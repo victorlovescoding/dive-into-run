@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+/* CSS認不出來 Link 所以要寫 a */
+.main-nav a{
+  display: inline-block;
+  margin: 0 2rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* 覆蓋 leaflet-geosearch 搜尋框的提示文字顏色 */
+.leaflet-control-geosearch input::placeholder {
+  color: #555; /* 深灰色，提高可讀性 */
+  /* 針對 Webkit 瀏覽器的兼容性處理 */
+  -webkit-text-fill-color: #555; 
+}

@@ -1,0 +1,10 @@
+.commentContainer {
+  border: 2px solid red;
+}
+.postOwnerMenu {
+  position: absolute;
+  right: 25px;
+}
+.postOwnerMenuButton:hover {
+  cursor: pointer;
+}
