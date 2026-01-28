@@ -1,53 +1,86 @@
-import { describe, it, expect, vi } from 'vitest'
-// 預期這個函式還不存在，這行可能會報錯或 undefined，這是正常的 TDD 紅燈
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { queryEvents } from '@/lib/firebase-events'
+import * as firestore from 'firebase/firestore'
+
+// Mock Firestore
+vi.mock('firebase/firestore', async () => {
+  const actual = await vi.importActual('firebase/firestore')
+  return {
+    ...actual,
+    getDocs: vi.fn(),
+    query: vi.fn(),
+    collection: vi.fn(),
+    where: vi.fn(),
+    orderBy: vi.fn(),
+    limit: vi.fn(),
+    Timestamp: {
+      fromDate: vi.fn((date) => ({ toDate: () => date })),
+    },
+  }
+})
+
+// Mock firebase-client
+vi.mock('@/lib/firebase-client', () => ({
+  db: {},
+}))
 
 describe('Event Filtering Logic (Unit) - Feature 001', () => {
-  
+  const mockEvents = [
+    { id: '1', city: '臺北市', distanceKm: 5, remainingSeats: 5 },
+    { id: '2', city: '臺中市', distanceKm: 10, remainingSeats: 0 },
+    { id: '3', city: '高雄市', distanceKm: 5.4, remainingSeats: 2 },
+    { id: '4', city: '臺北市', distanceKm: 10.5, remainingSeats: 1 },
+  ]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // 預設 Mock getDocs 回傳 mockEvents
+    firestore.getDocs.mockResolvedValue({
+      docs: mockEvents.map(ev => ({
+        id: ev.id,
+        data: () => ev
+      }))
+    })
+  })
+
   // 1. 單一地點篩選 (US4)
-  it('應能正確處理單一地點篩選', async () => {
-    try {
-      // 模擬輸入
-      const filters = { city: '臺中市' }
-      
-      // 假設我們能 Mock Firestore 的行為 (這裡簡化，直接測函式是否存在)
-      // 實作時，我們會在这里 mock getDocs 並回傳假資料
-      const results = await queryEvents(filters)
-      
-      // 預期回傳陣列
-      expect(Array.isArray(results)).toBe(true)
-    } catch (e) {
-      // 預期失敗：queryEvents is not a function
-      expect(e).toBeDefined() 
-    }
+  it('應能正確呼叫 Firestore 進行地點篩選', async () => {
+    const filters = { city: '臺中市' }
+    await queryEvents(filters)
+    
+    // 驗證是否產生了正確的 where 條件 (這裡檢查 where 函式被呼叫)
+    expect(firestore.where).toHaveBeenCalledWith('city', '==', '臺中市')
   })
 
   // 2. 距離寬容度 (US2)
   it('應正確處理距離寬容度 ±0.5km', async () => {
-    // 這裡定義預期行為：
-    // 若 queryEvents 支援記憶體過濾，我們預期它會處理回傳的資料
-    // 注意：真正的邏輯測試需要 Mock Firestore 回傳值，這裡先寫好結構
-    try {
-      // 假設 filters
-      const filters = { minDistance: 5, maxDistance: 10 }
-      const results = await queryEvents(filters)
-      
-      // 驗證過濾後的結果 (當我們能 Mock 時，這裡會檢查 results 的 distanceKm 是否都在 4.5 ~ 10.5 之間)
-      expect(results).toBeDefined()
-    } catch (e) {
-      expect(e).toBeDefined()
-    }
+    // 假設 Firestore 回傳了所有 4 筆資料
+    const filters = { minDistance: 5, maxDistance: 10 }
+    const results = await queryEvents(filters)
+    
+    // 預期結果：
+    // id 1: 5km (符合 [4.5, 10.5])
+    // id 2: 10km (符合 [4.5, 10.5])
+    // id 3: 5.4km (符合 [4.5, 10.5])
+    // id 4: 10.5km (符合 [4.5, 10.5])
+    expect(results.length).toBe(4)
+    
+    // 如果過濾 11km (max 10)
+    const filters2 = { maxDistance: 5 }
+    const results2 = await queryEvents(filters2)
+    // id 1: 5 (符合 <= 5.5)
+    // id 3: 5.4 (符合 <= 5.5)
+    expect(results2.some(r => r.id === '1')).toBe(true)
+    expect(results2.some(r => r.id === '3')).toBe(true)
+    expect(results2.length).toBe(2)
   })
 
   // 3. 名額狀況 (US3)
   it('當 hasSeatsOnly 為 true 時，應過濾掉額滿活動', async () => {
-    try {
-      const results = await queryEvents({ hasSeatsOnly: true })
-      // 當我們能 Mock 時，這裡會檢查 results 中沒有 remainingSeats <= 0 的項目
-      // 或檢查 remainingSeats 為 undefined 但 max <= participants 的項目也被排除
-      expect(results).toBeDefined()
-    } catch (e) {
-      expect(e).toBeDefined()
-    }
+    const results = await queryEvents({ hasSeatsOnly: true })
+    
+    // id 2 (remainingSeats: 0) 應該被過濾掉
+    expect(results.some(r => r.id === '2')).toBe(false)
+    expect(results.length).toBe(3)
   })
 })

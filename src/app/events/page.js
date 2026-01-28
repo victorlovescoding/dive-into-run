@@ -9,6 +9,7 @@ import {
   createEvent,
   fetchLatestEvents,
   fetchNextEvents,
+  queryEvents,
   joinEvent,
   leaveEvent,
   fetchMyJoinedEventsForIds,
@@ -534,9 +535,11 @@ export default function RunTogetherPage() {
 
   // ✅ 活動列表
   const [events, setEvents] = useState([]);
+  const [isFilteredResults, setIsFilteredResults] = useState(false); // 是否為篩選後的結果
 
   // ✅ 初次載入（進頁面抓最新 10 筆）
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false); // 正在篩選中
   const [loadError, setLoadError] = useState(null);
 
   // ✅ 無限滾動（載入更多）
@@ -766,12 +769,37 @@ export default function RunTogetherPage() {
     setFilterMaxParticipantsMin("");
     setFilterMaxParticipantsMax("");
     setFilterRunType("");
+    
+    // 重置搜尋結果狀態
+    setIsFilteredResults(false);
   }
 
-  function handleSearchFilters() {
-    // 目前僅做 UI 展示，關閉浮層
+  async function handleSearchFilters() {
     setFilterOpen(false);
-    // 未來在此處加入後端查詢邏輯
+    setIsFiltering(true);
+    setLoadError(null);
+
+    const filters = {
+      city: filterCity,
+      district: filterDistrict,
+      startTime: filterTimeStart,
+      endTime: filterTimeEnd,
+      minDistance: filterDistanceMin,
+      maxDistance: filterDistanceMax,
+      hasSeatsOnly: filterHasSeatsOnly,
+    };
+
+    try {
+      const results = await queryEvents(filters);
+      setEvents(results);
+      setIsFilteredResults(true);
+      setHasMore(false); // MVP 篩選結果暫不支援載入更多
+    } catch (err) {
+      console.error("篩選失敗:", err);
+      setLoadError("搜尋失敗，請稍後再試");
+    } finally {
+      setIsFiltering(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -1024,6 +1052,13 @@ export default function RunTogetherPage() {
           </div>
         )}
 
+        {isFiltering && (
+          <div className={styles.statusRow} role="status" aria-live="polite">
+            <div className={styles.spinner} aria-hidden="true" />
+            <span>正在篩選活動…</span>
+          </div>
+        )}
+
         {isCreating && (
           <div className={styles.statusRow} role="status" aria-live="polite">
             <div className={styles.spinner} aria-hidden="true" />
@@ -1057,9 +1092,9 @@ export default function RunTogetherPage() {
         )}
 
         <div className={styles.eventList}>
-          {!isLoadingEvents && events.length === 0 ? (
+          {!isLoadingEvents && !isFiltering && events.length === 0 ? (
             <div className={styles.emptyHint}>
-              目前還沒有活動（先建立一筆看看）
+              {isFilteredResults ? "沒有符合條件的活動" : "目前還沒有活動（先建立一筆看看）"}
             </div>
           ) : (
             events.map((ev) => (
@@ -1292,34 +1327,15 @@ export default function RunTogetherPage() {
                 </div>
               </div>
 
-              {/* 2) 揪團人 */}
+              {/* 2) 揪團人 (MVP 隱藏) */}
+              {/*
               <div className={styles.filterGroup}>
                 <label htmlFor="filterHost" className={styles.filterLabel}>
                   揪團人
                 </label>
-                <input
-                  id="filterHost"
-                  type="text"
-                  className={styles.filterTextField}
-                  value={filterHostText}
-                  onChange={(e) => setFilterHostText(e.target.value)}
-                  placeholder="輸入揪團人（例如：小明）"
-                  list="filterHostOptions"
-                />
-                <datalist id="filterHostOptions">
-                  {Array.from(
-                    new Set(
-                      events
-                        .map((ev) => String(ev?.hostName || "").trim())
-                        .filter((name) => Boolean(name))
-                    )
-                  )
-                    .sort((a, b) => a.localeCompare(b, "zh-Hant"))
-                    .map((name) => (
-                      <option key={name} value={name} />
-                    ))}
-                </datalist>
+                ...
               </div>
+              */}
 
               {/* 2) 活動日期/時間 */}
               <div className={styles.filterGroup}>
@@ -1347,31 +1363,12 @@ export default function RunTogetherPage() {
                 </div>
               </div>
 
-              {/* 3) 報名截止時間 */}
+              {/* 3) 報名截止時間 (MVP 隱藏) */}
+              {/*
               <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>報名截止時間formatDateTime</label>
-                <div className={styles.filterRow}>
-                  <div className={styles.filterRowItem}>
-                    <input
-                      type="datetime-local"
-                      className={styles.filterTextField}
-                      value={filterRegStart}
-                      onChange={(e) => setFilterRegStart(e.target.value)}
-                      aria-label="報名截止時間（起）"
-                    />
-                  </div>
-                  <span className={styles.filterSeparator}>至</span>
-                  <div className={styles.filterRowItem}>
-                    <input
-                      type="datetime-local"
-                      className={styles.filterTextField}
-                      value={filterRegEnd}
-                      onChange={(e) => setFilterRegEnd(e.target.value)}
-                      aria-label="報名截止時間（迄）"
-                    />
-                  </div>
-                </div>
+                ...
               </div>
+              */}
 
               {/* 4) 跑步距離 (km) */}
               <div className={styles.filterGroup}>
@@ -1403,70 +1400,12 @@ export default function RunTogetherPage() {
                 </div>
               </div>
 
-              {/* 5) 配速 (分:秒) */}
+              {/* 5) 配速 (分:秒) (MVP 隱藏) */}
+              {/*
               <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>配速範圍 (每公里)</label>
-
-                {/* 最快配速 */}
-                <div className={styles.filterRowWithMargin}>
-                  <span className={styles.filterPaceLabel}>最快：</span>
-                  <select
-                    className={`${styles.selectField} ${styles.flex1} ${styles.centerSelect}`}
-                    value={filterPaceMinMin}
-                    onChange={(e) => setFilterPaceMinMin(e.target.value)}
-                  >
-                    <option value="">分</option>
-                    {[...Array(19)].map((_, i) => (
-                      <option key={i} value={String(i + 2).padStart(2, "0")}>
-                        {i + 2}
-                      </option>
-                    ))}
-                  </select>
-                  <span>:</span>
-                  <select
-                    className={`${styles.selectField} ${styles.flex1} ${styles.centerSelect}`}
-                    value={filterPaceMinSec}
-                    onChange={(e) => setFilterPaceMinSec(e.target.value)}
-                  >
-                    <option value="">秒</option>
-                    {[...Array(60).keys()].map((s) => (
-                      <option key={s} value={String(s).padStart(2, "0")}>
-                        {String(s).padStart(2, "0")}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 最慢配速 */}
-                <div className={styles.filterRow}>
-                  <span className={styles.filterPaceLabel}>最慢：</span>
-                  <select
-                    className={`${styles.selectField} ${styles.flex1} ${styles.centerSelect}`}
-                    value={filterPaceMaxMin}
-                    onChange={(e) => setFilterPaceMaxMin(e.target.value)}
-                  >
-                    <option value="">分</option>
-                    {[...Array(19)].map((_, i) => (
-                      <option key={i} value={String(i + 2).padStart(2, "0")}>
-                        {i + 2}
-                      </option>
-                    ))}
-                  </select>
-                  <span>:</span>
-                  <select
-                    className={`${styles.selectField} ${styles.flex1} ${styles.centerSelect}`}
-                    value={filterPaceMaxSec}
-                    onChange={(e) => setFilterPaceMaxSec(e.target.value)}
-                  >
-                    <option value="">秒</option>
-                    {[...Array(60).keys()].map((s) => (
-                      <option key={s} value={String(s).padStart(2, "0")}>
-                        {String(s).padStart(2, "0")}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                ...
               </div>
+              */}
 
               {/* 7) 縣市 + 區 */}
               <div className={styles.filterGroup}>
@@ -1475,6 +1414,7 @@ export default function RunTogetherPage() {
                   <select
                     className={`${styles.selectField} ${styles.flex1}`}
                     value={filterCity}
+                    aria-label="選擇縣市"
                     onChange={(e) => {
                       setFilterCity(e.target.value);
                       setFilterDistrict("");
@@ -1491,6 +1431,7 @@ export default function RunTogetherPage() {
                   <select
                     className={`${styles.selectField} ${styles.flex1}`}
                     value={filterDistrict}
+                    aria-label="選擇區域"
                     onChange={(e) => setFilterDistrict(e.target.value)}
                     disabled={!filterCity}
                   >
@@ -1505,67 +1446,19 @@ export default function RunTogetherPage() {
                 </div>
               </div>
 
-              {/* 8) 限制人數 */}
+              {/* 8) 限制人數 (MVP 隱藏) */}
+              {/*
               <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>人數上限</label>
-                <div className={styles.filterRow}>
-                  <div className={styles.filterRowItem}>
-                    <input
-                      type="number"
-                      className={styles.filterTextField}
-                      placeholder="最少"
-                      min="1"
-                      value={filterMaxParticipantsMin}
-                      onChange={(e) =>
-                        setFilterMaxParticipantsMin(e.target.value)
-                      }
-                    />
-                  </div>
-                  <span className={styles.filterSeparator}>-</span>
-                  <div className={styles.filterRowItem}>
-                    <input
-                      type="number"
-                      className={styles.filterTextField}
-                      placeholder="最多"
-                      min="1"
-                      value={filterMaxParticipantsMax}
-                      onChange={(e) =>
-                        setFilterMaxParticipantsMax(e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
+                ...
               </div>
+              */}
 
-              {/* 9) 跑步類型 */}
+              {/* 9) 跑步類型 (MVP 隱藏) */}
+              {/*
               <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>跑步類型</label>
-                <select
-                  className={styles.selectField}
-                  value={filterRunType}
-                  onChange={(e) => setFilterRunType(e.target.value)}
-                >
-                  <option value="">所有類型</option>
-                  <option value="easy_run">輕鬆慢跑（Easy Run）</option>
-                  <option value="long_run">長距離慢跑（Long Run）</option>
-                  <option value="tempo_run">節奏跑（Tempo Run）</option>
-                  <option value="interval_training">
-                    間歇訓練（Interval Training）
-                  </option>
-                  <option value="hill_training">
-                    坡度訓練（Hill Training）
-                  </option>
-                  <option value="fartlek">變速跑（Fartlek）</option>
-                  <option value="trail_run">越野跑（Trail Run）</option>
-                  <option value="social_run">休閒社交跑（Social Run）</option>
-                </select>
+                ...
               </div>
-
-              <div style={{ marginTop: 20, textAlign: "center" }}>
-                <small className={styles.filterHint}>
-                  提示：目前此篩選器僅為 UI 展示（Demo），尚未串接後端查詢邏輯。
-                </small>
-              </div>
+              */}
 
               {/* 底部按鈕區 */}
               <div className={styles.filterActions}>

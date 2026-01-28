@@ -7,6 +7,7 @@ import {
   getDoc,
   doc,
   query,
+  where,
   orderBy,
   limit,
   startAfter,
@@ -117,6 +118,73 @@ export async function fetchLatestEvents(limitCount = 10) {
   return { events, lastDoc };
 }
 
+/**
+ * 混合式查詢活動 (MVP)
+ * 1. Firestore 層級: city, district, time (範圍)
+ * 2. 記憶體層級: distanceKm (容差), remainingSeats
+ */
+export async function queryEvents(filters = {}) {
+  const {
+    city,
+    district,
+    startTime,
+    endTime,
+    minDistance,
+    maxDistance,
+    hasSeatsOnly,
+  } = filters;
+
+  const constraints = [collection(db, "events")];
+
+  // --- Stage 1: Firestore Queries (Equality & Primary Range) ---
+  if (city) {
+    constraints.push(where("city", "==", city));
+  }
+  if (district) {
+    constraints.push(where("district", "==", district));
+  }
+
+  // 時間篩選
+  if (startTime) {
+    constraints.push(where("time", ">=", Timestamp.fromDate(new Date(startTime))));
+  }
+  if (endTime) {
+    constraints.push(where("time", "<=", Timestamp.fromDate(new Date(endTime))));
+  }
+
+  // 排序：預設依活動時間 (time) 由新到舊 (desc)
+  constraints.push(orderBy("time", "desc"));
+  constraints.push(limit(50));
+
+  const q = query(...constraints);
+  const snap = await getDocs(q);
+  let results = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  // --- Stage 2: In-Memory Filtering (Secondary Filters) ---
+
+  // 1. 距離篩選 (±0.5km 寬容度)
+  if (minDistance !== undefined && minDistance !== "" && minDistance !== null) {
+    const min = Number(minDistance) - 0.5;
+    results = results.filter((ev) => Number(ev.distanceKm || 0) >= min);
+  }
+  if (maxDistance !== undefined && maxDistance !== "" && maxDistance !== null) {
+    const max = Number(maxDistance) + 0.5;
+    results = results.filter((ev) => Number(ev.distanceKm || 0) <= max);
+  }
+
+  // 2. 名額篩選
+  if (hasSeatsOnly) {
+    results = results.filter((ev) => {
+      // 若資料庫沒存 remainingSeats (舊資料)，則用 max - count 計算
+      const seats = typeof ev.remainingSeats === "number" 
+        ? ev.remainingSeats 
+        : Number(ev.maxParticipants || 0) - Number(ev.participantsCount || 0);
+      return seats > 0;
+    });
+  }
+
+  return results;
+}
 
 // 取得單一活動（用 eventId 讀 events/{id}）
 // 回傳：{ id, ...data } 或 null（找不到）

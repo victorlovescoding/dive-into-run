@@ -16,11 +16,11 @@ test.describe('Event Filtering Feature', () => {
     await expect(filterModal).toBeVisible();
 
     // 2. 選擇城市 (桃園市)
-    const citySelect = page.locator('select').first();
+    const citySelect = page.getByRole('combobox', { name: '選擇縣市' });
     await citySelect.selectOption('桃園市');
 
     // 3. 驗證區域連動：等待龜山區選項出現並選取
-    const districtSelect = page.locator('select').nth(1);
+    const districtSelect = page.getByRole('combobox', { name: '選擇區域' });
     await districtSelect.selectOption('龜山區');
 
     // 4. 點擊搜尋
