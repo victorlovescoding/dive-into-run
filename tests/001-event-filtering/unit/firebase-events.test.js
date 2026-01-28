@@ -44,12 +44,16 @@ describe('Event Filtering Logic (Unit) - Feature 001', () => {
   })
 
   // 1. 單一地點篩選 (US4)
-  it('應能正確呼叫 Firestore 進行地點篩選', async () => {
+  it('應在記憶體中正確過濾地點 (In-Memory Filtering)', async () => {
     const filters = { city: '臺中市' }
-    await queryEvents(filters)
+    const results = await queryEvents(filters)
     
-    // 驗證是否產生了正確的 where 條件 (這裡檢查 where 函式被呼叫)
-    expect(firestore.where).toHaveBeenCalledWith('city', '==', '臺中市')
+    // 驗證 Firestore 沒有被呼叫 city 查詢 (因為移至記憶體處理以避免索引問題)
+    expect(firestore.where).not.toHaveBeenCalledWith('city', '==', '臺中市')
+
+    // 驗證結果確實只包含臺中市的活動
+    expect(results.length).toBe(1)
+    expect(results[0].city).toBe('臺中市')
   })
 
   // 2. 距離寬容度 (US2)

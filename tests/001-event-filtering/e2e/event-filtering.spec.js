@@ -80,5 +80,10 @@ test.describe('Event Filtering Feature', () => {
     
     // 5. 驗證是否進入詳情頁 (檢查是否有詳情頁特有的元素，例如「回到活動列表」)
     await expect(page.getByText('回到活動列表')).toBeVisible();
+
+    // 6. 驗證配速是否正確顯示 (格式應為 MM:SS /km)
+    // 我們尋找包含配速文字的具體 div
+    const paceText = page.locator('div').filter({ hasText: /^配速：/ }).last();
+    await expect(paceText).toContainText(/\d+:\d+ \/km/);
   });
 });

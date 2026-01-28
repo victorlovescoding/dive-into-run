@@ -136,13 +136,9 @@ export async function queryEvents(filters = {}) {
 
   const constraints = [collection(db, "events")];
 
-  // --- Stage 1: Firestore Queries (Equality & Primary Range) ---
-  if (city) {
-    constraints.push(where("city", "==", city));
-  }
-  if (district) {
-    constraints.push(where("district", "==", district));
-  }
+  // --- Stage 1: Firestore Queries (Time Range Only) ---
+  // 為了避免複雜的複合索引問題 (如 city + time 索引)，我們將地點篩選移至記憶體 (Stage 2)
+  // 這樣只需要 time 的單欄位索引即可運作。對於 MVP 資料量來說，這是可接受的折衷。
 
   // 時間篩選
   if (startTime) {
@@ -161,6 +157,14 @@ export async function queryEvents(filters = {}) {
   let results = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
   // --- Stage 2: In-Memory Filtering (Secondary Filters) ---
+
+  // 0. 地點篩選 (精確比對)
+  if (city) {
+    results = results.filter((ev) => ev.city === city);
+  }
+  if (district) {
+    results = results.filter((ev) => ev.district === district);
+  }
 
   // 1. 距離篩選 (±0.5km 寬容度)
   if (minDistance !== undefined && minDistance !== "" && minDistance !== null) {

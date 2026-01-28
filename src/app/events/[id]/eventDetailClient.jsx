@@ -76,13 +76,16 @@ function getRemainingSeats(ev, fallbackParticipantsCount = 0) {
   return Math.max(0, max - toNumber(count));
 }
 
-function buildUserPayload(user) {
-  if (!user?.uid) return null;
-  return {
-    uid: String(user.uid),
-    name: String(user.name || (user.email ? user.email.split("@")[0] : "")),
-    photoURL: String(user.photoURL || ""),
-  };
+function formatPace(paceSec, fallbackText = "") {
+  const n = typeof paceSec === "number" ? paceSec : Number(paceSec);
+  if (Number.isFinite(n) && n > 0) {
+    const mm = Math.floor(n / 60);
+    const ss = n % 60;
+    return `${mm}:${String(ss).padStart(2, "0")}`;
+  }
+  if (typeof fallbackText === "string" && fallbackText.trim())
+    return fallbackText;
+  return "";
 }
 
 export default function EventDetailClient({ id }) {
@@ -245,7 +248,7 @@ export default function EventDetailClient({ id }) {
 
               <div className={styles.eventMeta}>
                 <div>距離：{event.distanceKm} km</div>
-                <div>配速：{event.pace} /km</div>
+                <div>配速：{formatPace(event.paceSec, event.pace)} /km</div>
                 <div>人數上限：{event.maxParticipants}</div>
                 <div>
                   剩餘名額：{getRemainingSeats(event, participants.length)}
