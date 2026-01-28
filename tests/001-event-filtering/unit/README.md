@@ -1,32 +1,33 @@
-# Unit Test Goals: Event Filtering Service
 
-**Target Module**: `src/lib/firebase-events.js`
-**Function**: `queryEvents(filters)`
+# 單元測試目標：活動篩選服務 (Unit Test Goals)
 
-## Test Scenarios
+**目標模組**: `src/lib/firebase-events.js`
+**測試函式**: `queryEvents(filters)`
 
-### 1. Single Location Filtering (US4)
-- **Goal**: Verify that filtering by `city` only returns events from that city.
-- **Input**: `{ city: 'Taichung' }`
-- **Expected Outcome**: Result list contains only events where `city === 'Taichung'`.
+## 測試情境 (Test Scenarios)
 
-### 2. Hybrid Filtering: Distance (US2)
-- **Goal**: Verify that distance filtering is applied in-memory after fetching from Firestore.
-- **Logic Check**: Must support **±0.5km tolerance**.
-- **Input**: `{ minDistance: 5, maxDistance: 10 }`
-- **Expected Outcome**:
-    - 5.0km event -> Keep
-    - 5.4km event -> Keep (within tolerance)
-    - 10.5km event -> Keep (within tolerance)
-    - 3.0km event -> Exclude
+### 1. 單一地點篩選 (US4)
+- **目標**: 驗證依 `city` 進行篩選時，僅回傳該縣市的活動。
+- **輸入**: `{ city: 'Taichung' }`
+- **預期結果**: 回傳列表中的每個活動其 `city` 都必須是 `'Taichung'`。
 
-### 3. Seat Availability (US3)
-- **Goal**: Verify that "Has Seats Only" filter excludes full events.
-- **Input**: `{ hasSeatsOnly: true }`
-- **Expected Outcome**: Events with `remainingSeats <= 0` are excluded.
+### 2. 混合式過濾：距離 (US2)
+- **目標**: 驗證從 Firestore 獲取資料後，是否正確執行記憶體內的距離過濾。
+- **邏輯檢查**: 必須支援 **±0.5km 寬容度**。
+- **輸入**: `{ minDistance: 5, maxDistance: 10 }`
+- **預期結果**:
+    - 5.0km 活動 -> 保留
+    - 5.4km 活動 -> 保留 (在寬容度內)
+    - 10.5km 活動 -> 保留 (在寬容度內)
+    - 3.0km 活動 -> 排除
 
-### 4. Edge Cases (EC)
-- **Goal**: Verify robustness against invalid inputs.
-- **Scenarios**:
-    - Empty filter object -> Should return all (default behavior) or throw error (depending on design).
-    - Invalid distance numbers (negative) -> Should handle gracefully.
+### 3. 名額狀況 (US3)
+- **目標**: 驗證「只顯示有名額」選項是否能排除已額滿的活動。
+- **輸入**: `{ hasSeatsOnly: true }`
+- **預期結果**: 所有 `remainingSeats <= 0` 的活動都被排除。
+
+### 4. 邊界情況 (Edge Cases)
+- **目標**: 驗證對無效輸入的強健性。
+- **情境**:
+    - 空的篩選物件 -> 應回傳所有活動 (或依預設行為處理)。
+    - 無效的距離數值 (如負數) -> 應優雅處理而不崩潰。

@@ -17,6 +17,7 @@ Version: 0.0.0 -> 1.0.0
 
 ### I. 規格與測試驅動紀律 (SDD/TDD)
 **不可協商**: 在沒有明確的書面規格 (SDD) 和失敗的測試 (TDD) 之前，不得開始任何實作。
+- **文件即法律 (Documentation as Law)**: **嚴格禁止偏離文件開發**。任何實作細節若與規格書、計畫文件或本憲法不符，將被視為重大缺失。沒有「我覺得這樣比較好」的模糊空間，除非先修改文件並獲得核准。
 - **規格優先 (Spec First)**: 程式碼結構必須遵循規格中定義的架構規劃與資料模型。
 - **GWT 場景**: 每個使用者故事 (User Story) 必須包含明確的 **Given-When-Then (GWT)** 驗收場景，以定義精確的 UI/UX 互動與結果。
 - **邊界情況 (Edge Cases)**: 規格書必須包含明確的邊界情況處理邏輯，以確保系統在極端或錯誤輸入下（如無輸入、非法數值、網路失敗）的穩定性。
@@ -57,6 +58,9 @@ Version: 0.0.0 -> 1.0.0
 - **程式庫**: React 19
 - **資料庫**: Firebase v9+ (Firestore, Auth, Storage)
 - **地圖**: Leaflet, React-Leaflet, Leaflet-Draw
+- **測試**: 
+    - **Vitest**: 搭配 `jsdom` 與 `@testing-library/react` (用於單元與元件測試)。
+    - **Playwright**: 用於端對端 (E2E) 測試。
 - **Linting**: 每次提交前必須通過 ESLint 檢查。
 
 ## 工作流程與品質閘門 (Workflow & Quality Gates)

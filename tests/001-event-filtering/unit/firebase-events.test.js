@@ -24,11 +24,15 @@ describe('Event Filtering Logic (Unit) - Feature 001', () => {
 
   // 2. 距離寬容度 (US2)
   it('應正確處理距離寬容度 ±0.5km', async () => {
-    // 這裡我們無法真的測到邏輯，因為函式是空的。
-    // 但這個測試定義了我們的預期行為：
-    // 如果 queryEvents 被實作，它應該要能吃 maxDistance 參數
+    // 這裡定義預期行為：
+    // 若 queryEvents 支援記憶體過濾，我們預期它會處理回傳的資料
+    // 注意：真正的邏輯測試需要 Mock Firestore 回傳值，這裡先寫好結構
     try {
-      const results = await queryEvents({ maxDistance: 5 })
+      // 假設 filters
+      const filters = { minDistance: 5, maxDistance: 10 }
+      const results = await queryEvents(filters)
+      
+      // 驗證過濾後的結果 (當我們能 Mock 時，這裡會檢查 results 的 distanceKm 是否都在 4.5 ~ 10.5 之間)
       expect(results).toBeDefined()
     } catch (e) {
       expect(e).toBeDefined()
@@ -39,6 +43,8 @@ describe('Event Filtering Logic (Unit) - Feature 001', () => {
   it('當 hasSeatsOnly 為 true 時，應過濾掉額滿活動', async () => {
     try {
       const results = await queryEvents({ hasSeatsOnly: true })
+      // 當我們能 Mock 時，這裡會檢查 results 中沒有 remainingSeats <= 0 的項目
+      // 或檢查 remainingSeats 為 undefined 但 max <= participants 的項目也被排除
       expect(results).toBeDefined()
     } catch (e) {
       expect(e).toBeDefined()

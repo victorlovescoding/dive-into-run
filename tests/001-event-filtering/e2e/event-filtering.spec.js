@@ -7,7 +7,7 @@ test.describe('Event Filtering Feature', () => {
     await page.goto('http://localhost:3000/events');
   });
 
-  test('應該能打開篩選器並進行搜尋 (US1)', async ({ page }) => {
+  test('應該能打開篩選器並進行縣市區域連動搜尋 (US1, US4)', async ({ page }) => {
     // 1. 打開篩選器
     await page.getByRole('button', { name: '篩選活動' }).click();
     
@@ -15,19 +15,19 @@ test.describe('Event Filtering Feature', () => {
     const filterModal = page.locator('div[role="dialog"]');
     await expect(filterModal).toBeVisible();
 
-    // 2. 輸入條件 (地點：臺北市)
-    // 根據 page.js，這是一個 select
-    await page.locator('select').first().selectOption('臺北市');
+    // 2. 選擇城市 (桃園市)
+    const citySelect = page.locator('select').first();
+    await citySelect.selectOption('桃園市');
 
-    // 3. 點擊搜尋
+    // 3. 驗證區域連動：等待龜山區選項出現並選取
+    const districtSelect = page.locator('select').nth(1);
+    await districtSelect.selectOption('龜山區');
+
+    // 4. 點擊搜尋
     await page.getByRole('button', { name: '搜尋' }).click();
 
-    // 4. 驗證篩選器自動關閉 (UI-004)
+    // 5. 驗證篩選器自動關閉 (UI-004)
     await expect(filterModal).toBeHidden();
-
-    // 5. 驗證列表更新 (需視實際資料而定，這裡先檢查列表容器存在)
-    // 根據 events.module.css，卡片 class 是 .eventCard
-    // await expect(page.locator('.eventCard').first()).toBeVisible();
   });
 
   test('清除按鈕應該重置欄位但保留名額勾選 (UI-003)', async ({ page }) => {
@@ -58,5 +58,27 @@ test.describe('Event Filtering Feature', () => {
     
     // 驗證出現空狀態文字
     await expect(page.getByText('沒有符合條件的活動')).toBeVisible();
+  });
+
+  test('點擊搜尋結果應導向詳情頁 (FR-007)', async ({ page }) => {
+    // 1. 執行一個簡單搜尋，確保有結果 (假設預設列表有活動，或執行寬鬆搜尋)
+    await page.getByRole('button', { name: '篩選活動' }).click();
+    await page.getByRole('button', { name: '搜尋' }).click();
+
+    // 2. 等待列表載入 (假設至少有一個結果)
+    const firstEventCard = page.locator('a[href^="/events/"]').first();
+    await expect(firstEventCard).toBeVisible();
+
+    // 取得該卡片的連結
+    const href = await firstEventCard.getAttribute('href');
+
+    // 3. 點擊卡片
+    await firstEventCard.click();
+
+    // 4. 驗證網址是否包含 event ID
+    await expect(page).toHaveURL(new RegExp(href));
+    
+    // 5. 驗證是否進入詳情頁 (檢查是否有詳情頁特有的元素，例如「回到活動列表」)
+    await expect(page.getByText('回到活動列表')).toBeVisible();
   });
 });

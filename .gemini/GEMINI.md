@@ -34,10 +34,17 @@
 - **語言**: **JavaScript** (.js / .jsx) - **請勿使用 TypeScript**。
 - **資料庫**: Firebase v9+ (Firestore, Auth, Storage)
 - **地圖**: Leaflet, React-Leaflet, Leaflet-Draw, Mapbox Polyline
-- **測試工具**: **Vitest** (搭配 `@testing-library/react` 和 `jsdom`)
+- **測試工具**:
+    - **單元/整合測試**: **Vitest** (搭配 `jsdom` 與 `@testing-library/react`)
+    - **E2E 測試**: **Playwright**
 - **樣式**: 以 **CSS Modules** (`*.module.css`) 為主要方式。雖然專案已安裝 Tailwind CSS，但除非有特別說明，否則元件特定樣式請優先使用 CSS Modules。
 
 ## 開發原則 (不可協商)
+
+### 0. 絕對原則：文件即法律 (Documentation as Law)
+- **零容忍**: **嚴格禁止偏離文件開發**。任何實作必須 100% 對應規格書、計畫與本檔案的定義。
+- **禁止發散**: 沒有「順便做一下」或「我覺得這樣更好」的空間。若發現文件有誤或有更好的做法，**必須先更新文件**，確認後再寫程式碼。
+- **任何不符合文件的代碼都是錯誤的代碼**，無論它是否能運作。
 
 ### 1. 規格驅動開發 (SDD)
 - **規格優先**: 在沒有明確的書面規格或需求定義之前，不得開始任何實作。

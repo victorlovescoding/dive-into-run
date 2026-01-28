@@ -1,24 +1,28 @@
-# E2E Test Goals: Event Filtering UI
+# E2E 測試目標：活動篩選 UI (E2E Test Goals)
 
-**Target Page**: `/events`
-**Spec Reference**: `specs/001-event-filtering/spec.md`
+**目標頁面**: `/events`
+**規格參考**: `specs/001-event-filtering/spec.md`
 
-## Test Scenarios (GWT)
+## 測試情境 (GWT)
 
-### 1. Filter Interaction (US1, US4)
-- **Given**: User is on the events page.
-- **When**: User clicks filter button -> Selects "Taipei" -> Clicks Search.
+### 1. 篩選互動流程 (US1, US4)
+- **Given**: 使用者在活動頁面。
+- **When**: 使用者點擊篩選按鈕 -> 選擇「桃園市」 -> 驗證區域選單是否自動更新為桃園的行政區 -> 選擇「龜山區」 -> 點擊「搜尋」。
 - **Then**:
-    - Filter modal must **close automatically**.
-    - Event list must update (visual change).
-    - Only Taipei events are shown.
+    - 篩選器浮層必須 **自動關閉**。
+    - 活動列表必須更新。
+    - 列表僅顯示桃園市龜山區的活動。
 
-### 2. Auto-Close Behavior (UI-004)
-- **Goal**: Verify the modal closes upon clicking Search, regardless of results.
+### 2. 自動關閉行為 (UI-004)
+- **目標**: 驗證點擊「搜尋」後，無論有無結果，浮層都會自動關閉。
 
-### 3. Clear Functionality (UI-003)
-- **Goal**: Verify "Clear" button resets inputs but keeps "Has Seats" checked.
-- **Action**: Fill inputs -> Click Clear -> Check state.
+### 3. 清除功能 (UI-003)
+- **目標**: 驗證「清除」按鈕能清空輸入欄位，但保留「只顯示有名額」的勾選狀態。
+- **動作**: 填寫欄位 -> 點擊清除 -> 檢查狀態。
 
-### 4. Empty State (UI-007)
-- **Goal**: Verify "No matching events" message appears when no results found.
+### 4. 空狀態 (UI-007)
+- **目標**: 驗證當搜尋無結果時，會出現「沒有符合條件的活動」提示訊息。
+
+### 5. 導航行為 (FR-007)
+- **目標**: 驗證點擊搜尋結果中的活動卡片，能正確導航至詳情頁。
+- **動作**: 執行搜尋 -> 點擊第一個結果 -> 驗證 URL 與頁面內容。
