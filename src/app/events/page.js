@@ -1,4 +1,4 @@
-"use client";
+"use client"; //Victor
 import styles from "./events.module.css";
 import { useEffect, useState, useContext, useRef, useCallback } from "react";
 import { AuthContext } from "@/contexts/AuthContext";

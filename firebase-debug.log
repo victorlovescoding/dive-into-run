@@ -10,3 +10,15 @@
 [debug] [2026-01-30T20:50:53.327Z] > authorizing via signed-in user (rifrigerator3204367@gmail.com)
 [debug] [2026-01-30T20:50:53.328Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
 [debug] [2026-01-30T20:50:53.328Z] > authorizing via signed-in user (rifrigerator3204367@gmail.com)
+[debug] [2026-01-30T21:22:52.049Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-01-30T21:22:52.051Z] > authorizing via signed-in user (rifrigerator3204367@gmail.com)
+[debug] [2026-01-30T21:22:52.062Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-01-30T21:22:52.063Z] > authorizing via signed-in user (rifrigerator3204367@gmail.com)
+[debug] [2026-01-30T21:22:52.083Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-01-30T21:22:52.083Z] > authorizing via signed-in user (rifrigerator3204367@gmail.com)
+[debug] [2026-01-30T21:22:52.084Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-01-30T21:22:52.084Z] > authorizing via signed-in user (rifrigerator3204367@gmail.com)
+[debug] [2026-01-30T21:22:52.087Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-01-30T21:22:52.087Z] > authorizing via signed-in user (rifrigerator3204367@gmail.com)
+[debug] [2026-01-30T21:22:52.088Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-01-30T21:22:52.088Z] > authorizing via signed-in user (rifrigerator3204367@gmail.com)
