@@ -41,3 +41,4 @@ yarn-error.log*
 next-env.d.ts
 \n# Gemini Workflow Logs\n*.log\n# Firebase Emulators\nfirebase-debug.log*\nfirestore-debug.log*\n
 \n# Gemini Settings (contains sensitive tokens)\n.gemini/settings.json
+\n# AI Tooling and IDE settings\n.agent/\n.agents/\n.claude/\n.codex/\n.opencode/\n.vscode/\n
