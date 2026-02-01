@@ -1,0 +1,11 @@
+ ⚠ Warning: Found multiple lockfiles. Selecting /Users/chentzuyu/package-lock.json.
+   Consider removing the lockfiles at:
+   * /Users/chentzuyu/Desktop/dive-into-run/package-lock.json
+
+   ▲ Next.js 15.4.6
+   - Local:        http://127.0.0.1:3000
+   - Network:      http://127.0.0.1:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1421ms

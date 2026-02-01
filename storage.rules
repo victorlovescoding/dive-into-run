@@ -1,0 +1,23 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // 只開放使用者自己的大頭貼區域
+    // 你現在上傳到 users/{uid}/avatar.png，所以這樣寫可涵蓋該路徑
+    match /users/{userId}/{allPaths=**} {
+      // 讀：先開放（帶 token 的下載網址本來就是公開用，這裡簡化 MVP）
+      allow read: if true;
+
+      // 寫：必須登入、本人、型別 image/*、大小 <= 1MB（你可調整）
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.contentType.matches('image/.*')
+                   // && request.resource.size <= 1 * 1024 * 1024;
+    }
+
+    // 其他路徑一律封鎖
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

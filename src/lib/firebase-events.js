@@ -41,7 +41,7 @@ export function normalizeEventPayload(raw) {
     throw new Error("距離（公里）請輸入有效數字");
   }
 
-  if (Number.isNaN(maxParticipants) || maxParticipants < 2) {
+  if (Number .isNaN(maxParticipants) || maxParticipants < 2) {
     throw new Error("人數上限請輸入 2 以上的有效數字");
   }
 
