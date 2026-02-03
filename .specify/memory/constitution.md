@@ -1,15 +1,10 @@
 <!-- 
 SYNC IMPACT REPORT
-Version: 0.0.0 -> 1.0.0
-- Defined Principle I: Specification & Test-Driven Discipline (SDD/TDD)
-- Defined Principle II: Strict Service Layer Architecture
-- Defined Principle III: User Experience & Consistency
-- Defined Principle IV: Performance & Concurrency
-- Defined Principle V: Code Quality & Conventions
-- Filled Section 2: Technology Constraints
-- Filled Section 3: Workflow & Quality Gates
-- Updated Governance dates
-- Templates requiring updates: ✅ None (Templates align with new principles)
+Version: 1.0.0 -> 1.1.0
+- Added Principle VI: Modern Development Standards (Airbnb & JSDoc)
+- Detailed ESLint 9 + FlatCompat + Airbnb + JSDoc strategy
+- Added specific rules for React 19 (no import React)
+- Governance updated to reflect new tooling standards
 -->
 # Dive into Run 專案憲法 (Constitution)
 
@@ -52,6 +47,22 @@ Version: 0.0.0 -> 1.0.0
 - **Hook 順序**: State -> Context -> Refs -> Effects -> Handlers。
 - **註解**: 專注於解釋「為什麼」(意圖)，而非「做什麼」(語法)。
 
+### VI. 現代化開發標準 (Modern Development Standards)
+**不可協商**: 遵循 Airbnb 風格精華與 JSDoc 嚴謹性。
+- **Airbnb Spirit**: 遵循 Airbnb JavaScript Style Guide 的核心精神。
+    - **變數宣告**: 一律使用 `const`，僅在必須重新賦值時使用 `let`。**嚴禁使用 `var`**。
+    - **不可變性 (Immutability)**: 優先使用陣列/物件方法（`map`, `filter`, `spread operator`）取代迴圈與變異操作（`push`, `splice`），以符合 React 狀態更新原則。
+    - **物件解構**: 強制使用解構賦值 (Destructuring) 來存取物件屬性與陣列元素。
+    - **命名慣例**: 變數與函式使用 `camelCase`，React 元件使用 `PascalCase`，常數使用 `UPPER_SNAKE_CASE`。
+    - **結尾逗號**: 多行物件與陣列定義必須使用結尾逗號 (Trailing Commas)。
+- **React 19 慣例**:
+    - **No Import React**: 不需要在檔案頂部寫 `import React from 'react'`，除非使用 Hooks。
+    - **Hooks 規則**: 嚴格遵守 `rules-of-hooks`。
+- **JSDoc 紀律**:
+    - **強制文件**: 每個導出 (exported) 的函式與元件都必須包含完整的 JSDoc 註解。
+    - **型別定義**: 必須使用 `@param` 與 `@returns` 定義參數與回傳值的型別，以彌補缺少 TypeScript 的型別檢查。
+    - **執法過渡期**: 目前 ESLint 設定為 `warn` 以容許快速迭代，但任何進入 `main` 分支的代碼最終目標應為零警告 (Zero Warnings)。
+
 ## 技術約束 (Technology Constraints)
 
 - **框架**: Next.js 15 (App Router)
@@ -61,15 +72,18 @@ Version: 0.0.0 -> 1.0.0
 - **測試**: 
     - **Vitest**: 搭配 `jsdom` 與 `@testing-library/react` (用於單元與元件測試)。
     - **Playwright**: 用於端對端 (E2E) 測試。
-- **Linting**: 每次提交前必須通過 ESLint 檢查。
+- **Linting**: 
+    - **引擎**: ESLint 9 (Flat Config)。
+    - **規範**: 結合 `eslint-config-airbnb` (via FlatCompat) 與 `eslint-plugin-jsdoc`。
+    - **閘門**: 每次提交前必須通過 ESLint 檢查（目前設定為 `warn`，未來將升級為 `error`）。
 
 ## 工作流程與品質閘門 (Workflow & Quality Gates)
 
 1.  **規劃 (Plan)**: 定義規格與架構。
 2.  **測試 (Test)**: 為定義的行為撰寫會失敗的測試。
-3.  **實作 (Implement)**: 撰寫能通過測試的最少程式碼。
-4.  **重構 (Refactor)**: 在保持測試通過的前提下清理代碼。
-5.  **驗證 (Verify)**: 確保所有新邏輯都有覆蓋率且通過 Linting。
+3.  **實作 (Implement)**: 撰寫能通過測試的最少程式碼，並同時遵守 Airbnb 風格與 JSDoc 要求。
+4.  **驗證 (Verify)**: 確保所有新邏輯都有覆蓋率，且 `npm run lint` 無任何錯誤或警告。
+5.  **重構 (Refactor)**: 在保持測試通過的前提下清理代碼。
 
 ## 治理 (Governance)
 
@@ -80,4 +94,4 @@ Version: 0.0.0 -> 1.0.0
 - 程式碼的複雜度必須在規格中說明理由。
 - 使用 `.gemini/GEMINI.md` 獲取具體的執行時開發指引。
 
-**Version**: 1.0.0 | **Ratified**: 2026-01-27 | **Last Amended**: 2026-01-27
+**Version**: 1.1.1 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-02-03

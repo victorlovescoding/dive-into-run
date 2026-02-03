@@ -1,9 +1,11 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { initializeApp } from 'firebase/app';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
-import { getAuth, GoogleAuthProvider, signOut, connectAuthEmulator } from "firebase/auth";
+import {
+  getAuth, GoogleAuthProvider, signOut, connectAuthEmulator,
+} from 'firebase/auth';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -12,7 +14,7 @@ const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase
@@ -24,12 +26,12 @@ const db = getFirestore(app);
 
 // Connect to Emulators based on environment variable
 if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  console.log("🔥 Connecting to Firebase Emulators...");
-  if (typeof window !== "undefined") {
-      // client side
-      connectAuthEmulator(auth, "http://localhost:9099");
-      connectFirestoreEmulator(db, "localhost", 8080);
+  console.log('🔥 Connecting to Firebase Emulators...');
+  if (typeof window !== 'undefined') {
+    // client side
+    connectAuthEmulator(auth, 'http://localhost:9099');
+    connectFirestoreEmulator(db, 'localhost', 8080);
   }
 }
 
-export {provider, auth, db}
+export { provider, auth, db };

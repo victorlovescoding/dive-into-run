@@ -1,10 +1,11 @@
-"use client";
-import { getPostDetail } from "@/lib/firebase-posts";
-import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
-import { useContext } from "react";
-import { AuthContext } from "@/contexts/AuthContext";
+'use client';
+
+import Image from 'next/image';
 import {
+  useState, useEffect, useRef, useContext,
+} from 'react';
+import {
+  getPostDetail,
   addComment,
   getLatestComments,
   getCommentById,
@@ -15,20 +16,27 @@ import {
   deletePost,
   deleteComment,
   getMoreComments,
-} from "@/lib/firebase-posts";
-import styles from "../postDetail.module.css";
-const INFINITE_SCROLL_MARGIN = "300px 0px";
+} from '@/lib/firebase-posts';
+import { AuthContext } from '@/contexts/AuthContext';
+import styles from '../postDetail.module.css';
+
+const INFINITE_SCROLL_MARGIN = '300px 0px';
+/**
+ *
+ * @param root0
+ * @param root0.postId
+ */
 export default function PostDetailClient({ postId }) {
   const [postDetail, setPostDetail] = useState(null);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
   const [commentEditing, setCommentEditing] = useState(null);
   const [isCommentEditing, setIsCommentEditing] = useState(false);
   const [isComposeEditing, setIsComposeEditing] = useState(false);
   const { user } = useContext(AuthContext);
-  const [comment, setComment] = useState(""); //只裝使用者即將送出的留言
-  const [comments, setComments] = useState([]); //裝所有留言
-  const [openMenuPostId, setOpenMenuPostId] = useState("");
+  const [comment, setComment] = useState(''); // 只裝使用者即將送出的留言
+  const [comments, setComments] = useState([]); // 裝所有留言
+  const [openMenuPostId, setOpenMenuPostId] = useState('');
   const [editingPostId, setEditingPostId] = useState(null);
   const bottomRef = useRef(null);
   const [nextCursor, setNextCursor] = useState(null);
@@ -38,22 +46,25 @@ export default function PostDetailClient({ postId }) {
     if (!postId) {
       return;
     }
+    /**
+     *
+     */
     async function fetchPost() {
       const postDetailData = await getPostDetail(postId);
       setPostDetail(postDetailData);
       const commentsData = await getLatestComments(postId, 10);
       const last = commentsData[commentsData.length - 1]; // 上一頁最後一筆（snapshot）
       setNextCursor(last);
-      //這邊要先確認有沒有當前登入的使用者的留言（跑迴圈）
+      // 這邊要先確認有沒有當前登入的使用者的留言（跑迴圈）
       setComments(
         commentsData.map((prev) => ({
           ...prev,
           isAuthor: prev.authorUid === user?.uid,
-        }))
+        })),
       );
 
-      //setComments(commentsData)
-      //要拿postId去查使用者有沒有按過讚
+      // setComments(commentsData)
+      // 要拿postId去查使用者有沒有按過讚
       if (user?.uid) {
         const liked = await hasUserLikedPost(user.uid, postId);
         setPostDetail((prev) => ({
@@ -72,8 +83,8 @@ export default function PostDetailClient({ postId }) {
     if (!bottomRef.current || !nextCursor || isLoadingNext || !postId) return;
     const intersectionObserver = new IntersectionObserver(
       async (entries) => {
-        const entry = entries[0]; //只觀察一個東西所以取第一筆資料
-        if (!entry.isIntersecting || isLoadingNext) return; //代表 目標元素有沒有「進到」觀測區域（root；你這裡是視窗 + rootMargin）。
+        const entry = entries[0]; // 只觀察一個東西所以取第一筆資料
+        if (!entry.isIntersecting || isLoadingNext) return; // 代表 目標元素有沒有「進到」觀測區域（root；你這裡是視窗 + rootMargin）。
         intersectionObserver.unobserve(entry.target); // 先暫停觀察，避免回呼抖動連觸
         setIsLoadingNext(true);
         let shouldReobserve = true; // 👈 本輪旗標
@@ -102,7 +113,7 @@ export default function PostDetailClient({ postId }) {
           if (moreComments.length < 10) {
             setNextCursor(null); // 明確表示沒有下一頁
             shouldReobserve = false; // 👈 關鍵：這一輪就別重掛了
-            return; // 跳到 finally
+            // 跳到 finally
           }
         } catch (e) {
           console.error(e);
@@ -121,7 +132,7 @@ export default function PostDetailClient({ postId }) {
         root: null,
         threshold: 0,
         rootMargin: INFINITE_SCROLL_MARGIN, // 想提前一點就打開
-      }
+      },
     );
     // start observing
     const el = bottomRef.current;
@@ -138,8 +149,12 @@ export default function PostDetailClient({ postId }) {
     comments.length,
   ]);
 
+  /**
+   *
+   * @param postId
+   */
   function composeButtonHandler(postId) {
-    //按下寫文章按鈕後，跳出編輯頁面
+    // 按下寫文章按鈕後，跳出編輯頁面
     if (postId && !isComposeEditing) {
       setTitle(postDetail.title);
       setContent(postDetail.content);
@@ -149,41 +164,58 @@ export default function PostDetailClient({ postId }) {
       setIsComposeEditing(false);
     } else if (!postId && !isComposeEditing) {
       setIsComposeEditing(true);
-      setTitle("");
-      setContent("");
+      setTitle('');
+      setContent('');
     } else {
       setIsComposeEditing(false);
     }
   }
 
+  /**
+   *
+   * @param e
+   */
   async function handleSubmitPost(e) {
     e.preventDefault();
     if (editingPostId) {
       await updatePost(editingPostId, { title, content }); // 編輯
-      setPostDetail((prev) => ({ ...prev, title: title, content: content })); // ✅ 只更新那一筆，不新增
+      setPostDetail((prev) => ({ ...prev, title, content })); // ✅ 只更新那一筆，不新增
     }
-    setTitle("");
-    setContent("");
+    setTitle('');
+    setContent('');
     setIsComposeEditing(false);
     setEditingPostId(null);
   }
 
+  /**
+   *
+   * @param postId
+   * @param e
+   */
   function toggleOwnerMenu(postId, e) {
     e.stopPropagation();
     if (postId === openMenuPostId) {
-      setOpenMenuPostId("");
+      setOpenMenuPostId('');
     } else {
       setOpenMenuPostId(postId);
     }
   }
 
+  /**
+   *
+   * @param postId
+   */
   async function deletePostHandler(postId) {
-    if (confirm("確定要刪除文章？")) {
+    if (confirm('確定要刪除文章？')) {
       await deletePost(postId);
     }
   }
 
   // 編輯留言function
+  /**
+   *
+   * @param commentId
+   */
   async function editCommentButtonHandler(commentId) {
     // 點擊編輯按鈕後，把isCommentEditing設定成true/false ，再拿著commentId到comments裡面尋找該留言內容並且放入comment的useState中
     const target = comments.find((c) => c.id === commentId);
@@ -193,8 +225,12 @@ export default function PostDetailClient({ postId }) {
   }
 
   // 刪除留言function
+  /**
+   *
+   * @param commentId
+   */
   async function deleteCommentButtonHandler(commentId) {
-    if (!confirm("確定要刪除留言？")) return;
+    if (!confirm('確定要刪除留言？')) return;
     try {
       await deleteComment(postId, commentId);
 
@@ -202,7 +238,7 @@ export default function PostDetailClient({ postId }) {
       if (commentEditing?.id === commentId) {
         setCommentEditing(null);
         setIsCommentEditing(false);
-        setComment("");
+        setComment('');
       }
 
       // 從 comments state 中移除該留言
@@ -214,22 +250,26 @@ export default function PostDetailClient({ postId }) {
         commentsCount: Math.max(0, Number(prev?.commentsCount ?? 0) - 1),
       }));
       // 關閉該留言的選單
-      setOpenMenuPostId("");
+      setOpenMenuPostId('');
     } catch (e) {
-      alert("刪除失敗，請稍後再試");
+      alert('刪除失敗，請稍後再試');
       console.error(e);
     }
   }
 
   if (!postDetail) return <p>載入中...</p>;
+  /**
+   *
+   * @param e
+   */
   async function submitCommentHandler(e) {
     e.preventDefault();
 
     if (!comment.trim() || !user?.uid) return;
-    //下一行要新增如果commentEditing裡面沒有資料代表這是新的留言，就繼續跑下面的邏輯
+    // 下一行要新增如果commentEditing裡面沒有資料代表這是新的留言，就繼續跑下面的邏輯
     if (!commentEditing) {
       const { id } = await addComment(postId, { user, comment }); // 先拿到新留言 id
-      setComment(""); // 清空輸入框
+      setComment(''); // 清空輸入框
 
       // 拿「那一筆」的正式資料（含真正的 createdAt）
       const mine = await getCommentById(postId, id);
@@ -238,8 +278,8 @@ export default function PostDetailClient({ postId }) {
       const hydrated = mine ?? {
         id,
         authorUid: user.uid,
-        authorName: user.name || "我",
-        authorImgURL: user.photoURL || "",
+        authorName: user.name || '我',
+        authorImgURL: user.photoURL || '',
         comment,
         createdAt: new Date(),
       };
@@ -247,54 +287,52 @@ export default function PostDetailClient({ postId }) {
       const withFlag = { ...hydrated, isAuthor: true };
 
       setComments((prev) => [withFlag, ...prev]);
-      //留言數+1
+      // 留言數+1
       setPostDetail((prev) => ({
         ...prev,
         commentsCount: Math.max(0, Number(prev?.commentsCount ?? 0) + 1),
       }));
     } else {
       const newText = comment.trim();
-      const prevText =
-        comments.find((c) => c.id === commentEditing.id)?.comment ?? "";
-      //樂觀更新：在還沒確定資料庫已經完成更新前就先顯示更新後的畫面
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === commentEditing.id ? { ...c, comment: newText } : c
-        )
-      );
+      const prevText = comments.find((c) => c.id === commentEditing.id)?.comment ?? '';
+      // 樂觀更新：在還沒確定資料庫已經完成更新前就先顯示更新後的畫面
+      setComments((prev) => prev.map((c) => (c.id === commentEditing.id ? { ...c, comment: newText } : c)));
       try {
         await updateComment(postId, commentEditing.id, { comment: newText });
       } catch (e) {
         // 回滾
-        setComments((prev) =>
-          prev.map((c) =>
-            c.id === commentEditing.id ? { ...c, comment: prevText } : c
-          )
-        );
+        setComments((prev) => prev.map((c) => (c.id === commentEditing.id ? { ...c, comment: prevText } : c)));
       }
-      setComment("");
+      setComment('');
       setCommentEditing(null);
       setIsCommentEditing(false);
     }
   }
 
+  /**
+   *
+   * @param e
+   */
   function handleCommentChange(e) {
     setComment(e.target.value);
   }
 
+  /**
+   *
+   */
   async function handleToggleLike() {
     if (!user?.uid) return;
-    //如果資料庫更新失敗就會回復到原本的按讚狀態
+    // 如果資料庫更新失敗就會回復到原本的按讚狀態
     const prevLiked = !!postDetail?.liked;
     const prevCount = Number(postDetail?.likesCount ?? 0);
-    //樂觀更新
+    // 樂觀更新
     setPostDetail((prev) => ({
       ...prev,
       liked: !prevLiked,
       likesCount: Math.max(0, prevCount + (prevLiked ? -1 : 1)),
     }));
     const result = await toggleLikePost(postId, user.uid);
-    if (result === "fail") {
+    if (result === 'fail') {
       setPostDetail((prev) => ({
         ...prev,
         liked: prevLiked,
@@ -307,7 +345,7 @@ export default function PostDetailClient({ postId }) {
     <article>
       <div
         className={styles.postOwnerMenu}
-        style={{ display: postDetail?.isAuthor ? "block" : "none" }}
+        style={{ display: postDetail?.isAuthor ? 'block' : 'none' }}
       >
         <button
           id={`post-owner-menu-btn-${postDetail.id}`}
@@ -315,7 +353,7 @@ export default function PostDetailClient({ postId }) {
           className={styles.postOwnerMenuButton}
           aria-label="更多選項"
           aria-haspopup="menu"
-          aria-expanded={openMenuPostId === postDetail.id ? "true" : "false"}
+          aria-expanded={openMenuPostId === postDetail.id ? 'true' : 'false'}
           aria-controls={`post-owner-menu-${postDetail.id}`}
           onClick={(e) => toggleOwnerMenu(postDetail.id, e)}
         >
@@ -370,7 +408,7 @@ export default function PostDetailClient({ postId }) {
           <li key={comment.id} className={styles.commentContainer}>
             <div
               className={styles.commentOwnerMenu}
-              style={{ display: comment?.isAuthor ? "block" : "none" }}
+              style={{ display: comment?.isAuthor ? 'block' : 'none' }}
             >
               <button
                 id={`comment-owner-menu-btn-${comment.id}`}
@@ -378,7 +416,7 @@ export default function PostDetailClient({ postId }) {
                 className={styles.commentOwnerMenuButton}
                 aria-label="更多選項"
                 aria-haspopup="menu"
-                aria-expanded={openMenuPostId === comment.id ? "true" : "false"}
+                aria-expanded={openMenuPostId === comment.id ? 'true' : 'false'}
                 aria-controls={`comment-owner-menu-${comment.id}`}
                 onClick={(e) => toggleOwnerMenu(comment.id, e)}
               >
@@ -447,7 +485,7 @@ export default function PostDetailClient({ postId }) {
           <svg
             width="16"
             height="16"
-            fill={postDetail?.liked ? "currentColor" : "none"}
+            fill={postDetail?.liked ? 'currentColor' : 'none'}
             stroke="currentColor"
             strokeWidth="1.5"
             viewBox="0 0 24 24"
@@ -488,7 +526,7 @@ export default function PostDetailClient({ postId }) {
           {user?.photoURL ? (
             <Image
               src={user.photoURL}
-              alt={`${user?.name ?? "使用者"}的大頭貼`}
+              alt={`${user?.name ?? '使用者'}的大頭貼`}
               width={50}
               height={50}
             />
@@ -521,7 +559,7 @@ export default function PostDetailClient({ postId }) {
               placeholder="有什麼新鮮的？"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-            ></textarea>
+            />
             <button type="submit">發佈</button>
           </form>
         </div>

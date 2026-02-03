@@ -107,3 +107,9 @@
 ## 資訊更新與自主檢索
 - **主動檢索**：當遇到不確定、可能過時的技術問題（如 Next.js 或 Firebase 的最新變更），或是不確定 Gemini CLI 的支援功能時，**必須**優先使用 `google_web_search` 或 `delegate_to_agent` (cli_help) 查詢最新資訊，嚴禁憑空猜測。
 - **持續同步**：在執行開發任務前，應視需求主動確認當前環境、檔案結構與工具狀態，確保開發流程符合最新的專案規範與 CLI 能力。
+
+## Tooling & Standards
+- **Linter**: ESLint 9 (configured in `eslint.config.mjs`)
+- **Style Guide**: Airbnb Base + React Hooks (via `FlatCompat`)
+- **Type Checking**: Enabled via `jsconfig.json` (`checkJs: true`) using JSDoc
+- **Documentation**: JSDoc required for all exported functions and components

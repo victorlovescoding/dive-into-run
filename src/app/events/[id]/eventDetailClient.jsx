@@ -1,93 +1,122 @@
-"use client";
+'use client';
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useContext, useEffect, useMemo, useState, useCallback } from "react";
-import Link from "next/link";
-import dynamic from "next/dynamic";
-import styles from "../events.module.css";
-import { AuthContext } from "@/contexts/AuthContext";
+import {
+  useContext, useEffect, useMemo, useState, useCallback,
+} from 'react';
+import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import styles from '../events.module.css';
+import { AuthContext } from '@/contexts/AuthContext';
 import {
   fetchEventById,
   fetchParticipants,
   fetchMyJoinedEventsForIds,
   joinEvent,
   leaveEvent,
-} from "@/lib/firebase-events";
+} from '@/lib/firebase-events';
 
 // Leaflet 只能在瀏覽器端跑
-const EventMap = dynamic(() => import("@/components/EventMap"), { ssr: false });
+const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
 
+/**
+ *
+ * @param value
+ */
 function formatDateTime(value) {
-  if (!value) return "";
+  if (!value) return '';
 
   // datetime-local 字串（例如 2025-12-27T13:17）
-  if (typeof value === "string") {
-    return value.replace("T", " ");
+  if (typeof value === 'string') {
+    return value.replace('T', ' ');
   }
 
   // Firestore Timestamp（有 toDate 方法）
-  if (typeof value?.toDate === "function") {
+  if (typeof value?.toDate === 'function') {
     const d = value.toDate();
     const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
     return `${y}-${m}-${day} ${hh}:${mm}`;
   }
 
   return String(value);
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.time
+ * @param root0.registrationDeadline
+ */
 function computeStatus({ time, registrationDeadline }) {
   const now = Date.now();
 
   const toMs = (v) => {
     if (!v) return null;
-    if (typeof v === "string") {
+    if (typeof v === 'string') {
       const d = new Date(v);
       return Number.isNaN(d.getTime()) ? null : d.getTime();
     }
-    if (typeof v?.toDate === "function") return v.toDate().getTime();
+    if (typeof v?.toDate === 'function') return v.toDate().getTime();
     return null;
   };
 
   const t = toMs(time);
   const ddl = toMs(registrationDeadline);
 
-  if (t && now >= t) return "活動已開始";
-  if (ddl && now >= ddl) return "報名已截止";
-  return "報名中";
+  if (t && now >= t) return '活動已開始';
+  if (ddl && now >= ddl) return '報名已截止';
+  return '報名中';
 }
 
+/**
+ *
+ * @param v
+ */
 function toNumber(v) {
-  const n = typeof v === "number" ? v : Number(v);
+  const n = typeof v === 'number' ? v : Number(v);
   return Number.isFinite(n) ? n : 0;
 }
 
+/**
+ *
+ * @param ev
+ * @param fallbackParticipantsCount
+ */
 function getRemainingSeats(ev, fallbackParticipantsCount = 0) {
-  if (typeof ev?.remainingSeats === "number") return ev.remainingSeats;
+  if (typeof ev?.remainingSeats === 'number') return ev.remainingSeats;
   const max = toNumber(ev?.maxParticipants);
-  const count =
-    typeof ev?.participantsCount === "number"
-      ? ev.participantsCount
-      : fallbackParticipantsCount;
+  const count = typeof ev?.participantsCount === 'number'
+    ? ev.participantsCount
+    : fallbackParticipantsCount;
   return Math.max(0, max - toNumber(count));
 }
 
-function formatPace(paceSec, fallbackText = "") {
-  const n = typeof paceSec === "number" ? paceSec : Number(paceSec);
+/**
+ *
+ * @param paceSec
+ * @param fallbackText
+ */
+function formatPace(paceSec, fallbackText = '') {
+  const n = typeof paceSec === 'number' ? paceSec : Number(paceSec);
   if (Number.isFinite(n) && n > 0) {
     const mm = Math.floor(n / 60);
     const ss = n % 60;
-    return `${mm}:${String(ss).padStart(2, "0")}`;
+    return `${mm}:${String(ss).padStart(2, '0')}`;
   }
-  if (typeof fallbackText === "string" && fallbackText.trim())
-    return fallbackText;
-  return "";
+  if (typeof fallbackText === 'string' && fallbackText.trim()) return fallbackText;
+  return '';
 }
 
+/**
+ *
+ * @param root0
+ * @param root0.id
+ */
 export default function EventDetailClient({ id }) {
   const { user } = useContext(AuthContext);
 
@@ -115,8 +144,8 @@ export default function EventDetailClient({ id }) {
       const list = await fetchParticipants(id, 200);
       setParticipants(Array.isArray(list) ? list : []);
     } catch (err) {
-      console.error("讀取參加名單失敗:", err);
-      setParticipantsError("讀取參加名單失敗，請稍後再試");
+      console.error('讀取參加名單失敗:', err);
+      setParticipantsError('讀取參加名單失敗，請稍後再試');
     } finally {
       setParticipantsLoading(false);
     }
@@ -126,6 +155,9 @@ export default function EventDetailClient({ id }) {
   useEffect(() => {
     let cancelled = false;
 
+    /**
+     *
+     */
     async function run() {
       setLoading(true);
       setError(null);
@@ -136,14 +168,14 @@ export default function EventDetailClient({ id }) {
 
         if (!data) {
           setEvent(null);
-          setError("找不到這個活動（可能已被刪除）");
+          setError('找不到這個活動（可能已被刪除）');
           return;
         }
 
         setEvent(data);
       } catch (err) {
-        console.error("讀取活動詳情失敗:", err);
-        if (!cancelled) setError("讀取活動詳情失敗，請稍後再試");
+        console.error('讀取活動詳情失敗:', err);
+        if (!cancelled) setError('讀取活動詳情失敗，請稍後再試');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -164,6 +196,9 @@ export default function EventDetailClient({ id }) {
   useEffect(() => {
     let cancelled = false;
 
+    /**
+     *
+     */
     async function run() {
       setIsJoined(false);
       if (!user?.uid || !id) return;
@@ -173,7 +208,7 @@ export default function EventDetailClient({ id }) {
         if (cancelled) return;
         setIsJoined(set instanceof Set ? set.has(String(id)) : false);
       } catch (err) {
-        console.error("查詢是否已參加失敗:", err);
+        console.error('查詢是否已參加失敗:', err);
       }
     }
 
@@ -187,14 +222,14 @@ export default function EventDetailClient({ id }) {
   useEffect(() => {
     if (!isParticipantsOpen) return;
     const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prevOverflow;
     };
   }, [isParticipantsOpen]);
 
   const statusText = useMemo(() => {
-    if (!event) return "";
+    if (!event) return '';
     return computeStatus({
       time: event.time,
       registrationDeadline: event.registrationDeadline,
@@ -236,27 +271,54 @@ export default function EventDetailClient({ id }) {
               </div>
 
               <div className={styles.eventMeta}>
-                <div>時間：{formatDateTime(event.time)}</div>
                 <div>
-                  報名截止：{formatDateTime(event.registrationDeadline)}
+                  時間：
+                  {formatDateTime(event.time)}
                 </div>
                 <div>
-                  地點：{event.city} {event.district}
+                  報名截止：
+                  {formatDateTime(event.registrationDeadline)}
                 </div>
-                <div>集合：{event.meetPlace}</div>
+                <div>
+                  地點：
+                  {event.city}
+                  {' '}
+                  {event.district}
+                </div>
+                <div>
+                  集合：
+                  {event.meetPlace}
+                </div>
               </div>
 
               <div className={styles.eventMeta}>
-                <div>距離：{event.distanceKm} km</div>
-                <div>配速：{formatPace(event.paceSec, event.pace)} /km</div>
-                <div>人數上限：{event.maxParticipants}</div>
                 <div>
-                  剩餘名額：{getRemainingSeats(event, participants.length)}
+                  距離：
+                  {event.distanceKm}
+                  {' '}
+                  km
+                </div>
+                <div>
+                  配速：
+                  {formatPace(event.paceSec, event.pace)}
+                  {' '}
+                  /km
+                </div>
+                <div>
+                  人數上限：
+                  {event.maxParticipants}
+                </div>
+                <div>
+                  剩餘名額：
+                  {getRemainingSeats(event, participants.length)}
                 </div>
               </div>
 
               <div className={styles.eventMeta}>
-                <div>主揪：{event.hostName}</div>
+                <div>
+                  主揪：
+                  {event.hostName}
+                </div>
               </div>
 
               {/* ✅ 參加/退出 + 參加名單 */}
@@ -284,7 +346,7 @@ export default function EventDetailClient({ id }) {
                   (() => {
                     const remaining = getRemainingSeats(
                       event,
-                      participants.length
+                      participants.length,
                     );
 
                     if (isJoined) {
@@ -298,13 +360,13 @@ export default function EventDetailClient({ id }) {
                             if (!payload) return;
 
                             setActionMessage(null);
-                            setPending("leaving");
+                            setPending('leaving');
                             try {
                               const res = await leaveEvent(String(id), payload);
                               if (
-                                res?.ok &&
-                                (res.status === "left" ||
-                                  res.status === "not_joined")
+                                res?.ok
+                                && (res.status === 'left'
+                                  || res.status === 'not_joined')
                               ) {
                                 setIsJoined(false);
 
@@ -313,47 +375,45 @@ export default function EventDetailClient({ id }) {
                                   if (!prev) return prev;
                                   const max = toNumber(prev.maxParticipants);
                                   const prevCount = toNumber(
-                                    prev.participantsCount ??
-                                      participants.length
+                                    prev.participantsCount
+                                      ?? participants.length,
                                   );
                                   const prevRemaining = getRemainingSeats(
                                     prev,
-                                    participants.length
+                                    participants.length,
                                   );
                                   return {
                                     ...prev,
                                     participantsCount: Math.max(
                                       0,
-                                      prevCount - 1
+                                      prevCount - 1,
                                     ),
                                     remainingSeats: Math.min(
                                       max,
-                                      prevRemaining + 1
+                                      prevRemaining + 1,
                                     ),
                                   };
                                 });
 
-                                setParticipants((prev) =>
-                                  prev.filter(
-                                    (p) => String(p.uid) !== String(user.uid)
-                                  )
-                                );
+                                setParticipants((prev) => prev.filter(
+                                  (p) => String(p.uid) !== String(user.uid),
+                                ));
 
                                 setActionMessage({
-                                  type: "success",
-                                  message: "已成功取消報名",
+                                  type: 'success',
+                                  message: '已成功取消報名',
                                 });
                               } else {
                                 setActionMessage({
-                                  type: "error",
-                                  message: "發生錯誤，請再重新取消報名",
+                                  type: 'error',
+                                  message: '發生錯誤，請再重新取消報名',
                                 });
                               }
                             } catch (err) {
-                              console.error("退出活動失敗:", err);
+                              console.error('退出活動失敗:', err);
                               setActionMessage({
-                                type: "error",
-                                message: "發生錯誤，請再重新取消報名",
+                                type: 'error',
+                                message: '發生錯誤，請再重新取消報名',
                               });
                             } finally {
                               setPending(null);
@@ -361,7 +421,7 @@ export default function EventDetailClient({ id }) {
                           }}
                           disabled={pending != null}
                         >
-                          {pending === "leaving" ? (
+                          {pending === 'leaving' ? (
                             <span className={styles.spinnerLabel}>
                               <div
                                 className={`${styles.spinner} ${styles.buttonSpinner}`}
@@ -369,7 +429,7 @@ export default function EventDetailClient({ id }) {
                               取消中…
                             </span>
                           ) : (
-                            "退出活動"
+                            '退出活動'
                           )}
                         </button>
                       );
@@ -398,43 +458,42 @@ export default function EventDetailClient({ id }) {
                           if (!payload) return;
 
                           setActionMessage(null);
-                          setPending("joining");
+                          setPending('joining');
                           try {
                             const res = await joinEvent(String(id), payload);
 
                             if (
-                              res?.ok &&
-                              (res.status === "joined" ||
-                                res.status === "already_joined")
+                              res?.ok
+                              && (res.status === 'joined'
+                                || res.status === 'already_joined')
                             ) {
                               setIsJoined(true);
 
-                              if (res.status === "joined") {
+                              if (res.status === 'joined') {
                                 // UI 快取更新（counts/seats + participants list）
                                 setEvent((prev) => {
                                   if (!prev) return prev;
                                   const prevCount = toNumber(
-                                    prev.participantsCount ??
-                                      participants.length
+                                    prev.participantsCount
+                                      ?? participants.length,
                                   );
                                   const prevRemaining = getRemainingSeats(
                                     prev,
-                                    participants.length
+                                    participants.length,
                                   );
                                   return {
                                     ...prev,
                                     participantsCount: prevCount + 1,
                                     remainingSeats: Math.max(
                                       0,
-                                      prevRemaining - 1
+                                      prevRemaining - 1,
                                     ),
                                   };
                                 });
 
                                 setParticipants((prev) => {
                                   const uid = String(user.uid);
-                                  if (prev.some((p) => String(p.uid) === uid))
-                                    return prev;
+                                  if (prev.some((p) => String(p.uid) === uid)) return prev;
                                   return [
                                     {
                                       id: uid,
@@ -449,31 +508,29 @@ export default function EventDetailClient({ id }) {
                               }
 
                               setActionMessage({
-                                type: "success",
-                                message: "報名成功",
+                                type: 'success',
+                                message: '報名成功',
                               });
                             } else if (
-                              res?.ok === false &&
-                              res.status === "full"
+                              res?.ok === false
+                              && res.status === 'full'
                             ) {
                               setActionMessage({
-                                type: "error",
-                                message: "本活動已額滿",
+                                type: 'error',
+                                message: '本活動已額滿',
                               });
-                              setEvent((prev) =>
-                                prev ? { ...prev, remainingSeats: 0 } : prev
-                              );
+                              setEvent((prev) => (prev ? { ...prev, remainingSeats: 0 } : prev));
                             } else {
                               setActionMessage({
-                                type: "error",
-                                message: "報名失敗，請再試一次",
+                                type: 'error',
+                                message: '報名失敗，請再試一次',
                               });
                             }
                           } catch (err) {
-                            console.error("參加活動失敗:", err);
+                            console.error('參加活動失敗:', err);
                             setActionMessage({
-                              type: "error",
-                              message: "報名失敗，請再試一次",
+                              type: 'error',
+                              message: '報名失敗，請再試一次',
                             });
                           } finally {
                             setPending(null);
@@ -481,7 +538,7 @@ export default function EventDetailClient({ id }) {
                         }}
                         disabled={pending != null}
                       >
-                        {pending === "joining" ? (
+                        {pending === 'joining' ? (
                           <span className={styles.spinnerLabel}>
                             <div
                               className={`${styles.spinner} ${styles.buttonSpinner}`}
@@ -489,7 +546,7 @@ export default function EventDetailClient({ id }) {
                             報名中…
                           </span>
                         ) : (
-                          "參加活動"
+                          '參加活動'
                         )}
                       </button>
                     );
@@ -501,14 +558,14 @@ export default function EventDetailClient({ id }) {
               {actionMessage && (
                 <div
                   className={styles.errorCard}
-                  role={actionMessage.type === "error" ? "alert" : "status"}
+                  role={actionMessage.type === 'error' ? 'alert' : 'status'}
                   style={
-                    actionMessage.type === "success"
+                    actionMessage.type === 'success'
                       ? {
-                          background: "rgba(16, 185, 129, 0.12)",
-                          border: "1px solid rgba(16, 185, 129, 0.25)",
-                          color: "#065f46",
-                        }
+                        background: 'rgba(16, 185, 129, 0.12)',
+                        border: '1px solid rgba(16, 185, 129, 0.25)',
+                        color: '#065f46',
+                      }
                       : undefined
                   }
                 >
@@ -525,7 +582,7 @@ export default function EventDetailClient({ id }) {
               <div className={styles.eventMeta}>
                 {event.description?.trim()
                   ? event.description
-                  : "尚未填寫活動說明"}
+                  : '尚未填寫活動說明'}
               </div>
             </div>
 
@@ -540,7 +597,10 @@ export default function EventDetailClient({ id }) {
               ) : (
                 <>
                   <div className={styles.eventMeta}>
-                    已設定路線（{event.route?.pointsCount ?? "?"} 點）
+                    已設定路線（
+                    {event.route?.pointsCount ?? '?'}
+                    {' '}
+                    點）
                   </div>
 
                   <div className={styles.detailMapContainer}>
@@ -603,48 +663,48 @@ export default function EventDetailClient({ id }) {
                       </div>
                     )}
 
-                    {!participantsLoading &&
-                    !participantsError &&
-                    participants.length === 0 ? (
+                    {!participantsLoading
+                    && !participantsError
+                    && participants.length === 0 ? (
                       <div className={styles.emptyHint}>目前還沒有人報名</div>
-                    ) : (
-                      <div className={styles.participantsList}>
-                        {participants.map((p) => (
-                          <div
-                            key={String(p.uid || p.id)}
-                            className={styles.participantItem}
-                          >
-                            {p.photoURL ? (
-                              <img
-                                src={p.photoURL}
-                                alt={
-                                  p.name ? `${p.name} 的大頭貼` : "參加者大頭貼"
+                      ) : (
+                        <div className={styles.participantsList}>
+                          {participants.map((p) => (
+                            <div
+                              key={String(p.uid || p.id)}
+                              className={styles.participantItem}
+                            >
+                              {p.photoURL ? (
+                                <img
+                                  src={p.photoURL}
+                                  alt={
+                                  p.name ? `${p.name} 的大頭貼` : '參加者大頭貼'
                                 }
-                                width={36}
-                                height={36}
-                                className={styles.participantAvatar}
-                              />
-                            ) : (
-                              <div
-                                aria-hidden="true"
-                                className={styles.participantFallbackAvatar}
-                              >
-                                {(p.name || "?").slice(0, 1)}
-                              </div>
-                            )}
+                                  width={36}
+                                  height={36}
+                                  className={styles.participantAvatar}
+                                />
+                              ) : (
+                                <div
+                                  aria-hidden="true"
+                                  className={styles.participantFallbackAvatar}
+                                >
+                                  {(p.name || '?').slice(0, 1)}
+                                </div>
+                              )}
 
-                            <div className={styles.participantInfo}>
-                              <div className={styles.participantName}>
-                                {p.name || "（未命名）"}
-                              </div>
-                              <div className={styles.participantStatus}>
-                                已參加
+                              <div className={styles.participantInfo}>
+                                <div className={styles.participantName}>
+                                  {p.name || '（未命名）'}
+                                </div>
+                                <div className={styles.participantStatus}>
+                                  已參加
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>

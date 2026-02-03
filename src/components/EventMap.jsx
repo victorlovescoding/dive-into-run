@@ -1,24 +1,29 @@
 // src/components/EventMap.jsx
-import React, { useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import "leaflet-draw/dist/leaflet.draw.css";
-import "leaflet-geosearch/dist/geosearch.css";
-import L from "leaflet";
-import "leaflet-draw";
-import { GeoSearchControl, OpenStreetMapProvider } from "leaflet-geosearch";
-import polyline from "@mapbox/polyline";
+import React, { useEffect, useMemo } from 'react';
+import { MapContainer, TileLayer, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw/dist/leaflet.draw.css';
+import 'leaflet-geosearch/dist/geosearch.css';
+import L from 'leaflet';
+import 'leaflet-draw';
+import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
+import polyline from '@mapbox/polyline';
 
 // Fix for default icon issues with Webpack
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "leaflet/images/marker-icon-2x.png",
-  iconUrl: "leaflet/images/marker-icon.png",
-  shadowUrl: "leaflet/images/marker-shadow.png",
+  iconRetinaUrl: 'leaflet/images/marker-icon-2x.png',
+  iconUrl: 'leaflet/images/marker-icon.png',
+  shadowUrl: 'leaflet/images/marker-shadow.png',
 });
 
 // Draw mode: Leaflet.draw integration
-const DrawControl = ({ onRouteDrawn }) => {
+/**
+ *
+ * @param root0
+ * @param root0.onRouteDrawn
+ */
+function DrawControl({ onRouteDrawn }) {
   const map = useMap();
 
   useEffect(() => {
@@ -38,7 +43,7 @@ const DrawControl = ({ onRouteDrawn }) => {
         circle: false,
         polyline: {
           shapeOptions: {
-            color: "#f00",
+            color: '#f00',
             weight: 5,
             opacity: 0.7,
           },
@@ -58,7 +63,7 @@ const DrawControl = ({ onRouteDrawn }) => {
           lng: latlng.lng,
         }));
 
-        if (typeof onRouteDrawn === "function") {
+        if (typeof onRouteDrawn === 'function') {
           onRouteDrawn(latlngs);
         }
       }
@@ -66,7 +71,7 @@ const DrawControl = ({ onRouteDrawn }) => {
 
     const handleDeleted = () => {
       if (editableLayers.getLayers().length === 0) {
-        if (typeof onRouteDrawn === "function") {
+        if (typeof onRouteDrawn === 'function') {
           onRouteDrawn(null);
         }
       }
@@ -84,10 +89,13 @@ const DrawControl = ({ onRouteDrawn }) => {
   }, [map, onRouteDrawn]);
 
   return null;
-};
+}
 
 // Draw mode: search bar
-const SearchField = () => {
+/**
+ *
+ */
+function SearchField() {
   const map = useMap();
 
   useEffect(() => {
@@ -95,14 +103,14 @@ const SearchField = () => {
 
     const searchControl = new GeoSearchControl({
       provider,
-      style: "bar",
+      style: 'bar',
       showMarker: false,
       showPopup: false,
       autoClose: true,
       retainZoomLevel: false,
       animateZoom: true,
       keepResult: true,
-      searchLabel: "輸入地點搜尋...",
+      searchLabel: '輸入地點搜尋...',
     });
 
     map.addControl(searchControl);
@@ -113,10 +121,16 @@ const SearchField = () => {
   }, [map]);
 
   return null;
-};
+}
 
 // View mode: render route polyline + fit bounds
-const RouteViewer = ({ encodedPolyline, bbox }) => {
+/**
+ *
+ * @param root0
+ * @param root0.encodedPolyline
+ * @param root0.bbox
+ */
+function RouteViewer({ encodedPolyline, bbox }) {
   const map = useMap();
 
   const latlngs = useMemo(() => {
@@ -126,7 +140,7 @@ const RouteViewer = ({ encodedPolyline, bbox }) => {
       // decoded: [[lat, lng], ...]
       return decoded.map(([lat, lng]) => [lat, lng]);
     } catch (e) {
-      console.error("decode polyline failed:", e);
+      console.error('decode polyline failed:', e);
       return null;
     }
   }, [encodedPolyline]);
@@ -135,7 +149,7 @@ const RouteViewer = ({ encodedPolyline, bbox }) => {
     if (!latlngs || latlngs.length === 0) return;
 
     const line = L.polyline(latlngs, {
-      color: "#f00",
+      color: '#f00',
       weight: 5,
       opacity: 0.8,
     });
@@ -144,7 +158,7 @@ const RouteViewer = ({ encodedPolyline, bbox }) => {
 
     // 優先用 bbox fitBounds（更快），沒有 bbox 才用線段本身
     try {
-      if (bbox && typeof bbox === "object") {
+      if (bbox && typeof bbox === 'object') {
         const sw = L.latLng(bbox.minLat, bbox.minLng);
         const ne = L.latLng(bbox.maxLat, bbox.maxLng);
         map.fitBounds(L.latLngBounds(sw, ne), { padding: [18, 18] });
@@ -161,10 +175,19 @@ const RouteViewer = ({ encodedPolyline, bbox }) => {
   }, [map, latlngs, bbox]);
 
   return null;
-};
+}
 
+/**
+ *
+ * @param root0
+ * @param root0.mode
+ * @param root0.onRouteDrawn
+ * @param root0.encodedPolyline
+ * @param root0.bbox
+ * @param root0.height
+ */
 export default function EventMap({
-  mode = "draw",
+  mode = 'draw',
   onRouteDrawn,
   encodedPolyline,
   bbox,
@@ -174,8 +197,8 @@ export default function EventMap({
 
   const mapStyle = {
     height: `${height}px`,
-    width: "100%",
-    borderRadius: "8px",
+    width: '100%',
+    borderRadius: '8px',
     zIndex: 0,
   };
 
@@ -183,7 +206,7 @@ export default function EventMap({
     <MapContainer
       center={taipeiCenter}
       zoom={13}
-      scrollWheelZoom={true}
+      scrollWheelZoom
       style={mapStyle}
     >
       <TileLayer
@@ -191,14 +214,14 @@ export default function EventMap({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
 
-      {mode === "draw" && (
+      {mode === 'draw' && (
         <>
           <SearchField />
           <DrawControl onRouteDrawn={onRouteDrawn} />
         </>
       )}
 
-      {mode === "view" && (
+      {mode === 'view' && (
         <RouteViewer encodedPolyline={encodedPolyline} bbox={bbox} />
       )}
     </MapContainer>

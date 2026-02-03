@@ -1,14 +1,99 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+// eslint.config.mjs
+// ESLint 9 Flat Config - 使用官方 FlatCompat 包裝 Airbnb 規則
+import { fixupConfigRules } from '@eslint/compat';
+import { FlatCompat } from '@eslint/eslintrc';
+import js from '@eslint/js';
+import jsdoc from 'eslint-plugin-jsdoc';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 const compat = new FlatCompat({
   baseDirectory: __dirname,
+  recommendedConfig: js.configs.recommended,
 });
 
-const eslintConfig = [...compat.extends("next/core-web-vitals")];
+export default [
+  // ESLint 官方推薦規則
+  js.configs.recommended,
 
-export default eslintConfig;
+  // Airbnb 規則（使用官方 FlatCompat 轉換）
+  ...fixupConfigRules(compat.extends('airbnb', 'airbnb/hooks')),
+
+  // Next.js 規則
+  ...fixupConfigRules(compat.extends('next/core-web-vitals')),
+
+  // JSDoc 規則
+  jsdoc.configs['flat/recommended'],
+
+  // 專案自訂設定
+  {
+    files: ['**/*.js', '**/*.jsx'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+    },
+    rules: {
+      // ===== 與專案現有程式碼相容的調整 =====
+
+      // 允許 console（開發階段常用）
+      'no-console': 'warn',
+
+      // 允許未使用的變數被標記為警告而非錯誤
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+
+      // React: 不強制 prop-types（我們用 JSDoc）
+      'react/prop-types': 'off',
+
+      // React: 允許 JSX 在 .js 檔案中
+      'react/jsx-filename-extension': ['warn', { extensions: ['.js', '.jsx'] }],
+
+      // React: 不強制 default props
+      'react/require-default-props': 'off',
+
+      // React: 允許展開 props
+      'react/jsx-props-no-spreading': 'off',
+
+      // React: React 17+ (Next.js) 不再需要引入 React
+      'react/react-in-jsx-scope': 'off',
+
+      // Import: 允許 devDependencies 在測試檔案中
+      'import/no-extraneous-dependencies': [
+        'error',
+        {
+          devDependencies: [
+            '**/*.test.js',
+            '**/*.spec.js',
+            '**/vitest.config.js',
+            '**/playwright.config.js',
+          ],
+        },
+      ],
+
+      // Import: 關閉副檔名檢查（Next.js 不需要）
+      'import/extensions': 'off',
+
+      // Import: 關閉路徑解析（讓 Next.js 處理 @/ 別名）
+      'import/no-unresolved': 'off',
+
+      // JSDoc: 調整為警告
+      'jsdoc/require-jsdoc': 'warn',
+      'jsdoc/require-param-description': 'warn',
+      'jsdoc/require-returns-description': 'warn',
+    },
+  },
+
+  // 忽略的檔案和資料夾
+  {
+    ignores: [
+      'node_modules/**',
+      '.next/**',
+      'out/**',
+      'public/**',
+      '*.config.js',
+      '*.config.mjs',
+    ],
+  },
+];

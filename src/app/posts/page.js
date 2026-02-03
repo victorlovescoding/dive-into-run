@@ -1,7 +1,11 @@
-"use client";
-import styles from "./posts.module.css";
-import { useState, useContext, useEffect, useRef } from "react";
-import { AuthContext } from "@/contexts/AuthContext";
+'use client';
+
+import {
+  useState, useContext, useEffect, useRef,
+} from 'react';
+import Link from 'next/link';
+import styles from './posts.module.css';
+import { AuthContext } from '@/contexts/AuthContext';
 import {
   createPost,
   updatePost,
@@ -11,22 +15,27 @@ import {
   hasUserLikedPosts,
   deletePost,
   getMorePosts,
-} from "@/lib/firebase-posts";
-import Link from "next/link";
+} from '@/lib/firebase-posts';
 
+/**
+ *
+ */
 export default function PostPage() {
   const [isComposeEditing, setIsComposeEditing] = useState(false);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
   const { user } = useContext(AuthContext);
   const [posts, setPosts] = useState([]);
-  const [openMenuPostId, setOpenMenuPostId] = useState("");
+  const [openMenuPostId, setOpenMenuPostId] = useState('');
   const [editingPostId, setEditingPostId] = useState(null);
   const bottomRef = useRef(null);
   const [nextCursor, setNextCursor] = useState(null);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
 
   useEffect(() => {
+    /**
+     *
+     */
     async function fetchPosts() {
       try {
         const postsData = await getLatestPosts();
@@ -39,7 +48,7 @@ export default function PostPage() {
             postsData.map((p) => ({
               ...p,
               liked: false,
-            }))
+            })),
           );
           return;
         }
@@ -51,10 +60,10 @@ export default function PostPage() {
             ...p,
             liked: likedSet.has(p.id),
             isAuthor: p.authorUid === user.uid,
-          }))
+          })),
         ); // ✅ 把資料存進 state
       } catch (err) {
-        console.error("取得文章失敗:", err);
+        console.error('取得文章失敗:', err);
       }
     }
     fetchPosts();
@@ -62,16 +71,15 @@ export default function PostPage() {
 
   useEffect(() => {
     if (
-      !bottomRef.current ||
-      posts.length === 0 ||
-      !nextCursor ||
-      isLoadingNext
-    )
-      return;
+      !bottomRef.current
+      || posts.length === 0
+      || !nextCursor
+      || isLoadingNext
+    ) return;
     const intersectionObserver = new IntersectionObserver(
       async (entries) => {
-        const entry = entries[0]; //只觀察一個東西所以取第一筆資料
-        if (!entry.isIntersecting || isLoadingNext) return; //代表 目標元素有沒有「進到」觀測區域（root；你這裡是視窗 + rootMargin）。
+        const entry = entries[0]; // 只觀察一個東西所以取第一筆資料
+        if (!entry.isIntersecting || isLoadingNext) return; // 代表 目標元素有沒有「進到」觀測區域（root；你這裡是視窗 + rootMargin）。
         intersectionObserver.unobserve(entry.target); // 先暫停觀察，避免回呼抖動連觸
         setIsLoadingNext(true);
         let shouldReobserve = true; // 👈 本輪旗標
@@ -114,7 +122,7 @@ export default function PostPage() {
           if (morePosts.length < 10) {
             setNextCursor(null); // 明確表示沒有下一頁
             shouldReobserve = false; // 👈 關鍵：這一輪就別重掛了
-            return; // 跳到 finally
+            // 跳到 finally
           }
         } catch (e) {
           console.error(e);
@@ -131,8 +139,8 @@ export default function PostPage() {
       {
         root: null,
         threshold: 0,
-        rootMargin: "300px 0px", // 想提前一點就打開
-      }
+        rootMargin: '300px 0px', // 想提前一點就打開
+      },
     );
     // start observing
     const el = bottomRef.current;
@@ -142,10 +150,14 @@ export default function PostPage() {
     };
   }, [posts.length, nextCursor, user?.uid, isLoadingNext]);
 
+  /**
+   *
+   * @param postId
+   */
   function composeButtonHandler(postId) {
-    //按下寫文章按鈕後，跳出編輯頁面
+    // 按下寫文章按鈕後，跳出編輯頁面
     if (postId && !isComposeEditing) {
-      //要把編輯的原文、標題塞入 title content useState 裡面
+      // 要把編輯的原文、標題塞入 title content useState 裡面
       const p = posts.find((x) => x.id === postId);
       // if (!p) return; // 安全檢查
       setTitle(p.title);
@@ -156,20 +168,22 @@ export default function PostPage() {
       setIsComposeEditing(false);
     } else if (!postId && !isComposeEditing) {
       setIsComposeEditing(true);
-      setTitle("");
-      setContent("");
+      setTitle('');
+      setContent('');
     } else {
       setIsComposeEditing(false);
     }
   }
+  /**
+   *
+   * @param e
+   */
   async function handleSubmitPost(e) {
     e.preventDefault();
 
     if (editingPostId) {
       await updatePost(editingPostId, { title, content }); // 編輯
-      setPosts((prev) =>
-        prev.map((p) => (p.id === editingPostId ? { ...p, title, content } : p))
-      ); // ✅ 只更新那一筆，不新增
+      setPosts((prev) => prev.map((p) => (p.id === editingPostId ? { ...p, title, content } : p))); // ✅ 只更新那一筆，不新增
     } else {
       const { id } = await createPost({ title, content, user }); // 新增
       const minePost = await getPostDetail(id);
@@ -179,15 +193,19 @@ export default function PostPage() {
         isAuthor: user?.uid ? minePost.authorUid === user.uid : false,
       }; // 只在新增時撈一次
       setPosts((prev) => [hydrated, ...prev]); // ✅ prepend 只有新增
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    setTitle("");
-    setContent("");
+    setTitle('');
+    setContent('');
     setIsComposeEditing(false);
     setEditingPostId(null);
   }
 
+  /**
+   *
+   * @param postId
+   */
   async function pressLikeButton(postId) {
     if (!user?.uid) return;
     // 樂觀更新寫這裡
@@ -195,46 +213,52 @@ export default function PostPage() {
     // 拿著被點讚的那篇 postId，做不可變的樂觀更新（一次 setPosts）
     setPosts(
       (
-        prev //prev是拿之前的 post useState利用map換成新的[]
-      ) =>
-        prev.map((p) => {
-          if (p.id !== postId) return p;
-          const prevLiked = !!p.liked;
-          const prevCount = Number(p.likesCount ?? 0);
-          const nextLiked = !prevLiked;
-          const nextCount = Math.max(0, prevCount + (prevLiked ? -1 : 1));
-          return { ...p, liked: nextLiked, likesCount: nextCount };
-        })
+        prev, // prev是拿之前的 post useState利用map換成新的[]
+      ) => prev.map((p) => {
+        if (p.id !== postId) return p;
+        const prevLiked = !!p.liked;
+        const prevCount = Number(p.likesCount ?? 0);
+        const nextLiked = !prevLiked;
+        const nextCount = Math.max(0, prevCount + (prevLiked ? -1 : 1));
+        return { ...p, liked: nextLiked, likesCount: nextCount };
+      }),
     );
     const result = await toggleLikePost(postId, user.uid); // 寫回 Firestore
-    //如果更新成功就不維持狀態，更新失敗則回復原本狀態
-    if (result == "fail") {
-      setPosts((prev) =>
-        prev.map((p) => {
-          if (p.id !== postId) return p;
-          const prevLiked = !!p.liked;
-          const prevCount = Number(p.likesCount ?? 0);
-          const nextLiked = !prevLiked;
-          const nextCount = Math.max(0, prevCount + (prevLiked ? -1 : 1));
-          return { ...p, liked: nextLiked, likesCount: nextCount };
-        })
-      );
+    // 如果更新成功就不維持狀態，更新失敗則回復原本狀態
+    if (result == 'fail') {
+      setPosts((prev) => prev.map((p) => {
+        if (p.id !== postId) return p;
+        const prevLiked = !!p.liked;
+        const prevCount = Number(p.likesCount ?? 0);
+        const nextLiked = !prevLiked;
+        const nextCount = Math.max(0, prevCount + (prevLiked ? -1 : 1));
+        return { ...p, liked: nextLiked, likesCount: nextCount };
+      }));
     }
   }
+  /**
+   *
+   * @param postId
+   * @param e
+   */
   function toggleOwnerMenu(postId, e) {
     e.stopPropagation();
     if (postId === openMenuPostId) {
-      setOpenMenuPostId("");
+      setOpenMenuPostId('');
     } else {
       setOpenMenuPostId(postId);
     }
   }
 
+  /**
+   *
+   * @param postId
+   */
   async function deletePostHandler(postId) {
-    if (!confirm("確定要刪除文章？")) return;
+    if (!confirm('確定要刪除文章？')) return;
     await deletePost(postId);
     setPosts((prev) => prev.filter((p) => p.id !== postId));
-    if (openMenuPostId === postId) setOpenMenuPostId(""); // 關掉菜單
+    if (openMenuPostId === postId) setOpenMenuPostId(''); // 關掉菜單
   }
 
   return (
@@ -245,7 +269,7 @@ export default function PostPage() {
           <li className={styles.postContainer} key={post.id}>
             <div
               className={styles.postOwnerMenu}
-              style={{ display: post?.isAuthor ? "block" : "none" }}
+              style={{ display: post?.isAuthor ? 'block' : 'none' }}
             >
               <button
                 id={`post-owner-menu-btn-${post.id}`}
@@ -253,7 +277,7 @@ export default function PostPage() {
                 className={styles.postOwnerMenuButton}
                 aria-label="更多選項"
                 aria-haspopup="menu"
-                aria-expanded={openMenuPostId === post.id ? "true" : "false"}
+                aria-expanded={openMenuPostId === post.id ? 'true' : 'false'}
                 aria-controls={`post-owner-menu-${post.id}`}
                 onClick={(e) => toggleOwnerMenu(post.id, e)}
               >
@@ -313,7 +337,7 @@ export default function PostPage() {
                 <svg
                   width="16"
                   height="16"
-                  fill={post.liked ? "currentColor" : "none"}
+                  fill={post.liked ? 'currentColor' : 'none'}
                   stroke="currentColor"
                   strokeWidth="1.5"
                   viewBox="0 0 24 24"
@@ -376,7 +400,7 @@ export default function PostPage() {
                   placeholder="有什麼新鮮的？"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                ></textarea>
+                />
                 <button type="submit">發佈</button>
               </form>
             </div>

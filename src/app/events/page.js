@@ -1,10 +1,13 @@
-"use client";
-import styles from "./events.module.css";
-import { useEffect, useState, useContext, useRef, useCallback } from "react";
-import { AuthContext } from "@/contexts/AuthContext";
-import dynamic from "next/dynamic"; // 導入 dynamic
-import polyline from "@mapbox/polyline";
-import Link from "next/link";
+'use client';
+
+import {
+  useEffect, useState, useContext, useRef, useCallback,
+} from 'react';
+import dynamic from 'next/dynamic'; // 導入 dynamic
+import polyline from '@mapbox/polyline';
+import Link from 'next/link';
+import { AuthContext } from '@/contexts/AuthContext';
+import styles from './events.module.css';
 import {
   createEvent,
   fetchLatestEvents,
@@ -13,409 +16,411 @@ import {
   joinEvent,
   leaveEvent,
   fetchMyJoinedEventsForIds,
-} from "@/lib/firebase-events";
+} from '@/lib/firebase-events';
 
 // 動態載入 EventMap 元件，關閉 SSR
-const EventMap = dynamic(() => import("@/components/EventMap"), { ssr: false });
+const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
 
-//#region taiwanLocations
+// #region taiwanLocations
 const taiwanLocations = {
   臺北市: [
-    "中正區",
-    "大同區",
-    "中山區",
-    "松山區",
-    "大安區",
-    "萬華區",
-    "信義區",
-    "士林區",
-    "北投區",
-    "內湖區",
-    "南港區",
-    "文山區",
+    '中正區',
+    '大同區',
+    '中山區',
+    '松山區',
+    '大安區',
+    '萬華區',
+    '信義區',
+    '士林區',
+    '北投區',
+    '內湖區',
+    '南港區',
+    '文山區',
   ],
   新北市: [
-    "萬里區",
-    "金山區",
-    "板橋區",
-    "汐止區",
-    "深坑區",
-    "石碇區",
-    "瑞芳區",
-    "平溪區",
-    "雙溪區",
-    "貢寮區",
-    "新店區",
-    "坪林區",
-    "烏來區",
-    "永和區",
-    "中和區",
-    "土城區",
-    "三峽區",
-    "樹林區",
-    "鶯歌區",
-    "三重區",
-    "新莊區",
-    "泰山區",
-    "林口區",
-    "蘆洲區",
-    "五股區",
-    "八里區",
-    "淡水區",
-    "三芝區",
-    "石門區",
+    '萬里區',
+    '金山區',
+    '板橋區',
+    '汐止區',
+    '深坑區',
+    '石碇區',
+    '瑞芳區',
+    '平溪區',
+    '雙溪區',
+    '貢寮區',
+    '新店區',
+    '坪林區',
+    '烏來區',
+    '永和區',
+    '中和區',
+    '土城區',
+    '三峽區',
+    '樹林區',
+    '鶯歌區',
+    '三重區',
+    '新莊區',
+    '泰山區',
+    '林口區',
+    '蘆洲區',
+    '五股區',
+    '八里區',
+    '淡水區',
+    '三芝區',
+    '石門區',
   ],
   基隆市: [
-    "仁愛區",
-    "信義區",
-    "中正區",
-    "中山區",
-    "安樂區",
-    "暖暖區",
-    "七堵區",
+    '仁愛區',
+    '信義區',
+    '中正區',
+    '中山區',
+    '安樂區',
+    '暖暖區',
+    '七堵區',
   ],
   桃園市: [
-    "中壢區",
-    "平鎮區",
-    "龍潭區",
-    "楊梅區",
-    "新屋區",
-    "觀音區",
-    "桃園區",
-    "龜山區",
-    "八德區",
-    "大溪區",
-    "復興區",
-    "大園區",
-    "蘆竹區",
+    '中壢區',
+    '平鎮區',
+    '龍潭區',
+    '楊梅區',
+    '新屋區',
+    '觀音區',
+    '桃園區',
+    '龜山區',
+    '八德區',
+    '大溪區',
+    '復興區',
+    '大園區',
+    '蘆竹區',
   ],
-  新竹市: ["東區", "北區", "香山區"],
+  新竹市: ['東區', '北區', '香山區'],
   新竹縣: [
-    "竹北市",
-    "竹東鎮",
-    "新埔鎮",
-    "關西鎮",
-    "湖口鄉",
-    "新豐鄉",
-    "芎林鄉",
-    "橫山鄉",
-    "北埔鄉",
-    "寶山鄉",
-    "峨眉鄉",
-    "尖石鄉",
-    "五峰鄉",
+    '竹北市',
+    '竹東鎮',
+    '新埔鎮',
+    '關西鎮',
+    '湖口鄉',
+    '新豐鄉',
+    '芎林鄉',
+    '橫山鄉',
+    '北埔鄉',
+    '寶山鄉',
+    '峨眉鄉',
+    '尖石鄉',
+    '五峰鄉',
   ],
   苗栗縣: [
-    "苗栗市",
-    "頭份市",
-    "竹南鎮",
-    "後龍鎮",
-    "通霄鎮",
-    "苑裡鎮",
-    "卓蘭鎮",
-    "造橋鄉",
-    "西湖鄉",
-    "頭屋鄉",
-    "公館鄉",
-    "銅鑼鄉",
-    "三義鄉",
-    "大湖鄉",
-    "獅潭鄉",
-    "南庄鄉",
-    "泰安鄉",
+    '苗栗市',
+    '頭份市',
+    '竹南鎮',
+    '後龍鎮',
+    '通霄鎮',
+    '苑裡鎮',
+    '卓蘭鎮',
+    '造橋鄉',
+    '西湖鄉',
+    '頭屋鄉',
+    '公館鄉',
+    '銅鑼鄉',
+    '三義鄉',
+    '大湖鄉',
+    '獅潭鄉',
+    '南庄鄉',
+    '泰安鄉',
   ],
   臺中市: [
-    "中區",
-    "東區",
-    "南區",
-    "西區",
-    "北區",
-    "北屯區",
-    "西屯區",
-    "南屯區",
-    "太平區",
-    "大里區",
-    "霧峰區",
-    "烏日區",
-    "豐原區",
-    "后里區",
-    "石岡區",
-    "東勢區",
-    "和平區",
-    "新社區",
-    "潭子區",
-    "大雅區",
-    "神岡區",
-    "大肚區",
-    "沙鹿區",
-    "龍井區",
-    "梧棲區",
-    "清水區",
-    "大甲區",
-    "外埔區",
-    "大安區",
+    '中區',
+    '東區',
+    '南區',
+    '西區',
+    '北區',
+    '北屯區',
+    '西屯區',
+    '南屯區',
+    '太平區',
+    '大里區',
+    '霧峰區',
+    '烏日區',
+    '豐原區',
+    '后里區',
+    '石岡區',
+    '東勢區',
+    '和平區',
+    '新社區',
+    '潭子區',
+    '大雅區',
+    '神岡區',
+    '大肚區',
+    '沙鹿區',
+    '龍井區',
+    '梧棲區',
+    '清水區',
+    '大甲區',
+    '外埔區',
+    '大安區',
   ],
   彰化縣: [
-    "彰化市",
-    "員林市",
-    "和美鎮",
-    "鹿港鎮",
-    "溪湖鎮",
-    "二林鎮",
-    "田中鎮",
-    "北斗鎮",
-    "花壇鄉",
-    "芬園鄉",
-    "大村鄉",
-    "埔心鄉",
-    "永靖鄉",
-    "社頭鄉",
-    "二水鄉",
-    "田尾鄉",
-    "埤頭鄉",
-    "芳苑鄉",
-    "大城鄉",
-    "竹塘鄉",
-    "溪州鄉",
-    "秀水鄉",
-    "福興鄉",
-    "線西鄉",
-    "伸港鄉",
-    "埔鹽鄉",
+    '彰化市',
+    '員林市',
+    '和美鎮',
+    '鹿港鎮',
+    '溪湖鎮',
+    '二林鎮',
+    '田中鎮',
+    '北斗鎮',
+    '花壇鄉',
+    '芬園鄉',
+    '大村鄉',
+    '埔心鄉',
+    '永靖鄉',
+    '社頭鄉',
+    '二水鄉',
+    '田尾鄉',
+    '埤頭鄉',
+    '芳苑鄉',
+    '大城鄉',
+    '竹塘鄉',
+    '溪州鄉',
+    '秀水鄉',
+    '福興鄉',
+    '線西鄉',
+    '伸港鄉',
+    '埔鹽鄉',
   ],
   南投縣: [
-    "南投市",
-    "埔里鎮",
-    "草屯鎮",
-    "竹山鎮",
-    "集集鎮",
-    "名間鄉",
-    "鹿谷鄉",
-    "中寮鄉",
-    "魚池鄉",
-    "國姓鄉",
-    "水里鄉",
-    "信義鄉",
-    "仁愛鄉",
+    '南投市',
+    '埔里鎮',
+    '草屯鎮',
+    '竹山鎮',
+    '集集鎮',
+    '名間鄉',
+    '鹿谷鄉',
+    '中寮鄉',
+    '魚池鄉',
+    '國姓鄉',
+    '水里鄉',
+    '信義鄉',
+    '仁愛鄉',
   ],
   雲林縣: [
-    "斗六市",
-    "斗南鎮",
-    "虎尾鎮",
-    "西螺鎮",
-    "土庫鎮",
-    "北港鎮",
-    "古坑鄉",
-    "大埤鄉",
-    "莿桐鄉",
-    "林內鄉",
-    "二崙鄉",
-    "崙背鄉",
-    "麥寮鄉",
-    "東勢鄉",
-    "褒忠鄉",
-    "臺西鄉",
-    "元長鄉",
-    "四湖鄉",
-    "口湖鄉",
-    "水林鄉",
+    '斗六市',
+    '斗南鎮',
+    '虎尾鎮',
+    '西螺鎮',
+    '土庫鎮',
+    '北港鎮',
+    '古坑鄉',
+    '大埤鄉',
+    '莿桐鄉',
+    '林內鄉',
+    '二崙鄉',
+    '崙背鄉',
+    '麥寮鄉',
+    '東勢鄉',
+    '褒忠鄉',
+    '臺西鄉',
+    '元長鄉',
+    '四湖鄉',
+    '口湖鄉',
+    '水林鄉',
   ],
-  嘉義市: ["東區", "西區"],
+  嘉義市: ['東區', '西區'],
   嘉義縣: [
-    "太保市",
-    "朴子市",
-    "布袋鎮",
-    "大林鎮",
-    "民雄鄉",
-    "溪口鄉",
-    "新港鄉",
-    "六腳鄉",
-    "東石鄉",
-    "義竹鄉",
-    "鹿草鄉",
-    "水上鄉",
-    "中埔鄉",
-    "竹崎鄉",
-    "梅山鄉",
-    "番路鄉",
-    "大埔鄉",
-    "阿里山鄉",
+    '太保市',
+    '朴子市',
+    '布袋鎮',
+    '大林鎮',
+    '民雄鄉',
+    '溪口鄉',
+    '新港鄉',
+    '六腳鄉',
+    '東石鄉',
+    '義竹鄉',
+    '鹿草鄉',
+    '水上鄉',
+    '中埔鄉',
+    '竹崎鄉',
+    '梅山鄉',
+    '番路鄉',
+    '大埔鄉',
+    '阿里山鄉',
   ],
   臺南市: [
-    "中西區",
-    "東區",
-    "南區",
-    "北區",
-    "安平區",
-    "安南區",
-    "永康區",
-    "歸仁區",
-    "新化區",
-    "左鎮區",
-    "玉井區",
-    "楠西區",
-    "南化區",
-    "仁德區",
-    "關廟區",
-    "龍崎區",
-    "官田區",
-    "麻豆區",
-    "佳里區",
-    "西港區",
-    "七股區",
-    "將軍區",
-    "學甲區",
-    "北門區",
-    "新營區",
-    "後壁區",
-    "白河區",
-    "東山區",
-    "六甲區",
-    "下營區",
-    "柳營區",
-    "鹽水區",
-    "善化區",
-    "大內區",
-    "山上區",
-    "新市區",
-    "安定區",
+    '中西區',
+    '東區',
+    '南區',
+    '北區',
+    '安平區',
+    '安南區',
+    '永康區',
+    '歸仁區',
+    '新化區',
+    '左鎮區',
+    '玉井區',
+    '楠西區',
+    '南化區',
+    '仁德區',
+    '關廟區',
+    '龍崎區',
+    '官田區',
+    '麻豆區',
+    '佳里區',
+    '西港區',
+    '七股區',
+    '將軍區',
+    '學甲區',
+    '北門區',
+    '新營區',
+    '後壁區',
+    '白河區',
+    '東山區',
+    '六甲區',
+    '下營區',
+    '柳營區',
+    '鹽水區',
+    '善化區',
+    '大內區',
+    '山上區',
+    '新市區',
+    '安定區',
   ],
   高雄市: [
-    "楠梓區",
-    "左營區",
-    "鼓山區",
-    "三民區",
-    "鹽埕區",
-    "前金區",
-    "新興區",
-    "苓雅區",
-    "前鎮區",
-    "旗津區",
-    "小港區",
-    "鳳山區",
-    "林園區",
-    "大寮區",
-    "大樹區",
-    "大社區",
-    "仁武區",
-    "鳥松區",
-    "岡山區",
-    "橋頭區",
-    "燕巢區",
-    "田寮區",
-    "阿蓮區",
-    "路竹區",
-    "湖內區",
-    "茄萣區",
-    "永安區",
-    "彌陀區",
-    "梓官區",
-    "旗山區",
-    "美濃區",
-    "六龜區",
-    "甲仙區",
-    "杉林區",
-    "內門區",
-    "茂林區",
-    "桃源區",
-    "那瑪夏區",
+    '楠梓區',
+    '左營區',
+    '鼓山區',
+    '三民區',
+    '鹽埕區',
+    '前金區',
+    '新興區',
+    '苓雅區',
+    '前鎮區',
+    '旗津區',
+    '小港區',
+    '鳳山區',
+    '林園區',
+    '大寮區',
+    '大樹區',
+    '大社區',
+    '仁武區',
+    '鳥松區',
+    '岡山區',
+    '橋頭區',
+    '燕巢區',
+    '田寮區',
+    '阿蓮區',
+    '路竹區',
+    '湖內區',
+    '茄萣區',
+    '永安區',
+    '彌陀區',
+    '梓官區',
+    '旗山區',
+    '美濃區',
+    '六龜區',
+    '甲仙區',
+    '杉林區',
+    '內門區',
+    '茂林區',
+    '桃源區',
+    '那瑪夏區',
   ],
   屏東縣: [
-    "屏東市",
-    "潮州鎮",
-    "東港鎮",
-    "恆春鎮",
-    "萬丹鄉",
-    "長治鄉",
-    "麟洛鄉",
-    "九如鄉",
-    "里港鄉",
-    "鹽埔鄉",
-    "高樹鄉",
-    "萬巒鄉",
-    "內埔鄉",
-    "竹田鄉",
-    "新埤鄉",
-    "枋寮鄉",
-    "新園鄉",
-    "崁頂鄉",
-    "林邊鄉",
-    "南州鄉",
-    "佳冬鄉",
-    "琉球鄉",
-    "車城鄉",
-    "滿州鄉",
-    "枋山鄉",
-    "三地門鄉",
-    "霧臺鄉",
-    "瑪家鄉",
-    "泰武鄉",
-    "來義鄉",
-    "春日鄉",
-    "獅子鄉",
-    "牡丹鄉",
+    '屏東市',
+    '潮州鎮',
+    '東港鎮',
+    '恆春鎮',
+    '萬丹鄉',
+    '長治鄉',
+    '麟洛鄉',
+    '九如鄉',
+    '里港鄉',
+    '鹽埔鄉',
+    '高樹鄉',
+    '萬巒鄉',
+    '內埔鄉',
+    '竹田鄉',
+    '新埤鄉',
+    '枋寮鄉',
+    '新園鄉',
+    '崁頂鄉',
+    '林邊鄉',
+    '南州鄉',
+    '佳冬鄉',
+    '琉球鄉',
+    '車城鄉',
+    '滿州鄉',
+    '枋山鄉',
+    '三地門鄉',
+    '霧臺鄉',
+    '瑪家鄉',
+    '泰武鄉',
+    '來義鄉',
+    '春日鄉',
+    '獅子鄉',
+    '牡丹鄉',
   ],
   宜蘭縣: [
-    "宜蘭市",
-    "羅東鎮",
-    "蘇澳鎮",
-    "頭城鎮",
-    "礁溪鄉",
-    "壯圍鄉",
-    "員山鄉",
-    "冬山鄉",
-    "五結鄉",
-    "三星鄉",
-    "大同鄉",
-    "南澳鄉",
+    '宜蘭市',
+    '羅東鎮',
+    '蘇澳鎮',
+    '頭城鎮',
+    '礁溪鄉',
+    '壯圍鄉',
+    '員山鄉',
+    '冬山鄉',
+    '五結鄉',
+    '三星鄉',
+    '大同鄉',
+    '南澳鄉',
   ],
   花蓮縣: [
-    "花蓮市",
-    "鳳林鎮",
-    "玉里鎮",
-    "新城鄉",
-    "吉安鄉",
-    "壽豐鄉",
-    "光復鄉",
-    "豐濱鄉",
-    "瑞穗鄉",
-    "富里鄉",
-    "秀林鄉",
-    "萬榮鄉",
-    "卓溪鄉",
+    '花蓮市',
+    '鳳林鎮',
+    '玉里鎮',
+    '新城鄉',
+    '吉安鄉',
+    '壽豐鄉',
+    '光復鄉',
+    '豐濱鄉',
+    '瑞穗鄉',
+    '富里鄉',
+    '秀林鄉',
+    '萬榮鄉',
+    '卓溪鄉',
   ],
   臺東縣: [
-    "臺東市",
-    "成功鎮",
-    "關山鎮",
-    "卑南鄉",
-    "大武鄉",
-    "太麻里鄉",
-    "東河鄉",
-    "長濱鄉",
-    "鹿野鄉",
-    "池上鄉",
-    "綠島鄉",
-    "蘭嶼鄉",
-    "延平鄉",
-    "金峰鄉",
-    "達仁鄉",
-    "海端鄉",
+    '臺東市',
+    '成功鎮',
+    '關山鎮',
+    '卑南鄉',
+    '大武鄉',
+    '太麻里鄉',
+    '東河鄉',
+    '長濱鄉',
+    '鹿野鄉',
+    '池上鄉',
+    '綠島鄉',
+    '蘭嶼鄉',
+    '延平鄉',
+    '金峰鄉',
+    '達仁鄉',
+    '海端鄉',
   ],
-  澎湖縣: ["馬公市", "湖西鄉", "白沙鄉", "西嶼鄉", "望安鄉", "七美鄉"],
-  金門縣: ["金城鎮", "金湖鎮", "金沙鎮", "金寧鄉", "烈嶼鄉", "烏坵鄉"],
-  連江縣: ["南竿鄉", "北竿鄉", "莒光鄉", "東引鄉"],
+  澎湖縣: ['馬公市', '湖西鄉', '白沙鄉', '西嶼鄉', '望安鄉', '七美鄉'],
+  金門縣: ['金城鎮', '金湖鎮', '金沙鎮', '金寧鄉', '烈嶼鄉', '烏坵鄉'],
+  連江縣: ['南竿鄉', '北竿鄉', '莒光鄉', '東引鄉'],
 };
-//#endregion taiwanLocations
+// #endregion taiwanLocations
 
 // 將地圖繪製的座標點 [{lat,lng}, ...] 壓縮成 encoded polyline 字串
+/**
+ *
+ * @param routeCoordinates
+ */
 function buildRoutePayload(routeCoordinates) {
-  if (!Array.isArray(routeCoordinates) || routeCoordinates.length === 0)
-    return null;
+  if (!Array.isArray(routeCoordinates) || routeCoordinates.length === 0) return null;
 
   const points = routeCoordinates.map((p) => [Number(p.lat), Number(p.lng)]);
-  if (points.some(([lat, lng]) => Number.isNaN(lat) || Number.isNaN(lng)))
-    return null;
+  if (points.some(([lat, lng]) => Number.isNaN(lat) || Number.isNaN(lng))) return null;
 
   const encoded = polyline.encode(points);
 
@@ -434,104 +439,135 @@ function buildRoutePayload(routeCoordinates) {
   return {
     polyline: encoded,
     pointsCount: points.length,
-    bbox: { minLat, minLng, maxLat, maxLng },
+    bbox: {
+      minLat, minLng, maxLat, maxLng,
+    },
   };
 }
 
+/**
+ *
+ * @param value
+ */
 function formatDateTime(value) {
-  if (!value) return "";
+  if (!value) return '';
 
-  if (typeof value === "string") return value.replace("T", " ");
+  if (typeof value === 'string') return value.replace('T', ' ');
 
-  if (typeof value?.toDate === "function") {
+  if (typeof value?.toDate === 'function') {
     const d = value.toDate();
     const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
     return `${y}-${m}-${day} ${hh}:${mm}`;
   }
 
   return String(value);
 }
 
-function formatPace(paceSec, fallbackText = "") {
-  const n = typeof paceSec === "number" ? paceSec : Number(paceSec);
+/**
+ *
+ * @param paceSec
+ * @param fallbackText
+ */
+function formatPace(paceSec, fallbackText = '') {
+  const n = typeof paceSec === 'number' ? paceSec : Number(paceSec);
   if (Number.isFinite(n) && n > 0) {
     const mm = Math.floor(n / 60);
     const ss = n % 60;
-    return `${mm}:${String(ss).padStart(2, "0")}`;
+    return `${mm}:${String(ss).padStart(2, '0')}`;
   }
-  if (typeof fallbackText === "string" && fallbackText.trim()) return fallbackText;
-  return "";
+  if (typeof fallbackText === 'string' && fallbackText.trim()) return fallbackText;
+  return '';
 }
 
+/**
+ *
+ * @param arr
+ * @param size
+ */
 function chunkArray(arr, size) {
   const out = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
 }
 
+/**
+ *
+ * @param v
+ */
 function toNumber(v) {
-  const n = typeof v === "number" ? v : Number(v);
+  const n = typeof v === 'number' ? v : Number(v);
   return Number.isFinite(n) ? n : 0;
 }
 
+/**
+ *
+ * @param ev
+ */
 function getRemainingSeats(ev) {
-  if (typeof ev?.remainingSeats === "number") return ev.remainingSeats;
+  if (typeof ev?.remainingSeats === 'number') return ev.remainingSeats;
   const max = toNumber(ev?.maxParticipants);
   const count = toNumber(ev?.participantsCount);
   return Math.max(0, max - count);
 }
 
+/**
+ *
+ * @param user
+ */
 function buildUserPayload(user) {
   if (!user?.uid) return null;
   return {
     uid: String(user.uid),
-    name: String(user.name || (user.email ? user.email.split("@")[0] : "")),
-    photoURL: String(user.photoURL || ""),
+    name: String(user.name || (user.email ? user.email.split('@')[0] : '')),
+    photoURL: String(user.photoURL || ''),
   };
 }
 
+/**
+ *
+ */
 export default function RunTogetherPage() {
   const [isFormOpen, setFormOpen] = useState(false);
   // ✅ 篩選浮層（先做空白 UI）
   const [isFilterOpen, setFilterOpen] = useState(false);
   // ✅ 篩選表單（先從「揪團人」開始）
-  const [filterHostText, setFilterHostText] = useState("");
+  const [filterHostText, setFilterHostText] = useState('');
   // 2. 活動日期/時間
-  const [filterTimeStart, setFilterTimeStart] = useState("");
-  const [filterTimeEnd, setFilterTimeEnd] = useState("");
+  const [filterTimeStart, setFilterTimeStart] = useState('');
+  const [filterTimeEnd, setFilterTimeEnd] = useState('');
   // 3. 報名截止時間
-  const [filterRegStart, setFilterRegStart] = useState("");
-  const [filterRegEnd, setFilterRegEnd] = useState("");
+  const [filterRegStart, setFilterRegStart] = useState('');
+  const [filterRegEnd, setFilterRegEnd] = useState('');
   // 4. 跑步距離 (km)
-  const [filterDistanceMin, setFilterDistanceMin] = useState("");
-  const [filterDistanceMax, setFilterDistanceMax] = useState("");
+  const [filterDistanceMin, setFilterDistanceMin] = useState('');
+  const [filterDistanceMax, setFilterDistanceMax] = useState('');
   // 5. 配速 (分:秒) - 範圍
-  const [filterPaceMinMin, setFilterPaceMinMin] = useState(""); // 最快配速 (分)
-  const [filterPaceMinSec, setFilterPaceMinSec] = useState(""); // 最快配速 (秒)
-  const [filterPaceMaxMin, setFilterPaceMaxMin] = useState(""); // 最慢配速 (分)
-  const [filterPaceMaxSec, setFilterPaceMaxSec] = useState(""); // 最慢配速 (秒)
+  const [filterPaceMinMin, setFilterPaceMinMin] = useState(''); // 最快配速 (分)
+  const [filterPaceMinSec, setFilterPaceMinSec] = useState(''); // 最快配速 (秒)
+  const [filterPaceMaxMin, setFilterPaceMaxMin] = useState(''); // 最慢配速 (分)
+  const [filterPaceMaxSec, setFilterPaceMaxSec] = useState(''); // 最慢配速 (秒)
   // 6. 是否還有名額
   const [filterHasSeatsOnly, setFilterHasSeatsOnly] = useState(true);
   // 7. 縣市 + 區
-  const [filterCity, setFilterCity] = useState("");
-  const [filterDistrict, setFilterDistrict] = useState("");
+  const [filterCity, setFilterCity] = useState('');
+  const [filterDistrict, setFilterDistrict] = useState('');
   // 8. 限制人數
-  const [filterMaxParticipantsMin, setFilterMaxParticipantsMin] = useState("");
-  const [filterMaxParticipantsMax, setFilterMaxParticipantsMax] = useState("");
+  const [filterMaxParticipantsMin, setFilterMaxParticipantsMin] = useState('');
+  const [filterMaxParticipantsMax, setFilterMaxParticipantsMax] = useState('');
   // 9. 跑步類型
-  const [filterRunType, setFilterRunType] = useState("");
+  const [filterRunType, setFilterRunType] = useState('');
   const { user } = useContext(AuthContext);
 
   // ✅ 表單相關 state
   const [showMap, setShowMap] = useState(false);
   const [routeCoordinates, setRouteCoordinates] = useState(null);
-  const [selectedCity, setSelectedCity] = useState("");
-  const [selectedDistrict, setSelectedDistrict] = useState("");
-  const [minDateTime, setMinDateTime] = useState("");
+  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [minDateTime, setMinDateTime] = useState('');
 
   // ✅ 活動列表
   const [events, setEvents] = useState([]);
@@ -566,13 +602,13 @@ export default function RunTogetherPage() {
   // ✅ 上次建立失敗時保留的草稿
   const [draftFormData, setDraftFormData] = useState(null);
 
-  const hostName = user?.name || (user?.email ? user.email.split("@")[0] : "");
+  const hostName = user?.name || (user?.email ? user.email.split('@')[0] : '');
 
   // 表單打開時鎖住 body 捲動
   useEffect(() => {
     if (!isFormOpen) return;
     const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prevOverflow;
     };
@@ -582,7 +618,7 @@ export default function RunTogetherPage() {
   useEffect(() => {
     if (!isFilterOpen) return;
     const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prevOverflow;
     };
@@ -592,6 +628,9 @@ export default function RunTogetherPage() {
   useEffect(() => {
     let cancelled = false;
 
+    /**
+     *
+     */
     async function run() {
       setIsLoadingEvents(true);
       setLoadError(null);
@@ -612,8 +651,8 @@ export default function RunTogetherPage() {
           setHasMore(latest.length === 10 && !!lastDoc);
         }
       } catch (err) {
-        console.error("載入活動失敗:", err);
-        if (!cancelled) setLoadError("載入活動失敗，請稍後再試");
+        console.error('載入活動失敗:', err);
+        if (!cancelled) setLoadError('載入活動失敗，請稍後再試');
       } finally {
         if (!cancelled) setIsLoadingEvents(false);
       }
@@ -659,7 +698,7 @@ export default function RunTogetherPage() {
           });
         }
       } catch (err) {
-        console.error("查詢已參加活動失敗:", err);
+        console.error('查詢已參加活動失敗:', err);
       }
     })();
 
@@ -689,8 +728,8 @@ export default function RunTogetherPage() {
       if (next.length < 10 || !lastDoc) setHasMore(false);
       setLoadMoreError(null);
     } catch (err) {
-      console.error("載入更多活動失敗:", err);
-      setLoadMoreError("載入更多活動失敗，請稍後再試");
+      console.error('載入更多活動失敗:', err);
+      setLoadMoreError('載入更多活動失敗，請稍後再試');
     } finally {
       setIsLoadingMore(false);
     }
@@ -706,13 +745,16 @@ export default function RunTogetherPage() {
         const entry = entries[0];
         if (entry?.isIntersecting) loadMore();
       },
-      { root: null, rootMargin: "0px 0px 300px 0px", threshold: 0 }
+      { root: null, rootMargin: '0px 0px 300px 0px', threshold: 0 },
     );
 
     observer.observe(el);
     return () => observer.disconnect();
   }, [hasMore, loadMore]);
 
+  /**
+   *
+   */
   function handleToggleCreateRunForm() {
     if (!user?.uid) return;
 
@@ -723,18 +765,18 @@ export default function RunTogetherPage() {
 
     const now = new Date();
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    const hours = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
     setMinDateTime(`${year}-${month}-${day}T${hours}:${minutes}`);
 
     if (draftFormData) {
-      setSelectedCity(draftFormData.city || "");
-      setSelectedDistrict(draftFormData.district || "");
+      setSelectedCity(draftFormData.city || '');
+      setSelectedDistrict(draftFormData.district || '');
 
-      const planRoute = draftFormData.planRoute;
-      if (planRoute === "yes") {
+      const { planRoute } = draftFormData;
+      if (planRoute === 'yes') {
         setShowMap(true);
         setRouteCoordinates(draftFormData.routeCoordinates || null);
       } else {
@@ -742,8 +784,8 @@ export default function RunTogetherPage() {
         setRouteCoordinates(null);
       }
     } else {
-      setSelectedCity("");
-      setSelectedDistrict("");
+      setSelectedCity('');
+      setSelectedDistrict('');
       setShowMap(false);
       setRouteCoordinates(null);
     }
@@ -751,29 +793,35 @@ export default function RunTogetherPage() {
     setFormOpen(true);
   }
 
+  /**
+   *
+   */
   function handleClearFilters() {
-    setFilterHostText("");
-    setFilterTimeStart("");
-    setFilterTimeEnd("");
-    setFilterRegStart("");
-    setFilterRegEnd("");
-    setFilterDistanceMin("");
-    setFilterDistanceMax("");
-    setFilterPaceMinMin("");
-    setFilterPaceMinSec("");
-    setFilterPaceMaxMin("");
-    setFilterPaceMaxSec("");
+    setFilterHostText('');
+    setFilterTimeStart('');
+    setFilterTimeEnd('');
+    setFilterRegStart('');
+    setFilterRegEnd('');
+    setFilterDistanceMin('');
+    setFilterDistanceMax('');
+    setFilterPaceMinMin('');
+    setFilterPaceMinSec('');
+    setFilterPaceMaxMin('');
+    setFilterPaceMaxSec('');
     setFilterHasSeatsOnly(true);
-    setFilterCity("");
-    setFilterDistrict("");
-    setFilterMaxParticipantsMin("");
-    setFilterMaxParticipantsMax("");
-    setFilterRunType("");
-    
+    setFilterCity('');
+    setFilterDistrict('');
+    setFilterMaxParticipantsMin('');
+    setFilterMaxParticipantsMax('');
+    setFilterRunType('');
+
     // 重置搜尋結果狀態
     setIsFilteredResults(false);
   }
 
+  /**
+   *
+   */
   async function handleSearchFilters() {
     setFilterOpen(false);
     setIsFiltering(true);
@@ -795,13 +843,17 @@ export default function RunTogetherPage() {
       setIsFilteredResults(true);
       setHasMore(false); // MVP 篩選結果暫不支援載入更多
     } catch (err) {
-      console.error("篩選失敗:", err);
-      setLoadError("搜尋失敗，請稍後再試");
+      console.error('篩選失敗:', err);
+      setLoadError('搜尋失敗，請稍後再試');
     } finally {
       setIsFiltering(false);
     }
   }
 
+  /**
+   *
+   * @param e
+   */
   async function handleSubmit(e) {
     e.preventDefault();
 
@@ -818,17 +870,16 @@ export default function RunTogetherPage() {
     // ✅ UI 用下拉（分/秒），資料層與 Firestore 只存 paceSec（number）
     const paceMin = Number(data.paceMinutes);
     const paceSecPart = Number(data.paceSeconds);
-    const paceSec =
-      Number.isFinite(paceMin) && Number.isFinite(paceSecPart)
-        ? paceMin * 60 + paceSecPart
-        : 0;
+    const paceSec = Number.isFinite(paceMin) && Number.isFinite(paceSecPart)
+      ? paceMin * 60 + paceSecPart
+      : 0;
 
     const route = buildRoutePayload(routeCoordinatesSnapshot);
 
     const extra = {
-      hostUid: user?.uid || "",
-      hostName: hostName || "",
-      hostPhotoURL: user?.photoURL || "",
+      hostUid: user?.uid || '',
+      hostName: hostName || '',
+      hostPhotoURL: user?.photoURL || '',
       route,
     };
 
@@ -856,29 +907,34 @@ export default function RunTogetherPage() {
       setFormOpen(false);
       setShowMap(false);
       setRouteCoordinates(null);
-      setSelectedCity("");
-      setSelectedDistrict("");
+      setSelectedCity('');
+      setSelectedDistrict('');
 
       setIsCreating(false);
     } catch (err) {
-      console.error("建立活動失敗:", err);
+      console.error('建立活動失敗:', err);
 
       setDraftFormData({
         ...data,
         routeCoordinates: routeCoordinatesSnapshot,
       });
 
-      setCreateError("建立活動失敗，請再建立一次");
+      setCreateError('建立活動失敗，請再建立一次');
       setIsCreating(false);
     }
   }
 
+  /**
+   *
+   * @param ev
+   * @param clickEvent
+   */
   async function handleJoinClick(ev, clickEvent) {
     clickEvent.preventDefault();
     clickEvent.stopPropagation();
 
     if (!user?.uid) {
-      setActionMessage({ type: "error", message: "加入活動前請先登入" });
+      setActionMessage({ type: 'error', message: '加入活動前請先登入' });
       return;
     }
     if (ev.hostUid === user.uid) return;
@@ -888,14 +944,14 @@ export default function RunTogetherPage() {
     if (!payload) return;
 
     setActionMessage(null);
-    setPendingByEventId((prev) => ({ ...prev, [eventId]: "joining" }));
+    setPendingByEventId((prev) => ({ ...prev, [eventId]: 'joining' }));
 
     try {
       const res = await joinEvent(eventId, payload);
 
       if (
-        res?.ok &&
-        (res.status === "joined" || res.status === "already_joined")
+        res?.ok
+        && (res.status === 'joined' || res.status === 'already_joined')
       ) {
         setMyJoinedEventIds((prev) => {
           const next = new Set(prev);
@@ -903,39 +959,33 @@ export default function RunTogetherPage() {
           return next;
         });
 
-        if (res.status === "joined") {
-          setEvents((prev) =>
-            prev.map((item) => {
-              if (String(item.id) !== eventId) return item;
-              const remaining = getRemainingSeats(item);
-              const count = toNumber(item.participantsCount);
-              return {
-                ...item,
-                remainingSeats: Math.max(0, remaining - 1),
-                participantsCount: count + 1,
-              };
-            })
-          );
+        if (res.status === 'joined') {
+          setEvents((prev) => prev.map((item) => {
+            if (String(item.id) !== eventId) return item;
+            const remaining = getRemainingSeats(item);
+            const count = toNumber(item.participantsCount);
+            return {
+              ...item,
+              remainingSeats: Math.max(0, remaining - 1),
+              participantsCount: count + 1,
+            };
+          }));
         }
 
-        setActionMessage({ type: "success", message: "報名成功" });
+        setActionMessage({ type: 'success', message: '報名成功' });
         return;
       }
 
-      if (res?.ok === false && res.status === "full") {
-        setActionMessage({ type: "error", message: "本活動已額滿" });
-        setEvents((prev) =>
-          prev.map((item) =>
-            String(item.id) === eventId ? { ...item, remainingSeats: 0 } : item
-          )
-        );
+      if (res?.ok === false && res.status === 'full') {
+        setActionMessage({ type: 'error', message: '本活動已額滿' });
+        setEvents((prev) => prev.map((item) => (String(item.id) === eventId ? { ...item, remainingSeats: 0 } : item)));
         return;
       }
 
-      setActionMessage({ type: "error", message: "報名失敗，請再試一次" });
+      setActionMessage({ type: 'error', message: '報名失敗，請再試一次' });
     } catch (err) {
-      console.error("參加活動失敗:", err);
-      setActionMessage({ type: "error", message: "報名失敗，請再試一次" });
+      console.error('參加活動失敗:', err);
+      setActionMessage({ type: 'error', message: '報名失敗，請再試一次' });
     } finally {
       setPendingByEventId((prev) => {
         const next = { ...prev };
@@ -945,12 +995,17 @@ export default function RunTogetherPage() {
     }
   }
 
+  /**
+   *
+   * @param ev
+   * @param clickEvent
+   */
   async function handleLeaveClick(ev, clickEvent) {
     clickEvent.preventDefault();
     clickEvent.stopPropagation();
 
     if (!user?.uid) {
-      setActionMessage({ type: "error", message: "請先登入再操作" });
+      setActionMessage({ type: 'error', message: '請先登入再操作' });
       return;
     }
 
@@ -959,48 +1014,46 @@ export default function RunTogetherPage() {
     if (!payload) return;
 
     setActionMessage(null);
-    setPendingByEventId((prev) => ({ ...prev, [eventId]: "leaving" }));
+    setPendingByEventId((prev) => ({ ...prev, [eventId]: 'leaving' }));
 
     try {
       const res = await leaveEvent(eventId, payload);
 
-      if (res?.ok && (res.status === "left" || res.status === "not_joined")) {
+      if (res?.ok && (res.status === 'left' || res.status === 'not_joined')) {
         setMyJoinedEventIds((prev) => {
           const next = new Set(prev);
           next.delete(eventId);
           return next;
         });
 
-        if (res.status === "left") {
-          setEvents((prev) =>
-            prev.map((item) => {
-              if (String(item.id) !== eventId) return item;
+        if (res.status === 'left') {
+          setEvents((prev) => prev.map((item) => {
+            if (String(item.id) !== eventId) return item;
 
-              const max = toNumber(item.maxParticipants);
-              const remaining = getRemainingSeats(item);
-              const count = toNumber(item.participantsCount);
-              return {
-                ...item,
-                remainingSeats: Math.min(max, remaining + 1),
-                participantsCount: Math.max(0, count - 1),
-              };
-            })
-          );
+            const max = toNumber(item.maxParticipants);
+            const remaining = getRemainingSeats(item);
+            const count = toNumber(item.participantsCount);
+            return {
+              ...item,
+              remainingSeats: Math.min(max, remaining + 1),
+              participantsCount: Math.max(0, count - 1),
+            };
+          }));
         }
 
-        setActionMessage({ type: "success", message: "已成功取消報名" });
+        setActionMessage({ type: 'success', message: '已成功取消報名' });
         return;
       }
 
       setActionMessage({
-        type: "error",
-        message: "發生錯誤，請再重新取消報名",
+        type: 'error',
+        message: '發生錯誤，請再重新取消報名',
       });
     } catch (err) {
-      console.error("退出活動失敗:", err);
+      console.error('退出活動失敗:', err);
       setActionMessage({
-        type: "error",
-        message: "發生錯誤，請再重新取消報名",
+        type: 'error',
+        message: '發生錯誤，請再重新取消報名',
       });
     } finally {
       setPendingByEventId((prev) => {
@@ -1081,11 +1134,11 @@ export default function RunTogetherPage() {
         {actionMessage && (
           <div
             className={
-              actionMessage.type === "success"
+              actionMessage.type === 'success'
                 ? styles.successCard
                 : styles.errorCard
             }
-            role={actionMessage.type === "error" ? "alert" : "status"}
+            role={actionMessage.type === 'error' ? 'alert' : 'status'}
           >
             {actionMessage.message}
           </div>
@@ -1094,7 +1147,7 @@ export default function RunTogetherPage() {
         <div className={styles.eventList}>
           {!isLoadingEvents && !isFiltering && events.length === 0 ? (
             <div className={styles.emptyHint}>
-              {isFilteredResults ? "沒有符合條件的活動" : "目前還沒有活動（先建立一筆看看）"}
+              {isFilteredResults ? '沒有符合條件的活動' : '目前還沒有活動（先建立一筆看看）'}
             </div>
           ) : (
             events.map((ev) => (
@@ -1107,110 +1160,139 @@ export default function RunTogetherPage() {
                   <div className={styles.eventTitle}>{ev.title}</div>
 
                   <div className={styles.eventMeta}>
-                    <div>時間：{formatDateTime(ev.time)}</div>
                     <div>
-                      報名截止：{formatDateTime(ev.registrationDeadline)}
+                      時間：
+                      {formatDateTime(ev.time)}
                     </div>
                     <div>
-                      地點：{ev.city} {ev.district}
+                      報名截止：
+                      {formatDateTime(ev.registrationDeadline)}
                     </div>
-                    <div>集合：{ev.meetPlace}</div>
+                    <div>
+                      地點：
+                      {ev.city}
+                      {' '}
+                      {ev.district}
+                    </div>
+                    <div>
+                      集合：
+                      {ev.meetPlace}
+                    </div>
                   </div>
 
                   <div className={styles.eventMeta}>
-                    <div>距離：{ev.distanceKm} km</div>
-                    <div>配速：{formatPace(ev.paceSec, ev.pace)} /km</div>
-                    <div>人數上限：{ev.maxParticipants}</div>
-                    <div>剩餘名額：{getRemainingSeats(ev)}</div>
+                    <div>
+                      距離：
+                      {ev.distanceKm}
+                      {' '}
+                      km
+                    </div>
+                    <div>
+                      配速：
+                      {formatPace(ev.paceSec, ev.pace)}
+                      {' '}
+                      /km
+                    </div>
+                    <div>
+                      人數上限：
+                      {ev.maxParticipants}
+                    </div>
+                    <div>
+                      剩餘名額：
+                      {getRemainingSeats(ev)}
+                    </div>
                   </div>
 
                   <div className={styles.eventMeta}>
-                    <div>主揪：{ev.hostName}</div>
+                    <div>
+                      主揪：
+                      {ev.hostName}
+                    </div>
                     <div>
                       路線：
-                      {Array.isArray(ev.routeCoordinates) &&
-                      ev.routeCoordinates.length > 0
+                      {Array.isArray(ev.routeCoordinates)
+                      && ev.routeCoordinates.length > 0
                         ? `已設定（${ev.routeCoordinates.length} 點）`
                         : ev.route?.pointsCount
-                        ? `已設定（${ev.route.pointsCount} 點）`
-                        : "未設定"}
+                          ? `已設定（${ev.route.pointsCount} 點）`
+                          : '未設定'}
                     </div>
                   </div>
 
                   {/* ✅ 參加/退出活動（events 列表版） */}
                   <div className={styles.eventCardActions}>
-                    {user?.uid &&
-                    ev.hostUid === user.uid ? null : !user?.uid ? (
+                    {user?.uid
+                    && ev.hostUid === user.uid ? null : !user?.uid ? (
                       <div className={styles.helperText}>
                         加入活動前請先登入
                       </div>
-                    ) : (
-                      (() => {
-                        const eventId = String(ev.id);
-                        const pending = pendingByEventId[eventId];
-                        const joined = myJoinedEventIds.has(eventId);
-                        const remaining = getRemainingSeats(ev);
+                      ) : (
+                        (() => {
+                          const eventId = String(ev.id);
+                          const pending = pendingByEventId[eventId];
+                          const joined = myJoinedEventIds.has(eventId);
+                          const remaining = getRemainingSeats(ev);
 
-                        if (joined) {
+                          if (joined) {
+                            return (
+                              <button
+                                type="button"
+                                className={`${styles.submitButton} ${styles.leaveButton}`}
+                                onClick={(e) => handleLeaveClick(ev, e)}
+                                disabled={
+                                Boolean(pending) || isCreating || isFormOpen
+                              }
+                              >
+                                {pending === 'leaving' ? (
+                                  <span className={styles.spinnerLabel}>
+                                    <div
+                                      className={`${styles.spinner} ${styles.buttonSpinner}`}
+                                    />
+                                    取消中…
+                                  </span>
+                                ) : (
+                                  '退出活動'
+                                )}
+                              </button>
+                            );
+                          }
+
+                          if (remaining <= 0) {
+                            return (
+                              <button
+                                type="button"
+                                className={`${styles.submitButton} ${styles.soldOutButton}`}
+                                disabled
+                                aria-disabled="true"
+                              >
+                                已額滿
+                              </button>
+                            );
+                          }
+
                           return (
                             <button
                               type="button"
-                              className={`${styles.submitButton} ${styles.leaveButton}`}
-                              onClick={(e) => handleLeaveClick(ev, e)}
+                              className={styles.submitButton}
+                              onClick={(e) => handleJoinClick(ev, e)}
                               disabled={
-                                Boolean(pending) || isCreating || isFormOpen
-                              }
+                              Boolean(pending) || isCreating || isFormOpen
+                            }
                             >
-                              {pending === "leaving" ? (
+                              {pending === 'joining' ? (
                                 <span className={styles.spinnerLabel}>
                                   <div
                                     className={`${styles.spinner} ${styles.buttonSpinner}`}
                                   />
-                                  取消中…
+                                  報名中…
                                 </span>
                               ) : (
-                                "退出活動"
+                                '參加活動'
                               )}
                             </button>
                           );
-                        }
-
-                        if (remaining <= 0) {
-                          return (
-                            <button
-                              type="button"
-                              className={`${styles.submitButton} ${styles.soldOutButton}`}
-                              disabled
-                              aria-disabled="true"
-                            >
-                              已額滿
-                            </button>
-                          );
-                        }
-
-                        return (
-                          <button
-                            type="button"
-                            className={styles.submitButton}
-                            onClick={(e) => handleJoinClick(ev, e)}
-                            disabled={
-                              Boolean(pending) || isCreating || isFormOpen
-                            }
-                          >
-                            {pending === "joining" ? (
-                              <span className={styles.spinnerLabel}>
-                                <div
-                                  className={`${styles.spinner} ${styles.buttonSpinner}`}
-                                />
-                                報名中…
-                              </span>
-                            ) : (
-                              "參加活動"
-                            )}
-                          </button>
-                        );
-                      })()
-                    )}
+                        })()
+                      )}
                   </div>
                 </div>
               </Link>
@@ -1322,7 +1404,7 @@ export default function RunTogetherPage() {
                       checked={filterHasSeatsOnly}
                       onChange={(e) => setFilterHasSeatsOnly(e.target.checked)}
                     />
-                    <span className={`${styles.slider} ${styles.round}`}></span>
+                    <span className={`${styles.slider} ${styles.round}`} />
                   </label>
                 </div>
               </div>
@@ -1417,7 +1499,7 @@ export default function RunTogetherPage() {
                     aria-label="選擇縣市"
                     onChange={(e) => {
                       setFilterCity(e.target.value);
-                      setFilterDistrict("");
+                      setFilterDistrict('');
                     }}
                   >
                     <option value="">所有縣市</option>
@@ -1436,8 +1518,8 @@ export default function RunTogetherPage() {
                     disabled={!filterCity}
                   >
                     <option value="">所有區域</option>
-                    {filterCity &&
-                      taiwanLocations[filterCity]?.map((dist) => (
+                    {filterCity
+                      && taiwanLocations[filterCity]?.map((dist) => (
                         <option key={dist} value={dist}>
                           {dist}
                         </option>
@@ -1492,7 +1574,7 @@ export default function RunTogetherPage() {
       {user?.uid && isFormOpen && (
         <div className={styles.formOverlay}>
           <form className={styles.googleFormCard} onSubmit={handleSubmit}>
-            <div className={styles.formHeaderAccent}></div>
+            <div className={styles.formHeaderAccent} />
 
             <div className={styles.formHeader}>
               <h2>揪團表單</h2>
@@ -1512,7 +1594,7 @@ export default function RunTogetherPage() {
                 aria-readonly="true"
                 placeholder="將自動帶入您的會員名稱"
               />
-              <div className={styles.focusBorder}></div>
+              <div className={styles.focusBorder} />
               <small className={styles.helperText}>
                 由登入帳號自動帶入，無法修改
               </small>
@@ -1526,9 +1608,9 @@ export default function RunTogetherPage() {
                 name="title"
                 required
                 placeholder="例如：大安森林公園輕鬆跑"
-                defaultValue={draftFormData?.title || ""}
+                defaultValue={draftFormData?.title || ''}
               />
-              <div className={styles.focusBorder}></div>
+              <div className={styles.focusBorder} />
             </div>
 
             <div className={styles.formGroup}>
@@ -1539,9 +1621,9 @@ export default function RunTogetherPage() {
                 name="time"
                 min={minDateTime}
                 required
-                defaultValue={draftFormData?.time || ""}
+                defaultValue={draftFormData?.time || ''}
               />
-              <div className={styles.focusBorder}></div>
+              <div className={styles.focusBorder} />
             </div>
 
             <div className={styles.formGroup}>
@@ -1552,9 +1634,9 @@ export default function RunTogetherPage() {
                 name="registrationDeadline"
                 min={minDateTime}
                 required
-                defaultValue={draftFormData?.registrationDeadline || ""}
+                defaultValue={draftFormData?.registrationDeadline || ''}
               />
-              <div className={styles.focusBorder}></div>
+              <div className={styles.focusBorder} />
             </div>
 
             <div className={styles.formGroup}>
@@ -1565,7 +1647,7 @@ export default function RunTogetherPage() {
                   value={selectedCity}
                   onChange={(e) => {
                     setSelectedCity(e.target.value);
-                    setSelectedDistrict("");
+                    setSelectedDistrict('');
                   }}
                   required
                   className={`${styles.selectField} ${styles.flex1}`}
@@ -1590,8 +1672,8 @@ export default function RunTogetherPage() {
                   <option value="" disabled>
                     請選擇區域
                   </option>
-                  {selectedCity &&
-                    taiwanLocations[selectedCity]?.map((dist) => (
+                  {selectedCity
+                    && taiwanLocations[selectedCity]?.map((dist) => (
                       <option key={dist} value={dist}>
                         {dist}
                       </option>
@@ -1608,9 +1690,9 @@ export default function RunTogetherPage() {
                 name="meetPlace"
                 required
                 placeholder="例如：大安森林公園 2號出口"
-                defaultValue={draftFormData?.meetPlace || ""}
+                defaultValue={draftFormData?.meetPlace || ''}
               />
-              <div className={styles.focusBorder}></div>
+              <div className={styles.focusBorder} />
             </div>
 
             <div className={styles.formGroup}>
@@ -1620,7 +1702,7 @@ export default function RunTogetherPage() {
                 id="runType"
                 className={styles.selectField}
                 required
-                defaultValue={draftFormData?.runType || ""}
+                defaultValue={draftFormData?.runType || ''}
               >
                 <option value="" disabled>
                   請選擇跑步類型
@@ -1636,7 +1718,7 @@ export default function RunTogetherPage() {
                 <option value="trail_run">越野跑（Trail Run）</option>
                 <option value="social_run">休閒社交跑（Social Run）</option>
               </select>
-              <div className={styles.focusBorder}></div>
+              <div className={styles.focusBorder} />
             </div>
 
             <div className={styles.formGroup}>
@@ -1649,9 +1731,9 @@ export default function RunTogetherPage() {
                 step="0.1"
                 required
                 placeholder="10"
-                defaultValue={draftFormData?.distanceKm || ""}
+                defaultValue={draftFormData?.distanceKm || ''}
               />
-              <div className={styles.focusBorder}></div>
+              <div className={styles.focusBorder} />
             </div>
 
             <div className={styles.formGroup}>
@@ -1663,12 +1745,12 @@ export default function RunTogetherPage() {
                   name="paceMinutes"
                   className={`${styles.selectField} ${styles.centerSelect}`}
                   required
-                  defaultValue={draftFormData?.paceMinutes || ""}
+                  defaultValue={draftFormData?.paceMinutes || ''}
                   aria-label="分鐘"
                 >
-                  <option value="" disabled hidden></option>
+                  <option value="" disabled hidden />
                   {[...Array(19)].map((_, i) => (
-                    <option key={i} value={String(i + 2).padStart(2, "0")}>
+                    <option key={i} value={String(i + 2).padStart(2, '0')}>
                       {i + 2}
                     </option>
                   ))}
@@ -1678,12 +1760,12 @@ export default function RunTogetherPage() {
                   name="paceSeconds"
                   className={`${styles.selectField} ${styles.centerSelect}`}
                   required
-                  defaultValue={draftFormData?.paceSeconds || ""}
+                  defaultValue={draftFormData?.paceSeconds || ''}
                   aria-label="秒"
                 >
-                  <option value="" disabled hidden></option>
+                  <option value="" disabled hidden />
                   {[...Array(60).keys()].map((s) => {
-                    const label = String(s).padStart(2, "0");
+                    const label = String(s).padStart(2, '0');
                     return (
                       <option key={s} value={label}>
                         {label}
@@ -1693,7 +1775,7 @@ export default function RunTogetherPage() {
                 </select>
                 <span className={styles.paceUnit}>秒</span>
               </div>
-              <div className={styles.focusBorder}></div>
+              <div className={styles.focusBorder} />
               <small className={styles.helperText}>
                 請選擇每公里的配速時間
               </small>
@@ -1708,9 +1790,10 @@ export default function RunTogetherPage() {
                     name="planRoute"
                     value="yes"
                     required
-                    defaultChecked={draftFormData?.planRoute === "yes"}
+                    defaultChecked={draftFormData?.planRoute === 'yes'}
                     onChange={() => setShowMap(true)}
-                  />{" "}
+                  />
+                  {' '}
                   是
                 </label>
                 <label>
@@ -1719,16 +1802,17 @@ export default function RunTogetherPage() {
                     name="planRoute"
                     value="no"
                     required
-                    defaultChecked={draftFormData?.planRoute === "no"}
+                    defaultChecked={draftFormData?.planRoute === 'no'}
                     onChange={() => {
                       setShowMap(false);
                       setRouteCoordinates(null);
                     }}
-                  />{" "}
+                  />
+                  {' '}
                   否
                 </label>
               </div>
-              <div className={styles.focusBorder}></div>
+              <div className={styles.focusBorder} />
             </div>
 
             {showMap && (
@@ -1737,7 +1821,11 @@ export default function RunTogetherPage() {
                 <EventMap onRouteDrawn={setRouteCoordinates} />
                 {routeCoordinates && (
                   <p className={styles.helperText}>
-                    路線已繪製，包含 {routeCoordinates.length} 個點。
+                    路線已繪製，包含
+                    {' '}
+                    {routeCoordinates.length}
+                    {' '}
+                    個點。
                   </p>
                 )}
               </div>
@@ -1750,9 +1838,9 @@ export default function RunTogetherPage() {
                 name="maxParticipants"
                 type="number"
                 min="2"
-                defaultValue={draftFormData?.maxParticipants || "2"}
+                defaultValue={draftFormData?.maxParticipants || '2'}
               />
-              <div className={styles.focusBorder}></div>
+              <div className={styles.focusBorder} />
             </div>
 
             <div className={styles.formGroup}>
@@ -1763,9 +1851,9 @@ export default function RunTogetherPage() {
                 rows="4"
                 placeholder="請說明活動內容、注意事項、集合細節等"
                 className={styles.textareaField}
-                defaultValue={draftFormData?.description || ""}
-              ></textarea>
-              <div className={styles.focusBorder}></div>
+                defaultValue={draftFormData?.description || ''}
+              />
+              <div className={styles.focusBorder} />
             </div>
 
             <div className={styles.formActions}>
@@ -1782,7 +1870,7 @@ export default function RunTogetherPage() {
                 className={styles.submitButton}
                 disabled={isCreating}
               >
-                {isCreating ? "建立中…" : "建立活動"}
+                {isCreating ? '建立中…' : '建立活動'}
               </button>
             </div>
           </form>
