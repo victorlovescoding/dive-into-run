@@ -5,6 +5,8 @@ description: 執行開發流程的第五步：任務拆解。當收到 `/speckit
 
 # Step 5: Task Breakdown
 
+**目前正在做 workflow-step-5-task skill！！！**
+
 此 Skill 負責將技術計畫 (`plan.md`) 轉化為可被追蹤與指派的任務清單 (`tasks.md`)。
 
 ## 執行流程
@@ -17,6 +19,8 @@ description: 執行開發流程的第五步：任務拆解。當收到 `/speckit
 
 2.  **拆解任務**:
     *   **Rule**: 每個任務應該是「原子化」的 (Atomic)，且 ideally 可在 1-2 小時內完成。
+    *   **Strict Rule**: **每個 User Story 或主要功能區塊的最後一項任務，必須是「驗證：執行 Lint 與測試」**。
+        - 內容範例：`Run 'npm run lint' and 'npm run test', fix all errors.`
     *   **Format**: 必須包含明確的標題與驗收標準。
 
 3.  **產出 Tasks 檔案**:
@@ -38,6 +42,10 @@ description: 執行開發流程的第五步：任務拆解。當收到 `/speckit
 ## 3. Frontend
 - [ ] Task 3: Create Component X
   - Description: ...
+
+## 4. Verification (MANDATORY)
+- [ ] Task: 執行 Lint 與測試
+  - Description: 執行 `npm run lint` 並修復所有 errors 與 warnings (JSDoc, Airbnb style)。確保 `npm run test` 全數通過。
 ```
 
 ## 下一步
@@ -46,3 +54,12 @@ description: 執行開發流程的第五步：任務拆解。當收到 `/speckit
 > 任務清單已準備就緒。請輸入「繼續」以進入 Step 6: Execute 階段 (將任務加入 Kanban)。
 
 同時回覆：「workflow-step-5-task skill 已執行完畢」。
+
+## Instructions
+
+### 0. 啟動宣告 (Declaration)
+*   **必須**在第一時間先回覆：'**目前正在做 workflow-step-5-task skill！！！**'.
+
+### 1. 核心規範遵守 (Standard Compliance)
+*   **強制驗證**: 必須在 `tasks.md` 的每個主要功能章節末尾加入「執行 Lint 與測試」任務。
+*   **零容忍原則**: 驗收標準必須明確要求修復所有 Airbnb 風格與 JSDoc 的 warnings 與 errors。

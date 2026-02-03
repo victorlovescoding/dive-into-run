@@ -1,6 +1,9 @@
 {
   "compilerOptions": {
     "checkJs": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "paths": {
       "@/*": ["./src/*"]
     }
