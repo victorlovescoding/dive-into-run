@@ -203,6 +203,8 @@ Next failing test for next feature.
 
 | Quality | Good | Bad |
 |---------|------|-----|
+| **Structure (AAA)** | Follows **Arrange, Act, Assert** pattern. | Logic mixed together. |
+| **Standard (FIRST)** | Meets **Fast, Independent, Repeatable, Self-Validating, Timely**. | Slow or flaky tests. |
 | **Minimal** | One thing. "and" in name? Split it. | `test('validates email and domain and whitespace')` |
 | **Clear** | Name describes behavior | `test('test1')` |
 | **Shows intent** | Demonstrates desired API | Obscures what code should do |
