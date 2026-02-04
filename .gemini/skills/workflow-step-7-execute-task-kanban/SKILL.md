@@ -19,7 +19,10 @@ description: 執行開發流程的第七步：任務執行監控。當 `workflow
 2.  **若有任務未完成**:
     - **Action**: 挑選一個 `todo` 或 `inprogress` 的任務。
     - **Action**: 開始 Coding / TDD 循環。
-    - **Action**: 完成後使用 `update_task` 標記為 `done`。
+    - **Action**: **[原子化提交]** 任務完成後且測試通過時，**必須**執行 Commit。
+        - **Standards**: 參考 `git-commit-guard` 規範撰寫 Message。
+        - **Format**: `feat(<feature>): <task-description>`
+    - **Action**: 使用 `update_task` 標記為 `done`。
     - **Repeat**: 提示使用者繼續下一個任務，或再次輸入「繼續」。
 
 3.  **若所有任務已完成**:

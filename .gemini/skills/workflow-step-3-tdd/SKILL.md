@@ -47,7 +47,10 @@ description: 執行開發流程的第三步：測試驅動開發 (TDD)。當 `wo
 
 ## 下一步
 
-當測試檔案建立且確認為 Red 狀態後，請提示使用者：
-> 測試案例已建立 (RED)。請輸入「繼續」以進入 Step 4: Plan 階段。
+當測試檔案建立且確認為 Red 狀態後，請提示使用者執行以下指令：
+> **Command**: `git add . && git commit -m "test(<feature>): add failing tests (RED)"`
+
+提示使用者：
+> 測試案例已建立 (RED) 並已提交。請輸入「繼續」以進入 Step 4: Plan 階段。
 
 同時回覆：「workflow-step-3-tdd skill 已執行完畢」。

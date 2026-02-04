@@ -12,17 +12,29 @@ description: 執行開發流程的最後一步：代碼審查與提交。當 `wo
 0.  **狀態報告 (Start)**:
     - 請第一時間回覆：「目前執行 workflow-step-9-review skill」。
 
-1.  **開啟 Vibe Kanban 進行 Review**:
+1.  **AI 自動化審查 (Linus Mode)**:
+    *   **取得變更**: 執行 `git diff main` 以檢視本 Feature 的所有異動。
+    *   **Action**: 啟用 `codereview-roasted` Skill。
+    *   **指令**: 「請針對本次變更進行毒舌 Review。除了你的核心原則外，請務必嚴格檢查是否符合以下 **測試法規**：
+        1. **Unit**: 必須有 AAA 註解，禁止使用 DOM。
+        2. **Integration**: 必須使用三劍客與 user-event，禁止 fireEvent。
+        3. **E2E**: 禁止 waitForTimeout，必須使用 Web-first assertions。」
+    *   **判定標準**:
+        - 🟢 **Good taste** / 🟡 **Acceptable**: 通過，可進入下一步。
+        - 🔴 **Needs improvement**: **禁止提交**。必須回到實作階段修正後，重新執行 Review。
+
+2.  **修正代碼與對話**:
+    *   根據 AI 的批判進行修正。
+    *   **若需質疑 AI 意見**: 參考 `receiving-code-review` Skill 的流程進行專業辯論 (Pushback)。
+
+3.  **開啟 Vibe Kanban 進行最終確認**:
     - **Command**: `open https://vibe-kanban.vercel.app/`。
+    - 將任務移動至 **Completed**。
 
-2.  **自我審查 (Self-Review)**:
-    - 檢查代碼品質、Linting。
-
-3.  **提交代碼**:
-    - `git commit`。
-
-4.  **標記結案 (Mark as Completed)**:
-    - **Action**: 在 `specs/<feature>/spec.md` 的最上方加入 YAML Frontmatter 或標記：`status: completed`。
+4.  **提交與結案**:
+    - **Command**: `git add . && git commit -m "feat(<feature>): complete feature and finalize after review"`
+    - **範例**: `git commit -m "feat(001-event-filtering): 實作活動篩選功能與最終優化"`
+    - **Action**: 在 `specs/<feature>/spec.md` 的最上方標記：`status: completed`。
     - **重要**: 這標誌著整個 Feature 的結束。
 
 ## 結束
