@@ -16,12 +16,15 @@ description: 執行開發流程的第七步：任務執行監控。當 `workflow
     - **Tool**: 使用 `vibe_kanban` 的 `list_tasks`。
     - **Check**: 是否所有任務狀態皆為 `done`？
 
-2.  **若有任務未完成**:
+2.  **若有任務未完成 (或從 Step 8 退回修復)**:
     - **Action**: 挑選一個 `todo` 或 `inprogress` 的任務。
+    - **若為修復任務**: 建議啟用 `systematic-debugging` Skill 輔助診斷根因。
     - **Action**: 開始 Coding / TDD 循環。
     - **Action**: **[原子化提交]** 任務完成後且測試通過時，**必須**執行 Commit。
         - **Standards**: 參考 `git-commit-guard` 規範撰寫 Message。
-        - **Format**: `feat(<feature>): <task-description>`
+        - **Commit Format**:
+            - **正常開發**: `feat(<feature>): <task-description>`
+            - **驗收修復**: `fix(<feature>): <description of the bug fix>`
     - **Action**: 使用 `update_task` 標記為 `done`。
     - **Repeat**: 提示使用者繼續下一個任務，或再次輸入「繼續」。
 
