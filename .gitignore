@@ -51,11 +51,6 @@ firestore-debug.log*
 # .gemini/settings.json
 
 # AI Tooling and IDE settings
-.agent/
-.agents/
-.claude/
-.codex/
-.opencode/
 .vscode/
 .gemini/hook_debug.log
 .gemini/.username
