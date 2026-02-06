@@ -47,8 +47,8 @@ next-env.d.ts
 firebase-debug.log*
 firestore-debug.log*
 
-# Gemini Settings (contains sensitive tokens)
-.gemini/settings.json
+# Gemini Settings (moved sensitive tokens to .env)
+# .gemini/settings.json
 
 # AI Tooling and IDE settings
 .agent/

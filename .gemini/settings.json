@@ -1,0 +1,46 @@
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "chrome-devtools-mcp@latest"
+      ]
+    },
+    "notion": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@notionhq/notion-mcp-server"
+      ],
+      "env": {
+        "NOTION_TOKEN": "$NOTION_TOKEN"
+      }
+    }
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "notify-permission",
+            "type": "command",
+            "command": "$GEMINI_PROJECT_DIR/.gemini/hooks/notify-permission.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "run_shell_command|run_command|bash|sh",
+        "hooks": [
+          {
+            "name": "block-dangerous-commands",
+            "type": "command",
+            "command": "$GEMINI_PROJECT_DIR/.gemini/hooks/block-dangerous-commands.js"
+          }
+        ]
+      }
+    ]
+  }
+}
