@@ -1,5 +1,15 @@
 {
   "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "$GITHUB_TOKEN"
+      }
+    },
     "chrome-devtools": {
       "command": "npx",
       "args": [
@@ -15,6 +25,18 @@
       "env": {
         "NOTION_TOKEN": "$NOTION_TOKEN"
       }
+    },
+    "firebase": {
+      "command": "npx",
+      "args": ["-y", "firebase-tools@latest", "mcp"]
+    },
+    "vibe_kanban": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "vibe-kanban@latest",
+        "--mcp"
+      ]
     }
   },
   "hooks": {
@@ -30,7 +52,7 @@
         ]
       }
     ],
-    "PreToolUse": [
+    "BeforeTool": [
       {
         "matcher": "run_shell_command|run_command|bash|sh",
         "hooks": [
