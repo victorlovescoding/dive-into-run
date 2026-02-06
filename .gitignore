@@ -57,3 +57,5 @@ firestore-debug.log*
 .codex/
 .opencode/
 .vscode/
+.gemini/hook_debug.log
+.gemini/.username
