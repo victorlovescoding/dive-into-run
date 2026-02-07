@@ -240,13 +240,14 @@ export async function fetchEventById(eventId) {
   return { id: snap.id, ...snap.data() };
 }
 
-// 取得下一頁活動（依 createdAt 由新到舊）
-// afterDoc: 上一頁最後一筆的 DocumentSnapshot（cursor）
-// 回傳：{ events, lastDoc }
 /**
- *
- * @param afterDoc
- * @param limitCount
+ * 取得下一頁活動（依 createdAt 由新到舊）。
+ * @param {import('firebase/firestore').QueryDocumentSnapshot} afterDoc - 上一頁最後一筆的 Snapshot（分頁游標）。
+ * @param {number} [limitCount] - 一次取得幾筆資料。
+ * @returns {Promise<{
+ *   events: object[],
+ *   lastDoc: import('firebase/firestore').QueryDocumentSnapshot|null
+ * }>} 活動列表與分頁 cursor。
  */
 export async function fetchNextEvents(afterDoc, limitCount = 10) {
   if (!afterDoc) {
@@ -261,9 +262,9 @@ export async function fetchNextEvents(afterDoc, limitCount = 10) {
   );
 
   const snap = await getDocs(q);
-  const events = snap.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
+  const events = snap.docs.map((snapshot) => ({
+    id: snapshot.id,
+    ...snapshot.data(),
   }));
 
   const lastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
