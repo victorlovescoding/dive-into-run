@@ -18,8 +18,18 @@ import { db } from '@/lib/firebase-client';
 // 將 UI 表單送出的 raw data 正規化成 Firestore 友善的 payload
 // 用意：把資料型別與資料清潔集中在 data layer，避免 UI 重複做轉換
 /**
- *
- * @param raw
+ * 將 UI 表單送出的 raw data 正規化成 Firestore 友善的 payload。
+ * 用意：把資料型別與資料清潔集中在 data layer，避免 UI 重複做轉換。
+ * @param {object} raw - 來自 UI 表單的原始資料物件。
+ * @param {string} raw.time - 活動時間 ISO 字串。
+ * @param {string} raw.registrationDeadline - 報名截止時間 ISO 字串。
+ * @param {string|number} raw.distanceKm - 距離（公里）。
+ * @param {string|number} [raw.maxParticipants] - 人數上限，預設 2。
+ * @param {string|number} raw.paceMinutes - 配速（分鐘）。
+ * @param {string|number} raw.paceSeconds - 配速（秒數）。
+ * @param {any} [raw.planRoute] - 路線規劃（未使用，將被濾除）。
+ * @returns {object} 正規化後的 Firestore payload，包含 Timestamp 物件與計算後的 paceSec。
+ * @throws {Error} 若必要欄位遺失或格式不正確。
  */
 export function normalizeEventPayload(raw) {
   if (!raw || typeof raw !== 'object') {
@@ -53,7 +63,8 @@ export function normalizeEventPayload(raw) {
   //    - 建立活動前在 data layer 統一轉換，避免 UI 到處重複算
   //    - paceSec 代表「每公里配速的秒數」
   const {
-    planRoute, paceMinutes, paceSeconds, ...rest
+    planRoute: _planRoute, // eslint-disable-line no-unused-vars
+    paceMinutes, paceSeconds, ...rest
   } = raw;
 
   const paceMin = Number(paceMinutes);
