@@ -18,7 +18,7 @@ description: 執行開發流程的第四步：技術實作規劃。當收到 `/s
     *   **Action**: 呼叫 `activate_skill` 啟用 `writing-plans`。
 
 2.  **整合資訊**:
-    *   **Input**: `specs/<feature>/spec.md` (需求)、`tests/` (驗收標準)、現有代碼結構。
+    *   **Input**: `specs/$(git branch --show-current)/spec.md` (需求)、`tests/$(git branch --show-current)/` (驗收標準)、現有代碼結構。
 
 3.  **制定技術細節 (Strict Rules)**:
     *   **規範對應 (Style Alignment)**: 規劃中的代碼片段與模組設計，必須明確符合 **Airbnb JavaScript 風格**。規劃時應主動讀取專案中的 `eslint.config.mjs`，核對函數定義與語法是否 100% 符合該設定。
@@ -26,7 +26,7 @@ description: 執行開發流程的第四步：技術實作規劃。當收到 `/s
     *   **品質門檻 (Quality Gates)**: 計畫中必須包含實作後的 `npm run lint` 掃描與測試驗證規劃。
 
 4.  **產出 Plan 檔案**:
-    *   **Path**: `specs/<feature>/plan.md`。
+    *   **Path**: `specs/$(git branch --show-current)/plan.md`。
 
 ## Plan.md 結構範本
 

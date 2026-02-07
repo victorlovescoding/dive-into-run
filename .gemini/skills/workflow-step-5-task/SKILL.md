@@ -15,7 +15,7 @@ description: 執行開發流程的第五步：任務拆解。當收到 `/speckit
     - 請第一時間回覆：「目前執行 workflow-step-5-task skill」。
 
 1.  **讀取 Plan**:
-    *   **Action**: 讀取 `specs/<feature>/plan.md`。
+    *   **Action**: 讀取 `specs/$(git branch --show-current)/plan.md`。
 
 2.  **拆解任務**:
     *   **Rule**: 每個任務應該是「原子化」的 (Atomic)，且 ideally 可在 1-2 小時內完成。
@@ -24,7 +24,7 @@ description: 執行開發流程的第五步：任務拆解。當收到 `/speckit
     *   **Format**: 必須包含明確的標題與驗收標準。
 
 3.  **產出 Tasks 檔案**:
-    *   **Path**: `specs/<feature>/tasks.md`。
+    *   **Path**: `specs/$(git branch --show-current)/tasks.md`。
 
 ## Tasks.md 結構範本
 
@@ -61,5 +61,5 @@ description: 執行開發流程的第五步：任務拆解。當收到 `/speckit
 *   **必須**在第一時間先回覆：'**目前正在做 workflow-step-5-task skill！！！**'.
 
 ### 1. 核心規範遵守 (Standard Compliance)
-*   **強制驗證**: 必須在 `tasks.md` 的每個主要功能章節末尾加入「執行 Lint 與測試」任務。
+*   **強制驗證**: 必須在 `specs/$(git branch --show-current)/tasks.md` 的每個主要功能章節末尾加入「執行 Lint 與測試」任務。
 *   **零容忍原則**: 驗收標準必須明確要求修復所有 Airbnb 風格與 JSDoc 的 warnings 與 errors。

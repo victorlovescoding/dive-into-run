@@ -29,7 +29,7 @@ description: 執行開發流程的第七步：任務執行監控。當 `workflow
     - **Repeat**: 提示使用者繼續下一個任務，或再次輸入「繼續」。
 
 3.  **若所有任務已完成**:
-    - **Action**: 在 `tasks.md` 檔案開頭加入（或更新）標記：`status: implementation_completed`。
+    - **Action**: 在 `specs/$(git branch --show-current)/tasks.md` 檔案開頭加入（或更新）標記：`status: implementation_completed`。
     - **重要**: 這讓 Workflow 知道實作已完成，準備進入 Verify。
 
 ## 結束

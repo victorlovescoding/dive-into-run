@@ -24,7 +24,7 @@ description: 執行開發流程的最後一步：代碼審查與提交。當 `wo
         - 🔴 **Needs improvement**: **禁止提交**。必須回到實作階段修正後，重新執行 Review。
 
 2.  **紀錄 Code Review 報告**:
-    *   **Action**: 在 `specs/<feature>/code-review.md` 紀錄審查結果。
+    *   **Action**: 在 `specs/$(git branch --show-current)/code-review.md` 紀錄審查結果。
     *   **內容規範**:
         - **若為 🔴**: 必須詳細紀錄問題點與預計修正方案。
         - **若為 🟢🟡**: 可選擇性紀錄重要的架構 Insights 或優化建議。
@@ -38,9 +38,9 @@ description: 執行開發流程的最後一步：代碼審查與提交。當 `wo
     - 將任務移動至 **Completed**。
 
 5.  **提交與結案**:
-    - **Command**: `git add . && git commit -m "feat(<feature>): complete feature and finalize after review"`
+    - **Command**: `git add . && git commit -m "feat($(git branch --show-current)): complete feature and finalize after review"`
     - **範例**: `git commit -m "feat(001-event-filtering): 實作活動篩選功能與最終優化"`
-    - **Action**: 在 `specs/<feature>/spec.md` 的最上方標記：`status: completed`。
+    - **Action**: 在 `specs/$(git branch --show-current)/spec.md` 的最上方標記：`status: completed`。
     - **重要**: 這標誌著整個 Feature 的結束。
 
 ## 結束
