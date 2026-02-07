@@ -2,7 +2,7 @@
 
 **Feature Branch**: `002-jsdoc-refactor`  
 **Created**: 2026-02-07  
-**Status**: Draft  
+**Status**: Completed  
 **Input**: User description: "我想針對@src/lib/firebase-events.js 進行符合現有coding style和JSDoc規則的重構 請參考@prd/002-jsdoc-refactor/firebase-events-issues.md 這裡面有所有需要改的錯誤 並且參考和@src/lib/firebase-events.js 有關連的檔案以利撰寫JSDoc 分支名稱請叫做「002-jsdoc-refactor」"
 
 ## User Scenarios & Testing *(mandatory)*
