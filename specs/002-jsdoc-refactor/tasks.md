@@ -1,6 +1,6 @@
 # Tasks for JSDoc Refactor (002-jsdoc-refactor)
 
-status: pending
+status: kanban_synced
 
 ## 1. Refactor Write Operations
 - [ ] Task: Refactor `normalizeEventPayload`
