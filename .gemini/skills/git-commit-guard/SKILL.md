@@ -1,6 +1,6 @@
 ---
 name: git-commit-guard
-description: Guide for creating effective git commit messages and ensuring proper commit timing based on best practices. Use this skill when the user wants to commit code, asks about commit message conventions, or asks about when/how to commit.
+description: Mandatory Git safety guard. MUST be activated before ANY commit action (e.g., "打commit", "commit changes") OR when evaluating if a commit is needed (e.g., "有沒有需要打commit", "可以 commit 嗎"). Enforces project-specific formatting (50/72 rule), atomic commits, and proper timing. Use whenever the user requests to commit, wrap up a feature, asks if a commit is necessary, or asks for commit advice.
 ---
 
 # Git Commit Guard
