@@ -280,14 +280,16 @@ export async function fetchNextEvents(afterDoc, limitCount = 10) {
 
 // ====== 參加活動 / 退出活動（transaction，避免多人搶名額超賣） ======
 
-// 參加活動
-// - 會在 events/{eventId}/participants/{uid} 建立一筆參加者資料（docId = uid，天然避免重複）
-// - 同一個 transaction 內把 events/{eventId}.remainingSeats -1、participantsCount +1
-// 回傳：{ ok: true, status: 'joined' | 'already_joined' } 或 { ok:false, status:'full' }
 /**
- *
- * @param eventId
- * @param user
+ * 參加活動。
+ * - 於 events/{eventId}/participants/{uid} 建立參加者資料。
+ * - 使用 Transaction 更新 remainingSeats 與 participantsCount。
+ * @param {string} eventId - 活動 ID。
+ * @param {object} user - 使用者物件。
+ * @param {string} user.uid - 使用者 ID。
+ * @param {string} [user.name] - 使用者名稱。
+ * @param {string} [user.photoURL] - 使用者大頭貼。
+ * @returns {Promise<{ok: boolean, status: 'joined'|'already_joined'|'full'}>} 執行結果。
  */
 export async function joinEvent(eventId, user) {
   if (!eventId) throw new Error('joinEvent: eventId is required');
@@ -342,14 +344,14 @@ export async function joinEvent(eventId, user) {
   return result;
 }
 
-// 退出活動
-// - 會刪除 events/{eventId}/participants/{uid}
-// - 同一個 transaction 內把 remainingSeats +1、participantsCount -1
-// 回傳：{ ok:true, status:'left' | 'not_joined' }
 /**
- *
- * @param eventId
- * @param user
+ * 退出活動。
+ * - 刪除 events/{eventId}/participants/{uid}。
+ * - 使用 Transaction 更新 remainingSeats 與 participantsCount。
+ * @param {string} eventId - 活動 ID。
+ * @param {object} user - 使用者物件。
+ * @param {string} user.uid - 使用者 ID。
+ * @returns {Promise<{ok: boolean, status: 'left'|'not_joined'}>} 執行結果。
  */
 export async function leaveEvent(eventId, user) {
   if (!eventId) throw new Error('leaveEvent: eventId is required');
