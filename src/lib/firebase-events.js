@@ -90,24 +90,29 @@ export function normalizeEventPayload(raw) {
   };
 }
 
-// 建立活動（寫入 Firestore）
-// raw: UI 表單資料（Object.fromEntries(formData.entries())）
-// extra: 由 UI 組裝的額外欄位（例如 pace/host/route）
 /**
- *
- * @param raw
- * @param extra
+ * 建立活動（寫入 Firestore）。
+ * @param {object} raw - UI 表單資料 (例如 from Object.fromEntries)。
+ * @param {object} [extra] - 由 UI 組裝的額外欄位（例如 host/route 等）。
+ * @param {any} [extra.pace] - 濾除欄位。
+ * @param {any} [extra.paceText] - 濾除欄位。
+ * @param {any} [extra.paceMinutes] - 濾除欄位。
+ * @param {any} [extra.paceSeconds] - 濾除欄位。
+ * @param {any} [extra.paceSec] - 濾除欄位 (避免衝突)。
+ * @returns {Promise<import('firebase/firestore').DocumentReference>} 新建立的活動文件參照。
  */
 export async function createEvent(raw, extra = {}) {
   // ✅ 安全起見：不讓 UI 傳進來的字串 pace 混進資料庫（Firestore 只存 paceSec）
+  /* eslint-disable no-unused-vars */
   const {
-    pace,
-    paceText,
-    paceMinutes,
-    paceSeconds,
+    pace: _pace,
+    paceText: _paceText,
+    paceMinutes: _paceMinutes,
+    paceSeconds: _paceSeconds,
     paceSec: _paceSec,
     ...extraRest
   } = extra || {};
+  /* eslint-enable no-unused-vars */
 
   const payload = {
     ...normalizeEventPayload(raw),
