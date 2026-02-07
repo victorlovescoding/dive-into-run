@@ -27,7 +27,7 @@ import { db } from '@/lib/firebase-client';
  * @param {string|number} [raw.maxParticipants] - 人數上限，預設 2。
  * @param {string|number} raw.paceMinutes - 配速（分鐘）。
  * @param {string|number} raw.paceSeconds - 配速（秒數）。
- * @param {any} [raw.planRoute] - 路線規劃（未使用，將被濾除）。
+ * @param {unknown} [raw.planRoute] - 路線規劃（未使用，將被濾除）。
  * @returns {object} 正規化後的 Firestore payload，包含 Timestamp 物件與計算後的 paceSec。
  * @throws {Error} 若必要欄位遺失或格式不正確。
  */
@@ -94,11 +94,11 @@ export function normalizeEventPayload(raw) {
  * 建立活動（寫入 Firestore）。
  * @param {object} raw - UI 表單資料 (例如 from Object.fromEntries)。
  * @param {object} [extra] - 由 UI 組裝的額外欄位（例如 host/route 等）。
- * @param {any} [extra.pace] - 濾除欄位。
- * @param {any} [extra.paceText] - 濾除欄位。
- * @param {any} [extra.paceMinutes] - 濾除欄位。
- * @param {any} [extra.paceSeconds] - 濾除欄位。
- * @param {any} [extra.paceSec] - 濾除欄位 (避免衝突)。
+ * @param {unknown} [extra.pace] - 濾除欄位。
+ * @param {unknown} [extra.paceText] - 濾除欄位。
+ * @param {unknown} [extra.paceMinutes] - 濾除欄位。
+ * @param {unknown} [extra.paceSeconds] - 濾除欄位。
+ * @param {unknown} [extra.paceSec] - 濾除欄位 (避免衝突)。
  * @returns {Promise<import('firebase/firestore').DocumentReference>} 新建立的活動文件參照。
  */
 export async function createEvent(raw, extra = {}) {
