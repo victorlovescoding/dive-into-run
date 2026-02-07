@@ -125,12 +125,14 @@ export async function createEvent(raw, extra = {}) {
   return docRef;
 }
 
-// 取得最新的活動列表（依 createdAt 由新到舊）
-// 回傳：{ events, lastDoc }
-// 用意：讓 UI 不直接碰 Firestore 查詢，統一走 data layer
 /**
- *
- * @param limitCount
+ * 取得最新的活動列表（依 createdAt 由新到舊）。
+ * 用意：讓 UI 不直接碰 Firestore 查詢，統一走 data layer。
+ * @param {number} [limitCount] - 一次取得幾筆資料。
+ * @returns {Promise<{
+ *   events: object[],
+ *   lastDoc: import('firebase/firestore').QueryDocumentSnapshot|null
+ * }>} 活動列表與分頁 cursor。
  */
 export async function fetchLatestEvents(limitCount = 10) {
   const q = query(
@@ -140,9 +142,9 @@ export async function fetchLatestEvents(limitCount = 10) {
   );
 
   const snap = await getDocs(q);
-  const events = snap.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
+  const events = snap.docs.map((snapshot) => ({
+    id: snapshot.id,
+    ...snapshot.data(),
   }));
 
   const lastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
