@@ -152,10 +152,18 @@ export async function fetchLatestEvents(limitCount = 10) {
 }
 
 /**
- * 混合式查詢活動 (MVP)
- * 1. Firestore 層級: city, district, time (範圍)
- * 2. 記憶體層級: distanceKm (容差), remainingSeats
- * @param filters
+ * 混合式查詢活動 (MVP)。
+ * 1. Firestore 層級: city, district, time (範圍)。
+ * 2. 記憶體層級: distanceKm (容差), remainingSeats。
+ * @param {object} [filters] - 篩選條件。
+ * @param {string} [filters.city] - 縣市。
+ * @param {string} [filters.district] - 行政區。
+ * @param {string} [filters.startTime] - 開始時間 (ISO)。
+ * @param {string} [filters.endTime] - 結束時間 (ISO)。
+ * @param {number|string} [filters.minDistance] - 最小距離。
+ * @param {number|string} [filters.maxDistance] - 最大距離。
+ * @param {boolean} [filters.hasSeatsOnly] - 是否只顯示有名額的活動。
+ * @returns {Promise<object[]>} 符合條件的活動列表。
  */
 export async function queryEvents(filters = {}) {
   const {
@@ -224,11 +232,10 @@ export async function queryEvents(filters = {}) {
   return results;
 }
 
-// 取得單一活動（用 eventId 讀 events/{id}）
-// 回傳：{ id, ...data } 或 null（找不到）
 /**
- *
- * @param eventId
+ * 取得單一活動（用 eventId 讀 events/{id}）。
+ * @param {string} eventId - 活動 ID。
+ * @returns {Promise<object|null>} 活動資料（包含 ID），若找不到則回傳 null。
  */
 export async function fetchEventById(eventId) {
   if (!eventId) return null;
