@@ -399,12 +399,11 @@ export async function leaveEvent(eventId, user) {
   return result;
 }
 
-// 取得某個活動的參加者名單
-// 回傳：participants Array<{ uid, name, photoURL, eventId, joinedAt }>
 /**
- *
- * @param eventId
- * @param limitCount
+ * 取得某個活動的參加者名單。
+ * @param {string} eventId - 活動 ID。
+ * @param {number} [limitCount] - 最大回傳數量。
+ * @returns {Promise<object[]>} 參加者列表 Array<{ uid, name, photoURL, eventId, joinedAt }>。
  */
 export async function fetchParticipants(eventId, limitCount = 50) {
   if (!eventId) throw new Error('fetchParticipants: eventId is required');
@@ -424,13 +423,12 @@ export async function fetchParticipants(eventId, limitCount = 50) {
   }));
 }
 
-// 取得「我在這批 eventIds 裡面哪些已經參加」
-// 用意：events 列表一次抓 10 筆活動時，避免 N+1 查詢
-// 回傳：Set<string>（已參加的 eventId 集合）
 /**
- *
- * @param uid
- * @param eventIds
+ * 取得「我在這批 eventIds 裡面哪些已經參加」。
+ * 用意：events 列表一次抓 10 筆活動時，避免 N+1 查詢。
+ * @param {string} uid - 使用者 ID。
+ * @param {string[]} eventIds - 活動 ID 列表。
+ * @returns {Promise<Set<string>>} 已參加的 eventId 集合。
  */
 export async function fetchMyJoinedEventsForIds(uid, eventIds) {
   if (!uid) return new Set();
