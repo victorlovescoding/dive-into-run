@@ -1,3 +1,4 @@
+status: kanban_synced
 # Tasks for Strict Type Fixes
 
 ## 1. Type Refactoring
