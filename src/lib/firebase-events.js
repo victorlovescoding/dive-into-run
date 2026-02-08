@@ -1,7 +1,7 @@
 import {
   addDoc,
   collection,
-  Timestamp,
+  Timestamp as FirestoreTimestamp,
   getDocs,
   getDoc,
   doc,
@@ -14,6 +14,38 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 import { db } from './firebase-client';
+
+/**
+ * @typedef {FirestoreTimestamp} Timestamp
+ * @typedef {import('firebase/firestore').DocumentData} DocumentData
+ * @typedef {import('firebase/firestore').QueryDocumentSnapshot} QueryDocumentSnapshot
+ * @typedef {import('firebase/firestore').DocumentReference} DocumentReference
+ * @typedef {import('firebase/firestore').CollectionReference} CollectionReference
+ * @typedef {import('firebase/firestore').QueryConstraint} QueryConstraint
+ * @typedef {import('firebase/firestore').QueryFieldFilterConstraint} QueryFieldFilterConstraint
+ * @typedef {import('firebase/firestore').QueryOrderByConstraint} QueryOrderByConstraint
+ * @typedef {import('firebase/firestore').QueryLimitConstraint} QueryLimitConstraint
+ */
+
+/**
+ * @typedef {Object} EventData
+ * @property {string} [id]
+ * @property {string} city
+ * @property {string} district
+ * @property {Timestamp} time
+ * @property {Timestamp} registrationDeadline
+ * @property {number} distanceKm
+ * @property {number} maxParticipants
+ * @property {number} [participantsCount]
+ * @property {number} [remainingSeats]
+ * @property {number} paceSec
+ * @property {Timestamp} [createdAt]
+ * @property {string} [hostId]
+ * @property {string} [title]
+ * @property {string} [location]
+ * @property {string} [description]
+ * @property {string} [routeImage]
+ */
 
 // 將 UI 表單送出的 raw data 正規化成 Firestore 友善的 payload
 // 用意：把資料型別與資料清潔集中在 data layer，避免 UI 重複做轉換
@@ -44,8 +76,8 @@ export function normalizeEventPayload(raw) {
     throw new Error('活動時間或報名截止時間格式不正確');
   }
 
-  const time = Timestamp.fromDate(timeDate);
-  const registrationDeadline = Timestamp.fromDate(deadlineDate);
+  const time = FirestoreTimestamp.fromDate(timeDate);
+  const registrationDeadline = FirestoreTimestamp.fromDate(deadlineDate);
 
   // 2) distanceKm / maxParticipants：字串 -> number
   const distanceKm = Number(raw.distanceKm);
@@ -184,10 +216,10 @@ export async function queryEvents(filters = {}) {
 
   // 時間篩選
   if (startTime) {
-    constraints.push(where('time', '>=', Timestamp.fromDate(new Date(startTime))));
+    constraints.push(where('time', '>=', FirestoreTimestamp.fromDate(new Date(startTime))));
   }
   if (endTime) {
-    constraints.push(where('time', '<=', Timestamp.fromDate(new Date(endTime))));
+    constraints.push(where('time', '<=', FirestoreTimestamp.fromDate(new Date(endTime))));
   }
 
   // 排序：預設依活動時間 (time) 由新到舊 (desc)
@@ -196,7 +228,8 @@ export async function queryEvents(filters = {}) {
 
   const q = query(...constraints);
   const snap = await getDocs(q);
-  let results = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  /** @type {EventData[]} */
+  let results = snap.docs.map((d) => ({ id: d.id, .../** @type {EventData} */(d.data()) }));
 
   // --- Stage 2: In-Memory Filtering (Secondary Filters) ---
 
