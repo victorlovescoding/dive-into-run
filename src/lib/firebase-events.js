@@ -208,7 +208,9 @@ export async function queryEvents(filters = {}) {
     hasSeatsOnly,
   } = filters;
 
-  const constraints = [collection(db, 'events')];
+  const eventsRef = collection(db, 'events');
+  /** @type {QueryConstraint[]} */
+  const constraints = [];
 
   // --- Stage 1: Firestore Queries (Time Range Only) ---
   // 為了避免複雜的複合索引問題 (如 city + time 索引)，我們將地點篩選移至記憶體 (Stage 2)
@@ -226,7 +228,7 @@ export async function queryEvents(filters = {}) {
   constraints.push(orderBy('time', 'desc'));
   constraints.push(limit(50));
 
-  const q = query(...constraints);
+  const q = query(eventsRef, ...constraints);
   const snap = await getDocs(q);
   /** @type {EventData[]} */
   let results = snap.docs.map((d) => ({ id: d.id, .../** @type {EventData} */(d.data()) }));
