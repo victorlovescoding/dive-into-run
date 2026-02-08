@@ -1,6 +1,6 @@
 ---
 name: workflow-step-3-tdd
-description: 執行開發流程的第三步：測試驅動開發 (TDD)。當 `workflow-orchestrator` 指示進入 TDD 階段時使用。負責撰寫 Unit Tests, Integration Tests 與 E2E Tests。
+description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能測試、Bug 修復測試，或執行開發流程第三步 (Step 3) 時使用。此 Skill 是專案中 TDD 的唯一權威來源。
 ---
 
 # Step 3: Test Driven Development (TDD)
@@ -12,8 +12,22 @@ description: 執行開發流程的第三步：測試驅動開發 (TDD)。當 `wo
 0.  **狀態報告 (Start)**:
     - 請第一時間回覆：「目前執行 workflow-step-3-tdd skill」。
 
-1.  **啟用 TDD Skill**:
-    *   **Action**: 無需使用者介入。Agent 應自動呼叫 `view_file` 讀取並遵循 `.gemini/skills/test-driven-development/SKILL.md` 的指引。
+1.  **TDD Core Principles (The Iron Law)**:
+    *   **NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST.**
+    *   **Verify Red**: 必須親眼看到測試失敗（證明測試能抓到錯誤）。
+    *   **Verify Green**: 寫最少量的代碼讓測試通過。
+    *   **Refactor**: 在 Green 狀態下重構，保持測試通過。
+    *   **Anti-patterns**: 
+        -   先寫 Code 再補測試 (False TDD)。
+        -   一次寫一堆測試再實作 (Batch Testing)。
+        -   測試過於依賴 Mock 而不測試真實行為。
+    *   **Rationalization Prevention**: 
+        -   **禁止**以「功能簡單」、「時間緊迫」或「已有手動測試」為由跳過此階段。
+        -   **Iron Law**: No Production Code Without A Failing Test First. 違者視為違反核心價值。
+
+1.5 **測試品質防線 (Quality Gate)**:
+    *   **Action**: 在開始撰寫測試前，**必須先執行 `view_file` 讀取並理解 `.gemini/skills/workflow-step-3-tdd/references/testing-anti-patterns.md`**。
+    *   **Iron Rule**: 嚴格遵守「三不原則」：不測試 Mock 行為、不污染生產代碼、不使用不完整 Mock。
 
 2.  **分析 Spec**:
     *   **Action**: 根據 `specs/$(git branch --show-current)/spec.md` 的 User Stories 和驗收標準，列出需要的測試案例。
@@ -41,8 +55,11 @@ description: 執行開發流程的第三步：測試驅動開發 (TDD)。當 `wo
             1. **Locators**: 優先使用 `page.getByRole`, `page.getByText`。禁止使用脆弱的 CSS selector。
             2. **Stability**: **嚴格禁止使用 `page.waitForTimeout()`**。必須使用 Playwright 的自動等待特性與 Assertions。
 
-5.  **驗證測試 (Red)**:
+4.  **驗證測試 (Red)**:
     *   **Action**: 執行測試指令，確認它們**失敗** (因為功能尚未實作)。
+    *   **Strict Check**: 必須確認測試失敗是因為 **Assertion Error (功能未實作)**，而非 **Syntax Error / Reference Error**。
+        -   ❌ `ReferenceError: x is not defined` (這是你的測試寫錯了，修好它)
+        -   ✅ `AssertionError: expected 'success' but got undefined` (這才是有效的 RED)
     *   **Commands**:
         - Unit: `mkdir -p test-results/$(git branch --show-current)/unit && npx vitest run tests/$(git branch --show-current)/unit --reporter=junit --outputFile=test-results/$(git branch --show-current)/unit/results.xml`
         - Integration: `mkdir -p test-results/$(git branch --show-current)/integration && npx vitest run tests/$(git branch --show-current)/integration --reporter=junit --outputFile=test-results/$(git branch --show-current)/integration/results.xml`
