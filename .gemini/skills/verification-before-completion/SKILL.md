@@ -47,6 +47,7 @@ Skip any step = lying, not verifying
 |-------|----------|----------------|
 | Tests pass | Test command output: 0 failures | Previous run, "should pass" |
 | Linter clean | Linter output: 0 errors | Partial check, extrapolation |
+| Type check clean | `npm run type-check`: 0 errors | Linter passing, no runtime errors |
 | Build succeeds | Build command: exit 0 | Linter passing, logs look good |
 | Bug fixed | Test original symptom: passes | Code changed, assumed fixed |
 | Regression test works | Red-green cycle verified | Test passes once |
@@ -95,6 +96,12 @@ Skip any step = lying, not verifying
 ```
 ✅ [Run build] [See: exit 0] "Build passes"
 ❌ "Linter passed" (linter doesn't check compilation)
+```
+
+**Type Check:**
+```
+✅ [Run type-check] [See: 0 errors] "Type check passed"
+❌ "It's just JavaScript" (JSDoc errors are real bugs)
 ```
 
 **Requirements:**

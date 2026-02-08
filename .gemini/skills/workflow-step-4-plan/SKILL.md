@@ -47,10 +47,15 @@ description: 執行開發流程的第四步：技術實作規劃。當收到 `/s
 ## 4. 品質保證與規範 (MANDATORY)
 - [ ] **風格規範**: 遵循憲法 Principle VI (Airbnb Style)。
 - [ ] **JSDoc 契約**: 已在「技術細節」區塊預先定義所有函數的參數與型別。
-- [ ] **驗收門檻**: 此計畫包含實作後的 `npm run lint` 掃描與 Vitest 測試驗證。
+- [ ] **驗收門檻**: 此計畫包含實作後的 `npm run lint` 掃描、`npm run type-check` (0 errors) 與 Vitest 測試驗證。
 
 ## 5. Step-by-Step Implementation Guide
-(詳細的步驟，供 Step 5 拆解任務用)
+(詳細的步驟，供 Step 5 拆解任務用。必須採用 **Bite-Sized TDD Granularity**，每個功能實作都應包含：)
+- **Step 1: Write failing test** (Red)
+- **Step 2: Run test to confirm failure** (Red)
+- **Step 3: Implement minimal code** (Green)
+- **Step 4: Run test to confirm pass** (Green)
+- **Step 5: Refactor & Commit** (Refactor)
 ```
 
 ## 下一步

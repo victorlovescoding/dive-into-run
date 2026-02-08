@@ -13,12 +13,30 @@ description: 執行開發流程的最後一步：代碼審查與提交。當 `wo
     - 請第一時間回覆：「目前執行 workflow-step-9-review skill」。
 
 1.  **AI 自動化審查 (Linus Mode)**:
-    *   **取得變更**: 執行 `git diff <base_branch>...HEAD` (預設 `main`，若為 Stacked Branch 則選擇上一層分支) 以檢視本 Feature 的所有異動。
+    *   **取得變更**: 
+        - **SHA Calculation**:
+          ```bash
+          # 若為 Feature Branch，找出 Base SHA
+          BASE_SHA=$(git log --oneline | grep "Task 1" | head -1 | awk '{print $1}') # Advanced
+          # 或者簡單地
+          BASE_SHA=$(git rev-parse main) # Simple
+          HEAD_SHA=$(git rev-parse HEAD)
+          ```
+        - 執行 `git diff $BASE_SHA...$HEAD_SHA` 以檢視本 Feature 的所有異動。
     *   **Action**: 啟用 `codereview-roasted` Skill。
+    *   **Template**: 使用以下結構發送 Review Request (Internal Monologue):
+        ```
+        WHAT_WAS_IMPLEMENTED: [Summary of changes]
+        PLAN_OR_REQUIREMENTS: [Link to spec.md]
+        BASE_SHA: $BASE_SHA
+        HEAD_SHA: $HEAD_SHA
+        DESCRIPTION: [Detailed description for Linus]
+        ```
     *   **指令**: 「請針對本次變更進行毒舌 Review。除了你的核心原則外，請務必嚴格檢查是否符合以下 **測試法規**：
         1. **Unit**: 必須有 AAA 註解，禁止使用 DOM。
         2. **Integration**: 必須使用三劍客與 user-event，禁止 fireEvent。
-        3. **E2E**: 禁止 waitForTimeout，必須使用 Web-first assertions。」
+        3. **E2E**: 禁止 waitForTimeout，必須使用 Web-first assertions。
+        4. **Type Safety**: 必須通過 `npm run type-check` (0 errors)。」
     *   **判定標準**:
         - 🟢 **Good taste** / 🟡 **Acceptable**: 通過，可進入下一步。
         - 🔴 **Needs improvement**: **禁止提交**。必須回到實作階段修正後，重新執行 Review。
