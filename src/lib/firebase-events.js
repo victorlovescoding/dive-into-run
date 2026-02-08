@@ -13,7 +13,7 @@ import {
   serverTimestamp,
   runTransaction,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase-client';
+import { db } from './firebase-client';
 
 // 將 UI 表單送出的 raw data 正規化成 Firestore 友善的 payload
 // 用意：把資料型別與資料清潔集中在 data layer，避免 UI 重複做轉換
