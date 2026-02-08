@@ -47,6 +47,18 @@ import { db } from './firebase-client';
  * @property {string} [routeImage]
  */
 
+/**
+ * @typedef {Object} JoinResult
+ * @property {boolean} ok
+ * @property {'joined'|'already_joined'|'full'} status
+ */
+
+/**
+ * @typedef {Object} LeaveResult
+ * @property {boolean} ok
+ * @property {'left'|'not_joined'} status
+ */
+
 // 將 UI 表單送出的 raw data 正規化成 Firestore 友善的 payload
 // 用意：把資料型別與資料清潔集中在 data layer，避免 UI 重複做轉換
 /**
@@ -334,7 +346,7 @@ export async function joinEvent(eventId, user) {
   const eventRef = doc(db, 'events', eid);
   const participantRef = doc(db, 'events', eid, 'participants', String(user.uid));
 
-  const result = await runTransaction(db, async (tx) => {
+  const result = /** @type {JoinResult} */ (await runTransaction(db, async (tx) => {
     const eventSnap = await tx.get(eventRef);
     if (!eventSnap.exists()) {
       throw new Error('活動不存在');
@@ -374,7 +386,7 @@ export async function joinEvent(eventId, user) {
     });
 
     return { ok: true, status: 'joined' };
-  });
+  }));
 
   return result;
 }
@@ -396,7 +408,7 @@ export async function leaveEvent(eventId, user) {
   const eventRef = doc(db, 'events', eid);
   const participantRef = doc(db, 'events', eid, 'participants', String(user.uid));
 
-  const result = await runTransaction(db, async (tx) => {
+  const result = /** @type {LeaveResult} */ (await runTransaction(db, async (tx) => {
     const eventSnap = await tx.get(eventRef);
     if (!eventSnap.exists()) {
       throw new Error('活動不存在');
@@ -429,7 +441,7 @@ export async function leaveEvent(eventId, user) {
     });
 
     return { ok: true, status: 'left' };
-  });
+  }));
 
   return result;
 }
