@@ -13,7 +13,7 @@ description: 執行開發流程的最後一步：代碼審查與提交。當 `wo
     - 請第一時間回覆：「目前執行 workflow-step-9-review skill」。
 
 1.  **AI 自動化審查 (Linus Mode)**:
-    *   **取得變更**: 執行 `git diff main` 以檢視本 Feature 的所有異動。
+    *   **取得變更**: 執行 `git diff <base_branch>...HEAD` (預設 `main`，若為 Stacked Branch 則選擇上一層分支) 以檢視本 Feature 的所有異動。
     *   **Action**: 啟用 `codereview-roasted` Skill。
     *   **指令**: 「請針對本次變更進行毒舌 Review。除了你的核心原則外，請務必嚴格檢查是否符合以下 **測試法規**：
         1. **Unit**: 必須有 AAA 註解，禁止使用 DOM。

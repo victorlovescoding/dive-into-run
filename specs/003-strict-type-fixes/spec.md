@@ -1,5 +1,6 @@
 # Feature Specification: Strict Type Fixes
 
+status: completed
 **Feature Branch**: `003-strict-type-fixes`
 **Created**: 2026-02-08
 **Status**: Draft
