@@ -61,7 +61,8 @@ If I ask for adjustments to code I have provided you, do not repeat all of my co
 - **Linter**: ESLint 9 (configured in `eslint.config.mjs`)
 - **Style Guide**: Airbnb Base + React Hooks (via `FlatCompat`)
 - **Type Checking**: Enabled via `jsconfig.json` (`checkJs: true`) using JSDoc.
-    - **Strict JSDoc & Type Safety**: Any new or modified function MUST include complete JSDoc. Strictly FORBIDDEN to claim task completion if `type-check` fails. If an external library type issue is unresolvable, you MUST use `@ts-expect-error` with a comment explaining the reason. DO NOT ignore errors silently.
+    - **Strict JSDoc & Type Safety**: Any new or modified function MUST include complete JSDoc. Strictly FORBIDDEN to claim task completion if `type-check` fails. 
+    - **No @ts-ignore**: Absolutely NO `@ts-ignore` allowed. If an external library type issue is unresolvable, you MUST use `@ts-expect-error` with a comment explaining the reason. DO NOT ignore errors silently.
 - **Documentation**: JSDoc required for all exported functions and components
 
 ## Testing Standards (Kent C. Dodds Style)
