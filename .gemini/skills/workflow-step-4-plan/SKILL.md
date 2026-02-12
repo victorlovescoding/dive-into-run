@@ -74,3 +74,4 @@ description: 執行開發流程的第四步：技術實作規劃。當收到 `/s
 *   **Airbnb 風格**: 規劃時必須確保所有代碼設計符合 Airbnb 風格與 `eslint.config.mjs` 設定。
 *   **JSDoc 契約**: 核心函數實作前，必須在計畫中預先定義完整 JSDoc 結構。
 *   **驗收機制**: 必須將 `npm run lint` 與測試驗證列為計畫的必要驗收門檻。
+*   **型別安全**: 計畫必須包含 `npm run type-check` (0 errors) 為必要條件，且**明確禁止**使用 `@ts-ignore`。

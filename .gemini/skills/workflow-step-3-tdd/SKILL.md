@@ -58,6 +58,7 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
 4.  **驗證測試 (Red)**:
     *   **Action**: 執行測試指令，確認它們**失敗** (因為功能尚未實作)。
     *   **Strict Check**: 必須確認測試失敗是因為 **Assertion Error (功能未實作)**，而非 **Syntax Error / Reference Error**。
+        -   ✅ `npm run type-check` 必須通過 (0 errors)，且禁止使用 `@ts-ignore`。
         -   ❌ `ReferenceError: x is not defined` (這是你的測試寫錯了，修好它)
         -   ✅ `AssertionError: expected 'success' but got undefined` (這才是有效的 RED)
     *   **Commands**:

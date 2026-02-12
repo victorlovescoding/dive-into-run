@@ -23,7 +23,11 @@ description: 執行開發流程的第七步：任務執行監控。當 `workflow
     - **Action**: 挑選一個 `todo` 或 `inprogress` 的任務。
     - **若為修復任務**: 建議啟用 `systematic-debugging` Skill 輔助診斷根因。
     - **Action**: 開始 Coding / TDD 循環。
-    - **Action**: **[原子化提交]** 任務完成後，**必須**執行 `npm run type-check` 確保無誤，且測試通過時，才執行 Commit。
+    - **Action**: **[原子化提交]** 任務完成後，**必須且強制**執行以下檢查，全部通過才可 Commit：
+        1. `npm run type-check` (Must have 0 errors)
+        2. `grep -r "@ts-ignore" src` (Must be empty, 0 items)
+        3. `npm run test` (Must pass all tests)
+        4. `npx playwright test` (If applicable / has E2E tests)
         - **Standards**: 參考 `git-commit-guard` 規範撰寫 Message。
         - **Commit Format**:
             - **正常開發**: `feat(<feature>): <task-description>`

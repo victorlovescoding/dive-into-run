@@ -32,14 +32,19 @@ description: 執行開發流程的最後一步：代碼審查與提交。當 `wo
         HEAD_SHA: $HEAD_SHA
         DESCRIPTION: [Detailed description for Linus]
         ```
-    *   **指令**: 「請針對本次變更進行毒舌 Review。除了你的核心原則外，請務必嚴格檢查是否符合以下 **測試法規**：
+    *   **指令**: 「請針對本次變更進行毒舌 Review。除了你的核心原則外，請務必嚴格檢查是否符合以下 **測試與規範法規**：
         1. **Unit**: 必須有 AAA 註解，禁止使用 DOM。
         2. **Integration**: 必須使用三劍客與 user-event，禁止 fireEvent。
         3. **E2E**: 禁止 waitForTimeout，必須使用 Web-first assertions。
-        4. **Type Safety**: 必須通過 `npm run type-check` (0 errors)。」
+        4. **Coding Standards (Mandatory)**:
+            - **ESLint**: 必須符合 Airbnb 與 Next.js 規範 (0 warnings)。
+            - **JSDoc**: 所有 Export 函數必須有完整 JSDoc。
+            - **Type Safety**: 必須通過 `npm run type-check` (0 errors)。
+            - **No Cheating**: 嚴禁使用 `@ts-ignore`。」
     *   **判定標準**:
         - 🟢 **Good taste** / 🟡 **Acceptable**: 通過，可進入下一步。
         - 🔴 **Needs improvement**: **禁止提交**。必須回到實作階段修正後，重新執行 Review。
+        - 🔴 **Reject**: 若發現程式碼包含 `@ts-ignore`，**直接拒絕**並要求移除。
 
 2.  **紀錄 Code Review 報告**:
     *   **Action**: 在 `specs/$(git branch --show-current)/code-review.md` 紀錄審查結果。
