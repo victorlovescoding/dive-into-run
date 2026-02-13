@@ -64,6 +64,7 @@ If I ask for adjustments to code I have provided you, do not repeat all of my co
     - **Strict JSDoc & Type Safety**: Any new or modified function MUST include complete JSDoc. Strictly FORBIDDEN to claim task completion if `type-check` fails. 
     - **No @ts-ignore**: Absolutely NO `@ts-ignore` allowed. If an external library type issue is unresolvable, you MUST use `@ts-expect-error` with a comment explaining the reason. DO NOT ignore errors silently.
 - **Documentation**: JSDoc required for all exported functions and components
+- **E2E**: Playwright (configured in `playwright.config.mjs`, Chromium only)
 
 ## Testing Standards (Kent C. Dodds Style)
 - **Structure**: `tests/<feature-name>/[unit | integration | e2e]/`
@@ -99,4 +100,5 @@ If I ask for adjustments to code I have provided you, do not repeat all of my co
 - `.gemini/`: CLI configuration, settings, and hooks.
 - `.gemini/skills/`: Active Agent Skills (use `activate_skill` to load specialized instructions).
 - `src/lib/`: Service layer and business logic (Firebase interactions).
+- `src/lib/event-helpers.js`: 純邏輯 helper functions（formatPace, buildRoutePayload 等），從 page.jsx 抽出。
 - `src/app/`: Next.js App Router pages and layouts.
