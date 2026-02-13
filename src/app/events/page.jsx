@@ -4,8 +4,16 @@ import {
   useEffect, useState, useContext, useRef, useCallback,
 } from 'react';
 import dynamic from 'next/dynamic'; // 導入 dynamic
-import polyline from '@mapbox/polyline';
 import Link from 'next/link';
+import {
+  buildRoutePayload,
+  formatDateTime,
+  formatPace,
+  chunkArray,
+  toNumber,
+  getRemainingSeats,
+  buildUserPayload,
+} from '@/lib/event-helpers';
 import { AuthContext } from '@/contexts/AuthContext';
 import styles from './events.module.css';
 import {
@@ -410,122 +418,6 @@ const taiwanLocations = {
   連江縣: ['南竿鄉', '北竿鄉', '莒光鄉', '東引鄉'],
 };
 // #endregion taiwanLocations
-
-// 將地圖繪製的座標點 [{lat,lng}, ...] 壓縮成 encoded polyline 字串
-/**
- *
- * @param routeCoordinates
- */
-function buildRoutePayload(routeCoordinates) {
-  if (!Array.isArray(routeCoordinates) || routeCoordinates.length === 0) return null;
-
-  const points = routeCoordinates.map((p) => [Number(p.lat), Number(p.lng)]);
-  if (points.some(([lat, lng]) => Number.isNaN(lat) || Number.isNaN(lng))) return null;
-
-  const encoded = polyline.encode(points);
-
-  let minLat = points[0][0];
-  let maxLat = points[0][0];
-  let minLng = points[0][1];
-  let maxLng = points[0][1];
-
-  for (const [lat, lng] of points) {
-    if (lat < minLat) minLat = lat;
-    if (lat > maxLat) maxLat = lat;
-    if (lng < minLng) minLng = lng;
-    if (lng > maxLng) maxLng = lng;
-  }
-
-  return {
-    polyline: encoded,
-    pointsCount: points.length,
-    bbox: {
-      minLat, minLng, maxLat, maxLng,
-    },
-  };
-}
-
-/**
- *
- * @param value
- */
-function formatDateTime(value) {
-  if (!value) return '';
-
-  if (typeof value === 'string') return value.replace('T', ' ');
-
-  if (typeof value?.toDate === 'function') {
-    const d = value.toDate();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    return `${y}-${m}-${day} ${hh}:${mm}`;
-  }
-
-  return String(value);
-}
-
-/**
- *
- * @param paceSec
- * @param fallbackText
- */
-function formatPace(paceSec, fallbackText = '') {
-  const n = typeof paceSec === 'number' ? paceSec : Number(paceSec);
-  if (Number.isFinite(n) && n > 0) {
-    const mm = Math.floor(n / 60);
-    const ss = n % 60;
-    return `${mm}:${String(ss).padStart(2, '0')}`;
-  }
-  if (typeof fallbackText === 'string' && fallbackText.trim()) return fallbackText;
-  return '';
-}
-
-/**
- *
- * @param arr
- * @param size
- */
-function chunkArray(arr, size) {
-  const out = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-}
-
-/**
- *
- * @param v
- */
-function toNumber(v) {
-  const n = typeof v === 'number' ? v : Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
-
-/**
- *
- * @param ev
- */
-function getRemainingSeats(ev) {
-  if (typeof ev?.remainingSeats === 'number') return ev.remainingSeats;
-  const max = toNumber(ev?.maxParticipants);
-  const count = toNumber(ev?.participantsCount);
-  return Math.max(0, max - count);
-}
-
-/**
- *
- * @param user
- */
-function buildUserPayload(user) {
-  if (!user?.uid) return null;
-  return {
-    uid: String(user.uid),
-    name: String(user.name || (user.email ? user.email.split('@')[0] : '')),
-    photoURL: String(user.photoURL || ''),
-  };
-}
 
 /**
  *

@@ -1,0 +1,182 @@
+import polyline from '@mapbox/polyline';
+
+// #region JSDoc Type Definitions
+/**
+ * @typedef {Object} RoutePoint
+ * @property {number} lat
+ * @property {number} lng
+ */
+
+/**
+ * @typedef {Object} RouteBBox
+ * @property {number} minLat
+ * @property {number} minLng
+ * @property {number} maxLat
+ * @property {number} maxLng
+ */
+
+/**
+ * @typedef {Object} RoutePayload
+ * @property {string} polyline
+ * @property {number} pointsCount
+ * @property {RouteBBox} bbox
+ */
+
+/**
+ * @typedef {Object} FirestoreTimestamp
+ * @property {function(): Date} toDate
+ */
+
+/**
+ * @typedef {Object} EventData
+ * @property {string} id
+ * @property {string} title
+ * @property {string|FirestoreTimestamp} time
+ * @property {string|FirestoreTimestamp} registrationDeadline
+ * @property {string} city
+ * @property {string} district
+ * @property {string} meetPlace
+ * @property {number} distanceKm
+ * @property {number} paceSec
+ * @property {string} [pace]
+ * @property {number} maxParticipants
+ * @property {number} [participantsCount]
+ * @property {number} [remainingSeats]
+ * @property {string} hostUid
+ * @property {string} hostName
+ * @property {RoutePayload} [route]
+ * @property {RoutePoint[]} [routeCoordinates]
+ */
+
+/**
+ * @typedef {Object} UserPayload
+ * @property {string} uid
+ * @property {string} name
+ * @property {string} photoURL
+ */
+// #endregion JSDoc Type Definitions
+
+/**
+ * 將地圖繪製的座標點壓縮成 encoded polyline 字串
+ * @param {RoutePoint[] | null} routeCoordinates - 座標陣列
+ * @returns {RoutePayload | null} 壓縮後的路線資料，或 null
+ */
+export function buildRoutePayload(routeCoordinates) {
+  if (!Array.isArray(routeCoordinates) || routeCoordinates.length === 0) return null;
+
+  /** @type {[number, number][]} */
+  const points = routeCoordinates.map((p) => [Number(p.lat), Number(p.lng)]);
+  if (points.some(([lat, lng]) => Number.isNaN(lat) || Number.isNaN(lng))) return null;
+
+  const encoded = polyline.encode(points);
+
+  let minLat = points[0][0];
+  let maxLat = points[0][0];
+  let minLng = points[0][1];
+  let maxLng = points[0][1];
+
+  for (const [lat, lng] of points) {
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+    if (lng < minLng) minLng = lng;
+    if (lng > maxLng) maxLng = lng;
+  }
+
+  return {
+    polyline: encoded,
+    pointsCount: points.length,
+    bbox: {
+      minLat, minLng, maxLat, maxLng,
+    },
+  };
+}
+
+/**
+ * 格式化日期時間值（支援 string 或 Firestore Timestamp）
+ * @param {string | FirestoreTimestamp | null | undefined} value - 日期時間值
+ * @returns {string} 格式化後的日期字串
+ */
+export function formatDateTime(value) {
+  if (!value) return '';
+
+  if (typeof value === 'string') return value.replace('T', ' ');
+
+  if (typeof value?.toDate === 'function') {
+    const d = value.toDate();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${y}-${m}-${day} ${hh}:${mm}`;
+  }
+
+  return String(value);
+}
+
+/**
+ * 將秒數轉換為 MM:SS 配速格式
+ * @param {number | string} paceSec - 配速秒數
+ * @param {string} [fallbackText=''] - 無法轉換時的備用文字
+ * @returns {string} 格式化後的配速字串
+ */
+export function formatPace(paceSec, fallbackText = '') {
+  const n = typeof paceSec === 'number' ? paceSec : Number(paceSec);
+  if (Number.isFinite(n) && n > 0) {
+    const mm = Math.floor(n / 60);
+    const ss = n % 60;
+    return `${mm}:${String(ss).padStart(2, '0')}`;
+  }
+  if (typeof fallbackText === 'string' && fallbackText.trim()) return fallbackText;
+  return '';
+}
+
+/**
+ * 將陣列分割為指定大小的子陣列
+ * @template T
+ * @param {T[]} arr - 要分割的陣列
+ * @param {number} size - 每個子陣列的大小
+ * @returns {T[][]} 分割後的二維陣列
+ */
+export function chunkArray(arr, size) {
+  /** @type {T[][]} */
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+/**
+ * 安全地將值轉換為數字
+ * @param {*} v - 要轉換的值
+ * @returns {number} 轉換後的數字，無效值回傳 0
+ */
+export function toNumber(v) {
+  const n = typeof v === 'number' ? v : Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * 計算活動的剩餘名額
+ * @param {EventData} ev - 活動資料
+ * @returns {number} 剩餘名額數
+ */
+export function getRemainingSeats(ev) {
+  if (typeof ev?.remainingSeats === 'number') return ev.remainingSeats;
+  const max = toNumber(ev?.maxParticipants);
+  const count = toNumber(ev?.participantsCount);
+  return Math.max(0, max - count);
+}
+
+/**
+ * 建立使用者 payload
+ * @param {{ uid?: string, name?: string, email?: string, photoURL?: string } | null} user - 使用者物件
+ * @returns {UserPayload | null} 使用者 payload，或 null
+ */
+export function buildUserPayload(user) {
+  if (!user?.uid) return null;
+  return {
+    uid: String(user.uid),
+    name: String(user.name || (user.email ? user.email.split('@')[0] : '')),
+    photoURL: String(user.photoURL || ''),
+  };
+}

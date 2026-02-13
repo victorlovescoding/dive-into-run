@@ -65,9 +65,15 @@ export default [
         {
           devDependencies: [
             '**/*.test.js',
+            '**/*.test.jsx',
+            '**/*.test.mjs',
             '**/*.spec.js',
+            '**/*.spec.jsx',
+            '**/*.spec.mjs',
             '**/vitest.config.js',
+            '**/vitest.config.mjs',
             '**/playwright.config.js',
+            '**/playwright.config.mjs',
           ],
         },
       ],
