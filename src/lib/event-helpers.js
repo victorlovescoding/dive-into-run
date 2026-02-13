@@ -2,57 +2,57 @@ import polyline from '@mapbox/polyline';
 
 // #region JSDoc Type Definitions
 /**
- * @typedef {Object} RoutePoint
- * @property {number} lat
- * @property {number} lng
+ * @typedef {object} RoutePoint
+ * @property {number} lat - 緯度。
+ * @property {number} lng - 經度。
  */
 
 /**
- * @typedef {Object} RouteBBox
- * @property {number} minLat
- * @property {number} minLng
- * @property {number} maxLat
- * @property {number} maxLng
+ * @typedef {object} RouteBBox
+ * @property {number} minLat - 最小緯度。
+ * @property {number} minLng - 最小經度。
+ * @property {number} maxLat - 最大緯度。
+ * @property {number} maxLng - 最大經度。
  */
 
 /**
- * @typedef {Object} RoutePayload
- * @property {string} polyline
- * @property {number} pointsCount
- * @property {RouteBBox} bbox
+ * @typedef {object} RoutePayload
+ * @property {string} polyline - 壓縮後的路線字串。
+ * @property {number} pointsCount - 座標點數量。
+ * @property {RouteBBox} bbox - 邊界範圍。
  */
 
 /**
- * @typedef {Object} FirestoreTimestamp
- * @property {function(): Date} toDate
+ * @typedef {object} FirestoreTimestamp
+ * @property {function(): Date} toDate - 轉換為 Date 物件。
  */
 
 /**
- * @typedef {Object} EventData
- * @property {string} id
- * @property {string} title
- * @property {string|FirestoreTimestamp} time
- * @property {string|FirestoreTimestamp} registrationDeadline
- * @property {string} city
- * @property {string} district
- * @property {string} meetPlace
- * @property {number} distanceKm
- * @property {number} paceSec
- * @property {string} [pace]
- * @property {number} maxParticipants
- * @property {number} [participantsCount]
- * @property {number} [remainingSeats]
- * @property {string} hostUid
- * @property {string} hostName
- * @property {RoutePayload} [route]
- * @property {RoutePoint[]} [routeCoordinates]
+ * @typedef {object} EventData
+ * @property {string} id - 活動 ID。
+ * @property {string} title - 活動標題。
+ * @property {string|FirestoreTimestamp} time - 活動時間。
+ * @property {string|FirestoreTimestamp} registrationDeadline - 報名截止時間。
+ * @property {string} city - 縣市。
+ * @property {string} district - 區域。
+ * @property {string} meetPlace - 集合地點。
+ * @property {number} distanceKm - 距離（公里）。
+ * @property {number} paceSec - 配速秒數。
+ * @property {string} [pace] - 配速文字。
+ * @property {number} maxParticipants - 人數上限。
+ * @property {number} [participantsCount] - 目前參加人數。
+ * @property {number} [remainingSeats] - 剩餘名額。
+ * @property {string} hostUid - 主揪 UID。
+ * @property {string} hostName - 主揪名稱。
+ * @property {RoutePayload} [route] - 路線資料。
+ * @property {RoutePoint[]} [routeCoordinates] - 路線座標。
  */
 
 /**
- * @typedef {Object} UserPayload
- * @property {string} uid
- * @property {string} name
- * @property {string} photoURL
+ * @typedef {object} UserPayload
+ * @property {string} uid - 使用者 UID。
+ * @property {string} name - 使用者名稱。
+ * @property {string} photoURL - 大頭貼 URL。
  */
 // #endregion JSDoc Type Definitions
 
@@ -75,7 +75,8 @@ export function buildRoutePayload(routeCoordinates) {
   let minLng = points[0][1];
   let maxLng = points[0][1];
 
-  for (const [lat, lng] of points) {
+  for (let i = 0; i < points.length; i += 1) {
+    const [lat, lng] = points[i];
     if (lat < minLat) minLat = lat;
     if (lat > maxLat) maxLat = lat;
     if (lng < minLng) minLng = lng;
@@ -116,16 +117,20 @@ export function formatDateTime(value) {
 
 /**
  * 將秒數轉換為 MM:SS 配速格式
- * @param {number | string} paceSec - 配速秒數
+ * @param {number | string | null | undefined} paceSec - 配速秒數
  * @param {string} [fallbackText=''] - 無法轉換時的備用文字
  * @returns {string} 格式化後的配速字串
  */
 export function formatPace(paceSec, fallbackText = '') {
+  if (paceSec === null || paceSec === undefined || paceSec === '') {
+    if (typeof fallbackText === 'string' && fallbackText.trim()) return fallbackText;
+    return '';
+  }
   const n = typeof paceSec === 'number' ? paceSec : Number(paceSec);
-  if (Number.isFinite(n) && n > 0) {
+  if (Number.isFinite(n) && n >= 0) {
     const mm = Math.floor(n / 60);
     const ss = n % 60;
-    return `${mm}:${String(ss).padStart(2, '0')}`;
+    return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
   }
   if (typeof fallbackText === 'string' && fallbackText.trim()) return fallbackText;
   return '';
@@ -139,6 +144,7 @@ export function formatPace(paceSec, fallbackText = '') {
  * @returns {T[][]} 分割後的二維陣列
  */
 export function chunkArray(arr, size) {
+  if (!Array.isArray(arr) || size <= 0) return [];
   /** @type {T[][]} */
   const out = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));

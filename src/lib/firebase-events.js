@@ -138,6 +138,10 @@ export function normalizeEventPayload(raw) {
  * 建立活動（寫入 Firestore）。
  * @param {object} raw - UI 表單資料 (例如 from Object.fromEntries)。
  * @param {object} [extra] - 由 UI 組裝的額外欄位（例如 host/route 等）。
+ * @param {string} [extra.hostUid]
+ * @param {string} [extra.hostName]
+ * @param {string} [extra.hostPhotoURL]
+ * @param {import('./event-helpers').RoutePayload} [extra.route]
  * @param {unknown} [extra.pace] - 濾除欄位。
  * @param {unknown} [extra.paceText] - 濾除欄位。
  * @param {unknown} [extra.paceMinutes] - 濾除欄位。

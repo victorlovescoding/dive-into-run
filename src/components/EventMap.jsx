@@ -10,6 +10,7 @@ import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import polyline from '@mapbox/polyline';
 
 // Fix for default icon issues with Webpack
+// @ts-expect-error Leaflet prototype manipulation
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'leaflet/images/marker-icon-2x.png',
@@ -20,8 +21,8 @@ L.Icon.Default.mergeOptions({
 // Draw mode: Leaflet.draw integration
 /**
  *
- * @param root0
- * @param root0.onRouteDrawn
+ * @param {object} root0
+ * @param {function} root0.onRouteDrawn
  */
 function DrawControl({ onRouteDrawn }) {
   const map = useMap();
@@ -101,6 +102,7 @@ function SearchField() {
   useEffect(() => {
     const provider = new OpenStreetMapProvider();
 
+    // @ts-expect-error leaflet-geosearch types issue
     const searchControl = new GeoSearchControl({
       provider,
       style: 'bar',
@@ -126,9 +128,9 @@ function SearchField() {
 // View mode: render route polyline + fit bounds
 /**
  *
- * @param root0
- * @param root0.encodedPolyline
- * @param root0.bbox
+ * @param {object} root0
+ * @param {string} root0.encodedPolyline
+ * @param {object} root0.bbox
  */
 function RouteViewer({ encodedPolyline, bbox }) {
   const map = useMap();
@@ -179,12 +181,12 @@ function RouteViewer({ encodedPolyline, bbox }) {
 
 /**
  *
- * @param root0
- * @param root0.mode
- * @param root0.onRouteDrawn
- * @param root0.encodedPolyline
- * @param root0.bbox
- * @param root0.height
+ * @param {object} root0
+ * @param {'draw'|'view'} [root0.mode]
+ * @param {function} [root0.onRouteDrawn]
+ * @param {string} [root0.encodedPolyline]
+ * @param {object} [root0.bbox]
+ * @param {number} [root0.height]
  */
 export default function EventMap({
   mode = 'draw',

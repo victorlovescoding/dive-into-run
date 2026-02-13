@@ -1,3 +1,4 @@
+import React from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Link from 'next/link';
 import LoginButton from './login/LoginButton.jsx';
@@ -24,8 +25,8 @@ export const metadata = {
 
 /**
  *
- * @param root0
- * @param root0.children
+ * @param {object} root0
+ * @param {React.ReactNode} root0.children
  */
 export default function RootLayout({ children }) {
   return (

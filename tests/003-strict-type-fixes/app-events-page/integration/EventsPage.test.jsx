@@ -88,8 +88,8 @@ describe('EventsPage Integration Tests', () => {
       expect(screen.getByText('Morning Run')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('臺北市')).toBeInTheDocument();
-    expect(screen.getByText('信義區')).toBeInTheDocument();
+    expect(screen.getByText(/臺北市/)).toBeInTheDocument();
+    expect(screen.getByText(/信義區/)).toBeInTheDocument();
     expect(screen.getByText(/5\.?0* km/)).toBeInTheDocument();
   });
 

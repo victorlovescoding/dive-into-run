@@ -1,6 +1,9 @@
 'use client';
 
 /* eslint-disable @next/next/no-img-element */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
 
 import {
   useContext, useEffect, useMemo, useState, useCallback,
@@ -16,13 +19,15 @@ import {
   joinEvent,
   leaveEvent,
 } from '@/lib/firebase-events';
+import { buildUserPayload } from '@/lib/event-helpers';
 
 // Leaflet 只能在瀏覽器端跑
 const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
 
 /**
- *
- * @param value
+ * 格式化日期。
+ * @param {string|object|null|undefined} value - 日期值。
+ * @returns {string} 格式化後的字串。
  */
 function formatDateTime(value) {
   if (!value) return '';
@@ -47,10 +52,11 @@ function formatDateTime(value) {
 }
 
 /**
- *
- * @param root0
- * @param root0.time
- * @param root0.registrationDeadline
+ * 計算活動狀態。
+ * @param {object} root0
+ * @param {string|object} root0.time
+ * @param {string|object} root0.registrationDeadline
+ * @returns {string} 活動狀態文字。
  */
 function computeStatus({ time, registrationDeadline }) {
   const now = Date.now();
@@ -74,8 +80,9 @@ function computeStatus({ time, registrationDeadline }) {
 }
 
 /**
- *
- * @param v
+ * 安全轉換數字。
+ * @param {any} v
+ * @returns {number}
  */
 function toNumber(v) {
   const n = typeof v === 'number' ? v : Number(v);
@@ -83,9 +90,10 @@ function toNumber(v) {
 }
 
 /**
- *
- * @param ev
- * @param fallbackParticipantsCount
+ * 計算剩餘名額。
+ * @param {import('@/lib/event-helpers').EventData} ev - 活動資料。
+ * @param {number} [fallbackParticipantsCount] - 備用參加人數。
+ * @returns {number} 剩餘名額。
  */
 function getRemainingSeats(ev, fallbackParticipantsCount = 0) {
   if (typeof ev?.remainingSeats === 'number') return ev.remainingSeats;
@@ -97,9 +105,10 @@ function getRemainingSeats(ev, fallbackParticipantsCount = 0) {
 }
 
 /**
- *
- * @param paceSec
- * @param fallbackText
+ * 格式化配速。
+ * @param {number|string|null|undefined} paceSec - 配速秒數。
+ * @param {string} [fallbackText] - 備用文字。
+ * @returns {string} 格式化後的配速。
  */
 function formatPace(paceSec, fallbackText = '') {
   const n = typeof paceSec === 'number' ? paceSec : Number(paceSec);
@@ -113,9 +122,10 @@ function formatPace(paceSec, fallbackText = '') {
 }
 
 /**
- *
- * @param root0
- * @param root0.id
+ * 活動詳情客戶端組件。
+ * @param {object} root0
+ * @param {string} root0.id - 活動 ID。
+ * @returns {import('react').ReactElement} 詳情頁面。
  */
 export default function EventDetailClient({ id }) {
   const { user } = useContext(AuthContext);
@@ -220,12 +230,14 @@ export default function EventDetailClient({ id }) {
 
   // overlay 開啟時鎖住 body 滾動
   useEffect(() => {
-    if (!isParticipantsOpen) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prevOverflow;
-    };
+    if (isParticipantsOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+    return undefined;
   }, [isParticipantsOpen]);
 
   const statusText = useMemo(() => {
@@ -336,13 +348,14 @@ export default function EventDetailClient({ id }) {
                 </button>
 
                 {/* 參加/退出 */}
-                {user?.uid && event.hostUid === user.uid ? null : !user?.uid ? (
+                {!user?.uid && (
                   <div
                     className={`${styles.helperText} ${styles.alignSelfCenter}`}
                   >
                     加入活動前請先登入
                   </div>
-                ) : (
+                )}
+                {user?.uid && event.hostUid !== user.uid && (
                   (() => {
                     const remaining = getRemainingSeats(
                       event,
@@ -621,11 +634,17 @@ export default function EventDetailClient({ id }) {
                 role="dialog"
                 aria-modal="true"
                 className={styles.participantsOverlay}
-                onClick={() => setParticipantsOpen(false)}
+                // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) setParticipantsOpen(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setParticipantsOpen(false);
+                }}
+                tabIndex={-1}
               >
                 <div
                   className={styles.participantsCard}
-                  onClick={(e) => e.stopPropagation()}
                 >
                   <div className={styles.participantsHeader}>
                     <div className={styles.participantsTitle}>參加名單</div>

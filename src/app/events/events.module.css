@@ -108,6 +108,14 @@
   background-color: #f8f9fa;
 }
 
+.formLabel {
+  display: block;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+  color: #202124;
+}
+
 .formGroup label {
   display: block;
   font-size: 1rem;

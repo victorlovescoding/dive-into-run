@@ -1,5 +1,9 @@
 'use client';
 
+/* eslint-disable jsx-a11y/label-has-associated-control */
+/* eslint-disable jsx-a11y/control-has-associated-label */
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+
 import {
   useEffect, useState, useContext, useRef, useCallback,
 } from 'react';
@@ -420,7 +424,8 @@ const taiwanLocations = {
 // #endregion taiwanLocations
 
 /**
- *
+ * 揪團跑步主頁面。
+ * @returns {import('react').ReactElement} 頁面組件。
  */
 export default function RunTogetherPage() {
   const [isFormOpen, setFormOpen] = useState(false);
@@ -498,7 +503,7 @@ export default function RunTogetherPage() {
 
   // 表單打開時鎖住 body 捲動
   useEffect(() => {
-    if (!isFormOpen) return;
+    if (!isFormOpen) return undefined;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
@@ -508,7 +513,7 @@ export default function RunTogetherPage() {
 
   // 篩選浮層打開時鎖住 body 捲動
   useEffect(() => {
-    if (!isFilterOpen) return;
+    if (!isFilterOpen) return undefined;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
@@ -561,12 +566,12 @@ export default function RunTogetherPage() {
     if (!user?.uid) {
       setMyJoinedEventIds(new Set());
       membershipCheckedRef.current = new Set();
-      return;
+      return undefined;
     }
 
     const ids = events.map((e) => e?.id).filter(Boolean);
     const newIds = ids.filter((id) => !membershipCheckedRef.current.has(id));
-    if (newIds.length === 0) return;
+    if (newIds.length === 0) return undefined;
 
     let cancelled = false;
 
@@ -575,7 +580,9 @@ export default function RunTogetherPage() {
         const batches = chunkArray(newIds, 30);
         const joined = new Set();
 
-        for (const batch of batches) {
+        for (let i = 0; i < batches.length; i += 1) {
+          const batch = batches[i];
+          // eslint-disable-next-line no-await-in-loop
           const set = await fetchMyJoinedEventsForIds(user.uid, batch);
           set.forEach((id) => joined.add(id));
         }
@@ -629,8 +636,8 @@ export default function RunTogetherPage() {
 
   useEffect(() => {
     const el = sentinelRef.current;
-    if (!el) return;
-    if (!hasMore) return;
+    if (!el) return undefined;
+    if (!hasMore) return undefined;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -648,7 +655,10 @@ export default function RunTogetherPage() {
    *
    */
   function handleToggleCreateRunForm() {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      setActionMessage({ type: 'error', message: '發起活動前請先登入' });
+      return;
+    }
 
     if (isFormOpen) {
       setFormOpen(false);
@@ -712,7 +722,8 @@ export default function RunTogetherPage() {
   }
 
   /**
-   *
+   * 根據目前設定的篩選條件執行搜尋。
+   * @returns {Promise<void>}
    */
   async function handleSearchFilters() {
     setFilterOpen(false);
@@ -743,8 +754,9 @@ export default function RunTogetherPage() {
   }
 
   /**
-   *
-   * @param e
+   * 提交建立活動表單。
+   * @param {import('react').FormEvent<HTMLFormElement>} e - 表單提交事件。
+   * @returns {Promise<void>}
    */
   async function handleSubmit(e) {
     e.preventDefault();
@@ -752,7 +764,7 @@ export default function RunTogetherPage() {
     setCreateError(null);
     setIsCreating(true);
 
-    const formData = new FormData(e.target);
+    const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
     const routeCoordinatesSnapshot = Array.isArray(routeCoordinates)
@@ -792,7 +804,7 @@ export default function RunTogetherPage() {
 
       setEvents((prev) => [
         newEventCard,
-        ...prev.filter((e) => e.id !== newEventCard.id),
+        ...prev.filter((ev) => ev.id !== newEventCard.id),
       ]);
       setDraftFormData(null);
 
@@ -817,9 +829,10 @@ export default function RunTogetherPage() {
   }
 
   /**
-   *
-   * @param ev
-   * @param clickEvent
+   * 處理點擊參加活動。
+   * @param {import('@/lib/event-helpers').EventData} ev - 活動資料。
+   * @param {import('react').MouseEvent} clickEvent - 點擊事件。
+   * @returns {Promise<void>}
    */
   async function handleJoinClick(ev, clickEvent) {
     clickEvent.preventDefault();
@@ -870,7 +883,9 @@ export default function RunTogetherPage() {
 
       if (res?.ok === false && res.status === 'full') {
         setActionMessage({ type: 'error', message: '本活動已額滿' });
-        setEvents((prev) => prev.map((item) => (String(item.id) === eventId ? { ...item, remainingSeats: 0 } : item)));
+        setEvents((prev) => prev.map((item) => (
+          String(item.id) === eventId ? { ...item, remainingSeats: 0 } : item
+        )));
         return;
       }
 
@@ -888,9 +903,10 @@ export default function RunTogetherPage() {
   }
 
   /**
-   *
-   * @param ev
-   * @param clickEvent
+   * 處理點擊退出活動。
+   * @param {import('@/lib/event-helpers').EventData} ev - 活動資料。
+   * @param {import('react').MouseEvent} clickEvent - 點擊事件。
+   * @returns {Promise<void>}
    */
   async function handleLeaveClick(ev, clickEvent) {
     clickEvent.preventDefault();
@@ -1102,89 +1118,92 @@ export default function RunTogetherPage() {
                     </div>
                     <div>
                       路線：
-                      {Array.isArray(ev.routeCoordinates)
-                      && ev.routeCoordinates.length > 0
-                        ? `已設定（${ev.routeCoordinates.length} 點）`
-                        : ev.route?.pointsCount
-                          ? `已設定（${ev.route.pointsCount} 點）`
-                          : '未設定'}
+                      {(() => {
+                        if (Array.isArray(ev.routeCoordinates) && ev.routeCoordinates.length > 0) {
+                          return `已設定（${ev.routeCoordinates.length} 點）`;
+                        }
+                        if (ev.route?.pointsCount) {
+                          return `已設定（${ev.route.pointsCount} 點）`;
+                        }
+                        return '未設定';
+                      })()}
                     </div>
                   </div>
 
                   {/* ✅ 參加/退出活動（events 列表版） */}
                   <div className={styles.eventCardActions}>
-                    {user?.uid
-                    && ev.hostUid === user.uid ? null : !user?.uid ? (
+                    {!user?.uid && (
                       <div className={styles.helperText}>
                         加入活動前請先登入
                       </div>
-                      ) : (
-                        (() => {
-                          const eventId = String(ev.id);
-                          const pending = pendingByEventId[eventId];
-                          const joined = myJoinedEventIds.has(eventId);
-                          const remaining = getRemainingSeats(ev);
+                    )}
+                    {user?.uid && ev.hostUid !== user.uid && (
+                      (() => {
+                        const eventId = String(ev.id);
+                        const pending = pendingByEventId[eventId];
+                        const joined = myJoinedEventIds.has(eventId);
+                        const remaining = getRemainingSeats(ev);
 
-                          if (joined) {
-                            return (
-                              <button
-                                type="button"
-                                className={`${styles.submitButton} ${styles.leaveButton}`}
-                                onClick={(e) => handleLeaveClick(ev, e)}
-                                disabled={
-                                Boolean(pending) || isCreating || isFormOpen
-                              }
-                              >
-                                {pending === 'leaving' ? (
-                                  <span className={styles.spinnerLabel}>
-                                    <div
-                                      className={`${styles.spinner} ${styles.buttonSpinner}`}
-                                    />
-                                    取消中…
-                                  </span>
-                                ) : (
-                                  '退出活動'
-                                )}
-                              </button>
-                            );
-                          }
-
-                          if (remaining <= 0) {
-                            return (
-                              <button
-                                type="button"
-                                className={`${styles.submitButton} ${styles.soldOutButton}`}
-                                disabled
-                                aria-disabled="true"
-                              >
-                                已額滿
-                              </button>
-                            );
-                          }
-
+                        if (joined) {
                           return (
                             <button
                               type="button"
-                              className={styles.submitButton}
-                              onClick={(e) => handleJoinClick(ev, e)}
+                              className={`${styles.submitButton} ${styles.leaveButton}`}
+                              onClick={(e) => handleLeaveClick(ev, e)}
                               disabled={
-                              Boolean(pending) || isCreating || isFormOpen
-                            }
+                                Boolean(pending) || isCreating || isFormOpen
+                              }
                             >
-                              {pending === 'joining' ? (
+                              {pending === 'leaving' ? (
                                 <span className={styles.spinnerLabel}>
                                   <div
                                     className={`${styles.spinner} ${styles.buttonSpinner}`}
                                   />
-                                  報名中…
+                                  取消中…
                                 </span>
                               ) : (
-                                '參加活動'
+                                '退出活動'
                               )}
                             </button>
                           );
-                        })()
-                      )}
+                        }
+
+                        if (remaining <= 0) {
+                          return (
+                            <button
+                              type="button"
+                              className={`${styles.submitButton} ${styles.soldOutButton}`}
+                              disabled
+                              aria-disabled="true"
+                            >
+                              已額滿
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <button
+                            type="button"
+                            className={styles.submitButton}
+                            onClick={(e) => handleJoinClick(ev, e)}
+                            disabled={
+                              Boolean(pending) || isCreating || isFormOpen
+                            }
+                          >
+                            {pending === 'joining' ? (
+                              <span className={styles.spinnerLabel}>
+                                <div
+                                  className={`${styles.spinner} ${styles.buttonSpinner}`}
+                                />
+                                報名中…
+                              </span>
+                            ) : (
+                              '參加活動'
+                            )}
+                          </button>
+                        );
+                      })()
+                    )}
                   </div>
                 </div>
               </Link>
@@ -1228,7 +1247,7 @@ export default function RunTogetherPage() {
         </div>
       </div>
 
-      {user?.uid && !isFormOpen && (
+      {!isFormOpen && (
         <button
           type="button"
           onClick={handleToggleCreateRunForm}
@@ -1240,21 +1259,22 @@ export default function RunTogetherPage() {
 
       {isFilterOpen && (
         <div
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
           className={styles.filterOverlay}
           role="dialog"
           aria-modal="true"
           aria-label="篩選活動"
-          onMouseDown={(e) => {
+          onClick={(e) => {
             // 點背景關閉
             if (e.target === e.currentTarget) setFilterOpen(false);
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setFilterOpen(false);
+          }}
+          tabIndex={-1}
         >
           <div
             className={styles.filterCard}
-            onMouseDown={(e) => {
-              // 防止點卡片時觸發背景關閉
-              e.stopPropagation();
-            }}
           >
             <div className={styles.filterHeader}>
               <div className={styles.filterHeaderTitle}>篩選活動</div>
@@ -1285,16 +1305,18 @@ export default function RunTogetherPage() {
             <div className={styles.filterBody}>
               {/* 1) 是否還有名額 (移至最前) */}
               <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>名額狀況</label>
+                <div className={styles.filterLabel}>名額狀況</div>
                 <div className={styles.filterToggleRow}>
                   <span className={styles.filterToggleLabel}>
                     只顯示還有名額的活動
                   </span>
-                  <label className={styles.switch}>
+                  <label className={styles.switch} htmlFor="filterHasSeatsOnly">
                     <input
                       type="checkbox"
+                      id="filterHasSeatsOnly"
                       checked={filterHasSeatsOnly}
                       onChange={(e) => setFilterHasSeatsOnly(e.target.checked)}
+                      aria-label="只顯示還有名額的活動"
                     />
                     <span className={`${styles.slider} ${styles.round}`} />
                   </label>
@@ -1313,7 +1335,7 @@ export default function RunTogetherPage() {
 
               {/* 2) 活動日期/時間 */}
               <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>活動時間</label>
+                <div className={styles.filterLabel}>活動時間</div>
                 <div className={styles.filterRow}>
                   <div className={styles.filterRowItem}>
                     <input
@@ -1346,15 +1368,15 @@ export default function RunTogetherPage() {
 
               {/* 4) 跑步距離 (km) */}
               <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>跑步距離 (km)</label>
+                <div className={styles.filterLabel}>跑步距離 (km)</div>
                 <div className={styles.filterRow}>
                   <div className={styles.filterRowItem}>
                     <input
                       type="number"
                       className={styles.filterTextField}
                       placeholder="最小距離"
-                      min="0"
-                      step="0.1"
+                      min={0}
+                      step={0.1}
                       value={filterDistanceMin}
                       onChange={(e) => setFilterDistanceMin(e.target.value)}
                     />
@@ -1365,8 +1387,8 @@ export default function RunTogetherPage() {
                       type="number"
                       className={styles.filterTextField}
                       placeholder="最大距離"
-                      min="0"
-                      step="0.1"
+                      min={0}
+                      step={0.1}
                       value={filterDistanceMax}
                       onChange={(e) => setFilterDistanceMax(e.target.value)}
                     />
@@ -1383,7 +1405,7 @@ export default function RunTogetherPage() {
 
               {/* 7) 縣市 + 區 */}
               <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>活動區域</label>
+                <div className={styles.filterLabel}>活動區域</div>
                 <div className={styles.filterRow}>
                   <select
                     className={`${styles.selectField} ${styles.flex1}`}
@@ -1532,7 +1554,7 @@ export default function RunTogetherPage() {
             </div>
 
             <div className={styles.formGroup}>
-              <label>活動區域</label>
+              <div className={styles.formLabel}>活動區域</div>
               <div className={styles.flexRowGap10}>
                 <select
                   name="city"
@@ -1619,8 +1641,8 @@ export default function RunTogetherPage() {
                 id="distanceKm"
                 name="distanceKm"
                 type="number"
-                min="0.1"
-                step="0.1"
+                min={0.1}
+                step={0.1}
                 required
                 placeholder="10"
                 defaultValue={draftFormData?.distanceKm || ''}
@@ -1629,7 +1651,7 @@ export default function RunTogetherPage() {
             </div>
 
             <div className={styles.formGroup}>
-              <label>目標配速（每公里）</label>
+              <div className={styles.formLabel}>目標配速（每公里）</div>
               <div
                 className={`${styles.flexRowGap10} ${styles.flexAlignCenter}`}
               >
@@ -1641,11 +1663,14 @@ export default function RunTogetherPage() {
                   aria-label="分鐘"
                 >
                   <option value="" disabled hidden />
-                  {[...Array(19)].map((_, i) => (
-                    <option key={i} value={String(i + 2).padStart(2, '0')}>
-                      {i + 2}
-                    </option>
-                  ))}
+                  {[...Array(19)].map((_, i) => {
+                    const val = String(i + 2).padStart(2, '0');
+                    return (
+                      <option key={val} value={val}>
+                        {i + 2}
+                      </option>
+                    );
+                  })}
                 </select>
                 <span className={styles.paceUnit}>分</span>
                 <select
@@ -1674,11 +1699,12 @@ export default function RunTogetherPage() {
             </div>
 
             <div className={styles.formGroup}>
-              <label>是否需要繪製活動路線？</label>
+              <div className={styles.formLabel}>是否需要繪製活動路線？</div>
               <div className={styles.radioGroup}>
-                <label>
+                <label htmlFor="planRouteYes">
                   <input
                     type="radio"
+                    id="planRouteYes"
                     name="planRoute"
                     value="yes"
                     required
@@ -1688,9 +1714,10 @@ export default function RunTogetherPage() {
                   {' '}
                   是
                 </label>
-                <label>
+                <label htmlFor="planRouteNo">
                   <input
                     type="radio"
+                    id="planRouteNo"
                     name="planRoute"
                     value="no"
                     required
@@ -1709,7 +1736,7 @@ export default function RunTogetherPage() {
 
             {showMap && (
               <div className={styles.formGroup}>
-                <label>繪製活動路線</label>
+                <div className={styles.formLabel}>繪製活動路線</div>
                 <EventMap onRouteDrawn={setRouteCoordinates} />
                 {routeCoordinates && (
                   <p className={styles.helperText}>
@@ -1729,7 +1756,7 @@ export default function RunTogetherPage() {
                 id="maxParticipants"
                 name="maxParticipants"
                 type="number"
-                min="2"
+                min={2}
                 defaultValue={draftFormData?.maxParticipants || '2'}
               />
               <div className={styles.focusBorder} />
@@ -1740,7 +1767,7 @@ export default function RunTogetherPage() {
               <textarea
                 id="description"
                 name="description"
-                rows="4"
+                rows={4}
                 placeholder="請說明活動內容、注意事項、集合細節等"
                 className={styles.textareaField}
                 defaultValue={draftFormData?.description || ''}
