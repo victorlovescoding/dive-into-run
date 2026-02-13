@@ -18,14 +18,12 @@ describe('event-helpers', () => {
     it('returns null for invalid input', () => {
       expect(buildRoutePayload(null)).toBeNull();
       expect(buildRoutePayload([])).toBeNull();
-      // @ts-expect-error Testing invalid input
-      expect(buildRoutePayload('invalid')).toBeNull();
+      expect(buildRoutePayload(/** @type {any} */('invalid'))).toBeNull();
     });
 
     it('returns null if any coordinate is invalid', () => {
       const input = [{ lat: 10, lng: 10 }, { lat: 'NaN', lng: 20 }];
-      // @ts-expect-error Testing mixed types that result in NaN
-      expect(buildRoutePayload(input)).toBeNull();
+      expect(buildRoutePayload(/** @type {any} */(input))).toBeNull();
     });
 
     it('calculates correct bbox and encodes polyline', () => {
@@ -60,8 +58,7 @@ describe('event-helpers', () => {
       const mockTimestamp = {
         toDate: () => new Date('2023-10-10T08:30:00'),
       };
-      // @ts-expect-error Mocking Firestore Timestamp
-      expect(formatDateTime(mockTimestamp)).toBe('2023-10-10 08:30');
+      expect(formatDateTime(/** @type {any} */(mockTimestamp))).toBe('2023-10-10 08:30');
     });
   });
 
@@ -106,30 +103,25 @@ describe('event-helpers', () => {
 
   describe('getRemainingSeats', () => {
     it('returns direct value if present', () => {
-      // @ts-expect-error Partial Event Data
-      expect(getRemainingSeats({ remainingSeats: 5 })).toBe(5);
+      expect(getRemainingSeats(/** @type {any} */({ remainingSeats: 5 }))).toBe(5);
     });
 
     it('calculates from max and count', () => {
-      // @ts-expect-error Partial Event Data
-      expect(getRemainingSeats({ maxParticipants: 10, participantsCount: 3 })).toBe(7);
+      expect(getRemainingSeats(/** @type {any} */({ maxParticipants: 10, participantsCount: 3 }))).toBe(7);
     });
 
     it('returns 0 if overbooked', () => {
-      // @ts-expect-error Partial Event Data
-      expect(getRemainingSeats({ maxParticipants: 5, participantsCount: 6 })).toBe(0);
+      expect(getRemainingSeats(/** @type {any} */({ maxParticipants: 5, participantsCount: 6 }))).toBe(0);
     });
   });
 
   describe('buildUserPayload', () => {
     it('returns null if no uid', () => {
-      // @ts-expect-error Partial User
-      expect(buildUserPayload({})).toBeNull();
+      expect(buildUserPayload(/** @type {any} */({}))).toBeNull();
     });
 
     it('extracts name from email if name missing', () => {
-      // @ts-expect-error Mock User
-      const user = { uid: '123', email: 'test@example.com' };
+      const user = /** @type {any} */({ uid: '123', email: 'test@example.com' });
       expect(buildUserPayload(user)).toEqual({
         uid: '123',
         name: 'test',
@@ -138,8 +130,7 @@ describe('event-helpers', () => {
     });
 
     it('uses provided name and photo', () => {
-      // @ts-expect-error Mock User
-      const user = { uid: '123', name: 'Alice', photoURL: 'http://img.com', email: 'a@b.com' };
+      const user = /** @type {any} */({ uid: '123', name: 'Alice', photoURL: 'http://img.com', email: 'a@b.com' });
       expect(buildUserPayload(user)).toEqual({
         uid: '123',
         name: 'Alice',

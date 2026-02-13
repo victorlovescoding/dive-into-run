@@ -10,11 +10,16 @@ global.ResizeObserver = class ResizeObserver {
 }
 
 // Mock IntersectionObserver (Missing in JSDOM)
+// Mock IntersectionObserver (Missing in JSDOM)
 global.IntersectionObserver = class IntersectionObserver {
   constructor() {}
+  get root() { return null; }
+  get rootMargin() { return ''; }
+  get thresholds() { return []; }
   observe() {}
   unobserve() {}
   disconnect() {}
+  takeRecords() { return []; }
 }
 
 // Global Mock for Leaflet (Avoids 'window is not defined' in JSDOM)
