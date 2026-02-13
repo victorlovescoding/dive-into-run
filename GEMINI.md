@@ -62,8 +62,8 @@ If I ask for adjustments to code I have provided you, do not repeat all of my co
 - **Style Guide**: Airbnb Base + React Hooks (via `FlatCompat`)
 - **Type Checking**: Enabled via `jsconfig.json` (`checkJs: true`) using JSDoc.
     - **Strict JSDoc & Type Safety**: Any new or modified function MUST include complete JSDoc. Strictly FORBIDDEN to claim task completion if `type-check` fails.
-    - **Test Quality**: All tests (Unit/Integration/E2E) MUST pass `npm run type-check` and `npm run lint`.
-    - **No @ts-ignore**: Strictly FORBIDDEN. Verification MUST include `grep -r "@ts-ignore" src` to ensure a clean codebase. If an external library type issue is unresolvable, you MUST use `@ts-expect-error` with a comment explaining the reason. DO NOT ignore errors silently.
+    - **Test Quality**: All tests (Unit/Integration/E2E) MUST strictly follow the project **Style Guide (Airbnb Base + React Hooks)** and pass `npm run type-check`, `npm run lint` & ensure no `@ts-ignore` via `grep`.
+    - **No @ts-ignore**: Strictly FORBIDDEN. Verification MUST include `grep -r "@ts-ignore" src tests` to ensure a clean codebase. If an external library type issue is unresolvable, you MUST use `@ts-expect-error` with a comment explaining the reason. DO NOT ignore errors silently.
 - **Documentation**: JSDoc required for all exported functions and components
 - **E2E**: Playwright (configured in `playwright.config.mjs`, Chromium only)
 

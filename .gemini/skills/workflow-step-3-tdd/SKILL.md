@@ -29,8 +29,17 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
     *   **Action**: 在開始撰寫測試前，**必須先執行 `view_file` 讀取並理解 `.gemini/skills/workflow-step-3-tdd/references/testing-anti-patterns.md`**。
     *   **Iron Rule**: 嚴格遵守「三不原則」：不測試 Mock 行為、不污染生產代碼、不使用不完整 Mock。
 
-2.  **分析 Spec**:
-    *   **Action**: 根據 `specs/$(git branch --show-current)/spec.md` 的 User Stories 和驗收標準，列出需要的測試案例。
+2.  **分析 Spec (Analyze & Locate)**:
+    *   **Locate Spec (Robust Strategy)**:
+        -   **Action**: 必須準確找到對應的 `spec.md`。由於分支名稱 (e.g. `refactor/fix-bug`) 可能與 Spec 路徑 (e.g. `specs/feature-auth`) 不一致，切勿 blindly assume路徑。
+        -   **Strategy**:
+            1.  預設嘗試: `specs/$(git branch --show-current)/spec.md`
+            2.  搜尋嘗試: 若上述不存在，應尋找父目錄或相關連的 `specs/**/spec.md` (類似 Tests 的尋找邏輯)。
+            3.  **Mandatory Ask**: 若有多個候選或無法確定，**必須**請使用者提供正確路徑。
+    *   **Analyze (Critical Thinking)**:
+        -   **Action**: 閱讀 Spec 並進行**批判性思考**。
+        -   **Gap Analysis**: 若 Spec 描述不足 (e.g. 只有 Happy Path)，**必須**主動補完 Edge Cases (Null, Network Error, Boundary) 並列出測試案例。
+        -   **Verification**: 確保測試覆蓋了 Spec 的所有驗收標準 (AC)。
 
 2.5 **決定測試路徑 (Path Strategy)**:
     *   **Action**: 執行以下邏輯以決定測試檔案存放位置：
@@ -47,6 +56,7 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
     *   **Result**: 輸出你決定的 `TEST_PATH` 與 `RESULT_PATH` 供使用者確認。
 
 3.  **撰寫測試 (Testing)**:
+    *   **Requirement**: 必須**明確處理**以下三個層級的測試。對於每一個層級，**必須**建立測試檔案，**或**明確說明「為何本任務不需要此層級測試」(例如：純 UI 修改不涉邏輯則免 Unit Test)。
     *   **Unit Tests**:
         - **Target**: `src/lib/` 中的純商業邏輯。
         - **Path**: `$TEST_PATH/unit/`。
@@ -60,6 +70,13 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
         - **Path**: `$TEST_PATH/integration/`。
         - **Requirement**: 必須使用 **Testing Library 三劍客** (`dom`, `react`, `user-event`)。**禁止使用 fireEvent**。
         - **Action**: 使用 `write_to_file` 建立測試檔案。
+    *   **Writing Standards (Zero-Tolerance)**:
+        *   **Style Guide**: 必須嚴格遵守專案定義的風格規範 (**Airbnb Base + React Hooks**)。
+        *   在撰寫測試代碼時，**必須**隨時確保符合 TypeScript/JSDoc 類型定義與 ESLint 規範。
+        *   **禁止**寫出「先求有再求好」的爛 code。測試代碼也是產品代碼的一部分。
+        *   **禁止**使用 `@ts-ignore` 或 `any` (除非極度必要且有詳細註解)。
+        *   寫完一個檔案，建議立即執行 `npm run lint -- --fix` 自動修復風格問題，並手動修正剩餘錯誤。
+
     *   **E2E Tests**:
         - **Target**: 關鍵的使用者操作流程 (Critical User Journeys)。
         - **Path**: `$TEST_PATH/e2e/`。
