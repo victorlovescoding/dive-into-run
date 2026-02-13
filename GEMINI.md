@@ -64,6 +64,10 @@ If I ask for adjustments to code I have provided you, do not repeat all of my co
     - **Strict JSDoc & Type Safety**: Any new or modified function MUST include complete JSDoc. Strictly FORBIDDEN to claim task completion if `type-check` fails.
     - **Test Quality**: All tests (Unit/Integration/E2E) MUST strictly follow the project **Style Guide (Airbnb Base + React Hooks)** and pass `npm run type-check`, `npm run lint` & ensure no `@ts-ignore` via `grep`.
     - **No @ts-ignore**: Strictly FORBIDDEN. Verification MUST include `grep -r "@ts-ignore" src tests` to ensure a clean codebase. If an external library type issue is unresolvable, you MUST use `@ts-expect-error` with a comment explaining the reason. DO NOT ignore errors silently.
+- **Strict Coding Rules (Non-Negotiable)**:
+    - **No Logic in JSX**: Strictly FORBIDDEN to write complex logic (IIFE, heavy conditionals) inside JSX. Extract them into separate Components or Helper Functions. JSX should only handle View.
+    - **No ESLint Abuse**: Strictly FORBIDDEN to use `eslint-disable` to bypass A11y rules (e.g. `jsx-a11y/click-events-have-key-events`). You MUST fix the underlying HTML structure (add roles, labels, event handlers) instead of silencing the error.
+    - **Meaningful JSDoc**: Strictly FORBIDDEN to write empty/boilerplate JSDoc. Documentation MUST explain the *intent* and *params*, not just satisfy the linter.
 - **Documentation**: JSDoc required for all exported functions and components
 - **E2E**: Playwright (configured in `playwright.config.mjs`, Chromium only)
 
