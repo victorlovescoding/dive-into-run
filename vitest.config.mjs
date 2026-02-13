@@ -16,7 +16,10 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: './vitest.setup.mjs',
+    setupFiles: './vitest.setup.jsx',
+    alias: {
+      '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    },
     css: {
       modules: {
         classNameStrategy: 'non-scoped',
