@@ -102,4 +102,24 @@ export default [
       '*.config.mjs',
     ],
   },
+ // 針對測試檔案的嚴格規範
+  {
+    // 鎖定目標：測試資料夾與所有測試副檔名
+    files: [
+      'tests/**/*.js',
+      'tests/**/*.jsx',
+      '**/*.test.js',
+      '**/*.spec.js',
+    ],
+    rules: {
+      // 1. 開啟依賴檢查，但允許測試檔案使用 devDependencies (比 off 更安全！)
+      'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
+
+      // 2. 測試檔案也要求 JSDoc (這條如果不習慣，隨時可以改成 'off')
+      'jsdoc/require-jsdoc': 'warn',
+
+      // 3. 禁止使用 console.log (保持測試輸出乾淨，逼 AI 寫出乾淨的 Code)
+      'no-console': 'error',
+    },
+  },
 ];
