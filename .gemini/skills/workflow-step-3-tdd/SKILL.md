@@ -86,13 +86,20 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
             1. **Locators**: 優先使用 `page.getByRole`, `page.getByText`。禁止使用脆弱的 CSS selector。
             2. **Stability**: **嚴格禁止使用 `page.waitForTimeout()`**。必須使用 Playwright 的自動等待特性與 Assertions。
 
-4.  **品質驗收 (Quality Gate)**:
+4.  **The Iron Wall (絕對防線 - Zero Tolerance)**:
     *   **Mandatory**: 提交測試前，**必須**確保測試程式碼通過靜態分析。測試邏輯應失敗 (Red)，但語法與類型必須正確。
-    *   **Checklist**:
-        1.  執行 `npm run type-check` 確保無 Type Errors。
-        2.  執行 `npm run lint` 確保符合 ESLint 規範。
-        3.  執行 `grep -r "@ts-ignore" src/ tests/` (確保無 `@ts-ignore`)。
-    *   **Constraint**: 若上述任一檢查失敗，**必須**修正直至通過，才可進入提交階段。
+    *   **Strict Rule**: **絕對沒有任何不遵守的空間 (NO EXCEPTIONS)**。任何錯誤 (Error) 或警告 (Warning) 都是攔路虎，禁止繞過。
+    *   **Mandatory Protocol (Loop until Green)**:
+        1.  **Type Check**: 執行 `npm run type-check`。
+            -   結果必須為 **0 errors**。
+            -   若有錯 -> **立刻修復 (Fix Immediately)**。禁止 Commit。
+        2.  **Lint Check**: 執行 `npm run lint`。
+            -   結果必須為 **0 problems**。
+            -   使用 `npm run lint -- --fix` 自動修復，手修剩餘問題。
+        3.  **Sanity Check**: 執行 `grep -r "@ts-ignore" src tests`。
+            -   結果必須為 **Empty (空)**。
+            -   若有輸出 -> **立刻移除 (Remove Immediately)**。
+    *   **Constraint**: 只有當上述三項全數通過時，才允許執行 `git commit`。AI 不得在未驗證的情況下假設代碼是乾淨的。
 
 5.  **驗證測試 (Red)**:
     *   **Action**: 執行測試指令，確認它們**失敗** (因為功能尚未實作)。
