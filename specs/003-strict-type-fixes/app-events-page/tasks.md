@@ -1,3 +1,4 @@
+status: kanban_synced
 # Tasks for Strict Type and Lint Fixes for App Events Page
 
 ## 1. Foundation (Prerequisites)
