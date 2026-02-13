@@ -32,10 +32,24 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
 2.  **分析 Spec**:
     *   **Action**: 根據 `specs/$(git branch --show-current)/spec.md` 的 User Stories 和驗收標準，列出需要的測試案例。
 
+2.5 **決定測試路徑 (Path Strategy)**:
+    *   **Action**: 執行以下邏輯以決定測試檔案存放位置：
+        1.  取得當前分支名稱: `BRANCH=$(git branch --show-current)`
+        2.  檢查 `tests/$BRANCH` 是否存在：
+            -   **不存在 (New Feature)**:
+                -   `TEST_PATH = "tests/$BRANCH"`
+            -   **存在 (Continuation/Refactor)**:
+                -   找出 `specs/$BRANCH` 下最近被修改的 `spec.md`。
+                -   取得該 `spec.md` 的**上一層資料夾名稱** (Parent Directory Name)。
+                -   若該名稱等於 `$BRANCH`，則 `TEST_PATH = "tests/$BRANCH"`。
+                -   否則，`TEST_PATH = "tests/$BRANCH/<Parent Directory Name>"`。
+        3.  `RESULT_PATH` 則為 `test-results` 開頭的對應路徑 (例如 `test-results/$BRANCH` 或 `test-results/$BRANCH/<Parent Directory Name>`)。
+    *   **Result**: 輸出你決定的 `TEST_PATH` 與 `RESULT_PATH` 供使用者確認。
+
 3.  **撰寫測試 (Testing)**:
     *   **Unit Tests**:
         - **Target**: `src/lib/` 中的純商業邏輯。
-        - **Path**: `tests/$(git branch --show-current)/unit/` (使用當前分支名稱，請務必先確認)。
+        - **Path**: `$TEST_PATH/unit/`。
         - **Requirement**: 禁止使用 DOM 或 React Testing Library，保持速度與純粹性。
         - **Action**: 使用 `write_to_file` 建立測試檔案。
         - **Standards**:
@@ -43,12 +57,12 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
             2. **Quality**: 符合 **F.I.R.S.T 原則** (Fast, Independent, Repeatable, Self-Validating, Timely)。
     *   **Integration Tests**:
         - **Target**: UI 元件與 Interaction。
-        - **Path**: `tests/$(git branch --show-current)/integration/`。
+        - **Path**: `$TEST_PATH/integration/`。
         - **Requirement**: 必須使用 **Testing Library 三劍客** (`dom`, `react`, `user-event`)。**禁止使用 fireEvent**。
         - **Action**: 使用 `write_to_file` 建立測試檔案。
     *   **E2E Tests**:
         - **Target**: 關鍵的使用者操作流程 (Critical User Journeys)。
-        - **Path**: `tests/$(git branch --show-current)/e2e/`。
+        - **Path**: `$TEST_PATH/e2e/`。
         - **Tool**: Playwright。
         - **Action**: 使用 `write_to_file` 建立測試檔案。
         - **Standards**:
@@ -64,9 +78,9 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
         -   ❌ `ReferenceError: x is not defined` (這是你的測試寫錯了，修好它)
         -   ✅ `AssertionError: expected 'success' but got undefined` (這才是有效的 RED)
     *   **Commands**:
-        - Unit: `mkdir -p test-results/$(git branch --show-current)/unit && npx vitest run tests/$(git branch --show-current)/unit --reporter=junit --outputFile=test-results/$(git branch --show-current)/unit/results.xml`
-        - Integration: `mkdir -p test-results/$(git branch --show-current)/integration && npx vitest run tests/$(git branch --show-current)/integration --reporter=junit --outputFile=test-results/$(git branch --show-current)/integration/results.xml`
-        - E2E: `mkdir -p test-results/$(git branch --show-current)/e2e && PLAYWRIGHT_JUNIT_OUTPUT_NAME=test-results/$(git branch --show-current)/e2e/results.xml npx playwright test tests/$(git branch --show-current)/e2e --reporter=junit`
+        - Unit: `mkdir -p $RESULT_PATH/unit && npx vitest run $TEST_PATH/unit --reporter=junit --outputFile=$RESULT_PATH/unit/results.xml`
+        - Integration: `mkdir -p $RESULT_PATH/integration && npx vitest run $TEST_PATH/integration --reporter=junit --outputFile=$RESULT_PATH/integration/results.xml`
+        - E2E: `mkdir -p $RESULT_PATH/e2e && PLAYWRIGHT_JUNIT_OUTPUT_NAME=$RESULT_PATH/e2e/results.xml npx playwright test $TEST_PATH/e2e --reporter=junit`
 
 ## 下一步
 
