@@ -40,6 +40,7 @@ const dangerousPatterns = [
   // 5. 強制操作 (Git)
   /git\s+push\s+.*(-f|--force)/,
   /git\s+reset\s+--hard/,
+  /git\s+clean\s+[\s\S]*(-[a-zA-Z]*[xX])/, // 禁止清除 ignored 檔案 (如 -fdx, -x)
 
   // 6. 權限與所有權變更
   /chmod\s+(-R\s+)?(777|666)/,
