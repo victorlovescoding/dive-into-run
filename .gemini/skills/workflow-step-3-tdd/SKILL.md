@@ -69,7 +69,15 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
             1. **Locators**: 優先使用 `page.getByRole`, `page.getByText`。禁止使用脆弱的 CSS selector。
             2. **Stability**: **嚴格禁止使用 `page.waitForTimeout()`**。必須使用 Playwright 的自動等待特性與 Assertions。
 
-4.  **驗證測試 (Red)**:
+4.  **品質驗收 (Quality Gate)**:
+    *   **Mandatory**: 提交測試前，**必須**確保測試程式碼通過靜態分析。測試邏輯應失敗 (Red)，但語法與類型必須正確。
+    *   **Checklist**:
+        1.  執行 `npm run type-check` 確保無 Type Errors。
+        2.  執行 `npm run lint` 確保符合 ESLint 規範。
+        3.  執行 `grep -r "@ts-ignore" src/ tests/` (確保無 `@ts-ignore`)。
+    *   **Constraint**: 若上述任一檢查失敗，**必須**修正直至通過，才可進入提交階段。
+
+5.  **驗證測試 (Red)**:
     *   **Action**: 執行測試指令，確認它們**失敗** (因為功能尚未實作)。
     *   **Strict Check**: 必須確認測試失敗是因為 **Assertion Error (功能未實作)**，而非 **Syntax Error / Reference Error**。
         -   ✅ `npm run type-check` 必須通過 (0 errors)。
