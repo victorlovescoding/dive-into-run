@@ -1,11 +1,8 @@
 <!-- 
 SYNC IMPACT REPORT
-Version: 1.1.1 -> 1.2.0
-- Updated Principle I: Incorporated Kent C. Dodds Testing Trophy distributions and specific mocking guidelines.
-- Updated Principle VI: Reinforced JSDoc requirements with checkJs context.
-- Added Principle VII: Security & Secrets (Environment variables and git exclusion).
-- Added Principle VIII: Agent Interaction Protocol (Explicit confirmation rules and communication style).
-- Templates requiring updates: None (Generic structures remain valid).
+Version: 1.2.0 -> 1.3.0
+- Added Principle IX: Strict Coding Iron Rules (No Logic in JSX, No ESLint Abuse, Meaningful JSDoc).
+- Updated Governance: Version 1.3.0.
 -->
 # Dive into Run 專案憲法 (Constitution)
 
@@ -86,8 +83,14 @@ Version: 1.1.1 -> 1.2.0
 5.  **重構 (Refactor)**: 優化代碼結構。
 6.  **審查 (Review)**: 確認符合所有憲法原則。
 
+### IX. 絕對編碼鐵律 (Strict Coding Iron Rules)
+**不可協商**: 違反下列規則視為重大違規。
+- **No Logic in JSX**: **嚴格禁止**在 JSX 內撰寫複雜邏輯 (IIFE, heavy conditionals)。必須抽離成 Component 或 Helper。JSX 僅負責 View。
+- **No ESLint Abuse**: **嚴格禁止**使用 `eslint-disable` 規避 A11y 規則 (如 `click-events-have-key-events`)。必須修復 HTML 結構 (加入 roles, labels, handlers)。
+- **Meaningful JSDoc**: **嚴格禁止**撰寫空泛/樣板 JSDoc。文件必須解釋 *意圖* 與 *參數*，不僅是為了滿足 Linter。
+
 ## 治理 (Governance)
 
 本憲法凌駕於所有其他慣例之上。
 
-**Version**: 1.2.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-02-07
+**Version**: 1.3.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-02-14
