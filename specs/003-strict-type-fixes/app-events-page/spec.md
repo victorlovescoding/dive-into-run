@@ -1,3 +1,4 @@
+status: completed
 # Specification: Strict Type and Lint Fixes for App Events Page
 
 **Target File**: `src/app/events/page.js`
