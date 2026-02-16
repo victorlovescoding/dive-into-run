@@ -28,7 +28,8 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
 1.5 **測試品質防線 (Quality Gate)**:
     *   **Action 1 (Read The Laws)**: 在撰寫任何測試代碼前，**必須依序執行以下指令**，否則視為任務失敗：
         1.  `read_file` 讀取 `.gemini/skills/workflow-step-3-tdd/references/coding-style.md` (這是你的法律，必須嚴格遵守)。
-        2.  `read_file` 讀取 `.gemini/skills/workflow-step-3-tdd/references/boilerplate.js` (這是你的範本，請照抄結構)。
+        2.  `read_file` 讀取 `.gemini/skills/workflow-step-3-tdd/references/jsdoc-cheatsheet.md` (這是你的語法字典，請查閱型別寫法)。
+        3.  `read_file` 讀取 `.gemini/skills/workflow-step-3-tdd/references/boilerplate.js` (這是你的範本，請照抄結構)。
     *   **Action 2 (Anti-Patterns)**: 執行 `view_file` 讀取並理解 `.gemini/skills/workflow-step-3-tdd/references/testing-anti-patterns.md`。
     *   **Iron Rule**: 嚴格遵守「三不原則」：不測試 Mock 行為、不污染生產代碼、不使用不完整 Mock。
 

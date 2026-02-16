@@ -9,6 +9,7 @@ This document defines the **absolute laws** for coding in this project. All AI a
 *   **Linter**: ESLint 9 (configured in `eslint.config.mjs`).
 
 ## 2. JavaScript & JSDoc (The "Type System")
+*   **Scope**: Applies to **ALL files** (`src/**/*.js`, `src/**/*.jsx`, `tests/**/*.js`, `tests/**/*.jsx`).
 *   **Strict JSDoc**:
     *   **MANDATORY**: All exported functions, components, and constants MUST have JSDoc.
     *   **Required Tags**: `@param`, `@returns`, `@description`.

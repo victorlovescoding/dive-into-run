@@ -64,18 +64,23 @@ describe('Unit: calculateTotal', () => {
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
-// import UserProfile from '@/components/UserProfile'; // Example import
+
+/**
+ * @typedef {Object} User
+ * @property {string} id
+ * @property {string} name
+ */
 
 /**
  * Mock Component for the example
  * @param {Object} props
- * @param {string} props.name
- * @param {Function} props.onUpdate
+ * @param {User} props.user - Complex object prop
+ * @param {(id: string) => void} props.onUpdate - Typed callback
  */
-const UserProfile = ({ name, onUpdate }) => (
+const UserProfile = ({ user, onUpdate }) => (
   <div>
-    <h1>{name}</h1>
-    <button type="button" onClick={onUpdate}>Update</button>
+    <h1>{user.name}</h1>
+    <button type="button" onClick={() => onUpdate(user.id)}>Update</button>
   </div>
 );
 
@@ -83,13 +88,14 @@ describe('Integration: UserProfile', () => {
   it('should render the user name and handle button click', async () => {
     // Arrange
     const user = userEvent.setup();
+    
+    /** @type {import('vitest').Mock} */
     const mockOnUpdate = vi.fn();
-    const props = {
-      name: 'John Doe',
-      onUpdate: mockOnUpdate,
-    };
+    
+    /** @type {User} */
+    const mockUser = { id: '123', name: 'John Doe' };
 
-    render(<UserProfile {...props} />);
+    render(<UserProfile user={mockUser} onUpdate={mockOnUpdate} />);
 
     // Act
     // Verify initial state strictly using accessible queries
@@ -103,6 +109,7 @@ describe('Integration: UserProfile', () => {
     await user.click(button);
 
     // Assert
+    expect(mockOnUpdate).toHaveBeenCalledWith('123');
     expect(mockOnUpdate).toHaveBeenCalledTimes(1);
   });
 });
