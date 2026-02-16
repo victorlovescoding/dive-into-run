@@ -113,6 +113,10 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
         - Unit: `mkdir -p $RESULT_PATH/unit && npx vitest run $TEST_PATH/unit --reporter=junit --outputFile=$RESULT_PATH/unit/results.xml`
         - Integration: `mkdir -p $RESULT_PATH/integration && npx vitest run $TEST_PATH/integration --reporter=junit --outputFile=$RESULT_PATH/integration/results.xml`
         - E2E: `mkdir -p $RESULT_PATH/e2e && PLAYWRIGHT_JUNIT_OUTPUT_NAME=$RESULT_PATH/e2e/results.xml npx playwright test $TEST_PATH/e2e --reporter=junit`
+    
+    *   **Test Results (Output)**:
+        -   **Standard**: `test-results/<feature-name>/[unit | integration | e2e]/`
+        -   **Refactoring**: `test-results/<branch-name>/<task-name>/[unit | integration | e2e]/`
 
 ## 下一步
 
