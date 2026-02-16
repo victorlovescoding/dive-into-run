@@ -72,7 +72,12 @@ If I ask for adjustments to code I have provided you, do not repeat all of my co
 - **E2E**: Playwright (configured in `playwright.config.mjs`, Chromium only)
 
 ## Testing Standards (Kent C. Dodds Style)
-- **Structure**: `tests/<feature-name>/[unit | integration | e2e]/`
+- **Structure**:
+    - **Standard (Feature)**: `tests/<feature-name>/[unit | integration | e2e]/`
+    - **Refactoring (Task-Based)**: `tests/<branch-name>/<task-name>/[unit | integration | e2e]/` (Use this for granular refactoring tasks)
+- **Test Results (Output)**:
+    - **Standard**: `test-results/<feature-name>/[unit | integration | e2e]/`
+    - **Refactoring**: `test-results/<branch-name>/<task-name>/[unit | integration | e2e]/`
     - `unit/`: Pure logic and service layer testing (e.g., `src/lib/`). No DOM/React.
         - **Logic**: Follow **AAA pattern** (Arrange, Act, Assert) for test structure.
         - **Quality**: Adhere to **F.I.R.S.T principles** (Fast, Independent, Repeatable, Self-Validating, Timely).
