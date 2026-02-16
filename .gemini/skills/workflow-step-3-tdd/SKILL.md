@@ -26,7 +26,10 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
         -   **Iron Law**: No Production Code Without A Failing Test First. 違者視為違反核心價值。
 
 1.5 **測試品質防線 (Quality Gate)**:
-    *   **Action**: 在開始撰寫測試前，**必須先執行 `view_file` 讀取並理解 `.gemini/skills/workflow-step-3-tdd/references/testing-anti-patterns.md`**。
+    *   **Action 1 (Read The Laws)**: 在撰寫任何測試代碼前，**必須依序執行以下指令**，否則視為任務失敗：
+        1.  `read_file` 讀取 `.gemini/skills/workflow-step-3-tdd/references/coding-style.md` (這是你的法律，必須嚴格遵守)。
+        2.  `read_file` 讀取 `.gemini/skills/workflow-step-3-tdd/references/boilerplate.js` (這是你的範本，請照抄結構)。
+    *   **Action 2 (Anti-Patterns)**: 執行 `view_file` 讀取並理解 `.gemini/skills/workflow-step-3-tdd/references/testing-anti-patterns.md`。
     *   **Iron Rule**: 嚴格遵守「三不原則」：不測試 Mock 行為、不污染生產代碼、不使用不完整 Mock。
 
 2.  **分析 Spec (Analyze & Locate)**:
@@ -44,15 +47,18 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
 2.5 **決定測試路徑 (Path Strategy)**:
     *   **Action**: 執行以下邏輯以決定測試檔案存放位置：
         1.  取得當前分支名稱: `BRANCH=$(git branch --show-current)`
-        2.  檢查 `tests/$BRANCH` 是否存在：
-            -   **不存在 (New Feature)**:
-                -   `TEST_PATH = "tests/$BRANCH"`
-            -   **存在 (Continuation/Refactor)**:
-                -   找出 `specs/$BRANCH` 下最近被修改的 `spec.md`。
-                -   取得該 `spec.md` 的**上一層資料夾名稱** (Parent Directory Name)。
-                -   若該名稱等於 `$BRANCH`，則 `TEST_PATH = "tests/$BRANCH"`。
-                -   否則，`TEST_PATH = "tests/$BRANCH/<Parent Directory Name>"`。
-        3.  `RESULT_PATH` 則為 `test-results` 開頭的對應路徑 (例如 `test-results/$BRANCH` 或 `test-results/$BRANCH/<Parent Directory Name>`)。
+        2.  **判斷任務類型 (Feature vs. Refactor)**:
+            -   **Scenario A: Refactoring (Task-Based)**
+                -   若分支名稱包含 `refactor`，或使用者明確指定為重構任務。
+                -   找出當前參考的 `spec.md` 路徑 (e.g., `specs/003-strict-type-fixes/refactor-events-page/spec.md`)。
+                -   提取 `spec.md` 的**父目錄名稱** (e.g., `refactor-events-page`) 作為 `TASK_NAME`。
+                -   **TEST_PATH**: `tests/$BRANCH/$TASK_NAME`
+                -   **RESULT_PATH**: `test-results/$BRANCH/$TASK_NAME`
+            -   **Scenario B: Standard Feature**
+                -   預設情況，或 `spec.md` 直接位於 `specs/$BRANCH/spec.md`。
+                -   **TEST_PATH**: `tests/$BRANCH`
+                -   **RESULT_PATH**: `test-results/$BRANCH`
+        3.  **Create Directories**: 使用 `mkdir -p` 確保目標資料夾存在。
     *   **Result**: 輸出你決定的 `TEST_PATH` 與 `RESULT_PATH` 供使用者確認。
 
 3.  **撰寫測試 (Testing)**:
