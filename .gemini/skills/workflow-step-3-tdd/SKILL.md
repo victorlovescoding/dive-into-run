@@ -96,14 +96,15 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
 4.  **The Iron Wall (絕對防線 - Zero Tolerance)**:
     *   **Mandatory**: 提交測試前，**必須**確保測試程式碼通過靜態分析。測試邏輯應失敗 (Red)，但語法與類型必須正確。
     *   **Strict Rule**: **絕對沒有任何不遵守的空間 (NO EXCEPTIONS)**。任何錯誤 (Error) 或警告 (Warning) 都是攔路虎，禁止繞過。
+    *   **Variable Definition**: 下列指令中的 `$TEST_FILE_PATH` 代表**你剛剛建立的測試檔案路徑** (e.g. `tests/feature/login.test.jsx`)。
     *   **Mandatory Protocol (Loop until Green)**:
-        1.  **Type Check**: 執行 `npm run type-check`。
+        1.  **Type Check**: 執行 `npx tsc $TEST_FILE_PATH --noEmit --allowJs --checkJs --jsx react-jsx --moduleResolution bundler --target esnext --module esnext` (僅檢查此檔案)。
             -   結果必須為 **0 errors**。
             -   若有錯 -> **立刻修復 (Fix Immediately)**。禁止 Commit。
-        2.  **Lint Check**: 執行 `npm run lint`。
+        2.  **Lint Check**: 執行 `npx eslint $TEST_FILE_PATH`。
             -   結果必須為 **0 problems**。
-            -   使用 `npm run lint -- --fix` 自動修復，手修剩餘問題。
-        3.  **Sanity Check**: 執行 `grep -r "@ts-ignore" src tests`。
+            -   使用 `npx eslint $TEST_FILE_PATH --fix` 自動修復，手修剩餘問題。
+        3.  **Sanity Check**: 執行 `grep "@ts-ignore" $TEST_FILE_PATH`。
             -   結果必須為 **Empty (空)**。
             -   若有輸出 -> **立刻移除 (Remove Immediately)**。
     *   **Constraint**: 只有當上述三項全數通過時，才允許執行 `git commit`。AI 不得在未驗證的情況下假設代碼是乾淨的。
@@ -111,9 +112,9 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
 5.  **驗證測試 (Red)**:
     *   **Action**: 執行測試指令，確認它們**失敗** (因為功能尚未實作)。
     *   **Strict Check**: 必須確認測試失敗是因為 **Assertion Error (功能未實作)**，而非 **Syntax Error / Reference Error**。
-        -   ✅ `npm run type-check` 必須通過 (0 errors)。
-        -   ✅ `npm run lint` 必須通過 (0 errors)。
-        -   ✅ 執行 `grep -r "@ts-ignore" src` 確保沒有任何被禁用的註解。
+        -   ✅ `npx tsc ...` 必須通過 (0 errors)。
+        -   ✅ `npx eslint ...` 必須通過 (0 errors)。
+        -   ✅ `grep "@ts-ignore" ...` 確保沒有任何被禁用的註解。
         -   ❌ `ReferenceError: x is not defined` (這是你的測試寫錯了，修好它)
         -   ✅ `AssertionError: expected 'success' but got undefined` (這才是有效的 RED)
     *   **Commands**:
