@@ -1,3 +1,4 @@
+status: kanban_synced
 # Tasks: Refactor Events Page
 
 **Feature**: Refactor Events Page for Strict Standards (Branch: `003-strict-type-fixes`)
