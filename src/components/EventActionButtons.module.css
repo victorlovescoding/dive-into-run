@@ -1,0 +1,115 @@
+/**
+ * @file Styles for EventActionButtons component.
+ * @description
+ * Migrated from events.module.css to support the isolated EventActionButtons component.
+ */
+
+/* 活動平台風格按鈕（Join / Leave / Submit 共用基底） */
+.submitButton {
+  background-color: #1a73e8;
+  color: white;
+  border: 1px solid rgba(26, 115, 232, 0.35);
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: transform 0.06s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.submitButton:hover {
+  background-color: #1558b0;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.14);
+}
+
+.submitButton:active {
+  transform: translateY(1px);
+}
+
+/* disabled 狀態更明顯（含 aria-disabled） */
+.submitButton:disabled,
+.submitButton[aria-disabled="true"] {
+  background: #e5e7eb;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.submitButton:disabled:hover,
+.submitButton[aria-disabled="true"]:hover {
+  background: #e5e7eb;
+  box-shadow: none;
+}
+
+/* 退出按鈕（紅色） */
+.leaveButton {
+  composes: submitButton;
+  background: #ef4444;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.leaveButton:hover {
+  background: #dc2626;
+}
+
+/* 額滿/不可用（灰色，但比 disabled 再更一致） */
+.disabledButton {
+  background: #e5e7eb;
+  color: #9ca3af;
+  border: 1px solid #e5e7eb;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* 額滿按鈕樣式 */
+.soldOutButton {
+  composes: submitButton;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 按鈕內的小 spinner 尺寸 */
+.buttonSpinner {
+  width: 14px;
+  height: 14px;
+}
+
+/* Spinner and Animation */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #dadce0;
+  border-top-color: #673ab7;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Spinner Label alignment */
+.spinnerLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.helperText {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: #70757a;
+}

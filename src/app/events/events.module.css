@@ -215,78 +215,6 @@
   background: rgba(103, 58, 183, 0.04);
 }
 
-/* 活動平台風格按鈕（Join / Leave / Submit 共用基底） */
-.submitButton {
-  background-color: #1a73e8;
-  color: white;
-  border: 1px solid rgba(26, 115, 232, 0.35);
-  padding: 10px 16px;
-  border-radius: 10px;
-  font-weight: 800;
-  font-size: 0.95rem;
-  cursor: pointer;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 40px;
-
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  transition: transform 0.06s ease, box-shadow 0.15s ease, background 0.15s ease;
-}
-
-.submitButton:hover {
-  background-color: #1558b0;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.14);
-}
-
-.submitButton:active {
-  transform: translateY(1px);
-}
-
-/* disabled 狀態更明顯（含 aria-disabled） */
-.submitButton:disabled,
-.submitButton[aria-disabled="true"] {
-  background: #e5e7eb;
-  color: #9ca3af;
-  border-color: #e5e7eb;
-  box-shadow: none;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.submitButton:disabled:hover,
-.submitButton[aria-disabled="true"]:hover {
-  background: #e5e7eb;
-  box-shadow: none;
-}
-
-/* 退出按鈕（紅色） */
-.leaveButton {
-  background: #ef4444;
-  border-color: rgba(239, 68, 68, 0.35);
-}
-
-.leaveButton:hover {
-  background: #dc2626;
-}
-
-/* 額滿/不可用（灰色，但比 disabled 再更一致） */
-.disabledButton {
-  background: #e5e7eb;
-  color: #9ca3af;
-  border: 1px solid #e5e7eb;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* 額滿按鈕樣式 */
-.soldOutButton {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .formGroup input::placeholder {
   color: #70757a; /* 改成深灰色，這樣會清楚很多 */
   opacity: 1; /* 確保透明度是 100% (Firefox 預設會變淡，這行很重要) */
@@ -423,6 +351,13 @@
 
   padding: 24px 12px;
   overflow: hidden; /* 外層不滾，內層卡片滾 */
+}
+
+.overlayBackground {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  cursor: pointer;
 }
 
 .filterCard {
@@ -707,12 +642,6 @@
   }
 }
 
-/* 按鈕內的小 spinner 尺寸（避免每次都 inline style） */
-.buttonSpinner {
-  width: 14px;
-  height: 14px;
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -965,4 +894,17 @@
 
 .fontSize16 {
   font-size: 16px;
+}
+
+/* Accessible utility class to hide elements visually while keeping them for screen readers */
+:global(.sr-only) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }

@@ -20,15 +20,25 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import EventActionButtons from '@/components/EventActionButtons'; 
 
 /**
- * @typedef {Object} EventData
+ * @typedef {object} EventData
  * @property {string} id
  * @property {string} hostUid
+ * @property {string} hostName
  * @property {number} maxParticipants
  * @property {string[]} participants
+ * @property {number} [participantsCount]
+ * @property {string} title
+ * @property {string} time
+ * @property {string} registrationDeadline
+ * @property {string} city
+ * @property {string} district
+ * @property {string} meetPlace
+ * @property {number} distanceKm
+ * @property {number} paceSec
  */
 
 /**
- * @typedef {Object} User
+ * @typedef {object} User
  * @property {string} uid
  */
 
@@ -52,8 +62,18 @@ describe('Integration: EventActionButtons', () => {
     const mockEvent = {
       id: 'event-1',
       hostUid: 'host-999',
+      hostName: 'Test Host',
       maxParticipants: 10,
-      participants: ['other-user']
+      participants: ['other-user'],
+      participantsCount: 1,
+      title: 'Mock Event',
+      time: '2026-01-01T10:00',
+      registrationDeadline: '2025-12-31T23:59',
+      city: '臺北市',
+      district: '中正區',
+      meetPlace: '公園',
+      distanceKm: 5,
+      paceSec: 360,
     };
 
     render(
@@ -65,11 +85,12 @@ describe('Integration: EventActionButtons', () => {
         isPending={false}
         isCreating={false}
         isFormOpen={false}
+        myJoinedEventIds={new Set()}
       />
     );
 
     // Act
-    const joinButton = screen.getByRole('button', { name: /join event/i });
+    const joinButton = screen.getByRole('button', { name: /參加活動/i });
 
     // Assert
     expect(joinButton).toBeInTheDocument();
@@ -94,8 +115,18 @@ describe('Integration: EventActionButtons', () => {
     const mockEvent = {
       id: 'event-1',
       hostUid: 'host-999',
+      hostName: 'Test Host',
       maxParticipants: 10,
-      participants: ['user-123', 'other-user'] // User is in participants
+      participants: ['user-123', 'other-user'],
+      participantsCount: 2,
+      title: 'Mock Event',
+      time: '2026-01-01T10:00',
+      registrationDeadline: '2025-12-31T23:59',
+      city: '臺北市',
+      district: '中正區',
+      meetPlace: '公園',
+      distanceKm: 5,
+      paceSec: 360,
     };
 
     render(
@@ -107,11 +138,12 @@ describe('Integration: EventActionButtons', () => {
         isPending={false}
         isCreating={false}
         isFormOpen={false}
+        myJoinedEventIds={new Set(['event-1'])}
       />
     );
 
     // Act
-    const leaveButton = screen.getByRole('button', { name: /leave event/i });
+    const leaveButton = screen.getByRole('button', { name: /退出活動/i });
 
     // Assert
     expect(leaveButton).toBeInTheDocument();
@@ -130,8 +162,18 @@ describe('Integration: EventActionButtons', () => {
     const mockEvent = {
       id: 'event-1',
       hostUid: 'host-999',
+      hostName: 'Test Host',
       maxParticipants: 1,
-      participants: ['other-user'] // 1/1 participants
+      participants: ['other-user'],
+      participantsCount: 1,
+      title: 'Mock Event',
+      time: '2026-01-01T10:00',
+      registrationDeadline: '2025-12-31T23:59',
+      city: '臺北市',
+      district: '中正區',
+      meetPlace: '公園',
+      distanceKm: 5,
+      paceSec: 360,
     };
 
     render(
@@ -143,14 +185,13 @@ describe('Integration: EventActionButtons', () => {
         isPending={false}
         isCreating={false}
         isFormOpen={false}
+        myJoinedEventIds={new Set()}
       />
     );
 
     // Act & Assert
-    // Assuming "Full" is rendered as text or a disabled button
-    // Adjust selector based on implementation details if needed (e.g., getByText)
-    expect(screen.getByText(/full/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /join event/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/已額滿/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /參加活動/i })).not.toBeInTheDocument();
   });
 
   it('should NOT render Join/Leave buttons if user is the host', () => {
@@ -161,9 +202,19 @@ describe('Integration: EventActionButtons', () => {
     /** @type {EventData} */
     const mockEvent = {
       id: 'event-1',
-      hostUid: 'host-999', // User is host
+      hostUid: 'host-999',
+      hostName: 'Test Host',
       maxParticipants: 10,
-      participants: []
+      participants: [],
+      participantsCount: 0,
+      title: 'Mock Event',
+      time: '2026-01-01T10:00',
+      registrationDeadline: '2025-12-31T23:59',
+      city: '臺北市',
+      district: '中正區',
+      meetPlace: '公園',
+      distanceKm: 5,
+      paceSec: 360,
     };
 
     render(
@@ -175,6 +226,7 @@ describe('Integration: EventActionButtons', () => {
         isPending={false}
         isCreating={false}
         isFormOpen={false}
+        myJoinedEventIds={new Set()}
       />
     );
 
@@ -192,8 +244,18 @@ describe('Integration: EventActionButtons', () => {
     const mockEvent = {
       id: 'event-1',
       hostUid: 'host-999',
+      hostName: 'Test Host',
       maxParticipants: 10,
-      participants: []
+      participants: [],
+      participantsCount: 0,
+      title: 'Mock Event',
+      time: '2026-01-01T10:00',
+      registrationDeadline: '2025-12-31T23:59',
+      city: '臺北市',
+      district: '中正區',
+      meetPlace: '公園',
+      distanceKm: 5,
+      paceSec: 360,
     };
 
     render(
@@ -202,16 +264,56 @@ describe('Integration: EventActionButtons', () => {
         user={mockUser} 
         onJoin={vi.fn()} 
         onLeave={vi.fn()}
-        isPending={true} // Pending state
+        isPending={true}
         isCreating={false}
         isFormOpen={false}
+        myJoinedEventIds={new Set()}
       />
     );
 
     // Act
-    const joinButton = screen.getByRole('button', { name: /join event/i });
+    const joinButton = screen.getByRole('button', { name: /參加活動/i });
 
     // Assert
     expect(joinButton).toBeDisabled();
+  });
+
+  it('should NOT render Join/Leave buttons if user is NOT logged in', () => {
+    // Arrange
+    /** @type {EventData} */
+    const mockEvent = {
+      id: 'event-1',
+      hostUid: 'host-999',
+      hostName: 'Test Host',
+      maxParticipants: 10,
+      participants: [],
+      participantsCount: 0,
+      title: 'Mock Event',
+      time: '2026-01-01T10:00',
+      registrationDeadline: '2025-12-31T23:59',
+      city: '臺北市',
+      district: '中正區',
+      meetPlace: '公園',
+      distanceKm: 5,
+      paceSec: 360,
+    };
+
+    render(
+      <EventActionButtons 
+        event={mockEvent} 
+        user={null} // Not logged in
+        onJoin={vi.fn()} 
+        onLeave={vi.fn()}
+        isPending={false}
+        isCreating={false}
+        isFormOpen={false}
+        myJoinedEventIds={new Set()}
+      />
+    );
+
+    // Act & Assert
+    expect(screen.queryByRole('button', { name: /參加活動/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /退出活動/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/登入/i)).toBeInTheDocument();
   });
 });

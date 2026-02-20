@@ -1,9 +1,5 @@
 'use client';
 
-/* eslint-disable jsx-a11y/label-has-associated-control */
-/* eslint-disable jsx-a11y/control-has-associated-label */
-/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
-
 import {
   useEffect, useState, useContext, useRef, useCallback,
 } from 'react';
@@ -20,6 +16,7 @@ import {
 } from '@/lib/event-helpers';
 import { AuthContext } from '@/contexts/AuthContext';
 import styles from './events.module.css';
+import EventActionButtons from '@/components/EventActionButtons';
 import {
   createEvent,
   fetchLatestEvents,
@@ -431,32 +428,18 @@ export default function RunTogetherPage() {
   const [isFormOpen, setFormOpen] = useState(false);
   // ✅ 篩選浮層（先做空白 UI）
   const [isFilterOpen, setFilterOpen] = useState(false);
-  // ✅ 篩選表單（先從「揪團人」開始）
-  const [filterHostText, setFilterHostText] = useState('');
+  // ✅ 篩選表單
   // 2. 活動日期/時間
   const [filterTimeStart, setFilterTimeStart] = useState('');
   const [filterTimeEnd, setFilterTimeEnd] = useState('');
-  // 3. 報名截止時間
-  const [filterRegStart, setFilterRegStart] = useState('');
-  const [filterRegEnd, setFilterRegEnd] = useState('');
   // 4. 跑步距離 (km)
   const [filterDistanceMin, setFilterDistanceMin] = useState('');
   const [filterDistanceMax, setFilterDistanceMax] = useState('');
-  // 5. 配速 (分:秒) - 範圍
-  const [filterPaceMinMin, setFilterPaceMinMin] = useState(''); // 最快配速 (分)
-  const [filterPaceMinSec, setFilterPaceMinSec] = useState(''); // 最快配速 (秒)
-  const [filterPaceMaxMin, setFilterPaceMaxMin] = useState(''); // 最慢配速 (分)
-  const [filterPaceMaxSec, setFilterPaceMaxSec] = useState(''); // 最慢配速 (秒)
   // 6. 是否還有名額
   const [filterHasSeatsOnly, setFilterHasSeatsOnly] = useState(true);
   // 7. 縣市 + 區
   const [filterCity, setFilterCity] = useState('');
   const [filterDistrict, setFilterDistrict] = useState('');
-  // 8. 限制人數
-  const [filterMaxParticipantsMin, setFilterMaxParticipantsMin] = useState('');
-  const [filterMaxParticipantsMax, setFilterMaxParticipantsMax] = useState('');
-  // 9. 跑步類型
-  const [filterRunType, setFilterRunType] = useState('');
   const { user } = useContext(AuthContext);
 
   // ✅ 表單相關 state
@@ -526,7 +509,7 @@ export default function RunTogetherPage() {
     let cancelled = false;
 
     /**
-     *
+     * 執行初始資料載入。
      */
     async function run() {
       setIsLoadingEvents(true);
@@ -606,6 +589,10 @@ export default function RunTogetherPage() {
     };
   }, [events, user?.uid]);
 
+  /**
+   * 載入更多活動。
+   * @returns {Promise<void>}
+   */
   const loadMore = useCallback(async () => {
     if (isFormOpen || isCreating) return;
     if (!hasMore || !cursor || isLoadingEvents || isLoadingMore) return;
@@ -652,7 +639,7 @@ export default function RunTogetherPage() {
   }, [hasMore, loadMore]);
 
   /**
-   *
+   * 切換建立活動表單顯示狀態。
    */
   function handleToggleCreateRunForm() {
     if (!user?.uid) {
@@ -696,26 +683,16 @@ export default function RunTogetherPage() {
   }
 
   /**
-   *
+   * 清除所有篩選條件。
    */
   function handleClearFilters() {
-    setFilterHostText('');
     setFilterTimeStart('');
     setFilterTimeEnd('');
-    setFilterRegStart('');
-    setFilterRegEnd('');
     setFilterDistanceMin('');
     setFilterDistanceMax('');
-    setFilterPaceMinMin('');
-    setFilterPaceMinSec('');
-    setFilterPaceMaxMin('');
-    setFilterPaceMaxSec('');
     setFilterHasSeatsOnly(true);
     setFilterCity('');
     setFilterDistrict('');
-    setFilterMaxParticipantsMin('');
-    setFilterMaxParticipantsMax('');
-    setFilterRunType('');
 
     // 重置搜尋結果狀態
     setIsFilteredResults(false);
@@ -834,7 +811,7 @@ export default function RunTogetherPage() {
    * @param {import('react').MouseEvent} clickEvent - 點擊事件。
    * @returns {Promise<void>}
    */
-  async function handleJoinClick(ev, clickEvent) {
+  const handleJoinClick = useCallback(async (ev, clickEvent) => {
     clickEvent.preventDefault();
     clickEvent.stopPropagation();
 
@@ -900,7 +877,7 @@ export default function RunTogetherPage() {
         return next;
       });
     }
-  }
+  }, [user]);
 
   /**
    * 處理點擊退出活動。
@@ -908,7 +885,7 @@ export default function RunTogetherPage() {
    * @param {import('react').MouseEvent} clickEvent - 點擊事件。
    * @returns {Promise<void>}
    */
-  async function handleLeaveClick(ev, clickEvent) {
+  const handleLeaveClick = useCallback(async (ev, clickEvent) => {
     clickEvent.preventDefault();
     clickEvent.stopPropagation();
 
@@ -970,7 +947,7 @@ export default function RunTogetherPage() {
         return next;
       });
     }
-  }
+  }, [user]);
 
   return (
     <div className={styles.pageContainer}>
@@ -1132,78 +1109,16 @@ export default function RunTogetherPage() {
 
                   {/* ✅ 參加/退出活動（events 列表版） */}
                   <div className={styles.eventCardActions}>
-                    {!user?.uid && (
-                      <div className={styles.helperText}>
-                        加入活動前請先登入
-                      </div>
-                    )}
-                    {user?.uid && ev.hostUid !== user.uid && (
-                      (() => {
-                        const eventId = String(ev.id);
-                        const pending = pendingByEventId[eventId];
-                        const joined = myJoinedEventIds.has(eventId);
-                        const remaining = getRemainingSeats(ev);
-
-                        if (joined) {
-                          return (
-                            <button
-                              type="button"
-                              className={`${styles.submitButton} ${styles.leaveButton}`}
-                              onClick={(e) => handleLeaveClick(ev, e)}
-                              disabled={
-                                Boolean(pending) || isCreating || isFormOpen
-                              }
-                            >
-                              {pending === 'leaving' ? (
-                                <span className={styles.spinnerLabel}>
-                                  <div
-                                    className={`${styles.spinner} ${styles.buttonSpinner}`}
-                                  />
-                                  取消中…
-                                </span>
-                              ) : (
-                                '退出活動'
-                              )}
-                            </button>
-                          );
-                        }
-
-                        if (remaining <= 0) {
-                          return (
-                            <button
-                              type="button"
-                              className={`${styles.submitButton} ${styles.soldOutButton}`}
-                              disabled
-                              aria-disabled="true"
-                            >
-                              已額滿
-                            </button>
-                          );
-                        }
-
-                        return (
-                          <button
-                            type="button"
-                            className={styles.submitButton}
-                            onClick={(e) => handleJoinClick(ev, e)}
-                            disabled={
-                              Boolean(pending) || isCreating || isFormOpen
-                            }
-                          >
-                            {pending === 'joining' ? (
-                              <span className={styles.spinnerLabel}>
-                                <div
-                                  className={`${styles.spinner} ${styles.buttonSpinner}`}
-                                />
-                                報名中…
-                              </span>
-                            ) : (
-                              '參加活動'
-                            )}
-                          </button>
-                        );
-                      })()
-                    )}
+                    <EventActionButtons
+                      event={ev}
+                      user={user}
+                      onJoin={handleJoinClick}
+                      onLeave={handleLeaveClick}
+                      isPending={pendingByEventId[String(ev.id)]}
+                      isCreating={isCreating}
+                      isFormOpen={isFormOpen}
+                      myJoinedEventIds={myJoinedEventIds}
+                    />
                   </div>
                 </div>
               </Link>
@@ -1258,23 +1173,24 @@ export default function RunTogetherPage() {
       )}
 
       {isFilterOpen && (
-        <div
-          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-          className={styles.filterOverlay}
-          role="dialog"
-          aria-modal="true"
-          aria-label="篩選活動"
-          onClick={(e) => {
-            // 點背景關閉
-            if (e.target === e.currentTarget) setFilterOpen(false);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setFilterOpen(false);
-          }}
-          tabIndex={-1}
-        >
+        <div className={styles.filterOverlay}>
+          <div
+            className={styles.overlayBackground}
+            role="button"
+            aria-label="關閉篩選"
+            onClick={() => setFilterOpen(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+                setFilterOpen(false);
+              }
+            }}
+            tabIndex={0}
+          />
           <div
             className={styles.filterCard}
+            role="dialog"
+            aria-modal="true"
+            aria-label="篩選活動詳情"
           >
             <div className={styles.filterHeader}>
               <div className={styles.filterHeaderTitle}>篩選活動</div>
@@ -1340,6 +1256,7 @@ export default function RunTogetherPage() {
                   <div className={styles.filterRowItem}>
                     <input
                       type="datetime-local"
+                      id="filterTimeStart"
                       className={styles.filterTextField}
                       value={filterTimeStart}
                       onChange={(e) => setFilterTimeStart(e.target.value)}
@@ -1350,6 +1267,7 @@ export default function RunTogetherPage() {
                   <div className={styles.filterRowItem}>
                     <input
                       type="datetime-local"
+                      id="filterTimeEnd"
                       className={styles.filterTextField}
                       value={filterTimeEnd}
                       onChange={(e) => setFilterTimeEnd(e.target.value)}
@@ -1373,8 +1291,10 @@ export default function RunTogetherPage() {
                   <div className={styles.filterRowItem}>
                     <input
                       type="number"
+                      id="filterDistanceMin"
                       className={styles.filterTextField}
                       placeholder="最小距離"
+                      aria-label="最小跑步距離"
                       min={0}
                       step={0.1}
                       value={filterDistanceMin}
@@ -1385,8 +1305,10 @@ export default function RunTogetherPage() {
                   <div className={styles.filterRowItem}>
                     <input
                       type="number"
+                      id="filterDistanceMax"
                       className={styles.filterTextField}
                       placeholder="最大距離"
+                      aria-label="最大跑步距離"
                       min={0}
                       step={0.1}
                       value={filterDistanceMax}
@@ -1407,38 +1329,44 @@ export default function RunTogetherPage() {
               <div className={styles.filterGroup}>
                 <div className={styles.filterLabel}>活動區域</div>
                 <div className={styles.filterRow}>
-                  <select
-                    className={`${styles.selectField} ${styles.flex1}`}
-                    value={filterCity}
-                    aria-label="選擇縣市"
-                    onChange={(e) => {
-                      setFilterCity(e.target.value);
-                      setFilterDistrict('');
-                    }}
-                  >
-                    <option value="">所有縣市</option>
-                    {Object.keys(taiwanLocations).map((city) => (
-                      <option key={city} value={city}>
-                        {city}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    className={`${styles.selectField} ${styles.flex1}`}
-                    value={filterDistrict}
-                    aria-label="選擇區域"
-                    onChange={(e) => setFilterDistrict(e.target.value)}
-                    disabled={!filterCity}
-                  >
-                    <option value="">所有區域</option>
-                    {filterCity
-                      && taiwanLocations[filterCity]?.map((dist) => (
-                        <option key={dist} value={dist}>
-                          {dist}
+                  <label htmlFor="filterCity" className={styles.flex1}>
+                    <span className="sr-only">選擇縣市</span>
+                    <select
+                      id="filterCity"
+                      className={styles.selectField}
+                      value={filterCity}
+                      onChange={(e) => {
+                        setFilterCity(e.target.value);
+                        setFilterDistrict('');
+                      }}
+                    >
+                      <option value="">所有縣市</option>
+                      {Object.keys(taiwanLocations).map((city) => (
+                        <option key={city} value={city}>
+                          {city}
                         </option>
                       ))}
-                  </select>
+                    </select>
+                  </label>
+
+                  <label htmlFor="filterDistrict" className={styles.flex1}>
+                    <span className="sr-only">選擇區域</span>
+                    <select
+                      id="filterDistrict"
+                      className={styles.selectField}
+                      value={filterDistrict}
+                      onChange={(e) => setFilterDistrict(e.target.value)}
+                      disabled={!filterCity}
+                    >
+                      <option value="">所有區域</option>
+                      {filterCity
+                        && taiwanLocations[filterCity]?.map((dist) => (
+                          <option key={dist} value={dist}>
+                            {dist}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
                 </div>
               </div>
 
@@ -1498,16 +1426,18 @@ export default function RunTogetherPage() {
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="hostName">揪團人</label>
-              <input
-                id="hostName"
-                type="text"
-                name="hostName"
-                value={hostName}
-                readOnly
-                aria-readonly="true"
-                placeholder="將自動帶入您的會員名稱"
-              />
+              <label htmlFor="hostName">
+                揪團人
+                <input
+                  id="hostName"
+                  type="text"
+                  name="hostName"
+                  value={hostName}
+                  readOnly
+                  aria-readonly="true"
+                  placeholder="將自動帶入您的會員名稱"
+                />
+              </label>
               <div className={styles.focusBorder} />
               <small className={styles.helperText}>
                 由登入帳號自動帶入，無法修改
@@ -1515,138 +1445,155 @@ export default function RunTogetherPage() {
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="title">活動名稱</label>
-              <input
-                id="title"
-                type="text"
-                name="title"
-                required
-                placeholder="例如：大安森林公園輕鬆跑"
-                defaultValue={draftFormData?.title || ''}
-              />
-              <div className={styles.focusBorder} />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="time">活動時間</label>
-              <input
-                id="time"
-                type="datetime-local"
-                name="time"
-                min={minDateTime}
-                required
-                defaultValue={draftFormData?.time || ''}
-              />
-              <div className={styles.focusBorder} />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="registrationDeadline">報名截止時間</label>
-              <input
-                id="registrationDeadline"
-                type="datetime-local"
-                name="registrationDeadline"
-                min={minDateTime}
-                required
-                defaultValue={draftFormData?.registrationDeadline || ''}
-              />
-              <div className={styles.focusBorder} />
-            </div>
-
-            <div className={styles.formGroup}>
-              <div className={styles.formLabel}>活動區域</div>
-              <div className={styles.flexRowGap10}>
-                <select
-                  name="city"
-                  value={selectedCity}
-                  onChange={(e) => {
-                    setSelectedCity(e.target.value);
-                    setSelectedDistrict('');
-                  }}
+              <label htmlFor="title">
+                活動名稱
+                <input
+                  id="title"
+                  type="text"
+                  name="title"
                   required
-                  className={`${styles.selectField} ${styles.flex1}`}
-                >
-                  <option value="" disabled>
-                    請選擇縣市
-                  </option>
-                  {Object.keys(taiwanLocations).map((city) => (
-                    <option key={city} value={city}>
-                      {city}
+                  placeholder="例如：大安森林公園輕鬆跑"
+                  defaultValue={draftFormData?.title || ''}
+                />
+              </label>
+              <div className={styles.focusBorder} />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="time">
+                活動時間
+                <input
+                  id="time"
+                  type="datetime-local"
+                  name="time"
+                  min={minDateTime}
+                  required
+                  defaultValue={draftFormData?.time || ''}
+                />
+              </label>
+              <div className={styles.focusBorder} />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="registrationDeadline">
+                報名截止時間
+                <input
+                  id="registrationDeadline"
+                  type="datetime-local"
+                  name="registrationDeadline"
+                  min={minDateTime}
+                  required
+                  defaultValue={draftFormData?.registrationDeadline || ''}
+                />
+              </label>
+              <div className={styles.focusBorder} />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel} htmlFor="city">
+                活動區域
+                <div className={styles.flexRowGap10}>
+                  <select
+                    id="city"
+                    name="city"
+                    value={selectedCity}
+                    onChange={(e) => {
+                      setSelectedCity(e.target.value);
+                      setSelectedDistrict('');
+                    }}
+                    required
+                    className={`${styles.selectField} ${styles.flex1}`}
+                  >
+                    <option value="" disabled>
+                      請選擇縣市
                     </option>
-                  ))}
-                </select>
-
-                <select
-                  name="district"
-                  value={selectedDistrict}
-                  onChange={(e) => setSelectedDistrict(e.target.value)}
-                  required
-                  className={`${styles.selectField} ${styles.flex1}`}
-                >
-                  <option value="" disabled>
-                    請選擇區域
-                  </option>
-                  {selectedCity
-                    && taiwanLocations[selectedCity]?.map((dist) => (
-                      <option key={dist} value={dist}>
-                        {dist}
+                    {Object.keys(taiwanLocations).map((city) => (
+                      <option key={city} value={city}>
+                        {city}
                       </option>
                     ))}
+                  </select>
+
+                  <select
+                    id="district"
+                    name="district"
+                    aria-label="選擇區域"
+                    value={selectedDistrict}
+                    onChange={(e) => setSelectedDistrict(e.target.value)}
+                    required
+                    className={`${styles.selectField} ${styles.flex1}`}
+                  >
+                    <option value="" disabled>
+                      請選擇區域
+                    </option>
+                    {selectedCity
+                      && taiwanLocations[selectedCity]?.map((dist) => (
+                        <option key={dist} value={dist}>
+                          {dist}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </label>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="meetPlace">
+                集合地點
+                <input
+                  id="meetPlace"
+                  type="text"
+                  name="meetPlace"
+                  required
+                  placeholder="例如：大安森林公園 2號出口"
+                  defaultValue={draftFormData?.meetPlace || ''}
+                />
+              </label>
+              <div className={styles.focusBorder} />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="runType">
+                跑步類型
+                <select
+                  name="runType"
+                  id="runType"
+                  className={styles.selectField}
+                  required
+                  defaultValue={draftFormData?.runType || ''}
+                >
+                  <option value="" disabled>
+                    請選擇跑步類型
+                  </option>
+                  <option value="easy_run">輕鬆慢跑（Easy Run）</option>
+                  <option value="long_run">長距離慢跑（Long Run）</option>
+                  <option value="tempo_run">節奏跑（Tempo Run）</option>
+                  <option value="interval_training">
+                    間歇訓練（Interval Training）
+                  </option>
+                  <option value="hill_training">坡度訓練（Hill Training）</option>
+                  <option value="fartlek">變速跑（Fartlek）</option>
+                  <option value="trail_run">越野跑（Trail Run）</option>
+                  <option value="social_run">休閒社交跑（Social Run）</option>
                 </select>
-              </div>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="meetPlace">集合地點</label>
-              <input
-                id="meetPlace"
-                type="text"
-                name="meetPlace"
-                required
-                placeholder="例如：大安森林公園 2號出口"
-                defaultValue={draftFormData?.meetPlace || ''}
-              />
+              </label>
               <div className={styles.focusBorder} />
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="runType">跑步類型</label>
-              <select
-                name="runType"
-                id="runType"
-                className={styles.selectField}
-                required
-                defaultValue={draftFormData?.runType || ''}
-              >
-                <option value="" disabled>
-                  請選擇跑步類型
-                </option>
-                <option value="easy_run">輕鬆慢跑（Easy Run）</option>
-                <option value="long_run">長距離慢跑（Long Run）</option>
-                <option value="tempo_run">節奏跑（Tempo Run）</option>
-                <option value="interval_training">
-                  間歇訓練（Interval Training）
-                </option>
-                <option value="hill_training">坡度訓練（Hill Training）</option>
-                <option value="fartlek">變速跑（Fartlek）</option>
-                <option value="trail_run">越野跑（Trail Run）</option>
-                <option value="social_run">休閒社交跑（Social Run）</option>
-              </select>
-              <div className={styles.focusBorder} />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="distanceKm">距離（公里）</label>
-              <input
-                id="distanceKm"
-                name="distanceKm"
-                type="number"
-                min={0.1}
-                step={0.1}
-                required
-                placeholder="10"
-                defaultValue={draftFormData?.distanceKm || ''}
-              />
+              <label htmlFor="distanceKm">
+                距離（公里）
+                <input
+                  id="distanceKm"
+                  name="distanceKm"
+                  type="number"
+                  min={0.1}
+                  step={0.1}
+                  required
+                  placeholder="10"
+                  defaultValue={draftFormData?.distanceKm || ''}
+                />
+              </label>
               <div className={styles.focusBorder} />
             </div>
 
@@ -1655,42 +1602,47 @@ export default function RunTogetherPage() {
               <div
                 className={`${styles.flexRowGap10} ${styles.flexAlignCenter}`}
               >
-                <select
-                  name="paceMinutes"
-                  className={`${styles.selectField} ${styles.centerSelect}`}
-                  required
-                  defaultValue={draftFormData?.paceMinutes || ''}
-                  aria-label="分鐘"
-                >
-                  <option value="" disabled hidden />
-                  {[...Array(19)].map((_, i) => {
-                    const val = String(i + 2).padStart(2, '0');
-                    return (
-                      <option key={val} value={val}>
-                        {i + 2}
-                      </option>
-                    );
-                  })}
-                </select>
-                <span className={styles.paceUnit}>分</span>
-                <select
-                  name="paceSeconds"
-                  className={`${styles.selectField} ${styles.centerSelect}`}
-                  required
-                  defaultValue={draftFormData?.paceSeconds || ''}
-                  aria-label="秒"
-                >
-                  <option value="" disabled hidden />
-                  {[...Array(60).keys()].map((s) => {
-                    const label = String(s).padStart(2, '0');
-                    return (
-                      <option key={s} value={label}>
-                        {label}
-                      </option>
-                    );
-                  })}
-                </select>
-                <span className={styles.paceUnit}>秒</span>
+                <label htmlFor="paceMinutes" className={styles.flexAlignCenter}>
+                  <select
+                    id="paceMinutes"
+                    name="paceMinutes"
+                    className={`${styles.selectField} ${styles.centerSelect}`}
+                    required
+                    defaultValue={draftFormData?.paceMinutes || ''}
+                  >
+                    <option value="" disabled hidden>分</option>
+                    {[...Array(19)].map((_, i) => {
+                      const val = String(i + 2).padStart(2, '0');
+                      return (
+                        <option key={val} value={val}>
+                          {i + 2}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <span className={styles.paceUnit}>分</span>
+                </label>
+
+                <label htmlFor="paceSeconds" className={styles.flexAlignCenter}>
+                  <select
+                    id="paceSeconds"
+                    name="paceSeconds"
+                    className={`${styles.selectField} ${styles.centerSelect}`}
+                    required
+                    defaultValue={draftFormData?.paceSeconds || ''}
+                  >
+                    <option value="" disabled hidden>秒</option>
+                    {[...Array(60).keys()].map((s) => {
+                      const label = String(s).padStart(2, '0');
+                      return (
+                        <option key={s} value={label}>
+                          {label}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <span className={styles.paceUnit}>秒</span>
+                </label>
               </div>
               <div className={styles.focusBorder} />
               <small className={styles.helperText}>
@@ -1751,27 +1703,31 @@ export default function RunTogetherPage() {
             )}
 
             <div className={styles.formGroup}>
-              <label htmlFor="maxParticipants">人數上限</label>
-              <input
-                id="maxParticipants"
-                name="maxParticipants"
-                type="number"
-                min={2}
-                defaultValue={draftFormData?.maxParticipants || '2'}
-              />
+              <label htmlFor="maxParticipants">
+                人數上限
+                <input
+                  id="maxParticipants"
+                  name="maxParticipants"
+                  type="number"
+                  min={2}
+                  defaultValue={draftFormData?.maxParticipants || '2'}
+                />
+              </label>
               <div className={styles.focusBorder} />
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="description">活動說明</label>
-              <textarea
-                id="description"
-                name="description"
-                rows={4}
-                placeholder="請說明活動內容、注意事項、集合細節等"
-                className={styles.textareaField}
-                defaultValue={draftFormData?.description || ''}
-              />
+              <label htmlFor="description">
+                活動說明
+                <textarea
+                  id="description"
+                  name="description"
+                  rows={4}
+                  placeholder="請說明活動內容、注意事項、集合細節等"
+                  className={styles.textareaField}
+                  defaultValue={draftFormData?.description || ''}
+                />
+              </label>
               <div className={styles.focusBorder} />
             </div>
 
