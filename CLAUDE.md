@@ -1,0 +1,68 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Communication Style
+
+- Respond in **Taiwan Traditional Chinese** (繁體中文)
+- Be terse, casual, and treat the user as an expert
+- Give actual code and concrete explanations — no high-level hand-waving
+- Give the answer first, then explain if needed
+- Before modifying any code, obtain explicit confirmation from the user
+
+## Commands
+
+```bash
+npm run dev          # Dev server (Next.js + Turbopack) on localhost:3000
+npm run build        # Production build
+npm run lint         # ESLint (Airbnb + React Hooks + JSDoc via flat config)
+npm run type-check   # TypeScript-powered JSDoc type checking (tsc -p tsconfig.check.json)
+npm run test         # Vitest (unit + integration, jsdom env)
+npx vitest run tests/path/to/file.test.jsx  # Run a single test file
+npx playwright test  # E2E tests (Chromium only, needs dev server)
+npx playwright test tests/path/to/file.spec.js  # Single E2E test
+```
+
+## Architecture
+
+- **Next.js 15 / React 19** with App Router — pure JavaScript (no TypeScript), type safety via JSDoc + `checkJs: true`
+- **Path alias**: `@/` → `./src/`
+- **Firebase v9+** (Firestore) as backend — all Firebase interactions go through `src/lib/firebase-*.js`
+- **Leaflet / React-Leaflet** for map features
+- **CSS Modules** + Tailwind CSS 4 for styling
+- **Vitest** for unit/integration tests (jsdom), **Playwright** for E2E (Chromium only)
+
+### Key Directories
+
+| Path | Purpose |
+|---|---|
+| `src/app/` | Next.js App Router pages (events, login, member, posts, signout) |
+| `src/lib/` | Service layer — Firebase clients, domain helpers (`event-helpers.js`) |
+| `src/components/` | Shared React components |
+| `src/contexts/` | React Context providers (Auth) |
+| `src/types/` | Type declarations (CSS modules) |
+| `tests/` | All tests — structured by feature or branch/task |
+
+## Strict Rules (Non-Negotiable)
+
+1. **No `@ts-ignore`** — use `@ts-expect-error` with explanation if absolutely necessary. Verify with `grep -r "@ts-ignore" src tests`
+2. **No logic in JSX** — extract complex logic into components or helper functions. JSX handles view only
+3. **No `eslint-disable` for a11y rules** — fix the HTML structure (roles, labels, handlers) instead
+4. **Meaningful JSDoc** — all new/modified exported functions must have JSDoc explaining intent and params, not boilerplate
+5. **Task completion requires** `npm run type-check` and `npm run lint` to pass
+
+## Testing Standards (Kent C. Dodds / Testing Trophy)
+
+- **Integration (60%)** / **Unit (20%)** / **E2E (20%)**
+- Test structure:
+  - Standard: `tests/<feature>/[unit|integration|e2e]/`
+  - Refactoring: `tests/<branch>/<task>/[unit|integration|e2e]/`
+- Unit tests: AAA pattern, F.I.R.S.T principles, 100% isolated (mock Firebase with `vi.mock`)
+- Integration tests: **must** use `@testing-library/user-event` (`userEvent.setup()`). Never `fireEvent`. Use `screen.getByRole` over `container.querySelector`
+- E2E tests: `page.getByRole`/`page.getByText` for locators. No `page.waitForTimeout()`
+- Assertions: `@testing-library/jest-dom` matchers
+
+## Environment & Secrets
+
+- All secrets (API keys, tokens) in `.env` only — never commit them
+- `.env` must be in `.gitignore`
