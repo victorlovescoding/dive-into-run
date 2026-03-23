@@ -1,5 +1,5 @@
 ---
-name: workflow-step-9-review
+name: workflow-step-5-review
 description: 執行開發流程的最後一步：代碼審查與提交。當 `workflow-orchestrator` 指示進入 Review 階段時使用。負責結案並標記 spec.md。
 ---
 
@@ -10,7 +10,7 @@ description: 執行開發流程的最後一步：代碼審查與提交。當 `wo
 ## 執行流程
 
 0.  **狀態報告 (Start)**:
-    - 請第一時間回覆：「目前執行 workflow-step-9-review skill」。
+    - 請第一時間回覆：「目前執行 workflow-step-5-review skill」。
 
 1.  **AI 自動化審查 (Linus Mode)**:
     *   **取得變更**: 

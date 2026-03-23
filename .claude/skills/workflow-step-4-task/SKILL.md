@@ -1,5 +1,5 @@
 ---
-name: workflow-step-5-task
+name: workflow-step-4-task
 description: 執行開發流程的第五步：任務拆解。當收到 `/speckit.task` 指令或 `workflow-orchestrator` 指示進入 Task 階段時使用。負責產出 tasks.md。
 ---
 
@@ -12,7 +12,7 @@ description: 執行開發流程的第五步：任務拆解。當收到 `/speckit
 ## 執行流程
 
 0.  **狀態報告 (Start)**:
-    - 請第一時間回覆：「目前執行 workflow-step-5-task skill」。
+    - 請第一時間回覆：「目前執行 workflow-step-4-task skill」。
 
 1.  **讀取 Plan**:
     *   **Action**: 讀取 `specs/$(git branch --show-current)/plan.md`。
