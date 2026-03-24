@@ -48,18 +48,17 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
 2.5 **決定測試路徑 (Path Strategy)**:
     *   **Action**: 執行以下邏輯以決定測試檔案存放位置：
         1.  取得當前分支名稱: `BRANCH=$(git branch --show-current)`
-        2.  **判斷任務類型 (Feature vs. Refactor)**:
-            -   **Scenario A: Refactoring (Task-Based)**
-                -   若分支名稱包含 `refactor`，或使用者明確指定為重構任務。
-                -   找出當前參考的 `spec.md` 路徑 (e.g., `specs/003-strict-type-fixes/refactor-events-page/spec.md`)。
-                -   提取 `spec.md` 的**父目錄名稱** (e.g., `refactor-events-page`) 作為 `TASK_NAME`。
-                -   **TEST_PATH**: `tests/$BRANCH/$TASK_NAME`
-                -   **RESULT_PATH**: `test-results/$BRANCH/$TASK_NAME`
-            -   **Scenario B: Standard Feature**
-                -   預設情況，或 `spec.md` 直接位於 `specs/$BRANCH/spec.md`。
-                -   **TEST_PATH**: `tests/$BRANCH`
-                -   **RESULT_PATH**: `test-results/$BRANCH`
-        3.  **Create Directories**: 使用 `mkdir -p` 確保目標資料夾存在。
+        2.  **定位 Spec 資料夾**:
+            -   在 `specs/` 目錄下尋找與分支名稱相同的資料夾 (e.g., `specs/$BRANCH/`)。
+            -   若不存在，**必須**詢問使用者確認正確路徑後再繼續。
+        3.  **設定路徑**:
+            -   **TEST_PATH**: `specs/$BRANCH/tests`（測試建立在 spec 資料夾內）
+            -   **RESULT_PATH**: `specs/$BRANCH/test-results`（結果同樣放在 spec 資料夾內）
+        4.  **Create Directories**: 使用 `mkdir -p` 一次建立所有子資料夾：
+            ```
+            mkdir -p specs/$BRANCH/tests/unit specs/$BRANCH/tests/integration specs/$BRANCH/tests/e2e
+            mkdir -p specs/$BRANCH/test-results/unit specs/$BRANCH/test-results/integration specs/$BRANCH/test-results/e2e
+            ```
     *   **Result**: 輸出你決定的 `TEST_PATH` 與 `RESULT_PATH` 供使用者確認。
 
 3.  **撰寫測試 (Testing)**:
@@ -96,7 +95,7 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
 4.  **The Iron Wall (絕對防線 - Zero Tolerance)**:
     *   **Mandatory**: 提交測試前，**必須**確保測試程式碼通過靜態分析。測試邏輯應失敗 (Red)，但語法與類型必須正確。
     *   **Strict Rule**: **絕對沒有任何不遵守的空間 (NO EXCEPTIONS)**。任何錯誤 (Error) 或警告 (Warning) 都是攔路虎，禁止繞過。
-    *   **Variable Definition**: 下列指令中的 `$TEST_FILE_PATH` 代表**你剛剛建立的測試檔案路徑** (e.g. `tests/feature/login.test.jsx`)。
+    *   **Variable Definition**: 下列指令中的 `$TEST_FILE_PATH` 代表**你剛剛建立的測試檔案路徑** (e.g. `specs/$BRANCH/tests/unit/login.test.jsx`)。
     *   **Mandatory Protocol (Loop until Green)**:
         1.  **Type Check**: 執行 `npx tsc $TEST_FILE_PATH --noEmit --allowJs --checkJs --jsx react-jsx --moduleResolution bundler --target esnext --module esnext` (僅檢查此檔案)。
             -   結果必須為 **0 errors**。
@@ -111,20 +110,16 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
 
 5.  **驗證測試 (Red)**:
     *   **Action**: 執行測試指令，確認它們**失敗** (因為功能尚未實作)。
-    *   **Strict Check**: 必須確認測試失敗是因為 **Assertion Error (功能未實作)**，而非 **Syntax Error / Reference Error**。
-        -   ✅ `npx tsc ...` 必須通過 (0 errors)。
-        -   ✅ `npx eslint ...` 必須通過 (0 errors)。
-        -   ✅ `grep "@ts-ignore" ...` 確保沒有任何被禁用的註解。
-        -   ❌ `ReferenceError: x is not defined` (這是你的測試寫錯了，修好它)
-        -   ✅ `AssertionError: expected 'success' but got undefined` (這才是有效的 RED)
+    *   **Strict Check**: 必須確認測試失敗是因為 **Assertion Error (功能未實作)**，而非 **Syntax Error / Reference Error**。前提：Step 4 的三項檢查（tsc / eslint / grep）必須已全數通過。
+        -   ❌ `ReferenceError: x is not defined` → 測試寫錯了，修好它
+        -   ✅ `AssertionError: expected 'success' but got undefined` → 這才是有效的 RED
     *   **Commands**:
         - Unit: `mkdir -p $RESULT_PATH/unit && npx vitest run $TEST_PATH/unit --reporter=junit --outputFile=$RESULT_PATH/unit/results.xml`
         - Integration: `mkdir -p $RESULT_PATH/integration && npx vitest run $TEST_PATH/integration --reporter=junit --outputFile=$RESULT_PATH/integration/results.xml`
         - E2E: `mkdir -p $RESULT_PATH/e2e && PLAYWRIGHT_JUNIT_OUTPUT_NAME=$RESULT_PATH/e2e/results.xml npx playwright test $TEST_PATH/e2e --reporter=junit`
     
     *   **Test Results (Output)**:
-        -   **Standard**: `test-results/<feature-name>/[unit | integration | e2e]/`
-        -   **Refactoring**: `test-results/<branch-name>/<task-name>/[unit | integration | e2e]/`
+        -   `specs/<branch-name>/test-results/[unit | integration | e2e]/`
 
 ## 下一步
 
