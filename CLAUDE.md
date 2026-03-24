@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Communication Style
 
-- Respond in **Taiwan Traditional Chinese** (繁體中文)
+- Respond in **Taiwan Traditional Chinese** (正體中文)
 - Be terse, casual, and treat the user as an expert
 - Give actual code and concrete explanations — no high-level hand-waving
 - Give the answer first, then explain if needed
@@ -16,11 +16,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev          # Dev server (Next.js + Turbopack) on localhost:3000
 npm run build        # Production build
 npm run lint         # ESLint (Airbnb + React Hooks + JSDoc via flat config)
+npm run lint:changed # 只 lint git changed files
 npm run type-check   # TypeScript-powered JSDoc type checking (tsc -p tsconfig.check.json)
+npm run type-check:changed  # 只顯示 changed files 的 type errors
 npm run test         # Vitest (unit + integration, jsdom env)
-npx vitest run tests/path/to/file.test.jsx  # Run a single test file
+npx vitest run specs/path/to/file.test.jsx  # Run a single test file
 npx playwright test  # E2E tests (Chromium only, needs dev server)
-npx playwright test tests/path/to/file.spec.js  # Single E2E test
+npx playwright test specs/path/to/file.spec.js  # Single E2E test
 ```
 
 ## Architecture
@@ -41,11 +43,11 @@ npx playwright test tests/path/to/file.spec.js  # Single E2E test
 | `src/components/` | Shared React components |
 | `src/contexts/` | React Context providers (Auth) |
 | `src/types/` | Type declarations (CSS modules) |
-| `tests/` | All tests — structured by feature or branch/task |
+| `specs/` | Feature specs + tests — one folder per git branch/feature |
 
 ## Strict Rules (Non-Negotiable)
 
-1. **No `@ts-ignore`** — use `@ts-expect-error` with explanation if absolutely necessary. Verify with `grep -r "@ts-ignore" src tests`
+1. **No `@ts-ignore`** — use `@ts-expect-error` with explanation if absolutely necessary. Verify with `grep -r "@ts-ignore" src specs`
 2. **No logic in JSX** — extract complex logic into components or helper functions. JSX handles view only
 3. **No `eslint-disable` for a11y rules** — fix the HTML structure (roles, labels, handlers) instead
 4. **Meaningful JSDoc** — all new/modified exported functions must have JSDoc explaining intent and params, not boilerplate
@@ -54,9 +56,9 @@ npx playwright test tests/path/to/file.spec.js  # Single E2E test
 ## Testing Standards (Kent C. Dodds / Testing Trophy)
 
 - **Integration (60%)** / **Unit (20%)** / **E2E (20%)**
-- Test structure:
-  - Standard: `tests/<feature>/[unit|integration|e2e]/`
-  - Refactoring: `tests/<branch>/<task>/[unit|integration|e2e]/`
+- Test structure: `specs/<feature>/tests/[unit|integration|e2e]/`
+- Test results: `specs/<feature>/test-results/[unit|integration|e2e]/`
+  - `<feature>` 對應 git 分支名稱（e.g. `003-strict-type-fixes`）
 - Unit tests: AAA pattern, F.I.R.S.T principles, 100% isolated (mock Firebase with `vi.mock`)
 - Integration tests: **must** use `@testing-library/user-event` (`userEvent.setup()`). Never `fireEvent`. Use `screen.getByRole` over `container.querySelector`
 - E2E tests: `page.getByRole`/`page.getByText` for locators. No `page.waitForTimeout()`

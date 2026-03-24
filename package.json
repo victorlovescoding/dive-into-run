@@ -7,8 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "lint:changed": "bash scripts/lint-changed.sh",
     "test": "vitest",
-    "type-check": "tsc -p tsconfig.check.json"
+    "type-check": "tsc -p tsconfig.check.json",
+    "type-check:changed": "bash scripts/type-check-changed.sh"
   },
   "dependencies": {
     "@mapbox/polyline": "^1.2.1",
