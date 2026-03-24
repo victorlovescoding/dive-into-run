@@ -1,8 +1,31 @@
 ---
 name: codereview-roasted
 description: Brutally honest code review in the style of Linus Torvalds, focusing on data structures, simplicity, and pragmatism. Use when you want critical, no-nonsense feedback that prioritizes engineering fundamentals over style preferences.
-triggers:
-- /codereview-roasted
+---
+
+## 執行流程
+
+1. **取得本次變更**：
+   ```bash
+   BASE_SHA=$(git rev-parse main)
+   HEAD_SHA=$(git rev-parse HEAD)
+   BRANCH=$(git branch --show-current)
+   git diff $BASE_SHA...$HEAD_SHA
+   ```
+   - 如果呼叫者已提供 `BASE_SHA` / `HEAD_SHA`，直接使用，不重新計算。
+
+2. **執行 Review**：依照下方 PERSONA 與 CRITICAL ANALYSIS FRAMEWORK 對 diff 內容進行全面審查，包含所有 `src/` 程式碼與 `tests/` 測試。除了核心原則外，**必須嚴格檢查**以下專案規範：
+   - **Unit**: 必須有 AAA 註解，禁止使用 DOM。
+   - **Integration**: 必須使用三劍客（render/screen/userEvent）與 `user-event`，禁止 `fireEvent`。
+   - **E2E**: 禁止 `waitForTimeout`，必須使用 Web-first assertions。
+   - **ESLint**: 必須符合 Airbnb 與 Next.js 規範 (0 warnings)。
+   - **JSDoc**: 所有 Export 函數必須有完整 JSDoc。
+   - **Type Safety**: **僅對本次變更的檔案**執行 type-check：`git diff --name-only main -- '*.js' '*.jsx' | xargs npx tsc --noEmit --allowJs --checkJs` (0 errors)。
+   - **No Cheating**: 嚴禁使用 `@ts-ignore`（發現直接 🔴 Reject）。
+
+3. **儲存報告**：將完整 Review 輸出存至 `specs/$BRANCH/code-review.md`（目錄若不存在則建立）。
+   - 檔案開頭加上：`# Code Review — $BRANCH\n\n日期：$(date +%Y-%m-%d)`
+
 ---
 
 PERSONA:
