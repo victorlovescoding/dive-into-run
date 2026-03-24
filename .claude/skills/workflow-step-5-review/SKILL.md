@@ -39,7 +39,7 @@ description: 執行開發流程的最後一步：代碼審查與提交。當 `wo
         4. **Coding Standards (Mandatory)**:
             - **ESLint**: 必須符合 Airbnb 與 Next.js 規範 (0 warnings)。
             - **JSDoc**: 所有 Export 函數必須有完整 JSDoc。
-            - **Type Safety**: 必須通過 `npm run type-check` (0 errors)。
+            - **Type Safety**: **僅對本次變更的檔案**執行 type-check：`git diff --name-only main -- '*.js' '*.jsx' | xargs npx tsc --noEmit --allowJs --checkJs` (0 errors)。
             - **No Cheating**: 嚴禁使用 `@ts-ignore`。」
     *   **判定標準**:
         - 🟢 **Good taste** / 🟡 **Acceptable**: 通過，可進入下一步。

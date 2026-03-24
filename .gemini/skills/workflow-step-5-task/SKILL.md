@@ -46,7 +46,7 @@ description: 執行開發流程的第五步：任務拆解。當收到 `/speckit
 ## 4. Verification (MANDATORY)
 - [ ] Task: 執行 Lint 與測試
   - Description: 執行 `npm run lint` 並修復所有 errors 與 warnings (JSDoc, Airbnb style)。
-  - Description: 確保 `npm run type-check` 全數通過 (0 errors)。
+  - Description: **僅對本次變更的檔案**執行 type-check：`git diff --name-only main -- '*.js' '*.jsx' | xargs npx tsc --noEmit --allowJs --checkJs` (0 errors)。
   - Description: **執行 `grep -r "@ts-ignore" src`**，確保結果為空 (0 items)。禁止任何 `ts-ignore`。
 ```
 
@@ -66,5 +66,5 @@ description: 執行開發流程的第五步：任務拆解。當收到 `/speckit
 *   **強制驗證**: 必須在 `specs/$(git branch --show-current)/tasks.md` 的每個主要功能章節末尾加入「執行 Lint 與測試」任務。
 *   **零容忍原則**: 驗收標準必須明確要求：
     1.  修復所有 Airbnb 風格與 JSDoc 的 warnings 與 errors。
-    2.  `npm run type-check` 必須全數通過 (0 errors)。
+    2.  **僅對本次變更的檔案**執行 type-check：`git diff --name-only main -- '*.js' '*.jsx' | xargs npx tsc --noEmit --allowJs --checkJs` (0 errors)。
     3.  **執行 `grep -r "@ts-ignore" src` 檢查**，確保結果為空 (0 items)。禁止任何 `ts-ignore`。
