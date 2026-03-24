@@ -1,5 +1,5 @@
 ---
-name: workflow-step-3-tdd
+name: Test-Driven-Development
 description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能測試、Bug 修復測試，或執行開發流程第三步 (Step 3) 時使用。此 Skill 是專案中 TDD 的唯一權威來源。
 ---
 
@@ -10,7 +10,7 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
 ## 執行流程
 
 0.  **狀態報告 (Start)**:
-    - 請第一時間回覆：「目前執行 workflow-step-3-tdd skill」。
+    - 請第一時間回覆：「目前執行 Test-Driven-Development skill」。
 
 1.  **TDD Core Principles (The Iron Law)**:
     *   **NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST.**
@@ -27,10 +27,10 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
 
 1.5 **測試品質防線 (Quality Gate)**:
     *   **Action 1 (Read The Laws)**: 在撰寫任何測試代碼前，**必須依序執行以下指令**，否則視為任務失敗：
-        1.  `read_file` 讀取 `.gemini/skills/workflow-step-3-tdd/references/coding-style.md` (這是你的法律，必須嚴格遵守)。
-        2.  `read_file` 讀取 `.gemini/skills/workflow-step-3-tdd/references/jsdoc-cheatsheet.md` (這是你的語法字典，請查閱型別寫法)。
-        3.  `read_file` 讀取 `.gemini/skills/workflow-step-3-tdd/references/boilerplate.js` (這是你的範本，請照抄結構)。
-    *   **Action 2 (Anti-Patterns)**: 執行 `view_file` 讀取並理解 `.gemini/skills/workflow-step-3-tdd/references/testing-anti-patterns.md`。
+        1.  `read_file` 讀取 `.gemini/skills/Test-Driven-Development/references/coding-style.md` (這是你的法律，必須嚴格遵守)。
+        2.  `read_file` 讀取 `.gemini/skills/Test-Driven-Development/references/jsdoc-cheatsheet.md` (這是你的語法字典，請查閱型別寫法)。
+        3.  `read_file` 讀取 `.gemini/skills/Test-Driven-Development/references/boilerplate.js` (這是你的範本，請照抄結構)。
+    *   **Action 2 (Anti-Patterns)**: 執行 `view_file` 讀取並理解 `.gemini/skills/Test-Driven-Development/references/testing-anti-patterns.md`。
     *   **Iron Rule**: 嚴格遵守「三不原則」：不測試 Mock 行為、不污染生產代碼、不使用不完整 Mock。
 
 2.  **分析 Spec (Analyze & Locate)**:
@@ -129,4 +129,4 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
 提示使用者：
 > 測試案例已建立 (RED) 並已提交。請輸入「繼續」以進入 Step 4: Plan 階段。
 
-同時回覆：「workflow-step-3-tdd skill 已執行完畢」。
+同時回覆：「Test-Driven-Development skill 已執行完畢」。
