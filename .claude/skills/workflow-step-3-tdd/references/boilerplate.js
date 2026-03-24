@@ -2,7 +2,7 @@
  * @file Golden Sample for Testing in this project.
  * @description
  * THIS IS THE SOURCE OF TRUTH. COPY THIS STYLE.
- * 
+ *
  * Rules:
  * 1. Use `vitest` for test runner.
  * 2. Use `@testing-library/react` for components.
@@ -12,19 +12,22 @@
  * 6. AAA Pattern (Arrange, Act, Assert) is mandatory.
  */
 
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
 /* ==========================================================================
    SECTION 1: UNIT TEST EXAMPLE (Pure Logic)
    Target: src/lib/math-helper.js
    ========================================================================== */
 
-import { describe, it, expect } from 'vitest';
 // import { calculateTotal } from '@/lib/math-helper'; // Example import
 
 /**
  * Mock function to simulate a pure logic function.
- * @param {number} a
- * @param {number} b
- * @returns {number}
+ * @param {number} a - First operand.
+ * @param {number} b - Second operand.
+ * @returns {number} Sum of a and b.
  */
 const calculateTotal = (a, b) => a + b;
 
@@ -61,37 +64,38 @@ describe('Unit: calculateTotal', () => {
    Target: src/components/UserProfile.jsx
    ========================================================================== */
 
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { vi } from 'vitest';
-
 /**
- * @typedef {Object} User
- * @property {string} id
- * @property {string} name
+ * @typedef {object} User
+ * @property {string} id - Unique user identifier.
+ * @property {string} name - Display name.
  */
 
 /**
- * Mock Component for the example
- * @param {Object} props
- * @param {User} props.user - Complex object prop
- * @param {(id: string) => void} props.onUpdate - Typed callback
+ * Mock Component for the example.
+ * @param {object} props - Component props.
+ * @param {User} props.user - Complex object prop.
+ * @param {(id: string) => void} props.onUpdate - Typed callback.
+ * @returns {import('react').ReactElement} Rendered component.
  */
-const UserProfile = ({ user, onUpdate }) => (
-  <div>
-    <h1>{user.name}</h1>
-    <button type="button" onClick={() => onUpdate(user.id)}>Update</button>
-  </div>
-);
+function UserProfile({ user, onUpdate }) {
+  return (
+    <div>
+      <h1>{user.name}</h1>
+      <button type="button" onClick={() => onUpdate(user.id)}>
+        Update
+      </button>
+    </div>
+  );
+}
 
 describe('Integration: UserProfile', () => {
   it('should render the user name and handle button click', async () => {
     // Arrange
     const user = userEvent.setup();
-    
+
     /** @type {import('vitest').Mock} */
     const mockOnUpdate = vi.fn();
-    
+
     /** @type {User} */
     const mockUser = { id: '123', name: 'John Doe' };
 

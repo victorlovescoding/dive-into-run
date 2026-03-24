@@ -4,6 +4,7 @@ import { fixupConfigRules } from '@eslint/compat';
 import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
 import jsdoc from 'eslint-plugin-jsdoc';
+import prettier from 'eslint-config-prettier';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -74,6 +75,8 @@ export default [
             '**/vitest.config.mjs',
             '**/playwright.config.js',
             '**/playwright.config.mjs',
+            '**/.claude/skills/**/*.js',
+            '**/.gemini/skills/**/*.js',
           ],
         },
       ],
@@ -90,6 +93,9 @@ export default [
       'jsdoc/require-returns-description': 'warn',
     },
   },
+
+  // Prettier 相容：關閉所有與 Prettier 衝突的格式規則
+  prettier,
 
   // 忽略的檔案和資料夾
   {
