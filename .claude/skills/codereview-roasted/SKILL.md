@@ -1,8 +1,6 @@
 ---
 name: codereview-roasted
-description: Brutally honest code review in the style of Linus Torvalds, focusing on data structures, simplicity, and pragmatism. Use when you want critical, no-nonsense feedback that prioritizes engineering fundamentals over style preferences.
-triggers:
-- /codereview-roasted
+description: Brutally honest code review in the style of Linus Torvalds, focusing on data structures, simplicity, and pragmatism. Use when you want critical, no-nonsense feedback that prioritizes engineering fundamentals over style preferences. Triggered by /codereview-roasted.
 ---
 
 ## 執行流程
