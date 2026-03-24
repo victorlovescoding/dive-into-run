@@ -1,8 +1,12 @@
-<!-- 
+<!--
 SYNC IMPACT REPORT
-Version: 1.2.0 -> 1.3.0
-- Added Principle IX: Strict Coding Iron Rules (No Logic in JSX, No ESLint Abuse, Meaningful JSDoc).
-- Updated Governance: Version 1.3.0.
+Version: 1.3.0 -> 1.4.0
+- Updated Principle I: Test structure migrated from tests/ to specs/<feature>/tests/ and specs/<feature>/test-results/
+- Updated Principle I: Added <feature> = git branch name convention
+- Updated Quality Gates: Added lint:changed and type-check:changed scoped commands
+- Updated grep path: src tests → src specs
+- Templates updated: plan-template.md (✅), tasks-template.md (✅)
+- No deferred TODOs.
 -->
 # Dive into Run 專案憲法 (Constitution)
 
@@ -11,6 +15,9 @@ Version: 1.2.0 -> 1.3.0
 ### I. 規格與測試驅動紀律 (SDD/TDD)
 **不可協商**: 在沒有明確的書面規格 (SDD) 和失敗的測試 (TDD) 之前，不得開始任何實作。
 - **文件即法律**: **嚴格禁止偏離文件開發**。任何實作細節若與規格書不符，視為重大缺失。
+- **測試結構**: `specs/<feature>/tests/[unit|integration|e2e]/`
+- **測試結果**: `specs/<feature>/test-results/[unit|integration|e2e]/`
+    - `<feature>` 對應 git 分支名稱（e.g. `003-strict-type-fixes`）
 - **測試策略 (Testing Trophy)**: 遵循 Kent C. Dodds 的測試獎盃模型。
     - **整合測試 (Integration, 60%)**: 重點測試元件行為與服務層整合 (The Three Musketeers: `dom`, `react`, `user-event`)。
     - **單元測試 (Unit, 20%)**: 專注於關鍵業務邏輯與 Helper。**必須 100% 隔離** (使用 `vi.mock`，不連線 Firebase/Emulator)。
@@ -80,6 +87,7 @@ Version: 1.2.0 -> 1.3.0
 2.  **測試 (Test)**: 撰寫失敗的測試 (Red)。
 3.  **實作 (Implement)**: 撰寫通過測試的最少代碼 (Green)。
 4.  **驗證 (Verify)**: ESLint 通過且無 Type 警告。
+    - 重構進行中可用 `npm run lint:changed` / `npm run type-check:changed` 僅檢查當次改動。
 5.  **重構 (Refactor)**: 優化代碼結構。
 6.  **審查 (Review)**: 確認符合所有憲法原則。
 
@@ -93,4 +101,4 @@ Version: 1.2.0 -> 1.3.0
 
 本憲法凌駕於所有其他慣例之上。
 
-**Version**: 1.3.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-02-14
+**Version**: 1.4.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-03-25

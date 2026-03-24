@@ -63,7 +63,7 @@ src/
 ├── cli/
 └── lib/
 
-tests/
+specs/[###-feature]/tests/
 ├── contract/
 ├── integration/
 └── unit/
