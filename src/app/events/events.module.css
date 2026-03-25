@@ -609,6 +609,27 @@
   composes: cancelButton;
 }
 
+/* 按鈕基底（composes from EventActionButtons，與列表頁共用相同樣式） */
+.submitButton {
+  composes: submitButton from '../../components/EventActionButtons.module.css';
+}
+
+.leaveButton {
+  composes: leaveButton from '../../components/EventActionButtons.module.css';
+}
+
+.soldOutButton {
+  composes: soldOutButton from '../../components/EventActionButtons.module.css';
+}
+
+.buttonSpinner {
+  composes: buttonSpinner from '../../components/EventActionButtons.module.css';
+}
+
+.spinnerLabel {
+  composes: spinnerLabel from '../../components/EventActionButtons.module.css';
+}
+
 .filterSearchButton {
   composes: submitButton;
   min-width: 100px;
