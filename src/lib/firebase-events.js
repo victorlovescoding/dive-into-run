@@ -501,3 +501,24 @@ export async function fetchMyJoinedEventsForIds(uid, eventIds) {
 
   return joined;
 }
+
+// ====== 編輯活動 / 刪除活動（TDD stub — 尚未實作） ======
+
+/**
+ * 更新活動資料。
+ * @param {string} _eventId - 活動 ID。
+ * @param {object} _updatedFields - 要更新的欄位。
+ * @returns {Promise<{ok: boolean}>} 更新結果。
+ */
+export async function updateEvent(_eventId, _updatedFields) {
+  throw new Error('updateEvent is not implemented yet');
+}
+
+/**
+ * 刪除活動及其參與者子集合。
+ * @param {string} _eventId - 活動 ID。
+ * @returns {Promise<{ok: boolean}>} 刪除結果。
+ */
+export async function deleteEvent(_eventId) {
+  throw new Error('deleteEvent is not implemented yet');
+}

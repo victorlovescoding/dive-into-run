@@ -1,0 +1,717 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="34" failures="29" errors="0" time="0.66576079">
+    <testsuite name="specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx" timestamp="2026-03-29T16:35:49.088Z" hostname="Mac" tests="10" failures="7" errors="0" skipped="0" time="0.227484666">
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx" name="Integration: EventCardMenu &gt; should render three-dot button when user is the event creator (FR-001)" time="0.134498791">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx:94:31
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx" name="Integration: EventCardMenu &gt; should NOT render three-dot button when user is NOT the creator (FR-001)" time="0.003661708">
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx" name="Integration: EventCardMenu &gt; should NOT render three-dot button when user is not logged in (Edge Case)" time="0.003626625">
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx" name="Integration: EventCardMenu &gt; should show dropdown with &quot;編輯活動&quot; and &quot;刪除活動&quot; when three-dot is clicked (FR-002)" time="0.009348875">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx:155:31
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx" name="Integration: EventCardMenu &gt; should NOT show dropdown before three-dot button is clicked" time="0.00530175">
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx" name="Integration: EventCardMenu &gt; should close dropdown when clicking outside (FR-003)" time="0.036818833">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+Here are the accessible roles:
+
+  button:
+
+  Name &quot;外部按鈕&quot;:
+  [36m&lt;button[39m
+    [33mtype[39m=[32m&quot;button&quot;[39m
+  [36m/&gt;[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div&gt;[39m
+    [36m&lt;div&gt;[39m
+      [36m&lt;button[39m
+        [33mtype[39m=[32m&quot;button&quot;[39m
+      [36m&gt;[39m
+        [0m外部按鈕[0m
+      [36m&lt;/button&gt;[39m
+    [36m&lt;/div&gt;[39m
+  [36m&lt;/div&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+Here are the accessible roles:
+
+  button:
+
+  Name &quot;外部按鈕&quot;:
+  &lt;button
+    type=&quot;button&quot;
+  /&gt;
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div&gt;
+    &lt;div&gt;
+      &lt;button
+        type=&quot;button&quot;
+      &gt;
+        外部按鈕
+      &lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx:201:31
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx" name="Integration: EventCardMenu &gt; should call onEdit with event when &quot;編輯活動&quot; is clicked" time="0.007324958">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx:232:31
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx" name="Integration: EventCardMenu &gt; should call onDelete with event when &quot;刪除活動&quot; is clicked" time="0.007793417">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx:260:31
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx" name="Integration: EventCardMenu &gt; should close dropdown after selecting a menu item" time="0.008849959">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx:286:31
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx" name="Integration: EventCardMenu &gt; should toggle dropdown off when clicking three-dot button again" time="0.008204292">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/更多操作/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx:312:31
+            </failure>
+        </testcase>
+    </testsuite>
+    <testsuite name="specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx" timestamp="2026-03-29T16:35:49.096Z" hostname="Mac" tests="9" failures="8" errors="0" skipped="0" time="0.213973916">
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx" name="Integration: EventDeleteConfirm &gt; should render confirmation message &quot;確定要刪除活動？&quot; (FR-010)" time="0.025434625">
+            <failure message="Unable to find an element with the text: /確定要刪除活動/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an element with the text: /確定要刪除活動/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx:48:19
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx" name="Integration: EventDeleteConfirm &gt; should render &quot;是&quot; and &quot;否&quot; buttons (FR-010)" time="0.12271625">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/^是$/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/^是$/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx:62:19
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx" name="Integration: EventDeleteConfirm &gt; should be a custom dialog, not a native confirm (FR-010)" time="0.010508083">
+            <failure message="Unable to find an accessible element with the role &quot;dialog&quot;
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;dialog&quot;
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx:77:19
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx" name="Integration: EventDeleteConfirm &gt; should call onCancel when &quot;否&quot; is clicked (US2-AC2)" time="0.013514959">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/^否$/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/^否$/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx:97:29
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx" name="Integration: EventDeleteConfirm &gt; should call onConfirm with eventId when &quot;是&quot; is clicked (US2-AC3)" time="0.012167834">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/^是$/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/^是$/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx:121:30
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx" name="Integration: EventDeleteConfirm &gt; should disable both buttons while deletion is in progress" time="0.0095955">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/是|刪除中/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/是|刪除中/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx:143:30
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx" name="Integration: EventDeleteConfirm &gt; should display error message when deleteError is provided (FR-013)" time="0.002610375">
+            <failure message="Unable to find an element with the text: /發生錯誤，請再試一次/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an element with the text: /發生錯誤，請再試一次/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx:165:19
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx" name="Integration: EventDeleteConfirm &gt; should NOT display error message when deleteError is not provided" time="0.003132375">
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx" name="Integration: EventDeleteConfirm &gt; should have proper aria-modal attribute on dialog" time="0.01231225">
+            <failure message="Unable to find an accessible element with the role &quot;dialog&quot;
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;dialog&quot;
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx:196:27
+            </failure>
+        </testcase>
+    </testsuite>
+    <testsuite name="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" timestamp="2026-03-29T16:35:49.100Z" hostname="Mac" tests="15" failures="14" errors="0" skipped="0" time="0.224302208">
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should prefill form with existing event data (FR-004)" time="0.023638958">
+            <failure message="Unable to find a label with the text of: /活動名稱/i
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find a label with the text of: /活動名稱/i
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:91:19
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should prefill pace dropdowns with correct minutes and seconds" time="0.003160125">
+            <failure message="Unable to find a label with the text of: /配速.*分/i
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find a label with the text of: /配速.*分/i
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:112:19
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should prefill description textarea" time="0.004207084">
+            <failure message="Unable to find a label with the text of: /活動說明/i
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find a label with the text of: /活動說明/i
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:129:19
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should show &quot;取消編輯&quot; and &quot;編輯完成&quot; buttons (FR-005)" time="0.115341375">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/取消編輯/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/取消編輯/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:147:19
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should NOT show &quot;建立活動&quot; or &quot;取消&quot; buttons (distinguish from create form)" time="0.004943916">
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should disable &quot;編輯完成&quot; button when no changes have been made (FR-006)" time="0.00990025">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/編輯完成/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/編輯完成/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:182:33
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should enable &quot;編輯完成&quot; button when a field is modified (FR-007)" time="0.014794334">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/編輯完成/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/編輯完成/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:203:33
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should disable &quot;編輯完成&quot; button again when field is reverted to original value (AC-3 of Story 3)" time="0.008860167">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/編輯完成/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/編輯完成/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:228:33
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should call onSubmit with updated data when &quot;編輯完成&quot; is clicked (FR-008)" time="0.005237459">
+            <failure message="Unable to find a label with the text of: /活動名稱/i
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find a label with the text of: /活動名稱/i
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:261:31
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should call onCancel when &quot;取消編輯&quot; is clicked (US1-AC8)" time="0.009745875">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/取消編輯/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/取消編輯/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:293:33
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should set maxParticipants minimum to current participantsCount (FR-015)" time="0.002049083">
+            <failure message="Unable to find a label with the text of: /人數上限/i
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find a label with the text of: /人數上限/i
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:315:19
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should use min=2 when participantsCount is less than 2" time="0.001852167">
+            <failure message="Unable to find a label with the text of: /人數上限/i
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find a label with the text of: /人數上限/i
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:331:19
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should detect changes in numeric fields (distanceKm)" time="0.007638416">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/編輯完成/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/編輯完成/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:349:33
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should detect changes in description textarea" time="0.005372709">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/編輯完成/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/編輯完成/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:374:33
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx" name="Integration: EventEditForm &gt; should disable submit button and show loading text while submitting" time="0.005208792">
+            <failure message="Unable to find an accessible element with the role &quot;button&quot; and name `/編輯中|更新中/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m&lt;body&gt;[39m
+  [36m&lt;div /&gt;[39m
+[36m&lt;/body&gt;[39m" type="TestingLibraryElementError">
+TestingLibraryElementError: Unable to find an accessible element with the role &quot;button&quot; and name `/編輯中|更新中/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+&lt;body&gt;
+  &lt;div /&gt;
+&lt;/body&gt;
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx:402:33
+            </failure>
+        </testcase>
+    </testsuite>
+</testsuites>
