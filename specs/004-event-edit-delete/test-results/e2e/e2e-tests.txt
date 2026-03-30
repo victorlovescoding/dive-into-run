@@ -1,0 +1,295 @@
+[dotenv@17.3.1] injecting env (8) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+Running 12 tests using 5 workers
+
+[1A[2K[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+
+[1A[2K[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+
+[1A[2K[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+
+[1A[2K[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+[1A[2K[1/12] [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:36:7 › Event Edit & Delete - User Story 1: 編輯活動 › creator should see three-dot menu on their event card (SC-005)
+[1A[2K[2/12] [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:46:7 › Event Edit & Delete - User Story 1: 編輯活動 › non-creator should NOT see three-dot menu (SC-005)
+[1A[2K[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+[1A[2K[3/12] [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:89:7 › Event Edit & Delete - User Story 1: 編輯活動 › "編輯完成" should be disabled initially and enabled after modification (SC-003)
+[1A[2K[4/12] [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:73:7 › Event Edit & Delete - User Story 1: 編輯活動 › edit form should prefill with existing event data (SC-002)
+[1A[2K[5/12] [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:59:7 › Event Edit & Delete - User Story 1: 編輯活動 › clicking three-dot should show edit and delete options (SC-001)
+[1A[2K  1) [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:36:7 › Event Edit & Delete - User Story 1: 編輯活動 › creator should see three-dot menu on their event card (SC-005) 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel(/email/i)[22m
+
+
+      26 | async function loginAsUser(page, email, password) {
+      27 |   await page.goto('/login');
+    > 28 |   await page.getByLabel(/email/i).fill(email);
+         |                                   ^
+      29 |   await page.getByLabel(/密碼|password/i).fill(password);
+      30 |   await page.getByRole('button', { name: /登入|login/i }).click();
+      31 |   // 等待登入完成 — 檢查導航到 events 頁面或出現使用者元素
+        at loginAsUser (/Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:28:35)
+        at /Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:38:5
+
+    Error Context: test-results/004-event-edit-delete-test-65dab-on-their-event-card-SC-005--chromium/error-context.md
+
+
+[1A[2K  2) [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:59:7 › Event Edit & Delete - User Story 1: 編輯活動 › clicking three-dot should show edit and delete options (SC-001) 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel(/email/i)[22m
+
+
+      26 | async function loginAsUser(page, email, password) {
+      27 |   await page.goto('/login');
+    > 28 |   await page.getByLabel(/email/i).fill(email);
+         |                                   ^
+      29 |   await page.getByLabel(/密碼|password/i).fill(password);
+      30 |   await page.getByRole('button', { name: /登入|login/i }).click();
+      31 |   // 等待登入完成 — 檢查導航到 events 頁面或出現使用者元素
+        at loginAsUser (/Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:28:35)
+        at /Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:61:5
+
+    Error Context: test-results/004-event-edit-delete-test-16ca7--and-delete-options-SC-001--chromium/error-context.md
+
+
+[1A[2K  3) [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:89:7 › Event Edit & Delete - User Story 1: 編輯活動 › "編輯完成" should be disabled initially and enabled after modification (SC-003) 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel(/email/i)[22m
+
+
+      26 | async function loginAsUser(page, email, password) {
+      27 |   await page.goto('/login');
+    > 28 |   await page.getByLabel(/email/i).fill(email);
+         |                                   ^
+      29 |   await page.getByLabel(/密碼|password/i).fill(password);
+      30 |   await page.getByRole('button', { name: /登入|login/i }).click();
+      31 |   // 等待登入完成 — 檢查導航到 events 頁面或出現使用者元素
+        at loginAsUser (/Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:28:35)
+        at /Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:91:5
+
+    Error Context: test-results/004-event-edit-delete-test-ae115--after-modification-SC-003--chromium/error-context.md
+
+
+[1A[2K  4) [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:73:7 › Event Edit & Delete - User Story 1: 編輯活動 › edit form should prefill with existing event data (SC-002) 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel(/email/i)[22m
+
+
+      26 | async function loginAsUser(page, email, password) {
+      27 |   await page.goto('/login');
+    > 28 |   await page.getByLabel(/email/i).fill(email);
+         |                                   ^
+      29 |   await page.getByLabel(/密碼|password/i).fill(password);
+      30 |   await page.getByRole('button', { name: /登入|login/i }).click();
+      31 |   // 等待登入完成 — 檢查導航到 events 頁面或出現使用者元素
+        at loginAsUser (/Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:28:35)
+        at /Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:75:5
+
+    Error Context: test-results/004-event-edit-delete-test-897fb-existing-event-data-SC-002--chromium/error-context.md
+
+
+[1A[2K  5) [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:46:7 › Event Edit & Delete - User Story 1: 編輯活動 › non-creator should NOT see three-dot menu (SC-005) 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel(/email/i)[22m
+
+
+      26 | async function loginAsUser(page, email, password) {
+      27 |   await page.goto('/login');
+    > 28 |   await page.getByLabel(/email/i).fill(email);
+         |                                   ^
+      29 |   await page.getByLabel(/密碼|password/i).fill(password);
+      30 |   await page.getByRole('button', { name: /登入|login/i }).click();
+      31 |   // 等待登入完成 — 檢查導航到 events 頁面或出現使用者元素
+        at loginAsUser (/Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:28:35)
+        at /Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:48:5
+
+    Error Context: test-results/004-event-edit-delete-test-3a8d8--see-three-dot-menu-SC-005--chromium/error-context.md
+
+
+[1A[2K[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+
+[1A[2K[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+
+[1A[2K[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+[1A[2K[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+
+[1A[2K[6/12] [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:165:7 › Event Edit & Delete - User Story 2: 刪除活動 › delete confirmation dialog should appear with proper content (FR-010)
+[1A[2K[7/12] [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:202:7 › Event Edit & Delete - User Story 2: 刪除活動 › full delete flow: confirm → event removed from list (US2-AC3, SC-004)
+[1A[2K[8/12] [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:112:7 › Event Edit & Delete - User Story 1: 編輯活動 › full edit flow: modify title → submit → verify updated (US1)
+[1A[2K[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+
+[1A[2K[9/12] [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:137:7 › Event Edit & Delete - User Story 1: 編輯活動 › cancel edit should not change event data (US1-AC8)
+[1A[2K[10/12] [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:182:7 › Event Edit & Delete - User Story 2: 刪除活動 › clicking "否" should close dialog and keep event (US2-AC2)
+[1A[2K  6) [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:165:7 › Event Edit & Delete - User Story 2: 刪除活動 › delete confirmation dialog should appear with proper content (FR-010) 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel(/email/i)[22m
+
+
+      26 | async function loginAsUser(page, email, password) {
+      27 |   await page.goto('/login');
+    > 28 |   await page.getByLabel(/email/i).fill(email);
+         |                                   ^
+      29 |   await page.getByLabel(/密碼|password/i).fill(password);
+      30 |   await page.getByRole('button', { name: /登入|login/i }).click();
+      31 |   // 等待登入完成 — 檢查導航到 events 頁面或出現使用者元素
+        at loginAsUser (/Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:28:35)
+        at /Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:167:5
+
+    Error Context: test-results/004-event-edit-delete-test-75f5a-with-proper-content-FR-010--chromium/error-context.md
+
+
+[1A[2K  7) [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:202:7 › Event Edit & Delete - User Story 2: 刪除活動 › full delete flow: confirm → event removed from list (US2-AC3, SC-004) 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel(/email/i)[22m
+
+
+      26 | async function loginAsUser(page, email, password) {
+      27 |   await page.goto('/login');
+    > 28 |   await page.getByLabel(/email/i).fill(email);
+         |                                   ^
+      29 |   await page.getByLabel(/密碼|password/i).fill(password);
+      30 |   await page.getByRole('button', { name: /登入|login/i }).click();
+      31 |   // 等待登入完成 — 檢查導航到 events 頁面或出現使用者元素
+        at loginAsUser (/Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:28:35)
+        at /Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:204:5
+
+    Error Context: test-results/004-event-edit-delete-test-e189c-d-from-list-US2-AC3-SC-004--chromium/error-context.md
+
+
+[1A[2K  8) [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:112:7 › Event Edit & Delete - User Story 1: 編輯活動 › full edit flow: modify title → submit → verify updated (US1) 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel(/email/i)[22m
+
+
+      26 | async function loginAsUser(page, email, password) {
+      27 |   await page.goto('/login');
+    > 28 |   await page.getByLabel(/email/i).fill(email);
+         |                                   ^
+      29 |   await page.getByLabel(/密碼|password/i).fill(password);
+      30 |   await page.getByRole('button', { name: /登入|login/i }).click();
+      31 |   // 等待登入完成 — 檢查導航到 events 頁面或出現使用者元素
+        at loginAsUser (/Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:28:35)
+        at /Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:114:5
+
+    Error Context: test-results/004-event-edit-delete-test-ea624-ubmit-→-verify-updated-US1--chromium/error-context.md
+
+
+[1A[2K  9) [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:137:7 › Event Edit & Delete - User Story 1: 編輯活動 › cancel edit should not change event data (US1-AC8) 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel(/email/i)[22m
+
+
+      26 | async function loginAsUser(page, email, password) {
+      27 |   await page.goto('/login');
+    > 28 |   await page.getByLabel(/email/i).fill(email);
+         |                                   ^
+      29 |   await page.getByLabel(/密碼|password/i).fill(password);
+      30 |   await page.getByRole('button', { name: /登入|login/i }).click();
+      31 |   // 等待登入完成 — 檢查導航到 events 頁面或出現使用者元素
+        at loginAsUser (/Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:28:35)
+        at /Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:139:5
+
+    Error Context: test-results/004-event-edit-delete-test-12377--change-event-data-US1-AC8--chromium/error-context.md
+
+
+[1A[2K  10) [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:182:7 › Event Edit & Delete - User Story 2: 刪除活動 › clicking "否" should close dialog and keep event (US2-AC2) 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel(/email/i)[22m
+
+
+      26 | async function loginAsUser(page, email, password) {
+      27 |   await page.goto('/login');
+    > 28 |   await page.getByLabel(/email/i).fill(email);
+         |                                   ^
+      29 |   await page.getByLabel(/密碼|password/i).fill(password);
+      30 |   await page.getByRole('button', { name: /登入|login/i }).click();
+      31 |   // 等待登入完成 — 檢查導航到 events 頁面或出現使用者元素
+        at loginAsUser (/Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:28:35)
+        at /Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:184:5
+
+    Error Context: test-results/004-event-edit-delete-test-3a60c-log-and-keep-event-US2-AC2--chromium/error-context.md
+
+
+[1A[2K[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+[1A[2K[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+
+[1A[2K[11/12] [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:241:7 › Event Edit & Delete - Edge Cases › unauthenticated user should NOT see three-dot menu
+[1A[2K[12/12] [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:224:7 › Event Edit & Delete - Edge Cases › dropdown should close when clicking outside (FR-003)
+[1A[2K  11) [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:224:7 › Event Edit & Delete - Edge Cases › dropdown should close when clicking outside (FR-003) 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel(/email/i)[22m
+
+
+      26 | async function loginAsUser(page, email, password) {
+      27 |   await page.goto('/login');
+    > 28 |   await page.getByLabel(/email/i).fill(email);
+         |                                   ^
+      29 |   await page.getByLabel(/密碼|password/i).fill(password);
+      30 |   await page.getByRole('button', { name: /登入|login/i }).click();
+      31 |   // 等待登入完成 — 檢查導航到 events 頁面或出現使用者元素
+        at loginAsUser (/Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:28:35)
+        at /Users/chentzuyu/Desktop/dive-into-run/specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:226:5
+
+    Error Context: test-results/004-event-edit-delete-test-6f664-en-clicking-outside-FR-003--chromium/error-context.md
+
+
+[1A[2K  11 failed
+    [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:36:7 › Event Edit & Delete - User Story 1: 編輯活動 › creator should see three-dot menu on their event card (SC-005) 
+    [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:46:7 › Event Edit & Delete - User Story 1: 編輯活動 › non-creator should NOT see three-dot menu (SC-005) 
+    [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:59:7 › Event Edit & Delete - User Story 1: 編輯活動 › clicking three-dot should show edit and delete options (SC-001) 
+    [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:73:7 › Event Edit & Delete - User Story 1: 編輯活動 › edit form should prefill with existing event data (SC-002) 
+    [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:89:7 › Event Edit & Delete - User Story 1: 編輯活動 › "編輯完成" should be disabled initially and enabled after modification (SC-003) 
+    [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:112:7 › Event Edit & Delete - User Story 1: 編輯活動 › full edit flow: modify title → submit → verify updated (US1) 
+    [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:137:7 › Event Edit & Delete - User Story 1: 編輯活動 › cancel edit should not change event data (US1-AC8) 
+    [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:165:7 › Event Edit & Delete - User Story 2: 刪除活動 › delete confirmation dialog should appear with proper content (FR-010) 
+    [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:182:7 › Event Edit & Delete - User Story 2: 刪除活動 › clicking "否" should close dialog and keep event (US2-AC2) 
+    [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:202:7 › Event Edit & Delete - User Story 2: 刪除活動 › full delete flow: confirm → event removed from list (US2-AC3, SC-004) 
+    [chromium] › specs/004-event-edit-delete/tests/e2e/event-edit-delete.spec.js:224:7 › Event Edit & Delete - Edge Cases › dropdown should close when clicking outside (FR-003) 
+  1 passed (1.6m)

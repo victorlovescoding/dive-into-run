@@ -1,6 +1,7 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   Timestamp as FirestoreTimestamp,
   getDocs,
   getDoc,
@@ -502,23 +503,84 @@ export async function fetchMyJoinedEventsForIds(uid, eventIds) {
   return joined;
 }
 
-// ====== 編輯活動 / 刪除活動（TDD stub — 尚未實作） ======
+// ====== 編輯活動 / 刪除活動 ======
 
 /**
- * 更新活動資料。
- * @param {string} _eventId - 活動 ID。
- * @param {object} _updatedFields - 要更新的欄位。
+ * 更新活動資料（使用 runTransaction 確保 maxParticipants 驗證的一致性）。
+ * @param {string} eventId - 活動 ID。
+ * @param {object} updatedFields - 要更新的欄位（非空物件）。
  * @returns {Promise<{ok: boolean}>} 更新結果。
+ * @throws {Error} 若 eventId 空白、updatedFields 無效、活動不存在或 maxParticipants 低於目前報名人數。
  */
-export async function updateEvent(_eventId, _updatedFields) {
-  throw new Error('updateEvent is not implemented yet');
+export async function updateEvent(eventId, updatedFields) {
+  if (!eventId) throw new Error('updateEvent: eventId is required');
+  if (
+    !updatedFields
+    || typeof updatedFields !== 'object'
+    || Array.isArray(updatedFields)
+    || Object.keys(updatedFields).length === 0
+  ) {
+    throw new Error('updateEvent: updatedFields must be a non-empty object');
+  }
+
+  const eid = String(eventId);
+  const eventRef = doc(db, 'events', eid);
+
+  const result = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(eventRef);
+    if (!snap.exists()) throw new Error('活動不存在');
+
+    const data = snap.data();
+    const participantsCount = Number(data.participantsCount ?? 0);
+    const updates = { ...updatedFields };
+
+    // 將 datetime-local 字串轉為 Firestore Timestamp
+    if (typeof updates.time === 'string' && updates.time) {
+      updates.time = FirestoreTimestamp.fromDate(new Date(updates.time));
+    }
+    if (typeof updates.registrationDeadline === 'string' && updates.registrationDeadline) {
+      updates.registrationDeadline = FirestoreTimestamp.fromDate(new Date(updates.registrationDeadline));
+    }
+
+    if ('maxParticipants' in updatedFields) {
+      const newMax = Number(updatedFields.maxParticipants);
+      if (newMax < participantsCount) {
+        throw new Error('人數上限不能低於目前的報名人數');
+      }
+      updates.remainingSeats = newMax - participantsCount;
+    }
+
+    tx.update(eventRef, updates);
+    return { ok: true };
+  });
+
+  return result ?? { ok: true };
 }
 
 /**
  * 刪除活動及其參與者子集合。
- * @param {string} _eventId - 活動 ID。
+ * @param {string} eventId - 活動 ID。
  * @returns {Promise<{ok: boolean}>} 刪除結果。
+ * @throws {Error} 若 eventId 空白或刪除操作失敗。
  */
-export async function deleteEvent(_eventId) {
-  throw new Error('deleteEvent is not implemented yet');
+export async function deleteEvent(eventId) {
+  if (!eventId) throw new Error('deleteEvent: eventId is required');
+
+  const eid = String(eventId);
+  const eventRef = doc(db, 'events', eid);
+
+  const snap = await getDoc(eventRef);
+  if (!snap.exists()) throw new Error('活動不存在');
+
+  const participantsRef = collection(db, 'events', eid, 'participants');
+
+  const participantsSnap = await getDocs(participantsRef);
+  const participantDocs = participantsSnap?.docs ?? [];
+
+  if (participantDocs.length > 0) {
+    await Promise.all(participantDocs.map((d) => deleteDoc(d.ref)));
+  }
+
+  await deleteDoc(eventRef);
+  return { ok: true };
 }

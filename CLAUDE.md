@@ -110,4 +110,4 @@ const el = /** @type {HTMLInputElement} */ (document.getElementById('x'));
 - `.env` must be in `.gitignore`
 
 ## Recent Changes
-- 004-event-edit-delete: Added updateEvent/deleteEvent service functions, EventCardMenu, EventEditForm, EventDeleteConfirm components
+- 004-event-edit-delete: **COMPLETE** — updateEvent/deleteEvent service functions, EventCardMenu (三點選單), EventEditForm (預填+dirty detection), EventDeleteConfirm (刪除確認) 全部實作並整合至 events page。unit/integration tests 全綠，lint/type-check (changed files) 通過。E2E blocked：app 使用 Google OAuth，E2E 測試預設 email/password login 無法執行。

@@ -44,6 +44,8 @@ import polyline from '@mapbox/polyline';
  * @property {number} [remainingSeats] - 剩餘名額。
  * @property {string} hostUid - 主揪 UID。
  * @property {string} hostName - 主揪名稱。
+ * @property {string} [runType] - 跑步類型。
+ * @property {string} [description] - 活動說明。
  * @property {RoutePayload} [route] - 路線資料。
  * @property {RoutePoint[]} [routeCoordinates] - 路線座標。
  */

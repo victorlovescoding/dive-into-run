@@ -21,8 +21,30 @@ vi.mock('firebase/firestore', () => {
   const mockUpdateDoc = vi.fn();
   const mockDeleteDoc = vi.fn();
   const mockGetDocs = vi.fn();
-  const mockRunTransaction = vi.fn();
-  const mockGetDoc = vi.fn();
+  const mockRunTransaction = vi.fn().mockImplementation(async (_, callback) => {
+    const mockTx = {
+      get: vi.fn().mockResolvedValue(
+        /** @type {import('firebase/firestore').DocumentSnapshot} */ (
+          /** @type {unknown} */ ({
+            exists: () => true,
+            data: () => ({ participantsCount: 8, maxParticipants: 10, remainingSeats: 2 }),
+          })
+        ),
+      ),
+      update: vi.fn(),
+      set: vi.fn(),
+      delete: vi.fn(),
+    };
+    return callback(mockTx);
+  });
+  const mockGetDoc = vi.fn().mockResolvedValue(
+    /** @type {import('firebase/firestore').DocumentSnapshot} */ (
+      /** @type {unknown} */ ({
+        exists: () => true,
+        data: () => ({ participantsCount: 0, maxParticipants: 10, remainingSeats: 10 }),
+      })
+    ),
+  );
   const mockQuery = vi.fn();
 
   return {
@@ -179,6 +201,22 @@ describe('Unit: updateEvent', () => {
   it('should throw error when event does not exist', async () => {
     // Arrange
     const { updateEvent } = await import('@/lib/firebase-events');
+    const { runTransaction } = await import('firebase/firestore');
+
+    vi.mocked(runTransaction).mockImplementationOnce(async (_, callback) => {
+      const mockTx = {
+        get: vi.fn().mockResolvedValue(
+          /** @type {import('firebase/firestore').DocumentSnapshot} */ (
+            /** @type {unknown} */ ({ exists: () => false })
+          ),
+        ),
+        update: vi.fn(),
+        set: vi.fn(),
+        delete: vi.fn(),
+      };
+      return callback(mockTx);
+    });
+
     const eventId = 'non-existent-event';
     const updatedFields = { title: 'test' };
 
@@ -249,6 +287,11 @@ describe('Unit: deleteEvent', () => {
   it('should throw error when event does not exist', async () => {
     // Arrange
     const { deleteEvent } = await import('@/lib/firebase-events');
+    const { getDoc } = await import('firebase/firestore');
+
+    // @ts-expect-error — partial DocumentSnapshot mock: only exists() needed
+    vi.mocked(getDoc).mockResolvedValueOnce({ exists: () => false });
+
     const eventId = 'non-existent-event';
 
     // Act & Assert

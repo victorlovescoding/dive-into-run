@@ -17,18 +17,35 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
 
+// Run all tests in this file serially to avoid Firestore state conflicts
+test.describe.configure({ mode: 'serial' });
+
 /**
- * 登入為指定的測試使用者。
+ * 透過 Firebase Auth Emulator 以程式方式登入測試使用者。
+ * 需要 app 在 NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true 模式下運行，
+ * 且 firebase-client.js 已將 window.testFirebaseHelpers 暴露在 window 上。
  * @param {import('@playwright/test').Page} page - Playwright page object.
  * @param {string} email - 測試使用者的 email。
  * @param {string} password - 測試使用者的密碼。
+ * @returns {Promise<void>}
  */
 async function loginAsUser(page, email, password) {
-  await page.goto('/login');
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/密碼|password/i).fill(password);
-  await page.getByRole('button', { name: /登入|login/i }).click();
-  // 等待登入完成 — 檢查導航到 events 頁面或出現使用者元素
+  // 先導航到 /events 以初始化 Firebase app (connectAuthEmulator 會被呼叫)
+  await page.goto('/events');
+
+  // 等待 emulator 測試 helpers 掛載到 window
+  await page.waitForFunction(() => Boolean(window.testFirebaseHelpers), {
+    timeout: 10000,
+  });
+
+  // 直接呼叫 Firebase SDK 登入，不需要 UI 表單
+  await page.evaluate(async (/** @type {{ email: string, password: string }} */ creds) => {
+    const { auth, signIn } = window.testFirebaseHelpers;
+    await signIn(auth, creds.email, creds.password);
+  }, { email, password });
+
+  // Reload 讓 React auth context 重新讀取 IndexedDB 中的登入狀態
+  await page.reload();
   await expect(page.getByText(/活動列表/i)).toBeVisible();
 }
 
@@ -175,8 +192,8 @@ test.describe('Event Edit & Delete - User Story 2: 刪除活動', () => {
     // Assert — 自訂確認視窗出現
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByText(/確定要刪除活動/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /^是$/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /^否$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /是，確認刪除/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /否，取消/i })).toBeVisible();
   });
 
   test('clicking "否" should close dialog and keep event (US2-AC2)', async ({ page }) => {
@@ -192,7 +209,7 @@ test.describe('Event Edit & Delete - User Story 2: 刪除活動', () => {
     await page.getByRole('menuitem', { name: /刪除活動/i }).click();
 
     // Act — 選擇「否」
-    await page.getByRole('button', { name: /^否$/i }).click();
+    await page.getByRole('button', { name: /否，取消/i }).click();
 
     // Assert — 對話框關閉，活動仍在
     await expect(page.getByRole('dialog')).not.toBeVisible();
@@ -212,7 +229,7 @@ test.describe('Event Edit & Delete - User Story 2: 刪除活動', () => {
     await page.getByRole('menuitem', { name: /刪除活動/i }).click();
 
     // Act — 選擇「是」確認刪除
-    await page.getByRole('button', { name: /^是$/i }).click();
+    await page.getByRole('button', { name: /是，確認刪除/i }).click();
 
     // Assert — 顯示成功訊息，活動從列表消失
     await expect(page.getByText(/刪除成功/i)).toBeVisible();

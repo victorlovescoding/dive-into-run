@@ -1,0 +1,23 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/chentzuyu/Desktop/dive-into-run[39m
+
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: updateEvent[2m > [22mshould update event fields in Firestore and return updated data[32m 19[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: updateEvent[2m > [22mshould throw error when eventId is missing[32m 1[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: updateEvent[2m > [22mshould throw error when updatedFields is empty or not an object[32m 0[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: updateEvent[2m > [22mshould reject maxParticipants lower than current participantsCount (FR-015)[32m 1[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: updateEvent[2m > [22mshould allow maxParticipants equal to current participantsCount[32m 0[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: updateEvent[2m > [22mshould recalculate remainingSeats when maxParticipants is updated[32m 0[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: updateEvent[2m > [22mshould handle update failure gracefully[32m 0[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: updateEvent[2m > [22mshould throw error when event does not exist[32m 0[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: deleteEvent[2m > [22mshould delete the event document from Firestore[32m 0[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: deleteEvent[2m > [22mshould also delete all participants in the subcollection (FR-011)[32m 0[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: deleteEvent[2m > [22mshould throw error when eventId is missing[32m 0[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: deleteEvent[2m > [22mshould throw error when event does not exist[32m 0[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: deleteEvent[2m > [22mshould handle delete failure gracefully[32m 0[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js[2m > [22mUnit: deleteEvent[2m > [22mshould succeed even when event has no participants[32m 0[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m14 passed[39m[22m[90m (14)[39m
+[2m   Start at [22m 17:31:39
+[2m   Duration [22m 588ms[2m (transform 72ms, setup 78ms, import 34ms, tests 25ms, environment 339ms)[22m
+
