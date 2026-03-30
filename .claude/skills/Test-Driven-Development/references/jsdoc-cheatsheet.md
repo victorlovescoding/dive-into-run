@@ -1,77 +1,36 @@
-/**
- * @file JSDoc Cheatsheet for TypeScript (checkJs: true)
- * @description
- * This project uses TypeScript's JSDoc Check (`checkJs: true`).
- * We prefer "TypeScript JSDoc Syntax" over "Google Closure Syntax" for better VS Code integration.
- * 
- * References:
- * - JSDoc Support: https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html
- * - checkJs Option: https://www.typescriptlang.org/tsconfig#checkJs
- */
+# JSDoc Cheatsheet — TDD Supplement
 
-/* ==========================================================================
-   1. FUNCTION TYPES (CALLBACKS)
-   Preferred: TypeScript Syntax (Arrow Functions)
-   ========================================================================== */
+> **Common patterns** (typedef, props, import, casting): See `CLAUDE.md` §"JSDoc Patterns (checkJs: true)".
+> This file only covers patterns **not** in CLAUDE.md.
 
+## Named Callback (`@callback`)
+
+Use when the same function signature is reused across multiple JSDoc blocks:
+
+```js
 /**
  * @callback UpdateCallback
  * @param {string} id
  * @returns {void}
  */
 
-/**
- * RECOMMENDED: TypeScript Syntax (Readable, Supported in VS Code)
- * @param {(id: string) => void} onUpdate
- */
+/** @param {UpdateCallback} onUpdate */
+function subscribe(onUpdate) {}
+```
 
-/**
- * ALSO VALID: Google Closure Syntax (Verbose)
- * @param {function(string): void} onUpdateOld
- */
+Prefer inline arrow syntax for one-off usage:
+```js
+/** @param {(id: string) => void} onUpdate */
+```
 
-/* ==========================================================================
-   2. OBJECT TYPES & TYPEDEF
-   ========================================================================== */
+## Google Closure vs TypeScript Syntax
 
-/**
- * @typedef {Object} User
- * @property {string} id
- * @property {string} name
- * @property {string} [email] - Optional property
- */
+This project uses **TypeScript syntax** (better VS Code support):
 
-/**
- * @param {User} user
- */
-function processUser(user) {
-  // ...
-}
+```js
+// PREFERRED: TypeScript arrow syntax
+/** @param {(id: string) => void} onUpdate */
 
-/* ==========================================================================
-   3. OBJECT DESTRUCTURING IN @PARAM
-   ========================================================================== */
-
-/**
- * Component Props example
- * @param {Object} props
- * @param {User} props.user
- * @param {(id: string) => void} props.onUpdate
- */
-function UserProfile({ user, onUpdate }) {
-    // ...
-}
-
-/* ==========================================================================
-   4. IMPORTING TYPES
-   ========================================================================== */
-
-/**
- * @param {import('./other-file').SomeType} data
- */
-
-/* ==========================================================================
-   5. CASTING (TYPE ASSERTION)
-   ========================================================================== */
-
-const myValue = /** @type {string} */ (someAnyValue);
+// AVOID: Google Closure syntax (verbose, weaker IDE support)
+/** @param {function(string): void} onUpdate */
+```

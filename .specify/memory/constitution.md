@@ -54,6 +54,11 @@ Version: 1.3.0 -> 1.4.0
 ### VI. 現代化開發標準 (Modern Development Standards)
 **不可協商**: 遵循 Airbnb 風格精華與 JSDoc 嚴謹性。
 - **Airbnb Spirit**: `const` 優先、嚴禁 `var`、強制解構賦值、結尾逗號。
+- **Formatting 鐵律**:
+    - **分號**: 必須加。
+    - **引號**: JS 用單引號 `'`，JSX 屬性用雙引號 `"`。
+    - **縮排**: 2 spaces。
+    - **結尾逗號**: ES5 格式（objects, arrays, params）。
 - **React 19**: 不使用 `import React` (除非 Hooks 需要)，嚴守 Hooks 規則。
 - **JSDoc 紀律**:
     - **強制文件**: 導出函式必須有完整 JSDoc。
