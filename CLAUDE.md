@@ -108,3 +108,6 @@ const el = /** @type {HTMLInputElement} */ (document.getElementById('x'));
 
 - All secrets (API keys, tokens) in `.env` only — never commit them
 - `.env` must be in `.gitignore`
+
+## Recent Changes
+- 004-event-edit-delete: Added updateEvent/deleteEvent service functions, EventCardMenu, EventEditForm, EventDeleteConfirm components
