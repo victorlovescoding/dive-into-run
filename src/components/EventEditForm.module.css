@@ -125,6 +125,23 @@
   border-bottom: 2px solid #673ab7;
 }
 
+.formLabel {
+  display: block;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+  color: #202124;
+}
+
+.flexRowGap10 {
+  display: flex;
+  gap: 10px;
+}
+
+.flex1 {
+  flex: 1;
+}
+
 /* 配速並排（分 / 秒） */
 .paceRow {
   display: flex;
