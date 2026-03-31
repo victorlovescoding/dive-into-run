@@ -205,12 +205,7 @@ export default function EventMap({
   };
 
   return (
-    <MapContainer
-      center={taipeiCenter}
-      zoom={13}
-      scrollWheelZoom
-      style={mapStyle}
-    >
+    <MapContainer center={taipeiCenter} zoom={13} scrollWheelZoom style={mapStyle}>
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -223,9 +218,7 @@ export default function EventMap({
         </>
       )}
 
-      {mode === 'view' && (
-        <RouteViewer encodedPolyline={encodedPolyline} bbox={bbox} />
-      )}
+      {mode === 'view' && <RouteViewer encodedPolyline={encodedPolyline} bbox={bbox} />}
     </MapContainer>
   );
 }

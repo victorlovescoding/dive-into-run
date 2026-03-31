@@ -1,26 +1,34 @@
-import '@testing-library/jest-dom'
-import { vi } from 'vitest'
-import React from 'react'
+import '@testing-library/jest-dom';
+import { vi } from 'vitest';
+import React from 'react';
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
-}
+};
 
 // Mock IntersectionObserver (Missing in JSDOM)
 // Mock IntersectionObserver (Missing in JSDOM)
 global.IntersectionObserver = class IntersectionObserver {
   constructor() {}
-  get root() { return null; }
-  get rootMargin() { return ''; }
-  get thresholds() { return []; }
+  get root() {
+    return null;
+  }
+  get rootMargin() {
+    return '';
+  }
+  get thresholds() {
+    return [];
+  }
   observe() {}
   unobserve() {}
   disconnect() {}
-  takeRecords() { return []; }
-}
+  takeRecords() {
+    return [];
+  }
+};
 
 // Global Mock for Leaflet (Avoids 'window is not defined' in JSDOM)
 vi.mock('leaflet', () => ({

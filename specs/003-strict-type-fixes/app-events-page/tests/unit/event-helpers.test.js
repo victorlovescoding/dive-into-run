@@ -49,7 +49,10 @@ describe('event-helpers unit tests', () => {
     it('should split array into chunks of specified size', () => {
       const arr = [1, 2, 3, 4, 5];
       expect(chunkArray(arr, 2)).toEqual([[1, 2], [3, 4], [5]]);
-      expect(chunkArray(arr, 3)).toEqual([[1, 2, 3], [4, 5]]);
+      expect(chunkArray(arr, 3)).toEqual([
+        [1, 2, 3],
+        [4, 5],
+      ]);
     });
 
     it('should return empty array for empty input', () => {
@@ -77,7 +80,10 @@ describe('event-helpers unit tests', () => {
 
   describe('buildRoutePayload', () => {
     it('should build payload from coordinates', () => {
-      const coords = [{ lat: 1, lng: 2 }, { lat: 3, lng: 4 }];
+      const coords = [
+        { lat: 1, lng: 2 },
+        { lat: 3, lng: 4 },
+      ];
       const result = buildRoutePayload(coords);
       expect(result).toBeDefined();
       if (result) {

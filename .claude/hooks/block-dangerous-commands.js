@@ -47,7 +47,7 @@ const dangerousPatterns = [
   /\b(mkfs|dd|fdisk|parted|reboot|shutdown|halt|poweroff)\b/,
 
   // 8. 寫入硬體裝置
-  />\s*\/dev\/(sd[a-z]|nvme|hd[a-z])/
+  />\s*\/dev\/(sd[a-z]|nvme|hd[a-z])/,
 ];
 
 // 檢查是否匹配任何危險模式
@@ -55,13 +55,15 @@ for (const pattern of dangerousPatterns) {
   if (pattern.test(command)) {
     console.error(`[Security Hook] Blocked command: ${command}`);
 
-    console.log(JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecision: 'deny',
-        permissionDecisionReason: `🚫 安全性攔截：此指令被標記為高風險 (${pattern})，已自動阻擋。`
-      }
-    }));
+    console.log(
+      JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'PreToolUse',
+          permissionDecision: 'deny',
+          permissionDecisionReason: `🚫 安全性攔截：此指令被標記為高風險 (${pattern})，已自動阻擋。`,
+        },
+      }),
+    );
     process.exit(0);
   }
 }

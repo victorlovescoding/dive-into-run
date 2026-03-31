@@ -5,9 +5,7 @@
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 
-import {
-  useContext, useEffect, useMemo, useState, useCallback,
-} from 'react';
+import { useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import styles from '../events.module.css';
@@ -98,9 +96,8 @@ function toNumber(v) {
 function getRemainingSeats(ev, fallbackParticipantsCount = 0) {
   if (typeof ev?.remainingSeats === 'number') return ev.remainingSeats;
   const max = toNumber(ev?.maxParticipants);
-  const count = typeof ev?.participantsCount === 'number'
-    ? ev.participantsCount
-    : fallbackParticipantsCount;
+  const count =
+    typeof ev?.participantsCount === 'number' ? ev.participantsCount : fallbackParticipantsCount;
   return Math.max(0, max - toNumber(count));
 }
 
@@ -253,10 +250,7 @@ export default function EventDetailClient({ id }) {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.eventsSection}>
-        <Link
-          href="/events"
-          className={styles.backLink}
-        >
+        <Link href="/events" className={styles.backLink}>
           ← 回到活動列表
         </Link>
 
@@ -293,9 +287,7 @@ export default function EventDetailClient({ id }) {
                 </div>
                 <div>
                   地點：
-                  {event.city}
-                  {' '}
-                  {event.district}
+                  {event.city} {event.district}
                 </div>
                 <div>
                   集合：
@@ -306,15 +298,11 @@ export default function EventDetailClient({ id }) {
               <div className={styles.eventMeta}>
                 <div>
                   距離：
-                  {event.distanceKm}
-                  {' '}
-                  km
+                  {event.distanceKm} km
                 </div>
                 <div>
                   配速：
-                  {formatPace(event.paceSec, event.pace)}
-                  {' '}
-                  /km
+                  {formatPace(event.paceSec, event.pace)} /km
                 </div>
                 <div>
                   人數上限：
@@ -349,18 +337,14 @@ export default function EventDetailClient({ id }) {
 
                 {/* 參加/退出 */}
                 {!user?.uid && (
-                  <div
-                    className={`${styles.helperText} ${styles.alignSelfCenter}`}
-                  >
+                  <div className={`${styles.helperText} ${styles.alignSelfCenter}`}>
                     加入活動前請先登入
                   </div>
                 )}
-                {user?.uid && event.hostUid !== user.uid && (
+                {user?.uid &&
+                  event.hostUid !== user.uid &&
                   (() => {
-                    const remaining = getRemainingSeats(
-                      event,
-                      participants.length,
-                    );
+                    const remaining = getRemainingSeats(event, participants.length);
 
                     if (isJoined) {
                       return (
@@ -377,9 +361,8 @@ export default function EventDetailClient({ id }) {
                             try {
                               const res = await leaveEvent(String(id), payload);
                               if (
-                                res?.ok
-                                && (res.status === 'left'
-                                  || res.status === 'not_joined')
+                                res?.ok &&
+                                (res.status === 'left' || res.status === 'not_joined')
                               ) {
                                 setIsJoined(false);
 
@@ -388,8 +371,7 @@ export default function EventDetailClient({ id }) {
                                   if (!prev) return prev;
                                   const max = toNumber(prev.maxParticipants);
                                   const prevCount = toNumber(
-                                    prev.participantsCount
-                                      ?? participants.length,
+                                    prev.participantsCount ?? participants.length,
                                   );
                                   const prevRemaining = getRemainingSeats(
                                     prev,
@@ -397,20 +379,14 @@ export default function EventDetailClient({ id }) {
                                   );
                                   return {
                                     ...prev,
-                                    participantsCount: Math.max(
-                                      0,
-                                      prevCount - 1,
-                                    ),
-                                    remainingSeats: Math.min(
-                                      max,
-                                      prevRemaining + 1,
-                                    ),
+                                    participantsCount: Math.max(0, prevCount - 1),
+                                    remainingSeats: Math.min(max, prevRemaining + 1),
                                   };
                                 });
 
-                                setParticipants((prev) => prev.filter(
-                                  (p) => String(p.uid) !== String(user.uid),
-                                ));
+                                setParticipants((prev) =>
+                                  prev.filter((p) => String(p.uid) !== String(user.uid)),
+                                );
 
                                 setActionMessage({
                                   type: 'success',
@@ -436,9 +412,7 @@ export default function EventDetailClient({ id }) {
                         >
                           {pending === 'leaving' ? (
                             <span className={styles.spinnerLabel}>
-                              <div
-                                className={`${styles.spinner} ${styles.buttonSpinner}`}
-                              />
+                              <div className={`${styles.spinner} ${styles.buttonSpinner}`} />
                               取消中…
                             </span>
                           ) : (
@@ -476,9 +450,8 @@ export default function EventDetailClient({ id }) {
                             const res = await joinEvent(String(id), payload);
 
                             if (
-                              res?.ok
-                              && (res.status === 'joined'
-                                || res.status === 'already_joined')
+                              res?.ok &&
+                              (res.status === 'joined' || res.status === 'already_joined')
                             ) {
                               setIsJoined(true);
 
@@ -487,8 +460,7 @@ export default function EventDetailClient({ id }) {
                                 setEvent((prev) => {
                                   if (!prev) return prev;
                                   const prevCount = toNumber(
-                                    prev.participantsCount
-                                      ?? participants.length,
+                                    prev.participantsCount ?? participants.length,
                                   );
                                   const prevRemaining = getRemainingSeats(
                                     prev,
@@ -497,10 +469,7 @@ export default function EventDetailClient({ id }) {
                                   return {
                                     ...prev,
                                     participantsCount: prevCount + 1,
-                                    remainingSeats: Math.max(
-                                      0,
-                                      prevRemaining - 1,
-                                    ),
+                                    remainingSeats: Math.max(0, prevRemaining - 1),
                                   };
                                 });
 
@@ -524,10 +493,7 @@ export default function EventDetailClient({ id }) {
                                 type: 'success',
                                 message: '報名成功',
                               });
-                            } else if (
-                              res?.ok === false
-                              && res.status === 'full'
-                            ) {
+                            } else if (res?.ok === false && res.status === 'full') {
                               setActionMessage({
                                 type: 'error',
                                 message: '本活動已額滿',
@@ -553,9 +519,7 @@ export default function EventDetailClient({ id }) {
                       >
                         {pending === 'joining' ? (
                           <span className={styles.spinnerLabel}>
-                            <div
-                              className={`${styles.spinner} ${styles.buttonSpinner}`}
-                            />
+                            <div className={`${styles.spinner} ${styles.buttonSpinner}`} />
                             報名中…
                           </span>
                         ) : (
@@ -563,8 +527,7 @@ export default function EventDetailClient({ id }) {
                         )}
                       </button>
                     );
-                  })()
-                )}
+                  })()}
               </div>
 
               {/* ✅ 成功/失敗字卡（同 events 頁） */}
@@ -575,10 +538,10 @@ export default function EventDetailClient({ id }) {
                   style={
                     actionMessage.type === 'success'
                       ? {
-                        background: 'rgba(16, 185, 129, 0.12)',
-                        border: '1px solid rgba(16, 185, 129, 0.25)',
-                        color: '#065f46',
-                      }
+                          background: 'rgba(16, 185, 129, 0.12)',
+                          border: '1px solid rgba(16, 185, 129, 0.25)',
+                          color: '#065f46',
+                        }
                       : undefined
                   }
                 >
@@ -589,21 +552,15 @@ export default function EventDetailClient({ id }) {
 
             {/* 活動說明 */}
             <div className={styles.eventCard}>
-              <div className={`${styles.eventTitle} ${styles.fontSize16}`}>
-                活動說明
-              </div>
+              <div className={`${styles.eventTitle} ${styles.fontSize16}`}>活動說明</div>
               <div className={styles.eventMeta}>
-                {event.description?.trim()
-                  ? event.description
-                  : '尚未填寫活動說明'}
+                {event.description?.trim() ? event.description : '尚未填寫活動說明'}
               </div>
             </div>
 
             {/* 路線 */}
             <div className={styles.eventCard}>
-              <div className={`${styles.eventTitle} ${styles.fontSize16}`}>
-                活動路線
-              </div>
+              <div className={`${styles.eventTitle} ${styles.fontSize16}`}>活動路線</div>
 
               {!hasRoute ? (
                 <div className={styles.eventMeta}>此活動未設定路線</div>
@@ -611,9 +568,7 @@ export default function EventDetailClient({ id }) {
                 <>
                   <div className={styles.eventMeta}>
                     已設定路線（
-                    {event.route?.pointsCount ?? '?'}
-                    {' '}
-                    點）
+                    {event.route?.pointsCount ?? '?'} 點）
                   </div>
 
                   <div className={styles.detailMapContainer}>
@@ -643,9 +598,7 @@ export default function EventDetailClient({ id }) {
                 }}
                 tabIndex={-1}
               >
-                <div
-                  className={styles.participantsCard}
-                >
+                <div className={styles.participantsCard}>
                   <div className={styles.participantsHeader}>
                     <div className={styles.participantsTitle}>參加名單</div>
                     <button
@@ -682,48 +635,34 @@ export default function EventDetailClient({ id }) {
                       </div>
                     )}
 
-                    {!participantsLoading
-                    && !participantsError
-                    && participants.length === 0 ? (
+                    {!participantsLoading && !participantsError && participants.length === 0 ? (
                       <div className={styles.emptyHint}>目前還沒有人報名</div>
-                      ) : (
-                        <div className={styles.participantsList}>
-                          {participants.map((p) => (
-                            <div
-                              key={String(p.uid || p.id)}
-                              className={styles.participantItem}
-                            >
-                              {p.photoURL ? (
-                                <img
-                                  src={p.photoURL}
-                                  alt={
-                                  p.name ? `${p.name} 的大頭貼` : '參加者大頭貼'
-                                }
-                                  width={36}
-                                  height={36}
-                                  className={styles.participantAvatar}
-                                />
-                              ) : (
-                                <div
-                                  aria-hidden="true"
-                                  className={styles.participantFallbackAvatar}
-                                >
-                                  {(p.name || '?').slice(0, 1)}
-                                </div>
-                              )}
-
-                              <div className={styles.participantInfo}>
-                                <div className={styles.participantName}>
-                                  {p.name || '（未命名）'}
-                                </div>
-                                <div className={styles.participantStatus}>
-                                  已參加
-                                </div>
+                    ) : (
+                      <div className={styles.participantsList}>
+                        {participants.map((p) => (
+                          <div key={String(p.uid || p.id)} className={styles.participantItem}>
+                            {p.photoURL ? (
+                              <img
+                                src={p.photoURL}
+                                alt={p.name ? `${p.name} 的大頭貼` : '參加者大頭貼'}
+                                width={36}
+                                height={36}
+                                className={styles.participantAvatar}
+                              />
+                            ) : (
+                              <div aria-hidden="true" className={styles.participantFallbackAvatar}>
+                                {(p.name || '?').slice(0, 1)}
                               </div>
+                            )}
+
+                            <div className={styles.participantInfo}>
+                              <div className={styles.participantName}>{p.name || '（未命名）'}</div>
+                              <div className={styles.participantStatus}>已參加</div>
                             </div>
-                          ))}
-                        </div>
-                      )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

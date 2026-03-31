@@ -11,6 +11,7 @@
 ---
 
 ## 1. Data Model Changes
+
 None.
 
 ## 2. Server-Side Logic (src/lib/firebase-events.js)
@@ -146,31 +147,33 @@ The following functions will be refactored to add JSDoc and fix linting issues:
     ```
 
 ## 3. UI Components
+
 None.
 
 ## 4. 品質保證與規範 (MANDATORY)
+
 - [ ] **風格規範**: 遵循憲法 Principle VI (Airbnb Style)。
 - [ ] **JSDoc 契約**: 已在「技術細節」區塊預先定義所有函數的參數與型別。
 - [ ] **驗收門檻**:
-    - `npm run lint` 必須完全通過 (0 errors, 0 warnings in target file)。
-    - `vitest run tests/002-jsdoc-refactor/unit/firebase-events.test.js` 必須全部通過 (Regression Test)。
+  - `npm run lint` 必須完全通過 (0 errors, 0 warnings in target file)。
+  - `vitest run tests/002-jsdoc-refactor/unit/firebase-events.test.js` 必須全部通過 (Regression Test)。
 
 ## 5. Step-by-Step Implementation Guide
 
 1.  **Refactor `normalizeEventPayload` & `createEvent`**:
-    -   Address `no-unused-vars` by renaming unused destructured variables (prefix with `_`).
-    -   Add JSDoc blocks.
-    -   Run lint to verify.
+    - Address `no-unused-vars` by renaming unused destructured variables (prefix with `_`).
+    - Add JSDoc blocks.
+    - Run lint to verify.
 
 2.  **Refactor `fetchLatestEvents` & `fetchNextEvents`**:
-    -   Rename local `doc` to `snapshot`.
-    -   Add JSDoc blocks.
-    -   Run lint to verify.
+    - Rename local `doc` to `snapshot`.
+    - Add JSDoc blocks.
+    - Run lint to verify.
 
 3.  **Add JSDoc to remaining functions**:
-    -   `queryEvents`, `fetchEventById`, `joinEvent`, `leaveEvent`, `fetchParticipants`, `fetchMyJoinedEventsForIds`.
-    -   Ensure types match `import('firebase/firestore')` types where appropriate.
+    - `queryEvents`, `fetchEventById`, `joinEvent`, `leaveEvent`, `fetchParticipants`, `fetchMyJoinedEventsForIds`.
+    - Ensure types match `import('firebase/firestore')` types where appropriate.
 
 4.  **Final Verification**:
-    -   Run `npx eslint src/lib/firebase-events.js` (Must be clean).
-    -   Run `npm test` (Must pass).
+    - Run `npx eslint src/lib/firebase-events.js` (Must be clean).
+    - Run `npm test` (Must pass).

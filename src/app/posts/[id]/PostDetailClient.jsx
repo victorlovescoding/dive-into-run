@@ -1,9 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import {
-  useState, useEffect, useRef, useContext,
-} from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import {
   getPostDetail,
   addComment,
@@ -140,14 +138,7 @@ export default function PostDetailClient({ postId }) {
     return () => {
       intersectionObserver.disconnect();
     };
-  }, [
-    postId,
-    nextCursor,
-    isLoadingNext,
-    user?.uid,
-    bottomRef.current,
-    comments.length,
-  ]);
+  }, [postId, nextCursor, isLoadingNext, user?.uid, bottomRef.current, comments.length]);
 
   /**
    *
@@ -296,12 +287,16 @@ export default function PostDetailClient({ postId }) {
       const newText = comment.trim();
       const prevText = comments.find((c) => c.id === commentEditing.id)?.comment ?? '';
       // 樂觀更新：在還沒確定資料庫已經完成更新前就先顯示更新後的畫面
-      setComments((prev) => prev.map((c) => (c.id === commentEditing.id ? { ...c, comment: newText } : c)));
+      setComments((prev) =>
+        prev.map((c) => (c.id === commentEditing.id ? { ...c, comment: newText } : c)),
+      );
       try {
         await updateComment(postId, commentEditing.id, { comment: newText });
       } catch (e) {
         // 回滾
-        setComments((prev) => prev.map((c) => (c.id === commentEditing.id ? { ...c, comment: prevText } : c)));
+        setComments((prev) =>
+          prev.map((c) => (c.id === commentEditing.id ? { ...c, comment: prevText } : c)),
+        );
       }
       setComment('');
       setCommentEditing(null);
@@ -477,11 +472,7 @@ export default function PostDetailClient({ postId }) {
         ))}
       </ul>
       <div>
-        <button
-          type="button"
-          className={styles.metaButton}
-          onClick={handleToggleLike}
-        >
+        <button type="button" className={styles.metaButton} onClick={handleToggleLike}>
           <svg
             width="16"
             height="16"
@@ -516,9 +507,7 @@ export default function PostDetailClient({ postId }) {
             />
           </g>
         </svg>
-        <span className={styles.metaCount}>
-          {postDetail.commentsCount ?? 0}
-        </span>
+        <span className={styles.metaCount}>{postDetail.commentsCount ?? 0}</span>
       </div>
       {/* 留言欄位 */}
       <div>

@@ -49,11 +49,7 @@ export default function EventActionButtons({
   myJoinedEventIds,
 }) {
   if (!user?.uid) {
-    return (
-      <div className={styles.helperText}>
-        加入活動前請先登入
-      </div>
-    );
+    return <div className={styles.helperText}>加入活動前請先登入</div>;
   }
 
   if (event.hostUid === user.uid) {

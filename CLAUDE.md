@@ -36,14 +36,14 @@ npx playwright test specs/path/to/file.spec.js  # Single E2E test
 
 ### Key Directories
 
-| Path | Purpose |
-|---|---|
-| `src/app/` | Next.js App Router pages (events, login, member, posts, signout) |
-| `src/lib/` | Service layer — Firebase clients, domain helpers (`event-helpers.js`) |
-| `src/components/` | Shared React components |
-| `src/contexts/` | React Context providers (Auth) |
-| `src/types/` | Type declarations (CSS modules) |
-| `specs/` | Feature specs + tests — one folder per git branch/feature |
+| Path              | Purpose                                                               |
+| ----------------- | --------------------------------------------------------------------- |
+| `src/app/`        | Next.js App Router pages (events, login, member, posts, signout)      |
+| `src/lib/`        | Service layer — Firebase clients, domain helpers (`event-helpers.js`) |
+| `src/components/` | Shared React components                                               |
+| `src/contexts/`   | React Context providers (Auth)                                        |
+| `src/types/`      | Type declarations (CSS modules)                                       |
+| `specs/`          | Feature specs + tests — one folder per git branch/feature             |
 
 ## Strict Rules (Non-Negotiable)
 
@@ -61,6 +61,7 @@ npx playwright test specs/path/to/file.spec.js  # Single E2E test
 ## Code Style Quick Reference
 
 ### Formatting
+
 - **Semicolons**: always
 - **Quotes**: single `'` in JS, double `"` in JSX attributes
 - **Indent**: 2 spaces

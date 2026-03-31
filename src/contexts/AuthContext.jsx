@@ -25,10 +25,17 @@ export default function UserDataHandler({ children }) {
     let unSubProfile = null; // 保存 users/{uid} 監聽的退訂函式
     const unSubAuth = onAuthStateChanged(auth, async (fbUser) => {
       try {
-        if (unSubProfile) { unSubProfile(); unSubProfile = null; }// 每次觸發onAuthStateChanged都會執行watchUserProfile，如果不先清空就會有多個watchUserProfile同時活著
+        if (unSubProfile) {
+          unSubProfile();
+          unSubProfile = null;
+        } // 每次觸發onAuthStateChanged都會執行watchUserProfile，如果不先清空就會有多個watchUserProfile同時活著
         setLoading(true);
-        if (!fbUser) { setUser(null); setLoading(false); return; }
-        await loginCheckUserData(fbUser);// loginCheckUserData和watchUserProfile做的事情有點重複都是要拿資料回來，需要修改
+        if (!fbUser) {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        await loginCheckUserData(fbUser); // loginCheckUserData和watchUserProfile做的事情有點重複都是要拿資料回來，需要修改
         unSubProfile = watchUserProfile(
           fbUser.uid,
           (data) => {
@@ -60,7 +67,5 @@ export default function UserDataHandler({ children }) {
       unSubAuth();
     };
   }, []);
-  return (
-    <AuthContext.Provider value={{ user, setUser, loading }}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, setUser, loading }}>{children}</AuthContext.Provider>;
 }

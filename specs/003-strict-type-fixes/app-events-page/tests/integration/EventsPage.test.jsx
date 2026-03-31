@@ -2,9 +2,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
-import {
-  describe, it, expect, vi, beforeEach,
-} from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import EventsPage from '@/app/events/page';
 import { AuthContext } from '@/contexts/AuthContext';
 import * as firebaseEvents from '@/lib/firebase-events';

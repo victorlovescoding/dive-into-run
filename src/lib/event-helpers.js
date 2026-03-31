@@ -87,7 +87,10 @@ export function buildRoutePayload(routeCoordinates) {
     polyline: encoded,
     pointsCount: points.length,
     bbox: {
-      minLat, minLng, maxLat, maxLng,
+      minLat,
+      minLng,
+      maxLat,
+      maxLng,
     },
   };
 }

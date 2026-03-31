@@ -1,7 +1,9 @@
 status: verified
+
 # Tasks for Strict Type and Lint Fixes for App Events Page
 
 ## 1. Foundation (Prerequisites)
+
 - [ ] Task 1: Create CSS Module type declaration
   - Description: Create `src/types/css.d.ts`.
   - Dependency: None.
@@ -12,6 +14,7 @@ status: verified
   - Acceptance: `tsc` recognizes these types in `src/app/events/page.jsx`.
 
 ## 2. Shared Logic (src/lib/event-helpers.js)
+
 - [ ] Task 3: Refactor `formatPace` and `toNumber`
   - Description: Add JSDoc and handle `null`/`undefined` inputs.
 - [ ] Task 4: Refactor `chunkArray`, `getRemainingSeats`, and `buildRoutePayload`
@@ -22,6 +25,7 @@ status: verified
   - Acceptance: 所有 Unit Tests 變為 **GREEN (PASS)**。
 
 ## 3. UI Refactoring (src/app/events/page.jsx)
+
 - [ ] Task 6: Fix Component JSDoc and Imports
   - Description: Fix `root0` JSDoc annotations and add `buildUserPayload` import.
 - [ ] Task 7: Refactor loops and return statements
@@ -34,6 +38,7 @@ status: verified
   - Acceptance: 所有 Integration Tests 變為 **GREEN (PASS)**。
 
 ## 4. Final Quality Gate (MANDATORY)
+
 - [ ] Task 10: 執行全局品質檢查 (The Iron Wall)
   - Description: 執行 `npm run type-check` (0 errors) 與 `npm run lint` (0 problems)。
   - Description: **執行 `grep -r "@ts-ignore" src`**，確保結果為空。

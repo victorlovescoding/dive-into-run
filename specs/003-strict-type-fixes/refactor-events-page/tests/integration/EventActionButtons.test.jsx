@@ -17,7 +17,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 // Note: We are testing a component that doesn't exist yet (TDD), so the import will fail if we ran it now.
 // But we write the test assuming it will be at this path.
-import EventActionButtons from '@/components/EventActionButtons'; 
+import EventActionButtons from '@/components/EventActionButtons';
 
 /**
  * @typedef {object} EventData
@@ -57,7 +57,7 @@ describe('Integration: EventActionButtons', () => {
 
     /** @type {User} */
     const mockUser = { uid: 'user-123' };
-    
+
     /** @type {EventData} */
     const mockEvent = {
       id: 'event-1',
@@ -77,16 +77,16 @@ describe('Integration: EventActionButtons', () => {
     };
 
     render(
-      <EventActionButtons 
-        event={mockEvent} 
-        user={mockUser} 
-        onJoin={mockOnJoin} 
+      <EventActionButtons
+        event={mockEvent}
+        user={mockUser}
+        onJoin={mockOnJoin}
         onLeave={mockOnLeave}
         isPending={false}
         isCreating={false}
         isFormOpen={false}
         myJoinedEventIds={new Set()}
-      />
+      />,
     );
 
     // Act
@@ -94,7 +94,7 @@ describe('Integration: EventActionButtons', () => {
 
     // Assert
     expect(joinButton).toBeInTheDocument();
-    
+
     // Interact
     await user.click(joinButton);
     expect(mockOnJoin).toHaveBeenCalledTimes(1);
@@ -110,7 +110,7 @@ describe('Integration: EventActionButtons', () => {
 
     /** @type {User} */
     const mockUser = { uid: 'user-123' };
-    
+
     /** @type {EventData} */
     const mockEvent = {
       id: 'event-1',
@@ -130,16 +130,16 @@ describe('Integration: EventActionButtons', () => {
     };
 
     render(
-      <EventActionButtons 
-        event={mockEvent} 
-        user={mockUser} 
-        onJoin={mockOnJoin} 
+      <EventActionButtons
+        event={mockEvent}
+        user={mockUser}
+        onJoin={mockOnJoin}
         onLeave={mockOnLeave}
         isPending={false}
         isCreating={false}
         isFormOpen={false}
         myJoinedEventIds={new Set(['event-1'])}
-      />
+      />,
     );
 
     // Act
@@ -147,7 +147,7 @@ describe('Integration: EventActionButtons', () => {
 
     // Assert
     expect(leaveButton).toBeInTheDocument();
-    
+
     // Interact
     await user.click(leaveButton);
     expect(mockOnLeave).toHaveBeenCalledTimes(1);
@@ -157,7 +157,7 @@ describe('Integration: EventActionButtons', () => {
     // Arrange
     /** @type {User} */
     const mockUser = { uid: 'user-123' };
-    
+
     /** @type {EventData} */
     const mockEvent = {
       id: 'event-1',
@@ -177,16 +177,16 @@ describe('Integration: EventActionButtons', () => {
     };
 
     render(
-      <EventActionButtons 
-        event={mockEvent} 
-        user={mockUser} 
-        onJoin={vi.fn()} 
+      <EventActionButtons
+        event={mockEvent}
+        user={mockUser}
+        onJoin={vi.fn()}
         onLeave={vi.fn()}
         isPending={false}
         isCreating={false}
         isFormOpen={false}
         myJoinedEventIds={new Set()}
-      />
+      />,
     );
 
     // Act & Assert
@@ -198,7 +198,7 @@ describe('Integration: EventActionButtons', () => {
     // Arrange
     /** @type {User} */
     const mockUser = { uid: 'host-999' };
-    
+
     /** @type {EventData} */
     const mockEvent = {
       id: 'event-1',
@@ -218,16 +218,16 @@ describe('Integration: EventActionButtons', () => {
     };
 
     render(
-      <EventActionButtons 
-        event={mockEvent} 
-        user={mockUser} 
-        onJoin={vi.fn()} 
+      <EventActionButtons
+        event={mockEvent}
+        user={mockUser}
+        onJoin={vi.fn()}
         onLeave={vi.fn()}
         isPending={false}
         isCreating={false}
         isFormOpen={false}
         myJoinedEventIds={new Set()}
-      />
+      />,
     );
 
     // Act & Assert
@@ -239,7 +239,7 @@ describe('Integration: EventActionButtons', () => {
     // Arrange
     /** @type {User} */
     const mockUser = { uid: 'user-123' };
-    
+
     /** @type {EventData} */
     const mockEvent = {
       id: 'event-1',
@@ -259,16 +259,16 @@ describe('Integration: EventActionButtons', () => {
     };
 
     render(
-      <EventActionButtons 
-        event={mockEvent} 
-        user={mockUser} 
-        onJoin={vi.fn()} 
+      <EventActionButtons
+        event={mockEvent}
+        user={mockUser}
+        onJoin={vi.fn()}
         onLeave={vi.fn()}
         isPending={true}
         isCreating={false}
         isFormOpen={false}
         myJoinedEventIds={new Set()}
-      />
+      />,
     );
 
     // Act
@@ -299,16 +299,16 @@ describe('Integration: EventActionButtons', () => {
     };
 
     render(
-      <EventActionButtons 
-        event={mockEvent} 
+      <EventActionButtons
+        event={mockEvent}
         user={null} // Not logged in
-        onJoin={vi.fn()} 
+        onJoin={vi.fn()}
         onLeave={vi.fn()}
         isPending={false}
         isCreating={false}
         isFormOpen={false}
         myJoinedEventIds={new Set()}
-      />
+      />,
     );
 
     // Act & Assert

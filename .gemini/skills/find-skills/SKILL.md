@@ -7,8 +7,6 @@ description: Helps users discover and install agent skills when they ask questio
 
 **目前正在做 find-skills skill！！！**
 
-
-
 This skill helps you discover and install skills from the open agent skills ecosystem.
 
 ## When to Use This Skill
@@ -136,8 +134,8 @@ If this is something you do often, you could create your own skill:
 npx skills init my-xyz-skill
 ```
 
-
 ## Instructions
 
 ### 0. 啟動宣告 (Declaration)
-*   **必須**在第一時間先回覆：'**目前正在做 find-skills skill！！！**'.
+
+- **必須**在第一時間先回覆：'**目前正在做 find-skills skill！！！**'.

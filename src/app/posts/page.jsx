@@ -1,8 +1,6 @@
 'use client';
 
-import {
-  useState, useContext, useEffect, useRef,
-} from 'react';
+import { useState, useContext, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import styles from './posts.module.css';
 import { AuthContext } from '@/contexts/AuthContext';
@@ -70,12 +68,7 @@ export default function PostPage() {
   }, [user?.uid]);
 
   useEffect(() => {
-    if (
-      !bottomRef.current
-      || posts.length === 0
-      || !nextCursor
-      || isLoadingNext
-    ) return;
+    if (!bottomRef.current || posts.length === 0 || !nextCursor || isLoadingNext) return;
     const intersectionObserver = new IntersectionObserver(
       async (entries) => {
         const entry = entries[0]; // 只觀察一個東西所以取第一筆資料
@@ -214,26 +207,29 @@ export default function PostPage() {
     setPosts(
       (
         prev, // prev是拿之前的 post useState利用map換成新的[]
-      ) => prev.map((p) => {
-        if (p.id !== postId) return p;
-        const prevLiked = !!p.liked;
-        const prevCount = Number(p.likesCount ?? 0);
-        const nextLiked = !prevLiked;
-        const nextCount = Math.max(0, prevCount + (prevLiked ? -1 : 1));
-        return { ...p, liked: nextLiked, likesCount: nextCount };
-      }),
+      ) =>
+        prev.map((p) => {
+          if (p.id !== postId) return p;
+          const prevLiked = !!p.liked;
+          const prevCount = Number(p.likesCount ?? 0);
+          const nextLiked = !prevLiked;
+          const nextCount = Math.max(0, prevCount + (prevLiked ? -1 : 1));
+          return { ...p, liked: nextLiked, likesCount: nextCount };
+        }),
     );
     const result = await toggleLikePost(postId, user.uid); // 寫回 Firestore
     // 如果更新成功就不維持狀態，更新失敗則回復原本狀態
     if (result == 'fail') {
-      setPosts((prev) => prev.map((p) => {
-        if (p.id !== postId) return p;
-        const prevLiked = !!p.liked;
-        const prevCount = Number(p.likesCount ?? 0);
-        const nextLiked = !prevLiked;
-        const nextCount = Math.max(0, prevCount + (prevLiked ? -1 : 1));
-        return { ...p, liked: nextLiked, likesCount: nextCount };
-      }));
+      setPosts((prev) =>
+        prev.map((p) => {
+          if (p.id !== postId) return p;
+          const prevLiked = !!p.liked;
+          const prevCount = Number(p.likesCount ?? 0);
+          const nextLiked = !prevLiked;
+          const nextCount = Math.max(0, prevCount + (prevLiked ? -1 : 1));
+          return { ...p, liked: nextLiked, likesCount: nextCount };
+        }),
+      );
     }
   }
   /**
@@ -369,9 +365,7 @@ export default function PostPage() {
                     />
                   </g>
                 </svg>
-                <span className={styles.metaCount}>
-                  {post.commentsCount ?? 0}
-                </span>
+                <span className={styles.metaCount}>{post.commentsCount ?? 0}</span>
               </Link>
             </div>
           </li>
@@ -379,11 +373,7 @@ export default function PostPage() {
       </ul>
       {user && (
         <>
-          <button
-            type="button"
-            className={styles.compose}
-            onClick={() => composeButtonHandler()}
-          >
+          <button type="button" className={styles.compose} onClick={() => composeButtonHandler()}>
             ➕
           </button>
           {isComposeEditing && (

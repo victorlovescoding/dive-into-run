@@ -1,10 +1,6 @@
 // 這個檔案專門拿資料
-import {
-  doc, getDoc, setDoc, onSnapshot, serverTimestamp,
-} from 'firebase/firestore';
-import {
-  getStorage, ref, uploadBytes, getDownloadURL,
-} from 'firebase/storage';
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from '@/lib/firebase-client';
 
 /**
@@ -42,10 +38,18 @@ export async function loginCheckUserData(fbUser) {
  */
 export async function updateUserName(uid, newUserName) {
   const safeName = (newUserName ?? '').trim();
-  if (!uid) { throw new Error('沒有uid'); }
-  if (!safeName) { throw new Error('沒有名字'); }
+  if (!uid) {
+    throw new Error('沒有uid');
+  }
+  if (!safeName) {
+    throw new Error('沒有名字');
+  }
   // 更新資料庫
-  await setDoc(doc(db, 'users', uid), { name: safeName, nameChangedAt: serverTimestamp() }, { merge: true });// setDoc第一個參數是整份文件而不是name
+  await setDoc(
+    doc(db, 'users', uid),
+    { name: safeName, nameChangedAt: serverTimestamp() },
+    { merge: true },
+  ); // setDoc第一個參數是整份文件而不是name
 }
 
 // 這裡要再一個監聽的function
@@ -55,7 +59,8 @@ export async function updateUserName(uid, newUserName) {
  * @param onData
  * @param onError
  */
-export function watchUserProfile(uid, onData, onError) { // onData是發現資料更改時要做的事情
+export function watchUserProfile(uid, onData, onError) {
+  // onData是發現資料更改時要做的事情
   if (!uid) throw new Error('uid required');
   // onSnapshot要在登出/離開/刷新/關分頁時做清理
   const ref = doc(db, 'users', uid);
@@ -78,7 +83,7 @@ export function watchUserProfile(uid, onData, onError) { // onData是發現資�
  * @param uid
  */
 export async function uploadUserAvatar(file, uid) {
-// File解碼成bitmap
+  // File解碼成bitmap
   const imageBitmap = await window.createImageBitmap(file);
   // 用ImageBitmap來把圖片畫到canvas上
   const canvas = document.createElement('canvas');
@@ -105,7 +110,8 @@ export async function uploadUserAvatar(file, uid) {
   // 轉回去blob並且壓縮檔案來暫存
   const blob = await new Promise((resolve, reject) => {
     canvas.toBlob((b) => {
-      if (b) resolve(b); // 成功 → 把結果交給 resolve
+      if (b)
+        resolve(b); // 成功 → 把結果交給 resolve
       else reject(new Error('toBlob 失敗')); // 失敗 → 交給 reject
     });
   });
@@ -128,8 +134,12 @@ export async function uploadUserAvatar(file, uid) {
  * @param uid
  */
 export async function updateUserPhotoURL(url, uid) {
-  if (!url) { throw new Error('沒有url'); }
-  if (!uid) { throw new Error('沒有uid'); }
+  if (!url) {
+    throw new Error('沒有url');
+  }
+  if (!uid) {
+    throw new Error('沒有uid');
+  }
   await setDoc(
     doc(db, 'users', uid),
     { photoURL: url, photoUpdatedAt: serverTimestamp() },

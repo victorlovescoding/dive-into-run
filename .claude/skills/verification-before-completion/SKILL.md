@@ -7,8 +7,6 @@ description: Use when about to claim work is complete, fixed, or passing, before
 
 **目前正在做 verification-before-completion skill！！！**
 
-
-
 ## Overview
 
 Claiming work is complete without verification is dishonesty, not efficiency.
@@ -43,16 +41,16 @@ Skip any step = lying, not verifying
 
 ## Common Failures
 
-| Claim | Requires | Not Sufficient |
-|-------|----------|----------------|
-| Tests pass | Test command output: 0 failures | Previous run, "should pass" |
-| Linter clean | Linter output: 0 errors | Partial check, extrapolation |
-| Type check clean | `npm run type-check`: 0 errors | Linter passing, no runtime errors |
-| Build succeeds | Build command: exit 0 | Linter passing, logs look good |
-| Bug fixed | Test original symptom: passes | Code changed, assumed fixed |
-| Regression test works | Red-green cycle verified | Test passes once |
-| Agent completed | VCS diff shows changes | Agent reports "success" |
-| Requirements met | Line-by-line checklist | Tests passing |
+| Claim                 | Requires                        | Not Sufficient                    |
+| --------------------- | ------------------------------- | --------------------------------- |
+| Tests pass            | Test command output: 0 failures | Previous run, "should pass"       |
+| Linter clean          | Linter output: 0 errors         | Partial check, extrapolation      |
+| Type check clean      | `npm run type-check`: 0 errors  | Linter passing, no runtime errors |
+| Build succeeds        | Build command: exit 0           | Linter passing, logs look good    |
+| Bug fixed             | Test original symptom: passes   | Code changed, assumed fixed       |
+| Regression test works | Red-green cycle verified        | Test passes once                  |
+| Agent completed       | VCS diff shows changes          | Agent reports "success"           |
+| Requirements met      | Line-by-line checklist          | Tests passing                     |
 
 ## Red Flags - STOP
 
@@ -67,50 +65,56 @@ Skip any step = lying, not verifying
 
 ## Rationalization Prevention
 
-| Excuse | Reality |
-|--------|---------|
-| "Should work now" | RUN the verification |
-| "I'm confident" | Confidence ≠ evidence |
-| "Just this once" | No exceptions |
-| "Linter passed" | Linter ≠ compiler |
-| "Agent said success" | Verify independently |
-| "I'm tired" | Exhaustion ≠ excuse |
-| "Partial check is enough" | Partial proves nothing |
-| "Different words so rule doesn't apply" | Spirit over letter |
+| Excuse                                  | Reality                |
+| --------------------------------------- | ---------------------- |
+| "Should work now"                       | RUN the verification   |
+| "I'm confident"                         | Confidence ≠ evidence  |
+| "Just this once"                        | No exceptions          |
+| "Linter passed"                         | Linter ≠ compiler      |
+| "Agent said success"                    | Verify independently   |
+| "I'm tired"                             | Exhaustion ≠ excuse    |
+| "Partial check is enough"               | Partial proves nothing |
+| "Different words so rule doesn't apply" | Spirit over letter     |
 
 ## Key Patterns
 
 **Tests:**
+
 ```
 ✅ [Run test command] [See: 34/34 pass] "All tests pass"
 ❌ "Should pass now" / "Looks correct"
 ```
 
 **Regression tests (TDD Red-Green):**
+
 ```
 ✅ Write → Run (pass) → Revert fix → Run (MUST FAIL) → Restore → Run (pass)
 ❌ "I've written a regression test" (without red-green verification)
 ```
 
 **Build:**
+
 ```
 ✅ [Run build] [See: exit 0] "Build passes"
 ❌ "Linter passed" (linter doesn't check compilation)
 ```
 
 **Type Check:**
+
 ```
 ✅ [Run type-check] [See: 0 errors] "Type check passed"
 ❌ "It's just JavaScript" (JSDoc errors are real bugs)
 ```
 
 **Requirements:**
+
 ```
 ✅ Re-read plan → Create checklist → Verify each → Report gaps or completion
 ❌ "Tests pass, phase complete"
 ```
 
 **Agent delegation:**
+
 ```
 ✅ Agent reports success → Check VCS diff → Verify changes → Report actual state
 ❌ Trust agent report
@@ -119,6 +123,7 @@ Skip any step = lying, not verifying
 ## Why This Matters
 
 From 24 failure memories:
+
 - your human partner said "I don't believe you" - trust broken
 - Undefined functions shipped - would crash
 - Missing requirements shipped - incomplete features
@@ -128,6 +133,7 @@ From 24 failure memories:
 ## When To Apply
 
 **ALWAYS before:**
+
 - ANY variation of success/completion claims
 - ANY expression of satisfaction
 - ANY positive statement about work state
@@ -136,6 +142,7 @@ From 24 failure memories:
 - Delegating to agents
 
 **Rule applies to:**
+
 - Exact phrases
 - Paraphrases and synonyms
 - Implications of success
@@ -149,8 +156,8 @@ Run the command. Read the output. THEN claim the result.
 
 This is non-negotiable.
 
-
 ## Instructions
 
 ### 0. 啟動宣告 (Declaration)
-*   **必須**在第一時間先回覆：'**目前正在做 verification-before-completion skill！！！**'.
+
+- **必須**在第一時間先回覆：'**目前正在做 verification-before-completion skill！！！**'.

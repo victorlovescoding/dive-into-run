@@ -12,7 +12,7 @@ status: completed
 
 - Q: Where should the new JSDoc type definitions be placed? → A: Inline in `src/lib/firebase-events.js` (Option A).
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Developer Type Safety (Priority: P1)
 
@@ -30,9 +30,9 @@ As a developer, I want the `src/lib/firebase-events.js` file to pass TypeScript 
 ### Edge Cases
 
 - **Dynamic Data**: How does the system handle properties that might be missing in Firestore documents (e.g., optional `distanceKm`)?
-  - *Resolution*: JSDoc types must correctly reflect optional fields (e.g., `number|undefined`) and code must handle them safely (which it currently seems to do via `|| 0`, but types need to match).
+  - _Resolution_: JSDoc types must correctly reflect optional fields (e.g., `number|undefined`) and code must handle them safely (which it currently seems to do via `|| 0`, but types need to match).
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -47,7 +47,7 @@ As a developer, I want the `src/lib/firebase-events.js` file to pass TypeScript 
 - **Event**: A Firestore document representing a running event, containing fields like `time`, `city`, `district`, `maxParticipants`, etc.
 - **JoinResult**: The result object returned from join/leave operations, containing `ok` (boolean) and `status` (specific string enum).
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

@@ -3,9 +3,7 @@
 // 為何要 "use client": 這個頁面要使用 React 的 useContext（只在 Client 端可用），
 // 並讀取瀏覽器端還原的登入狀態，所以必須是 Client Component。
 
-import {
-  useContext, useEffect, useState, useRef,
-} from 'react';
+import { useContext, useEffect, useState, useRef } from 'react';
 // import { useRouter } from 'next/navigation'
 import Image from 'next/image';
 import { AuthContext } from '@/contexts/AuthContext';
@@ -44,7 +42,6 @@ export default function MemberPage() {
     if (user) {
       inputFileRef.current?.click();
     } else {
-
     }
   }
   /**
@@ -55,7 +52,7 @@ export default function MemberPage() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     try {
-    // 1) 上傳並「接住」回傳的 URL（這裡就用到你在 firebase-users.js 的 return url）
+      // 1) 上傳並「接住」回傳的 URL（這裡就用到你在 firebase-users.js 的 return url）
       const url = await uploadUserAvatar(file, user.uid);
 
       // 2) 把 URL 寫回 Firestore
@@ -63,7 +60,7 @@ export default function MemberPage() {
     } catch (err) {
       console.error(err);
     } finally {
-    // 允許選同一張圖再次觸發
+      // 允許選同一張圖再次觸發
       e.target.value = '';
     }
   }
@@ -73,9 +70,11 @@ export default function MemberPage() {
    * @param e
    */
   async function onSubmitNewName(e) {
-    e.preventDefault();// 避免重新整理影響後續更新資料庫
+    e.preventDefault(); // 避免重新整理影響後續更新資料庫
     // 如果使用者沒有登入或是還在loading 不可以送出
-    if (!user || loading) { return; }
+    if (!user || loading) {
+      return;
+    }
     // 檢查使用者輸入的字是否有問題並且要刪除空白
     const safeName = (name ?? '').trim();
     if (!safeName || safeName === (user.name ?? '')) return;
@@ -110,14 +109,9 @@ export default function MemberPage() {
           onChange={onAvatarFileChange}
         />
         <form action="" onSubmit={onSubmitNewName}>
-          <input
-            type="text"
-            value={name || ''}
-            onChange={onNameChange}
-          />
+          <input type="text" value={name || ''} onChange={onNameChange} />
           <button type="submit">變更名稱</button>
         </form>
-
       </div>
     </div>
   );

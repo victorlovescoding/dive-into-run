@@ -8,13 +8,14 @@
 ## Clarifications
 
 ### Session 2026-02-16
+
 - Q: Scope of Filter State Cleanup? → A: Strict Linter Only. Remove only variables that trigger "no-unused-vars" (e.g., `filterHostText`, `filterRegStart` if unused). Keep working filters. Existing functionality must not break.
 - Q: Rendering Strategy for `EventActionButtons`? → A: Parent Control. Parent checks conditions (e.g., `user` exists) and renders component conditionally. Component always returns markup.
 - Q: Type Safety Strategy? → A: Strict JSDoc. All props must have `@typedef` and `@param` definitions. Use `import('react').ReactElement` return types. No `any`.
 - Q: Structure of `EventActionButtons` Component? → A: Function Component. Standard React functional component.
 - Q: Styling Strategy for New Component? → A: New CSS Module. Create `EventActionButtons.module.css` and migrate relevant styles.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Extract Event Action Buttons (Priority: P1)
 
@@ -69,7 +70,7 @@ As a developer, I want unused MVP variables removed and all functions documented
 - **Data Loading**: When user data is still loading (auth state undefined), the buttons should not flicker or show incorrect state.
 - **Malformed Data**: If event data is missing required fields (e.g. `hostUid`), the component should render nothing or a safe fallback instead of crashing.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -88,7 +89,7 @@ As a developer, I want unused MVP variables removed and all functions documented
 - **EventActionButtons**: New component for event actions.
 - **EventData**: Existing entity, passed as prop.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

@@ -1,8 +1,6 @@
 'use client';
 
-import {
-  useEffect, useState, useContext, useRef, useCallback,
-} from 'react';
+import { useEffect, useState, useContext, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic'; // 導入 dynamic
 import Link from 'next/link';
 import {
@@ -77,15 +75,7 @@ const taiwanLocations = {
     '三芝區',
     '石門區',
   ],
-  基隆市: [
-    '仁愛區',
-    '信義區',
-    '中正區',
-    '中山區',
-    '安樂區',
-    '暖暖區',
-    '七堵區',
-  ],
+  基隆市: ['仁愛區', '信義區', '中正區', '中山區', '安樂區', '暖暖區', '七堵區'],
   桃園市: [
     '中壢區',
     '平鎮區',
@@ -751,9 +741,8 @@ export default function RunTogetherPage() {
     // ✅ UI 用下拉（分/秒），資料層與 Firestore 只存 paceSec（number）
     const paceMin = Number(data.paceMinutes);
     const paceSecPart = Number(data.paceSeconds);
-    const paceSec = Number.isFinite(paceMin) && Number.isFinite(paceSecPart)
-      ? paceMin * 60 + paceSecPart
-      : 0;
+    const paceSec =
+      Number.isFinite(paceMin) && Number.isFinite(paceSecPart) ? paceMin * 60 + paceSecPart : 0;
 
     const route = buildRoutePayload(routeCoordinatesSnapshot);
 
@@ -779,10 +768,7 @@ export default function RunTogetherPage() {
         remainingSeats: toNumber(data.maxParticipants),
       };
 
-      setEvents((prev) => [
-        newEventCard,
-        ...prev.filter((ev) => ev.id !== newEventCard.id),
-      ]);
+      setEvents((prev) => [newEventCard, ...prev.filter((ev) => ev.id !== newEventCard.id)]);
       setDraftFormData(null);
 
       setFormOpen(false);
@@ -811,73 +797,77 @@ export default function RunTogetherPage() {
    * @param {import('react').MouseEvent} clickEvent - 點擊事件。
    * @returns {Promise<void>}
    */
-  const handleJoinClick = useCallback(async (ev, clickEvent) => {
-    clickEvent.preventDefault();
-    clickEvent.stopPropagation();
+  const handleJoinClick = useCallback(
+    async (ev, clickEvent) => {
+      clickEvent.preventDefault();
+      clickEvent.stopPropagation();
 
-    if (!user?.uid) {
-      setActionMessage({ type: 'error', message: '加入活動前請先登入' });
-      return;
-    }
-    if (ev.hostUid === user.uid) return;
+      if (!user?.uid) {
+        setActionMessage({ type: 'error', message: '加入活動前請先登入' });
+        return;
+      }
+      if (ev.hostUid === user.uid) return;
 
-    const eventId = String(ev.id);
-    const payload = buildUserPayload(user);
-    if (!payload) return;
+      const eventId = String(ev.id);
+      const payload = buildUserPayload(user);
+      if (!payload) return;
 
-    setActionMessage(null);
-    setPendingByEventId((prev) => ({ ...prev, [eventId]: 'joining' }));
+      setActionMessage(null);
+      setPendingByEventId((prev) => ({ ...prev, [eventId]: 'joining' }));
 
-    try {
-      const res = await joinEvent(eventId, payload);
+      try {
+        const res = await joinEvent(eventId, payload);
 
-      if (
-        res?.ok
-        && (res.status === 'joined' || res.status === 'already_joined')
-      ) {
-        setMyJoinedEventIds((prev) => {
-          const next = new Set(prev);
-          next.add(eventId);
-          return next;
-        });
+        if (res?.ok && (res.status === 'joined' || res.status === 'already_joined')) {
+          setMyJoinedEventIds((prev) => {
+            const next = new Set(prev);
+            next.add(eventId);
+            return next;
+          });
 
-        if (res.status === 'joined') {
-          setEvents((prev) => prev.map((item) => {
-            if (String(item.id) !== eventId) return item;
-            const remaining = getRemainingSeats(item);
-            const count = toNumber(item.participantsCount);
-            return {
-              ...item,
-              remainingSeats: Math.max(0, remaining - 1),
-              participantsCount: count + 1,
-            };
-          }));
+          if (res.status === 'joined') {
+            setEvents((prev) =>
+              prev.map((item) => {
+                if (String(item.id) !== eventId) return item;
+                const remaining = getRemainingSeats(item);
+                const count = toNumber(item.participantsCount);
+                return {
+                  ...item,
+                  remainingSeats: Math.max(0, remaining - 1),
+                  participantsCount: count + 1,
+                };
+              }),
+            );
+          }
+
+          setActionMessage({ type: 'success', message: '報名成功' });
+          return;
         }
 
-        setActionMessage({ type: 'success', message: '報名成功' });
-        return;
-      }
+        if (res?.ok === false && res.status === 'full') {
+          setActionMessage({ type: 'error', message: '本活動已額滿' });
+          setEvents((prev) =>
+            prev.map((item) =>
+              String(item.id) === eventId ? { ...item, remainingSeats: 0 } : item,
+            ),
+          );
+          return;
+        }
 
-      if (res?.ok === false && res.status === 'full') {
-        setActionMessage({ type: 'error', message: '本活動已額滿' });
-        setEvents((prev) => prev.map((item) => (
-          String(item.id) === eventId ? { ...item, remainingSeats: 0 } : item
-        )));
-        return;
+        setActionMessage({ type: 'error', message: '報名失敗，請再試一次' });
+      } catch (err) {
+        console.error('參加活動失敗:', err);
+        setActionMessage({ type: 'error', message: '報名失敗，請再試一次' });
+      } finally {
+        setPendingByEventId((prev) => {
+          const next = { ...prev };
+          delete next[eventId];
+          return next;
+        });
       }
-
-      setActionMessage({ type: 'error', message: '報名失敗，請再試一次' });
-    } catch (err) {
-      console.error('參加活動失敗:', err);
-      setActionMessage({ type: 'error', message: '報名失敗，請再試一次' });
-    } finally {
-      setPendingByEventId((prev) => {
-        const next = { ...prev };
-        delete next[eventId];
-        return next;
-      });
-    }
-  }, [user]);
+    },
+    [user],
+  );
 
   /**
    * 處理點擊退出活動。
@@ -885,69 +875,74 @@ export default function RunTogetherPage() {
    * @param {import('react').MouseEvent} clickEvent - 點擊事件。
    * @returns {Promise<void>}
    */
-  const handleLeaveClick = useCallback(async (ev, clickEvent) => {
-    clickEvent.preventDefault();
-    clickEvent.stopPropagation();
+  const handleLeaveClick = useCallback(
+    async (ev, clickEvent) => {
+      clickEvent.preventDefault();
+      clickEvent.stopPropagation();
 
-    if (!user?.uid) {
-      setActionMessage({ type: 'error', message: '請先登入再操作' });
-      return;
-    }
-
-    const eventId = String(ev.id);
-    const payload = buildUserPayload(user);
-    if (!payload) return;
-
-    setActionMessage(null);
-    setPendingByEventId((prev) => ({ ...prev, [eventId]: 'leaving' }));
-
-    try {
-      const res = await leaveEvent(eventId, payload);
-
-      if (res?.ok && (res.status === 'left' || res.status === 'not_joined')) {
-        setMyJoinedEventIds((prev) => {
-          const next = new Set(prev);
-          next.delete(eventId);
-          return next;
-        });
-
-        if (res.status === 'left') {
-          setEvents((prev) => prev.map((item) => {
-            if (String(item.id) !== eventId) return item;
-
-            const max = toNumber(item.maxParticipants);
-            const remaining = getRemainingSeats(item);
-            const count = toNumber(item.participantsCount);
-            return {
-              ...item,
-              remainingSeats: Math.min(max, remaining + 1),
-              participantsCount: Math.max(0, count - 1),
-            };
-          }));
-        }
-
-        setActionMessage({ type: 'success', message: '已成功取消報名' });
+      if (!user?.uid) {
+        setActionMessage({ type: 'error', message: '請先登入再操作' });
         return;
       }
 
-      setActionMessage({
-        type: 'error',
-        message: '發生錯誤，請再重新取消報名',
-      });
-    } catch (err) {
-      console.error('退出活動失敗:', err);
-      setActionMessage({
-        type: 'error',
-        message: '發生錯誤，請再重新取消報名',
-      });
-    } finally {
-      setPendingByEventId((prev) => {
-        const next = { ...prev };
-        delete next[eventId];
-        return next;
-      });
-    }
-  }, [user]);
+      const eventId = String(ev.id);
+      const payload = buildUserPayload(user);
+      if (!payload) return;
+
+      setActionMessage(null);
+      setPendingByEventId((prev) => ({ ...prev, [eventId]: 'leaving' }));
+
+      try {
+        const res = await leaveEvent(eventId, payload);
+
+        if (res?.ok && (res.status === 'left' || res.status === 'not_joined')) {
+          setMyJoinedEventIds((prev) => {
+            const next = new Set(prev);
+            next.delete(eventId);
+            return next;
+          });
+
+          if (res.status === 'left') {
+            setEvents((prev) =>
+              prev.map((item) => {
+                if (String(item.id) !== eventId) return item;
+
+                const max = toNumber(item.maxParticipants);
+                const remaining = getRemainingSeats(item);
+                const count = toNumber(item.participantsCount);
+                return {
+                  ...item,
+                  remainingSeats: Math.min(max, remaining + 1),
+                  participantsCount: Math.max(0, count - 1),
+                };
+              }),
+            );
+          }
+
+          setActionMessage({ type: 'success', message: '已成功取消報名' });
+          return;
+        }
+
+        setActionMessage({
+          type: 'error',
+          message: '發生錯誤，請再重新取消報名',
+        });
+      } catch (err) {
+        console.error('退出活動失敗:', err);
+        setActionMessage({
+          type: 'error',
+          message: '發生錯誤，請再重新取消報名',
+        });
+      } finally {
+        setPendingByEventId((prev) => {
+          const next = { ...prev };
+          delete next[eventId];
+          return next;
+        });
+      }
+    },
+    [user],
+  );
 
   return (
     <div className={styles.pageContainer}>
@@ -1018,11 +1013,7 @@ export default function RunTogetherPage() {
 
         {actionMessage && (
           <div
-            className={
-              actionMessage.type === 'success'
-                ? styles.successCard
-                : styles.errorCard
-            }
+            className={actionMessage.type === 'success' ? styles.successCard : styles.errorCard}
             role={actionMessage.type === 'error' ? 'alert' : 'status'}
           >
             {actionMessage.message}
@@ -1036,11 +1027,7 @@ export default function RunTogetherPage() {
             </div>
           ) : (
             events.map((ev) => (
-              <Link
-                key={ev.id}
-                href={`/events/${ev.id}`}
-                className={styles.eventLink}
-              >
+              <Link key={ev.id} href={`/events/${ev.id}`} className={styles.eventLink}>
                 <div className={styles.eventCard}>
                   <div className={styles.eventTitle}>{ev.title}</div>
 
@@ -1055,9 +1042,7 @@ export default function RunTogetherPage() {
                     </div>
                     <div>
                       地點：
-                      {ev.city}
-                      {' '}
-                      {ev.district}
+                      {ev.city} {ev.district}
                     </div>
                     <div>
                       集合：
@@ -1068,15 +1053,11 @@ export default function RunTogetherPage() {
                   <div className={styles.eventMeta}>
                     <div>
                       距離：
-                      {ev.distanceKm}
-                      {' '}
-                      km
+                      {ev.distanceKm} km
                     </div>
                     <div>
                       配速：
-                      {formatPace(ev.paceSec, ev.pace)}
-                      {' '}
-                      /km
+                      {formatPace(ev.paceSec, ev.pace)} /km
                     </div>
                     <div>
                       人數上限：
@@ -1141,33 +1122,21 @@ export default function RunTogetherPage() {
                 type="button"
                 className={styles.retryButton}
                 onClick={loadMore}
-                disabled={
-                  isLoadingMore || isLoadingEvents || isCreating || isFormOpen
-                }
+                disabled={isLoadingMore || isLoadingEvents || isCreating || isFormOpen}
               >
                 重試
               </button>
             </div>
           )}
 
-          {!hasMore && events.length > 0 && (
-            <div className={styles.endHint}>已經到底了</div>
-          )}
+          {!hasMore && events.length > 0 && <div className={styles.endHint}>已經到底了</div>}
 
-          <div
-            ref={sentinelRef}
-            className={styles.sentinel}
-            aria-hidden="true"
-          />
+          <div ref={sentinelRef} className={styles.sentinel} aria-hidden="true" />
         </div>
       </div>
 
       {!isFormOpen && (
-        <button
-          type="button"
-          onClick={handleToggleCreateRunForm}
-          className={styles.mainButton}
-        >
+        <button type="button" onClick={handleToggleCreateRunForm} className={styles.mainButton}>
           ＋ 新增跑步揪團
         </button>
       )}
@@ -1223,9 +1192,7 @@ export default function RunTogetherPage() {
               <div className={styles.filterGroup}>
                 <div className={styles.filterLabel}>名額狀況</div>
                 <div className={styles.filterToggleRow}>
-                  <span className={styles.filterToggleLabel}>
-                    只顯示還有名額的活動
-                  </span>
+                  <span className={styles.filterToggleLabel}>只顯示還有名額的活動</span>
                   <label className={styles.switch} htmlFor="filterHasSeatsOnly">
                     <input
                       type="checkbox"
@@ -1359,8 +1326,8 @@ export default function RunTogetherPage() {
                       disabled={!filterCity}
                     >
                       <option value="">所有區域</option>
-                      {filterCity
-                        && taiwanLocations[filterCity]?.map((dist) => (
+                      {filterCity &&
+                        taiwanLocations[filterCity]?.map((dist) => (
                           <option key={dist} value={dist}>
                             {dist}
                           </option>
@@ -1420,9 +1387,7 @@ export default function RunTogetherPage() {
 
             <div className={styles.formHeader}>
               <h2>揪團表單</h2>
-              <p className={styles.formDescription}>
-                請填寫詳細資訊讓跑友們加入
-              </p>
+              <p className={styles.formDescription}>請填寫詳細資訊讓跑友們加入</p>
             </div>
 
             <div className={styles.formGroup}>
@@ -1439,9 +1404,7 @@ export default function RunTogetherPage() {
                 />
               </label>
               <div className={styles.focusBorder} />
-              <small className={styles.helperText}>
-                由登入帳號自動帶入，無法修改
-              </small>
+              <small className={styles.helperText}>由登入帳號自動帶入，無法修改</small>
             </div>
 
             <div className={styles.formGroup}>
@@ -1526,8 +1489,8 @@ export default function RunTogetherPage() {
                     <option value="" disabled>
                       請選擇區域
                     </option>
-                    {selectedCity
-                      && taiwanLocations[selectedCity]?.map((dist) => (
+                    {selectedCity &&
+                      taiwanLocations[selectedCity]?.map((dist) => (
                         <option key={dist} value={dist}>
                           {dist}
                         </option>
@@ -1568,9 +1531,7 @@ export default function RunTogetherPage() {
                   <option value="easy_run">輕鬆慢跑（Easy Run）</option>
                   <option value="long_run">長距離慢跑（Long Run）</option>
                   <option value="tempo_run">節奏跑（Tempo Run）</option>
-                  <option value="interval_training">
-                    間歇訓練（Interval Training）
-                  </option>
+                  <option value="interval_training">間歇訓練（Interval Training）</option>
                   <option value="hill_training">坡度訓練（Hill Training）</option>
                   <option value="fartlek">變速跑（Fartlek）</option>
                   <option value="trail_run">越野跑（Trail Run）</option>
@@ -1599,9 +1560,7 @@ export default function RunTogetherPage() {
 
             <div className={styles.formGroup}>
               <div className={styles.formLabel}>目標配速（每公里）</div>
-              <div
-                className={`${styles.flexRowGap10} ${styles.flexAlignCenter}`}
-              >
+              <div className={`${styles.flexRowGap10} ${styles.flexAlignCenter}`}>
                 <label htmlFor="paceMinutes" className={styles.flexAlignCenter}>
                   <select
                     id="paceMinutes"
@@ -1610,7 +1569,9 @@ export default function RunTogetherPage() {
                     required
                     defaultValue={draftFormData?.paceMinutes || ''}
                   >
-                    <option value="" disabled hidden>分</option>
+                    <option value="" disabled hidden>
+                      分
+                    </option>
                     {[...Array(19)].map((_, i) => {
                       const val = String(i + 2).padStart(2, '0');
                       return (
@@ -1631,7 +1592,9 @@ export default function RunTogetherPage() {
                     required
                     defaultValue={draftFormData?.paceSeconds || ''}
                   >
-                    <option value="" disabled hidden>秒</option>
+                    <option value="" disabled hidden>
+                      秒
+                    </option>
                     {[...Array(60).keys()].map((s) => {
                       const label = String(s).padStart(2, '0');
                       return (
@@ -1645,9 +1608,7 @@ export default function RunTogetherPage() {
                 </label>
               </div>
               <div className={styles.focusBorder} />
-              <small className={styles.helperText}>
-                請選擇每公里的配速時間
-              </small>
+              <small className={styles.helperText}>請選擇每公里的配速時間</small>
             </div>
 
             <div className={styles.formGroup}>
@@ -1662,8 +1623,7 @@ export default function RunTogetherPage() {
                     required
                     defaultChecked={draftFormData?.planRoute === 'yes'}
                     onChange={() => setShowMap(true)}
-                  />
-                  {' '}
+                  />{' '}
                   是
                 </label>
                 <label htmlFor="planRouteNo">
@@ -1678,8 +1638,7 @@ export default function RunTogetherPage() {
                       setShowMap(false);
                       setRouteCoordinates(null);
                     }}
-                  />
-                  {' '}
+                  />{' '}
                   否
                 </label>
               </div>
@@ -1692,11 +1651,7 @@ export default function RunTogetherPage() {
                 <EventMap onRouteDrawn={setRouteCoordinates} />
                 {routeCoordinates && (
                   <p className={styles.helperText}>
-                    路線已繪製，包含
-                    {' '}
-                    {routeCoordinates.length}
-                    {' '}
-                    個點。
+                    路線已繪製，包含 {routeCoordinates.length} 個點。
                   </p>
                 )}
               </div>
@@ -1740,11 +1695,7 @@ export default function RunTogetherPage() {
               >
                 取消
               </button>
-              <button
-                type="submit"
-                className={styles.submitButton}
-                disabled={isCreating}
-              >
+              <button type="submit" className={styles.submitButton} disabled={isCreating}>
                 {isCreating ? '建立中…' : '建立活動'}
               </button>
             </div>

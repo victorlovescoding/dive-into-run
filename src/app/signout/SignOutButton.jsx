@@ -14,18 +14,16 @@ export default function SignOutButton() {
    *
    */
   function signOutHandler() {
-    signOut(auth).then(() => {
-
-    }).catch((error) => {
-      alert(error);
-    });
+    signOut(auth)
+      .then(() => {})
+      .catch((error) => {
+        alert(error);
+      });
   }
 
   return (
     <>
-      {(!loading && user) && (
-      <button onClick={signOutHandler}>登出</button>
-      )}
+      {!loading && user && <button onClick={signOutHandler}>登出</button>}
       {/* <LoginButtonDisplay ... /> 這裡若要暫時註解，要用 JSX 註解格式 */}
     </>
   );

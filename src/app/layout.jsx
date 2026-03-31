@@ -31,9 +31,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <UserDataHandler>
           <nav className="main-nav">
             <Link href="/">回首頁</Link>

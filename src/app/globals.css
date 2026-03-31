@@ -1,11 +1,11 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 /* CSS認不出來 Link 所以要寫 a */
-.main-nav a{
+.main-nav a {
   display: inline-block;
   margin: 0 2rem;
 }
@@ -34,5 +34,5 @@ body {
 .leaflet-control-geosearch input::placeholder {
   color: #555; /* 深灰色，提高可讀性 */
   /* 針對 Webkit 瀏覽器的兼容性處理 */
-  -webkit-text-fill-color: #555; 
+  -webkit-text-fill-color: #555;
 }

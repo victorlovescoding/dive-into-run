@@ -65,6 +65,7 @@ We will define these types at the top of the file to satisfy FR-003 and strict t
 ### Task 1: Fix Module Import Error (FR-001)
 
 **Files:**
+
 - Modify: `src/lib/firebase-events.js`
 
 **Step 1: Verify current error**
@@ -83,10 +84,13 @@ Relative import: `./firebase-client`.
 
 **Step 3: Apply Fix**
 Change:
+
 ```javascript
 import { db } from '@/lib/firebase-client';
 ```
+
 To:
+
 ```javascript
 import { db } from './firebase-client';
 ```
@@ -101,6 +105,7 @@ Expected: TS2307 gone.
 ### Task 2: Define Data Types & Fix "Property does not exist" Errors (FR-003)
 
 **Files:**
+
 - Modify: `src/lib/firebase-events.js`
 
 **Step 1: Verify current errors**
@@ -113,10 +118,12 @@ Annotate `results` in `queryEvents` and `joinEvent` data retrieval.
 
 **Step 3: Apply Fixes**
 In `queryEvents`:
+
 ```javascript
 /** @type {EventData[]} */
-let results = snap.docs.map((d) => ({ id: d.id, .../** @type {EventData} */(d.data()) }));
+let results = snap.docs.map((d) => ({ id: d.id, .../** @type {EventData} */ (d.data()) }));
 ```
+
 (Or cast the `data()` result)
 
 **Step 4: Verify**
@@ -129,6 +136,7 @@ Expected: TS2339 errors gone.
 ### Task 3: Fix Firestore Query Constraints Type Mismatches (FR-002)
 
 **Files:**
+
 - Modify: `src/lib/firebase-events.js`
 
 **Step 1: Verify current errors**
@@ -143,6 +151,7 @@ The `query` function takes `(query, ...constraints)`.
 We need to separate the base query (collection) from the additional constraints.
 
 Refactor `queryEvents`:
+
 ```javascript
 const eventsRef = collection(db, 'events');
 /** @type {QueryConstraint[]} */
@@ -163,6 +172,7 @@ Expected: TS2345 and TS2556 errors gone.
 ### Task 4: Fix Return Type Mismatches (FR-004)
 
 **Files:**
+
 - Modify: `src/lib/firebase-events.js`
 
 **Step 1: Verify current errors**
@@ -173,6 +183,7 @@ Expected: TS2322 errors for `joinEvent` and `leaveEvent` return values.
 Explicitly cast the return objects or use the defined typedefs.
 
 For `joinEvent`:
+
 ```javascript
 /** @type {JoinResult} */
 const result = await runTransaction(db, async (tx) => {
@@ -180,6 +191,7 @@ const result = await runTransaction(db, async (tx) => {
   return { ok: true, status: 'already_joined' }; // TS should now infer correctly against the JSDoc of joinEvent return or we might need explicit cast inside if strict.
 });
 ```
+
 Actually, the error is likely because the inferred return type of the async function inside `runTransaction` is generic object, but `joinEvent` JSDoc says specific union string.
 We need to ensure the return statements inside `runTransaction` match the expected type.
 We can add `@returns {Promise<JoinResult>}` to the callback or cast the return values.
@@ -194,6 +206,7 @@ Expected: 0 errors remaining.
 ### Task 5: Final Validation
 
 **Files:**
+
 - Test: `tests/003-strict-type-fixes/unit/firebase-events.test.js`
 
 **Step 1: Run Linter**

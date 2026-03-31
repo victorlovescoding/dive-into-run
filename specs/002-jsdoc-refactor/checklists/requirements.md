@@ -6,9 +6,9 @@
 
 ## Content Quality
 
-- [x] No implementation details (languages, frameworks, APIs) - *Exception: This is a refactoring task, so technical details are the subject matter.*
-- [x] Focused on user value and business needs - *Value: Maintainability and Developer Experience.*
-- [x] Written for non-technical stakeholders - *Written for Developers (primary stakeholder for this).*
+- [x] No implementation details (languages, frameworks, APIs) - _Exception: This is a refactoring task, so technical details are the subject matter._
+- [x] Focused on user value and business needs - _Value: Maintainability and Developer Experience._
+- [x] Written for non-technical stakeholders - _Written for Developers (primary stakeholder for this)._
 - [x] All mandatory sections completed
 
 ## Requirement Completeness
@@ -16,7 +16,7 @@
 - [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
-- [x] Success criteria are technology-agnostic (no implementation details) - *Exception: Specific tools (ESLint) required.*
+- [x] Success criteria are technology-agnostic (no implementation details) - _Exception: Specific tools (ESLint) required._
 - [x] All acceptance scenarios are defined
 - [x] Edge cases are identified
 - [x] Scope is clearly bounded
@@ -27,7 +27,7 @@
 - [x] All functional requirements have clear acceptance criteria
 - [x] User scenarios cover primary flows
 - [x] Feature meets measurable outcomes defined in Success Criteria
-- [x] No implementation details leak into specification - *See Content Quality exception.*
+- [x] No implementation details leak into specification - _See Content Quality exception._
 
 ## Notes
 

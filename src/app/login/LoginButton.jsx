@@ -32,7 +32,8 @@ export default function LoginButton() {
         //     userName:user.displayName,
         //     userEmail:user.email
         // })
-      }).catch((error) => {
+      })
+      .catch((error) => {
         console.log(error);
         setBusy(false);
         // Handle Errors here.
@@ -47,10 +48,10 @@ export default function LoginButton() {
   }
   return (
     <>
-      {(!loading && !user) && (
-      <button onClick={LoginButtonHandler} disabled={busy}>
-        {busy ? '處理中' : '登入'}
-      </button>
+      {!loading && !user && (
+        <button onClick={LoginButtonHandler} disabled={busy}>
+          {busy ? '處理中' : '登入'}
+        </button>
       )}
       {/* <LoginButtonDisplay ... /> 這裡若要暫時註解，要用 JSX 註解格式 */}
     </>

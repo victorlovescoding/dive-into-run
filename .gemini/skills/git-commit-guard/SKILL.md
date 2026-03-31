@@ -14,17 +14,17 @@ This skill ensures that all Git commits adhere to established best practices reg
 When the user requests to commit code or asks for advice on committing:
 
 1.  **Analyze the Changes**:
-    *   Check `git status` and `git diff` to understand what is being committed.
-    *   **Rule Check**: Are the changes related? If not, advise splitting them into separate commits.
-    *   **Rule Check**: Is the work complete and tested? If not, advise against committing or suggest `git stash`.
+    - Check `git status` and `git diff` to understand what is being committed.
+    - **Rule Check**: Are the changes related? If not, advise splitting them into separate commits.
+    - **Rule Check**: Is the work complete and tested? If not, advise against committing or suggest `git stash`.
 
 2.  **Draft the Commit Message**:
-    *   **Summary Line**: Create a concise summary (< 50 chars), capitalized, in imperative mood (e.g., "Add user login" not "Added user login").
-    *   **Body**: If necessary, provide a detailed explanation separated by a blank line, wrapped at 72 chars. Explain *why* and *how* it changed.
+    - **Summary Line**: Create a concise summary (< 50 chars), capitalized, in imperative mood (e.g., "Add user login" not "Added user login").
+    - **Body**: If necessary, provide a detailed explanation separated by a blank line, wrapped at 72 chars. Explain _why_ and _how_ it changed.
 
 3.  **Execute (or Suggest)**:
-    *   If the user asked you to commit, present the planned message and verify the `git add` strategy.
-    *   If the user asked for advice, provide the formatted message and explain the rules applied.
+    - If the user asked you to commit, present the planned message and verify the `git add` strategy.
+    - If the user asked for advice, provide the formatted message and explain the rules applied.
 
 ## Reference Rules
 

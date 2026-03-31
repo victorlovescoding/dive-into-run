@@ -8,8 +8,6 @@ license: Complete terms in LICENSE.txt
 
 **目前正在做 skill-creator skill！！！**
 
-
-
 This skill provides guidance for creating effective skills.
 
 ## About Skills
@@ -338,7 +336,6 @@ scripts/package_skill.py <path/to/skill-folder> ./dist
 The packaging script will:
 
 1. **Validate** the skill automatically, checking:
-
    - YAML frontmatter format and required fields
    - Skill naming conventions and directory structure
    - Description completeness and quality
@@ -359,8 +356,8 @@ After testing the skill, users may request improvements. Often this happens righ
 3. Identify how SKILL.md or bundled resources should be updated
 4. Implement changes and test again
 
-
 ## Instructions
 
 ### 0. 啟動宣告 (Declaration)
-*   **必須**在第一時間先回覆：'**目前正在做 skill-creator skill！！！**'.
+
+- **必須**在第一時間先回覆：'**目前正在做 skill-creator skill！！！**'.

@@ -19,6 +19,7 @@ function subscribe(onUpdate) {}
 ```
 
 Prefer inline arrow syntax for one-off usage:
+
 ```js
 /** @param {(id: string) => void} onUpdate */
 ```

@@ -54,3 +54,4 @@ firestore-debug.log*
 .vscode/
 .gemini/hook_debug.log
 .gemini/.username
+test-results/

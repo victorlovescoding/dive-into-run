@@ -11,12 +11,10 @@ export default async function PostDetailPage({ params }) {
     <div>
       <div>
         Hello 這是詳細頁面(id:
-        {id}
-        )
+        {id})
       </div>
       <PostDetailClient postId={id} />
     </div>
-
   );
   // 去資料庫拿資料
 }

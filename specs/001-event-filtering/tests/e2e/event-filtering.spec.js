@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Event Filtering Feature', () => {
-  
   test.beforeEach(async ({ page }) => {
     // 假設本地 server 跑在 3000
     await page.goto('http://localhost:3000/events');
@@ -10,7 +9,7 @@ test.describe('Event Filtering Feature', () => {
   test('應該能打開篩選器並進行縣市區域連動搜尋 (US1, US4)', async ({ page }) => {
     // 1. 打開篩選器
     await page.getByRole('button', { name: '篩選活動' }).click();
-    
+
     // 驗證篩選器已開啟
     const filterModal = page.locator('div[role="dialog"]');
     await expect(filterModal).toBeVisible();
@@ -32,16 +31,16 @@ test.describe('Event Filtering Feature', () => {
 
   test('清除按鈕應該重置欄位但保留名額勾選 (UI-003)', async ({ page }) => {
     await page.getByRole('button', { name: '篩選活動' }).click();
-    
+
     // 填寫一些資料
     await page.locator('input[type="number"]').first().fill('10');
-    
+
     // 點擊清除
     await page.getByRole('button', { name: '清除' }).click();
-    
+
     // 驗證數字欄位被清空
     await expect(page.locator('input[type="number"]').first()).toHaveValue('');
-    
+
     // 驗證名額 checkbox 還是勾選的 (預設)
     // 注意：需確認 switch 的實作方式，這裡是假設 input[type="checkbox"]
     const checkbox = page.locator('input[type="checkbox"]');
@@ -50,12 +49,12 @@ test.describe('Event Filtering Feature', () => {
 
   test('當搜尋無結果時應顯示提示 (UI-007)', async ({ page }) => {
     await page.getByRole('button', { name: '篩選活動' }).click();
-    
+
     // 輸入一個不可能的距離
     await page.locator('input[placeholder="最小距離"]').fill('9999');
-    
+
     await page.getByRole('button', { name: '搜尋' }).click();
-    
+
     // 驗證出現空狀態文字
     await expect(page.getByText('沒有符合條件的活動')).toBeVisible();
   });
@@ -77,13 +76,16 @@ test.describe('Event Filtering Feature', () => {
 
     // 4. 驗證網址是否包含 event ID
     await expect(page).toHaveURL(new RegExp(href));
-    
+
     // 5. 驗證是否進入詳情頁 (檢查是否有詳情頁特有的元素，例如「回到活動列表」)
     await expect(page.getByText('回到活動列表')).toBeVisible();
 
     // 6. 驗證配速是否正確顯示 (格式應為 MM:SS /km)
     // 我們尋找包含配速文字的具體 div
-    const paceText = page.locator('div').filter({ hasText: /^配速：/ }).last();
+    const paceText = page
+      .locator('div')
+      .filter({ hasText: /^配速：/ })
+      .last();
     await expect(paceText).toContainText(/\d+:\d+ \/km/);
   });
 });

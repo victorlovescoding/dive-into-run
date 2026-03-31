@@ -2,7 +2,7 @@
  * @file Golden Sample for Testing in this project.
  * @description
  * THIS IS THE SOURCE OF TRUTH. COPY THIS STYLE.
- * 
+ *
  * Rules:
  * 1. Use `vitest` for test runner.
  * 2. Use `@testing-library/react` for components.
@@ -80,7 +80,9 @@ import { vi } from 'vitest';
 const UserProfile = ({ user, onUpdate }) => (
   <div>
     <h1>{user.name}</h1>
-    <button type="button" onClick={() => onUpdate(user.id)}>Update</button>
+    <button type="button" onClick={() => onUpdate(user.id)}>
+      Update
+    </button>
   </div>
 );
 
@@ -88,10 +90,10 @@ describe('Integration: UserProfile', () => {
   it('should render the user name and handle button click', async () => {
     // Arrange
     const user = userEvent.setup();
-    
+
     /** @type {import('vitest').Mock} */
     const mockOnUpdate = vi.fn();
-    
+
     /** @type {User} */
     const mockUser = { id: '123', name: 'John Doe' };
 

@@ -18,10 +18,10 @@ test.describe('Events Page E2E', () => {
 
   test('should show create event button and open modal or show login hint', async ({ page }) => {
     await page.getByRole('button', { name: /新增跑步揪團/i }).click();
-    
+
     const modalTitle = page.getByText('揪團表單');
     const loginHint = page.getByText('發起活動前請先登入');
-    
+
     await expect(modalTitle.or(loginHint)).toBeVisible();
   });
 });
