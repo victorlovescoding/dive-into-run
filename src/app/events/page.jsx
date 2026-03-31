@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 import {
   buildRoutePayload,
+  countTotalPoints,
   formatDateTime,
   formatPace,
   chunkArray,
@@ -369,7 +370,7 @@ export default function RunTogetherPage() {
     const data = Object.fromEntries(formData.entries());
 
     const routeCoordinatesSnapshot = Array.isArray(routeCoordinates)
-      ? routeCoordinates.map((p) => ({ lat: p.lat, lng: p.lng }))
+      ? routeCoordinates.map((seg) => seg.map((p) => ({ lat: p.lat, lng: p.lng })))
       : null;
 
     // ✅ UI 用下拉（分/秒），資料層與 Firestore 只存 paceSec（number）
@@ -821,11 +822,9 @@ export default function RunTogetherPage() {
                       <div>
                         路線：
                         {(() => {
-                          if (
-                            Array.isArray(ev.routeCoordinates) &&
-                            ev.routeCoordinates.length > 0
-                          ) {
-                            return `已設定（${ev.routeCoordinates.length} 點）`;
+                          const pts = countTotalPoints(ev.routeCoordinates);
+                          if (pts > 0) {
+                            return `已設定（${pts} 點）`;
                           }
                           if (ev.route?.pointsCount) {
                             return `已設定（${ev.route.pointsCount} 點）`;
@@ -1409,7 +1408,7 @@ export default function RunTogetherPage() {
                 <EventMap onRouteDrawn={setRouteCoordinates} />
                 {routeCoordinates && (
                   <p className={styles.helperText}>
-                    路線已繪製，包含 {routeCoordinates.length} 個點。
+                    路線已繪製，包含 {countTotalPoints(routeCoordinates)} 個點。
                   </p>
                 )}
               </div>

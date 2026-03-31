@@ -21,7 +21,7 @@ import {
   updateEvent,
   deleteEvent,
 } from '@/lib/firebase-events';
-import { buildUserPayload } from '@/lib/event-helpers';
+import { buildUserPayload, normalizeRoutePolylines } from '@/lib/event-helpers';
 import EventCardMenu from '@/components/EventCardMenu';
 import EventEditForm from '@/components/EventEditForm';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
@@ -365,7 +365,7 @@ export default function EventDetailClient({ id }) {
     });
   }, [event]);
 
-  const hasRoute = Boolean(event?.route?.polyline);
+  const hasRoute = normalizeRoutePolylines(event?.route).length > 0;
 
   return (
     <div className={styles.pageContainer}>
@@ -702,7 +702,7 @@ export default function EventDetailClient({ id }) {
                   <div className={styles.detailMapContainer}>
                     <EventMap
                       mode="view"
-                      encodedPolyline={event.route.polyline}
+                      encodedPolylines={normalizeRoutePolylines(event.route)}
                       bbox={event.route.bbox}
                       height={420}
                     />

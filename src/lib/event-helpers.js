@@ -17,9 +17,10 @@ import polyline from '@mapbox/polyline';
 
 /**
  * @typedef {object} RoutePayload
- * @property {string} polyline - 壓縮後的路線字串。
- * @property {number} pointsCount - 座標點數量。
- * @property {RouteBBox} bbox - 邊界範圍。
+ * @property {string[]} polylines - 各段路線的壓縮字串陣列。
+ * @property {string} [polyline] - 舊格式單一壓縮路線字串（向後相容讀取用）。
+ * @property {number} pointsCount - 所有路線的座標點總數。
+ * @property {RouteBBox} bbox - 所有路線的聯集邊界範圍。
  */
 
 /**
@@ -47,7 +48,7 @@ import polyline from '@mapbox/polyline';
  * @property {string} [runType] - 跑步類型。
  * @property {string} [description] - 活動說明。
  * @property {RoutePayload} [route] - 路線資料。
- * @property {RoutePoint[]} [routeCoordinates] - 路線座標。
+ * @property {RoutePoint[][]} [routeCoordinates] - 路線座標（每條路線一個子陣列）。
  */
 
 /**
@@ -59,41 +60,66 @@ import polyline from '@mapbox/polyline';
 // #endregion JSDoc Type Definitions
 
 /**
- * 將地圖繪製的座標點壓縮成 encoded polyline 字串
- * @param {RoutePoint[] | null} routeCoordinates - 座標陣列
- * @returns {RoutePayload | null} 壓縮後的路線資料，或 null
+ * 取得 RoutePayload 中的 polylines 陣列（相容新舊格式）。
+ * @param {RoutePayload | null | undefined} route - 路線資料。
+ * @returns {string[]} encoded polyline 字串陣列。
+ */
+export function normalizeRoutePolylines(route) {
+  if (route?.polylines) return route.polylines;
+  if (route?.polyline) return [route.polyline];
+  return [];
+}
+
+/**
+ * 計算多段路線座標的總點數。
+ * @param {RoutePoint[][] | null} coordsArray - 多段路線座標。
+ * @returns {number} 總點數。
+ */
+export function countTotalPoints(coordsArray) {
+  if (!Array.isArray(coordsArray)) return 0;
+  return coordsArray.reduce((sum, line) => sum + line.length, 0);
+}
+
+/**
+ * 將地圖繪製的多段座標壓縮成 encoded polyline 陣列。
+ * @param {RoutePoint[][] | null} routeCoordinates - 多段路線座標（每條路線一個子陣列）。
+ * @returns {RoutePayload | null} 壓縮後的路線資料，或 null。
  */
 export function buildRoutePayload(routeCoordinates) {
   if (!Array.isArray(routeCoordinates) || routeCoordinates.length === 0) return null;
 
-  /** @type {[number, number][]} */
-  const points = routeCoordinates.map((p) => [Number(p.lat), Number(p.lng)]);
-  if (points.some(([lat, lng]) => Number.isNaN(lat) || Number.isNaN(lng))) return null;
+  /** @type {string[]} */
+  const encodedPolylines = [];
+  let totalPoints = 0;
+  let minLat = Infinity;
+  let maxLat = -Infinity;
+  let minLng = Infinity;
+  let maxLng = -Infinity;
 
-  const encoded = polyline.encode(points);
+  routeCoordinates.forEach((segment) => {
+    if (!Array.isArray(segment) || segment.length === 0) return;
 
-  let minLat = points[0][0];
-  let maxLat = points[0][0];
-  let minLng = points[0][1];
-  let maxLng = points[0][1];
+    /** @type {[number, number][]} */
+    const points = segment.map((p) => [Number(p.lat), Number(p.lng)]);
+    if (points.some(([lat, lng]) => Number.isNaN(lat) || Number.isNaN(lng))) return;
 
-  for (let i = 0; i < points.length; i += 1) {
-    const [lat, lng] = points[i];
-    if (lat < minLat) minLat = lat;
-    if (lat > maxLat) maxLat = lat;
-    if (lng < minLng) minLng = lng;
-    if (lng > maxLng) maxLng = lng;
-  }
+    encodedPolylines.push(polyline.encode(points));
+    totalPoints += points.length;
+
+    points.forEach(([lat, lng]) => {
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+    });
+  });
+
+  if (encodedPolylines.length === 0) return null;
 
   return {
-    polyline: encoded,
-    pointsCount: points.length,
-    bbox: {
-      minLat,
-      minLng,
-      maxLat,
-      maxLng,
-    },
+    polylines: encodedPolylines,
+    pointsCount: totalPoints,
+    bbox: { minLat, minLng, maxLat, maxLng },
   };
 }
 

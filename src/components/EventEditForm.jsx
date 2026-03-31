@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import styles from './EventEditForm.module.css';
-import { buildRoutePayload } from '@/lib/event-helpers';
+import { buildRoutePayload, normalizeRoutePolylines, countTotalPoints } from '@/lib/event-helpers';
 import taiwanLocations from '@/lib/taiwan-locations';
 
 const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
@@ -80,11 +80,11 @@ export default function EventEditForm({ event, onSubmit, onCancel, isSubmitting 
   // 路線編輯 state
   const [routeMode, setRouteMode] = useState(event.route ? 'view' : 'none');
   const [editedRouteCoordinates, setEditedRouteCoordinates] = useState(
-    /** @type {Array<{lat: number, lng: number}>|null} */ (null),
+    /** @type {Array<Array<{lat: number, lng: number}>>|null} */ (null),
   );
   const [routeCleared, setRouteCleared] = useState(false);
 
-  /** @type {(coords: Array<{lat: number, lng: number}>|null) => void} */
+  /** @type {(coords: Array<Array<{lat: number, lng: number}>>|null) => void} */
   const handleRouteDrawn = useCallback((coords) => {
     setEditedRouteCoordinates(coords);
     if (coords) {
@@ -384,7 +384,7 @@ export default function EventEditForm({ event, onSubmit, onCancel, isSubmitting 
             <div className={styles.mapContainer}>
               <EventMap
                 mode="view"
-                encodedPolyline={event.route.polyline}
+                encodedPolylines={normalizeRoutePolylines(event.route)}
                 bbox={event.route.bbox}
                 height={320}
               />
@@ -451,14 +451,25 @@ export default function EventEditForm({ event, onSubmit, onCancel, isSubmitting 
           <>
             {editedRouteCoordinates ? (
               <div className={styles.routeStatusText}>
-                新路線已繪製（
-                {editedRouteCoordinates.length} 點）
+                路線已更新（
+                {countTotalPoints(editedRouteCoordinates)} 點）
               </div>
             ) : (
-              <div className={styles.routeStatusText}>請在地圖上繪製路線</div>
+              <div className={styles.routeStatusText}>
+                {!routeCleared && event.route
+                  ? `編輯既有路線（${event.route.pointsCount ?? '?'} 點）`
+                  : '請在地圖上繪製路線'}
+              </div>
             )}
             <div className={styles.mapContainer}>
-              <EventMap mode="draw" onRouteDrawn={handleRouteDrawn} height={320} />
+              <EventMap
+                mode="draw"
+                onRouteDrawn={handleRouteDrawn}
+                initialEncodedPolylines={
+                  routeCleared ? undefined : normalizeRoutePolylines(event.route)
+                }
+                height={320}
+              />
             </div>
             <div className={styles.routeActions}>
               <button
