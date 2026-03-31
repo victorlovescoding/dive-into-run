@@ -63,7 +63,12 @@ Version: 1.3.0 -> 1.4.0
 - **JSDoc 紀律**:
     - **強制文件**: 導出函式必須有完整 JSDoc。
     - **型別檢查**: 專案啟用 `checkJs: true`，必須透過 `@param` 與 `@returns` 定義型別以通過檢查。
+    - **@typedef 規範**: 必須使用小寫 `{object}`，禁止 `{Object}`。
+    - **@property 描述**: 每個 `@property` 必須附帶描述文字（e.g. `@property {string} city - 活動所在縣市。`）。
+    - **@param 描述**: 每個 `@param` 必須附帶描述文字。
     - **目標**: 致力於消除所有 ESLint/Type 警告。
+- **cSpell 字典管理**:
+    - 專案特有字詞必須加入根目錄 `cspell.json`，禁止使用 inline `cspell:disable` 註解。
 
 ### VII. 安全與機密 (Security & Secrets)
 **不可協商**: 零信任與機密隔離。
