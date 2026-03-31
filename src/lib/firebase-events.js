@@ -29,35 +29,35 @@ import { db } from './firebase-client';
  */
 
 /**
- * @typedef {Object} EventData
- * @property {string} [id]
- * @property {string} city
- * @property {string} district
- * @property {Timestamp} time
- * @property {Timestamp} registrationDeadline
- * @property {number} distanceKm
- * @property {number} maxParticipants
- * @property {number} [participantsCount]
- * @property {number} [remainingSeats]
- * @property {number} paceSec
- * @property {Timestamp} [createdAt]
- * @property {string} [hostId]
- * @property {string} [title]
- * @property {string} [location]
- * @property {string} [description]
- * @property {string} [routeImage]
+ * @typedef {object} EventData
+ * @property {string} [id] - Firestore 文件 ID。
+ * @property {string} city - 活動所在縣市。
+ * @property {string} district - 活動所在行政區。
+ * @property {Timestamp} time - 活動開始時間。
+ * @property {Timestamp} registrationDeadline - 報名截止時間。
+ * @property {number} distanceKm - 跑步距離（公里）。
+ * @property {number} maxParticipants - 人數上限。
+ * @property {number} [participantsCount] - 目前報名人數。
+ * @property {number} [remainingSeats] - 剩餘名額。
+ * @property {number} paceSec - 每公里配速（秒）。
+ * @property {Timestamp} [createdAt] - 活動建立時間。
+ * @property {string} [hostId] - 主辦者 UID。
+ * @property {string} [title] - 活動標題。
+ * @property {string} [location] - 活動地點名稱。
+ * @property {string} [description] - 活動描述。
+ * @property {string} [routeImage] - 路線圖片 URL。
  */
 
 /**
- * @typedef {Object} JoinResult
- * @property {boolean} ok
- * @property {'joined'|'already_joined'|'full'} status
+ * @typedef {object} JoinResult
+ * @property {boolean} ok - 操作是否成功。
+ * @property {'joined'|'already_joined'|'full'} status - 參加結果狀態。
  */
 
 /**
- * @typedef {Object} LeaveResult
- * @property {boolean} ok
- * @property {'left'|'not_joined'} status
+ * @typedef {object} LeaveResult
+ * @property {boolean} ok - 操作是否成功。
+ * @property {'left'|'not_joined'} status - 退出結果狀態。
  */
 
 // 將 UI 表單送出的 raw data 正規化成 Firestore 友善的 payload
@@ -109,7 +109,9 @@ export function normalizeEventPayload(raw) {
   //    - paceSec 代表「每公里配速的秒數」
   const {
     planRoute: _planRoute, // eslint-disable-line no-unused-vars
-    paceMinutes, paceSeconds, ...rest
+    paceMinutes,
+    paceSeconds,
+    ...rest
   } = raw;
 
   const paceMin = Number(paceMinutes);
@@ -139,10 +141,10 @@ export function normalizeEventPayload(raw) {
  * 建立活動（寫入 Firestore）。
  * @param {object} raw - UI 表單資料 (例如 from Object.fromEntries)。
  * @param {object} [extra] - 由 UI 組裝的額外欄位（例如 host/route 等）。
- * @param {string} [extra.hostUid]
- * @param {string} [extra.hostName]
- * @param {string} [extra.hostPhotoURL]
- * @param {import('./event-helpers').RoutePayload} [extra.route]
+ * @param {string} [extra.hostUid] - 主辦者 UID。
+ * @param {string} [extra.hostName] - 主辦者名稱。
+ * @param {string} [extra.hostPhotoURL] - 主辦者大頭貼 URL。
+ * @param {import('./event-helpers').RoutePayload} [extra.route] - 路線資料。
  * @param {unknown} [extra.pace] - 濾除欄位。
  * @param {unknown} [extra.paceText] - 濾除欄位。
  * @param {unknown} [extra.paceMinutes] - 濾除欄位。
@@ -184,11 +186,7 @@ export async function createEvent(raw, extra = {}) {
  * }>} 活動列表與分頁 cursor。
  */
 export async function fetchLatestEvents(limitCount = 10) {
-  const q = query(
-    collection(db, 'events'),
-    orderBy('createdAt', 'desc'),
-    limit(limitCount),
-  );
+  const q = query(collection(db, 'events'), orderBy('createdAt', 'desc'), limit(limitCount));
 
   const snap = await getDocs(q);
   const events = snap.docs.map((snapshot) => ({
@@ -215,15 +213,7 @@ export async function fetchLatestEvents(limitCount = 10) {
  * @returns {Promise<object[]>} 符合條件的活動列表。
  */
 export async function queryEvents(filters = {}) {
-  const {
-    city,
-    district,
-    startTime,
-    endTime,
-    minDistance,
-    maxDistance,
-    hasSeatsOnly,
-  } = filters;
+  const { city, district, startTime, endTime, minDistance, maxDistance, hasSeatsOnly } = filters;
 
   const eventsRef = collection(db, 'events');
   /** @type {QueryConstraint[]} */
@@ -248,7 +238,7 @@ export async function queryEvents(filters = {}) {
   const q = query(eventsRef, ...constraints);
   const snap = await getDocs(q);
   /** @type {EventData[]} */
-  let results = snap.docs.map((d) => ({ id: d.id, .../** @type {EventData} */(d.data()) }));
+  let results = snap.docs.map((d) => ({ id: d.id, .../** @type {EventData} */ (d.data()) }));
 
   // --- Stage 2: In-Memory Filtering (Secondary Filters) ---
 
@@ -274,9 +264,10 @@ export async function queryEvents(filters = {}) {
   if (hasSeatsOnly) {
     results = results.filter((ev) => {
       // 若資料庫沒存 remainingSeats (舊資料)，則用 max - count 計算
-      const seats = typeof ev.remainingSeats === 'number'
-        ? ev.remainingSeats
-        : Number(ev.maxParticipants || 0) - Number(ev.participantsCount || 0);
+      const seats =
+        typeof ev.remainingSeats === 'number'
+          ? ev.remainingSeats
+          : Number(ev.maxParticipants || 0) - Number(ev.participantsCount || 0);
       return seats > 0;
     });
   }
@@ -351,47 +342,49 @@ export async function joinEvent(eventId, user) {
   const eventRef = doc(db, 'events', eid);
   const participantRef = doc(db, 'events', eid, 'participants', String(user.uid));
 
-  const result = /** @type {JoinResult} */ (await runTransaction(db, async (tx) => {
-    const eventSnap = await tx.get(eventRef);
-    if (!eventSnap.exists()) {
-      throw new Error('活動不存在');
-    }
+  const result = /** @type {JoinResult} */ (
+    await runTransaction(db, async (tx) => {
+      const eventSnap = await tx.get(eventRef);
+      if (!eventSnap.exists()) {
+        throw new Error('活動不存在');
+      }
 
-    const eventData = eventSnap.data();
+      const eventData = eventSnap.data();
 
-    const maxParticipants = Number(eventData.maxParticipants ?? 0);
-    const participantsCount = Number(eventData.participantsCount ?? 0);
+      const maxParticipants = Number(eventData.maxParticipants ?? 0);
+      const participantsCount = Number(eventData.participantsCount ?? 0);
 
-    // remainingSeats 若還沒建立（舊資料），用 maxParticipants - participantsCount 推導一次
-    let { remainingSeats } = eventData;
-    if (typeof remainingSeats !== 'number') {
-      remainingSeats = Math.max(0, maxParticipants - participantsCount);
-    }
+      // remainingSeats 若還沒建立（舊資料），用 maxParticipants - participantsCount 推導一次
+      let { remainingSeats } = eventData;
+      if (typeof remainingSeats !== 'number') {
+        remainingSeats = Math.max(0, maxParticipants - participantsCount);
+      }
 
-    const pSnap = await tx.get(participantRef);
-    if (pSnap.exists()) {
-      return { ok: true, status: 'already_joined' };
-    }
+      const pSnap = await tx.get(participantRef);
+      if (pSnap.exists()) {
+        return { ok: true, status: 'already_joined' };
+      }
 
-    if (remainingSeats <= 0) {
-      return { ok: false, status: 'full' };
-    }
+      if (remainingSeats <= 0) {
+        return { ok: false, status: 'full' };
+      }
 
-    tx.set(participantRef, {
-      uid: String(user.uid),
-      name: String(user.name ?? ''),
-      photoURL: String(user.photoURL ?? ''),
-      eventId: eid,
-      joinedAt: serverTimestamp(),
-    });
+      tx.set(participantRef, {
+        uid: String(user.uid),
+        name: String(user.name ?? ''),
+        photoURL: String(user.photoURL ?? ''),
+        eventId: eid,
+        joinedAt: serverTimestamp(),
+      });
 
-    tx.update(eventRef, {
-      remainingSeats: remainingSeats - 1,
-      participantsCount: participantsCount + 1,
-    });
+      tx.update(eventRef, {
+        remainingSeats: remainingSeats - 1,
+        participantsCount: participantsCount + 1,
+      });
 
-    return { ok: true, status: 'joined' };
-  }));
+      return { ok: true, status: 'joined' };
+    })
+  );
 
   return result;
 }
@@ -413,40 +406,42 @@ export async function leaveEvent(eventId, user) {
   const eventRef = doc(db, 'events', eid);
   const participantRef = doc(db, 'events', eid, 'participants', String(user.uid));
 
-  const result = /** @type {LeaveResult} */ (await runTransaction(db, async (tx) => {
-    const eventSnap = await tx.get(eventRef);
-    if (!eventSnap.exists()) {
-      throw new Error('活動不存在');
-    }
+  const result = /** @type {LeaveResult} */ (
+    await runTransaction(db, async (tx) => {
+      const eventSnap = await tx.get(eventRef);
+      if (!eventSnap.exists()) {
+        throw new Error('活動不存在');
+      }
 
-    const eventData = eventSnap.data();
+      const eventData = eventSnap.data();
 
-    const maxParticipants = Number(eventData.maxParticipants ?? 0);
-    const participantsCount = Number(eventData.participantsCount ?? 0);
+      const maxParticipants = Number(eventData.maxParticipants ?? 0);
+      const participantsCount = Number(eventData.participantsCount ?? 0);
 
-    let { remainingSeats } = eventData;
-    if (typeof remainingSeats !== 'number') {
-      remainingSeats = Math.max(0, maxParticipants - participantsCount);
-    }
+      let { remainingSeats } = eventData;
+      if (typeof remainingSeats !== 'number') {
+        remainingSeats = Math.max(0, maxParticipants - participantsCount);
+      }
 
-    const pSnap = await tx.get(participantRef);
-    if (!pSnap.exists()) {
-      return { ok: true, status: 'not_joined' };
-    }
+      const pSnap = await tx.get(participantRef);
+      if (!pSnap.exists()) {
+        return { ok: true, status: 'not_joined' };
+      }
 
-    tx.delete(participantRef);
+      tx.delete(participantRef);
 
-    // 防呆：不讓 seats 超過 maxParticipants、count 變負
-    const nextRemaining = Math.min(maxParticipants, remainingSeats + 1);
-    const nextCount = Math.max(0, participantsCount - 1);
+      // 防呆：不讓 seats 超過 maxParticipants、count 變負
+      const nextRemaining = Math.min(maxParticipants, remainingSeats + 1);
+      const nextCount = Math.max(0, participantsCount - 1);
 
-    tx.update(eventRef, {
-      remainingSeats: nextRemaining,
-      participantsCount: nextCount,
-    });
+      tx.update(eventRef, {
+        remainingSeats: nextRemaining,
+        participantsCount: nextCount,
+      });
 
-    return { ok: true, status: 'left' };
-  }));
+      return { ok: true, status: 'left' };
+    })
+  );
 
   return result;
 }
@@ -515,10 +510,10 @@ export async function fetchMyJoinedEventsForIds(uid, eventIds) {
 export async function updateEvent(eventId, updatedFields) {
   if (!eventId) throw new Error('updateEvent: eventId is required');
   if (
-    !updatedFields
-    || typeof updatedFields !== 'object'
-    || Array.isArray(updatedFields)
-    || Object.keys(updatedFields).length === 0
+    !updatedFields ||
+    typeof updatedFields !== 'object' ||
+    Array.isArray(updatedFields) ||
+    Object.keys(updatedFields).length === 0
   ) {
     throw new Error('updateEvent: updatedFields must be a non-empty object');
   }
@@ -539,7 +534,9 @@ export async function updateEvent(eventId, updatedFields) {
       updates.time = FirestoreTimestamp.fromDate(new Date(updates.time));
     }
     if (typeof updates.registrationDeadline === 'string' && updates.registrationDeadline) {
-      updates.registrationDeadline = FirestoreTimestamp.fromDate(new Date(updates.registrationDeadline));
+      updates.registrationDeadline = FirestoreTimestamp.fromDate(
+        new Date(updates.registrationDeadline),
+      );
     }
 
     if ('maxParticipants' in updatedFields) {
