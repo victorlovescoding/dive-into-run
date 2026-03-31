@@ -1,7 +1,6 @@
 import {
   addDoc,
   collection,
-  deleteDoc,
   Timestamp as FirestoreTimestamp,
   getDocs,
   getDoc,
@@ -13,6 +12,7 @@ import {
   startAfter,
   serverTimestamp,
   runTransaction,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from './firebase-client';
 
@@ -554,7 +554,7 @@ export async function updateEvent(eventId, updatedFields) {
     return { ok: true };
   });
 
-  return result ?? { ok: true };
+  return result;
 }
 
 /**
@@ -575,12 +575,12 @@ export async function deleteEvent(eventId) {
   const participantsRef = collection(db, 'events', eid, 'participants');
 
   const participantsSnap = await getDocs(participantsRef);
-  const participantDocs = participantsSnap?.docs ?? [];
+  const participantDocs = participantsSnap.docs;
 
-  if (participantDocs.length > 0) {
-    await Promise.all(participantDocs.map((d) => deleteDoc(d.ref)));
-  }
+  const batch = writeBatch(db);
+  participantDocs.forEach((d) => batch.delete(d.ref));
+  batch.delete(eventRef);
+  await batch.commit();
 
-  await deleteDoc(eventRef);
   return { ok: true };
 }

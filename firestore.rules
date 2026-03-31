@@ -72,9 +72,11 @@ service cloud.firestore {
       allow delete: if isSignedIn()
         && request.auth.uid == resource.data.hostUid;
 
-      // 主揪：可更新任何欄位；非主揪：只能更新名額相關欄位
+      // 主揪：可更新任何欄位（但 maxParticipants 不可低於目前報名人數）；非主揪：只能更新名額相關欄位
       allow update: if (
         isSignedIn() && request.auth.uid == resource.data.hostUid
+        && (!request.resource.data.keys().hasAny(['maxParticipants'])
+            || request.resource.data.maxParticipants >= resource.data.participantsCount)
       ) || (
         isSignedIn()
         && request.resource.data.diff(resource.data).changedKeys()

@@ -3,13 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signOut,
-  connectAuthEmulator,
-  signInWithEmailAndPassword,
-} from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signOut, connectAuthEmulator } from 'firebase/auth';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -35,8 +29,6 @@ if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
     // client side
     connectAuthEmulator(auth, 'http://localhost:9099');
     connectFirestoreEmulator(db, 'localhost', 8080);
-    // Expose auth helpers for E2E tests (emulator only)
-    window.testFirebaseHelpers = { auth, signIn: signInWithEmailAndPassword };
   }
 }
 

@@ -5,6 +5,7 @@ import {
 } from 'react';
 import dynamic from 'next/dynamic'; // 導入 dynamic
 import Link from 'next/link';
+import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 import {
   buildRoutePayload,
   formatDateTime,
@@ -988,10 +989,22 @@ export default function RunTogetherPage() {
     setIsUpdating(true);
     try {
       await updateEvent(String(id), fields);
-      setEvents((prev) => prev.map((ev) => (String(ev.id) === String(id) ? { ...ev, ...fields } : ev)));
+      // 將 string timestamp 轉回 Firestore Timestamp，避免本地 state 與 Firestore 資料型別不一致
+      const mergedFields = { ...fields };
+      if (typeof mergedFields.time === 'string' && mergedFields.time) {
+        mergedFields.time = FirestoreTimestamp.fromDate(new Date(mergedFields.time));
+      }
+      if (typeof mergedFields.registrationDeadline === 'string' && mergedFields.registrationDeadline) {
+        mergedFields.registrationDeadline = FirestoreTimestamp.fromDate(
+          new Date(mergedFields.registrationDeadline),
+        );
+      }
+      setEvents((prev) => prev.map((ev) => (
+        String(ev.id) === String(id) ? { ...ev, ...mergedFields } : ev
+      )));
       setEditingEvent(null);
-    } catch (err) {
-      console.error('更新活動失敗:', err);
+    } catch {
+      setActionMessage({ type: 'error', message: '更新活動失敗，請再試一次' });
     } finally {
       setIsUpdating(false);
     }
@@ -1027,8 +1040,7 @@ export default function RunTogetherPage() {
       setEvents((prev) => prev.filter((ev) => String(ev.id) !== String(eventId)));
       setDeletingEventId(null);
       setActionMessage({ type: 'success', message: '刪除成功' });
-    } catch (err) {
-      console.error('刪除活動失敗:', err);
+    } catch {
       setDeleteError('發生錯誤，請再試一次');
     } finally {
       setIsDeletingEvent(false);

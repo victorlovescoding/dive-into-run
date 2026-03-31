@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import styles from './EventEditForm.module.css';
 
 /**
@@ -71,15 +71,24 @@ export default function EventEditForm({
   const [formPaceSec, setFormPaceSec] = useState(initPaceSec);
   const [formDescription, setFormDescription] = useState(String(event.description || ''));
 
-  // 計算 dirty 狀態（shallow compare）
-  const origTitle = String(event.title || '');
-  const origTime = toDatetimeLocal(event.time);
-  const origDeadline = toDatetimeLocal(event.registrationDeadline);
-  const origMeetPlace = String(event.meetPlace || '');
-  const origDistance = String(event.distanceKm ?? '');
-  const origMaxParticipants = String(event.maxParticipants ?? '');
-  const { paceMinStr: origPaceMin, paceSecStr: origPaceSec } = deriveInitialPace(event.paceSec);
-  const origDescription = String(event.description || '');
+  // 計算 dirty 狀態（shallow compare）— useMemo 避免每次 render 重算（event prop 只在開啟/關閉時改變）
+  const {
+    origTitle, origTime, origDeadline, origMeetPlace,
+    origDistance, origMaxParticipants, origPaceMin, origPaceSec, origDescription,
+  } = useMemo(() => {
+    const { paceMinStr, paceSecStr } = deriveInitialPace(event.paceSec);
+    return {
+      origTitle: String(event.title || ''),
+      origTime: toDatetimeLocal(event.time),
+      origDeadline: toDatetimeLocal(event.registrationDeadline),
+      origMeetPlace: String(event.meetPlace || ''),
+      origDistance: String(event.distanceKm ?? ''),
+      origMaxParticipants: String(event.maxParticipants ?? ''),
+      origPaceMin: paceMinStr,
+      origPaceSec: paceSecStr,
+      origDescription: String(event.description || ''),
+    };
+  }, [event]);
 
   const isDirty = (
     formTitle !== origTitle

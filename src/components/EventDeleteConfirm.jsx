@@ -30,8 +30,8 @@ export default function EventDeleteConfirm({
   deleteError = '',
 }) {
   return (
-    <div role="dialog" aria-modal="true" className={styles.dialog}>
-      <p className={styles.message}>確定要刪除活動？</p>
+    <div role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title" className={styles.dialog}>
+      <p id="delete-dialog-title" className={styles.message}>確定要刪除活動？</p>
       {deleteError && <div role="alert" className={styles.errorAlert}>{deleteError}</div>}
       <div className={styles.actions}>
         <button

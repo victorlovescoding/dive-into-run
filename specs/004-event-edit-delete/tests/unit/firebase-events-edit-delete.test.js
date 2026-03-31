@@ -20,7 +20,7 @@ vi.mock('firebase/firestore', () => {
   const mockCollection = vi.fn();
   const mockUpdateDoc = vi.fn();
   const mockDeleteDoc = vi.fn();
-  const mockGetDocs = vi.fn();
+  const mockGetDocs = vi.fn().mockResolvedValue({ docs: [] });
   const mockRunTransaction = vi.fn().mockImplementation(async (_, callback) => {
     const mockTx = {
       get: vi.fn().mockResolvedValue(
@@ -46,6 +46,10 @@ vi.mock('firebase/firestore', () => {
     ),
   );
   const mockQuery = vi.fn();
+  const mockWriteBatch = vi.fn(() => ({
+    delete: vi.fn(),
+    commit: vi.fn().mockResolvedValue(undefined),
+  }));
 
   return {
     doc: mockDoc,
@@ -56,6 +60,7 @@ vi.mock('firebase/firestore', () => {
     getDoc: mockGetDoc,
     runTransaction: mockRunTransaction,
     query: mockQuery,
+    writeBatch: mockWriteBatch,
     orderBy: vi.fn(),
     limit: vi.fn(),
     startAfter: vi.fn(),
@@ -168,19 +173,77 @@ describe('Unit: updateEvent', () => {
   it('should recalculate remainingSeats when maxParticipants is updated', async () => {
     // Arrange
     const { updateEvent } = await import('@/lib/firebase-events');
+    const { runTransaction } = await import('firebase/firestore');
+
+    const mockUpdate = vi.fn();
+    vi.mocked(runTransaction).mockImplementationOnce(async (_, callback) => {
+      const mockTx = {
+        get: vi.fn().mockResolvedValue(
+          /** @type {import('firebase/firestore').DocumentSnapshot} */ (
+            /** @type {unknown} */ ({
+              exists: () => true,
+              data: () => ({ participantsCount: 8, maxParticipants: 10, remainingSeats: 2 }),
+            })
+          ),
+        ),
+        update: mockUpdate,
+        set: vi.fn(),
+        delete: vi.fn(),
+      };
+      return callback(mockTx);
+    });
+
     const eventId = 'event-123';
 
     // 目前 8 人報名，改上限為 12 → remainingSeats 應為 4
-    const updatedFields = {
-      maxParticipants: 12,
-    };
+    const updatedFields = { maxParticipants: 12 };
 
     // Act
     const result = await updateEvent(eventId, updatedFields);
 
     // Assert
-    expect(result).toBeDefined();
     expect(result.ok).toBe(true);
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+    expect(mockUpdate.mock.calls[0][1]).toEqual(
+      expect.objectContaining({ remainingSeats: 4, maxParticipants: 12 }),
+    );
+  });
+
+  it('should convert string timestamps to Firestore Timestamps', async () => {
+    // Arrange
+    const { updateEvent } = await import('@/lib/firebase-events');
+    const { runTransaction, Timestamp } = await import('firebase/firestore');
+
+    const mockUpdate = vi.fn();
+    vi.mocked(runTransaction).mockImplementationOnce(async (_, callback) => {
+      const mockTx = {
+        get: vi.fn().mockResolvedValue(
+          /** @type {import('firebase/firestore').DocumentSnapshot} */ (
+            /** @type {unknown} */ ({
+              exists: () => true,
+              data: () => ({ participantsCount: 0, maxParticipants: 10, remainingSeats: 10 }),
+            })
+          ),
+        ),
+        update: mockUpdate,
+        set: vi.fn(),
+        delete: vi.fn(),
+      };
+      return callback(mockTx);
+    });
+
+    // Act
+    const result = await updateEvent('event-123', { time: '2026-04-01T08:00' });
+
+    // Assert
+    expect(result.ok).toBe(true);
+    expect(Timestamp.fromDate).toHaveBeenCalled();
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+    expect(mockUpdate.mock.calls[0][1]).toEqual(
+      expect.objectContaining({
+        time: expect.objectContaining({ seconds: expect.any(Number) }),
+      }),
+    );
   });
 
   it('should handle update failure gracefully', async () => {
@@ -247,10 +310,9 @@ describe('Unit: deleteEvent', () => {
   it('should also delete all participants in the subcollection (FR-011)', async () => {
     // Arrange
     const { deleteEvent } = await import('@/lib/firebase-events');
-    const { getDocs, deleteDoc } = await import('firebase/firestore');
+    const { getDocs, writeBatch } = await import('firebase/firestore');
 
     // 模擬 participants 子集合有 3 筆資料
-    // 用 unknown 中轉避免 any/jsdoc lint 警告，同時繞過 DocumentReference 型別不符問題
     vi.mocked(getDocs).mockResolvedValueOnce(
       /** @type {import('firebase/firestore').QuerySnapshot} */ (
         /** @type {unknown} */ ({
@@ -272,8 +334,11 @@ describe('Unit: deleteEvent', () => {
     expect(result).toBeDefined();
     expect(result.ok).toBe(true);
 
-    // 應該刪除 3 個 participant + 1 個 event 本身 = 至少呼叫 deleteDoc
-    expect(vi.mocked(deleteDoc).mock.calls.length).toBeGreaterThanOrEqual(1);
+    // writeBatch 應被呼叫一次，batch.delete 應呼叫 4 次（3 participants + 1 event）
+    expect(vi.mocked(writeBatch)).toHaveBeenCalledTimes(1);
+    const batch = vi.mocked(writeBatch).mock.results[0].value;
+    expect(batch.delete).toHaveBeenCalledTimes(4);
+    expect(batch.commit).toHaveBeenCalledTimes(1);
   });
 
   it('should throw error when eventId is missing', async () => {
@@ -301,9 +366,16 @@ describe('Unit: deleteEvent', () => {
   it('should handle delete failure gracefully', async () => {
     // Arrange
     const { deleteEvent } = await import('@/lib/firebase-events');
-    const { deleteDoc } = await import('firebase/firestore');
+    const { writeBatch } = await import('firebase/firestore');
 
-    vi.mocked(deleteDoc).mockRejectedValueOnce(new Error('Firestore delete failed'));
+    vi.mocked(writeBatch).mockReturnValueOnce(
+      /** @type {import('firebase/firestore').WriteBatch} */ (
+        /** @type {unknown} */ ({
+          delete: vi.fn(),
+          commit: vi.fn().mockRejectedValueOnce(new Error('Batch commit failed')),
+        })
+      ),
+    );
 
     const eventId = 'event-123';
 
@@ -314,7 +386,7 @@ describe('Unit: deleteEvent', () => {
   it('should succeed even when event has no participants', async () => {
     // Arrange
     const { deleteEvent } = await import('@/lib/firebase-events');
-    const { getDocs } = await import('firebase/firestore');
+    const { getDocs, writeBatch } = await import('firebase/firestore');
 
     // @ts-expect-error — partial QuerySnapshot mock: only `docs` needed
     vi.mocked(getDocs).mockResolvedValueOnce({ docs: [] });
@@ -327,5 +399,10 @@ describe('Unit: deleteEvent', () => {
     // Assert
     expect(result).toBeDefined();
     expect(result.ok).toBe(true);
+
+    // 只刪 event 本身，batch.delete 應呼叫 1 次
+    const batch = vi.mocked(writeBatch).mock.results[0].value;
+    expect(batch.delete).toHaveBeenCalledTimes(1);
+    expect(batch.commit).toHaveBeenCalledTimes(1);
   });
 });
