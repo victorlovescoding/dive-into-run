@@ -5,6 +5,9 @@
     "firestore",
     "Firestore",
     "Firebase",
-    "firebase"
+    "firebase",
+    "Turbopack",
+    "fartlek",
+    "Fartlek"
   ]
 }

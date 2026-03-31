@@ -56,6 +56,7 @@ npx playwright test specs/path/to/file.spec.js  # Single E2E test
    - Every `@param` must include a description
 5. **Task completion requires** `npm run type-check` and `npm run lint` to pass
 6. **cSpell** — project-specific words must be added to `cspell.json` at project root. Do not use inline `cspell:disable` comments
+7. **IDE Diagnostics** — before marking a task complete, run `getDiagnostics` (via MCP) and fix all items with severity Warning, Hint, or Error. cSpell "Information" items can be ignored (but unknown words should still be added to `cspell.json`)
 
 ## Code Style Quick Reference
 
