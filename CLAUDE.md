@@ -51,7 +51,11 @@ npx playwright test specs/path/to/file.spec.js  # Single E2E test
 2. **No logic in JSX** — extract complex logic into components or helper functions. JSX handles view only
 3. **No `eslint-disable` for a11y rules** — fix the HTML structure (roles, labels, handlers) instead
 4. **Meaningful JSDoc** — all new/modified exported functions must have JSDoc explaining intent and params, not boilerplate
+   - `@typedef` must use lowercase `{object}`, not `{Object}`
+   - Every `@property` must include a description (e.g. `@property {string} city - 活動所在縣市。`)
+   - Every `@param` must include a description
 5. **Task completion requires** `npm run type-check` and `npm run lint` to pass
+6. **cSpell** — project-specific words must be added to `cspell.json` at project root. Do not use inline `cspell:disable` comments
 
 ## Code Style Quick Reference
 
