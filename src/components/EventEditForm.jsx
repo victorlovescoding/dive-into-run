@@ -23,7 +23,8 @@ import styles from './EventEditForm.module.css';
 function toDatetimeLocal(value) {
   if (!value) return '';
   const val = /** @type {any} */ (value);
-  const date = typeof val.toDate === 'function' ? val.toDate() : new Date(/** @type {string} */ (value));
+  const date =
+    typeof val.toDate === 'function' ? val.toDate() : new Date(/** @type {string} */ (value));
   if (Number.isNaN(date.getTime())) return '';
   const pad = (/** @type {number} */ n) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -53,12 +54,7 @@ function deriveInitialPace(paceSec) {
  * @param {EventEditFormProps} props - Component props.
  * @returns {import('react').ReactElement} 活動編輯表單元件。
  */
-export default function EventEditForm({
-  event,
-  onSubmit,
-  onCancel,
-  isSubmitting = false,
-}) {
+export default function EventEditForm({ event, onSubmit, onCancel, isSubmitting = false }) {
   const { paceMinStr: initPaceMin, paceSecStr: initPaceSec } = deriveInitialPace(event.paceSec);
 
   const [formTitle, setFormTitle] = useState(String(event.title || ''));
@@ -66,15 +62,24 @@ export default function EventEditForm({
   const [formDeadline, setFormDeadline] = useState(toDatetimeLocal(event.registrationDeadline));
   const [formMeetPlace, setFormMeetPlace] = useState(String(event.meetPlace || ''));
   const [formDistance, setFormDistance] = useState(String(event.distanceKm ?? ''));
-  const [formMaxParticipants, setFormMaxParticipants] = useState(String(event.maxParticipants ?? ''));
+  const [formMaxParticipants, setFormMaxParticipants] = useState(
+    String(event.maxParticipants ?? ''),
+  );
   const [formPaceMin, setFormPaceMin] = useState(initPaceMin);
   const [formPaceSec, setFormPaceSec] = useState(initPaceSec);
   const [formDescription, setFormDescription] = useState(String(event.description || ''));
 
   // 計算 dirty 狀態（shallow compare）— useMemo 避免每次 render 重算（event prop 只在開啟/關閉時改變）
   const {
-    origTitle, origTime, origDeadline, origMeetPlace,
-    origDistance, origMaxParticipants, origPaceMin, origPaceSec, origDescription,
+    origTitle,
+    origTime,
+    origDeadline,
+    origMeetPlace,
+    origDistance,
+    origMaxParticipants,
+    origPaceMin,
+    origPaceSec,
+    origDescription,
   } = useMemo(() => {
     const { paceMinStr, paceSecStr } = deriveInitialPace(event.paceSec);
     return {
@@ -90,17 +95,16 @@ export default function EventEditForm({
     };
   }, [event]);
 
-  const isDirty = (
-    formTitle !== origTitle
-    || formTime !== origTime
-    || formDeadline !== origDeadline
-    || formMeetPlace !== origMeetPlace
-    || formDistance !== origDistance
-    || formMaxParticipants !== origMaxParticipants
-    || formPaceMin !== origPaceMin
-    || formPaceSec !== origPaceSec
-    || formDescription !== origDescription
-  );
+  const isDirty =
+    formTitle !== origTitle ||
+    formTime !== origTime ||
+    formDeadline !== origDeadline ||
+    formMeetPlace !== origMeetPlace ||
+    formDistance !== origDistance ||
+    formMaxParticipants !== origMaxParticipants ||
+    formPaceMin !== origPaceMin ||
+    formPaceSec !== origPaceSec ||
+    formDescription !== origDescription;
 
   const maxParticipantsMin = Math.max(Number(event.participantsCount || 0), 2);
 
@@ -119,7 +123,8 @@ export default function EventEditForm({
     if (formDeadline !== origDeadline) changes.registrationDeadline = formDeadline;
     if (formMeetPlace !== origMeetPlace) changes.meetPlace = formMeetPlace;
     if (formDistance !== origDistance) changes.distanceKm = Number(formDistance);
-    if (formMaxParticipants !== origMaxParticipants) changes.maxParticipants = Number(formMaxParticipants);
+    if (formMaxParticipants !== origMaxParticipants)
+      changes.maxParticipants = Number(formMaxParticipants);
     if (formPaceMin !== origPaceMin || formPaceSec !== origPaceSec) {
       changes.paceSec = Number(formPaceMin) * 60 + Number(formPaceSec);
     }
@@ -211,7 +216,9 @@ export default function EventEditForm({
                 onChange={(e) => setFormPaceMin(e.target.value)}
               >
                 {PACE_MINUTES.map((m) => (
-                  <option key={m} value={m}>{m}</option>
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
                 ))}
               </select>
             </label>
@@ -226,7 +233,9 @@ export default function EventEditForm({
                 onChange={(e) => setFormPaceSec(e.target.value)}
               >
                 {PACE_SECONDS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
                 ))}
               </select>
             </label>
@@ -269,11 +278,7 @@ export default function EventEditForm({
         <button type="button" className={styles.cancelButton} onClick={onCancel}>
           取消編輯
         </button>
-        <button
-          type="submit"
-          className={styles.submitButton}
-          disabled={!isDirty || !!isSubmitting}
-        >
+        <button type="submit" className={styles.submitButton} disabled={!isDirty || !!isSubmitting}>
           {isSubmitting ? '編輯中…' : '編輯完成'}
         </button>
       </div>

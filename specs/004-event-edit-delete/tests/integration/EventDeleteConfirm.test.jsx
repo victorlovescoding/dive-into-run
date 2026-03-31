@@ -36,13 +36,7 @@ describe('Integration: EventDeleteConfirm', () => {
 
   it('should render confirmation message "確定要刪除活動？" (FR-010)', () => {
     // Arrange
-    render(
-      <EventDeleteConfirm
-        eventId="event-1"
-        onConfirm={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventDeleteConfirm eventId="event-1" onConfirm={vi.fn()} onCancel={vi.fn()} />);
 
     // Act & Assert
     expect(screen.getByText(/確定要刪除活動/i)).toBeInTheDocument();
@@ -50,13 +44,7 @@ describe('Integration: EventDeleteConfirm', () => {
 
   it('should render "是" and "否" buttons (FR-010)', () => {
     // Arrange
-    render(
-      <EventDeleteConfirm
-        eventId="event-1"
-        onConfirm={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventDeleteConfirm eventId="event-1" onConfirm={vi.fn()} onCancel={vi.fn()} />);
 
     // Act & Assert
     expect(screen.getByRole('button', { name: /^是$/i })).toBeInTheDocument();
@@ -65,13 +53,7 @@ describe('Integration: EventDeleteConfirm', () => {
 
   it('should be a custom dialog, not a native confirm (FR-010)', () => {
     // Arrange
-    render(
-      <EventDeleteConfirm
-        eventId="event-1"
-        onConfirm={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventDeleteConfirm eventId="event-1" onConfirm={vi.fn()} onCancel={vi.fn()} />);
 
     // Act & Assert — 應有 dialog role
     expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -85,13 +67,7 @@ describe('Integration: EventDeleteConfirm', () => {
     /** @type {import('vitest').Mock} */
     const mockOnCancel = vi.fn();
 
-    render(
-      <EventDeleteConfirm
-        eventId="event-1"
-        onConfirm={vi.fn()}
-        onCancel={mockOnCancel}
-      />,
-    );
+    render(<EventDeleteConfirm eventId="event-1" onConfirm={vi.fn()} onCancel={mockOnCancel} />);
 
     // Act
     const noButton = screen.getByRole('button', { name: /^否$/i });
@@ -110,11 +86,7 @@ describe('Integration: EventDeleteConfirm', () => {
     const mockOnConfirm = vi.fn();
 
     render(
-      <EventDeleteConfirm
-        eventId="event-to-delete"
-        onConfirm={mockOnConfirm}
-        onCancel={vi.fn()}
-      />,
+      <EventDeleteConfirm eventId="event-to-delete" onConfirm={mockOnConfirm} onCancel={vi.fn()} />,
     );
 
     // Act
@@ -131,12 +103,7 @@ describe('Integration: EventDeleteConfirm', () => {
   it('should disable both buttons while deletion is in progress', () => {
     // Arrange
     render(
-      <EventDeleteConfirm
-        eventId="event-1"
-        onConfirm={vi.fn()}
-        onCancel={vi.fn()}
-        isDeleting
-      />,
+      <EventDeleteConfirm eventId="event-1" onConfirm={vi.fn()} onCancel={vi.fn()} isDeleting />,
     );
 
     // Act
@@ -168,13 +135,7 @@ describe('Integration: EventDeleteConfirm', () => {
 
   it('should NOT display error message when deleteError is not provided', () => {
     // Arrange
-    render(
-      <EventDeleteConfirm
-        eventId="event-1"
-        onConfirm={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventDeleteConfirm eventId="event-1" onConfirm={vi.fn()} onCancel={vi.fn()} />);
 
     // Act & Assert
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -184,13 +145,7 @@ describe('Integration: EventDeleteConfirm', () => {
 
   it('should have proper aria-modal attribute on dialog', () => {
     // Arrange
-    render(
-      <EventDeleteConfirm
-        eventId="event-1"
-        onConfirm={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventDeleteConfirm eventId="event-1" onConfirm={vi.fn()} onCancel={vi.fn()} />);
 
     // Act
     const dialog = screen.getByRole('dialog');

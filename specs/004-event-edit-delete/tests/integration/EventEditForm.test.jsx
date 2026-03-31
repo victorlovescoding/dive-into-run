@@ -79,13 +79,7 @@ describe('Integration: EventEditForm', () => {
     // Arrange
     const event = createMockEvent();
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
     // Act & Assert — 驗證各欄位已預填
     expect(screen.getByLabelText(/活動名稱/i)).toHaveValue('大安森林公園晨跑');
@@ -100,13 +94,7 @@ describe('Integration: EventEditForm', () => {
     // Arrange — paceSec = 360 → 6 分 00 秒
     const event = createMockEvent({ paceSec: 390 }); // 6 分 30 秒
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
     // Act & Assert
     expect(screen.getByLabelText(/配速.*分/i)).toHaveValue('06');
@@ -117,13 +105,7 @@ describe('Integration: EventEditForm', () => {
     // Arrange
     const event = createMockEvent({ description: '特殊活動說明' });
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
     // Act & Assert
     expect(screen.getByLabelText(/活動說明/i)).toHaveValue('特殊活動說明');
@@ -135,13 +117,7 @@ describe('Integration: EventEditForm', () => {
     // Arrange
     const event = createMockEvent();
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
     // Act & Assert
     expect(screen.getByRole('button', { name: /取消編輯/i })).toBeInTheDocument();
@@ -152,13 +128,7 @@ describe('Integration: EventEditForm', () => {
     // Arrange
     const event = createMockEvent();
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
     // Act & Assert
     expect(screen.queryByRole('button', { name: /^建立活動$/i })).not.toBeInTheDocument();
@@ -170,13 +140,7 @@ describe('Integration: EventEditForm', () => {
     // Arrange
     const event = createMockEvent();
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
     // Act
     const submitButton = screen.getByRole('button', { name: /編輯完成/i });
@@ -192,13 +156,7 @@ describe('Integration: EventEditForm', () => {
     const user = userEvent.setup();
     const event = createMockEvent();
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
     const submitButton = screen.getByRole('button', { name: /編輯完成/i });
     expect(submitButton).toBeDisabled();
@@ -217,13 +175,7 @@ describe('Integration: EventEditForm', () => {
     const user = userEvent.setup();
     const event = createMockEvent({ title: 'Original Title' });
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
     const submitButton = screen.getByRole('button', { name: /編輯完成/i });
     const titleInput = screen.getByLabelText(/活動名稱/i);
@@ -249,13 +201,7 @@ describe('Integration: EventEditForm', () => {
     /** @type {import('vitest').Mock} */
     const mockOnSubmit = vi.fn();
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={mockOnSubmit}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={mockOnSubmit} onCancel={vi.fn()} />);
 
     // Act — 修改標題讓按鈕可點
     const titleInput = screen.getByLabelText(/活動名稱/i);
@@ -281,13 +227,7 @@ describe('Integration: EventEditForm', () => {
     /** @type {import('vitest').Mock} */
     const mockOnCancel = vi.fn();
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={mockOnCancel}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={mockOnCancel} />);
 
     // Act
     const cancelButton = screen.getByRole('button', { name: /取消編輯/i });
@@ -303,13 +243,7 @@ describe('Integration: EventEditForm', () => {
     // Arrange — 目前有 5 人報名
     const event = createMockEvent({ participantsCount: 5, maxParticipants: 10 });
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
     // Act & Assert — min 屬性應為 max(participantsCount, 2) = 5
     expect(screen.getByLabelText(/人數上限/i)).toHaveAttribute('min', '5');
@@ -319,13 +253,7 @@ describe('Integration: EventEditForm', () => {
     // Arrange — 目前有 0 人報名
     const event = createMockEvent({ participantsCount: 0, maxParticipants: 10 });
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
     // Act & Assert — min 屬性應為 2（最小值）
     expect(screen.getByLabelText(/人數上限/i)).toHaveAttribute('min', '2');
@@ -338,13 +266,7 @@ describe('Integration: EventEditForm', () => {
     const user = userEvent.setup();
     const event = createMockEvent({ distanceKm: 5 });
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
     const submitButton = screen.getByRole('button', { name: /編輯完成/i });
     expect(submitButton).toBeDisabled();
@@ -363,13 +285,7 @@ describe('Integration: EventEditForm', () => {
     const user = userEvent.setup();
     const event = createMockEvent({ description: '原始說明' });
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={vi.fn()} />);
 
     const submitButton = screen.getByRole('button', { name: /編輯完成/i });
     expect(submitButton).toBeDisabled();
@@ -389,14 +305,7 @@ describe('Integration: EventEditForm', () => {
     // Arrange
     const event = createMockEvent();
 
-    render(
-      <EventEditForm
-        event={event}
-        onSubmit={vi.fn()}
-        onCancel={vi.fn()}
-        isSubmitting
-      />,
-    );
+    render(<EventEditForm event={event} onSubmit={vi.fn()} onCancel={vi.fn()} isSubmitting />);
 
     // Act
     const submitButton = screen.getByRole('button', { name: /編輯中|更新中/i });

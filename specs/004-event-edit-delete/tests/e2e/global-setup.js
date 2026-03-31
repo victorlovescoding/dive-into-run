@@ -100,16 +100,15 @@ export default async function globalSetup() {
     await fetch(`${AUTH_EMULATOR_URL}/`);
   } catch {
     throw new Error(
-      '❌ Firebase Auth Emulator is not running.\n'
-        + '   Run: firebase emulators:start --only auth,firestore',
+      '❌ Firebase Auth Emulator is not running.\n' +
+        '   Run: firebase emulators:start --only auth,firestore',
     );
   }
 
   // Clear all emulator auth accounts
-  await fetch(
-    `${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`,
-    { method: 'DELETE' },
-  );
+  await fetch(`${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`, {
+    method: 'DELETE',
+  });
 
   // Clear all Firestore emulator documents
   await fetch(
@@ -145,15 +144,25 @@ export default async function globalSetup() {
     createdAt: ts('2026-03-30T00:00:00Z'),
   };
 
-  await seedDoc('events', 'test-event-1', {
-    ...baseEvent,
-    title: 'E2E 測試活動一',
-    time: ts('2026-04-15T10:00:00Z'),
-  }, hostIdToken);
+  await seedDoc(
+    'events',
+    'test-event-1',
+    {
+      ...baseEvent,
+      title: 'E2E 測試活動一',
+      time: ts('2026-04-15T10:00:00Z'),
+    },
+    hostIdToken,
+  );
 
-  await seedDoc('events', 'test-event-2', {
-    ...baseEvent,
-    title: 'E2E 測試活動二',
-    time: ts('2026-04-16T10:00:00Z'),
-  }, hostIdToken);
+  await seedDoc(
+    'events',
+    'test-event-2',
+    {
+      ...baseEvent,
+      title: 'E2E 測試活動二',
+      time: ts('2026-04-16T10:00:00Z'),
+    },
+    hostIdToken,
+  );
 }

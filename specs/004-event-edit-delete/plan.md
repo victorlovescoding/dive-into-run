@@ -21,19 +21,19 @@
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principle | Status | Notes |
-|---|---|---|
-| I. SDD/TDD | ✅ PASS | spec.md 完成、RED phase 測試已撰寫（unit/integration/e2e） |
-| II. Strict Service Layer | ✅ PASS | `updateEvent`/`deleteEvent` 在 `src/lib/firebase-events.js`；元件不直接 import Firebase |
-| III. UX & Consistency | ✅ PASS | 正體中文 UI 文字、自訂 dialog（非原生 confirm） |
-| IV. Performance & Concurrency | ✅ PASS | `updateEvent` 使用 `runTransaction` 保證 maxParticipants 驗證一致性 |
-| V. Code Quality | ✅ PASS | MVP 思維、獨立元件、CSS Modules |
-| VI. Modern Standards | ✅ PASS | `const` 優先、JSDoc 完整、React 19 Hooks |
-| VII. Security | ✅ PASS | 前端 `hostUid` 比對 + Firestore Security Rules |
-| VIII. Agent Protocol | ✅ PASS | 修改前確認、資訊誠實 |
-| IX. Coding Iron Rules | ✅ PASS | 無 JSX 內邏輯、無 eslint-disable a11y、有意義 JSDoc |
+| Principle                     | Status  | Notes                                                                                   |
+| ----------------------------- | ------- | --------------------------------------------------------------------------------------- |
+| I. SDD/TDD                    | ✅ PASS | spec.md 完成、RED phase 測試已撰寫（unit/integration/e2e）                              |
+| II. Strict Service Layer      | ✅ PASS | `updateEvent`/`deleteEvent` 在 `src/lib/firebase-events.js`；元件不直接 import Firebase |
+| III. UX & Consistency         | ✅ PASS | 正體中文 UI 文字、自訂 dialog（非原生 confirm）                                         |
+| IV. Performance & Concurrency | ✅ PASS | `updateEvent` 使用 `runTransaction` 保證 maxParticipants 驗證一致性                     |
+| V. Code Quality               | ✅ PASS | MVP 思維、獨立元件、CSS Modules                                                         |
+| VI. Modern Standards          | ✅ PASS | `const` 優先、JSDoc 完整、React 19 Hooks                                                |
+| VII. Security                 | ✅ PASS | 前端 `hostUid` 比對 + Firestore Security Rules                                          |
+| VIII. Agent Protocol          | ✅ PASS | 修改前確認、資訊誠實                                                                    |
+| IX. Coding Iron Rules         | ✅ PASS | 無 JSX 內邏輯、無 eslint-disable a11y、有意義 JSDoc                                     |
 
 **Post-Design Re-Check**: ✅ 所有原則維持通過。`EventCardMenu` click-outside 使用標準 `useRef` + event listener，不違反任何原則。
 
@@ -107,6 +107,7 @@ src/
 ### Phase 2: UI Components (Integration Tests → GREEN)
 
 **2A: EventCardMenu** (`src/components/EventCardMenu.jsx`)
+
 - Tests: `EventCardMenu.test.jsx`
 - 權限判斷：`currentUserUid !== event.hostUid` → return null
 - 三點按鈕：`<button aria-label="更多操作">`
@@ -116,6 +117,7 @@ src/
 - 點擊 menuitem → callback + close
 
 **2B: EventDeleteConfirm** (`src/components/EventDeleteConfirm.jsx`)
+
 - Tests: `EventDeleteConfirm.test.jsx`
 - `<div role="dialog" aria-modal="true">`
 - 文字「確定要刪除活動？」
@@ -125,6 +127,7 @@ src/
 - `deleteError` → `<div role="alert">`
 
 **2C: EventEditForm** (`src/components/EventEditForm.jsx`)
+
 - Tests: `EventEditForm.test.jsx`
 - 預填所有欄位（title, time, deadline, meetPlace, distanceKm, maxParticipants, paceSec → 分/秒, description, city, district, runType）
 - 按鈕：「取消編輯」/「編輯完成」
@@ -186,9 +189,9 @@ Phase 3 (Page Integration)
 
 ## Risk Assessment
 
-| Risk | Likelihood | Mitigation |
-|---|---|---|
-| 編輯表單欄位與建立表單不一致 | Low | 對照 `normalizeEventPayload` + 建立表單 name 屬性 |
-| 刪除子集合遺漏 | Low | Unit test 驗證 deleteDoc 呼叫次數 |
-| Dirty detection 對數字型別誤判 | Medium | 統一轉為 string 比較或使用 `==` |
-| Click outside 與 Link 點擊衝突 | Medium | `stopPropagation` on menu click + 正確的 ref 範圍 |
+| Risk                           | Likelihood | Mitigation                                        |
+| ------------------------------ | ---------- | ------------------------------------------------- |
+| 編輯表單欄位與建立表單不一致   | Low        | 對照 `normalizeEventPayload` + 建立表單 name 屬性 |
+| 刪除子集合遺漏                 | Low        | Unit test 驗證 deleteDoc 呼叫次數                 |
+| Dirty detection 對數字型別誤判 | Medium     | 統一轉為 string 比較或使用 `==`                   |
+| Click outside 與 Link 點擊衝突 | Medium     | `stopPropagation` on menu click + 正確的 ref 範圍 |

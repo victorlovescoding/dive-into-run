@@ -11,7 +11,7 @@
 
 - Q: 編輯人數上限時，若目前報名人數已超過新設定的上限，系統應如何處理？ → A: 限制人數上限不能低於目前報名人數（例如已有 8 人報名，最小值為 8）
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - 活動創建人編輯自己的活動 (Priority: P1)
 
@@ -76,7 +76,7 @@
 - 未登入使用者查看活動列表？三個點按鈕不顯示（因為沒有登入使用者，不可能是任何活動的創建人）。
 - 編輯人數上限低於目前報名人數？不允許，人數上限最小值為目前已報名人數。
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -101,7 +101,7 @@
 - **活動 (Event)**: 包含標題、時間、截止時間、地點、跑步類型、距離、配速、人數上限、描述、路線等屬性，以及創建人資訊。編輯操作修改此實體，刪除操作移除此實體。
 - **參與者 (Participant)**: 活動的子集合，記錄已報名的使用者。刪除活動時需一併處理。
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

@@ -123,8 +123,7 @@ describe('Unit: updateEvent', () => {
     const { updateEvent } = await import('@/lib/firebase-events');
 
     // Act & Assert
-    await expect(updateEvent('', { title: 'test' }))
-      .rejects.toThrow();
+    await expect(updateEvent('', { title: 'test' })).rejects.toThrow();
   });
 
   it('should throw error when updatedFields is empty or not an object', async () => {
@@ -132,8 +131,7 @@ describe('Unit: updateEvent', () => {
     const { updateEvent } = await import('@/lib/firebase-events');
 
     // Act & Assert
-    await expect(updateEvent('event-123', null))
-      .rejects.toThrow();
+    await expect(updateEvent('event-123', null)).rejects.toThrow();
   });
 
   it('should reject maxParticipants lower than current participantsCount (FR-015)', async () => {
@@ -148,8 +146,7 @@ describe('Unit: updateEvent', () => {
 
     // Act & Assert
     // updateEvent 內部應讀取目前 participantsCount 並拒絕此更新
-    await expect(updateEvent(eventId, updatedFields))
-      .rejects.toThrow(/人數上限/);
+    await expect(updateEvent(eventId, updatedFields)).rejects.toThrow(/人數上限/);
   });
 
   it('should allow maxParticipants equal to current participantsCount', async () => {
@@ -257,8 +254,7 @@ describe('Unit: updateEvent', () => {
     const updatedFields = { title: 'new title' };
 
     // Act & Assert
-    await expect(updateEvent(eventId, updatedFields))
-      .rejects.toThrow();
+    await expect(updateEvent(eventId, updatedFields)).rejects.toThrow();
   });
 
   it('should throw error when event does not exist', async () => {
@@ -268,11 +264,13 @@ describe('Unit: updateEvent', () => {
 
     vi.mocked(runTransaction).mockImplementationOnce(async (_, callback) => {
       const mockTx = {
-        get: vi.fn().mockResolvedValue(
-          /** @type {import('firebase/firestore').DocumentSnapshot} */ (
-            /** @type {unknown} */ ({ exists: () => false })
+        get: vi
+          .fn()
+          .mockResolvedValue(
+            /** @type {import('firebase/firestore').DocumentSnapshot} */ (
+              /** @type {unknown} */ ({ exists: () => false })
+            ),
           ),
-        ),
         update: vi.fn(),
         set: vi.fn(),
         delete: vi.fn(),
@@ -284,8 +282,7 @@ describe('Unit: updateEvent', () => {
     const updatedFields = { title: 'test' };
 
     // Act & Assert
-    await expect(updateEvent(eventId, updatedFields))
-      .rejects.toThrow();
+    await expect(updateEvent(eventId, updatedFields)).rejects.toThrow();
   });
 });
 

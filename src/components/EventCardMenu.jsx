@@ -21,12 +21,7 @@ import menuStyles from './EventCardMenu.module.css';
  * @param {EventCardMenuProps} props - Component props.
  * @returns {import('react').ReactElement|null} 三點選單元件，非創建人時回傳 null。
  */
-export default function EventCardMenu({
-  event,
-  currentUserUid,
-  onEdit,
-  onDelete,
-}) {
+export default function EventCardMenu({ event, currentUserUid, onEdit, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(/** @type {HTMLDivElement|null} */ (null));
 
@@ -77,10 +72,20 @@ export default function EventCardMenu({
       </button>
       {isOpen && (
         <div role="menu" className={menuStyles.dropdown}>
-          <button type="button" role="menuitem" className={menuStyles.menuItem} onClick={handleEdit}>
+          <button
+            type="button"
+            role="menuitem"
+            className={menuStyles.menuItem}
+            onClick={handleEdit}
+          >
             編輯活動
           </button>
-          <button type="button" role="menuitem" className={menuStyles.menuItem} onClick={handleDelete}>
+          <button
+            type="button"
+            role="menuitem"
+            className={menuStyles.menuItem}
+            onClick={handleDelete}
+          >
             刪除活動
           </button>
         </div>

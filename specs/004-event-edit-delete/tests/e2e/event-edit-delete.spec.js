@@ -39,10 +39,13 @@ async function loginAsUser(page, email, password) {
   });
 
   // 直接呼叫 Firebase SDK 登入，不需要 UI 表單
-  await page.evaluate(async (/** @type {{ email: string, password: string }} */ creds) => {
-    const { auth, signIn } = window.testFirebaseHelpers;
-    await signIn(auth, creds.email, creds.password);
-  }, { email, password });
+  await page.evaluate(
+    async (/** @type {{ email: string, password: string }} */ creds) => {
+      const { auth, signIn } = window.testFirebaseHelpers;
+      await signIn(auth, creds.email, creds.password);
+    },
+    { email, password },
+  );
 
   // Reload 讓 React auth context 重新讀取 IndexedDB 中的登入狀態
   await page.reload();
@@ -103,7 +106,9 @@ test.describe('Event Edit & Delete - User Story 1: 編輯活動', () => {
     await expect(titleInput).not.toHaveValue('');
   });
 
-  test('"編輯完成" should be disabled initially and enabled after modification (SC-003)', async ({ page }) => {
+  test('"編輯完成" should be disabled initially and enabled after modification (SC-003)', async ({
+    page,
+  }) => {
     // Arrange
     await loginAsUser(page, 'test-host@example.com', 'test-password');
     await page.goto('/events');
@@ -179,7 +184,9 @@ test.describe('Event Edit & Delete - User Story 1: 編輯活動', () => {
 });
 
 test.describe('Event Edit & Delete - User Story 2: 刪除活動', () => {
-  test('delete confirmation dialog should appear with proper content (FR-010)', async ({ page }) => {
+  test('delete confirmation dialog should appear with proper content (FR-010)', async ({
+    page,
+  }) => {
     // Arrange
     await loginAsUser(page, 'test-host@example.com', 'test-password');
     await page.goto('/events');
@@ -216,7 +223,9 @@ test.describe('Event Edit & Delete - User Story 2: 刪除活動', () => {
     await expect(page.getByText(firstEventTitle)).toBeVisible();
   });
 
-  test('full delete flow: confirm → event removed from list (US2-AC3, SC-004)', async ({ page }) => {
+  test('full delete flow: confirm → event removed from list (US2-AC3, SC-004)', async ({
+    page,
+  }) => {
     // Arrange
     await loginAsUser(page, 'test-host@example.com', 'test-password');
     await page.goto('/events');

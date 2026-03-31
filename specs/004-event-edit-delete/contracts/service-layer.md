@@ -33,13 +33,13 @@ export async function updateEvent(eventId, updatedFields)
 
 ### Error Cases
 
-| Condition | Error |
-|---|---|
-| `eventId` 為空 | `throw Error` |
-| `updatedFields` 為 null 或非物件 | `throw Error` |
-| Event document 不存在 | `throw Error` |
+| Condition                             | Error                     |
+| ------------------------------------- | ------------------------- |
+| `eventId` 為空                        | `throw Error`             |
+| `updatedFields` 為 null 或非物件      | `throw Error`             |
+| Event document 不存在                 | `throw Error`             |
 | `maxParticipants < participantsCount` | `throw Error(/人數上限/)` |
-| Firestore write 失敗 | `throw Error`（原生錯誤） |
+| Firestore write 失敗                  | `throw Error`（原生錯誤） |
 
 ---
 
@@ -73,10 +73,10 @@ export async function deleteEvent(eventId)
 
 ### Error Cases
 
-| Condition | Error |
-|---|---|
-| `eventId` 為空 | `throw Error` |
-| Event document 不存在 | `throw Error` |
+| Condition             | Error                     |
+| --------------------- | ------------------------- |
+| `eventId` 為空        | `throw Error`             |
+| Event document 不存在 | `throw Error`             |
 | Firestore delete 失敗 | `throw Error`（原生錯誤） |
 
 ---
@@ -98,6 +98,7 @@ export async function deleteEvent(eventId)
 ```
 
 **Behavior**:
+
 - `currentUserUid !== event.hostUid` → render nothing (empty)
 - `currentUserUid === event.hostUid` → render 三點按鈕 (aria-label: "更多操作")
 - 點擊三點按鈕 → toggle dropdown (role="menuitem": "編輯活動", "刪除活動")
@@ -119,6 +120,7 @@ export async function deleteEvent(eventId)
 ```
 
 **Behavior**:
+
 - 所有欄位預填 `event` 對應值
 - 按鈕: "取消編輯" (left) / "編輯完成" (right)
 - "編輯完成" disabled when: 無欄位變更 OR isSubmitting
@@ -143,6 +145,7 @@ export async function deleteEvent(eventId)
 ```
 
 **Behavior**:
+
 - 顯示 dialog (role="dialog", aria-modal="true")
 - 文字: "確定要刪除活動？"
 - 按鈕: "是" / "否"

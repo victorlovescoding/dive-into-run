@@ -122,12 +122,7 @@ describe('Integration: EventCardMenu', () => {
     const event = createMockEvent();
 
     const { container } = render(
-      <EventCardMenu
-        event={event}
-        currentUserUid={null}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-      />,
+      <EventCardMenu event={event} currentUserUid={null} onEdit={vi.fn()} onDelete={vi.fn()} />,
     );
 
     // Act & Assert

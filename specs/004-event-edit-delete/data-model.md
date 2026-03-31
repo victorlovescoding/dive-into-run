@@ -8,38 +8,38 @@
 
 **Collection**: `events`
 
-| Field | Type | Editable | Notes |
-|---|---|---|---|
-| `id` | string | No | Firestore document ID |
-| `title` | string | Yes | 活動名稱 |
-| `time` | Timestamp | Yes | 活動時間 |
-| `registrationDeadline` | Timestamp | Yes | 報名截止時間 |
-| `city` | string | Yes | 縣市 |
-| `district` | string | Yes | 區域 |
-| `meetPlace` | string | Yes | 集合地點 |
-| `runType` | string | Yes | 跑步類型 |
-| `distanceKm` | number | Yes | 距離（公里） |
-| `paceSec` | number | Yes | 配速秒數 |
-| `maxParticipants` | number | Yes | 人數上限（min = max(participantsCount, 2)） |
-| `description` | string | Yes | 活動說明 |
-| `route` | object | No | 路線資料（編輯時保留原值） |
-| `hostUid` | string | No | 主揪 UID |
-| `hostName` | string | No | 主揪名稱 |
-| `hostPhotoURL` | string | No | 主揪頭像 |
-| `participantsCount` | number | No | 目前參加人數（系統管理） |
-| `remainingSeats` | number | Derived | maxParticipants - participantsCount |
-| `createdAt` | Timestamp | No | 建立時間 |
+| Field                  | Type      | Editable | Notes                                       |
+| ---------------------- | --------- | -------- | ------------------------------------------- |
+| `id`                   | string    | No       | Firestore document ID                       |
+| `title`                | string    | Yes      | 活動名稱                                    |
+| `time`                 | Timestamp | Yes      | 活動時間                                    |
+| `registrationDeadline` | Timestamp | Yes      | 報名截止時間                                |
+| `city`                 | string    | Yes      | 縣市                                        |
+| `district`             | string    | Yes      | 區域                                        |
+| `meetPlace`            | string    | Yes      | 集合地點                                    |
+| `runType`              | string    | Yes      | 跑步類型                                    |
+| `distanceKm`           | number    | Yes      | 距離（公里）                                |
+| `paceSec`              | number    | Yes      | 配速秒數                                    |
+| `maxParticipants`      | number    | Yes      | 人數上限（min = max(participantsCount, 2)） |
+| `description`          | string    | Yes      | 活動說明                                    |
+| `route`                | object    | No       | 路線資料（編輯時保留原值）                  |
+| `hostUid`              | string    | No       | 主揪 UID                                    |
+| `hostName`             | string    | No       | 主揪名稱                                    |
+| `hostPhotoURL`         | string    | No       | 主揪頭像                                    |
+| `participantsCount`    | number    | No       | 目前參加人數（系統管理）                    |
+| `remainingSeats`       | number    | Derived  | maxParticipants - participantsCount         |
+| `createdAt`            | Timestamp | No       | 建立時間                                    |
 
 ### Participant (既有 — 刪除操作一併清除)
 
 **Collection**: `events/{eventId}/participants`
 
-| Field | Type | Notes |
-|---|---|---|
-| `uid` | string | 參與者 UID（document ID） |
-| `name` | string | 參與者名稱 |
-| `photoURL` | string | 參與者頭像 |
-| `joinedAt` | Timestamp | 報名時間 |
+| Field      | Type      | Notes                     |
+| ---------- | --------- | ------------------------- |
+| `uid`      | string    | 參與者 UID（document ID） |
+| `name`     | string    | 參與者名稱                |
+| `photoURL` | string    | 參與者頭像                |
+| `joinedAt` | Timestamp | 報名時間                  |
 
 ## Validation Rules
 
