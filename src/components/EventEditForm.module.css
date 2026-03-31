@@ -168,3 +168,46 @@
 .submitButton {
   composes: submitButton from './EventActionButtons.module.css';
 }
+
+/* 路線編輯區塊 */
+.routeSectionLabel {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #202124;
+  margin-bottom: 12px;
+}
+
+.routeStatusText {
+  color: #5f6368;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.routeActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.routeButton {
+  background: transparent;
+  border: 1px solid #dadce0;
+  color: #673ab7;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.routeButton:hover {
+  background: rgba(103, 58, 183, 0.04);
+  border-color: #673ab7;
+}
+
+.mapContainer {
+  margin-top: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+}

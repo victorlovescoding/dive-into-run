@@ -1,7 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import styles from './EventEditForm.module.css';
+import { buildRoutePayload } from '@/lib/event-helpers';
+
+const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
 
 /**
  * @typedef {import('@/lib/event-helpers').EventData} EventData
@@ -69,6 +73,21 @@ export default function EventEditForm({ event, onSubmit, onCancel, isSubmitting 
   const [formPaceSec, setFormPaceSec] = useState(initPaceSec);
   const [formDescription, setFormDescription] = useState(String(event.description || ''));
 
+  // 路線編輯 state
+  const [routeMode, setRouteMode] = useState(event.route ? 'view' : 'none');
+  const [editedRouteCoordinates, setEditedRouteCoordinates] = useState(
+    /** @type {Array<{lat: number, lng: number}>|null} */ (null),
+  );
+  const [routeCleared, setRouteCleared] = useState(false);
+
+  /** @type {(coords: Array<{lat: number, lng: number}>|null) => void} */
+  const handleRouteDrawn = useCallback((coords) => {
+    setEditedRouteCoordinates(coords);
+    if (coords) {
+      setRouteCleared(false);
+    }
+  }, []);
+
   // 計算 dirty 狀態（shallow compare）— useMemo 避免每次 render 重算（event prop 只在開啟/關閉時改變）
   const {
     origTitle,
@@ -95,6 +114,8 @@ export default function EventEditForm({ event, onSubmit, onCancel, isSubmitting 
     };
   }, [event]);
 
+  const isRouteDirty = (routeCleared && Boolean(event.route)) || editedRouteCoordinates !== null;
+
   const isDirty =
     formTitle !== origTitle ||
     formTime !== origTime ||
@@ -104,7 +125,8 @@ export default function EventEditForm({ event, onSubmit, onCancel, isSubmitting 
     formMaxParticipants !== origMaxParticipants ||
     formPaceMin !== origPaceMin ||
     formPaceSec !== origPaceSec ||
-    formDescription !== origDescription;
+    formDescription !== origDescription ||
+    isRouteDirty;
 
   const maxParticipantsMin = Math.max(Number(event.participantsCount || 0), 2);
 
@@ -129,6 +151,14 @@ export default function EventEditForm({ event, onSubmit, onCancel, isSubmitting 
       changes.paceSec = Number(formPaceMin) * 60 + Number(formPaceSec);
     }
     if (formDescription !== origDescription) changes.description = formDescription;
+
+    if (isRouteDirty) {
+      if (routeCleared && !editedRouteCoordinates) {
+        changes.route = null;
+      } else if (editedRouteCoordinates) {
+        changes.route = buildRoutePayload(editedRouteCoordinates);
+      }
+    }
 
     onSubmit(changes);
   }
@@ -272,6 +302,112 @@ export default function EventEditForm({ event, onSubmit, onCancel, isSubmitting 
             onChange={(e) => setFormDescription(e.target.value)}
           />
         </label>
+      </div>
+
+      {/* 路線編輯區塊 */}
+      <div className={styles.formGroup}>
+        <div className={styles.routeSectionLabel}>活動路線</div>
+
+        {routeMode === 'view' && event.route && (
+          <>
+            <div className={styles.routeStatusText}>
+              已設定路線（
+              {event.route.pointsCount ?? '?'} 點）
+            </div>
+            <div className={styles.mapContainer}>
+              <EventMap
+                mode="view"
+                encodedPolyline={event.route.polyline}
+                bbox={event.route.bbox}
+                height={320}
+              />
+            </div>
+            <div className={styles.routeActions}>
+              <button
+                type="button"
+                className={styles.routeButton}
+                onClick={() => {
+                  setRouteMode('draw');
+                  setEditedRouteCoordinates(null);
+                }}
+              >
+                重新繪製路線
+              </button>
+              <button
+                type="button"
+                className={styles.routeButton}
+                onClick={() => {
+                  setRouteCleared(true);
+                  setEditedRouteCoordinates(null);
+                  setRouteMode('none');
+                }}
+              >
+                清除路線
+              </button>
+            </div>
+          </>
+        )}
+
+        {routeMode === 'none' && (
+          <>
+            <div className={styles.routeStatusText}>
+              {routeCleared ? '路線已清除' : '此活動未設定路線'}
+            </div>
+            <div className={styles.routeActions}>
+              <button
+                type="button"
+                className={styles.routeButton}
+                onClick={() => {
+                  setRouteMode('draw');
+                  setEditedRouteCoordinates(null);
+                }}
+              >
+                {routeCleared ? '重新繪製路線' : '新增路線'}
+              </button>
+              {routeCleared && (
+                <button
+                  type="button"
+                  className={styles.routeButton}
+                  onClick={() => {
+                    setRouteCleared(false);
+                    setRouteMode(event.route ? 'view' : 'none');
+                  }}
+                >
+                  復原清除
+                </button>
+              )}
+            </div>
+          </>
+        )}
+
+        {routeMode === 'draw' && (
+          <>
+            {editedRouteCoordinates ? (
+              <div className={styles.routeStatusText}>
+                新路線已繪製（
+                {editedRouteCoordinates.length} 點）
+              </div>
+            ) : (
+              <div className={styles.routeStatusText}>請在地圖上繪製路線</div>
+            )}
+            <div className={styles.mapContainer}>
+              <EventMap mode="draw" onRouteDrawn={handleRouteDrawn} height={320} />
+            </div>
+            <div className={styles.routeActions}>
+              <button
+                type="button"
+                className={styles.routeButton}
+                onClick={() => {
+                  setEditedRouteCoordinates(null);
+                  const fallbackMode = routeCleared || !event.route ? 'none' : 'view';
+                  setRouteMode(fallbackMode);
+                }}
+              >
+                取消繪製
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       <div className={styles.formActions}>

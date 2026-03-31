@@ -1008,7 +1008,15 @@ export default function RunTogetherPage() {
           );
         }
         setEvents((prev) =>
-          prev.map((ev) => (String(ev.id) === String(id) ? { ...ev, ...mergedFields } : ev)),
+          prev.map((ev) => {
+            if (String(ev.id) !== String(id)) return ev;
+            const updated = { ...ev, ...mergedFields };
+            // 若 route 被清除，從本地 state 移除
+            if ('route' in mergedFields && mergedFields.route === null) {
+              delete updated.route;
+            }
+            return updated;
+          }),
         );
         setEditingEvent(null);
       } catch {

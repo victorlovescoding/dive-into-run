@@ -13,6 +13,7 @@ import {
   serverTimestamp,
   runTransaction,
   writeBatch,
+  deleteField,
 } from 'firebase/firestore';
 import { db } from './firebase-client';
 
@@ -537,6 +538,11 @@ export async function updateEvent(eventId, updatedFields) {
       updates.registrationDeadline = FirestoreTimestamp.fromDate(
         new Date(updates.registrationDeadline),
       );
+    }
+
+    // 若明確傳入 route: null，使用 deleteField() 完全移除 Firestore 欄位
+    if ('route' in updates && updates.route === null) {
+      updates.route = deleteField();
     }
 
     if ('maxParticipants' in updatedFields) {
