@@ -826,7 +826,10 @@ export default function RunTogetherPage() {
    * @param {import('react').MouseEvent} clickEvent - 點擊事件。
    * @returns {Promise<void>}
    */
-  const handleJoinClick = useCallback(async (ev, clickEvent) => {
+  const handleJoinClick = useCallback(async (
+    /** @type {import('@/lib/event-helpers').EventData} */ ev,
+    /** @type {import('react').MouseEvent} */ clickEvent,
+  ) => {
     clickEvent.preventDefault();
     clickEvent.stopPropagation();
 
@@ -900,7 +903,10 @@ export default function RunTogetherPage() {
    * @param {import('react').MouseEvent} clickEvent - 點擊事件。
    * @returns {Promise<void>}
    */
-  const handleLeaveClick = useCallback(async (ev, clickEvent) => {
+  const handleLeaveClick = useCallback(async (
+    /** @type {import('@/lib/event-helpers').EventData} */ ev,
+    /** @type {import('react').MouseEvent} */ clickEvent,
+  ) => {
     clickEvent.preventDefault();
     clickEvent.stopPropagation();
 
@@ -968,7 +974,7 @@ export default function RunTogetherPage() {
    * 開啟編輯活動表單。
    * @param {object} ev - 活動資料。
    */
-  const handleEditEvent = useCallback((ev) => {
+  const handleEditEvent = useCallback((/** @type {import('@/lib/event-helpers').EventData} */ ev) => {
     setEditingEvent(ev);
   }, []);
 
@@ -984,7 +990,7 @@ export default function RunTogetherPage() {
    * @param {object} changedData - 含 id 與變更欄位的物件。
    * @returns {Promise<void>}
    */
-  const handleEditSubmit = useCallback(async (changedData) => {
+  const handleEditSubmit = useCallback(async (/** @type {{ id: string, [key: string]: unknown }} */ changedData) => {
     const { id, ...fields } = changedData;
     setIsUpdating(true);
     try {
@@ -1014,7 +1020,7 @@ export default function RunTogetherPage() {
    * 開啟刪除活動確認對話框。
    * @param {object} ev - 活動資料。
    */
-  const handleDeleteEventRequest = useCallback((ev) => {
+  const handleDeleteEventRequest = useCallback((/** @type {import('@/lib/event-helpers').EventData} */ ev) => {
     setDeletingEventId(String(ev.id));
     setDeleteError('');
   }, []);
@@ -1032,7 +1038,7 @@ export default function RunTogetherPage() {
    * @param {string} eventId - 要刪除的活動 ID。
    * @returns {Promise<void>}
    */
-  const handleDeleteConfirm = useCallback(async (eventId) => {
+  const handleDeleteConfirm = useCallback(async (/** @type {string} */ eventId) => {
     setIsDeletingEvent(true);
     setDeleteError('');
     try {
@@ -1469,7 +1475,7 @@ export default function RunTogetherPage() {
                     >
                       <option value="">所有區域</option>
                       {filterCity
-                        && taiwanLocations[filterCity]?.map((dist) => (
+                        && taiwanLocations[filterCity]?.map((/** @type {string} */ dist) => (
                           <option key={dist} value={dist}>
                             {dist}
                           </option>
@@ -1636,7 +1642,7 @@ export default function RunTogetherPage() {
                       請選擇區域
                     </option>
                     {selectedCity
-                      && taiwanLocations[selectedCity]?.map((dist) => (
+                      && taiwanLocations[selectedCity]?.map((/** @type {string} */ dist) => (
                         <option key={dist} value={dist}>
                           {dist}
                         </option>
