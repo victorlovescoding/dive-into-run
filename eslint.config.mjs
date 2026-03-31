@@ -39,8 +39,8 @@ export default [
     rules: {
       // ===== 與專案現有程式碼相容的調整 =====
 
-      // 允許 console（開發階段常用）
-      'no-console': 'warn',
+      // console.log 警告，但允許 console.warn / console.error（錯誤紀錄用途）
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
 
       // 允許未使用的變數被標記為警告而非錯誤
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
