@@ -1,0 +1,76 @@
+/* EventDeleteConfirm.module.css */
+
+.dialog {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+  padding: 32px;
+  max-width: 380px;
+  width: 90vw;
+  text-align: center;
+}
+
+.message {
+  font-size: 1.1rem;
+  color: #202124;
+  font-weight: 500;
+  margin: 0 0 24px 0;
+}
+
+.errorAlert {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: #fdecea;
+  color: #d32f2f;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.confirmButton {
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  padding: 10px 28px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.confirmButton:hover {
+  background-color: #b71c1c;
+}
+
+.confirmButton:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  background: transparent;
+  color: #673ab7;
+  border: 1px solid #673ab7;
+  padding: 10px 28px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.cancelButton:hover {
+  background: rgba(103, 58, 183, 0.06);
+}
+
+.cancelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

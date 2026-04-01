@@ -1,0 +1,29 @@
+E2E Tests (Firebase Emulator) — Run: 2026-03-31
+Config: playwright.emulator.config.mjs
+Auth: Firebase Auth Emulator (port 9099)
+Firestore: Firestore Emulator (port 8080)
+Dev server: NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true npm run dev
+
+Results: 12 passed, 0 failed (17.2s)
+
+Tests:
+  ✅ creator should see three-dot menu on their event card (SC-005)
+  ✅ non-creator should NOT see three-dot menu (SC-005)
+  ✅ clicking three-dot should show edit and delete options (SC-001)
+  ✅ edit form should prefill with existing event data (SC-002)
+  ✅ "編輯完成" should be disabled initially and enabled after modification (SC-003)
+  ✅ full edit flow: modify title → submit → verify updated (US1)
+  ✅ cancel edit should not change event data (US1-AC8)
+  ✅ delete confirmation dialog should appear with proper content (FR-010)
+  ✅ clicking "否" should close dialog and keep event (US2-AC2)
+  ✅ full delete flow: confirm → event removed from list (US2-AC3, SC-004)
+  ✅ dropdown should close when clicking outside (FR-003)
+  ✅ unauthenticated user should NOT see three-dot menu
+
+Fixes applied during E2E setup:
+  - global-setup.js: seedDoc now passes idToken (Bearer token) to satisfy Firestore security rules
+  - event-edit-delete.spec.js: fixed button regex /^是$/ → /是，確認刪除/ and /^否$/ → /否，取消/
+  - window.d.ts: added Window type augmentation for testFirebaseHelpers
+  - EventEditForm.jsx: fixed TS2339 by using intermediate any cast for toDatetimeLocal()
+  - firebase-client.js: exposes window.testFirebaseHelpers in emulator mode only
+

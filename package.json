@@ -10,7 +10,8 @@
     "lint:changed": "bash scripts/lint-changed.sh",
     "test": "vitest",
     "type-check": "tsc -p tsconfig.check.json",
-    "type-check:changed": "bash scripts/type-check-changed.sh"
+    "type-check:changed": "bash scripts/type-check-changed.sh",
+    "test:e2e:emulator": "npx playwright test --config playwright.emulator.config.mjs"
   },
   "dependencies": {
     "@mapbox/polyline": "^1.2.1",

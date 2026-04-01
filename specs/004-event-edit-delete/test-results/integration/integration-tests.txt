@@ -1,0 +1,43 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/chentzuyu/Desktop/dive-into-run[39m
+
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx[2m > [22mIntegration: EventDeleteConfirm[2m > [22mshould render confirmation message "確定要刪除活動？" (FR-010)[32m 58[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx[2m > [22mIntegration: EventCardMenu[2m > [22mshould render three-dot button when user is the event creator (FR-001)[32m 222[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx[2m > [22mIntegration: EventCardMenu[2m > [22mshould NOT render three-dot button when user is NOT the creator (FR-001)[32m 6[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx[2m > [22mIntegration: EventCardMenu[2m > [22mshould NOT render three-dot button when user is not logged in (Edge Case)[32m 4[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx[2m > [22mIntegration: EventCardMenu[2m > [22mshould show dropdown with "編輯活動" and "刪除活動" when three-dot is clicked (FR-002)[32m 84[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx[2m > [22mIntegration: EventDeleteConfirm[2m > [22mshould render "是" and "否" buttons (FR-010)[32m 185[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx[2m > [22mIntegration: EventDeleteConfirm[2m > [22mshould be a custom dialog, not a native confirm (FR-010)[32m 20[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx[2m > [22mIntegration: EventDeleteConfirm[2m > [22mshould call onCancel when "否" is clicked (US2-AC2)[32m 53[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould prefill form with existing event data (FR-004)[32m 105[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould prefill pace dropdowns with correct minutes and seconds[32m 21[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould prefill description textarea[32m 19[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx[2m > [22mIntegration: EventDeleteConfirm[2m > [22mshould call onConfirm with eventId when "是" is clicked (US2-AC3)[32m 31[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx[2m > [22mIntegration: EventDeleteConfirm[2m > [22mshould disable both buttons while deletion is in progress[32m 20[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx[2m > [22mIntegration: EventDeleteConfirm[2m > [22mshould display error message when deleteError is provided (FR-013)[32m 14[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx[2m > [22mIntegration: EventDeleteConfirm[2m > [22mshould NOT display error message when deleteError is not provided[32m 3[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventDeleteConfirm.test.jsx[2m > [22mIntegration: EventDeleteConfirm[2m > [22mshould have proper aria-modal attribute on dialog[32m 14[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx[2m > [22mIntegration: EventCardMenu[2m > [22mshould NOT show dropdown before three-dot button is clicked[32m 4[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx[2m > [22mIntegration: EventCardMenu[2m > [22mshould close dropdown when clicking outside (FR-003)[32m 61[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould show "取消編輯" and "編輯完成" buttons (FR-005)[32m 232[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould NOT show "建立活動" or "取消" buttons (distinguish from create form)[32m 33[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould disable "編輯完成" button when no changes have been made (FR-006)[32m 30[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx[2m > [22mIntegration: EventCardMenu[2m > [22mshould call onEdit with event when "編輯活動" is clicked[32m 40[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx[2m > [22mIntegration: EventCardMenu[2m > [22mshould call onDelete with event when "刪除活動" is clicked[32m 31[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx[2m > [22mIntegration: EventCardMenu[2m > [22mshould close dropdown after selecting a menu item[32m 34[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventCardMenu.test.jsx[2m > [22mIntegration: EventCardMenu[2m > [22mshould toggle dropdown off when clicking three-dot button again[32m 26[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould enable "編輯完成" button when a field is modified (FR-007)[32m 104[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould disable "編輯完成" button again when field is reverted to original value (AC-3 of Story 3)[32m 164[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould call onSubmit with updated data when "編輯完成" is clicked (FR-008)[32m 63[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould call onCancel when "取消編輯" is clicked (US1-AC8)[32m 19[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould set maxParticipants minimum to current participantsCount (FR-015)[32m 8[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould use min=2 when participantsCount is less than 2[32m 8[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould detect changes in numeric fields (distanceKm)[32m 39[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould detect changes in description textarea[32m 55[2mms[22m[39m
+ [32m✓[39m specs/004-event-edit-delete/tests/integration/EventEditForm.test.jsx[2m > [22mIntegration: EventEditForm[2m > [22mshould disable submit button and show loading text while submitting[32m 12[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[32m34 passed[39m[22m[90m (34)[39m
+[2m   Start at [22m 17:37:01
+[2m   Duration [22m 1.79s[2m (transform 259ms, setup 326ms, import 668ms, tests 1.83s, environment 1.31s)[22m
+

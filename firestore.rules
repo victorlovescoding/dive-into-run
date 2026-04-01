@@ -1,8 +1,113 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /posts/{postId} {
+      allow read: if true;
+
+      allow create: if isSignedIn()
+        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.content is string
+        && request.resource.data.content.size() <= 5000;
+
+      allow update, delete: if isSignedIn()
+        && request.auth.uid == resource.data.authorUid;
+
+      match /likes/{uid} {
+        allow read: if isSignedIn();
+        allow create, delete: if isSignedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // collectionGroup('likes') 需要的規則
+    match /{path=**}/likes/{uid} {
+      allow read: if isSignedIn();
+      allow create, delete: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    match /posts/{postId}/comments/{commentId} {
+      allow read: if true;
+
+      allow create: if isSignedIn()
+        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.comment is string
+        && request.resource.data.comment.size() <= 500;
+
+      allow update, delete: if isSignedIn()
+        && request.auth.uid == resource.data.authorUid;
+    }
+
+    // =========================
+    // ✅ events + participants
+    // =========================
+
+    // collectionGroup('participants') 需要的全域規則
+    match /{path=**}/participants/{uid} {
+      allow read: if true;
+    }
+
+    match /events/{eventId} {
+      allow read: if true;
+
+      allow create: if isSignedIn()
+        && request.resource.data.hostUid == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.time is timestamp
+        && request.resource.data.registrationDeadline is timestamp
+        && request.resource.data.distanceKm is number
+        && request.resource.data.maxParticipants is number;
+
+      // 主揪才能刪活動
+      allow delete: if isSignedIn()
+        && request.auth.uid == resource.data.hostUid;
+
+      // 主揪：可更新任何欄位（但 maxParticipants 不可低於目前報名人數）；非主揪：只能更新名額相關欄位
+      allow update: if (
+        isSignedIn() && request.auth.uid == resource.data.hostUid
+        && (!request.resource.data.keys().hasAny(['maxParticipants'])
+            || request.resource.data.maxParticipants >= resource.data.participantsCount)
+      ) || (
+        isSignedIn()
+        && request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['remainingSeats', 'participantsCount'])
+        && request.resource.data.remainingSeats is number
+        && request.resource.data.participantsCount is number
+        && request.resource.data.remainingSeats >= 0
+        && request.resource.data.participantsCount >= 0
+        && (request.resource.data.remainingSeats + request.resource.data.participantsCount)
+            == resource.data.maxParticipants
+      );
+
+      // participants 子集合
+      match /participants/{uid} {
+        allow read: if true;
+
+        allow create: if isSignedIn()
+          && request.auth.uid == uid
+          && request.resource.data.uid == uid
+          && request.resource.data.eventId == eventId
+          && request.resource.data.name is string
+          && request.resource.data.photoURL is string;
+
+        // ✅ 本人可退出（刪自己的紀錄），或主揪刪除整個活動時可刪所有 participants
+        allow delete: if isSignedIn() && (
+          request.auth.uid == uid
+          || get(/databases/$(database)/documents/events/$(eventId)).data.hostUid == request.auth.uid
+        );
+
+        allow update: if false;
+      }
     }
   }
 }

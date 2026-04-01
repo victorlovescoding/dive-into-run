@@ -18,13 +18,32 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'leaflet/images/marker-shadow.png',
 });
 
+/**
+ * 從 FeatureGroup 收集所有 Polyline 座標，每條線獨立一個子陣列。
+ * @param {L.FeatureGroup} featureGroup - 包含 polyline 的圖層群組。
+ * @returns {Array<Array<{lat: number, lng: number}>>|null} 多段座標，無圖層回傳 null。
+ */
+function collectAllCoords(featureGroup) {
+  /** @type {Array<Array<{lat: number, lng: number}>>} */
+  const all = [];
+  featureGroup.eachLayer((layer) => {
+    if (layer instanceof L.Polyline) {
+      const latlngs = /** @type {L.LatLng[]} */ (layer.getLatLngs());
+      const coords = latlngs.map((ll) => ({ lat: ll.lat, lng: ll.lng }));
+      if (coords.length > 0) all.push(coords);
+    }
+  });
+  return all.length > 0 ? all : null;
+}
+
 // Draw mode: Leaflet.draw integration
 /**
- *
- * @param {object} root0
- * @param {function} root0.onRouteDrawn
+ * Leaflet.draw 繪圖控制器，支援載入既有路線作為可編輯 polyline。
+ * @param {object} props
+ * @param {(coords: Array<Array<{lat: number, lng: number}>>|null) => void} props.onRouteDrawn - 路線變更回呼。
+ * @param {string[]} [props.initialEncodedPolylines] - 既有路線的 encoded polyline 陣列，進入 draw 模式時載入。
  */
-function DrawControl({ onRouteDrawn }) {
+function DrawControl({ onRouteDrawn, initialEncodedPolylines }) {
   const map = useMap();
 
   useEffect(() => {
@@ -54,40 +73,59 @@ function DrawControl({ onRouteDrawn }) {
 
     map.addControl(drawControl);
 
+    // 載入既有路線到 editableLayers，使其可編輯
+    if (Array.isArray(initialEncodedPolylines) && initialEncodedPolylines.length > 0) {
+      try {
+        /** @type {L.LatLngBounds[]} */
+        const allBounds = [];
+        initialEncodedPolylines.forEach((encoded) => {
+          const decoded = polyline.decode(encoded);
+          const latlngs = decoded.map(([lat, lng]) => L.latLng(lat, lng));
+          const line = L.polyline(latlngs, { color: '#f00', weight: 5, opacity: 0.7 });
+          editableLayers.addLayer(line);
+          if (latlngs.length > 0) allBounds.push(line.getBounds());
+        });
+        if (allBounds.length > 0) {
+          const combined = allBounds.reduce((acc, b) => acc.extend(b));
+          map.fitBounds(combined, { padding: [18, 18] });
+        }
+      } catch (err) {
+        console.error('Failed to load initial routes for editing:', err);
+      }
+    }
+
     const handleCreated = (e) => {
       const { layer } = e;
       editableLayers.addLayer(layer);
+      if (typeof onRouteDrawn === 'function') {
+        onRouteDrawn(collectAllCoords(editableLayers));
+      }
+    };
 
-      if (layer instanceof L.Polyline) {
-        const latlngs = layer.getLatLngs().map((latlng) => ({
-          lat: latlng.lat,
-          lng: latlng.lng,
-        }));
-
-        if (typeof onRouteDrawn === 'function') {
-          onRouteDrawn(latlngs);
-        }
+    const handleEdited = () => {
+      if (typeof onRouteDrawn === 'function') {
+        onRouteDrawn(collectAllCoords(editableLayers));
       }
     };
 
     const handleDeleted = () => {
-      if (editableLayers.getLayers().length === 0) {
-        if (typeof onRouteDrawn === 'function') {
-          onRouteDrawn(null);
-        }
+      if (typeof onRouteDrawn === 'function') {
+        onRouteDrawn(collectAllCoords(editableLayers));
       }
     };
 
     map.on(L.Draw.Event.CREATED, handleCreated);
+    map.on(L.Draw.Event.EDITED, handleEdited);
     map.on(L.Draw.Event.DELETED, handleDeleted);
 
     return () => {
       map.removeControl(drawControl);
       map.removeLayer(editableLayers);
       map.off(L.Draw.Event.CREATED, handleCreated);
+      map.off(L.Draw.Event.EDITED, handleEdited);
       map.off(L.Draw.Event.DELETED, handleDeleted);
     };
-  }, [map, onRouteDrawn]);
+  }, [map, onRouteDrawn, initialEncodedPolylines]);
 
   return null;
 }
@@ -125,38 +163,34 @@ function SearchField() {
   return null;
 }
 
-// View mode: render route polyline + fit bounds
+// View mode: render route polylines + fit bounds
 /**
- *
- * @param {object} root0
- * @param {string} root0.encodedPolyline
- * @param {object} root0.bbox
+ * 顯示多條路線的唯讀檢視元件。
+ * @param {object} props
+ * @param {string[]} props.encodedPolylines - encoded polyline 字串陣列。
+ * @param {object} [props.bbox] - 邊界範圍。
  */
-function RouteViewer({ encodedPolyline, bbox }) {
+function RouteViewer({ encodedPolylines, bbox }) {
   const map = useMap();
 
-  const latlngs = useMemo(() => {
-    if (!encodedPolyline) return null;
+  const allLines = useMemo(() => {
+    if (!Array.isArray(encodedPolylines) || encodedPolylines.length === 0) return null;
     try {
-      const decoded = polyline.decode(encodedPolyline);
-      // decoded: [[lat, lng], ...]
-      return decoded.map(([lat, lng]) => [lat, lng]);
+      return encodedPolylines
+        .map((encoded) => polyline.decode(encoded).map(([lat, lng]) => [lat, lng]))
+        .filter((coords) => coords.length > 0);
     } catch (e) {
-      console.error('decode polyline failed:', e);
+      console.error('decode polylines failed:', e);
       return null;
     }
-  }, [encodedPolyline]);
+  }, [encodedPolylines]);
 
   useEffect(() => {
-    if (!latlngs || latlngs.length === 0) return;
+    if (!allLines || allLines.length === 0) return undefined;
 
-    const line = L.polyline(latlngs, {
-      color: '#f00',
-      weight: 5,
-      opacity: 0.8,
-    });
-
-    line.addTo(map);
+    const layers = allLines.map((latlngs) =>
+      L.polyline(latlngs, { color: '#f00', weight: 5, opacity: 0.8 }).addTo(map),
+    );
 
     // 優先用 bbox fitBounds（更快），沒有 bbox 才用線段本身
     try {
@@ -165,33 +199,39 @@ function RouteViewer({ encodedPolyline, bbox }) {
         const ne = L.latLng(bbox.maxLat, bbox.maxLng);
         map.fitBounds(L.latLngBounds(sw, ne), { padding: [18, 18] });
       } else {
-        map.fitBounds(line.getBounds(), { padding: [18, 18] });
+        const combined = layers.reduce(
+          (acc, line) => acc.extend(line.getBounds()),
+          L.latLngBounds(layers[0].getBounds()),
+        );
+        map.fitBounds(combined, { padding: [18, 18] });
       }
     } catch (e) {
       // 忽略 fit 失敗
     }
 
     return () => {
-      map.removeLayer(line);
+      layers.forEach((layer) => map.removeLayer(layer));
     };
-  }, [map, latlngs, bbox]);
+  }, [map, allLines, bbox]);
 
   return null;
 }
 
 /**
- *
- * @param {object} root0
- * @param {'draw'|'view'} [root0.mode]
- * @param {function} [root0.onRouteDrawn]
- * @param {string} [root0.encodedPolyline]
- * @param {object} [root0.bbox]
- * @param {number} [root0.height]
+ * 活動地圖元件，支援繪製（draw）和檢視（view）模式。
+ * @param {object} props
+ * @param {'draw'|'view'} [props.mode] - 地圖模式。
+ * @param {(coords: Array<Array<{lat: number, lng: number}>>|null) => void} [props.onRouteDrawn] - draw 模式路線變更回呼。
+ * @param {string[]} [props.encodedPolylines] - view 模式用的 encoded polyline 陣列。
+ * @param {string[]} [props.initialEncodedPolylines] - draw 模式用的既有路線 encoded polyline 陣列。
+ * @param {object} [props.bbox] - 邊界範圍。
+ * @param {number} [props.height] - 地圖高度（px）。
  */
 export default function EventMap({
   mode = 'draw',
   onRouteDrawn,
-  encodedPolyline,
+  encodedPolylines,
+  initialEncodedPolylines,
   bbox,
   height = 500,
 }) {
@@ -214,11 +254,14 @@ export default function EventMap({
       {mode === 'draw' && (
         <>
           <SearchField />
-          <DrawControl onRouteDrawn={onRouteDrawn} />
+          <DrawControl
+            onRouteDrawn={onRouteDrawn}
+            initialEncodedPolylines={initialEncodedPolylines}
+          />
         </>
       )}
 
-      {mode === 'view' && <RouteViewer encodedPolyline={encodedPolyline} bbox={bbox} />}
+      {mode === 'view' && <RouteViewer encodedPolylines={encodedPolylines} bbox={bbox} />}
     </MapContainer>
   );
 }

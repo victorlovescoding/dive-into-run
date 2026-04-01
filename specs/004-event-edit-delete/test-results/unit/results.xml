@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="14" failures="7" errors="0" time="0.030806">
+    <testsuite name="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" timestamp="2026-03-29T16:35:47.177Z" hostname="Mac" tests="14" failures="7" errors="0" skipped="0" time="0.030806">
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: updateEvent &gt; should update event fields in Firestore and return updated data" time="0.022182625">
+            <failure message="updateEvent is not implemented yet" type="Error">
+Error: updateEvent is not implemented yet
+ ❯ updateEvent src/lib/firebase-events.js:514:9
+ ❯ specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js:87:26
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: updateEvent &gt; should throw error when eventId is missing" time="0.001579584">
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: updateEvent &gt; should throw error when updatedFields is empty or not an object" time="0.000356958">
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: updateEvent &gt; should reject maxParticipants lower than current participantsCount (FR-015)" time="0.002542459">
+            <failure message="expected [Function] to throw error matching /人數上限/ but got &apos;updateEvent is not implemented yet&apos;" type="AssertionError">
+AssertionError: expected [Function] to throw error matching /人數上限/ but got &apos;updateEvent is not implemented yet&apos;
+
+- Expected: 
+/人數上限/
+
++ Received: 
+&quot;updateEvent is not implemented yet&quot;
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: updateEvent &gt; should allow maxParticipants equal to current participantsCount" time="0.000441583">
+            <failure message="updateEvent is not implemented yet" type="Error">
+Error: updateEvent is not implemented yet
+ ❯ updateEvent src/lib/firebase-events.js:514:9
+ ❯ specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js:139:26
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: updateEvent &gt; should recalculate remainingSeats when maxParticipants is updated" time="0.00034475">
+            <failure message="updateEvent is not implemented yet" type="Error">
+Error: updateEvent is not implemented yet
+ ❯ updateEvent src/lib/firebase-events.js:514:9
+ ❯ specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js:157:26
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: updateEvent &gt; should handle update failure gracefully" time="0.000380166">
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: updateEvent &gt; should throw error when event does not exist" time="0.000172167">
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: deleteEvent &gt; should delete the event document from Firestore" time="0.0004045">
+            <failure message="deleteEvent is not implemented yet" type="Error">
+Error: deleteEvent is not implemented yet
+ ❯ deleteEvent src/lib/firebase-events.js:523:9
+ ❯ specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js:202:26
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: deleteEvent &gt; should also delete all participants in the subcollection (FR-011)" time="0.000322333">
+            <failure message="deleteEvent is not implemented yet" type="Error">
+Error: deleteEvent is not implemented yet
+ ❯ deleteEvent src/lib/firebase-events.js:523:9
+ ❯ specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js:227:26
+            </failure>
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: deleteEvent &gt; should throw error when eventId is missing" time="0.00014125">
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: deleteEvent &gt; should throw error when event does not exist" time="0.000229542">
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: deleteEvent &gt; should handle delete failure gracefully" time="0.0001485">
+        </testcase>
+        <testcase classname="specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js" name="Unit: deleteEvent &gt; should succeed even when event has no participants" time="0.000164208">
+            <failure message="deleteEvent is not implemented yet" type="Error">
+Error: deleteEvent is not implemented yet
+ ❯ deleteEvent src/lib/firebase-events.js:523:9
+ ❯ specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js:278:26
+            </failure>
+        </testcase>
+    </testsuite>
+</testsuites>

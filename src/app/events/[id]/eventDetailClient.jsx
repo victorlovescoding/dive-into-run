@@ -7,7 +7,9 @@
 
 import { useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 import styles from '../events.module.css';
 import { AuthContext } from '@/contexts/AuthContext';
 import {
@@ -16,8 +18,13 @@ import {
   fetchMyJoinedEventsForIds,
   joinEvent,
   leaveEvent,
+  updateEvent,
+  deleteEvent,
 } from '@/lib/firebase-events';
-import { buildUserPayload } from '@/lib/event-helpers';
+import { buildUserPayload, normalizeRoutePolylines } from '@/lib/event-helpers';
+import EventCardMenu from '@/components/EventCardMenu';
+import EventEditForm from '@/components/EventEditForm';
+import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 
 // Leaflet 只能在瀏覽器端跑
 const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
@@ -126,6 +133,7 @@ function formatPace(paceSec, fallbackText = '') {
  */
 export default function EventDetailClient({ id }) {
   const { user } = useContext(AuthContext);
+  const router = useRouter();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -140,6 +148,15 @@ export default function EventDetailClient({ id }) {
   // join/leave UI
   const [actionMessage, setActionMessage] = useState(null);
   const [pending, setPending] = useState(null); // 'joining' | 'leaving' | null
+
+  // edit/delete UI
+  const [editingEvent, setEditingEvent] = useState(
+    /** @type {import('@/lib/event-helpers').EventData|null} */ (null),
+  );
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [deletingEventId, setDeletingEventId] = useState(/** @type {string|null} */ (null));
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [isJoined, setIsJoined] = useState(false);
 
   const refreshParticipants = useCallback(async () => {
@@ -226,8 +243,9 @@ export default function EventDetailClient({ id }) {
   }, [user?.uid, id]);
 
   // overlay 開啟時鎖住 body 滾動
+  const hasOverlay = isParticipantsOpen || editingEvent !== null || deletingEventId !== null;
   useEffect(() => {
-    if (isParticipantsOpen) {
+    if (hasOverlay) {
       const prevOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => {
@@ -235,7 +253,109 @@ export default function EventDetailClient({ id }) {
       };
     }
     return undefined;
-  }, [isParticipantsOpen]);
+  }, [hasOverlay]);
+
+  // ── 編輯 handlers ──
+
+  /**
+   * 開啟編輯表單。
+   * @param {import('@/lib/event-helpers').EventData} ev - 活動資料。
+   */
+  const handleEditEvent = useCallback(
+    (/** @type {import('@/lib/event-helpers').EventData} */ ev) => {
+      setEditingEvent(ev);
+    },
+    [],
+  );
+
+  /** 取消編輯。 */
+  const handleEditCancel = useCallback(() => {
+    setEditingEvent(null);
+  }, []);
+
+  /**
+   * 提交活動編輯更新。
+   * @param {object} changedData - 含 id 與變更欄位的物件。
+   * @returns {Promise<void>}
+   */
+  const handleEditSubmit = useCallback(
+    async (/** @type {{ id: string, [key: string]: unknown }} */ changedData) => {
+      const { id: eventId, ...fields } = changedData;
+      setIsUpdating(true);
+      try {
+        await updateEvent(String(eventId), fields);
+        const mergedFields = { ...fields };
+        if (typeof mergedFields.time === 'string' && mergedFields.time) {
+          mergedFields.time = FirestoreTimestamp.fromDate(new Date(mergedFields.time));
+        }
+        if (
+          typeof mergedFields.registrationDeadline === 'string' &&
+          mergedFields.registrationDeadline
+        ) {
+          mergedFields.registrationDeadline = FirestoreTimestamp.fromDate(
+            new Date(/** @type {string} */ (mergedFields.registrationDeadline)),
+          );
+        }
+        setEvent((prev) => {
+          if (!prev) return prev;
+          const updated = { ...prev, ...mergedFields };
+          // 若 route 被清除，從本地 state 移除
+          if ('route' in mergedFields && mergedFields.route === null) {
+            delete updated.route;
+          }
+          return updated;
+        });
+        setEditingEvent(null);
+      } catch {
+        setActionMessage({ type: 'error', message: '更新活動失敗，請再試一次' });
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [],
+  );
+
+  // ── 刪除 handlers ──
+
+  /**
+   * 開啟刪除確認對話框。
+   * @param {import('@/lib/event-helpers').EventData} ev - 活動資料。
+   */
+  const handleDeleteEventRequest = useCallback(
+    (/** @type {import('@/lib/event-helpers').EventData} */ ev) => {
+      setDeletingEventId(String(ev.id));
+      setDeleteError('');
+    },
+    [],
+  );
+
+  /** 取消刪除。 */
+  const handleDeleteCancel = useCallback(() => {
+    setDeletingEventId(null);
+    setDeleteError('');
+  }, []);
+
+  /**
+   * 確認刪除活動，成功後導回活動列表。
+   * @param {string} eventId - 要刪除的活動 ID。
+   * @returns {Promise<void>}
+   */
+  const handleDeleteConfirm = useCallback(
+    async (/** @type {string} */ eventId) => {
+      setIsDeletingEvent(true);
+      setDeleteError('');
+      try {
+        await deleteEvent(String(eventId));
+        setDeletingEventId(null);
+        router.push('/events');
+      } catch {
+        setDeleteError('發生錯誤，請再試一次');
+      } finally {
+        setIsDeletingEvent(false);
+      }
+    },
+    [router],
+  );
 
   const statusText = useMemo(() => {
     if (!event) return '';
@@ -245,7 +365,7 @@ export default function EventDetailClient({ id }) {
     });
   }, [event]);
 
-  const hasRoute = Boolean(event?.route?.polyline);
+  const hasRoute = normalizeRoutePolylines(event?.route).length > 0;
 
   return (
     <div className={styles.pageContainer}>
@@ -273,7 +393,15 @@ export default function EventDetailClient({ id }) {
             <div className={styles.eventCard}>
               <div className={styles.detailHeader}>
                 <div className={styles.eventTitle}>{event.title}</div>
-                <div className={styles.statusPill}>{statusText}</div>
+                <div className={styles.detailHeaderRight}>
+                  <div className={styles.statusPill}>{statusText}</div>
+                  <EventCardMenu
+                    event={event}
+                    currentUserUid={user?.uid || null}
+                    onEdit={handleEditEvent}
+                    onDelete={handleDeleteEventRequest}
+                  />
+                </div>
               </div>
 
               <div className={styles.eventMeta}>
@@ -574,7 +702,7 @@ export default function EventDetailClient({ id }) {
                   <div className={styles.detailMapContainer}>
                     <EventMap
                       mode="view"
-                      encodedPolyline={event.route.polyline}
+                      encodedPolylines={normalizeRoutePolylines(event.route)}
                       bbox={event.route.bbox}
                       height={420}
                     />
@@ -670,6 +798,31 @@ export default function EventDetailClient({ id }) {
           </>
         )}
       </div>
+
+      {/* 編輯活動 overlay */}
+      {editingEvent && (
+        <div className={styles.editFormOverlay}>
+          <EventEditForm
+            event={editingEvent}
+            onSubmit={handleEditSubmit}
+            onCancel={handleEditCancel}
+            isSubmitting={isUpdating}
+          />
+        </div>
+      )}
+
+      {/* 刪除確認 overlay */}
+      {deletingEventId && (
+        <div className={styles.deleteConfirmOverlay}>
+          <EventDeleteConfirm
+            eventId={deletingEventId}
+            onConfirm={handleDeleteConfirm}
+            onCancel={handleDeleteCancel}
+            isDeleting={isDeletingEvent}
+            deleteError={deleteError}
+          />
+        </div>
+      )}
     </div>
   );
 }
