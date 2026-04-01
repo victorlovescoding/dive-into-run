@@ -1,5 +1,16 @@
 {
   "version": "0.2",
   "language": "en",
-  "words": ["firestore", "Firestore", "Firebase", "firebase", "Turbopack", "fartlek", "Fartlek"]
+  "words": [
+    "firestore",
+    "Firestore",
+    "Firebase",
+    "firebase",
+    "Turbopack",
+    "fartlek",
+    "Fartlek",
+    "subcollections",
+    "subcollection",
+    "WCAG"
+  ]
 }

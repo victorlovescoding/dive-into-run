@@ -108,3 +108,12 @@ const el = /** @type {HTMLInputElement} */ (document.getElementById('x'));
 
 - All secrets (API keys, tokens) in `.env` only — never commit them
 - `.env` must be in `.gitignore`
+
+## Active Technologies
+
+- JavaScript (ES6+), JSDoc type checking (checkJs: true) + Next.js 15 (App Router), React 19, Firebase v9+ (Firestore) (005-event-comments)
+- Firestore — subcollections `events/{eventId}/comments`, `comments/{commentId}/history` (005-event-comments)
+
+## Recent Changes
+
+- 005-event-comments: Added JavaScript (ES6+), JSDoc type checking (checkJs: true) + Next.js 15 (App Router), React 19, Firebase v9+ (Firestore)
