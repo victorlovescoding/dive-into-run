@@ -5,7 +5,20 @@
  * TDD stub — functions are declared but NOT implemented yet.
  */
 
-// eslint-disable-next-line no-unused-vars
+import {
+  doc,
+  collection,
+  query,
+  getDocs,
+  getDoc,
+  addDoc,
+  orderBy,
+  limit,
+  startAfter,
+  serverTimestamp,
+  runTransaction,
+  writeBatch,
+} from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 
 /**
@@ -40,9 +53,16 @@ import { db } from '@/lib/firebase-client';
  * @returns {Promise<FetchCommentsResult>} 留言與分頁游標。
  */
 export async function fetchComments(eventId, limitCount = 15) {
-  void eventId;
-  void limitCount;
-  throw new Error('Not implemented');
+  if (!eventId) throw new Error('fetchComments: eventId is required');
+
+  const ref = collection(db, 'events', eventId, 'comments');
+  const q = query(ref, orderBy('createdAt', 'desc'), limit(limitCount));
+  const snap = await getDocs(q);
+  /** @type {CommentData[]} */
+  const comments = snap.docs.map((d) => /** @type {CommentData} */ ({ id: d.id, ...d.data() }));
+  const lastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+
+  return { comments, lastDoc };
 }
 
 /**
@@ -53,10 +73,16 @@ export async function fetchComments(eventId, limitCount = 15) {
  * @returns {Promise<FetchCommentsResult>} 留言與分頁游標。
  */
 export async function fetchMoreComments(eventId, afterDoc, limitCount = 15) {
-  void eventId;
-  void afterDoc;
-  void limitCount;
-  throw new Error('Not implemented');
+  if (!eventId) throw new Error('fetchMoreComments: eventId is required');
+
+  const ref = collection(db, 'events', eventId, 'comments');
+  const q = query(ref, orderBy('createdAt', 'desc'), startAfter(afterDoc), limit(limitCount));
+  const snap = await getDocs(q);
+  /** @type {CommentData[]} */
+  const comments = snap.docs.map((d) => /** @type {CommentData} */ ({ id: d.id, ...d.data() }));
+  const lastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+
+  return { comments, lastDoc };
 }
 
 /**
@@ -66,9 +92,13 @@ export async function fetchMoreComments(eventId, afterDoc, limitCount = 15) {
  * @returns {Promise<CommentData | null>} 留言資料或 null。
  */
 export async function getCommentById(eventId, commentId) {
-  void eventId;
-  void commentId;
-  throw new Error('Not implemented');
+  if (!eventId || !commentId) return null;
+
+  const ref = doc(db, 'events', eventId, 'comments', commentId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return null;
+
+  return /** @type {CommentData} */ ({ id: snap.id, ...snap.data() });
 }
 
 /**
@@ -79,10 +109,25 @@ export async function getCommentById(eventId, commentId) {
  * @returns {Promise<{ id: string }>} 新留言 ID。
  */
 export async function addComment(eventId, user, content) {
-  void eventId;
-  void user;
-  void content;
-  throw new Error('Not implemented');
+  if (!eventId) throw new Error('addComment: eventId is required');
+  if (!user?.uid) throw new Error('addComment: user.uid is required');
+
+  const trimmed = content.trim();
+  if (!trimmed) throw new Error('addComment: content is required');
+  if (trimmed.length > 500) throw new Error('addComment: content exceeds 500 characters');
+
+  const ref = collection(db, 'events', eventId, 'comments');
+  const docRef = await addDoc(ref, {
+    authorUid: user.uid,
+    authorName: user.name || '',
+    authorPhotoURL: user.photoURL || '',
+    content: trimmed,
+    createdAt: serverTimestamp(),
+    updatedAt: null,
+    isEdited: false,
+  });
+
+  return { id: docRef.id };
 }
 
 /**
@@ -94,11 +139,32 @@ export async function addComment(eventId, user, content) {
  * @returns {Promise<void>}
  */
 export async function updateComment(eventId, commentId, newContent, oldContent) {
-  void eventId;
-  void commentId;
-  void newContent;
-  void oldContent;
-  throw new Error('Not implemented');
+  if (!eventId) throw new Error('updateComment: eventId is required');
+
+  const trimmed = newContent.trim();
+  if (!trimmed) throw new Error('updateComment: newContent is required');
+  if (trimmed.length > 500) throw new Error('updateComment: newContent exceeds 500 characters');
+  if (trimmed === oldContent) throw new Error('updateComment: content unchanged');
+
+  const commentRef = doc(db, 'events', eventId, 'comments', commentId);
+  const historyCol = collection(db, 'events', eventId, 'comments', commentId, 'history');
+  const historyDocRef = doc(historyCol);
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(commentRef);
+    if (!snap.exists()) throw new Error('Comment not found');
+
+    tx.set(historyDocRef, {
+      content: oldContent,
+      editedAt: serverTimestamp(),
+    });
+
+    tx.update(commentRef, {
+      content: trimmed,
+      updatedAt: serverTimestamp(),
+      isEdited: true,
+    });
+  });
 }
 
 /**
@@ -108,9 +174,16 @@ export async function updateComment(eventId, commentId, newContent, oldContent) 
  * @returns {Promise<void>}
  */
 export async function deleteComment(eventId, commentId) {
-  void eventId;
-  void commentId;
-  throw new Error('Not implemented');
+  if (!eventId || !commentId) throw new Error('deleteComment: eventId and commentId are required');
+
+  const commentRef = doc(db, 'events', eventId, 'comments', commentId);
+  const historyRef = collection(db, 'events', eventId, 'comments', commentId, 'history');
+  const historySnap = await getDocs(historyRef);
+
+  const batch = writeBatch(db);
+  historySnap.docs.forEach((d) => batch.delete(d.ref));
+  batch.delete(commentRef);
+  await batch.commit();
 }
 
 /**
@@ -120,7 +193,12 @@ export async function deleteComment(eventId, commentId) {
  * @returns {Promise<CommentHistoryEntry[]>} 編輯記錄列表。
  */
 export async function fetchCommentHistory(eventId, commentId) {
-  void eventId;
-  void commentId;
-  throw new Error('Not implemented');
+  if (!eventId || !commentId)
+    throw new Error('fetchCommentHistory: eventId and commentId are required');
+
+  const ref = collection(db, 'events', eventId, 'comments', commentId, 'history');
+  const q = query(ref, orderBy('editedAt', 'asc'));
+  const snap = await getDocs(q);
+
+  return snap.docs.map((d) => /** @type {CommentHistoryEntry} */ ({ id: d.id, ...d.data() }));
 }

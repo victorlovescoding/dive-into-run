@@ -1,0 +1,133 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dialog {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+  padding: 24px;
+  width: 90vw;
+  max-width: 520px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  color: #1a1a1a;
+}
+
+.closeButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #5f6368;
+  transition: background-color 0.15s;
+}
+
+.closeButton:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.entry {
+  padding: 16px 0;
+  border-bottom: 1px solid #e0e3e7;
+}
+
+.entry:last-child {
+  border-bottom: none;
+}
+
+.entryHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.badgeCurrent {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  background: #673ab7;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.badgeOriginal {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #5f6368;
+  background: #e0e3e7;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.entryTime {
+  font-size: 0.75rem;
+  color: #5f6368;
+}
+
+.entryContent {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #1a1a1a;
+  word-break: break-word;
+}
+
+/* RWD: mobile */
+@media (max-width: 767px) {
+  .dialog {
+    padding: 16px;
+  }
+
+  .entry {
+    padding: 12px 0;
+  }
+
+  .entryTime {
+    font-size: 0.7rem;
+  }
+}

@@ -1,0 +1,104 @@
+.card {
+  padding: 12px 0;
+}
+
+.highlighted {
+  animation: commentHighlight 2s ease-out;
+}
+
+@keyframes commentHighlight {
+  from {
+    background-color: rgba(103, 58, 183, 0.12);
+  }
+  to {
+    background-color: #fff;
+  }
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.avatarFallback {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(103, 58, 183, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #673ab7;
+  flex-shrink: 0;
+}
+
+.meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.authorName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.time {
+  font-size: 0.75rem;
+  color: #5f6368;
+}
+
+.editedBadge {
+  border: none;
+  background: transparent;
+  font-size: 0.75rem;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 0;
+}
+
+.editedBadge:hover {
+  color: #673ab7;
+  text-decoration: underline;
+}
+
+.content {
+  margin: 4px 0 0;
+  padding-left: 48px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #1a1a1a;
+  word-break: break-word;
+}
+
+/* RWD: mobile */
+@media (max-width: 767px) {
+  .avatar,
+  .avatarFallback {
+    width: 32px;
+    height: 32px;
+  }
+
+  .content {
+    padding-left: 44px;
+    font-size: 0.9rem;
+  }
+}

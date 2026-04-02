@@ -575,13 +575,38 @@ export async function deleteEvent(eventId) {
   const snap = await getDoc(eventRef);
   if (!snap.exists()) throw new Error('活動不存在');
 
+  // --- 清除 participants 子集合 ---
   const participantsRef = collection(db, 'events', eid, 'participants');
-
   const participantsSnap = await getDocs(participantsRef);
   const participantDocs = participantsSnap.docs;
 
+  // --- 清除 comments 子集合及每則留言的 history 子集合 ---
+  const commentsRef = collection(db, 'events', eid, 'comments');
+  const commentsSnap = await getDocs(commentsRef);
+  const commentDocs = commentsSnap.docs;
+
+  // 逐一查詢每則留言的 history 子集合
+  const historySnaps = await Promise.all(
+    commentDocs.map((commentDoc) =>
+      getDocs(collection(db, 'events', eid, 'comments', commentDoc.id, 'history')),
+    ),
+  );
+
+  // NOTE: Firestore writeBatch 上限 500 筆操作。
+  // 目前單一活動不預期超過此限制，若未來有大量留言需改用分批 commit。
   const batch = writeBatch(db);
+
+  // 刪除所有 history 文件
+  historySnaps.forEach((historySnap) => {
+    historySnap.docs.forEach((d) => batch.delete(d.ref));
+  });
+
+  // 刪除所有 comment 文件
+  commentDocs.forEach((d) => batch.delete(d.ref));
+
+  // 刪除所有 participant 文件
   participantDocs.forEach((d) => batch.delete(d.ref));
+
   batch.delete(eventRef);
   await batch.commit();
 

@@ -25,6 +25,7 @@ import { buildUserPayload, normalizeRoutePolylines } from '@/lib/event-helpers';
 import EventCardMenu from '@/components/EventCardMenu';
 import EventEditForm from '@/components/EventEditForm';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
+import CommentSection from '@/components/CommentSection';
 
 // Leaflet 只能在瀏覽器端跑
 const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
@@ -710,6 +711,8 @@ export default function EventDetailClient({ id }) {
                 </>
               )}
             </div>
+
+            <CommentSection eventId={id} />
 
             {/* ✅ Participants Overlay */}
             {isParticipantsOpen && (

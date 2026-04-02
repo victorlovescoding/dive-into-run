@@ -852,7 +852,7 @@ describe('Integration: CommentSection', () => {
         createMockComment({
           id: 'comment-edited',
           authorUid: 'user-1',
-          content: '已編輯過的留言',
+          content: '修改過的留言內容',
           isEdited: true,
           updatedAt: { toDate: () => new Date(2026, 3, 2, 15, 0) },
         }),

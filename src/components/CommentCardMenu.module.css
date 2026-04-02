@@ -1,0 +1,53 @@
+.wrapper {
+  position: relative;
+  z-index: 10;
+}
+
+.trigger {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #5f6368;
+  transition: background-color 0.15s;
+}
+
+.trigger:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 50;
+  min-width: 120px;
+  background: #fff;
+  border: 1px solid #e0e3e7;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 0.9rem;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.menuItem:hover {
+  background: rgba(103, 58, 183, 0.08);
+}

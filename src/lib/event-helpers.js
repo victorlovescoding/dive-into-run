@@ -224,8 +224,13 @@ export function buildUserPayload(user) {
  * @returns {string} 格式化後的時間字串，如「4/2 14:30」。
  */
 export function formatCommentTime(value) {
-  void value;
-  return '';
+  if (!value || typeof (/** @type {*} */ (value).toDate) !== 'function') return '';
+  const d = /** @type {{ toDate: () => Date }} */ (value).toDate();
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${month}/${day} ${hh}:${mm}`;
 }
 
 /**
@@ -234,6 +239,12 @@ export function formatCommentTime(value) {
  * @returns {string} 格式化後的完整時間字串，如「2026年4月2日 14:30」。
  */
 export function formatCommentTimeFull(value) {
-  void value;
-  return '';
+  if (!value || typeof (/** @type {*} */ (value).toDate) !== 'function') return '';
+  const d = /** @type {{ toDate: () => Date }} */ (value).toDate();
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${year}年${month}月${day}日 ${hh}:${mm}`;
 }

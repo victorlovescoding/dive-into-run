@@ -16,7 +16,7 @@
 
 **Purpose**: Service layer、helpers、以及所有獨立 UI 元件 — 全部互不相依（不同檔案），可 **8 agents 完全平行**
 
-- [ ] T001 [P] Implement `formatCommentTime` + `formatCommentTimeFull` in `src/lib/event-helpers.js`
+- [x] T001 [P] Implement `formatCommentTime` + `formatCommentTimeFull` in `src/lib/event-helpers.js`
   - 已有 stub（L226-239），需實作為回傳正確格式的函式
   - `formatCommentTime(timestamp)` → `"4/2 14:30"`（月/日 HH:MM，月日不補零，時分補零）
   - `formatCommentTimeFull(timestamp)` → `"2026年4月2日 14:30"`（含年份完整格式）
@@ -30,7 +30,7 @@
     - `Unit: formatCommentTimeFull > should format to YYYY年M月D日 HH:MM`
     - `Unit: formatCommentTimeFull > should return empty string for null or undefined`
 
-- [ ] T002 [P] Create `src/lib/firebase-comments.js` — typedefs + all 7 service functions
+- [x] T002 [P] Create `src/lib/firebase-comments.js` — typedefs + all 7 service functions
   - 新建檔案，import `firebase/firestore`（doc, collection, query, getDocs, getDoc, addDoc, orderBy, limit, startAfter, serverTimestamp, runTransaction, writeBatch）+ `@/lib/firebase-client`（db）
   - 定義 `@typedef CommentData`（id, authorUid, authorName, authorPhotoURL, content, createdAt, updatedAt, isEdited）
   - 定義 `@typedef FetchCommentsResult`（comments: CommentData[], lastDoc: QueryDocumentSnapshot | null）
@@ -55,7 +55,7 @@
     - `Unit: deleteComment` 全部 4 個測試
     - `Unit: fetchCommentHistory` 全部 3 個測試
 
-- [ ] T003 [P] [US1] Create `src/components/CommentCard.jsx` + `src/components/CommentCard.module.css`
+- [x] T003 [P] [US1] Create `src/components/CommentCard.jsx` + `src/components/CommentCard.module.css`
   - Display-only 版本：avatar（36px 圓形，無 photoURL 則 fallback 首字紫色背景 rgba(103,58,183,0.12)）、名稱（0.9rem, fw 700）、`<time dateTime="ISO">` 時間（用 `formatCommentTime`，title 用 `formatCommentTimeFull`）、內容（0.95rem, padding-left 48px）
   - Props: `comment`（CommentData）、`isOwner`（boolean，暫不用）、`isHighlighted`（boolean）、callbacks 預留（`onEdit`, `onDelete`, `onViewHistory`）
   - 高亮動畫：`isHighlighted` 時 CSS `@keyframes commentHighlight` rgba(103,58,183,0.12) → #fff, 2s
@@ -64,7 +64,7 @@
   - 參考既有 Card 元件的 JSDoc props pattern
   - ⏳ 此 task 完成後尚無測試可獨立通過（需 T010 CommentSection 一起 render）
 
-- [ ] T004 [P] [US2] Create `src/components/CommentInput.jsx` + `src/components/CommentInput.module.css`
+- [x] T004 [P] [US2] Create `src/components/CommentInput.jsx` + `src/components/CommentInput.module.css`
   - **一次到位的完整版**（非 shell）：`position: fixed; bottom: 0; left: 0; right: 0`，z-index 100
   - textbox（pill shape, border-radius 20px, bg #f8f9fa, focus border #673ab7）+ 送出按鈕（pill, bg #673ab7, disabled bg #e5e7eb）
   - Props: `onSubmit(content)`、`isSubmitting`（boolean）、`submitError`（string | null）
@@ -77,7 +77,7 @@
   - RWD §4.3/§4.9：mobile input 36px / radius 18px / btn 48px / padding 8px 12px，tablet+ input 40px / radius 20px / btn 56px / padding 12px 16px
   - ⏳ 此 task 完成後尚無測試可獨立通過（需 T010 CommentSection 一起 render）
 
-- [ ] T005 [P] [US3] Create `src/components/CommentCardMenu.jsx` + `src/components/CommentCardMenu.module.css`
+- [x] T005 [P] [US3] Create `src/components/CommentCardMenu.jsx` + `src/components/CommentCardMenu.module.css`
   - 三點按鈕（28x28px）`aria-label="更多操作"` + dropdown（`role="menu"`）
   - 兩個選項：「編輯留言」+「刪除留言」（`role="menuitem"`）
   - Click-outside 關閉：參考 `EventCardMenu.jsx` L25-95 的 useEffect + mousedown pattern
@@ -86,7 +86,7 @@
   - z-index: wrapper 10, dropdown 50
   - ⏳ 此 task 完成後尚無測試可獨立通過（需 T009 整合進 CommentCard）
 
-- [ ] T006 [P] [US3] Create `src/components/CommentEditModal.jsx` + `src/components/CommentEditModal.module.css`
+- [x] T006 [P] [US3] Create `src/components/CommentEditModal.jsx` + `src/components/CommentEditModal.module.css`
   - `role="dialog" aria-modal="true"` overlay（z-200, rgba(0,0,0,0.5)）
   - Textarea 預填原文，min-height 120px, resize vertical
   - 「完成編輯」按鈕：`content.trim() === originalContent` 時 disabled
@@ -98,7 +98,7 @@
   - Props: `comment`（editingComment）、`isUpdating`（boolean）、`onSave(newContent)`、`onCancel`
   - ⏳ 此 task 完成後尚無測試可獨立通過（需 T011 wire handler）
 
-- [ ] T007 [P] [US3] Create `src/components/CommentHistoryModal.jsx` + `src/components/CommentHistoryModal.module.css`
+- [x] T007 [P] [US3] Create `src/components/CommentHistoryModal.jsx` + `src/components/CommentHistoryModal.module.css`
   - `role="dialog" aria-modal="true"` overlay（z-200）
   - Header + scrollable body，32px 圓形關閉按鈕
   - 由新到舊排列：最新標 `"目前版本"`（紫色 badge #673ab7）、最舊標 `"原始版本"`（灰色 badge）
@@ -109,7 +109,7 @@
   - RWD §4.6/§4.9：mobile padding 16px / 版本 12px / 時間 0.7rem，tablet+ padding 24px / 版本 16px / 時間 0.75rem / max-width 520px
   - ⏳ 此 task 完成後尚無測試可獨立通過（需 T011 wire handler）
 
-- [ ] T008 [P] [US4] Create `src/components/CommentDeleteConfirm.jsx` + `src/components/CommentDeleteConfirm.module.css`
+- [x] T008 [P] [US4] Create `src/components/CommentDeleteConfirm.jsx` + `src/components/CommentDeleteConfirm.module.css`
   - `role="dialog" aria-modal="true"` overlay（z-200）
   - 文案 `"確定刪除留言？"`
   - 「確定刪除」按鈕（紅 #d32f2f）+ 「取消刪除」按鈕（紫 outline #673ab7）
@@ -129,7 +129,7 @@
 
 **Purpose**: 把 Phase 1 的獨立元件組裝起來 — **2 agents 平行**（不同檔案）
 
-- [ ] T009 [P] [US3] Integrate `CommentCardMenu` + edited badge into `src/components/CommentCard.jsx`
+- [x] T009 [P] [US3] Integrate `CommentCardMenu` + edited badge into `src/components/CommentCard.jsx`
   - 條件 render `<CommentCardMenu>`: 僅 `isOwner === true` 時顯示（卡片右上角）
   - 新增「已編輯」badge：`isEdited === true` 時在時間旁顯示 `<button aria-label="查看編輯記錄">已編輯</button>`（0.75rem #5f6368，hover 紫色底線）
   - badge 點擊呼叫 `onViewHistory(comment)` callback
@@ -137,7 +137,7 @@
   - **依賴**: T003（CommentCard 已建立）、T005（CommentCardMenu 已建立）
   - ⏳ 此 task 完成後尚無測試可獨立通過（需 T010/T011 CommentSection render）
 
-- [ ] T010 [P] [US1] Create `src/components/CommentSection.jsx` + `src/components/CommentSection.module.css` — US1 瀏覽 + US2 送出
+- [x] T010 [P] [US1] Create `src/components/CommentSection.jsx` + `src/components/CommentSection.module.css` — US1 瀏覽 + US2 送出
   - Container 元件：`role="region" aria-label="留言區"`
   - 用 `useContext(AuthContext)` 取得 user
   - **US1 State**: `comments[]`, `cursor`（lastDoc）, `hasMore`, `isLoading`, `isLoadingMore`
@@ -170,7 +170,7 @@
 
 **Purpose**: 把編輯/歷史/刪除的 modal handlers 接入 CommentSection — **1 agent**（CommentSection.jsx 瓶頸）
 
-- [ ] T011 [US3] Wire edit / history / delete handlers into `src/components/CommentSection.jsx`
+- [x] T011 [US3] Wire edit / history / delete handlers into `src/components/CommentSection.jsx`
   - **US3 新增 state**: `editingComment`（CommentData | null）、`isUpdating`（boolean）、`historyComment`（CommentData | null）、`historyEntries`（CommentHistoryEntry[]）
   - **US4 新增 state**: `deletingCommentId`（string | null）、`isDeleting`（boolean）、`deleteError`（string | null）
   - **Edit handlers**:
@@ -211,7 +211,7 @@
 
 **Purpose**: 頁面整合、級聯刪除 — **2 agents 平行**（不同檔案）
 
-- [ ] T012 [P] Integrate `<CommentSection>` into `src/app/events/[id]/eventDetailClient.jsx`
+- [x] T012 [P] Integrate `<CommentSection>` into `src/app/events/[id]/eventDetailClient.jsx`
   - Import CommentSection（不需 dynamic import，非地圖元件）
   - 在路線 card（EventMap，約 L712）之後 render `<CommentSection eventId={id} />`
   - CommentSection 內部自行 `useContext(AuthContext)` 取 user，不需額外傳 props
@@ -228,12 +228,12 @@
     - `US4 > delete flow: confirm → comment removed`
     - `US4 > cancel delete should keep comment intact`
 
-- [ ] T013 [P] Add cascade delete for comments in `src/lib/firebase-events.js` `deleteEvent`
+- [x] T013 [P] Add cascade delete for comments in `src/lib/firebase-events.js` `deleteEvent`
   - 在 deleteEvent 的 writeBatch 中加入：查詢 `events/{eventId}/comments` → 對每則留言查詢 `history` 子集合 → batch.delete 全部
   - 注意 batch 500 ops 上限（參考 data-model.md §Cascade Delete）
   - 參考既有 deleteEvent L569-589 的 batch pattern
 
-- [ ] T014 Run `npm run type-check` and `npm run lint` — fix all errors
+- [x] T014 Run `npm run type-check` and `npm run lint` — fix all errors
   - 新增的 cSpell 詞彙加入 `cspell.json`（如有需要）
   - 確認無 `@ts-ignore`、無 `eslint-disable` for a11y
 
