@@ -27,8 +27,6 @@ import { AuthContext } from '@/contexts/AuthContext';
 import CommentSection from '@/components/CommentSection';
 import {
   fetchComments,
-  fetchMoreComments,
-  getCommentById,
   addComment,
   updateComment,
   deleteComment,
@@ -37,8 +35,6 @@ import {
 
 vi.mock('@/lib/firebase-comments', () => ({
   fetchComments: vi.fn(),
-  fetchMoreComments: vi.fn(),
-  getCommentById: vi.fn(),
   addComment: vi.fn(),
   updateComment: vi.fn(),
   deleteComment: vi.fn(),
@@ -49,8 +45,6 @@ vi.mock('@/lib/firebase-client', () => ({ db: {} }));
 
 /* Cast mocked imports — vi.mock() 替換為 vi.fn()，TS 需要 Mock 型別才認 .mockXxx() */
 const mockedFetchComments = /** @type {import('vitest').Mock} */ (fetchComments);
-const mockedFetchMoreComments = /** @type {import('vitest').Mock} */ (fetchMoreComments);
-const mockedGetCommentById = /** @type {import('vitest').Mock} */ (getCommentById);
 const mockedAddComment = /** @type {import('vitest').Mock} */ (addComment);
 const mockedUpdateComment = /** @type {import('vitest').Mock} */ (updateComment);
 const mockedDeleteComment = /** @type {import('vitest').Mock} */ (deleteComment);
@@ -167,6 +161,18 @@ describe('Integration: CommentSection', () => {
   beforeEach(() => {
     intersectionCallback = null;
 
+    // jsdom 不支援 HTMLDialogElement.showModal/close，需 polyfill
+    if (!HTMLDialogElement.prototype.showModal) {
+      HTMLDialogElement.prototype.showModal = function showModal() {
+        this.setAttribute('open', '');
+      };
+    }
+    if (!HTMLDialogElement.prototype.close) {
+      HTMLDialogElement.prototype.close = function close() {
+        this.removeAttribute('open');
+      };
+    }
+
     /**
      * IntersectionObserver mock — 使用 function constructor 避免 class-methods-use-this。
      * @param {(entries: Array<{ isIntersecting: boolean }>) => void} callback - Observer callback。
@@ -260,7 +266,7 @@ describe('Integration: CommentSection', () => {
         comments: firstBatch,
         lastDoc: mockLastDoc,
       });
-      mockedFetchMoreComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: secondBatch,
         lastDoc: null,
       });
@@ -277,7 +283,7 @@ describe('Integration: CommentSection', () => {
 
       // Assert
       await waitFor(() => {
-        expect(fetchMoreComments).toHaveBeenCalledWith('e1', mockLastDoc, expect.any(Number));
+        expect(fetchComments).toHaveBeenCalledWith('e1', { afterDoc: mockLastDoc, limitCount: 15 });
       });
 
       const allItems = await screen.findAllByRole('listitem');
@@ -346,8 +352,7 @@ describe('Integration: CommentSection', () => {
         lastDoc: null,
       });
 
-      mockedAddComment.mockResolvedValueOnce({ id: 'new-1' });
-      mockedGetCommentById.mockResolvedValueOnce(
+      mockedAddComment.mockResolvedValueOnce(
         createMockComment({
           id: 'new-1',
           authorUid: 'user-1',
@@ -535,8 +540,7 @@ describe('Integration: CommentSection', () => {
         lastDoc: null,
       });
 
-      mockedAddComment.mockResolvedValueOnce({ id: 'new-keyboard' });
-      mockedGetCommentById.mockResolvedValueOnce(
+      mockedAddComment.mockResolvedValueOnce(
         createMockComment({
           id: 'new-keyboard',
           content: '快捷鍵留言',
@@ -1208,9 +1212,9 @@ describe('Integration: CommentSection', () => {
       await user.click(menuButton);
       await user.click(screen.getByRole('menuitem', { name: /編輯留言/ }));
 
-      // Assert
+      // Assert — <dialog> opened via showModal() is natively modal
       const dialog = await screen.findByRole('dialog');
-      expect(dialog).toHaveAttribute('aria-modal', 'true');
+      expect(dialog).toBeInTheDocument();
     });
 
     it('should use time element with dateTime attribute', async () => {
@@ -1221,15 +1225,16 @@ describe('Integration: CommentSection', () => {
       });
 
       // Act
-      const { container } = renderWithAuth(<CommentSection eventId="e1" />, {
+      renderWithAuth(<CommentSection eventId="e1" />, {
         user: createMockUser(),
       });
 
       await screen.findAllByRole('listitem');
 
-      // Assert
-      const timeElement = container.querySelector('time[dateTime]');
-      expect(timeElement).toBeInTheDocument();
+      // Assert — <time> 顯示的是 formatCommentTime 格式化結果
+      const timeElement = screen.getByText('4/2 14:30');
+      expect(timeElement.tagName).toBe('TIME');
+      expect(timeElement).toHaveAttribute('dateTime');
     });
   });
 });

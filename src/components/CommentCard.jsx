@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { formatCommentTime, formatCommentTimeFull } from '@/lib/event-helpers';
 import CommentCardMenu from './CommentCardMenu';
 import styles from './CommentCard.module.css';
@@ -40,7 +41,13 @@ export default function CommentCard({
       <div className={styles.headerRow}>
         <div className={styles.header}>
           {hasPhoto ? (
-            <img src={comment.authorPhotoURL} alt="" className={styles.avatar} />
+            <Image
+              src={comment.authorPhotoURL}
+              alt=""
+              width={36}
+              height={36}
+              className={styles.avatar}
+            />
           ) : (
             <div className={styles.avatarFallback}>{initial}</div>
           )}

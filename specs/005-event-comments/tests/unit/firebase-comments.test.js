@@ -85,6 +85,9 @@ const mockWriteBatch = vi.fn(() => ({
   commit: vi.fn().mockResolvedValue(undefined),
 }));
 
+/** @type {{ now: import('vitest').Mock }} */
+const mockTimestamp = { now: vi.fn(() => ({ _timestampNow: true, toDate: () => new Date() })) };
+
 vi.mock('firebase/firestore', () => ({
   doc: mockDoc,
   collection: mockCollection,
@@ -96,6 +99,7 @@ vi.mock('firebase/firestore', () => ({
   limit: mockLimit,
   startAfter: mockStartAfter,
   serverTimestamp: mockServerTimestamp,
+  Timestamp: mockTimestamp,
   runTransaction: mockRunTransaction,
   writeBatch: mockWriteBatch,
 }));
@@ -202,13 +206,13 @@ describe('Unit: fetchComments', () => {
     expect(result.comments[0].id).toBe('comment-abc');
   });
 
-  it('should accept custom limitCount', async () => {
+  it('should accept custom limitCount via options', async () => {
     // Arrange
     const { fetchComments } = await import('@/lib/firebase-comments');
     mockGetDocs.mockResolvedValueOnce({ docs: [] });
 
     // Act
-    await fetchComments('event-123', 30);
+    await fetchComments('event-123', { limitCount: 30 });
 
     // Assert
     expect(mockLimit).toHaveBeenCalledWith(30);
@@ -223,21 +227,21 @@ describe('Unit: fetchComments', () => {
   });
 });
 
-describe('Unit: fetchMoreComments', () => {
+describe('Unit: fetchComments with afterDoc (pagination)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should use startAfter with the provided cursor document', async () => {
     // Arrange
-    const { fetchMoreComments } = await import('@/lib/firebase-comments');
+    const { fetchComments } = await import('@/lib/firebase-comments');
     const cursorDoc = /** @type {import('firebase/firestore').QueryDocumentSnapshot} */ (
       /** @type {unknown} */ ({ id: 'cursor-doc' })
     );
     mockGetDocs.mockResolvedValueOnce({ docs: [] });
 
     // Act
-    await fetchMoreComments('event-123', cursorDoc);
+    await fetchComments('event-123', { afterDoc: cursorDoc });
 
     // Assert
     expect(mockStartAfter).toHaveBeenCalledWith(cursorDoc);
@@ -247,14 +251,14 @@ describe('Unit: fetchMoreComments', () => {
 
   it('should return empty when no more documents exist', async () => {
     // Arrange
-    const { fetchMoreComments } = await import('@/lib/firebase-comments');
+    const { fetchComments } = await import('@/lib/firebase-comments');
     const cursorDoc = /** @type {import('firebase/firestore').QueryDocumentSnapshot} */ (
       /** @type {unknown} */ ({ id: 'cursor-doc' })
     );
     mockGetDocs.mockResolvedValueOnce({ docs: [] });
 
     // Act
-    const result = await fetchMoreComments('event-123', cursorDoc);
+    const result = await fetchComments('event-123', { afterDoc: cursorDoc });
 
     // Assert
     expect(result.comments).toEqual([]);
@@ -263,13 +267,13 @@ describe('Unit: fetchMoreComments', () => {
 
   it('should throw when eventId is empty', async () => {
     // Arrange
-    const { fetchMoreComments } = await import('@/lib/firebase-comments');
+    const { fetchComments } = await import('@/lib/firebase-comments');
     const cursorDoc = /** @type {import('firebase/firestore').QueryDocumentSnapshot} */ (
       /** @type {unknown} */ ({ id: 'cursor-doc' })
     );
 
     // Act & Assert
-    await expect(fetchMoreComments('', cursorDoc)).rejects.toThrow();
+    await expect(fetchComments('', { afterDoc: cursorDoc })).rejects.toThrow();
   });
 });
 
@@ -359,7 +363,12 @@ describe('Unit: addComment', () => {
     const result = await addComment('event-123', validUser, '好棒的路線！');
 
     // Assert
-    expect(result).toEqual({ id: 'new-comment-id' });
+    expect(result.id).toBe('new-comment-id');
+    expect(result.authorUid).toBe('user-1');
+    expect(result.authorName).toBe('Alice');
+    expect(result.content).toBe('好棒的路線！');
+    expect(result.isEdited).toBe(false);
+    expect(result.updatedAt).toBeNull();
     expect(mockAddDoc).toHaveBeenCalledTimes(1);
     const addDocArg = mockAddDoc.mock.calls[0][1];
     expect(addDocArg.authorUid).toBe('user-1');

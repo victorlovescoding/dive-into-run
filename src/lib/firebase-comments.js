@@ -16,6 +16,7 @@ import {
   limit,
   startAfter,
   serverTimestamp,
+  Timestamp,
   runTransaction,
   writeBatch,
 } from 'firebase/firestore';
@@ -47,36 +48,27 @@ import { db } from '@/lib/firebase-client';
  */
 
 /**
- * 取得留言列表（最新在前）。
- * @param {string} eventId - 活動 ID。
- * @param {number} [limitCount=15] - 每頁筆數。
- * @returns {Promise<FetchCommentsResult>} 留言與分頁游標。
+ * @typedef {object} FetchCommentsOptions
+ * @property {import('firebase/firestore').DocumentSnapshot} [afterDoc] - 分頁游標，傳入則從此文件之後開始。
+ * @property {number} [limitCount] - 每頁筆數，預設 15。
  */
-export async function fetchComments(eventId, limitCount = 15) {
-  if (!eventId) throw new Error('fetchComments: eventId is required');
-
-  const ref = collection(db, 'events', eventId, 'comments');
-  const q = query(ref, orderBy('createdAt', 'desc'), limit(limitCount));
-  const snap = await getDocs(q);
-  /** @type {CommentData[]} */
-  const comments = snap.docs.map((d) => /** @type {CommentData} */ ({ id: d.id, ...d.data() }));
-  const lastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
-
-  return { comments, lastDoc };
-}
 
 /**
- * 載入更多留言（分頁）。
+ * 取得留言列表（最新在前），支援分頁。
  * @param {string} eventId - 活動 ID。
- * @param {import('firebase/firestore').DocumentSnapshot} afterDoc - 上一頁的最後文件。
- * @param {number} [limitCount=15] - 每頁筆數。
+ * @param {FetchCommentsOptions} [options] - 分頁選項。
  * @returns {Promise<FetchCommentsResult>} 留言與分頁游標。
  */
-export async function fetchMoreComments(eventId, afterDoc, limitCount = 15) {
-  if (!eventId) throw new Error('fetchMoreComments: eventId is required');
+export async function fetchComments(eventId, options = {}) {
+  if (!eventId) throw new Error('fetchComments: eventId is required');
 
+  const { afterDoc, limitCount = 15 } = options;
   const ref = collection(db, 'events', eventId, 'comments');
-  const q = query(ref, orderBy('createdAt', 'desc'), startAfter(afterDoc), limit(limitCount));
+  /** @type {import('firebase/firestore').QueryConstraint[]} */
+  const constraints = [orderBy('createdAt', 'desc'), limit(limitCount)];
+  if (afterDoc) constraints.push(startAfter(afterDoc));
+
+  const q = query(ref, ...constraints);
   const snap = await getDocs(q);
   /** @type {CommentData[]} */
   const comments = snap.docs.map((d) => /** @type {CommentData} */ ({ id: d.id, ...d.data() }));
@@ -106,7 +98,7 @@ export async function getCommentById(eventId, commentId) {
  * @param {string} eventId - 活動 ID。
  * @param {{ uid: string, name: string, photoURL: string }} user - 使用者資料。
  * @param {string} content - 留言內容。
- * @returns {Promise<{ id: string }>} 新留言 ID。
+ * @returns {Promise<CommentData>} 新留言完整資料。
  */
 export async function addComment(eventId, user, content) {
   if (!eventId) throw new Error('addComment: eventId is required');
@@ -127,7 +119,16 @@ export async function addComment(eventId, user, content) {
     isEdited: false,
   });
 
-  return { id: docRef.id };
+  return /** @type {CommentData} */ ({
+    id: docRef.id,
+    authorUid: user.uid,
+    authorName: user.name || '',
+    authorPhotoURL: user.photoURL || '',
+    content: trimmed,
+    createdAt: Timestamp.now(),
+    updatedAt: null,
+    isEdited: false,
+  });
 }
 
 /**

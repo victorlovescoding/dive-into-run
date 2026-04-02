@@ -134,8 +134,9 @@ service cloud.firestore {
         match /history/{historyId} {
           allow read: if true;
 
-          // 編輯留言時 transaction 內建立
-          allow create: if isSignedIn();
+          // 編輯留言時 transaction 內建立（僅留言作者可寫入）
+          allow create: if isSignedIn()
+            && request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)/comments/$(commentId)).data.authorUid;
 
           // cascade delete（刪留言或刪活動時）
           // UI 層確保不會單獨刪 history

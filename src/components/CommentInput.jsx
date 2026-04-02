@@ -1,37 +1,31 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import styles from './CommentInput.module.css';
 
 /**
  * 浮動留言輸入框。
- * @param {object} props
- * @param {(content: string) => void} props.onSubmit - 送出留言回呼。
+ * @param {object} props - 元件 props。
+ * @param {(content: string) => void | Promise<void>} props.onSubmit - 送出留言回呼。
  * @param {boolean} props.isSubmitting - 是否送出中。
- * @param {string | null} props.submitError - 送出錯誤訊息。
+ * @returns {import('react').ReactElement} 留言輸入框元件。
  */
-export default function CommentInput({ onSubmit, isSubmitting, submitError }) {
+export default function CommentInput({ onSubmit, isSubmitting }) {
   const [content, setContent] = useState('');
-  const prevSubmittingRef = useRef(false);
-
-  // Clear input on successful submit (isSubmitting: true → false, no error)
-  useEffect(() => {
-    if (prevSubmittingRef.current && !isSubmitting && !submitError) {
-      setContent('');
-    }
-    prevSubmittingRef.current = isSubmitting;
-  }, [isSubmitting, submitError]);
 
   const trimmed = content.trim();
   const isDisabled = trimmed === '' || content.length > 500 || isSubmitting;
 
+  /**
+   * 觸發送出留言。
+   */
   function handleSubmit() {
     if (!isDisabled) {
       onSubmit(content);
     }
   }
 
-  /** @param {import('react').KeyboardEvent} e */
+  /** @param {import('react').KeyboardEvent} e - 鍵盤事件。 */
   function handleKeyDown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
@@ -42,14 +36,14 @@ export default function CommentInput({ onSubmit, isSubmitting, submitError }) {
   return (
     <div className={styles.wrapper}>
       <div className={styles.inputRow}>
-        <input
-          type="text"
+        <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="留言..."
           className={styles.textbox}
           disabled={isSubmitting}
+          rows={1}
         />
         <button
           type="button"
