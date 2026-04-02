@@ -50,6 +50,35 @@
   margin-top: 8px;
 }
 
+.loadError {
+  text-align: center;
+  padding: 24px 0;
+  color: #d32f2f;
+  font-size: 0.9rem;
+}
+
+.loadMoreError {
+  text-align: center;
+  padding: 12px 0;
+  color: #d32f2f;
+  font-size: 0.85rem;
+}
+
+.retryButton {
+  margin-left: 10px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #f28b82;
+  background: #fff;
+  color: #c5221f;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.retryButton:hover {
+  background: rgba(197, 34, 31, 0.06);
+}
+
 .submitError {
   position: fixed;
   bottom: 68px;

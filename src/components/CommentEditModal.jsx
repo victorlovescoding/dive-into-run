@@ -8,11 +8,12 @@ import styles from './CommentEditModal.module.css';
  * @param {object} props - 元件 props。
  * @param {import('@/lib/firebase-comments').CommentData} props.comment - 正在編輯的留言。
  * @param {boolean} props.isUpdating - 是否更新中。
+ * @param {string | null} props.updateError - 更新錯誤訊息。
  * @param {(newContent: string) => void} props.onSave - 儲存回呼。
  * @param {() => void} props.onCancel - 取消回呼。
  * @returns {import('react').ReactElement} 編輯留言 Modal 元件。
  */
-export default function CommentEditModal({ comment, isUpdating, onSave, onCancel }) {
+export default function CommentEditModal({ comment, isUpdating, updateError, onSave, onCancel }) {
   const [editContent, setEditContent] = useState(comment.content);
   const dialogRef = useRef(/** @type {HTMLDialogElement | null} */ (null));
 
@@ -43,6 +44,11 @@ export default function CommentEditModal({ comment, isUpdating, onSave, onCancel
         <span className={`${styles.charCount} ${isOverLimit ? styles.charCountOver : ''}`}>
           {editContent.length}/500
         </span>
+      )}
+      {updateError && (
+        <div role="alert" className={styles.errorAlert}>
+          {updateError}
+        </div>
       )}
       <div className={styles.actions}>
         <button

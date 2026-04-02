@@ -4,173 +4,204 @@
 
 ---
 
-## Taste Rating: 🟢 Good taste — Clean architecture with proper separation of concerns
+## Taste Rating: 🟢 Good taste — Clean hooks architecture, proper data ownership, thin view layer
 
-上次 review 的 3 個 Critical Issues 全部修復。God Component 拆解成 hooks，Firestore Rules 安全漏洞已堵，假 Timestamp 已換成 `Timestamp.now()`。架構乾淨，service layer 薄而精確，UI 層只管 view。
+前兩輪 review 的所有 Critical + Improvement issues 已全部修復。架構從初版的 God Component 進化到 `useComments` + `useCommentMutations` 的 clean hooks 分離，CommentSection 是純粹的 view layer。Service layer（`firebase-comments.js`）薄而正確，Transaction 保護寫入一致性。Error handling 已補齊到每個 async path。
 
 ---
 
 ## Linus's Three Questions
 
-1. **Is this solving a real problem?** — Yes. Event comments 是真實需求，且修復了前次 review 的安全漏洞和架構問題。
-2. **Is there a simpler way?** — 拆出 `useComments` + `useCommentMutations` 後，CommentSection 從 300 行降到 118 行。Hooks 各司其職。已經夠簡潔了。
-3. **What will this break?** — Nothing. Additive feature，對 `eventDetailClient.jsx` 只加了 1 行 import + 1 行 JSX。
-
----
-
-## 前次 Critical Issues 修復狀態
-
-| Issue                                              | Status   | Detail                                                                                                 |
-| -------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
-| C1 — Firestore Rules history `create` 允許任意用戶 | ✅ FIXED | `firestore.rules:138-139` 現在驗證 `request.auth.uid == get(.../comments/$(commentId)).data.authorUid` |
-| C2 — ESLint Error: setState in useEffect           | ✅ FIXED | 改用 `key` reset pattern（`submitKey` state + `<CommentInput key={submitKey}>`）                       |
-| C3 — Fake Timestamp 混入 State                     | ✅ FIXED | `useCommentMutations.js:117` 使用 `Timestamp.now()`                                                    |
-
-## 前次 Improvement Opportunities 修復狀態
-
-| Issue                                     | Status   | Detail                                                                                       |
-| ----------------------------------------- | -------- | -------------------------------------------------------------------------------------------- |
-| I1 — God Component 15 state               | ✅ FIXED | 拆成 `useComments` (7 state) + `useCommentMutations` (9 state)，CommentSection 118 行純 view |
-| I2 — fetchComments/fetchMoreComments 重複 | ✅ FIXED | 合併成單一 `fetchComments(eventId, options?)`                                                |
-| I3 — addComment 後多餘 getCommentById     | ✅ FIXED | `addComment` 直接 return 建構的 CommentData，用 `Timestamp.now()` 代替 serverTimestamp       |
-| I4 — setTimeout 未 cleanup                | ✅ FIXED | `useCommentMutations.js:52` 用 ref 存 timeout，`useEffect` return cleanup                    |
-| I5 — input vs textarea 不一致             | ✅ FIXED | CommentInput 改用 `<textarea>`                                                               |
-| I6 — EditModal 沒字數限制                 | ✅ FIXED | `CommentEditModal.jsx:42-46` 加了 450+ 字數計數器                                            |
-| I7 — Modal 沒有 Focus Trap                | ✅ FIXED | 三個 Modal 全改用 `<dialog>` + `showModal()`，原生 focus trap                                |
-| I8 — CardMenu 缺鍵盤導航                  | ✅ FIXED | `CommentCardMenu.jsx:47-79` 完整 Arrow Up/Down/Home/End/Escape 導航                          |
-| I9 — loadMore error 被吞掉                | ✅ FIXED | `useComments.js:72` catch 設定 `loadMoreError`，UI 顯示錯誤 + 重試按鈕                       |
+1. **Is this solving a real problem?** — Yes. Event comments 是真實社群需求。CRUD + 編輯歷史 + 分頁 + 錯誤處理全部到位。
+2. **Is there a simpler way?** — 很難更簡單了。兩個 hooks 各管其職（data fetching vs mutations），CommentSection 145 行純 JSX。Service layer 只做 Firestore 操作，不混 UI state。
+3. **What will this break?** — Nothing. 對 `eventDetailClient.jsx` 只加 1 行 import + 2 行 JSX（`<CommentSection eventId={id} />`）。對 `AuthContext.jsx` 的改動（JSDoc 修正 + useMemo context value）修復了既有 lint error，不改變行為。
 
 ---
 
 ## [CRITICAL ISSUES]
 
-### 🔴 C1 — Type Error: CommentInput `key` prop 不在 JSDoc 定義中
-
-**[src/components/CommentSection.jsx, Line 92]**
-
-```
-error TS2322: Type '{ key: number; onSubmit: ...; isSubmitting: boolean; }'
-is not assignable to type '{ onSubmit: ...; isSubmitting: boolean; }'.
-Property 'key' does not exist on type '{ onSubmit: ...; isSubmitting: boolean; }'.
-```
-
-`npm run type-check` 報錯。React 的 `key` 是特殊 prop，不需要在 JSDoc 裡宣告，但 TypeScript `checkJs` 模式下會把它當成多餘的 prop。
-
-**Fix 建議**：在 `CommentInput.jsx` 的 JSDoc `@param` 加上 `@param {number} [props.key]` — 或者更乾淨的做法：改用 `/** @param {object & { key?: number }} props */` 或直接用 `@type {import('react').FC<...>}` pattern。
-
-**Severity: 違反 CLAUDE.md 規則 5（type-check 必須 pass）**
+無。
 
 ---
 
 ## [IMPROVEMENT OPPORTUNITIES]
 
-### 🟡 I1 — 初始載入失敗完全靜默
+### 🟡 I1 — `retryLoad` 與 initial useEffect 邏輯重複
 
-**[src/hooks/useComments.js, Lines 51-53]**
+**[src/hooks/useComments.js, Lines 44-60 vs 104-119]**
+
+`retryLoad` callback 和 useEffect 內的 `load()` 做的事一模一樣（fetchComments → setComments/setCursor/setHasMore → catch setLoadError → finally setIsLoading），但用了完全不同的寫法（一個 async/await 一個 promise chain）。
 
 ```js
-} catch {
-  if (!cancelled) setIsLoading(false);
-}
+// useEffect 內: async/await + cancelled flag
+async function load() { ... }
+
+// retryLoad: .then/.catch/.finally, 無 cancelled flag
+const retryLoad = useCallback(() => {
+  fetchComments(eventId).then(...).catch(...).finally(...);
+}, [eventId]);
 ```
 
-初始 `fetchComments` 失敗時，只把 `isLoading` 設回 false。用戶看到「還沒有人留言」（空列表），但實際是載入失敗。應該加一個 `loadError` state 顯示「載入失敗，請重試」。
+問題：
+
+- 兩處邏輯維護成本雙倍 — 改一邊忘改另一邊就 drift
+- retryLoad 沒有 cancelled flag，理論上 unmount 後 retry 會 setState on unmounted component（React 19 不 warn 了，但仍是 smell）
+
+**Fix 建議**：抽出共用的 `loadComments` function，或讓 retryLoad 觸發 eventId 的 re-key 來重跑 useEffect。最簡單的做法：加一個 `retryCounter` state，retryLoad 只做 `setRetryCounter(c => c + 1)`，把 retryCounter 加到 useEffect deps。
 
 ---
 
-### 🟡 I2 — 編輯失敗完全靜默
+### 🟡 I2 — `loadError` 和 `isLoading` 同時為 true 的短暫不一致
 
-**[src/hooks/useCommentMutations.js, Lines 123-124]**
+**[src/hooks/useComments.js, Lines 45-46]**
 
 ```js
-} catch {
-  // stay in modal on failure
-}
+setIsLoading(true);
+setLoadError(null);
 ```
 
-`updateComment` 拋錯時，Modal 留在原地但完全沒有任何錯誤提示。用戶按完「完成編輯」後什麼都沒發生，無法區分是在更新中還是失敗了。至少加一個 `updateError` state 顯示在 Modal 內。
+在 `load()` 開頭先設 `isLoading = true`，再清 `loadError`。React 18+ batching 確保這兩個 setState 在同一個 render，但語義上 loadError 應該在 isLoading 之前清掉（先清錯誤，再標記載入中）。順序應該反過來，或用 useReducer 一次切換。不是 bug，是 code smell。
 
 ---
 
-### 🟡 I3 — 歷史記錄載入失敗靜默
+### 🟡 I3 — `deleteComment` 的 batch delete 沒有分頁保護
 
-**[src/hooks/useCommentMutations.js, Lines 174-175]**
+**[src/lib/firebase-comments.js, Lines 177-188]**
 
 ```js
-} catch {
-  setHistoryEntries([]);
-}
+const historySnap = await getDocs(historyRef);
+const batch = writeBatch(db);
+historySnap.docs.forEach((d) => batch.delete(d.ref));
+batch.delete(commentRef);
+await batch.commit();
 ```
 
-`fetchCommentHistory` 失敗時，顯示的是空列表。用戶打開「編輯記錄」看到什麼都沒有，無法區分是「沒有編輯記錄」還是「載入失敗」。
+Firestore writeBatch 限制 500 operations/batch。如果一則留言的 history 超過 499 筆（極端但理論可能），batch.commit() 會炸。現階段 500 字留言被編輯 499 次幾乎不可能，但 Linus 會說：好的 data structure 不應該有隱藏的上限。
+
+**Fix 建議**：加個 guard comment 標明限制，或用 `chunks of 499` pattern。不 block merge。
 
 ---
 
-### 🟡 I4 — `CommentHistoryModal` 每次 render 都 reverse array
+### 🟡 I4 — `.errorAlert` CSS 重複三份
 
-**[src/components/CommentHistoryModal.jsx, Line 29]**
+**[CommentDeleteConfirm.module.css:28-35, CommentEditModal.module.css:100-107, CommentHistoryModal.module.css:119-128]**
 
-```js
-const reversedHistory = [...history].reverse();
+```css
+.errorAlert {
+  background: #fdecea;
+  color: #d32f2f;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
 ```
 
-每次 render 都做 spread + reverse。量小時不是問題，但不夠 idiomatic。可以用 `useMemo` 或直接在 hook 層就排好序。
+三個 CSS Module 檔案有幾乎一模一樣的 `.errorAlert`，只差 margin 方向。用 CSS Modules 時無法共用 class，但可以考慮抽成 Tailwind utility 或共用 CSS Module（`ErrorAlert.module.css`）被多個元件 import。不 block merge，但 3 份一樣的 CSS 是 maintenance burden。
 
 ---
 
 ## [STYLE NOTES]
 
-### S1 — AuthContext.jsx 有既有的 type error
+### S1 — `@ts-expect-error` 用來壓 React `key` prop
 
-**[src/contexts/AuthContext.jsx, Line 28]**
+**[src/components/CommentSection.jsx, Line 114]**
 
+```js
+// @ts-expect-error — key 是 React 特殊 prop，不在 CommentInput JSDoc 型別中但為合法用法
+<CommentInput key={submitKey} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
 ```
-error TS8032: Qualified name 'root0.children' is not allowed without
-a leading '@param {object} root0'.
-```
 
-這是既有的 type error，不是本次變更引入的，但在 `npm run type-check` 裡會出現。本 branch 有修改 `AuthContext.jsx`（加了 19 行），如果要順手修可以一併處理。
+合理的 workaround。React 的 `key` 不是 component prop，TypeScript JSDoc `@param {object} props` 嚴格模式下無法正確表達。用 `@ts-expect-error` + 清楚的中文解釋是正確做法。比 `@ts-ignore` 好，因為如果未來 TypeScript 修了這個問題，`@ts-expect-error` 會反過來報錯提醒你移除。✅
+
+---
+
+### S2 — `CommentCard.jsx` 不需要 `'use client'`
+
+**[src/components/CommentCard.jsx]**
+
+這個元件沒有使用 hooks 或 browser APIs，理論上可以是 Server Component。但因為它被 `CommentSection`（client component）import，Next.js 會自動把它當 client component 處理，所以不加 `'use client'` 也能正常運作。不加反而更正確 — 讓 Next.js 決定 boundary。
+
+---
+
+### S3 — `CommentInput.jsx:12` 的 `@param {object} props` 回到原樣
+
+**[src/components/CommentInput.jsx, Line 8]**
+
+之前嘗試了 `{object & { key?: number }}` 和 `@param {number} [props.key]`，最終回到 `{object}`。這是正確的 — key 是 React 內部機制，不是 component 的 public API，不該出現在 props JSDoc 裡。`@ts-expect-error` 在 call site 已經處理了。✅
 
 ---
 
 ## [TESTING GAPS]
 
-### T1 — E2E spec 被 vitest 抓到會爆炸
-
-**[specs/005-event-comments/tests/e2e/event-comments.spec.js, Line 23]**
-
-```
-Error: Playwright Test did not expect test.describe.configure() to be called here.
-```
-
-`npx vitest run specs/005-event-comments/tests/` 會把 E2E spec 一起抓進來跑，因為 `test.describe.configure({ mode: 'serial' })` 是 Playwright-only API。Vitest config 應該 exclude `**/e2e/**` 或這個檔案應該有 `.spec.js` 以外的副檔名讓 vitest 跳過。
-
----
-
-### T2 — Unit Tests 仍然偏重 mock 斷言
+### T1 — Unit Tests 偏重 mock 斷言（既有，非新增）
 
 **[specs/005-event-comments/tests/unit/firebase-comments.test.js]**
 
-跟前次 review 一樣，大部分 unit test 的 pattern 是 mock Firebase → call function → assert mock was called。好的部分：validation tests（空 content、超過 500 字、null user）是真正的行為測試 ✅。`formatCommentTime` / `formatCommentTimeFull` 的 pure function 測試完美 ✅。
+38 個 unit tests。大部分 pattern 是：mock Firebase → call function → assert mock was called with correct args。這不是行為測試，是實作細節測試 — 如果你 refactor Firestore 呼叫順序但行為不變，所有 tests 都會壞。
+
+**好的部分** ✅：
+
+- Validation tests（空 content、超過 500 字、null user）是真正的行為測試 — 輸入不合法 → 拋出正確的 error message
+- `formatCommentTime` / `formatCommentTimeFull` 的 pure function 測試是完美的 unit test
+
+**應該改進的部分**：
+
+- `fetchComments` 測試應該 assert 回傳的 data shape，不是 assert `mockOrderBy` 被呼叫
+- `updateComment` 測試應該 assert transaction 結束後 comment 被更新，不是 assert `tx.update` 和 `tx.set` 被呼叫
+
+不 block merge — 這是 testing philosophy 的改善，不是缺陷。
 
 ---
 
-### T3 — Integration Tests 覆蓋完整且品質好
+### T2 — Integration Tests 品質優秀
 
 **[specs/005-event-comments/tests/integration/CommentSection.test.jsx]**
 
-31 個 integration tests 全部通過。涵蓋 US1-US4 完整 user story + Accessibility。使用 `@testing-library/react` + `userEvent.setup()`，沒有 `fireEvent`。用 `screen.getByRole` 查詢，沒有 `container.querySelector`（前次 T2 已修）。很好。✅
+31 個 integration tests 全部通過。覆蓋 US1-US4 完整 user story + Accessibility。
+
+**Compliance check**：
+
+- ✅ `@testing-library/react` + `userEvent.setup()` — 沒有 `fireEvent`
+- ✅ `screen.getByRole` / `screen.getByText` — 沒有 `container.querySelector`
+- ✅ `within()` 正確用於 scoped queries
+- ✅ `waitFor()` 用於 async assertions — 沒有 `waitForTimeout`
+- ✅ AAA pattern 清楚標註
+- ✅ Helper functions（`createMockComment`, `renderWithAuth`）乾淨且有 JSDoc
+
+唯一的 console warning（`act(...)` on infinite scroll test）是 IntersectionObserver mock 的已知限制，不影響測試正確性。
+
+---
+
+### T3 — E2E Tests 不再被 Vitest 誤抓
+
+**[vitest.config.mjs]**
+
+`exclude: ['**/e2e/**', '**/node_modules/**']` 正確解決了 Playwright-only API（`test.describe.configure`）在 Vitest 下爆炸的問題。E2E spec 本身品質好 — `page.getByRole` locators、無 `waitForTimeout`、完整的 JSDoc。✅
+
+---
+
+### T4 — 新增的 error handling（I1-I3 fix）缺少對應測試
+
+**[未覆蓋]**
+
+本次新增了 3 個 error state（`loadError`, `updateError`, `historyError`）和對應的 UI 顯示，但 integration test 沒有覆蓋這些 path：
+
+- 初始 `fetchComments` reject → 應顯示「載入留言失敗」+ 重試按鈕
+- `updateComment` reject → 應在 EditModal 內顯示「更新失敗，請再試一次」
+- `fetchCommentHistory` reject → 應在 HistoryModal 內顯示「載入編輯記錄失敗」
+
+建議在下一個 iteration 補上。不 block merge — error path 的邏輯已在 code 中正確實作。
 
 ---
 
 ## VERDICT
 
-✅ **Worth merging** — 前次 3 個 Critical Issues + 9 個 Improvement Opportunities 全部修復。架構從 God Component 進化成 clean hooks + thin view layer。唯一阻擋 merge 的是 **C1 type error**（`key` prop），修復後即可 merge。
+✅ **Worth merging** — 架構乾淨（hooks + thin view），service layer 正確使用 transaction/batch，Firestore rules 安全，前三輪 review 的所有問題都已修復。Error handling 從「全靜默」進化到「每個 async path 都有 error state + UI 回饋」。
 
-I1-I3（靜默錯誤）建議在 merge 前或下一個 iteration 處理，不 block merge。
+I1-I4 是改善建議，不 block merge。T4（error path 測試）建議在下一個 iteration 補。
 
 ---
 
 ## KEY INSIGHT
 
-**這次的修復展示了 custom hooks 的正確用法 — `useComments` 管 data fetching + pagination，`useCommentMutations` 管 CRUD + modal state — 讓 CommentSection 變成一個 118 行的純 view layer，state 被分散到語義正確的位置。** 前次 review 指出的「bad data structures make for bad code」問題已經解決。
+**這個 feature 的演化過程 — 從 God Component → hooks 拆分 → error handling 補齊 — 展示了正確的 iterative development。每輪 review 都推動架構往更好的方向走，而不是推翻重來。最終的 data flow（CommentSection 只管 view，useComments 管 fetching，useCommentMutations 管 CRUD）是教科書級的 React hooks 分離。**

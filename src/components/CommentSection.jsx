@@ -20,8 +20,17 @@ import styles from './CommentSection.module.css';
 export default function CommentSection({ eventId }) {
   const { user } = useContext(AuthContext);
 
-  const { comments, setComments, isLoading, hasMore, loadMoreError, retryLoadMore, sentinelRef } =
-    useComments(eventId);
+  const {
+    comments,
+    setComments,
+    isLoading,
+    hasMore,
+    loadError,
+    retryLoad,
+    loadMoreError,
+    retryLoadMore,
+    sentinelRef,
+  } = useComments(eventId);
 
   const {
     isSubmitting,
@@ -31,6 +40,7 @@ export default function CommentSection({ eventId }) {
     handleSubmit,
     editingComment,
     isUpdating,
+    updateError,
     handleEditOpen,
     handleEditSave,
     handleEditCancel,
@@ -42,6 +52,7 @@ export default function CommentSection({ eventId }) {
     handleDeleteCancel,
     historyComment,
     historyEntries,
+    historyError,
     handleViewHistory,
     handleHistoryClose,
   } = useCommentMutations(eventId, user, setComments);
@@ -53,7 +64,17 @@ export default function CommentSection({ eventId }) {
           載入中...
         </div>
       )}
-      {!isLoading && comments.length === 0 && <p className={styles.empty}>還沒有人留言</p>}
+      {loadError && (
+        <div role="alert" className={styles.loadError}>
+          <span>{loadError}</span>
+          <button type="button" className={styles.retryButton} onClick={retryLoad}>
+            重試
+          </button>
+        </div>
+      )}
+      {!isLoading && !loadError && comments.length === 0 && (
+        <p className={styles.empty}>還沒有人留言</p>
+      )}
       {!isLoading && comments.length > 0 && (
         <ul className={styles.list} style={user ? { paddingBottom: 80 } : undefined}>
           {comments.map((c) => (
@@ -89,11 +110,15 @@ export default function CommentSection({ eventId }) {
           送出失敗，請再試一次
         </div>
       )}
-      {user && <CommentInput key={submitKey} onSubmit={handleSubmit} isSubmitting={isSubmitting} />}
+      {user && (
+        // @ts-expect-error — key 是 React 特殊 prop，不在 CommentInput JSDoc 型別中但為合法用法
+        <CommentInput key={submitKey} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+      )}
       {editingComment && (
         <CommentEditModal
           comment={editingComment}
           isUpdating={isUpdating}
+          updateError={updateError}
           onSave={handleEditSave}
           onCancel={handleEditCancel}
         />
@@ -110,6 +135,7 @@ export default function CommentSection({ eventId }) {
         <CommentHistoryModal
           comment={historyComment}
           history={historyEntries}
+          historyError={historyError}
           onClose={handleHistoryClose}
         />
       )}

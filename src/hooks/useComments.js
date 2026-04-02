@@ -8,6 +8,8 @@ import { fetchComments } from '@/lib/firebase-comments';
  * @property {boolean} isLoading - 初始載入中。
  * @property {boolean} isLoadingMore - 載入更多中。
  * @property {boolean} hasMore - 是否還有更多留言。
+ * @property {string | null} loadError - 初始載入失敗訊息。
+ * @property {() => void} retryLoad - 重試初始載入。
  * @property {string | null} loadMoreError - 載入更多失敗訊息。
  * @property {() => void} retryLoadMore - 重試載入更多。
  * @property {import('react').RefObject<HTMLDivElement | null>} sentinelRef - IntersectionObserver 哨兵 ref。
@@ -28,6 +30,7 @@ export default function useComments(eventId) {
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState(/** @type {string | null} */ (null));
   const [loadMoreError, setLoadMoreError] = useState(/** @type {string | null} */ (null));
 
   const sentinelRef = useRef(/** @type {HTMLDivElement | null} */ (null));
@@ -40,6 +43,7 @@ export default function useComments(eventId) {
      */
     async function load() {
       setIsLoading(true);
+      setLoadError(null);
       try {
         const result = await fetchComments(eventId);
         if (!cancelled) {
@@ -49,7 +53,10 @@ export default function useComments(eventId) {
           setIsLoading(false);
         }
       } catch {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) {
+          setLoadError('載入留言失敗');
+          setIsLoading(false);
+        }
       }
     }
     load();
@@ -92,6 +99,26 @@ export default function useComments(eventId) {
   }, [hasMore, loadMore]);
 
   /**
+   * 重試初始載入。
+   */
+  const retryLoad = useCallback(() => {
+    setLoadError(null);
+    setIsLoading(true);
+    fetchComments(eventId)
+      .then((result) => {
+        setComments(result.comments);
+        setCursor(result.lastDoc);
+        setHasMore(result.lastDoc !== null);
+      })
+      .catch(() => {
+        setLoadError('載入留言失敗');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [eventId]);
+
+  /**
    * 重試載入更多。
    */
   const retryLoadMore = useCallback(() => {
@@ -105,6 +132,8 @@ export default function useComments(eventId) {
     isLoading,
     isLoadingMore,
     hasMore,
+    loadError,
+    retryLoad,
     loadMoreError,
     retryLoadMore,
     sentinelRef,

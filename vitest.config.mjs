@@ -17,6 +17,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './vitest.setup.jsx',
+    exclude: ['**/e2e/**', '**/node_modules/**'],
     alias: {
       '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     },

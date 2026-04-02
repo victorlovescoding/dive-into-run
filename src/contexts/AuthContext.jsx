@@ -2,7 +2,7 @@
 
 'use client';
 
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useMemo } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase-client'; // 依你的路徑調整
 import { loginCheckUserData, watchUserProfile } from '@/lib/firebase-users';
@@ -23,9 +23,10 @@ export const AuthContext = /** @type {import('react').Context<AuthContextValue>}
 );
 
 /**
- *
- * @param root0
- * @param root0.children
+ * 提供使用者驗證狀態的 Context Provider。
+ * @param {object} props - 元件 props。
+ * @param {import('react').ReactNode} props.children - 子元件。
+ * @returns {import('react').ReactElement} AuthContext Provider。
  */
 export default function UserDataHandler({ children }) {
   const [user, setUser] = useState(null);
@@ -76,5 +77,6 @@ export default function UserDataHandler({ children }) {
       unSubAuth();
     };
   }, []);
-  return <AuthContext.Provider value={{ user, setUser, loading }}>{children}</AuthContext.Provider>;
+  const value = useMemo(() => ({ user, setUser, loading }), [user, setUser, loading]);
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

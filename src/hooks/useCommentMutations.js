@@ -21,6 +21,7 @@ import {
  * @property {(content: string) => Promise<void>} handleSubmit - 送出新留言。
  * @property {CommentData | null} editingComment - 正在編輯的留言。
  * @property {boolean} isUpdating - 編輯更新中。
+ * @property {string | null} updateError - 編輯更新錯誤訊息。
  * @property {(comment: CommentData) => void} handleEditOpen - 開啟編輯 modal。
  * @property {(newContent: string) => Promise<void>} handleEditSave - 儲存編輯。
  * @property {() => void} handleEditCancel - 取消編輯。
@@ -32,6 +33,7 @@ import {
  * @property {() => void} handleDeleteCancel - 取消刪除。
  * @property {CommentData | null} historyComment - 查看歷史的留言。
  * @property {CommentHistoryEntry[]} historyEntries - 編輯歷史列表。
+ * @property {string | null} historyError - 歷史載入錯誤訊息。
  * @property {(comment: CommentData) => Promise<void>} handleViewHistory - 查看編輯記錄。
  * @property {() => void} handleHistoryClose - 關閉歷史 modal。
  */
@@ -54,6 +56,7 @@ export default function useCommentMutations(eventId, user, setComments) {
   // Edit state
   const [editingComment, setEditingComment] = useState(/** @type {CommentData | null} */ (null));
   const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState(/** @type {string | null} */ (null));
 
   // Delete state
   const [deletingComment, setDeletingComment] = useState(/** @type {CommentData | null} */ (null));
@@ -63,6 +66,7 @@ export default function useCommentMutations(eventId, user, setComments) {
   // History state
   const [historyComment, setHistoryComment] = useState(/** @type {CommentData | null} */ (null));
   const [historyEntries, setHistoryEntries] = useState(/** @type {CommentHistoryEntry[]} */ ([]));
+  const [historyError, setHistoryError] = useState(/** @type {string | null} */ (null));
 
   // Cleanup highlight timeout on unmount
   useEffect(
@@ -98,6 +102,7 @@ export default function useCommentMutations(eventId, user, setComments) {
   /** @type {(comment: CommentData) => void} */
   const handleEditOpen = useCallback((comment) => {
     setEditingComment(comment);
+    setUpdateError(null);
   }, []);
 
   /** @type {(newContent: string) => Promise<void>} */
@@ -105,6 +110,7 @@ export default function useCommentMutations(eventId, user, setComments) {
     async (newContent) => {
       if (!editingComment) return;
       setIsUpdating(true);
+      setUpdateError(null);
       try {
         await updateComment(eventId, editingComment.id, newContent, editingComment.content);
         setComments((prev) =>
@@ -121,7 +127,7 @@ export default function useCommentMutations(eventId, user, setComments) {
         );
         setEditingComment(null);
       } catch {
-        // stay in modal on failure
+        setUpdateError('更新失敗，請再試一次');
       } finally {
         setIsUpdating(false);
       }
@@ -132,6 +138,7 @@ export default function useCommentMutations(eventId, user, setComments) {
   /** @type {() => void} */
   const handleEditCancel = useCallback(() => {
     setEditingComment(null);
+    setUpdateError(null);
   }, []);
 
   // --- Delete ---
@@ -168,10 +175,12 @@ export default function useCommentMutations(eventId, user, setComments) {
   const handleViewHistory = useCallback(
     async (comment) => {
       setHistoryComment(comment);
+      setHistoryError(null);
       try {
         const entries = await fetchCommentHistory(eventId, comment.id);
         setHistoryEntries(entries);
       } catch {
+        setHistoryError('載入編輯記錄失敗');
         setHistoryEntries([]);
       }
     },
@@ -182,6 +191,7 @@ export default function useCommentMutations(eventId, user, setComments) {
   const handleHistoryClose = useCallback(() => {
     setHistoryComment(null);
     setHistoryEntries([]);
+    setHistoryError(null);
   }, []);
 
   return {
@@ -192,6 +202,7 @@ export default function useCommentMutations(eventId, user, setComments) {
     handleSubmit,
     editingComment,
     isUpdating,
+    updateError,
     handleEditOpen,
     handleEditSave,
     handleEditCancel,
@@ -203,6 +214,7 @@ export default function useCommentMutations(eventId, user, setComments) {
     handleDeleteCancel,
     historyComment,
     historyEntries,
+    historyError,
     handleViewHistory,
     handleHistoryClose,
   };
