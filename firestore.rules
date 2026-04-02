@@ -108,6 +108,45 @@ service cloud.firestore {
 
         allow update: if false;
       }
+
+      // =========================
+      // ✅ comments + history
+      // =========================
+
+      match /comments/{commentId} {
+        allow read: if true;
+
+        allow create: if isSignedIn()
+          && request.resource.data.authorUid == request.auth.uid
+          && request.resource.data.content is string
+          && request.resource.data.content.size() <= 500;
+
+        allow update: if isSignedIn()
+          && request.auth.uid == resource.data.authorUid;
+
+        // 留言作者刪自己留言，或主揪 deleteEvent cascade
+        allow delete: if isSignedIn() && (
+          request.auth.uid == resource.data.authorUid
+          || request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)).data.hostUid
+        );
+
+        // history 子集合（編輯記錄）
+        match /history/{historyId} {
+          allow read: if true;
+
+          // 編輯留言時 transaction 內建立
+          allow create: if isSignedIn();
+
+          // cascade delete（刪留言或刪活動時）
+          // UI 層確保不會單獨刪 history
+          allow delete: if isSignedIn() && (
+            request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)/comments/$(commentId)).data.authorUid
+            || request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)).data.hostUid
+          );
+
+          allow update: if false;
+        }
+      }
     }
   }
 }
