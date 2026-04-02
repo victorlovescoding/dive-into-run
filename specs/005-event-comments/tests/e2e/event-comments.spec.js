@@ -38,17 +38,12 @@ async function loginAsUser(page, email, password) {
   await page.goto('/events');
 
   // Wait for emulator test helpers to be mounted on window
-  await page.waitForFunction(
-    // @ts-expect-error - testFirebaseHelpers is injected at runtime by the app in emulator mode
-    () => Boolean(window.testFirebaseHelpers),
-    { timeout: 10000 },
-  );
+  await page.waitForFunction(() => Boolean(window.testFirebaseHelpers), { timeout: 10000 });
 
   // Sign in programmatically via Firebase SDK
   await page.evaluate(
     async (/** @type {{ email: string, password: string }} */ creds) => {
       /** @type {{ auth: unknown, signIn: (a: unknown, e: string, p: string) => Promise<unknown> }} */
-      // @ts-expect-error - testFirebaseHelpers is injected at runtime by the app in emulator mode
       const helpers = window.testFirebaseHelpers;
       await helpers.signIn(helpers.auth, creds.email, creds.password);
     },

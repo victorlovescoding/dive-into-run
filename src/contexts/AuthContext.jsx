@@ -7,11 +7,20 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase-client'; // 依你的路徑調整
 import { loginCheckUserData, watchUserProfile } from '@/lib/firebase-users';
 
-export const AuthContext = createContext({
-  user: null,
-  setUser: () => {},
-  loading: true,
-});
+/**
+ * @typedef {object} AuthContextValue
+ * @property {{ uid: string, name: string | null, email: string | null, photoURL: string | null } | null} user - 當前登入使用者。
+ * @property {(user: AuthContextValue['user']) => void} setUser - 設定使用者。
+ * @property {boolean} loading - 驗證狀態載入中。
+ */
+
+export const AuthContext = /** @type {import('react').Context<AuthContextValue>} */ (
+  createContext({
+    user: null,
+    setUser: () => {},
+    loading: true,
+  })
+);
 
 /**
  *

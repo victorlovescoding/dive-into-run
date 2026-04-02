@@ -122,7 +122,7 @@ vi.mock('@/lib/firebase-client', () => ({
 /**
  * @typedef {object} MockUser
  * @property {string} uid - 使用者 UID。
- * @property {string} displayName - 使用者名稱。
+ * @property {string} name - 使用者名稱。
  * @property {string} photoURL - 大頭貼 URL。
  */
 
@@ -347,7 +347,7 @@ describe('Unit: addComment', () => {
   /** @type {MockUser} */
   const validUser = {
     uid: 'user-1',
-    displayName: 'Alice',
+    name: 'Alice',
     photoURL: 'https://example.com/alice.jpg',
   };
 
@@ -412,7 +412,7 @@ describe('Unit: addComment', () => {
     await expect(
       addComment(
         'event-123',
-        /** @type {MockUser} */ (/** @type {unknown} */ ({ displayName: 'No UID' })),
+        /** @type {MockUser} */ (/** @type {unknown} */ ({ name: 'No UID' })),
         '留言',
       ),
     ).rejects.toThrow();

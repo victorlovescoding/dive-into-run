@@ -47,6 +47,15 @@ vi.mock('@/lib/firebase-comments', () => ({
 
 vi.mock('@/lib/firebase-client', () => ({ db: {} }));
 
+/* Cast mocked imports — vi.mock() 替換為 vi.fn()，TS 需要 Mock 型別才認 .mockXxx() */
+const mockedFetchComments = /** @type {import('vitest').Mock} */ (fetchComments);
+const mockedFetchMoreComments = /** @type {import('vitest').Mock} */ (fetchMoreComments);
+const mockedGetCommentById = /** @type {import('vitest').Mock} */ (getCommentById);
+const mockedAddComment = /** @type {import('vitest').Mock} */ (addComment);
+const mockedUpdateComment = /** @type {import('vitest').Mock} */ (updateComment);
+const mockedDeleteComment = /** @type {import('vitest').Mock} */ (deleteComment);
+const mockedFetchCommentHistory = /** @type {import('vitest').Mock} */ (fetchCommentHistory);
+
 /* ==========================================================================
    Type Definitions
    ========================================================================== */
@@ -186,7 +195,7 @@ describe('Integration: CommentSection', () => {
     it('should display comment list with newest first when comments exist', async () => {
       // Arrange
       const comments = createMockComments(3);
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: {},
       });
@@ -210,7 +219,7 @@ describe('Integration: CommentSection', () => {
 
     it('should show empty state when no comments exist', async () => {
       // Arrange
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: [],
         lastDoc: null,
       });
@@ -226,7 +235,7 @@ describe('Integration: CommentSection', () => {
 
     it('should show loading state while fetching comments', () => {
       // Arrange
-      fetchComments.mockReturnValueOnce(new Promise(() => {}));
+      mockedFetchComments.mockReturnValueOnce(new Promise(() => {}));
 
       // Act
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
@@ -247,11 +256,11 @@ describe('Integration: CommentSection', () => {
       /** @type {object} */
       const mockLastDoc = { id: 'cursor-doc' };
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: firstBatch,
         lastDoc: mockLastDoc,
       });
-      fetchMoreComments.mockResolvedValueOnce({
+      mockedFetchMoreComments.mockResolvedValueOnce({
         comments: secondBatch,
         lastDoc: null,
       });
@@ -278,7 +287,7 @@ describe('Integration: CommentSection', () => {
     it('should show end hint when no more comments to load', async () => {
       // Arrange
       const comments = createMockComments(5);
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
@@ -294,7 +303,7 @@ describe('Integration: CommentSection', () => {
 
     it('should hide comment input when user is not logged in', async () => {
       // Arrange
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: createMockComments(2),
         lastDoc: null,
       });
@@ -309,7 +318,7 @@ describe('Integration: CommentSection', () => {
 
     it('should show comment input when user is logged in', async () => {
       // Arrange
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: createMockComments(2),
         lastDoc: null,
       });
@@ -332,13 +341,13 @@ describe('Integration: CommentSection', () => {
       // Arrange
       const user = userEvent.setup();
       const existingComments = createMockComments(2);
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: existingComments,
         lastDoc: null,
       });
 
-      addComment.mockResolvedValueOnce({ id: 'new-1' });
-      getCommentById.mockResolvedValueOnce(
+      mockedAddComment.mockResolvedValueOnce({ id: 'new-1' });
+      mockedGetCommentById.mockResolvedValueOnce(
         createMockComment({
           id: 'new-1',
           authorUid: 'user-1',
@@ -380,7 +389,7 @@ describe('Integration: CommentSection', () => {
     it('should disable submit button when input is empty or whitespace', async () => {
       // Arrange
       const user = userEvent.setup();
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: [],
         lastDoc: null,
       });
@@ -414,7 +423,7 @@ describe('Integration: CommentSection', () => {
     it('should show character count warning near 500 and disable at 501', async () => {
       // Arrange
       const user = userEvent.setup();
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: [],
         lastDoc: null,
       });
@@ -460,12 +469,12 @@ describe('Integration: CommentSection', () => {
     it('should show error notification and preserve input on submit failure', async () => {
       // Arrange
       const user = userEvent.setup();
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: [],
         lastDoc: null,
       });
 
-      addComment.mockRejectedValueOnce(new Error('Network error'));
+      mockedAddComment.mockRejectedValueOnce(new Error('Network error'));
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
 
@@ -492,12 +501,12 @@ describe('Integration: CommentSection', () => {
     it('should show loading state on submit button while submitting', async () => {
       // Arrange
       const user = userEvent.setup();
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: [],
         lastDoc: null,
       });
 
-      addComment.mockReturnValueOnce(new Promise(() => {}));
+      mockedAddComment.mockReturnValueOnce(new Promise(() => {}));
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
 
@@ -521,13 +530,13 @@ describe('Integration: CommentSection', () => {
     it('should submit on Ctrl+Enter keyboard shortcut', async () => {
       // Arrange
       const user = userEvent.setup();
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: [],
         lastDoc: null,
       });
 
-      addComment.mockResolvedValueOnce({ id: 'new-keyboard' });
-      getCommentById.mockResolvedValueOnce(
+      mockedAddComment.mockResolvedValueOnce({ id: 'new-keyboard' });
+      mockedGetCommentById.mockResolvedValueOnce(
         createMockComment({
           id: 'new-keyboard',
           content: '快捷鍵留言',
@@ -575,7 +584,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
@@ -601,7 +610,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
@@ -630,7 +639,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
@@ -665,7 +674,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
@@ -706,7 +715,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
@@ -745,12 +754,12 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
 
-      updateComment.mockResolvedValueOnce(undefined);
+      mockedUpdateComment.mockResolvedValueOnce(undefined);
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -802,7 +811,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
@@ -849,7 +858,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
@@ -876,12 +885,12 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
 
-      fetchCommentHistory.mockResolvedValueOnce([
+      mockedFetchCommentHistory.mockResolvedValueOnce([
         {
           content: '原始版本的留言',
           editedAt: { toDate: () => new Date(2026, 3, 2, 14, 30) },
@@ -929,7 +938,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
@@ -967,12 +976,12 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
 
-      deleteComment.mockResolvedValueOnce(undefined);
+      mockedDeleteComment.mockResolvedValueOnce(undefined);
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -1015,12 +1024,12 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
 
-      deleteComment.mockReturnValueOnce(new Promise(() => {}));
+      mockedDeleteComment.mockReturnValueOnce(new Promise(() => {}));
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -1060,12 +1069,12 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
 
-      deleteComment.mockRejectedValueOnce(new Error('Delete failed'));
+      mockedDeleteComment.mockRejectedValueOnce(new Error('Delete failed'));
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -1104,7 +1113,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
@@ -1143,7 +1152,7 @@ describe('Integration: CommentSection', () => {
   describe('Accessibility', () => {
     it('should have region role with aria-label on comment section', async () => {
       // Arrange
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: createMockComments(1),
         lastDoc: null,
       });
@@ -1158,7 +1167,7 @@ describe('Integration: CommentSection', () => {
 
     it('should render comment list as semantic ul/li', async () => {
       // Arrange
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: createMockComments(3),
         lastDoc: null,
       });
@@ -1185,7 +1194,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments,
         lastDoc: null,
       });
@@ -1206,7 +1215,7 @@ describe('Integration: CommentSection', () => {
 
     it('should use time element with dateTime attribute', async () => {
       // Arrange
-      fetchComments.mockResolvedValueOnce({
+      mockedFetchComments.mockResolvedValueOnce({
         comments: createMockComments(1),
         lastDoc: null,
       });

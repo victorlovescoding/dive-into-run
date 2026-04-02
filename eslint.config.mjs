@@ -99,7 +99,15 @@ export default [
 
   // 忽略的檔案和資料夾
   {
-    ignores: ['node_modules/**', '.next/**', 'out/**', 'public/**', '*.config.js', '*.config.mjs'],
+    ignores: [
+      'node_modules/**',
+      '.next/**',
+      'out/**',
+      'public/**',
+      '*.config.js',
+      '*.config.mjs',
+      '**/*.d.ts',
+    ],
   },
   // 針對測試檔案的嚴格規範
   {
