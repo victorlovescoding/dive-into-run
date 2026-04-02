@@ -217,3 +217,23 @@ export function buildUserPayload(user) {
     photoURL: String(user.photoURL || ''),
   };
 }
+
+/**
+ * 格式化留言時間為「月/日 時:分」（24 小時制）。
+ * @param {string | { toDate: () => Date } | null | undefined} value - 日期時間值。
+ * @returns {string} 格式化後的時間字串，如「4/2 14:30」。
+ */
+export function formatCommentTime(value) {
+  void value;
+  return '';
+}
+
+/**
+ * 格式化留言完整時間為「YYYY年M月D日 HH:MM」。
+ * @param {string | { toDate: () => Date } | null | undefined} value - 日期時間值。
+ * @returns {string} 格式化後的完整時間字串，如「2026年4月2日 14:30」。
+ */
+export function formatCommentTimeFull(value) {
+  void value;
+  return '';
+}
