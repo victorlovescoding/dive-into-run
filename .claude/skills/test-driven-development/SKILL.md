@@ -1,6 +1,6 @@
 ---
-name: Test-Driven-Development
-description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能測試、Bug 修復測試，或執行開發流程第三步 (Step 3) 時使用。此 Skill 是專案中 TDD 的唯一權威來源。
+name: test-driven-development
+description: Test-Driven-Development（測試驅動開發）。當需要撰寫功能測試、Bug 修復測試，或在實作前建立失敗測試案例（RED phase）時使用。涵蓋 Unit / Integration / E2E 三層級測試的撰寫規範與品質防線。
 ---
 
 # Step 3: Test Driven Development (TDD)
@@ -26,18 +26,33 @@ description: 測試驅動開發 (TDD) 與流程第三步。當需要撰寫功能
       - **Iron Law**: No Production Code Without A Failing Test First. 違者視為違反核心價值。
 
 1.5 **測試品質防線 (Quality Gate)**:
-_ **Action 1 (Read The Laws)**: 在撰寫任何測試代碼前，**必須依序執行以下指令**，否則視為任務失敗：1. `Read` 讀取 `.claude/skills/Test-Driven-Development/references/coding-style.md` (這是你的法律，必須嚴格遵守)。2. `Read` 讀取 `.claude/skills/Test-Driven-Development/references/jsdoc-cheatsheet.md` (這是你的語法字典，請查閱型別寫法)。3. `Read` 讀取 `.claude/skills/Test-Driven-Development/references/boilerplate.js` (這是你的範本，請照抄結構)。
-_ **Action 2 (Anti-Patterns)**: `Read` 讀取並理解 `.claude/skills/Test-Driven-Development/references/testing-anti-patterns.md`。\* **Iron Rule**: 嚴格遵守「三不原則」：不測試 Mock 行為、不污染生產代碼、不使用不完整 Mock。
+_ **Action 1 (Read The Laws)**: 在撰寫任何測試代碼前，**必須依序執行以下指令**，否則視為任務失敗：1. `Read` 讀取 `.claude/skills/test-driven-development/references/coding-style.md` (這是你的法律，必須嚴格遵守)。2. `Read` 讀取 `.claude/skills/test-driven-development/references/jsdoc-cheatsheet.md` (這是你的語法字典，請查閱型別寫法)。3. `Read` 讀取 `.claude/skills/test-driven-development/references/boilerplate.js` (這是你的範本，請照抄結構)。
+_ **Action 2 (Anti-Patterns)**: `Read` 讀取並理解 `.claude/skills/test-driven-development/references/testing-anti-patterns.md`。\* **Iron Rule**: 嚴格遵守「三不原則」：不測試 Mock 行為、不污染生產代碼、不使用不完整 Mock。
 
-2.  **分析 Spec (Analyze & Locate)**:
-    - **Locate Spec (Robust Strategy)**:
-      - **Action**: 必須準確找到對應的 `spec.md`。由於分支名稱 (e.g. `refactor/fix-bug`) 可能與 Spec 路徑 (e.g. `specs/feature-auth`) 不一致，切勿 blindly assume路徑。
+2.  **分析設計文件 (Analyze & Locate)**:
+    - **Locate Documents (Robust Strategy)**:
+      - **Action**: 必須準確找到對應的設計文件。由於分支名稱 (e.g. `refactor/fix-bug`) 可能與 Spec 路徑 (e.g. `specs/feature-auth`) 不一致，切勿 blindly assume 路徑。
       - **Strategy**:
-        1.  預設嘗試: `specs/$(git branch --show-current)/spec.md`
-        2.  搜尋嘗試: 若上述不存在，應尋找父目錄或相關連的 `specs/**/spec.md` (類似 Tests 的尋找邏輯)。
+        1.  預設嘗試: `specs/$(git branch --show-current)/`
+        2.  搜尋嘗試: 若上述不存在，應尋找父目錄或相關連的 `specs/**/` (類似 Tests 的尋找邏輯)。
         3.  **Mandatory Ask**: 若有多個候選或無法確定，**必須**請使用者提供正確路徑。
+      - **必讀文件**:
+        1.  `spec.md`（**必要**）— 定義**測什麼**: User Stories、Acceptance Scenarios、Functional Requirements (FRs)
+        2.  `plan.md`（**必要**）— 定義**怎麼測**: Function signatures、Component architecture、State management、UI specs
+        3.  `data-model.md`（若存在）— 補充 validation rules、資料結構、query patterns
+    - **文件 → 測試層級對應**:
+
+      | 測試層級    | 主要依據                              | 輔助參考                                |
+      | ----------- | ------------------------------------- | --------------------------------------- |
+      | Unit        | `plan.md` (service layer functions)   | `data-model.md` (validation rules)      |
+      | Integration | `spec.md` (acceptance scenarios, FRs) | `plan.md` (component tree, state, a11y) |
+      | E2E         | `spec.md` (user stories)              | —                                       |
+      - **Unit Tests**: 從 `plan.md` 的 service layer 表格提取每個 function 的 signature 與要點，據此設計 mock/assert。`data-model.md` 的 validation rules 直接對應邊界測試案例。
+      - **Integration Tests**: 從 `spec.md` 的 Acceptance Scenarios 逐條轉為測試案例（每個 Given/When/Then 至少一個 test）。從 `plan.md` 取得 component props、state 名稱、aria attributes 作為斷言依據。
+      - **E2E Tests**: 從 `spec.md` 的 User Stories 提取 critical user journeys。
+
     - **Analyze (Critical Thinking)**:
-      - **Action**: 閱讀 Spec 並進行**批判性思考**。
+      - **Action**: 閱讀上述文件並進行**批判性思考**。
       - **Gap Analysis**: 若 Spec 描述不足 (e.g. 只有 Happy Path)，**必須**主動補完 Edge Cases (Null, Network Error, Boundary) 並列出測試案例。
       - **Verification**: 確保測試覆蓋了 Spec 的所有驗收標準 (AC)。
 
