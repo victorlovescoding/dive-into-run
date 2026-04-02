@@ -117,3 +117,35 @@ describe('Integration: UserProfile', () => {
     expect(mockOnUpdate).toHaveBeenCalledTimes(1);
   });
 });
+
+/* ==========================================================================
+   SECTION 3: MODULE MOCK PATTERN (vi.mock + typed alias)
+   When mocking an entire module, TS doesn't know the imports became Mock.
+   Create typed aliases IMMEDIATELY after vi.mock() to avoid TS2339.
+   ========================================================================== */
+
+// import { fetchItems, addItem } from '@/lib/firebase-items'; // Example import
+
+// vi.mock('@/lib/firebase-items', () => ({
+//   fetchItems: vi.fn(),
+//   addItem: vi.fn(),
+// }));
+
+// /* Cast mocked imports — TS needs Mock type to recognize .mockXxx() */
+// const mockedFetchItems = /** @type {import('vitest').Mock} */ (fetchItems);
+// const mockedAddItem = /** @type {import('vitest').Mock} */ (addItem);
+
+// describe('Integration: ItemList', () => {
+//   it('should render items from mock data', async () => {
+//     // Arrange — use mocked alias for .mockXxx()
+//     mockedFetchItems.mockResolvedValueOnce({ items: [{ id: '1', name: 'Test' }] });
+//
+//     render(<ItemList />);
+//
+//     // Assert
+//     await screen.findByText('Test');
+//
+//     // expect() can use original name — it accepts any
+//     expect(fetchItems).toHaveBeenCalledTimes(1);
+//   });
+// });
