@@ -84,6 +84,17 @@ You **MUST** consider the user input before proceeding (if not empty).
      - Display the table showing all checklists passed
      - Automatically proceed to step 3
 
+2.5. **Coding Standards Gate (Quality Gate)**:
+
+- **Action (MANDATORY)**: Before writing ANY code, you MUST execute the following reads.
+  Failure to do so is a task violation:
+  1.  `Read` `.claude/references/coding-standards.md` — 通用格式與架構規範
+  2.  `Read` `.specify/memory/constitution.md` — 僅關注 Principles V, VI, IX
+- **Subagent Rule**: When spawning subagents for parallel tasks,
+  include the content of coding-standards.md in each task prompt.
+- **Iron Rule**: All code produced in this session MUST comply with these standards.
+  Do not defer to lint — get it right the first time.
+
 3. Load and analyze the implementation context:
    - **REQUIRED**: Read tasks.md for the complete task list and execution plan
    - **REQUIRED**: Read plan.md for tech stack, architecture, and file structure
