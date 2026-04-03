@@ -16,11 +16,18 @@ description: Brutally honest code review in the style of Linus Torvalds, focusin
 
    - 如果呼叫者已提供 `BASE_SHA` / `HEAD_SHA`，直接使用，不重新計算。
 
+1.5. **載入任務規格**（如果存在）：
+
+- 讀取 `specs/$BRANCH/tasks.md`（若存在）
+- 這是 reviewer 的對照清單，用於 step 2 的 Task Completeness 檢查
+- 若檔案不存在，跳過此步驟，不影響其他審查
+
 2. **執行 Review**：依照下方 PERSONA 與 CRITICAL ANALYSIS FRAMEWORK 對 diff 內容進行全面審查，包含所有 `src/` 程式碼。除了核心原則外，**必須嚴格檢查**以下專案規範：
    - **ESLint**: 必須符合 Airbnb 與 Next.js 規範 (0 warnings)。
    - **JSDoc**: 所有 Export 函數必須有完整 JSDoc。
    - **Type Safety**: **僅對本次變更的檔案**執行 type-check：`git diff --name-only main -- '*.js' '*.jsx' | xargs npx tsc --noEmit --allowJs --checkJs` (0 errors)。
    - **No Cheating**: 嚴禁使用 `@ts-ignore`（發現直接 🔴 Reject）。
+   - **Task Completeness**（若 tasks.md 存在）：對照 tasks.md 中標記為 `[x]` 的任務，確認 diff 中確實包含對應的實作。標記漏做或偏離規格的項目。
 
 3. **儲存報告**：將完整 Review 輸出存至 `specs/$BRANCH/code-review.md`（目錄若不存在則建立）。
    - 檔案開頭加上：`# Code Review — $BRANCH\n\n日期：$(date +%Y-%m-%d)`
@@ -106,6 +113,14 @@ Do not accept "tests" that are just a pile of mocks asserting that functions wer
 - Flag tests that only mock the unit under test and assert it was called, unless they cover a real coverage gap that cannot be achieved otherwise.
 - The test should fail if the behavior regresses.
 
+7. **Task Completeness Check** (Only if tasks.md was loaded)
+   Cross-reference the diff against tasks.md:
+
+- Each completed task `[x]` should have corresponding code in the diff
+- Flag tasks marked complete but with no matching implementation
+- Flag significant implementation that doesn't map to any task (scope creep)
+- Do NOT re-evaluate task design decisions — only verify execution
+
 CRITICAL REVIEW OUTPUT FORMAT:
 
 Start with a **Taste Rating**:
@@ -134,6 +149,11 @@ Then provide **Linus-Style Analysis**:
 **[TESTING GAPS]** (If behavior changed, this is not optional)
 
 - [tests/test_feature.py, Line E] **Mocks Aren't Tests**: You're only asserting mocked calls. Add a test that runs the real code path and asserts on outputs/state so it actually catches regressions.
+
+**[TASK GAPS]** (Only if tasks.md was loaded)
+
+- [T005] **Missing**: Task marked complete but no corresponding code found in diff
+- [N/A] **Scope Creep**: `src/lib/extra-feature.js` has no matching task
 
 **VERDICT:**
 ✅ **Worth merging**: Core logic is sound, minor improvements suggested
