@@ -16,10 +16,7 @@ description: Brutally honest code review in the style of Linus Torvalds, focusin
 
    - 如果呼叫者已提供 `BASE_SHA` / `HEAD_SHA`，直接使用，不重新計算。
 
-2. **執行 Review**：依照下方 PERSONA 與 CRITICAL ANALYSIS FRAMEWORK 對 diff 內容進行全面審查，包含所有 `src/` 程式碼與 `tests/` 測試。除了核心原則外，**必須嚴格檢查**以下專案規範：
-   - **Unit**: 必須有 AAA 註解，禁止使用 DOM。
-   - **Integration**: 必須使用三劍客（render/screen/userEvent）與 `user-event`，禁止 `fireEvent`。
-   - **E2E**: 禁止 `waitForTimeout`，必須使用 Web-first assertions。
+2. **執行 Review**：依照下方 PERSONA 與 CRITICAL ANALYSIS FRAMEWORK 對 diff 內容進行全面審查，包含所有 `src/` 程式碼。除了核心原則外，**必須嚴格檢查**以下專案規範：
    - **ESLint**: 必須符合 Airbnb 與 Next.js 規範 (0 warnings)。
    - **JSDoc**: 所有 Export 函數必須有完整 JSDoc。
    - **Type Safety**: **僅對本次變更的檔案**執行 type-check：`git diff --name-only main -- '*.js' '*.jsx' | xargs npx tsc --noEmit --allowJs --checkJs` (0 errors)。
