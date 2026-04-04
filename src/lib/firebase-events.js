@@ -166,11 +166,15 @@ export async function createEvent(raw, extra = {}) {
   } = extra || {};
   /* eslint-enable no-unused-vars */
 
+  const normalized = normalizeEventPayload(raw);
   const payload = {
-    ...normalizeEventPayload(raw),
+    ...normalized,
     ...extraRest,
     // ✅ 改用伺服器時間：避免使用者裝置時間不準造成排序怪異
     createdAt: serverTimestamp(),
+    // ✅ 初始化名額欄位，避免 security rules 因欄位不存在而拒絕後續更新
+    participantsCount: 0,
+    remainingSeats: normalized.maxParticipants,
   };
 
   const docRef = await addDoc(collection(db, 'events'), payload);
