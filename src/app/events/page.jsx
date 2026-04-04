@@ -308,9 +308,10 @@ export default function RunTogetherPage() {
   }
 
   /**
-   * 清除所有篩選條件。
+   * 清除所有篩選條件並重新載入原始活動列表。
+   * @returns {Promise<void>}
    */
-  function handleClearFilters() {
+  async function handleClearFilters() {
     setFilterTimeStart('');
     setFilterTimeEnd('');
     setFilterDistanceMin('');
@@ -318,9 +319,23 @@ export default function RunTogetherPage() {
     setFilterHasSeatsOnly(true);
     setFilterCity('');
     setFilterDistrict('');
-
-    // 重置搜尋結果狀態
     setIsFilteredResults(false);
+
+    // 重新載入原始活動列表，恢復 pagination 狀態
+    setIsLoadingEvents(true);
+    setLoadError(null);
+
+    try {
+      const { events: latest, lastDoc } = await fetchLatestEvents(10);
+      setEvents(latest);
+      setCursor(lastDoc);
+      setHasMore(latest.length === 10 && !!lastDoc);
+    } catch (err) {
+      console.error('載入活動失敗:', err);
+      setLoadError('載入活動失敗，請稍後再試');
+    } finally {
+      setIsLoadingEvents(false);
+    }
   }
 
   /**
