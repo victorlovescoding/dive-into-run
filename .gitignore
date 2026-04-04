@@ -57,3 +57,6 @@ firestore-debug.log*
 .gemini/hook_debug.log
 .gemini/.username
 test-results/
+
+# Personal planning docs
+FEATURE_ROADMAP.md
