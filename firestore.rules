@@ -76,6 +76,7 @@ service cloud.firestore {
       allow update: if (
         isSignedIn() && request.auth.uid == resource.data.hostUid
         && (!request.resource.data.keys().hasAny(['maxParticipants'])
+            || !('participantsCount' in resource.data)
             || request.resource.data.maxParticipants >= resource.data.participantsCount)
       ) || (
         isSignedIn()

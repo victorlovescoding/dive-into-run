@@ -654,7 +654,8 @@ export default function RunTogetherPage() {
           }),
         );
         setEditingEvent(null);
-      } catch {
+      } catch (err) {
+        console.error('更新活動失敗:', err);
         setActionMessage({ type: 'error', message: '更新活動失敗，請再試一次' });
       } finally {
         setIsUpdating(false);
