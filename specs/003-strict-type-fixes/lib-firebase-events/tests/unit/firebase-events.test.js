@@ -141,7 +141,7 @@ describe('firebase-events', () => {
 
       const result = await queryEvents({ city: 'Tao' });
       expect(result).toHaveLength(1);
-      expect(firestore.where).not.toHaveBeenCalled(); // No time filter, so no where
+      expect(firestore.where).toHaveBeenCalledWith('city', '==', 'Tao');
     });
 
     it('should filter by time', async () => {

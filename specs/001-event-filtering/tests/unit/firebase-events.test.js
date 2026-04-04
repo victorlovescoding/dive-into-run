@@ -44,16 +44,39 @@ describe('Event Filtering Logic (Unit) - Feature 001', () => {
   });
 
   // 1. 單一地點篩選 (US4)
-  it('應在記憶體中正確過濾地點 (In-Memory Filtering)', async () => {
+  it('應在 Firestore 層級過濾地點 (city where clause)', async () => {
+    // city 篩選已移至 Firestore 層級，mock 模擬 Firestore 只回傳匹配的資料
+    const taichungEvents = mockEvents.filter((ev) => ev.city === '臺中市');
+    firestore.getDocs.mockResolvedValueOnce({
+      docs: taichungEvents.map((ev) => ({ id: ev.id, data: () => ev })),
+    });
+
     const filters = { city: '臺中市' };
     const results = await queryEvents(filters);
 
-    // 驗證 Firestore 沒有被呼叫 city 查詢 (因為移至記憶體處理以避免索引問題)
-    expect(firestore.where).not.toHaveBeenCalledWith('city', '==', '臺中市');
+    // 驗證 Firestore 被呼叫 city 查詢（已從 in-memory 提升至 Firestore 層級）
+    expect(firestore.where).toHaveBeenCalledWith('city', '==', '臺中市');
 
     // 驗證結果確實只包含臺中市的活動
     expect(results.length).toBe(1);
     expect(results[0].city).toBe('臺中市');
+  });
+
+  // 1b. city + district 同時篩選
+  it('應在 Firestore 層級同時過濾 city 和 district', async () => {
+    const filters = { city: '臺北市', district: '信義區' };
+    await queryEvents(filters);
+
+    expect(firestore.where).toHaveBeenCalledWith('city', '==', '臺北市');
+    expect(firestore.where).toHaveBeenCalledWith('district', '==', '信義區');
+  });
+
+  // 1c. district without city 不應加 where
+  it('沒有 city 時不應加 district where clause', async () => {
+    const filters = { district: '信義區' };
+    await queryEvents(filters);
+
+    expect(firestore.where).not.toHaveBeenCalledWith('district', '==', '信義區');
   });
 
   // 2. 距離寬容度 (US2)
