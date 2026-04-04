@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { getRemainingSeats } from '@/lib/event-helpers';
+import { getRemainingSeats, isDeadlinePassed } from '@/lib/event-helpers';
 import styles from './EventActionButtons.module.css';
 
 /**
@@ -90,6 +90,14 @@ export default function EventActionButtons({
         aria-disabled="true"
       >
         已額滿
+      </button>
+    );
+  }
+
+  if (isDeadlinePassed(event)) {
+    return (
+      <button type="button" className={styles.submitButton} disabled aria-disabled="true">
+        報名已截止
       </button>
     );
   }

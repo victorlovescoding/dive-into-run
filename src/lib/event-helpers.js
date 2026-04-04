@@ -205,6 +205,32 @@ export function getRemainingSeats(ev) {
 }
 
 /**
+ * 將日期值轉為毫秒時間戳（支援 string 或 Firestore Timestamp）。
+ * @param {string | FirestoreTimestamp | null | undefined} value - 日期值。
+ * @returns {number | null} 毫秒時間戳，無效值回傳 null。
+ */
+export function toMs(value) {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d.getTime();
+  }
+  if (typeof value?.toDate === 'function') return value.toDate().getTime();
+  return null;
+}
+
+/**
+ * 判斷活動的報名截止時間是否已過。
+ * @param {EventData} event - 活動資料。
+ * @returns {boolean} 若截止時間已過回傳 true，否則 false。
+ */
+export function isDeadlinePassed(event) {
+  const ddl = toMs(event?.registrationDeadline);
+  if (ddl === null) return false;
+  return Date.now() >= ddl;
+}
+
+/**
  * 建立使用者 payload
  * @param {{ uid?: string, name?: string, email?: string, photoURL?: string } | null} user - 使用者物件
  * @returns {UserPayload | null} 使用者 payload，或 null

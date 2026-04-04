@@ -21,7 +21,12 @@ import {
   updateEvent,
   deleteEvent,
 } from '@/lib/firebase-events';
-import { buildUserPayload, normalizeRoutePolylines } from '@/lib/event-helpers';
+import {
+  buildUserPayload,
+  isDeadlinePassed,
+  normalizeRoutePolylines,
+  toMs,
+} from '@/lib/event-helpers';
 import EventCardMenu from '@/components/EventCardMenu';
 import EventEditForm from '@/components/EventEditForm';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
@@ -66,17 +71,6 @@ function formatDateTime(value) {
  */
 function computeStatus({ time, registrationDeadline }) {
   const now = Date.now();
-
-  const toMs = (v) => {
-    if (!v) return null;
-    if (typeof v === 'string') {
-      const d = new Date(v);
-      return Number.isNaN(d.getTime()) ? null : d.getTime();
-    }
-    if (typeof v?.toDate === 'function') return v.toDate().getTime();
-    return null;
-  };
-
   const t = toMs(time);
   const ddl = toMs(registrationDeadline);
 
@@ -561,6 +555,19 @@ export default function EventDetailClient({ id }) {
                           aria-disabled="true"
                         >
                           已額滿
+                        </button>
+                      );
+                    }
+
+                    if (isDeadlinePassed(event)) {
+                      return (
+                        <button
+                          type="button"
+                          className={styles.submitButton}
+                          disabled
+                          aria-disabled="true"
+                        >
+                          報名已截止
                         </button>
                       );
                     }
