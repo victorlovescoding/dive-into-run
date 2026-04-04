@@ -178,7 +178,7 @@ export async function createEvent(raw, extra = {}) {
 }
 
 /**
- * 取得最新的活動列表（依 createdAt 由新到舊）。
+ * 取得最新的活動列表（依 time（活動時間）由新到舊）。
  * 用意：讓 UI 不直接碰 Firestore 查詢，統一走 data layer。
  * @param {number} [limitCount] - 一次取得幾筆資料。
  * @returns {Promise<{
@@ -187,7 +187,7 @@ export async function createEvent(raw, extra = {}) {
  * }>} 活動列表與分頁 cursor。
  */
 export async function fetchLatestEvents(limitCount = 10) {
-  const q = query(collection(db, 'events'), orderBy('createdAt', 'desc'), limit(limitCount));
+  const q = query(collection(db, 'events'), orderBy('time', 'desc'), limit(limitCount));
 
   const snap = await getDocs(q);
   const events = snap.docs.map((snapshot) => ({
@@ -291,7 +291,7 @@ export async function fetchEventById(eventId) {
 }
 
 /**
- * 取得下一頁活動（依 createdAt 由新到舊）。
+ * 取得下一頁活動（依 time（活動時間）由新到舊）。
  * @param {import('firebase/firestore').QueryDocumentSnapshot} afterDoc - 上一頁最後一筆的 Snapshot（分頁游標）。
  * @param {number} [limitCount] - 一次取得幾筆資料。
  * @returns {Promise<{
@@ -306,7 +306,7 @@ export async function fetchNextEvents(afterDoc, limitCount = 10) {
 
   const q = query(
     collection(db, 'events'),
-    orderBy('createdAt', 'desc'),
+    orderBy('time', 'desc'),
     startAfter(afterDoc),
     limit(limitCount),
   );

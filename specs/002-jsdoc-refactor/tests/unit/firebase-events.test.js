@@ -130,7 +130,7 @@ describe('firebase-events', () => {
       expect(result.events[0].id).toBe('1');
       expect(result.lastDoc).toBe(mockDocs[1]);
       expect(firestore.query).toHaveBeenCalled();
-      expect(firestore.orderBy).toHaveBeenCalledWith('createdAt', 'desc');
+      expect(firestore.orderBy).toHaveBeenCalledWith('time', 'desc');
     });
   });
 
