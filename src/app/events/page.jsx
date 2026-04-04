@@ -52,7 +52,7 @@ export default function RunTogetherPage() {
   const [filterDistanceMin, setFilterDistanceMin] = useState('');
   const [filterDistanceMax, setFilterDistanceMax] = useState('');
   // 6. 是否還有名額
-  const [filterHasSeatsOnly, setFilterHasSeatsOnly] = useState(true);
+  const [filterHasSeatsOnly, setFilterHasSeatsOnly] = useState(false);
   // 7. 縣市 + 區
   const [filterCity, setFilterCity] = useState('');
   const [filterDistrict, setFilterDistrict] = useState('');
@@ -316,7 +316,7 @@ export default function RunTogetherPage() {
     setFilterTimeEnd('');
     setFilterDistanceMin('');
     setFilterDistanceMax('');
-    setFilterHasSeatsOnly(true);
+    setFilterHasSeatsOnly(false);
     setFilterCity('');
     setFilterDistrict('');
     setIsFilteredResults(false);
