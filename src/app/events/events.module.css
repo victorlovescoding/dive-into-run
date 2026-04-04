@@ -615,10 +615,6 @@
   color: #202124;
 }
 
-.filterCancelButton {
-  composes: cancelButton;
-}
-
 /* 按鈕基底（composes from EventActionButtons，與列表頁共用相同樣式） */
 .submitButton {
   composes: submitButton from '../../components/EventActionButtons.module.css';

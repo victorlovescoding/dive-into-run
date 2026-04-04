@@ -1134,13 +1134,6 @@ export default function RunTogetherPage() {
                 </button>
                 <button
                   type="button"
-                  className={styles.filterCancelButton}
-                  onClick={() => setFilterOpen(false)}
-                >
-                  取消
-                </button>
-                <button
-                  type="button"
                   className={styles.filterSearchButton}
                   onClick={handleSearchFilters}
                 >
