@@ -33,7 +33,7 @@
 
 **Collection**: `stravaConnections/{uid}`
 **Access**: Client-readable（owner only）
-**Firestore Rule**: `allow read: if isSignedIn() && request.auth.uid == userId`
+**Firestore Rule**: `allow read: if isSignedIn() && request.auth.uid == uid`
 
 | Field             | Type      | Required | Description                             |
 | ----------------- | --------- | -------- | --------------------------------------- |
