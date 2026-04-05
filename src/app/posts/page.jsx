@@ -16,7 +16,8 @@ import {
 } from '@/lib/firebase-posts';
 
 /**
- *
+ * 文章列表頁面，含發文、編輯、刪除、按讚與無限滾動。
+ * @returns {import('react').JSX.Element} 文章列表頁面。
  */
 export default function PostPage() {
   const [isComposeEditing, setIsComposeEditing] = useState(false);
@@ -31,9 +32,7 @@ export default function PostPage() {
   const [isLoadingNext, setIsLoadingNext] = useState(false);
 
   useEffect(() => {
-    /**
-     *
-     */
+    /** 載入最新文章列表並查詢按讚狀態。 */
     async function fetchPosts() {
       try {
         const postsData = await getLatestPosts();
@@ -68,7 +67,7 @@ export default function PostPage() {
   }, [user?.uid]);
 
   useEffect(() => {
-    if (!bottomRef.current || posts.length === 0 || !nextCursor || isLoadingNext) return;
+    if (!bottomRef.current || posts.length === 0 || !nextCursor || isLoadingNext) return undefined;
     const intersectionObserver = new IntersectionObserver(
       async (entries) => {
         const entry = entries[0]; // 只觀察一個東西所以取第一筆資料
@@ -144,8 +143,8 @@ export default function PostPage() {
   }, [posts.length, nextCursor, user?.uid, isLoadingNext]);
 
   /**
-   *
-   * @param postId
+   * 切換文章編輯/新增模式。
+   * @param {string} [postId] - 要編輯的文章 ID，未傳則為新增模式。
    */
   function composeButtonHandler(postId) {
     // 按下寫文章按鈕後，跳出編輯頁面
@@ -168,8 +167,8 @@ export default function PostPage() {
     }
   }
   /**
-   *
-   * @param e
+   * 送出新文章或更新既有文章。
+   * @param {import('react').FormEvent<HTMLFormElement>} e - 表單送出事件。
    */
   async function handleSubmitPost(e) {
     e.preventDefault();
@@ -196,8 +195,8 @@ export default function PostPage() {
   }
 
   /**
-   *
-   * @param postId
+   * 切換文章按讚狀態，搭配樂觀更新。
+   * @param {string} postId - 文章 ID。
    */
   async function pressLikeButton(postId) {
     if (!user?.uid) return;
@@ -219,7 +218,7 @@ export default function PostPage() {
     );
     const result = await toggleLikePost(postId, user.uid); // 寫回 Firestore
     // 如果更新成功就不維持狀態，更新失敗則回復原本狀態
-    if (result == 'fail') {
+    if (result === 'fail') {
       setPosts((prev) =>
         prev.map((p) => {
           if (p.id !== postId) return p;
@@ -233,9 +232,9 @@ export default function PostPage() {
     }
   }
   /**
-   *
-   * @param postId
-   * @param e
+   * 切換文章作者操作選單顯示。
+   * @param {string} postId - 文章 ID。
+   * @param {import('react').MouseEvent} e - 滑鼠點擊事件。
    */
   function toggleOwnerMenu(postId, e) {
     e.stopPropagation();
@@ -247,11 +246,12 @@ export default function PostPage() {
   }
 
   /**
-   *
-   * @param postId
+   * 確認後刪除文章並從列表移除。
+   * @param {string} postId - 要刪除的文章 ID。
    */
   async function deletePostHandler(postId) {
-    if (!confirm('確定要刪除文章？')) return;
+    // eslint-disable-next-line no-alert -- 刪除確認使用原生對話框
+    if (!window.confirm('確定要刪除文章？')) return;
     await deletePost(postId);
     setPosts((prev) => prev.filter((p) => p.id !== postId));
     if (openMenuPostId === postId) setOpenMenuPostId(''); // 關掉菜單

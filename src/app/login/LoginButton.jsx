@@ -1,32 +1,29 @@
 'use client';
 
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { useContext, useEffect, useState } from 'react';
+import { signInWithPopup } from 'firebase/auth';
+import { useContext, useState } from 'react';
 import { provider, auth } from '../../lib/firebase-client';
 import { AuthContext } from '@/contexts/AuthContext';
 
 /**
- *
+ * Google 登入按鈕，未登入時顯示。
+ * @returns {import('react').JSX.Element} 登入按鈕元件。
  */
 export default function LoginButton() {
-  const { setUser, user, loading } = useContext(AuthContext); // 在元件最上層取用
+  const { user, loading } = useContext(AuthContext); // 在元件最上層取用
   const [busy, setBusy] = useState(false);
   // const [ isLoginButton, setIsLoginButton ] = useState(true)
-  /**
-   *
-   */
+  /** 觸發 Google 登入彈窗流程。 */
   function LoginButtonHandler() {
     setBusy(true);
     signInWithPopup(auth, provider)
       .then((result) => {
         // This gives you a Google Access Token. You can use it to access the Google API.
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        const token = credential.accessToken;
         // The signed-in user info.
-        const { user } = result;
+        const { user: signedInUser } = result;
         // IdP data available using getAdditionalUserInfo(result)
         // ...
-        console.log(user);
+        console.warn(signedInUser);
         setBusy(false);
         // setUser({
         //     userName:user.displayName,
@@ -34,7 +31,7 @@ export default function LoginButton() {
         // })
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
         setBusy(false);
         // Handle Errors here.
         // const errorCode = error.code;
@@ -49,7 +46,7 @@ export default function LoginButton() {
   return (
     <>
       {!loading && !user && (
-        <button onClick={LoginButtonHandler} disabled={busy}>
+        <button type="button" onClick={LoginButtonHandler} disabled={busy}>
           {busy ? '處理中' : '登入'}
         </button>
       )}

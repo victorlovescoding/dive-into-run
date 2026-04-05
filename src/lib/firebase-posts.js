@@ -20,11 +20,34 @@ import {
 import { db } from '@/lib/firebase-client';
 
 /**
- *
- * @param root0
- * @param root0.title
- * @param root0.content
- * @param root0.user
+ * @typedef {object} Post
+ * @property {string} id - 文章 ID。
+ * @property {string} authorUid - 作者 UID。
+ * @property {string} title - 文章標題。
+ * @property {string} content - 文章內容。
+ * @property {string} [authorImgURL] - 作者大頭貼 URL。
+ * @property {import('firebase/firestore').Timestamp} [postAt] - 發文時間。
+ * @property {number} [likesCount] - 按讚數。
+ * @property {number} [commentsCount] - 留言數。
+ */
+
+/**
+ * @typedef {object} Comment
+ * @property {string} id - 留言 ID。
+ * @property {string} authorUid - 留言者 UID。
+ * @property {string} [authorName] - 留言者名稱。
+ * @property {string} [authorImgURL] - 留言者大頭貼 URL。
+ * @property {string} comment - 留言內容。
+ * @property {import('firebase/firestore').Timestamp} [createdAt] - 留言時間。
+ */
+
+/**
+ * 建立新文章。
+ * @param {object} root0 - 參數物件。
+ * @param {string} root0.title - 文章標題。
+ * @param {string} root0.content - 文章內容。
+ * @param {{ uid: string, photoURL?: string }} root0.user - 使用者資訊。
+ * @returns {Promise<{ id: string }>} 新建文章的 ID。
  */
 export async function createPost({ title, content, user }) {
   const ref = await addDoc(collection(db, 'posts'), {
@@ -40,11 +63,11 @@ export async function createPost({ title, content, user }) {
 }
 
 /**
- *
- * @param editingPostId
- * @param root0
- * @param root0.title
- * @param root0.content
+ * 更新文章標題與內容。
+ * @param {string} editingPostId - 要編輯的文章 ID。
+ * @param {object} root0 - 參數物件。
+ * @param {string} root0.title - 新標題。
+ * @param {string} root0.content - 新內容。
  */
 export async function updatePost(editingPostId, { title, content }) {
   await updateDoc(doc(db, 'posts', editingPostId), {
@@ -54,7 +77,8 @@ export async function updatePost(editingPostId, { title, content }) {
 }
 
 /**
- *
+ * 取得最新 10 篇文章。
+ * @returns {Promise<Post[]>} 最新文章陣列。
  */
 export async function getLatestPosts() {
   const q = query(
@@ -64,15 +88,19 @@ export async function getLatestPosts() {
     limit(10),
   );
   const docSnap = await getDocs(q);
-  return docSnap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+  return docSnap.docs.map(
+    (d) =>
+      /** @type {Post} */ ({
+        id: d.id,
+        ...d.data(),
+      }),
+  );
 }
 
 /**
- *
- * @param last
+ * 取得更多文章（分頁）。
+ * @param {Post | null} last - 上一頁最後一筆文章。
+ * @returns {Promise<Post[]>} 下一頁文章陣列。
  */
 export async function getMorePosts(last) {
   if (!last) return [];
@@ -85,15 +113,19 @@ export async function getMorePosts(last) {
     limit(10),
   );
   const docSnap = await getDocs(q);
-  return docSnap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+  return docSnap.docs.map(
+    (d) =>
+      /** @type {Post} */ ({
+        id: d.id,
+        ...d.data(),
+      }),
+  );
 }
 
 /**
- *
- * @param searchTerm
+ * 依關鍵字搜尋文章。
+ * @param {string} searchTerm - 搜尋關鍵字。
+ * @returns {Promise<Post[]>} 搜尋結果文章陣列。
  */
 export async function getPostsBySearch(searchTerm) {
   const normalizedSearchTerm = searchTerm.toLowerCase();
@@ -106,16 +138,20 @@ export async function getPostsBySearch(searchTerm) {
     limit(10),
   );
   const docSnap = await getDocs(q);
-  return docSnap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+  return docSnap.docs.map(
+    (d) =>
+      /** @type {Post} */ ({
+        id: d.id,
+        ...d.data(),
+      }),
+  );
 }
 
 /**
- *
- * @param searchTerm
- * @param last
+ * 依關鍵字搜尋更多文章（分頁）。
+ * @param {string} searchTerm - 搜尋關鍵字。
+ * @param {Post | null} last - 上一頁最後一筆文章。
+ * @returns {Promise<Post[]>} 下一頁搜尋結果。
  */
 export async function getMorePostsBySearch(searchTerm, last) {
   if (!last) return [];
@@ -130,33 +166,39 @@ export async function getMorePostsBySearch(searchTerm, last) {
     limit(10),
   );
   const docSnap = await getDocs(q);
-  return docSnap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+  return docSnap.docs.map(
+    (d) =>
+      /** @type {Post} */ ({
+        id: d.id,
+        ...d.data(),
+      }),
+  );
 }
 
 /**
- *
- * @param id
+ * 取得單篇文章詳情。
+ * @param {string} id - 文章 ID。
+ * @returns {Promise<Post | null>} 文章資料，不存在時回傳 null。
  */
 export async function getPostDetail(id) {
   const docRef = doc(db, 'posts', id);
   const docSnap = await getDoc(docRef);
 
   if (docSnap.exists()) {
-    const postDetailData = { id: docSnap.id, ...docSnap.data() }; // ✅ 解開完直接回傳
+    const postDetailData = /** @type {Post} */ ({ id: docSnap.id, ...docSnap.data() }); // 解開完直接回傳
     // 傳到ui層
     return postDetailData;
   }
   // docSnap.data() will be undefined in this case
-  console.log('No such document!');
+  console.warn('No such document!');
+  return null;
 }
 
 /**
- *
- * @param id
- * @param numberOfComments
+ * 取得文章最新留言。
+ * @param {string} id - 文章 ID。
+ * @param {number} numberOfComments - 要取得的留言數量。
+ * @returns {Promise<Comment[]>} 留言陣列。
  */
 export async function getLatestComments(id, numberOfComments) {
   const q = query(
@@ -166,16 +208,20 @@ export async function getLatestComments(id, numberOfComments) {
     limit(numberOfComments),
   );
   const docSnap = await getDocs(q);
-  return docSnap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+  return docSnap.docs.map(
+    (d) =>
+      /** @type {Comment} */ ({
+        id: d.id,
+        ...d.data(),
+      }),
+  );
 }
 
 /**
- *
- * @param id
- * @param last
+ * 取得更多留言（分頁）。
+ * @param {string} id - 文章 ID。
+ * @param {Comment} last - 上一頁最後一筆留言。
+ * @returns {Promise<Comment[]>} 下一頁留言陣列。
  */
 export async function getMoreComments(id, last) {
   const q = query(
@@ -186,29 +232,33 @@ export async function getMoreComments(id, last) {
     limit(10),
   );
   const docSnap = await getDocs(q);
-  return docSnap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+  return docSnap.docs.map(
+    (d) =>
+      /** @type {Comment} */ ({
+        id: d.id,
+        ...d.data(),
+      }),
+  );
 }
 
-// 拿著剛剛使用者送出的留言ID去抓到留言時間
 /**
- *
- * @param postId
- * @param commentId
+ * 依留言 ID 取得單筆留言（用於取得留言時間）。
+ * @param {string} postId - 文章 ID。
+ * @param {string} commentId - 留言 ID。
+ * @returns {Promise<Comment | null>} 留言資料，不存在時回傳 null。
  */
 export async function getCommentById(postId, commentId) {
   const ref = doc(db, 'posts', postId, 'comments', commentId);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() };
+  return /** @type {Comment} */ ({ id: snap.id, ...snap.data() });
 }
 
 /**
- *
- * @param postId
- * @param uid
+ * 切換文章按讚狀態。
+ * @param {string} postId - 文章 ID。
+ * @param {string} uid - 使用者 UID。
+ * @returns {Promise<'success' | 'fail'>} 操作結果。
  */
 export async function toggleLikePost(postId, uid) {
   if (!uid) {
@@ -241,20 +291,20 @@ export async function toggleLikePost(postId, uid) {
     });
     return 'success';
     // console.log("Transaction successfully committed!");
-  } catch (e) {
+  } catch {
     return 'fail';
-    // console.log("Transaction failed: ", e);
-    // throw(e)
+    // console.log("Transaction failed");
+    // throw error
   }
 }
 
-// 需要把留言者名字、大頭貼url、留言內容、留言時間寫上去
 /**
- *
- * @param postId
- * @param root0
- * @param root0.user
- * @param root0.comment
+ * 新增留言到文章。
+ * @param {string} postId - 文章 ID。
+ * @param {object} root0 - 參數物件。
+ * @param {{ uid: string, name?: string, photoURL?: string }} root0.user - 留言者資訊。
+ * @param {string} root0.comment - 留言內容。
+ * @returns {Promise<{ id: string }>} 新留言的 ID。
  */
 export async function addComment(postId, { user, comment }) {
   if (!user?.uid) throw new Error('No user');
@@ -292,11 +342,12 @@ export async function addComment(postId, { user, comment }) {
 }
 
 /**
- *
- * @param postId
- * @param commentId
- * @param root0
- * @param root0.comment
+ * 更新留言內容。
+ * @param {string} postId - 文章 ID。
+ * @param {string} commentId - 留言 ID。
+ * @param {object} root0 - 參數物件。
+ * @param {string} root0.comment - 新留言內容。
+ * @returns {Promise<void>} 無回傳值。
  */
 export async function updateComment(postId, commentId, { comment }) {
   const updateCommentRef = doc(db, 'posts', postId, 'comments', commentId);
@@ -308,9 +359,9 @@ export async function updateComment(postId, commentId, { comment }) {
 }
 
 /**
- *
- * @param postId
- * @param commentId
+ * 刪除留言並同步扣減留言數。
+ * @param {string} postId - 文章 ID。
+ * @param {string} commentId - 留言 ID。
  */
 export async function deleteComment(postId, commentId) {
   const postRef = doc(db, 'posts', postId);
@@ -324,11 +375,11 @@ export async function deleteComment(postId, commentId) {
   });
 }
 
-// 拿著使用者的uid去資料庫找使用者按過哪幾篇貼文讚
 /**
- *
- * @param uid
- * @param postIds
+ * 批次查詢使用者是否按過指定文章的讚。
+ * @param {string} uid - 使用者 UID。
+ * @param {string[]} postIds - 要查詢的文章 ID 陣列。
+ * @returns {Promise<Set<string>>} 已按讚的文章 ID 集合。
  */
 export async function hasUserLikedPosts(uid, postIds) {
   if (!uid || !Array.isArray(postIds) || postIds.length === 0) {
@@ -343,11 +394,11 @@ export async function hasUserLikedPosts(uid, postIds) {
   return new Set(snap.docs.map((d) => d.data().postId)); // 用set 日後好判斷有沒有liked
 }
 
-// 詳文頁檢查使用者有沒有按過這篇文章讚
 /**
- *
- * @param uid
- * @param postId
+ * 檢查使用者是否按過單篇文章的讚。
+ * @param {string} uid - 使用者 UID。
+ * @param {string} postId - 文章 ID。
+ * @returns {Promise<boolean>} 是否已按讚。
  */
 export async function hasUserLikedPost(uid, postId) {
   try {
@@ -361,8 +412,8 @@ export async function hasUserLikedPost(uid, postId) {
 }
 
 /**
- *
- * @param postId
+ * 刪除文章。
+ * @param {string} postId - 文章 ID。
  */
 export async function deletePost(postId) {
   await deleteDoc(doc(db, 'posts', postId));

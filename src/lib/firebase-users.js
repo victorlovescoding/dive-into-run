@@ -4,8 +4,9 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from '@/lib/firebase-client';
 
 /**
- *
- * @param fbUser
+ * 登入時檢查使用者資料，若 Firestore 無資料則自動建立。
+ * @param {import('firebase/auth').User} fbUser - Firebase Auth 使用者物件。
+ * @returns {Promise<void>}
  */
 export async function loginCheckUserData(fbUser) {
   try {
@@ -14,7 +15,7 @@ export async function loginCheckUserData(fbUser) {
     // 預計把有資料的狀況刪除，拿資料的工作交給watchUserProfile
     if (!docSnap.exists()) {
       // docSnap.data() will be undefined in this case
-      console.log('No such document!');
+      console.warn('No such document!');
       // 資料庫沒有使用者資料就要新增一個document
       const newUser = {
         name: fbUser.displayName,
@@ -26,15 +27,16 @@ export async function loginCheckUserData(fbUser) {
       await setDoc(docRef, newUser, { merge: true });
     }
   } catch (error) {
-    console.log(error);
+    console.error(error);
     throw error;
   }
 }
 
 /**
- *
- * @param uid
- * @param newUserName
+ * 更新使用者顯示名稱。
+ * @param {string} uid - 使用者 UID。
+ * @param {string} newUserName - 新的顯示名稱。
+ * @returns {Promise<void>}
  */
 export async function updateUserName(uid, newUserName) {
   const safeName = (newUserName ?? '').trim();
@@ -54,18 +56,19 @@ export async function updateUserName(uid, newUserName) {
 
 // 這裡要再一個監聽的function
 /**
- *
- * @param uid
- * @param onData
- * @param onError
+ * 即時監聽使用者個人資料變更。
+ * @param {string} uid - 使用者 UID。
+ * @param {(data: object | null) => void} onData - 資料變更時的回呼。
+ * @param {(err: Error) => void} onError - 監聽錯誤時的回呼。
+ * @returns {() => void} 取消監聽的函式。
  */
 export function watchUserProfile(uid, onData, onError) {
   // onData是發現資料更改時要做的事情
   if (!uid) throw new Error('uid required');
   // onSnapshot要在登出/離開/刷新/關分頁時做清理
-  const ref = doc(db, 'users', uid);
+  const docRef = doc(db, 'users', uid);
   const unSubProfile = onSnapshot(
-    ref,
+    docRef,
     (snap) => {
       onData?.(snap.data() ?? null);
     },
@@ -78,9 +81,10 @@ export function watchUserProfile(uid, onData, onError) {
 
 // 把拿到的檔案壓縮並且傳到Storage，最後呼叫 getDownloadURL(ref) 拿到檔案的網址
 /**
- *
- * @param file
- * @param uid
+ * 壓縮並上傳使用者大頭貼至 Firebase Storage，回傳附帶快取破壞參數的下載網址。
+ * @param {File} file - 使用者選取的圖片檔案。
+ * @param {string} uid - 使用者 UID。
+ * @returns {Promise<string>} 含快取破壞參數的圖片下載網址。
  */
 export async function uploadUserAvatar(file, uid) {
   // File解碼成bitmap
@@ -120,7 +124,7 @@ export async function uploadUserAvatar(file, uid) {
   const storageRef = ref(storage, `users/${uid}/avatar.png`);
   // 先確保上傳完成，再取下載網址
   await uploadBytes(storageRef, blob, { contentType: 'image/png' });
-  console.log('Uploaded a blob or file!');
+  console.warn('Uploaded a blob or file!');
   const url = await getDownloadURL(storageRef);
   // 加版本參數，擊穿瀏覽器/CDN 快取
   const bustUrl = `${url + (url.includes('?') ? '&' : '?')}v=${Date.now()}`;
@@ -129,9 +133,10 @@ export async function uploadUserAvatar(file, uid) {
 
 // 拿著新的url更新firestore的網址
 /**
- *
- * @param url
- * @param uid
+ * 更新 Firestore 中使用者的大頭貼網址。
+ * @param {string} url - 新的大頭貼網址。
+ * @param {string} uid - 使用者 UID。
+ * @returns {Promise<void>}
  */
 export async function updateUserPhotoURL(url, uid) {
   if (!url) {

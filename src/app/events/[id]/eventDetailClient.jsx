@@ -1,11 +1,8 @@
 'use client';
 
 /* eslint-disable @next/next/no-img-element */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
 
-import { useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -64,9 +61,9 @@ function formatDateTime(value) {
 
 /**
  * 計算活動狀態。
- * @param {object} root0
- * @param {string|object} root0.time
- * @param {string|object} root0.registrationDeadline
+ * @param {object} root0 - 活動時間資料。
+ * @param {string|object} root0.time - 活動時間。
+ * @param {string|object} root0.registrationDeadline - 報名截止時間。
  * @returns {string} 活動狀態文字。
  */
 function computeStatus({ time, registrationDeadline }) {
@@ -81,8 +78,8 @@ function computeStatus({ time, registrationDeadline }) {
 
 /**
  * 安全轉換數字。
- * @param {any} v
- * @returns {number}
+ * @param {string | number | null | undefined} v - 要轉換的值。
+ * @returns {number} 轉換後的數字，無效值回傳 0。
  */
 function toNumber(v) {
   const n = typeof v === 'number' ? v : Number(v);
@@ -122,7 +119,7 @@ function formatPace(paceSec, fallbackText = '') {
 
 /**
  * 活動詳情客戶端組件。
- * @param {object} root0
+ * @param {object} root0 - 元件屬性。
  * @param {string} root0.id - 活動 ID。
  * @returns {import('react').ReactElement} 詳情頁面。
  */
@@ -139,6 +136,7 @@ export default function EventDetailClient({ id }) {
   const [participantsLoading, setParticipantsLoading] = useState(false);
   const [participantsError, setParticipantsError] = useState(null);
   const [isParticipantsOpen, setParticipantsOpen] = useState(false);
+  const participantsOverlayRef = useRef(null);
 
   // join/leave UI
   const [actionMessage, setActionMessage] = useState(null);
@@ -174,9 +172,7 @@ export default function EventDetailClient({ id }) {
   useEffect(() => {
     let cancelled = false;
 
-    /**
-     *
-     */
+    /** 載入活動詳情資料。 */
     async function run() {
       setLoading(true);
       setError(null);
@@ -215,9 +211,7 @@ export default function EventDetailClient({ id }) {
   useEffect(() => {
     let cancelled = false;
 
-    /**
-     *
-     */
+    /** 查詢目前使用者是否已參加此活動。 */
     async function run() {
       setIsJoined(false);
       if (!user?.uid || !id) return;
@@ -249,6 +243,24 @@ export default function EventDetailClient({ id }) {
     }
     return undefined;
   }, [hasOverlay]);
+
+  // participants overlay：backdrop click + Escape 以原生 listener 處理，避免 jsx-a11y 違規
+  useEffect(() => {
+    if (!isParticipantsOpen) return undefined;
+    const overlay = participantsOverlayRef.current;
+    const handleClick = (/** @type {MouseEvent} */ e) => {
+      if (e.target === overlay) setParticipantsOpen(false);
+    };
+    const handleKeyDown = (/** @type {KeyboardEvent} */ e) => {
+      if (e.key === 'Escape') setParticipantsOpen(false);
+    };
+    overlay?.addEventListener('click', handleClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      overlay?.removeEventListener('click', handleClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isParticipantsOpen]);
 
   // ── 編輯 handlers ──
 
@@ -725,16 +737,10 @@ export default function EventDetailClient({ id }) {
             {/* ✅ Participants Overlay */}
             {isParticipantsOpen && (
               <div
+                ref={participantsOverlayRef}
                 role="dialog"
                 aria-modal="true"
                 className={styles.participantsOverlay}
-                // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-                onClick={(e) => {
-                  if (e.target === e.currentTarget) setParticipantsOpen(false);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') setParticipantsOpen(false);
-                }}
                 tabIndex={-1}
               >
                 <div className={styles.participantsCard}>

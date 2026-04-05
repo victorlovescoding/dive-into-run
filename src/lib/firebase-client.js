@@ -3,7 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
-import { getAuth, GoogleAuthProvider, signOut, connectAuthEmulator } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, connectAuthEmulator } from 'firebase/auth';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -25,7 +25,7 @@ const db = getFirestore(app);
 
 // Connect to Emulators based on environment variable
 if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  console.log('🔥 Connecting to Firebase Emulators...');
+  console.warn('Connecting to Firebase Emulators...');
   if (typeof window !== 'undefined') {
     // client side
     connectAuthEmulator(auth, 'http://localhost:9099');

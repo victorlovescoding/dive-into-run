@@ -1,5 +1,5 @@
 import React from 'react';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono as GeistMono } from 'next/font/google';
 import Link from 'next/link';
 import LoginButton from './login/LoginButton.jsx';
 import SignOutButton from './signout/SignOutButton.jsx';
@@ -13,7 +13,7 @@ const geistSans = Geist({
   subsets: ['latin'],
 });
 
-const geistMono = Geist_Mono({
+const geistMono = GeistMono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
 });
@@ -24,9 +24,10 @@ export const metadata = {
 };
 
 /**
- *
- * @param {object} root0
- * @param {React.ReactNode} root0.children
+ * 應用程式根佈局，包含導覽列與全域 Provider。
+ * @param {object} root0 - 元件屬性。
+ * @param {React.ReactNode} root0.children - 子頁面內容。
+ * @returns {React.JSX.Element} 根佈局元件。
  */
 export default function RootLayout({ children }) {
   return (

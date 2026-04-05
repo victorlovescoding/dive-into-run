@@ -11,6 +11,7 @@ import polyline from '@mapbox/polyline';
 
 // Fix for default icon issues with Webpack
 // @ts-expect-error Leaflet prototype manipulation
+// eslint-disable-next-line no-underscore-dangle -- Leaflet 內部：已知 Webpack icon 修復
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'leaflet/images/marker-icon-2x.png',
@@ -39,9 +40,10 @@ function collectAllCoords(featureGroup) {
 // Draw mode: Leaflet.draw integration
 /**
  * Leaflet.draw 繪圖控制器，支援載入既有路線作為可編輯 polyline。
- * @param {object} props
+ * @param {object} props - 元件屬性。
  * @param {(coords: Array<Array<{lat: number, lng: number}>>|null) => void} props.onRouteDrawn - 路線變更回呼。
  * @param {string[]} [props.initialEncodedPolylines] - 既有路線的 encoded polyline 陣列，進入 draw 模式時載入。
+ * @returns {null} 不渲染任何 DOM。
  */
 function DrawControl({ onRouteDrawn, initialEncodedPolylines }) {
   const map = useMap();
@@ -132,7 +134,8 @@ function DrawControl({ onRouteDrawn, initialEncodedPolylines }) {
 
 // Draw mode: search bar
 /**
- *
+ * 地圖搜尋欄位，使用 OpenStreetMap 提供地點搜尋。
+ * @returns {null} 不渲染任何 DOM。
  */
 function SearchField() {
   const map = useMap();
@@ -166,9 +169,10 @@ function SearchField() {
 // View mode: render route polylines + fit bounds
 /**
  * 顯示多條路線的唯讀檢視元件。
- * @param {object} props
+ * @param {object} props - 元件屬性。
  * @param {string[]} props.encodedPolylines - encoded polyline 字串陣列。
  * @param {object} [props.bbox] - 邊界範圍。
+ * @returns {null} 不渲染任何 DOM。
  */
 function RouteViewer({ encodedPolylines, bbox }) {
   const map = useMap();
@@ -205,7 +209,7 @@ function RouteViewer({ encodedPolylines, bbox }) {
         );
         map.fitBounds(combined, { padding: [18, 18] });
       }
-    } catch (e) {
+    } catch {
       // 忽略 fit 失敗
     }
 
@@ -219,13 +223,14 @@ function RouteViewer({ encodedPolylines, bbox }) {
 
 /**
  * 活動地圖元件，支援繪製（draw）和檢視（view）模式。
- * @param {object} props
+ * @param {object} props - 元件屬性。
  * @param {'draw'|'view'} [props.mode] - 地圖模式。
  * @param {(coords: Array<Array<{lat: number, lng: number}>>|null) => void} [props.onRouteDrawn] - draw 模式路線變更回呼。
  * @param {string[]} [props.encodedPolylines] - view 模式用的 encoded polyline 陣列。
  * @param {string[]} [props.initialEncodedPolylines] - draw 模式用的既有路線 encoded polyline 陣列。
  * @param {object} [props.bbox] - 邊界範圍。
  * @param {number} [props.height] - 地圖高度（px）。
+ * @returns {React.JSX.Element} 地圖元件。
  */
 export default function EventMap({
   mode = 'draw',

@@ -20,16 +20,17 @@ import styles from '../postDetail.module.css';
 
 const INFINITE_SCROLL_MARGIN = '300px 0px';
 /**
- *
- * @param root0
- * @param root0.postId
+ * 文章詳情頁面客戶端元件，含留言、按讚與無限滾動。
+ * @param {object} root0 - 元件屬性。
+ * @param {string} root0.postId - 文章 ID。
+ * @returns {import('react').JSX.Element} 文章詳情頁面。
  */
 export default function PostDetailClient({ postId }) {
   const [postDetail, setPostDetail] = useState(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [commentEditing, setCommentEditing] = useState(null);
-  const [isCommentEditing, setIsCommentEditing] = useState(false);
+  const [, setIsCommentEditing] = useState(false);
   const [isComposeEditing, setIsComposeEditing] = useState(false);
   const { user } = useContext(AuthContext);
   const [comment, setComment] = useState(''); // 只裝使用者即將送出的留言
@@ -44,9 +45,7 @@ export default function PostDetailClient({ postId }) {
     if (!postId) {
       return;
     }
-    /**
-     *
-     */
+    /** 載入文章詳情及留言資料。 */
     async function fetchPost() {
       const postDetailData = await getPostDetail(postId);
       setPostDetail(postDetailData);
@@ -78,7 +77,7 @@ export default function PostDetailClient({ postId }) {
   }, [postId, user?.uid]);
 
   useEffect(() => {
-    if (!bottomRef.current || !nextCursor || isLoadingNext || !postId) return;
+    if (!bottomRef.current || !nextCursor || isLoadingNext || !postId) return undefined;
     const intersectionObserver = new IntersectionObserver(
       async (entries) => {
         const entry = entries[0]; // 只觀察一個東西所以取第一筆資料
@@ -138,22 +137,22 @@ export default function PostDetailClient({ postId }) {
     return () => {
       intersectionObserver.disconnect();
     };
-  }, [postId, nextCursor, isLoadingNext, user?.uid, bottomRef.current, comments.length]);
+  }, [postId, nextCursor, isLoadingNext, user?.uid, comments.length]);
 
   /**
-   *
-   * @param postId
+   * 切換文章編輯模式，並載入既有內容。
+   * @param {string} targetId - 文章 ID。
    */
-  function composeButtonHandler(postId) {
+  function composeButtonHandler(targetId) {
     // 按下寫文章按鈕後，跳出編輯頁面
-    if (postId && !isComposeEditing) {
+    if (targetId && !isComposeEditing) {
       setTitle(postDetail.title);
       setContent(postDetail.content);
       setIsComposeEditing(true);
-      setEditingPostId(postId);
-    } else if (postId && isComposeEditing) {
+      setEditingPostId(targetId);
+    } else if (targetId && isComposeEditing) {
       setIsComposeEditing(false);
-    } else if (!postId && !isComposeEditing) {
+    } else if (!targetId && !isComposeEditing) {
       setIsComposeEditing(true);
       setTitle('');
       setContent('');
@@ -163,8 +162,8 @@ export default function PostDetailClient({ postId }) {
   }
 
   /**
-   *
-   * @param e
+   * 送出編輯後的文章更新。
+   * @param {import('react').FormEvent<HTMLFormElement>} e - 表單送出事件。
    */
   async function handleSubmitPost(e) {
     e.preventDefault();
@@ -179,33 +178,34 @@ export default function PostDetailClient({ postId }) {
   }
 
   /**
-   *
-   * @param postId
-   * @param e
+   * 切換文章或留言的作者操作選單顯示。
+   * @param {string} menuTargetId - 文章或留言 ID。
+   * @param {import('react').MouseEvent} e - 滑鼠點擊事件。
    */
-  function toggleOwnerMenu(postId, e) {
+  function toggleOwnerMenu(menuTargetId, e) {
     e.stopPropagation();
-    if (postId === openMenuPostId) {
+    if (menuTargetId === openMenuPostId) {
       setOpenMenuPostId('');
     } else {
-      setOpenMenuPostId(postId);
+      setOpenMenuPostId(menuTargetId);
     }
   }
 
   /**
-   *
-   * @param postId
+   * 確認後刪除文章。
+   * @param {string} targetPostId - 要刪除的文章 ID。
    */
-  async function deletePostHandler(postId) {
-    if (confirm('確定要刪除文章？')) {
-      await deletePost(postId);
+  async function deletePostHandler(targetPostId) {
+    // eslint-disable-next-line no-alert -- 刪除確認使用原生對話框
+    if (window.confirm('確定要刪除文章？')) {
+      await deletePost(targetPostId);
     }
   }
 
   // 編輯留言function
   /**
-   *
-   * @param commentId
+   * 進入留言編輯模式，載入該留言內容。
+   * @param {string} commentId - 要編輯的留言 ID。
    */
   async function editCommentButtonHandler(commentId) {
     // 點擊編輯按鈕後，把isCommentEditing設定成true/false ，再拿著commentId到comments裡面尋找該留言內容並且放入comment的useState中
@@ -217,11 +217,12 @@ export default function PostDetailClient({ postId }) {
 
   // 刪除留言function
   /**
-   *
-   * @param commentId
+   * 確認後刪除留言，並同步更新前端狀態。
+   * @param {string} commentId - 要刪除的留言 ID。
    */
   async function deleteCommentButtonHandler(commentId) {
-    if (!confirm('確定要刪除留言？')) return;
+    // eslint-disable-next-line no-alert -- 刪除確認使用原生對話框
+    if (!window.confirm('確定要刪除留言？')) return;
     try {
       await deleteComment(postId, commentId);
 
@@ -242,16 +243,17 @@ export default function PostDetailClient({ postId }) {
       }));
       // 關閉該留言的選單
       setOpenMenuPostId('');
-    } catch (e) {
-      alert('刪除失敗，請稍後再試');
-      console.error(e);
+    } catch (err) {
+      // eslint-disable-next-line no-alert -- 刪除失敗使用原生對話框提示
+      window.alert('刪除失敗，請稍後再試');
+      console.error(err);
     }
   }
 
   if (!postDetail) return <p>載入中...</p>;
   /**
-   *
-   * @param e
+   * 送出新留言或更新既有留言。
+   * @param {import('react').FormEvent<HTMLFormElement>} e - 表單送出事件。
    */
   async function submitCommentHandler(e) {
     e.preventDefault();
@@ -292,7 +294,7 @@ export default function PostDetailClient({ postId }) {
       );
       try {
         await updateComment(postId, commentEditing.id, { comment: newText });
-      } catch (e) {
+      } catch {
         // 回滾
         setComments((prev) =>
           prev.map((c) => (c.id === commentEditing.id ? { ...c, comment: prevText } : c)),
@@ -305,16 +307,14 @@ export default function PostDetailClient({ postId }) {
   }
 
   /**
-   *
-   * @param e
+   * 處理留言輸入框內容變更。
+   * @param {import('react').ChangeEvent<HTMLInputElement>} e - 輸入框變更事件。
    */
   function handleCommentChange(e) {
     setComment(e.target.value);
   }
 
-  /**
-   *
-   */
+  /** 切換文章按讚狀態，搭配樂觀更新與失敗回滾。 */
   async function handleToggleLike() {
     if (!user?.uid) return;
     // 如果資料庫更新失敗就會回復到原本的按讚狀態
@@ -399,21 +399,21 @@ export default function PostDetailClient({ postId }) {
       <p>{postDetail.content}</p>
       {/* 所有留言區 */}
       <ul>
-        {comments.map((comment) => (
-          <li key={comment.id} className={styles.commentContainer}>
+        {comments.map((commentItem) => (
+          <li key={commentItem.id} className={styles.commentContainer}>
             <div
               className={styles.commentOwnerMenu}
-              style={{ display: comment?.isAuthor ? 'block' : 'none' }}
+              style={{ display: commentItem?.isAuthor ? 'block' : 'none' }}
             >
               <button
-                id={`comment-owner-menu-btn-${comment.id}`}
+                id={`comment-owner-menu-btn-${commentItem.id}`}
                 type="button"
                 className={styles.commentOwnerMenuButton}
                 aria-label="更多選項"
                 aria-haspopup="menu"
-                aria-expanded={openMenuPostId === comment.id ? 'true' : 'false'}
-                aria-controls={`comment-owner-menu-${comment.id}`}
-                onClick={(e) => toggleOwnerMenu(comment.id, e)}
+                aria-expanded={openMenuPostId === commentItem.id ? 'true' : 'false'}
+                aria-controls={`comment-owner-menu-${commentItem.id}`}
+                onClick={(e) => toggleOwnerMenu(commentItem.id, e)}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -430,11 +430,11 @@ export default function PostDetailClient({ postId }) {
                 </svg>
               </button>
               <ul
-                id={`post-owner-menu-${comment.id}`}
+                id={`post-owner-menu-${commentItem.id}`}
                 className={styles.commentOwnerMenuList}
                 role="menu"
-                aria-labelledby={`comment-owner-menu-btn-${comment.id}`}
-                hidden={comment.id !== openMenuPostId}
+                aria-labelledby={`comment-owner-menu-btn-${commentItem.id}`}
+                hidden={commentItem.id !== openMenuPostId}
               >
                 <li role="none">
                   {/* function要改 */}
@@ -442,7 +442,7 @@ export default function PostDetailClient({ postId }) {
                     type="button"
                     role="menuitem"
                     className={styles.commentOwnerMenuItem}
-                    onClick={() => editCommentButtonHandler(comment.id)}
+                    onClick={() => editCommentButtonHandler(commentItem.id)}
                   >
                     編輯
                   </button>
@@ -452,7 +452,7 @@ export default function PostDetailClient({ postId }) {
                     type="button"
                     role="menuitem"
                     className={styles.postOwnerMenuItem}
-                    onClick={() => deleteCommentButtonHandler(comment.id)}
+                    onClick={() => deleteCommentButtonHandler(commentItem.id)}
                   >
                     刪除
                   </button>
@@ -460,13 +460,13 @@ export default function PostDetailClient({ postId }) {
               </ul>
             </div>
             <Image
-              src={comment.authorImgURL}
-              alt={`${comment.authorName}的大頭貼`}
+              src={commentItem.authorImgURL}
+              alt={`${commentItem.authorName}的大頭貼`}
               width={20}
               height={20}
             />
-            <h2>{comment.authorName}</h2>
-            <p>{comment.comment}</p>
+            <h2>{commentItem.authorName}</h2>
+            <p>{commentItem.comment}</p>
             {/* 按讚、留言 */}
           </li>
         ))}
@@ -520,13 +520,10 @@ export default function PostDetailClient({ postId }) {
               height={50}
             />
           ) : null}
-          <label htmlFor="comment" className="sr-only">
-            留言
-          </label>
           <input
-            id="comment"
             type="text"
             placeholder="留言"
+            aria-label="留言"
             value={comment}
             onChange={handleCommentChange}
           />

@@ -1,8 +1,6 @@
-import Image from 'next/image';
-import Link from 'next/link';
-
 /**
- *
+ * 首頁元件。
+ * @returns {import('react').JSX.Element} 首頁。
  */
 export default function Home() {
   return (

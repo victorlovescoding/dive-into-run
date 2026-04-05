@@ -27,7 +27,7 @@ const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
  */
 function toDatetimeLocal(value) {
   if (!value) return '';
-  const val = /** @type {any} */ (value);
+  const val = /** @type {{ toDate?: () => Date }} */ (value);
   const date =
     typeof val.toDate === 'function' ? val.toDate() : new Date(/** @type {string} */ (value));
   if (Number.isNaN(date.getTime())) return '';

@@ -223,17 +223,17 @@
 }
 
 /* --- Leaflet GeoSearch 覆寫（讓建議文字更清楚） --- */
-:global(.leaflet-control-geosearch form input::placeholder) {
+.formGroup :global(.leaflet-control-geosearch form input::placeholder) {
   color: #5f6368; /* 深一點的灰，和表單 placeholder 一致 */
   opacity: 1; /* 取消瀏覽器預設淡化 */
 }
 
-:global(.leaflet-control-geosearch .results > *) {
+.formGroup :global(.leaflet-control-geosearch .results > *) {
   color: #202124; /* 建議列表的文字加深 */
 }
 
-:global(.leaflet-control-geosearch .results > .active),
-:global(.leaflet-control-geosearch .results > *:hover) {
+.formGroup :global(.leaflet-control-geosearch .results > .active),
+.formGroup :global(.leaflet-control-geosearch .results > *:hover) {
   color: #111; /* hover/選取更深 */
   background: #f1f3f4; /* 提升可視對比 */
 }
@@ -955,7 +955,7 @@
 }
 
 /* Accessible utility class to hide elements visually while keeping them for screen readers */
-:global(.sr-only) {
+.srOnly {
   position: absolute;
   width: 1px;
   height: 1px;

@@ -149,7 +149,7 @@ export function formatDateTime(value) {
 /**
  * 將秒數轉換為 MM:SS 配速格式
  * @param {number | string | null | undefined} paceSec - 配速秒數
- * @param {string} [fallbackText=''] - 無法轉換時的備用文字
+ * @param {string} [fallbackText] - 無法轉換時的備用文字。
  * @returns {string} 格式化後的配速字串
  */
 export function formatPace(paceSec, fallbackText = '') {
@@ -184,7 +184,7 @@ export function chunkArray(arr, size) {
 
 /**
  * 安全地將值轉換為數字
- * @param {*} v - 要轉換的值
+ * @param {string | number | null | undefined} v - 要轉換的值
  * @returns {number} 轉換後的數字，無效值回傳 0
  */
 export function toNumber(v) {
@@ -250,7 +250,8 @@ export function buildUserPayload(user) {
  * @returns {string} 格式化後的時間字串，如「4/2 14:30」。
  */
 export function formatCommentTime(value) {
-  if (!value || typeof (/** @type {*} */ (value).toDate) !== 'function') return '';
+  if (!value || typeof (/** @type {{ toDate?: () => Date }} */ (value).toDate) !== 'function')
+    return '';
   const d = /** @type {{ toDate: () => Date }} */ (value).toDate();
   const month = d.getMonth() + 1;
   const day = d.getDate();
@@ -265,7 +266,8 @@ export function formatCommentTime(value) {
  * @returns {string} 格式化後的完整時間字串，如「2026年4月2日 14:30」。
  */
 export function formatCommentTimeFull(value) {
-  if (!value || typeof (/** @type {*} */ (value).toDate) !== 'function') return '';
+  if (!value || typeof (/** @type {{ toDate?: () => Date }} */ (value).toDate) !== 'function')
+    return '';
   const d = /** @type {{ toDate: () => Date }} */ (value).toDate();
   const year = d.getFullYear();
   const month = d.getMonth() + 1;

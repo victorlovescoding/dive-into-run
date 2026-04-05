@@ -3,14 +3,15 @@
 // 為何要 "use client": 這個頁面要使用 React 的 useContext（只在 Client 端可用），
 // 並讀取瀏覽器端還原的登入狀態，所以必須是 Client Component。
 
-import { useContext, useEffect, useState, useRef } from 'react';
+import { useContext, useEffect, useState, useRef, useCallback } from 'react';
 // import { useRouter } from 'next/navigation'
 import Image from 'next/image';
 import { AuthContext } from '@/contexts/AuthContext';
 import { updateUserName, uploadUserAvatar, updateUserPhotoURL } from '@/lib/firebase-users';
 
 /**
- *
+ * 會員個人頁面，可修改名稱與大頭貼。
+ * @returns {import('react').JSX.Element} 會員頁面元件。
  */
 export default function MemberPage() {
   // 為何要從 Context 讀 user：Firebase SDK 會在背景非同步還原登入，
@@ -28,25 +29,22 @@ export default function MemberPage() {
     }
   }, [user]);
   /**
-   *
-   * @param e
+   * 處理名稱輸入框的變更事件。
+   * @param {import('react').ChangeEvent<HTMLInputElement>} e - 輸入框變更事件。
    */
   function onNameChange(e) {
     setName(e.target.value);
   }
 
-  /**
-   *
-   */
-  function triggerFilePicker() {
+  /** 觸發隱藏的檔案選擇器讓使用者選圖片。 */
+  const triggerFilePicker = useCallback(() => {
     if (user) {
       inputFileRef.current?.click();
-    } else {
     }
-  }
+  }, [user]);
   /**
-   *
-   * @param e
+   * 處理大頭貼檔案選擇後的上傳流程。
+   * @param {import('react').ChangeEvent<HTMLInputElement>} e - 檔案輸入框變更事件。
    */
   async function onAvatarFileChange(e) {
     const file = e.target.files?.[0];
@@ -66,8 +64,8 @@ export default function MemberPage() {
   }
 
   /**
-   *
-   * @param e
+   * 提交新名稱到 Firestore。
+   * @param {import('react').FormEvent<HTMLFormElement>} e - 表單送出事件。
    */
   async function onSubmitNewName(e) {
     e.preventDefault(); // 避免重新整理影響後續更新資料庫
@@ -81,7 +79,7 @@ export default function MemberPage() {
     // 預計在這裡call changeName function 到資料庫更新名字
     try {
       await updateUserName(user.uid, safeName);
-      console.log(user.photoURL);
+      console.warn(user.photoURL);
     } catch (err) {
       console.error(err);
     }

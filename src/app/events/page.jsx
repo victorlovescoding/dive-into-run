@@ -1070,7 +1070,7 @@ export default function RunTogetherPage() {
                 <div className={styles.filterLabel}>活動區域</div>
                 <div className={styles.filterRow}>
                   <label htmlFor="filterCity" className={styles.flex1}>
-                    <span className="sr-only">選擇縣市</span>
+                    <span className={styles.srOnly}>選擇縣市</span>
                     <select
                       id="filterCity"
                       className={styles.selectField}
@@ -1090,7 +1090,7 @@ export default function RunTogetherPage() {
                   </label>
 
                   <label htmlFor="filterDistrict" className={styles.flex1}>
-                    <span className="sr-only">選擇區域</span>
+                    <span className={styles.srOnly}>選擇區域</span>
                     <select
                       id="filterDistrict"
                       className={styles.selectField}
