@@ -69,7 +69,7 @@ src/
 │   ├── useStravaActivities.js
 │   └── useStravaSync.js
 └── lib/
-    ├── firebase-admin.js        # Admin SDK init + verifyAuthToken
+    ├── firebase-admin.js        # Admin SDK init + verifyAuthToken + syncStravaActivities
     ├── firebase-strava.js       # Client Firestore service layer
     └── strava-helpers.js        # Pure utility functions
 

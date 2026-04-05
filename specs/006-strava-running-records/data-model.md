@@ -12,14 +12,14 @@
 **Access**: Server-only（Admin SDK）
 **Firestore Rule**: `allow read, write: if false`
 
-| Field          | Type      | Required | Description                                   |
-| -------------- | --------- | -------- | --------------------------------------------- |
-| `accessToken`  | string    | YES      | Strava API access token（6h 過期）            |
-| `refreshToken` | string    | YES      | Strava API refresh token（每次 refresh 輪換） |
-| `expiresAt`    | number    | YES      | Access token 到期 Unix epoch seconds          |
-| `athleteId`    | number    | YES      | Strava athlete 數字 ID                        |
-| `connectedAt`  | Timestamp | YES      | 首次連結時間（serverTimestamp）               |
-| `lastSyncAt`   | Timestamp | YES      | 最後同步時間（冷卻判斷用）                    |
+| Field          | Type      | Required | Description                                      |
+| -------------- | --------- | -------- | ------------------------------------------------ |
+| `accessToken`  | string    | YES      | Strava API access token（6h 過期）               |
+| `refreshToken` | string    | YES      | Strava API refresh token（每次 refresh 輪換）    |
+| `expiresAt`    | number    | YES      | Access token 到期 Unix epoch seconds             |
+| `athleteId`    | number    | YES      | Strava athlete 數字 ID                           |
+| `connectedAt`  | Timestamp | YES      | 首次連結時間（serverTimestamp）                  |
+| `lastSyncAt`   | Timestamp | NO       | 最後同步時間（冷卻判斷用，首次同步完成後才寫入） |
 
 **Validation**:
 
@@ -35,14 +35,13 @@
 **Access**: Client-readable（owner only）
 **Firestore Rule**: `allow read: if isSignedIn() && request.auth.uid == uid`
 
-| Field             | Type      | Required | Description                             |
-| ----------------- | --------- | -------- | --------------------------------------- |
-| `connected`       | boolean   | YES      | 是否已連結 Strava                       |
-| `athleteId`       | number    | YES      | Strava athlete 數字 ID                  |
-| `athleteName`     | string    | YES      | Strava 顯示名稱（firstname + lastname） |
-| `athletePhotoURL` | string    | NO       | Strava 頭像 URL                         |
-| `connectedAt`     | Timestamp | YES      | 連結時間                                |
-| `lastSyncAt`      | Timestamp | YES      | 最後同步時間（前端冷卻倒數顯示用）      |
+| Field         | Type      | Required | Description                                              |
+| ------------- | --------- | -------- | -------------------------------------------------------- |
+| `connected`   | boolean   | YES      | 是否已連結 Strava                                        |
+| `athleteId`   | number    | YES      | Strava athlete 數字 ID                                   |
+| `athleteName` | string    | YES      | Strava 顯示名稱（firstname + lastname）                  |
+| `connectedAt` | Timestamp | YES      | 連結時間                                                 |
+| `lastSyncAt`  | Timestamp | NO       | 最後同步時間（前端冷卻倒數顯示用，首次同步完成後才寫入） |
 
 **State Transitions**:
 
@@ -58,19 +57,19 @@
 **Firestore Rule**: `allow read: if isSignedIn() && request.auth.uid == resource.data.uid`
 **Document ID**: Strava activity ID 轉為 string（自動 dedup）
 
-| Field             | Type      | Required | Description                                      |
-| ----------------- | --------- | -------- | ------------------------------------------------ |
-| `uid`             | string    | YES      | Owner Firebase UID                               |
-| `stravaId`        | number    | YES      | Strava activity 數字 ID                          |
-| `name`            | string    | YES      | 活動名稱（來自 Strava）                          |
-| `type`            | string    | YES      | 活動類型：`Run` / `TrailRun` / `VirtualRun`      |
-| `distanceMeters`  | number    | YES      | 距離（公尺，保留 Strava 原始精度）               |
-| `movingTimeSec`   | number    | YES      | 移動時間（秒）                                   |
-| `startDate`       | Timestamp | YES      | 活動開始時間（Firestore Timestamp，排序/查詢用） |
-| `startDateLocal`  | string    | YES      | 當地時間 ISO string（顯示用）                    |
-| `summaryPolyline` | string    | NO       | Encoded polyline 路線（null = 無 GPS，如跑步機） |
-| `averageSpeed`    | number    | YES      | 平均速度 m/s（來自 Strava）                      |
-| `syncedAt`        | Timestamp | YES      | 同步時間（serverTimestamp）                      |
+| Field             | Type      | Required | Description                                                            |
+| ----------------- | --------- | -------- | ---------------------------------------------------------------------- |
+| `uid`             | string    | YES      | Owner Firebase UID                                                     |
+| `stravaId`        | number    | YES      | Strava activity 數字 ID                                                |
+| `name`            | string    | YES      | 活動名稱（來自 Strava）                                                |
+| `type`            | string    | YES      | 活動類型：`Run` / `TrailRun` / `VirtualRun`                            |
+| `distanceMeters`  | number    | YES      | 距離（公尺，保留 Strava 原始精度）                                     |
+| `movingTimeSec`   | number    | YES      | 移動時間（秒）                                                         |
+| `startDate`       | Timestamp | YES      | 活動開始時間（Firestore Timestamp，排序/查詢用）                       |
+| `startDateLocal`  | string    | YES      | 當地時間 ISO string（顯示用）                                          |
+| `summaryPolyline` | string    | NO       | Encoded polyline 路線（null = 無 GPS，如跑步機）                       |
+| `averageSpeed`    | number    | YES      | 平均速度 m/s（來自 Strava，目前無 UI 使用，保留供未來 aggregate 查詢） |
+| `syncedAt`        | Timestamp | YES      | 同步時間（serverTimestamp）                                            |
 
 **Validation**:
 
