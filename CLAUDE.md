@@ -110,6 +110,8 @@ const el = /** @type {HTMLInputElement} */ (document.getElementById('x'));
 - `.env` must be in `.gitignore`
 
 ## Active Technologies
+- JavaScript (ES6+), JSDoc `checkJs: true` + Next.js 15 (App Router), React 19, Firebase v9+ (Firestore), Firebase Admin SDK (Route Handlers), Leaflet, `@mapbox/polyline` (006-strava-running-records)
+- Firestore — `stravaTokens/{uid}` (server-only), `stravaConnections/{uid}` (client-read), `stravaActivities/{id}` (client-read, top-level) (006-strava-running-records)
 
 - JavaScript (ES6+), JSDoc type checking (checkJs: true) + Next.js 15 (App Router), React 19, Firebase v9+ (Firestore) (005-event-comments)
 - Firestore — subcollections `events/{eventId}/comments`, `comments/{commentId}/history` (005-event-comments)
