@@ -2,9 +2,7 @@ import admin from 'firebase-admin';
 
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: process.env.GOOGLE_APPLICATION_CREDENTIALS
-      ? admin.credential.cert(process.env.GOOGLE_APPLICATION_CREDENTIALS)
-      : admin.credential.applicationDefault(),
+    credential: admin.credential.applicationDefault(),
     projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
   });
 }
@@ -50,55 +48,70 @@ async function verifyAuthToken(request) {
  * @returns {Promise<number>} Number of activities synced.
  */
 async function syncStravaActivities({ uid, accessToken, afterEpoch }) {
-  const url = `https://www.strava.com/api/v3/athlete/activities?after=${afterEpoch}&per_page=100`;
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const PER_PAGE = 100;
+  let page = 1;
+  let totalSynced = 0;
 
-  if (!response.ok) {
-    throw new Error(`Strava API error: ${response.status} ${response.statusText}`);
-  }
+  while (true) {
+    const url = `https://www.strava.com/api/v3/athlete/activities?after=${afterEpoch}&per_page=${PER_PAGE}&page=${page}`;
+    // eslint-disable-next-line no-await-in-loop -- pages must be fetched sequentially
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
 
-  const activities = await response.json();
-  const runActivities = activities.filter((/** @type {{ type: string }} */ a) =>
-    ALLOWED_TYPES.includes(a.type),
-  );
+    if (!response.ok) {
+      throw new Error(`Strava API error: ${response.status} ${response.statusText}`);
+    }
 
-  if (runActivities.length === 0) {
-    return 0;
-  }
-
-  const batch = adminDb.batch();
-
-  runActivities.forEach((activity) => {
-    const docRef = adminDb.collection('stravaActivities').doc(String(activity.id));
-    batch.set(
-      docRef,
-      {
-        uid,
-        stravaId: activity.id,
-        name: activity.name,
-        type: activity.type,
-        distanceMeters: activity.distance,
-        movingTimeSec: activity.moving_time,
-        startDate: admin.firestore.Timestamp.fromDate(new Date(activity.start_date)),
-        startDateLocal: activity.start_date_local,
-        summaryPolyline: activity.map?.summary_polyline || null,
-        averageSpeed: activity.average_speed,
-        syncedAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true },
+    // eslint-disable-next-line no-await-in-loop
+    const activities = await response.json();
+    const runActivities = activities.filter((/** @type {{ type: string }} */ a) =>
+      ALLOWED_TYPES.includes(a.type),
     );
-  });
 
-  const tokensRef = adminDb.collection('stravaTokens').doc(uid);
-  const connectionsRef = adminDb.collection('stravaConnections').doc(uid);
-  batch.update(tokensRef, { lastSyncAt: admin.firestore.FieldValue.serverTimestamp() });
-  batch.update(connectionsRef, { lastSyncAt: admin.firestore.FieldValue.serverTimestamp() });
+    if (runActivities.length > 0) {
+      const batch = adminDb.batch();
 
-  await batch.commit();
+      runActivities.forEach((activity) => {
+        const docRef = adminDb.collection('stravaActivities').doc(String(activity.id));
+        batch.set(
+          docRef,
+          {
+            uid,
+            stravaId: activity.id,
+            name: activity.name,
+            type: activity.type,
+            distanceMeters: activity.distance,
+            movingTimeSec: activity.moving_time,
+            startDate: admin.firestore.Timestamp.fromDate(new Date(activity.start_date)),
+            startDateLocal: activity.start_date_local,
+            summaryPolyline: activity.map?.summary_polyline || null,
+            averageSpeed: activity.average_speed,
+            syncedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
+      });
 
-  return runActivities.length;
+      // eslint-disable-next-line no-await-in-loop
+      await batch.commit();
+      totalSynced += runActivities.length;
+    }
+
+    if (activities.length < PER_PAGE) break;
+    page += 1;
+  }
+
+  if (totalSynced > 0) {
+    const finalBatch = adminDb.batch();
+    const tokensRef = adminDb.collection('stravaTokens').doc(uid);
+    const connectionsRef = adminDb.collection('stravaConnections').doc(uid);
+    finalBatch.update(tokensRef, { lastSyncAt: admin.firestore.FieldValue.serverTimestamp() });
+    finalBatch.update(connectionsRef, { lastSyncAt: admin.firestore.FieldValue.serverTimestamp() });
+    await finalBatch.commit();
+  }
+
+  return totalSynced;
 }
 
 export { adminDb, verifyAuthToken, syncStravaActivities };

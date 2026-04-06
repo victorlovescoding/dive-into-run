@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { auth } from '@/lib/firebase-client';
+import { useState, useEffect, useCallback, useRef, useContext } from 'react';
+import { AuthContext } from '@/contexts/AuthContext';
 
 const COOLDOWN_SECONDS = 3600; // 1 hour
 
@@ -28,6 +28,7 @@ function calcRemaining(lastSyncAt) {
  * @returns {UseStravaSyncReturn} 同步狀態與操作。
  */
 export default function useStravaSync(lastSyncAt) {
+  const { user } = useContext(AuthContext);
   const [isSyncing, setIsSyncing] = useState(false);
   const [cooldownRemaining, setCooldownRemaining] = useState(() => calcRemaining(lastSyncAt));
   const [error, setError] = useState(/** @type {string | null} */ (null));
@@ -63,7 +64,8 @@ export default function useStravaSync(lastSyncAt) {
     setError(null);
 
     try {
-      const token = await auth.currentUser?.getIdToken();
+      if (!user) return false;
+      const token = await user.getIdToken();
       const res = await fetch('/api/strava/sync', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
@@ -82,7 +84,7 @@ export default function useStravaSync(lastSyncAt) {
       isSyncingRef.current = false;
       setIsSyncing(false);
     }
-  }, []);
+  }, [user]);
 
   return { sync, isSyncing, cooldownRemaining, error };
 }

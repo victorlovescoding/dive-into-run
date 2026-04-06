@@ -174,7 +174,7 @@ describe('syncStravaActivities', () => {
 
     // Assert
     expect(mockedFetch).toHaveBeenCalledWith(
-      'https://www.strava.com/api/v3/athlete/activities?after=1700000000&per_page=100',
+      'https://www.strava.com/api/v3/athlete/activities?after=1700000000&per_page=100&page=1',
       {
         headers: { Authorization: 'Bearer strava-token-xyz' },
       },
@@ -280,7 +280,7 @@ describe('syncStravaActivities', () => {
     );
   });
 
-  it('updates lastSyncAt on both stravaTokens and stravaConnections', async () => {
+  it('updates lastSyncAt on both stravaTokens and stravaConnections in final batch', async () => {
     // Arrange
     mockedFetch.mockResolvedValue({
       ok: true,
@@ -295,7 +295,8 @@ describe('syncStravaActivities', () => {
       afterEpoch: 0,
     });
 
-    // Assert
+    // Assert — activity batch + final lastSyncAt batch = 2 commits
+    expect(mockBatchCommit).toHaveBeenCalledTimes(2);
     expect(mockDocRef).toHaveBeenCalledWith('stravaTokens', 'user-sync');
     expect(mockDocRef).toHaveBeenCalledWith('stravaConnections', 'user-sync');
     expect(mockBatchUpdate).toHaveBeenCalledTimes(2);
@@ -345,6 +346,42 @@ describe('syncStravaActivities', () => {
         afterEpoch: 0,
       }),
     ).rejects.toThrow();
+  });
+
+  it('paginates when first page returns per_page results', async () => {
+    // Arrange — page 1: 100 activities (full page), page 2: 1 activity (partial)
+    const page1 = Array.from({ length: 100 }, (_, i) =>
+      createStravaActivity({ id: i + 1, type: 'Run' }),
+    );
+    const page2 = [createStravaActivity({ id: 201, type: 'Run' })];
+
+    mockedFetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(page1) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(page2) });
+
+    // Act
+    const { syncStravaActivities } = await import('@/lib/firebase-admin');
+    const count = await syncStravaActivities({
+      uid: 'user-paginate',
+      accessToken: 'token',
+      afterEpoch: 0,
+    });
+
+    // Assert
+    expect(count).toBe(101);
+    expect(mockedFetch).toHaveBeenCalledTimes(2);
+    expect(mockedFetch).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('&page=1'),
+      expect.anything(),
+    );
+    expect(mockedFetch).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('&page=2'),
+      expect.anything(),
+    );
+    // activity batch x2 + lastSyncAt batch x1 = 3 commits
+    expect(mockBatchCommit).toHaveBeenCalledTimes(3);
   });
 
   it('returns 0 for empty activities response', async () => {

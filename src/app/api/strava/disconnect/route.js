@@ -22,11 +22,11 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Not connected to Strava' }, { status: 400 });
   }
 
-  // Delete stravaTokens doc
-  await adminDb.collection('stravaTokens').doc(uid).delete();
-
-  // Update stravaConnections to disconnected (keep doc for state tracking)
-  await connectionRef.update({ connected: false });
+  // Atomic: delete token + mark disconnected in one batch
+  const atomicBatch = adminDb.batch();
+  atomicBatch.delete(adminDb.collection('stravaTokens').doc(uid));
+  atomicBatch.update(connectionRef, { connected: false });
+  await atomicBatch.commit();
 
   // Delete all stravaActivities for this user in batches of 500
   const activitiesRef = adminDb.collection('stravaActivities');

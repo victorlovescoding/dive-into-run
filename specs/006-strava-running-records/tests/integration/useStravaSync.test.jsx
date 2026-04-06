@@ -1,22 +1,41 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { AuthContext } from '@/contexts/AuthContext';
 
 vi.mock('@/lib/firebase-client', () => ({
-  auth: {
-    currentUser: {
-      getIdToken: vi.fn().mockResolvedValue('mock-id-token'),
-    },
-  },
+  db: {},
+  auth: {},
 }));
 
 vi.stubGlobal('fetch', vi.fn());
 const mockedFetch = /** @type {import('vitest').Mock} */ (globalThis.fetch);
 
-import { auth } from '@/lib/firebase-client';
 import useStravaSync from '@/hooks/useStravaSync';
 
-const mockedGetIdToken = /** @type {import('vitest').Mock} */ (auth.currentUser.getIdToken);
+const mockGetIdToken = vi.fn().mockResolvedValue('mock-id-token');
+
+const mockUser = {
+  uid: 'u1',
+  name: 'Test',
+  email: null,
+  photoURL: null,
+  getIdToken: mockGetIdToken,
+};
+
+/**
+ * 以 AuthContext.Provider 包裝元件並 render。
+ * @param {import('react').ReactElement} ui - 要渲染的元件。
+ * @param {object | null} [user] - 模擬使用者。
+ * @returns {ReturnType<typeof render>} render 結果。
+ */
+function renderWithAuth(ui, user = mockUser) {
+  return render(
+    <AuthContext.Provider value={{ user, setUser: vi.fn(), loading: false }}>
+      {ui}
+    </AuthContext.Provider>,
+  );
+}
 
 /**
  * 消費 useStravaSync hook 的測試元件。
@@ -50,7 +69,7 @@ describe('useStravaSync', () => {
   it('calls POST /api/strava/sync with Bearer token on sync()', async () => {
     const user = userEvent.setup();
 
-    render(<TestComponent lastSyncAt={null} />);
+    renderWithAuth(<TestComponent lastSyncAt={null} />);
 
     await user.click(screen.getByRole('button', { name: 'Sync' }));
 
@@ -72,7 +91,7 @@ describe('useStravaSync', () => {
 
     const user = userEvent.setup();
 
-    render(<TestComponent lastSyncAt={null} />);
+    renderWithAuth(<TestComponent lastSyncAt={null} />);
 
     expect(screen.getByTestId('syncing')).toHaveTextContent('false');
 
@@ -96,7 +115,7 @@ describe('useStravaSync', () => {
     const thirtyMinAgo = new Date('2026-04-06T11:30:00Z');
     const lastSyncAt = { toDate: () => thirtyMinAgo };
 
-    render(<TestComponent lastSyncAt={lastSyncAt} />);
+    renderWithAuth(<TestComponent lastSyncAt={lastSyncAt} />);
 
     expect(screen.getByTestId('cooldown')).toHaveTextContent('1800');
 
@@ -109,7 +128,7 @@ describe('useStravaSync', () => {
   });
 
   it('cooldownRemaining is 0 when lastSyncAt is null', () => {
-    render(<TestComponent lastSyncAt={null} />);
+    renderWithAuth(<TestComponent lastSyncAt={null} />);
 
     expect(screen.getByTestId('cooldown')).toHaveTextContent('0');
   });
@@ -124,7 +143,7 @@ describe('useStravaSync', () => {
 
     const user = userEvent.setup();
 
-    render(<TestComponent lastSyncAt={null} />);
+    renderWithAuth(<TestComponent lastSyncAt={null} />);
 
     await user.click(screen.getByRole('button', { name: 'Sync' }));
     expect(mockedFetch).toHaveBeenCalledTimes(1);
@@ -146,7 +165,7 @@ describe('useStravaSync', () => {
 
     const user = userEvent.setup();
 
-    render(<TestComponent lastSyncAt={null} />);
+    renderWithAuth(<TestComponent lastSyncAt={null} />);
 
     await user.click(screen.getByRole('button', { name: 'Sync' }));
 
@@ -159,6 +178,7 @@ describe('useStravaSync', () => {
     /** @type {boolean | undefined} */
     let syncResult;
 
+    /** @returns {import('react').ReactElement} 測試用按鈕元件。 */
     function ResultComponent() {
       const { sync } = useStravaSync(null);
       return (
@@ -174,7 +194,7 @@ describe('useStravaSync', () => {
     }
 
     const user = userEvent.setup();
-    render(<ResultComponent />);
+    renderWithAuth(<ResultComponent />);
 
     await user.click(screen.getByRole('button', { name: 'Sync' }));
 
@@ -192,6 +212,7 @@ describe('useStravaSync', () => {
     /** @type {boolean | undefined} */
     let syncResult;
 
+    /** @returns {import('react').ReactElement} 測試用按鈕元件。 */
     function ResultComponent() {
       const { sync } = useStravaSync(null);
       return (
@@ -207,7 +228,7 @@ describe('useStravaSync', () => {
     }
 
     const user = userEvent.setup();
-    render(<ResultComponent />);
+    renderWithAuth(<ResultComponent />);
 
     await user.click(screen.getByRole('button', { name: 'Sync' }));
 
@@ -226,7 +247,7 @@ describe('useStravaSync', () => {
 
     const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
 
-    const { unmount } = render(<TestComponent lastSyncAt={lastSyncAt} />);
+    const { unmount } = renderWithAuth(<TestComponent lastSyncAt={lastSyncAt} />);
 
     expect(screen.getByTestId('cooldown')).toHaveTextContent('3000');
 

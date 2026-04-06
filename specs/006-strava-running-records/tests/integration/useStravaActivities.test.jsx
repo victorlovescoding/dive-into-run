@@ -115,8 +115,14 @@ describe('useStravaActivities', () => {
 
   it('stores lastDoc from initial load for pagination cursor', async () => {
     const fakeCursor = { id: 'cursor1' };
+    const tenActivities = Array.from({ length: 10 }, (_, i) => ({
+      id: `doc${i}`,
+      stravaId: i + 1,
+      name: `Run ${i + 1}`,
+      uid: 'u1',
+    }));
     mockedGetActivities.mockResolvedValue({
-      activities: [{ id: 'doc1', stravaId: 1, name: 'Run 1', uid: 'u1' }],
+      activities: tenActivities,
       lastDoc: fakeCursor,
     });
 

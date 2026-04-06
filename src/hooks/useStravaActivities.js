@@ -2,6 +2,8 @@ import { useState, useContext, useEffect, useCallback } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
 import { getStravaActivities } from '@/lib/firebase-strava';
 
+const PAGE_SIZE = 10;
+
 /**
  * @typedef {object} UseStravaActivitiesReturn
  * @property {import('@/lib/firebase-strava').StravaActivity[]} activities - Strava 活動列表。
@@ -47,12 +49,12 @@ export default function useStravaActivities() {
     setIsLoading(true);
     setError(null);
 
-    getStravaActivities(user.uid, 10)
+    getStravaActivities(user.uid, PAGE_SIZE)
       .then((result) => {
         if (!cancelled) {
           setActivities(result.activities);
           setCursor(result.lastDoc);
-          setHasMore(result.lastDoc !== null);
+          setHasMore(result.activities.length === PAGE_SIZE);
           setIsLoading(false);
         }
       })
@@ -75,7 +77,7 @@ export default function useStravaActivities() {
       const result = await getStravaActivities(user.uid, 10, cursor);
       setActivities((prev) => [...prev, ...result.activities]);
       setCursor(result.lastDoc);
-      setHasMore(result.lastDoc !== null);
+      setHasMore(result.activities.length === PAGE_SIZE);
     } catch {
       // loadMore error — silently handled
     } finally {

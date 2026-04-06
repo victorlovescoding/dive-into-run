@@ -28,13 +28,13 @@ function FitBounds({ coords }) {
  * 路線地圖內部元件，渲染 Leaflet 地圖與 polyline 路線。
  * @param {object} props - 元件 props。
  * @param {string | null | undefined} props.summaryPolyline - Google Encoded Polyline 字串。
- * @returns {import('react').ReactElement} Leaflet 地圖或空 div。
+ * @returns {import('react').ReactElement | null} Leaflet 地圖，無座標時回傳 null。
  */
 export default function RunsRouteMapInner({ summaryPolyline }) {
   const coords = decodePolyline(summaryPolyline);
 
   if (coords.length === 0) {
-    return <div />;
+    return null;
   }
 
   return (

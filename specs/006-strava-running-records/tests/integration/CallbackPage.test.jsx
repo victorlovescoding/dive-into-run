@@ -59,6 +59,7 @@ const mockedFetch = /** @type {import('vitest').Mock} */ (globalThis.fetch);
  * @property {string} name - 使用者名稱。
  * @property {string} email - 使用者信箱。
  * @property {string} photoURL - 使用者大頭貼 URL。
+ * @property {() => Promise<string>} getIdToken - 取得 Firebase ID token。
  */
 
 /* ==========================================================================
@@ -76,6 +77,7 @@ function createMockUser(overrides = {}) {
     name: 'Alice',
     email: 'alice@test.com',
     photoURL: 'https://example.com/alice.jpg',
+    getIdToken: vi.fn().mockResolvedValue('mock-id-token'),
     ...overrides,
   };
 }

@@ -306,8 +306,8 @@ describe('Unit: getStravaActivities', () => {
       mockCollRef,
       mockWhereConstraint,
       mockOrderByConstraint,
-      mockLimitConstraint,
       mockStartAfterConstraint,
+      mockLimitConstraint,
     );
   });
 

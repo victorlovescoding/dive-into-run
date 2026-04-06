@@ -9,7 +9,7 @@ import { loginCheckUserData, watchUserProfile } from '@/lib/firebase-users';
 
 /**
  * @typedef {object} AuthContextValue
- * @property {{ uid: string, name: string | null, email: string | null, photoURL: string | null } | null} user - 當前登入使用者。
+ * @property {{ uid: string, name: string | null, email: string | null, photoURL: string | null, getIdToken: () => Promise<string> } | null} user - 當前登入使用者。
  * @property {(user: AuthContextValue['user']) => void} setUser - 設定使用者。
  * @property {boolean} loading - 驗證狀態載入中。
  */
@@ -54,6 +54,7 @@ export default function UserDataHandler({ children }) {
               name: data?.name ?? null,
               email: data?.email ?? null,
               photoURL: data?.photoURL ?? null,
+              getIdToken: () => fbUser.getIdToken(),
             });
             setLoading(false);
           },

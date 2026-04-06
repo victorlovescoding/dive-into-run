@@ -18,6 +18,9 @@ export async function POST(request) {
   }
 
   const tokenDoc = await adminDb.collection('stravaTokens').doc(uid).get();
+  if (!tokenDoc.exists) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   const tokenData = tokenDoc.data();
 
   // Cooldown check — skip if lastSyncAt is null (first sync)

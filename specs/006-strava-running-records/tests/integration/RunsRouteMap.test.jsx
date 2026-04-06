@@ -17,7 +17,7 @@ vi.mock('react-leaflet', () => ({
 }));
 
 import { decodePolyline } from '@/lib/strava-helpers';
-import { RunsRouteMapInner } from '@/components/RunsRouteMap';
+import RunsRouteMapInner from '@/components/RunsRouteMapInner';
 
 const mockedDecode = /** @type {import('vitest').Mock} */ (decodePolyline);
 
@@ -56,7 +56,7 @@ describe('RunsRouteMap', () => {
 
     const { container } = render(<RunsRouteMapInner summaryPolyline={null} />);
 
-    expect(container.firstChild).toBeEmptyDOMElement();
+    expect(container.firstChild).toBeNull();
     expect(screen.queryByTestId('map-container')).not.toBeInTheDocument();
   });
 
@@ -65,7 +65,7 @@ describe('RunsRouteMap', () => {
 
     const { container } = render(<RunsRouteMapInner summaryPolyline="" />);
 
-    expect(container.firstChild).toBeEmptyDOMElement();
+    expect(container.firstChild).toBeNull();
     expect(screen.queryByTestId('map-container')).not.toBeInTheDocument();
   });
 });

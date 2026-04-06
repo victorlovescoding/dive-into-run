@@ -3,12 +3,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // --- Mocks (vi.hoisted ensures availability in vi.mock factory) ---
 const {
   mockGet,
-  mockUpdate,
-  mockDelete,
   mockDocInstance,
   mockQueryGet,
   mockWhere,
   mockBatchDelete,
+  mockBatchUpdate,
   mockBatchCommit,
   mockBatch,
 } = vi.hoisted(() => {
@@ -23,9 +22,11 @@ const {
   }));
 
   const mockBatchDelete = vi.fn();
+  const mockBatchUpdate = vi.fn();
   const mockBatchCommit = vi.fn().mockResolvedValue(undefined);
   const mockBatch = vi.fn(() => ({
     delete: mockBatchDelete,
+    update: mockBatchUpdate,
     commit: mockBatchCommit,
   }));
 
@@ -37,6 +38,7 @@ const {
     mockQueryGet,
     mockWhere,
     mockBatchDelete,
+    mockBatchUpdate,
     mockBatchCommit,
     mockBatch,
   };
@@ -169,9 +171,10 @@ describe('POST /api/strava/disconnect', () => {
     // Assert
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
-    expect(mockDelete).toHaveBeenCalled(); // stravaTokens deleted
-    expect(mockUpdate).toHaveBeenCalledWith({ connected: false }); // stravaConnections updated
-    expect(mockBatchDelete).toHaveBeenCalledTimes(3); // 3 activities deleted
+    // Atomic batch: token delete + connection update
+    expect(mockBatchDelete).toHaveBeenCalled(); // stravaTokens deleted via batch
+    expect(mockBatchUpdate).toHaveBeenCalledWith(mockDocInstance, { connected: false });
+    // Activity batch deletes (3 activities) + atomic batch = total batch deletes include token
     expect(mockBatchCommit).toHaveBeenCalled();
   });
 
@@ -188,9 +191,9 @@ describe('POST /api/strava/disconnect', () => {
     // Assert
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
-    expect(mockDelete).toHaveBeenCalled(); // stravaTokens still deleted
-    expect(mockUpdate).toHaveBeenCalledWith({ connected: false });
-    expect(mockBatchDelete).not.toHaveBeenCalled(); // no activities to delete
+    // Atomic batch: token delete + connection update (even with no activities)
+    expect(mockBatchDelete).toHaveBeenCalled(); // stravaTokens deleted via batch
+    expect(mockBatchUpdate).toHaveBeenCalledWith(mockDocInstance, { connected: false });
   });
 
   it('handles pagination when activities exceed 500 (batch delete in loop)', async () => {
@@ -209,8 +212,8 @@ describe('POST /api/strava/disconnect', () => {
     // Assert
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
-    expect(mockBatchDelete).toHaveBeenCalledTimes(700); // 500 + 200
-    // batch.commit called for each batch of deletes (2 batches with docs)
-    expect(mockBatchCommit).toHaveBeenCalledTimes(2);
+    expect(mockBatchDelete).toHaveBeenCalledTimes(701); // 1 token + 500 + 200 activities
+    // atomic batch (token+connection) + 2 activity batches = 3 commits
+    expect(mockBatchCommit).toHaveBeenCalledTimes(3);
   });
 });
