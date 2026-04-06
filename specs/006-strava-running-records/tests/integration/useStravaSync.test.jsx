@@ -111,20 +111,20 @@ describe('useStravaSync', () => {
     const now = new Date('2026-04-06T12:00:00Z');
     vi.setSystemTime(now);
 
-    // lastSyncAt = 30 minutes ago -> 30 min (1800s) remaining
-    const thirtyMinAgo = new Date('2026-04-06T11:30:00Z');
-    const lastSyncAt = { toDate: () => thirtyMinAgo };
+    // lastSyncAt = 2 minutes ago -> 180s remaining (300 - 120)
+    const twoMinAgo = new Date('2026-04-06T11:58:00Z');
+    const lastSyncAt = { toDate: () => twoMinAgo };
 
     renderWithAuth(<TestComponent lastSyncAt={lastSyncAt} />);
 
-    expect(screen.getByTestId('cooldown')).toHaveTextContent('1800');
+    expect(screen.getByTestId('cooldown')).toHaveTextContent('180');
 
     // Advance 10 seconds
     act(() => {
       vi.advanceTimersByTime(10_000);
     });
 
-    expect(screen.getByTestId('cooldown')).toHaveTextContent('1790');
+    expect(screen.getByTestId('cooldown')).toHaveTextContent('170');
   });
 
   it('cooldownRemaining is 0 when lastSyncAt is null', () => {
@@ -242,14 +242,14 @@ describe('useStravaSync', () => {
     const now = new Date('2026-04-06T12:00:00Z');
     vi.setSystemTime(now);
 
-    const tenMinAgo = new Date('2026-04-06T11:50:00Z');
-    const lastSyncAt = { toDate: () => tenMinAgo };
+    const oneMinAgo = new Date('2026-04-06T11:59:00Z');
+    const lastSyncAt = { toDate: () => oneMinAgo };
 
     const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
 
     const { unmount } = renderWithAuth(<TestComponent lastSyncAt={lastSyncAt} />);
 
-    expect(screen.getByTestId('cooldown')).toHaveTextContent('3000');
+    expect(screen.getByTestId('cooldown')).toHaveTextContent('240');
 
     unmount();
 

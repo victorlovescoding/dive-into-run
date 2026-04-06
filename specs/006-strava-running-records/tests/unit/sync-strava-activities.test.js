@@ -402,6 +402,8 @@ describe('syncStravaActivities', () => {
     // Assert
     expect(count).toBe(0);
     expect(mockBatchSet).not.toHaveBeenCalled();
-    expect(mockBatchCommit).not.toHaveBeenCalled();
+    // updateLastSyncAt still commits (batch.update x2 + commit x1)
+    expect(mockBatchUpdate).toHaveBeenCalledTimes(2);
+    expect(mockBatchCommit).toHaveBeenCalledTimes(1);
   });
 });

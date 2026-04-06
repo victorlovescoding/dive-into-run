@@ -33,6 +33,147 @@ async function verifyAuthToken(request) {
 }
 
 /**
+ * Maps a raw Strava API activity object to the Firestore document shape.
+ * @param {string} uid - Firebase user uid.
+ * @param {object} activity - Raw Strava API activity object.
+ * @returns {object} Firestore document fields for stravaActivities collection.
+ */
+function mapStravaActivityToDoc(uid, activity) {
+  return {
+    uid,
+    stravaId: activity.id,
+    name: activity.name,
+    type: activity.type,
+    distanceMeters: activity.distance,
+    movingTimeSec: activity.moving_time,
+    startDate: admin.firestore.Timestamp.fromDate(new Date(activity.start_date)),
+    startDateLocal: activity.start_date_local,
+    summaryPolyline: activity.map?.summary_polyline || null,
+    averageSpeed: activity.average_speed,
+    syncedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+}
+
+/**
+ * Looks up Firebase uid from a Strava athlete ID.
+ * @param {number} athleteId - Strava athlete ID (owner_id from webhook).
+ * @returns {Promise<string | null>} Firebase uid, or null if not found.
+ */
+async function getUidByAthleteId(athleteId) {
+  const snap = await adminDb
+    .collection('stravaTokens')
+    .where('athleteId', '==', athleteId)
+    .limit(1)
+    .get();
+  if (snap.empty) return null;
+  return snap.docs[0].id;
+}
+
+/**
+ * @typedef {object} EnsureTokenResult
+ * @property {string} [accessToken] - Valid Strava access token.
+ * @property {string} [error] - Error message if token could not be obtained.
+ */
+
+/**
+ * Ensures a valid Strava access token for the given uid.
+ * Refreshes via Strava OAuth if expired, updates Firestore accordingly.
+ * @param {string} uid - Firebase user uid.
+ * @returns {Promise<EnsureTokenResult>} Object with accessToken or error.
+ */
+async function ensureValidStravaToken(uid) {
+  const tokenDoc = await adminDb.collection('stravaTokens').doc(uid).get();
+  if (!tokenDoc.exists) {
+    return { error: 'Token not found' };
+  }
+  const tokenData = tokenDoc.data();
+
+  if (tokenData.expiresAt >= Math.floor(Date.now() / 1000)) {
+    return { accessToken: tokenData.accessToken };
+  }
+
+  const refreshResponse = await fetch('https://www.strava.com/api/v3/oauth/token', {
+    method: 'POST',
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: tokenData.refreshToken,
+      client_id: process.env.STRAVA_CLIENT_ID,
+      client_secret: process.env.STRAVA_CLIENT_SECRET,
+    }),
+  });
+
+  if (!refreshResponse.ok) {
+    await adminDb.collection('stravaConnections').doc(uid).update({ connected: false });
+    return { error: 'Token refresh failed' };
+  }
+
+  const refreshData = await refreshResponse.json();
+  await adminDb.collection('stravaTokens').doc(uid).update({
+    accessToken: refreshData.access_token,
+    refreshToken: refreshData.refresh_token,
+    expiresAt: refreshData.expires_at,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return { accessToken: refreshData.access_token };
+}
+
+/**
+ * Updates lastSyncAt timestamp on both stravaTokens and stravaConnections.
+ * @param {string} uid - Firebase user uid.
+ * @returns {Promise<void>}
+ */
+async function updateLastSyncAt(uid) {
+  const batch = adminDb.batch();
+  batch.update(adminDb.collection('stravaTokens').doc(uid), {
+    lastSyncAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  batch.update(adminDb.collection('stravaConnections').doc(uid), {
+    lastSyncAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  await batch.commit();
+}
+
+/**
+ * @typedef {object} SyncSingleParams
+ * @property {string} uid - Firebase user uid.
+ * @property {string} accessToken - Strava OAuth access token.
+ * @property {number} stravaActivityId - Strava activity ID to fetch.
+ */
+
+/**
+ * Fetches a single activity from Strava and writes it to Firestore.
+ * Filters by ALLOWED_TYPES. Returns true if written, false if filtered out
+ * or not found.
+ * @param {SyncSingleParams} params - Parameters for single activity sync.
+ * @returns {Promise<boolean>} True if activity was written to Firestore.
+ */
+async function syncSingleStravaActivity({ uid, accessToken, stravaActivityId }) {
+  const response = await fetch(`https://www.strava.com/api/v3/activities/${stravaActivityId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (response.status === 404) {
+    await adminDb.collection('stravaActivities').doc(String(stravaActivityId)).delete();
+    return false;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Strava API error: ${response.status} ${response.statusText}`);
+  }
+
+  const activity = await response.json();
+  if (!ALLOWED_TYPES.includes(activity.type)) {
+    return false;
+  }
+
+  const docRef = adminDb.collection('stravaActivities').doc(String(activity.id));
+  await docRef.set(mapStravaActivityToDoc(uid, activity), { merge: true });
+  await updateLastSyncAt(uid);
+  return true;
+}
+
+/**
  * @typedef {object} SyncParams
  * @property {string} uid - Firebase user uid.
  * @property {string} accessToken - Strava OAuth access token.
@@ -74,23 +215,7 @@ async function syncStravaActivities({ uid, accessToken, afterEpoch }) {
 
       runActivities.forEach((activity) => {
         const docRef = adminDb.collection('stravaActivities').doc(String(activity.id));
-        batch.set(
-          docRef,
-          {
-            uid,
-            stravaId: activity.id,
-            name: activity.name,
-            type: activity.type,
-            distanceMeters: activity.distance,
-            movingTimeSec: activity.moving_time,
-            startDate: admin.firestore.Timestamp.fromDate(new Date(activity.start_date)),
-            startDateLocal: activity.start_date_local,
-            summaryPolyline: activity.map?.summary_polyline || null,
-            averageSpeed: activity.average_speed,
-            syncedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
+        batch.set(docRef, mapStravaActivityToDoc(uid, activity), { merge: true });
       });
 
       // eslint-disable-next-line no-await-in-loop
@@ -102,16 +227,18 @@ async function syncStravaActivities({ uid, accessToken, afterEpoch }) {
     page += 1;
   }
 
-  if (totalSynced > 0) {
-    const finalBatch = adminDb.batch();
-    const tokensRef = adminDb.collection('stravaTokens').doc(uid);
-    const connectionsRef = adminDb.collection('stravaConnections').doc(uid);
-    finalBatch.update(tokensRef, { lastSyncAt: admin.firestore.FieldValue.serverTimestamp() });
-    finalBatch.update(connectionsRef, { lastSyncAt: admin.firestore.FieldValue.serverTimestamp() });
-    await finalBatch.commit();
-  }
+  await updateLastSyncAt(uid);
 
   return totalSynced;
 }
 
-export { adminDb, verifyAuthToken, syncStravaActivities };
+export {
+  adminDb,
+  verifyAuthToken,
+  mapStravaActivityToDoc,
+  getUidByAthleteId,
+  ensureValidStravaToken,
+  updateLastSyncAt,
+  syncSingleStravaActivity,
+  syncStravaActivities,
+};

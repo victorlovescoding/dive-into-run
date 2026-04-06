@@ -7,6 +7,7 @@ const mockDocInstance = { get: mockGet, update: mockUpdate };
 
 vi.mock('@/lib/firebase-admin', () => ({
   verifyAuthToken: vi.fn(),
+  ensureValidStravaToken: vi.fn(),
   adminDb: {
     collection: vi.fn(() => ({
       doc: vi.fn(() => mockDocInstance),
@@ -25,13 +26,15 @@ vi.mock('firebase-admin', () => ({
   },
 }));
 
-import { verifyAuthToken, syncStravaActivities } from '@/lib/firebase-admin';
+import {
+  verifyAuthToken,
+  ensureValidStravaToken,
+  syncStravaActivities,
+} from '@/lib/firebase-admin';
 
 const mockedVerifyAuth = /** @type {import('vitest').Mock} */ (verifyAuthToken);
+const mockedEnsureToken = /** @type {import('vitest').Mock} */ (ensureValidStravaToken);
 const mockedSync = /** @type {import('vitest').Mock} */ (syncStravaActivities);
-
-vi.stubGlobal('fetch', vi.fn());
-const mockedFetch = /** @type {import('vitest').Mock} */ (globalThis.fetch);
 
 import { POST } from '@/app/api/strava/sync/route';
 
@@ -100,8 +103,8 @@ describe('POST /api/strava/sync', () => {
   it('returns 429 when cooldown is active', async () => {
     // Arrange
     mockedVerifyAuth.mockResolvedValue('uid-123');
-    const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
-    mockGet.mockResolvedValue(createMockTokenDoc({ lastSyncAt: thirtyMinAgo }));
+    const twoMinAgo = Date.now() - 2 * 60 * 1000;
+    mockGet.mockResolvedValue(createMockTokenDoc({ lastSyncAt: twoMinAgo }));
 
     // Act
     const response = await POST(createMockRequest());
@@ -111,13 +114,14 @@ describe('POST /api/strava/sync', () => {
     expect(response.status).toBe(429);
     expect(body.error).toBe('Sync cooldown active');
     expect(body.retryAfter).toBeGreaterThan(0);
-    expect(body.retryAfter).toBeLessThanOrEqual(1800);
+    expect(body.retryAfter).toBeLessThanOrEqual(300);
   });
 
   it('skips cooldown when lastSyncAt is null (first sync)', async () => {
     // Arrange
     mockedVerifyAuth.mockResolvedValue('uid-123');
     mockGet.mockResolvedValue(createMockTokenDoc({ lastSyncAt: null }));
+    mockedEnsureToken.mockResolvedValue({ accessToken: 'access-token' });
     mockedSync.mockResolvedValue(5);
 
     // Act
@@ -132,8 +136,9 @@ describe('POST /api/strava/sync', () => {
   it('allows sync after cooldown period', async () => {
     // Arrange
     mockedVerifyAuth.mockResolvedValue('uid-123');
-    const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
-    mockGet.mockResolvedValue(createMockTokenDoc({ lastSyncAt: twoHoursAgo }));
+    const tenMinAgo = Date.now() - 10 * 60 * 1000;
+    mockGet.mockResolvedValue(createMockTokenDoc({ lastSyncAt: tenMinAgo }));
+    mockedEnsureToken.mockResolvedValue({ accessToken: 'access-token' });
     mockedSync.mockResolvedValue(3);
 
     // Act
@@ -145,73 +150,28 @@ describe('POST /api/strava/sync', () => {
     expect(body.success).toBe(true);
   });
 
-  it('skips token refresh when token is still valid', async () => {
+  it('delegates token management to ensureValidStravaToken', async () => {
     // Arrange
     mockedVerifyAuth.mockResolvedValue('uid-123');
-    const validExpiry = Math.floor(Date.now() / 1000) + 3600;
-    mockGet.mockResolvedValue(createMockTokenDoc({ expiresAt: validExpiry }));
+    mockGet.mockResolvedValue(createMockTokenDoc());
+    mockedEnsureToken.mockResolvedValue({ accessToken: 'refreshed-token' });
     mockedSync.mockResolvedValue(2);
 
     // Act
     await POST(createMockRequest());
 
     // Assert
-    expect(mockedFetch).not.toHaveBeenCalled();
-    expect(mockUpdate).not.toHaveBeenCalled();
-  });
-
-  it('refreshes token when expired and updates Firestore', async () => {
-    // Arrange
-    mockedVerifyAuth.mockResolvedValue('uid-123');
-    const expiredAt = Math.floor(Date.now() / 1000) - 100;
-    mockGet.mockResolvedValue(
-      createMockTokenDoc({
-        expiresAt: expiredAt,
-        refreshToken: 'old-refresh',
-      }),
-    );
-    mockedFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        access_token: 'new-access',
-        refresh_token: 'new-refresh',
-        expires_at: Math.floor(Date.now() / 1000) + 7200,
-      }),
-    });
-    mockedSync.mockResolvedValue(1);
-
-    // Act
-    const response = await POST(createMockRequest());
-
-    // Assert
-    expect(response.status).toBe(200);
-    expect(mockedFetch).toHaveBeenCalledWith(
-      'https://www.strava.com/api/v3/oauth/token',
-      expect.objectContaining({
-        method: 'POST',
-        body: expect.any(URLSearchParams),
-      }),
-    );
-    expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        accessToken: 'new-access',
-        refreshToken: 'new-refresh',
-      }),
-    );
-    // syncStravaActivities should receive the new access token
+    expect(mockedEnsureToken).toHaveBeenCalledWith('uid-123');
     expect(mockedSync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        accessToken: 'new-access',
-      }),
+      expect.objectContaining({ accessToken: 'refreshed-token' }),
     );
   });
 
-  it('returns 401 when token refresh fails', async () => {
+  it('returns 401 when ensureValidStravaToken returns error', async () => {
     // Arrange
     mockedVerifyAuth.mockResolvedValue('uid-123');
-    const expiredAt = Math.floor(Date.now() / 1000) - 100;
-    mockGet.mockResolvedValue(createMockTokenDoc({ expiresAt: expiredAt }));
-    mockedFetch.mockResolvedValue({ ok: false, status: 400 });
+    mockGet.mockResolvedValue(createMockTokenDoc());
+    mockedEnsureToken.mockResolvedValue({ error: 'Token refresh failed' });
 
     // Act
     const response = await POST(createMockRequest());
@@ -225,9 +185,10 @@ describe('POST /api/strava/sync', () => {
   it('calls syncStravaActivities with correct params using lastSyncAt as afterEpoch', async () => {
     // Arrange
     mockedVerifyAuth.mockResolvedValue('uid-123');
-    const twoHoursAgoMs = Date.now() - 2 * 60 * 60 * 1000;
-    const expectedEpoch = Math.floor(twoHoursAgoMs / 1000);
-    mockGet.mockResolvedValue(createMockTokenDoc({ lastSyncAt: twoHoursAgoMs }));
+    const tenMinAgoMs = Date.now() - 10 * 60 * 1000;
+    const expectedEpoch = Math.floor(tenMinAgoMs / 1000);
+    mockGet.mockResolvedValue(createMockTokenDoc({ lastSyncAt: tenMinAgoMs }));
+    mockedEnsureToken.mockResolvedValue({ accessToken: 'access-token' });
     mockedSync.mockResolvedValue(4);
 
     // Act
@@ -245,6 +206,7 @@ describe('POST /api/strava/sync', () => {
     // Arrange
     mockedVerifyAuth.mockResolvedValue('uid-123');
     mockGet.mockResolvedValue(createMockTokenDoc({ lastSyncAt: null }));
+    mockedEnsureToken.mockResolvedValue({ accessToken: 'access-token' });
     mockedSync.mockResolvedValue(10);
     const twoMonthsAgo = Math.floor(Date.now() / 1000) - 60 * 24 * 3600;
 
@@ -264,6 +226,7 @@ describe('POST /api/strava/sync', () => {
     // Arrange
     mockedVerifyAuth.mockResolvedValue('uid-123');
     mockGet.mockResolvedValue(createMockTokenDoc());
+    mockedEnsureToken.mockResolvedValue({ accessToken: 'access-token' });
     mockedSync.mockResolvedValue(7);
 
     // Act
@@ -279,6 +242,7 @@ describe('POST /api/strava/sync', () => {
     // Arrange
     mockedVerifyAuth.mockResolvedValue('uid-123');
     mockGet.mockResolvedValue(createMockTokenDoc());
+    mockedEnsureToken.mockResolvedValue({ accessToken: 'access-token' });
     mockedSync.mockRejectedValue(new Error('Strava API error'));
 
     // Act

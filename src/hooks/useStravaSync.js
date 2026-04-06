@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useContext } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
 
-const COOLDOWN_SECONDS = 3600; // 1 hour
+const COOLDOWN_SECONDS = 300; // 5 minutes
 
 /**
  * @typedef {object} UseStravaSyncReturn
