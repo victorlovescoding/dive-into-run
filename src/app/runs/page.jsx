@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useContext, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
 import useStravaConnection from '@/hooks/useStravaConnection';
 import useStravaActivities from '@/hooks/useStravaActivities';
@@ -35,6 +35,14 @@ export default function RunsPage() {
     cooldownRemaining,
     error: syncError,
   } = useStravaSync(connection?.lastSyncAt);
+
+  // Auto-refresh when webhook updates lastSyncAt (skip initial render)
+  const lastSyncRef = useRef(connection?.lastSyncAt);
+  useEffect(() => {
+    if (lastSyncRef.current === connection?.lastSyncAt) return;
+    lastSyncRef.current = connection?.lastSyncAt;
+    refresh();
+  }, [connection?.lastSyncAt, refresh]);
 
   const handleSync = useCallback(async () => {
     const ok = await sync();
