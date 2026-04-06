@@ -48,6 +48,27 @@ service cloud.firestore {
     }
 
     // =========================
+    // ✅ Strava collections
+    // =========================
+
+    // stravaTokens: server-only（Admin SDK 存取）
+    match /stravaTokens/{uid} {
+      allow read, write: if false;
+    }
+
+    // stravaConnections: 本人可讀，僅 server 可寫
+    match /stravaConnections/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // stravaActivities: 本人可讀，僅 server 可寫
+    match /stravaActivities/{id} {
+      allow read: if isSignedIn() && request.auth.uid == resource.data.uid;
+      allow write: if false;
+    }
+
+    // =========================
     // ✅ events + participants
     // =========================
 

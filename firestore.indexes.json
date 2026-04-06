@@ -16,6 +16,14 @@
         { "fieldPath": "district", "order": "ASCENDING" },
         { "fieldPath": "time", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "stravaActivities",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "startDate", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
