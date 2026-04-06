@@ -4,220 +4,195 @@
 
 ---
 
-## Automated Checks
+## Taste Rating: 🟡 **Acceptable** — Works, ships the feature, but has real design issues worth addressing before this calcifies
 
-| Check                     | Result                                                                         |
-| ------------------------- | ------------------------------------------------------------------------------ |
-| ESLint                    | 0 warnings, 0 errors                                                           |
-| @ts-ignore                | None found                                                                     |
-| Type-check (branch files) | 1 error — `RunsRouteMap.test.jsx:20` named import from default-export module   |
-| Tests                     | 7 failed / 125 passed (3 files failed / 15 passed)                             |
-| eslint-disable (new code) | 3 — all justified (`no-await-in-loop` x2 batch deletes, `no-alert` x1 confirm) |
+The overall architecture — server route handlers ↔ Admin SDK ↔ client hooks ↔ UI components — is sound. Data flows in one direction, security rules are correct, the separation between server-only tokens and client-readable connections is the right call. But there are several spots where the code adds unnecessary complexity, makes questionable data structure decisions, or silently swallows failures in ways that will bite you in production.
 
 ---
 
-## Taste Rating
+## Linus's Three Questions
 
-🟡 **Acceptable** — Data flow is clean and separation of concerns is well-thought-out. Server routes handle secrets, hooks manage state, components stay dumb. But there are real null-safety crashes, a silent data loss bug in sync pagination, and inconsistent auth patterns that smell like "it works on my machine" engineering.
-
----
-
-## Linus-Style Analysis
-
-### Three Questions
-
-1. **Is this solving a real problem?** Yes. Strava integration is a concrete user-facing feature. No over-engineering, no theoretical frameworks.
-2. **Is there a simpler way?** Mostly no — the OAuth + Firestore + realtime listener architecture is the straightforward path. A few places have unnecessary complexity (dual auth patterns, redundant admin init logic).
-3. **What will this break?** The `auth.currentUser` null access **will** crash in production when timing is unlucky. The sync pagination gap **will** silently lose data for active runners.
+1. **Is this solving a real problem?** Yes. Strava OAuth + activity sync + display is a concrete, well-scoped feature.
+2. **Is there a simpler way?** In places, yes. Some hooks carry more state than needed, the `useStravaConnection` uid-change detection is over-engineered, and `syncStravaActivities` buries important failure modes.
+3. **What will this break?** Nothing existing — this is additive. The `AuthContext` change is the only touch point, and it's backwards-compatible.
 
 ---
 
-### [CRITICAL ISSUES] — Must fix
+## [CRITICAL ISSUES]
 
-**1. [src/app/api/strava/sync/route.js, Line 21-24] Data Integrity: `tokenData` null dereference**
+### 1. `syncStravaActivities` skips `lastSyncAt` update when zero new activities are synced
+
+**[src/lib/firebase-admin.js, Line 104–112]**
 
 ```js
-const tokenDoc = await adminDb.collection('stravaTokens').doc(uid).get();
-const tokenData = tokenDoc.data();
-// ← tokenData is undefined if doc doesn't exist
-if (tokenData.lastSyncAt) { // 💥 TypeError
-```
-
-`tokenDoc.data()` returns `undefined` when the document doesn't exist. Any user who hits `/api/strava/sync` after their token doc was deleted (e.g. race condition with disconnect) gets an unhandled 500. This is not a theoretical edge case — it's a state machine transition that **will** happen.
-
-**Fix:** Guard with `if (!tokenDoc.exists)` and return 401 before accessing `.data()`.
-
----
-
-**2. [src/app/runs/page.jsx, Line 53] Breaking Change: `auth.currentUser` null crash**
-
-```js
-const token = await auth.currentUser.getIdToken();
-```
-
-Tests confirm this crashes: `TypeError: Cannot read properties of undefined (reading 'getIdToken')`. The `handleDisconnect` function uses `auth.currentUser` (from firebase-client import) instead of `user` (from AuthContext). When the auth module's internal state and the React context are out of sync — which happens during auth state transitions — this throws.
-
-This also exists in `src/app/runs/callback/page.jsx:62`:
-
-```js
-const idToken = await auth.currentUser.getIdToken();
-```
-
-**Fix:** Use `user.getIdToken()` from AuthContext consistently. You already have `user` in scope via `useContext(AuthContext)`. Don't reach into the Firebase SDK's internal singleton when you have a perfectly good React state holding the same object.
-
----
-
-**3. [src/lib/firebase-admin.js, Line 53] Data Loss: Sync only fetches first 100 activities**
-
-```js
-const url = `https://www.strava.com/api/v3/athlete/activities?after=${afterEpoch}&per_page=100`;
-const response = await fetch(url, { ... });
-```
-
-Strava returns at most `per_page` results. For active runners, 100 activities in a 2-month window is entirely possible (multiple runs per day during training blocks). The remaining activities are **silently dropped**. No error, no warning, no indication to the user that their data is incomplete. This is the kind of bug that erodes trust because the user can't tell something is wrong.
-
-**Fix:** Paginate with `page` parameter until results < `per_page`. The Strava API supports `page=1,2,3...`. Batch Firestore writes per page (each page has <=100 docs + 2 updates = 102 ops, well under the 500 batch limit).
-
----
-
-### [IMPROVEMENT OPPORTUNITIES] — Should fix
-
-**4. [src/hooks/useStravaSync.js, Line 66] Silent Failure: `undefined` Bearer token**
-
-```js
-const token = await auth.currentUser?.getIdToken();
-const res = await fetch('/api/strava/sync', {
-  headers: { Authorization: `Bearer ${token}` },
-});
-```
-
-Optional chaining means `token` can be `undefined`. You'd send `Authorization: Bearer undefined` — which the server correctly rejects as 401, but the user sees a generic "同步失敗" with no clue that their auth state is broken. At least three different auth token patterns across the codebase:
-
-| File                   | Pattern                          | Null-safe?     |
-| ---------------------- | -------------------------------- | -------------- |
-| `runs/page.jsx:53`     | `auth.currentUser.getIdToken()`  | No — crashes   |
-| `callback/page.jsx:62` | `auth.currentUser.getIdToken()`  | No — crashes   |
-| `useStravaSync.js:66`  | `auth.currentUser?.getIdToken()` | Fails silently |
-
-**Fix:** Pick one pattern: `user.getIdToken()` from AuthContext, guard once at the call site with an early return if `!user`.
-
----
-
-**5. [src/hooks/useStravaActivities.js, Line 55] Unnecessary Firestore Read: `hasMore` false positive**
-
-```js
-setHasMore(result.lastDoc !== null);
-```
-
-If a query returns exactly `pageSize` items and that happens to be the last batch, `lastDoc` is non-null → `hasMore` is `true` → IntersectionObserver fires `loadMore()` → fetches 0 items → finally sets `hasMore` to `false`. This is one unnecessary Firestore read per user per session. Not catastrophic, but it's sloppy.
-
-**Fix:** `setHasMore(result.activities.length === pageSize)` — if fewer than `pageSize` results come back, you know you're at the end.
-
----
-
-**6. [src/app/runs/page.jsx, Line 54-56] No error feedback on disconnect failure**
-
-```js
-await fetch('/api/strava/disconnect', {
-  method: 'POST',
-  headers: { Authorization: `Bearer ${token}` },
-});
-// ← response.ok not checked, user gets no feedback
-```
-
-Disconnect can fail (network error, server 500, auth expired). User clicks "取消連結", sees "取消連結中..." → it finishes → nothing visually changes because the connection listener still shows connected. Silent failure with no feedback.
-
-**Fix:** Check `response.ok`, show error state on failure (same pattern as sync error).
-
----
-
-**7. [src/app/api/strava/disconnect/route.js, Line 26-44] Non-atomic disconnect operations**
-
-Sequential operations: delete token (L26) → update connection (L29) → batch delete activities (L32-45). If the process crashes after deleting the token but before updating the connection, the user appears "connected" but has no token — sync will crash, disconnect will return 400 (no token doc to check).
-
-Not a common scenario in a serverless environment, but the operations _could_ be partially batched. At minimum, the token delete and connection update should be in the same batch.
-
-**Fix:** Batch the token delete + connection update together. Activity deletion can remain separate (it's already batched internally).
-
----
-
-**8. [src/lib/firebase-admin.js, Line 4-8] Confusing Admin SDK init**
-
-```js
-credential: process.env.GOOGLE_APPLICATION_CREDENTIALS
-  ? admin.credential.cert(process.env.GOOGLE_APPLICATION_CREDENTIALS)
-  : admin.credential.applicationDefault(),
-```
-
-`GOOGLE_APPLICATION_CREDENTIALS` is the standard env var consumed _automatically_ by `applicationDefault()`. Using it with `cert()` is redundant — ADC already reads that path. The conditional logic suggests the author doesn't understand the difference. `cert()` is for when you have a JSON object or explicit path that ISN'T in the standard env var.
-
-**Fix:** Just use `admin.credential.applicationDefault()` unconditionally (or `cert()` with a separate env var name if explicit path control is needed).
-
----
-
-### [TESTING GAPS]
-
-**9. [specs/006-strava-running-records/tests/integration/RunsRouteMap.test.jsx, Line 20] Import error breaks all 4 tests**
-
-```js
-import { RunsRouteMapInner } from '@/components/RunsRouteMap';
-// TS2614: Module has no exported member 'RunsRouteMapInner'
-```
-
-`RunsRouteMap.jsx` only has a default export (the `dynamic()` wrapper). `RunsRouteMapInner` is a separate file. All 4 map tests fail with `Element type is invalid`.
-
-**Fix:** Either import `RunsRouteMapInner` from `@/components/RunsRouteMapInner` (to test the inner component directly) or import the default from `@/components/RunsRouteMap`.
-
----
-
-**10. [specs/006-strava-running-records/tests/integration/RunsPage.test.jsx] Disconnect tests expose production bug**
-
-The `handleDisconnect` test mocks `auth` as `{}` but the real code calls `auth.currentUser.getIdToken()`. The test catches a real bug (issue #2 above) but the test itself is set up in a way that passes for the wrong reason — the mock user object has `getIdToken` but it's on the `connectedUser` object, not on `auth.currentUser`:
-
-```js
-const connectedUser = {
-  uid: 'u1',
-  getIdToken: vi.fn().mockResolvedValue('mock-token-123'),
-};
-// But page.jsx does: auth.currentUser.getIdToken()  ← auth is mocked as {}
-```
-
-The test expectation `expect(connectedUser.getIdToken).toHaveBeenCalled()` passes vacuously because the test throws before reaching that assertion. The unhandled rejection confirms the code is broken.
-
-**Fix:** Fix the source code (issue #2), then the tests will pass naturally.
-
----
-
-### [STYLE NOTES]
-
-**11. [src/components/RunsRouteMapInner.jsx, Line 37] Empty div fallback**
-
-```jsx
-if (coords.length === 0) {
-  return <div />;
+if (totalSynced > 0) {
+  // updates lastSyncAt
 }
 ```
 
-An empty `<div>` is technically correct but semantically meaningless. `return null` is the React convention for "render nothing".
+If the user has been active on Strava but only logged cycling/swimming (filtered out), `totalSynced === 0` and `lastSyncAt` never advances. Next sync fetches the exact same window again. And again. Forever. This is a **data structure bug** — the sync cursor should always advance regardless of whether filtered results were found, because the Strava API _did_ return data, you just filtered it.
+
+**Fix**: Always update `lastSyncAt` after a successful API fetch, not conditionally on `totalSynced > 0`.
+
+### 2. `syncStravaActivities` unbounded batch size
+
+**[src/lib/firebase-admin.js, Line 72–93]**
+
+Each page can return up to 100 activities. If all 100 are runs, you write 100 docs in one batch. Firestore batch limit is 500 operations, so this _works_, but the code has zero awareness of this limit. If the data model evolves to write sub-documents or the page size is increased, this silently breaks. The `disconnect/route.js` correctly respects the 500-doc limit — inconsistency in the same codebase.
+
+**Fix**: Either add a comment documenting the assumption (`PER_PAGE=100 < FIRESTORE_BATCH_LIMIT=500`), or chunk `runActivities` into batches of 500 defensively.
+
+### 3. Callback route uses `STRAVA_CLIENT_ID` (server env) but ConnectGuide uses `NEXT_PUBLIC_STRAVA_CLIENT_ID` (public env)
+
+**[src/app/api/strava/callback/route.js, Line 24]** vs **[src/components/RunsConnectGuide.jsx, Line 4]**
+
+The OAuth token exchange in the callback route reads `process.env.STRAVA_CLIENT_ID`, but the client-side ConnectGuide reads `process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID`. If these are set to different values (or one is missing), OAuth will silently fail with a cryptic Strava error. This is a **data consistency bug** — the same logical value has two names.
+
+**Fix**: Use `NEXT_PUBLIC_STRAVA_CLIENT_ID` everywhere (it's not a secret — it's in the OAuth URL visible to users), or document that both must be identical.
+
+### 4. `useStravaSync` returns `false` before `finally` resets state when user is null
+
+**[src/hooks/useStravaSync.js, Line 62–63]**
+
+```js
+isSyncingRef.current = true;
+setIsSyncing(true);
+// ...
+if (!user) return false;
+```
+
+When `user` is null, you return `false` but `isSyncing` remains `true` and `isSyncingRef.current` remains `true` — the sync button is permanently disabled. The `finally` block never runs because you returned early before the `try`.
+
+**Fix**: Move the `!user` guard before setting syncing state, or restructure so the `try`/`finally` wraps the full function body.
 
 ---
 
-### [TASK GAPS]
+## [IMPROVEMENT OPPORTUNITIES]
 
-All 26 tasks (T001–T026) have corresponding implementation in the diff. No missing tasks, no scope creep.
+### 5. `useStravaConnection` uid-change-during-render hack
+
+**[src/hooks/useStravaConnection.js, Lines 61–66]**
+
+```js
+if (prevUidRef.current !== uid) {
+  prevUidRef.current = uid;
+  setConnection(null);
+  setIsLoading(!!uid);
+  setError(null);
+}
+```
+
+Calling `setState` during render (outside of a `useEffect`) is a React anti-pattern that only works by accident in concurrent mode. The `useEffect` on `[uid]` already handles cleanup. This block is solving an imaginary problem (a single-frame flash of stale data) with a fragile hack.
+
+**Fix**: Remove the render-phase setState block entirely. The `useEffect` cleanup + re-subscribe handles uid changes correctly.
+
+### 6. `useStravaActivities` has 7 independent `useState` calls — too many moving parts
+
+**[src/hooks/useStravaActivities.js, Lines 42–53]**
+
+Seven pieces of state that must stay in sync: `activities`, `isLoading`, `error`, `cursor`, `hasMore`, `isLoadingMore`, `refreshCounter`. This is a classic case where `useReducer` would eliminate an entire class of impossible-state bugs (e.g., `isLoading=true` + `error=non-null` + `activities=non-empty`).
+
+**Not blocking**, but this is exactly the kind of state management that gets subtly broken when someone adds a feature later.
+
+### 7. `loadMore` silently swallows errors
+
+**[src/hooks/useStravaActivities.js, Lines 89–91]**
+
+```js
+} catch {
+  // loadMore error — silently handled
+}
+```
+
+"Silently handled" is a funny way to spell "silently broken." If pagination fails, the user sees nothing — no error, no retry, just... nothing more loads. At minimum, set an error state so the UI can show "載入更多失敗".
+
+### 8. `RunsLoginGuide` directly imports `firebase/auth` and `firebase-client`
+
+**[src/components/RunsLoginGuide.jsx, Lines 3–4]**
+
+Every other component in this feature accesses auth through `AuthContext`. This one bypasses the pattern entirely, importing `signInWithPopup`, `auth`, and `provider` directly. If the auth provider changes (or you need to test this component), you can't mock the context — you have to mock the Firebase module.
+
+**Fix**: Either use a login callback from AuthContext, or accept an `onLogin` prop so the parent controls the auth flow.
+
+### 9. Hardcoded colors in CSS Modules
+
+**[Multiple .module.css files]**
+
+`#fc4c02`, `#dc2626`, `#374151`, `#e5e7eb` — these are hardcoded in multiple CSS files. Other parts of the project use CSS variables (`var(--foreground, #111)`, `var(--primary, #2563eb)`). The new Strava files are inconsistent: `RunsLoginGuide.module.css` uses CSS variables, but `callback.module.css` and `RunsActivityCard.module.css` hardcode everything.
+
+This isn't blocking, but it means a theme change touches 8+ files instead of 1.
+
+### 10. `TWO_MONTHS_SECONDS` is wrong
+
+**[src/app/api/strava/callback/route.js, Line 6]**
+
+```js
+const TWO_MONTHS_SECONDS = 60 * 24 * 3600;
+```
+
+That's 60 days × 86400 = 5,184,000 seconds. A "two months" constant should be ~61 days (avg month = 30.44 days). The value is `60 * 24 * 3600` which reads as "60 × 24 hours" = 60 days. The naming is misleading — call it `SIXTY_DAYS_SEC` or actually compute 2 months. The same constant appears in `sync/route.js` as `TWO_MONTHS_SEC`. Two different names for the same value in two files.
+
+**Fix**: Extract to a shared constant with an honest name.
+
+### 11. `handleDisconnect` is not wrapped in `useCallback`
+
+**[src/app/runs/page.jsx, Line 50]**
+
+`handleSync` is correctly memoized with `useCallback`, but `handleDisconnect` is a raw `async function` that creates a new reference every render. The disconnect button re-renders unnecessarily. Minor, but inconsistent.
+
+---
+
+## [STYLE NOTES]
+
+### 12. `eslint-disable` comments for `no-await-in-loop`
+
+**[src/app/api/strava/disconnect/route.js, Lines 41–43]** and **[src/lib/firebase-admin.js, Lines 56–65]**
+
+The eslint-disable comments are justified (sequential batch deletes, sequential pagination) — these are legitimate uses. No issue here.
+
+### 13. `RunsRouteMap.jsx` JSDoc says it "returns" a ReactElement but actually returns a dynamically loaded component
+
+**[src/components/RunsRouteMap.jsx, Lines 3–7]**
+
+The JSDoc describes it as a function component, but it's actually a `dynamic()` wrapper. The JSDoc is slightly misleading. Minor.
+
+---
+
+## [TESTING GAPS]
+
+### 14. No error-path test for `syncStravaActivities` pagination
+
+The unit tests for `syncStravaActivities` test single-page success and filtering, but don't test: (a) what happens when page 2 of the Strava API returns a non-ok response, or (b) what happens when the batch commit fails mid-pagination. These are real production failure modes.
+
+### 15. `loadMore` error handling is untested
+
+Since `loadMore` silently swallows errors (#7), there's no test verifying what the user sees when pagination fails. The "silently handled" comment is the test equivalent of `// TODO`.
+
+### 16. No integration test for the disconnect → activities-cleared flow
+
+There's a unit test for the disconnect route, but no integration test verifying that after disconnect, the `useStravaConnection` listener fires, the UI switches to `RunsConnectGuide`, and the activities list is cleared. This is the most complex state transition in the feature.
+
+---
+
+## [TASK GAPS]
+
+All 26 tasks (T001–T026) are marked `[x]` complete, and the diff contains corresponding implementations for each:
+
+- **T001–T004** (Setup): Dependencies installed, helpers created, nav link added ✅
+- **T005–T008** (Foundation): Service layer, route handlers, security rules ✅
+- **T009–T018** (US1–US3 + Integration): Hooks, components, pages ✅
+- **T019–T020** (US4 Disconnect): Route handler + UI ✅
+- **T021–T022** (US5 Pagination): Cursor-based pagination + sentinel ✅
+- **T023–T026** (Polish): Lint/type-check clean, index, token revocation, sync error handling ✅
+
+No scope creep detected — the diff maps cleanly to the task list.
 
 ---
 
 ## VERDICT
 
-❌ **Needs rework** — Three critical issues must be addressed:
-
-1. **`tokenData` null dereference** — server crash on missing token doc
-2. **`auth.currentUser` null access** — confirmed client crash (test evidence)
-3. **Sync pagination missing** — silent data loss for active runners
-
-Issues #1 and #2 are quick fixes (null guards + consistent auth pattern). Issue #3 requires a pagination loop in `syncStravaActivities` but the change is isolated to one function.
+✅ **Worth merging** — with fixes for #1 (lastSyncAt never advances) and #4 (sync permanently disabled on null user). The rest are improvements worth tracking but not blocking.
 
 ## KEY INSIGHT
 
-The data structures and separation of concerns are solid — server handles secrets, hooks manage state, components stay presentational. The problems are all at the **boundary glue**: null checks at the seams between Firebase SDK and React state, and incomplete API pagination. Fix the plumbing and this is a clean merge.
+The `syncStravaActivities` cursor logic (#1) is the most dangerous issue — it creates an invisible performance regression where the same Strava API window is re-fetched on every sync, burning rate limit budget and returning stale results, all while appearing to "work" because no errors are thrown.
