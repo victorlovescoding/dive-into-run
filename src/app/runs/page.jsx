@@ -2,6 +2,7 @@
 
 import { useContext, useState } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
+import { auth } from '@/lib/firebase-client';
 import useStravaConnection from '@/hooks/useStravaConnection';
 import useStravaActivities from '@/hooks/useStravaActivities';
 import useStravaSync from '@/hooks/useStravaSync';
@@ -41,7 +42,7 @@ export default function RunsPage() {
     }
     setIsDisconnecting(true);
     try {
-      const token = await user.getIdToken();
+      const token = await auth.currentUser.getIdToken();
       await fetch('/api/strava/disconnect', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },

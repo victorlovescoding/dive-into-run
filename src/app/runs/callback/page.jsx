@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect, useRef, useContext } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AuthContext } from '@/contexts/AuthContext';
+import { auth } from '@/lib/firebase-client';
 import styles from './callback.module.css';
 
 /**
@@ -58,7 +59,7 @@ function CallbackContent() {
 
     const run = async () => {
       try {
-        const idToken = await user.getIdToken();
+        const idToken = await auth.currentUser.getIdToken();
         const { ok } = await exchangeCode(/** @type {string} */ (code), idToken);
 
         if (ok) {
