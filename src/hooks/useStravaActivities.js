@@ -10,6 +10,7 @@ import { getStravaActivities } from '@/lib/firebase-strava';
  * @property {() => void} loadMore - 載入更多活動。
  * @property {boolean} hasMore - 是否還有更多活動。
  * @property {boolean} isLoadingMore - 是否正在載入更多。
+ * @property {() => void} refresh - 重新載入活動列表（從頭開始）。
  */
 
 /**
@@ -28,6 +29,7 @@ export default function useStravaActivities() {
   );
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
   const { user } = useContext(AuthContext);
 
@@ -64,7 +66,7 @@ export default function useStravaActivities() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, refreshCounter]);
 
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !cursor || !user) return;
@@ -81,5 +83,9 @@ export default function useStravaActivities() {
     }
   }, [cursor, isLoadingMore, user]);
 
-  return { activities, isLoading, error, loadMore, hasMore, isLoadingMore };
+  const refresh = useCallback(() => {
+    setRefreshCounter((c) => c + 1);
+  }, []);
+
+  return { activities, isLoading, error, loadMore, hasMore, isLoadingMore, refresh };
 }

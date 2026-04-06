@@ -14,7 +14,8 @@ import useStravaActivities from '@/hooks/useStravaActivities';
 const mockedGetActivities = /** @type {import('vitest').Mock} */ (getStravaActivities);
 
 function TestComponent() {
-  const { activities, isLoading, error, loadMore, hasMore, isLoadingMore } = useStravaActivities();
+  const { activities, isLoading, error, loadMore, hasMore, isLoadingMore, refresh } =
+    useStravaActivities();
   if (isLoading) return <div role="status">Loading</div>;
   if (error) return <div role="alert">{error}</div>;
   return (
@@ -28,6 +29,9 @@ function TestComponent() {
       <div data-testid="has-more">{hasMore ? 'true' : 'false'}</div>
       <button type="button" onClick={loadMore}>
         Load More
+      </button>
+      <button type="button" onClick={refresh}>
+        Refresh
       </button>
     </div>
   );
@@ -208,6 +212,40 @@ describe('useStravaActivities', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('loading-more')).not.toBeInTheDocument();
     });
+  });
+
+  it('refresh re-fetches activities from scratch', async () => {
+    const user = userEvent.setup();
+
+    mockedGetActivities.mockResolvedValueOnce({
+      activities: [{ id: 'doc1', stravaId: 1, name: 'Run 1', uid: 'u1' }],
+      lastDoc: null,
+    });
+
+    renderWithAuth({ uid: 'u1', name: 'Test', email: null, photoURL: null });
+
+    await waitFor(() => {
+      expect(screen.getByText('Run 1')).toBeInTheDocument();
+    });
+
+    mockedGetActivities.mockResolvedValueOnce({
+      activities: [
+        { id: 'doc1', stravaId: 1, name: 'Run 1', uid: 'u1' },
+        { id: 'doc2', stravaId: 2, name: 'Run 2', uid: 'u1' },
+      ],
+      lastDoc: null,
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Refresh' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Run 2')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Run 1')).toBeInTheDocument();
+    // Initial fetch + refresh fetch, both without cursor
+    expect(mockedGetActivities).toHaveBeenCalledTimes(2);
+    expect(mockedGetActivities).toHaveBeenLastCalledWith('u1', 10);
   });
 
   it('loadMore guards against concurrent calls', async () => {

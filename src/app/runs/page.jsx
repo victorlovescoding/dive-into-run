@@ -1,6 +1,6 @@
 'use client';
 
-import { useContext, useState } from 'react';
+import { useCallback, useContext, useState } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
 import { auth } from '@/lib/firebase-client';
 import useStravaConnection from '@/hooks/useStravaConnection';
@@ -27,6 +27,7 @@ export default function RunsPage() {
     loadMore,
     hasMore,
     isLoadingMore,
+    refresh,
   } = useStravaActivities();
   const {
     sync,
@@ -34,6 +35,13 @@ export default function RunsPage() {
     cooldownRemaining,
     error: syncError,
   } = useStravaSync(connection?.lastSyncAt);
+
+  const handleSync = useCallback(async () => {
+    const ok = await sync();
+    if (ok) {
+      refresh();
+    }
+  }, [sync, refresh]);
 
   const handleDisconnect = async () => {
     // eslint-disable-next-line no-alert -- T020 spec allows window.confirm for disconnect confirmation
@@ -87,7 +95,7 @@ export default function RunsPage() {
             type="button"
             className={styles.syncButton}
             disabled={cooldownRemaining > 0 || isSyncing}
-            onClick={sync}
+            onClick={handleSync}
           >
             同步
           </button>

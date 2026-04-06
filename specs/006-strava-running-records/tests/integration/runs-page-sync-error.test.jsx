@@ -103,6 +103,7 @@ describe('RunsPage sync error handling', () => {
       loadMore: vi.fn(),
       hasMore: false,
       isLoadingMore: false,
+      refresh: vi.fn(),
     });
     mockedUseSync.mockReturnValue({
       sync: vi.fn(),

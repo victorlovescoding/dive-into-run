@@ -5,7 +5,7 @@ const COOLDOWN_SECONDS = 3600; // 1 hour
 
 /**
  * @typedef {object} UseStravaSyncReturn
- * @property {() => Promise<void>} sync - 觸發 Strava 同步。
+ * @property {() => Promise<boolean>} sync - 觸發 Strava 同步，成功回傳 true，失敗回傳 false。
  * @property {boolean} isSyncing - 是否正在同步中。
  * @property {number} cooldownRemaining - 距離冷卻結束的秒數，0 表示可同步。
  * @property {string | null} error - 同步失敗訊息。
@@ -56,7 +56,7 @@ export default function useStravaSync(lastSyncAt) {
    * 觸發 Strava 同步 API。
    */
   const sync = useCallback(async () => {
-    if (isSyncingRef.current) return;
+    if (isSyncingRef.current) return false;
 
     isSyncingRef.current = true;
     setIsSyncing(true);
@@ -72,9 +72,12 @@ export default function useStravaSync(lastSyncAt) {
       if (!res.ok) {
         const data = await res.json();
         setError(data.error || '同步失敗，請稍後再試');
+        return false;
       }
+      return true;
     } catch {
       setError('同步失敗，請稍後再試');
+      return false;
     } finally {
       isSyncingRef.current = false;
       setIsSyncing(false);

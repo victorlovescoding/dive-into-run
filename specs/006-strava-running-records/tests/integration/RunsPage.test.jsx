@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AuthContext } from '@/contexts/AuthContext';
 
@@ -84,6 +84,7 @@ describe('RunsPage', () => {
       loadMore: vi.fn(),
       hasMore: true,
       isLoadingMore: false,
+      refresh: vi.fn(),
     });
     mockedUseSync.mockReturnValue({
       sync: vi.fn(),
@@ -132,6 +133,7 @@ describe('RunsPage', () => {
       loadMore: vi.fn(),
       hasMore: false,
       isLoadingMore: false,
+      refresh: vi.fn(),
     });
 
     renderWithAuth(<RunsPage />, {
@@ -187,6 +189,79 @@ describe('RunsPage', () => {
     const syncButton = screen.getByRole('button', { name: /同步/i });
     expect(syncButton).toBeDisabled();
     expect(screen.getByText(/45/)).toBeInTheDocument();
+  });
+
+  it('calls refresh after successful sync', async () => {
+    const syncFn = vi.fn().mockResolvedValue(true);
+    const refreshFn = vi.fn();
+    mockedUseConnection.mockReturnValue({
+      connection: { connected: true, athleteName: 'John', lastSyncAt: null },
+      isLoading: false,
+      error: null,
+    });
+    mockedUseSync.mockReturnValue({
+      sync: syncFn,
+      isSyncing: false,
+      cooldownRemaining: 0,
+      error: null,
+    });
+    mockedUseActivities.mockReturnValue({
+      activities: [],
+      isLoading: false,
+      error: null,
+      loadMore: vi.fn(),
+      hasMore: true,
+      isLoadingMore: false,
+      refresh: refreshFn,
+    });
+
+    const user = userEvent.setup();
+    renderWithAuth(<RunsPage />, {
+      user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
+    });
+
+    await user.click(screen.getByRole('button', { name: /同步/i }));
+
+    await waitFor(() => {
+      expect(refreshFn).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('does not call refresh after failed sync', async () => {
+    const syncFn = vi.fn().mockResolvedValue(false);
+    const refreshFn = vi.fn();
+    mockedUseConnection.mockReturnValue({
+      connection: { connected: true, athleteName: 'John', lastSyncAt: null },
+      isLoading: false,
+      error: null,
+    });
+    mockedUseSync.mockReturnValue({
+      sync: syncFn,
+      isSyncing: false,
+      cooldownRemaining: 0,
+      error: null,
+    });
+    mockedUseActivities.mockReturnValue({
+      activities: [],
+      isLoading: false,
+      error: null,
+      loadMore: vi.fn(),
+      hasMore: true,
+      isLoadingMore: false,
+      refresh: refreshFn,
+    });
+
+    const user = userEvent.setup();
+    renderWithAuth(<RunsPage />, {
+      user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
+    });
+
+    await user.click(screen.getByRole('button', { name: /同步/i }));
+
+    await waitFor(() => {
+      expect(syncFn).toHaveBeenCalledTimes(1);
+    });
+    expect(refreshFn).not.toHaveBeenCalled();
   });
 
   describe('disconnect', () => {

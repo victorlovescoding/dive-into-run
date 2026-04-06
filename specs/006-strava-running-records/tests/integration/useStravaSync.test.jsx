@@ -155,6 +155,67 @@ describe('useStravaSync', () => {
     });
   });
 
+  it('sync() resolves to true on success', async () => {
+    /** @type {boolean | undefined} */
+    let syncResult;
+
+    function ResultComponent() {
+      const { sync } = useStravaSync(null);
+      return (
+        <button
+          type="button"
+          onClick={async () => {
+            syncResult = await sync();
+          }}
+        >
+          Sync
+        </button>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<ResultComponent />);
+
+    await user.click(screen.getByRole('button', { name: 'Sync' }));
+
+    await waitFor(() => {
+      expect(syncResult).toBe(true);
+    });
+  });
+
+  it('sync() resolves to false on failure', async () => {
+    mockedFetch.mockResolvedValue({
+      ok: false,
+      json: () => Promise.resolve({ error: '同步失敗' }),
+    });
+
+    /** @type {boolean | undefined} */
+    let syncResult;
+
+    function ResultComponent() {
+      const { sync } = useStravaSync(null);
+      return (
+        <button
+          type="button"
+          onClick={async () => {
+            syncResult = await sync();
+          }}
+        >
+          Sync
+        </button>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<ResultComponent />);
+
+    await user.click(screen.getByRole('button', { name: 'Sync' }));
+
+    await waitFor(() => {
+      expect(syncResult).toBe(false);
+    });
+  });
+
   it('cleans up interval on unmount', () => {
     vi.useFakeTimers();
     const now = new Date('2026-04-06T12:00:00Z');
