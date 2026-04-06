@@ -1,0 +1,67 @@
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.date {
+  font-size: 0.8rem;
+  color: #5f6368;
+  white-space: nowrap;
+}
+
+.stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.statItem {
+  flex: 1;
+  text-align: center;
+}
+
+.statLabel {
+  display: block;
+  font-size: 0.75rem;
+  color: #5f6368;
+  margin-bottom: 2px;
+}
+
+.statValue {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* RWD: mobile */
+@media (max-width: 767px) {
+  .card {
+    padding: 12px;
+  }
+
+  .stats {
+    gap: 8px;
+  }
+
+  .statValue {
+    font-size: 0.9rem;
+  }
+}
