@@ -39,6 +39,7 @@ export default function RootLayout({ children }) {
             <Link href="/member">會員頁面</Link>
             <Link href="/posts">文章</Link>
             <Link href="/events">揪團頁面</Link>
+            <Link href="/runs">跑步</Link>
             <LoginButton />
             <SignOutButton />
           </nav>

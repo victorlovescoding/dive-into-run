@@ -109,6 +109,13 @@ export default [
       '**/*.d.ts',
     ],
   },
+  // Next.js Route Handlers must use named exports (GET, POST, etc.)
+  {
+    files: ['**/app/api/**/route.js'],
+    rules: {
+      'import/prefer-default-export': 'off',
+    },
+  },
   // 針對測試檔案的嚴格規範
   {
     // 鎖定目標：測試資料夾與所有測試副檔名
