@@ -21,15 +21,15 @@
 
 **9 subagents can execute simultaneously.**
 
-- [ ] T001 [P] Add `RUN_TYPE_LABELS` constant, `buildCalendarGrid()`, `groupActivitiesByDay()`, `calcMonthSummary()` to `src/lib/strava-helpers.js` — follow signatures in `specs/008-run-calendar/contracts/components.md` and types in `specs/008-run-calendar/data-model.md`
-- [ ] T002 [P] Add `getStravaActivitiesByMonth(uid, year, month)` to `src/lib/firebase-strava.js` — Firestore range query using `where('uid','==',uid)` + `where('startDate','>=',monthStart)` + `where('startDate','<',nextMonthStart)`, see `specs/008-run-calendar/research.md` R1
-- [ ] T003 [P] Create `CalendarIcon` SVG component in `src/components/icons/CalendarIcon.jsx` — inline SVG, props: `size` (default 16), `className`, see `specs/008-run-calendar/contracts/components.md` shared icon interface
-- [ ] T004 [P] Create `RunOutdoorIcon` SVG component (runner silhouette) in `src/components/icons/RunOutdoorIcon.jsx` — same props interface as T003
-- [ ] T005 [P] Create `RunIndoorIcon` SVG component (treadmill) in `src/components/icons/RunIndoorIcon.jsx` — same props interface as T003
-- [ ] T006 [P] Create `RunTrailIcon` SVG component (person running in mountains) in `src/components/icons/RunTrailIcon.jsx` — same props interface as T003
-- [ ] T007 [P] Create unit test for `buildCalendarGrid` in `specs/008-run-calendar/tests/unit/buildCalendarGrid.test.js` — test month-start alignment, correct day count, null padding, edge cases (Feb leap year, months starting on Sunday/Saturday)
-- [ ] T008 [P] Create unit test for `groupActivitiesByDay` in `specs/008-run-calendar/tests/unit/groupActivitiesByDay.test.js` — test grouping by `startDateLocal`, same-type distance aggregation, multi-type same day, empty input, type sort order (Run > VirtualRun > TrailRun)
-- [ ] T009 [P] Create unit test for `calcMonthSummary` in `specs/008-run-calendar/tests/unit/calcMonthSummary.test.js` — test total distance, per-type subtotals, types with zero records excluded from `byType`, empty map, label mapping correctness
+- [x] T001 [P] Add `RUN_TYPE_LABELS` constant, `buildCalendarGrid()`, `groupActivitiesByDay()`, `calcMonthSummary()` to `src/lib/strava-helpers.js` — follow signatures in `specs/008-run-calendar/contracts/components.md` and types in `specs/008-run-calendar/data-model.md`
+- [x] T002 [P] Add `getStravaActivitiesByMonth(uid, year, month)` to `src/lib/firebase-strava.js` — Firestore range query using `where('uid','==',uid)` + `where('startDate','>=',monthStart)` + `where('startDate','<',nextMonthStart)`, see `specs/008-run-calendar/research.md` R1
+- [x] T003 [P] Create `CalendarIcon` SVG component in `src/components/icons/CalendarIcon.jsx` — inline SVG, props: `size` (default 16), `className`, see `specs/008-run-calendar/contracts/components.md` shared icon interface
+- [x] T004 [P] Create `RunOutdoorIcon` SVG component (runner silhouette) in `src/components/icons/RunOutdoorIcon.jsx` — same props interface as T003
+- [x] T005 [P] Create `RunIndoorIcon` SVG component (treadmill) in `src/components/icons/RunIndoorIcon.jsx` — same props interface as T003
+- [x] T006 [P] Create `RunTrailIcon` SVG component (person running in mountains) in `src/components/icons/RunTrailIcon.jsx` — same props interface as T003
+- [x] T007 [P] Create unit test for `buildCalendarGrid` in `specs/008-run-calendar/tests/unit/buildCalendarGrid.test.js` — test month-start alignment, correct day count, null padding, edge cases (Feb leap year, months starting on Sunday/Saturday)
+- [x] T008 [P] Create unit test for `groupActivitiesByDay` in `specs/008-run-calendar/tests/unit/groupActivitiesByDay.test.js` — test grouping by `startDateLocal`, same-type distance aggregation, multi-type same day, empty input, type sort order (Run > VirtualRun > TrailRun)
+- [x] T009 [P] Create unit test for `calcMonthSummary` in `specs/008-run-calendar/tests/unit/calcMonthSummary.test.js` — test total distance, per-type subtotals, types with zero records excluded from `byType`, empty map, label mapping correctness
 
 **Checkpoint**: All building blocks ready. Unit tests written.
 
@@ -45,9 +45,9 @@
 
 ### Implementation
 
-- [ ] T010 [US1] Create `useRunCalendar` hook in `src/hooks/useRunCalendar.js` — call `getStravaActivitiesByMonth`, pipe through `groupActivitiesByDay` + `calcMonthSummary`, manage loading/error state, return `{ dayMap, monthSummary, isLoading, error }`, see `specs/008-run-calendar/contracts/components.md` hook contract (depends: T001, T002)
-- [ ] T011 [US1][US2][US3][US4] Create `RunCalendarDialog` component in `src/components/RunCalendarDialog.jsx` + styles in `src/components/RunCalendarDialog.module.css` — native `<dialog>` with `showModal()`/`close()`, calendar header with month title + prev/next navigation (US4), 7-column grid with weekday headers (日~六), day cells rendering type-specific icons + km (US2), light-green background for days with runs, month summary footer with total + per-type subtotals (US3), loading indicator + error state, close via backdrop/button/Escape, desktop centered modal (max-width ~420px) + mobile fullscreen, see `specs/008-run-calendar/contracts/components.md` full component contract (depends: T003–T006, T010)
-- [ ] T012 [US1] Add calendar button to runs page header in `src/app/runs/page.jsx` + button styles in `src/app/runs/runs.module.css` — import `CalendarIcon` + `RunCalendarDialog`, manage `open`/`onClose` state, only show button when user has Strava connection (depends: T003, T011)
+- [x] T010 [US1] Create `useRunCalendar` hook in `src/hooks/useRunCalendar.js` — call `getStravaActivitiesByMonth`, pipe through `groupActivitiesByDay` + `calcMonthSummary`, manage loading/error state, return `{ dayMap, monthSummary, isLoading, error }`, see `specs/008-run-calendar/contracts/components.md` hook contract (depends: T001, T002)
+- [x] T011 [US1][US2][US3][US4] Create `RunCalendarDialog` component in `src/components/RunCalendarDialog.jsx` + styles in `src/components/RunCalendarDialog.module.css` — native `<dialog>` with `showModal()`/`close()`, calendar header with month title + prev/next navigation (US4), 7-column grid with weekday headers (日~六), day cells rendering type-specific icons + km (US2), light-green background for days with runs, month summary footer with total + per-type subtotals (US3), loading indicator + error state, close via backdrop/button/Escape, desktop centered modal (max-width ~420px) + mobile fullscreen, see `specs/008-run-calendar/contracts/components.md` full component contract (depends: T003–T006, T010)
+- [x] T012 [US1] Add calendar button to runs page header in `src/app/runs/page.jsx` + button styles in `src/app/runs/runs.module.css` — import `CalendarIcon` + `RunCalendarDialog`, manage `open`/`onClose` state, only show button when user has Strava connection (depends: T003, T011)
 
 **Checkpoint**: Full calendar feature functional — grid, icons, summary, month navigation all working
 
@@ -57,10 +57,10 @@
 
 **Purpose**: Test verification + code quality checks
 
-- [ ] T013 [P] Verify unit tests pass — run `npx vitest run specs/008-run-calendar/tests/unit/` and fix any failures (depends: T001, T007–T009)
-- [ ] T014 [P] Create integration test in `specs/008-run-calendar/tests/integration/RunCalendarDialog.test.jsx` — test dialog open/close, calendar grid rendering, icon display per activity type, month summary values, month navigation, use `@testing-library/user-event` + `screen.getByRole`, mock `useRunCalendar` hook, assert calendar data loads within 2s (SC-003/SC-004) (depends: T012)
-- [ ] T015 Run `npm run type-check` and `npm run lint` — fix all errors and warnings (depends: T012)
-- [ ] T016 [P] Create E2E happy path test in `specs/008-run-calendar/tests/e2e/run-calendar.spec.js` — 登入已連接 Strava 使用者，進入 runs 頁面，點擊月曆按鈕，確認 dialog 開啟、日曆網格顯示、有跑步日期顯示圖示+公里數、底部總里程正確、月份切換正常，使用 `page.getByRole` locators (depends: T012)
+- [x] T013 [P] Verify unit tests pass — run `npx vitest run specs/008-run-calendar/tests/unit/` and fix any failures (depends: T001, T007–T009)
+- [x] T014 [P] Create integration test in `specs/008-run-calendar/tests/integration/RunCalendarDialog.test.jsx` — test dialog open/close, calendar grid rendering, icon display per activity type, month summary values, month navigation, use `@testing-library/user-event` + `screen.getByRole`, mock `useRunCalendar` hook, assert calendar data loads within 2s (SC-003/SC-004) (depends: T012)
+- [x] T015 Run `npm run type-check` and `npm run lint` — fix all errors and warnings (depends: T012)
+- [x] T016 [P] Create E2E happy path test in `specs/008-run-calendar/tests/e2e/run-calendar.spec.js` — 登入已連接 Strava 使用者，進入 runs 頁面，點擊月曆按鈕，確認 dialog 開啟、日曆網格顯示、有跑步日期顯示圖示+公里數、底部總里程正確、月份切換正常，使用 `page.getByRole` locators (depends: T012)
 
 ---
 

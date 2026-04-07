@@ -8,6 +8,8 @@ import useStravaSync from '@/hooks/useStravaSync';
 import RunsLoginGuide from '@/components/RunsLoginGuide';
 import RunsConnectGuide from '@/components/RunsConnectGuide';
 import RunsActivityList from '@/components/RunsActivityList';
+import CalendarIcon from '@/components/icons/CalendarIcon';
+import RunCalendarDialog from '@/components/RunCalendarDialog';
 import styles from './runs.module.css';
 
 /**
@@ -17,6 +19,7 @@ import styles from './runs.module.css';
  */
 export default function RunsPage() {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [disconnectError, setDisconnectError] = useState(/** @type {string | null} */ (null));
   const { user, loading: authLoading } = useContext(AuthContext);
   const { connection } = useStravaConnection();
@@ -114,6 +117,14 @@ export default function RunsPage() {
         <div>
           <button
             type="button"
+            className={styles.calendarButton}
+            onClick={() => setCalendarOpen(true)}
+            aria-label="跑步月曆"
+          >
+            <CalendarIcon size={18} />
+          </button>
+          <button
+            type="button"
             className={styles.syncButton}
             disabled={cooldownRemaining > 0 || isSyncing}
             onClick={handleSync}
@@ -151,6 +162,7 @@ export default function RunsPage() {
         hasMore={hasMore}
         isLoadingMore={isLoadingMore}
       />
+      <RunCalendarDialog open={calendarOpen} onClose={() => setCalendarOpen(false)} />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   limit,
   startAfter,
   getDocs,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase-client';
 
@@ -97,4 +98,33 @@ export async function getStravaActivities(uid, pageSize, lastDoc) {
   const newLastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
 
   return { activities, lastDoc: newLastDoc };
+}
+
+/**
+ * 查詢指定月份的 Strava 跑步活動。
+ * @param {string} uid - 使用者 UID。
+ * @param {number} year - 年份。
+ * @param {number} month - 月份（0-11）。
+ * @returns {Promise<StravaActivity[]>} 該月份的活動列表。
+ */
+export async function getStravaActivitiesByMonth(uid, year, month) {
+  const monthStart = Timestamp.fromDate(new Date(year, month, 1));
+  const nextMonthStart = Timestamp.fromDate(new Date(year, month + 1, 1));
+  const collRef = collection(db, 'stravaActivities');
+
+  const q = query(
+    collRef,
+    where('uid', '==', uid),
+    where('startDate', '>=', monthStart),
+    where('startDate', '<', nextMonthStart),
+    orderBy('startDate', 'desc'),
+  );
+  const snap = await getDocs(q);
+
+  return /** @type {StravaActivity[]} */ (
+    snap.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    }))
+  );
 }

@@ -1,0 +1,150 @@
+.dialog {
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0;
+  max-width: 420px;
+  width: 90vw;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  position: relative;
+}
+
+.navButton {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+  color: #333;
+}
+
+.navButton:hover {
+  color: #1976d2;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.closeButton {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  color: #666;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  color: #333;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 0.75rem;
+  color: #666;
+  padding: 0.5rem 0.5rem 0.25rem;
+  border-bottom: 1px solid #eee;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0.25rem 0.5rem;
+  gap: 2px;
+}
+
+.dayCell {
+  min-height: 3rem;
+  padding: 0.125rem;
+  border-radius: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dayActive {
+  background-color: #e8f5e9;
+}
+
+.dayNumber {
+  font-size: 0.75rem;
+  color: #333;
+  line-height: 1.2;
+}
+
+.runEntry {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+}
+
+.runDistance {
+  font-size: 0.625rem;
+  color: #555;
+}
+
+.footer {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.totalDistance {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.typeSummary {
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.loading {
+  padding: 2rem;
+  text-align: center;
+  color: #888;
+}
+
+.error {
+  padding: 0.75rem 1rem;
+  color: #d32f2f;
+  background-color: #fce4ec;
+  margin: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 767px) {
+  .dialog {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    margin: 0;
+  }
+}
