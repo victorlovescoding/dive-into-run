@@ -113,6 +113,9 @@ const el = /** @type {HTMLInputElement} */ (document.getElementById('x'));
 
 - Firestore — `stravaActivities` collection（既有，不修改 schema） (008-run-calendar)
 
+- JavaScript (ES6+), JSDoc `checkJs: true` + Next.js 15 (App Router), React 19, Firebase v9+ (Firestore client SDK) (007-member-dashboard)
+- Firestore — `events`, `posts`, `posts/{postId}/comments` collections (007-member-dashboard)
+
 - JavaScript (ES6+), JSDoc `checkJs: true` + Next.js 15 (App Router), React 19, Firebase v9+ (Firestore), Firebase Admin SDK (Route Handlers), Leaflet, `@mapbox/polyline` (006-strava-running-records)
 - Firestore — `stravaTokens/{uid}` (server-only), `stravaConnections/{uid}` (client-read), `stravaActivities/{id}` (client-read, top-level) (006-strava-running-records)
 
