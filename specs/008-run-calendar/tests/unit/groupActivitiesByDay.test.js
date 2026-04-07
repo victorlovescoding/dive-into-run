@@ -16,10 +16,16 @@ function makeActivity(overrides = {}) {
   return {
     id: 'act-1',
     uid: 'user-1',
+    stravaId: 12345,
     name: 'Morning Run',
     type: 'Run',
     distanceMeters: 5000,
+    movingTimeSec: 1800,
+    startDate: /** @type {any} */ ({ toDate: () => new Date('2026-04-07T06:30:00Z') }),
     startDateLocal: '2026-04-07T06:30:00Z',
+    summaryPolyline: null,
+    averageSpeed: 2.78,
+    syncedAt: /** @type {any} */ ({ toDate: () => new Date() }),
     ...overrides,
   };
 }

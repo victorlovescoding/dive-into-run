@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import useRunCalendar from '@/hooks/useRunCalendar';
-import { buildCalendarGrid, RUN_TYPE_LABELS, formatDistance } from '@/lib/strava-helpers';
+import { buildCalendarGrid, formatDistance } from '@/lib/strava-helpers';
 import RunOutdoorIcon from '@/components/icons/RunOutdoorIcon';
 import RunIndoorIcon from '@/components/icons/RunIndoorIcon';
 import RunTrailIcon from '@/components/icons/RunTrailIcon';
@@ -29,19 +29,28 @@ const WEEKDAY_HEADERS = ['日', '一', '二', '三', '四', '五', '六'];
 
 /**
  * 跑步月曆 dialog 元件。
- * @param {object} props
+ * @param {object} props - 元件屬性。
  * @param {boolean} props.open - 是否開啟 dialog。
  * @param {() => void} props.onClose - 關閉 dialog 的回呼。
  * @returns {import('react').ReactElement} 月曆 dialog。
  */
 export default function RunCalendarDialog({ open, onClose }) {
   const dialogRef = useRef(/** @type {HTMLDialogElement | null} */ (null));
-  const now = new Date();
-  const [currentYear, setCurrentYear] = useState(now.getFullYear());
-  const [currentMonth, setCurrentMonth] = useState(now.getMonth());
+  const [current, setCurrent] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
 
-  const { dayMap, monthSummary, isLoading, error } = useRunCalendar(currentYear, currentMonth);
-  const grid = buildCalendarGrid(currentYear, currentMonth);
+  const { dayMap, monthSummary, isLoading, error } = useRunCalendar(current.year, current.month);
+  /** @type {{ key: string, day: number | null }[]} */
+  const gridCells = buildCalendarGrid(current.year, current.month).reduce((acc, day) => {
+    if (day === null) {
+      acc.push({ key: `pad-${acc.length}`, day: null });
+    } else {
+      acc.push({ key: String(day), day });
+    }
+    return acc;
+  }, /** @type {{ key: string, day: number | null }[]} */ ([]));
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -60,24 +69,36 @@ export default function RunCalendarDialog({ open, onClose }) {
     onClose();
   }
 
+  // Backdrop click-to-close：用 addEventListener 避免 jsx-a11y 規則衝突
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return undefined;
+
+    /** @param {MouseEvent} e - click 事件。 */
+    function handleClick(e) {
+      if (e.target === dialog) {
+        onClose();
+      }
+    }
+
+    dialog.addEventListener('click', handleClick);
+    return () => dialog.removeEventListener('click', handleClick);
+  }, [onClose]);
+
   /** 切換到上一個月。 */
   function handlePrevMonth() {
-    if (currentMonth === 0) {
-      setCurrentYear((y) => y - 1);
-      setCurrentMonth(11);
-    } else {
-      setCurrentMonth((m) => m - 1);
-    }
+    setCurrent((prev) => {
+      const d = new Date(prev.year, prev.month - 1, 1);
+      return { year: d.getFullYear(), month: d.getMonth() };
+    });
   }
 
   /** 切換到下一個月。 */
   function handleNextMonth() {
-    if (currentMonth === 11) {
-      setCurrentYear((y) => y + 1);
-      setCurrentMonth(0);
-    } else {
-      setCurrentMonth((m) => m + 1);
-    }
+    setCurrent((prev) => {
+      const d = new Date(prev.year, prev.month + 1, 1);
+      return { year: d.getFullYear(), month: d.getMonth() };
+    });
   }
 
   return (
@@ -92,7 +113,7 @@ export default function RunCalendarDialog({ open, onClose }) {
           &#8249;
         </button>
         <span className={styles.title}>
-          {currentYear}年{currentMonth + 1}月
+          {current.year}年{current.month + 1}月
         </span>
         <button
           type="button"
@@ -126,9 +147,9 @@ export default function RunCalendarDialog({ open, onClose }) {
       )}
 
       <div className={styles.grid}>
-        {grid.map((day, index) => {
+        {gridCells.map(({ key, day }) => {
           if (day === null) {
-            return <div key={`empty-${index}`} className={styles.dayCell} />;
+            return <div key={key} className={styles.dayCell} />;
           }
 
           const dayActivities = dayMap.get(day);
@@ -137,7 +158,7 @@ export default function RunCalendarDialog({ open, onClose }) {
             : styles.dayCell;
 
           return (
-            <div key={day} className={cellClass}>
+            <div key={key} className={cellClass}>
               <span className={styles.dayNumber}>{day}</span>
               {dayActivities &&
                 dayActivities.runs.map((run) => {

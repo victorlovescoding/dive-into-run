@@ -29,23 +29,17 @@ export default function useRunCalendar(year, month) {
   const [monthSummary, setMonthSummary] = useState(
     /** @type {import('@/lib/strava-helpers').MonthSummary} */ (EMPTY_SUMMARY),
   );
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(/** @type {string|null} */ (null));
+  const [loaded, setLoaded] = useState(
+    /** @type {{ year: number, month: number }} */ ({ year: -1, month: -1 }),
+  );
 
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
-    if (!user) {
-      setDayMap(new Map());
-      setMonthSummary(EMPTY_SUMMARY);
-      setIsLoading(false);
-      setError(null);
-      return undefined;
-    }
+    if (!user) return undefined;
 
     let cancelled = false;
-    setIsLoading(true);
-    setError(null);
 
     getStravaActivitiesByMonth(user.uid, year, month)
       .then((activities) => {
@@ -54,12 +48,13 @@ export default function useRunCalendar(year, month) {
         const summary = calcMonthSummary(map);
         setDayMap(map);
         setMonthSummary(summary);
-        setIsLoading(false);
+        setError(null);
+        setLoaded({ year, month });
       })
       .catch((err) => {
         if (cancelled) return;
         setError(err?.message || '月曆資料載入失敗');
-        setIsLoading(false);
+        setLoaded({ year, month });
         // dayMap 和 monthSummary 保留前次有效值，不清空
       });
 
@@ -68,5 +63,17 @@ export default function useRunCalendar(year, month) {
     };
   }, [user, year, month]);
 
-  return { dayMap, monthSummary, isLoading, error };
+  // isLoading 由「已載入的 key 是否匹配當前請求」推導，避免在 effect 內同步 setState
+  const isLoading = !!user && (loaded.year !== year || loaded.month !== month);
+
+  if (!user) {
+    return { dayMap: new Map(), monthSummary: EMPTY_SUMMARY, isLoading: false, error: null };
+  }
+
+  return {
+    dayMap,
+    monthSummary,
+    isLoading,
+    error: isLoading ? null : error,
+  };
 }

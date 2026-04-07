@@ -162,7 +162,9 @@ export default function RunsPage() {
         hasMore={hasMore}
         isLoadingMore={isLoadingMore}
       />
-      <RunCalendarDialog open={calendarOpen} onClose={() => setCalendarOpen(false)} />
+      {calendarOpen && (
+        <RunCalendarDialog open={calendarOpen} onClose={() => setCalendarOpen(false)} />
+      )}
     </div>
   );
 }

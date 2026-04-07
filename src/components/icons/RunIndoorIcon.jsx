@@ -1,7 +1,7 @@
 /**
  * 室內跑步圖示（跑步機）。
- * @param {object} props
- * @param {number} [props.size=16] - 圖示尺寸（寬高相同）。
+ * @param {object} props - 元件屬性。
+ * @param {number} [props.size] - 圖示尺寸（寬高相同），預設 16。
  * @param {string} [props.className] - 額外 CSS class。
  * @returns {import('react').ReactElement} SVG 圖示。
  */

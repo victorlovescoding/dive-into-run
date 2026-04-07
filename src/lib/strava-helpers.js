@@ -165,10 +165,10 @@ export function calcMonthSummary(dayMap) {
   });
 
   /** @type {MonthTypeSummary[]} */
-  const byType = Array.from(typeAccum.entries()).map(([type, meters]) => ({
-    type,
-    totalMeters: meters,
-    label: RUN_TYPE_LABELS[type] || type,
+  const byType = TYPE_ORDER.filter((t) => typeAccum.has(t)).map((t) => ({
+    type: t,
+    totalMeters: /** @type {number} */ (typeAccum.get(t)),
+    label: RUN_TYPE_LABELS[t] || t,
   }));
 
   return { totalMeters, byType };
