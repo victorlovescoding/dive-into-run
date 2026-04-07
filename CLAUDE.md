@@ -110,6 +110,7 @@ const el = /** @type {HTMLInputElement} */ (document.getElementById('x'));
 - `.env` must be in `.gitignore`
 
 ## Active Technologies
+
 - Firestore — `stravaActivities` collection（既有，不修改 schema） (008-run-calendar)
 
 - JavaScript (ES6+), JSDoc `checkJs: true` + Next.js 15 (App Router), React 19, Firebase v9+ (Firestore), Firebase Admin SDK (Route Handlers), Leaflet, `@mapbox/polyline` (006-strava-running-records)
