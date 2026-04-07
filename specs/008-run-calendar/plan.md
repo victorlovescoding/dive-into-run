@@ -17,6 +17,7 @@
 **Project Type**: Web application (Next.js)
 **Performance Goals**: 月曆資料載入 < 2 秒（SC-003/SC-004）
 **Constraints**: 不引入外部 icon library（FR-014）、不引入 date library
+**Design Tokens**: 有跑步日期背景色 `#e8f5e9`（Material Green 50）
 **Scale/Scope**: 單一使用者月視圖，月資料量 < 100 筆活動
 
 ## Constitution Check

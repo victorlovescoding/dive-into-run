@@ -58,8 +58,9 @@
 **Purpose**: Test verification + code quality checks
 
 - [ ] T013 [P] Verify unit tests pass — run `npx vitest run specs/008-run-calendar/tests/unit/` and fix any failures (depends: T001, T007–T009)
-- [ ] T014 [P] Create integration test in `specs/008-run-calendar/tests/integration/RunCalendarDialog.test.jsx` — test dialog open/close, calendar grid rendering, icon display per activity type, month summary values, month navigation, use `@testing-library/user-event` + `screen.getByRole`, mock `useRunCalendar` hook (depends: T012)
+- [ ] T014 [P] Create integration test in `specs/008-run-calendar/tests/integration/RunCalendarDialog.test.jsx` — test dialog open/close, calendar grid rendering, icon display per activity type, month summary values, month navigation, use `@testing-library/user-event` + `screen.getByRole`, mock `useRunCalendar` hook, assert calendar data loads within 2s (SC-003/SC-004) (depends: T012)
 - [ ] T015 Run `npm run type-check` and `npm run lint` — fix all errors and warnings (depends: T012)
+- [ ] T016 [P] Create E2E happy path test in `specs/008-run-calendar/tests/e2e/run-calendar.spec.js` — 登入已連接 Strava 使用者，進入 runs 頁面，點擊月曆按鈕，確認 dialog 開啟、日曆網格顯示、有跑步日期顯示圖示+公里數、底部總里程正確、月份切換正常，使用 `page.getByRole` locators (depends: T012)
 
 ---
 
@@ -69,7 +70,7 @@
 
 - **Foundational (Phase 2)**: No dependencies — start immediately, all 9 tasks in parallel
 - **Core Calendar (Phase 3)**: Sequential chain T010 → T011 → T012, each depends on prior
-- **Polish (Phase 4)**: T013 can start after Phase 2; T014+T015 require T012
+- **Polish (Phase 4)**: T013 can start after Phase 2; T014+T015+T016 require T012
 
 ### Batch Execution Plan (subagent parallelism)
 
@@ -87,25 +88,26 @@ Batch 3 — 1 subagent:
 Batch 4 — 1 subagent:
   T012 (page integration — needs T003+T011)
 
-Batch 5 — 2 parallel subagents:
+Batch 5 — 3 parallel subagents:
   T014 (integration test — needs T012)
   T015 (type-check + lint — needs T012)
+  T016 (E2E test — needs T012)
 ```
 
 ### User Story Tracing
 
-| Story | Priority | Tasks                        | Description           |
-| ----- | -------- | ---------------------------- | --------------------- |
-| US1   | P1       | T001, T002, T010, T011, T012 | 查看當月跑步月曆      |
-| US2   | P1       | T004–T006, T011              | 區分三種跑步類型圖示  |
-| US3   | P1       | T001, T010, T011             | 月曆底部當月跑步總結  |
-| US4   | P2       | T011                         | 月份切換（prev/next） |
+| Story | Priority | Tasks                              | Description           |
+| ----- | -------- | ---------------------------------- | --------------------- |
+| US1   | P1       | T001, T002, T003, T010, T011, T012 | 查看當月跑步月曆      |
+| US2   | P1       | T004–T006, T011                    | 區分三種跑步類型圖示  |
+| US3   | P1       | T001, T010, T011                   | 月曆底部當月跑步總結  |
+| US4   | P2       | T011                               | 月份切換（prev/next） |
 
 ### Parallel Opportunities
 
 - **Batch 1**: 9 tasks simultaneously (all different files, zero deps)
 - **Batch 2**: T010 + T013 (hook creation + unit test verification)
-- **Batch 5**: T014 + T015 (integration test + lint)
+- **Batch 5**: T014 + T015 + T016 (integration test + lint + E2E)
 
 ---
 

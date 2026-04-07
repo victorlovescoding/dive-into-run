@@ -89,9 +89,11 @@ RunsPage (既有)
 ### Behavior
 
 - 依賴 `AuthContext` 取得 `user.uid`
+- `user` 為 null 時不觸發 query，返回空 Map + 零值 MonthSummary + `isLoading: false`
 - `year` / `month` 變更時觸發 `getStravaActivitiesByMonth(uid, year, month)`
 - 查詢結果透過 `groupActivitiesByDay()` 和 `calcMonthSummary()` 聚合
 - Loading / error state 管理
+- error 發生時保留前次有效的 `dayMap` 和 `monthSummary`（不清空），讓 UI 可同時顯示舊資料 + error 訊息
 
 ---
 
@@ -153,7 +155,7 @@ export async function getStravaActivitiesByMonth(uid, year, month) {}
 /**
  * 將活動列表按日期分組並聚合同類型距離。
  * @param {import('./firebase-strava').StravaActivity[]} activities - 活動列表。
- * @returns {Map<number, import('../specs/008-run-calendar/data-model').DayActivities>} 以日期數字為 key 的聚合 map。
+ * @returns {Map<number, DayActivities>} 以日期數字為 key 的聚合 map。
  */
 export function groupActivitiesByDay(activities) {}
 
