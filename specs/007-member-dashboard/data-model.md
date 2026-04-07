@@ -61,7 +61,20 @@
 | comment      | string    | 留言內容 (注意：欄位名是 `comment` 不是 `content`) |
 | createdAt    | Timestamp | 留言時間 (排序依據)                                |
 
-**查詢路徑**: `collectionGroup('comments').where('authorUid', '==', uid).orderBy('createdAt', 'desc')` — 使用者的留言 (需過濾 parent collection = `posts`)
+**查詢路徑**: `collectionGroup('comments').where('authorUid', '==', uid).orderBy('createdAt', 'desc')` — 使用者的文章留言
+
+### Event Comment (`events/{eventId}/comments/{commentId}`)
+
+| Field          | Type      | Description                                                |
+| -------------- | --------- | ---------------------------------------------------------- |
+| id             | string    | Firestore doc ID                                           |
+| authorUid      | string    | 留言者 UID                                                 |
+| authorName     | string    | 留言者名稱                                                 |
+| authorPhotoURL | string    | 留言者頭像（注意：與 Post Comment 的 `authorImgURL` 不同） |
+| content        | string    | 留言內容（注意：欄位名是 `content` 不是 `comment`）        |
+| createdAt      | Timestamp | 留言時間                                                   |
+
+**查詢路徑**: `collectionGroup('comments')` 會同時撈到 Post Comment 和 Event Comment，以 `doc.ref.parent.parent.parent.id` 判斷來源（`'posts'` 或 `'events'`）
 
 ## Application-Level Types (JSDoc)
 
@@ -80,8 +93,6 @@
  * @property {number} participantsCount - 目前報名人數。
  * @property {number} maxParticipants - 人數上限。
  * @property {string} hostUid - 主辦者 UID。
- * @property {boolean} isHost - 是否為主辦者。
- * @property {boolean} isUpcoming - 是否即將到來。
  */
 ```
 
@@ -91,9 +102,10 @@
 /**
  * @typedef {object} MyCommentItem
  * @property {string} id - 留言 ID。
- * @property {string} postId - 所屬文章 ID。
- * @property {string} postTitle - 所屬文章標題。
- * @property {string} comment - 留言內容。
+ * @property {'post' | 'event'} source - 來源類型（文章或活動）。
+ * @property {string} parentId - 所屬文章或活動 ID。
+ * @property {string} parentTitle - 所屬文章或活動標題。
+ * @property {string} text - 留言內容（正規化：文章留言取 comment 欄位，活動留言取 content 欄位）。
  * @property {import('firebase/firestore').Timestamp} createdAt - 留言時間。
  */
 ```
@@ -105,7 +117,8 @@ User (uid)
   ├── 1:N → events (hostUid = uid)           → Tab 1 "我的活動" (hosted)
   ├── 1:N → participants (uid = uid)          → Tab 1 "我的活動" (joined)
   ├── 1:N → posts (authorUid = uid)           → Tab 2 "我的文章"
-  └── 1:N → post comments (authorUid = uid)   → Tab 3 "我的留言"
+  ├── 1:N → post comments (authorUid = uid)   → Tab 3 "我的留言"
+  └── 1:N → event comments (authorUid = uid)  → Tab 3 "我的留言"
 ```
 
 ## Required Firestore Indexes

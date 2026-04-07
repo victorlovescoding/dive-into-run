@@ -208,8 +208,10 @@ hostedIds 作為 Set 回傳，供 UI 判斷「主辦」badge。
  * @property {boolean} isLoading - 初始載入中。
  * @property {boolean} isLoadingMore - 載入更多中。
  * @property {boolean} hasMore - 是否還有更多。
- * @property {string | null} error - 錯誤訊息。
- * @property {() => void} retry - 重試。
+ * @property {string | null} error - 初始載入錯誤訊息。
+ * @property {() => void} retry - 重試初始載入。
+ * @property {string | null} loadMoreError - 載入更多錯誤訊息。
+ * @property {() => void} retryLoadMore - 重試載入更多。
  * @property {import('react').RefObject<HTMLDivElement | null>} sentinelRef - 哨兵 ref。
  */
 
