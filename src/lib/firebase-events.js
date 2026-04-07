@@ -42,7 +42,7 @@ import { db } from './firebase-client';
  * @property {number} [remainingSeats] - 剩餘名額。
  * @property {number} paceSec - 每公里配速（秒）。
  * @property {Timestamp} [createdAt] - 活動建立時間。
- * @property {string} [hostId] - 主辦者 UID。
+ * @property {string} [hostUid] - 主辦者 UID。
  * @property {string} [title] - 活動標題。
  * @property {string} [location] - 活動地點名稱。
  * @property {string} [description] - 活動描述。
