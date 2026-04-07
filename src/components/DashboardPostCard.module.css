@@ -1,0 +1,42 @@
+.card {
+  background: #fff;
+  border: 1px solid #e0e3e7;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  padding: 16px 20px;
+}
+
+.title {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.titleLink {
+  color: #202124;
+  text-decoration: none;
+}
+
+.titleLink:hover {
+  text-decoration: underline;
+}
+
+.date {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: #5f6368;
+}
+
+.stats {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: #5f6368;
+}
+
+@media (max-width: 767px) {
+  .card {
+    padding: 12px 14px;
+  }
+}

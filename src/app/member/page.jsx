@@ -8,6 +8,7 @@ import { useContext, useEffect, useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { AuthContext } from '@/contexts/AuthContext';
 import { updateUserName, uploadUserAvatar, updateUserPhotoURL } from '@/lib/firebase-users';
+import DashboardTabs from '@/components/DashboardTabs';
 
 /**
  * 會員個人頁面，可修改名稱與大頭貼。
@@ -111,6 +112,7 @@ export default function MemberPage() {
           <button type="submit">變更名稱</button>
         </form>
       </div>
+      {user && <DashboardTabs uid={user.uid} />}
     </div>
   );
 }

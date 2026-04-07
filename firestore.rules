@@ -29,6 +29,11 @@ service cloud.firestore {
       }
     }
 
+    // collectionGroup('comments') — member dashboard「我的留言」查詢
+    match /{path=**}/comments/{commentId} {
+      allow read: if true;
+    }
+
     // collectionGroup('likes') 需要的規則
     match /{path=**}/likes/{uid} {
       allow read: if isSignedIn();

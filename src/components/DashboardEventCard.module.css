@@ -1,0 +1,71 @@
+.card {
+  background: #fff;
+  border: 1px solid #e0e3e7;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #202124;
+  text-decoration: none;
+}
+
+.title:hover {
+  text-decoration: underline;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.hostBadge {
+  background: #e8f0fe;
+  color: #1967d2;
+}
+
+.upcomingBadge {
+  background: #e6f4ea;
+  color: #137333;
+}
+
+.endedBadge {
+  background: #f1f3f4;
+  color: #5f6368;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.875rem;
+  color: #5f6368;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 767px) {
+  .card {
+    padding: 12px;
+  }
+}
