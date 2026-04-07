@@ -25,15 +25,23 @@
 
 .syncButton {
   padding: 0.5rem 1rem;
-  border: 1px solid #ccc;
+  border: none;
   border-radius: 0.375rem;
-  background: #fff;
+  background: #fc4c02;
+  color: #fff;
   cursor: pointer;
   font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.syncButton:hover:not(:disabled) {
+  background: #e04400;
 }
 
 .syncButton:disabled {
-  opacity: 0.5;
+  background: #9ca3af;
+  color: #d1d5db;
   cursor: not-allowed;
 }
 

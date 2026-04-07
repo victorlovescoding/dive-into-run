@@ -44,6 +44,13 @@ export default function RunsPage() {
     refresh();
   }, [connection?.lastSyncAt, refresh]);
 
+  /** @returns {string} 同步按鈕文字 */
+  const syncButtonLabel = () => {
+    if (isSyncing) return '同步中…';
+    if (cooldownRemaining > 0) return '冷卻中';
+    return '同步';
+  };
+
   const handleSync = useCallback(async () => {
     const ok = await sync();
     if (ok) {
@@ -111,7 +118,7 @@ export default function RunsPage() {
             disabled={cooldownRemaining > 0 || isSyncing}
             onClick={handleSync}
           >
-            同步
+            {syncButtonLabel()}
           </button>
           {cooldownRemaining > 0 && (
             <span className={styles.cooldownText}>{cooldownRemaining} 秒後可再同步</span>
