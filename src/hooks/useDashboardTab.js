@@ -58,7 +58,8 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
         setItems(result.items);
         prevResultRef.current = result;
         setHasMore(result.items.length >= pageSize);
-      } catch {
+      } catch (err) {
+        console.error('[DashboardTab] initial load failed:', err);
         setError('載入失敗');
       } finally {
         setIsLoading(false);
@@ -83,7 +84,8 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
       setItems((prev) => [...prev, ...result.items]);
       prevResultRef.current = result;
       setHasMore(result.items.length >= pageSize);
-    } catch {
+    } catch (err) {
+      console.error('[DashboardTab] load more failed:', err);
       setLoadMoreError('載入更多失敗');
     } finally {
       isLoadingMoreRef.current = false;
@@ -118,7 +120,8 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
         prevResultRef.current = result;
         setHasMore(result.items.length >= pageSize);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('[DashboardTab] retry failed:', err);
         setError('載入失敗');
       })
       .finally(() => {
