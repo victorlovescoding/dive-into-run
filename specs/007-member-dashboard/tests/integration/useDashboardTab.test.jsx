@@ -338,8 +338,8 @@ describe('useDashboardTab', () => {
     expect(result.current.items).toEqual([{ id: 'only' }]);
   });
 
-  // --- 11. cancelled flag — unmount 後不更新 state ---
-  it('does not update state after unmount (cancelled flag)', async () => {
+  // --- 11. unmount 後不更新 state ---
+  it('does not update state after unmount', async () => {
     const useDashboardTab = await importHook();
     /** @type {(value: any) => void} */
     let resolveFetch;

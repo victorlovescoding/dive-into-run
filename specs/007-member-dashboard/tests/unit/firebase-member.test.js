@@ -311,12 +311,11 @@ describe('Unit: fetchMyEvents', () => {
       }))
     );
 
-    // Act — page 2, cursor=5, pageSize=5
+    // Act — page 2, nextCursor=5, pageSize=5
     const { fetchMyEvents } = await import('@/lib/firebase-member');
     const result = await fetchMyEvents('u1', {
-      cursor: 5,
+      prevResult: { nextCursor: 5, allEvents, hostedIds: new Set() },
       pageSize: 5,
-      allEvents,
     });
 
     // Assert — should get remaining 3 items
@@ -471,7 +470,7 @@ describe('Unit: fetchMyPosts', () => {
 
     // Act
     const { fetchMyPosts } = await import('@/lib/firebase-member');
-    await fetchMyPosts('u1', { afterDoc: afterDocMock, pageSize: 5 });
+    await fetchMyPosts('u1', { prevResult: { lastDoc: afterDocMock }, pageSize: 5 });
 
     // Assert
     expect(mockStartAfter).toHaveBeenCalledWith(afterDocMock);
@@ -571,6 +570,11 @@ describe('Unit: fetchMyComments', () => {
     expect(result.items[1].parentId).toBe('event-1');
     expect(result.items[1].parentTitle).toBe('My Event');
     expect(result.items[1].text).toBe('Great event!');
+
+    // titleCache should be returned for cross-page reuse
+    expect(result.titleCache).toBeInstanceOf(Map);
+    expect(result.titleCache.get('post-1')).toBe('My Post');
+    expect(result.titleCache.get('event-1')).toBe('My Event');
   });
 
   it('should use titleCache to skip already-fetched parent titles', async () => {
@@ -590,10 +594,13 @@ describe('Unit: fetchMyComments', () => {
     mockGetDocs.mockResolvedValueOnce({ docs: commentDocs });
     mockGetDoc.mockResolvedValueOnce(makeMockGetDocResult('post-1', { title: 'Cached Post' }));
 
-    // Act — pass empty titleCache
+    // Act — pass empty titleCache via prevResult
     const titleCache = new Map();
     const { fetchMyComments } = await import('@/lib/firebase-member');
-    const result = await fetchMyComments('u1', { pageSize: 5, titleCache });
+    const result = await fetchMyComments('u1', {
+      prevResult: { lastDoc: null, titleCache },
+      pageSize: 5,
+    });
 
     // Assert — only 1 getDoc call for the 2 comments (same parent)
     expect(mockGetDoc).toHaveBeenCalledTimes(1);
@@ -618,7 +625,10 @@ describe('Unit: fetchMyComments', () => {
 
     // Act
     const { fetchMyComments } = await import('@/lib/firebase-member');
-    const result = await fetchMyComments('u1', { pageSize: 5, titleCache });
+    const result = await fetchMyComments('u1', {
+      prevResult: { lastDoc: null, titleCache },
+      pageSize: 5,
+    });
 
     // Assert — no getDoc calls, title from cache
     expect(mockGetDoc).not.toHaveBeenCalled();
@@ -632,7 +642,7 @@ describe('Unit: fetchMyComments', () => {
 
     // Act
     const { fetchMyComments } = await import('@/lib/firebase-member');
-    await fetchMyComments('u1', { afterDoc: afterDocMock, pageSize: 5 });
+    await fetchMyComments('u1', { prevResult: { lastDoc: afterDocMock }, pageSize: 5 });
 
     // Assert
     expect(mockStartAfter).toHaveBeenCalledWith(afterDocMock);

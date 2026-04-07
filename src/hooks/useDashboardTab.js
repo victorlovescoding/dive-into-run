@@ -45,7 +45,6 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
   useEffect(() => {
     if (!uid || !isActive || initializedRef.current) return undefined;
 
-    let cancelled = false;
     initializedRef.current = true;
 
     /**
@@ -56,25 +55,18 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
       setError(null);
       try {
         const result = await fetchFn(uid, { prevResult: null, pageSize });
-        if (!cancelled) {
-          setItems(result.items);
-          prevResultRef.current = result;
-          setHasMore(result.items.length >= pageSize);
-          setIsLoading(false);
-        }
+        setItems(result.items);
+        prevResultRef.current = result;
+        setHasMore(result.items.length >= pageSize);
       } catch {
-        if (!cancelled) {
-          setError('載入失敗');
-          setIsLoading(false);
-        }
+        setError('載入失敗');
+      } finally {
+        setIsLoading(false);
       }
     }
 
     load();
-
-    return () => {
-      cancelled = true;
-    };
+    return undefined;
   }, [uid, isActive, fetchFn, pageSize]);
 
   // --- Load more ---

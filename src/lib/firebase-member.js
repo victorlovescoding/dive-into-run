@@ -60,20 +60,20 @@ export async function fetchMyEventIds(uid) {
 /**
  * 分頁取得使用者的活動列表，依活動時間由新到舊。
  *
- * 首次呼叫（不傳 allEvents）會做完整 fetch；後續呼叫傳入先前的 allEvents 直接 slice。
+ * 首次呼叫（prevResult 為 null）會做完整 fetch；後續呼叫透過 prevResult 取得快取直接 slice。
  * @param {string} uid - 使用者 UID。
  * @param {object} [options] - 分頁選項。
- * @param {number} [options.cursor] - Array offset，未傳代表首次呼叫。
+ * @param {{ allEvents: MyEventItem[], nextCursor: number | null, hostedIds: Set<string> } | null} [options.prevResult] - 前次呼叫的回傳結果。
  * @param {number} [options.pageSize] - 每頁筆數，預設 5。
- * @param {MyEventItem[]} [options.allEvents] - 前次呼叫回傳的完整事件列表（供後續分頁用）。
  * @returns {Promise<{ items: MyEventItem[], nextCursor: number | null, hostedIds: Set<string>, allEvents: MyEventItem[] }>} 分頁結果。
  */
 export async function fetchMyEvents(uid, options = {}) {
-  const { cursor, pageSize = 5, allEvents: cachedEvents } = options;
+  const { prevResult = null, pageSize = 5 } = options;
 
   // Subsequent call — slice from cached array
-  if (cachedEvents) {
-    const start = cursor ?? 0;
+  if (prevResult?.allEvents) {
+    const cachedEvents = prevResult.allEvents;
+    const start = prevResult.nextCursor ?? 0;
     const items = cachedEvents.slice(start, start + pageSize);
     const nextEnd = start + pageSize;
     const nextCursor = nextEnd < cachedEvents.length ? nextEnd : null;
@@ -105,7 +105,7 @@ export async function fetchMyEvents(uid, options = {}) {
   allEvents.sort((a, b) => b.time.seconds - a.time.seconds);
 
   // Paginate
-  const start = cursor ?? 0;
+  const start = 0;
   const items = allEvents.slice(start, start + pageSize);
   const nextEnd = start + pageSize;
   const nextCursor = nextEnd < allEvents.length ? nextEnd : null;
@@ -118,12 +118,13 @@ export async function fetchMyEvents(uid, options = {}) {
  * 分頁取得使用者發表的文章。
  * @param {string} uid - 使用者 UID。
  * @param {object} [options] - 分頁選項。
- * @param {QueryDocumentSnapshot | null} [options.afterDoc] - 上一頁最後一筆文件快照。
+ * @param {{ lastDoc: QueryDocumentSnapshot | null } | null} [options.prevResult] - 前次呼叫的回傳結果。
  * @param {number} [options.pageSize] - 每頁筆數，預設 5。
  * @returns {Promise<{ items: Post[], lastDoc: QueryDocumentSnapshot | null }>} 分頁結果。
  */
 export async function fetchMyPosts(uid, options = {}) {
-  const { afterDoc = null, pageSize = 5 } = options;
+  const { prevResult = null, pageSize = 5 } = options;
+  const afterDoc = prevResult?.lastDoc ?? null;
 
   /** @type {import('firebase/firestore').QueryConstraint[]} */
   const constraints = [where('authorUid', '==', uid), orderBy('postAt', 'desc'), limit(pageSize)];
@@ -145,13 +146,14 @@ export async function fetchMyPosts(uid, options = {}) {
  * 分頁取得使用者在文章與活動下的所有留言。
  * @param {string} uid - 使用者 UID。
  * @param {object} [options] - 分頁選項。
- * @param {QueryDocumentSnapshot | null} [options.afterDoc] - 上一頁最後一筆文件快照。
+ * @param {{ lastDoc: QueryDocumentSnapshot | null, titleCache?: Map<string, string> } | null} [options.prevResult] - 前次呼叫的回傳結果。
  * @param {number} [options.pageSize] - 每頁筆數，預設 5。
- * @param {Map<string, string>} [options.titleCache] - 跨頁共用的 parent title 快取。
- * @returns {Promise<{ items: MyCommentItem[], lastDoc: QueryDocumentSnapshot | null }>} 分頁結果。
+ * @returns {Promise<{ items: MyCommentItem[], lastDoc: QueryDocumentSnapshot | null, titleCache: Map<string, string> }>} 分頁結果。
  */
 export async function fetchMyComments(uid, options = {}) {
-  const { afterDoc = null, pageSize = 5, titleCache = new Map() } = options;
+  const { prevResult = null, pageSize = 5 } = options;
+  const afterDoc = prevResult?.lastDoc ?? null;
+  const titleCache = prevResult?.titleCache ?? new Map();
 
   /** @type {import('firebase/firestore').QueryConstraint[]} */
   const constraints = [
@@ -223,5 +225,5 @@ export async function fetchMyComments(uid, options = {}) {
 
   const lastDoc = snap.docs.length === pageSize ? snap.docs[snap.docs.length - 1] : null;
 
-  return { items, lastDoc };
+  return { items, lastDoc, titleCache };
 }
