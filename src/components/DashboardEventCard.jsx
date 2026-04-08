@@ -19,7 +19,7 @@ function isUpcoming(time) {
  * @returns {import('react').ReactElement} 活動卡片。
  */
 export default function DashboardEventCard({ event, isHost }) {
-  const { id, title, time, location, city, participantsCount, maxParticipants } = event;
+  const { id, title, time, location, city, participantsCount } = event;
   const dateTimeStr = formatDateTime(time);
   const upcoming = isUpcoming(time);
   const statusLabel = upcoming ? '即將到來' : '已結束';
@@ -39,9 +39,7 @@ export default function DashboardEventCard({ event, isHost }) {
         <span>
           {city} {location}
         </span>
-        <span>
-          {participantsCount} / {maxParticipants}
-        </span>
+        <span>{participantsCount} 人已報名</span>
       </div>
     </article>
   );

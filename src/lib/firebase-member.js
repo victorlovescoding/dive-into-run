@@ -101,13 +101,14 @@ export async function fetchMyEvents(uid, options = {}) {
   // Filter existing docs, map to MyEventItem
   const allEvents = docResults
     .filter((snap) => snap.exists())
-    .map(
-      (snap) =>
-        /** @type {MyEventItem} */ ({
-          id: snap.id,
-          ...snap.data(),
-        }),
-    );
+    .map((snap) => {
+      const data = snap.data();
+      return /** @type {MyEventItem} */ ({
+        id: snap.id,
+        ...data,
+        participantsCount: data.participantsCount ?? 0,
+      });
+    });
 
   // Sort by time desc (client-side)
   allEvents.sort((a, b) => b.time.seconds - a.time.seconds);
