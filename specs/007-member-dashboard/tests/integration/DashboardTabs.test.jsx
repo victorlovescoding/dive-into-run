@@ -385,4 +385,127 @@ describe('DashboardTabs', () => {
     expect(screen.getByTestId('event-e2')).toHaveTextContent('Event 2');
     expect(screen.getByTestId('event-e2')).not.toHaveTextContent('[主辦]');
   });
+
+  // === Keyboard navigation (WAI-ARIA Tabs pattern) ===
+  describe('keyboard navigation', () => {
+    /**
+     * 動態 import DashboardTabs 元件。
+     * @returns {Promise<typeof import('@/components/DashboardTabs').default>} 元件。
+     */
+    async function importComponent() {
+      const mod = await import('@/components/DashboardTabs');
+      return mod.default;
+    }
+
+    it('navigates to next tab with ArrowRight', async () => {
+      const DashboardTabs = await importComponent();
+      render(<DashboardTabs uid={TEST_UID} />);
+      const user = userEvent.setup();
+
+      const eventsTab = screen.getByRole('tab', { name: '我的活動' });
+      await user.click(eventsTab);
+      await user.keyboard('{ArrowRight}');
+
+      expect(screen.getByRole('tab', { name: '我的文章' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      expect(screen.getByRole('tab', { name: '我的文章' })).toHaveFocus();
+    });
+
+    it('navigates to previous tab with ArrowLeft', async () => {
+      const DashboardTabs = await importComponent();
+      render(<DashboardTabs uid={TEST_UID} />);
+      const user = userEvent.setup();
+
+      await user.click(screen.getByRole('tab', { name: '我的文章' }));
+      await user.keyboard('{ArrowLeft}');
+
+      expect(screen.getByRole('tab', { name: '我的活動' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      expect(screen.getByRole('tab', { name: '我的活動' })).toHaveFocus();
+    });
+
+    it('wraps around from last to first with ArrowRight', async () => {
+      const DashboardTabs = await importComponent();
+      render(<DashboardTabs uid={TEST_UID} />);
+      const user = userEvent.setup();
+
+      await user.click(screen.getByRole('tab', { name: '我的留言' }));
+      await user.keyboard('{ArrowRight}');
+
+      expect(screen.getByRole('tab', { name: '我的活動' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      expect(screen.getByRole('tab', { name: '我的活動' })).toHaveFocus();
+    });
+
+    it('wraps around from first to last with ArrowLeft', async () => {
+      const DashboardTabs = await importComponent();
+      render(<DashboardTabs uid={TEST_UID} />);
+      const user = userEvent.setup();
+
+      const eventsTab = screen.getByRole('tab', { name: '我的活動' });
+      await user.click(eventsTab);
+      await user.keyboard('{ArrowLeft}');
+
+      expect(screen.getByRole('tab', { name: '我的留言' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      expect(screen.getByRole('tab', { name: '我的留言' })).toHaveFocus();
+    });
+
+    it('moves to first tab with Home key', async () => {
+      const DashboardTabs = await importComponent();
+      render(<DashboardTabs uid={TEST_UID} />);
+      const user = userEvent.setup();
+
+      await user.click(screen.getByRole('tab', { name: '我的留言' }));
+      await user.keyboard('{Home}');
+
+      expect(screen.getByRole('tab', { name: '我的活動' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      expect(screen.getByRole('tab', { name: '我的活動' })).toHaveFocus();
+    });
+
+    it('moves to last tab with End key', async () => {
+      const DashboardTabs = await importComponent();
+      render(<DashboardTabs uid={TEST_UID} />);
+      const user = userEvent.setup();
+
+      const eventsTab = screen.getByRole('tab', { name: '我的活動' });
+      await user.click(eventsTab);
+      await user.keyboard('{End}');
+
+      expect(screen.getByRole('tab', { name: '我的留言' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      expect(screen.getByRole('tab', { name: '我的留言' })).toHaveFocus();
+    });
+
+    it('active tab has tabIndex 0, inactive tabs have tabIndex -1', async () => {
+      const DashboardTabs = await importComponent();
+      render(<DashboardTabs uid={TEST_UID} />);
+      const user = userEvent.setup();
+
+      // Default: events tab active
+      expect(screen.getByRole('tab', { name: '我的活動' })).toHaveAttribute('tabindex', '0');
+      expect(screen.getByRole('tab', { name: '我的文章' })).toHaveAttribute('tabindex', '-1');
+      expect(screen.getByRole('tab', { name: '我的留言' })).toHaveAttribute('tabindex', '-1');
+
+      // Switch to posts tab
+      await user.click(screen.getByRole('tab', { name: '我的文章' }));
+
+      expect(screen.getByRole('tab', { name: '我的活動' })).toHaveAttribute('tabindex', '-1');
+      expect(screen.getByRole('tab', { name: '我的文章' })).toHaveAttribute('tabindex', '0');
+      expect(screen.getByRole('tab', { name: '我的留言' })).toHaveAttribute('tabindex', '-1');
+    });
+  });
 });

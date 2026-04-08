@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback, Fragment } from 'react';
 import useDashboardTab from '@/hooks/useDashboardTab';
 import { fetchMyEvents, fetchMyPosts, fetchMyComments } from '@/lib/firebase-member';
 import DashboardEventCard from '@/components/DashboardEventCard';
@@ -40,19 +40,44 @@ export default function DashboardTabs({ uid }) {
   // --- State ---
   const [activeTab, setActiveTab] = useState(0);
 
-  // --- Refs ---
-  const hostedIdsRef = useRef(/** @type {Set<string>} */ (new Set()));
+  // --- Keyboard navigation (WAI-ARIA Tabs pattern) ---
+  const handleTabKeyDown = useCallback(
+    /** @param {import('react').KeyboardEvent} e - 鍵盤事件。 */
+    (e) => {
+      const tabCount = TAB_CONFIGS.length;
+      let nextIndex = activeTab;
 
-  // --- Callbacks (must precede useDashboardTab which depends on them) ---
-  /** @type {(uid: string, options: object) => Promise<import('@/hooks/useDashboardTab').FetchResult>} */
-  const fetchEventsWrapper = useCallback(async (u, options) => {
-    const result = await fetchMyEvents(u, options);
-    hostedIdsRef.current = result.hostedIds;
-    return result;
-  }, []);
+      switch (e.key) {
+        case 'ArrowRight':
+          e.preventDefault();
+          nextIndex = (activeTab + 1) % tabCount;
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          nextIndex = (activeTab - 1 + tabCount) % tabCount;
+          break;
+        case 'Home':
+          e.preventDefault();
+          nextIndex = 0;
+          break;
+        case 'End':
+          e.preventDefault();
+          nextIndex = tabCount - 1;
+          break;
+        default:
+          return;
+      }
+
+      setActiveTab(nextIndex);
+      const tabList = /** @type {HTMLElement} */ (e.currentTarget).closest('[role="tablist"]');
+      const buttons = tabList?.querySelectorAll('[role="tab"]');
+      /** @type {HTMLElement | undefined} */ (buttons?.[nextIndex])?.focus();
+    },
+    [activeTab],
+  );
 
   // --- Custom Hooks ---
-  const eventsTab = useDashboardTab(uid, fetchEventsWrapper, PAGE_SIZE, activeTab === 0);
+  const eventsTab = useDashboardTab(uid, fetchMyEvents, PAGE_SIZE, activeTab === 0);
   const postsTab = useDashboardTab(uid, fetchMyPosts, PAGE_SIZE, activeTab === 1);
   const commentsTab = useDashboardTab(uid, fetchMyComments, PAGE_SIZE, activeTab === 2);
 
@@ -70,6 +95,8 @@ export default function DashboardTabs({ uid }) {
             aria-controls={config.panelId}
             className={activeTab === index ? styles.tabActive : styles.tab}
             onClick={() => setActiveTab(index)}
+            onKeyDown={handleTabKeyDown}
+            tabIndex={activeTab === index ? 0 : -1}
             type="button"
           >
             {config.label}
@@ -85,12 +112,7 @@ export default function DashboardTabs({ uid }) {
           aria-labelledby={config.id}
           style={activeTab !== index ? { display: 'none' } : undefined}
         >
-          <TabPanel
-            tab={tabs[index]}
-            tabIndex={index}
-            emptyText={config.emptyText}
-            hostedIdsRef={hostedIdsRef}
-          />
+          <TabPanel tab={tabs[index]} tabIndex={index} emptyText={config.emptyText} />
         </div>
       ))}
     </div>
@@ -103,10 +125,9 @@ export default function DashboardTabs({ uid }) {
  * @param {import('@/hooks/useDashboardTab').UseDashboardTabReturn} props.tab - hook 回傳值。
  * @param {number} props.tabIndex - tab 索引（0=events, 1=posts, 2=comments）。
  * @param {string} props.emptyText - 空資料提示文字。
- * @param {import('react').RefObject<Set<string>>} props.hostedIdsRef - 主辦活動 ID 集合。
  * @returns {import('react').ReactElement} panel 內容。
  */
-function TabPanel({ tab, tabIndex, emptyText, hostedIdsRef }) {
+function TabPanel({ tab, tabIndex, emptyText }) {
   const {
     items,
     isLoading,
@@ -117,6 +138,7 @@ function TabPanel({ tab, tabIndex, emptyText, hostedIdsRef }) {
     loadMoreError,
     retryLoadMore,
     sentinelRef,
+    prevResult,
   } = tab;
 
   if (isLoading) {
@@ -140,7 +162,15 @@ function TabPanel({ tab, tabIndex, emptyText, hostedIdsRef }) {
 
   return (
     <div className={styles.cardList}>
-      <ItemList items={items} tabIndex={tabIndex} hostedIdsRef={hostedIdsRef} />
+      <ItemList
+        items={items}
+        tabIndex={tabIndex}
+        hostedIds={
+          tabIndex === 0
+            ? /** @type {{ hostedIds?: Set<string> }} */ (prevResult)?.hostedIds
+            : undefined
+        }
+      />
       <div ref={sentinelRef} />
       {isLoadingMore && <p className={styles.loadingMore}>載入更多...</p>}
       {loadMoreError && (
@@ -161,29 +191,44 @@ function TabPanel({ tab, tabIndex, emptyText, hostedIdsRef }) {
  * @param {object} props - 元件屬性。
  * @param {object[]} props.items - 資料項目。
  * @param {number} props.tabIndex - tab 索引。
- * @param {import('react').RefObject<Set<string>>} props.hostedIdsRef - 主辦活動 ID 集合。
- * @returns {import('react').ReactElement[]} Card 元件陣列。
+ * @param {Set<string>} [props.hostedIds] - 主辦活動 ID 集合（僅 events tab 使用）。
+ * @returns {import('react').ReactElement} Card 元件。
  */
-function ItemList({ items, tabIndex, hostedIdsRef }) {
+function ItemList({ items, tabIndex, hostedIds }) {
   if (tabIndex === 0) {
     const events = /** @type {import('@/lib/firebase-member').MyEventItem[]} */ (items);
-    return events.map((event) => (
-      <DashboardEventCard
-        // @ts-expect-error — key 是 React 特殊 prop，不在 JSDoc 型別中但為合法用法
-        key={event.id}
-        event={event}
-        isHost={hostedIdsRef.current.has(event.id)}
-      />
-    ));
+    return (
+      <>
+        {events.map((event) => (
+          <Fragment key={event.id}>
+            <DashboardEventCard event={event} isHost={hostedIds?.has(event.id) ?? false} />
+          </Fragment>
+        ))}
+      </>
+    );
   }
 
   if (tabIndex === 1) {
     const posts = /** @type {import('@/lib/firebase-posts').Post[]} */ (items);
-    // @ts-expect-error — key 是 React 特殊 prop，不在 JSDoc 型別中但為合法用法
-    return posts.map((post) => <DashboardPostCard key={post.id} post={post} />);
+    return (
+      <>
+        {posts.map((post) => (
+          <Fragment key={post.id}>
+            <DashboardPostCard post={post} />
+          </Fragment>
+        ))}
+      </>
+    );
   }
 
   const comments = /** @type {import('@/lib/firebase-member').MyCommentItem[]} */ (items);
-  // @ts-expect-error — key 是 React 特殊 prop，不在 JSDoc 型別中但為合法用法
-  return comments.map((comment) => <DashboardCommentCard key={comment.id} comment={comment} />);
+  return (
+    <>
+      {comments.map((comment) => (
+        <Fragment key={comment.id}>
+          <DashboardCommentCard comment={comment} />
+        </Fragment>
+      ))}
+    </>
+  );
 }
