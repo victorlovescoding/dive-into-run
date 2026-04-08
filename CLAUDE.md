@@ -59,6 +59,14 @@ firebase emulators:exec --only auth,firestore "npm run test:e2e:emulator"  # 一
 5. **Task completion requires** `npm run type-check` and `npm run lint` to pass
 6. **cSpell** — project-specific words must be added to `cspell.json` at project root. Do not use inline `cspell:disable` comments
 7. **IDE Diagnostics** — before marking a task complete, run `getDiagnostics` (via MCP) and fix all items with severity Warning, Hint, or Error. cSpell "Information" items can be ignored (but unknown words should still be added to `cspell.json`)
+8. **Chore / Skill 修改的 Git 流程** — 修改 skill、constitution、CLAUDE.md、cspell.json 等非 feature 檔案時，**不論目前在 main 或 feature branch，一律禁止直接 commit**。必須：
+   1. 回到主 repo 目錄，`git checkout main && git pull`
+   2. `git checkout -b chore/描述` — 開獨立分支
+   3. 修改 + commit
+   4. `git checkout main && git merge chore/描述 && git branch -d chore/描述`
+   5. 用 `git worktree list` 找出所有 active worktree
+   6. 對每個 worktree 執行 `git -C <worktree-path> rebase main`（跳過 main 本身）
+   7. 如果原本在 feature branch，切回去繼續工作
 
 ## Code Style Quick Reference
 
