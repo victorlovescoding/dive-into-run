@@ -118,6 +118,11 @@ Version: 1.3.0 -> 1.4.0
 5.  **重構 (Refactor)**: 優化代碼結構。
 6.  **審查 (Review)**: 確認符合所有憲法原則。
 
+### 任務生成規則 (Task Generation Rules)
+
+- **相依性分析**: 生成 tasks 後必須分析 task 間的相依性與先後順序，標註哪些 task 可以平行執行。
+- **最大化平行度**: 以最大化 subagent / agent team 平行執行為目標，重新排序或分組 task。無相依關係的 task 應明確標示為可平行。
+
 ### 實作執行規則 (Implementation Execution Rules)
 
 - **Subagent 執行**: 每個 task 必須用 subagent 執行，節省主對話 context window。
@@ -136,4 +141,4 @@ Version: 1.3.0 -> 1.4.0
 
 本憲法凌駕於所有其他慣例之上。
 
-**Version**: 1.5.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-04-08
+**Version**: 1.6.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-04-08
