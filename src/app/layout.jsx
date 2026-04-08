@@ -4,6 +4,8 @@ import Link from 'next/link';
 import LoginButton from './login/LoginButton.jsx';
 import SignOutButton from './signout/SignOutButton.jsx';
 import UserDataHandler from '@/contexts/AuthContext';
+import ToastProvider from '@/contexts/ToastContext';
+import ToastContainer from '@/components/ToastContainer';
 import './globals.css';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
@@ -34,17 +36,20 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <UserDataHandler>
-          <nav className="main-nav">
-            <Link href="/">回首頁</Link>
-            <Link href="/member">會員頁面</Link>
-            <Link href="/posts">文章</Link>
-            <Link href="/events">揪團頁面</Link>
-            <Link href="/runs">跑步</Link>
-            <LoginButton />
-            <SignOutButton />
-          </nav>
-          <hr />
-          {children}
+          <ToastProvider>
+            <nav className="main-nav">
+              <Link href="/">回首頁</Link>
+              <Link href="/member">會員頁面</Link>
+              <Link href="/posts">文章</Link>
+              <Link href="/events">揪團頁面</Link>
+              <Link href="/runs">跑步</Link>
+              <LoginButton />
+              <SignOutButton />
+            </nav>
+            <hr />
+            {children}
+            <ToastContainer />
+          </ToastProvider>
         </UserDataHandler>
       </body>
     </html>

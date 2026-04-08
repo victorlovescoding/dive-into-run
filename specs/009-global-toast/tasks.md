@@ -20,10 +20,10 @@
 
 **CRITICAL**: No page migration can begin until this phase is complete
 
-- [ ] T001 [P] Create ToastContext with useReducer (ADD/REMOVE/CLEAR_ALL), ToastProvider, useToast hook, and route-change clear via usePathname in src/contexts/ToastContext.jsx
-- [ ] T002 [P] Create Toast component with type-based styles (success/error/info), close button, ARIA roles (status/alert), enter/exit CSS transition animations, and long-text overflow handling (word-break/overflow-wrap) in src/components/Toast.jsx + src/components/Toast.module.css
-- [ ] T003 Create ToastContainer with fixed positioning (bottom-right desktop, full-width mobile), flex-column-reverse stack layout, z-index 1100, and context consumption in src/components/ToastContainer.jsx + src/components/ToastContainer.module.css
-- [ ] T004 Integrate ToastProvider and ToastContainer into src/app/layout.jsx
+- [x] T001 [P] Create ToastContext with useReducer (ADD/REMOVE/CLEAR_ALL), ToastProvider, useToast hook, and route-change clear via usePathname in src/contexts/ToastContext.jsx
+- [x] T002 [P] Create Toast component with type-based styles (success/error/info), close button, ARIA roles (status/alert), enter/exit CSS transition animations, and long-text overflow handling (word-break/overflow-wrap) in src/components/Toast.jsx + src/components/Toast.module.css
+- [x] T003 Create ToastContainer with fixed positioning (bottom-right desktop, full-width mobile), flex-column-reverse stack layout, z-index 1100, and context consumption in src/components/ToastContainer.jsx + src/components/ToastContainer.module.css
+- [x] T004 Integrate ToastProvider and ToastContainer into src/app/layout.jsx
 
 **Checkpoint**: Toast infrastructure ready — `showToast('test')` / `showToast('test', 'error')` / `showToast('test', 'info')` all work from any client component
 
@@ -37,9 +37,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T005 [P] [US1] Migrate src/app/events/page.jsx — remove actionMessage state + JSX block, replace setActionMessage calls with showToast via useToast
-- [ ] T006 [P] [US1] Migrate src/app/events/[id]/eventDetailClient.jsx — remove actionMessage state + JSX block, replace setActionMessage calls with showToast via useToast
-- [ ] T007 [US1] Remove unused CSS classes (.errorCard, .successCard) from src/app/events/events.module.css (both pages import this single file; eventDetail.module.css does not exist)
+- [x] T005 [P] [US1] Migrate src/app/events/page.jsx — remove actionMessage state + JSX block, replace setActionMessage calls with showToast via useToast
+- [x] T006 [P] [US1] Migrate src/app/events/[id]/eventDetailClient.jsx — remove actionMessage state + JSX block, replace setActionMessage calls with showToast via useToast
+- [x] T007 [US1] Remove unused CSS class .successCard from src/app/events/events.module.css (.errorCard retained — still used by loadError/createError/participantsError)
 
 **Checkpoint**: 活動列表頁和詳情頁的操作回饋已由 Toast 接管，無殘留 actionMessage
 
@@ -53,9 +53,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T008 [P] [US2] Migrate src/app/posts/[id]/PostDetailClient.jsx — replace window.alert with showToast error, remove eslint-disable comments
-- [ ] T009 [P] [US2] Migrate src/app/signout/SignOutButton.jsx — replace window.alert with showToast error, remove eslint-disable comments
-- [ ] T010 [P] [US2] Migrate src/app/member/page.jsx — add showToast error in catch blocks where currently only console.error exists
+- [x] T008 [P] [US2] Migrate src/app/posts/[id]/PostDetailClient.jsx — replace window.alert with showToast error, remove eslint-disable comments
+- [x] T009 [P] [US2] Migrate src/app/signout/SignOutButton.jsx — replace window.alert with showToast error, remove eslint-disable comments
+- [x] T010 [P] [US2] Migrate src/app/member/page.jsx — add showToast error in catch blocks where currently only console.error exists
 
 **Checkpoint**: 專案內無 window.alert 做操作回饋，member 頁面不再有靜默失敗
 
@@ -69,7 +69,7 @@
 
 ### Implementation for User Story 3
 
-- [ ] T011 [US3] Migrate src/app/runs/page.jsx — remove disconnectError state + JSX block, replace with showToast info via useToast, and remove unused .syncError class from src/app/runs/runs.module.css
+- [x] T011 [US3] Migrate src/app/runs/page.jsx — remove disconnectError state + JSX block, replace with showToast error via useToast (.syncError CSS retained — still used by syncError)
 
 **Checkpoint**: runs 頁面的 inline error 提示已由 info Toast 取代
 
@@ -83,7 +83,7 @@
 
 > Core stacking logic (reducer MAX_TOASTS, flex-column-reverse) is built in Phase 1. This phase is verification.
 
-- [ ] T012 [US4] Verify multi-toast stacking — trigger 6+ toasts rapidly, confirm oldest removed when exceeding 5, confirm each toast dismisses independently
+- [x] T012 [US4] Verify multi-toast stacking — trigger 6+ toasts rapidly, confirm oldest removed when exceeding 5, confirm each toast dismisses independently
 
 **Checkpoint**: 多 Toast 堆疊、上限 5 個、獨立消失全部正常
 
@@ -93,9 +93,9 @@
 
 **Purpose**: 全功能驗證、型別檢查、lint 通過
 
-- [ ] T013 Run npm run type-check and npm run lint across all modified files, fix all errors
-- [ ] T014 Verify a11y — success/info Toast uses role="status", error Toast uses role="alert", close button has accessible label
-- [ ] T015 Verify mobile responsiveness — Toast positioning on 375px viewport does not block navigation or action buttons
+- [x] T013 Run npm run type-check and npm run lint across all modified files, fix all errors
+- [x] T014 Verify a11y — success/info Toast uses role="status", error Toast uses role="alert", close button has accessible label
+- [x] T015 Verify mobile responsiveness — Toast positioning on 375px viewport does not block navigation or action buttons
 
 ---
 

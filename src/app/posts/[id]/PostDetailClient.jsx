@@ -16,6 +16,7 @@ import {
   getMoreComments,
 } from '@/lib/firebase-posts';
 import { AuthContext } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import styles from '../postDetail.module.css';
 
 const INFINITE_SCROLL_MARGIN = '300px 0px';
@@ -33,6 +34,7 @@ export default function PostDetailClient({ postId }) {
   const [, setIsCommentEditing] = useState(false);
   const [isComposeEditing, setIsComposeEditing] = useState(false);
   const { user } = useContext(AuthContext);
+  const { showToast } = useToast();
   const [comment, setComment] = useState(''); // 只裝使用者即將送出的留言
   const [comments, setComments] = useState([]); // 裝所有留言
   const [openMenuPostId, setOpenMenuPostId] = useState('');
@@ -244,8 +246,7 @@ export default function PostDetailClient({ postId }) {
       // 關閉該留言的選單
       setOpenMenuPostId('');
     } catch (err) {
-      // eslint-disable-next-line no-alert -- 刪除失敗使用原生對話框提示
-      window.alert('刪除失敗，請稍後再試');
+      showToast('刪除失敗，請稍後再試', 'error');
       console.error(err);
     }
   }

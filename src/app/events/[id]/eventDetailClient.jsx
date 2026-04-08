@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 import styles from '../events.module.css';
 import { AuthContext } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import {
   fetchEventById,
   fetchParticipants,
@@ -125,6 +126,7 @@ function formatPace(paceSec, fallbackText = '') {
  */
 export default function EventDetailClient({ id }) {
   const { user } = useContext(AuthContext);
+  const { showToast } = useToast();
   const router = useRouter();
 
   const [event, setEvent] = useState(null);
@@ -139,7 +141,6 @@ export default function EventDetailClient({ id }) {
   const participantsOverlayRef = useRef(null);
 
   // join/leave UI
-  const [actionMessage, setActionMessage] = useState(null);
   const [pending, setPending] = useState(null); // 'joining' | 'leaving' | null
 
   // edit/delete UI
@@ -315,12 +316,12 @@ export default function EventDetailClient({ id }) {
         setEditingEvent(null);
       } catch (err) {
         console.error('更新活動失敗:', err);
-        setActionMessage({ type: 'error', message: '更新活動失敗，請再試一次' });
+        showToast('更新活動失敗，請再試一次', 'error');
       } finally {
         setIsUpdating(false);
       }
     },
-    [],
+    [showToast],
   );
 
   // ── 刪除 handlers ──
@@ -492,7 +493,6 @@ export default function EventDetailClient({ id }) {
                             const payload = buildUserPayload(user);
                             if (!payload) return;
 
-                            setActionMessage(null);
                             setPending('leaving');
                             try {
                               const res = await leaveEvent(String(id), payload);
@@ -524,22 +524,13 @@ export default function EventDetailClient({ id }) {
                                   prev.filter((p) => String(p.uid) !== String(user.uid)),
                                 );
 
-                                setActionMessage({
-                                  type: 'success',
-                                  message: '已成功取消報名',
-                                });
+                                showToast('已成功取消報名');
                               } else {
-                                setActionMessage({
-                                  type: 'error',
-                                  message: '發生錯誤，請再重新取消報名',
-                                });
+                                showToast('發生錯誤，請再重新取消報名', 'error');
                               }
                             } catch (err) {
                               console.error('退出活動失敗:', err);
-                              setActionMessage({
-                                type: 'error',
-                                message: '發生錯誤，請再重新取消報名',
-                              });
+                              showToast('發生錯誤，請再重新取消報名', 'error');
                             } finally {
                               setPending(null);
                             }
@@ -593,7 +584,6 @@ export default function EventDetailClient({ id }) {
                           const payload = buildUserPayload(user);
                           if (!payload) return;
 
-                          setActionMessage(null);
                           setPending('joining');
                           try {
                             const res = await joinEvent(String(id), payload);
@@ -638,28 +628,16 @@ export default function EventDetailClient({ id }) {
                                 });
                               }
 
-                              setActionMessage({
-                                type: 'success',
-                                message: '報名成功',
-                              });
+                              showToast('報名成功');
                             } else if (res?.ok === false && res.status === 'full') {
-                              setActionMessage({
-                                type: 'error',
-                                message: '本活動已額滿',
-                              });
+                              showToast('本活動已額滿', 'error');
                               setEvent((prev) => (prev ? { ...prev, remainingSeats: 0 } : prev));
                             } else {
-                              setActionMessage({
-                                type: 'error',
-                                message: '報名失敗，請再試一次',
-                              });
+                              showToast('報名失敗，請再試一次', 'error');
                             }
                           } catch (err) {
                             console.error('參加活動失敗:', err);
-                            setActionMessage({
-                              type: 'error',
-                              message: '報名失敗，請再試一次',
-                            });
+                            showToast('報名失敗，請再試一次', 'error');
                           } finally {
                             setPending(null);
                           }
@@ -678,25 +656,6 @@ export default function EventDetailClient({ id }) {
                     );
                   })()}
               </div>
-
-              {/* ✅ 成功/失敗字卡（同 events 頁） */}
-              {actionMessage && (
-                <div
-                  className={styles.errorCard}
-                  role={actionMessage.type === 'error' ? 'alert' : 'status'}
-                  style={
-                    actionMessage.type === 'success'
-                      ? {
-                          background: 'rgba(16, 185, 129, 0.12)',
-                          border: '1px solid rgba(16, 185, 129, 0.25)',
-                          color: '#065f46',
-                        }
-                      : undefined
-                  }
-                >
-                  {actionMessage.message}
-                </div>
-              )}
             </div>
 
             {/* 活動說明 */}

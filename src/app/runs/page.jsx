@@ -10,6 +10,7 @@ import RunsConnectGuide from '@/components/RunsConnectGuide';
 import RunsActivityList from '@/components/RunsActivityList';
 import CalendarIcon from '@/components/icons/CalendarIcon';
 import RunCalendarDialog from '@/components/RunCalendarDialog';
+import { useToast } from '@/contexts/ToastContext';
 import styles from './runs.module.css';
 
 /**
@@ -20,7 +21,7 @@ import styles from './runs.module.css';
 export default function RunsPage() {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [disconnectError, setDisconnectError] = useState(/** @type {string | null} */ (null));
+  const { showToast } = useToast();
   const { user, loading: authLoading } = useContext(AuthContext);
   const { connection } = useStravaConnection();
   const {
@@ -67,7 +68,6 @@ export default function RunsPage() {
       return;
     }
     setIsDisconnecting(true);
-    setDisconnectError(null);
     try {
       const token = await user.getIdToken();
       const response = await fetch('/api/strava/disconnect', {
@@ -75,10 +75,10 @@ export default function RunsPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
-        setDisconnectError('取消連結失敗，請稍後再試');
+        showToast('取消連結失敗，請稍後再試', 'error');
       }
     } catch {
-      setDisconnectError('取消連結失敗，請稍後再試');
+      showToast('取消連結失敗，請稍後再試', 'error');
     } finally {
       setIsDisconnecting(false);
     }
@@ -147,11 +147,6 @@ export default function RunsPage() {
       {syncError && (
         <p className={styles.syncError} role="alert">
           {syncError}
-        </p>
-      )}
-      {disconnectError && (
-        <p className={styles.syncError} role="alert">
-          {disconnectError}
         </p>
       )}
       <RunsActivityList

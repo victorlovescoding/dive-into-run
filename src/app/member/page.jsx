@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { AuthContext } from '@/contexts/AuthContext';
 import { updateUserName, uploadUserAvatar, updateUserPhotoURL } from '@/lib/firebase-users';
 import DashboardTabs from '@/components/DashboardTabs';
+import { useToast } from '@/contexts/ToastContext';
 
 /**
  * 會員個人頁面，可修改名稱與大頭貼。
@@ -18,6 +19,7 @@ export default function MemberPage() {
   // 為何要從 Context 讀 user：Firebase SDK 會在背景非同步還原登入，
   // 還原完成後 AuthProvider 會把 user 放進 Context，這裡直接取用即可。
   const { user, loading } = useContext(AuthContext);
+  const { showToast } = useToast();
   const [name, setName] = useState('');
   const inputFileRef = useRef(null);
 
@@ -58,6 +60,7 @@ export default function MemberPage() {
       await updateUserPhotoURL(url, user.uid);
     } catch (err) {
       console.error(err);
+      showToast('上傳大頭貼失敗，請稍後再試', 'error');
     } finally {
       // 允許選同一張圖再次觸發
       e.target.value = '';
@@ -82,6 +85,7 @@ export default function MemberPage() {
       await updateUserName(user.uid, safeName);
     } catch (err) {
       console.error(err);
+      showToast('更新名稱失敗，請稍後再試', 'error');
     }
   }
   return (

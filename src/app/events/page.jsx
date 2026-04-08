@@ -15,6 +15,7 @@ import {
   buildUserPayload,
 } from '@/lib/event-helpers';
 import { AuthContext } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import styles from './events.module.css';
 import EventActionButtons from '@/components/EventActionButtons';
 import {
@@ -57,6 +58,7 @@ export default function RunTogetherPage() {
   const [filterCity, setFilterCity] = useState('');
   const [filterDistrict, setFilterDistrict] = useState('');
   const { user } = useContext(AuthContext);
+  const { showToast } = useToast();
 
   // ✅ 表單相關 state
   const [showMap, setShowMap] = useState(false);
@@ -84,9 +86,6 @@ export default function RunTogetherPage() {
   // ✅ 建立活動狀態
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
-
-  // ✅ 參加/退出：成功/失敗字卡（不使用 alert）
-  const [actionMessage, setActionMessage] = useState(null);
 
   // ✅ 參加/退出：每張卡片的按鈕 loading 狀態
   const [pendingByEventId, setPendingByEventId] = useState({});
@@ -268,7 +267,7 @@ export default function RunTogetherPage() {
    */
   function handleToggleCreateRunForm() {
     if (!user?.uid) {
-      setActionMessage({ type: 'error', message: '發起活動前請先登入' });
+      showToast('發起活動前請先登入', 'error');
       return;
     }
 
@@ -456,7 +455,7 @@ export default function RunTogetherPage() {
       clickEvent.stopPropagation();
 
       if (!user?.uid) {
-        setActionMessage({ type: 'error', message: '加入活動前請先登入' });
+        showToast('加入活動前請先登入', 'error');
         return;
       }
       if (ev.hostUid === user.uid) return;
@@ -465,7 +464,6 @@ export default function RunTogetherPage() {
       const payload = buildUserPayload(user);
       if (!payload) return;
 
-      setActionMessage(null);
       setPendingByEventId((prev) => ({ ...prev, [eventId]: 'joining' }));
 
       try {
@@ -493,12 +491,12 @@ export default function RunTogetherPage() {
             );
           }
 
-          setActionMessage({ type: 'success', message: '報名成功' });
+          showToast('報名成功');
           return;
         }
 
         if (res?.ok === false && res.status === 'full') {
-          setActionMessage({ type: 'error', message: '本活動已額滿' });
+          showToast('本活動已額滿', 'error');
           setEvents((prev) =>
             prev.map((item) =>
               String(item.id) === eventId ? { ...item, remainingSeats: 0 } : item,
@@ -507,10 +505,10 @@ export default function RunTogetherPage() {
           return;
         }
 
-        setActionMessage({ type: 'error', message: '報名失敗，請再試一次' });
+        showToast('報名失敗，請再試一次', 'error');
       } catch (err) {
         console.error('參加活動失敗:', err);
-        setActionMessage({ type: 'error', message: '報名失敗，請再試一次' });
+        showToast('報名失敗，請再試一次', 'error');
       } finally {
         setPendingByEventId((prev) => {
           const next = { ...prev };
@@ -519,7 +517,7 @@ export default function RunTogetherPage() {
         });
       }
     },
-    [user],
+    [user, showToast],
   );
 
   /**
@@ -537,7 +535,7 @@ export default function RunTogetherPage() {
       clickEvent.stopPropagation();
 
       if (!user?.uid) {
-        setActionMessage({ type: 'error', message: '請先登入再操作' });
+        showToast('請先登入再操作', 'error');
         return;
       }
 
@@ -545,7 +543,6 @@ export default function RunTogetherPage() {
       const payload = buildUserPayload(user);
       if (!payload) return;
 
-      setActionMessage(null);
       setPendingByEventId((prev) => ({ ...prev, [eventId]: 'leaving' }));
 
       try {
@@ -575,20 +572,14 @@ export default function RunTogetherPage() {
             );
           }
 
-          setActionMessage({ type: 'success', message: '已成功取消報名' });
+          showToast('已成功取消報名');
           return;
         }
 
-        setActionMessage({
-          type: 'error',
-          message: '發生錯誤，請再重新取消報名',
-        });
+        showToast('發生錯誤，請再重新取消報名', 'error');
       } catch (err) {
         console.error('退出活動失敗:', err);
-        setActionMessage({
-          type: 'error',
-          message: '發生錯誤，請再重新取消報名',
-        });
+        showToast('發生錯誤，請再重新取消報名', 'error');
       } finally {
         setPendingByEventId((prev) => {
           const next = { ...prev };
@@ -597,7 +588,7 @@ export default function RunTogetherPage() {
         });
       }
     },
-    [user],
+    [user, showToast],
   );
 
   /**
@@ -656,12 +647,12 @@ export default function RunTogetherPage() {
         setEditingEvent(null);
       } catch (err) {
         console.error('更新活動失敗:', err);
-        setActionMessage({ type: 'error', message: '更新活動失敗，請再試一次' });
+        showToast('更新活動失敗，請再試一次', 'error');
       } finally {
         setIsUpdating(false);
       }
     },
-    [],
+    [showToast],
   );
 
   /**
@@ -689,20 +680,23 @@ export default function RunTogetherPage() {
    * @param {string} eventId - 要刪除的活動 ID。
    * @returns {Promise<void>}
    */
-  const handleDeleteConfirm = useCallback(async (/** @type {string} */ eventId) => {
-    setIsDeletingEvent(true);
-    setDeleteError('');
-    try {
-      await deleteEvent(String(eventId));
-      setEvents((prev) => prev.filter((ev) => String(ev.id) !== String(eventId)));
-      setDeletingEventId(null);
-      setActionMessage({ type: 'success', message: '刪除成功' });
-    } catch {
-      setDeleteError('發生錯誤，請再試一次');
-    } finally {
-      setIsDeletingEvent(false);
-    }
-  }, []);
+  const handleDeleteConfirm = useCallback(
+    async (/** @type {string} */ eventId) => {
+      setIsDeletingEvent(true);
+      setDeleteError('');
+      try {
+        await deleteEvent(String(eventId));
+        setEvents((prev) => prev.filter((ev) => String(ev.id) !== String(eventId)));
+        setDeletingEventId(null);
+        showToast('刪除成功');
+      } catch {
+        setDeleteError('發生錯誤，請再試一次');
+      } finally {
+        setIsDeletingEvent(false);
+      }
+    },
+    [showToast],
+  );
 
   return (
     <div className={styles.pageContainer}>
@@ -768,15 +762,6 @@ export default function RunTogetherPage() {
         {createError && (
           <div className={styles.errorCard} role="alert">
             {createError}
-          </div>
-        )}
-
-        {actionMessage && (
-          <div
-            className={actionMessage.type === 'success' ? styles.successCard : styles.errorCard}
-            role={actionMessage.type === 'error' ? 'alert' : 'status'}
-          >
-            {actionMessage.message}
           </div>
         )}
 

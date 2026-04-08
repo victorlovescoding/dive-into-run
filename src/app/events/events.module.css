@@ -707,17 +707,6 @@
   font-weight: 600;
 }
 
-/* 成功字卡（不使用 inline style） */
-.successCard {
-  padding: 12px 14px;
-  border-radius: 8px;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  color: #065f46;
-  margin-bottom: 10px;
-  font-weight: 700;
-}
-
 /* 卡片列表 */
 .eventList {
   display: flex;
