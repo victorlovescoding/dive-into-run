@@ -1,265 +1,227 @@
 # Code Review — 007-member-dashboard
 
-日期：2026-04-07
+日期：2026-04-08
 
 ---
 
-## Taste Rating: 🟡 Acceptable — Works but has one critical data flow bug
+## Taste Rating
 
-整體架構乾淨：service layer → generic hook → card components → container。關注點分離得宜，JSDoc 完整，測試覆蓋率好（69 tests, all green）。但有一個會造成無窮迴圈的分頁 bug 必須修。
+🟡 **Acceptable** — Core architecture is sound and the service layer / hook separation is clean. But there are two genuine bugs and several "good taste" violations that need attention before merge.
 
 ---
 
-## Linus-Style Analysis
+## Linus's Three Questions
 
-### [CRITICAL ISSUES]
+1. **Is this solving a real problem?** — Yes. Member dashboard with paginated tabs is a concrete feature users need.
+2. **Is there a simpler way?** — The `fetchMyEvents` dual-query + client-sort approach is the simplest given Firestore's inability to query across two different sources. The hook abstraction (`useDashboardTab`) eliminates duplication across 3 tabs well.
+3. **What will this break?** — The `collectionGroup('comments')` wildcard read rule expands security surface. Otherwise, no breaking changes to existing functionality.
 
-**1. [src/lib/firebase-member.js, Line 76] Data Structure: `fetchMyEvents` 後續分頁 `nextCursor === null` 造成無窮迴圈**
+---
 
-當活動總數恰好是 `pageSize` 的整數倍時（例如 10 筆, pageSize 5），會觸發無窮迴圈：
+## [CRITICAL ISSUES]
 
-```
-Call 1 (initial): allEvents=[10], items=[0..4], nextCursor=5
-Call 2 (loadMore): start=5, items=[5..9], nextEnd=10, 10 < 10 → false → nextCursor=null
-  → Hook: items.length=5 >= 5 → hasMore=true ← 問題在這
-Call 3 (loadMore): prevResult.nextCursor=null, start = null ?? 0 = 0
-  → items = allEvents.slice(0, 5) → 重複回傳第一頁！→ 無窮迴圈
-```
+### C1. DashboardEventCard: participant count 顯示與測試不一致
 
-`line 76: const start = prevResult.nextCursor ?? 0;` — 當 `nextCursor` 是 `null` 時，`??` 把 start 重設為 0，re-slice 整個陣列。Hook 的 `hasMore` 靠 `items.length >= pageSize` 判斷，所以永遠不會停。
+**File**: `src/components/DashboardEventCard.jsx:22,43`
+**Test**: `specs/.../DashboardEventCard.test.jsx:114`
 
-**修法**（二選一）：
+元件只 destructure `participantsCount`，渲染 `{participantsCount} 人已報名`（輸出 "3 人已報名"）。但：
+
+- **Spec (T005)** 要求顯示 `participantsCount/maxParticipants`
+- **測試** 期望 `screen.getByText('3 / 10')`
+- **Typedef** 包含 `maxParticipants` 但未被使用
+
+**測試已確認失敗**：1 test failed (`DashboardEventCard.test.jsx`)。commit `d88fce3` ("Fix event card participant count display") 似乎只改了一半。
+
+**Fix**: 二擇一——
+
+- (A) 元件 destructure `maxParticipants` 並渲染 `{participantsCount} / {maxParticipants}`（符合 spec + 測試）
+- (B) 修正測試為 `screen.getByText('3 人已報名')`（但偏離 spec）
+
+---
+
+### C2. useDashboardTab: `retry` 成功後 `initializedRef` 未設為 true
+
+**File**: `src/hooks/useDashboardTab.js:120-137`
+
+`retry` callback 成功後設了 `items`、`prevResultRef`、`hasMore`，但**沒有** `initializedRef.current = true`。
+
+**Bug path**:
+
+1. Initial fetch 失敗 → `initializedRef.current` 維持 `false`
+2. 使用者按「重試」→ retry 成功，資料載入
+3. 使用者切到其他 tab（`isActive = false`）再切回（`isActive = true`）
+4. Effect 因 `isActive` 變動重新執行 → `initializedRef.current` 仍為 `false` → 觸發**第二次 initial fetch**
+5. 使用者看到 loading 閃爍，retry 載入的資料被覆蓋
+
+**Fix**: `retry` 的 `.then()` 裡加上 `initializedRef.current = true;`
+
+---
+
+## [IMPROVEMENT OPPORTUNITIES]
+
+### I1. `retry` 缺少 cancelled flag
+
+**File**: `src/hooks/useDashboardTab.js:120-137`
+
+Initial fetch effect 有 `cancelled` flag 防止 unmount 後的 stale setState，但 `retry` 沒有。React 19 不再 warn，但如果 retry promise 在 unmount 後 resolve，仍會對已 unmounted 的 state 做無效寫入。建議用同樣的 `let cancelled = false` pattern，或改成 effect + retryTrigger state。
+
+---
+
+### I2. `fetchEventsWrapper` 把 side effect 塞進 fetch function
+
+**File**: `src/components/DashboardTabs.jsx:48-52`
 
 ```js
-// Option A: 在 subsequent-call branch 開頭加 guard
-if (prevResult?.allEvents) {
-  if (prevResult.nextCursor === null) {
-    return {
-      items: [],
-      nextCursor: null,
-      hostedIds: prevResult.hostedIds ?? new Set(),
-      allEvents: prevResult.allEvents,
-    };
-  }
-  // ...rest
-}
-
-// Option B: 讓 hook 同時檢查 cursor
-setHasMore(result.items.length >= pageSize && result.nextCursor !== null);
-// 但這對 posts/comments (用 lastDoc) 也得適用，較侵入
+const fetchEventsWrapper = useCallback(async (u, options) => {
+  const result = await fetchMyEvents(u, options);
+  hostedIdsRef.current = result.hostedIds; // ← side effect
+  return result;
+}, []);
 ```
 
-Option A 比較乾淨，改動最小。
+Fetch function 同時在更新 UI ref，混合了 data fetching 和 state management。更乾淨的做法是在 `useDashboardTab` 加一個 `onSuccess` callback，或讓 `hostedIds` 成為 hook return value 的一部份（`prevResultRef.current.hostedIds`）。
+
+不是 bug，但會讓 data flow 更難追蹤。
 
 ---
 
-**2. [src/hooks/useDashboardTab.js, Lines 45-71] Missing `cancelled` flag — 規格要求但未實作**
+### I3. `hostedIdsRef` 不必要的 prop drilling
 
-T004 spec 明確要求：
+**File**: `src/components/DashboardTabs.jsx:92,106,164`
 
-> `cancelled` flag pattern to prevent stale updates (reference `src/hooks/useComments.js`)
+`hostedIdsRef` 從 `DashboardTabs` → `TabPanel` → `ItemList`，但只有 `tabIndex === 0`（events tab）會用到。Posts 和 comments tab 拿到這個 ref 毫無意義。
 
-但 initial fetch effect 的 cleanup 只有 `return undefined;`（line 70）。React 19 不會因 unmounted setState 報錯，所以測試會通過，但：
+可以改成在 `ItemList` 裡透過 `prevResultRef` 取 `hostedIds`，或只在 events path 傳入。
 
-- 如果 `uid` 或 `fetchFn` 在 fetch in-flight 時變了，useEffect 重跑（因為 deps 變了），但 `initializedRef.current` 已是 `true`，所以新的 effect 直接 return。舊的 promise resolve 後仍然寫入 state → **stale data**。
-- useDashboardTab.test.jsx #11 註解說 "cancelled flag worked" 但實際上是 React 19 靜默丟棄 setState。
+---
 
-**修法**：
+### I4. `ItemList` 回傳陣列而非單一 element
+
+**File**: `src/components/DashboardTabs.jsx:167-189`
+
+`ItemList` 直接 `return events.map(...)` 回傳陣列。JSDoc 標註 `@returns {import('react').ReactElement[]}` 也反映了這點。雖然 React 支援回傳陣列，但 `<Fragment>` 包裝更慣例、更容易做 type annotation，也消除了 `@ts-expect-error` 的需求（如果用 Fragment 的話，`key` 就在 children 上而不是 component 上）。
+
+---
+
+### I5. 三個重複的 `@ts-expect-error` for `key` prop
+
+**File**: `src/components/DashboardTabs.jsx:172,182,187`
+
+三行完全相同的 suppression：
 
 ```js
-useEffect(() => {
-  if (!uid || !isActive || initializedRef.current) return undefined;
-  initializedRef.current = true;
-  let cancelled = false;
-
-  async function load() {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await fetchFn(uid, { prevResult: null, pageSize });
-      if (cancelled) return;
-      setItems(result.items);
-      prevResultRef.current = result;
-      setHasMore(result.items.length >= pageSize);
-    } catch (err) {
-      if (cancelled) return;
-      console.error('[DashboardTab] initial load failed:', err);
-      setError('載入失敗');
-    } finally {
-      if (!cancelled) setIsLoading(false);
-    }
-  }
-
-  load();
-  return () => {
-    cancelled = true;
-  };
-}, [uid, isActive, fetchFn, pageSize]);
+// @ts-expect-error — key 是 React 特殊 prop，不在 JSDoc 型別中但為合法用法
 ```
+
+這是 JSDoc checkJs 搭配 React 的已知限制。`key` 本來就不該出現在 props typedef 裡（React 會把它從 props 中移除）。用 `<Fragment>` 包裝 + 在 children 上加 key，或用 `/** @type {any} */` cast 整個 map return，都可以減少重複。
 
 ---
 
-### [IMPROVEMENT OPPORTUNITIES]
+### I6. `fetchMyEvents` first-page cost 與使用者規模成正比
 
-**3. [src/lib/firebase-member.js, Line 80] Simplification: `hostedIds` 每次後續呼叫都重算**
+**File**: `src/lib/firebase-member.js:70-122`
 
-Subsequent-call branch 每次都 `new Set(cachedEvents.filter(...).map(...))` 重建 hostedIds。明明第一次呼叫時已經算好了。應該把 hostedIds 也存在回傳結果裡讓後續呼叫直接傳遞：
+First call 做了：
 
-```js
-// 第一次呼叫時
-const hostedIds = new Set(hostedIdsList);
-return { items, nextCursor, hostedIds, allEvents };
+1. 2 次 `getDocs`（participants collectionGroup + events collection）
+2. N 次 `getDoc`（每個 unique event ID 一次）
 
-// 後續呼叫時直接重用
-if (prevResult?.allEvents) {
-  // ...
-  return { items, nextCursor, hostedIds: prevResult.hostedIds, allEvents: cachedEvents };
-}
-```
+如果使用者參加了 200 個活動，first page 就是 202 次 Firestore read。後續頁面 0 次（client-side slice）——tradeoff 是合理的，但 N 太大時 first-page latency 會明顯。
+
+這是 research.md 做過的設計決策，不改，但標註讓後續開發者知道 performance cliff 在哪。
 
 ---
 
-**4. [src/components/DashboardTabs.jsx, Lines 167-191] Good Taste: `Fragment` wrapping 多餘**
+## [STYLE NOTES]
 
-```jsx
-return events.map((event) => (
-  <Fragment key={event.id}>
-    <DashboardEventCard event={event} isHost={...} />
-  </Fragment>
-));
-```
+### S1. `FetchResult` typedef 過於寬鬆
 
-`Fragment` 在這裡沒有任何作用，key 可以直接放在 component 上：
-
-```jsx
-return events.map((event) => (
-  <DashboardEventCard key={event.id} event={event} isHost={...} />
-));
-```
-
-三個 tab 的 mapping 都有這個問題。
-
----
-
-**5. [src/components/DashboardTabs.jsx, Line 142] UI: 卡片之間沒有間距**
-
-TabPanel 的 list wrapper 是一個裸的 `<div>`，卡片之間沒有 gap 或 margin。卡片會緊貼在一起。
-
-```css
-/* DashboardTabs.module.css — 加一個 class */
-.cardList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-```
-
----
-
-**6. [src/hooks/useDashboardTab.js, Lines 4-6] Type Safety: `FetchResult` typedef 過於寬鬆**
+**File**: `src/hooks/useDashboardTab.js:4-8`
 
 ```js
 /** @typedef {object} FetchResult
- * @property {object[]} items - 回傳的資料項目。
+ * @property {object[]} items
+ * @property {unknown} [nextCursor]
+ * @property {unknown} [lastDoc]
  */
 ```
 
-`items: object[]` 丟失了所有具體型別資訊。`prevResultRef` 被型別化為 `FetchResult | null`，意味著 `nextCursor`、`hostedIds`、`lastDoc`、`titleCache` 等欄位全部是 implicit any。既然 hook 是 generic 的不綁定具體型別，至少用一個 generic-like pattern：
+`items` 是 `object[]`，`nextCursor` / `lastDoc` 是 `unknown`。這使得 hook 的消費者拿到的都是 untyped data。可以考慮用 generic pattern（雖然 JSDoc generics 不太好寫）或至少用 union type。
+
+不改也不影響功能，但降低了 type-check 的防護力。
+
+---
+
+### S2. `page.jsx` 裡遺留的 `console.warn`
+
+**File**: `src/app/member/page.jsx:83`
 
 ```js
-/**
- * @typedef {object} FetchResult
- * @property {object[]} items - 回傳的資料項目。
- * @property {unknown} [nextCursor] - 下一頁 cursor（由 service layer 決定型別）。
- * @property {unknown} [lastDoc] - Firestore cursor document。
- */
+console.warn(user.photoURL);
 ```
 
----
-
-**7. [src/hooks/useDashboardTab.js, Lines 113-130] Pragmatism: `retry` 和 initial fetch 邏輯重複**
-
-`retry` callback 複製了 `load()` 的完整 fetch → setState 流程。如果有人改了 initial fetch 的邏輯忘了改 retry，兩邊就會 diverge。
-
-可以考慮重置 `initializedRef.current = false` 然後觸發 re-render（例如 increment 一個 counter state），讓 effect 自然重跑。但這需要小心避免 double-fetch。當前做法可以接受，只是維護成本較高。
+這是 debug 遺留物，不應進入 production。
 
 ---
 
-### [STYLE NOTES]
+## [TESTING GAPS]
 
-**8. [src/lib/firebase-member.js, Line 108] Dead code: `const start = 0;`**
+### T1. 測試已失敗（1/70）
 
-```js
-const start = 0;
-const items = allEvents.slice(start, start + pageSize);
+**File**: `specs/007-member-dashboard/tests/integration/DashboardEventCard.test.jsx:114`
+
+```
+FAIL: renders participants count as "current / max"
+Expected: '3 / 10'
+Received: '3 人已報名'
 ```
 
-`start` 永遠是 0，直接 `allEvents.slice(0, pageSize)` 即可。
+元件 render 結果與測試期望不一致。見 C1。
 
 ---
 
-**9. [src/components/DashboardEventCard.module.css, Line 61] Unused CSS class `.metaRow`**
+### T2. Tab 鍵盤導航未測試
 
-定義了 `.metaRow` 但 `DashboardEventCard.jsx` 沒有使用。
+Tabs 實作了 `role="tablist"` / `role="tab"` + `aria-selected`，但沒有測試：
 
----
+- Arrow key 切換 tab
+- Tab/Shift+Tab focus 管理
+- Enter/Space 啟動 tab
 
-### [TESTING GAPS]
-
-**10. [specs/007-member-dashboard/tests/unit/firebase-member.test.js] Missing: 無窮迴圈 scenario 未測**
-
-沒有測試 `total events = n * pageSize` 的場景（Critical Issue #1 的 trigger condition）。補一個 test case：
-
-```js
-it('should return empty items when nextCursor is null on subsequent call', async () => {
-  // Arrange — prevResult with nextCursor: null (all data consumed)
-  const allEvents = Array.from({ length: 10 }, (_, i) => ({
-    id: `e${i}`,
-    title: `E${i}`,
-    time: { seconds: (10 - i) * 100, toMillis: () => (10 - i) * 100000 },
-    location: 'L',
-    city: 'C',
-    participantsCount: 1,
-    maxParticipants: 10,
-    hostUid: 'h',
-  }));
-  const { fetchMyEvents } = await import('@/lib/firebase-member');
-  const result = await fetchMyEvents('u1', {
-    prevResult: { nextCursor: null, allEvents, hostedIds: new Set() },
-    pageSize: 5,
-  });
-  expect(result.items).toEqual([]); // ← 目前會 FAIL，回傳第一頁
-  expect(result.nextCursor).toBeNull();
-});
-```
+WCAG 2.1 要求 tabs widget 支援鍵盤操作。目前 JS 也沒實作 keyboard handler（只有 `onClick`），所以不只是測試缺失——**功能也缺失**。
 
 ---
 
-**11. [specs/007-member-dashboard/tests/integration/useDashboardTab.test.jsx, Line 368] Misleading: 測試註解聲稱 cancelled flag 但實際上沒有**
+### T3. DashboardTabs 整合測試 mock 了所有 card components
 
-```js
-// If we get here without error, cancelled flag worked
-expect(result.current.items).toEqual([]);
-```
+**File**: `specs/.../DashboardTabs.test.jsx:14-27`
 
-這個 assertion 能通過是因為 React 19 靜默丟棄 unmounted setState，不是因為 cancelled flag（因為根本沒實作）。註解應修正或刪除。
+三個 Card component 全被 mock 成簡單 `<div>`。這意味著測試無法驗證真實的 data → component render 流程。雖然 card components 各有自己的測試，但 "integration test" 的價值在於驗證接線是否正確——而 mock 恰好把接線的部分切掉了。
+
+建議至少有 1-2 個 test case 用真實 card component（不 mock）來驗證端到端的 render。
 
 ---
 
-### [TASK GAPS]
+## [TASK GAPS]
 
-**12. [T004] Incomplete: `cancelled` flag pattern 未實作**
+All 10 tasks (T001–T010) 在 diff 中都有對應的實作。Tasks.md 未要求測試，但測試仍然被撰寫（6 test files, 70 test cases, 69 passing）。無 scope creep。
 
-Task spec 明確要求 `cancelled flag pattern to prevent stale updates (reference src/hooks/useComments.js)`。`useDashboardTab.js` 沒有實作此 pattern。測試 #11 表面通過但測的不是 cancelled flag。
+唯一例外：**T010 要求 type-check 和 lint 通過**。Lint 通過（0 errors, 0 warnings），但有 1 個 test 失敗（見 T1），且 type-check 的 TS6053 errors 來自 main 上其他 branch 的檔案殘留（非本 branch 問題）。
 
 ---
 
 ## VERDICT
 
-❌ **Needs rework** — Critical Issue #1（無窮迴圈）必須在 merge 前修復。
+❌ **Needs rework** — 兩個 critical issues 需要修復才能 merge：
 
-修完 #1 + #2 後，其他 improvement opportunities 可以視情況處理。整體架構設計合理，改動量不大就能修好。
+1. **C1**: DashboardEventCard 的 participant count 顯示與 spec、測試不一致（test 實際失敗中）
+2. **C2**: `useDashboardTab` retry 成功後 `initializedRef` 未更新，導致 tab 切換時重複 fetch
+
+修完 C1 + C2 後就能 merge。I1–I6 和 T2–T3 是 improvement，可以留到 follow-up。
+
+---
 
 ## KEY INSIGHT
 
-分頁策略在 events tab 用了「全量 fetch + client-side slice」的 pattern（不同於 posts/comments 的 Firestore cursor），但 `nextCursor === null` 的終止條件沒有正確處理，導致恰好整除 pageSize 時無窮迴圈。兩種分頁策略混用時，hook 的 `hasMore` 判斷邏輯無法同時正確覆蓋兩種 cursor 語意（number cursor vs DocumentSnapshot cursor），需要在 service layer 就統一「沒有更多 → items 為空」的語意。
+The service layer and hook separation is well-designed — `useDashboardTab` as a generic paginated-tab abstraction is clean and reusable. But the retry path was treated as a secondary concern and missed the `initializedRef` bookkeeping that the primary path gets right, which is a classic "happy path only" mistake.
