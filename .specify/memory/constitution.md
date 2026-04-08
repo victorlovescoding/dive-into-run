@@ -118,6 +118,12 @@ Version: 1.3.0 -> 1.4.0
 5.  **重構 (Refactor)**: 優化代碼結構。
 6.  **審查 (Review)**: 確認符合所有憲法原則。
 
+### 實作執行規則 (Implementation Execution Rules)
+
+- **Subagent 執行**: 每個 task 必須用 subagent 執行，節省主對話 context window。
+- **TDD 強制**: 實作前必須先根據 task 撰寫失敗測試 (Red)，再寫最少代碼通過 (Green)，最後重構 (Refactor)。
+- **完成條件**: 只有 Refactor 階段通過（lint + type-check pass）才可標記 task 完成（`[x]`）。未通過 Refactor 的 task 禁止標記完成。
+
 ### IX. 絕對編碼鐵律 (Strict Coding Iron Rules)
 
 **不可協商**: 違反下列規則視為重大違規。
@@ -130,4 +136,4 @@ Version: 1.3.0 -> 1.4.0
 
 本憲法凌駕於所有其他慣例之上。
 
-**Version**: 1.4.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-03-25
+**Version**: 1.5.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-04-08
