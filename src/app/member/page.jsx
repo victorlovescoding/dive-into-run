@@ -80,7 +80,6 @@ export default function MemberPage() {
     // 預計在這裡call changeName function 到資料庫更新名字
     try {
       await updateUserName(user.uid, safeName);
-      console.warn(user.photoURL);
     } catch (err) {
       console.error(err);
     }

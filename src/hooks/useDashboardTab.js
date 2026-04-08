@@ -123,6 +123,7 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
     setIsLoading(true);
     fetchFn(uid, { prevResult: null, pageSize })
       .then((/** @type {FetchResult} */ result) => {
+        initializedRef.current = true;
         setItems(result.items);
         prevResultRef.current = result;
         setHasMore(result.items.length >= pageSize);

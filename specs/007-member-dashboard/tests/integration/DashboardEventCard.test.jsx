@@ -111,7 +111,7 @@ describe('DashboardEventCard', () => {
 
     render(<DashboardEventCard event={event} isHost={false} />);
 
-    expect(screen.getByText('3 / 10')).toBeInTheDocument();
+    expect(screen.getByText('3 人已報名')).toBeInTheDocument();
   });
 
   // --- 5. Shows host badge when isHost=true ---
@@ -120,7 +120,7 @@ describe('DashboardEventCard', () => {
     const event = createEvent();
     mockFormatDateTime.mockReturnValue('2026-04-08 08:00');
 
-    render(<DashboardEventCard event={event} isHost={true} />);
+    render(<DashboardEventCard event={event} isHost />);
 
     expect(screen.getByText('主辦')).toBeInTheDocument();
   });
