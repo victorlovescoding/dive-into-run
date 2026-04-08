@@ -120,6 +120,8 @@ const el = /** @type {HTMLInputElement} */ (document.getElementById('x'));
 - `.env` must be in `.gitignore`
 
 ## Active Technologies
+- JavaScript (ES6+), JSDoc `checkJs: true` + Next.js 15 (App Router), React 19, Firebase v9+ (Auth — 透過 AuthContext) (010-responsive-navbar)
+- N/A（純 UI 功能，認證狀態來自現有 AuthContext） (010-responsive-navbar)
 
 - N/A（純 client-side state，無持久化） (009-global-toast)
 
