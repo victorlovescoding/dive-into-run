@@ -121,6 +121,8 @@ const el = /** @type {HTMLInputElement} */ (document.getElementById('x'));
 
 ## Active Technologies
 
+- N/A（純 client-side state，無持久化） (009-global-toast)
+
 - Firestore — `stravaActivities` collection（既有，不修改 schema） (008-run-calendar)
 
 - JavaScript (ES6+), JSDoc `checkJs: true` + Next.js 15 (App Router), React 19, Firebase v9+ (Firestore client SDK) (007-member-dashboard)
