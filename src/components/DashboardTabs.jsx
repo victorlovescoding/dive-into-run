@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import useDashboardTab from '@/hooks/useDashboardTab';
 import { fetchMyEvents, fetchMyPosts, fetchMyComments } from '@/lib/firebase-member';
 import DashboardEventCard from '@/components/DashboardEventCard';
@@ -139,7 +139,7 @@ function TabPanel({ tab, tabIndex, emptyText, hostedIdsRef }) {
   }
 
   return (
-    <div>
+    <div className={styles.cardList}>
       <ItemList items={items} tabIndex={tabIndex} hostedIdsRef={hostedIdsRef} />
       <div ref={sentinelRef} />
       {isLoadingMore && <p className={styles.loadingMore}>載入更多...</p>}
@@ -168,25 +168,22 @@ function ItemList({ items, tabIndex, hostedIdsRef }) {
   if (tabIndex === 0) {
     const events = /** @type {import('@/lib/firebase-member').MyEventItem[]} */ (items);
     return events.map((event) => (
-      <Fragment key={event.id}>
-        <DashboardEventCard event={event} isHost={hostedIdsRef.current.has(event.id)} />
-      </Fragment>
+      <DashboardEventCard
+        // @ts-expect-error — key 是 React 特殊 prop，不在 JSDoc 型別中但為合法用法
+        key={event.id}
+        event={event}
+        isHost={hostedIdsRef.current.has(event.id)}
+      />
     ));
   }
 
   if (tabIndex === 1) {
     const posts = /** @type {import('@/lib/firebase-posts').Post[]} */ (items);
-    return posts.map((post) => (
-      <Fragment key={post.id}>
-        <DashboardPostCard post={post} />
-      </Fragment>
-    ));
+    // @ts-expect-error — key 是 React 特殊 prop，不在 JSDoc 型別中但為合法用法
+    return posts.map((post) => <DashboardPostCard key={post.id} post={post} />);
   }
 
   const comments = /** @type {import('@/lib/firebase-member').MyCommentItem[]} */ (items);
-  return comments.map((comment) => (
-    <Fragment key={comment.id}>
-      <DashboardCommentCard comment={comment} />
-    </Fragment>
-  ));
+  // @ts-expect-error — key 是 React 特殊 prop，不在 JSDoc 型別中但為合法用法
+  return comments.map((comment) => <DashboardCommentCard key={comment.id} comment={comment} />);
 }

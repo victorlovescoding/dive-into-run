@@ -389,6 +389,37 @@ describe('Unit: fetchMyEvents', () => {
     expect(result.items).toHaveLength(1);
     expect(mockGetDoc).toHaveBeenCalledTimes(1);
   });
+
+  it('should return empty items when nextCursor is null on subsequent call', async () => {
+    // Arrange — prevResult with nextCursor: null (all data consumed)
+    const allEvents = /** @type {any[]} */ (
+      Array.from({ length: 10 }, (_, i) => ({
+        id: `e${i}`,
+        title: `E${i}`,
+        time: { seconds: (10 - i) * 100, toMillis: () => (10 - i) * 100000 },
+        location: 'L',
+        city: 'C',
+        participantsCount: 1,
+        maxParticipants: 10,
+        hostUid: 'h',
+      }))
+    );
+
+    // Act
+    const { fetchMyEvents } = await import('@/lib/firebase-member');
+    const result = await fetchMyEvents('u1', {
+      prevResult: { nextCursor: null, allEvents, hostedIds: new Set() },
+      pageSize: 5,
+    });
+
+    // Assert — should return empty, NOT re-slice from index 0
+    expect(result.items).toEqual([]);
+    expect(result.nextCursor).toBeNull();
+    expect(result.hostedIds).toBeInstanceOf(Set);
+    expect(result.allEvents).toBe(allEvents);
+    expect(mockGetDocs).not.toHaveBeenCalled();
+    expect(mockGetDoc).not.toHaveBeenCalled();
+  });
 });
 
 describe('Unit: fetchMyPosts', () => {

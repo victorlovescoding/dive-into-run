@@ -3,6 +3,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 /**
  * @typedef {object} FetchResult
  * @property {object[]} items - 回傳的資料項目。
+ * @property {unknown} [nextCursor] - 下一頁 cursor（由 service layer 決定型別）。
+ * @property {unknown} [lastDoc] - Firestore cursor document。
  */
 
 /**
@@ -45,7 +47,7 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
   useEffect(() => {
     if (!uid || !isActive || initializedRef.current) return undefined;
 
-    initializedRef.current = true;
+    let cancelled = false;
 
     /**
      * 執行初始載入。
@@ -55,19 +57,24 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
       setError(null);
       try {
         const result = await fetchFn(uid, { prevResult: null, pageSize });
+        if (cancelled) return;
+        initializedRef.current = true;
         setItems(result.items);
         prevResultRef.current = result;
         setHasMore(result.items.length >= pageSize);
       } catch (err) {
+        if (cancelled) return;
         console.error('[DashboardTab] initial load failed:', err);
         setError('載入失敗');
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
 
     load();
-    return undefined;
+    return () => {
+      cancelled = true;
+    };
   }, [uid, isActive, fetchFn, pageSize]);
 
   // --- Load more ---

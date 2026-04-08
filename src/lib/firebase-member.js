@@ -72,12 +72,20 @@ export async function fetchMyEvents(uid, options = {}) {
 
   // Subsequent call — slice from cached array
   if (prevResult?.allEvents) {
+    if (prevResult.nextCursor === null) {
+      return {
+        items: [],
+        nextCursor: null,
+        hostedIds: prevResult.hostedIds ?? new Set(),
+        allEvents: prevResult.allEvents,
+      };
+    }
     const cachedEvents = prevResult.allEvents;
-    const start = prevResult.nextCursor ?? 0;
+    const start = prevResult.nextCursor;
     const items = cachedEvents.slice(start, start + pageSize);
     const nextEnd = start + pageSize;
     const nextCursor = nextEnd < cachedEvents.length ? nextEnd : null;
-    const hostedIds = new Set(cachedEvents.filter((e) => e.hostUid === uid).map((e) => e.id));
+    const { hostedIds } = prevResult;
     return { items, nextCursor, hostedIds, allEvents: cachedEvents };
   }
 
@@ -105,10 +113,8 @@ export async function fetchMyEvents(uid, options = {}) {
   allEvents.sort((a, b) => b.time.seconds - a.time.seconds);
 
   // Paginate
-  const start = 0;
-  const items = allEvents.slice(start, start + pageSize);
-  const nextEnd = start + pageSize;
-  const nextCursor = nextEnd < allEvents.length ? nextEnd : null;
+  const items = allEvents.slice(0, pageSize);
+  const nextCursor = pageSize < allEvents.length ? pageSize : null;
   const hostedIds = new Set(hostedIdsList);
 
   return { items, nextCursor, hostedIds, allEvents };

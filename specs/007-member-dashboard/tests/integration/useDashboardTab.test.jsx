@@ -365,7 +365,7 @@ describe('useDashboardTab', () => {
       resolveFetch({ items: [{ id: 'ghost' }] });
     });
 
-    // If we get here without error, cancelled flag worked
+    // Resolve after unmount — state should not update (cancelled flag prevents stale writes)
     expect(result.current.items).toEqual([]);
   });
 });
