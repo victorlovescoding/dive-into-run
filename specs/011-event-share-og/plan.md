@@ -87,7 +87,7 @@ specs/011-event-share-og/tests/
     └── ShareButton.test.jsx          # ShareButton 元件整合測試
 ```
 
-**Structure Decision**: Next.js App Router 單一專案架構。新增 3 個檔案（helper + component + CSS）、修改 3 個既有檔案（layout + 2 page）、1 張圖片。符合 MVP 最小化原則。
+**Structure Decision**: Next.js App Router 單一專案架構。新增 4 個檔案（helper + component + CSS + OG image）、修改 5 個既有檔案（layout + 2 page + 2 client component）。符合 MVP 最小化原則。
 
 ## Design Decisions
 
