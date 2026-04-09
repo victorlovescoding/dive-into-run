@@ -76,14 +76,25 @@ export default function MobileDrawer({
         {/* Auth section */}
         <div className={styles.drawerAuth}>
           {!loading && !user && (
-            <button type="button" className={styles.loginButton} onClick={signInWithGoogle}>
+            <button
+              type="button"
+              className={styles.loginButton}
+              onClick={() => signInWithGoogle()?.catch(() => {})}
+            >
               登入
             </button>
           )}
           {!loading && user && (
             <div className={styles.drawerUserInfo}>
               <span className={styles.drawerUserName}>{user.name}</span>
-              <button type="button" className={styles.loginButton} onClick={signOutUser}>
+              <button
+                type="button"
+                className={styles.loginButton}
+                onClick={() => {
+                  closeDrawer();
+                  signOutUser();
+                }}
+              >
                 登出
               </button>
             </div>

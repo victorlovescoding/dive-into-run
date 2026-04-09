@@ -108,7 +108,6 @@
   height: 100vh;
   background-color: var(--background, #ffffff);
   transform: translateX(100%);
-  will-change: transform;
   transition: transform 0.3s ease-in-out;
   pointer-events: none;
   display: flex;
@@ -125,6 +124,7 @@
 .drawerOpen {
   transform: translateX(0);
   pointer-events: auto;
+  will-change: transform;
 }
 
 /* Close button (top-right) */

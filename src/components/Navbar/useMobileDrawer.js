@@ -3,6 +3,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+/** drawer 滑入/滑出動畫時長（毫秒），須與 CSS transition-duration 同步。 */
+const DRAWER_TRANSITION_MS = 300;
+
 /**
  * @typedef {object} MobileDrawerReturn
  * @property {boolean} isDrawerOpen - drawer 是否開啟。
@@ -112,7 +115,7 @@ export default function useMobileDrawer() {
     setIsDrawerOpen((prev) => !prev);
     setTimeout(() => {
       isTransitioning.current = false;
-    }, 300);
+    }, DRAWER_TRANSITION_MS);
   }, []);
 
   /** 關閉 drawer 並將 focus 移回 hamburger。 */
@@ -132,7 +135,7 @@ export default function useMobileDrawer() {
       const href = /** @type {HTMLAnchorElement} */ (e.currentTarget).getAttribute('href');
       closedByPopState.current = true;
       setIsDrawerOpen(false);
-      router.replace(href);
+      router.push(href);
     },
     [router],
   );

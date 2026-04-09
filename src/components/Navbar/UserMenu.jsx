@@ -29,7 +29,11 @@ export default function UserMenu({
     <div className={styles.userSection} ref={dropdownRef}>
       {loading && <div className={styles.skeleton} />}
       {!loading && !user && (
-        <button type="button" className={styles.loginButton} onClick={signInWithGoogle}>
+        <button
+          type="button"
+          className={styles.loginButton}
+          onClick={() => signInWithGoogle()?.catch(() => {})}
+        >
           登入
         </button>
       )}
