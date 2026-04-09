@@ -18,8 +18,12 @@ vi.mock('next/image', () => ({
   ),
 }));
 
+const mockReplace = vi.fn();
+const mockPush = vi.fn();
+
 vi.mock('next/navigation', () => ({
   usePathname: vi.fn(() => '/'),
+  useRouter: vi.fn(() => ({ replace: mockReplace, push: mockPush })),
 }));
 
 /** @type {import('react').Context<{ user: object | null, loading: boolean }>} */
