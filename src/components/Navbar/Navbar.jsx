@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { AuthContext } from '@/contexts/AuthContext';
 import { signInWithGoogle, signOutUser } from '@/lib/firebase-auth-helpers';
 import styles from './Navbar.module.css';
@@ -46,6 +46,7 @@ export default function Navbar() {
   // -- Context --
   const { user, loading } = useContext(AuthContext);
   const pathname = usePathname();
+  const router = useRouter();
 
   // -- Refs --
   const hamburgerRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
@@ -195,14 +196,17 @@ export default function Navbar() {
     hamburgerRef.current?.focus();
   }, []);
 
-  /** 點擊 drawer 內的連結後關閉 drawer。 */
-  const handleLinkClick = useCallback(() => {
-    if (!closedByPopState.current) {
-      history.back();
-    }
-    closedByPopState.current = false;
-    setIsDrawerOpen(false);
-  }, []);
+  /** 點擊 drawer 內的連結後關閉 drawer 並導航。 */
+  const handleLinkClick = useCallback(
+    (e) => {
+      e.preventDefault();
+      const href = /** @type {HTMLAnchorElement} */ (e.currentTarget).getAttribute('href');
+      closedByPopState.current = true;
+      setIsDrawerOpen(false);
+      router.replace(href);
+    },
+    [router],
+  );
 
   /** 切換 dropdown 開關。 */
   const toggleDropdown = useCallback(() => {
