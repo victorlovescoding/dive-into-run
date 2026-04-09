@@ -31,7 +31,7 @@
 
 **Purpose**: 建立分享功能所需的靜態資源和環境設定
 
-- [ ] T001 Create brand placeholder OG image (1200×630px PNG) at `public/og-default.png`
+- [x] T001 Create brand placeholder OG image (1200×630px PNG) at `public/og-default.png`
 
 ---
 
@@ -41,7 +41,7 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Modify `src/app/layout.jsx` — add `metadataBase` (from `NEXT_PUBLIC_SITE_URL` env) and site-wide OG defaults (`og:site_name`, `og:type`); add `NEXT_PUBLIC_SITE_URL` to `.env.example`
+- [x] T002 Modify `src/app/layout.jsx` — add `metadataBase` (from `NEXT_PUBLIC_SITE_URL` env) and site-wide OG defaults (`og:site_name`, `og:type`); add `NEXT_PUBLIC_SITE_URL` to `.env.example`
 
 **Checkpoint**: Foundation ready — metadata 基礎已建立，user story 可以開始實作
 
@@ -57,15 +57,15 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation (RED phase)**
 
-- [ ] T003 [P] [US1] Write unit tests for `buildEventOgDescription`, `stripMarkup`, `truncate` in `specs/011-event-share-og/tests/unit/og-helpers.test.js` — 含特殊字元（emoji、引號、HTML entities）edge cases，以及 event=null 時回傳 fallback metadata 的測試案例
-- [ ] T004 [P] [US1] Write integration tests for ShareButton (Web Share API mock + clipboard fallback + toast feedback + navigator.share reject 時顯示錯誤 toast) in `specs/011-event-share-og/tests/integration/ShareButton.test.jsx`
+- [x] T003 [P] [US1] Write unit tests for `buildEventOgDescription`, `stripMarkup`, `truncate` in `specs/011-event-share-og/tests/unit/og-helpers.test.js` — 含特殊字元（emoji、引號、HTML entities）edge cases，以及 event=null 時回傳 fallback metadata 的測試案例
+- [x] T004 [P] [US1] Write integration tests for ShareButton (Web Share API mock + clipboard fallback + toast feedback + navigator.share reject 時顯示錯誤 toast) in `specs/011-event-share-og/tests/integration/ShareButton.test.jsx`
 
 ### Implementation for US1+US2
 
-- [ ] T005 [P] [US1] Create `src/lib/og-helpers.js` — implement `stripMarkup()`, `truncate()`, `buildEventOgDescription()` with JSDoc (GREEN for T003)
-- [ ] T006 [P] [US1] Create `src/components/ShareButton.jsx` + `src/components/ShareButton.module.css` — icon button, Web Share API + clipboard fallback, `useToast()` integration, `aria-label="分享"` (GREEN for T004)
-- [ ] T007 [US1] Add `generateMetadata()` to `src/app/events/[id]/page.jsx` — call `fetchEventById()` from `src/lib/firebase-events.js`, use `buildEventOgDescription()`, include OG + Twitter Card tags, implement fallback metadata for non-existent events
-- [ ] T008 [US1] Embed ShareButton in `src/app/events/[id]/eventDetailClient.jsx` — 標題右側，傳入 `title` + `url` props
+- [x] T005 [P] [US1] Create `src/lib/og-helpers.js` — implement `stripMarkup()`, `truncate()`, `buildEventOgDescription()` with JSDoc (GREEN for T003)
+- [x] T006 [P] [US1] Create `src/components/ShareButton.jsx` + `src/components/ShareButton.module.css` — icon button, Web Share API + clipboard fallback, `useToast()` integration, `aria-label="分享"` (GREEN for T004)
+- [x] T007 [US1] Add `generateMetadata()` to `src/app/events/[id]/page.jsx` — call `fetchEventById()` from `src/lib/firebase-events.js`, use `buildEventOgDescription()`, include OG + Twitter Card tags, implement fallback metadata for non-existent events
+- [x] T008 [US1] Embed ShareButton in `src/app/events/[id]/eventDetailClient.jsx` — 標題右側，傳入 `title` + `url` props
 
 **Checkpoint**: 活動分享功能完整可用（手機 + 桌面），US1 + US2 的 Acceptance Scenarios 全部通過
 
@@ -81,13 +81,13 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation (RED phase)**
 
-- [ ] T009 [US3] Add unit tests for `buildPostOgDescription` (HTML/Markdown stripping, 80-char truncation, edge cases) to `specs/011-event-share-og/tests/unit/og-helpers.test.js`
+- [x] T009 [US3] Add unit tests for `buildPostOgDescription` (HTML/Markdown stripping, 80-char truncation, edge cases) to `specs/011-event-share-og/tests/unit/og-helpers.test.js`
 
 ### Implementation for US3
 
-- [ ] T010 [US3] Add `buildPostOgDescription()` to `src/lib/og-helpers.js` — strip HTML/Markdown, truncate to 80 chars, format as `「{title} — {excerpt}…」` (GREEN for T009)
-- [ ] T011 [US3] Add `generateMetadata()` to `src/app/posts/[id]/page.jsx` — call `getPostDetail()` from `src/lib/firebase-posts.js`, use `buildPostOgDescription()`, include OG + Twitter Card tags, implement fallback metadata for non-existent posts
-- [ ] T012 [US3] Embed ShareButton in `src/app/posts/[id]/PostDetailClient.jsx` — 標題右側，傳入 `title` + `url` props
+- [x] T010 [US3] Add `buildPostOgDescription()` to `src/lib/og-helpers.js` — strip HTML/Markdown, truncate to 80 chars, format as `「{title} — {excerpt}…」` (GREEN for T009)
+- [x] T011 [US3] Add `generateMetadata()` to `src/app/posts/[id]/page.jsx` — call `getPostDetail()` from `src/lib/firebase-posts.js`, use `buildPostOgDescription()`, include OG + Twitter Card tags, implement fallback metadata for non-existent posts
+- [x] T012 [US3] Embed ShareButton in `src/app/posts/[id]/PostDetailClient.jsx` — 標題右側，傳入 `title` + `url` props
 
 **Checkpoint**: 文章分享功能完整可用，US3 的 Acceptance Scenarios 全部通過
 
@@ -97,8 +97,8 @@
 
 **Purpose**: 品質驗證和跨功能檢查
 
-- [ ] T013 Run `npm run type-check` + `npm run lint` — fix all errors and warnings
-- [ ] T014 Run quickstart.md validation — verify OG tags via `curl` + check test suite passes
+- [x] T013 Run `npm run type-check` + `npm run lint` — fix all errors and warnings
+- [x] T014 Run quickstart.md validation — verify OG tags via `curl` + check test suite passes
 
 ---
 

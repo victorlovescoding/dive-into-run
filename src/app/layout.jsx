@@ -19,8 +19,13 @@ const geistMono = GeistMono({
 });
 
 export const metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: 'Dive Into Run',
   description: 'Dive Into Run 跑步社群平台',
+  openGraph: {
+    siteName: 'Dive Into Run',
+    type: 'website',
+  },
 };
 
 /**
