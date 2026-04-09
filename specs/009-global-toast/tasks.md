@@ -5,12 +5,12 @@
 
 **Tests**: Created via TDD workflow during each task implementation (per constitution I — Red/Green/Refactor)
 
-**Organization**: Tasks grouped by user story (US1–US4) for independent implementation and testing.
+**Organization**: Tasks grouped by user story (US1–US4 core, US1b/US1c CRUD integration) for independent implementation and testing.
 
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story (US1, US2, US3, US4)
+- **[Story]**: Which user story (US1, US1b, US1c, US2, US3, US4)
 
 ---
 
@@ -99,6 +99,51 @@
 
 ---
 
+## Phase 7: US1b/US1c — CRUD Toast 整合：活動頁面 (Priority: P1)
+
+**Goal**: 補齊活動頁面缺失的 success toast（建立、編輯、刪除），將 inline error state（createError、deleteError）改為 error toast，支援刪除後導航 toast
+
+**Prerequisite**: Phase 1–6 完成
+
+**Independent Test**: 在活動列表頁和詳情頁各執行建立/編輯/刪除操作，確認每個操作成功/失敗後都出現對應 Toast，無殘留 inline error
+
+### Implementation for US1b/US1c — 活動頁面
+
+- [ ] T016 [P] [US1b] Migrate CRUD toast + search params + cleanup in src/app/events/page.jsx — (1) add useSearchParams import + useEffect to read ?toast= param then showToast and router.replace without scroll, (2) confirm/add showToast('建立活動成功') on create success, (3) add showToast('更新活動成功') on edit success, (4) change delete success message from '刪除成功' to '活動已刪除', (5) replace setCreateError with showToast('建立活動失敗，請稍後再試', 'error'), (6) update edit error message to '更新活動失敗，請稍後再試', (7) replace setDeleteError with showToast('刪除活動失敗，請稍後再試', 'error'), (8) remove createError/deleteError useState + inline error JSX, (9) remove deleteError prop from EventDeleteConfirm call
+- [ ] T017 [P] [US1b] Migrate CRUD toast + navigation param + cleanup in src/app/events/[id]/eventDetailClient.jsx — (1) add showToast('更新活動成功') on edit success, (2) change delete success from router.push('/events') to router.push('/events?toast=活動已刪除'), (3) update edit error message to '更新活動失敗，請稍後再試', (4) replace setDeleteError with showToast('刪除活動失敗，請稍後再試', 'error'), (5) remove deleteError useState + inline usage, (6) remove deleteError prop from EventDeleteConfirm call
+- [ ] T018 [US1b] Clean up EventDeleteConfirm component: remove deleteError prop from JSDoc, destructuring params, and inline error JSX in src/components/EventDeleteConfirm.jsx
+
+**Checkpoint**: 活動列表頁 + 詳情頁所有 CRUD 操作（建立/編輯/刪除）都有 success/error Toast，createError/deleteError inline state 全部移除
+
+---
+
+## Phase 8: US1b — CRUD Toast 整合：文章頁面 (Priority: P1)
+
+**Goal**: 為文章列表頁和詳情頁所有 CRUD 操作新增 try-catch + success/error Toast，修復詳情頁刪除後缺少 router.push 的 bug
+
+**Prerequisite**: Phase 1–6 完成（可與 Phase 7 並行）
+
+**Independent Test**: 在文章列表頁和詳情頁各執行建立/編輯/刪除操作，確認每個操作成功/失敗後都出現 Toast
+
+### Implementation for US1b — 文章頁面
+
+- [ ] T019 [P] [US1b] Migrate all CRUD toast + search params in src/app/posts/page.jsx — (1) add useToast import from @/contexts/ToastContext, (2) add useSearchParams import from next/navigation, (3) wrap create post handler in try-catch: success showToast('發佈文章成功'), error showToast('發佈文章失敗，請稍後再試', 'error') + console.error, (4) wrap edit post handler in try-catch: success showToast('更新文章成功'), error showToast('更新文章失敗，請稍後再試', 'error') + console.error, (5) wrap delete post handler in try-catch: success showToast('文章已刪除'), error showToast('刪除文章失敗，請稍後再試', 'error') + console.error, (6) add useEffect to read ?toast= search param then showToast and router.replace('/posts', { scroll: false })
+- [ ] T020 [P] [US1b] Migrate all CRUD toast + delete navigation + bug fix in src/app/posts/[id]/PostDetailClient.jsx — (1) add useToast import if not present, (2) wrap edit post handler in try-catch: success showToast('更新文章成功'), error showToast('更新文章失敗，請稍後再試', 'error') + console.error, (3) wrap delete post handler in try-catch: success router.push('/posts?toast=文章已刪除') (bug fix: 目前缺少 router.push，使用者停留在已刪除文章頁面), error showToast('刪除文章失敗，請稍後再試', 'error') + console.error
+
+**Checkpoint**: 文章列表頁 + 詳情頁所有 CRUD 操作都有 success/error Toast，詳情頁刪除後正確導航至列表頁
+
+---
+
+## Phase 9: CRUD Toast Verification & Polish
+
+**Purpose**: 整合測試 + 全面驗證 SC-001（零靜默操作），型別檢查 + lint 通過
+
+- [ ] T021 [P] Create integration tests for CRUD toast in specs/009-global-toast/tests/integration/crud-toast.test.jsx — test cases: (1) events page shows success toast on create/edit/delete, (2) events page shows error toast on create/edit/delete failure, (3) events page reads ?toast= search param and shows toast, (4) posts page shows success/error toast on create/edit/delete, (5) posts page reads ?toast= search param, (6) EventDeleteConfirm no longer receives deleteError prop
+- [ ] T022 Run npm run type-check and npm run lint across all modified files (events/page.jsx, eventDetailClient.jsx, EventDeleteConfirm.jsx, posts/page.jsx, PostDetailClient.jsx), fix all errors
+- [ ] T023 Verify SC-001 CRUD coverage: confirm all 10 success + 10 error operations from research.md R10 table produce visible Toast feedback — 0 silent CRUD operations remain (報名/取消報名已於 Phase 2 驗證)
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -108,7 +153,10 @@
 - **US2 (Phase 3)**: Depends on Phase 1 completion — can run in parallel with US1
 - **US3 (Phase 4)**: Depends on Phase 1 completion — can run in parallel with US1/US2
 - **US4 (Phase 5)**: Depends on Phase 1 completion — verification only
-- **Polish (Phase 6)**: Depends on all user stories complete
+- **Polish (Phase 6)**: Depends on all Phase 2–5 user stories complete
+- **CRUD 活動 (Phase 7)**: Depends on Phase 1–6 completion
+- **CRUD 文章 (Phase 8)**: Depends on Phase 1–6 completion — can run in parallel with Phase 7
+- **CRUD Verification (Phase 9)**: Depends on Phase 7 + Phase 8 completion
 
 ### User Story Dependencies
 
@@ -116,8 +164,24 @@
 - **US2 (P1)**: Independent. Migrates posts, signout, member pages (error-only paths)
 - **US3 (P2)**: Independent. Migrates runs page (info path)
 - **US4 (P2)**: Independent. Verification of foundational stacking behavior
+- **US1b (P1)**: Depends on Phase 1–6. CRUD success/error toast for events + posts
+- **US1c (P1)**: Covered within US1b Phase 7 (create event error → toast)
 
-### Parallel Opportunities
+### Within Phase 7 (CRUD 活動)
+
+- T016 (events/page.jsx) and T017 (eventDetailClient.jsx) can run in parallel
+- T018 (EventDeleteConfirm cleanup) depends on T016 + T017
+
+### Within Phase 8 (CRUD 文章)
+
+- T019 (posts/page.jsx) and T020 (PostDetailClient.jsx) can run in parallel
+
+### Cross-Phase Parallelism
+
+- Phase 7 and Phase 8 can run in parallel (different file sets)
+- Phase 9 depends on both Phase 7 and Phase 8
+
+### Parallel Opportunities (Phase 1–6, completed)
 
 Within Phase 1:
 
@@ -134,41 +198,54 @@ Within Phase 3 (US2):
 
 - T008, T009, T010 can ALL run in parallel (different files, no dependencies)
 
-Across Phases:
-
-- Phase 2, 3, 4, 5 can all start in parallel after Phase 1 completes
-
 ---
 
-## Parallel Example: After Phase 1 Completes
+## Parallel Example: CRUD Toast Integration (Phase 7 + 8)
 
 ```bash
-# All user stories can start simultaneously:
-US1: T005 (events/page.jsx) + T006 (eventDetailClient.jsx) — parallel
-US2: T008 (PostDetailClient) + T009 (SignOutButton) + T010 (member/page) — parallel
-US3: T011 (runs/page.jsx)
-US4: T012 (verification)
+# Phase 7 + 8 can run in parallel:
+
+# Phase 7 — 活動頁面:
+Task T016: "events/page.jsx — CRUD toast + search params + cleanup"
+Task T017: "eventDetailClient.jsx — CRUD toast + navigation param + cleanup"  # parallel with T016
+# T018 (EventDeleteConfirm cleanup) — after T016 + T017
+
+# Phase 8 — 文章頁面 (parallel with Phase 7):
+Task T019: "posts/page.jsx — all CRUD try-catch + toast + search params"
+Task T020: "PostDetailClient.jsx — all CRUD try-catch + toast + delete navigation"  # parallel with T019
+
+# Phase 9 — after Phase 7 + 8:
+Task T021: "integration tests for CRUD toast"  # parallel with T022
+Task T022: "type-check + lint"
+Task T023: "SC-001 CRUD verification"
 ```
 
 ---
 
 ## Implementation Strategy
 
-### MVP First (User Story 1 Only)
+### Phase 1–6 完成 ✅
 
-1. Complete Phase 1: Foundational (T001–T004)
-2. Complete Phase 2: US1 (T005–T007)
-3. **STOP and VALIDATE**: 活動頁面的 Toast 回饋完整運作
-4. 此時已可 demo MVP 價值
+Core Toast infrastructure + initial page migration all complete.
 
-### Incremental Delivery
+### CRUD Toast 整合 (Phase 7–9)
 
-1. Phase 1 → Toast 基礎建設就緒
-2. Phase 2 (US1) → 活動頁面遷移完成 — **MVP!**
-3. Phase 3 (US2) → 錯誤回饋全面升級
-4. Phase 4 (US3) → 資訊提示遷移完成
-5. Phase 5 (US4) → 多 Toast 堆疊驗證
-6. Phase 6 → 收尾驗證
+1. **Phase 7 + 8 並行**: 活動頁面和文章頁面互不依賴，可同時進行
+2. **Phase 7 內部**: T016 + T017 並行 → T018 收尾清理
+3. **Phase 8 內部**: T019 + T020 並行
+4. **Phase 9**: integration tests + 全面驗證 SC-001 + type-check + lint
+5. **STOP and VALIDATE**: 確認 R10 表格中所有 20 個 toast 操作都有可見回饋
+
+### MVP Delivery Order
+
+1. ~~Phase 1 → Toast 基礎建設就緒~~ ✅
+2. ~~Phase 2 (US1) → 活動頁面遷移完成~~ ✅
+3. ~~Phase 3 (US2) → 錯誤回饋全面升級~~ ✅
+4. ~~Phase 4 (US3) → 資訊提示遷移完成~~ ✅
+5. ~~Phase 5 (US4) → 多 Toast 堆疊驗證~~ ✅
+6. ~~Phase 6 → 收尾驗證~~ ✅
+7. Phase 7 + 8 → CRUD Toast 全面覆蓋
+8. Phase 9 → SC-001 最終驗證
 
 ---
 
@@ -179,3 +256,4 @@ US4: T012 (verification)
 - Each user story is independently completable and testable
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
+- Phase 7–9 追加自 plan.md「追加 Plan: CRUD Toast 整合 (FR-011–FR-014, SC-001)」
