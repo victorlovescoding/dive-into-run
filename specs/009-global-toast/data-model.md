@@ -74,3 +74,42 @@ removeToast(id: string) → void
 
 - 內部 dispatch REMOVE action
 - 由 Toast 元件的關閉按鈕或 auto-dismiss timer 呼叫
+
+---
+
+## 追加 (2026-04-09) — CRUD Toast 整合所需的 State 變更
+
+### 移除的 Inline Error State
+
+以下 state 將被移除（改用 Toast）：
+
+#### 活動列表頁 (`src/app/events/page.jsx`)
+
+| 移除項目                         | 型別             | 替代方式                  |
+| -------------------------------- | ---------------- | ------------------------- |
+| `createError` / `setCreateError` | `useState(null)` | `showToast(msg, 'error')` |
+| `deleteError` / `setDeleteError` | `useState('')`   | `showToast(msg, 'error')` |
+
+#### 活動詳情頁 (`src/app/events/[id]/eventDetailClient.jsx`)
+
+| 移除項目                         | 型別           | 替代方式                  |
+| -------------------------------- | -------------- | ------------------------- |
+| `deleteError` / `setDeleteError` | `useState('')` | `showToast(msg, 'error')` |
+
+### 元件 Props 變更
+
+| 元件                 | 移除 Prop     | 原因                               |
+| -------------------- | ------------- | ---------------------------------- |
+| `EventDeleteConfirm` | `deleteError` | Error 改走 Toast，不再 inline 顯示 |
+
+### 新增 import (文章頁面)
+
+| 檔案                      | 新增                                      | 原因                 |
+| ------------------------- | ----------------------------------------- | -------------------- |
+| `src/app/posts/page.jsx`  | `useToast` from `@/contexts/ToastContext` | 目前未使用 Toast     |
+| `src/app/posts/page.jsx`  | `useSearchParams` from `next/navigation`  | 讀取導航 toast param |
+| `src/app/events/page.jsx` | `useSearchParams` from `next/navigation`  | 讀取導航 toast param |
+
+### 無 Firestore 變更
+
+本功能為純 client-side state，不涉及任何 Firestore collection 或 schema 修改。

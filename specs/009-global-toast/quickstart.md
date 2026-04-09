@@ -89,3 +89,78 @@ showToast('已複製連結', 'info'); // 藍色，3 秒自動消失
 
   // 移除 disconnectError JSX 區塊
 ```
+
+---
+
+## 追加 (2026-04-09) — CRUD Toast 整合模式
+
+### CRUD Handler 標準模式（文章頁面新增）
+
+```js
+import { useToast } from '@/contexts/ToastContext';
+
+const { showToast } = useToast();
+
+const handleSubmitPost = async (formData) => {
+  try {
+    if (editingPost) {
+      await updatePost(editingPost.id, formData);
+      // ... 更新 state
+      showToast('更新文章成功');
+    } else {
+      await createPost(formData);
+      // ... 更新 state
+      showToast('發佈文章成功');
+    }
+  } catch (err) {
+    console.error('Post submit error:', err);
+    showToast(editingPost ? '更新文章失敗，請稍後再試' : '發佈文章失敗，請稍後再試', 'error');
+  }
+};
+```
+
+### 導航後 Toast（刪除操作專用）
+
+```js
+// === 詳情頁（發送端）===
+// 刪除成功後，導航帶 toast search param
+router.push('/posts?toast=文章已刪除');
+
+// === 列表頁（接收端）===
+import { useSearchParams } from 'next/navigation';
+
+const searchParams = useSearchParams();
+const router = useRouter();
+const { showToast } = useToast();
+
+useEffect(() => {
+  const toastMsg = searchParams.get('toast');
+  if (toastMsg) {
+    showToast(toastMsg);
+    router.replace('/posts', { scroll: false });
+  }
+}, [searchParams, showToast, router]);
+```
+
+### Inline Error → Toast 遷移（活動頁面）
+
+```diff
+- const [createError, setCreateError] = useState(null);
+  const { showToast } = useToast();
+
+  // Error path
+- setCreateError('建立活動失敗');
++ showToast('建立活動失敗，請稍後再試', 'error');
+
+  // 移除 createError inline JSX 區塊
+  // 移除 EventDeleteConfirm 的 deleteError prop
+```
+
+### SC-001 完成驗證清單
+
+以下操作不應有「靜默完成」：
+
+- 活動列表頁：建立/編輯/刪除活動 → success 或 error toast
+- 活動詳情頁：編輯/刪除活動 → success 或 error toast
+- 文章列表頁：建立/編輯/刪除文章 → success 或 error toast
+- 文章詳情頁：編輯/刪除文章 → success 或 error toast
