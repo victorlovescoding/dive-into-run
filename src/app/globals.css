@@ -4,12 +4,6 @@
   --background: #ffffff;
   --foreground: #171717;
 }
-/* CSS認不出來 Link 所以要寫 a */
-.main-nav a {
-  display: inline-block;
-  margin: 0 2rem;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

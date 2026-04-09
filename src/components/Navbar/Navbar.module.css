@@ -1,0 +1,340 @@
+/* ===== Navbar bar ===== */
+.navbar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  z-index: 1000;
+  background-color: var(--background, #ffffff);
+  padding: 0.75rem 1rem;
+  gap: 0.5rem;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.125rem;
+  text-decoration: none;
+  color: inherit;
+  margin-right: auto;
+}
+
+/* Desktop nav links (hidden on mobile) */
+.link {
+  text-decoration: none;
+  color: inherit;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+}
+
+.link:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.linkActive {
+  font-weight: 600;
+  color: #2563eb;
+}
+
+/* ===== Hamburger button ===== */
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.hamburger:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.hamburgerLine {
+  display: block;
+  width: 1.25rem;
+  height: 2px;
+  background-color: currentColor;
+  border-radius: 1px;
+  transition:
+    transform 0.3s ease-in-out,
+    opacity 0.3s ease-in-out;
+  transform-origin: center;
+}
+
+/* Animate to ✕ */
+.hamburgerOpen .hamburgerLine:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.hamburgerOpen .hamburgerLine:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburgerOpen .hamburgerLine:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ===== Overlay ===== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.overlayVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ===== Drawer panel ===== */
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 1002;
+  width: 280px;
+  height: 100vh;
+  background-color: var(--background, #ffffff);
+  transform: translateX(100%);
+  will-change: transform;
+  transition: transform 0.3s ease-in-out;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+@supports (height: 100dvh) {
+  .drawer {
+    height: 100dvh;
+  }
+}
+
+.drawerOpen {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+/* Close button (top-right) */
+.drawerClose {
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: inherit;
+}
+
+.drawerClose:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Drawer nav links */
+.drawerLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 1rem;
+}
+
+.drawerLink {
+  text-decoration: none;
+  color: inherit;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+
+.drawerLink:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.drawerLinkActive {
+  font-weight: 600;
+  color: #2563eb;
+  background-color: rgba(37, 99, 235, 0.05);
+}
+
+/* Auth section */
+.drawerAuth {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.drawerUserInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.drawerUserName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.loginButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.375rem;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: inherit;
+  transition: background-color 0.2s;
+}
+
+.loginButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* ===== Desktop links container ===== */
+.desktopLinks {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ===== User section (desktop) ===== */
+.userSection {
+  display: none;
+  position: relative;
+  align-items: center;
+  margin-left: 0.5rem;
+}
+
+/* ===== Skeleton loader ===== */
+.skeleton {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ===== Avatar button ===== */
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.avatarImage {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* ===== Dropdown menu ===== */
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 120px;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0;
+  list-style: none;
+  background-color: var(--background, #ffffff);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+
+.dropdownOpen {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.dropdown button {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: inherit;
+}
+
+.dropdown button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* ===== Responsive: hide hamburger/drawer on desktop ===== */
+@media (min-width: 768px) {
+  .hamburger {
+    display: none;
+  }
+
+  .overlay {
+    display: none;
+  }
+
+  .drawer {
+    display: none;
+  }
+
+  .desktopLinks {
+    display: flex;
+  }
+
+  .userSection {
+    display: flex;
+  }
+}

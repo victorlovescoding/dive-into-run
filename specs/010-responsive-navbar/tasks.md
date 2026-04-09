@@ -21,7 +21,7 @@
 
 **Purpose**: Create service layer that Navbar depends on
 
-- [ ] T001 Create `src/lib/firebase-auth-helpers.js` — export `signInWithGoogle()` (Google popup auth) and `signOutUser()` (sign out current user) per service layer contract in `specs/010-responsive-navbar/contracts/navbar-contract.md`
+- [x] T001 Create `src/lib/firebase-auth-helpers.js` — export `signInWithGoogle()` (Google popup auth) and `signOutUser()` (sign out current user) per service layer contract in `specs/010-responsive-navbar/contracts/navbar-contract.md`
 
 ---
 
@@ -31,9 +31,9 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Create `src/components/Navbar/Navbar.jsx` — `'use client'` directive, `NAV_ITEMS` constant array (5 items per data-model.md), `isActivePath(pathname, href)` helper, `<nav aria-label="主要導覽">` with brand `<Link href="/">Dive Into Run</Link>`, flat nav link list using `usePathname()`。**注意**：此 task 僅建立 `isActivePath` helper 和基礎 link markup，不套用 active 樣式——active styling 由 T009（desktop）和 T006（drawer）各自負責套用
-- [ ] T003 Create `src/components/Navbar/Navbar.module.css` — `.navbar` (sticky, top:0, display:flex, align-items:center, z-index:1000, background, padding), `.brand` (font-weight, text-decoration), `.link` and `.linkActive` (active highlight style)
-- [ ] T004 Integrate Navbar into `src/app/layout.jsx` — import and render `<Navbar />` replacing inline `<nav className="main-nav">` block, remove `<hr />` divider, remove `.main-nav a` styles from `src/app/globals.css`, remove unused `LoginButton.jsx` and `SignOutButton.jsx` from `src/components/`（已被 Navbar 內建 auth UI 取代，舊元件直接 import Firebase SDK 違反 Constitution II）
+- [x] T002 Create `src/components/Navbar/Navbar.jsx` — `'use client'` directive, `NAV_ITEMS` constant array (5 items per data-model.md), `isActivePath(pathname, href)` helper, `<nav aria-label="主要導覽">` with brand `<Link href="/">Dive Into Run</Link>`, flat nav link list using `usePathname()`。**注意**：此 task 僅建立 `isActivePath` helper 和基礎 link markup，不套用 active 樣式——active styling 由 T009（desktop）和 T006（drawer）各自負責套用
+- [x] T003 Create `src/components/Navbar/Navbar.module.css` — `.navbar` (sticky, top:0, display:flex, align-items:center, z-index:1000, background, padding), `.brand` (font-weight, text-decoration), `.link` and `.linkActive` (active highlight style)
+- [x] T004 Integrate Navbar into `src/app/layout.jsx` — import and render `<Navbar />` replacing inline `<nav className="main-nav">` block, remove `<hr />` divider, remove `.main-nav a` styles from `src/app/globals.css`, remove unused `LoginButton.jsx` and `SignOutButton.jsx` from `src/components/`（已被 Navbar 內建 auth UI 取代，舊元件直接 import Firebase SDK 違反 Constitution II）
 
 **Checkpoint**: Site works with Navbar as independent component. Navigation identical to pre-refactor. All links visible as flat list.
 
@@ -45,10 +45,10 @@
 
 **Independent Test**: At <768px viewport, verify hamburger visible, drawer opens/closes, all links navigate correctly, body scroll locked while open.
 
-- [ ] T005 [US1] Add hamburger button markup — 3 `<span>` elements inside `<button>`, CSS transform animation to ✕ on open — in `src/components/Navbar/Navbar.jsx` + `src/components/Navbar/Navbar.module.css` (`.hamburger`, `.hamburgerLine`, `.hamburgerOpen`; hidden at >=768px via media query)
-- [ ] T006 [US1] Add drawer panel + overlay — right-side drawer with nav links and auth section (login button or user info + sign-out), semi-transparent overlay backdrop, CSS `transform: translateX(100%)` → `translateX(0)` slide-in transition with `will-change: transform`, overlay `opacity` fade, drawer 連結同樣套用 `.linkActive` + `aria-current="page"` 標示目前所在頁面 — in `src/components/Navbar/Navbar.jsx` + `src/components/Navbar/Navbar.module.css` (`.drawer`, `.drawerOpen`, `.overlay`, `.overlayVisible`, `.drawerLinks`, `.drawerLinkActive`, `.drawerClose`, `.loginButton`)
-- [ ] T007 [US1] Implement drawer state management in `src/components/Navbar/Navbar.jsx` — `isDrawerOpen` state, hamburger click toggles, `useEffect` for body scroll lock (`document.body.style.overflow` with cleanup), auto-close on nav link click, `matchMedia('(min-width: 768px)')` listener to auto-close on viewport resize to desktop
-- [ ] T008 [US1] Add drawer accessibility in `src/components/Navbar/Navbar.jsx` — `id="mobile-drawer"`, `role="dialog"`, `aria-modal="true"`, `aria-label="導覽選單"`, hamburger `aria-controls="mobile-drawer"` + `aria-expanded`, `aria-label="開啟導覽選單"/"關閉導覽選單"`, Escape key handler to close drawer, focus management (open: focus close button, close: focus hamburger button)
+- [x] T005 [US1] Add hamburger button markup — 3 `<span>` elements inside `<button>`, CSS transform animation to ✕ on open — in `src/components/Navbar/Navbar.jsx` + `src/components/Navbar/Navbar.module.css` (`.hamburger`, `.hamburgerLine`, `.hamburgerOpen`; hidden at >=768px via media query)
+- [x] T006 [US1] Add drawer panel + overlay — right-side drawer with nav links and auth section (login button or user info + sign-out), semi-transparent overlay backdrop, CSS `transform: translateX(100%)` → `translateX(0)` slide-in transition with `will-change: transform`, overlay `opacity` fade, drawer 連結同樣套用 `.linkActive` + `aria-current="page"` 標示目前所在頁面 — in `src/components/Navbar/Navbar.jsx` + `src/components/Navbar/Navbar.module.css` (`.drawer`, `.drawerOpen`, `.overlay`, `.overlayVisible`, `.drawerLinks`, `.drawerLinkActive`, `.drawerClose`, `.loginButton`)
+- [x] T007 [US1] Implement drawer state management in `src/components/Navbar/Navbar.jsx` — `isDrawerOpen` state, hamburger click toggles, `useEffect` for body scroll lock (`document.body.style.overflow` with cleanup), auto-close on nav link click, `matchMedia('(min-width: 768px)')` listener to auto-close on viewport resize to desktop
+- [x] T008 [US1] Add drawer accessibility in `src/components/Navbar/Navbar.jsx` — `id="mobile-drawer"`, `role="dialog"`, `aria-modal="true"`, `aria-label="導覽選單"`, hamburger `aria-controls="mobile-drawer"` + `aria-expanded`, `aria-label="開啟導覽選單"/"關閉導覽選單"`, Escape key handler to close drawer, focus management (open: focus close button, close: focus hamburger button)
 
 **Checkpoint**: Mobile experience fully functional — hamburger opens right-side drawer, all links work, overlay dismiss, body scroll lock, keyboard accessible.
 
@@ -60,10 +60,10 @@
 
 **Independent Test**: At >=768px viewport, verify horizontal links with active state, avatar dropdown opens/closes with sign-out, login button shown when logged out, skeleton during loading.
 
-- [ ] T009 [US2] Add desktop horizontal link container — 將 T002 的 flat link list 包進 `<ul role="list">` desktop-only container（>=768px 顯示，<768px 隱藏），並在此套用 `.linkActive` + `aria-current="page"` active styling — in `src/components/Navbar/Navbar.jsx` + `src/components/Navbar/Navbar.module.css` (`.desktopLinks`; hidden at <768px via media query)
-- [ ] T010 [US2] Add auth UI section — skeleton loading state (`.skeleton` circular pulse animation while `loading === true`), user avatar (`user.photoURL` in `<img>` with inline SVG circle+person fallback, `.avatar`, `.avatarImage`), login button when `user === null` (`.loginButton`, calls `signInWithGoogle()`) — in `src/components/Navbar/Navbar.jsx` + `src/components/Navbar/Navbar.module.css` (`.userSection`, `.skeleton`, `.avatar`, `.avatarImage`, `.loginButton`)
-- [ ] T011 [US2] Add avatar dropdown menu — `isDropdownOpen` state, avatar `<button>` click toggles dropdown, `<ul>` with sign-out `<button>` calling `signOutUser()`, click-outside close via `useEffect` + `dropdownRef` + `document.addEventListener('click')` — in `src/components/Navbar/Navbar.jsx` + `src/components/Navbar/Navbar.module.css` (`.dropdown`, `.dropdownOpen`)
-- [ ] T012 [US2] Add dropdown accessibility in `src/components/Navbar/Navbar.jsx` — avatar button `aria-expanded` + `aria-haspopup="true"`, dropdown `role="menu"`, sign-out `role="menuitem"`, Escape key handler to close dropdown, focus management (open: focus first menu item, close: focus avatar button)
+- [x] T009 [US2] Add desktop horizontal link container — 將 T002 的 flat link list 包進 `<ul role="list">` desktop-only container（>=768px 顯示，<768px 隱藏），並在此套用 `.linkActive` + `aria-current="page"` active styling — in `src/components/Navbar/Navbar.jsx` + `src/components/Navbar/Navbar.module.css` (`.desktopLinks`; hidden at <768px via media query)
+- [x] T010 [US2] Add auth UI section — skeleton loading state (`.skeleton` circular pulse animation while `loading === true`), user avatar (`user.photoURL` in `<img>` with inline SVG circle+person fallback, `.avatar`, `.avatarImage`), login button when `user === null` (`.loginButton`, calls `signInWithGoogle()`) — in `src/components/Navbar/Navbar.jsx` + `src/components/Navbar/Navbar.module.css` (`.userSection`, `.skeleton`, `.avatar`, `.avatarImage`, `.loginButton`)
+- [x] T011 [US2] Add avatar dropdown menu — `isDropdownOpen` state, avatar `<button>` click toggles dropdown, `<ul>` with sign-out `<button>` calling `signOutUser()`, click-outside close via `useEffect` + `dropdownRef` + `document.addEventListener('click')` — in `src/components/Navbar/Navbar.jsx` + `src/components/Navbar/Navbar.module.css` (`.dropdown`, `.dropdownOpen`)
+- [x] T012 [US2] Add dropdown accessibility in `src/components/Navbar/Navbar.jsx` — avatar button `aria-expanded` + `aria-haspopup="true"`, dropdown `role="menu"`, sign-out `role="menuitem"`, Escape key handler to close dropdown, focus management (open: focus first menu item, close: focus avatar button)
 
 **Checkpoint**: Desktop experience fully functional — horizontal nav with active state, avatar dropdown with sign-out, login button for unauthenticated, skeleton loading. Both mobile and desktop viewports now work correctly.
 
@@ -75,7 +75,7 @@
 
 **Independent Test**: View page source — `<html lang="zh-Hant-TW">` and `<title>Dive Into Run</title>`.
 
-- [ ] T013 [US4] Update `src/app/layout.jsx` — change `export const metadata` title from current value to `'Dive Into Run'`, change `<html lang="en">` to `<html lang="zh-Hant-TW">`
+- [x] T013 [US4] Update `src/app/layout.jsx` — change `export const metadata` title from current value to `'Dive Into Run'`, change `<html lang="en">` to `<html lang="zh-Hant-TW">`
 
 **Checkpoint**: Metadata correct. All 4 user stories complete.
 
@@ -85,9 +85,9 @@
 
 **Purpose**: Verification across all user stories
 
-- [ ] T014 Cross-viewport verification — test responsive behavior at 320px, 375px, 768px, 1024px, 1920px breakpoints, verify no overflow/overlap/layout shift, confirm drawer and dropdown work correctly at boundary (768px), 在地圖頁面（含 Leaflet 的頁面）確認 navbar 不被地圖 container 覆蓋（z-index 驗證）
-- [ ] T015 Run `npm run lint` + `npm run type-check`, fix all issues; run getDiagnostics and fix Warning/Hint/Error items; add any unknown words to `cspell.json`
-- [ ] T016 Edge case 驗證與修正 — (1) 手機旋轉時面板適應或自動關閉（orientation change / resize 事件）, (2) 滑出面板展開時按瀏覽器返回鍵關閉面板而非導航離開（popstate 事件 + history.pushState）, (3) 快速連續點擊漢堡按鈕不導致狀態不一致（CSS transition 期間 pointer-events 防護或 state guard）
+- [x] T014 Cross-viewport verification — test responsive behavior at 320px, 375px, 768px, 1024px, 1920px breakpoints, verify no overflow/overlap/layout shift, confirm drawer and dropdown work correctly at boundary (768px), 在地圖頁面（含 Leaflet 的頁面）確認 navbar 不被地圖 container 覆蓋（z-index 驗證）
+- [x] T015 Run `npm run lint` + `npm run type-check`, fix all issues; run getDiagnostics and fix Warning/Hint/Error items; add any unknown words to `cspell.json`
+- [x] T016 Edge case 驗證與修正 — (1) 手機旋轉時面板適應或自動關閉（orientation change / resize 事件）, (2) 滑出面板展開時按瀏覽器返回鍵關閉面板而非導航離開（popstate 事件 + history.pushState）, (3) 快速連續點擊漢堡按鈕不導致狀態不一致（CSS transition 期間 pointer-events 防護或 state guard）
 
 ---
 
