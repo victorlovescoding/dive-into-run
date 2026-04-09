@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useContext } from 'react';
 import {
   getPostDetail,
@@ -35,6 +36,7 @@ export default function PostDetailClient({ postId }) {
   const [isComposeEditing, setIsComposeEditing] = useState(false);
   const { user } = useContext(AuthContext);
   const { showToast } = useToast();
+  const router = useRouter();
   const [comment, setComment] = useState(''); // 只裝使用者即將送出的留言
   const [comments, setComments] = useState([]); // 裝所有留言
   const [openMenuPostId, setOpenMenuPostId] = useState('');
@@ -169,9 +171,15 @@ export default function PostDetailClient({ postId }) {
    */
   async function handleSubmitPost(e) {
     e.preventDefault();
-    if (editingPostId) {
-      await updatePost(editingPostId, { title, content }); // 編輯
-      setPostDetail((prev) => ({ ...prev, title, content })); // ✅ 只更新那一筆，不新增
+    try {
+      if (editingPostId) {
+        await updatePost(editingPostId, { title, content });
+        setPostDetail((prev) => ({ ...prev, title, content }));
+        showToast('更新文章成功');
+      }
+    } catch (err) {
+      console.error('Post update error:', err);
+      showToast('更新文章失敗，請稍後再試', 'error');
     }
     setTitle('');
     setContent('');
@@ -199,8 +207,13 @@ export default function PostDetailClient({ postId }) {
    */
   async function deletePostHandler(targetPostId) {
     // eslint-disable-next-line no-alert -- 刪除確認使用原生對話框
-    if (window.confirm('確定要刪除文章？')) {
+    if (!window.confirm('確定要刪除文章？')) return;
+    try {
       await deletePost(targetPostId);
+      router.push('/posts?toast=文章已刪除');
+    } catch (err) {
+      console.error('Delete post error:', err);
+      showToast('刪除文章失敗，請稍後再試', 'error');
     }
   }
 

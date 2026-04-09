@@ -109,9 +109,9 @@
 
 ### Implementation for US1b/US1c — 活動頁面
 
-- [ ] T016 [P] [US1b] Migrate CRUD toast + search params + cleanup in src/app/events/page.jsx — (1) add useSearchParams import + useEffect to read ?toast= param then showToast and router.replace without scroll, (2) confirm/add showToast('建立活動成功') on create success, (3) add showToast('更新活動成功') on edit success, (4) change delete success message from '刪除成功' to '活動已刪除', (5) replace setCreateError with showToast('建立活動失敗，請稍後再試', 'error'), (6) update edit error message to '更新活動失敗，請稍後再試', (7) replace setDeleteError with showToast('刪除活動失敗，請稍後再試', 'error'), (8) remove createError/deleteError useState + inline error JSX, (9) remove deleteError prop from EventDeleteConfirm call
-- [ ] T017 [P] [US1b] Migrate CRUD toast + navigation param + cleanup in src/app/events/[id]/eventDetailClient.jsx — (1) add showToast('更新活動成功') on edit success, (2) change delete success from router.push('/events') to router.push('/events?toast=活動已刪除'), (3) update edit error message to '更新活動失敗，請稍後再試', (4) replace setDeleteError with showToast('刪除活動失敗，請稍後再試', 'error'), (5) remove deleteError useState + inline usage, (6) remove deleteError prop from EventDeleteConfirm call
-- [ ] T018 [US1b] Clean up EventDeleteConfirm component: remove deleteError prop from JSDoc, destructuring params, and inline error JSX in src/components/EventDeleteConfirm.jsx
+- [x] T016 [P] [US1b] Migrate CRUD toast + search params + cleanup in src/app/events/page.jsx — (1) add useSearchParams import + useEffect to read ?toast= param then showToast and router.replace without scroll, (2) confirm/add showToast('建立活動成功') on create success, (3) add showToast('更新活動成功') on edit success, (4) change delete success message from '刪除成功' to '活動已刪除', (5) replace setCreateError with showToast('建立活動失敗，請稍後再試', 'error'), (6) update edit error message to '更新活動失敗，請稍後再試', (7) replace setDeleteError with showToast('刪除活動失敗，請稍後再試', 'error'), (8) remove createError/deleteError useState + inline error JSX, (9) remove deleteError prop from EventDeleteConfirm call
+- [x] T017 [P] [US1b] Migrate CRUD toast + navigation param + cleanup in src/app/events/[id]/eventDetailClient.jsx — (1) add showToast('更新活動成功') on edit success, (2) change delete success from router.push('/events') to router.push('/events?toast=活動已刪除'), (3) update edit error message to '更新活動失敗，請稍後再試', (4) replace setDeleteError with showToast('刪除活動失敗，請稍後再試', 'error'), (5) remove deleteError useState + inline usage, (6) remove deleteError prop from EventDeleteConfirm call
+- [x] T018 [US1b] Clean up EventDeleteConfirm component: remove deleteError prop from JSDoc, destructuring params, and inline error JSX in src/components/EventDeleteConfirm.jsx
 
 **Checkpoint**: 活動列表頁 + 詳情頁所有 CRUD 操作（建立/編輯/刪除）都有 success/error Toast，createError/deleteError inline state 全部移除
 
@@ -127,8 +127,8 @@
 
 ### Implementation for US1b — 文章頁面
 
-- [ ] T019 [P] [US1b] Migrate all CRUD toast + search params in src/app/posts/page.jsx — (1) add useToast import from @/contexts/ToastContext, (2) add useSearchParams import from next/navigation, (3) wrap create post handler in try-catch: success showToast('發佈文章成功'), error showToast('發佈文章失敗，請稍後再試', 'error') + console.error, (4) wrap edit post handler in try-catch: success showToast('更新文章成功'), error showToast('更新文章失敗，請稍後再試', 'error') + console.error, (5) wrap delete post handler in try-catch: success showToast('文章已刪除'), error showToast('刪除文章失敗，請稍後再試', 'error') + console.error, (6) add useEffect to read ?toast= search param then showToast and router.replace('/posts', { scroll: false })
-- [ ] T020 [P] [US1b] Migrate all CRUD toast + delete navigation + bug fix in src/app/posts/[id]/PostDetailClient.jsx — (1) add useToast import if not present, (2) wrap edit post handler in try-catch: success showToast('更新文章成功'), error showToast('更新文章失敗，請稍後再試', 'error') + console.error, (3) wrap delete post handler in try-catch: success router.push('/posts?toast=文章已刪除') (bug fix: 目前缺少 router.push，使用者停留在已刪除文章頁面), error showToast('刪除文章失敗，請稍後再試', 'error') + console.error
+- [x] T019 [P] [US1b] Migrate all CRUD toast + search params in src/app/posts/page.jsx — (1) add useToast import from @/contexts/ToastContext, (2) add useSearchParams import from next/navigation, (3) wrap create post handler in try-catch: success showToast('發佈文章成功'), error showToast('發佈文章失敗，請稍後再試', 'error') + console.error, (4) wrap edit post handler in try-catch: success showToast('更新文章成功'), error showToast('更新文章失敗，請稍後再試', 'error') + console.error, (5) wrap delete post handler in try-catch: success showToast('文章已刪除'), error showToast('刪除文章失敗，請稍後再試', 'error') + console.error, (6) add useEffect to read ?toast= search param then showToast and router.replace('/posts', { scroll: false })
+- [x] T020 [P] [US1b] Migrate all CRUD toast + delete navigation + bug fix in src/app/posts/[id]/PostDetailClient.jsx — (1) add useToast import if not present, (2) wrap edit post handler in try-catch: success showToast('更新文章成功'), error showToast('更新文章失敗，請稍後再試', 'error') + console.error, (3) wrap delete post handler in try-catch: success router.push('/posts?toast=文章已刪除') (bug fix: 目前缺少 router.push，使用者停留在已刪除文章頁面), error showToast('刪除文章失敗，請稍後再試', 'error') + console.error
 
 **Checkpoint**: 文章列表頁 + 詳情頁所有 CRUD 操作都有 success/error Toast，詳情頁刪除後正確導航至列表頁
 
@@ -138,9 +138,9 @@
 
 **Purpose**: 整合測試 + 全面驗證 SC-001（零靜默操作），型別檢查 + lint 通過
 
-- [ ] T021 [P] Create integration tests for CRUD toast in specs/009-global-toast/tests/integration/crud-toast.test.jsx — test cases: (1) events page shows success toast on create/edit/delete, (2) events page shows error toast on create/edit/delete failure, (3) events page reads ?toast= search param and shows toast, (4) posts page shows success/error toast on create/edit/delete, (5) posts page reads ?toast= search param, (6) EventDeleteConfirm no longer receives deleteError prop
-- [ ] T022 Run npm run type-check and npm run lint across all modified files (events/page.jsx, eventDetailClient.jsx, EventDeleteConfirm.jsx, posts/page.jsx, PostDetailClient.jsx), fix all errors
-- [ ] T023 Verify SC-001 CRUD coverage: confirm all 10 success + 10 error operations from research.md R10 table produce visible Toast feedback — 0 silent CRUD operations remain (報名/取消報名已於 Phase 2 驗證)
+- [x] T021 [P] Create integration tests for CRUD toast in specs/009-global-toast/tests/integration/crud-toast.test.jsx — test cases: (1) events page shows success toast on create/edit/delete, (2) events page shows error toast on create/edit/delete failure, (3) events page reads ?toast= search param and shows toast, (4) posts page shows success/error toast on create/edit/delete, (5) posts page reads ?toast= search param, (6) EventDeleteConfirm no longer receives deleteError prop
+- [x] T022 Run npm run type-check and npm run lint across all modified files (events/page.jsx, eventDetailClient.jsx, EventDeleteConfirm.jsx, posts/page.jsx, PostDetailClient.jsx), fix all errors
+- [x] T023 Verify SC-001 CRUD coverage: confirm all 10 success + 10 error operations from research.md R10 table produce visible Toast feedback — 0 silent CRUD operations remain (報名/取消報名已於 Phase 2 驗證)
 
 ---
 

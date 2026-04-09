@@ -3,6 +3,7 @@
 import { useEffect, useState, useContext, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic'; // 導入 dynamic
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 import {
   buildRoutePayload,
@@ -59,6 +60,8 @@ export default function RunTogetherPage() {
   const [filterDistrict, setFilterDistrict] = useState('');
   const { user } = useContext(AuthContext);
   const { showToast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // ✅ 表單相關 state
   const [showMap, setShowMap] = useState(false);
@@ -85,7 +88,6 @@ export default function RunTogetherPage() {
 
   // ✅ 建立活動狀態
   const [isCreating, setIsCreating] = useState(false);
-  const [createError, setCreateError] = useState(null);
 
   // ✅ 參加/退出：每張卡片的按鈕 loading 狀態
   const [pendingByEventId, setPendingByEventId] = useState({});
@@ -104,7 +106,6 @@ export default function RunTogetherPage() {
   // ✅ 刪除活動
   const [deletingEventId, setDeletingEventId] = useState(/** @type {string|null} */ (null));
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
 
   const hostName = user?.name || (user?.email ? user.email.split('@')[0] : '');
 
@@ -127,6 +128,15 @@ export default function RunTogetherPage() {
       document.body.style.overflow = prevOverflow;
     };
   }, [isFilterOpen]);
+
+  // 讀取導航帶來的 toast 訊息（例如從詳情頁刪除後跳轉）
+  useEffect(() => {
+    const toastMsg = searchParams.get('toast');
+    if (toastMsg) {
+      showToast(toastMsg);
+      router.replace('/events', { scroll: false });
+    }
+  }, [searchParams, showToast, router]);
 
   // 進入 events 頁面時，先載入最新 10 筆活動
   useEffect(() => {
@@ -377,7 +387,6 @@ export default function RunTogetherPage() {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    setCreateError(null);
     setIsCreating(true);
 
     const formData = new FormData(e.currentTarget);
@@ -426,6 +435,7 @@ export default function RunTogetherPage() {
       setSelectedCity('');
       setSelectedDistrict('');
 
+      showToast('建立活動成功');
       setIsCreating(false);
     } catch (err) {
       console.error('建立活動失敗:', err);
@@ -435,7 +445,7 @@ export default function RunTogetherPage() {
         routeCoordinates: routeCoordinatesSnapshot,
       });
 
-      setCreateError('建立活動失敗，請再建立一次');
+      showToast('建立活動失敗，請稍後再試', 'error');
       setIsCreating(false);
     }
   }
@@ -644,10 +654,11 @@ export default function RunTogetherPage() {
             return updated;
           }),
         );
+        showToast('更新活動成功');
         setEditingEvent(null);
       } catch (err) {
         console.error('更新活動失敗:', err);
-        showToast('更新活動失敗，請再試一次', 'error');
+        showToast('更新活動失敗，請稍後再試', 'error');
       } finally {
         setIsUpdating(false);
       }
@@ -662,7 +673,6 @@ export default function RunTogetherPage() {
   const handleDeleteEventRequest = useCallback(
     (/** @type {import('@/lib/event-helpers').EventData} */ ev) => {
       setDeletingEventId(String(ev.id));
-      setDeleteError('');
     },
     [],
   );
@@ -672,7 +682,6 @@ export default function RunTogetherPage() {
    */
   const handleDeleteCancel = useCallback(() => {
     setDeletingEventId(null);
-    setDeleteError('');
   }, []);
 
   /**
@@ -683,14 +692,13 @@ export default function RunTogetherPage() {
   const handleDeleteConfirm = useCallback(
     async (/** @type {string} */ eventId) => {
       setIsDeletingEvent(true);
-      setDeleteError('');
       try {
         await deleteEvent(String(eventId));
         setEvents((prev) => prev.filter((ev) => String(ev.id) !== String(eventId)));
         setDeletingEventId(null);
-        showToast('刪除成功');
+        showToast('活動已刪除');
       } catch {
-        setDeleteError('發生錯誤，請再試一次');
+        showToast('刪除活動失敗，請稍後再試', 'error');
       } finally {
         setIsDeletingEvent(false);
       }
@@ -756,12 +764,6 @@ export default function RunTogetherPage() {
         {loadError && (
           <div className={styles.errorCard} role="alert">
             {loadError}
-          </div>
-        )}
-
-        {createError && (
-          <div className={styles.errorCard} role="alert">
-            {createError}
           </div>
         )}
 
@@ -1472,7 +1474,6 @@ export default function RunTogetherPage() {
             onConfirm={handleDeleteConfirm}
             onCancel={handleDeleteCancel}
             isDeleting={isDeletingEvent}
-            deleteError={deleteError}
           />
         </div>
       )}

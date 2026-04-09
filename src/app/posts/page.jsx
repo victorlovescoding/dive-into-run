@@ -2,8 +2,10 @@
 
 import { useState, useContext, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './posts.module.css';
 import { AuthContext } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import {
   createPost,
   updatePost,
@@ -24,6 +26,9 @@ export default function PostPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const { user } = useContext(AuthContext);
+  const { showToast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [posts, setPosts] = useState([]);
   const [openMenuPostId, setOpenMenuPostId] = useState('');
   const [editingPostId, setEditingPostId] = useState(null);
@@ -65,6 +70,15 @@ export default function PostPage() {
     }
     fetchPosts();
   }, [user?.uid]);
+
+  // 讀取導航帶來的 toast 訊息（例如從詳情頁刪除後跳轉）
+  useEffect(() => {
+    const toastMsg = searchParams.get('toast');
+    if (toastMsg) {
+      showToast(toastMsg);
+      router.replace('/posts', { scroll: false });
+    }
+  }, [searchParams, showToast, router]);
 
   useEffect(() => {
     if (!bottomRef.current || posts.length === 0 || !nextCursor || isLoadingNext) return undefined;
@@ -173,19 +187,28 @@ export default function PostPage() {
   async function handleSubmitPost(e) {
     e.preventDefault();
 
-    if (editingPostId) {
-      await updatePost(editingPostId, { title, content }); // 編輯
-      setPosts((prev) => prev.map((p) => (p.id === editingPostId ? { ...p, title, content } : p))); // ✅ 只更新那一筆，不新增
-    } else {
-      const { id } = await createPost({ title, content, user }); // 新增
-      const minePost = await getPostDetail(id);
-      const hydrated = {
-        ...minePost,
-        liked: false,
-        isAuthor: user?.uid ? minePost.authorUid === user.uid : false,
-      }; // 只在新增時撈一次
-      setPosts((prev) => [hydrated, ...prev]); // ✅ prepend 只有新增
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+      if (editingPostId) {
+        await updatePost(editingPostId, { title, content });
+        setPosts((prev) =>
+          prev.map((p) => (p.id === editingPostId ? { ...p, title, content } : p)),
+        );
+        showToast('更新文章成功');
+      } else {
+        const { id } = await createPost({ title, content, user });
+        const minePost = await getPostDetail(id);
+        const hydrated = {
+          ...minePost,
+          liked: false,
+          isAuthor: user?.uid ? minePost.authorUid === user.uid : false,
+        };
+        setPosts((prev) => [hydrated, ...prev]);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        showToast('發佈文章成功');
+      }
+    } catch (err) {
+      console.error('Post submit error:', err);
+      showToast(editingPostId ? '更新文章失敗，請稍後再試' : '發佈文章失敗，請稍後再試', 'error');
     }
 
     setTitle('');
@@ -252,9 +275,15 @@ export default function PostPage() {
   async function deletePostHandler(postId) {
     // eslint-disable-next-line no-alert -- 刪除確認使用原生對話框
     if (!window.confirm('確定要刪除文章？')) return;
-    await deletePost(postId);
-    setPosts((prev) => prev.filter((p) => p.id !== postId));
-    if (openMenuPostId === postId) setOpenMenuPostId(''); // 關掉菜單
+    try {
+      await deletePost(postId);
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      if (openMenuPostId === postId) setOpenMenuPostId('');
+      showToast('文章已刪除');
+    } catch (err) {
+      console.error('Delete post error:', err);
+      showToast('刪除文章失敗，請稍後再試', 'error');
+    }
   }
 
   return (

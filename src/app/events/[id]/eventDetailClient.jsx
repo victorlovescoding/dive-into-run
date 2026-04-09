@@ -150,7 +150,7 @@ export default function EventDetailClient({ id }) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState(/** @type {string|null} */ (null));
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
+
   const [isJoined, setIsJoined] = useState(false);
 
   const refreshParticipants = useCallback(async () => {
@@ -313,10 +313,11 @@ export default function EventDetailClient({ id }) {
           }
           return updated;
         });
+        showToast('更新活動成功');
         setEditingEvent(null);
       } catch (err) {
         console.error('更新活動失敗:', err);
-        showToast('更新活動失敗，請再試一次', 'error');
+        showToast('更新活動失敗，請稍後再試', 'error');
       } finally {
         setIsUpdating(false);
       }
@@ -333,7 +334,6 @@ export default function EventDetailClient({ id }) {
   const handleDeleteEventRequest = useCallback(
     (/** @type {import('@/lib/event-helpers').EventData} */ ev) => {
       setDeletingEventId(String(ev.id));
-      setDeleteError('');
     },
     [],
   );
@@ -341,7 +341,6 @@ export default function EventDetailClient({ id }) {
   /** 取消刪除。 */
   const handleDeleteCancel = useCallback(() => {
     setDeletingEventId(null);
-    setDeleteError('');
   }, []);
 
   /**
@@ -352,18 +351,17 @@ export default function EventDetailClient({ id }) {
   const handleDeleteConfirm = useCallback(
     async (/** @type {string} */ eventId) => {
       setIsDeletingEvent(true);
-      setDeleteError('');
       try {
         await deleteEvent(String(eventId));
         setDeletingEventId(null);
-        router.push('/events');
+        router.push('/events?toast=活動已刪除');
       } catch {
-        setDeleteError('發生錯誤，請再試一次');
+        showToast('刪除活動失敗，請稍後再試', 'error');
       } finally {
         setIsDeletingEvent(false);
       }
     },
-    [router],
+    [router, showToast],
   );
 
   const statusText = useMemo(() => {
@@ -795,7 +793,6 @@ export default function EventDetailClient({ id }) {
             onConfirm={handleDeleteConfirm}
             onCancel={handleDeleteCancel}
             isDeleting={isDeletingEvent}
-            deleteError={deleteError}
           />
         </div>
       )}

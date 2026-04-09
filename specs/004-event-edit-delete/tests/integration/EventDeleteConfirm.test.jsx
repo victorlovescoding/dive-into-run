@@ -115,31 +115,7 @@ describe('Integration: EventDeleteConfirm', () => {
     expect(noButton).toBeDisabled();
   });
 
-  // --- FR-013: 刪除失敗時顯示錯誤訊息 ---
-
-  it('should display error message when deleteError is provided (FR-013)', () => {
-    // Arrange
-    render(
-      <EventDeleteConfirm
-        eventId="event-1"
-        onConfirm={vi.fn()}
-        onCancel={vi.fn()}
-        deleteError="發生錯誤，請再試一次"
-      />,
-    );
-
-    // Act & Assert
-    expect(screen.getByText(/發生錯誤，請再試一次/i)).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toBeInTheDocument();
-  });
-
-  it('should NOT display error message when deleteError is not provided', () => {
-    // Arrange
-    render(<EventDeleteConfirm eventId="event-1" onConfirm={vi.fn()} onCancel={vi.fn()} />);
-
-    // Act & Assert
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  });
+  // --- FR-013: 刪除失敗改用 Toast 通知（deleteError prop 已移除） ---
 
   // --- Accessibility ---
 
