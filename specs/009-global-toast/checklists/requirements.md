@@ -2,6 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-04-08
+**Updated**: 2026-04-09 — 追加 8 處缺漏需求後重新驗證
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
@@ -31,6 +32,8 @@
 
 ## Notes
 
-- All items pass. Spec is ready for `/speckit.clarify` or `/speckit.plan`.
-- FR-008 列出了 6 個具體需取代的位置，範圍明確。
-- Assumptions 區段記錄了 4 項合理預設（Toast 位置、時間、無持久化、CSS 動畫），避免不必要的 clarification。
+- All items pass. Spec is ready for `/speckit.plan`.
+- FR-008 列出 6 個需取代的舊回饋方式；FR-012 新增 8 個成功路徑的 Toast 覆蓋需求。
+- FR-013 處理建立活動失敗的 inline → Toast 統一；FR-014 確保文章列表頁整合 Toast。
+- User Story 1b 的 8 個 acceptance scenarios 對應 FR-012 的 8 個成功路徑，可逐一驗證。
+- Assumptions 區段記錄了 4 項合理預設（Toast 位置、時間、無持久化、CSS 動畫）。

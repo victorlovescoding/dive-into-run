@@ -4,12 +4,22 @@
 **Created**: 2026-04-08
 **Status**: Draft
 **Input**: User description: "取代各頁面分散的 actionMessage / alert，建立統一的 Toast feedback 機制"
+**Updated**: 2026-04-09 — 追加 8 處缺漏的 Toast 覆蓋需求（活動 CRUD、文章 CRUD）
 
 ## Clarifications
 
 ### Session 2026-04-08
 
 - Q: Error Toast 是否也 3 秒自動消失？ → A: Error 停留到手動關閉，success / info 維持 3 秒自動消失
+
+### Session 2026-04-09
+
+- Q: 活動詳情頁刪除活動成功後會 router.push('/events')，Toast 何時顯示？ → A: 導航到 /events 後再顯示「活動已刪除」Toast，不需跨頁保留機制
+- Q: FR-012 列出的所有操作，其失敗路徑是否也要統一用 error Toast？ → A: 是，全面覆蓋——FR-012 列出的所有操作失敗時一律用 error Toast
+- Q: FR-014 涵蓋範圍是否包含文章詳情頁？ → A: 是，擴展為文章列表頁 + 文章詳情頁，與 User Story 1b 一致
+- Q: FR-012 未列出「刪除活動成功」的 success Toast，是否應補入？ → A: 補入——FR-012 success 清單應與 FR-013 error 清單對稱
+- Q: 文章詳情頁刪除文章成功後是否有導航行為？Toast 在哪顯示？ → A: 刪除成功後 router.push('/posts')，Toast 在文章列表頁顯示（比照活動刪除）
+- Q: FR-013 文章 error Toast 的訊息格式？ → A: 通用格式「{操作}失敗，請稍後再試」，不附帶技術錯誤原因
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -26,6 +36,44 @@
 1. **Given** 使用者在活動頁面，**When** 成功報名一個活動，**Then** 畫面出現成功 Toast，顯示報名成功訊息
 2. **Given** 成功 Toast 已顯示，**When** 經過 3 秒，**Then** Toast 自動消失並帶有淡出動畫
 3. **Given** 成功 Toast 已顯示，**When** 使用者點擊關閉按鈕，**Then** Toast 立即消失
+
+---
+
+### User Story 1b — 所有 CRUD 操作成功都有即時回饋 (Priority: P1)
+
+身為使用者，我在建立活動、編輯活動、刪除活動、建立文章、編輯文章、刪除文章後，希望看到成功 Toast 回饋，而非操作後畫面毫無反應。
+
+**Why this priority**: 這些是應用中最頻繁的寫入操作，目前成功路徑完全靜默——使用者無法確認操作是否已生效。與 User Story 1 同屬 P1 核心場景。
+
+**Independent Test**: 依序執行建立活動、編輯活動、刪除活動、建立文章、編輯文章、刪除文章，確認每個操作成功後都出現對應的成功 Toast。
+
+**Acceptance Scenarios**:
+
+1. **Given** 使用者在活動列表頁填好表單，**When** 成功建立一個活動，**Then** 出現「建立活動成功」的成功 Toast
+2. **Given** 使用者在活動列表頁編輯活動，**When** 成功儲存變更，**Then** 出現「更新活動成功」的成功 Toast
+3. **Given** 使用者在活動詳情頁編輯活動，**When** 成功儲存變更，**Then** 出現「更新活動成功」的成功 Toast
+4. **Given** 使用者在文章列表頁填好表單，**When** 成功建立一篇文章，**Then** 出現「發佈文章成功」的成功 Toast
+5. **Given** 使用者在文章列表頁編輯文章，**When** 成功儲存變更，**Then** 出現「更新文章成功」的成功 Toast
+6. **Given** 使用者在文章列表頁刪除文章，**When** 刪除完成，**Then** 出現「文章已刪除」的成功 Toast
+7. **Given** 使用者在文章詳情頁編輯文章，**When** 成功儲存變更，**Then** 出現「更新文章成功」的成功 Toast
+8. **Given** 使用者在文章詳情頁刪除文章，**When** 刪除完成並導航至 /posts，**Then** 出現「文章已刪除」的成功 Toast
+9. **Given** 使用者在活動列表頁刪除活動，**When** 刪除完成，**Then** 出現「活動已刪除」的成功 Toast
+10. **Given** 使用者在活動詳情頁刪除活動，**When** 刪除完成並導航至 /events，**Then** 出現「活動已刪除」的成功 Toast
+
+---
+
+### User Story 1c — 建立活動失敗使用 Toast 而非 inline 錯誤 (Priority: P1)
+
+身為使用者，我在建立活動失敗時，希望看到統一的 error Toast，而不是頁面上的 inline 錯誤訊息，以維持一致的回饋體驗。
+
+**Why this priority**: 建立活動的 error path 目前使用 `setCreateError` 設定 inline 錯誤狀態，與其他已改用 `showToast` 的 error 回饋不一致。統一後使用者體驗更一致。
+
+**Independent Test**: 模擬建立活動失敗（例如斷網），確認出現 error Toast 而非 inline 錯誤訊息。
+
+**Acceptance Scenarios**:
+
+1. **Given** 使用者在活動列表頁填好表單，**When** 建立活動失敗（如網路錯誤），**Then** 出現 error Toast 顯示錯誤訊息，而非 inline 紅字
+2. **Given** 建立活動失敗顯示 error Toast，**When** 使用者未手動關閉，**Then** Toast 持續顯示直到手動關閉
 
 ---
 
@@ -103,7 +151,28 @@
   - 會員頁面目前缺失的錯誤回饋（只有 `console.error`）
 - **FR-009**: Toast MUST 對螢幕閱讀器可存取——成功與資訊提示使用 `status` role，錯誤提示使用 `alert` role
 - **FR-010**: Toast 在行動裝置上 MUST 不遮擋主要導覽列或頁面操作按鈕
-- **FR-011**: 路由切換時，殘留的 Toast SHOULD 自動清除
+- **FR-011**: 路由切換時，殘留的 Toast SHOULD 自動清除（註：涉及導航的操作如活動詳情頁刪除→/events、文章詳情頁刪除→/posts，Toast 在導航目標頁觸發，不需跨頁保留）
+- **FR-012**: 以下操作的成功路徑 MUST 顯示 success Toast：
+  - 活動列表頁：建立活動成功
+  - 活動列表頁：編輯活動成功
+  - 活動詳情頁：編輯活動成功
+  - 活動列表頁：刪除活動成功
+  - 活動詳情頁：刪除活動成功
+  - 文章列表頁：建立文章成功
+  - 文章列表頁：編輯文章成功
+  - 文章列表頁：刪除文章成功
+  - 文章詳情頁：編輯文章成功
+  - 文章詳情頁：刪除文章成功
+- **FR-013**: 以下操作的失敗路徑 MUST 統一使用 error Toast 回饋（活動編輯的列表頁與詳情頁已有 error Toast，不需變更）。錯誤訊息格式統一為「{操作}失敗，請稍後再試」，不附帶技術錯誤原因：
+  - 活動列表頁：建立活動失敗（取代 `setCreateError` inline 錯誤）
+  - 活動列表頁：刪除活動失敗（取代 `setDeleteError` inline 錯誤）
+  - 活動詳情頁：刪除活動失敗（取代 `setDeleteError` inline 錯誤）
+  - 文章列表頁：建立文章失敗（目前無 try-catch，需新增）
+  - 文章列表頁：編輯文章失敗（目前無 try-catch，需新增）
+  - 文章列表頁：刪除文章失敗（目前無 try-catch，需新增）
+  - 文章詳情頁：編輯文章失敗（目前無 try-catch，需新增）
+  - 文章詳情頁：刪除文章失敗（目前無 try-catch，需新增）
+- **FR-014**: 文章列表頁與文章詳情頁 MUST 整合 Toast 通知，使兩頁面的建立、編輯、刪除操作均透過 Toast 提供回饋
 
 ### Key Entities
 
@@ -114,7 +183,7 @@
 
 ### Measurable Outcomes
 
-- **SC-001**: 使用者的每個關鍵操作（報名、取消、刪除、更新等）都會產生可見的回饋提示，0 個操作處於「靜默失敗」狀態
+- **SC-001**: 使用者的每個關鍵操作（建立活動、編輯活動、報名、取消報名、建立文章、編輯文章、刪除文章等）不論成功或失敗都會產生可見的 Toast 回饋，0 個寫入操作處於「靜默完成」狀態
 - **SC-002**: 專案內不再使用 `window.alert()` 做操作回饋，所有回饋統一透過 Toast 呈現
 - **SC-003**: Success / info Toast 在 3 秒內自動消失；error Toast 持續顯示直到手動關閉，確保使用者不會錯過錯誤訊息
 - **SC-004**: Toast 通知在行動裝置（375px 寬）和桌面裝置（1440px 寬）上都能正常顯示且不遮擋關鍵 UI
