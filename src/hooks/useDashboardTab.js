@@ -43,14 +43,6 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
   const initializedRef = useRef(false);
   const prevResultRef = useRef(/** @type {FetchResult | null} */ (null));
   const isLoadingMoreRef = useRef(false);
-  const mountedRef = useRef(true);
-
-  useEffect(
-    () => () => {
-      mountedRef.current = false;
-    },
-    [],
-  );
 
   // --- Initial fetch ---
   useEffect(() => {
@@ -97,17 +89,15 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
         prevResult: prevResultRef.current,
         pageSize,
       });
-      if (!mountedRef.current) return;
       setItems((prev) => [...prev, ...result.items]);
       prevResultRef.current = result;
       setHasMore(result.items.length >= pageSize);
     } catch (err) {
-      if (!mountedRef.current) return;
       console.error('[DashboardTab] load more failed:', err);
       setLoadMoreError('載入更多失敗');
     } finally {
       isLoadingMoreRef.current = false;
-      if (mountedRef.current) setIsLoadingMore(false);
+      setIsLoadingMore(false);
     }
   }, [uid, hasMore, fetchFn, pageSize]);
 
@@ -134,19 +124,17 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
     setIsLoading(true);
     fetchFn(uid, { prevResult: null, pageSize })
       .then((/** @type {FetchResult} */ result) => {
-        if (!mountedRef.current) return;
         initializedRef.current = true;
         setItems(result.items);
         prevResultRef.current = result;
         setHasMore(result.items.length >= pageSize);
       })
       .catch((err) => {
-        if (!mountedRef.current) return;
         console.error('[DashboardTab] retry failed:', err);
         setError('載入失敗');
       })
       .finally(() => {
-        if (mountedRef.current) setIsLoading(false);
+        setIsLoading(false);
       });
   }, [uid, fetchFn, pageSize]);
 

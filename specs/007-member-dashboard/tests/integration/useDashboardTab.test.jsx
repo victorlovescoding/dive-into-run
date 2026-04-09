@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
 
 /** @type {IntersectionObserverCallback | null} */
 let observerCallback = null;
@@ -367,5 +368,91 @@ describe('useDashboardTab', () => {
 
     // Resolve after unmount — state should not update (cancelled flag prevents stale writes)
     expect(result.current.items).toEqual([]);
+  });
+
+  // --- 12. StrictMode 下 loadMore 正常完成（迴歸測試） ---
+  it('completes loadMore under StrictMode without getting stuck', async () => {
+    const useDashboardTab = await importHook();
+    const page1 = Array.from({ length: 5 }, (_, i) => ({ id: `p1-${i}` }));
+    const page1Result = { items: page1, nextCursor: 5 };
+
+    /** @type {(value: any) => void} */
+    let resolveInitial;
+    mockFetchFn.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveInitial = resolve;
+        }),
+    );
+
+    /** @param {{ children: import('react').ReactNode }} props */
+    function StrictWrapper({ children }) {
+      return <StrictMode>{children}</StrictMode>;
+    }
+
+    const { result } = renderHook(() => useDashboardTab('user-1', mockFetchFn, 5, true), {
+      wrapper: StrictWrapper,
+    });
+
+    const sentinel = document.createElement('div');
+    result.current.sentinelRef.current = sentinel;
+
+    await act(async () => {
+      resolveInitial(page1Result);
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.hasMore).toBe(true);
+
+    // loadMore should succeed — not stuck at isLoadingMore=true
+    const page2 = [{ id: 'p2-0' }, { id: 'p2-1' }];
+    mockFetchFn.mockResolvedValueOnce({ items: page2 });
+
+    await act(async () => {
+      triggerIntersection();
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoadingMore).toBe(false);
+    });
+
+    expect(result.current.items).toHaveLength(7);
+    expect(result.current.hasMore).toBe(false);
+  });
+
+  // --- 13. StrictMode 下 retry 正常完成 ---
+  it('completes retry under StrictMode without getting stuck', async () => {
+    const useDashboardTab = await importHook();
+    mockFetchFn.mockRejectedValueOnce(new Error('network error'));
+
+    /** @param {{ children: import('react').ReactNode }} props */
+    function StrictWrapper({ children }) {
+      return <StrictMode>{children}</StrictMode>;
+    }
+
+    const { result } = renderHook(() => useDashboardTab('user-1', mockFetchFn, 10, true), {
+      wrapper: StrictWrapper,
+    });
+
+    await waitFor(() => {
+      expect(result.current.error).not.toBeNull();
+    });
+
+    // Retry should succeed — not stuck at isLoading=true
+    mockFetchFn.mockResolvedValueOnce({ items: [{ id: 'recovered' }] });
+
+    await act(async () => {
+      result.current.retry();
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.items).toEqual([{ id: 'recovered' }]);
   });
 });
