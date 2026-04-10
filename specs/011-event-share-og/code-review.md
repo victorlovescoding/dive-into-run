@@ -1,82 +1,166 @@
-# Code Review — 011-event-share-og
+# Code Review — 011-event-share-og (Polish iteration)
 
 日期：2026-04-10
+
+**Scope**: 目前 uncommitted 的變更，排除 `CLAUDE.md` 與 `project-health/`。
+**範圍檔案**:
+
+- `src/components/ShareButton.jsx`（+42 / -5）
+- `src/contexts/ToastContext.jsx`（+1 / -1）
+- `specs/011-event-share-og/tests/integration/ShareButton.test.jsx`（+95 / -1）
+
+**Verification**:
+
+- `npx vitest run specs/011-event-share-og/tests/integration/ShareButton.test.jsx` → **9 passed / 9 total** ✅
+- `npx eslint` on modified files → **0 errors / 0 warnings** ✅
+- `npm run type-check` grep `ShareButton|ToastContext` → **空輸出**（0 new errors） ✅
 
 ---
 
 ## Taste Rating
 
-🟢 **Good taste** — Clean separation of concerns, minimal new abstractions, reuses existing service layer. The data flows from Firestore through `generateMetadata()` into `<meta>` tags with zero unnecessary indirection. ShareButton is a single, focused component that handles exactly two code paths. This is how you ship a feature without creating technical debt.
+🟢 **Good taste** — 上一輪 Improvement #1 和 #2 都精準落地。`executeShare` 現在是一條線性敘事：「try share → try copy → toast」，nesting 從 3 降到 2，函式職責分明。`copyToClipboard` 這個 helper 是教科書等級的「好的抽象」——它把一個真實的語義單元（「把文字複製到剪貼簿，不管用什麼手段」）變成一個函式，外界只關心成敗的 boolean，內部細節完全封裝。
 
 ---
 
-## Linus-Style Analysis
+## Linus's Three Questions
 
-### Linus's Three Questions
+1. **Is this solving a real problem?**
+   Yes — 降低 nesting 是 readability + 未來維護的真實收益；`vi.spyOn` 是避免 test 之間狀態污染的真實預防。兩者都不是過度工程。
 
-1. **Is this solving a real problem?** Yes — sharing links to social platforms without OG metadata means ugly raw URLs with no preview. This directly impacts user acquisition.
-2. **Is there a simpler way?** Not really. `generateMetadata()` is the canonical Next.js 15 approach. Web Share API + clipboard fallback is the minimal implementation for cross-device sharing. No unnecessary libraries, no over-abstraction.
-3. **What will this break?** Very little. Additive changes only — new metadata on existing pages, new button in existing UI. The only risk is `window.location.origin` in JSX (see below).
+2. **Is there a simpler way?**
+   No further — `executeShare` 已經是三個 linear step，再砍會失去清晰性。函式拆法也恰到好處（`copyViaTextarea` sync / `copyToClipboard` async / `executeShare` orchestration），沒有 over-engineering 也沒有 under-engineering。
 
----
-
-### [CRITICAL ISSUES]
-
-None.
+3. **What will this break?**
+   Nothing — 9/9 tests 全綠，行為與上一輪完全相同，只是結構更乾淨。
 
 ---
 
-### [IMPROVEMENT OPPORTUNITIES]
+## [CRITICAL ISSUES]
 
-- **[src/app/events/[id]/eventDetailClient.jsx, Line 405] `window.location.origin` in JSX render path**: While this works because it's a `'use client'` component that only renders after hydration (behind `!loading && !error && event` checks), directly referencing `window.location.origin` in JSX is a code smell. If the component's rendering logic ever changes (e.g., SSR pre-rendering), this becomes a runtime crash. Consider computing the URL in a `useMemo` or passing it as a prop from the server component. Same applies to `PostDetailClient.jsx` line 415. Pragmatically, this works today — it's a "should fix at some point" not a "must fix now".
-
-- **[src/app/posts/[id]/PostDetailClient.jsx, Line 413] Inline `style` for layout**: The `<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>` wrapper and `<h2 style={{ margin: 0 }}>` are inline styles in a codebase that uses CSS Modules everywhere else. This is inconsistent. A CSS Module class (e.g., `.titleRow`) would be cleaner and more maintainable. The event page uses existing `styles.detailHeader` / `styles.detailHeaderRight` — the post page should follow the same pattern.
-
-- **[src/app/events/[id]/page.jsx + src/app/posts/[id]/page.jsx] Duplicated constants**: `FALLBACK_TITLE` and `OG_IMAGE_PATH` are defined identically in both page files. These are not abstractions crying to be made — two occurrences is fine — but if a third page ever needs OG metadata, extract them to `og-helpers.js`. As-is, acceptable.
-
-- **[src/lib/og-helpers.js, Line 34] Markdown bold/italic regex limitation**: The regex `(\*{1,2}|_{1,2})(.+?)\1` uses a backreference that only works for matching pairs. Mixed cases like `**bold *italic* still bold**` will partially strip. This is an inherent regex-based Markdown parsing limitation. For OG description purposes (80-char excerpt), this is pragmatically fine. Don't reach for a full Markdown parser — that would be over-engineering.
-
-- **[src/lib/og-helpers.js, Line 40] List marker regex also matches `* italic *`**: The list marker removal `^[-*]\s+/gm` runs after bold/italic stripping, so `* italic *` would already have been handled. Execution order is correct. No action needed, but worth being aware of the coupling.
+**None.**
 
 ---
 
-### [STYLE NOTES]
+## [IMPROVEMENT OPPORTUNITIES]
 
-- **[src/components/ShareButton.jsx]** Good separation of `executeShare()` as a standalone async function outside the component. Clean `useCallback` with correct dependency array. The AbortError silencing (`error.name === 'AbortError'`) is the right call — users dismissing the share sheet is not an error.
+### 1. `document.execCommand = () => false` 的 stub 會在檔案內殘留（極輕微）
 
-- **[src/lib/og-helpers.js]** Good use of unicode escape sequences for CJK brackets (`\u300c`, `\u300d`) and separators (`\u00b7`, `\u2014`). Makes the code unambiguous regardless of file encoding.
+`specs/011-event-share-og/tests/integration/ShareButton.test.jsx:236-238` 和 `:262-264`
 
-- **[src/components/ShareButton.module.css]** Clean, minimal. Hardcoded colors (#dadce0, #5f6368, etc.) are Google Material-ish. If the project has design tokens or CSS variables, these should reference them. But for MVP, fine.
+```js
+if (!document.execCommand) {
+  document.execCommand = () => false; // jsdom 沒有預設實作，先 stub
+}
+const execSpy = vi.spyOn(document, 'execCommand').mockReturnValue(true);
+```
+
+`vi.restoreAllMocks()` 會還原 `vi.spyOn` 套的 wrapper，但**不會**還原第一行直接 assign 上去的 `() => false` base stub。結果是：第一個 test 執行後，`document.execCommand` 永久變成 `() => false`（在同一個 test 檔案的 jsdom instance 內）。
+
+**目前不會炸的原因**：
+
+- Vitest test files 彼此 isolated（各自 jsdom），不會跨檔污染
+- 檔案內後續 test 用 `vi.spyOn` 包上去的時候，spy 的 base 是 `() => false`，依然可以被 `mockReturnValue` 改行為，restore 之後變回 `() => false`
+- base stub 是 pure function，無狀態，不會造成 data corruption
+
+**Pragmatic 角度**：這是「理論潔癖」而非實際問題。Linus 會說 "works fine, stop polishing"。可以無視。
+
+如果要乾淨到極致，解法是用 `vi.stubGlobal` 或在 `beforeEach` 設定 / `afterEach` 清掉：
+
+```js
+// 或許更乾淨的做法
+afterEach(() => {
+  if ('execCommand' in document) {
+    // @ts-expect-error — 清掉我們 stub 上去的 property
+    delete document.execCommand;
+  }
+});
+```
+
+但這會引入 `@ts-expect-error`，CLAUDE.md 規則 1 雖然允許但不鼓勵。**結論：保持現狀即可**。
 
 ---
 
-### [TESTING GAPS]
+### 2. `execCommand` 在 `await` 之後可能失效（production 風險，不是 test 問題）
 
-- **`generateMetadata()` has no tests**: Both `events/[id]/page.jsx` and `posts/[id]/page.jsx` have `generateMetadata()` functions that call Firebase, format metadata, and handle fallbacks. The unit tests only cover `og-helpers.js` (the pure functions). The integration between `fetchEventById` -> `buildEventOgDescription` -> metadata object construction is untested. This is the most important code path (it's what crawlers see) and it has zero test coverage. **Recommendation**: Add integration tests that mock the Firebase fetch and assert the full metadata object shape, including the fallback case when the document doesn't exist.
+`src/components/ShareButton.jsx:46-52`
 
-- **ShareButton integration tests are solid**: Good coverage of Web Share API path, clipboard fallback, toast feedback, AbortError handling. Uses real ToastProvider + ToastContainer — these are real integration tests, not mock-assert-mock patterns. Well done.
+```js
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text); // ← 這個 await 如果 async reject
+    return true;
+  } catch {
+    return copyViaTextarea(text); // ← 這裡的 execCommand 可能因失去 user gesture 失敗
+  }
+}
+```
+
+Web 規範上，`document.execCommand('copy')` 必須在 **user-initiated event handler** 的 synchronous call chain 內才能成功。一旦經過 `await`（哪怕是 rejected promise），微任務 queue 就已經 flush，user gesture context 可能失效。
+
+**兩個情境**：
+
+- **`navigator.clipboard === undefined`**（非常舊的瀏覽器 / 特殊環境）→ `undefined.writeText(...)` **synchronously** throw TypeError → 不會經過 await → user gesture 仍然有效 → `execCommand` 可以跑 ✅
+- **`navigator.clipboard.writeText()` async rejects**（HTTP LAN IP 的常見情況）→ 經過 await → user gesture **可能**失效 → `execCommand` 可能回 `false` ⚠️
+
+**但**——使用者本人已經在 iPhone HTTP LAN IP 實測過這個 code path，回報「需要點一次才能複製網址」（意思是修好之後可以跑了）。這代表 Safari 在 HTTP LAN IP 上的 `clipboard.writeText` 是 **synchronously** throw（不是 async reject），所以 user gesture 保留。或者 Safari 對這個規定比較寬鬆。
+
+**結論**：這條風險在實測過的環境裡不存在。留個註記給未來讀 code 的人知道為什麼能 work，不需要改。如果未來遇到「在 Chrome Android HTTP LAN IP 按分享無反應」類似的 bug，這裡是第一個懷疑點。
 
 ---
 
-### [TASK GAPS]
+## [STYLE NOTES]
 
-All 14 tasks marked `[x]` have corresponding implementation in the diff. No tasks are missing implementation. No significant scope creep detected.
+無。
 
-- **T002 partial**: Task says "add `NEXT_PUBLIC_SITE_URL` to `.env.example`" — this was not visible in the diff. Either `.env.example` doesn't exist, or this sub-item was skipped. Minor — it's a documentation concern, not a code concern.
+---
+
+## [TESTING GAPS]
+
+**None.** 9 個 test 覆蓋：
+
+| Path                                                         | Test                                                               |
+| ------------------------------------------------------------ | ------------------------------------------------------------------ |
+| Rendering & a11y                                             | `should render a button with aria-label "分享"`                    |
+| 觸控 + Web Share API 可用                                    | `should call navigator.share when Web Share API is available`      |
+| 無 Web Share → clipboard                                     | `should copy URL to clipboard when Web Share API is unavailable`   |
+| Clipboard 成功 → success toast                               | `should show success toast after clipboard copy`                   |
+| Share reject → error toast                                   | `should show error toast when navigator.share rejects`             |
+| Share 使用者取消（AbortError）→ 不顯示 error                 | `should NOT show error toast when user cancels share (AbortError)` |
+| 桌面（`pointer: fine`）+ 有 `navigator.share` → 走 clipboard | `should copy URL when pointer is fine (desktop)`                   |
+| Clipboard reject → `execCommand` fallback 成功               | `should fall back to execCommand when clipboard API rejects`       |
+| Clipboard reject + `execCommand` 失敗 → error toast          | `should show error toast when both clipboard and execCommand fail` |
+
+所有 assertion 都對 visible DOM state（toast text / button role），不是 mock theater。
+
+---
+
+## [TASK GAPS]
+
+與上一輪相同：這是 post-implementation polish，`tasks.md` 沒有對應 task。**非 blocker**，可以在 commit message 或 follow-up 的 tasks.md 補 `Phase 6: 熱修` section 記錄動機。
 
 ---
 
 ## VERDICT
 
-✅ **Worth merging** — Core logic is sound. The `og-helpers.js` module is clean, well-tested, and handles edge cases properly. `ShareButton` is a focused, reusable component with good a11y (`aria-label`, keyboard-accessible `<button>`). `generateMetadata()` follows Next.js 15 conventions correctly. The metadata structure matches the contract spec exactly.
+✅ **Worth merging**
 
-Two items deserve attention before or shortly after merge:
+沒有 blocking issues，所有 verification 全綠。兩個 improvement opportunities 都是「理論層級潔癖」，Linus 會叫你停止 polish 直接 commit。
 
-1. The inline styles in `PostDetailClient.jsx` should use CSS Modules for consistency.
-2. `generateMetadata()` integration tests should be added — this is the feature's most critical code path and it currently has zero direct test coverage.
+**建議 commit 流程**：
+
+1. ~~修 improvement~~ — 不用，這兩個是 nitpick，不值得再動 code
+2. （Optional）在 `tasks.md` 加 Phase 6 熱修 section 或在 commit message 描述動機
+3. `git add -p` 仔細挑要 commit 的 hunks（排除 `CLAUDE.md` 和 `project-health/`）
+4. Commit
 
 ---
 
 ## KEY INSIGHT
 
-The entire feature ships with exactly **3 new source files** (og-helpers.js, ShareButton.jsx, ShareButton.module.css) and **5 modified files** — all additive, no breaking changes, no new dependencies. This is what "good taste" looks like: solving a real user problem with minimal surface area. The only code smell is the `PostDetailClient.jsx` inline styles, which is a consistency nit, not a design flaw.
+**這一輪把 readability 從「能過 review」推到「一眼就看懂」的境界。** `executeShare` 現在三行主邏輯就講完整個故事：「if 觸控＋有 share，用 share；else copy；copy 失敗顯示錯誤；成功顯示已複製」。沒有 nested try/catch 干擾閱讀，沒有隱式狀態，沒有特殊分支。
+
+`copyToClipboard` 這個抽象的價值不在於「省幾行 code」——省不了多少——而在於**給語義命名**。未來讀 code 的人不需要再在腦裡解析「先試 Clipboard API、失敗就試 textarea、這整段到底在幹嘛」，他只要看 `copyToClipboard` 這個名字就知道。
+
+> "Good code reads like prose."
+> 這版 `executeShare` 就是 prose level。收工。

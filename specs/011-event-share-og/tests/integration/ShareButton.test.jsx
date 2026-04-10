@@ -45,11 +45,35 @@ describe('Integration: ShareButton', () => {
   /** @type {import('vitest').Mock} */
   let mockWriteText;
 
+  /** @type {boolean} */
+  let matchMediaResult;
+
   beforeEach(() => {
+    matchMediaResult = true; // 預設觸控裝置
+    /** @type {(query: string) => MediaQueryList} */
+    const matchMediaImpl = (query) =>
+      /** @type {MediaQueryList} */ (
+        /** @type {unknown} */ ({
+          matches: query === '(pointer: coarse)' ? matchMediaResult : false,
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        })
+      );
+    Object.defineProperty(window, 'matchMedia', {
+      value: vi.fn(matchMediaImpl),
+      writable: true,
+      configurable: true,
+    });
+
     originalShare = navigator.share;
     // jsdom navigator.clipboard is on window — mock writeText on the actual instance
     mockWriteText = vi.fn().mockResolvedValue(undefined);
-    const clipboard = window.navigator.clipboard;
+    const { clipboard } = window.navigator;
     if (clipboard) {
       // jsdom has a real Clipboard — spy on its prototype
       const proto = Object.getPrototypeOf(clipboard);
@@ -176,5 +200,76 @@ describe('Integration: ShareButton', () => {
 
     // Assert
     expect(screen.queryByText('分享失敗')).not.toBeInTheDocument();
+  });
+
+  /* ========================================================================
+     Pointer detection: desktop should not call Web Share API
+     ======================================================================== */
+
+  it('should copy URL when pointer is fine (desktop)', async () => {
+    // Arrange
+    matchMediaResult = false; // 桌面（pointer: fine）
+    const mockShare = vi.fn().mockResolvedValue(undefined);
+    navigator.share = mockShare;
+    const { user } = renderShareButton(defaultProps);
+
+    // Act
+    const button = screen.getByRole('button', { name: '分享' });
+    await user.click(button);
+
+    // Assert
+    expect(mockShare).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockWriteText).toHaveBeenCalledWith('https://example.com/events/123');
+    });
+    expect(screen.getByText('已複製連結')).toBeInTheDocument();
+  });
+
+  /* ========================================================================
+     execCommand fallback path (clipboard API rejected)
+     ======================================================================== */
+
+  it('should fall back to execCommand when clipboard API rejects', async () => {
+    // Arrange
+    matchMediaResult = false; // 桌面
+    delete navigator.share;
+    mockWriteText.mockRejectedValueOnce(new Error('Clipboard denied'));
+    if (!document.execCommand) {
+      document.execCommand = () => false; // jsdom 沒有預設實作，先 stub
+    }
+    const execSpy = vi.spyOn(document, 'execCommand').mockReturnValue(true);
+    const { user } = renderShareButton(defaultProps);
+
+    // Act
+    const button = screen.getByRole('button', { name: '分享' });
+    await user.click(button);
+
+    // Assert
+    await waitFor(() => {
+      expect(execSpy).toHaveBeenCalledWith('copy');
+    });
+    expect(screen.getByText('已複製連結')).toBeInTheDocument();
+  });
+
+  it('should show error toast when both clipboard and execCommand fail', async () => {
+    // Arrange
+    matchMediaResult = false; // 桌面
+    delete navigator.share;
+    mockWriteText.mockRejectedValueOnce(new Error('Clipboard denied'));
+    if (!document.execCommand) {
+      document.execCommand = () => false; // jsdom 沒有預設實作，先 stub
+    }
+    vi.spyOn(document, 'execCommand').mockReturnValue(false);
+    const { user } = renderShareButton(defaultProps);
+
+    // Act
+    const button = screen.getByRole('button', { name: '分享' });
+    await user.click(button);
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText('分享失敗')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('已複製連結')).not.toBeInTheDocument();
   });
 });

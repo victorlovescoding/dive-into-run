@@ -5,7 +5,47 @@ import { useToast } from '@/contexts/ToastContext';
 import styles from './ShareButton.module.css';
 
 /**
- * 執行分享動作：優先使用 Web Share API，fallback 為複製連結到剪貼簿。
+ * 同步複製文字到剪貼簿的最後手段：用隱藏 textarea + `execCommand('copy')`。
+ * 在 non-secure context（例：HTTP LAN IP）或 Clipboard API 被瀏覽器拒絕時使用。
+ * @param {string} text - 要複製的文字。
+ * @returns {boolean} 複製是否成功。
+ */
+function copyViaTextarea(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  try {
+    textarea.select();
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
+/**
+ * 嘗試複製 URL 到剪貼簿：優先用 Clipboard API，失敗則 fallback 到 `execCommand`。
+ * @param {string} text - 要複製的文字。
+ * @returns {Promise<boolean>} 是否成功複製。
+ */
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Clipboard API 不存在或被瀏覽器拒絕（例：Firefox non-secure context）
+    return copyViaTextarea(text);
+  }
+}
+
+/**
+ * 執行分享動作，依序嘗試三種方式：
+ * 1. 觸控裝置（`pointer: coarse`）+ 支援 Web Share API → 系統原生分享面板
+ * 2. Clipboard API → 複製連結 + toast
+ * 3. `execCommand('copy')` fallback → 複製連結 + toast（non-secure context）
  * @param {object} params - 分享參數。
  * @param {string} params.title - 分享標題。
  * @param {string} params.url - 分享網址。
@@ -14,12 +54,15 @@ import styles from './ShareButton.module.css';
  */
 async function executeShare({ title, url, showToast }) {
   try {
-    if (navigator.share) {
+    if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
       await navigator.share({ title, url });
-    } else {
-      await navigator.clipboard.writeText(url);
-      showToast('已複製連結');
+      return;
     }
+    if (!(await copyToClipboard(url))) {
+      showToast('分享失敗', 'error');
+      return;
+    }
+    showToast('已複製連結');
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
       return;
