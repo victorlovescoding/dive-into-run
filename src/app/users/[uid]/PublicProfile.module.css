@@ -1,0 +1,234 @@
+/* ==========================================================================
+   Public Profile Page — shared module for ProfileHeader / ProfileStats /
+   ProfileEventList / ProfileClient.
+   ========================================================================== */
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* --- Self profile banner (US4) ----------------------------------------- */
+
+.selfBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #e8f0fe;
+  border: 1px solid #a8c7fa;
+  border-radius: 12px;
+  color: #1967d2;
+}
+
+.selfBannerText {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.selfBannerLink {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1967d2;
+  text-decoration: underline;
+}
+
+.selfBannerLink:hover {
+  color: #174ea6;
+}
+
+/* --- Header ------------------------------------------------------------- */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e0e3e7;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.avatarWrapper {
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #f1f3f4;
+}
+
+.avatarFallback {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: #e8f0fe;
+  color: #1967d2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 600;
+  user-select: none;
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #202124;
+  margin: 0;
+}
+
+.bio {
+  font-size: 0.95rem;
+  color: #3c4043;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.joinDate {
+  font-size: 0.8125rem;
+  color: #5f6368;
+  margin: 0;
+}
+
+/* --- Stats -------------------------------------------------------------- */
+
+.stats {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e0e3e7;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.statItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1967d2;
+}
+
+.statLabel {
+  font-size: 0.8125rem;
+  color: #5f6368;
+}
+
+/* --- Event list --------------------------------------------------------- */
+
+.eventListSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.eventListTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #202124;
+  margin: 0;
+}
+
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loadingText,
+.emptyText,
+.errorText {
+  font-size: 0.9375rem;
+  color: #5f6368;
+  text-align: center;
+  padding: 24px 16px;
+  background: #fff;
+  border: 1px dashed #dadce0;
+  border-radius: 12px;
+}
+
+.errorText {
+  color: #c5221f;
+  border-color: #f5c2c2;
+}
+
+.loadMoreStatus {
+  font-size: 0.8125rem;
+  color: #5f6368;
+  text-align: center;
+  padding: 8px;
+}
+
+.loadMoreError {
+  font-size: 0.8125rem;
+  color: #c5221f;
+  text-align: center;
+  padding: 8px;
+}
+
+.sentinel {
+  height: 1px;
+}
+
+/* --- Responsive --------------------------------------------------------- */
+
+@media (max-width: 640px) {
+  .header {
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .headerText {
+    align-items: center;
+  }
+
+  .stats {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .statValue {
+    font-size: 1.25rem;
+  }
+
+  .avatar,
+  .avatarFallback {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatarFallback {
+    font-size: 2rem;
+  }
+}
