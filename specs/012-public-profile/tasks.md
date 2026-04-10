@@ -19,12 +19,13 @@
 
 **Contract**: `specs/012-public-profile/contracts/firebase-profile-api.md`
 
-- [ ] T000 Verify Firestore Security Rules — 確認 `users/{uid}` 允許 public read（FR-007）且 bio write 含 `size() <= 150` 驗證（FR-006）。對照 data-model.md 建議規則與現行 rules 合併，必要時更新並部署
+- [ ] T000 Verify Firestore Security Rules — 確認 `users/{uid}` 允許 public read（FR-007）且 bio write 含 `size() <= 150` 驗證（FR-006）。對照 data-model.md 建議規則與現行 rules 合併。**驗證流程**：(1) 更新 `firestore.rules` (2) 啟動 emulator `firebase emulators:start --only auth,firestore` (3) 跑既有 E2E `npm run test:e2e:emulator` 確保無 regression (4) 通過後再部署到正式環境
 - [ ] T001 Create `src/lib/firebase-profile.js` — JSDoc typedefs (`PublicProfile`, `ProfileStats`, `HostedEventsPage`) + implement `getUserProfile(uid)` per contract
+- [ ] T001a Create `src/lib/firebase-profile-server.js` — export `getUserProfileServer(uid)` using `adminDb` from `firebase-admin.js`. 專供 Server Component (`page.jsx` generateMetadata) 使用，回傳 `PublicProfile | null`。JSDoc typedef 複用 `firebase-profile.js` 中的 `PublicProfile` (via `import('@/lib/firebase-profile').PublicProfile`)
 - [ ] T002 Add `getProfileStats(uid)` to `src/lib/firebase-profile.js` — `Promise.all` parallel queries: hostedCount (`events`), joinedCount (`collectionGroup('participants')`), totalDistanceKm (`stravaConnections` check + `getAggregateFromServer` sum)
-- [ ] T003 Add `getHostedEvents(uid, options?)` to `src/lib/firebase-profile.js` — Firestore cursor-based pagination, `limit(pageSize + 1)` for hasMore detection, normalize to `EventData`。**注意**：查詢 `events(hostUid + time desc)` 可能需要 Firestore composite index，首次執行時 SDK 會報錯並提供建立連結
+- [ ] T003 Add `getHostedEvents(uid, options?)` to `src/lib/firebase-profile.js` — Firestore cursor-based pagination, `limit(pageSize + 1)` for hasMore detection, normalize to `EventData`。**Index 處理**：查詢 `events` where `hostUid == uid` orderBy `time desc` 需要 composite index `(hostUid asc, time desc)`。若首次執行 SDK 報錯，點 console 連結一鍵建立，建立完成後更新 `firestore.indexes.json` 以便版控
 
-**Checkpoint**: Service layer complete — all 3 query functions available for UI consumption
+**Checkpoint**: Service layer complete — 3 client-side query functions (`firebase-profile.js`) + 1 server-side function (`firebase-profile-server.js`) available for UI consumption
 
 ---
 
@@ -38,9 +39,9 @@
 
 - [ ] T004 [P] [US1] Create `src/app/users/[uid]/ProfileHeader.jsx` — 頭像（含 fallback）、名稱、簡介（有才顯示，bio 為空則隱藏區塊）、加入日期格式化 + styles in `PublicProfile.module.css`
 - [ ] T005 [P] [US1] Create `src/app/users/[uid]/ProfileStats.jsx` — 開團數 / 參團數 / 累計公里數（`totalDistanceKm === null` 時隱藏公里數欄位，`=== 0` 時顯示 `0 km`）+ styles in `PublicProfile.module.css`
-- [ ] T006 [P] [US1] Create `src/app/users/[uid]/ProfileEventList.jsx` — IntersectionObserver + sentinel 觸發 `getHostedEvents` 分頁載入，空狀態顯示「尚無主辦活動」+ styles in `PublicProfile.module.css`。**前置確認**：檢查既有 EventCard 是否為獨立可匯入元件，若嵌在 `events/page.jsx` 內部需先抽離或改用相同樣式自行渲染
-- [ ] T007 [US1] Create `src/app/users/[uid]/ProfileClient.jsx` — `'use client'` orchestrator，接收 `user` prop（from page.jsx）+ 呼叫 `getProfileStats` / `getHostedEvents`，compose ProfileHeader + ProfileStats + ProfileEventList，管理 loading / error state。若 T008 走 fallback 路徑，則改為接收 `uid` prop 並自行呼叫 `getUserProfile`
-- [ ] T008 [US1] Create `src/app/users/[uid]/page.jsx` — Server Component with `generateMetadata`（og:title / og:description / og:image），`getUserProfile` 取 user data 並以 prop 傳給 `<ProfileClient>`，不存在時 `notFound()`（FR-008）。**Fallback**：若 Firestore client SDK 無法在 SC 初始化，改為靜態 metadata + 只傳 uid，所有 data fetch 移至 ProfileClient（參考 research.md R-007）
+- [ ] T006 [P] [US1] Create `src/app/users/[uid]/ProfileEventList.jsx` — IntersectionObserver + sentinel 觸發 `getHostedEvents` 分頁載入，空狀態顯示「尚無主辦活動」。複用 `src/components/DashboardEventCard.jsx` 渲染每筆活動（傳入 `isHost={true}`）+ styles in `PublicProfile.module.css`
+- [ ] T007 [US1] Create `src/app/users/[uid]/ProfileClient.jsx` — `'use client'` orchestrator，接收 `user` prop（from page.jsx 的 server-side fetch）+ 呼叫 `getProfileStats` / `getHostedEvents`，compose ProfileHeader + ProfileStats + ProfileEventList，管理 loading / error state
+- [ ] T008 [US1] Create `src/app/users/[uid]/page.jsx` — Server Component with `generateMetadata`（og:title / og:description / og:image），呼叫 `getUserProfileServer(uid)` (from `firebase-profile-server.js`) 取 user data 並以 prop 傳給 `<ProfileClient>`，不存在時 `notFound()`（FR-008）
 
 **Checkpoint**: 公開檔案頁面可獨立運作，支援 SEO、not-found、未登入瀏覽
 
@@ -94,7 +95,7 @@
 **Purpose**: 全面品質檢查
 
 - [ ] T019 Run `npm run lint` + `npm run type-check` and fix all issues across new/modified files
-- [ ] T020 Run quickstart.md validation — verify all acceptance scenarios from spec.md。額外驗證：(1) FR-007 未登入狀態可正常瀏覽（無權限錯誤）(2) FR-009 Bio 含特殊字元 `<script>` 時正確轉義顯示
+- [ ] T020 Run quickstart.md validation — verify all acceptance scenarios from spec.md。額外驗證：(1) FR-007 未登入狀態可正常瀏覽（無權限錯誤）(2) FR-009 Bio 含特殊字元 `<script>` 時正確轉義顯示 (3) SC-001 效能驗證：Chrome DevTools → Performance → 錄製首次載入 `/users/[uid]`，確認 LCP (Largest Contentful Paint) < 2s（在一般網路條件下，非 throttled slow 3G）
 
 ---
 
@@ -111,9 +112,10 @@
 
 ### Within Each User Story
 
+- T001a depends on T001 (shared typedef from firebase-profile.js)
 - T004/T005/T006 are [P] — no mutual dependencies, can execute in any order
 - T007 depends on T004-T006 (imports sub-components)
-- T008 depends on T007 (renders ProfileClient)
+- T008 depends on T007 (renders ProfileClient) + T001a (calls getUserProfileServer)
 - T009 must complete before T010-T014 (UserLink component must exist)
 - T010-T014 are [P] — no mutual dependencies
 - T015 must complete before T016 (service function before UI)

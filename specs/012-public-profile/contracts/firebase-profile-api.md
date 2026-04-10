@@ -111,6 +111,35 @@ export async function getHostedEvents(uid, options = {}) {}
 
 ---
 
+### `getUserProfileServer(uid)` — Server Component only
+
+伺服器端取得使用者公開檔案資料（供 `generateMetadata` 與 Server Component 使用）。
+
+**File**: `src/lib/firebase-profile-server.js`
+
+```js
+/**
+ * 伺服器端取得使用者公開檔案資料。使用 Firebase Admin SDK，僅供 Server Component / Route Handler 呼叫。
+ * @param {string} uid - 目標使用者 UID。
+ * @returns {Promise<import('./firebase-profile').PublicProfile | null>} 使用者資料，不存在時回傳 null。
+ */
+export async function getUserProfileServer(uid) {}
+```
+
+**Behavior**:
+
+- 使用 `adminDb` (from `firebase-admin.js`) 讀取 `users/{uid}` document
+- 不存在 → return `null`
+- 只回傳公開欄位（排除 email）
+- 欄位 shape 與 `getUserProfile` 一致
+
+**Why separate from client `getUserProfile`**:
+
+- Server Component 需要 Admin SDK（預先初始化、無 window 依賴）
+- Client component 仍用 `getUserProfile` (client SDK) 支援 onSnapshot 監聽
+
+---
+
 ### `updateUserBio(uid, bio)`
 
 更新使用者個人簡介。
