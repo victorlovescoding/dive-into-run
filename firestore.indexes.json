@@ -12,6 +12,14 @@
       "collectionGroup": "events",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "hostUid", "order": "ASCENDING" },
+        { "fieldPath": "time", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "city", "order": "ASCENDING" },
         { "fieldPath": "district", "order": "ASCENDING" },
         { "fieldPath": "time", "order": "DESCENDING" }
@@ -31,6 +39,14 @@
       "fields": [
         { "fieldPath": "authorUid", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "likes",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "postId", "order": "ASCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
       ]
     },
     {
