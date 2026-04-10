@@ -23,8 +23,6 @@ import {
   getDoc,
   getDocs,
   getCountFromServer,
-  getAggregateFromServer,
-  sum,
   setDoc,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
@@ -117,45 +115,32 @@ async function fetchJoinedCount(uid) {
 }
 
 /**
- * 計算使用者的累計跑步距離（公里）。
- *
- * 流程：先讀 `stravaConnections/{uid}`，若 `connected !== true` 直接回傳 `null`
- * 代表未連結（公開檔案應隱藏該欄位）；已連結時用 aggregate sum 計算
- * `distanceMeters` 並換算為公里（含 0）。
- * @param {string} uid - 目標使用者 UID。
- * @returns {Promise<number | null>} 累計公里數或 `null`（未連結 Strava）。
- */
-async function fetchTotalDistanceKm(uid) {
-  const connSnap = await getDoc(doc(db, 'stravaConnections', uid));
-  if (!connSnap.exists()) return null;
-  const connData = /** @type {{ connected?: boolean }} */ (connSnap.data() ?? {});
-  if (connData.connected !== true) return null;
-
-  const q = query(collection(db, 'stravaActivities'), where('uid', '==', uid));
-  const aggSnap = await getAggregateFromServer(q, { totalDistance: sum('distanceMeters') });
-  const totalMeters = Number(aggSnap.data().totalDistance ?? 0);
-  return totalMeters / 1000;
-}
-
-/**
  * 取得使用者的公開檔案統計數據。
  *
- * 三項統計透過 `Promise.all` 並行查詢以最小化整體延遲；其中 Strava 距離若未連結
- * 直接回傳 `null` 並短路後續 aggregate 查詢，節省一次無謂的 round-trip。
+ * 目前只跑 hostedCount 與 joinedCount 兩條查詢（`events` 與 `collectionGroup
+ * ('participants')` 都對外開放 read）。累計跑步公里數（`totalDistanceKm`）
+ * 暫時**固定回 `null`** — Strava 公開展示功能還沒正式實作，且既有的
+ * `stravaActivities` rule 只允許本人讀（跨使用者會 permission denied），
+ * client SDK 的 aggregate 也需要新的 composite index。等 Strava 公開展示
+ * 功能正式啟動時，再重新實作這條查詢（屆時要在 Admin SDK aggregate /
+ * denormalize / 只給本人看 三個方案中擇一）。
+ *
+ * `ProfileStats` 元件層既有的 `totalDistanceKm === null → 隱藏` 分支會
+ * 自動吸收這個 null，UI 上不會顯示公里數區塊，與「未連結 Strava」的
+ * 視覺行為一致。
  * @param {string} uid - 目標使用者 UID。
- * @returns {Promise<ProfileStats>} 三項統計數據。
+ * @returns {Promise<ProfileStats>} 三項統計數據（totalDistanceKm 固定 null）。
  * @throws {Error} 當 `uid` 為空字串。
  */
 export async function getProfileStats(uid) {
   if (!uid) throw new Error('uid is required');
 
-  const [hostedCount, joinedCount, totalDistanceKm] = await Promise.all([
+  const [hostedCount, joinedCount] = await Promise.all([
     fetchHostedCount(uid),
     fetchJoinedCount(uid),
-    fetchTotalDistanceKm(uid),
   ]);
 
-  return { hostedCount, joinedCount, totalDistanceKm };
+  return { hostedCount, joinedCount, totalDistanceKm: null };
 }
 
 /**

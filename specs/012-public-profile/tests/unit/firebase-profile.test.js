@@ -47,10 +47,6 @@ const mockGetDocs = vi.fn();
 /** @type {import('vitest').Mock} */
 const mockGetCountFromServer = vi.fn();
 /** @type {import('vitest').Mock} */
-const mockGetAggregateFromServer = vi.fn();
-/** @type {import('vitest').Mock} */
-const mockSum = vi.fn((field) => ({ _sum: field }));
-/** @type {import('vitest').Mock} */
 const mockSetDoc = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
@@ -65,8 +61,6 @@ vi.mock('firebase/firestore', () => ({
   getDoc: mockGetDoc,
   getDocs: mockGetDocs,
   getCountFromServer: mockGetCountFromServer,
-  getAggregateFromServer: mockGetAggregateFromServer,
-  sum: mockSum,
   setDoc: mockSetDoc,
 }));
 
@@ -126,17 +120,6 @@ function makeQueryDocSnap(id, data) {
 function makeCountSnap(count) {
   return {
     data: () => ({ count }),
-  };
-}
-
-/**
- * Build a mock aggregate snapshot for getAggregateFromServer().
- * @param {number} totalDistance - 累計距離（公尺）。
- * @returns {{ data: () => { totalDistance: number } }} Mock aggregate snapshot。
- */
-function makeAggregateSnap(totalDistance) {
-  return {
-    data: () => ({ totalDistance }),
   };
 }
 
@@ -238,81 +221,11 @@ describe('Unit: getProfileStats', () => {
     vi.clearAllMocks();
   });
 
-  it('當 Strava 未連結時 totalDistanceKm 應為 null（不查 stravaActivities）', async () => {
-    // Arrange — hostedCount=3、joinedCount=7、stravaConnections 不存在
-    mockGetCountFromServer
-      .mockResolvedValueOnce(makeCountSnap(3))
-      .mockResolvedValueOnce(makeCountSnap(7));
-    mockGetDoc.mockResolvedValueOnce(makeDocSnap('user-1', undefined, false));
-
-    // Act
-    const { getProfileStats } = await import('@/lib/firebase-profile');
-    const result = await getProfileStats('user-1');
-
-    // Assert
-    expect(result.hostedCount).toBe(3);
-    expect(result.joinedCount).toBe(7);
-    expect(result.totalDistanceKm).toBeNull();
-    // 未連結就不應呼叫 aggregate
-    expect(mockGetAggregateFromServer).not.toHaveBeenCalled();
-  });
-
-  it('當 stravaConnections.connected === false 時 totalDistanceKm 應為 null', async () => {
-    // Arrange
-    mockGetCountFromServer
-      .mockResolvedValueOnce(makeCountSnap(0))
-      .mockResolvedValueOnce(makeCountSnap(0));
-    mockGetDoc.mockResolvedValueOnce(makeDocSnap('user-1', { connected: false }));
-
-    // Act
-    const { getProfileStats } = await import('@/lib/firebase-profile');
-    const result = await getProfileStats('user-1');
-
-    // Assert
-    expect(result.totalDistanceKm).toBeNull();
-    expect(mockGetAggregateFromServer).not.toHaveBeenCalled();
-  });
-
-  it('當 Strava 已連結但累計距離為 0 時 totalDistanceKm 應為 0（不可為 null）', async () => {
-    // Arrange
-    mockGetCountFromServer
-      .mockResolvedValueOnce(makeCountSnap(2))
-      .mockResolvedValueOnce(makeCountSnap(5));
-    mockGetDoc.mockResolvedValueOnce(makeDocSnap('user-1', { connected: true }));
-    mockGetAggregateFromServer.mockResolvedValueOnce(makeAggregateSnap(0));
-
-    // Act
-    const { getProfileStats } = await import('@/lib/firebase-profile');
-    const result = await getProfileStats('user-1');
-
-    // Assert
-    expect(result.hostedCount).toBe(2);
-    expect(result.joinedCount).toBe(5);
-    expect(result.totalDistanceKm).toBe(0);
-  });
-
-  it('當 Strava 已連結且有跑步紀錄時 totalDistanceKm 應 = sum / 1000', async () => {
-    // Arrange — 5000m → 5km
-    mockGetCountFromServer
-      .mockResolvedValueOnce(makeCountSnap(1))
-      .mockResolvedValueOnce(makeCountSnap(2));
-    mockGetDoc.mockResolvedValueOnce(makeDocSnap('user-1', { connected: true }));
-    mockGetAggregateFromServer.mockResolvedValueOnce(makeAggregateSnap(5000));
-
-    // Act
-    const { getProfileStats } = await import('@/lib/firebase-profile');
-    const result = await getProfileStats('user-1');
-
-    // Assert
-    expect(result.totalDistanceKm).toBe(5);
-  });
-
   it('應使用 events where hostUid==uid 計算 hostedCount', async () => {
     // Arrange
     mockGetCountFromServer
       .mockResolvedValueOnce(makeCountSnap(0))
       .mockResolvedValueOnce(makeCountSnap(0));
-    mockGetDoc.mockResolvedValueOnce(makeDocSnap('user-1', undefined, false));
 
     // Act
     const { getProfileStats } = await import('@/lib/firebase-profile');
@@ -328,7 +241,6 @@ describe('Unit: getProfileStats', () => {
     mockGetCountFromServer
       .mockResolvedValueOnce(makeCountSnap(0))
       .mockResolvedValueOnce(makeCountSnap(0));
-    mockGetDoc.mockResolvedValueOnce(makeDocSnap('user-1', undefined, false));
 
     // Act
     const { getProfileStats } = await import('@/lib/firebase-profile');
@@ -339,22 +251,28 @@ describe('Unit: getProfileStats', () => {
     expect(mockWhere).toHaveBeenCalledWith('uid', '==', 'user-1');
   });
 
-  it('應使用 sum("distanceMeters") aggregate 在 stravaActivities 上', async () => {
-    // Arrange
+  it('totalDistanceKm 永遠為 null 且不觸及 Strava collections (Strava 公開展示未實作)', async () => {
+    // Arrange — hosted=3, joined=7；Strava mocks 刻意不設，若 code 嘗試查
+    // stravaConnections 或 stravaActivities 就會拿到 undefined 並炸掉。
     mockGetCountFromServer
-      .mockResolvedValueOnce(makeCountSnap(0))
-      .mockResolvedValueOnce(makeCountSnap(0));
-    mockGetDoc.mockResolvedValueOnce(makeDocSnap('user-1', { connected: true }));
-    mockGetAggregateFromServer.mockResolvedValueOnce(makeAggregateSnap(10000));
+      .mockResolvedValueOnce(makeCountSnap(3))
+      .mockResolvedValueOnce(makeCountSnap(7));
 
     // Act
     const { getProfileStats } = await import('@/lib/firebase-profile');
-    await getProfileStats('user-1');
+    const result = await getProfileStats('user-1');
 
     // Assert
-    expect(mockCollection).toHaveBeenCalledWith('mock-db', 'stravaActivities');
-    expect(mockSum).toHaveBeenCalledWith('distanceMeters');
-    expect(mockGetAggregateFromServer).toHaveBeenCalled();
+    expect(result).toEqual({
+      hostedCount: 3,
+      joinedCount: 7,
+      totalDistanceKm: null,
+    });
+    expect(mockCollection).not.toHaveBeenCalledWith('mock-db', 'stravaActivities');
+    // 原本 fetchTotalDistanceKm 透過 doc(db,'stravaConnections',uid) 讀，
+    // 現在整條 code path 已移除，doc() 在本函式內不應再被呼叫。
+    expect(mockDoc).not.toHaveBeenCalled();
+    expect(mockGetDoc).not.toHaveBeenCalled();
   });
 
   it('當 uid 為空字串時應拋出 Error', async () => {
