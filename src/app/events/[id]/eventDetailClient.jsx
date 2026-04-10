@@ -29,6 +29,7 @@ import EventCardMenu from '@/components/EventCardMenu';
 import EventEditForm from '@/components/EventEditForm';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import CommentSection from '@/components/CommentSection';
+import ShareButton from '@/components/ShareButton';
 
 // Leaflet 只能在瀏覽器端跑
 const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
@@ -401,6 +402,7 @@ export default function EventDetailClient({ id }) {
               <div className={styles.detailHeader}>
                 <div className={styles.eventTitle}>{event.title}</div>
                 <div className={styles.detailHeaderRight}>
+                  <ShareButton title={event.title} url={`${window.location.origin}/events/${id}`} />
                   <div className={styles.statusPill}>{statusText}</div>
                   <EventCardMenu
                     event={event}

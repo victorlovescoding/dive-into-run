@@ -74,7 +74,7 @@ export default function ToastProvider({ children }) {
     (message, type = 'success') => {
       /** @type {ToastItem} */
       const toast = {
-        id: crypto.randomUUID(),
+        id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         message,
         type,
         createdAt: Date.now(),

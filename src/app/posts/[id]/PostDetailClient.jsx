@@ -18,6 +18,7 @@ import {
 } from '@/lib/firebase-posts';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+import ShareButton from '@/components/ShareButton';
 import styles from '../postDetail.module.css';
 
 const INFINITE_SCROLL_MARGIN = '300px 0px';
@@ -409,7 +410,10 @@ export default function PostDetailClient({ postId }) {
           </li>
         </ul>
       </div>
-      <h2>{postDetail.title}</h2>
+      <div className={styles.titleRow}>
+        <h2>{postDetail.title}</h2>
+        <ShareButton title={postDetail.title} url={`${window.location.origin}/posts/${postId}`} />
+      </div>
       <p>{postDetail.content}</p>
       {/* 所有留言區 */}
       <ul>
