@@ -732,6 +732,16 @@
   color: inherit;
 }
 
+.eventTitleLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.eventTitleLink:hover .eventTitle {
+  color: #673ab7;
+}
+
 .eventTitle {
   font-size: 1.1rem;
   font-weight: 700;
@@ -857,37 +867,35 @@
 .participantItem {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   padding: 10px;
   border: 1px solid #e0e3e7;
   border-radius: 10px;
 }
 
-.participantAvatar {
+/*
+ * participantLink：合併 avatar + name 的單一 UserLink。
+ * UserLink 根元素已是 inline-flex + gap 8px，這裡只補 flex 伸縮與字重。
+ */
+.participantLink {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 800;
+  color: #202124;
+}
+
+.participantLink img {
+  width: 36px;
+  height: 36px;
   border-radius: 999px;
   object-fit: cover;
 }
 
-.participantFallbackAvatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  background: rgba(103, 58, 183, 0.12);
+.hostRow {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  color: #673ab7;
-}
-
-.participantInfo {
-  display: flex;
-  flex-direction: column;
-}
-
-.participantName {
-  font-weight: 800;
-  color: #202124;
+  gap: 6px;
 }
 
 .participantStatus {

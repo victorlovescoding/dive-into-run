@@ -33,10 +33,23 @@ import {
 import EventCardMenu from '@/components/EventCardMenu';
 import EventEditForm from '@/components/EventEditForm';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
+import UserLink from '@/components/UserLink';
 import taiwanLocations from '@/lib/taiwan-locations';
 
 // 動態載入 EventMap 元件，關閉 SSR
 const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
+
+/**
+ * 將活動的路線資料格式化為顯示文字（已設定/未設定）。
+ * @param {import('@/lib/event-helpers').EventData} ev - 活動資料。
+ * @returns {string} 顯示用的路線狀態描述。
+ */
+function renderRouteLabel(ev) {
+  const pts = countTotalPoints(ev.routeCoordinates);
+  if (pts > 0) return `已設定（${pts} 點）`;
+  if (ev.route?.pointsCount) return `已設定（${ev.route.pointsCount} 點）`;
+  return '未設定';
+}
 
 /**
  * 揪團跑步主頁面。
@@ -775,85 +788,81 @@ export default function RunTogetherPage() {
           ) : (
             events.map((ev) => (
               <div key={ev.id} className={styles.eventCardWrapper}>
-                <Link href={`/events/${ev.id}`} className={styles.eventLink}>
-                  <div className={styles.eventCard}>
+                <div className={styles.eventCard}>
+                  <Link href={`/events/${ev.id}`} className={styles.eventTitleLink}>
                     <div className={styles.eventTitle}>{ev.title}</div>
+                  </Link>
 
-                    <div className={styles.eventMeta}>
-                      <div>
-                        時間：
-                        {formatDateTime(ev.time)}
-                      </div>
-                      <div>
-                        報名截止：
-                        {formatDateTime(ev.registrationDeadline)}
-                      </div>
-                      <div>
-                        地點：
-                        {ev.city} {ev.district}
-                      </div>
-                      <div>
-                        集合：
-                        {ev.meetPlace}
-                      </div>
+                  <div className={styles.eventMeta}>
+                    <div>
+                      時間：
+                      {formatDateTime(ev.time)}
                     </div>
-
-                    <div className={styles.eventMeta}>
-                      <div>
-                        距離：
-                        {ev.distanceKm} km
-                      </div>
-                      <div>
-                        配速：
-                        {formatPace(ev.paceSec, ev.pace)} /km
-                      </div>
-                      <div>
-                        人數上限：
-                        {ev.maxParticipants}
-                      </div>
-                      <div>
-                        剩餘名額：
-                        {getRemainingSeats(ev)}
-                      </div>
+                    <div>
+                      報名截止：
+                      {formatDateTime(ev.registrationDeadline)}
                     </div>
-
-                    <div className={styles.eventMeta}>
-                      <div>
-                        主揪：
-                        {ev.hostName}
-                      </div>
-                      <div>
-                        路線：
-                        {(() => {
-                          const pts = countTotalPoints(ev.routeCoordinates);
-                          if (pts > 0) {
-                            return `已設定（${pts} 點）`;
-                          }
-                          if (ev.route?.pointsCount) {
-                            return `已設定（${ev.route.pointsCount} 點）`;
-                          }
-                          return '未設定';
-                        })()}
-                      </div>
+                    <div>
+                      地點：
+                      {ev.city} {ev.district}
                     </div>
-
-                    {/* ✅ 參加/退出活動（events 列表版） */}
-                    <div className={styles.eventCardActions}>
-                      <EventActionButtons
-                        event={ev}
-                        user={user}
-                        onJoin={handleJoinClick}
-                        onLeave={handleLeaveClick}
-                        isPending={pendingByEventId[String(ev.id)]}
-                        isCreating={isCreating}
-                        isFormOpen={isFormOpen}
-                        myJoinedEventIds={myJoinedEventIds}
-                      />
+                    <div>
+                      集合：
+                      {ev.meetPlace}
                     </div>
                   </div>
-                </Link>
 
-                {/* ✅ 編輯/刪除選單：在 Link 外，避免點擊觸發頁面跳轉 */}
+                  <div className={styles.eventMeta}>
+                    <div>
+                      距離：
+                      {ev.distanceKm} km
+                    </div>
+                    <div>
+                      配速：
+                      {formatPace(ev.paceSec, ev.pace)} /km
+                    </div>
+                    <div>
+                      人數上限：
+                      {ev.maxParticipants}
+                    </div>
+                    <div>
+                      剩餘名額：
+                      {getRemainingSeats(ev)}
+                    </div>
+                  </div>
+
+                  <div className={styles.eventMeta}>
+                    <div className={styles.hostRow}>
+                      <span>主揪：</span>
+                      <UserLink
+                        uid={ev.hostUid}
+                        name={ev.hostName}
+                        photoURL={ev.hostPhotoURL}
+                        size={24}
+                      />
+                    </div>
+                    <div>
+                      路線：
+                      {renderRouteLabel(ev)}
+                    </div>
+                  </div>
+
+                  {/* ✅ 參加/退出活動（events 列表版） */}
+                  <div className={styles.eventCardActions}>
+                    <EventActionButtons
+                      event={ev}
+                      user={user}
+                      onJoin={handleJoinClick}
+                      onLeave={handleLeaveClick}
+                      isPending={pendingByEventId[String(ev.id)]}
+                      isCreating={isCreating}
+                      isFormOpen={isFormOpen}
+                      myJoinedEventIds={myJoinedEventIds}
+                    />
+                  </div>
+                </div>
+
+                {/* ✅ 編輯/刪除選單：絕對定位於卡片右上角 */}
                 <div className={styles.eventCardMenuWrapper}>
                   <EventCardMenu
                     event={ev}

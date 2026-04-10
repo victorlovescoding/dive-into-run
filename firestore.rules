@@ -7,7 +7,22 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      // 公開檔案頁面可被未登入訪客瀏覽（FR-007）
+      allow read: if true;
+
+      allow create: if isSignedIn() && request.auth.uid == userId;
+
+      // 限制本人寫入；只有當「這次更新實際動到 bio 欄位」才驗證 bio
+      // 的型別與長度。這避免既有 over-length bio 在 rules 上線後被鎖死，
+      // 讓使用者仍能正常更新 name / photoURL 等欄位。
+      allow update: if isSignedIn()
+        && request.auth.uid == userId
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['bio'])
+          || (request.resource.data.bio is string && request.resource.data.bio.size() <= 150)
+        );
+
+      allow delete: if false;
     }
 
     match /posts/{postId} {
