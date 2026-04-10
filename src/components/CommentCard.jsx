@@ -1,5 +1,5 @@
-import Image from 'next/image';
 import { formatCommentTime, formatCommentTimeFull } from '@/lib/event-helpers';
+import UserLink from './UserLink';
 import CommentCardMenu from './CommentCardMenu';
 import styles from './CommentCard.module.css';
 
@@ -14,8 +14,19 @@ import styles from './CommentCard.module.css';
  */
 
 /**
+ * 將 Firestore Timestamp 轉為 ISO 字串，供 `<time dateTime>` 使用。
+ * @param {import('firebase/firestore').Timestamp | null | undefined} timestamp - Firestore 時間戳。
+ * @returns {string} ISO 字串，無效時回傳空字串。
+ */
+function toIsoString(timestamp) {
+  if (!timestamp || typeof timestamp.toDate !== 'function') return '';
+  return timestamp.toDate().toISOString();
+}
+
+/**
  * CommentCard — 單則留言卡片（display-only 版本）。
- * 顯示留言者頭像、名稱、時間與留言內容。
+ * 顯示留言者頭像、名稱、時間與留言內容；頭像與名稱透過 `UserLink`
+ * 連結至作者的公開檔案頁面。
  * @param {CommentCardProps} props - Component props.
  * @returns {import('react').ReactElement} 留言卡片元件。
  */
@@ -27,32 +38,22 @@ export default function CommentCard({
   onDelete,
   onViewHistory,
 }) {
-  // Avatar: 36px circle. If no photoURL, show first char of authorName on purple bg
-  const hasPhoto = comment.authorPhotoURL && comment.authorPhotoURL.trim() !== '';
-  const initial = comment.authorName ? comment.authorName.charAt(0) : '?';
-
-  // Time formatting
   const timeText = formatCommentTime(comment.createdAt);
   const timeFullText = formatCommentTimeFull(comment.createdAt);
-  const isoString = comment.createdAt?.toDate ? comment.createdAt.toDate().toISOString() : '';
+  const isoString = toIsoString(comment.createdAt);
 
   return (
     <article className={`${styles.card} ${isHighlighted ? styles.highlighted : ''}`}>
       <div className={styles.headerRow}>
         <div className={styles.header}>
-          {hasPhoto ? (
-            <Image
-              src={comment.authorPhotoURL}
-              alt=""
-              width={36}
-              height={36}
-              className={styles.avatar}
-            />
-          ) : (
-            <div className={styles.avatarFallback}>{initial}</div>
-          )}
+          <UserLink
+            uid={comment.authorUid}
+            name={comment.authorName}
+            photoURL={comment.authorPhotoURL}
+            size={36}
+            className={styles.authorLink}
+          />
           <div className={styles.meta}>
-            <span className={styles.authorName}>{comment.authorName}</span>
             <time dateTime={isoString} title={timeFullText} className={styles.time}>
               {timeText}
             </time>

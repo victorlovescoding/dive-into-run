@@ -27,26 +27,19 @@
   gap: 12px;
 }
 
-.avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
+/*
+ * authorLink：合併 avatar + name 的單一 UserLink。
+ * UserLink 預設 .link 就是 inline-flex + gap 8px，再多指定字體/顏色即可。
+ */
+.authorLink {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a1a1a;
 }
 
-.avatarFallback {
+.authorLink img {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
-  background: rgba(103, 58, 183, 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #673ab7;
-  flex-shrink: 0;
 }
 
 .meta {

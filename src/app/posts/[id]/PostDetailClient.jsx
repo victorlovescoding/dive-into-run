@@ -18,6 +18,7 @@ import {
 } from '@/lib/firebase-posts';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+import UserLink from '@/components/UserLink';
 import styles from '../postDetail.module.css';
 
 const INFINITE_SCROLL_MARGIN = '300px 0px';
@@ -473,13 +474,12 @@ export default function PostDetailClient({ postId }) {
                 </li>
               </ul>
             </div>
-            <Image
-              src={commentItem.authorImgURL}
-              alt={`${commentItem.authorName}的大頭貼`}
-              width={20}
-              height={20}
+            <UserLink
+              uid={commentItem.authorUid}
+              name={commentItem.authorName ?? '使用者'}
+              photoURL={commentItem.authorImgURL}
+              size={20}
             />
-            <h2>{commentItem.authorName}</h2>
             <p>{commentItem.comment}</p>
             {/* 按讚、留言 */}
           </li>

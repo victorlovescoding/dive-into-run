@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable @next/next/no-img-element */
-
 import { useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -29,6 +27,7 @@ import EventCardMenu from '@/components/EventCardMenu';
 import EventEditForm from '@/components/EventEditForm';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import CommentSection from '@/components/CommentSection';
+import UserLink from '@/components/UserLink';
 
 // Leaflet 只能在瀏覽器端跑
 const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
@@ -450,9 +449,14 @@ export default function EventDetailClient({ id }) {
               </div>
 
               <div className={styles.eventMeta}>
-                <div>
-                  主揪：
-                  {event.hostName}
+                <div className={styles.hostRow}>
+                  <span>主揪：</span>
+                  <UserLink
+                    uid={event.hostUid}
+                    name={event.hostName}
+                    photoURL={event.hostPhotoURL}
+                    size={28}
+                  />
                 </div>
               </div>
 
@@ -743,24 +747,14 @@ export default function EventDetailClient({ id }) {
                       <div className={styles.participantsList}>
                         {participants.map((p) => (
                           <div key={String(p.uid || p.id)} className={styles.participantItem}>
-                            {p.photoURL ? (
-                              <img
-                                src={p.photoURL}
-                                alt={p.name ? `${p.name} 的大頭貼` : '參加者大頭貼'}
-                                width={36}
-                                height={36}
-                                className={styles.participantAvatar}
-                              />
-                            ) : (
-                              <div aria-hidden="true" className={styles.participantFallbackAvatar}>
-                                {(p.name || '?').slice(0, 1)}
-                              </div>
-                            )}
-
-                            <div className={styles.participantInfo}>
-                              <div className={styles.participantName}>{p.name || '（未命名）'}</div>
-                              <div className={styles.participantStatus}>已參加</div>
-                            </div>
+                            <UserLink
+                              uid={String(p.uid || p.id)}
+                              name={p.name || '（未命名）'}
+                              photoURL={p.photoURL}
+                              size={36}
+                              className={styles.participantLink}
+                            />
+                            <div className={styles.participantStatus}>已參加</div>
                           </div>
                         ))}
                       </div>
