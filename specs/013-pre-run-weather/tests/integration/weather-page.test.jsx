@@ -67,6 +67,96 @@ vi.mock('topojson-client', () => ({
           ],
         },
       },
+      {
+        type: 'Feature',
+        properties: {
+          COUNTYNAME: '台東縣',
+          COUNTYCODE: '10014',
+          TOWNNAME: '蘭嶼鄉',
+          TOWNCODE: '1001411',
+        },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [121.5, 22.0],
+              [121.6, 22.0],
+              [121.6, 22.1],
+              [121.5, 22.0],
+            ],
+          ],
+        },
+      },
+      {
+        type: 'Feature',
+        properties: {
+          COUNTYNAME: '台東縣',
+          COUNTYCODE: '10014',
+          TOWNNAME: '綠島鄉',
+          TOWNCODE: '1001416',
+        },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [121.4, 22.6],
+              [121.5, 22.6],
+              [121.5, 22.7],
+              [121.4, 22.6],
+            ],
+          ],
+        },
+      },
+      {
+        type: 'Feature',
+        properties: {
+          COUNTYNAME: '屏東縣',
+          COUNTYCODE: '10013',
+          TOWNNAME: '琉球鄉',
+          TOWNCODE: '1001322',
+        },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [120.3, 22.3],
+              [120.4, 22.3],
+              [120.4, 22.4],
+              [120.3, 22.3],
+            ],
+          ],
+        },
+      },
+      {
+        type: 'Feature',
+        properties: {
+          COUNTYNAME: '宜蘭縣',
+          COUNTYCODE: '10002',
+          TOWNNAME: '頭城鎮',
+          TOWNCODE: '1000204',
+        },
+        geometry: {
+          type: 'MultiPolygon',
+          coordinates: [
+            [
+              [
+                [121.93, 24.83],
+                [121.96, 24.83],
+                [121.96, 24.85],
+                [121.93, 24.83],
+              ],
+            ],
+            [
+              [
+                [121.7, 24.8],
+                [121.8, 24.8],
+                [121.8, 24.9],
+                [121.7, 24.8],
+              ],
+            ],
+          ],
+        },
+      },
     ],
   })),
 }));
@@ -86,42 +176,49 @@ vi.mock('@/data/geo/towns.json', () => ({
   },
 }));
 
-// --- Mock react-leaflet with interactive GeoJSON + CircleMarker ---
+// --- Mock react-leaflet with interactive GeoJSON ---
 vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
   GeoJSON: ({ data, onEachFeature }) => {
     const features = data?.features || [];
     return (
       <div data-testid="geojson-layer">
-        {features.map((f) => (
-          <button
-            key={f.properties.TOWNCODE || f.properties.COUNTYCODE}
-            type="button"
-            data-testid={`feature-${f.properties.TOWNCODE || f.properties.COUNTYCODE}`}
-            onClick={() => {
-              if (onEachFeature) {
-                const handler = {};
-                onEachFeature(f, {
-                  on: (events) => Object.assign(handler, events),
-                  setStyle: vi.fn(),
-                });
-                handler.click?.({ target: { feature: f, setStyle: vi.fn() } });
-              }
-            }}
-          >
-            {f.properties.TOWNNAME || f.properties.COUNTYNAME}
-          </button>
-        ))}
+        {features.map((f) => {
+          const testId = f.properties.islandId
+            ? `island-${f.properties.islandId}`
+            : `feature-${f.properties.TOWNCODE || f.properties.COUNTYCODE}`;
+          const label = f.properties.islandId
+            ? f.properties.targetTownship
+            : f.properties.TOWNNAME || f.properties.COUNTYNAME;
+          return (
+            <button
+              key={testId}
+              type="button"
+              data-testid={testId}
+              onClick={() => {
+                if (onEachFeature) {
+                  const handler = {};
+                  onEachFeature(f, {
+                    on: (events) => Object.assign(handler, events),
+                    setStyle: vi.fn(),
+                  });
+                  handler.click?.({ target: { feature: f, setStyle: vi.fn() } });
+                }
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
     );
   },
-  CircleMarker: ({ children, eventHandlers }) => (
-    <button type="button" data-testid="circle-marker" onClick={eventHandlers?.click}>
-      {children}
-    </button>
-  ),
-  Tooltip: ({ children }) => <span>{children}</span>,
-  useMap: () => ({ fitBounds: vi.fn(), setView: vi.fn() }),
+  useMap: () => ({
+    fitBounds: vi.fn(),
+    setView: vi.fn(),
+    getContainer: () => ({ style: {} }),
+    invalidateSize: vi.fn(),
+  }),
 }));
 
 // --- Mock next/image ---
@@ -380,8 +477,8 @@ describe('WeatherPage integration', () => {
 
       render(<WeatherPage />);
 
-      const markers = screen.getAllByTestId('circle-marker');
-      await user.click(markers[0]);
+      const islandButton = screen.getByTestId('island-lanyu');
+      await user.click(islandButton);
 
       await waitFor(() => {
         expect(mockedFetchWeather).toHaveBeenCalledWith(

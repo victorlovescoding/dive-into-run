@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useEffect, useCallback } from 'react';
-import { MapContainer, GeoJSON, CircleMarker, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { feature } from 'topojson-client';
 import countiesData from '@/data/geo/counties.json';
@@ -150,6 +150,49 @@ function TaiwanMap({
       features: allTowns.features.filter((f) => f.properties?.COUNTYCODE === selectedCountyCode),
     };
   }, [selectedCountyCode]);
+
+  const islandGeoJson = useMemo(() => {
+    const allTowns = /** @type {import('geojson').FeatureCollection} */ (
+      feature(townsData, townsData.objects.towns)
+    );
+
+    const islandFeatures = ISLAND_MARKERS.map((island) => {
+      const townFeature = allTowns.features.find(
+        (f) => f.properties?.TOWNNAME === island.targetTownship,
+      );
+      if (!townFeature) return null;
+
+      /** @type {import('geojson').GeoJsonProperties} */
+      const props = {
+        islandId: island.id,
+        targetCounty: island.targetCounty,
+        targetTownship: island.targetTownship,
+      };
+
+      if (island.polygonIndex != null && townFeature.geometry.type === 'MultiPolygon') {
+        return /** @type {import('geojson').Feature} */ ({
+          type: 'Feature',
+          properties: props,
+          geometry: {
+            type: 'Polygon',
+            coordinates: /** @type {import('geojson').MultiPolygon} */ (townFeature.geometry)
+              .coordinates[island.polygonIndex],
+          },
+        });
+      }
+
+      return /** @type {import('geojson').Feature} */ ({
+        type: 'Feature',
+        properties: props,
+        geometry: townFeature.geometry,
+      });
+    }).filter(Boolean);
+
+    return /** @type {import('geojson').FeatureCollection} */ ({
+      type: 'FeatureCollection',
+      features: islandFeatures,
+    });
+  }, []);
   // #endregion
 
   // #region Event handlers
@@ -245,20 +288,29 @@ function TaiwanMap({
   );
 
   /**
-   * 處理小離島 CircleMarker 的 hover in。
-   * @param {L.LeafletMouseEvent} e - Leaflet mouse event。
+   * 綁定離島 GeoJSON 圖層的滑鼠/點擊事件。
+   * @param {import('geojson').Feature} feat - GeoJSON feature。
+   * @param {L.Layer} layer - Leaflet layer。
    */
-  const handleIslandMouseOver = useCallback((e) => {
-    /** @type {L.CircleMarker} */ (e.target).setStyle(ISLAND_HOVER_STYLE);
-  }, []);
+  const onEachIsland = useCallback(
+    (feat, layer) => {
+      const targetCounty = feat.properties?.targetCounty ?? '';
+      const targetTownship = feat.properties?.targetTownship ?? '';
 
-  /**
-   * 處理小離島 CircleMarker 的 hover out。
-   * @param {L.LeafletMouseEvent} e - Leaflet mouse event。
-   */
-  const handleIslandMouseOut = useCallback((e) => {
-    /** @type {L.CircleMarker} */ (e.target).setStyle(ISLAND_RESET_STYLE);
-  }, []);
+      layer.on({
+        mouseover: ({ target }) => {
+          /** @type {L.Path} */ (target).setStyle(ISLAND_HOVER_STYLE);
+        },
+        mouseout: ({ target }) => {
+          /** @type {L.Path} */ (target).setStyle(ISLAND_RESET_STYLE);
+        },
+        click: () => {
+          onIslandClick(targetCounty, targetTownship);
+        },
+      });
+    },
+    [onIslandClick],
+  );
   // #endregion
 
   const activeGeoJson = mapLayer === 'overview' ? countiesGeoJson : townsGeoJson;
@@ -297,24 +349,14 @@ function TaiwanMap({
           />
         )}
 
-        {mapLayer === 'overview' &&
-          ISLAND_MARKERS.map((island) => (
-            <CircleMarker
-              key={island.id}
-              center={[island.lat, island.lng]}
-              radius={8}
-              pathOptions={ISLAND_STYLE}
-              eventHandlers={{
-                click: () => onIslandClick(island.targetCounty, island.targetTownship),
-                mouseover: handleIslandMouseOver,
-                mouseout: handleIslandMouseOut,
-              }}
-            >
-              <Tooltip direction="top" permanent>
-                {island.displayName}
-              </Tooltip>
-            </CircleMarker>
-          ))}
+        {mapLayer === 'overview' && islandGeoJson.features.length > 0 && (
+          <GeoJSON
+            key="islands"
+            data={islandGeoJson}
+            style={() => ISLAND_STYLE}
+            onEachFeature={onEachIsland}
+          />
+        )}
       </MapContainer>
     </div>
   );

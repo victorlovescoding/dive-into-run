@@ -98,13 +98,12 @@ vi.mock('react-leaflet', () => ({
       </div>
     );
   },
-  CircleMarker: ({ children, eventHandlers }) => (
-    <button type="button" data-testid="circle-marker" onClick={eventHandlers?.click}>
-      {children}
-    </button>
-  ),
-  Tooltip: ({ children }) => <span>{children}</span>,
-  useMap: () => ({ fitBounds: vi.fn(), setView: vi.fn() }),
+  useMap: () => ({
+    fitBounds: vi.fn(),
+    setView: vi.fn(),
+    getContainer: () => ({ style: {} }),
+    invalidateSize: vi.fn(),
+  }),
 }));
 
 // --- Mock weather-api.js ---

@@ -9,6 +9,7 @@
  * @property {string} targetCounty - 路由目標縣市名，e.g. "臺東縣"。
  * @property {string} targetTownship - 路由目標鄉鎮名，e.g. "蘭嶼鄉"。
  * @property {string | null} displaySuffix - 特殊顯示後綴（僅龜山島有 "（含龜山島）"）。
+ * @property {number | null} polygonIndex - 在 MultiPolygon 中的子多邊形索引（龜山島 = 0），null 代表整個 township 即為該島。
  */
 
 /**
@@ -70,6 +71,7 @@ export const ISLAND_MARKERS = [
     targetCounty: '臺東縣',
     targetTownship: '蘭嶼鄉',
     displaySuffix: null,
+    polygonIndex: null,
   },
   {
     id: 'ludao',
@@ -79,6 +81,7 @@ export const ISLAND_MARKERS = [
     targetCounty: '臺東縣',
     targetTownship: '綠島鄉',
     displaySuffix: null,
+    polygonIndex: null,
   },
   {
     id: 'xiaoliuqiu',
@@ -88,6 +91,7 @@ export const ISLAND_MARKERS = [
     targetCounty: '屏東縣',
     targetTownship: '琉球鄉',
     displaySuffix: null,
+    polygonIndex: null,
   },
   {
     id: 'guishandao',
@@ -97,6 +101,7 @@ export const ISLAND_MARKERS = [
     targetCounty: '宜蘭縣',
     targetTownship: '頭城鎮',
     displaySuffix: '（含龜山島）',
+    polygonIndex: 0,
   },
 ];
 // #endregion

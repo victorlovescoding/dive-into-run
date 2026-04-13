@@ -78,7 +78,16 @@ describe('ISLAND_MARKERS', () => {
       expect(marker).toHaveProperty('targetCounty');
       expect(marker).toHaveProperty('targetTownship');
       expect(marker).toHaveProperty('displaySuffix');
+      expect(marker).toHaveProperty('polygonIndex');
     });
+  });
+
+  it('only guishandao has a numeric polygonIndex', () => {
+    const guishan = ISLAND_MARKERS.find((m) => m.id === 'guishandao');
+    const others = ISLAND_MARKERS.filter((m) => m.id !== 'guishandao');
+
+    expect(guishan?.polygonIndex).toBe(0);
+    others.forEach((m) => expect(m.polygonIndex).toBeNull());
   });
 
   it('routes 蘭嶼 to 臺東縣/蘭嶼鄉', () => {
