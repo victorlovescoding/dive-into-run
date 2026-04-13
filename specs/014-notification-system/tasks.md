@@ -87,11 +87,11 @@
 
 ### Tests for US2
 
-- [ ] T014 [RED] [US2] Write integration tests for NotificationPanel（opens when isPanelOpen, shows up to 5 notifications, empty state「目前沒有通知」, closes on outside click）+ NotificationItem（circular avatar, message text, relative time via formatRelativeTime, blue dot for unread / no dot for read, clickable element）in specs/014-notification-system/tests/integration/NotificationPanel.test.jsx
+- [ ] T014 [RED] [US2] Write integration tests for NotificationPanel（opens when isPanelOpen, shows up to 5 notifications, empty state「目前沒有通知」, closes on outside click, 面板開啟中 Context notifications 更新 → 面板列表即時反映新通知）+ NotificationItem（circular avatar, message text, relative time via formatRelativeTime, blue dot for unread / no dot for read, clickable element）in specs/014-notification-system/tests/integration/NotificationPanel.test.jsx
 
 ### Implementation for US2
 
-- [ ] T015 [GREEN] [US2] Implement NotificationItem.jsx + NotificationItem.module.css in src/components/Notifications/ — layout: [avatar] [message + time] [blue dot], `notification` + `onClick` props, circular avatar (img), message text, formatRelativeTime(createdAt), conditional blue dot (read===false), accessible clickable element, pass T014 tests then refactor
+- [ ] T015 [GREEN] [US2] Implement NotificationItem.jsx + NotificationItem.module.css in src/components/Notifications/ — layout: [avatar] [message + time] [blue dot], `notification` + `onClick` props, circular avatar (img with onError fallback 顯示預設頭像，與現有 UserMenu avatar 一致), message text, formatRelativeTime(createdAt), conditional blue dot (read===false), accessible clickable element, pass T014 tests then refactor
 - [ ] T016 [GREEN] [US2] Implement NotificationPanel.jsx + NotificationPanel.module.css in src/components/Notifications/ — id="notification-panel", role="region", aria-label="通知面板", header with title「通知」, NotificationItem list from Context notifications, empty state, max-height 70vh + overflow-y auto, outside click close (useRef + mousedown event), mobile width ~100vw, pass T014 tests then refactor
 
 **Checkpoint**: Panel opens/closes. Shows latest 5 notifications. Read/unread distinction. Empty state. Outside click close. US2 independently testable.
