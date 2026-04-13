@@ -145,11 +145,9 @@ function extractUvInfo(uvData, township, now, isTomorrow) {
       : locations[0];
     if (!location) return null;
 
+    // CWA F-D0047 12hr: UV 資料在 '紫外線指數' element，UVIndex 和 UVExposureLevel 在同一個 ElementValue 物件裡
     const uvElement = location.WeatherElement?.find(
-      (/** @type {object} */ el) => el.ElementName === 'UVIndex',
-    );
-    const uvLevelElement = location.WeatherElement?.find(
-      (/** @type {object} */ el) => el.ElementName === 'UVExposureLevel',
+      (/** @type {object} */ el) => el.ElementName === '紫外線指數',
     );
 
     if (!uvElement?.Time?.length) return null;
@@ -175,8 +173,8 @@ function extractUvInfo(uvData, township, now, isTomorrow) {
       }
     }
 
-    const value = Number(uvElement.Time[periodIndex]?.ElementValue?.[0]?.Value);
-    const level = uvLevelElement?.Time?.[periodIndex]?.ElementValue?.[0]?.Value ?? '';
+    const value = Number(uvElement.Time[periodIndex]?.ElementValue?.[0]?.UVIndex);
+    const level = uvElement?.Time?.[periodIndex]?.ElementValue?.[0]?.UVExposureLevel ?? '';
 
     if (Number.isNaN(value)) return null;
 
@@ -337,22 +335,24 @@ function findTownshipElement(elements, name) {
 
 /**
  * 從 F-D0047 時段中取值。
- * @param {object} element - WeatherElement 物件。
+ * @param {object | undefined} element - WeatherElement 物件。
  * @param {number} index - 時段索引。
+ * @param {string} valueKey - ElementValue 物件內的欄位名，e.g. "Weather"。
  * @returns {string} ElementValue 或空字串。
  */
-function getTownshipTimeValue(element, index) {
-  return element?.Time?.[index]?.ElementValue?.[0]?.Value ?? '';
+function getTownshipTimeValue(element, index, valueKey) {
+  return element?.Time?.[index]?.ElementValue?.[0]?.[valueKey] ?? '';
 }
 
 /**
  * 從 F-D0047 時段中取數值。
- * @param {object} element - WeatherElement 物件。
+ * @param {object | undefined} element - WeatherElement 物件。
  * @param {number} index - 時段索引。
+ * @param {string} valueKey - ElementValue 物件內的欄位名，e.g. "Temperature"。
  * @returns {number} 數值。
  */
-function getTownshipTimeNumber(element, index) {
-  return Number(element?.Time?.[index]?.ElementValue?.[0]?.Value ?? 0);
+function getTownshipTimeNumber(element, index, valueKey) {
+  return Number(element?.Time?.[index]?.ElementValue?.[0]?.[valueKey] ?? 0);
 }
 
 /**
@@ -371,11 +371,20 @@ function normalizeTownshipWeather(cwaData, uvData, aqiInfo, county, township) {
   }
 
   const elements = location.WeatherElement;
-  const temp = findTownshipElement(elements, 'Temperature');
-  const humidity = findTownshipElement(elements, 'RelativeHumidity');
-  const pop = findTownshipElement(elements, 'ProbabilityOfPrecipitation');
-  const weather = findTownshipElement(elements, 'Weather');
-  const weatherCodeEl = findTownshipElement(elements, 'WeatherCode');
+  // CWA F-D0047 ElementName 為中文；'溫度'/'相對濕度' 是逐小時 DataTime，其他是 3 小時 StartTime/EndTime
+  const temp = findTownshipElement(elements, '溫度');
+  const humidity = findTownshipElement(elements, '相對濕度');
+  const pop = findTownshipElement(elements, '3小時降雨機率');
+  const weather = findTownshipElement(elements, '天氣現象'); // ElementValue 同時含 Weather 和 WeatherCode
+
+  /**
+   * 取出 time entry 的起始時間（DataTime 或 StartTime）。
+   * @param {{ DataTime?: string, StartTime?: string }} entry - Time 陣列中的一個項目。
+   * @returns {string} 起始時間字串。
+   */
+  function getEntryStart(entry) {
+    return entry.DataTime || entry.StartTime || '';
+  }
 
   const now = new Date();
   let todayIndex = 0;
@@ -385,33 +394,43 @@ function normalizeTownshipWeather(cwaData, uvData, aqiInfo, county, township) {
 
   if (temp?.Time) {
     for (let i = 0; i < temp.Time.length; i += 1) {
-      const { StartTime, EndTime } = temp.Time[i];
-      if (isPeriodCurrent(StartTime, EndTime, now)) {
-        todayIndex = i;
-        break;
-      }
-      if (new Date(StartTime) > now) {
-        todayIndex = i;
-        break;
+      const entry = temp.Time[i];
+      if (entry.DataTime) {
+        // 逐小時資料：取最後一個 <= now 的 index
+        if (new Date(entry.DataTime) <= now) {
+          todayIndex = i;
+        } else {
+          break;
+        }
+      } else {
+        const { StartTime, EndTime } = entry;
+        if (isPeriodCurrent(StartTime, EndTime, now)) {
+          todayIndex = i;
+          break;
+        }
+        if (new Date(StartTime) > now) {
+          todayIndex = i;
+          break;
+        }
       }
     }
 
     for (let i = todayIndex + 1; i < temp.Time.length; i += 1) {
-      const { StartTime } = temp.Time[i];
-      if (!isDaytimePeriod(StartTime) && !isPeriodTomorrow(StartTime, now)) {
+      const startTime = getEntryStart(temp.Time[i]);
+      if (!isDaytimePeriod(startTime) && !isPeriodTomorrow(startTime, now)) {
         todayNightIndex = i;
         break;
       }
-      if (isPeriodTomorrow(StartTime, now)) break;
+      if (isPeriodTomorrow(startTime, now)) break;
     }
 
     for (let i = todayIndex + 1; i < temp.Time.length; i += 1) {
-      const { StartTime } = temp.Time[i];
-      if (isPeriodTomorrow(StartTime, now)) {
-        if (isDaytimePeriod(StartTime) && tomorrowDayIndex === -1) {
+      const startTime = getEntryStart(temp.Time[i]);
+      if (isPeriodTomorrow(startTime, now)) {
+        if (isDaytimePeriod(startTime) && tomorrowDayIndex === -1) {
           tomorrowDayIndex = i;
         }
-        if (!isDaytimePeriod(StartTime) && tomorrowNightIndex === -1) {
+        if (!isDaytimePeriod(startTime) && tomorrowNightIndex === -1) {
           tomorrowNightIndex = i;
         }
       }
@@ -431,23 +450,23 @@ function normalizeTownshipWeather(cwaData, uvData, aqiInfo, county, township) {
     locationName: formatLocationName(county, township, null),
     locationNameShort: formatLocationNameShort(county, township),
     today: {
-      currentTemp: getTownshipTimeNumber(temp, todayIndex),
-      weatherDesc: getTownshipTimeValue(weather, todayIndex),
-      weatherCode: getTownshipTimeValue(weatherCodeEl, todayIndex),
-      morningTemp: getTownshipTimeNumber(temp, todayIndex),
-      eveningTemp: getTownshipTimeNumber(temp, todayNightIndex),
-      rainProb: getTownshipTimeNumber(pop, todayIndex),
-      humidity: getTownshipTimeNumber(humidity, todayIndex),
+      currentTemp: getTownshipTimeNumber(temp, todayIndex, 'Temperature'),
+      weatherDesc: getTownshipTimeValue(weather, todayIndex, 'Weather'),
+      weatherCode: getTownshipTimeValue(weather, todayIndex, 'WeatherCode'),
+      morningTemp: getTownshipTimeNumber(temp, todayIndex, 'Temperature'),
+      eveningTemp: getTownshipTimeNumber(temp, todayNightIndex, 'Temperature'),
+      rainProb: getTownshipTimeNumber(pop, todayIndex, 'ProbabilityOfPrecipitation'),
+      humidity: getTownshipTimeNumber(humidity, todayIndex, 'RelativeHumidity'),
       uv: uvInfo,
       aqi: aqiInfo,
     },
     tomorrow: {
-      weatherDesc: getTownshipTimeValue(weather, tomorrowDayIndex),
-      weatherCode: getTownshipTimeValue(weatherCodeEl, tomorrowDayIndex),
-      morningTemp: getTownshipTimeNumber(temp, tomorrowDayIndex),
-      eveningTemp: getTownshipTimeNumber(temp, tomorrowNightIndex),
-      rainProb: getTownshipTimeNumber(pop, tomorrowDayIndex),
-      humidity: getTownshipTimeNumber(humidity, tomorrowDayIndex),
+      weatherDesc: getTownshipTimeValue(weather, tomorrowDayIndex, 'Weather'),
+      weatherCode: getTownshipTimeValue(weather, tomorrowDayIndex, 'WeatherCode'),
+      morningTemp: getTownshipTimeNumber(temp, tomorrowDayIndex, 'Temperature'),
+      eveningTemp: getTownshipTimeNumber(temp, tomorrowNightIndex, 'Temperature'),
+      rainProb: getTownshipTimeNumber(pop, tomorrowDayIndex, 'ProbabilityOfPrecipitation'),
+      humidity: getTownshipTimeNumber(humidity, tomorrowDayIndex, 'RelativeHumidity'),
       uv: tomorrowUvInfo,
     },
   };
@@ -462,7 +481,8 @@ function normalizeTownshipWeather(cwaData, uvData, aqiInfo, county, township) {
  */
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const county = searchParams.get('county');
+  // GeoJSON 縣市名可能用「台」字，CWA API 及 COUNTY_FORECAST_IDS 一律用「臺」，統一正規化
+  const county = (searchParams.get('county') ?? '').replace(/台/g, '臺') || null;
   const township = searchParams.get('township');
 
   if (!county) {
