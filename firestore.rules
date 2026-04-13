@@ -23,6 +23,10 @@ service cloud.firestore {
         );
 
       allow delete: if false;
+
+      match /weatherFavorites/{docId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
     }
 
     match /posts/{postId} {
