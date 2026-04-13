@@ -1,199 +1,196 @@
 # Code Review — 013-pre-run-weather
 
-日期：2026-04-13 (Round 4)
+日期：2026-04-13 (Round 6 — re-verify after C1/C2 fix)
 
 ---
 
 ## Taste Rating: 🟡 Acceptable — Works but could be cleaner
 
-分層合理：API route 做 server-side proxy + normalization、前端 client component 管狀態、Leaflet 純互動地圖。Round 3 的 C1–C4 在 working tree 已修復（auth race condition、重複 favorites loading、type error、ESLint warnings）。但核心結構問題依然存在：**typedef 三重定義**是正在倒數的維護炸彈、**`getWeatherIconUrl` 重複定義**是 copy-paste 工程、**`feature()` 對 53,000 行 TopoJSON 重複解析 6 次**是不必要的計算浪費、**WeatherPage 576 行 God Component** 把地圖互動 / 天氣載入 / 收藏 CRUD / URL sync / localStorage 全塞在一起。這些不是理論問題 — 是真正會在下次改需求時咬你一口的東西。
+Round 5 的 C1/C2（township + UV mock 結構錯誤）**已修復**。Round 4 的 C5–C7 結構性重複問題**已全數修復**。
+
+**驗證結果**（Round 6）：
+
+- Unit tests: **60/60 passed** ✅
+- Integration tests: **28/28 passed** ✅
+- ESLint: **0 warnings, 0 errors** ✅
+- Type-check (`src/`): **0 errors**（僅 events/page.jsx、ProfileEventList.jsx 有既存 error，不屬於此 branch）✅
+- `@ts-ignore`: **未發現** ✅
+
+剩餘的 I1–I12 / S1–S3 均為結構性改善建議，不影響正確性。
+
+---
+
+## Round 4 修復狀態追蹤
+
+| Round 4 Issue             | 狀態     | 備註                                      |
+| ------------------------- | -------- | ----------------------------------------- |
+| C1 Auth Race              | ✅ FIXED | `loading` guard in restoreInitial         |
+| C2 Dup Favorites Loading  | ✅ FIXED | 單一 loadFavorites callback               |
+| C3 Type Error             | ✅ FIXED | FavoriteDoc typedef + cast                |
+| C4 ESLint Warnings        | ✅ FIXED | @returns descriptions 補齊                |
+| C5 Typedef 三重定義       | ✅ FIXED | `src/lib/weather-types.js` 統一 export    |
+| C6 getWeatherIconUrl 重複 | ✅ FIXED | 統一在 `weather-helpers.js:116`           |
+| C7 feature() 重複解析     | ✅ FIXED | `weather-geo-cache.js` module-level cache |
 
 ---
 
 ## [CRITICAL ISSUES] — Must fix
 
-### C1. ~~Auth Race Condition~~ ✅ FIXED (working tree)
+### C1. ~~Township Unit Tests FAILING — Mock Data Structure Mismatch~~ ✅ FIXED
 
-~~`WeatherPage.jsx:453` — `restoreInitial` 在 `user: null→object` 時雙重觸發。~~
+**`specs/013-pre-run-weather/tests/unit/weather-api-route.test.js`**
 
-**修復**：destructure `loading` from AuthContext，`restoreInitial` 開頭加 `if (loading) return;`，dependency array 加 `loading`。
+跑測試結果（`npx vitest run` 驗證）：
 
-### C2. ~~Duplicated Favorites Loading Logic~~ ✅ FIXED (working tree)
+```
+FAIL  weather-api-route.test.js > county + township query > should normalize township today weather
+FAIL  weather-api-route.test.js > county + township query > should include formatted location names
+```
 
-~~`WeatherPage.jsx:288-317` vs `397-437` — copy-paste 的同一段邏輯。~~
+**Root cause**: mock 的 F-D0047 township response 使用**英文** ElementName，但 `route.js:405-408` 用**中文**查找：
 
-**修復**：effect 改為 `(async () => { await loadFavorites(); })();`，dependency 改 `[loadFavorites]`。
+| Mock data 用的 name                               | route.js 實際查找的 name                                                        |
+| ------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `'Temperature'`                                   | `'溫度'`                                                                        |
+| `'RelativeHumidity'`                              | `'相對濕度'`                                                                    |
+| `'ProbabilityOfPrecipitation'`                    | `'3小時降雨機率'`                                                               |
+| `'Weather'` + `'WeatherCode'`（分開兩個 element） | `'天氣現象'`（單一 element，Weather + WeatherCode 在同一個 ElementValue[0] 裡） |
 
-### C3. ~~Type Error — getFavorites return type mismatch~~ ✅ FIXED (working tree)
+Mock 的 `ElementValue` 也錯：用 `{ Value: '28' }` 但 code 讀 `{ Temperature: '28' }`。
 
-~~`firebase-weather-favorites.js:76` — `d.data()` 回傳 `DocumentData`。~~
+`normalizeTownshipWeather` 找不到任何 element → 全部回傳 0/空字串。Township normalization 邏輯**完全沒被真正測到**。
 
-**修復**：新增 `FavoriteDoc` typedef + `@type` cast。
-
-### C4. ~~ESLint Warnings — Missing @returns description~~ ✅ FIXED (working tree)
-
-~~`firebase-weather-favorites.js:69,87` — `@returns` 缺 description。~~
-
-**修復**：`getFavorites` → 「使用者的收藏地點列表。」、`isFavorited` → 「收藏狀態與文件 ID。」
-
-### C5. Typedef 三重定義 — UvInfo / AqiInfo / TodayWeather / TomorrowWeather / WeatherInfo
-
-同一組 typedef 出現在 **3 個檔案**：
-
-| 檔案                   | typedef 數量          |
-| ---------------------- | --------------------- |
-| `route.js:5-47`        | 5 個 (含 WeatherInfo) |
-| `weather-api.js:2-43`  | 5 個                  |
-| `WeatherCard.jsx:5-39` | 4 個                  |
-
-改一個型別要同步改 3 份。這不是「有空再改」— 這是你第一次忘記改其中一份就會出 type mismatch bug 的定時炸彈。
-
-**Fix**: 放在 `src/lib/weather-types.js` 統一 export，其他檔案用 `@typedef {import(...)}`。
-
-### C6. `getWeatherIconUrl` 重複定義
-
-**`WeatherCard.jsx:49` vs `FavoritesBar.jsx:28`**
-
-兩份幾乎相同的 function。WeatherCard 版接受 `(weatherCode, period)` 兩個參數，FavoritesBar 版只接受 `(weatherCode)` 並自己判斷 day/night。行為不一致但名字相同。
-
-**Fix**: 抽到 `src/lib/weather-helpers.js`，統一 signature：
+**Fix**: 按照 CWA F-D0047 實際 response 結構重寫 `mockCwaTownshipResponse`：
 
 ```js
-export function getWeatherIconUrl(weatherCode, period) {
-  if (!period) {
-    const hour = new Date().getHours();
-    period = hour >= 6 && hour < 18 ? 'day' : 'night';
-  }
-  const code = String(weatherCode).padStart(2, '0');
-  return `https://www.cwa.gov.tw/V8/assets/img/weather_icons/weathers/svg_icon/${period}/${code}.svg`;
+{
+  ElementName: '溫度',
+  Time: [{
+    DataTime: '2026-04-13T10:00:00+08:00',
+    ElementValue: [{ Temperature: '28' }],
+  }],
 }
 ```
 
-### C7. `feature()` 重複解析大型 TopoJSON — 6 次呼叫
+### C2. ~~UV Test Mock 同樣結構錯誤~~ ✅ FIXED
 
-`feature(townsData, townsData.objects.towns)` 被呼叫 **3 次**：
+**`weather-api-route.test.js:123-159`**
 
-- `WeatherPage.jsx:91`（buildTownshipLookupByCode，module-level）
-- `TaiwanMap.jsx:146`（townsGeoJson useMemo）
-- `TaiwanMap.jsx:156`（islandGeoJson useMemo）
+`mockUvResponse` 有兩個獨立 element `'UVIndex'` 和 `'UVExposureLevel'`，但 `extractUvInfo`（route.js:179）查找的是**單一** element `'紫外線指數'`，然後從 `ElementValue[0]` 讀 `UVIndex` 和 `UVExposureLevel` 兩個 field。
 
-`feature(countiesData, countiesData.objects.counties)` 被呼叫 **3 次**：
-
-- `WeatherPage.jsx:49`（buildCountyCodeLookup，module-level）
-- `WeatherPage.jsx:73`（buildCountyNameByCode，module-level）
-- `TaiwanMap.jsx:138`（countiesGeoJson useMemo）
-
-towns.json 是 53,000+ 行。每次 `feature()` call 都在做 TopoJSON → GeoJSON 完整轉換。module-level 的 3 次無法避免（app 啟動時跑一次），但 TaiwanMap 的 3 次是 per-component-mount 且可以用 shared module-level cache 消除。
-
-**Fix**: 在 shared module-level 做一次轉換，export 給所有消費者：
+Mock structure:
 
 ```js
-// src/lib/weather-geo-cache.js
-import { feature } from 'topojson-client';
-import countiesData from '@/data/geo/counties.json';
-import townsData from '@/data/geo/towns.json';
-
-export const countiesGeoJson = feature(countiesData, countiesData.objects.counties);
-export const townsGeoJson = feature(townsData, townsData.objects.towns);
+WeatherElement: [
+  { ElementName: 'UVIndex', Time: [{ ElementValue: [{ Value: '7' }] }] },
+  { ElementName: 'UVExposureLevel', Time: [{ ElementValue: [{ Value: '高量級' }] }] },
+];
 ```
 
-WeatherPage 的 lookup builder 和 TaiwanMap 的 memo 都從這裡 import，全程式只解析一次。
+Code expects:
+
+```js
+WeatherElement: [
+  {
+    ElementName: '紫外線指數',
+    Time: [
+      {
+        ElementValue: [{ UVIndex: '7', UVExposureLevel: '高量級' }],
+      },
+    ],
+  },
+];
+```
+
+County 的 UV test `'should include UV info from F-D0047 even ID'`（L444-449）assertion `expect(data.today.uv).toEqual({ value: 7, level: '高量級' })` 在 extractUvInfo 回傳 null 的情況下會失敗 — 但因為 `.catch(() => null)` 在 L561 吃掉錯誤，UV 直接是 null。這個 test **可能碰巧通過**但原因是錯的。
+
+**Fix**: 同 C1 — 按實際 CWA API 結構重寫 mock data。
 
 ---
 
-## [IMPROVEMENT OPPORTUNITIES] — Should fix
+## [IMPROVEMENT OPPORTUNITIES] — Should fix（Round 4 遺留）
 
-### I1. WeatherPage God Component — 7 state + 2 refs + 11 callbacks + 5 effects
+### I1. WeatherPage God Component — 531 行、7 state、11 callbacks、5 effects
 
-`WeatherPage.jsx` ~540 行（C2 修復後），管理：
+**`WeatherPage.jsx`** — 仍然未拆分。收藏邏輯（state + effects + callbacks）佔 ~45%。
 
-- `selectedLocation`, `mapLayer`, `weatherState`, `weatherData`, `favorites`, `favSummaries`, `currentFavStatus`（7 useState）
-- `abortRef`, `cardPanelRef`（2 useRef）
-- 5 useEffect、9+ useCallback
+**Fix**: 抽 `useFavorites(user, selectedLocation)` custom hook，回傳 `{ favorites, favSummaries, currentFavStatus, loadFavorites, handleToggle, handleSelect, handleRemove }`。
 
-收藏邏輯（state + effects + callbacks）佔了 ~45% 的行數。抽成 `useFavorites(user)` hook 同時解決集中度問題。
-
-### I2. `window.innerWidth` 寫死響應式判斷
-
-**`WeatherPage.jsx:167`**
+### I2. `window.innerWidth` snapshot 值（WeatherPage.jsx:156）
 
 ```js
 if (window.innerWidth < 768 && cardPanelRef.current) {
 ```
 
-`window.innerWidth` 是 snapshot 值，不會隨 resize 更新。用戶在桌面版縮小視窗後點擊不會觸發 scroll。
+用戶 resize 後點擊不會觸發 scroll。改用 `matchMedia('(max-width: 767px)').matches`。
 
-**Fix**: `matchMedia('(max-width: 767px)').matches`。
-
-### I3. 無意義的 Promise.resolve 包裝
-
-**`WeatherPage.jsx:407`**
+### I3. 無意義 Promise.resolve 包裝（WeatherPage.jsx:394）
 
 ```js
 Promise.resolve(defaultStatus).then(setCurrentFavStatus);
 ```
 
-同步值沒必要包 Promise。直接 `setCurrentFavStatus(defaultStatus)` 即可。這行唯一的「作用」是把 setState 推到 microtask，但 React 18 batching 已經處理了這個問題。
+React 18 batching 下這行等於 `setCurrentFavStatus(defaultStatus)`。直接同步呼叫。
 
-### I4. Component unmount 時無 abort cleanup
+### I4. Component unmount 無 abort cleanup（WeatherPage.jsx）
 
-**`WeatherPage.jsx:148-176`**
-
-`fetchLocationWeather` 建立 AbortController 存在 `abortRef`，但 component unmount 時沒有 cleanup effect 去 abort pending request。快速導航離開 `/weather` → setState on unmounted component。
-
-**Fix**: 加一個 cleanup effect：
+`abortRef` 在 unmount 時沒有 cleanup effect。快速導航離開 `/weather` → setState on unmounted。
 
 ```js
-useEffect(() => {
-  return () => {
-    if (abortRef.current) abortRef.current.abort();
-  };
-}, []);
+useEffect(
+  () => () => {
+    abortRef.current?.abort();
+  },
+  [],
+);
 ```
 
-### I5. Favorites fetch 無 AbortSignal
+### I5. Favorites fetch 無 AbortSignal（WeatherPage.jsx:289）
 
-**`WeatherPage.jsx:300-309`**
+`loadFavorites` 對每個收藏呼叫 `fetchWeather` 但沒傳 signal。5 個收藏 = 5 個掛在空中的 request。
 
-`loadFavorites` 對每個收藏呼叫 `fetchWeather` 但沒傳 signal。快速切帳號或 unmount 時無法取消。5 個收藏 = 5 個掛在空中的 request。
+### I6. COUNTY_DEFAULT_HUMIDITY = 70（route.js:78）
 
-### I6. COUNTY_DEFAULT_HUMIDITY = 70 語意不清
-
-**`route.js:116`**
-
-縣市級 F-C0032 不提供濕度，永遠回傳 70%。使用者看到「濕度 70%」以為是真實數據。應回傳 `null` 讓前端顯示 "—"（跟 UV/AQI 的 null handling 一致），或至少在 UI 標註為估計值。
+F-C0032 不提供濕度但永遠回傳 70%。用戶以為是真實數據。應回傳 `null` 讓前端顯示「—」。
 
 ### I7. 收藏重複查詢邏輯 copy-paste
 
 **`firebase-weather-favorites.js:30-36` vs `94-101`**
 
-`addFavorite` 和 `isFavorited` 有完全相同的 Firestore query 建構邏輯（countyCode + townshipCode null handling）。
-
-**Fix**: 抽成 `buildFavoriteQuery(colRef, countyCode, townshipCode)` helper。
+`addFavorite` 和 `isFavorited` 的 Firestore query 建構完全相同。抽 `buildFavoriteQuery(colRef, countyCode, townshipCode)` helper。
 
 ### I8. route.js time-finding 邏輯重複
 
-**`route.js:336-358`（county）vs `route.js:463-506`（township）**
+**`route.js:298-316`（county）vs `route.js:425-468`（township）**
 
-兩段幾乎相同的迴圈找 todayIndex/tomorrowIndex，差異只在欄位名（camelCase vs PascalCase — 反映 CWA API 的不一致）。
+幾乎相同的迴圈找 todayIndex/tomorrowIndex。抽 `findTimeIndices(timeArray, getStartFn, getEndFn, now)`。
 
-**Fix**: 抽成 `findTimeIndices(timeArray, getStartFn, getEndFn, now)` 接受欄位存取 function。
+### I9. restoreInitial nesting depth — 8 層（WeatherPage.jsx:406-458）
 
-### I9. restoreInitial nesting depth — 8 層
+拆成 `tryUrlRestore()` / `tryFavoritesRestore(user)` / `tryLocalStorageRestore()` 三個 helper。
 
-**`WeatherPage.jsx:417-469`**
+### I10. Missing focus-visible styles
 
-`useEffect → async function → if (loading) → if (fromUrl) → if (user) → try → if (favs.length) → if (match)` — 8 層深。Linus 的規則是 3 層以上就要重構。
+**`weather.module.css`** — `.favoriteButton`、`.retryButton`、`.backButton`、`.chipSelectButton`、`.chipRemove` 都沒有 `:focus-visible` 樣式。WCAG 2.1 Level AA failure。
 
-**Fix**: 拆成 `tryUrlRestore()` / `tryFavoritesRestore(user)` / `tryLocalStorageRestore()` 三個 helper，restoreInitial 變成三行的 priority chain。
+```css
+.favoriteButton:focus-visible,
+.retryButton:focus-visible,
+.backButton:focus-visible,
+.chipSelectButton:focus-visible,
+.chipRemove:focus-visible {
+  outline: 2px solid var(--sky-accent);
+  outline-offset: 2px;
+}
+```
 
-### I10. Missing focus-visible styles on custom buttons
+### I11. WeatherCard.jsx 內建 inline style objects
 
-**`weather.module.css`**
+**`WeatherCard.jsx:77, 97, 121`** — 三處 `style={{ }}` 物件在每次 render 都建立新 reference。已有完整的 CSS module，這些應該搬進去。
 
-`.favoriteButton`、`.retryButton`、`.backButton`、`.chipSelectButton`、`.chipRemove` 都沒有 `:focus-visible` 樣式。鍵盤導航用戶看不到 focus indicator — WCAG 2.1 Level AA failure。
+### I12. `currentTemp` 語意誤導（route.js:332）
 
-**Fix**: 每個互動元素加 `:focus-visible { outline: 2px solid var(--sky-accent); outline-offset: 2px; }`。
+County-level 的 `currentTemp` 等於 `getCountyTimeNumber(maxT, todayIndex)` — 最高溫。Township-level 的 `currentTemp` 等於 `getTownshipTimeNumber(temp, todayIndex, 'Temperature')` — 即時溫度。相同 field name 但語意不同，下游 `WeatherCard` 不知道自己顯示的到底是哪個。
 
 ---
 
@@ -201,17 +198,17 @@ useEffect(() => {
 
 ### S1. `#region` / `#endregion` 過度使用
 
-route.js 有 8 組、WeatherPage 有 10 組。如果每個檔案都需要大量 region 折疊，真正的問題是檔案太大。Region 是症狀的繃帶，不是治療。
+route.js 8 組、WeatherPage 10 組。如果需要 region 折疊才能導航，檔案該拆了。
 
-### S2. SelectedLocation 物件建構散落 5 處
+### S2. SelectedLocation 物件建構散落 5 處（WeatherPage.jsx:185, 201, 222, 243, 324）
 
-`WeatherPage.jsx:196, 214, 233, 251, 335` — 每次都手寫 `{ countyCode, countyName, townshipCode, townshipName, displaySuffix }` 結構。任一處少一個欄位就是 bug。
+每次都手寫完整結構。任一處少一個欄位就是 bug。
 
-**Fix**: `createLocation(countyCode, countyName, townshipCode?, townshipName?, displaySuffix?)` factory function。
+**Fix**: `createLocation(countyCode, countyName, townshipCode?, townshipName?, displaySuffix?)` factory。
 
 ### S3. currentFavStatus default 重複 4 次
 
-`WeatherPage.jsx:129, 363, 405, 413` — `{ favorited: false, docId: null }` 四處出現。
+**`WeatherPage.jsx:118, 315, 394, 402`** — `{ favorited: false, docId: null }` 四處出現。
 
 **Fix**: `const DEFAULT_FAV_STATUS = Object.freeze({ favorited: false, docId: null });`
 
@@ -219,45 +216,46 @@ route.js 有 8 組、WeatherPage 有 10 組。如果每個檔案都需要大量 
 
 ## [TESTING GAPS]
 
-### TG1. restoreInitial auth transition 無測試覆蓋
+### ~~TG1. Township normalization 零覆蓋~~ ✅ FIXED（C1/C2 mock 修正後 60/60 通過）
 
-mount effect 的 URL → 收藏 → localStorage 優先順序邏輯沒有測試 `user: null → user: object` 的 transition。現有測試 mock user 為固定值（已登入或 null），不覆蓋 C1 的 race condition。C1 雖已修復，但沒有迴歸測試保護。
+### TG2. restoreInitial auth transition 無測試
 
-### TG2. Component unmount 時 pending request 無測試
+mount effect 的 `user: null → user: object` transition 沒有測試覆蓋。C1 fix（Round 4）沒有 regression test 保護。
 
-快速導航離開 `/weather` 時，fetchLocationWeather 的 pending request 行為未驗證。
+### TG3. Component unmount pending request 無測試
+
+快速導航離開 `/weather` 時的 pending request 行為未驗證。
+
+### TG4. E2E tests 永遠 skip in CI
+
+`weather-page.spec.js` 有 `test.skip(!hasCwaKey)` — CI 無法跑 E2E。沒有替代的 API route integration test 來補這個洞。
 
 ---
 
 ## [TASK GAPS]
 
-對照 `specs/013-pre-run-weather/tasks.md`，所有 T001–T033 均標記 `[x]`：
+所有 T001–T033 均標記 `[x]`，對照 diff 均有對應實作。
 
-- **所有 task 皆有對應 code in diff** — 沒有空標記
-- **無明顯 scope creep**
-
-**遺漏面**：
-
-- **T032 (Accessibility audit)** 標記完成，但：
-  - GeoJSON polygons 沒有鍵盤互動支援（`onEachCounty`/`onEachTownship` 只綁 mouseover/mouseout/click，無 keydown/focus）。Leaflet GeoJSON 層預設不 focusable
-  - 所有自訂按鈕缺少 `:focus-visible` 樣式（見 I10）
-  - T032 描述的「鍵盤導航 for counties/townships」嚴格來說未完成
+- **T032 (Accessibility audit)** — 仍然部分未完成：
+  - GeoJSON polygons 不可鍵盤 focus（Leaflet 限制，但 `role="application"` 暗示有鍵盤支援）
+  - 自訂按鈕缺 `:focus-visible` 樣式（I10）
+- **T033 (Quickstart validation)** — ~~unit tests 有 2 failures~~ ✅ C1/C2 修正後全綠
 
 ---
 
 ## VERDICT
 
-🟡 **Conditionally merge-ready** — Round 3 的 C1–C4 已在 working tree 修復，type-check 和 lint 均通過。新標記的 C5–C7 是結構性重複問題（typedef 三重定義、function 重複、TopoJSON 重複解析），**不影響正確性但嚴重影響可維護性**。
+✅ **Worth merging** — C1/C2 mock 結構修正後，unit 60/60、integration 28/28 全綠。ESLint 0 warnings、type-check `src/` 0 errors、無 `@ts-ignore`。核心功能正確且有測試覆蓋。
 
-建議：
+剩餘改善建議（不 block merge）：
 
-1. Commit C1–C4 fixes（已完成）
-2. C5–C7 + I7–I8 可作為獨立 refactor PR 處理（extract `weather-types.js`、`weather-geo-cache.js`、shared helpers）
-3. I1（God Component → `useFavorites` hook）ROI 最高但改動最大，可排下一個 iteration
-4. I10（focus-visible）是 a11y compliance，應盡快修
+1. **I4**: unmount abort cleanup（一行修，防 setState on unmounted）
+2. **I10**: focus-visible 樣式（a11y compliance，WCAG 2.1 AA）
+3. **I6**: COUNTY_DEFAULT_HUMIDITY → null（data honesty）
+4. **I1**: WeatherPage → useFavorites hook（最大 ROI refactor，可排下個 iteration）
 
 ---
 
 ## KEY INSIGHT
 
-**這個 codebase 的核心問題是「有意識的重複」—— typedef 定義 3 次、icon URL helper 定義 2 次、TopoJSON 解析 6 次、favorite query 建構 2 次、time-finding 邏輯 2 次。每一處重複都不是懶惰，而是「當時最快的做法」。但累積起來，下次改 WeatherInfo 結構你要改 3 個檔案、改天氣圖示 URL 你要改 2 個 function、改 GeoJSON 資料來源你要改 6 個 call site。治本之道是一句話：single source of truth。**
+**架構分層做對了，single source of truth（types / geo cache / icon helper）也到位了。剩下的 I1–I12 都是「能不能更好」而非「會不會壞」——合理的 tech debt，排進後續迭代即可。**

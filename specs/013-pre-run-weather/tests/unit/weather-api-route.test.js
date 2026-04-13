@@ -120,7 +120,7 @@ const mockCwaCountyResponse = {
 /** Mock EPA AQI response (raw array, lowercase keys — matches real EPA API). */
 const mockEpaResponse = [{ county: '臺北市', aqi: '45', status: '良好', sitename: '中山' }];
 
-/** Mock CWA F-D0047 even (UV 12hr) response. */
+/** Mock CWA F-D0047 even (UV 12hr) response — 單一 '紫外線指數' element，UVIndex + UVExposureLevel 在同一個 ElementValue。 */
 const mockUvResponse = {
   success: 'true',
   records: {
@@ -131,22 +131,12 @@ const mockUvResponse = {
             LocationName: '臺北市',
             WeatherElement: [
               {
-                ElementName: 'UVIndex',
+                ElementName: '紫外線指數',
                 Time: [
                   {
                     StartTime: '2026-04-13 06:00:00',
                     EndTime: '2026-04-13 18:00:00',
-                    ElementValue: [{ Value: '7' }],
-                  },
-                ],
-              },
-              {
-                ElementName: 'UVExposureLevel',
-                Time: [
-                  {
-                    StartTime: '2026-04-13 06:00:00',
-                    EndTime: '2026-04-13 18:00:00',
-                    ElementValue: [{ Value: '高量級' }],
+                    ElementValue: [{ UVIndex: '7', UVExposureLevel: '高量級' }],
                   },
                 ],
               },
@@ -158,7 +148,7 @@ const mockUvResponse = {
   },
 };
 
-/** Mock CWA F-D0047 odd (3hr township) response. */
+/** Mock CWA F-D0047 odd (3hr township) response — 中文 ElementName，具名 ElementValue key。 */
 const mockCwaTownshipResponse = {
   success: 'true',
   records: {
@@ -169,102 +159,82 @@ const mockCwaTownshipResponse = {
             LocationName: '板橋區',
             WeatherElement: [
               {
-                ElementName: 'Temperature',
+                ElementName: '溫度',
                 Time: [
                   {
                     StartTime: '2026-04-13 09:00:00',
                     EndTime: '2026-04-13 12:00:00',
-                    ElementValue: [{ Value: '28' }],
+                    ElementValue: [{ Temperature: '28' }],
                   },
                   {
                     StartTime: '2026-04-13 18:00:00',
                     EndTime: '2026-04-13 21:00:00',
-                    ElementValue: [{ Value: '22' }],
+                    ElementValue: [{ Temperature: '22' }],
                   },
                   {
                     StartTime: '2026-04-14 09:00:00',
                     EndTime: '2026-04-14 12:00:00',
-                    ElementValue: [{ Value: '27' }],
+                    ElementValue: [{ Temperature: '27' }],
                   },
                 ],
               },
               {
-                ElementName: 'RelativeHumidity',
+                ElementName: '相對濕度',
                 Time: [
                   {
                     StartTime: '2026-04-13 09:00:00',
                     EndTime: '2026-04-13 12:00:00',
-                    ElementValue: [{ Value: '72' }],
+                    ElementValue: [{ RelativeHumidity: '72' }],
                   },
                   {
                     StartTime: '2026-04-13 18:00:00',
                     EndTime: '2026-04-13 21:00:00',
-                    ElementValue: [{ Value: '80' }],
+                    ElementValue: [{ RelativeHumidity: '80' }],
                   },
                   {
                     StartTime: '2026-04-14 09:00:00',
                     EndTime: '2026-04-14 12:00:00',
-                    ElementValue: [{ Value: '75' }],
+                    ElementValue: [{ RelativeHumidity: '75' }],
                   },
                 ],
               },
               {
-                ElementName: 'ProbabilityOfPrecipitation',
+                ElementName: '3小時降雨機率',
                 Time: [
                   {
                     StartTime: '2026-04-13 09:00:00',
                     EndTime: '2026-04-13 12:00:00',
-                    ElementValue: [{ Value: '10' }],
+                    ElementValue: [{ ProbabilityOfPrecipitation: '10' }],
                   },
                   {
                     StartTime: '2026-04-13 18:00:00',
                     EndTime: '2026-04-13 21:00:00',
-                    ElementValue: [{ Value: '20' }],
+                    ElementValue: [{ ProbabilityOfPrecipitation: '20' }],
                   },
                   {
                     StartTime: '2026-04-14 09:00:00',
                     EndTime: '2026-04-14 12:00:00',
-                    ElementValue: [{ Value: '30' }],
+                    ElementValue: [{ ProbabilityOfPrecipitation: '30' }],
                   },
                 ],
               },
               {
-                ElementName: 'Weather',
+                ElementName: '天氣現象',
                 Time: [
                   {
                     StartTime: '2026-04-13 09:00:00',
                     EndTime: '2026-04-13 12:00:00',
-                    ElementValue: [{ Value: '晴時多雲' }],
+                    ElementValue: [{ Weather: '晴時多雲', WeatherCode: '2' }],
                   },
                   {
                     StartTime: '2026-04-13 18:00:00',
                     EndTime: '2026-04-13 21:00:00',
-                    ElementValue: [{ Value: '多雲' }],
+                    ElementValue: [{ Weather: '多雲', WeatherCode: '4' }],
                   },
                   {
                     StartTime: '2026-04-14 09:00:00',
                     EndTime: '2026-04-14 12:00:00',
-                    ElementValue: [{ Value: '多雲時陰' }],
-                  },
-                ],
-              },
-              {
-                ElementName: 'WeatherCode',
-                Time: [
-                  {
-                    StartTime: '2026-04-13 09:00:00',
-                    EndTime: '2026-04-13 12:00:00',
-                    ElementValue: [{ Value: '2' }],
-                  },
-                  {
-                    StartTime: '2026-04-13 18:00:00',
-                    EndTime: '2026-04-13 21:00:00',
-                    ElementValue: [{ Value: '4' }],
-                  },
-                  {
-                    StartTime: '2026-04-14 09:00:00',
-                    EndTime: '2026-04-14 12:00:00',
-                    ElementValue: [{ Value: '5' }],
+                    ElementValue: [{ Weather: '多雲時陰', WeatherCode: '5' }],
                   },
                 ],
               },
@@ -276,7 +246,7 @@ const mockCwaTownshipResponse = {
   },
 };
 
-/** Mock UV response for township (板橋區). */
+/** Mock UV response for township (板橋區) — 同 mockUvResponse 結構，單一 '紫外線指數' element。 */
 const mockUvTownshipResponse = {
   success: 'true',
   records: {
@@ -287,22 +257,12 @@ const mockUvTownshipResponse = {
             LocationName: '板橋區',
             WeatherElement: [
               {
-                ElementName: 'UVIndex',
+                ElementName: '紫外線指數',
                 Time: [
                   {
                     StartTime: '2026-04-13 06:00:00',
                     EndTime: '2026-04-13 18:00:00',
-                    ElementValue: [{ Value: '6' }],
-                  },
-                ],
-              },
-              {
-                ElementName: 'UVExposureLevel',
-                Time: [
-                  {
-                    StartTime: '2026-04-13 06:00:00',
-                    EndTime: '2026-04-13 18:00:00',
-                    ElementValue: [{ Value: '高量級' }],
+                    ElementValue: [{ UVIndex: '6', UVExposureLevel: '高量級' }],
                   },
                 ],
               },
