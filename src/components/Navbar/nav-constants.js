@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/posts', label: '文章' },
   { href: '/events', label: '揪團頁面' },
   { href: '/runs', label: '跑步' },
+  { href: '/weather', label: '天氣' },
 ];
 
 /**

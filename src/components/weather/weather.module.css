@@ -1,0 +1,461 @@
+/* === Color Variables === */
+.weatherRoot {
+  --sky-light: #eaf8fc;
+  --sky-medium: #a4c3e4;
+  --sky-bg: #f7fcfe;
+  --sky-text: #2c3e50;
+  --sky-accent: #5b8db8;
+  --sky-white: #ffffff;
+
+  background-color: var(--sky-bg);
+  color: var(--sky-text);
+  min-height: 100vh;
+}
+
+/* === Layout === */
+/* Desktop: weather card left + map right side-by-side */
+/* Mobile: map top + weather card bottom */
+.pageLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .pageLayout {
+    flex-direction: row;
+    padding: 1.5rem;
+    gap: 1.5rem;
+  }
+}
+
+.cardPanel {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .cardPanel {
+    flex: 0 0 380px;
+    order: -1; /* card on left */
+  }
+}
+
+.mapPanel {
+  flex: 1;
+  min-width: 0;
+  min-height: 400px;
+}
+
+@media (min-width: 1024px) {
+  .mapPanel {
+    min-height: 600px;
+  }
+}
+
+/* === GeoJSON Polygon Styles (used via Leaflet pathOptions) === */
+/* These are reference values — actual application is via JS pathOptions */
+/* Default: fillColor: #EAF8FC, fillOpacity: 0.6, color: #A4C3E4, weight: 1.5 */
+/* Hover: fillColor: #A4C3E4, fillOpacity: 0.8 */
+/* Selected: fillColor: #5B8DB8, fillOpacity: 0.9, weight: 2 */
+
+/* === Weather Card === */
+.weatherCard {
+  background: var(--sky-white);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(164, 195, 228, 0.15);
+}
+
+.temperature {
+  font-family: var(--font-fraunces), serif;
+  font-weight: 900;
+  font-size: 3.5rem;
+  line-height: 1;
+  font-variation-settings:
+    'SOFT' 100,
+    'WONK' 0;
+  color: var(--sky-text);
+}
+
+@media (min-width: 1024px) {
+  .temperature {
+    font-size: 4.5rem;
+  }
+}
+
+.locationName {
+  font-family: var(--font-fraunces), serif;
+  font-weight: 300;
+  font-size: 1.25rem;
+  font-variation-settings:
+    'SOFT' 80,
+    'WONK' 0;
+  color: var(--sky-accent);
+}
+
+@media (min-width: 1024px) {
+  .locationName {
+    font-size: 1.5rem;
+  }
+}
+
+.weatherDesc {
+  font-size: 1rem;
+  color: var(--sky-text);
+  opacity: 0.8;
+}
+
+.weatherIcon {
+  width: 64px;
+  height: 64px;
+}
+
+@media (min-width: 1024px) {
+  .weatherIcon {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+/* === Metrics row (rain, humidity, UV, AQI) === */
+.metricsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.metricItem {
+  text-align: center;
+}
+
+.metricValue {
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: var(--sky-text);
+}
+
+.metricLabel {
+  font-size: 0.75rem;
+  color: var(--sky-accent);
+  margin-top: 0.25rem;
+}
+
+/* === Morning/Evening temps === */
+.tempRange {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+}
+
+.tempItem {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--sky-text);
+}
+
+/* === Tomorrow section === */
+.tomorrowSection {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--sky-light);
+}
+
+.tomorrowTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sky-accent);
+  margin-bottom: 0.75rem;
+}
+
+/* === Skeleton / Shimmer animation === */
+.skeleton {
+  background: linear-gradient(90deg, var(--sky-light) 25%, #d4e8f5 50%, var(--sky-light) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeletonTemp {
+  composes: skeleton;
+  width: 120px;
+  height: 56px;
+}
+
+.skeletonText {
+  composes: skeleton;
+  height: 16px;
+  margin-bottom: 0.5rem;
+}
+
+.skeletonMetric {
+  composes: skeleton;
+  height: 40px;
+}
+
+/* === Empty state === */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--sky-accent);
+}
+
+.emptyIcon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.emptyText {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* === Error state === */
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.errorText {
+  color: var(--sky-text);
+  margin-bottom: 1rem;
+}
+
+.retryButton {
+  padding: 0.5rem 1.5rem;
+  border: 1px solid var(--sky-accent);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--sky-accent);
+  font-size: 0.875rem;
+  cursor: pointer;
+  min-height: 44px;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.retryButton:hover {
+  background: var(--sky-accent);
+  color: var(--sky-white);
+}
+
+/* === Township float effect (selected township) === */
+.townshipFloat {
+  box-shadow: 0 4px 12px rgba(91, 141, 184, 0.3);
+  transform: translateY(-2px);
+  transition:
+    box-shadow 0.3s,
+    transform 0.3s;
+}
+
+/* === BackToOverview button === */
+.backButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--sky-medium);
+  border-radius: 0.5rem;
+  background: var(--sky-white);
+  color: var(--sky-accent);
+  cursor: pointer;
+  font-size: 0.75rem;
+  min-width: 44px;
+  min-height: 44px;
+  transition: background-color 0.2s;
+}
+
+.backButton:hover {
+  background: var(--sky-light);
+}
+
+.backButtonIcon {
+  width: 24px;
+  height: 24px;
+}
+
+/* === FavoriteButton === */
+.favoriteButton {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favoriteButton:hover {
+  background: var(--sky-light);
+}
+
+.favoriteIcon {
+  width: 24px;
+  height: 24px;
+  color: var(--sky-accent);
+  transition: color 0.2s;
+}
+
+.favoriteIconActive {
+  composes: favoriteIcon;
+  color: #e74c3c;
+}
+
+/* === FavoritesBar === */
+/* Desktop: vertical list above weather card */
+/* Mobile: horizontal scrollable chips above map */
+.favoritesBar {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.5rem 0;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.favoritesBar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.favoritesBar::-webkit-scrollbar-thumb {
+  background: var(--sky-medium);
+  border-radius: 2px;
+}
+
+.favoritesBar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (min-width: 1024px) {
+  .favoritesBar {
+    flex-direction: column;
+    overflow-x: visible;
+    overflow-y: auto;
+    max-height: 200px;
+  }
+}
+
+.favoriteChip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--sky-white);
+  border: 1px solid var(--sky-light);
+  border-radius: 2rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+  min-height: 44px;
+}
+
+.favoriteChip:hover {
+  border-color: var(--sky-medium);
+  background: var(--sky-light);
+}
+
+.favoriteChipActive {
+  composes: favoriteChip;
+  border-color: var(--sky-accent);
+  background: var(--sky-light);
+}
+
+.chipIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.chipName {
+  font-size: 0.8125rem;
+  color: var(--sky-text);
+}
+
+.chipTemp {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--sky-text);
+}
+
+.chipSelectButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.chipRemove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  color: var(--sky-accent);
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chipRemove:hover {
+  opacity: 1;
+}
+
+/* === Map container === */
+.mapContainer {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: var(--sky-white);
+}
+
+@media (min-width: 1024px) {
+  .mapContainer {
+    min-height: 600px;
+  }
+}
