@@ -63,20 +63,25 @@ export async function removeFavorite(uid, docId) {
   await deleteDoc(docRef);
 }
 
+/** @typedef {{ countyCode: string, countyName: string, townshipCode: string | null, townshipName: string | null, displaySuffix: string | null, createdAt: import('firebase/firestore').Timestamp }} FavoriteDoc */
+
 /**
  * 取得使用者所有天氣收藏地點（按 createdAt 降序）。
  * @param {string} uid - 使用者 UID。
- * @returns {Promise<Array<{id: string, countyCode: string, countyName: string, townshipCode: string | null, townshipName: string | null, displaySuffix: string | null, createdAt: import('firebase/firestore').Timestamp}>>}
+ * @returns {Promise<Array<{ id: string } & FavoriteDoc>>} 使用者的收藏地點列表。
  */
 export async function getFavorites(uid) {
   const colRef = collection(db, 'users', uid, 'weatherFavorites');
   const q = query(colRef, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+  return snapshot.docs.map(
+    (d) =>
+      /** @type {{ id: string } & FavoriteDoc} */ ({
+        id: d.id,
+        ...d.data(),
+      }),
+  );
 }
 
 /**
@@ -84,7 +89,7 @@ export async function getFavorites(uid) {
  * @param {string} uid - 使用者 UID。
  * @param {string} countyCode - 縣市代碼。
  * @param {string | null} townshipCode - 鄉鎮代碼。
- * @returns {Promise<{favorited: boolean, docId: string | null}>}
+ * @returns {Promise<{favorited: boolean, docId: string | null}>} 收藏狀態與文件 ID。
  */
 export async function isFavorited(uid, countyCode, townshipCode) {
   const colRef = collection(db, 'users', uid, 'weatherFavorites');

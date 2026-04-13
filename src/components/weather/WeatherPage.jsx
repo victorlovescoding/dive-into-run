@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useCallback, useMemo, useEffect, useContext } from 'react';
-import { feature } from 'topojson-client';
 import TaiwanMap from './TaiwanMap';
 import WeatherCard from './WeatherCard';
 import WeatherCardEmpty from './WeatherCardEmpty';
@@ -20,8 +19,7 @@ import {
   loadLastLocation,
 } from '@/lib/weather-helpers';
 import { AuthContext } from '@/contexts/AuthContext';
-import countiesData from '@/data/geo/counties.json';
-import townsData from '@/data/geo/towns.json';
+import { countiesGeoJson, townsGeoJson } from '@/lib/weather-geo-cache';
 import styles from './weather.module.css';
 
 // #region Types
@@ -45,12 +43,9 @@ import styles from './weather.module.css';
  * @returns {Record<string, string>} 名稱對代碼的映射。
  */
 function buildCountyCodeLookup() {
-  const geoJson = /** @type {import('geojson').FeatureCollection} */ (
-    feature(countiesData, countiesData.objects.counties)
-  );
   /** @type {Record<string, string>} */
   const lookup = {};
-  geoJson.features.forEach((feat) => {
+  countiesGeoJson.features.forEach((feat) => {
     const name = feat.properties?.COUNTYNAME ?? '';
     const code = feat.properties?.COUNTYCODE ?? '';
     lookup[name] = code;
@@ -69,12 +64,9 @@ function buildCountyCodeLookup() {
  * @returns {Record<string, string>} 代碼對名稱的映射。
  */
 function buildCountyNameByCode() {
-  const geoJson = /** @type {import('geojson').FeatureCollection} */ (
-    feature(countiesData, countiesData.objects.counties)
-  );
   /** @type {Record<string, string>} */
   const lookup = {};
-  geoJson.features.forEach((feat) => {
+  countiesGeoJson.features.forEach((feat) => {
     const code = feat.properties?.COUNTYCODE ?? '';
     const name = feat.properties?.COUNTYNAME ?? '';
     lookup[code] = name;
@@ -87,12 +79,9 @@ function buildCountyNameByCode() {
  * @returns {Record<string, { townshipName: string, countyCode: string, countyName: string }>} 鄉鎮反查。
  */
 function buildTownshipLookupByCode() {
-  const geoJson = /** @type {import('geojson').FeatureCollection} */ (
-    feature(townsData, townsData.objects.towns)
-  );
   /** @type {Record<string, { townshipName: string, countyCode: string, countyName: string }>} */
   const lookup = {};
-  geoJson.features.forEach((feat) => {
+  townsGeoJson.features.forEach((feat) => {
     const townCode = feat.properties?.TOWNCODE ?? '';
     const townName = feat.properties?.TOWNNAME ?? '';
     const cCode = feat.properties?.COUNTYCODE ?? '';
@@ -113,7 +102,7 @@ const TOWNSHIP_LOOKUP_BY_CODE = buildTownshipLookupByCode();
  */
 export default function WeatherPage() {
   // #region State
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
   /** @type {[SelectedLocation | null, import('react').Dispatch<import('react').SetStateAction<SelectedLocation | null>>]} */
   const [selectedLocation, setSelectedLocation] = useState(null);
   /** @type {[string, import('react').Dispatch<import('react').SetStateAction<string>>]} */
@@ -395,46 +384,10 @@ export default function WeatherPage() {
 
   // 載入收藏清單 — user 變化時重新載入
   useEffect(() => {
-    let cancelled = false;
     (async () => {
-      if (!user) {
-        if (!cancelled) {
-          setFavorites([]);
-          setFavSummaries({});
-        }
-        return;
-      }
-      try {
-        const favs = await getFavorites(user.uid);
-        if (cancelled) return;
-        setFavorites(favs);
-        const summaryEntries = await Promise.all(
-          favs.map(async (fav) => {
-            try {
-              const data = await fetchWeather({
-                county: fav.countyName,
-                township: fav.townshipName,
-              });
-              return [
-                fav.id,
-                { weatherCode: data.today.weatherCode, currentTemp: data.today.currentTemp },
-              ];
-            } catch {
-              return [fav.id, { weatherCode: '', currentTemp: null }];
-            }
-          }),
-        );
-        if (!cancelled) {
-          setFavSummaries(Object.fromEntries(summaryEntries));
-        }
-      } catch {
-        // 靜默失敗 — 收藏是次要功能
-      }
+      await loadFavorites();
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
+  }, [loadFavorites]);
 
   // 檢查當前地點收藏狀態
   useEffect(() => {
@@ -453,6 +406,8 @@ export default function WeatherPage() {
   useEffect(() => {
     /** 根據優先順序還原初始地點。 */
     async function restoreInitial() {
+      if (loading) return;
+
       // 1. URL params 最優先
       const params = new URLSearchParams(window.location.search);
       const fromUrl = decodeLocationParams(params);
@@ -500,7 +455,7 @@ export default function WeatherPage() {
     }
 
     restoreInitial();
-  }, [user, restoreLocation]);
+  }, [user, loading, restoreLocation]);
   // #endregion
 
   // #region Render helpers

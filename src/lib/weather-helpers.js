@@ -106,6 +106,24 @@ export const ISLAND_MARKERS = [
 ];
 // #endregion
 
+// #region Weather icon
+/**
+ * 取得 CWA 天氣圖示 URL。
+ * @param {string} weatherCode - 天氣代碼。
+ * @param {'day' | 'night'} [period] - 日夜時段。未提供時依當前時間自動判斷。
+ * @returns {string} 圖示 URL。
+ */
+export function getWeatherIconUrl(weatherCode, period) {
+  let resolvedPeriod = period;
+  if (!resolvedPeriod) {
+    const hour = new Date().getHours();
+    resolvedPeriod = hour >= 6 && hour < 18 ? 'day' : 'night';
+  }
+  const code = String(weatherCode).padStart(2, '0');
+  return `https://www.cwa.gov.tw/V8/assets/img/weather_icons/weathers/svg_icon/${resolvedPeriod}/${code}.svg`;
+}
+// #endregion
+
 // #region Name formatting
 /**
  * 去除縣市後綴（縣/市）取得縮寫。

@@ -1,55 +1,11 @@
 import Image from 'next/image';
+import { getWeatherIconUrl } from '@/lib/weather-helpers';
 import styles from './weather.module.css';
 
-// #region JSDoc Type Definitions
-/**
- * @typedef {object} UvInfo
- * @property {number} value - UV 指數數值。
- * @property {string} level - 等級文字。
- */
-
-/**
- * @typedef {object} AqiInfo
- * @property {number} value - AQI 數值。
- * @property {string} status - 等級文字。
- */
-
-/**
- * @typedef {object} TodayWeather
- * @property {number} currentTemp - 當前氣溫。
- * @property {string} weatherDesc - 天氣狀況文字。
- * @property {string} weatherCode - 天氣代碼。
- * @property {number} morningTemp - 早上氣溫。
- * @property {number} eveningTemp - 晚上氣溫。
- * @property {number} rainProb - 降雨機率。
- * @property {number} humidity - 相對濕度。
- * @property {UvInfo | null} uv - 紫外線指數。
- * @property {AqiInfo | null} aqi - 空氣品質。
- */
-
-/**
- * @typedef {object} TomorrowWeather
- * @property {string} weatherDesc - 天氣狀況文字。
- * @property {string} weatherCode - 天氣代碼。
- * @property {number} morningTemp - 早上氣溫。
- * @property {number} eveningTemp - 晚上氣溫。
- * @property {number} rainProb - 降雨機率。
- * @property {number} humidity - 相對濕度。
- * @property {UvInfo | null} uv - 紫外線指數。
- */
-// #endregion
+/** @typedef {import('@/lib/weather-types').TodayWeather} TodayWeather */
+/** @typedef {import('@/lib/weather-types').TomorrowWeather} TomorrowWeather */
 
 // #region Helpers
-/**
- * 取得 CWA 天氣圖示 URL。
- * @param {string} weatherCode - 天氣代碼。
- * @param {'day' | 'night'} period - 日夜時段。
- * @returns {string} 圖示 URL。
- */
-function getWeatherIconUrl(weatherCode, period) {
-  const code = String(weatherCode).padStart(2, '0');
-  return `https://www.cwa.gov.tw/V8/assets/img/weather_icons/weathers/svg_icon/${period}/${code}.svg`;
-}
 
 /**
  * 格式化指標數值，null 時顯示 "—"。

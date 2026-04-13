@@ -2,49 +2,11 @@ import { NextResponse } from 'next/server';
 import { getForecastIds, formatLocationName, formatLocationNameShort } from '@/lib/weather-helpers';
 
 // #region JSDoc Type Definitions
-/**
- * @typedef {object} UvInfo
- * @property {number} value - UV 指數數值。
- * @property {string} level - 等級文字，e.g. "中量級"。
- */
-
-/**
- * @typedef {object} AqiInfo
- * @property {number} value - AQI 數值。
- * @property {string} status - 等級文字，e.g. "良好"。
- */
-
-/**
- * @typedef {object} TodayWeather
- * @property {number} currentTemp - 當前氣溫。
- * @property {string} weatherDesc - 天氣狀況文字。
- * @property {string} weatherCode - 天氣代碼。
- * @property {number} morningTemp - 早上氣溫。
- * @property {number} eveningTemp - 晚上氣溫。
- * @property {number} rainProb - 降雨機率 (0-100)。
- * @property {number} humidity - 相對濕度 (0-100)。
- * @property {UvInfo | null} uv - 紫外線指數。
- * @property {AqiInfo | null} aqi - 空氣品質。
- */
-
-/**
- * @typedef {object} TomorrowWeather
- * @property {string} weatherDesc - 天氣狀況文字。
- * @property {string} weatherCode - 天氣代碼。
- * @property {number} morningTemp - 早上氣溫。
- * @property {number} eveningTemp - 晚上氣溫。
- * @property {number} rainProb - 降雨機率。
- * @property {number} humidity - 相對濕度。
- * @property {UvInfo | null} uv - 紫外線指數。
- */
-
-/**
- * @typedef {object} WeatherInfo
- * @property {string} locationName - 地點全名。
- * @property {string} locationNameShort - 手機版縮寫。
- * @property {TodayWeather} today - 今日天氣。
- * @property {TomorrowWeather} tomorrow - 明日天氣。
- */
+/** @typedef {import('@/lib/weather-types').UvInfo} UvInfo */
+/** @typedef {import('@/lib/weather-types').AqiInfo} AqiInfo */
+/** @typedef {import('@/lib/weather-types').TodayWeather} TodayWeather */
+/** @typedef {import('@/lib/weather-types').TomorrowWeather} TomorrowWeather */
+/** @typedef {import('@/lib/weather-types').WeatherInfo} WeatherInfo */
 // --- County (F-C0032-001) response types ---
 /**
  * @typedef {object} CountyTimePeriod

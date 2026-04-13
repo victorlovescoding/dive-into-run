@@ -1,6 +1,6 @@
 import Image from 'next/image';
+import { formatLocationNameShort, getWeatherIconUrl } from '@/lib/weather-helpers';
 import styles from './weather.module.css';
-import { formatLocationNameShort } from '@/lib/weather-helpers';
 
 // #region Types
 /**
@@ -19,18 +19,6 @@ import { formatLocationNameShort } from '@/lib/weather-helpers';
  * @property {number | null} currentTemp - 當前氣溫。
  */
 // #endregion
-
-/**
- * 取得 CWA 天氣圖示 URL（依當前時段自動切換日/夜）。
- * @param {string} weatherCode - 天氣代碼。
- * @returns {string} 圖示 URL。
- */
-function getWeatherIconUrl(weatherCode) {
-  const code = String(weatherCode).padStart(2, '0');
-  const hour = new Date().getHours();
-  const period = hour >= 6 && hour < 18 ? 'day' : 'night';
-  return `https://www.cwa.gov.tw/V8/assets/img/weather_icons/weathers/svg_icon/${period}/${code}.svg`;
-}
 
 /**
  * 收藏區塊 — 桌面版縱向列表 / 手機版橫向可捲動 chips。

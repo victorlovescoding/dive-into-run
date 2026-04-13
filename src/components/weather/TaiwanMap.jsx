@@ -3,10 +3,8 @@
 import { useMemo, useEffect, useCallback } from 'react';
 import { MapContainer, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { feature } from 'topojson-client';
-import countiesData from '@/data/geo/counties.json';
-import townsData from '@/data/geo/towns.json';
 import { ISLAND_MARKERS } from '@/lib/weather-helpers';
+import { countiesGeoJson, townsGeoJson as allTownsGeoJson } from '@/lib/weather-geo-cache';
 import styles from './weather.module.css';
 
 // #region Style constants
@@ -131,33 +129,20 @@ function TaiwanMap({
   onTownshipClick,
   onIslandClick,
 }) {
-  // #region GeoJSON conversion (memoized)
-  const countiesGeoJson = useMemo(
-    () =>
-      /** @type {import('geojson').FeatureCollection} */ (
-        feature(countiesData, countiesData.objects.counties)
-      ),
-    [],
-  );
-
+  // #region GeoJSON filtering (source data from weather-geo-cache)
   const townsGeoJson = useMemo(() => {
     if (!selectedCountyCode) return null;
-    const allTowns = /** @type {import('geojson').FeatureCollection} */ (
-      feature(townsData, townsData.objects.towns)
-    );
     return {
-      ...allTowns,
-      features: allTowns.features.filter((f) => f.properties?.COUNTYCODE === selectedCountyCode),
+      ...allTownsGeoJson,
+      features: allTownsGeoJson.features.filter(
+        (f) => f.properties?.COUNTYCODE === selectedCountyCode,
+      ),
     };
   }, [selectedCountyCode]);
 
   const islandGeoJson = useMemo(() => {
-    const allTowns = /** @type {import('geojson').FeatureCollection} */ (
-      feature(townsData, townsData.objects.towns)
-    );
-
     const islandFeatures = ISLAND_MARKERS.map((island) => {
-      const townFeature = allTowns.features.find(
+      const townFeature = allTownsGeoJson.features.find(
         (f) => f.properties?.TOWNNAME === island.targetTownship,
       );
       if (!townFeature) return null;
