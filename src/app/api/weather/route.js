@@ -62,7 +62,10 @@ const COUNTY_DEFAULT_HUMIDITY = 70;
  * @returns {Promise<object>} CWA API 回應 JSON。
  */
 async function fetchCwa(datasetId, paramKey, locationValue) {
-  const url = `${CWA_BASE}/${datasetId}?Authorization=${process.env.CWA_API_KEY}&${paramKey}=${encodeURIComponent(locationValue)}`;
+  let url = `${CWA_BASE}/${datasetId}?Authorization=${process.env.CWA_API_KEY}`;
+  if (paramKey && locationValue) {
+    url += `&${paramKey}=${encodeURIComponent(locationValue)}`;
+  }
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`CWA ${datasetId} returned ${res.status}`);
@@ -194,16 +197,16 @@ function extractUvInfo(uvData, township, now, isTomorrow) {
  */
 function extractAqi(epaData, county) {
   try {
-    const records = epaData?.records;
+    const records = Array.isArray(epaData) ? epaData : epaData?.records;
     if (!records?.length) return null;
 
-    const station = records.find((/** @type {object} */ r) => r.County === county);
+    const station = records.find((/** @type {object} */ r) => r.county === county);
     if (!station) return null;
 
-    const value = Number(station.AQI);
+    const value = Number(station.aqi);
     if (Number.isNaN(value)) return null;
 
-    return { value, status: station.Status ?? '' };
+    return { value, status: station.status ?? '' };
   } catch {
     return null;
   }
@@ -522,7 +525,7 @@ export async function GET(request) {
     // County-level: F-C0032-001 + F-D0047 even (UV) + EPA
     const [cwaData, uvData, epaData] = await Promise.all([
       fetchCwa('F-C0032-001', 'locationName', county),
-      fetchCwa(forecastIds.twelveHour, 'LocationName', county).catch(() => null),
+      fetchCwa(forecastIds.twelveHour, null, null).catch(() => null),
       fetchEpaAqi().catch(() => null),
     ]);
 

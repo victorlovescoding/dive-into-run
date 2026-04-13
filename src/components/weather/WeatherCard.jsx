@@ -93,11 +93,11 @@ function TodayMetrics({ today }) {
       </div>
       <div className={styles.metricItem}>
         <div className={styles.metricValue}>{uv ? formatMetric(uv.value) : '\u2014'}</div>
-        <div className={styles.metricLabel}>{uv ? uv.level : 'UV'}</div>
+        <div className={styles.metricLabel}>紫外線</div>
       </div>
       <div className={styles.metricItem}>
         <div className={styles.metricValue}>{aqi ? formatMetric(aqi.value) : '\u2014'}</div>
-        <div className={styles.metricLabel}>{aqi ? aqi.status : 'AQI'}</div>
+        <div className={styles.metricLabel}>AQI</div>
       </div>
     </div>
   );

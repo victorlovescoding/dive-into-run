@@ -117,10 +117,8 @@ const mockCwaCountyResponse = {
   },
 };
 
-/** Mock EPA AQI response. */
-const mockEpaResponse = {
-  records: [{ County: '臺北市', AQI: '45', Status: '良好', SiteName: '中山' }],
-};
+/** Mock EPA AQI response (raw array, lowercase keys — matches real EPA API). */
+const mockEpaResponse = [{ county: '臺北市', aqi: '45', status: '良好', sitename: '中山' }];
 
 /** Mock CWA F-D0047 even (UV 12hr) response. */
 const mockUvResponse = {
