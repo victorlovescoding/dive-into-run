@@ -13,6 +13,17 @@
     "subcollection",
     "WCAG",
     "Strava",
-    "strava"
+    "strava",
+    "topojson",
+    "Fraunces",
+    "weathercode",
+    "cwa",
+    "moenv",
+    "geojson",
+    "drilldown",
+    "shimmer",
+    "polyline",
+    "township",
+    "maxage"
   ]
 }
