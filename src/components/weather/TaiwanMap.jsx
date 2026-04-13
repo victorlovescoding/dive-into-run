@@ -45,8 +45,42 @@ const ISLAND_RESET_STYLE = {
 
 const MAP_CENTER = /** @type {[number, number]} */ ([23.5, 121]);
 const MAP_ZOOM = 7;
-const FIT_PADDING = /** @type {[number, number]} */ ([20, 20]);
+const FIT_PADDING = /** @type {[number, number]} */ ([10, 10]);
 const MAP_BG = '#F7FCFE';
+// #endregion
+
+// #region InvalidateSizeHelper
+/**
+ * 監聽地圖容器尺寸變化，通知 Leaflet 重新計算並重新 fitBounds。
+ * 解決 viewport resize（如手機↔電腦切換）時地圖消失、NaN 錯誤、或縮放不正確。
+ * @param {object} props - 元件屬性。
+ * @param {import('geojson').FeatureCollection | null} props.geojsonData - 當前顯示的 GeoJSON 資料。
+ * @returns {null} 不渲染任何東西。
+ */
+function InvalidateSizeHelper({ geojsonData }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const container = map.getContainer();
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize();
+      if (geojsonData?.features?.length) {
+        requestAnimationFrame(() => {
+          try {
+            const layer = L.geoJSON(geojsonData);
+            map.fitBounds(layer.getBounds(), { padding: FIT_PADDING, animate: false });
+          } catch {
+            /* noop */
+          }
+        });
+      }
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [map, geojsonData]);
+
+  return null;
+}
 // #endregion
 
 // #region FitBoundsHelper
@@ -61,12 +95,15 @@ function FitBoundsHelper({ geojsonData }) {
 
   useEffect(() => {
     if (geojsonData?.features?.length) {
-      try {
-        const layer = L.geoJSON(geojsonData);
-        map.fitBounds(layer.getBounds(), { padding: FIT_PADDING });
-      } catch {
-        // Leaflet 在 jsdom 等非瀏覽器環境可能不可用
-      }
+      requestAnimationFrame(() => {
+        try {
+          map.invalidateSize();
+          const layer = L.geoJSON(geojsonData);
+          map.fitBounds(layer.getBounds(), { padding: FIT_PADDING });
+        } catch {
+          // Leaflet 在 jsdom 等非瀏覽器環境可能不可用
+        }
+      });
     }
   }, [map, geojsonData]);
 
@@ -237,8 +274,9 @@ function TaiwanMap({
         scrollWheelZoom={false}
         doubleClickZoom={false}
         attributionControl={false}
-        style={{ width: '100%', height: '100%', background: MAP_BG }}
+        style={{ position: 'absolute', inset: 0, background: MAP_BG }}
       >
+        <InvalidateSizeHelper geojsonData={activeGeoJson} />
         <FitBoundsHelper geojsonData={activeGeoJson} />
 
         {mapLayer === 'overview' && (
