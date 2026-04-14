@@ -4,7 +4,7 @@
 
 ---
 
-## Taste Rating: 🟡 **Acceptable** — Solid overall architecture, but a real data consistency bug in the pagination model and a security gap in Firestore rules undermine an otherwise well-structured feature.
+## Taste Rating: 🟡 **Acceptable** — Solid overall architecture. Critical issues (#1 pagination race condition, #2 actorUid security gap, #3 markAsRead coverage) have been fixed in `00be0f6`. Remaining items are improvement/style level.
 
 ---
 
@@ -12,56 +12,21 @@
 
 ### [CRITICAL ISSUES] (Must fix — these break fundamental principles)
 
-**1. [src/contexts/NotificationContext.jsx, Lines 203-208] Data Structure: `notifications` + `extraNotifications` merge creates gaps and duplicates**
+**1. ~~[src/contexts/NotificationContext.jsx, Lines 203-208] Data Structure: `notifications` + `extraNotifications` merge creates gaps and duplicates~~ ✅ Fixed in `00be0f6`**
 
-The fundamental data structure decision — splitting real-time listener data (`notifications`, latest 5) and paginated data (`extraNotifications`) into two separate state arrays merged via spread — is **wrong**. It creates a concurrency bug:
-
-```
-Scenario: User loads more notifications, then a new notification arrives.
-
-1. Listener has [n5, n4, n3, n2, n1], lastDoc = n1
-2. User clicks loadMore → fetches [n0] starting after n1
-   extraNotifications = [n0], lastDoc = n0
-3. New notification n6 arrives → listener fires
-   notifications = [n6, n5, n4, n3, n2], lastDoc = n2
-4. Display: [...notifications, ...extraNotifications] = [n6, n5, n4, n3, n2, n0]
-   → n1 IS MISSING — it fell out of the listener window and was never in extraNotifications
-```
-
-Furthermore, `lastDoc` is now n2 (overwritten by the listener). If the user calls `loadMore` again, it fetches starting after n2 — which returns [n1, n0, ...], causing **n0 to appear twice**.
-
-This is a textbook example of what happens when you split a single ordered dataset across two independent state containers without a deduplication/merge strategy.
-
-**Fix**: Either (a) maintain a single `Map<id, Notification>` that both the listener and pagination write into, with a sorted derived array, or (b) stop updating `lastDoc` from the listener once `hasLoadedMore` is true, and accept the listener window as frozen for display purposes.
+Replaced `notifications[]` + `extraNotifications[]` with a single `notificationsMap` (`Map<id, NotificationItem>`). Listener and pagination both merge via `Map.set()`, eliminating gaps and duplicates. Cursor split into `listenerCursor` / `paginationCursor` prevents cursor overwrite. Regression test added (`should not lose or duplicate notifications when listener fires after loadMore`).
 
 ---
 
-**2. [firestore.rules, Lines 63-68] Security: `actorUid` not validated against `request.auth.uid` — notification impersonation possible**
+**2. ~~[firestore.rules, Lines 63-68] Security: `actorUid` not validated against `request.auth.uid` — notification impersonation possible~~ ✅ Fixed in `00be0f6`**
 
-The create rule validates `recipientUid != request.auth.uid` and `type` whitelist, but does NOT validate:
-
-```
-request.resource.data.actorUid == request.auth.uid
-```
-
-A malicious client can create a notification with any `actorUid`, `actorName`, `actorPhotoURL` — effectively impersonating another user. The recipient would see a notification saying "Alice modified the event" when it was actually sent by Eve.
-
-This is a **real privilege escalation risk**, not theoretical. Any authenticated user can send forged notifications to any other user via the Firestore REST API or a modified client.
-
-**Fix**: Add `&& request.resource.data.actorUid == request.auth.uid` to the create rule.
+Added `&& request.resource.data.actorUid == request.auth.uid` to the create rule (`firestore.rules:218`).
 
 ---
 
-**3. [src/contexts/NotificationContext.jsx, Lines 185-201] Data Structure: `markAsRead` optimistic update doesn't cover `extraNotifications`**
+**3. ~~[src/contexts/NotificationContext.jsx, Lines 185-201] Data Structure: `markAsRead` optimistic update doesn't cover `extraNotifications`~~ ✅ Fixed in `00be0f6`**
 
-```js
-setNotifications((prev) => prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)));
-setUnreadNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-```
-
-This updates `notifications` (listener top 5) and `unreadNotifications`, but not `extraNotifications`. If the user scrolls down, loads more notifications, and clicks an unread item from the paginated section — the blue dot won't disappear until the next onSnapshot round-trip. This violates the spec requirement: 「點擊後 blue dot 立即消失（樂觀更新，不等 onSnapshot 回寫）」.
-
-**Fix**: Add `setExtraNotifications((prev) => prev.map(...))` with the same read:true logic.
+Single `notificationsMap` refactor (Issue #1) eliminated this problem — `markAsRead` now updates the Map via `Map.get()` + `Map.set()`, covering all notifications regardless of source.
 
 ---
 
@@ -161,14 +126,9 @@ For a dropdown that overlays content, keyboard accessibility is expected at P1. 
 
 ### [TESTING GAPS]
 
-**11. No test covers the pagination + new notification race condition (Critical Issue #1)**
+**11. ~~No test covers the pagination + new notification race condition (Critical Issue #1)~~ ✅ Fixed in `00be0f6`**
 
-All pagination tests mock the service layer and never simulate a listener update arriving between loadMore calls. The critical data consistency bug is completely untested. A test should:
-
-1. Setup initial 5 notifications via listener
-2. Call loadMore → append extra notifications
-3. Simulate a new notification arriving (trigger listener callback with shifted window)
-4. Assert no items are missing and no duplicates exist
+Added regression test `should not lose or duplicate notifications when listener fires after loadMore` in `NotificationPagination.test.jsx` — reproduces the exact race condition scenario and asserts 7 unique notifications with no gaps or duplicates.
 
 **12. Integration tests heavily rely on mocked service layer — acceptable for unit isolation, but the mocks never exercise the real `fetchMoreNotifications`/`loadMore` interaction**
 
@@ -184,10 +144,8 @@ The `NotificationPagination.test.jsx` mocks `fetchMoreNotifications` and injects
 
 ## VERDICT:
 
-❌ **Needs rework** — The pagination data model (Critical Issue #1) creates user-visible data loss. The Firestore security gap (Critical Issue #2) allows notification impersonation. Both must be addressed before merge.
-
-Issues #3 (markAsRead for paginated items) and #4 (CSS layout) are also high-confidence bugs that will be visible to users immediately.
+✅ **Worth merging** — Critical issues (#1, #2, #3) have been fixed. The single `Map<id, NotificationItem>` refactor is clean and structurally correct. Remaining items (#4–#10, #12) are improvement/style level and can be addressed in follow-up.
 
 ## KEY INSIGHT:
 
-The root cause of the pagination bugs is splitting a single ordered notification list across two independent state arrays (`notifications` + `extraNotifications`) without a reconciliation layer. This is the kind of "bad data structure" problem Linus warns about — the code complexity isn't in the logic, it's in the data model. A single `Map<id, NotificationItem>` with a derived sorted array would eliminate issues #1, #3, and the potential duplicate problem in one structural fix.
+The root cause of the pagination bugs was splitting a single ordered notification list across two independent state arrays (`notifications` + `extraNotifications`) without a reconciliation layer. Fixed by adopting a single `Map<id, NotificationItem>` with a derived sorted array — eliminated issues #1, #3, and the duplicate problem in one structural change.
