@@ -76,6 +76,8 @@ const mockUser = {
  * @returns {import('@/lib/notification-helpers').NotificationItem} 測試用通知。
  */
 function createNotification(id, read = false) {
+  const index = parseInt(id.replace('n', ''), 10);
+  const ms = index * 1000;
   return /** @type {import('@/lib/notification-helpers').NotificationItem} */ ({
     id,
     recipientUid: 'user1',
@@ -89,7 +91,7 @@ function createNotification(id, read = false) {
     commentId: null,
     message: `通知 ${id}`,
     read,
-    createdAt: { toDate: () => new Date() },
+    createdAt: { toDate: () => new Date(ms), toMillis: () => ms },
   });
 }
 
@@ -308,5 +310,54 @@ describe('NotificationPagination', () => {
     const callCountAfter = /** @type {import('vitest').Mock} */ (fetchMoreNotifications).mock.calls
       .length;
     expect(callCountAfter).toBe(2);
+  });
+
+  it('should not lose or duplicate notifications when listener fires after loadMore', async () => {
+    // Regression test: listener 和 loadMore 的 race condition
+    // 1. Listener: [n5,n4,n3,n2,n1]  2. loadMore: [n0]
+    // 3. Listener fires again: [n6,n5,n4,n3,n2] (n1 掉出 top 5)
+    // → n1 不該消失，n0 不該重複
+    const user = userEvent.setup();
+    renderPanel();
+    await user.click(screen.getByRole('button', { name: '通知' }));
+
+    // Step 1: Initial listener
+    act(() => {
+      notificationsCallback?.(createNotifications(5), mockLastDoc);
+      unreadCallback?.([]);
+    });
+
+    // Step 2: loadMore fetches older notification
+    /** @type {import('vitest').Mock} */ (fetchMoreNotifications).mockResolvedValueOnce({
+      notifications: [createNotification('n0')],
+      lastDoc: mockNewLastDoc,
+    });
+
+    await user.click(screen.getByRole('button', { name: '查看先前通知' }));
+    await waitFor(() => {
+      expect(screen.getByText('通知 n0')).toBeInTheDocument();
+    });
+
+    // Step 3: New notification n6 arrives — listener shifts window, n1 drops out
+    act(() => {
+      const shifted = [
+        createNotification('n6'),
+        createNotification('n5'),
+        createNotification('n4'),
+        createNotification('n3'),
+        createNotification('n2'),
+      ];
+      notificationsCallback?.(shifted, mockLastDoc);
+    });
+
+    // Step 4: All 7 unique notifications present — no gaps, no duplicates
+    await waitFor(() => {
+      for (const id of ['n0', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6']) {
+        expect(screen.getByText(`通知 ${id}`)).toBeInTheDocument();
+      }
+    });
+
+    const allItems = screen.getAllByText(/^通知 n\d+$/);
+    expect(allItems).toHaveLength(7);
   });
 });

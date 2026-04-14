@@ -56,6 +56,22 @@ export const NotificationContext =
   /** @type {import('react').Context<NotificationContextValue>} */ (createContext(defaultValue));
 
 /**
+ * 將 Firestore Timestamp 或 JS Date 轉為毫秒數，用於排序比較。
+ * @param {import('firebase/firestore').Timestamp | Date | null | undefined} ts - 時間戳記。
+ * @returns {number} 毫秒數，無法取得時回傳 0。
+ */
+function toMillis(ts) {
+  if (!ts) return 0;
+  if ('toMillis' in ts && typeof ts.toMillis === 'function') {
+    return /** @type {import('firebase/firestore').Timestamp} */ (ts).toMillis();
+  }
+  if (ts instanceof Date) {
+    return ts.getTime();
+  }
+  return 0;
+}
+
+/**
  * 提供通知狀態的 Context Provider。
  * @param {object} props - 元件 props。
  * @param {import('react').ReactNode} props.children - 子元件。
@@ -66,15 +82,15 @@ export default function NotificationProvider({ children }) {
   const [unreadNotifications, setUnreadNotifications] = useState(
     /** @type {import('@/lib/notification-helpers').NotificationItem[]} */ ([]),
   );
-  const [notifications, setNotifications] = useState(
-    /** @type {import('@/lib/notification-helpers').NotificationItem[]} */ ([]),
+  const [notificationsMap, setNotificationsMap] = useState(
+    /** @type {Map<string, import('@/lib/notification-helpers').NotificationItem>} */ (new Map()),
   );
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(/** @type {'all'|'unread'} */ ('all'));
-  const [extraNotifications, setExtraNotifications] = useState(
-    /** @type {import('@/lib/notification-helpers').NotificationItem[]} */ ([]),
+  const [listenerCursor, setListenerCursor] = useState(
+    /** @type {import('firebase/firestore').QueryDocumentSnapshot | null} */ (null),
   );
-  const [lastDoc, setLastDoc] = useState(
+  const [paginationCursor, setPaginationCursor] = useState(
     /** @type {import('firebase/firestore').QueryDocumentSnapshot | null} */ (null),
   );
   const [hasMoreAll, setHasMoreAll] = useState(false);
@@ -122,8 +138,12 @@ export default function NotificationProvider({ children }) {
     const unsubAll = watchNotifications(
       user.uid,
       (items, rawLastDoc) => {
-        setNotifications(items);
-        if (rawLastDoc) setLastDoc(rawLastDoc);
+        setNotificationsMap((prev) => {
+          const next = new Map(prev);
+          items.forEach((item) => next.set(item.id, item));
+          return next;
+        });
+        if (rawLastDoc) setListenerCursor(rawLastDoc);
         setHasMoreAll(items.length >= 5);
       },
       (err) => {
@@ -145,9 +165,10 @@ export default function NotificationProvider({ children }) {
       unsubUnread();
       unsubAll();
       setUnreadNotifications([]);
-      setNotifications([]);
+      setNotificationsMap(new Map());
       setIsPanelOpen(false);
-      setExtraNotifications([]);
+      setListenerCursor(null);
+      setPaginationCursor(null);
       setHasMoreAll(false);
       setHasLoadedMore(false);
     };
@@ -189,10 +210,14 @@ export default function NotificationProvider({ children }) {
      * @returns {Promise<void>}
      */
     async (notificationId) => {
-      // Optimistic update
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
-      );
+      // Optimistic update — 更新 Map 以涵蓋 listener 和 pagination 的資料
+      setNotificationsMap((prev) => {
+        const entry = prev.get(notificationId);
+        if (!entry) return prev;
+        const next = new Map(prev);
+        next.set(notificationId, { ...entry, read: true });
+        return next;
+      });
       setUnreadNotifications((prev) => prev.filter((n) => n.id !== notificationId));
 
       await markNotificationAsRead(notificationId);
@@ -204,8 +229,10 @@ export default function NotificationProvider({ children }) {
     if (activeTab === 'unread') {
       return unreadNotifications.slice(0, 5);
     }
-    return [...notifications, ...extraNotifications];
-  }, [activeTab, notifications, unreadNotifications, extraNotifications]);
+    return Array.from(notificationsMap.values()).sort(
+      (a, b) => toMillis(b.createdAt) - toMillis(a.createdAt),
+    );
+  }, [activeTab, notificationsMap, unreadNotifications]);
 
   const hasMore = useMemo(() => {
     if (activeTab === 'unread') {
@@ -215,18 +242,23 @@ export default function NotificationProvider({ children }) {
   }, [activeTab, hasMoreAll]);
 
   const loadMore = useCallback(async () => {
-    if (isLoadingMore || !hasMore || !user || !lastDoc) return;
+    const cursor = paginationCursor ?? listenerCursor;
+    if (isLoadingMore || !hasMore || !user || !cursor) return;
     setIsLoadingMore(true);
     try {
-      const result = await fetchMoreNotifications(user.uid, lastDoc, 5);
-      setExtraNotifications((prev) => [...prev, ...result.notifications]);
-      if (result.lastDoc) setLastDoc(result.lastDoc);
+      const result = await fetchMoreNotifications(user.uid, cursor, 5);
+      setNotificationsMap((prev) => {
+        const next = new Map(prev);
+        result.notifications.forEach((item) => next.set(item.id, item));
+        return next;
+      });
+      if (result.lastDoc) setPaginationCursor(result.lastDoc);
       if (result.notifications.length < 5) setHasMoreAll(false);
       setHasLoadedMore(true);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, hasMore, user, lastDoc]);
+  }, [isLoadingMore, hasMore, user, paginationCursor, listenerCursor]);
 
   const value = useMemo(
     () => ({
