@@ -35,7 +35,6 @@ export default function PostDetailClient({ postId }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [commentEditing, setCommentEditing] = useState(null);
-  const [, setIsCommentEditing] = useState(false);
   const [isComposeEditing, setIsComposeEditing] = useState(false);
   const { user } = useContext(AuthContext);
   const { showToast } = useToast();
@@ -254,7 +253,6 @@ export default function PostDetailClient({ postId }) {
     const target = comments.find((c) => c.id === commentId);
     setCommentEditing(target);
     setComment(target.comment);
-    setIsCommentEditing(true);
   }
 
   // 刪除留言function
@@ -271,7 +269,6 @@ export default function PostDetailClient({ postId }) {
       // 若正在編輯這則留言，先退出編輯狀態
       if (commentEditing?.id === commentId) {
         setCommentEditing(null);
-        setIsCommentEditing(false);
         setComment('');
       }
 
@@ -356,7 +353,6 @@ export default function PostDetailClient({ postId }) {
       }
       setComment('');
       setCommentEditing(null);
-      setIsCommentEditing(false);
     }
   }
 

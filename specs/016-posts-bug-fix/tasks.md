@@ -26,7 +26,7 @@
 
 **Independent Test**: 在文章列表中模擬文章不存在情境下點擊編輯，頁面不 crash 且顯示「文章不存在，無法編輯」toast
 
-- [ ] T001 [US1] 在 `composeButtonHandler` 中取消註解 null guard 並加入 `showToast('文章不存在，無法編輯', 'error')` in `src/app/posts/page.jsx`
+- [x] T001 [US1] 在 `composeButtonHandler` 中取消註解 null guard 並加入 `showToast('文章不存在，無法編輯', 'error')` in `src/app/posts/page.jsx`
 
 **Checkpoint**: 文章不存在時點擊編輯 → 頁面不 crash + toast 提示。既有編輯流程不受影響。
 
@@ -38,7 +38,7 @@
 
 **Independent Test**: 模擬按讚 API 失敗，UI 的 liked 和 likesCount 100% 還原至操作前的值
 
-- [ ] T002 [US2] 重構 `pressLikeButton` 為 capture-and-restore 模式（optimistic update 前 capture `prevLiked`/`prevCount`，失敗時直接 restore）in `src/app/posts/page.jsx`
+- [x] T002 [US2] 重構 `pressLikeButton` 為 capture-and-restore 模式（optimistic update 前 capture `prevLiked`/`prevCount`，失敗時直接 restore）in `src/app/posts/page.jsx`
 
 **Checkpoint**: 按讚失敗 → liked/likesCount 精確還原。正常按讚流程不受影響。
 
@@ -50,7 +50,7 @@
 
 **Independent Test**: 移除後留言的建立、編輯、取消流程皆正常運作
 
-- [ ] T003 [P] [US3] 刪除 `isCommentEditing` state 宣告（L38）及 3 處 `setIsCommentEditing` 呼叫（L257, L274, L359）in `src/app/posts/[id]/PostDetailClient.jsx`
+- [x] T003 [P] [US3] 刪除 `isCommentEditing` state 宣告（L38）及 3 處 `setIsCommentEditing` 呼叫（L257, L274, L359）in `src/app/posts/[id]/PostDetailClient.jsx`
 
 **Checkpoint**: 留言建立/編輯/取消全部正常。`commentEditing !== null` 邏輯不受影響。
 
@@ -60,9 +60,9 @@
 
 **Purpose**: 跨 User Story 驗證，確認零退化
 
-- [ ] T004 執行 `npm run type-check` 確認零新增錯誤
-- [ ] T005 執行 `npm run lint` 確認零新增錯誤
-- [ ] T006 執行 IDE `getDiagnostics` 並修復所有 Warning/Error（cSpell Information 可忽略但未知單字需加入 `cspell.json`）
+- [x] T004 執行 `npm run type-check` 確認零新增錯誤
+- [x] T005 執行 `npm run lint` 確認零新增錯誤
+- [x] T006 執行 IDE `getDiagnostics` 並修復所有 Warning/Error（cSpell Information 可忽略但未知單字需加入 `cspell.json`）
 - [ ] T007 依 quickstart.md 手動驗證：建立文章 → 編輯 → 按讚 → 留言建立/編輯/取消
 
 ---

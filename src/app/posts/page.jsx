@@ -165,7 +165,10 @@ export default function PostPage() {
     if (postId && !isComposeEditing) {
       // 要把編輯的原文、標題塞入 title content useState 裡面
       const p = posts.find((x) => x.id === postId);
-      // if (!p) return; // 安全檢查
+      if (!p) {
+        showToast('文章不存在，無法編輯', 'error');
+        return;
+      }
       setTitle(p.title);
       setContent(p.content);
       setIsComposeEditing(true);
@@ -223,34 +226,25 @@ export default function PostPage() {
    */
   async function pressLikeButton(postId) {
     if (!user?.uid) return;
-    // 樂觀更新寫這裡
-    // 拿著被點讚的那篇postId去取得他的liked 和 likesCount
-    // 拿著被點讚的那篇 postId，做不可變的樂觀更新（一次 setPosts）
-    setPosts(
-      (
-        prev, // prev是拿之前的 post useState利用map換成新的[]
-      ) =>
-        prev.map((p) => {
-          if (p.id !== postId) return p;
-          const prevLiked = !!p.liked;
-          const prevCount = Number(p.likesCount ?? 0);
-          const nextLiked = !prevLiked;
-          const nextCount = Math.max(0, prevCount + (prevLiked ? -1 : 1));
-          return { ...p, liked: nextLiked, likesCount: nextCount };
-        }),
+    const target = posts.find((p) => p.id === postId);
+    if (!target) return;
+    const prevLiked = !!target.liked;
+    const prevCount = Number(target.likesCount ?? 0);
+    // 樂觀更新
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id !== postId) return p;
+        return {
+          ...p,
+          liked: !prevLiked,
+          likesCount: Math.max(0, prevCount + (prevLiked ? -1 : 1)),
+        };
+      }),
     );
-    const result = await toggleLikePost(postId, user.uid); // 寫回 Firestore
-    // 如果更新成功就不維持狀態，更新失敗則回復原本狀態
+    const result = await toggleLikePost(postId, user.uid);
     if (result === 'fail') {
       setPosts((prev) =>
-        prev.map((p) => {
-          if (p.id !== postId) return p;
-          const prevLiked = !!p.liked;
-          const prevCount = Number(p.likesCount ?? 0);
-          const nextLiked = !prevLiked;
-          const nextCount = Math.max(0, prevCount + (prevLiked ? -1 : 1));
-          return { ...p, liked: nextLiked, likesCount: nextCount };
-        }),
+        prev.map((p) => (p.id === postId ? { ...p, liked: prevLiked, likesCount: prevCount } : p)),
       );
     }
   }
