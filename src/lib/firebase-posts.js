@@ -13,7 +13,7 @@ import {
   increment,
   collectionGroup,
   where,
-  deleteDoc,
+  writeBatch,
   startAfter,
   documentId,
 } from 'firebase/firestore';
@@ -412,9 +412,32 @@ export async function hasUserLikedPost(uid, postId) {
 }
 
 /**
- * 刪除文章。
+ * 刪除文章及其所有 likes、comments subcollection（cascade delete）。
  * @param {string} postId - 文章 ID。
+ * @returns {Promise<{ ok: boolean }>} 刪除結果。
  */
 export async function deletePost(postId) {
-  await deleteDoc(doc(db, 'posts', postId));
+  if (!postId) throw new Error('deletePost: postId is required');
+
+  const pid = String(postId);
+  const postRef = doc(db, 'posts', pid);
+
+  const snap = await getDoc(postRef);
+  if (!snap.exists()) throw new Error('文章不存在');
+
+  // --- 取得 likes 子集合所有文件 ---
+  const likesSnap = await getDocs(collection(db, 'posts', pid, 'likes'));
+  // --- 取得 comments 子集合所有文件 ---
+  const commentsSnap = await getDocs(collection(db, 'posts', pid, 'comments'));
+
+  // NOTE: Firestore writeBatch 上限 500 筆操作。
+  // 目前單篇文章不預期超過此限制，若未來超過需改用分批 commit。
+  const batch = writeBatch(db);
+
+  likesSnap.docs.forEach((d) => batch.delete(d.ref));
+  commentsSnap.docs.forEach((d) => batch.delete(d.ref));
+  batch.delete(postRef);
+
+  await batch.commit();
+  return { ok: true };
 }

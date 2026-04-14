@@ -54,7 +54,12 @@ service cloud.firestore {
 
       match /likes/{uid} {
         allow read: if isSignedIn();
-        allow create, delete: if isSignedIn() && request.auth.uid == uid;
+        allow create: if isSignedIn() && request.auth.uid == uid;
+        // 本人可刪自己的 like，或文章作者 deletePost cascade
+        allow delete: if isSignedIn() && (
+          request.auth.uid == uid
+          || request.auth.uid == get(/databases/$(database)/documents/posts/$(postId)).data.authorUid
+        );
       }
     }
 
@@ -77,8 +82,14 @@ service cloud.firestore {
         && request.resource.data.comment is string
         && request.resource.data.comment.size() <= 500;
 
-      allow update, delete: if isSignedIn()
+      allow update: if isSignedIn()
         && request.auth.uid == resource.data.authorUid;
+
+      // 留言作者刪自己留言，或文章作者 deletePost cascade
+      allow delete: if isSignedIn() && (
+        request.auth.uid == resource.data.authorUid
+        || request.auth.uid == get(/databases/$(database)/documents/posts/$(postId)).data.authorUid
+      );
     }
 
     // =========================
