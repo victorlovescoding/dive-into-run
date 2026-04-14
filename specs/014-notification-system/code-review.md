@@ -4,7 +4,7 @@
 
 ---
 
-## Taste Rating: 🟡 **Acceptable** — Solid overall architecture. Critical issues (#1 pagination race condition, #2 actorUid security gap, #3 markAsRead coverage) have been fixed in `00be0f6`. Remaining items are improvement/style level.
+## Taste Rating: 🟡 **Acceptable** — Solid overall architecture. Critical issues (#1 pagination race condition, #2 actorUid security gap, #3 markAsRead coverage) fixed in `00be0f6`. Improvement/style issues (#4, #6, #7, #8, #9, #10) fixed in `6b933b4`. Remaining: #5 unread pagination not implemented, #12 integration test gap.
 
 ---
 
@@ -32,27 +32,9 @@ Single `notificationsMap` refactor (Issue #1) eliminated this problem — `markA
 
 ### [IMPROVEMENT OPPORTUNITIES] (Should fix — violates good taste)
 
-**4. [src/components/Notifications/NotificationItem.jsx, Lines 44-48 + NotificationItem.module.css, Lines 40-54] CSS: `.message` and `.time` are inline `<span>` elements — layout is wrong**
+**4. ~~[src/components/Notifications/NotificationItem.jsx, Lines 44-48 + NotificationItem.module.css, Lines 40-54] CSS: `.message` and `.time` are inline `<span>` elements — layout is wrong~~ ✅ Fixed in `6b933b4`**
 
-The spec layout:
-
-```
-[avatar] [message text    ] [blue dot]
-         [relative time   ]
-```
-
-The actual render:
-
-```html
-<span class="content">
-  <span class="message">你所參加的…</span>
-  <span class="time">5 分鐘前</span>
-</span>
-```
-
-Both children are `<span>` (inline). The `margin-top: 2px` on `.time` won't apply to inline non-replaced elements. The time text will appear inline after the message, not below it.
-
-**Fix**: Add `display: flex; flex-direction: column;` to `.content`, or change the children to `<div>` elements (and the parent `.content` from `<span>` to `<div>`).
+Added `display: flex; flex-direction: column;` to `.content` (`NotificationItem.module.css:43-44`). Message and time now stack vertically as intended.
 
 ---
 
@@ -75,52 +57,35 @@ This is not implemented.
 
 ---
 
-**6. [src/components/Notifications/NotificationBell.jsx, Lines 37-49] Simplification: Filled vs outlined SVG uses the exact same path**
+**6. ~~[src/components/Notifications/NotificationBell.jsx, Lines 37-49] Simplification: Filled vs outlined SVG uses the exact same path~~ ✅ Fixed in `6b933b4`**
 
-Both branches use the identical `d` attribute — the only difference is `fill="currentColor"` vs `fill="none" stroke`. While technically functional, a bell icon drawn with stroke only looks significantly different from the same path filled. The outlined version will render as a thick-stroked bell (not a true outlined icon with visible interior). Consider using distinct paths or a design system icon set for clearer visual distinction.
-
----
-
-**7. [src/app/posts/[id]/PostDetailClient.jsx, Lines 160-167] Pragmatism: Event listener cleanup should use `{ once: true }`**
-
-```js
-el.addEventListener('animationend', handleAnimationEnd);
-```
-
-The handler removes the class and is only needed once. Use `{ once: true }` instead of manually removing inside the handler — simpler, self-documenting, no risk of the listener persisting.
+Replaced with two distinct Material Design bell paths (`NotificationBell.jsx:39-42`): filled (solid) for open state, outlined (with inner cutout) for closed state. Both use `fill="currentColor"` — outline effect achieved through path geometry rather than stroke.
 
 ---
 
-**8. [src/components/Notifications/NotificationBell.jsx, Line 19] Accessibility: `aria-label` count doesn't match visual display**
+**7. ~~[src/app/posts/[id]/PostDetailClient.jsx, Lines 160-167] Pragmatism: Event listener cleanup should use `{ once: true }`~~ ✅ Fixed in `6b933b4`**
 
-When `unreadCount = 100`, `aria-label` says `"通知，100 則未讀"` but the visual badge shows `"99+"`. Screen readers announce a different number than what sighted users see. Use `displayCount` in the aria-label too:
+Added `{ once: true }` to `addEventListener('animationend', ...)` (`PostDetailClient.jsx:167`).
 
-```js
-const ariaLabel = unreadCount > 0 ? `通知，${displayCount} 則未讀` : '通知';
-```
+---
+
+**8. ~~[src/components/Notifications/NotificationBell.jsx, Line 19] Accessibility: `aria-label` count doesn't match visual display~~ ✅ Fixed in `6b933b4`**
+
+`aria-label` now uses `displayCount` instead of `unreadCount` (`NotificationBell.jsx:19`), ensuring screen readers announce the same value (`99+`) as the visual badge.
 
 ---
 
 ### [STYLE NOTES] (Minor — but worth noting)
 
-**9. [src/components/Notifications/NotificationPanel.jsx, Lines 105-124] Accessibility: WAI-ARIA tabs pattern is incomplete**
+**9. ~~[src/components/Notifications/NotificationPanel.jsx, Lines 105-124] Accessibility: WAI-ARIA tabs pattern is incomplete~~ ✅ Fixed in `6b933b4`**
 
-The tab buttons have `role="tab"` + `aria-selected` inside a `role="tablist"`, but:
-
-- No `aria-controls` linking to a `role="tabpanel"` element
-- No `role="tabpanel"` elements wrapping the content areas
-
-This won't break screen readers (the region label helps), but it's not a complete tabs pattern. Either remove the ARIA tab roles (use simple buttons) or complete the pattern.
+Completed WAI-ARIA tabs pattern (`NotificationPanel.jsx:118-141`): tab buttons now have `id` and `aria-controls="notification-tabpanel"`; content area wrapped in `<div role="tabpanel" id="notification-tabpanel" aria-labelledby="notification-tab-{activeTab}">`.
 
 ---
 
-**10. [src/components/Notifications/NotificationPanel.jsx] Accessibility: No keyboard support for panel**
+**10. ~~[src/components/Notifications/NotificationPanel.jsx] Accessibility: No keyboard support for panel~~ ✅ Partially fixed in `6b933b4`**
 
-- No `Escape` key handler to close the panel
-- No focus trap or focus management on open
-- Outside click uses `mousedown` only — keyboard users can't close via click-outside equivalent
-
-For a dropdown that overlays content, keyboard accessibility is expected at P1. At minimum, add Escape-to-close.
+Added Escape-to-close handler (`NotificationPanel.jsx:54-57`). Focus trap and focus management on open are not yet implemented (P2, acceptable for follow-up).
 
 ---
 
@@ -144,7 +109,7 @@ The `NotificationPagination.test.jsx` mocks `fetchMoreNotifications` and injects
 
 ## VERDICT:
 
-✅ **Worth merging** — Critical issues (#1, #2, #3) have been fixed. The single `Map<id, NotificationItem>` refactor is clean and structurally correct. Remaining items (#4–#10, #12) are improvement/style level and can be addressed in follow-up.
+✅ **Worth merging** — Critical issues (#1, #2, #3) fixed in `00be0f6`. Improvement/style issues (#4, #6, #7, #8, #9, #10) fixed in `6b933b4`. Remaining: #5 unread tab pagination (not implemented), #10 focus trap (P2), #12 integration test gap — all acceptable for follow-up.
 
 ## KEY INSIGHT:
 
