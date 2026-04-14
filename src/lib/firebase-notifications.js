@@ -187,7 +187,7 @@ export function watchNotifications(uid, onNext, onError, onNew) {
 /**
  * 監聽使用者未讀通知（即時更新），用於未讀計數與「未讀」分頁。
  * @param {string} uid - 使用者 UID。
- * @param {(notifications: import('./notification-helpers').NotificationItem[]) => void} onNext - 資料回呼。
+ * @param {(notifications: import('./notification-helpers').NotificationItem[], lastDoc?: import('firebase/firestore').QueryDocumentSnapshot | null) => void} onNext - 資料回呼，第二參數為最後一筆 doc snapshot（分頁游標）。
  * @param {(error: Error) => void} onError - 錯誤回呼。
  * @returns {() => void} 退訂函式。
  */
@@ -207,7 +207,10 @@ export function watchUnreadNotifications(uid, onNext, onError) {
         id: d.id,
         ...d.data(),
       }));
-      onNext(/** @type {import('./notification-helpers').NotificationItem[]} */ (notifications));
+      onNext(
+        /** @type {import('./notification-helpers').NotificationItem[]} */ (notifications),
+        snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
+      );
     },
     onError,
   );

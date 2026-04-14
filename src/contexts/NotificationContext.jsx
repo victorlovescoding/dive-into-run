@@ -16,6 +16,7 @@ import {
   watchUnreadNotifications,
   markNotificationAsRead,
   fetchMoreNotifications,
+  fetchMoreUnreadNotifications,
 } from '@/lib/firebase-notifications';
 
 /**
@@ -33,6 +34,7 @@ import {
  * @property {boolean} hasLoadedMore - 是否已執行過查看先前通知。
  * @property {() => Promise<void>} loadMore - 載入更多通知。
  * @property {{ id: string, message: string } | null} currentToast - 目前顯示的 toast。
+ * @property {import('react').RefObject<HTMLButtonElement | null>} bellButtonRef - 鈴鐺按鈕 ref，用於 focus restore。
  */
 
 /** @type {NotificationContextValue} */
@@ -50,6 +52,7 @@ const defaultValue = {
   hasLoadedMore: false,
   loadMore: async () => {},
   currentToast: null,
+  bellButtonRef: { current: null },
 };
 
 export const NotificationContext =
@@ -95,7 +98,21 @@ export default function NotificationProvider({ children }) {
   );
   const [hasMoreAll, setHasMoreAll] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasLoadedMore, setHasLoadedMore] = useState(false);
+  const [hasLoadedMoreAll, setHasLoadedMoreAll] = useState(false);
+  const [hasLoadedMoreUnread, setHasLoadedMoreUnread] = useState(false);
+
+  // Unread tab pagination state
+  const [unreadDisplayCount, setUnreadDisplayCount] = useState(5);
+  const [unreadListenerCursor, setUnreadListenerCursor] = useState(
+    /** @type {import('firebase/firestore').QueryDocumentSnapshot | null} */ (null),
+  );
+  const [unreadPaginationCursor, setUnreadPaginationCursor] = useState(
+    /** @type {import('firebase/firestore').QueryDocumentSnapshot | null} */ (null),
+  );
+  const [unreadServerExhausted, setUnreadServerExhausted] = useState(false);
+  const [extraUnreadNotifications, setExtraUnreadNotifications] = useState(
+    /** @type {import('@/lib/notification-helpers').NotificationItem[]} */ ([]),
+  );
   const [toastQueue, setToastQueue] = useState(
     /** @type {{ id: string, message: string }[]} */ ([]),
   );
@@ -109,6 +126,7 @@ export default function NotificationProvider({ children }) {
   const showToast = toastCtx?.showToast;
 
   // Refs
+  const bellButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const isPanelOpenRef = useRef(false);
   const showToastRef = useRef(showToast);
   showToastRef.current = showToast;
@@ -126,8 +144,9 @@ export default function NotificationProvider({ children }) {
 
     const unsubUnread = watchUnreadNotifications(
       user.uid,
-      (items) => {
+      (items, lastDoc) => {
         setUnreadNotifications(items);
+        if (lastDoc) setUnreadListenerCursor(lastDoc);
       },
       (err) => {
         console.error('watchUnreadNotifications error:', err);
@@ -170,7 +189,13 @@ export default function NotificationProvider({ children }) {
       setListenerCursor(null);
       setPaginationCursor(null);
       setHasMoreAll(false);
-      setHasLoadedMore(false);
+      setHasLoadedMoreAll(false);
+      setHasLoadedMoreUnread(false);
+      setUnreadDisplayCount(5);
+      setUnreadListenerCursor(null);
+      setUnreadPaginationCursor(null);
+      setUnreadServerExhausted(false);
+      setExtraUnreadNotifications([]);
     };
   }, [user]);
 
@@ -201,6 +226,7 @@ export default function NotificationProvider({ children }) {
 
   const closePanel = useCallback(() => {
     setIsPanelOpen(false);
+    bellButtonRef.current?.focus();
   }, []);
 
   const markAsRead = useCallback(
@@ -219,6 +245,7 @@ export default function NotificationProvider({ children }) {
         return next;
       });
       setUnreadNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      setExtraUnreadNotifications((prev) => prev.filter((n) => n.id !== notificationId));
 
       await markNotificationAsRead(notificationId);
     },
@@ -227,23 +254,71 @@ export default function NotificationProvider({ children }) {
 
   const displayedNotifications = useMemo(() => {
     if (activeTab === 'unread') {
-      return unreadNotifications.slice(0, 5);
+      const listenerSlice = unreadNotifications.slice(0, unreadDisplayCount);
+      const listenerIds = new Set(listenerSlice.map((n) => n.id));
+      const extraFiltered = extraUnreadNotifications.filter((n) => !listenerIds.has(n.id));
+      return [...listenerSlice, ...extraFiltered];
     }
     return Array.from(notificationsMap.values()).sort(
       (a, b) => toMillis(b.createdAt) - toMillis(a.createdAt),
     );
-  }, [activeTab, notificationsMap, unreadNotifications]);
+  }, [
+    activeTab,
+    notificationsMap,
+    unreadNotifications,
+    unreadDisplayCount,
+    extraUnreadNotifications,
+  ]);
 
   const hasMore = useMemo(() => {
     if (activeTab === 'unread') {
+      if (unreadDisplayCount < unreadNotifications.length) return true;
+      if (unreadNotifications.length >= 100 && !unreadServerExhausted) return true;
       return false;
     }
     return hasMoreAll;
-  }, [activeTab, hasMoreAll]);
+  }, [
+    activeTab,
+    hasMoreAll,
+    unreadDisplayCount,
+    unreadNotifications.length,
+    unreadServerExhausted,
+  ]);
+
+  const hasLoadedMore = useMemo(
+    () => (activeTab === 'unread' ? hasLoadedMoreUnread : hasLoadedMoreAll),
+    [activeTab, hasLoadedMoreUnread, hasLoadedMoreAll],
+  );
 
   const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore || !user) return;
+
+    // Unread tab — two-phase pagination
+    if (activeTab === 'unread') {
+      // Phase 1: expand client-side slice
+      if (unreadDisplayCount < unreadNotifications.length) {
+        setUnreadDisplayCount((prev) => prev + 5);
+        return;
+      }
+      // Phase 2: server fallback
+      const cursor = unreadPaginationCursor ?? unreadListenerCursor;
+      if (!cursor) return;
+      setIsLoadingMore(true);
+      try {
+        const result = await fetchMoreUnreadNotifications(user.uid, cursor, 5);
+        setExtraUnreadNotifications((prev) => [...prev, ...result.notifications]);
+        if (result.lastDoc) setUnreadPaginationCursor(result.lastDoc);
+        if (result.notifications.length < 5) setUnreadServerExhausted(true);
+        setHasLoadedMoreUnread(true);
+      } finally {
+        setIsLoadingMore(false);
+      }
+      return;
+    }
+
+    // All tab — server pagination
     const cursor = paginationCursor ?? listenerCursor;
-    if (isLoadingMore || !hasMore || !user || !cursor) return;
+    if (!cursor) return;
     setIsLoadingMore(true);
     try {
       const result = await fetchMoreNotifications(user.uid, cursor, 5);
@@ -254,11 +329,22 @@ export default function NotificationProvider({ children }) {
       });
       if (result.lastDoc) setPaginationCursor(result.lastDoc);
       if (result.notifications.length < 5) setHasMoreAll(false);
-      setHasLoadedMore(true);
+      setHasLoadedMoreAll(true);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, hasMore, user, paginationCursor, listenerCursor]);
+  }, [
+    isLoadingMore,
+    hasMore,
+    user,
+    activeTab,
+    unreadDisplayCount,
+    unreadNotifications.length,
+    unreadPaginationCursor,
+    unreadListenerCursor,
+    paginationCursor,
+    listenerCursor,
+  ]);
 
   const value = useMemo(
     () => ({
@@ -275,6 +361,7 @@ export default function NotificationProvider({ children }) {
       hasLoadedMore,
       loadMore,
       currentToast,
+      bellButtonRef,
     }),
     [
       unreadNotifications.length,

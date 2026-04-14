@@ -11,7 +11,7 @@ import styles from './NotificationBell.module.css';
  */
 export default function NotificationBell() {
   const { user } = useContext(AuthContext);
-  const { unreadCount, isPanelOpen, togglePanel } = useContext(NotificationContext);
+  const { unreadCount, isPanelOpen, togglePanel, bellButtonRef } = useContext(NotificationContext);
 
   if (!user) return null;
 
@@ -20,6 +20,7 @@ export default function NotificationBell() {
 
   return (
     <button
+      ref={bellButtonRef}
       type="button"
       className={styles.bellButton}
       aria-label={ariaLabel}

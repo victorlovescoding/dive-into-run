@@ -295,11 +295,14 @@ describe('watchUnreadNotifications', () => {
     // Act
     snapshotCallback(snapshot);
 
-    // Assert
-    expect(onNext).toHaveBeenCalledWith([
-      { id: 'n1', message: 'unread1', read: false },
-      { id: 'n2', message: 'unread2', read: false },
-    ]);
+    // Assert — onNext receives (notifications, lastDoc)
+    expect(onNext).toHaveBeenCalledWith(
+      [
+        { id: 'n1', message: 'unread1', read: false },
+        { id: 'n2', message: 'unread2', read: false },
+      ],
+      expect.objectContaining({ id: 'n2' }),
+    );
   });
 });
 

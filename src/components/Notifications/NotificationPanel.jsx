@@ -33,6 +33,15 @@ export default function NotificationPanel() {
   const panelRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const sentinelRef = useRef(/** @type {HTMLDivElement | null} */ (null));
 
+  // Effects — focus first tab when panel opens
+  useEffect(() => {
+    if (!isPanelOpen) return;
+    const firstTab = panelRef.current?.querySelector('[role="tab"]');
+    if (firstTab) {
+      /** @type {HTMLElement} */ (firstTab).focus();
+    }
+  }, [isPanelOpen]);
+
   // Effects — outside click close
   useEffect(() => {
     if (!isPanelOpen) return undefined;
@@ -51,15 +60,47 @@ export default function NotificationPanel() {
       }
     };
 
-    /** @param {KeyboardEvent} e - keydown 事件。 */
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') closePanel();
-    };
-
     document.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('mousedown', handleMouseDown);
+    };
+  }, [isPanelOpen, closePanel]);
+
+  // Effects — keyboard: Escape close + focus trap
+  useEffect(() => {
+    if (!isPanelOpen) return undefined;
+
+    /** @param {KeyboardEvent} e - keydown 事件。 */
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closePanel();
+        return;
+      }
+
+      if (e.key === 'Tab') {
+        const panel = panelRef.current;
+        if (!panel) return;
+        const focusable = panel.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        if (focusable.length === 0) return;
+        const first = /** @type {HTMLElement} */ (focusable[0]);
+        const last = /** @type {HTMLElement} */ (focusable[focusable.length - 1]);
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isPanelOpen, closePanel]);
