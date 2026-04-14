@@ -50,7 +50,7 @@
 ## Assumptions
 
 - Post 的子資料集合僅有 `likes` 和 `comments`
-- 僅改動後端 service 層的刪除邏輯，UI 不需修改
+- 改動後端 service 層的刪除邏輯（`firebase-posts.js`）及 Firestore security rules（`firestore.rules`），UI 不需修改
 - 單篇文章的 likes + comments 合計不預期超過 Firestore writeBatch 500 筆上限，採用 single-batch 模式（同 deleteEvent），程式碼加 NOTE 註記未來若超過需改用分批 commit
 - 部分失敗處理、效能影響等實作議題留給 plan 階段決定
 
