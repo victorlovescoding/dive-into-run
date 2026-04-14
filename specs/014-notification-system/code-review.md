@@ -4,7 +4,7 @@
 
 ---
 
-## Taste Rating: 🟡 **Acceptable** — Solid overall architecture. Critical issues (#1 pagination race condition, #2 actorUid security gap, #3 markAsRead coverage) fixed in `00be0f6`. Improvement/style issues (#4, #6, #7, #8, #9, #10) fixed in `6b933b4`. Remaining: #5 unread pagination not implemented, #12 integration test gap.
+## Taste Rating: 🟢 **Good taste** — All critical and improvement issues resolved. Unread pagination two-phase design is structurally sound. Focus trap + focus restore is complete. Stateful cursor tests close the testing gap.
 
 ---
 
@@ -38,22 +38,17 @@ Added `display: flex; flex-direction: column;` to `.content` (`NotificationItem.
 
 ---
 
-**5. [src/contexts/NotificationContext.jsx, Lines 210-215] Missing Feature: Unread tab pagination is not implemented despite T022 marking it complete**
+**5. ~~[src/contexts/NotificationContext.jsx, Lines 210-215] Missing Feature: Unread tab pagination is not implemented despite T022 marking it complete~~ ✅ Fixed in `be287f4`**
 
-```js
-const hasMore = useMemo(() => {
-  if (activeTab === 'unread') {
-    return false; // ← Always false
-  }
-  return hasMoreAll;
-}, [activeTab, hasMoreAll]);
-```
+Implemented two-phase unread pagination matching T022 spec:
 
-`fetchMoreUnreadNotifications` is defined in `firebase-notifications.js` but **never imported** in `NotificationContext.jsx`. The unread tab displays `unreadNotifications.slice(0, 5)` with no way to load more. A user with 50 unread notifications can only see the first 5 in the "unread" tab.
+- **Phase 1** (`NotificationContext.jsx:298-302`): Client-side slice expansion — `unreadDisplayCount` increments by 5 per loadMore, `displayedNotifications` returns `unreadNotifications.slice(0, unreadDisplayCount)` + deduped `extraUnreadNotifications`.
+- **Phase 2** (`NotificationContext.jsx:303-316`): Server fallback — when listener data exhausted (≥100 items), calls `fetchMoreUnreadNotifications(uid, cursor, 5)`, appends to `extraUnreadNotifications`.
+- `hasMore` (`NotificationContext.jsx:273-286`): Correctly returns true when client-side slice has more, or when listener at capacity and server not exhausted.
+- `watchUnreadNotifications` (`firebase-notifications.js:210-213`): Now passes `lastDoc` (last snapshot doc) as second parameter to `onNext` callback for cursor tracking.
+- `markAsRead` (`NotificationContext.jsx:248`): Also filters `extraUnreadNotifications` for optimistic update coverage.
 
-T022 specifies: _「未讀」tab: 先從 Listener 1 資料 client-side slice（每次 5 則），Listener 1 資料用盡（≥ 100 則）後 fallback 呼叫 fetchMoreUnreadNotifications_
-
-This is not implemented.
+Data structure is clean — `extraUnreadNotifications[]` stores server-fetched items, deduped via `Set` against listener slice in `displayedNotifications`.
 
 ---
 
@@ -83,9 +78,15 @@ Completed WAI-ARIA tabs pattern (`NotificationPanel.jsx:118-141`): tab buttons n
 
 ---
 
-**10. ~~[src/components/Notifications/NotificationPanel.jsx] Accessibility: No keyboard support for panel~~ ✅ Partially fixed in `6b933b4`**
+**10. ~~[src/components/Notifications/NotificationPanel.jsx] Accessibility: No keyboard support for panel~~ ✅ Fixed in `be287f4`**
 
-Added Escape-to-close handler (`NotificationPanel.jsx:54-57`). Focus trap and focus management on open are not yet implemented (P2, acceptable for follow-up).
+Full keyboard + focus management implemented:
+
+- **Focus trap** (`NotificationPanel.jsx:80-99`): Tab key cycles through focusable elements inside panel; Shift+Tab wraps from first to last.
+- **Escape to close** (`NotificationPanel.jsx:75-78`): Closes panel on Escape key.
+- **Focus on open** (`NotificationPanel.jsx:37-43`): First `[role="tab"]` receives focus when panel opens.
+- **Focus restore on close** (`NotificationContext.jsx:228-229`): `bellButtonRef.current?.focus()` returns focus to bell button.
+- **Bell ref** (`NotificationBell.jsx:23`): `ref={bellButtonRef}` passed from Context.
 
 ---
 
@@ -95,22 +96,38 @@ Added Escape-to-close handler (`NotificationPanel.jsx:54-57`). Focus trap and fo
 
 Added regression test `should not lose or duplicate notifications when listener fires after loadMore` in `NotificationPagination.test.jsx` — reproduces the exact race condition scenario and asserts 7 unique notifications with no gaps or duplicates.
 
-**12. Integration tests heavily rely on mocked service layer — acceptable for unit isolation, but the mocks never exercise the real `fetchMoreNotifications`/`loadMore` interaction**
+**12. ~~Integration tests heavily rely on mocked service layer — acceptable for unit isolation, but the mocks never exercise the real `fetchMoreNotifications`/`loadMore` interaction~~ ✅ Fixed in `be287f4`**
 
-The `NotificationPagination.test.jsx` mocks `fetchMoreNotifications` and injects results directly. This proves the Context logic routes correctly, but doesn't catch the cursor management bugs. An integration test that uses a fake in-memory Firestore would catch issues #1 and #3.
+Added `NotificationPaginationStateful.test.jsx` (440 lines, 5 tests) with **stateful cursor mocks** that simulate Firestore cursor behavior:
+
+- `should traverse all pages without gaps or duplicates` — 13 notifications across 3 pages, verifies all present in correct order.
+- `should chain cursors correctly across multiple fetchMore calls` — asserts exact cursor values (`{ _index, id }`) passed to each `fetchMoreNotifications` call.
+- `should merge correctly when listener fires new data after loadMore` — listener shifts window after pagination, verifies 9 unique items with no duplicates.
+- `should paginate unread tab via client-side slice (Phase 1)` — 8 unread items, verifies client-side expansion with zero server calls.
+- `should fallback to server fetch when listener at capacity (Phase 2)` — 100 listener items + 3 server extras, verifies `fetchMoreUnreadNotifications` called after Phase 1 exhausted.
+
+The mocks now exercise the full cursor management pipeline in `NotificationContext`, closing the coverage gap between unit isolation and real Firestore behavior.
+
+---
+
+### [MINOR ISSUES IN FIX COMMIT]
+
+**13. ~~[NotificationPaginationStateful.test.jsx, Line 398] Type Error: `pointerEventsCheck: false` should be `0`~~ ✅ Fixed (uncommitted)**
+
+Changed `pointerEventsCheck: false` to `pointerEventsCheck: 0`. TS2322 resolved — `npm run type-check` no longer reports this error.
 
 ---
 
 ### [TASK GAPS]
 
-**[T022] Missing Implementation**: Task marked `[x]` (complete) but unread tab pagination is not implemented. `fetchMoreUnreadNotifications` is never imported or called from `NotificationContext`. The "unread" tab always shows at most 5 items with no loadMore capability.
+**[T022] ~~Missing Implementation~~ ✅ Fixed**: Unread tab pagination now implemented — two-phase approach (client-side slice + server fallback) matches T022 spec exactly.
 
 ---
 
 ## VERDICT:
 
-✅ **Worth merging** — Critical issues (#1, #2, #3) fixed in `00be0f6`. Improvement/style issues (#4, #6, #7, #8, #9, #10) fixed in `6b933b4`. Remaining: #5 unread tab pagination (not implemented), #10 focus trap (P2), #12 integration test gap — all acceptable for follow-up.
+✅ **Worth merging** — All 13 issues resolved. No remaining issues. ESLint 0 errors, type-check clean for changed files.
 
 ## KEY INSIGHT:
 
-The root cause of the pagination bugs was splitting a single ordered notification list across two independent state arrays (`notifications` + `extraNotifications`) without a reconciliation layer. Fixed by adopting a single `Map<id, NotificationItem>` with a derived sorted array — eliminated issues #1, #3, and the duplicate problem in one structural change.
+The unread pagination two-phase design is the right call: Phase 1 (client-side slice of listener's 100-item cache) is zero-cost, Phase 2 (server fetch) only fires when the listener limit is hit. Combined with the `Map<id, NotificationItem>` data structure from the earlier fix, the notification system now handles all pagination/dedup/cursor scenarios correctly.

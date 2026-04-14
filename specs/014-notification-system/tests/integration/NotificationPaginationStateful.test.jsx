@@ -395,7 +395,7 @@ describe('NotificationPagination — stateful cursor tests', () => {
 
     const { fireAllListener, fireUnreadListener } = setupStatefulMocks([]);
     // Skip pointer-events checks to speed up 19 sequential clicks
-    const user = userEvent.setup({ pointerEventsCheck: false });
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
 
     // Mock server fetch for unread Phase 2
     /** @type {import('vitest').Mock} */ (fetchMoreUnreadNotifications).mockResolvedValueOnce({
