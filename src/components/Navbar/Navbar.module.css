@@ -224,6 +224,13 @@
   gap: 0.25rem;
 }
 
+/* ===== Bell + Panel wrapper ===== */
+.bellWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 /* ===== User section (desktop) ===== */
 .userSection {
   display: none;

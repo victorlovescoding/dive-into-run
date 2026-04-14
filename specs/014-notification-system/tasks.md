@@ -26,8 +26,8 @@
 
 **Purpose**: Firestore security rules + composite indexes 設定
 
-- [ ] T001 Update firestore.rules — 新增 `match /notifications/{notificationId}` 區塊：create（登入+recipientUid!=self+type白名單+read==false+createdAt==request.time）、read（recipientUid==self）、update（recipientUid==self+只改read）、delete(false)，per data-model.md at firestore.rules
-- [ ] T002 [P] Update firestore.indexes.json — 新增 2 組 composite indexes：(1) recipientUid ASC + createdAt DESC（全部查詢）、(2) recipientUid ASC + read ASC + createdAt DESC（未讀查詢）at firestore.indexes.json
+- [x] T001 Update firestore.rules — 新增 `match /notifications/{notificationId}` 區塊：create（登入+recipientUid!=self+type白名單+read==false+createdAt==request.time）、read（recipientUid==self）、update（recipientUid==self+只改read）、delete(false)，per data-model.md at firestore.rules
+- [x] T002 [P] Update firestore.indexes.json — 新增 2 組 composite indexes：(1) recipientUid ASC + createdAt DESC（全部查詢）、(2) recipientUid ASC + read ASC + createdAt DESC（未讀查詢）at firestore.indexes.json
 
 ---
 
@@ -39,18 +39,18 @@
 
 ### TDD Cycle 1: notification-helpers.js
 
-- [ ] T003 [RED] Write unit tests for `formatRelativeTime`（≤1min→'剛剛', ≤1hr→'N 分鐘前', ≤1day→'N 小時前', ≤1wk→'N 天前', >1wk→'M/D'）, `buildNotificationMessage`（event_modified/event_cancelled/post_new_comment → 對應中文訊息）, `getNotificationLink`（event→/events/{id}, post→/posts/{id}?commentId={cid}）in specs/014-notification-system/tests/unit/notification-helpers.test.js
-- [ ] T004 [GREEN] Implement formatRelativeTime, buildNotificationMessage, getNotificationLink as pure functions in src/lib/notification-helpers.js — pass T003 tests, add JSDoc per contracts/notification-service.md, then refactor
+- [x] T003 [RED] Write unit tests for `formatRelativeTime`（≤1min→'剛剛', ≤1hr→'N 分鐘前', ≤1day→'N 小時前', ≤1wk→'N 天前', >1wk→'M/D'）, `buildNotificationMessage`（event_modified/event_cancelled/post_new_comment → 對應中文訊息）, `getNotificationLink`（event→/events/{id}, post→/posts/{id}?commentId={cid}）in specs/014-notification-system/tests/unit/notification-helpers.test.js
+- [x] T004 [GREEN] Implement formatRelativeTime, buildNotificationMessage, getNotificationLink as pure functions in src/lib/notification-helpers.js — pass T003 tests, add JSDoc per contracts/notification-service.md, then refactor
 
 ### TDD Cycle 2: firebase-notifications.js — Write Functions
 
-- [ ] T005 [RED] Write unit tests (mock Firestore writeBatch/addDoc/fetchParticipants) for `notifyEventModified`（batch create for all participants excluding actor, correct message）, `notifyEventCancelled`（same pattern, pre-fetched participants）, `notifyPostNewComment`（single addDoc, skip if actor===author）in specs/014-notification-system/tests/unit/firebase-notifications-write.test.js
-- [ ] T006 [GREEN] Implement 3 write functions in src/lib/firebase-notifications.js — writeBatch for event notifications, addDoc for comment notification, import buildNotificationMessage from helpers, serverTimestamp for createdAt, pass T005 tests then refactor
+- [x] T005 [RED] Write unit tests (mock Firestore writeBatch/addDoc/fetchParticipants) for `notifyEventModified`（batch create for all participants excluding actor, correct message）, `notifyEventCancelled`（same pattern, pre-fetched participants）, `notifyPostNewComment`（single addDoc, skip if actor===author）in specs/014-notification-system/tests/unit/firebase-notifications-write.test.js
+- [x] T006 [GREEN] Implement 3 write functions in src/lib/firebase-notifications.js — writeBatch for event notifications, addDoc for comment notification, import buildNotificationMessage from helpers, serverTimestamp for createdAt, pass T005 tests then refactor
 
 ### TDD Cycle 3: firebase-notifications.js — Read Functions + Update
 
-- [ ] T007 [RED] Write unit tests (mock Firestore onSnapshot/getDocs/updateDoc) for `watchNotifications`（onSnapshot with recipientUid+orderBy createdAt desc+limit 5, returns unsubscribe, onNew callback：首次 snapshot 不觸發 onNew，後續 snapshot 中 docChanges type 'added' 的項目透過 onNew 回傳）, `watchUnreadNotifications`（+where read==false+limit 100）, `fetchMoreNotifications`（getDocs with startAfter cursor）, `fetchMoreUnreadNotifications`, `markNotificationAsRead`（updateDoc read:true）in specs/014-notification-system/tests/unit/firebase-notifications-read.test.js
-- [ ] T008 [GREEN] Implement 4 read functions + markNotificationAsRead in src/lib/firebase-notifications.js — onSnapshot listeners return unsubscribe, getDocs with startAfter returns {notifications, lastDoc}; watchNotifications 新增第 4 參數 onNew — 內部 isInitialLoad flag，首次 snapshot 只呼叫 onNext，後續 snapshot 呼叫 onNext 後再從 docChanges 過濾 added items 呼叫 onNew（若未傳入 onNew 則跳過）, pass T007 tests then refactor
+- [x] T007 [RED] Write unit tests (mock Firestore onSnapshot/getDocs/updateDoc) for `watchNotifications`（onSnapshot with recipientUid+orderBy createdAt desc+limit 5, returns unsubscribe, onNew callback：首次 snapshot 不觸發 onNew，後續 snapshot 中 docChanges type 'added' 的項目透過 onNew 回傳）, `watchUnreadNotifications`（+where read==false+limit 100）, `fetchMoreNotifications`（getDocs with startAfter cursor）, `fetchMoreUnreadNotifications`, `markNotificationAsRead`（updateDoc read:true）in specs/014-notification-system/tests/unit/firebase-notifications-read.test.js
+- [x] T008 [GREEN] Implement 4 read functions + markNotificationAsRead in src/lib/firebase-notifications.js — onSnapshot listeners return unsubscribe, getDocs with startAfter returns {notifications, lastDoc}; watchNotifications 新增第 4 參數 onNew — 內部 isInitialLoad flag，首次 snapshot 只呼叫 onNext，後續 snapshot 呼叫 onNext 後再從 docChanges 過濾 added items 呼叫 onNew（若未傳入 onNew 則跳過）, pass T007 tests then refactor
 
 **Checkpoint**: Foundation ready — helpers + service layer 100% tested. User Story UI 開發可開始。
 
@@ -66,14 +66,14 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T009 [RED] [US1] Write integration tests (mock service layer) for NotificationContext（unreadCount from listener, isPanelOpen toggle）+ NotificationBell（badge hidden when 0, shows count when >0, shows '99+' when >99, outlined/filled icon toggle, hidden when user=null）+ Navbar render 驗證（Bell 出現在 desktopLinks 和 UserMenu 之間；mobile Bell 出現在 hamburger 旁；未登入時 Navbar 不顯示 Bell）in specs/014-notification-system/tests/integration/NotificationBell.test.jsx
+- [x] T009 [RED] [US1] Write integration tests (mock service layer) for NotificationContext（unreadCount from listener, isPanelOpen toggle）+ NotificationBell（badge hidden when 0, shows count when >0, shows '99+' when >99, outlined/filled icon toggle, hidden when user=null）+ Navbar render 驗證（Bell 出現在 desktopLinks 和 UserMenu 之間；mobile Bell 出現在 hamburger 旁；未登入時 Navbar 不顯示 Bell）in specs/014-notification-system/tests/integration/NotificationBell.test.jsx
 
 ### Implementation for US1
 
-- [ ] T010 [GREEN] [US1] Implement NotificationContext.jsx in src/contexts/NotificationContext.jsx — createContext, NotificationProvider (depends on AuthContext user.uid), setup watchUnreadNotifications + watchNotifications on login, cleanup on logout, expose unreadCount/isPanelOpen/togglePanel/closePanel, pass T009 tests then refactor
-- [ ] T011 [GREEN] [US1] Implement NotificationBell.jsx + NotificationBell.module.css in src/components/Notifications/ — button with aria-label="通知" (or "通知，N 則未讀"), aria-expanded, outlined SVG bell (panel closed) / filled SVG bell (panel open), red circular badge with count / '99+', pass T009 tests then refactor
-- [ ] T012 [US1] Add NotificationProvider to src/app/layout.jsx — wrap inside ToastProvider (after UserDataHandler, before Navbar + children), per contracts/notification-components.md Provider 層級
-- [ ] T013 [US1] Add NotificationBell to src/components/Navbar/Navbar.jsx — desktop: between desktopLinks `</ul>` and `<UserMenu>`; mobile: after hamburger button; conditional on `user` login state + update Navbar.module.css for bell positioning
+- [x] T010 [GREEN] [US1] Implement NotificationContext.jsx in src/contexts/NotificationContext.jsx — createContext, NotificationProvider (depends on AuthContext user.uid), setup watchUnreadNotifications + watchNotifications on login, cleanup on logout, expose unreadCount/isPanelOpen/togglePanel/closePanel, pass T009 tests then refactor
+- [x] T011 [GREEN] [US1] Implement NotificationBell.jsx + NotificationBell.module.css in src/components/Notifications/ — button with aria-label="通知" (or "通知，N 則未讀"), aria-expanded, outlined SVG bell (panel closed) / filled SVG bell (panel open), red circular badge with count / '99+', pass T009 tests then refactor
+- [x] T012 [US1] Add NotificationProvider to src/app/layout.jsx — wrap inside ToastProvider (after UserDataHandler, before Navbar + children), per contracts/notification-components.md Provider 層級
+- [x] T013 [US1] Add NotificationBell to src/components/Navbar/Navbar.jsx — desktop: between desktopLinks `</ul>` and `<UserMenu>`; mobile: after hamburger button; conditional on `user` login state + update Navbar.module.css for bell positioning
 
 **Checkpoint**: Bell + badge visible on Nav. Unread count real-time. 99+ cap. Hidden when logged out. US1 independently testable.
 
@@ -87,12 +87,12 @@
 
 ### Tests for US2
 
-- [ ] T014 [RED] [US2] Write integration tests for NotificationPanel（opens when isPanelOpen, shows up to 5 notifications, empty state「目前沒有通知」, closes on outside click, 面板開啟中 Context notifications 更新 → 面板列表即時反映新通知）+ NotificationItem（circular avatar, message text, relative time via formatRelativeTime, blue dot for unread / no dot for read, clickable element）in specs/014-notification-system/tests/integration/NotificationPanel.test.jsx
+- [x] T014 [RED] [US2] Write integration tests for NotificationPanel（opens when isPanelOpen, shows up to 5 notifications, empty state「目前沒有通知」, closes on outside click, 面板開啟中 Context notifications 更新 → 面板列表即時反映新通知）+ NotificationItem（circular avatar, message text, relative time via formatRelativeTime, blue dot for unread / no dot for read, clickable element）in specs/014-notification-system/tests/integration/NotificationPanel.test.jsx
 
 ### Implementation for US2
 
-- [ ] T015 [GREEN] [US2] Implement NotificationItem.jsx + NotificationItem.module.css in src/components/Notifications/ — layout: [avatar] [message + time] [blue dot], `notification` + `onClick` props, circular avatar (img with onError fallback 顯示預設頭像，與現有 UserMenu avatar 一致), message text, formatRelativeTime(createdAt), conditional blue dot (read===false), accessible clickable element, pass T014 tests then refactor
-- [ ] T016 [GREEN] [US2] Implement NotificationPanel.jsx + NotificationPanel.module.css in src/components/Notifications/ — id="notification-panel", role="region", aria-label="通知面板", header with title「通知」, NotificationItem list from Context notifications, empty state, max-height 70vh + overflow-y auto, outside click close (useRef + mousedown event), mobile width ~100vw, pass T014 tests then refactor
+- [x] T015 [GREEN] [US2] Implement NotificationItem.jsx + NotificationItem.module.css in src/components/Notifications/ — layout: [avatar] [message + time] [blue dot], `notification` + `onClick` props, circular avatar (img with onError fallback 顯示預設頭像，與現有 UserMenu avatar 一致), message text, formatRelativeTime(createdAt), conditional blue dot (read===false), accessible clickable element, pass T014 tests then refactor
+- [x] T016 [GREEN] [US2] Implement NotificationPanel.jsx + NotificationPanel.module.css in src/components/Notifications/ — id="notification-panel", role="region", aria-label="通知面板", header with title「通知」, NotificationItem list from Context notifications, empty state, max-height 70vh + overflow-y auto, outside click close (useRef + mousedown event), mobile width ~100vw, pass T014 tests then refactor
 
 **Checkpoint**: Panel opens/closes. Shows latest 5 notifications. Read/unread distinction. Empty state. Outside click close. US2 independently testable.
 
@@ -106,11 +106,11 @@
 
 ### Tests for US3
 
-- [ ] T017 [RED] [US3] Write integration tests for notification click behavior — click event_modified notification → markAsRead(id) called + router.push('/events/{entityId}') + closePanel(); click post_new_comment → router.push('/posts/{entityId}?commentId={cid}'); badge count decrements after markAsRead; 點擊後 blue dot 立即消失（樂觀更新，不等 onSnapshot 回寫）in specs/014-notification-system/tests/integration/notification-click.test.jsx
+- [x] T017 [RED] [US3] Write integration tests for notification click behavior — click event_modified notification → markAsRead(id) called + router.push('/events/{entityId}') + closePanel(); click post_new_comment → router.push('/posts/{entityId}?commentId={cid}'); badge count decrements after markAsRead; 點擊後 blue dot 立即消失（樂觀更新，不等 onSnapshot 回寫）in specs/014-notification-system/tests/integration/notification-click.test.jsx
 
 ### Implementation for US3
 
-- [ ] T018 [GREEN] [US3] Implement click handler composition in NotificationPanel — for each NotificationItem, compose onClick: () => { markAsRead(notification.id); router.push(getNotificationLink(notification)); closePanel(); }, add markAsRead to NotificationContext exports; markAsRead 除了呼叫 service layer，Context 需本地立即更新 notification.read = true（樂觀更新），不等 onSnapshot 回寫，確保「未讀」tab 中該通知立即消失、badge 數字立即減少, pass T017 tests then refactor
+- [x] T018 [GREEN] [US3] Implement click handler composition in NotificationPanel — for each NotificationItem, compose onClick: () => { markAsRead(notification.id); router.push(getNotificationLink(notification)); closePanel(); }, add markAsRead to NotificationContext exports; markAsRead 除了呼叫 service layer，Context 需本地立即更新 notification.read = true（樂觀更新），不等 onSnapshot 回寫，確保「未讀」tab 中該通知立即消失、badge 數字立即減少, pass T017 tests then refactor
 
 **Checkpoint**: All 3 notification types clickable. Correct navigation per type. Panel closes. Badge updates. US3 independently testable.
 
@@ -124,11 +124,11 @@
 
 ### Tests for US4
 
-- [ ] T019 [RED] [US4] Write integration tests for tab switching — default tab「全部」shows all notifications, click「未讀」shows only unread, empty state「沒有未讀通知」when all read, marking notification as read removes it from「未讀」view in specs/014-notification-system/tests/integration/NotificationTabs.test.jsx
+- [x] T019 [RED] [US4] Write integration tests for tab switching — default tab「全部」shows all notifications, click「未讀」shows only unread, empty state「沒有未讀通知」when all read, marking notification as read removes it from「未讀」view in specs/014-notification-system/tests/integration/NotificationTabs.test.jsx
 
 ### Implementation for US4
 
-- [ ] T020 [GREEN] [US4] Implement activeTab('all'|'unread') + setActiveTab in NotificationContext, add tab UI to NotificationPanel header — role="tablist" container, two role="tab" buttons with aria-selected,「全部」displays Listener 2 data,「未讀」displays Listener 1 data (first 5 sliced), pass T019 tests then refactor
+- [x] T020 [GREEN] [US4] Implement activeTab('all'|'unread') + setActiveTab in NotificationContext, add tab UI to NotificationPanel header — role="tablist" container, two role="tab" buttons with aria-selected,「全部」displays Listener 2 data,「未讀」displays Listener 1 data (first 5 sliced), pass T019 tests then refactor
 
 **Checkpoint**: Tab switching works.「全部」/「未讀」correctly filter.「未讀」empty state. US4 independently testable.
 
@@ -142,12 +142,12 @@
 
 ### Tests for US5
 
-- [ ] T021 [RED] [US5] Write integration tests for pagination — initial 5 with「查看先前通知」button visible, button hidden when total ≤5, click button loads next 5, after first loadMore button disappears and infinite scroll activates, scroll to bottom triggers loadMore, stops loading when all notifications loaded (hasMore=false);「未讀」tab 超過 100 則時 → Listener 1 cache 用完後呼叫 fetchMoreUnreadNotifications 繼續載入 in specs/014-notification-system/tests/integration/NotificationPagination.test.jsx
+- [x] T021 [RED] [US5] Write integration tests for pagination — initial 5 with「查看先前通知」button visible, button hidden when total ≤5, click button loads next 5, after first loadMore button disappears and infinite scroll activates, scroll to bottom triggers loadMore, stops loading when all notifications loaded (hasMore=false);「未讀」tab 超過 100 則時 → Listener 1 cache 用完後呼叫 fetchMoreUnreadNotifications 繼續載入 in specs/014-notification-system/tests/integration/NotificationPagination.test.jsx
 
 ### Implementation for US5
 
-- [ ] T022 [GREEN] [US5] Implement loadMore/hasMore/isLoadingMore/hasLoadedMore in NotificationContext — 「全部」tab: loadMore calls fetchMoreNotifications with lastDoc cursor, appends results;「未讀」tab: 先從 Listener 1 資料 client-side slice（每次 5 則），Listener 1 資料用盡（≥ 100 則）後 fallback 呼叫 fetchMoreUnreadNotifications(uid, lastDoc) 繼續分頁; updates hasMore based on returned count vs PAGE_SIZE; add「查看先前通知」button to NotificationPanel bottom (hidden when !hasMore || total ≤5), pass T021 tests then refactor
-- [ ] T023 [GREEN] [US5] Implement IntersectionObserver infinite scroll in NotificationPanel — sentinel div at list bottom, IntersectionObserver watches sentinel, triggers loadMore on intersection when hasLoadedMore===true && hasMore && !isLoadingMore, cleanup observer on unmount, pass T021 tests then refactor
+- [x] T022 [GREEN] [US5] Implement loadMore/hasMore/isLoadingMore/hasLoadedMore in NotificationContext — 「全部」tab: loadMore calls fetchMoreNotifications with lastDoc cursor, appends results;「未讀」tab: 先從 Listener 1 資料 client-side slice（每次 5 則），Listener 1 資料用盡（≥ 100 則）後 fallback 呼叫 fetchMoreUnreadNotifications(uid, lastDoc) 繼續分頁; updates hasMore based on returned count vs PAGE_SIZE; add「查看先前通知」button to NotificationPanel bottom (hidden when !hasMore || total ≤5), pass T021 tests then refactor
+- [x] T023 [GREEN] [US5] Implement IntersectionObserver infinite scroll in NotificationPanel — sentinel div at list bottom, IntersectionObserver watches sentinel, triggers loadMore on intersection when hasLoadedMore===true && hasMore && !isLoadingMore, cleanup observer on unmount, pass T021 tests then refactor
 
 **Checkpoint**: Initial 5 → button → infinite scroll. Stops at end. Works for both「全部」and「未讀」tabs. US5 independently testable.
 
@@ -161,12 +161,12 @@
 
 ### Tests for US7
 
-- [ ] T024 [RED] [US7] Write integration tests for toast — new notification (docChanges type 'added' after initial load) triggers toast with message text, toast auto-disappears after ~5s, no toast when isPanelOpen===true, no toast for initial snapshot load, multiple notifications queue sequentially (one at a time) in specs/014-notification-system/tests/integration/NotificationToast.test.jsx
+- [x] T024 [RED] [US7] Write integration tests for toast — new notification (docChanges type 'added' after initial load) triggers toast with message text, toast auto-disappears after ~5s, no toast when isPanelOpen===true, no toast for initial snapshot load, multiple notifications queue sequentially (one at a time) in specs/014-notification-system/tests/integration/NotificationToast.test.jsx
 
 ### Implementation for US7
 
-- [ ] T025 [GREEN] [US7] Implement toast queue in NotificationContext — 使用 watchNotifications 的 onNew callback 接收新通知（service layer 已處理 isInitialLoad + docChanges），enqueueToast(message) when panel closed, dequeue with 5s setTimeout, expose currentToast + dismissToast, pass T024 tests then refactor
-- [ ] T026 [GREEN] [US7] Implement NotificationToast.jsx + NotificationToast.module.css in src/components/Notifications/ — role="status", aria-live="polite", displays currentToast.message, fade-in/fade-out CSS animation, not clickable (no onClick/pointer-events), render in src/app/layout.jsx inside NotificationProvider, pass T024 tests then refactor
+- [x] T025 [GREEN] [US7] Implement toast queue in NotificationContext — 使用 watchNotifications 的 onNew callback 接收新通知（service layer 已處理 isInitialLoad + docChanges），enqueueToast(message) when panel closed, dequeue with 5s setTimeout, expose currentToast + dismissToast, pass T024 tests then refactor
+- [x] T026 [GREEN] [US7] Implement NotificationToast.jsx + NotificationToast.module.css in src/components/Notifications/ — role="status", aria-live="polite", displays currentToast.message, fade-in/fade-out CSS animation, not clickable (no onClick/pointer-events), render in src/app/layout.jsx inside NotificationProvider, pass T024 tests then refactor
 
 **Checkpoint**: New notification → toast appears. 5s auto-dismiss. No stacking. Panel suppression. Initial load skipped. US7 independently testable.
 
@@ -180,11 +180,11 @@
 
 ### Tests for US6
 
-- [ ] T027 [RED] [US6] Write integration tests for scroll-to-comment — when URL has ?commentId=xxx: getElementById called, scrollIntoView({ behavior: 'smooth', block: 'center' }) triggered, highlight CSS class applied to target element, highlight fades after ~3s; when commentId absent or element not found: no scroll/highlight in specs/014-notification-system/tests/integration/scroll-to-comment.test.jsx
+- [x] T027 [RED] [US6] Write integration tests for scroll-to-comment — when URL has ?commentId=xxx: getElementById called, scrollIntoView({ behavior: 'smooth', block: 'center' }) triggered, highlight CSS class applied to target element, highlight fades after ~3s; when commentId absent or element not found: no scroll/highlight in specs/014-notification-system/tests/integration/scroll-to-comment.test.jsx
 
 ### Implementation for US6
 
-- [ ] T028 [GREEN] [US6] Implement scroll-to-comment in src/app/posts/[id]/PostDetailClient.jsx — useSearchParams() to get commentId, useEffect to getElementById(commentId) + scrollIntoView + add highlight class, CSS @keyframes highlightFade (3s ease-out, background-color transition) in PostDetailClient CSS module or new shared module, cleanup: remove class after animation ends, pass T027 tests then refactor
+- [x] T028 [GREEN] [US6] Implement scroll-to-comment in src/app/posts/[id]/PostDetailClient.jsx — useSearchParams() to get commentId, useEffect to getElementById(commentId) + scrollIntoView + add highlight class, CSS @keyframes highlightFade (3s ease-out, background-color transition) in PostDetailClient CSS module or new shared module, cleanup: remove class after animation ends, pass T027 tests then refactor
 
 **Checkpoint**: Click post_new_comment notification → navigate + scroll to comment + 3s highlight fade. Graceful no-op when element missing. US6 independently testable.
 
@@ -196,12 +196,12 @@
 
 ### Tests for Triggers
 
-- [ ] T029 [RED] Write integration tests for notification creation triggers — eventDetailClient: (1) edit submit → notifyEventModified(eventId, title, actor) called after updateEvent, (2) delete → fetchParticipants then notifyEventCancelled then deleteEvent (ordered), PostDetailClient: (3) add comment → notifyPostNewComment(postId, title, authorUid, commentId, actor) called after addComment, (4) self-action: commenter===author → notifyPostNewComment not called in specs/014-notification-system/tests/integration/notification-triggers.test.jsx
+- [x] T029 [RED] Write integration tests for notification creation triggers — eventDetailClient: (1) edit submit → notifyEventModified(eventId, title, actor) called after updateEvent, (2) delete → fetchParticipants then notifyEventCancelled then deleteEvent (ordered), PostDetailClient: (3) add comment → notifyPostNewComment(postId, title, authorUid, commentId, actor) called after addComment, (4) self-action: commenter===author → notifyPostNewComment not called in specs/014-notification-system/tests/integration/notification-triggers.test.jsx
 
 ### Implementation for Triggers
 
-- [ ] T030 [GREEN] Integrate notification creation into src/app/events/[id]/eventDetailClient.jsx — after successful updateEvent: call notifyEventModified(eventId, eventTitle, { uid, name, photoURL }); before deleteEvent: fetchParticipants → notifyEventCancelled → deleteEvent (sequential), pass T029 event tests then refactor
-- [ ] T031 [GREEN] [P] Integrate notification creation into src/app/posts/[id]/PostDetailClient.jsx — after successful addComment: if commenter.uid !== post.authorUid, call notifyPostNewComment(postId, postTitle, postAuthorUid, newCommentId, { uid, name, photoURL }), pass T029 post tests then refactor
+- [x] T030 [GREEN] Integrate notification creation into src/app/events/[id]/eventDetailClient.jsx — after successful updateEvent: call notifyEventModified(eventId, eventTitle, { uid, name, photoURL }); before deleteEvent: fetchParticipants → notifyEventCancelled → deleteEvent (sequential), pass T029 event tests then refactor
+- [x] T031 [GREEN] [P] Integrate notification creation into src/app/posts/[id]/PostDetailClient.jsx — after successful addComment: if commenter.uid !== post.authorUid, call notifyPostNewComment(postId, postTitle, postAuthorUid, newCommentId, { uid, name, photoURL }), pass T029 post tests then refactor
 
 **Checkpoint**: Complete notification loop — event edit/delete + post comment produce notifications visible in bell + panel.
 
@@ -211,8 +211,8 @@
 
 **Purpose**: NotificationContext 的 onError 處理 + write function 失敗處理
 
-- [ ] T034 [RED] Write integration tests for error handling — watchNotifications/watchUnreadNotifications onError fires → Context 透過既有 ToastContext 顯示「通知載入失敗」; notifyEventModified/notifyPostNewComment 失敗 → 呼叫端顯示錯誤 toast in specs/014-notification-system/tests/integration/notification-error.test.jsx
-- [ ] T035 [GREEN] Implement error handling in NotificationContext onError callbacks → import useToast from ToastContext, show error toast; wrap trigger calls (T030/T031) in try-catch with error toast, pass T034 tests then refactor
+- [x] T034 [RED] Write integration tests for error handling — watchNotifications/watchUnreadNotifications onError fires → Context 透過既有 ToastContext 顯示「通知載入失敗」; notifyEventModified/notifyPostNewComment 失敗 → 呼叫端顯示錯誤 toast in specs/014-notification-system/tests/integration/notification-error.test.jsx
+- [x] T035 [GREEN] Implement error handling in NotificationContext onError callbacks → import useToast from ToastContext, show error toast; wrap trigger calls (T030/T031) in try-catch with error toast, pass T034 tests then refactor
 
 **Checkpoint**: onError 路徑有錯誤 toast 提示。write function 失敗不靜默。
 
@@ -222,8 +222,8 @@
 
 **Purpose**: Playwright E2E happy path 驗證完整通知迴圈，需 Firebase Emulator
 
-- [ ] T036 [RED] Write Playwright E2E test for happy path 1 — 活動編輯 → 其他使用者鈴鐺顯示未讀 → 開面板看到通知 → 點擊導航至活動頁 in specs/014-notification-system/tests/e2e/notification-flow.spec.js
-- [ ] T037 [RED] [P] Write Playwright E2E test for happy path 2 — 文章留言 → 作者收到通知 → 點擊導航至文章頁 → 滾動至留言並高亮 in specs/014-notification-system/tests/e2e/comment-notification-flow.spec.js
+- [x] T036 [RED] Write Playwright E2E test for happy path 1 — 活動編輯 → 其他使用者鈴鐺顯示未讀 → 開面板看到通知 → 點擊導航至活動頁 in specs/014-notification-system/tests/e2e/notification-flow.spec.js
+- [x] T037 [RED] [P] Write Playwright E2E test for happy path 2 — 文章留言 → 作者收到通知 → 點擊導航至文章頁 → 滾動至留言並高亮 in specs/014-notification-system/tests/e2e/comment-notification-flow.spec.js
 
 **Run**: `firebase emulators:exec --only auth,firestore "npm run test:e2e:emulator"`
 
@@ -235,8 +235,8 @@
 
 **Purpose**: 全面驗證、lint、type-check、IDE diagnostics
 
-- [ ] T032 Run quickstart.md validation — 逐項對照 quickstart.md 檔案清單與實作建議順序，確認所有檔案已建立、所有修改已完成、所有依賴正確
-- [ ] T033 [P] Run `npm run lint` + `npm run type-check` + `getDiagnostics` (via MCP) — fix all warnings/errors/hints, add unknown words to cspell.json
+- [x] T032 Run quickstart.md validation — 逐項對照 quickstart.md 檔案清單與實作建議順序，確認所有檔案已建立、所有修改已完成、所有依賴正確
+- [x] T033 [P] Run `npm run lint` + `npm run type-check` + `getDiagnostics` (via MCP) — fix all warnings/errors/hints, add unknown words to cspell.json
 
 ---
 

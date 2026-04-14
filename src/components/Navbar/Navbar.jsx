@@ -8,6 +8,8 @@ import useMobileDrawer from './useMobileDrawer';
 import useUserMenu from './useUserMenu';
 import MobileDrawer from './MobileDrawer';
 import UserMenu from './UserMenu';
+import NotificationBell from '@/components/Notifications/NotificationBell';
+import NotificationPanel from '@/components/Notifications/NotificationPanel';
 import { NAV_ITEMS, isActivePath } from './nav-constants';
 import styles from './Navbar.module.css';
 
@@ -68,6 +70,13 @@ export default function Navbar() {
             );
           })}
         </ul>
+
+        {user && (
+          <div className={styles.bellWrapper}>
+            <NotificationBell />
+            <NotificationPanel />
+          </div>
+        )}
 
         <UserMenu
           isDropdownOpen={isDropdownOpen}

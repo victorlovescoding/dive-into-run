@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, useContext } from 'react';
 import {
   getPostDetail,
@@ -18,6 +18,7 @@ import {
 } from '@/lib/firebase-posts';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+import { notifyPostNewComment } from '@/lib/firebase-notifications';
 import ShareButton from '@/components/ShareButton';
 import UserLink from '@/components/UserLink';
 import styles from '../postDetail.module.css';
@@ -39,6 +40,7 @@ export default function PostDetailClient({ postId }) {
   const { user } = useContext(AuthContext);
   const { showToast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [comment, setComment] = useState(''); // 只裝使用者即將送出的留言
   const [comments, setComments] = useState([]); // 裝所有留言
   const [openMenuPostId, setOpenMenuPostId] = useState('');
@@ -144,6 +146,29 @@ export default function PostDetailClient({ postId }) {
       intersectionObserver.disconnect();
     };
   }, [postId, nextCursor, isLoadingNext, user?.uid, comments.length]);
+
+  // Scroll-to-comment: 從通知點擊導航至留言時滾動到指定留言
+  useEffect(() => {
+    const commentId = searchParams.get('commentId');
+    if (!commentId) return undefined;
+
+    // 需要等留言載入完成，使用 setTimeout 確保 DOM 已更新
+    const timer = setTimeout(() => {
+      const el = document.getElementById(commentId);
+      if (!el) return;
+
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('commentHighlight');
+
+      /** 動畫結束後移除高亮 class。 */
+      const handleAnimationEnd = () => {
+        el.classList.remove('commentHighlight');
+      };
+      el.addEventListener('animationend', handleAnimationEnd);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchParams]);
 
   /**
    * 切換文章編輯模式，並載入既有內容。
@@ -278,6 +303,19 @@ export default function PostDetailClient({ postId }) {
     // 下一行要新增如果commentEditing裡面沒有資料代表這是新的留言，就繼續跑下面的邏輯
     if (!commentEditing) {
       const { id } = await addComment(postId, { user, comment }); // 先拿到新留言 id
+
+      // 通知文章作者有新留言（自己留言不通知，fire-and-forget）
+      if (user.uid !== postDetail.authorUid) {
+        notifyPostNewComment(postId, postDetail.title, postDetail.authorUid, id, {
+          uid: user.uid,
+          name: user.name || '',
+          photoURL: user.photoURL || '',
+        }).catch((notifyErr) => {
+          console.error('通知建立失敗:', notifyErr);
+          showToast('通知發送失敗', 'error');
+        });
+      }
+
       setComment(''); // 清空輸入框
 
       // 拿「那一筆」的正式資料（含真正的 createdAt）
@@ -419,7 +457,7 @@ export default function PostDetailClient({ postId }) {
       {/* 所有留言區 */}
       <ul>
         {comments.map((commentItem) => (
-          <li key={commentItem.id} className={styles.commentContainer}>
+          <li key={commentItem.id} id={commentItem.id} className={styles.commentContainer}>
             <div
               className={styles.commentOwnerMenu}
               style={{ display: commentItem?.isAuthor ? 'block' : 'none' }}

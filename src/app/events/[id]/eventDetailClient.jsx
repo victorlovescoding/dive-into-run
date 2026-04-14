@@ -23,6 +23,7 @@ import {
   normalizeRoutePolylines,
   toMs,
 } from '@/lib/event-helpers';
+import { notifyEventModified, notifyEventCancelled } from '@/lib/firebase-notifications';
 import EventCardMenu from '@/components/EventCardMenu';
 import EventEditForm from '@/components/EventEditForm';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
@@ -292,6 +293,17 @@ export default function EventDetailClient({ id }) {
       setIsUpdating(true);
       try {
         await updateEvent(String(eventId), fields);
+
+        // 通知參加者活動已修改（fire-and-forget）
+        notifyEventModified(String(eventId), event?.title || '', {
+          uid: user.uid,
+          name: user.name || '',
+          photoURL: user.photoURL || '',
+        }).catch((notifyErr) => {
+          console.error('通知建立失敗:', notifyErr);
+          showToast('通知發送失敗', 'error');
+        });
+
         const mergedFields = { ...fields };
         if (typeof mergedFields.time === 'string' && mergedFields.time) {
           mergedFields.time = FirestoreTimestamp.fromDate(new Date(mergedFields.time));
@@ -322,7 +334,7 @@ export default function EventDetailClient({ id }) {
         setIsUpdating(false);
       }
     },
-    [showToast],
+    [showToast, event?.title, user],
   );
 
   // ── 刪除 handlers ──
@@ -352,6 +364,15 @@ export default function EventDetailClient({ id }) {
     async (/** @type {string} */ eventId) => {
       setIsDeletingEvent(true);
       try {
+        // 取得參加者清單（刪除後就讀不到了）
+        const currentParticipants = await fetchParticipants(String(eventId));
+        // 通知參加者活動已取消
+        await notifyEventCancelled(String(eventId), event?.title || '', currentParticipants, {
+          uid: user.uid,
+          name: user.name || '',
+          photoURL: user.photoURL || '',
+        });
+
         await deleteEvent(String(eventId));
         setDeletingEventId(null);
         router.push('/events?toast=活動已刪除');
@@ -361,7 +382,7 @@ export default function EventDetailClient({ id }) {
         setIsDeletingEvent(false);
       }
     },
-    [router, showToast],
+    [router, showToast, event?.title, user],
   );
 
   const statusText = useMemo(() => {

@@ -2,7 +2,9 @@ import React from 'react';
 import { Geist, Geist_Mono as GeistMono } from 'next/font/google';
 import Navbar from '@/components/Navbar/Navbar';
 import UserDataHandler from '@/contexts/AuthContext';
+import NotificationProvider from '@/contexts/NotificationContext';
 import ToastProvider from '@/contexts/ToastContext';
+import NotificationToast from '@/components/Notifications/NotificationToast';
 import ToastContainer from '@/components/ToastContainer';
 import './globals.css';
 import 'leaflet/dist/leaflet.css';
@@ -40,9 +42,12 @@ export default function RootLayout({ children }) {
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <UserDataHandler>
           <ToastProvider>
-            <Navbar />
-            {children}
-            <ToastContainer />
+            <NotificationProvider>
+              <Navbar />
+              {children}
+              <NotificationToast />
+              <ToastContainer />
+            </NotificationProvider>
           </ToastProvider>
         </UserDataHandler>
       </body>
