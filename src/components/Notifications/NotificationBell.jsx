@@ -16,7 +16,7 @@ export default function NotificationBell() {
   if (!user) return null;
 
   const displayCount = unreadCount > 99 ? '99+' : String(unreadCount);
-  const ariaLabel = unreadCount > 0 ? `通知，${unreadCount} 則未讀` : '通知';
+  const ariaLabel = unreadCount > 0 ? `通知，${displayCount} 則未讀` : '通知';
 
   return (
     <button
@@ -34,19 +34,14 @@ export default function NotificationBell() {
         aria-hidden="true"
         data-filled={String(isPanelOpen)}
       >
-        {isPanelOpen ? (
-          <path
-            d="M12 2C7.58 2 4 5.58 4 10v4.17l-1.71 1.71A1 1 0 003 17h18a1 1 0 00.71-1.71L20 14.17V10c0-4.42-3.58-8-8-8zm0 20a2 2 0 002-2h-4a2 2 0 002 2z"
-            fill="currentColor"
-          />
-        ) : (
-          <path
-            d="M12 2C7.58 2 4 5.58 4 10v4.17l-1.71 1.71A1 1 0 003 17h18a1 1 0 00.71-1.71L20 14.17V10c0-4.42-3.58-8-8-8zm0 20a2 2 0 002-2h-4a2 2 0 002 2z"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-        )}
+        <path
+          d={
+            isPanelOpen
+              ? 'M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z'
+              : 'M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z'
+          }
+          fill="currentColor"
+        />
       </svg>
       {unreadCount > 0 && <span className={styles.badge}>{displayCount}</span>}
     </button>

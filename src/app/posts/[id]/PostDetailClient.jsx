@@ -164,7 +164,7 @@ export default function PostDetailClient({ postId }) {
       const handleAnimationEnd = () => {
         el.classList.remove('commentHighlight');
       };
-      el.addEventListener('animationend', handleAnimationEnd);
+      el.addEventListener('animationend', handleAnimationEnd, { once: true });
     }, 300);
 
     return () => clearTimeout(timer);

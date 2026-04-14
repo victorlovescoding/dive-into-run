@@ -51,8 +51,17 @@ export default function NotificationPanel() {
       }
     };
 
+    /** @param {KeyboardEvent} e - keydown 事件。 */
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') closePanel();
+    };
+
     document.addEventListener('mousedown', handleMouseDown);
-    return () => document.removeEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isPanelOpen, closePanel]);
 
   // Effects — IntersectionObserver for infinite scroll
@@ -106,7 +115,9 @@ export default function NotificationPanel() {
         <button
           type="button"
           role="tab"
+          id="notification-tab-all"
           aria-selected={activeTab === 'all'}
+          aria-controls="notification-tabpanel"
           className={activeTab === 'all' ? `${styles.tab} ${styles.tabActive}` : styles.tab}
           onClick={() => setActiveTab('all')}
         >
@@ -115,35 +126,43 @@ export default function NotificationPanel() {
         <button
           type="button"
           role="tab"
+          id="notification-tab-unread"
           aria-selected={activeTab === 'unread'}
+          aria-controls="notification-tabpanel"
           className={activeTab === 'unread' ? `${styles.tab} ${styles.tabActive}` : styles.tab}
           onClick={() => setActiveTab('unread')}
         >
           未讀
         </button>
       </div>
-      {isEmpty ? (
-        <p className={styles.emptyState}>{emptyMessage}</p>
-      ) : (
-        <ul className={styles.list}>
-          {notifications.map((n) => (
-            <li key={n.id}>
-              <NotificationItem notification={n} onClick={() => handleItemClick(n)} />
-            </li>
-          ))}
-        </ul>
-      )}
-      {showLoadMoreButton && (
-        <button
-          type="button"
-          className={styles.loadMoreButton}
-          onClick={loadMore}
-          disabled={isLoadingMore}
-        >
-          {isLoadingMore ? '載入中...' : '查看先前通知'}
-        </button>
-      )}
-      {showSentinel && <div ref={sentinelRef} className={styles.sentinel} />}
+      <div
+        role="tabpanel"
+        id="notification-tabpanel"
+        aria-labelledby={`notification-tab-${activeTab}`}
+      >
+        {isEmpty ? (
+          <p className={styles.emptyState}>{emptyMessage}</p>
+        ) : (
+          <ul className={styles.list}>
+            {notifications.map((n) => (
+              <li key={n.id}>
+                <NotificationItem notification={n} onClick={() => handleItemClick(n)} />
+              </li>
+            ))}
+          </ul>
+        )}
+        {showLoadMoreButton && (
+          <button
+            type="button"
+            className={styles.loadMoreButton}
+            onClick={loadMore}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? '載入中...' : '查看先前通知'}
+          </button>
+        )}
+        {showSentinel && <div ref={sentinelRef} className={styles.sentinel} />}
+      </div>
     </div>
   );
 }
