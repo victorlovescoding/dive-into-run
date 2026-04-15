@@ -20,38 +20,29 @@ None.
 
 ### [IMPROVEMENT OPPORTUNITIES]
 
-**1. [src/lib/firebase-notifications.js] Notification doc literal repeated 5 times**
+**1. ~~[src/lib/firebase-notifications.js] Notification doc literal repeated 5 times~~** ✅ Fixed
 
-The same 12-field object structure appears in `notifyPostCommentReply` and 3 times inside `notifyEventNewComment`. With the existing functions, that's 5 total instances across the file. Only `recipientUid`, `type`, `message`, `entityType`, `entityId`, and `entityTitle` vary.
+Extracted `buildNotificationDoc()` helper (line 40) that returns the base notification object. All 5 call sites now use this helper, eliminating ~60 lines of repetition.
 
-A `buildNotificationDoc(type, entityType, entityId, entityTitle, commentId, message, actor)` helper returning the base object would eliminate ~60 lines of repetition and make future type additions a one-liner. This isn't blocking — the code works — but it's the difference between "works" and "good taste".
+**2. ~~[src/lib/firebase-notifications.js, notifyEventNewComment] Empty batch commit when actor is host with no audience~~** ✅ Fixed
 
-**2. [src/lib/firebase-notifications.js, notifyEventNewComment] Empty batch commit when actor is host with no audience**
+Added `if (notifiedSet.size <= 1) return;` guard (line 300) before `batch.commit()`, consistent with `notifyEventModified`'s guard pattern.
 
-When `actor.uid === hostUid` AND participants are empty AND no past commenters, the function creates a `writeBatch`, adds nothing to it, then calls `batch.commit()`. This is a no-op but still issues a network call. Add an early return or guard:
+**3. ~~[src/app/posts/[id]/PostDetailClient.jsx, line ~318] Actor object duplication~~** ✅ Fixed
 
-```js
-// After all priority blocks, before commit:
-if (notifiedSet.size <= 1) return; // only actor in set, nothing to commit
-```
-
-Or track a counter. The existing `notifyEventModified` does this properly with its `if (recipients.length === 0) return` guard.
-
-**3. [src/app/posts/[id]/PostDetailClient.jsx, line ~318] Actor object duplication**
-
-The actor construction `{ uid: user.uid, name: user.name || '', photoURL: user.photoURL || '' }` appears twice in `submitCommentHandler` (once for `notifyPostNewComment`, once for `notifyPostCommentReply`). Extract to a const above both calls.
+Actor construction extracted to a single `const actor` (line 303) shared by both `notifyPostNewComment` and `notifyPostCommentReply` calls.
 
 ---
 
 ### [STYLE NOTES]
 
-**4. [specs/.../post-comment-reply.test.jsx] CJS `require('react')` inside `vi.mock`**
+**4. ~~[specs/.../post-comment-reply.test.jsx] CJS `require('react')` inside `vi.mock`~~** ✅ Fixed
 
-Lines 1040, 1061, 1081 use `require('react')` in an ESM test file. This works because Vitest transforms it, but the `async () => { const { createContext } = await import('react'); }` pattern used in `event-comment-notification.test.jsx` is cleaner and consistent with ESM.
+All `require('react')` calls removed; now uses the ESM `await import('react')` pattern consistent with other test files.
 
-**5. [specs/.../comment-notifications.spec.js, line 131] E2E `signOut` type error**
+**5. [specs/.../comment-notifications.spec.js, line 131] E2E `signOut` type error** ⚪ Pre-existing
 
-`window.testFirebaseHelpers.signOut` doesn't exist on the current type. This is a pre-existing issue (same error in `014-notification-system`), not introduced here, but flagged for awareness.
+`window.testFirebaseHelpers.signOut` is flagged as a type error, but the property IS correctly defined at runtime (`src/lib/firebase-client.js:43`). This is a pre-existing `window.d.ts` type declaration gap shared with `014-notification-system`, not in scope for this feature.
 
 ---
 
@@ -95,7 +86,7 @@ No scope creep detected. No tasks marked complete without implementation.
 
 ## VERDICT
 
-✅ **Worth merging** — Core logic is sound, dedup is correctly implemented, service layer isolation is maintained, no `@ts-ignore`, lint and type-check clean. The notification doc repetition (item #1) and empty batch commit (item #2) are real improvements worth making but don't block merge.
+✅ **Worth merging** — Core logic is sound, dedup is correctly implemented, service layer isolation is maintained, no `@ts-ignore`, lint and type-check clean. All improvement opportunities (#1–#4) have been addressed. Only #5 (pre-existing type gap) remains as a known issue outside this feature's scope.
 
 ## KEY INSIGHT
 
