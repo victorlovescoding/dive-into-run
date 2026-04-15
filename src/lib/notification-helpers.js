@@ -2,7 +2,7 @@
  * @typedef {object} NotificationItem
  * @property {string} id - Firestore document ID。
  * @property {string} recipientUid - 通知接收者 UID。
- * @property {'event_modified'|'event_cancelled'|'post_new_comment'} type - 通知類型。
+ * @property {NotificationType} type - 通知類型。
  * @property {string} actorUid - 觸發者 UID。
  * @property {string} actorName - 觸發者顯示名稱。
  * @property {string} actorPhotoURL - 觸發者頭像 URL。
@@ -13,6 +13,10 @@
  * @property {string} message - 完整通知訊息文字。
  * @property {boolean} read - 是否已讀。
  * @property {import('firebase/firestore').Timestamp} createdAt - 建立時間。
+ */
+
+/**
+ * @typedef {'event_modified'|'event_cancelled'|'post_new_comment'|'post_comment_reply'|'event_host_comment'|'event_participant_comment'|'event_comment_reply'} NotificationType
  */
 
 const MINUTE_MS = 60 * 1000;
@@ -62,11 +66,15 @@ const MESSAGE_BUILDERS = {
   event_modified: (title) => `你所參加的『${title}』活動資訊有更動`,
   event_cancelled: (title) => `你所參加的『${title}』已取消`,
   post_new_comment: (title) => `你的文章『${title}』有一則新的留言`,
+  post_comment_reply: (title) => `你留言過的文章『${title}』有一則新的留言`,
+  event_host_comment: (title) => `你主辦的活動『${title}』有一則新的留言`,
+  event_participant_comment: (title) => `你參加的活動『${title}』有一則新的留言`,
+  event_comment_reply: (title) => `你留言過的活動『${title}』有一則新的留言`,
 };
 
 /**
  * 根據通知類型與實體標題組合通知訊息。
- * @param {'event_modified'|'event_cancelled'|'post_new_comment'} type - 通知類型。
+ * @param {NotificationType} type - 通知類型。
  * @param {string} entityTitle - 實體標題。
  * @returns {string} 完整通知訊息。
  */
@@ -83,8 +91,16 @@ export function buildNotificationMessage(type, entityTitle) {
 export function getNotificationLink(notification) {
   const { type, entityId, commentId } = notification;
 
-  if (type === 'post_new_comment') {
+  if (type === 'post_new_comment' || type === 'post_comment_reply') {
     return `/posts/${entityId}?commentId=${commentId}`;
+  }
+
+  if (
+    type === 'event_host_comment' ||
+    type === 'event_participant_comment' ||
+    type === 'event_comment_reply'
+  ) {
+    return `/events/${entityId}?commentId=${commentId}`;
   }
 
   return `/events/${entityId}`;

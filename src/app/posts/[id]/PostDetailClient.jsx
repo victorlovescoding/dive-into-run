@@ -19,7 +19,7 @@ import {
 } from '@/lib/firebase-posts';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { notifyPostNewComment } from '@/lib/firebase-notifications';
+import { notifyPostNewComment, notifyPostCommentReply } from '@/lib/firebase-notifications';
 import ShareButton from '@/components/ShareButton';
 import UserLink from '@/components/UserLink';
 import styles from '../postDetail.module.css';
@@ -320,6 +320,15 @@ export default function PostDetailClient({ postId }) {
           showToast('通知發送失敗', 'error');
         });
       }
+
+      // 通知曾留言過的使用者有新留言（fire-and-forget）
+      notifyPostCommentReply(postId, postDetail.title, postDetail.authorUid, id, {
+        uid: user.uid,
+        name: user.name || '',
+        photoURL: user.photoURL || '',
+      }).catch((notifyErr) => {
+        console.error('跟帖通知失敗:', notifyErr);
+      });
 
       setComment(''); // 清空輸入框
 

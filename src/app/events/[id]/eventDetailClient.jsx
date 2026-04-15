@@ -23,7 +23,11 @@ import {
   normalizeRoutePolylines,
   toMs,
 } from '@/lib/event-helpers';
-import { notifyEventModified, notifyEventCancelled } from '@/lib/firebase-notifications';
+import {
+  notifyEventModified,
+  notifyEventCancelled,
+  notifyEventNewComment,
+} from '@/lib/firebase-notifications';
 import EventCardMenu from '@/components/EventCardMenu';
 import EventEditForm from '@/components/EventEditForm';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
@@ -385,6 +389,24 @@ export default function EventDetailClient({ id }) {
     [router, showToast, event?.title, user],
   );
 
+  /**
+   * 處理新留言通知：留言建立後觸發活動留言通知。
+   * @param {string} commentId - 新留言 ID。
+   */
+  const handleCommentAdded = useCallback(
+    (/** @type {string} */ commentId) => {
+      if (!event || !user) return;
+      notifyEventNewComment(String(id), event.title, event.hostUid, commentId, {
+        uid: user.uid,
+        name: user.name || '',
+        photoURL: user.photoURL || '',
+      }).catch((err) => {
+        console.error('活動留言通知失敗:', err);
+      });
+    },
+    [id, event, user],
+  );
+
   const statusText = useMemo(() => {
     if (!event) return '';
     return computeStatus({
@@ -716,7 +738,7 @@ export default function EventDetailClient({ id }) {
               )}
             </div>
 
-            <CommentSection eventId={id} />
+            <CommentSection eventId={id} onCommentAdded={handleCommentAdded} />
 
             {/* ✅ Participants Overlay */}
             {isParticipantsOpen && (

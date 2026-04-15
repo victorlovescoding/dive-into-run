@@ -19,7 +19,7 @@
 
 **Purpose**: Firestore security rules 允許新通知類型寫入
 
-- [ ] T001 Update `type in [...]` whitelist to add 4 new notification types (`post_comment_reply`, `event_host_comment`, `event_participant_comment`, `event_comment_reply`) in `firestore.rules` line 230
+- [x] T001 Update `type in [...]` whitelist to add 4 new notification types (`post_comment_reply`, `event_host_comment`, `event_participant_comment`, `event_comment_reply`) in `firestore.rules` line 230
 
 ---
 
@@ -31,13 +31,13 @@
 
 ### Tests ⚠️ Write FIRST, ensure they FAIL
 
-- [ ] T002 [P] Unit test for 4 new `MESSAGE_BUILDERS` entries (`post_comment_reply`, `event_host_comment`, `event_participant_comment`, `event_comment_reply`) and updated `getNotificationLink()` returning `?commentId=` URL for event comment types in `specs/015-comment-notifications/tests/unit/notification-helpers.test.js`
-- [ ] T003 [P] Unit test for `fetchDistinctCommentAuthors()` — returns distinct authorUid array from comments collection ref, handles empty collection, deduplicates multi-comment authors in `specs/015-comment-notifications/tests/unit/fetch-distinct-comment-authors.test.js`
+- [x] T002 [P] Unit test for 4 new `MESSAGE_BUILDERS` entries (`post_comment_reply`, `event_host_comment`, `event_participant_comment`, `event_comment_reply`) and updated `getNotificationLink()` returning `?commentId=` URL for event comment types in `specs/015-comment-notifications/tests/unit/notification-helpers.test.js`
+- [x] T003 [P] Unit test for `fetchDistinctCommentAuthors()` — returns distinct authorUid array from comments collection ref, handles empty collection, deduplicates multi-comment authors in `specs/015-comment-notifications/tests/unit/fetch-distinct-comment-authors.test.js`
 
 ### Implementation
 
-- [ ] T004 Update `NotificationType` typedef to add 4 new values, add 4 `MESSAGE_BUILDERS` entries with correct message templates (spec FR-007~FR-010), and update `getNotificationLink()` to return `/events/{entityId}?commentId={commentId}` for `event_host_comment`/`event_participant_comment`/`event_comment_reply` types and `/posts/{entityId}?commentId={commentId}` for `post_comment_reply` in `src/lib/notification-helpers.js`
-- [ ] T005 [P] Implement `fetchDistinctCommentAuthors(commentsRef)` — query all docs from given `CollectionReference`, extract `authorUid`, return deduplicated array in `src/lib/firebase-notifications.js`
+- [x] T004 Update `NotificationType` typedef to add 4 new values, add 4 `MESSAGE_BUILDERS` entries with correct message templates (spec FR-007~FR-010), and update `getNotificationLink()` to return `/events/{entityId}?commentId={commentId}` for `event_host_comment`/`event_participant_comment`/`event_comment_reply` types and `/posts/{entityId}?commentId={commentId}` for `post_comment_reply` in `src/lib/notification-helpers.js`
+- [x] T005 [P] Implement `fetchDistinctCommentAuthors(commentsRef)` — query all docs from given `CollectionReference`, extract `authorUid`, return deduplicated array in `src/lib/firebase-notifications.js`
 
 **Checkpoint**: Foundation ready — `buildNotificationMessage()` / `getNotificationLink()` support all 7 types, `fetchDistinctCommentAuthors()` available
 
@@ -51,13 +51,13 @@
 
 ### Tests ⚠️ Write FIRST, ensure they FAIL
 
-- [ ] T006 [P] [US1] Unit test for `notifyPostCommentReply()` — verifies batch notification to past commenters (excluding actor + post author), no notification when no past commenters, no duplicate when commenter is also post author, single notification per unique commenter in `specs/015-comment-notifications/tests/unit/notify-post-comment-reply.test.js`
-- [ ] T007 [P] [US1] Integration test for `PostDetailClient` — verifies `submitCommentHandler` calls both `notifyPostNewComment()` and `notifyPostCommentReply()` on new comment, passes correct args (postId, title, authorUid, commentId, actor) in `specs/015-comment-notifications/tests/integration/post-comment-reply.test.jsx`
+- [x] T006 [P] [US1] Unit test for `notifyPostCommentReply()` — verifies batch notification to past commenters (excluding actor + post author), no notification when no past commenters, no duplicate when commenter is also post author, single notification per unique commenter in `specs/015-comment-notifications/tests/unit/notify-post-comment-reply.test.js`
+- [x] T007 [P] [US1] Integration test for `PostDetailClient` — verifies `submitCommentHandler` calls both `notifyPostNewComment()` and `notifyPostCommentReply()` on new comment, passes correct args (postId, title, authorUid, commentId, actor) in `specs/015-comment-notifications/tests/integration/post-comment-reply.test.jsx`
 
 ### Implementation
 
-- [ ] T008 [US1] Implement `notifyPostCommentReply(postId, postTitle, postAuthorUid, commentId, actor)` in `src/lib/firebase-notifications.js` — call `fetchDistinctCommentAuthors()` on `posts/{postId}/comments`, filter out `actor.uid` and `postAuthorUid`, batch write `post_comment_reply` notifications for remaining UIDs
-- [ ] T009 [US1] Add `notifyPostCommentReply()` call (fire-and-forget with `.catch()`) after successful new comment in `submitCommentHandler()` at `src/app/posts/[id]/PostDetailClient.jsx` — place **outside** the `if (user.uid !== postDetail.authorUid)` block (after line ~314), so it fires unconditionally for every new comment (the function internally excludes `postAuthorUid` and `actor.uid`)
+- [x] T008 [US1] Implement `notifyPostCommentReply(postId, postTitle, postAuthorUid, commentId, actor)` in `src/lib/firebase-notifications.js` — call `fetchDistinctCommentAuthors()` on `posts/{postId}/comments`, filter out `actor.uid` and `postAuthorUid`, batch write `post_comment_reply` notifications for remaining UIDs
+- [x] T009 [US1] Add `notifyPostCommentReply()` call (fire-and-forget with `.catch()`) after successful new comment in `submitCommentHandler()` at `src/app/posts/[id]/PostDetailClient.jsx` — place **outside** the `if (user.uid !== postDetail.authorUid)` block (after line ~314), so it fires unconditionally for every new comment (the function internally excludes `postAuthorUid` and `actor.uid`)
 
 **Checkpoint**: US1 complete — 文章跟帖通知可獨立測試驗證
 
@@ -73,15 +73,15 @@
 
 ### Tests ⚠️ Write FIRST, ensure they FAIL
 
-- [ ] T010 [P] [US2-4] Unit test for `notifyEventNewComment()` dedup logic in `specs/015-comment-notifications/tests/unit/notify-event-new-comment.test.js` — scenarios: (1) host gets `event_host_comment`, (2) participants get `event_participant_comment`, (3) past commenters (non-host, non-participant) get `event_comment_reply`, (4) host+commenter → only `event_host_comment`, (5) participant+commenter → only `event_participant_comment`, (6) actor excluded from all, (7) empty participants + no past commenters → only host notification, (8) 50-participant batch timing assertion (< 2s, SC-005). Organize into 3 `describe` blocks: (A) Core Delivery — scenarios 1-3, (B) Dedup Logic — scenarios 4-6, (C) Performance — scenarios 7-8
-- [ ] T011 [P] [US2-4] Integration test for `CommentSection` `onCommentAdded` callback → `eventDetailClient` trigger in `specs/015-comment-notifications/tests/integration/event-comment-notification.test.jsx` — verifies `onCommentAdded` prop is called with commentId after new comment submit, and parent calls `notifyEventNewComment()` with correct args
+- [x] T010 [P] [US2-4] Unit test for `notifyEventNewComment()` dedup logic in `specs/015-comment-notifications/tests/unit/notify-event-new-comment.test.js` — scenarios: (1) host gets `event_host_comment`, (2) participants get `event_participant_comment`, (3) past commenters (non-host, non-participant) get `event_comment_reply`, (4) host+commenter → only `event_host_comment`, (5) participant+commenter → only `event_participant_comment`, (6) actor excluded from all, (7) empty participants + no past commenters → only host notification, (8) 50-participant batch timing assertion (< 2s, SC-005). Organize into 3 `describe` blocks: (A) Core Delivery — scenarios 1-3, (B) Dedup Logic — scenarios 4-6, (C) Performance — scenarios 7-8
+- [x] T011 [P] [US2-4] Integration test for `CommentSection` `onCommentAdded` callback → `eventDetailClient` trigger in `specs/015-comment-notifications/tests/integration/event-comment-notification.test.jsx` — verifies `onCommentAdded` prop is called with commentId after new comment submit, and parent calls `notifyEventNewComment()` with correct args
 
 ### Implementation
 
-- [ ] T012 [US2-4] Implement `notifyEventNewComment(eventId, eventTitle, hostUid, commentId, actor)` in `src/lib/firebase-notifications.js` — create `notifiedSet = new Set([actor.uid])`, Priority 1: host → `event_host_comment`, Priority 2: `fetchParticipants(eventId)` → `event_participant_comment`, Priority 3: `fetchDistinctCommentAuthors(events/{eventId}/comments)` → `event_comment_reply`, batch write all notifications
-- [ ] T013 [US2-4] Add `onCommentAdded` callback prop to `CommentSection` in `src/components/CommentSection.jsx` — first modify `src/hooks/useCommentMutations.js` to accept a 4th param `onSuccess` callback `((commentId: string) => void)`, call `onSuccess?.(newComment.id)` after `addComment` succeeds inside the hook. Then in CommentSection, pass `(commentId) => onCommentAdded?.(commentId)` as `onSuccess` to the hook. Update JSDoc props for both files accordingly
-- [ ] T014 [US2-4] Implement `handleCommentAdded` callback in `src/app/events/[id]/eventDetailClient.jsx` — callback calls `notifyEventNewComment(id, event.title, event.hostUid, commentId, actor)` fire-and-forget, pass as `onCommentAdded` prop to `<CommentSection>`
-- [ ] T015 [US2-4] Add scroll-to-comment + highlight for event page in `src/components/CommentSection.jsx` — read `?commentId=` from URL (`useSearchParams`), add `id={c.id}` to comment `<li>` elements, `setTimeout(300ms)` then `scrollIntoView({ behavior: 'smooth', block: 'center' })` + `commentHighlight` CSS class (reuse existing `highlightFade` animation from `globals.css`, same pattern as `PostDetailClient.jsx` lines 150-170)
+- [x] T012 [US2-4] Implement `notifyEventNewComment(eventId, eventTitle, hostUid, commentId, actor)` in `src/lib/firebase-notifications.js` — create `notifiedSet = new Set([actor.uid])`, Priority 1: host → `event_host_comment`, Priority 2: `fetchParticipants(eventId)` → `event_participant_comment`, Priority 3: `fetchDistinctCommentAuthors(events/{eventId}/comments)` → `event_comment_reply`, batch write all notifications
+- [x] T013 [US2-4] Add `onCommentAdded` callback prop to `CommentSection` in `src/components/CommentSection.jsx` — first modify `src/hooks/useCommentMutations.js` to accept a 4th param `onSuccess` callback `((commentId: string) => void)`, call `onSuccess?.(newComment.id)` after `addComment` succeeds inside the hook. Then in CommentSection, pass `(commentId) => onCommentAdded?.(commentId)` as `onSuccess` to the hook. Update JSDoc props for both files accordingly
+- [x] T014 [US2-4] Implement `handleCommentAdded` callback in `src/app/events/[id]/eventDetailClient.jsx` — callback calls `notifyEventNewComment(id, event.title, event.hostUid, commentId, actor)` fire-and-forget, pass as `onCommentAdded` prop to `<CommentSection>`
+- [x] T015 [US2-4] Add scroll-to-comment + highlight for event page in `src/components/CommentSection.jsx` — read `?commentId=` from URL (`useSearchParams`), add `id={c.id}` to comment `<li>` elements, `setTimeout(300ms)` then `scrollIntoView({ behavior: 'smooth', block: 'center' })` + `commentHighlight` CSS class (reuse existing `highlightFade` animation from `globals.css`, same pattern as `PostDetailClient.jsx` lines 150-170)
 
 **Checkpoint**: US2/US3/US4 complete — 所有活動留言通知可獨立測試驗證，scroll-to-comment 在活動頁面正常運作
 
@@ -91,8 +91,8 @@
 
 **Purpose**: E2E 驗證、type-check、lint
 
-- [ ] T016 [P] E2E test for full notification flow (comment → notification appears → bell badge unread count update → toast notification appearance → click notification → scroll + highlight) covering both post and event pages (FR-012 integration verification), verify notification appears within 30s (SC-001) in `specs/015-comment-notifications/tests/e2e/comment-notifications.spec.js`
-- [ ] T017 Run `npm run type-check` and `npm run lint` — fix all errors/warnings, add new words to `cspell.json` if needed, run IDE `getDiagnostics` and resolve all Warning/Hint/Error items
+- [x] T016 [P] E2E test for full notification flow (comment → notification appears → bell badge unread count update → toast notification appearance → click notification → scroll + highlight) covering both post and event pages (FR-012 integration verification), verify notification appears within 30s (SC-001) in `specs/015-comment-notifications/tests/e2e/comment-notifications.spec.js`
+- [x] T017 Run `npm run type-check` and `npm run lint` — fix all errors/warnings, add new words to `cspell.json` if needed, run IDE `getDiagnostics` and resolve all Warning/Hint/Error items
 
 ---
 

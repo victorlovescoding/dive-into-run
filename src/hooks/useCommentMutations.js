@@ -43,9 +43,10 @@ import {
  * @param {string} eventId - 活動 ID。
  * @param {{ uid: string, name: string, photoURL: string } | null} user - 目前使用者。
  * @param {(updater: (prev: CommentData[]) => CommentData[]) => void} setComments - 更新留言列表。
+ * @param {((commentId: string) => void)} [onSuccess] - 新留言建立成功後的回呼。
  * @returns {UseCommentMutationsReturn} mutation 狀態與操作。
  */
-export default function useCommentMutations(eventId, user, setComments) {
+export default function useCommentMutations(eventId, user, setComments, onSuccess) {
   // Submit state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(/** @type {string | null} */ (null));
@@ -89,13 +90,14 @@ export default function useCommentMutations(eventId, user, setComments) {
         clearTimeout(highlightTimeoutRef.current);
         highlightTimeoutRef.current = setTimeout(() => setHighlightId(null), 2000);
         setSubmitKey((k) => k + 1);
+        onSuccess?.(newComment.id);
       } catch {
         setSubmitError('送出失敗，請再試一次');
       } finally {
         setIsSubmitting(false);
       }
     },
-    [eventId, user, setComments],
+    [eventId, user, setComments, onSuccess],
   );
 
   // --- Edit ---

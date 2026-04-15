@@ -128,6 +128,144 @@ export async function notifyPostNewComment(postId, postTitle, postAuthorUid, com
   });
 }
 
+/**
+ * 查詢 comments subcollection 中所有不重複的 authorUid。
+ * @param {import('firebase/firestore').CollectionReference} commentsRef - comments collection reference。
+ * @returns {Promise<string[]>} 不重複的 authorUid 陣列。
+ */
+export async function fetchDistinctCommentAuthors(commentsRef) {
+  const snapshot = await getDocs(commentsRef);
+  const uids = snapshot.docs.map((d) => d.data().authorUid);
+  return [...new Set(uids)];
+}
+
+/**
+ * 文章跟帖通知：通知曾在該文章留言的使用者（排除留言者本人與文章作者）。
+ * @param {string} postId - 文章 ID。
+ * @param {string} postTitle - 文章標題。
+ * @param {string} postAuthorUid - 文章作者 UID（排除對象）。
+ * @param {string} commentId - 新留言 ID。
+ * @param {Actor} actor - 留言者。
+ * @returns {Promise<void>}
+ */
+export async function notifyPostCommentReply(postId, postTitle, postAuthorUid, commentId, actor) {
+  const commentsRef = collection(db, 'posts', postId, 'comments');
+  const authors = await fetchDistinctCommentAuthors(commentsRef);
+  const recipients = authors.filter((uid) => uid !== actor.uid && uid !== postAuthorUid);
+  if (recipients.length === 0) return;
+
+  const message = buildNotificationMessage('post_comment_reply', postTitle);
+  const batch = writeBatch(db);
+
+  recipients.forEach((uid) => {
+    const ref = doc(collection(db, 'notifications'));
+    batch.set(ref, {
+      recipientUid: uid,
+      type: 'post_comment_reply',
+      actorUid: actor.uid,
+      actorName: actor.name,
+      actorPhotoURL: actor.photoURL,
+      entityType: 'post',
+      entityId: postId,
+      entityTitle: postTitle,
+      commentId,
+      message,
+      read: false,
+      createdAt: serverTimestamp(),
+    });
+  });
+
+  await batch.commit();
+}
+
+/**
+ * 活動留言通知：一次處理主揪人/參加者/跟帖者三種通知，含去重。
+ * @param {string} eventId - 活動 ID。
+ * @param {string} eventTitle - 活動標題。
+ * @param {string} hostUid - 主揪人 UID。
+ * @param {string} commentId - 新留言 ID。
+ * @param {Actor} actor - 留言者。
+ * @returns {Promise<void>}
+ */
+export async function notifyEventNewComment(eventId, eventTitle, hostUid, commentId, actor) {
+  const notifiedSet = new Set([actor.uid]);
+  const batch = writeBatch(db);
+
+  // Priority 1: Host
+  if (!notifiedSet.has(hostUid)) {
+    const message = buildNotificationMessage('event_host_comment', eventTitle);
+    const ref = doc(collection(db, 'notifications'));
+    batch.set(ref, {
+      recipientUid: hostUid,
+      type: 'event_host_comment',
+      actorUid: actor.uid,
+      actorName: actor.name,
+      actorPhotoURL: actor.photoURL,
+      entityType: 'event',
+      entityId: eventId,
+      entityTitle: eventTitle,
+      commentId,
+      message,
+      read: false,
+      createdAt: serverTimestamp(),
+    });
+    notifiedSet.add(hostUid);
+  }
+
+  // Priority 2: Participants
+  const participants = await fetchParticipants(eventId);
+  const participantRecipients = participants.filter((p) => !notifiedSet.has(p.uid));
+  if (participantRecipients.length > 0) {
+    const message = buildNotificationMessage('event_participant_comment', eventTitle);
+    participantRecipients.forEach((p) => {
+      const ref = doc(collection(db, 'notifications'));
+      batch.set(ref, {
+        recipientUid: p.uid,
+        type: 'event_participant_comment',
+        actorUid: actor.uid,
+        actorName: actor.name,
+        actorPhotoURL: actor.photoURL,
+        entityType: 'event',
+        entityId: eventId,
+        entityTitle: eventTitle,
+        commentId,
+        message,
+        read: false,
+        createdAt: serverTimestamp(),
+      });
+      notifiedSet.add(p.uid);
+    });
+  }
+
+  // Priority 3: Comment authors (past commenters not already notified)
+  const commentsRef = collection(db, 'events', eventId, 'comments');
+  const commentAuthors = await fetchDistinctCommentAuthors(commentsRef);
+  const commenterRecipients = commentAuthors.filter((uid) => !notifiedSet.has(uid));
+  if (commenterRecipients.length > 0) {
+    const message = buildNotificationMessage('event_comment_reply', eventTitle);
+    commenterRecipients.forEach((uid) => {
+      const ref = doc(collection(db, 'notifications'));
+      batch.set(ref, {
+        recipientUid: uid,
+        type: 'event_comment_reply',
+        actorUid: actor.uid,
+        actorName: actor.name,
+        actorPhotoURL: actor.photoURL,
+        entityType: 'event',
+        entityId: eventId,
+        entityTitle: eventTitle,
+        commentId,
+        message,
+        read: false,
+        createdAt: serverTimestamp(),
+      });
+      notifiedSet.add(uid);
+    });
+  }
+
+  await batch.commit();
+}
+
 // ---------------------------------------------------------------------------
 // Read / Update functions
 // ---------------------------------------------------------------------------

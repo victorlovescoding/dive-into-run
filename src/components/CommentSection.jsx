@@ -1,6 +1,7 @@
 'use client';
 
-import { useContext } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useContext, useEffect } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
 import useComments from '@/hooks/useComments';
 import useCommentMutations from '@/hooks/useCommentMutations';
@@ -15,9 +16,10 @@ import styles from './CommentSection.module.css';
  * 留言區容器元件，管理所有留言相關 state 與子元件。
  * @param {object} props - 元件 props。
  * @param {string} props.eventId - 活動 ID。
+ * @param {((commentId: string) => void)} [props.onCommentAdded] - 新留言建立後的回呼。
  * @returns {import('react').ReactElement} 留言區元件。
  */
-export default function CommentSection({ eventId }) {
+export default function CommentSection({ eventId, onCommentAdded }) {
   const { user } = useContext(AuthContext);
 
   const {
@@ -55,7 +57,33 @@ export default function CommentSection({ eventId }) {
     historyError,
     handleViewHistory,
     handleHistoryClose,
-  } = useCommentMutations(eventId, user, setComments);
+  } = useCommentMutations(eventId, user, setComments, (commentId) => {
+    onCommentAdded?.(commentId);
+  });
+
+  const searchParams = useSearchParams();
+
+  // Scroll-to-comment: 從通知點擊導航至留言時滾動到指定留言
+  useEffect(() => {
+    const commentId = searchParams.get('commentId');
+    if (!commentId) return undefined;
+
+    const timer = setTimeout(() => {
+      const el = document.getElementById(commentId);
+      if (!el) return;
+
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('commentHighlight');
+
+      /** 動畫結束後移除高亮 class。 */
+      const handleAnimationEnd = () => {
+        el.classList.remove('commentHighlight');
+      };
+      el.addEventListener('animationend', handleAnimationEnd, { once: true });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchParams]);
 
   return (
     <section aria-label="留言區" className={styles.section}>
@@ -78,7 +106,7 @@ export default function CommentSection({ eventId }) {
       {!isLoading && comments.length > 0 && (
         <ul className={styles.list} style={user ? { paddingBottom: 80 } : undefined}>
           {comments.map((c) => (
-            <li key={c.id} className={styles.listItem}>
+            <li key={c.id} id={c.id} className={styles.listItem}>
               <CommentCard
                 comment={c}
                 isOwner={user?.uid === c.authorUid}

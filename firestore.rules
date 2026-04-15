@@ -227,7 +227,11 @@ service cloud.firestore {
         && request.resource.data.recipientUid is string
         && request.resource.data.recipientUid != request.auth.uid
         && request.resource.data.actorUid == request.auth.uid
-        && request.resource.data.type in ['event_modified', 'event_cancelled', 'post_new_comment']
+        && request.resource.data.type in [
+          'event_modified', 'event_cancelled', 'post_new_comment',
+          'post_comment_reply', 'event_host_comment',
+          'event_participant_comment', 'event_comment_reply',
+        ]
         && request.resource.data.read == false
         && request.resource.data.createdAt == request.time;
 
