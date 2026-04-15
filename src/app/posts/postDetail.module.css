@@ -66,35 +66,3 @@
 .scrollSentinel {
   height: 1px;
 }
-
-/* 按讚/留言 meta bar */
-.metaBar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 8px 0;
-}
-
-.metaButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #5f6368;
-  font-size: 0.85rem;
-  padding: 4px 0;
-}
-
-.metaButton:hover {
-  color: #1a1a1a;
-}
-
-.metaCount {
-  font-size: 0.85rem;
-}
-
-.liked {
-  color: #e91e63;
-}
