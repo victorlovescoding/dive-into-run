@@ -40,6 +40,7 @@ export default function PostPage() {
   const bottomRef = useRef(null);
   const [nextCursor, setNextCursor] = useState(null);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
+  const isLoadingNextRef = useRef(false);
 
   useEffect(() => {
     /** 載入最新文章列表並查詢按讚狀態。 */
@@ -88,14 +89,15 @@ export default function PostPage() {
   }, [searchParams, showToast, router]);
 
   useEffect(() => {
-    if (!bottomRef.current || posts.length === 0 || !nextCursor || isLoadingNext) return undefined;
+    if (!bottomRef.current || posts.length === 0 || !nextCursor || isLoadingNextRef.current)
+      return undefined;
     const intersectionObserver = new IntersectionObserver(
       async (entries) => {
         const entry = entries[0]; // 只觀察一個東西所以取第一筆資料
-        if (!entry.isIntersecting || isLoadingNext) return; // 代表 目標元素有沒有「進到」觀測區域（root；你這裡是視窗 + rootMargin）。
+        if (!entry.isIntersecting || isLoadingNextRef.current) return;
         intersectionObserver.unobserve(entry.target); // 先暫停觀察，避免回呼抖動連觸
+        isLoadingNextRef.current = true;
         setIsLoadingNext(true);
-        let shouldReobserve = true; // 👈 本輪旗標
 
         try {
           const morePosts = await getMorePosts(nextCursor); // 拿更多文章（21–40）
@@ -115,7 +117,6 @@ export default function PostPage() {
             });
             if (morePosts.length < 10) {
               setNextCursor(null);
-              shouldReobserve = false;
             }
             return;
           }
@@ -134,19 +135,12 @@ export default function PostPage() {
           }); // 先去重再併到尾端
           if (morePosts.length < 10) {
             setNextCursor(null); // 明確表示沒有下一頁
-            shouldReobserve = false; // 👈 關鍵：這一輪就別重掛了
-            // 跳到 finally
           }
         } catch (e) {
           console.error(e);
-          // 失敗時可選擇繼續重掛（保持 shouldReobserve 為 true）
         } finally {
+          isLoadingNextRef.current = false;
           setIsLoadingNext(false);
-          if (shouldReobserve && bottomRef.current) {
-            intersectionObserver.observe(entry.target);
-          } else {
-            intersectionObserver.disconnect(); // 末頁或無游標就收尾
-          }
         }
       },
       {
@@ -161,7 +155,7 @@ export default function PostPage() {
     return () => {
       intersectionObserver.disconnect();
     };
-  }, [posts.length, nextCursor, user?.uid, isLoadingNext]);
+  }, [posts.length, nextCursor, user?.uid]);
 
   /**
    * 開啟發文或編輯 Modal，帶入對應表單值。
