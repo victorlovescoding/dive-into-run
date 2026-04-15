@@ -192,16 +192,16 @@ specs/019-posts-ui-refactor/tests/
 | --------------------------------------- | ------------------------------------------------- |
 | `src/components/CommentCard.jsx`        | 確認卡片視覺在詳文頁 context 下一致（可能無需改） |
 | `src/components/CommentCard.module.css` | 可能微調間距/配色以配合新風格                     |
+| `src/lib/firebase-posts.js`             | 補存 authorName 一行（修正遺漏）                  |
 
 ### 不變更的檔案
 
-| 檔案                              | 原因                                                |
-| --------------------------------- | --------------------------------------------------- |
-| `src/lib/firebase-posts.js`       | 僅補一行 `authorName`（修正遺漏）+ migration script |
-| `src/lib/notification-helpers.js` | 只複用 `formatRelativeTime`，不修改                 |
-| `src/app/posts/[id]/page.jsx`     | Server component，OG metadata 邏輯不變              |
-| `src/contexts/AuthContext.jsx`    | 不變更                                              |
-| `src/contexts/ToastContext.jsx`   | 不變更                                              |
+| 檔案                              | 原因                                   |
+| --------------------------------- | -------------------------------------- |
+| `src/lib/notification-helpers.js` | 只複用 `formatRelativeTime`，不修改    |
+| `src/app/posts/[id]/page.jsx`     | Server component，OG metadata 邏輯不變 |
+| `src/contexts/AuthContext.jsx`    | 不變更                                 |
+| `src/contexts/ToastContext.jsx`   | 不變更                                 |
 
 ## Risk Assessment
 

@@ -43,7 +43,7 @@
 
 - 圓角 8px、底部 1px `#e0e3e7` 分隔線（非 `border` 全框）
 - 背景白色、文字深色（`#1a1a1a` 標題、`#5f6368` meta）
-- 頭像 36px 圓形、名稱 + 時間同行
+- 頭像 36px 圓形、名稱 + 時間同行（名稱 `max-width` 限制 + `text-overflow: ellipsis` 防止過長破版）
 - 按讚/留言 icon + count 在卡片底部
 
 ---

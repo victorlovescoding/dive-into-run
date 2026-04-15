@@ -49,7 +49,7 @@
  * @property {string} content - 文章完整內容。
  * @property {string} authorUid - 作者 UID。
  * @property {string} [authorImgURL] - 作者頭像 URL。
- * @property {string} [authorName] - 作者顯示名稱。
+ * @property {string} authorName - 作者顯示名稱（T002 migration 後所有文章皆有此欄位）。
  * @property {import('firebase/firestore').Timestamp} [postAt] - 發文時間。
  * @property {number} likesCount - 按讚數。
  * @property {number} commentsCount - 留言數。
