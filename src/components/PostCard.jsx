@@ -236,9 +236,9 @@ export default function PostCard({
   const timeText = getTimeText(post.postAt);
   const isMenuOpen = openMenuPostId === post.id;
   const likeClassName = getLikeButtonClassName(post.liked);
-  const hasContent = post.content !== '';
+  const hasContent = !!post.content;
   const contentRef = useRef(/** @type {HTMLDivElement | null} */ (null));
-  const needsTruncation = truncate && post.content.length > TRUNCATE_THRESHOLD;
+  const needsTruncation = hasContent && truncate && post.content.length > TRUNCATE_THRESHOLD;
   const isCollapsed = needsTruncation && !isExpanded;
 
   /** 量測 scrollHeight 並觸發 max-height CSS transition。 */
