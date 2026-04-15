@@ -53,6 +53,12 @@
   text-decoration: underline;
 }
 
+.titleLink:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .titleLink::after {
   content: '';
   position: absolute;
@@ -102,6 +108,12 @@
   color: #1a1a1a;
 }
 
+.metaButton:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .metaLink {
   display: inline-flex;
   align-items: center;
@@ -114,6 +126,12 @@
 
 .metaLink:hover {
   color: #1a1a1a;
+}
+
+.metaLink:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .metaCount {
@@ -142,6 +160,12 @@
 
 .menuButton:hover {
   background-color: #f0f0f0;
+}
+
+.menuButton:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .menuList {
@@ -174,6 +198,11 @@
   background-color: #f5f5f5;
 }
 
+.menuItem:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: -2px;
+}
+
 /* --- Expand Button --- */
 .expandButton {
   position: relative;
@@ -190,4 +219,10 @@
 .expandButton:hover {
   color: #1a1a1a;
   text-decoration: underline;
+}
+
+.expandButton:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
