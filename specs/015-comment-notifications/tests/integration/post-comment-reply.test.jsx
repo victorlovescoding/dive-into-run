@@ -105,8 +105,8 @@ const mockUser = {
   getIdToken: async () => '',
 };
 
-vi.mock('@/contexts/AuthContext', () => {
-  const { createContext } = require('react');
+vi.mock('@/contexts/AuthContext', async () => {
+  const { createContext } = await import('react');
   return {
     AuthContext: createContext({
       user: {
@@ -125,15 +125,18 @@ vi.mock('@/contexts/AuthContext', () => {
 });
 
 const mockShowToast = vi.fn();
-vi.mock('@/contexts/ToastContext', () => ({
-  useToast: () => ({ showToast: mockShowToast }),
-  ToastContext: require('react').createContext({
-    toasts: [],
-    showToast: () => {},
-    removeToast: () => {},
-  }),
-  default: ({ children }) => children,
-}));
+vi.mock('@/contexts/ToastContext', async () => {
+  const { createContext } = await import('react');
+  return {
+    useToast: () => ({ showToast: mockShowToast }),
+    ToastContext: createContext({
+      toasts: [],
+      showToast: () => {},
+      removeToast: () => {},
+    }),
+    default: ({ children }) => children,
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Mocks -- next
@@ -144,12 +147,15 @@ vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
-vi.mock('next/image', () => ({
-  default: (props) => {
-    const { fill, priority, ...rest } = props;
-    return require('react').createElement('img', rest);
-  },
-}));
+vi.mock('next/image', async () => {
+  const { createElement } = await import('react');
+  return {
+    default: (props) => {
+      const { fill, priority, ...rest } = props;
+      return createElement('img', rest);
+    },
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Mocks -- components

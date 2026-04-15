@@ -25,6 +25,45 @@ import { buildNotificationMessage } from './notification-helpers';
  */
 
 /**
+ * 建立 Firestore notification document 的共用 helper。
+ * @param {object} params - 通知文件欄位。
+ * @param {string} params.recipientUid - 通知接收者 UID。
+ * @param {string} params.type - 通知類型（如 'post_new_comment'）。
+ * @param {string} params.entityType - 實體類型（'post' 或 'event'）。
+ * @param {string} params.entityId - 實體 ID。
+ * @param {string} params.entityTitle - 實體標題。
+ * @param {string} params.commentId - 留言 ID。
+ * @param {string} params.message - 通知訊息文字。
+ * @param {Actor} params.actor - 觸發者資訊。
+ * @returns {object} Firestore notification document。
+ */
+function buildNotificationDoc({
+  recipientUid,
+  type,
+  entityType,
+  entityId,
+  entityTitle,
+  commentId,
+  message,
+  actor,
+}) {
+  return {
+    recipientUid,
+    type,
+    actorUid: actor.uid,
+    actorName: actor.name,
+    actorPhotoURL: actor.photoURL,
+    entityType,
+    entityId,
+    entityTitle,
+    commentId,
+    message,
+    read: false,
+    createdAt: serverTimestamp(),
+  };
+}
+
+/**
  * 建立「活動被修改」通知給所有參加者（排除觸發者）。
  * @param {string} eventId - 活動 ID。
  * @param {string} eventTitle - 活動標題。
@@ -112,20 +151,19 @@ export async function notifyPostNewComment(postId, postTitle, postAuthorUid, com
 
   const message = buildNotificationMessage('post_new_comment', postTitle);
 
-  await addDoc(collection(db, 'notifications'), {
-    recipientUid: postAuthorUid,
-    type: 'post_new_comment',
-    actorUid: actor.uid,
-    actorName: actor.name,
-    actorPhotoURL: actor.photoURL,
-    entityType: 'post',
-    entityId: postId,
-    entityTitle: postTitle,
-    commentId,
-    message,
-    read: false,
-    createdAt: serverTimestamp(),
-  });
+  await addDoc(
+    collection(db, 'notifications'),
+    buildNotificationDoc({
+      recipientUid: postAuthorUid,
+      type: 'post_new_comment',
+      entityType: 'post',
+      entityId: postId,
+      entityTitle: postTitle,
+      commentId,
+      message,
+      actor,
+    }),
+  );
 }
 
 /**
@@ -159,20 +197,19 @@ export async function notifyPostCommentReply(postId, postTitle, postAuthorUid, c
 
   recipients.forEach((uid) => {
     const ref = doc(collection(db, 'notifications'));
-    batch.set(ref, {
-      recipientUid: uid,
-      type: 'post_comment_reply',
-      actorUid: actor.uid,
-      actorName: actor.name,
-      actorPhotoURL: actor.photoURL,
-      entityType: 'post',
-      entityId: postId,
-      entityTitle: postTitle,
-      commentId,
-      message,
-      read: false,
-      createdAt: serverTimestamp(),
-    });
+    batch.set(
+      ref,
+      buildNotificationDoc({
+        recipientUid: uid,
+        type: 'post_comment_reply',
+        entityType: 'post',
+        entityId: postId,
+        entityTitle: postTitle,
+        commentId,
+        message,
+        actor,
+      }),
+    );
   });
 
   await batch.commit();
@@ -195,20 +232,19 @@ export async function notifyEventNewComment(eventId, eventTitle, hostUid, commen
   if (!notifiedSet.has(hostUid)) {
     const message = buildNotificationMessage('event_host_comment', eventTitle);
     const ref = doc(collection(db, 'notifications'));
-    batch.set(ref, {
-      recipientUid: hostUid,
-      type: 'event_host_comment',
-      actorUid: actor.uid,
-      actorName: actor.name,
-      actorPhotoURL: actor.photoURL,
-      entityType: 'event',
-      entityId: eventId,
-      entityTitle: eventTitle,
-      commentId,
-      message,
-      read: false,
-      createdAt: serverTimestamp(),
-    });
+    batch.set(
+      ref,
+      buildNotificationDoc({
+        recipientUid: hostUid,
+        type: 'event_host_comment',
+        entityType: 'event',
+        entityId: eventId,
+        entityTitle: eventTitle,
+        commentId,
+        message,
+        actor,
+      }),
+    );
     notifiedSet.add(hostUid);
   }
 
@@ -219,20 +255,19 @@ export async function notifyEventNewComment(eventId, eventTitle, hostUid, commen
     const message = buildNotificationMessage('event_participant_comment', eventTitle);
     participantRecipients.forEach((p) => {
       const ref = doc(collection(db, 'notifications'));
-      batch.set(ref, {
-        recipientUid: p.uid,
-        type: 'event_participant_comment',
-        actorUid: actor.uid,
-        actorName: actor.name,
-        actorPhotoURL: actor.photoURL,
-        entityType: 'event',
-        entityId: eventId,
-        entityTitle: eventTitle,
-        commentId,
-        message,
-        read: false,
-        createdAt: serverTimestamp(),
-      });
+      batch.set(
+        ref,
+        buildNotificationDoc({
+          recipientUid: p.uid,
+          type: 'event_participant_comment',
+          entityType: 'event',
+          entityId: eventId,
+          entityTitle: eventTitle,
+          commentId,
+          message,
+          actor,
+        }),
+      );
       notifiedSet.add(p.uid);
     });
   }
@@ -245,23 +280,24 @@ export async function notifyEventNewComment(eventId, eventTitle, hostUid, commen
     const message = buildNotificationMessage('event_comment_reply', eventTitle);
     commenterRecipients.forEach((uid) => {
       const ref = doc(collection(db, 'notifications'));
-      batch.set(ref, {
-        recipientUid: uid,
-        type: 'event_comment_reply',
-        actorUid: actor.uid,
-        actorName: actor.name,
-        actorPhotoURL: actor.photoURL,
-        entityType: 'event',
-        entityId: eventId,
-        entityTitle: eventTitle,
-        commentId,
-        message,
-        read: false,
-        createdAt: serverTimestamp(),
-      });
+      batch.set(
+        ref,
+        buildNotificationDoc({
+          recipientUid: uid,
+          type: 'event_comment_reply',
+          entityType: 'event',
+          entityId: eventId,
+          entityTitle: eventTitle,
+          commentId,
+          message,
+          actor,
+        }),
+      );
       notifiedSet.add(uid);
     });
   }
+
+  if (notifiedSet.size <= 1) return; // only actor in set, nothing to commit
 
   await batch.commit();
 }

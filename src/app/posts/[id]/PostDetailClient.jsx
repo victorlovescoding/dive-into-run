@@ -308,27 +308,24 @@ export default function PostDetailClient({ postId }) {
     // 下一行要新增如果commentEditing裡面沒有資料代表這是新的留言，就繼續跑下面的邏輯
     if (!commentEditing) {
       const { id } = await addComment(postId, { user, comment }); // 先拿到新留言 id
+      const actor = { uid: user.uid, name: user.name || '', photoURL: user.photoURL || '' };
 
       // 通知文章作者有新留言（自己留言不通知，fire-and-forget）
       if (user.uid !== postDetail.authorUid) {
-        notifyPostNewComment(postId, postDetail.title, postDetail.authorUid, id, {
-          uid: user.uid,
-          name: user.name || '',
-          photoURL: user.photoURL || '',
-        }).catch((notifyErr) => {
-          console.error('通知建立失敗:', notifyErr);
-          showToast('通知發送失敗', 'error');
-        });
+        notifyPostNewComment(postId, postDetail.title, postDetail.authorUid, id, actor).catch(
+          (notifyErr) => {
+            console.error('通知建立失敗:', notifyErr);
+            showToast('通知發送失敗', 'error');
+          },
+        );
       }
 
       // 通知曾留言過的使用者有新留言（fire-and-forget）
-      notifyPostCommentReply(postId, postDetail.title, postDetail.authorUid, id, {
-        uid: user.uid,
-        name: user.name || '',
-        photoURL: user.photoURL || '',
-      }).catch((notifyErr) => {
-        console.error('跟帖通知失敗:', notifyErr);
-      });
+      notifyPostCommentReply(postId, postDetail.title, postDetail.authorUid, id, actor).catch(
+        (notifyErr) => {
+          console.error('跟帖通知失敗:', notifyErr);
+        },
+      );
 
       setComment(''); // 清空輸入框
 
