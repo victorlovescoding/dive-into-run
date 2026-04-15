@@ -294,6 +294,19 @@ export default function EventDetailClient({ id }) {
   const handleEditSubmit = useCallback(
     async (/** @type {{ id: string, [key: string]: unknown }} */ changedData) => {
       const { id: eventId, ...fields } = changedData;
+
+      // 報名截止時間必須在活動開始時間之前
+      if ('time' in fields || 'registrationDeadline' in fields) {
+        const effectiveTime = fields.time ?? editingEvent?.time;
+        const effectiveDeadline = fields.registrationDeadline ?? editingEvent?.registrationDeadline;
+        const deadlineMs = toMs(/** @type {string} */ (effectiveDeadline));
+        const timeMs = toMs(/** @type {string} */ (effectiveTime));
+        if (deadlineMs !== null && timeMs !== null && deadlineMs >= timeMs) {
+          showToast('報名截止時間必須在活動開始時間之前', 'error');
+          return;
+        }
+      }
+
       setIsUpdating(true);
       try {
         await updateEvent(String(eventId), fields);
@@ -338,7 +351,7 @@ export default function EventDetailClient({ id }) {
         setIsUpdating(false);
       }
     },
-    [showToast, event?.title, user],
+    [showToast, event?.title, user, editingEvent],
   );
 
   // ── 刪除 handlers ──

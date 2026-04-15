@@ -12,6 +12,7 @@ import {
   formatPace,
   chunkArray,
   toNumber,
+  toMs,
   getRemainingSeats,
   buildUserPayload,
 } from '@/lib/event-helpers';
@@ -405,6 +406,15 @@ export default function RunTogetherPage() {
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
+    // 報名截止時間必須在活動開始時間之前
+    const deadlineDate = new Date(/** @type {string} */ (data.registrationDeadline));
+    const timeDate = new Date(/** @type {string} */ (data.time));
+    if (deadlineDate >= timeDate) {
+      showToast('報名截止時間必須在活動開始時間之前', 'error');
+      setIsCreating(false);
+      return;
+    }
+
     const routeCoordinatesSnapshot = Array.isArray(routeCoordinates)
       ? routeCoordinates.map((seg) => seg.map((p) => ({ lat: p.lat, lng: p.lng })))
       : null;
@@ -640,6 +650,19 @@ export default function RunTogetherPage() {
   const handleEditSubmit = useCallback(
     async (/** @type {{ id: string, [key: string]: unknown }} */ changedData) => {
       const { id, ...fields } = changedData;
+
+      // 報名截止時間必須在活動開始時間之前
+      if ('time' in fields || 'registrationDeadline' in fields) {
+        const effectiveTime = fields.time ?? editingEvent?.time;
+        const effectiveDeadline = fields.registrationDeadline ?? editingEvent?.registrationDeadline;
+        const deadlineMs = toMs(/** @type {string} */ (effectiveDeadline));
+        const timeMs = toMs(/** @type {string} */ (effectiveTime));
+        if (deadlineMs !== null && timeMs !== null && deadlineMs >= timeMs) {
+          showToast('報名截止時間必須在活動開始時間之前', 'error');
+          return;
+        }
+      }
+
       setIsUpdating(true);
       try {
         await updateEvent(String(id), fields);
@@ -676,7 +699,7 @@ export default function RunTogetherPage() {
         setIsUpdating(false);
       }
     },
-    [showToast],
+    [showToast, editingEvent],
   );
 
   /**

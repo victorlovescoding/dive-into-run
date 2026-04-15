@@ -90,6 +90,10 @@ export function normalizeEventPayload(raw) {
     throw new Error('活動時間或報名截止時間格式不正確');
   }
 
+  if (deadlineDate >= timeDate) {
+    throw new Error('報名截止時間必須在活動開始時間之前');
+  }
+
   const time = FirestoreTimestamp.fromDate(timeDate);
   const registrationDeadline = FirestoreTimestamp.fromDate(deadlineDate);
 
@@ -541,6 +545,15 @@ export async function updateEvent(eventId, updatedFields) {
       updates.registrationDeadline = FirestoreTimestamp.fromDate(
         new Date(updates.registrationDeadline),
       );
+    }
+
+    // 報名截止時間必須在活動開始時間之前
+    if ('time' in updates || 'registrationDeadline' in updates) {
+      const effectiveTime = updates.time ?? data.time;
+      const effectiveDeadline = updates.registrationDeadline ?? data.registrationDeadline;
+      if (effectiveDeadline.toDate().getTime() >= effectiveTime.toDate().getTime()) {
+        throw new Error('報名截止時間必須在活動開始時間之前');
+      }
     }
 
     // 若明確傳入 route: null，使用 deleteField() 完全移除 Firestore 欄位
