@@ -61,9 +61,9 @@ firebase emulators:exec --only auth,firestore "npm run test:e2e:emulator"  # 一
 5. **Task completion requires** 以下全部 pass：
    - `npm run type-check:branch` — 只檢查 branch 上改過的檔案的 JSDoc 型別
    - `npm run lint:branch` — 只檢查 branch 上改過的檔案的 ESLint
-   - `npm run test` — Vitest unit + integration 測試
-   - `npx playwright test` — E2E 測試（有 E2E spec 時才需要）
-   開發中可用 `type-check:changed` / `lint:changed`（只看未 commit 的改動）加速迭代。
+   - `npm run test:branch` — 只跑當前 branch 的 Vitest unit + integration 測試
+   - `npm run test:e2e:branch` — 只跑當前 branch 的 Playwright E2E 測試（無 E2E 目錄時自動跳過）
+     開發中可用 `type-check:changed` / `lint:changed`（只看未 commit 的改動）加速迭代。
 6. **cSpell** — project-specific words must be added to `cspell.json` at project root. Do not use inline `cspell:disable` comments
 7. **IDE Diagnostics** — before marking a task complete, run `getDiagnostics` (via MCP) and fix all items with severity Warning, Hint, or Error. cSpell "Information" items can be ignored (but unknown words should still be added to `cspell.json`)
 8. **Chore / Skill 修改的 Git 流程** — 修改 skill、constitution、CLAUDE.md、cspell.json 等非 feature 檔案時，**不論目前在 main 或 feature branch，一律禁止直接 commit**。必須：

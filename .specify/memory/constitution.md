@@ -115,7 +115,7 @@ Version: 1.3.0 -> 1.4.0
 3.  **實作 (Implement)**: 撰寫通過測試的最少代碼 (Green)。
 4.  **驗證 (Verify)**: ESLint 通過、無 Type 警告、測試通過。
     - 開發中可用 `npm run lint:changed` / `npm run type-check:changed` 僅檢查未 commit 改動。
-    - Task 完成前必須通過 `npm run type-check:branch` + `npm run lint:branch`（檢查整個 branch 的改動）+ `npm run test`（Vitest）+ `npx playwright test`（有 E2E spec 時）。
+    - Task 完成前必須通過 `npm run type-check:branch` + `npm run lint:branch`（檢查整個 branch 的改動）+ `npm run test:branch`（Vitest）+ `npm run test:e2e:branch`（Playwright，無 E2E 目錄時自動跳過）。
 5.  **重構 (Refactor)**: 優化代碼結構。
 6.  **審查 (Review)**: 確認符合所有憲法原則。
 
