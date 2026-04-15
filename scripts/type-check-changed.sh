@@ -11,4 +11,14 @@ fi
 
 # Run full tsc, filter output to only show errors from changed files
 PATTERN=$(echo "$FILES" | paste -sd '|' -)
-tsc -p tsconfig.check.json 2>&1 | grep -E "^($PATTERN)" || echo "No type errors in changed files."
+ERRORS=$(tsc -p tsconfig.check.json 2>&1 | grep -E "^($PATTERN)" || true)
+
+if [ -z "$ERRORS" ]; then
+  echo "✓ No type errors in changed files."
+  exit 0
+else
+  echo "$ERRORS"
+  echo ""
+  echo "✗ Type errors found in changed files."
+  exit 1
+fi

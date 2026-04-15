@@ -11,6 +11,8 @@
     "test": "vitest",
     "type-check": "tsc -p tsconfig.check.json",
     "type-check:changed": "bash scripts/type-check-changed.sh",
+    "type-check:branch": "bash scripts/type-check-branch.sh",
+    "lint:branch": "bash scripts/lint-branch.sh",
     "test:e2e:emulator": "npx playwright test --config playwright.emulator.config.mjs",
     "webhook:create": "node scripts/strava-webhook.js create",
     "webhook:view": "node scripts/strava-webhook.js view",
