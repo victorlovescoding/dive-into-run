@@ -1,0 +1,169 @@
+.card {
+  padding: 16px 0;
+  border-bottom: 1px solid #e0e3e7;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.authorInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.authorName {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time {
+  font-size: 0.75rem;
+  color: #5f6368;
+}
+
+/* separator between name and time */
+.dot {
+  color: #5f6368;
+  font-size: 0.75rem;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 4px;
+}
+
+.titleLink {
+  text-decoration: none;
+  color: inherit;
+}
+
+.titleLink:hover {
+  text-decoration: underline;
+}
+
+.content {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #333;
+  margin: 0 0 12px;
+  word-break: break-word;
+}
+
+.metaBar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.metaButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #5f6368;
+  font-size: 0.85rem;
+  padding: 4px 0;
+}
+
+.metaButton:hover {
+  color: #1a1a1a;
+}
+
+.metaLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  color: #5f6368;
+  font-size: 0.85rem;
+  padding: 4px 0;
+}
+
+.metaLink:hover {
+  color: #1a1a1a;
+}
+
+.metaCount {
+  font-size: 0.85rem;
+}
+
+.liked {
+  color: #e91e63;
+}
+
+/* --- Owner Menu --- */
+.menuWrapper {
+  position: relative;
+}
+
+.menuButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #5f6368;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+}
+
+.menuButton:hover {
+  background-color: #f0f0f0;
+}
+
+.menuList {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: #fff;
+  border: 1px solid #e0e3e7;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  list-style: none;
+  padding: 4px 0;
+  margin: 0;
+  z-index: 10;
+  min-width: 100px;
+}
+
+.menuItem {
+  width: 100%;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.9rem;
+  color: #1a1a1a;
+}
+
+.menuItem:hover {
+  background-color: #f5f5f5;
+}
+
+/* --- Expand Button --- */
+.expandButton {
+  background: none;
+  border: none;
+  color: #5f6368;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+  margin-bottom: 12px;
+}
+
+.expandButton:hover {
+  color: #1a1a1a;
+  text-decoration: underline;
+}

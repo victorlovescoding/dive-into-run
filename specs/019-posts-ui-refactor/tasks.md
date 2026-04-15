@@ -19,8 +19,8 @@
 
 **Purpose**: Data prerequisite — 修正 `createPost` 遺漏的 `authorName` 欄位 + 回填既有資料
 
-- [ ] T001 補存 `authorName` 欄位到 `createPost` 函式，加入 `authorName: user.name || '匿名使用者'` in `src/lib/firebase-posts.js`
-- [ ] T002 [P] 建立一次性 migration script，讀取所有 posts 的 `authorUid` 查詢 `users` collection 回填 `authorName`（約 20 筆）in `scripts/backfill-post-author-name.mjs`
+- [x] T001 補存 `authorName` 欄位到 `createPost` 函式，加入 `authorName: user.name || '匿名使用者'` in `src/lib/firebase-posts.js`
+- [x] T002 [P] 建立一次性 migration script，讀取所有 posts 的 `authorUid` 查詢 `users` collection 回填 `authorName`（約 20 筆）in `scripts/backfill-post-author-name.mjs`
 
 ---
 
@@ -34,14 +34,14 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T003 [P] [US1] Write PostCard unit test — 渲染作者資訊、標題、meta（按讚/留言數）、作者操作選單、edge cases（無內容文章、無頭像作者）in `specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx`
-- [ ] T004 [P] [US1] Write PostFeed integration test — feed layout、卡片列表渲染、無限滾動保持正常 in `specs/019-posts-ui-refactor/tests/integration/PostFeed.test.jsx`
+- [x] T003 [P] [US1] Write PostCard unit test — 渲染作者資訊、標題、meta（按讚/留言數）、作者操作選單、edge cases（無內容文章、無頭像作者）in `specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx`
+- [x] T004 [P] [US1] Write PostFeed integration test — feed layout、卡片列表渲染、無限滾動保持正常 in `specs/019-posts-ui-refactor/tests/integration/PostFeed.test.jsx`
 
 ### Implementation for User Story 1
 
-- [ ] T005 [P] [US1] Create PostCard component + CSS Module（社群風格卡片：圓角 8px、底部分隔線、作者區域 UserLink + formatRelativeTime、按讚/留言 meta bar、作者選單）in `src/components/PostCard.jsx` + `src/components/PostCard.module.css`
-- [ ] T006 [P] [US1] Rewrite list page CSS Module — 移除藍色邊框 dev style、建立 feed 窄欄佈局（max-width 680px 置中）in `src/app/posts/posts.module.css`
-- [ ] T007 [US1] Refactor list page JSX — 以 PostCard 取代 inline 卡片渲染、套用新 feed layout、移除固定右下角 FAB 按鈕、列表無文章時顯示空狀態提示 in `src/app/posts/page.jsx`
+- [x] T005 [P] [US1] Create PostCard component + CSS Module（社群風格卡片：圓角 8px、底部分隔線、作者區域 UserLink + formatRelativeTime、按讚/留言 meta bar、作者選單）in `src/components/PostCard.jsx` + `src/components/PostCard.module.css`
+- [x] T006 [P] [US1] Rewrite list page CSS Module — 移除藍色邊框 dev style、建立 feed 窄欄佈局（max-width 680px 置中）in `src/app/posts/posts.module.css`
+- [x] T007 [US1] Refactor list page JSX — 以 PostCard 取代 inline 卡片渲染、套用新 feed layout、移除固定右下角 FAB 按鈕、列表無文章時顯示空狀態提示 in `src/app/posts/page.jsx`
 
 **Checkpoint**: 列表頁以社群風格卡片呈現，所有必要資訊可見，無限滾動 + 編輯/刪除功能正常。此時尚未實作截斷/展開
 
@@ -57,11 +57,11 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T008 [US2] Add truncation/expand test cases to PostCard unit test — >150 字截斷 + 「查看更多」、<=150 字完整顯示、點擊展開、無「收起」按鈕 in `specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx`
+- [x] T008 [US2] Add truncation/expand test cases to PostCard unit test — >150 字截斷 + 「查看更多」、<=150 字完整顯示、點擊展開、無「收起」按鈕 in `specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx`
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] Implement content truncation/expand logic + max-height transition animation（250ms ease、transitionend 後移除 max-height 限制）in `src/components/PostCard.jsx` + `src/components/PostCard.module.css`
+- [x] T009 [US2] Implement content truncation/expand logic + max-height transition animation（250ms ease、transitionend 後移除 max-height 限制）in `src/components/PostCard.jsx` + `src/components/PostCard.module.css`
 
 **Checkpoint**: 長文章正確截斷，點擊「查看更多」以平滑動畫展開，短文章直接完整顯示
 
@@ -77,13 +77,13 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [US3] Write ComposeModal integration test — Modal 開關、表單填寫、送出、關閉保護（有內容時 Escape/backdrop 不關閉）、ComposePrompt auth-gated visibility（登入顯示/未登入隱藏）in `specs/019-posts-ui-refactor/tests/integration/ComposeModal.test.jsx`
+- [x] T010 [US3] Write ComposeModal integration test — Modal 開關、表單填寫、送出、關閉保護（有內容時 Escape/backdrop 不關閉）、ComposePrompt auth-gated visibility（登入顯示/未登入隱藏）in `specs/019-posts-ui-refactor/tests/integration/ComposeModal.test.jsx`
 
 ### Implementation for User Story 3
 
-- [ ] T011 [P] [US3] Create ComposePrompt component + CSS Module（使用者頭像 + placeholder「分享你的跑步故事...」、整塊可點擊、背景 #f8f9fa）in `src/components/ComposePrompt.jsx` + `src/components/ComposePrompt.module.css`
-- [ ] T012 [P] [US3] Create ComposeModal component + CSS Module（`<dialog>` + showModal、標題 input + 內容 textarea + 發布按鈕、cancel event 攔截、backdrop click 保護、isEditing 模式切換）in `src/components/ComposeModal.jsx` + `src/components/ComposeModal.module.css`
-- [ ] T013 [US3] Integrate ComposePrompt + ComposeModal into list page — 以 ComposePrompt 取代 FAB、以 ComposeModal 取代 inline form、登入判斷控制顯示 in `src/app/posts/page.jsx`
+- [x] T011 [P] [US3] Create ComposePrompt component + CSS Module（使用者頭像 + placeholder「分享你的跑步故事...」、整塊可點擊、背景 #f8f9fa）in `src/components/ComposePrompt.jsx` + `src/components/ComposePrompt.module.css`
+- [x] T012 [P] [US3] Create ComposeModal component + CSS Module（`<dialog>` + showModal、標題 input + 內容 textarea + 發布按鈕、cancel event 攔截、backdrop click 保護、isEditing 模式切換）in `src/components/ComposeModal.jsx` + `src/components/ComposeModal.module.css`
+- [x] T013 [US3] Integrate ComposePrompt + ComposeModal into list page — 以 ComposePrompt 取代 FAB、以 ComposeModal 取代 inline form、登入判斷控制顯示 in `src/app/posts/page.jsx`
 
 **Checkpoint**: 登入使用者可透過假輸入框 → Modal 完成發文，未登入者不見假輸入框，表單有內容時受關閉保護
 
@@ -99,13 +99,13 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T014 [US4] Write PostDetail integration test — 文章區域視覺一致性、CommentCard 渲染、按讚/分享/留言功能、留言無限滾動 in `specs/019-posts-ui-refactor/tests/integration/PostDetail.test.jsx`
+- [x] T014 [US4] Write PostDetail integration test — 文章區域視覺一致性、CommentCard 渲染、按讚/分享/留言功能、留言無限滾動 in `specs/019-posts-ui-refactor/tests/integration/PostDetail.test.jsx`
 
 ### Implementation for User Story 4
 
-- [ ] T015 [P] [US4] Update CommentCard visual style — 配合新設計的間距/配色/頭像呈現 in `src/components/CommentCard.jsx` + `src/components/CommentCard.module.css`
-- [ ] T016 [P] [US4] Rewrite detail page CSS Module — 移除紅色邊框 dev style、建立社群風格佈局 in `src/app/posts/[id]/postDetail.module.css`
-- [ ] T017 [US4] Refactor PostDetailClient — 以 PostCard（truncate=false）取代 inline 文章渲染、以 CommentCard 取代 inline 留言渲染、以 ComposeModal（isEditing）取代 inline 編輯表單、留言輸入區配合新風格 in `src/app/posts/[id]/PostDetailClient.jsx`
+- [x] T015 [P] [US4] Update CommentCard visual style — 配合新設計的間距/配色/頭像呈現 in `src/components/CommentCard.jsx` + `src/components/CommentCard.module.css`
+- [x] T016 [P] [US4] Rewrite detail page CSS Module — 移除紅色邊框 dev style、建立社群風格佈局 in `src/app/posts/[id]/postDetail.module.css`
+- [x] T017 [US4] Refactor PostDetailClient — 以 PostCard（truncate=false）取代 inline 文章渲染、以 CommentCard 取代 inline 留言渲染、以 ComposeModal（isEditing）取代 inline 編輯表單、留言輸入區配合新風格 in `src/app/posts/[id]/PostDetailClient.jsx`
 
 **Checkpoint**: 詳文頁與列表頁視覺一致，留言以獨立卡片呈現，所有既有互動功能（FR-023）正常運作
 
@@ -121,13 +121,13 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T018 [US5] Write PostCardSkeleton unit test — renders correct count、shimmer CSS class applied、具備 aria-busy attribute in `specs/019-posts-ui-refactor/tests/unit/PostCardSkeleton.test.jsx`
+- [x] T018 [US5] Write PostCardSkeleton unit test — renders correct count、shimmer CSS class applied、具備 aria-busy attribute in `specs/019-posts-ui-refactor/tests/unit/PostCardSkeleton.test.jsx`
 
 ### Implementation for User Story 5
 
-- [ ] T019 [P] [US5] Create PostCardSkeleton component + CSS Module（shimmer 動畫：linear-gradient + background-size 200% + @keyframes、count prop 控制數量、結構鏡像 PostCard）in `src/components/PostCardSkeleton.jsx` + `src/components/PostCardSkeleton.module.css`
-- [ ] T020 [US5] Integrate PostCardSkeleton into list page — 初始載入 isLoading 狀態顯示 skeleton count=3、無限滾動 isLoadingNext 顯示 skeleton count=1 in `src/app/posts/page.jsx`
-- [ ] T021 [US5] Integrate skeleton loading into detail page — 文章區域 + 留言區域的載入佔位 in `src/app/posts/[id]/PostDetailClient.jsx`
+- [x] T019 [P] [US5] Create PostCardSkeleton component + CSS Module（shimmer 動畫：linear-gradient + background-size 200% + @keyframes、count prop 控制數量、結構鏡像 PostCard）in `src/components/PostCardSkeleton.jsx` + `src/components/PostCardSkeleton.module.css`
+- [x] T020 [US5] Integrate PostCardSkeleton into list page — 初始載入 isLoading 狀態顯示 skeleton count=3、無限滾動 isLoadingNext 顯示 skeleton count=1 in `src/app/posts/page.jsx`
+- [x] T021 [US5] Integrate skeleton loading into detail page — 文章區域 + 留言區域的載入佔位 in `src/app/posts/[id]/PostDetailClient.jsx`
 
 **Checkpoint**: 頁面載入中顯示骨架屏，內容載入完成後骨架屏被實際內容取代
 
@@ -137,9 +137,9 @@
 
 **Purpose**: E2E 驗證、響應式確認、最終品質關卡
 
-- [ ] T022 Write E2E test — 列表頁卡片呈現、內容展開、發文流程（假輸入框→Modal→發布）、詳文頁互動、骨架屏載入 in `specs/019-posts-ui-refactor/tests/e2e/posts-ui.spec.js`
-- [ ] T023 [P] Responsive verification — 375px / 680px / 1280px 三個斷點視覺驗證，確認無破版或資訊遺漏
-- [ ] T024 Run quickstart.md validation + final quality gate（`npm run type-check` + `npm run lint` + `getDiagnostics`）
+- [x] T022 Write E2E test — 列表頁卡片呈現、內容展開、發文流程（假輸入框→Modal→發布）、詳文頁互動、骨架屏載入 in `specs/019-posts-ui-refactor/tests/e2e/posts-ui.spec.js`
+- [x] T023 [P] Responsive verification — 375px / 680px / 1280px 三個斷點視覺驗證，確認無破版或資訊遺漏
+- [x] T024 Run quickstart.md validation + final quality gate（`npm run type-check` + `npm run lint` + `getDiagnostics`）
 
 ---
 

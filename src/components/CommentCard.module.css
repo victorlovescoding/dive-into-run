@@ -1,5 +1,6 @@
 .card {
   padding: 12px 0;
+  border-bottom: 1px solid #e0e3e7;
 }
 
 .highlighted {
