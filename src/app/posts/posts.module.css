@@ -1,33 +1,26 @@
-.compose {
-  position: fixed;
-  right: 2rem;
-  bottom: 2rem;
-  font-size: 4rem;
+/* Feed 窄欄佈局 */
+.feed {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
-.compose:hover {
-  cursor: pointer;
+
+.feedTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 24px 0 16px;
 }
-.postContainer:hover {
-  cursor: pointer;
+
+/* 底部哨兵 — 無視覺 */
+.scrollSentinel {
+  height: 1px;
 }
-.postContainer a {
-  display: block;
-  width: 100%;
-  height: 100%;
-  text-decoration: none;
-  color: inherit;
-}
-.postContainer {
-  border: 3px solid blue;
-  margin: 2rem 1rem;
-}
-.postOwnerMenu {
-  position: absolute;
-  right: 25px;
-}
-.postOwnerMenuButton:hover {
-  cursor: pointer;
-}
-.scrollerFooter {
-  border: 2px solid red;
+
+/* 空狀態 */
+.emptyState {
+  text-align: center;
+  padding: 48px 16px;
+  color: #5f6368;
+  font-size: 1rem;
 }

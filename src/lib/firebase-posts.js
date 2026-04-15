@@ -52,6 +52,7 @@ export function validatePostInput({ title, content }) {
  * @property {string} title - 文章標題。
  * @property {string} content - 文章內容。
  * @property {string} [authorImgURL] - 作者大頭貼 URL。
+ * @property {string} [authorName] - 作者顯示名稱。
  * @property {import('firebase/firestore').Timestamp} [postAt] - 發文時間。
  * @property {number} [likesCount] - 按讚數。
  * @property {number} [commentsCount] - 留言數。
@@ -72,7 +73,7 @@ export function validatePostInput({ title, content }) {
  * @param {object} root0 - 參數物件。
  * @param {string} root0.title - 文章標題。
  * @param {string} root0.content - 文章內容。
- * @param {{ uid: string, photoURL?: string }} root0.user - 使用者資訊。
+ * @param {{ uid: string, name?: string, photoURL?: string }} root0.user - 使用者資訊。
  * @returns {Promise<{ id: string }>} 新建文章的 ID。
  */
 export async function createPost({ title, content, user }) {
@@ -84,6 +85,7 @@ export async function createPost({ title, content, user }) {
     title,
     content,
     authorImgURL: user.photoURL,
+    authorName: user.name || '匿名使用者',
     postAt: serverTimestamp(),
     likesCount: 0,
     commentsCount: 0,

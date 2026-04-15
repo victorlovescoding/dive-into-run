@@ -1,20 +1,23 @@
 'use client';
 
-import { useState, useContext, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './posts.module.css';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+import PostCard from '@/components/PostCard';
+import PostCardSkeleton from '@/components/PostCardSkeleton';
+import ComposePrompt from '@/components/ComposePrompt';
+import ComposeModal from '@/components/ComposeModal';
 import {
-  createPost,
-  updatePost,
   getLatestPosts,
-  getPostDetail,
   toggleLikePost,
   hasUserLikedPosts,
   deletePost,
   getMorePosts,
+  createPost,
+  updatePost,
+  getPostDetail,
   validatePostInput,
 } from '@/lib/firebase-posts';
 
@@ -23,19 +26,21 @@ import {
  * @returns {import('react').JSX.Element} 文章列表頁面。
  */
 export default function PostPage() {
-  const [isComposeEditing, setIsComposeEditing] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [editingPostId, setEditingPostId] = useState(null);
   const { user } = useContext(AuthContext);
   const { showToast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isLoading, setIsLoading] = useState(true);
   const [posts, setPosts] = useState([]);
   const [openMenuPostId, setOpenMenuPostId] = useState('');
-  const [editingPostId, setEditingPostId] = useState(null);
+  const dialogRef = useRef(null);
   const bottomRef = useRef(null);
   const [nextCursor, setNextCursor] = useState(null);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
+  const isLoadingNextRef = useRef(false);
 
   useEffect(() => {
     /** 載入最新文章列表並查詢按讚狀態。 */
@@ -51,6 +56,7 @@ export default function PostPage() {
             postsData.map((p) => ({
               ...p,
               liked: false,
+              isAuthor: false,
             })),
           );
           return;
@@ -67,6 +73,8 @@ export default function PostPage() {
         ); // ✅ 把資料存進 state
       } catch (err) {
         console.error('取得文章失敗:', err);
+      } finally {
+        setIsLoading(false);
       }
     }
     fetchPosts();
@@ -82,14 +90,15 @@ export default function PostPage() {
   }, [searchParams, showToast, router]);
 
   useEffect(() => {
-    if (!bottomRef.current || posts.length === 0 || !nextCursor || isLoadingNext) return undefined;
+    if (!bottomRef.current || posts.length === 0 || !nextCursor || isLoadingNextRef.current)
+      return undefined;
     const intersectionObserver = new IntersectionObserver(
       async (entries) => {
         const entry = entries[0]; // 只觀察一個東西所以取第一筆資料
-        if (!entry.isIntersecting || isLoadingNext) return; // 代表 目標元素有沒有「進到」觀測區域（root；你這裡是視窗 + rootMargin）。
+        if (!entry.isIntersecting || isLoadingNextRef.current) return;
         intersectionObserver.unobserve(entry.target); // 先暫停觀察，避免回呼抖動連觸
+        isLoadingNextRef.current = true;
         setIsLoadingNext(true);
-        let shouldReobserve = true; // 👈 本輪旗標
 
         try {
           const morePosts = await getMorePosts(nextCursor); // 拿更多文章（21–40）
@@ -100,6 +109,7 @@ export default function PostPage() {
             const hydrated = morePosts.map((p) => ({
               ...p,
               liked: false,
+              isAuthor: false,
             }));
             // 以 id 去重再追加
             setPosts((prev) => {
@@ -109,7 +119,6 @@ export default function PostPage() {
             });
             if (morePosts.length < 10) {
               setNextCursor(null);
-              shouldReobserve = false;
             }
             return;
           }
@@ -128,19 +137,12 @@ export default function PostPage() {
           }); // 先去重再併到尾端
           if (morePosts.length < 10) {
             setNextCursor(null); // 明確表示沒有下一頁
-            shouldReobserve = false; // 👈 關鍵：這一輪就別重掛了
-            // 跳到 finally
           }
         } catch (e) {
           console.error(e);
-          // 失敗時可選擇繼續重掛（保持 shouldReobserve 為 true）
         } finally {
+          isLoadingNextRef.current = false;
           setIsLoadingNext(false);
-          if (shouldReobserve && bottomRef.current) {
-            intersectionObserver.observe(entry.target);
-          } else {
-            intersectionObserver.disconnect(); // 末頁或無游標就收尾
-          }
         }
       },
       {
@@ -155,281 +157,187 @@ export default function PostPage() {
     return () => {
       intersectionObserver.disconnect();
     };
-  }, [posts.length, nextCursor, user?.uid, isLoadingNext]);
+  }, [posts.length, nextCursor, user?.uid]);
 
   /**
-   * 切換文章編輯/新增模式。
+   * 開啟發文或編輯 Modal，帶入對應表單值。
    * @param {string} [postId] - 要編輯的文章 ID，未傳則為新增模式。
    */
-  function composeButtonHandler(postId) {
-    // 按下寫文章按鈕後，跳出編輯頁面
-    if (postId && !isComposeEditing) {
-      // 要把編輯的原文、標題塞入 title content useState 裡面
-      const p = posts.find((x) => x.id === postId);
-      if (!p) {
-        showToast('文章不存在，無法編輯', 'error');
-        return;
-      }
-      setTitle(p.title);
-      setContent(p.content);
-      setIsComposeEditing(true);
-      setEditingPostId(postId);
-    } else if (postId && isComposeEditing) {
-      setIsComposeEditing(false);
-    } else if (!postId && !isComposeEditing) {
-      setIsComposeEditing(true);
-      setTitle('');
-      setContent('');
-    } else {
-      setIsComposeEditing(false);
-    }
-  }
-  /**
-   * 送出新文章或更新既有文章。
-   * @param {import('react').FormEvent<HTMLFormElement>} e - 表單送出事件。
-   */
-  async function handleSubmitPost(e) {
-    e.preventDefault();
-
-    const validationError = validatePostInput({ title, content });
-    if (validationError) {
-      showToast(validationError, 'error');
-      return;
-    }
-
-    try {
-      if (editingPostId) {
-        await updatePost(editingPostId, { title, content });
-        setPosts((prev) =>
-          prev.map((p) => (p.id === editingPostId ? { ...p, title, content } : p)),
-        );
-        showToast('更新文章成功');
+  const composeButtonHandler = useCallback(
+    (postId) => {
+      if (postId) {
+        const p = posts.find((x) => x.id === postId);
+        if (!p) {
+          showToast('文章不存在，無法編輯', 'error');
+          return;
+        }
+        setTitle(p.title);
+        setContent(p.content);
+        setEditingPostId(postId);
       } else {
-        const { id } = await createPost({ title, content, user });
-        const minePost = await getPostDetail(id);
-        const hydrated = {
-          ...minePost,
-          liked: false,
-          isAuthor: user?.uid ? minePost.authorUid === user.uid : false,
-        };
-        setPosts((prev) => [hydrated, ...prev]);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        showToast('發佈文章成功');
+        setTitle('');
+        setContent('');
+        setEditingPostId(null);
       }
-    } catch (err) {
-      console.error('Post submit error:', err);
-      showToast(editingPostId ? '更新文章失敗，請稍後再試' : '發佈文章失敗，請稍後再試', 'error');
-    }
-
-    setTitle('');
-    setContent('');
-    setIsComposeEditing(false);
-    setEditingPostId(null);
-  }
+      dialogRef.current?.showModal();
+    },
+    [posts, showToast],
+  );
 
   /**
    * 切換文章按讚狀態，搭配樂觀更新。
    * @param {string} postId - 文章 ID。
    */
-  async function pressLikeButton(postId) {
-    if (!user?.uid) return;
-    const target = posts.find((p) => p.id === postId);
-    if (!target) return;
-    const prevLiked = !!target.liked;
-    const prevCount = Number(target.likesCount ?? 0);
-    // 樂觀更新
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id !== postId) return p;
-        return {
-          ...p,
-          liked: !prevLiked,
-          likesCount: Math.max(0, prevCount + (prevLiked ? -1 : 1)),
-        };
-      }),
-    );
-    const result = await toggleLikePost(postId, user.uid);
-    if (result === 'fail') {
+  const pressLikeButton = useCallback(
+    async (postId) => {
+      if (!user?.uid) return;
+      const target = posts.find((p) => p.id === postId);
+      if (!target) return;
+      const prevLiked = !!target.liked;
+      const prevCount = Number(target.likesCount ?? 0);
       setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, liked: prevLiked, likesCount: prevCount } : p)),
+        prev.map((p) => {
+          if (p.id !== postId) return p;
+          return {
+            ...p,
+            liked: !prevLiked,
+            likesCount: Math.max(0, prevCount + (prevLiked ? -1 : 1)),
+          };
+        }),
       );
-    }
-  }
+      const result = await toggleLikePost(postId, user.uid);
+      if (result === 'fail') {
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postId ? { ...p, liked: prevLiked, likesCount: prevCount } : p,
+          ),
+        );
+      }
+    },
+    [user?.uid, posts],
+  );
+
   /**
    * 切換文章作者操作選單顯示。
    * @param {string} postId - 文章 ID。
    * @param {import('react').MouseEvent} e - 滑鼠點擊事件。
    */
-  function toggleOwnerMenu(postId, e) {
-    e.stopPropagation();
-    if (postId === openMenuPostId) {
-      setOpenMenuPostId('');
-    } else {
-      setOpenMenuPostId(postId);
-    }
-  }
+  const toggleOwnerMenu = useCallback(
+    (postId, e) => {
+      e.stopPropagation();
+      if (postId === openMenuPostId) {
+        setOpenMenuPostId('');
+      } else {
+        setOpenMenuPostId(postId);
+      }
+    },
+    [openMenuPostId],
+  );
 
   /**
    * 確認後刪除文章並從列表移除。
    * @param {string} postId - 要刪除的文章 ID。
    */
-  async function deletePostHandler(postId) {
-    // eslint-disable-next-line no-alert -- 刪除確認使用原生對話框
-    if (!window.confirm('確定要刪除文章？')) return;
-    try {
-      await deletePost(postId);
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
-      if (openMenuPostId === postId) setOpenMenuPostId('');
-      showToast('文章已刪除');
-    } catch (err) {
-      console.error('Delete post error:', err);
-      showToast('刪除文章失敗，請稍後再試', 'error');
+  const deletePostHandler = useCallback(
+    async (postId) => {
+      // eslint-disable-next-line no-alert -- 刪除確認使用原生對話框
+      if (!window.confirm('確定要刪除文章？')) return;
+      try {
+        await deletePost(postId);
+        setPosts((prev) => prev.filter((p) => p.id !== postId));
+        if (openMenuPostId === postId) setOpenMenuPostId('');
+        showToast('文章已刪除');
+      } catch (err) {
+        console.error('Delete post error:', err);
+        showToast('刪除文章失敗，請稍後再試', 'error');
+      }
+    },
+    [openMenuPostId, showToast],
+  );
+
+  /**
+   * 送出發文或編輯表單，成功後關閉 Modal 並更新列表。
+   * @param {import('react').FormEvent<HTMLFormElement>} e - 表單送出事件。
+   */
+  const handleSubmitPost = useCallback(
+    async (e) => {
+      e.preventDefault();
+      const validationError = validatePostInput({ title, content });
+      if (validationError) {
+        showToast(validationError, 'error');
+        return;
+      }
+      try {
+        if (editingPostId) {
+          await updatePost(editingPostId, { title, content });
+          setPosts((prev) =>
+            prev.map((p) => (p.id === editingPostId ? { ...p, title, content } : p)),
+          );
+          showToast('更新文章成功');
+        } else {
+          const { id } = await createPost({ title, content, user });
+          const minePost = await getPostDetail(id);
+          const hydrated = {
+            ...minePost,
+            liked: false,
+            isAuthor: user?.uid ? minePost.authorUid === user.uid : false,
+          };
+          setPosts((prev) => [hydrated, ...prev]);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          showToast('發佈文章成功');
+        }
+      } catch (err) {
+        console.error('Post submit error:', err);
+        showToast(editingPostId ? '更新文章失敗，請稍後再試' : '發佈文章失敗，請稍後再試', 'error');
+      }
+      setTitle('');
+      setContent('');
+      setEditingPostId(null);
+      dialogRef.current?.close();
+    },
+    [title, content, editingPostId, user, showToast],
+  );
+
+  /**
+   * 渲染文章列表，無文章時顯示空狀態提示。
+   * @returns {import('react').ReactNode} 文章列表或空狀態。
+   */
+  function renderPostList() {
+    if (isLoading) {
+      return <PostCardSkeleton count={3} />;
     }
+    if (posts.length === 0) {
+      return <p className={styles.emptyState}>還沒有文章，成為第一個分享的人吧！</p>;
+    }
+    return posts.map((post) => (
+      <PostCard
+        key={post.id}
+        post={post}
+        openMenuPostId={openMenuPostId}
+        onToggleMenu={toggleOwnerMenu}
+        onEdit={composeButtonHandler}
+        onDelete={deletePostHandler}
+        onLike={pressLikeButton}
+      />
+    ));
   }
 
   return (
-    <div>
-      <h1>文章河道</h1>
-      <ul className={styles.postsContainer}>
-        {posts.map((post) => (
-          <li className={styles.postContainer} key={post.id}>
-            <div
-              className={styles.postOwnerMenu}
-              style={{ display: post?.isAuthor ? 'block' : 'none' }}
-            >
-              <button
-                id={`post-owner-menu-btn-${post.id}`}
-                type="button"
-                className={styles.postOwnerMenuButton}
-                aria-label="更多選項"
-                aria-haspopup="menu"
-                aria-expanded={openMenuPostId === post.id ? 'true' : 'false'}
-                aria-controls={`post-owner-menu-${post.id}`}
-                onClick={(e) => toggleOwnerMenu(post.id, e)}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <title>更多選項</title>
-                  <circle cx="6" cy="12" r="1.75" />
-                  <circle cx="12" cy="12" r="1.75" />
-                  <circle cx="18" cy="12" r="1.75" />
-                </svg>
-              </button>
-              <ul
-                id={`post-owner-menu-${post.id}`}
-                className={styles.postOwnerMenuList}
-                role="menu"
-                aria-labelledby={`post-owner-menu-btn-${post.id}`}
-                hidden={post.id !== openMenuPostId}
-              >
-                <li role="none">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className={styles.postOwnerMenuItem}
-                    onClick={() => composeButtonHandler(post.id)}
-                  >
-                    編輯
-                  </button>
-                </li>
-                <li role="none">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className={styles.postOwnerMenuItem}
-                    onClick={() => deletePostHandler(post.id)}
-                  >
-                    刪除
-                  </button>
-                </li>
-              </ul>
-            </div>
-            <Link href={`/posts/${post.id}`}>
-              <strong>{post.title}</strong>
-              <p>{post.content}</p>
-            </Link>
-            <div>
-              <button
-                type="button"
-                onClick={() => pressLikeButton(post.id)}
-                className={styles.metaButton}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  fill={post.liked ? 'currentColor' : 'none'}
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M12 21s-6.2-4.35-9.2-8.35C1.2 10.35 2.2 6.5 5.5 5c2.1-1 4.7-.3 6.5 1.5C13.8 4.7 16.4 4 18.5 5c3.3 1.5 4.3 5.35 2.7 7.65C18.2 16.65 12 21 12 21z"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span className={styles.metaCount}>{post.likesCount ?? 0}</span>
-              </button>
-              <Link href={`/posts/${post.id}`} className={styles.metaButton}>
-                <svg
-                  width="16"
-                  height="16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <g transform="translate(24,0) scale(-1,1)">
-                    <path
-                      d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </g>
-                </svg>
-                <span className={styles.metaCount}>{post.commentsCount ?? 0}</span>
-              </Link>
-            </div>
-          </li>
-        ))}
-      </ul>
-      {user && (
-        <>
-          <button type="button" className={styles.compose} onClick={() => composeButtonHandler()}>
-            ➕
-          </button>
-          {isComposeEditing && (
-            <div className="compose">
-              <h2>編輯文章頁面</h2>
-              <form onSubmit={handleSubmitPost}>
-                <input
-                  type="text"
-                  placeholder="標題"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-                <textarea
-                  placeholder="有什麼新鮮的？"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                />
-                <button type="submit">發佈</button>
-              </form>
-            </div>
-          )}
-        </>
-      )}
-      <div ref={bottomRef} className={styles.scrollerFooter}>
-        我是底部
-      </div>
+    <div className={styles.feed}>
+      <h1 className={styles.feedTitle}>文章河道</h1>
+      {user && <ComposePrompt userPhotoURL={user.photoURL} onClick={composeButtonHandler} />}
+      {renderPostList()}
+      {isLoadingNext && <PostCardSkeleton count={1} />}
+      <div ref={bottomRef} className={styles.scrollSentinel} />
+      <ComposeModal
+        dialogRef={dialogRef}
+        title={title}
+        content={content}
+        onTitleChange={setTitle}
+        onContentChange={setContent}
+        onSubmit={handleSubmitPost}
+        isEditing={!!editingPostId}
+      />
     </div>
   );
 }

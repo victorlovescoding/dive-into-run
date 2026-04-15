@@ -1,20 +1,68 @@
-.commentContainer {
-  border: 2px solid red;
-}
-.postOwnerMenu {
-  position: absolute;
-  right: 25px;
-}
-.postOwnerMenuButton:hover {
-  cursor: pointer;
+/* 詳文頁容器 — 窄欄置中，配合列表頁 feed 一致 */
+.detailContainer {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 16px 1rem;
 }
 
-.titleRow {
+/* 留言區塊 */
+.commentsSection {
+  margin-top: 16px;
+  border-top: 1px solid #e0e3e7;
+  padding-top: 16px;
+}
+
+.commentsTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 12px;
+}
+
+/* 留言輸入區 */
+.commentForm {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid #e0e3e7;
+  margin-top: 8px;
 }
 
-.titleRow h2 {
-  margin: 0;
+.commentAvatar {
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.commentInput {
+  flex: 1;
+  border: 1px solid #e0e3e7;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.commentInput:focus {
+  border-color: #673ab7;
+}
+
+.commentSubmit {
+  background: #673ab7;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.commentSubmit:hover {
+  background: #5e35b1;
+}
+
+/* 底部哨兵 — 無視覺 */
+.scrollSentinel {
+  height: 1px;
 }

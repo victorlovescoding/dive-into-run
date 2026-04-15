@@ -1,0 +1,89 @@
+.dialog {
+  border: none;
+  border-radius: 12px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e3e7;
+}
+
+.headerTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #5f6368;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.closeButton:hover {
+  background: #f0f0f0;
+}
+
+.form {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.titleInput {
+  border: none;
+  border-bottom: 1px solid #e0e3e7;
+  padding: 8px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  outline: none;
+}
+
+.titleInput:focus {
+  border-bottom-color: #673ab7;
+}
+
+.contentTextarea {
+  border: none;
+  padding: 8px 0;
+  font-size: 0.95rem;
+  color: #1a1a1a;
+  outline: none;
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+}
+
+.submitButton {
+  align-self: flex-end;
+  padding: 8px 24px;
+  background: #673ab7;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submitButton:hover {
+  background: #5e35b1;
+}
