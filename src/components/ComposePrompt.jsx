@@ -15,7 +15,7 @@ export default function ComposePrompt({ userPhotoURL, onClick }) {
   const src = userPhotoURL || DEFAULT_AVATAR;
 
   return (
-    <button type="button" className={styles.prompt} onClick={onClick}>
+    <button type="button" className={styles.prompt} onClick={() => onClick()}>
       <Image
         className={styles.avatar}
         src={src}
