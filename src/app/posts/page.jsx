@@ -56,6 +56,7 @@ export default function PostPage() {
             postsData.map((p) => ({
               ...p,
               liked: false,
+              isAuthor: false,
             })),
           );
           return;
@@ -108,6 +109,7 @@ export default function PostPage() {
             const hydrated = morePosts.map((p) => ({
               ...p,
               liked: false,
+              isAuthor: false,
             }));
             // 以 id 去重再追加
             setPosts((prev) => {
