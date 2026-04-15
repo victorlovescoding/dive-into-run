@@ -133,8 +133,10 @@
 ### 行為
 
 - 由父元件透過 `dialogRef.current.showModal()` 開啟
-- Escape 鍵或點擊 backdrop 關閉（原生 `<dialog>` 行為 + backdrop click handler）
-- 表單包含：標題 input、內容 textarea、發布/更新按鈕
+- **關閉保護**：表單有內容時，backdrop click 和 Escape 都不關閉（防止誤觸遺失編輯）；表單空白時正常關閉
+- Escape 攔截：監聽 `cancel` event，有內容時 `e.preventDefault()`
+- Backdrop click：判斷點擊座標是否在 dialog bounding rect 外，空白時才關閉
+- 表單包含：標題 input、內容 textarea、發布/更新按鈕、X 關閉按鈕
 - `isEditing=true` 時 Modal 標題顯示「編輯文章」，按鈕文字「更新」
 - `isEditing=false` 時 Modal 標題顯示「發表文章」，按鈕文字「發布」
 - 關閉時由父元件負責清空表單狀態

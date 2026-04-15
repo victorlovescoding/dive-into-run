@@ -86,14 +86,16 @@ function handleTransitionEnd() {
 
 - 原生 focus trap：`showModal()` 自動將 focus 限制在 dialog 內
 - 原生 backdrop：`::backdrop` pseudo-element，可自定義樣式
-- 原生 Escape 關閉：`cancel` event
+- 原生 Escape 關閉：`cancel` event（可攔截）
 - 原生 inert：開啟時背景元素自動不可互動
 - 瀏覽器支援：Chrome 37+, Safari 15.4+, Firefox 98+ — 覆蓋所有目標使用者
 
-**Safari 注意事項**:
+**關閉保護邏輯**:
 
-- `::backdrop` 點擊事件：Safari 15.4–16.3 需要在 `<dialog>` 本身加 `onClick` 並檢查 `e.target === dialogRef.current`，因為 `::backdrop` 不是真正的 DOM 元素，不會觸發事件
-- 解法：dialog click handler 中判斷點擊位置是否在 dialog bounding rect 外
+表單有內容時，backdrop click 和 Escape 都不關閉 Modal（防止誤觸遺失編輯）。表單空白時正常關閉。
+
+- **Backdrop click**: 在 `<dialog>` 的 `onClick` 判斷點擊座標是否在 dialog bounding rect 外（`::backdrop` 不是真正 DOM 元素，無法直接綁事件）。Safari 15.4–16.3 也適用此做法。
+- **Escape**: 攔截 `<dialog>` 的 `cancel` event，有內容時 `e.preventDefault()` 阻止關閉。
 
 **Alternatives considered**:
 
@@ -106,19 +108,31 @@ function handleTransitionEnd() {
 ```jsx
 const dialogRef = useRef(null);
 
+function hasContent() {
+  return title.trim() !== '' || content.trim() !== '';
+}
+
 function openModal() {
   dialogRef.current?.showModal();
 }
 
+// Escape 攔截：有內容時阻止關閉
+function handleCancel(e) {
+  if (hasContent()) {
+    e.preventDefault();
+  }
+}
+
+// Backdrop click：有內容時不關閉
 function handleBackdropClick(e) {
-  // 點擊 backdrop（dialog 外部）時關閉
   const rect = dialogRef.current.getBoundingClientRect();
-  if (
+  const clickedOutside =
     e.clientX < rect.left ||
     e.clientX > rect.right ||
     e.clientY < rect.top ||
-    e.clientY > rect.bottom
-  ) {
+    e.clientY > rect.bottom;
+
+  if (clickedOutside && !hasContent()) {
     dialogRef.current.close();
   }
 }
