@@ -24,6 +24,9 @@
     "shimmer",
     "polyline",
     "township",
-    "maxage"
+    "maxage",
+    "dedup",
+    "commenters",
+    "speckit"
   ]
 }
