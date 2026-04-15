@@ -39,13 +39,22 @@ service cloud.firestore {
         && request.resource.data.content is string
         && request.resource.data.content.size() <= 5000;
 
-      // 作者可更新任何欄位；非作者只能更新 commentsCount（留言 transaction 用）
+      // 作者可更新任何欄位；非作者只能更新 commentsCount / likesCount（transaction 用）
       allow update: if isSignedIn() && (
         request.auth.uid == resource.data.authorUid
         || (
-          request.resource.data.diff(resource.data).changedKeys().hasOnly(['commentsCount'])
-          && request.resource.data.commentsCount is number
-          && request.resource.data.commentsCount >= 0
+          request.resource.data.diff(resource.data).changedKeys()
+            .hasOnly(['commentsCount', 'likesCount'])
+          && (
+            !request.resource.data.diff(resource.data).changedKeys().hasAny(['commentsCount'])
+            || (request.resource.data.commentsCount is number
+                && request.resource.data.commentsCount >= 0)
+          )
+          && (
+            !request.resource.data.diff(resource.data).changedKeys().hasAny(['likesCount'])
+            || (request.resource.data.likesCount is number
+                && request.resource.data.likesCount >= 0)
+          )
         )
       );
 
