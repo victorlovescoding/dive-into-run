@@ -68,6 +68,16 @@
   word-break: break-word;
 }
 
+.contentWrapper {
+  overflow: hidden;
+  transition: max-height 250ms ease;
+}
+
+.contentCollapsed {
+  /* 3 行 .content 文字 (font-size: 0.95rem × line-height: 1.6 × 3) */
+  max-height: calc(0.95rem * 1.6 * 3);
+}
+
 .metaBar {
   position: relative;
   z-index: 1;

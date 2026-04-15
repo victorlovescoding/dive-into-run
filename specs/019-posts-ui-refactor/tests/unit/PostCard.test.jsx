@@ -168,8 +168,8 @@ describe('PostCard', () => {
     it('超過 150 字的內容顯示截斷文字和「查看更多」按鈕', () => {
       const post = { ...basePost, content: longContent };
       render(<PostCard post={post} truncate={true} />);
-      // 截斷後的文字應該只有前 150 字 + ......
-      expect(screen.getByText(/\.\.\.\.\.\./)).toBeInTheDocument();
+      // 完整內容在 DOM 中，靠 CSS max-height 視覺裁切
+      expect(screen.getByText(longContent)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /查看更多/ })).toBeInTheDocument();
     });
 

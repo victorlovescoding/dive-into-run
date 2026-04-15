@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import UserLink from '@/components/UserLink';
 import { formatRelativeTime } from '@/lib/notification-helpers';
@@ -95,17 +95,6 @@ function MoreIcon() {
       <circle cx="12" cy="19" r="1.5" />
     </svg>
   );
-}
-
-/**
- * 判斷內容是否需要截斷。
- * @param {string} content - 完整內容。
- * @param {boolean} shouldTruncate - 是否啟用截斷。
- * @param {boolean} expanded - 是否已展開。
- * @returns {boolean} 是否需要截斷。
- */
-function shouldShowTruncated(content, shouldTruncate, expanded) {
-  return shouldTruncate && !expanded && content.length > TRUNCATE_THRESHOLD;
 }
 
 /**
@@ -248,6 +237,25 @@ export default function PostCard({
   const isMenuOpen = openMenuPostId === post.id;
   const likeClassName = getLikeButtonClassName(post.liked);
   const hasContent = post.content !== '';
+  const contentRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const needsTruncation = truncate && post.content.length > TRUNCATE_THRESHOLD;
+  const isCollapsed = needsTruncation && !isExpanded;
+
+  /** 量測 scrollHeight 並觸發 max-height CSS transition。 */
+  function handleExpand() {
+    const el = contentRef.current;
+    if (el) {
+      el.style.maxHeight = `${el.scrollHeight}px`;
+    }
+    setIsExpanded(true);
+  }
+
+  /** @param {import('react').TransitionEvent<HTMLDivElement>} e - transition 結束事件。 */
+  function handleTransitionEnd(e) {
+    if (e.propertyName !== 'max-height') return;
+    const el = contentRef.current;
+    if (el) el.style.maxHeight = 'none';
+  }
 
   return (
     <article className={styles.card}>
@@ -281,18 +289,20 @@ export default function PostCard({
 
       {hasContent && (
         <>
-          <p className={styles.content}>
-            {shouldShowTruncated(post.content, truncate, isExpanded)
-              ? `${post.content.slice(0, TRUNCATE_THRESHOLD)}......`
-              : post.content}
-          </p>
-          {shouldShowTruncated(post.content, truncate, isExpanded) && (
-            <button
-              type="button"
-              className={styles.expandButton}
-              onClick={() => setIsExpanded(true)}
-            >
-              查看更多
+          <div
+            ref={contentRef}
+            className={
+              needsTruncation
+                ? `${styles.contentWrapper}${isCollapsed ? ` ${styles.contentCollapsed}` : ''}`
+                : undefined
+            }
+            onTransitionEnd={needsTruncation ? handleTransitionEnd : undefined}
+          >
+            <p className={styles.content}>{post.content}</p>
+          </div>
+          {isCollapsed && (
+            <button type="button" className={styles.expandButton} onClick={handleExpand}>
+              ……查看更多
             </button>
           )}
         </>
