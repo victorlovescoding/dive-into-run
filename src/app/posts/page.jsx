@@ -15,6 +15,7 @@ import {
   hasUserLikedPosts,
   deletePost,
   getMorePosts,
+  validatePostInput,
 } from '@/lib/firebase-posts';
 
 /**
@@ -189,6 +190,12 @@ export default function PostPage() {
    */
   async function handleSubmitPost(e) {
     e.preventDefault();
+
+    const validationError = validatePostInput({ title, content });
+    if (validationError) {
+      showToast(validationError, 'error');
+      return;
+    }
 
     try {
       if (editingPostId) {

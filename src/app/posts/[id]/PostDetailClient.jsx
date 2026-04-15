@@ -15,6 +15,7 @@ import {
   deletePost,
   deleteComment,
   getMoreComments,
+  validatePostInput,
 } from '@/lib/firebase-posts';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -197,6 +198,13 @@ export default function PostDetailClient({ postId }) {
    */
   async function handleSubmitPost(e) {
     e.preventDefault();
+
+    const validationError = validatePostInput({ title, content });
+    if (validationError) {
+      showToast(validationError, 'error');
+      return;
+    }
+
     try {
       if (editingPostId) {
         await updatePost(editingPostId, { title, content });

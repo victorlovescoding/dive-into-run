@@ -19,6 +19,32 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 
+/** @type {number} 文章標題最大長度。 */
+export const POST_TITLE_MAX_LENGTH = 50;
+
+/** @type {number} 文章內容最大長度。 */
+export const POST_CONTENT_MAX_LENGTH = 10000;
+
+/**
+ * 驗證文章輸入是否合規。
+ * @param {object} input - 驗證目標。
+ * @param {string} input.title - 文章標題（raw，未 trim）。
+ * @param {string} input.content - 文章內容（raw，未 trim）。
+ * @returns {string | null} 第一個驗證錯誤訊息，或 null 表示通過。
+ */
+export function validatePostInput({ title, content }) {
+  const t = (title ?? '').trim();
+  const c = (content ?? '').trim();
+
+  if (!t && !c) return '請輸入標題和內容';
+  if (!t) return '請輸入標題';
+  if (!c) return '請輸入內容';
+  if (t.length > POST_TITLE_MAX_LENGTH) return '標題不可超過 50 字';
+  if (c.length > POST_CONTENT_MAX_LENGTH) return '內容不可超過 10,000 字';
+
+  return null;
+}
+
 /**
  * @typedef {object} Post
  * @property {string} id - 文章 ID。
@@ -50,6 +76,9 @@ import { db } from '@/lib/firebase-client';
  * @returns {Promise<{ id: string }>} 新建文章的 ID。
  */
 export async function createPost({ title, content, user }) {
+  const error = validatePostInput({ title, content });
+  if (error) throw new Error(`createPost: ${error}`);
+
   const ref = await addDoc(collection(db, 'posts'), {
     authorUid: user.uid,
     title,
@@ -70,6 +99,9 @@ export async function createPost({ title, content, user }) {
  * @param {string} root0.content - 新內容。
  */
 export async function updatePost(editingPostId, { title, content }) {
+  const error = validatePostInput({ title, content });
+  if (error) throw new Error(`updatePost: ${error}`);
+
   await updateDoc(doc(db, 'posts', editingPostId), {
     title,
     content,

@@ -31,11 +31,11 @@
 
 ### Test (RED)
 
-- [ ] T001 Write unit test for validatePostInput covering empty checks (US1) and length checks (US2) per contract behavior table + spec edge cases (emoji, leading/trailing spaces, both-empty merge) in `specs/018-posts-input-validation/tests/unit/validate-post-input.test.js`
+- [x] T001 Write unit test for validatePostInput covering empty checks (US1) and length checks (US2) per contract behavior table + spec edge cases (emoji, leading/trailing spaces, both-empty merge) in `specs/018-posts-input-validation/tests/unit/validate-post-input.test.js`
 
 ### Implementation (GREEN)
 
-- [ ] T002 Implement validatePostInput + export POST_TITLE_MAX_LENGTH (50) + POST_CONTENT_MAX_LENGTH (10000) in `src/lib/firebase-posts.js`
+- [x] T002 Implement validatePostInput + export POST_TITLE_MAX_LENGTH (50) + POST_CONTENT_MAX_LENGTH (10000) in `src/lib/firebase-posts.js`
 
 **Checkpoint**: validatePostInput 純函式通過所有 unit tests，常數已 export。
 
@@ -53,13 +53,13 @@
 
 > **Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T003 [P] [US1+US2] Write integration test for page.jsx create/edit form validation (including valid-input happy path) in `specs/018-posts-input-validation/tests/integration/post-form-validation.test.jsx`
-- [ ] T004 [P] [US1+US2] Write integration test for PostDetailClient.jsx edit form validation (including valid-input happy path) in `specs/018-posts-input-validation/tests/integration/post-edit-validation.test.jsx`
+- [x] T003 [P] [US1+US2] Write integration test for page.jsx create/edit form validation (including valid-input happy path) in `specs/018-posts-input-validation/tests/integration/post-form-validation.test.jsx`
+- [x] T004 [P] [US1+US2] Write integration test for PostDetailClient.jsx edit form validation (including valid-input happy path) in `specs/018-posts-input-validation/tests/integration/post-edit-validation.test.jsx`
 
 ### Implementation (GREEN)
 
-- [ ] T005 [P] [US1+US2] Add validatePostInput + showToast + early return to handleSubmitPost in `src/app/posts/page.jsx`
-- [ ] T006 [P] [US1+US2] Add validatePostInput + showToast + early return to handleSubmitPost in `src/app/posts/[id]/PostDetailClient.jsx`
+- [x] T005 [P] [US1+US2] Add validatePostInput + showToast + early return to handleSubmitPost in `src/app/posts/page.jsx`
+- [x] T006 [P] [US1+US2] Add validatePostInput + showToast + early return to handleSubmitPost in `src/app/posts/[id]/PostDetailClient.jsx`
 
 **Checkpoint**: US1+US2 fully functional — 空白/超長文章在 UI 層被攔截，toast 正確顯示。Integration tests 全數通過。
 
@@ -77,13 +77,13 @@
 
 > **Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T007 [P] [US3] Write unit test for createPost validation guard (mock Firestore) in `specs/018-posts-input-validation/tests/unit/create-post-validation.test.js`
-- [ ] T008 [P] [US3] Write unit test for updatePost validation guard (mock Firestore) in `specs/018-posts-input-validation/tests/unit/update-post-validation.test.js`
+- [x] T007 [P] [US3] Write unit test for createPost validation guard (mock Firestore) in `specs/018-posts-input-validation/tests/unit/create-post-validation.test.js`
+- [x] T008 [P] [US3] Write unit test for updatePost validation guard (mock Firestore) in `specs/018-posts-input-validation/tests/unit/update-post-validation.test.js`
 
 ### Implementation (GREEN)
 
-- [ ] T009 [US3] Add validatePostInput guard + throw Error to createPost in `src/lib/firebase-posts.js`
-- [ ] T010 [US3] Add validatePostInput guard + throw Error to updatePost in `src/lib/firebase-posts.js`
+- [x] T009 [US3] Add validatePostInput guard + throw Error to createPost in `src/lib/firebase-posts.js`
+- [x] T010 [US3] Add validatePostInput guard + throw Error to updatePost in `src/lib/firebase-posts.js`
 
 **Checkpoint**: Service 層 defense-in-depth 完成 — 不合規資料在 service 層被攔截，拋出描述性 Error（`createPost: 請輸入標題`）。Unit tests 全數通過。
 
@@ -93,7 +93,7 @@
 
 **Purpose**: 最終品質驗證
 
-- [ ] T011 Run `npm run type-check` + `npm run lint` + getDiagnostics + quickstart.md validation
+- [x] T011 Run `npm run type-check` + `npm run lint` + getDiagnostics + quickstart.md validation
 
 ---
 
