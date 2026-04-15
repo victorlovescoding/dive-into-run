@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import styles from './ComposeModal.module.css';
 
 /**
@@ -34,6 +34,18 @@ export default function ComposeModal({
   onSubmit,
   isEditing = false,
 }) {
+  // -- Refs (讓 useEffect 內的 listener 讀到最新值，避免每次 keystroke 重新註冊) --
+
+  const titleRef = useRef(title);
+  const contentRef = useRef(content);
+
+  useEffect(() => {
+    titleRef.current = title;
+  }, [title]);
+  useEffect(() => {
+    contentRef.current = content;
+  }, [content]);
+
   // -- Effects --
 
   useEffect(() => {
@@ -48,14 +60,14 @@ export default function ComposeModal({
         e.clientX > rect.right ||
         e.clientY < rect.top ||
         e.clientY > rect.bottom;
-      if (clickedOutside && !hasContent(title, content)) {
+      if (clickedOutside && !hasContent(titleRef.current, contentRef.current)) {
         dialog.close();
       }
     }
 
     dialog.addEventListener('click', handleBackdropClick);
     return () => dialog.removeEventListener('click', handleBackdropClick);
-  }, [dialogRef, title, content]);
+  }, [dialogRef]);
 
   // -- Handlers --
 
