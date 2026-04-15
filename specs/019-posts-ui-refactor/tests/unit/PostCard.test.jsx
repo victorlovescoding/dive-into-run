@@ -27,7 +27,7 @@ const basePost = {
   authorUid: 'user-1',
   authorName: '小明',
   authorImgURL: 'https://example.com/avatar.jpg',
-  postAt: { toDate: () => new Date('2026-04-15T10:00:00Z') },
+  postAt: /** @type {any} */ ({ toDate: () => new Date('2026-04-15T10:00:00Z') }),
   likesCount: 5,
   commentsCount: 3,
   liked: false,

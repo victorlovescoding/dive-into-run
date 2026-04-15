@@ -99,17 +99,19 @@ const mockedGetMorePosts = /** @type {import('vitest').Mock} */ (getMorePosts);
 let intersectionCallback = null;
 
 beforeAll(() => {
-  global.IntersectionObserver = class IntersectionObserver {
-    /**
-     * @param {(entries: Array<{ isIntersecting: boolean, target: Element }>) => void} callback - observer 回呼。
-     */
-    constructor(callback) {
-      intersectionCallback = callback;
-      this.observe = vi.fn();
-      this.unobserve = vi.fn();
-      this.disconnect = vi.fn();
+  global.IntersectionObserver = /** @type {any} */ (
+    class IntersectionObserver {
+      /**
+       * @param {(entries: Array<{ isIntersecting: boolean, target: Element }>) => void} callback - observer 回呼。
+       */
+      constructor(callback) {
+        intersectionCallback = callback;
+        this.observe = vi.fn();
+        this.unobserve = vi.fn();
+        this.disconnect = vi.fn();
+      }
     }
-  };
+  );
 });
 
 // ---------------------------------------------------------------------------

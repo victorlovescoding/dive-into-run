@@ -101,6 +101,19 @@ import {
   getMoreComments,
 } from '@/lib/firebase-posts';
 
+/** @type {import('vitest').Mock} */
+const mockedGetPostDetail = /** @type {import('vitest').Mock} */ (getPostDetail);
+/** @type {import('vitest').Mock} */
+const mockedGetLatestComments = /** @type {import('vitest').Mock} */ (getLatestComments);
+/** @type {import('vitest').Mock} */
+const mockedHasUserLikedPost = /** @type {import('vitest').Mock} */ (hasUserLikedPost);
+/** @type {import('vitest').Mock} */
+const mockedGetMoreComments = /** @type {import('vitest').Mock} */ (getMoreComments);
+/** @type {import('vitest').Mock} */
+const mockedAddComment = /** @type {import('vitest').Mock} */ (addComment);
+/** @type {import('vitest').Mock} */
+const mockedGetCommentById = /** @type {import('vitest').Mock} */ (getCommentById);
+
 // ---------------------------------------------------------------------------
 // Test fixtures
 // ---------------------------------------------------------------------------
@@ -133,10 +146,10 @@ const mockComments = [
 describe('PostDetailClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getPostDetail.mockResolvedValue(mockPost);
-    getLatestComments.mockResolvedValue(mockComments);
-    hasUserLikedPost.mockResolvedValue(false);
-    getMoreComments.mockResolvedValue([]);
+    mockedGetPostDetail.mockResolvedValue(mockPost);
+    mockedGetLatestComments.mockResolvedValue(mockComments);
+    mockedHasUserLikedPost.mockResolvedValue(false);
+    mockedGetMoreComments.mockResolvedValue([]);
   });
 
   it('文章區域以 PostCard 呈現（article 語義元素）', async () => {
@@ -179,8 +192,8 @@ describe('PostDetailClient', () => {
 
   it('留言輸入後可送出', async () => {
     const user = userEvent.setup();
-    addComment.mockResolvedValue({ id: 'new-comment' });
-    getCommentById.mockResolvedValue({
+    mockedAddComment.mockResolvedValue({ id: 'new-comment' });
+    mockedGetCommentById.mockResolvedValue({
       id: 'new-comment',
       authorUid: 'user-1',
       authorName: '小明',
