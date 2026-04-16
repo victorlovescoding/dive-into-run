@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
+import {
+  getPostDetail,
+  hasUserLikedPost,
+  getLatestComments,
+  updatePost,
+} from '@/lib/firebase-posts';
 
 // ---------------------------------------------------------------------------
 // Hoisted shared state (available inside vi.mock factories)
@@ -28,6 +35,8 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next/image', () => ({
+  // 測試替身：把 next/image 換成原生 img；alt 由 props 帶入。
+  // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text -- 測試 mock，alt 由呼叫端 prop 控制
   default: (props) => <img {...props} />,
 }));
 
@@ -97,16 +106,8 @@ vi.mock('@/lib/firebase-posts', async (importOriginal) => {
 });
 
 // ---------------------------------------------------------------------------
-// Imports (after mocks)
+// Typed mock handles (vi.mock above is hoisted by Vitest before these lines)
 // ---------------------------------------------------------------------------
-
-import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
-import {
-  getPostDetail,
-  hasUserLikedPost,
-  getLatestComments,
-  updatePost,
-} from '@/lib/firebase-posts';
 
 const mockedGetPostDetail = /** @type {import('vitest').Mock} */ (getPostDetail);
 const mockedHasUserLikedPost = /** @type {import('vitest').Mock} */ (hasUserLikedPost);
@@ -124,14 +125,16 @@ beforeAll(() => {
     this.removeAttribute('open');
   });
 
-  global.IntersectionObserver = /** @type {any} */ (
-    class IntersectionObserver {
-      constructor() {
-        this.observe = vi.fn();
-        this.unobserve = vi.fn();
-        this.disconnect = vi.fn();
+  global.IntersectionObserver = /** @type {typeof IntersectionObserver} */ (
+    /** @type {unknown} */ (
+      class FakeIntersectionObserver {
+        constructor() {
+          this.observe = vi.fn();
+          this.unobserve = vi.fn();
+          this.disconnect = vi.fn();
+        }
       }
-    }
+    )
   );
 });
 

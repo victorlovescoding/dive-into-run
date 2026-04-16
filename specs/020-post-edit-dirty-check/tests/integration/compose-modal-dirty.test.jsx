@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { useEffect, useRef } from 'react';
 import ComposeModal from '@/components/ComposeModal';
 
@@ -71,7 +70,7 @@ describe('ComposeModal dirty gate (isEditing=true)', () => {
     // Arrange & Act
     render(
       <ModalWrapper
-        isEditing={true}
+        isEditing
         originalTitle="orig title"
         originalContent="orig content"
         title="orig title"
@@ -87,7 +86,7 @@ describe('ComposeModal dirty gate (isEditing=true)', () => {
     // Arrange
     const { rerender } = render(
       <ModalWrapper
-        isEditing={true}
+        isEditing
         originalTitle="orig title"
         originalContent="orig content"
         title="orig title"
@@ -98,7 +97,7 @@ describe('ComposeModal dirty gate (isEditing=true)', () => {
     // Act — 模擬 parent state 把 title 改成不同值
     rerender(
       <ModalWrapper
-        isEditing={true}
+        isEditing
         originalTitle="orig title"
         originalContent="orig content"
         title="new title"
@@ -114,7 +113,7 @@ describe('ComposeModal dirty gate (isEditing=true)', () => {
     // Arrange
     const { rerender } = render(
       <ModalWrapper
-        isEditing={true}
+        isEditing
         originalTitle="orig title"
         originalContent="orig content"
         title="orig title"
@@ -125,7 +124,7 @@ describe('ComposeModal dirty gate (isEditing=true)', () => {
     // Act — 先改成 new title
     rerender(
       <ModalWrapper
-        isEditing={true}
+        isEditing
         originalTitle="orig title"
         originalContent="orig content"
         title="new title"
@@ -135,7 +134,7 @@ describe('ComposeModal dirty gate (isEditing=true)', () => {
     // 再改回來
     rerender(
       <ModalWrapper
-        isEditing={true}
+        isEditing
         originalTitle="orig title"
         originalContent="orig content"
         title="orig title"
@@ -151,7 +150,7 @@ describe('ComposeModal dirty gate (isEditing=true)', () => {
     // Arrange & Act
     render(
       <ModalWrapper
-        isEditing={true}
+        isEditing
         originalTitle="orig title"
         originalContent="orig content"
         title="orig title   "
@@ -167,7 +166,7 @@ describe('ComposeModal dirty gate (isEditing=true)', () => {
     // Arrange & Act
     render(
       <ModalWrapper
-        isEditing={true}
+        isEditing
         originalTitle="orig title"
         originalContent="orig content"
         title="orig title"
@@ -183,7 +182,7 @@ describe('ComposeModal dirty gate (isEditing=true)', () => {
     // Arrange & Act
     render(
       <ModalWrapper
-        isEditing={true}
+        isEditing
         originalTitle="orig title"
         originalContent="orig content"
         title="   "
@@ -199,12 +198,12 @@ describe('ComposeModal dirty gate (isEditing=true)', () => {
     // Arrange & Act
     render(
       <ModalWrapper
-        isEditing={true}
+        isEditing
         originalTitle="orig title"
         originalContent="orig content"
         title="new title"
         content="orig content"
-        isSubmitting={true}
+        isSubmitting
       />,
     );
 
@@ -218,7 +217,7 @@ describe('ComposeModal dirty gate (isEditing=true)', () => {
     // Arrange & Act
     render(
       <ModalWrapper
-        isEditing={true}
+        isEditing
         originalTitle="orig title"
         originalContent="orig content"
         title="new title"
@@ -237,7 +236,7 @@ describe('ComposeModal dirty gate (isEditing=true)', () => {
     // Arrange — 開啟「編輯 post A」，title 與 original 一致 → disabled
     const { rerender } = render(
       <ModalWrapper
-        isEditing={true}
+        isEditing
         originalTitle="postA title"
         originalContent="postA content"
         title="postA title"
@@ -251,7 +250,7 @@ describe('ComposeModal dirty gate (isEditing=true)', () => {
     //   不得 cache 舊的 originalTitle。
     rerender(
       <ModalWrapper
-        isEditing={true}
+        isEditing
         originalTitle="postB title"
         originalContent="postB content"
         title="postA title"
@@ -280,7 +279,7 @@ describe('ComposeModal new-post mode (isEditing=false)', () => {
 
   it('isSubmitting=true → submit button disabled (防重複送出, research.md Decision 4)', () => {
     // Arrange & Act
-    render(<ModalWrapper isEditing={false} title="" content="" isSubmitting={true} />);
+    render(<ModalWrapper isEditing={false} title="" content="" isSubmitting />);
 
     // Assert
     expect(screen.getByRole('button', { name: /發布/ })).toBeDisabled();
@@ -296,7 +295,7 @@ describe('ComposeModal new-post mode (isEditing=false)', () => {
     expect(screen.getByRole('button', { name: /發布/ })).toHaveTextContent('發布');
 
     // Act — 切成 isSubmitting=true
-    rerender(<ModalWrapper isEditing={false} title="" content="" isSubmitting={true} />);
+    rerender(<ModalWrapper isEditing={false} title="" content="" isSubmitting />);
 
     // Assert — 文字仍維持「發布」，不會切到「更新中…」
     const submittingButton = screen.getByRole('button', { name: /發布/ });

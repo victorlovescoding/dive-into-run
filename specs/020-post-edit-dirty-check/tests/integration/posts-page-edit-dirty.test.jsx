@@ -1,6 +1,17 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useMemo } from 'react';
+import { AuthContext } from '@/contexts/AuthContext';
+import PostPage from '@/app/posts/page';
+import {
+  getLatestPosts,
+  hasUserLikedPosts,
+  updatePost,
+  getMorePosts,
+  createPost,
+  getPostDetail,
+} from '@/lib/firebase-posts';
 
 // ---------------------------------------------------------------------------
 // Hoisted shared state (available inside vi.mock factories)
@@ -80,34 +91,19 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('next/image', () => ({
+  // 測試替身：把 next/image 換成原生 img；alt 由 props 帶入。
+  // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text -- 測試 mock，alt 由呼叫端 prop 控制
   default: (props) => <img {...props} />,
 }));
 
 // ---------------------------------------------------------------------------
-// Imports (after vi.mock — Vitest hoists mocks above these)
+// Typed mock handles (vi.mock above is hoisted by Vitest before these lines)
 // ---------------------------------------------------------------------------
-import { AuthContext } from '@/contexts/AuthContext';
-import PostPage from '@/app/posts/page';
-import {
-  getLatestPosts,
-  hasUserLikedPosts,
-  updatePost,
-  getMorePosts,
-  createPost,
-  getPostDetail,
-} from '@/lib/firebase-posts';
-
-/** @type {import('vitest').Mock} */
 const mockedGetLatestPosts = /** @type {import('vitest').Mock} */ (getLatestPosts);
-/** @type {import('vitest').Mock} */
 const mockedHasUserLikedPosts = /** @type {import('vitest').Mock} */ (hasUserLikedPosts);
-/** @type {import('vitest').Mock} */
 const mockedUpdatePost = /** @type {import('vitest').Mock} */ (updatePost);
-/** @type {import('vitest').Mock} */
 const mockedGetMorePosts = /** @type {import('vitest').Mock} */ (getMorePosts);
-/** @type {import('vitest').Mock} */
 const mockedCreatePost = /** @type {import('vitest').Mock} */ (createPost);
-/** @type {import('vitest').Mock} */
 const mockedGetPostDetail = /** @type {import('vitest').Mock} */ (getPostDetail);
 
 // ---------------------------------------------------------------------------
@@ -121,14 +117,16 @@ beforeAll(() => {
     this.removeAttribute('open');
   });
 
-  global.IntersectionObserver = /** @type {any} */ (
-    class IntersectionObserver {
-      constructor() {
-        this.observe = vi.fn();
-        this.unobserve = vi.fn();
-        this.disconnect = vi.fn();
+  global.IntersectionObserver = /** @type {typeof IntersectionObserver} */ (
+    /** @type {unknown} */ (
+      class FakeIntersectionObserver {
+        constructor() {
+          this.observe = vi.fn();
+          this.unobserve = vi.fn();
+          this.disconnect = vi.fn();
+        }
       }
-    }
+    )
   );
 });
 
@@ -182,11 +180,9 @@ const mockPosts = [
  * @returns {import('react').ReactElement} 包裹後的元件。
  */
 function AuthWrapper({ children, user = TEST_USER }) {
-  return (
-    <AuthContext.Provider value={{ user, setUser: vi.fn(), loading: false }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  // useMemo 避免 Provider value 每次 render 都建新物件 → 觸發 react/jsx-no-constructed-context-values
+  const value = useMemo(() => ({ user, setUser: vi.fn(), loading: false }), [user]);
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 /**

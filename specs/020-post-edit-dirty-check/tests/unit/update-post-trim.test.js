@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { updateDoc } from 'firebase/firestore';
+import { updatePost } from '@/lib/firebase-posts';
 
 vi.mock('@/lib/firebase-client', () => ({
   db: {},
@@ -23,9 +25,6 @@ vi.mock('firebase/firestore', () => ({
   startAfter: vi.fn(),
   documentId: vi.fn(),
 }));
-
-import { updatePost } from '@/lib/firebase-posts';
-import { updateDoc } from 'firebase/firestore';
 
 const mockedUpdateDoc = /** @type {import('vitest').Mock} */ (updateDoc);
 
