@@ -68,6 +68,9 @@ export default function PostDetailClient({ postId }) {
   const [error, setError] = useState(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [originalTitle, setOriginalTitle] = useState('');
+  const [originalContent, setOriginalContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [commentEditing, setCommentEditing] = useState(null);
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState([]);
@@ -257,6 +260,8 @@ export default function PostDetailClient({ postId }) {
       if (targetId) {
         setTitle(postDetail.title);
         setContent(postDetail.content);
+        setOriginalTitle(postDetail.title);
+        setOriginalContent(postDetail.content);
         setEditingPostId(targetId);
       }
       dialogRef.current?.showModal();
@@ -279,17 +284,22 @@ export default function PostDetailClient({ postId }) {
       }
 
       try {
+        setIsSubmitting(true);
         if (editingPostId) {
           await updatePost(editingPostId, { title, content });
-          setPostDetail((prev) => ({ ...prev, title, content }));
+          setPostDetail((prev) => ({ ...prev, title: title.trim(), content: content.trim() }));
           showToast('更新文章成功');
         }
       } catch (err) {
         console.error('Post update error:', err);
         showToast('更新文章失敗，請稍後再試', 'error');
+      } finally {
+        setIsSubmitting(false);
       }
       setTitle('');
       setContent('');
+      setOriginalTitle('');
+      setOriginalContent('');
       setEditingPostId(null);
       dialogRef.current?.close();
     },
@@ -558,6 +568,9 @@ export default function PostDetailClient({ postId }) {
             onContentChange={setContent}
             onSubmit={handleSubmitPost}
             isEditing
+            originalTitle={originalTitle}
+            originalContent={originalContent}
+            isSubmitting={isSubmitting}
           />
 
           {isLoadingNext && <PostCardSkeleton count={1} />}

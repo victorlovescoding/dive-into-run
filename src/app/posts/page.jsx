@@ -28,6 +28,9 @@ import {
 export default function PostPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [originalTitle, setOriginalTitle] = useState('');
+  const [originalContent, setOriginalContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingPostId, setEditingPostId] = useState(null);
   const { user } = useContext(AuthContext);
   const { showToast } = useToast();
@@ -173,12 +176,17 @@ export default function PostPage() {
         }
         setTitle(p.title);
         setContent(p.content);
+        setOriginalTitle(p.title);
+        setOriginalContent(p.content);
         setEditingPostId(postId);
       } else {
         setTitle('');
         setContent('');
+        setOriginalTitle('');
+        setOriginalContent('');
         setEditingPostId(null);
       }
+      setOpenMenuPostId('');
       dialogRef.current?.showModal();
     },
     [posts, showToast],
@@ -268,6 +276,7 @@ export default function PostPage() {
         return;
       }
       try {
+        setIsSubmitting(true);
         if (editingPostId) {
           await updatePost(editingPostId, { title, content });
           setPosts((prev) =>
@@ -289,9 +298,13 @@ export default function PostPage() {
       } catch (err) {
         console.error('Post submit error:', err);
         showToast(editingPostId ? '更新文章失敗，請稍後再試' : '發佈文章失敗，請稍後再試', 'error');
+      } finally {
+        setIsSubmitting(false);
       }
       setTitle('');
       setContent('');
+      setOriginalTitle('');
+      setOriginalContent('');
       setEditingPostId(null);
       dialogRef.current?.close();
     },
@@ -337,6 +350,9 @@ export default function PostPage() {
         onContentChange={setContent}
         onSubmit={handleSubmitPost}
         isEditing={!!editingPostId}
+        originalTitle={originalTitle}
+        originalContent={originalContent}
+        isSubmitting={isSubmitting}
       />
     </div>
   );
