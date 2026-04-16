@@ -87,3 +87,15 @@
 .submitButton:hover {
   background: #5e35b1;
 }
+
+.submitButton:disabled,
+.submitButton[aria-disabled='true'] {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.submitButton:disabled:hover,
+.submitButton[aria-disabled='true']:hover {
+  background: #e5e7eb;
+}
