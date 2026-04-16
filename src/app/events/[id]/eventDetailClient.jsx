@@ -16,6 +16,7 @@ import {
   leaveEvent,
   updateEvent,
   deleteEvent,
+  EVENT_NOT_FOUND_MESSAGE,
 } from '@/lib/firebase-events';
 import {
   buildUserPayload,
@@ -393,7 +394,19 @@ export default function EventDetailClient({ id }) {
         await deleteEvent(String(eventId));
         setDeletingEventId(null);
         router.push('/events?toast=活動已刪除');
-      } catch {
+      } catch (err) {
+        // Race condition：其他 tab / session 已先刪除此活動。
+        // 沿用載入時已刪除的紅卡片 UI（setEvent(null) + setError），避免誤導
+        // 使用者以為自己的刪除操作失敗。用 warn 級 log 留 trace 但不觸發
+        // Next.js dev overlay（只有 console.error 會）。
+        if (err instanceof Error && err.message === EVENT_NOT_FOUND_MESSAGE) {
+          console.warn('Delete event skipped: already deleted by another session');
+          setDeletingEventId(null);
+          setEvent(null);
+          setError('找不到這個活動（可能已被刪除）');
+          return;
+        }
+        console.error('刪除活動失敗:', err);
         showToast('刪除活動失敗，請稍後再試', 'error');
       } finally {
         setIsDeletingEvent(false);
