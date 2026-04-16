@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import {
@@ -62,6 +63,8 @@ function mapToCommentCardData(commentItem) {
 export default function PostDetailClient({ postId }) {
   // -- State --
   const [postDetail, setPostDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [commentEditing, setCommentEditing] = useState(null);
@@ -100,35 +103,63 @@ export default function PostDetailClient({ postId }) {
   // -- Effects --
 
   useEffect(() => {
-    if (!postId) {
-      return;
-    }
-    /** 載入文章詳情及留言資料。 */
-    async function fetchPost() {
-      const postDetailData = await getPostDetail(postId);
-      setPostDetail(postDetailData);
-      const commentsData = await getLatestComments(postId, 10);
-      const last = commentsData[commentsData.length - 1];
-      setNextCursor(last);
-      setComments(
-        commentsData.map((prev) => ({
-          ...prev,
-          isAuthor: prev.authorUid === user?.uid,
-        })),
-      );
+    if (!postId) return undefined;
+    let cancelled = false;
 
-      if (user?.uid) {
-        const liked = await hasUserLikedPost(user.uid, postId);
-        setPostDetail((prev) => ({
-          ...prev,
-          liked,
-          isAuthor: prev.authorUid === user.uid,
-        }));
-      } else {
-        setPostDetail((prev) => ({ ...prev, liked: false }));
+    /** 載入文章詳情及留言資料；文章不存在時進入 error 分支。 */
+    async function fetchPost() {
+      setLoading(true);
+      setError(null);
+      try {
+        const postDetailData = await getPostDetail(postId);
+        if (cancelled) return;
+
+        if (!postDetailData) {
+          setPostDetail(null);
+          setError('找不到這篇文章（可能已被刪除）');
+          return;
+        }
+
+        setPostDetail(postDetailData);
+
+        const commentsData = await getLatestComments(postId, 10);
+        if (cancelled) return;
+        const last = commentsData[commentsData.length - 1];
+        setNextCursor(last);
+        setComments(
+          commentsData.map((prev) => ({
+            ...prev,
+            isAuthor: prev.authorUid === user?.uid,
+          })),
+        );
+
+        if (user?.uid) {
+          const liked = await hasUserLikedPost(user.uid, postId);
+          if (cancelled) return;
+          setPostDetail((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  liked,
+                  isAuthor: prev.authorUid === user.uid,
+                }
+              : prev,
+          );
+        } else {
+          setPostDetail((prev) => (prev ? { ...prev, liked: false } : prev));
+        }
+      } catch (err) {
+        console.error('讀取文章詳情失敗:', err);
+        if (!cancelled) setError('讀取文章詳情失敗，請稍後再試');
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
+
     fetchPost();
+    return () => {
+      cancelled = true;
+    };
   }, [postId, user?.uid]);
 
   useEffect(() => {
@@ -221,6 +252,7 @@ export default function PostDetailClient({ postId }) {
    */
   const composeButtonHandler = useCallback(
     (targetId) => {
+      if (!postDetail) return;
       if (targetId) {
         setTitle(postDetail.title);
         setContent(postDetail.content);
@@ -228,7 +260,7 @@ export default function PostDetailClient({ postId }) {
       }
       dialogRef.current?.showModal();
     },
-    [postDetail?.title, postDetail?.content],
+    [postDetail],
   );
 
   /**
@@ -303,7 +335,7 @@ export default function PostDetailClient({ postId }) {
    * 按讚包裝函式，搭配樂觀更新與失敗回滾。忽略 PostCard 傳入的 postId。
    */
   const handleToggleLikeWrapper = useCallback(async () => {
-    if (!user?.uid) return;
+    if (!user?.uid || !postDetail) return;
     const prevLiked = !!postDetail?.liked;
     const prevCount = Number(postDetail?.likesCount ?? 0);
     setPostDetail((prev) => ({
@@ -319,7 +351,7 @@ export default function PostDetailClient({ postId }) {
         likesCount: prevCount,
       }));
     }
-  }, [postId, user?.uid, postDetail?.liked, postDetail?.likesCount]);
+  }, [postId, user?.uid, postDetail]);
 
   /**
    * 進入留言編輯模式，載入該留言內容。
@@ -366,7 +398,7 @@ export default function PostDetailClient({ postId }) {
   async function submitCommentHandler(e) {
     e.preventDefault();
 
-    if (!comment.trim() || !user?.uid) return;
+    if (!comment.trim() || !user?.uid || !postDetail) return;
     if (!commentEditing) {
       const { id } = await addComment(postId, { user, comment });
       const actor = { uid: user.uid, name: user.name || '', photoURL: user.photoURL || '' };
@@ -433,81 +465,94 @@ export default function PostDetailClient({ postId }) {
 
   // -- Render --
 
-  if (!postDetail) {
-    return (
-      <div className={styles.detailContainer}>
-        <PostCardSkeleton count={1} />
-      </div>
-    );
-  }
-
   return (
     <div className={styles.detailContainer}>
-      <PostCard
-        post={enrichedPost}
-        truncate={false}
-        openMenuPostId={openMenuPostId}
-        onToggleMenu={toggleOwnerMenu}
-        onEdit={composeButtonHandler}
-        onDelete={deletePostHandler}
-        onLike={handleToggleLikeWrapper}
-      >
-        <ShareButton title={postDetail.title} url={shareUrl} />
-      </PostCard>
+      <Link href="/posts" className={styles.backLink}>
+        ← 回到文章列表
+      </Link>
 
-      <section className={styles.commentsSection}>
-        <h3 className={styles.commentsTitle}>留言 ({postDetail?.commentsCount ?? 0})</h3>
-        {comments.map((commentItem) => (
-          <CommentCard
-            key={commentItem.id}
-            comment={mapToCommentCardData(commentItem)}
-            isOwner={!!commentItem.isAuthor}
-            isHighlighted={commentItem.id === highlightedCommentId}
-            onEdit={(c) => {
-              editCommentButtonHandler(c.id);
-            }}
-            onDelete={(c) => {
-              deleteCommentButtonHandler(c.id);
-            }}
+      {loading && (
+        <div className={styles.statusRow} role="status" aria-live="polite">
+          <div className={styles.spinner} aria-hidden="true" />
+          <span>正在載入文章詳情…</span>
+        </div>
+      )}
+
+      {error && (
+        <div className={styles.errorCard} role="alert">
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && postDetail && (
+        <>
+          <PostCard
+            post={enrichedPost}
+            truncate={false}
+            openMenuPostId={openMenuPostId}
+            onToggleMenu={toggleOwnerMenu}
+            onEdit={composeButtonHandler}
+            onDelete={deletePostHandler}
+            onLike={handleToggleLikeWrapper}
+          >
+            <ShareButton title={postDetail.title} url={shareUrl} />
+          </PostCard>
+
+          <section className={styles.commentsSection}>
+            <h3 className={styles.commentsTitle}>留言 ({postDetail?.commentsCount ?? 0})</h3>
+            {comments.map((commentItem) => (
+              <CommentCard
+                key={commentItem.id}
+                comment={mapToCommentCardData(commentItem)}
+                isOwner={!!commentItem.isAuthor}
+                isHighlighted={commentItem.id === highlightedCommentId}
+                onEdit={(c) => {
+                  editCommentButtonHandler(c.id);
+                }}
+                onDelete={(c) => {
+                  deleteCommentButtonHandler(c.id);
+                }}
+              />
+            ))}
+          </section>
+
+          <form onSubmit={submitCommentHandler} className={styles.commentForm}>
+            {user?.photoURL && (
+              <Image
+                src={user.photoURL}
+                alt={`${user?.name ?? '使用者'}的大頭貼`}
+                width={36}
+                height={36}
+                className={styles.commentAvatar}
+              />
+            )}
+            <input
+              type="text"
+              placeholder="留言"
+              aria-label="留言"
+              value={comment}
+              onChange={handleCommentChange}
+              className={styles.commentInput}
+            />
+            <button type="submit" className={styles.commentSubmit}>
+              送出
+            </button>
+          </form>
+
+          <ComposeModal
+            dialogRef={dialogRef}
+            title={title}
+            content={content}
+            onTitleChange={setTitle}
+            onContentChange={setContent}
+            onSubmit={handleSubmitPost}
+            isEditing
           />
-        ))}
-      </section>
 
-      <form onSubmit={submitCommentHandler} className={styles.commentForm}>
-        {user?.photoURL && (
-          <Image
-            src={user.photoURL}
-            alt={`${user?.name ?? '使用者'}的大頭貼`}
-            width={36}
-            height={36}
-            className={styles.commentAvatar}
-          />
-        )}
-        <input
-          type="text"
-          placeholder="留言"
-          aria-label="留言"
-          value={comment}
-          onChange={handleCommentChange}
-          className={styles.commentInput}
-        />
-        <button type="submit" className={styles.commentSubmit}>
-          送出
-        </button>
-      </form>
-
-      <ComposeModal
-        dialogRef={dialogRef}
-        title={title}
-        content={content}
-        onTitleChange={setTitle}
-        onContentChange={setContent}
-        onSubmit={handleSubmitPost}
-        isEditing
-      />
-
-      {isLoadingNext && <PostCardSkeleton count={1} />}
-      <div ref={bottomRef} className={styles.scrollSentinel} />
+          {isLoadingNext && <PostCardSkeleton count={1} />}
+          <div ref={bottomRef} className={styles.scrollSentinel} />
+        </>
+      )}
     </div>
   );
 }
