@@ -14,6 +14,19 @@ function hasContent(title, content) {
 }
 
 /**
+ * 依編輯/送出中狀態決定送出按鈕文字。
+ * 編輯模式：送出中顯示「更新中…」，否則「更新」；新增模式固定「發布」。
+ * 拆成 helper 以避開 nested ternary（Constitution IX）。
+ * @param {boolean} isEditing - 是否為編輯模式。
+ * @param {boolean} isSubmitting - 是否送出中。
+ * @returns {string} 按鈕顯示文字。
+ */
+function getSubmitText(isEditing, isSubmitting) {
+  if (!isEditing) return '發布';
+  return isSubmitting ? '更新中…' : '更新';
+}
+
+/**
  * 發文/編輯文章 Modal。
  * @param {object} props - 元件屬性。
  * @param {import('react').RefObject<HTMLDialogElement | null>} props.dialogRef - dialog 元素 ref。
@@ -23,6 +36,9 @@ function hasContent(title, content) {
  * @param {(value: string) => void} props.onContentChange - 內容變更回呼。
  * @param {(e: import('react').FormEvent<HTMLFormElement>) => void} props.onSubmit - 表單送出回呼。
  * @param {boolean} [props.isEditing] - 是否為編輯模式，預設 false。
+ * @param {string} [props.originalTitle] - 編輯模式下做為 dirty 比較基準的原始標題；非編輯模式可省略。
+ * @param {string} [props.originalContent] - 編輯模式下做為 dirty 比較基準的原始內文；非編輯模式可省略。
+ * @param {boolean} [props.isSubmitting] - 送出請求是否進行中，用於停用按鈕並切換 label。
  * @returns {import('react').ReactElement} Modal 元件。
  */
 export default function ComposeModal({
@@ -33,6 +49,9 @@ export default function ComposeModal({
   onContentChange,
   onSubmit,
   isEditing = false,
+  originalTitle,
+  originalContent,
+  isSubmitting,
 }) {
   // -- Refs (讓 useEffect 內的 listener 讀到最新值，避免每次 keystroke 重新註冊) --
 
@@ -84,7 +103,12 @@ export default function ComposeModal({
   // -- Derived values --
 
   const headerText = isEditing ? '編輯文章' : '發表文章';
-  const submitText = isEditing ? '更新' : '發布';
+  const isDirty = isEditing
+    ? title.trim() !== (originalTitle ?? '').trim() ||
+      content.trim() !== (originalContent ?? '').trim()
+    : true;
+  const submitDisabled = (isEditing && !isDirty) || !!isSubmitting;
+  const submitText = getSubmitText(isEditing, !!isSubmitting);
 
   return (
     <dialog ref={dialogRef} className={styles.dialog} onCancel={handleCancel}>
@@ -113,7 +137,7 @@ export default function ComposeModal({
           value={content}
           onChange={(e) => onContentChange(e.target.value)}
         />
-        <button type="submit" className={styles.submitButton}>
+        <button type="submit" className={styles.submitButton} disabled={submitDisabled}>
           {submitText}
         </button>
       </form>
