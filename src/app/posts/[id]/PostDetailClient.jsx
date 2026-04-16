@@ -17,6 +17,7 @@ import {
   deleteComment,
   getMoreComments,
   validatePostInput,
+  POST_NOT_FOUND_MESSAGE,
 } from '@/lib/firebase-posts';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -324,6 +325,16 @@ export default function PostDetailClient({ postId }) {
         await deletePost(targetPostId);
         router.push('/posts?toast=文章已刪除');
       } catch (err) {
+        // Race condition：其他 tab / session 已先刪除此篇文章。
+        // 沿用 e358a82「載入時已刪除」的紅卡片 UI，避免誤導使用者以為
+        // 自己先前的刪除操作失敗。用 warn 級 log 留 trace 但不觸發
+        // Next.js dev overlay（只有 console.error 會）。
+        if (err instanceof Error && err.message === POST_NOT_FOUND_MESSAGE) {
+          console.warn('Delete post skipped: already deleted by another session');
+          setPostDetail(null);
+          setError('找不到這篇文章（可能已被刪除）');
+          return;
+        }
         console.error('Delete post error:', err);
         showToast('刪除文章失敗，請稍後再試', 'error');
       }

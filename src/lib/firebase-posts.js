@@ -446,6 +446,17 @@ export async function hasUserLikedPost(uid, postId) {
 }
 
 /**
+ * 當文章不存在時 deletePost 拋出的錯誤訊息常數。
+ * 匯出供 UI 層作為 race condition（跨 tab / 跨 session 先行刪除）的判別 symbol，
+ * 使 caller 能用 `err.message === POST_NOT_FOUND_MESSAGE` 精準分辨，
+ * 避免兩處字串字面量獨立存在導致未來漂移。
+ *
+ * Note: 此常數不應被 i18n —— 僅作為內部 discriminator，未來引入翻譯層時
+ * 應改為 sentinel（自訂 Error class 或 Symbol）。
+ */
+export const POST_NOT_FOUND_MESSAGE = '文章不存在';
+
+/**
  * 刪除文章及其所有 likes、comments subcollection（cascade delete）。
  * @param {string} postId - 文章 ID。
  * @returns {Promise<{ ok: boolean }>} 刪除結果。
@@ -457,7 +468,7 @@ export async function deletePost(postId) {
   const postRef = doc(db, 'posts', pid);
 
   const snap = await getDoc(postRef);
-  if (!snap.exists()) throw new Error('文章不存在');
+  if (!snap.exists()) throw new Error(POST_NOT_FOUND_MESSAGE);
 
   // --- 取得 likes 子集合所有文件 ---
   const likesSnap = await getDocs(collection(db, 'posts', pid, 'likes'));
