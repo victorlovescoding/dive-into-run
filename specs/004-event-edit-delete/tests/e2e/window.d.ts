@@ -6,5 +6,6 @@ interface Window {
   testFirebaseHelpers: {
     auth: unknown;
     signIn: (auth: unknown, email: string, password: string) => Promise<unknown>;
+    signOut: (auth: unknown) => Promise<void>;
   };
 }

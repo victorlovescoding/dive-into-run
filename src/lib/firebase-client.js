@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 import {
@@ -28,6 +29,9 @@ provider.setCustomParameters({ prompt: 'select_account' });
 const auth = getAuth(app);
 // Initialize Cloud Firestore and get a reference to the service
 const db = getFirestore(app);
+// Initialize Cloud Storage (shared instance — other modules should import this
+// rather than calling getStorage() to ensure the emulator connection sticks)
+const storage = getStorage(app);
 
 // Connect to Emulators based on environment variable
 if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
@@ -36,6 +40,7 @@ if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
     // client side
     connectAuthEmulator(auth, 'http://localhost:9099');
     connectFirestoreEmulator(db, 'localhost', 8080);
+    connectStorageEmulator(storage, 'localhost', 9199);
     // Expose auth helpers for E2E tests (emulator only)
     window.testFirebaseHelpers = {
       auth,
@@ -45,4 +50,4 @@ if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
   }
 }
 
-export { provider, auth, db };
+export { provider, auth, db, storage };

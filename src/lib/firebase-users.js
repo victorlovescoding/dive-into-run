@@ -1,7 +1,7 @@
 // 這個檔案專門拿資料
 import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db } from '@/lib/firebase-client';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '@/lib/firebase-client';
 
 /**
  * 登入時檢查使用者資料，若 Firestore 無資料則自動建立。
@@ -119,7 +119,6 @@ export async function uploadUserAvatar(file, uid) {
       else reject(new Error('toBlob 失敗')); // 失敗 → 交給 reject
     });
   });
-  const storage = getStorage();
   // 固定檔名覆蓋，避免累積舊檔
   const storageRef = ref(storage, `users/${uid}/avatar.png`);
   // 先確保上傳完成，再取下載網址
