@@ -11,6 +11,8 @@ import styles from './CommentCard.module.css';
  * @property {(comment: import('@/lib/firebase-comments').CommentData) => void} [onEdit] - 編輯回呼。
  * @property {(comment: import('@/lib/firebase-comments').CommentData) => void} [onDelete] - 刪除回呼。
  * @property {(comment: import('@/lib/firebase-comments').CommentData) => void} [onViewHistory] - 查看編輯記錄回呼。
+ * @property {import('react').Key} [key] - React reconciler 專用 key；同 PostCardProps 的說明，
+ *   為了讓 JSDoc-based `checkJs` 不誤報 "Property 'key' does not exist" 而列出。
  */
 
 /**

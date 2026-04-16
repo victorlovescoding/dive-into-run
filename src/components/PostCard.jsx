@@ -214,6 +214,9 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onEdit, onDelete }) {
  * @property {(postId: string) => void} [onDelete] - 刪除回呼。
  * @property {(postId: string) => void} [onLike] - 按讚回呼。
  * @property {import('react').ReactNode} [children] - 額外內容（詳文頁用，如 ShareButton）。
+ * @property {import('react').Key} [key] - React reconciler 專用 key；非元件內部使用的 prop，
+ *   但為了讓 JSDoc-based `checkJs` 不誤報 "Property 'key' does not exist on type 'PostCardProps'"，
+ *   需明確列出。後續若改用 `React.ComponentProps` / `React.PropsWithChildren` 可移除。
  */
 
 /**
