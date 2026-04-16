@@ -577,10 +577,23 @@ export async function updateEvent(eventId, updatedFields) {
 }
 
 /**
+ * 當活動不存在時 deleteEvent 拋出的錯誤訊息常數。
+ * 匯出供 UI 層作為 race condition（跨 tab / 跨 session 先行刪除）的判別 symbol，
+ * 使 caller 能用 `err.message === EVENT_NOT_FOUND_MESSAGE` 精準分辨，
+ * 避免兩處字串字面量獨立存在導致未來漂移。
+ *
+ * 與 `POST_NOT_FOUND_MESSAGE` (firebase-posts.js) 同 pattern。
+ * Note: 此常數不應被 i18n —— 僅作為內部 discriminator，未來引入翻譯層時
+ * 應改為 sentinel（自訂 Error class 或 Symbol）。
+ */
+export const EVENT_NOT_FOUND_MESSAGE = '活動不存在';
+
+/**
  * 刪除活動及其參與者子集合。
  * @param {string} eventId - 活動 ID。
  * @returns {Promise<{ok: boolean}>} 刪除結果。
- * @throws {Error} 若 eventId 空白或刪除操作失敗。
+ * @throws {Error} 若 eventId 空白或刪除操作失敗。活動不存在時 message 等於
+ *   `EVENT_NOT_FOUND_MESSAGE`，供 UI 層判別 race condition。
  */
 export async function deleteEvent(eventId) {
   if (!eventId) throw new Error('deleteEvent: eventId is required');
@@ -589,7 +602,7 @@ export async function deleteEvent(eventId) {
   const eventRef = doc(db, 'events', eid);
 
   const snap = await getDoc(eventRef);
-  if (!snap.exists()) throw new Error('活動不存在');
+  if (!snap.exists()) throw new Error(EVENT_NOT_FOUND_MESSAGE);
 
   // --- 清除 participants 子集合 ---
   const participantsRef = collection(db, 'events', eid, 'participants');
