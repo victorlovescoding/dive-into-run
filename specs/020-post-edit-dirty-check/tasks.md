@@ -133,8 +133,8 @@ description: 'Task list for 020-post-edit-dirty-check'
   - **執行狀態**：`No E2E test directory found at specs/020-post-edit-dirty-check/tests/e2e — skipping.`（符合 T006 SKIPPED 決策，無 e2e 目錄自動跳過）。
 - [x] T017 執行 IDE MCP `getDiagnostics`，修正所有 severity=Error/Warning/Hint 的診斷。
   - **執行狀態**：對 10 個 changed files（6 production + 4 test）各別呼叫，全部 `diagnostics: []`。無 error / warning / hint。
-- [ ] T018 依 `specs/020-post-edit-dirty-check/quickstart.md` 逐一人工驗證 Scenario A–I，在文件末段的 Pass Criteria checkbox 打勾。
-  - **狀態**：**待使用者人工驗證**。自動化測試無法覆蓋需要登入狀態 + DevTools Network 觀察 + 慢網模擬的部分，此 task 依賴實機操作。
+- [x] T018 依 `specs/020-post-edit-dirty-check/quickstart.md` 逐一人工驗證 Scenario A–I，在文件末段的 Pass Criteria checkbox 打勾。
+  - **執行狀態**：使用者人工驗證通過，Scenario A–I 全部符合 Pass Criteria。
 
 ---
 
