@@ -95,18 +95,20 @@ export async function createPost({ title, content, user }) {
 
 /**
  * 更新文章標題與內容。
+ * 寫入前會對 title / content 呼叫 String.prototype.trim()，前後空白會被清除，
+ * 中間空白（詞間、換行、段落空行）完整保留（FR-010）。
  * @param {string} editingPostId - 要編輯的文章 ID。
  * @param {object} root0 - 參數物件。
- * @param {string} root0.title - 新標題。
- * @param {string} root0.content - 新內容。
+ * @param {string} root0.title - 新標題（前後空白會被自動 trim，中間空白保留）。
+ * @param {string} root0.content - 新內容（前後空白會被自動 trim，中間空白保留）。
  */
 export async function updatePost(editingPostId, { title, content }) {
   const error = validatePostInput({ title, content });
   if (error) throw new Error(`updatePost: ${error}`);
 
   await updateDoc(doc(db, 'posts', editingPostId), {
-    title,
-    content,
+    title: title.trim(),
+    content: content.trim(),
   });
 }
 
