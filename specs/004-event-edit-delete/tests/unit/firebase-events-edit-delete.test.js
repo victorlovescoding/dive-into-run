@@ -218,7 +218,13 @@ describe('Unit: updateEvent', () => {
           /** @type {import('firebase/firestore').DocumentSnapshot} */ (
             /** @type {unknown} */ ({
               exists: () => true,
-              data: () => ({ participantsCount: 0, maxParticipants: 10, remainingSeats: 10 }),
+              data: () => ({
+                participantsCount: 0,
+                maxParticipants: 10,
+                remainingSeats: 10,
+                time: { toDate: () => new Date('2026-05-01T10:00') },
+                registrationDeadline: { toDate: () => new Date('2026-04-25T10:00') },
+              }),
             })
           ),
         ),
@@ -229,8 +235,11 @@ describe('Unit: updateEvent', () => {
       return callback(mockTx);
     });
 
-    // Act
-    const result = await updateEvent('event-123', { time: '2026-04-01T08:00' });
+    // Act — time 早於 existing registrationDeadline 會觸發驗證錯誤，所以一起傳
+    const result = await updateEvent('event-123', {
+      time: '2026-04-01T08:00',
+      registrationDeadline: '2026-03-31T08:00',
+    });
 
     // Assert
     expect(result.ok).toBe(true);

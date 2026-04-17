@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { useMemo } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -26,6 +26,10 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/contexts/AuthContext', () => ({
   AuthContext: mockAuthContext,
+}));
+
+vi.mock('next/image', () => ({
+  default: (props) => <img {...props} />,
 }));
 
 vi.mock('@/contexts/ToastContext', () => ({
@@ -68,7 +72,7 @@ vi.mock('@/lib/firebase-posts', async (importOriginal) => {
       title: 'Test Title',
       content: 'Test Content',
       authorUid: 'test-uid',
-      authorImgURL: 'test.jpg',
+      authorImgURL: '/test.jpg',
       likesCount: 0,
       commentsCount: 0,
     }),
@@ -108,7 +112,7 @@ const mockedHasUserLikedPosts = /** @type {import('vitest').Mock} */ (hasUserLik
 // ---------------------------------------------------------------------------
 const TEST_USER = {
   uid: 'test-uid',
-  photoURL: 'test.jpg',
+  photoURL: '/test.jpg',
   name: 'Test User',
   email: 'test@test.com',
   bio: null,
@@ -149,20 +153,21 @@ async function renderPostPage() {
 }
 
 /**
- * 開啟新增文章表單（點擊 ➕ 按鈕）。
+ * 開啟新增文章表單（點擊 ComposePrompt）。
  * @param {import('@testing-library/user-event').UserEvent} user - userEvent 實例。
  */
 async function openComposeForm(user) {
-  const composeButton = screen.getByRole('button', { name: '➕' });
+  const composeButton = screen.getByText('分享你的跑步故事...');
   await user.click(composeButton);
 }
 
 /**
- * 送出文章表單（點擊「發佈」按鈕）。
+ * 送出文章表單（點擊送出按鈕）。
  * @param {import('@testing-library/user-event').UserEvent} user - userEvent 實例。
+ * @param {string} [label] - 按鈕文字，預設 '發布'。
  */
-async function submitForm(user) {
-  const submitButton = screen.getByRole('button', { name: '發佈' });
+async function submitForm(user, label = '發布') {
+  const submitButton = screen.getByRole('button', { name: label });
   await user.click(submitButton);
 }
 
@@ -178,12 +183,36 @@ beforeEach(() => {
     title: 'Test Title',
     content: 'Test Content',
     authorUid: 'test-uid',
-    authorImgURL: 'test.jpg',
+    authorImgURL: '/test.jpg',
     likesCount: 0,
     commentsCount: 0,
   });
   mockedHasUserLikedPosts.mockResolvedValue(new Set());
   mockSearchParamsGet.mockReturnValue(null);
+});
+
+// ---------------------------------------------------------------------------
+// jsdom HTMLDialogElement patch (jsdom 未實作 showModal / close)
+// ---------------------------------------------------------------------------
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = vi.fn(function showModalPolyfill() {
+    this.setAttribute('open', '');
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function closePolyfill() {
+    this.removeAttribute('open');
+  });
+
+  global.IntersectionObserver = /** @type {typeof IntersectionObserver} */ (
+    /** @type {unknown} */ (
+      class FakeIntersectionObserver {
+        constructor() {
+          this.observe = vi.fn();
+          this.unobserve = vi.fn();
+          this.disconnect = vi.fn();
+        }
+      }
+    )
+  );
 });
 
 // ===========================================================================
@@ -212,7 +241,7 @@ describe('PostPage form validation', () => {
       await openComposeForm(user);
 
       // Act — fill content only
-      const contentInput = screen.getByPlaceholderText('有什麼新鮮的？');
+      const contentInput = screen.getByPlaceholderText('分享你的想法...');
       await user.type(contentInput, '這是一篇測試文章的內容');
       await submitForm(user);
 
@@ -250,7 +279,7 @@ describe('PostPage form validation', () => {
       const longTitle = 'a'.repeat(51);
       await user.type(titleInput, longTitle);
 
-      const contentInput = screen.getByPlaceholderText('有什麼新鮮的？');
+      const contentInput = screen.getByPlaceholderText('分享你的想法...');
       await user.type(contentInput, '有效內容');
       await submitForm(user);
 
@@ -274,7 +303,7 @@ describe('PostPage form validation', () => {
           title: '原始標題',
           content: '原始內容',
           authorUid: 'test-uid',
-          authorImgURL: 'test.jpg',
+          authorImgURL: '/test.jpg',
           likesCount: 0,
           commentsCount: 0,
         },
@@ -303,7 +332,7 @@ describe('PostPage form validation', () => {
       // Act — clear title, keep content, submit
       const titleInput = screen.getByPlaceholderText('標題');
       await user.clear(titleInput);
-      await submitForm(user);
+      await submitForm(user, '更新');
 
       // Assert
       await waitFor(() => {
@@ -325,7 +354,7 @@ describe('PostPage form validation', () => {
 
       // Act — fill valid title and content
       const titleInput = screen.getByPlaceholderText('標題');
-      const contentInput = screen.getByPlaceholderText('有什麼新鮮的？');
+      const contentInput = screen.getByPlaceholderText('分享你的想法...');
       await user.type(titleInput, '有效標題');
       await user.type(contentInput, '有效的文章內容');
       await submitForm(user);
@@ -335,7 +364,7 @@ describe('PostPage form validation', () => {
         expect(mockedCreatePost).toHaveBeenCalledWith({
           title: '有效標題',
           content: '有效的文章內容',
-          user: expect.objectContaining({ uid: 'test-uid', photoURL: 'test.jpg' }),
+          user: expect.objectContaining({ uid: 'test-uid', photoURL: '/test.jpg' }),
         });
       });
       await waitFor(() => {

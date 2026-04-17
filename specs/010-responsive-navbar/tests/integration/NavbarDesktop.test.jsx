@@ -98,7 +98,7 @@ describe('Navbar Desktop (T009-T012)', () => {
 
   // T009: Desktop horizontal link container
   describe('T009: Desktop links in list', () => {
-    it('renders a ul with role="list" containing all 5 nav links as li children', async () => {
+    it('renders a ul with role="list" containing all 6 nav links as li children', async () => {
       // Arrange & Act
       await renderNavbar();
 
@@ -106,9 +106,9 @@ describe('Navbar Desktop (T009-T012)', () => {
       const nav = screen.getByRole('navigation', { name: '主要導覽' });
       const list = within(nav).getByRole('list');
       const items = within(list).getAllByRole('listitem');
-      expect(items).toHaveLength(5);
+      expect(items).toHaveLength(6);
 
-      const labels = ['回首頁', '會員頁面', '文章', '揪團頁面', '跑步'];
+      const labels = ['回首頁', '會員頁面', '文章', '揪團頁面', '跑步', '天氣'];
       for (const label of labels) {
         expect(within(list).getByRole('link', { name: label })).toBeInTheDocument();
       }

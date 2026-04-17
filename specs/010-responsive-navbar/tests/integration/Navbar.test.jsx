@@ -89,7 +89,7 @@ describe('Navbar base', () => {
     expect(brandLink).toHaveAttribute('href', '/');
   });
 
-  it('renders all 5 nav links with correct labels and hrefs in navbar', async () => {
+  it('renders all 6 nav links with correct labels and hrefs in navbar', async () => {
     // Arrange
     const expectedLinks = [
       { label: '回首頁', href: '/' },
@@ -97,6 +97,7 @@ describe('Navbar base', () => {
       { label: '文章', href: '/posts' },
       { label: '揪團頁面', href: '/events' },
       { label: '跑步', href: '/runs' },
+      { label: '天氣', href: '/weather' },
     ];
     const Navbar = await importComponent();
 

@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
 
 // ---------------------------------------------------------------------------
 // Shared mock state
@@ -88,6 +87,7 @@ vi.mock('@/lib/firebase-posts', () => ({
   hasUserLikedPosts: vi.fn().mockResolvedValue(new Set()),
   deletePost: vi.fn(),
   getMorePosts: vi.fn(),
+  validatePostInput: vi.fn().mockReturnValue(null),
 }));
 
 // ---------------------------------------------------------------------------
@@ -137,6 +137,18 @@ function AuthWrapper({ children, user = TEST_USER }) {
 beforeEach(() => {
   vi.clearAllMocks();
   mockSearchParams = new URLSearchParams();
+
+  // jsdom 的 <dialog> 不一定有 showModal / close；補 polyfill 避免 runtime error
+  if (!HTMLDialogElement.prototype.showModal) {
+    HTMLDialogElement.prototype.showModal = function showModal() {
+      this.setAttribute('open', '');
+    };
+  }
+  if (!HTMLDialogElement.prototype.close) {
+    HTMLDialogElement.prototype.close = function close() {
+      this.removeAttribute('open');
+    };
+  }
 });
 
 // ===========================================================================
@@ -458,15 +470,15 @@ describe('Posts page — CRUD handler toast calls', () => {
       expect(getLatestPosts).toHaveBeenCalled();
     });
 
-    const composeButton = screen.getByRole('button', { name: '➕' });
+    const composeButton = screen.getByRole('button', { name: /分享你的跑步故事/ });
     await user.click(composeButton);
 
     const titleInput = screen.getByPlaceholderText('標題');
-    const contentInput = screen.getByPlaceholderText('有什麼新鮮的？');
+    const contentInput = screen.getByPlaceholderText('分享你的想法...');
     await user.type(titleInput, 'New Post');
     await user.type(contentInput, 'Content');
 
-    const submitButton = screen.getByRole('button', { name: '發佈' });
+    const submitButton = screen.getByRole('button', { name: '發布' });
     await user.click(submitButton);
 
     await waitFor(() => {
@@ -492,15 +504,15 @@ describe('Posts page — CRUD handler toast calls', () => {
       expect(getLatestPosts).toHaveBeenCalled();
     });
 
-    const composeButton = screen.getByRole('button', { name: '➕' });
+    const composeButton = screen.getByRole('button', { name: /分享你的跑步故事/ });
     await user.click(composeButton);
 
     const titleInput = screen.getByPlaceholderText('標題');
-    const contentInput = screen.getByPlaceholderText('有什麼新鮮的？');
+    const contentInput = screen.getByPlaceholderText('分享你的想法...');
     await user.type(titleInput, 'Fail Post');
     await user.type(contentInput, 'Fail content');
 
-    const submitButton = screen.getByRole('button', { name: '發佈' });
+    const submitButton = screen.getByRole('button', { name: '發布' });
     await user.click(submitButton);
 
     await waitFor(() => {
@@ -543,7 +555,7 @@ describe('Posts page — CRUD handler toast calls', () => {
     await user.clear(titleInput);
     await user.type(titleInput, 'Updated Title');
 
-    const submitButton = screen.getByRole('button', { name: '發佈' });
+    const submitButton = screen.getByRole('button', { name: '更新' });
     await user.click(submitButton);
 
     await waitFor(() => {
@@ -586,7 +598,12 @@ describe('Posts page — CRUD handler toast calls', () => {
     const editButton = screen.getByRole('menuitem', { name: '編輯' });
     await user.click(editButton);
 
-    const submitButton = screen.getByRole('button', { name: '發佈' });
+    // Make the form dirty so submit button is enabled
+    const titleInput = screen.getByPlaceholderText('標題');
+    await user.clear(titleInput);
+    await user.type(titleInput, 'Changed Title');
+
+    const submitButton = screen.getByRole('button', { name: '更新' });
     await user.click(submitButton);
 
     await waitFor(() => {

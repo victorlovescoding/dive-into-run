@@ -73,14 +73,15 @@ describe('RunsActivityList', () => {
       intersectionCallback = null;
       vi.stubGlobal(
         'IntersectionObserver',
-        vi.fn((/** @type {(entries: IntersectionObserverEntry[]) => void} */ callback) => {
-          intersectionCallback = callback;
-          return {
-            observe: vi.fn(),
-            disconnect: vi.fn(),
-            unobserve: vi.fn(),
-          };
-        }),
+        class {
+          /** @param {(entries: IntersectionObserverEntry[]) => void} callback - intersection observer callback。 */
+          constructor(callback) {
+            intersectionCallback = callback;
+          }
+          observe = vi.fn();
+          disconnect = vi.fn();
+          unobserve = vi.fn();
+        },
       );
     });
 

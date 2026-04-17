@@ -243,7 +243,9 @@ export default [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        projectService: true,
+        projectService: {
+          allowDefaultProject: ['vitest.setup.jsx'],
+        },
         tsconfigRootDir: __dirname,
       },
     },

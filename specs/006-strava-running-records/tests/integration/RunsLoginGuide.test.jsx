@@ -1,5 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+
+vi.mock('@/lib/firebase-client', () => ({ auth: {}, provider: {} }));
+vi.mock('firebase/auth', () => ({
+  signInWithPopup: vi.fn(),
+}));
+
 import RunsLoginGuide from '@/components/RunsLoginGuide';
 
 describe('RunsLoginGuide', () => {
@@ -12,11 +18,10 @@ describe('RunsLoginGuide', () => {
     expect(heading).toBeInTheDocument();
   });
 
-  it('renders a link that navigates to /login', () => {
+  it('renders a login button', () => {
     render(<RunsLoginGuide />);
 
-    const link = screen.getByRole('link', { name: /登入/ });
-    expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', '/login');
+    const button = screen.getByRole('button', { name: /登入/ });
+    expect(button).toBeInTheDocument();
   });
 });

@@ -1,6 +1,5 @@
-import '@testing-library/jest-dom';
-import { vi } from 'vitest';
-import React from 'react';
+import '@testing-library/jest-dom'; // eslint-disable-line import/no-extraneous-dependencies
+import { vi } from 'vitest'; // eslint-disable-line import/no-extraneous-dependencies
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
@@ -10,9 +9,7 @@ global.ResizeObserver = class ResizeObserver {
 };
 
 // Mock IntersectionObserver (Missing in JSDOM)
-// Mock IntersectionObserver (Missing in JSDOM)
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
   get root() {
     return null;
   }
@@ -64,3 +61,11 @@ vi.mock('react-leaflet', () => ({
 
 // Mock leaflet-draw
 vi.mock('leaflet-draw', () => ({}));
+
+// Global Mock for Firebase client (prevents FirebaseError: invalid-api-key in JSDOM)
+vi.mock('@/lib/firebase-client', () => ({
+  auth: {},
+  db: {},
+  storage: {},
+  provider: { providerId: 'google.com' },
+}));

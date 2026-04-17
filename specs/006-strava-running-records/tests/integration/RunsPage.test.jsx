@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AuthContext } from '@/contexts/AuthContext';
+import ToastProvider from '@/contexts/ToastContext';
 
 // Mock Firebase to avoid initialization errors
 vi.mock('@/lib/firebase-client', () => ({
@@ -66,7 +67,9 @@ const mockedUseSync = /** @type {import('vitest').Mock} */ (useStravaSync);
  */
 function renderWithAuth(ui, { user = null, loading = false } = {}) {
   return render(
-    <AuthContext.Provider value={{ user, setUser: vi.fn(), loading }}>{ui}</AuthContext.Provider>,
+    <ToastProvider>
+      <AuthContext.Provider value={{ user, setUser: vi.fn(), loading }}>{ui}</AuthContext.Provider>
+    </ToastProvider>,
   );
 }
 
@@ -186,9 +189,9 @@ describe('RunsPage', () => {
       user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
     });
 
-    const syncButton = screen.getByRole('button', { name: /同步/i });
+    const syncButton = screen.getByRole('button', { name: '冷卻中' });
     expect(syncButton).toBeDisabled();
-    expect(screen.getByText(/45/)).toBeInTheDocument();
+    expect(screen.getByText(/45 秒後可再同步/)).toBeInTheDocument();
   });
 
   it('calls refresh after successful sync', async () => {

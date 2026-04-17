@@ -47,8 +47,8 @@ describe('Integration: EventDeleteConfirm', () => {
     render(<EventDeleteConfirm eventId="event-1" onConfirm={vi.fn()} onCancel={vi.fn()} />);
 
     // Act & Assert
-    expect(screen.getByRole('button', { name: /^是$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^否$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /是，確認刪除/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /否，取消/i })).toBeInTheDocument();
   });
 
   it('should be a custom dialog, not a native confirm (FR-010)', () => {
@@ -70,7 +70,7 @@ describe('Integration: EventDeleteConfirm', () => {
     render(<EventDeleteConfirm eventId="event-1" onConfirm={vi.fn()} onCancel={mockOnCancel} />);
 
     // Act
-    const noButton = screen.getByRole('button', { name: /^否$/i });
+    const noButton = screen.getByRole('button', { name: /否，取消/i });
     await user.click(noButton);
 
     // Assert
@@ -90,7 +90,7 @@ describe('Integration: EventDeleteConfirm', () => {
     );
 
     // Act
-    const yesButton = screen.getByRole('button', { name: /^是$/i });
+    const yesButton = screen.getByRole('button', { name: /是，確認刪除/i });
     await user.click(yesButton);
 
     // Assert
@@ -107,8 +107,8 @@ describe('Integration: EventDeleteConfirm', () => {
     );
 
     // Act
-    const yesButton = screen.getByRole('button', { name: /是|刪除中/i });
-    const noButton = screen.getByRole('button', { name: /^否$/i });
+    const yesButton = screen.getByRole('button', { name: /刪除中…/i });
+    const noButton = screen.getByRole('button', { name: /否，取消/i });
 
     // Assert
     expect(yesButton).toBeDisabled();
