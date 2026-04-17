@@ -18,7 +18,8 @@
     "test:e2e:emulator": "npx playwright test --config playwright.emulator.config.mjs",
     "webhook:create": "node scripts/strava-webhook.js create",
     "webhook:view": "node scripts/strava-webhook.js view",
-    "webhook:delete": "node scripts/strava-webhook.js delete"
+    "webhook:delete": "node scripts/strava-webhook.js delete",
+    "prepare": "husky"
   },
   "dependencies": {
     "@mapbox/polyline": "^1.2.1",
