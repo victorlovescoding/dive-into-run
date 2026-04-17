@@ -75,6 +75,8 @@ export default [
             '**/vitest.config.mjs',
             '**/playwright.config.js',
             '**/playwright.config.mjs',
+            '**/playwright.*.config.mjs',
+            '**/e2e/**/*.{js,jsx,mjs}',
             '**/.claude/skills/**/*.js',
             '**/.gemini/skills/**/*.js',
           ],
@@ -124,6 +126,7 @@ export default [
       '**/*.test.{js,jsx,mjs}',
       '**/*.spec.{js,jsx,mjs}',
       'specs/test-utils/**/*.{js,jsx,mjs}',
+      'specs/**/e2e/**/*.{js,jsx,mjs}',
     ],
     rules: {
       // 1. 開啟依賴檢查，但允許測試檔案使用 devDependencies (比 off 更安全！)
@@ -146,6 +149,7 @@ export default [
       'no-plusplus': 'off',
       'no-underscore-dangle': 'off',
       'class-methods-use-this': 'off',
+      'no-await-in-loop': 'off',
 
       // B 類 warnings
       'jsdoc/reject-any-type': 'off',
