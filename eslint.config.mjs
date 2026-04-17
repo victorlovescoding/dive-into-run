@@ -119,7 +119,7 @@ export default [
   // 針對測試檔案的嚴格規範
   {
     // 鎖定目標：測試資料夾與所有測試副檔名
-    files: ['tests/**/*.js', 'tests/**/*.jsx', '**/*.test.js', '**/*.spec.js'],
+    files: ['tests/**/*.{js,jsx,mjs}', '**/*.test.{js,jsx,mjs}', '**/*.spec.{js,jsx,mjs}'],
     rules: {
       // 1. 開啟依賴檢查，但允許測試檔案使用 devDependencies (比 off 更安全！)
       'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
@@ -129,6 +129,20 @@ export default [
 
       // 3. 禁止使用 console.log (保持測試輸出乾淨，逼 AI 寫出乾淨的 Code)
       'no-console': 'error',
+
+      // B 類：Vitest 測試環境本質衝突，放寬
+      'import/first': 'off',
+      'no-shadow': 'off',
+      'global-require': 'off',
+      'no-restricted-syntax': 'off',
+      'no-plusplus': 'off',
+      'no-underscore-dangle': 'off',
+      'class-methods-use-this': 'off',
+
+      // B 類 warnings
+      'jsdoc/reject-any-type': 'off',
+      '@next/next/no-img-element': 'off',
+      'jsx-a11y/alt-text': 'off',
     },
   },
 ];

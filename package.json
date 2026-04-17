@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint src specs",
     "lint:changed": "bash scripts/lint-changed.sh",
     "test": "vitest",
     "type-check": "tsc -p tsconfig.check.json",

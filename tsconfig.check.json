@@ -2,6 +2,7 @@
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
+    "types": ["vitest/globals", "@testing-library/jest-dom", "node"],
     "noEmit": true,
     "target": "esnext",
     "module": "esnext",
