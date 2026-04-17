@@ -1,5 +1,5 @@
-import '@testing-library/jest-dom'; // eslint-disable-line import/no-extraneous-dependencies
-import { vi } from 'vitest'; // eslint-disable-line import/no-extraneous-dependencies
+import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {

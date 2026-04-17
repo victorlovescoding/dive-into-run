@@ -1,2 +1,4 @@
-npm run lint:changed
-npm run type-check:changed
+npx eslint src specs --max-warnings 0
+npm run type-check
+npm run spellcheck
+npx vitest run

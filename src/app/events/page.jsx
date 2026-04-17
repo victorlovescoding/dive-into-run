@@ -18,7 +18,6 @@ import {
 } from '@/lib/event-helpers';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import styles from './events.module.css';
 import EventActionButtons from '@/components/EventActionButtons';
 import {
   createEvent,
@@ -36,6 +35,7 @@ import EventEditForm from '@/components/EventEditForm';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import UserLink from '@/components/UserLink';
 import taiwanLocations from '@/lib/taiwan-locations';
+import styles from './events.module.css';
 
 // 動態載入 EventMap 元件，關閉 SSR
 const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });

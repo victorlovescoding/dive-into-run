@@ -2,9 +2,9 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import styles from './EventEditForm.module.css';
 import { buildRoutePayload, normalizeRoutePolylines, countTotalPoints } from '@/lib/event-helpers';
 import taiwanLocations from '@/lib/taiwan-locations';
+import styles from './EventEditForm.module.css';
 
 const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
 

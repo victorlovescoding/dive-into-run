@@ -14,8 +14,7 @@ function isUpcoming(time) {
 /**
  * 活動卡片元件。
  * @param {object} props - 元件屬性。
- * @param {string} [props.key] - React key。
- * @param {import('@/lib/firebase-member').MyEventItem} props.event - 活動資料。
+ *@param {import('@/lib/firebase-member').MyEventItem} props.event - 活動資料。
  * @param {boolean} props.isHost - 是否為主辦者。
  * @returns {import('react').ReactElement} 活動卡片。
  */

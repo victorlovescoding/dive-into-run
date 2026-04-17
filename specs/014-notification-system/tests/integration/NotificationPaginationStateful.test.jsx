@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // ---------------------------------------------------------------------------
@@ -395,8 +395,7 @@ describe('NotificationPagination — stateful cursor tests', () => {
     });
 
     const { fireAllListener, fireUnreadListener } = setupStatefulMocks([]);
-    // Skip pointer-events checks to speed up 19 sequential clicks
-    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    const user = userEvent.setup();
 
     // Mock server fetch for unread Phase 2
     /** @type {import('vitest').Mock} */ (fetchMoreUnreadNotifications).mockResolvedValueOnce({
@@ -416,13 +415,19 @@ describe('NotificationPagination — stateful cursor tests', () => {
     await user.click(screen.getByRole('tab', { name: '未讀' }));
 
     // Phase 1: expand client-side slice from 5 to 100 (19 clicks × +5)
-    for (let i = 0; i < 19; i++) {
-      await user.click(screen.getByRole('button', { name: '查看先前通知' }));
-    }
-
-    await waitFor(() => {
-      expect(screen.getAllByText(/^通知 u\d+$/)).toHaveLength(100);
+    // Use fireEvent.click inside a single act() instead of 19 sequential
+    // userEvent.click calls. userEvent simulates full pointer-event sequences
+    // which causes timeouts under parallel test load (~500ms per click).
+    // React 18 batches the 19 functional setState((prev) => prev + 5) calls
+    // into one render, making this near-instant.
+    await act(async () => {
+      const btn = screen.getByRole('button', { name: '查看先前通知' });
+      for (let i = 0; i < 19; i++) {
+        fireEvent.click(btn);
+      }
     });
+
+    expect(screen.getAllByText(/^通知 u\d+$/)).toHaveLength(100);
 
     // Phase 2: still hasMore (listener at capacity 100), next loadMore hits server
     expect(screen.getByRole('button', { name: '查看先前通知' })).toBeInTheDocument();
@@ -436,5 +441,5 @@ describe('NotificationPagination — stateful cursor tests', () => {
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: '查看先前通知' })).not.toBeInTheDocument();
     });
-  }, 15000);
+  });
 });
