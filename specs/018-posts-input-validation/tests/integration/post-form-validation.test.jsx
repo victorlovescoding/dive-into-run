@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useMemo } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -6,7 +7,6 @@ import userEvent from '@testing-library/user-event';
 // Hoisted shared state (available inside vi.mock factories)
 // ---------------------------------------------------------------------------
 const { mockShowToast, mockReplace, mockSearchParamsGet, mockAuthContext } = vi.hoisted(() => {
-  // eslint-disable-next-line global-require -- dynamic require in hoisted factory
   const { createContext } = require('react');
   return {
     mockShowToast: vi.fn(),
@@ -127,11 +127,8 @@ const TEST_USER = {
  * @returns {import('react').ReactElement} 包裹後的元件。
  */
 function AuthWrapper({ children, user = TEST_USER }) {
-  return (
-    <AuthContext.Provider value={{ user, setUser: vi.fn(), loading: false }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const authValue = useMemo(() => ({ user, setUser: vi.fn(), loading: false }), [user]);
+  return <AuthContext.Provider value={authValue}>{children}</AuthContext.Provider>;
 }
 
 /**

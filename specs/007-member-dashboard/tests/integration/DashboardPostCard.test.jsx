@@ -13,7 +13,10 @@ vi.mock('@/lib/event-helpers', () => ({
 /** @type {import('vitest').Mock} */
 const mockFormatDateTime = /** @type {any} */ (await import('@/lib/event-helpers')).formatDateTime;
 
-/** @returns {import('@/lib/firebase-posts').Post} */
+/**
+ * @param overrides
+ * @returns {import('@/lib/firebase-posts').Post}
+ */
 function makePost(overrides = {}) {
   return {
     id: 'post-1',

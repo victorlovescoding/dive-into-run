@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { signInWithGoogle, signOutUser } from '@/lib/firebase-auth-helpers';
 import { signInWithPopup, signOut } from 'firebase/auth';
+import { signInWithGoogle, signOutUser } from '@/lib/firebase-auth-helpers';
 import { auth, provider } from '@/lib/firebase-client';
 
 vi.mock('firebase/auth', () => ({

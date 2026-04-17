@@ -1,4 +1,3 @@
-/* eslint-disable jsdoc/reject-any-type */
 import { describe, it, expect } from 'vitest';
 import {
   formatPace,
@@ -81,8 +80,10 @@ describe('event-helpers unit tests', () => {
   describe('buildRoutePayload', () => {
     it('should build payload from coordinates', () => {
       const coords = [
-        { lat: 1, lng: 2 },
-        { lat: 3, lng: 4 },
+        [
+          { lat: 1, lng: 2 },
+          { lat: 3, lng: 4 },
+        ],
       ];
       const result = buildRoutePayload(coords);
       expect(result).toBeDefined();

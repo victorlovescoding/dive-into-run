@@ -446,7 +446,7 @@ export default function RunTogetherPage() {
 
         // 參加功能：UI 快取
         participantsCount: 0,
-        remainingSeats: toNumber(data.maxParticipants),
+        remainingSeats: toNumber(String(data.maxParticipants)),
       };
 
       setEvents((prev) => [newEventCard, ...prev.filter((ev) => ev.id !== newEventCard.id)]);

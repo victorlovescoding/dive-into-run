@@ -72,7 +72,7 @@ describe('RunCalendarDialog', () => {
       const onClose = vi.fn();
 
       // Act
-      render(<RunCalendarDialog open={true} onClose={onClose} />);
+      render(<RunCalendarDialog open onClose={onClose} />);
 
       // Assert
       expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled();
@@ -82,7 +82,7 @@ describe('RunCalendarDialog', () => {
       // Arrange
       const user = userEvent.setup();
       const onClose = vi.fn();
-      render(<RunCalendarDialog open={true} onClose={onClose} />);
+      render(<RunCalendarDialog open onClose={onClose} />);
 
       // Act
       await user.click(screen.getByRole('button', { name: '關閉月曆' }));
@@ -95,7 +95,7 @@ describe('RunCalendarDialog', () => {
   describe('日曆網格 rendering', () => {
     it('顯示 weekday headers（日～六）', () => {
       // Arrange & Act
-      render(<RunCalendarDialog open={true} onClose={vi.fn()} />);
+      render(<RunCalendarDialog open onClose={vi.fn()} />);
 
       // Assert
       const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
@@ -106,7 +106,7 @@ describe('RunCalendarDialog', () => {
 
     it('dayMap 含資料時顯示日期數字', () => {
       // Arrange & Act
-      render(<RunCalendarDialog open={true} onClose={vi.fn()} />);
+      render(<RunCalendarDialog open onClose={vi.fn()} />);
 
       // Assert — 日曆格應包含 day 5 和 day 10
       expect(screen.getByText('5')).toBeInTheDocument();
@@ -117,7 +117,7 @@ describe('RunCalendarDialog', () => {
   describe('Icon display per activity type', () => {
     it('dayMap 含不同 type 時顯示對應距離文字', () => {
       // Arrange & Act
-      render(<RunCalendarDialog open={true} onClose={vi.fn()} />);
+      render(<RunCalendarDialog open onClose={vi.fn()} />);
 
       // Assert — day 5: Run 5200m → "5.2"
       expect(screen.getByText('5.2')).toBeInTheDocument();
@@ -130,7 +130,7 @@ describe('RunCalendarDialog', () => {
   describe('月份總結值', () => {
     it('顯示正確的總里程', () => {
       // Arrange & Act
-      render(<RunCalendarDialog open={true} onClose={vi.fn()} />);
+      render(<RunCalendarDialog open onClose={vi.fn()} />);
 
       // Assert — 16200m → "16.2 km"
       expect(screen.getByText(/16\.2 km/)).toBeInTheDocument();
@@ -138,7 +138,7 @@ describe('RunCalendarDialog', () => {
 
     it('顯示各類型小計文字', () => {
       // Arrange & Act
-      render(<RunCalendarDialog open={true} onClose={vi.fn()} />);
+      render(<RunCalendarDialog open onClose={vi.fn()} />);
 
       // Assert — 戶外 13.2 km, 越野 3.0 km
       expect(screen.getByText(/戶外/)).toBeInTheDocument();
@@ -170,7 +170,7 @@ describe('RunCalendarDialog', () => {
       const user = userEvent.setup();
       const { current, target } = getExpectedTitles(1);
 
-      render(<RunCalendarDialog open={true} onClose={vi.fn()} />);
+      render(<RunCalendarDialog open onClose={vi.fn()} />);
       expect(screen.getByText(current)).toBeInTheDocument();
 
       // Act
@@ -185,7 +185,7 @@ describe('RunCalendarDialog', () => {
       const user = userEvent.setup();
       const { current, target } = getExpectedTitles(-1);
 
-      render(<RunCalendarDialog open={true} onClose={vi.fn()} />);
+      render(<RunCalendarDialog open onClose={vi.fn()} />);
       expect(screen.getByText(current)).toBeInTheDocument();
 
       // Act

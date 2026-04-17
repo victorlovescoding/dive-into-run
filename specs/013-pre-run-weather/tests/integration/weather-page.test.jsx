@@ -223,7 +223,6 @@ vi.mock('react-leaflet', () => ({
 
 // --- Mock next/image ---
 vi.mock('next/image', () => ({
-  // eslint-disable-next-line @next/next/no-img-element -- test mock for next/image
   default: ({ src, alt, ...props }) => <img src={src} alt={alt} {...props} />,
 }));
 

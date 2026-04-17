@@ -75,6 +75,8 @@ export default [
             '**/vitest.config.mjs',
             '**/playwright.config.js',
             '**/playwright.config.mjs',
+            '**/playwright.*.config.mjs',
+            '**/e2e/**/*.{js,jsx,mjs}',
             '**/.claude/skills/**/*.js',
             '**/.gemini/skills/**/*.js',
           ],
@@ -119,7 +121,13 @@ export default [
   // 針對測試檔案的嚴格規範
   {
     // 鎖定目標：測試資料夾與所有測試副檔名
-    files: ['tests/**/*.{js,jsx,mjs}', '**/*.test.{js,jsx,mjs}', '**/*.spec.{js,jsx,mjs}'],
+    files: [
+      'tests/**/*.{js,jsx,mjs}',
+      '**/*.test.{js,jsx,mjs}',
+      '**/*.spec.{js,jsx,mjs}',
+      'specs/test-utils/**/*.{js,jsx,mjs}',
+      'specs/**/e2e/**/*.{js,jsx,mjs}',
+    ],
     rules: {
       // 1. 開啟依賴檢查，但允許測試檔案使用 devDependencies (比 off 更安全！)
       'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
@@ -130,6 +138,9 @@ export default [
       // 3. 禁止使用 console.log (保持測試輸出乾淨，逼 AI 寫出乾淨的 Code)
       'no-console': 'error',
 
+      // 測試輔助只 export 一個 helper 很正常
+      'import/prefer-default-export': 'off',
+
       // B 類：Vitest 測試環境本質衝突，放寬
       'import/first': 'off',
       'no-shadow': 'off',
@@ -138,6 +149,8 @@ export default [
       'no-plusplus': 'off',
       'no-underscore-dangle': 'off',
       'class-methods-use-this': 'off',
+      'no-await-in-loop': 'off',
+      'react/jsx-no-constructed-context-values': 'off', // 測試 wrapper Provider value 重建無害
 
       // B 類 warnings
       'jsdoc/reject-any-type': 'off',

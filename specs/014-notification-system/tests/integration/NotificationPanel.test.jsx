@@ -239,7 +239,6 @@ describe('NotificationItem', () => {
       <NotificationItem notification={notification} onClick={vi.fn()} />,
     );
 
-    // eslint-disable-next-line testing-library/no-container -- 驗證 CSS class 呈現的視覺元素
     const dot = container.querySelector('[class*="unreadDot"]');
     expect(dot).toBeInTheDocument();
   });
@@ -250,7 +249,6 @@ describe('NotificationItem', () => {
       <NotificationItem notification={notification} onClick={vi.fn()} />,
     );
 
-    // eslint-disable-next-line testing-library/no-container -- 驗證 CSS class 呈現的視覺元素
     const dot = container.querySelector('[class*="unreadDot"]');
     expect(dot).not.toBeInTheDocument();
   });

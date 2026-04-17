@@ -264,7 +264,7 @@ describe('Integration: EventActionButtons', () => {
         user={mockUser}
         onJoin={vi.fn()}
         onLeave={vi.fn()}
-        isPending={true}
+        isPending
         isCreating={false}
         isFormOpen={false}
         myJoinedEventIds={new Set()}

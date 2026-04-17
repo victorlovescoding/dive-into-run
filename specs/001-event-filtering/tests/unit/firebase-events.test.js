@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { queryEvents } from '@/lib/firebase-events';
 import * as firestore from 'firebase/firestore';
+import { asMock } from '../../../test-utils/mock-helpers';
+import { queryEvents } from '@/lib/firebase-events';
 
 // Mock Firestore
 vi.mock('firebase/firestore', async () => {
@@ -35,7 +36,7 @@ describe('Event Filtering Logic (Unit) - Feature 001', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // 預設 Mock getDocs 回傳 mockEvents
-    firestore.getDocs.mockResolvedValue({
+    asMock(firestore.getDocs).mockResolvedValue({
       docs: mockEvents.map((ev) => ({
         id: ev.id,
         data: () => ev,
@@ -47,7 +48,7 @@ describe('Event Filtering Logic (Unit) - Feature 001', () => {
   it('應在 Firestore 層級過濾地點 (city where clause)', async () => {
     // city 篩選已移至 Firestore 層級，mock 模擬 Firestore 只回傳匹配的資料
     const taichungEvents = mockEvents.filter((ev) => ev.city === '臺中市');
-    firestore.getDocs.mockResolvedValueOnce({
+    asMock(firestore.getDocs).mockResolvedValueOnce({
       docs: taichungEvents.map((ev) => ({ id: ev.id, data: () => ev })),
     });
 

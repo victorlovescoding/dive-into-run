@@ -17,7 +17,6 @@ import {
 // Hoisted shared state (available inside vi.mock factories)
 // ---------------------------------------------------------------------------
 const { mockShowToast, mockReplace, mockSearchParamsGet, mockAuthContext } = vi.hoisted(() => {
-  // eslint-disable-next-line global-require -- dynamic require in hoisted factory
   const { createContext } = require('react');
   return {
     mockShowToast: vi.fn(),
@@ -92,7 +91,7 @@ vi.mock('next/link', () => ({
 
 vi.mock('next/image', () => ({
   // 測試替身：把 next/image 換成原生 img；alt 由 props 帶入。
-  // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text -- 測試 mock，alt 由呼叫端 prop 控制
+
   default: (props) => <img {...props} />,
 }));
 

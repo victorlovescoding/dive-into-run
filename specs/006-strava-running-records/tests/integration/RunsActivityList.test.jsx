@@ -32,7 +32,7 @@ function createMockActivity(overrides = {}) {
 
 describe('RunsActivityList', () => {
   it('shows loading skeleton when isLoading is true', () => {
-    render(<RunsActivityList activities={[]} isLoading={true} error={null} />);
+    render(<RunsActivityList activities={[]} isLoading error={null} />);
 
     expect(screen.getByRole('status')).toBeInTheDocument();
     expect(screen.getByText('載入中…')).toBeInTheDocument();
@@ -73,7 +73,7 @@ describe('RunsActivityList', () => {
       intersectionCallback = null;
       vi.stubGlobal(
         'IntersectionObserver',
-        vi.fn(function MockIntersectionObserver(/** @type {Function} */ callback) {
+        vi.fn((/** @type {Function} */ callback) => {
           intersectionCallback = callback;
           return {
             observe: vi.fn(),
@@ -92,7 +92,7 @@ describe('RunsActivityList', () => {
           activities={activities}
           isLoading={false}
           error={null}
-          hasMore={true}
+          hasMore
           loadMore={vi.fn()}
         />,
       );
@@ -109,7 +109,7 @@ describe('RunsActivityList', () => {
           activities={activities}
           isLoading={false}
           error={null}
-          hasMore={true}
+          hasMore
           loadMore={loadMore}
         />,
       );
@@ -127,9 +127,9 @@ describe('RunsActivityList', () => {
           activities={activities}
           isLoading={false}
           error={null}
-          hasMore={true}
+          hasMore
           loadMore={vi.fn()}
-          isLoadingMore={true}
+          isLoadingMore
         />,
       );
 

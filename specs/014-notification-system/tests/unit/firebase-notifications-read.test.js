@@ -64,7 +64,11 @@ const mockedCollection = /** @type {import('vitest').Mock} */ (collection);
 // ---------------------------------------------------------------------------
 // Shared fixtures
 // ---------------------------------------------------------------------------
-/** @returns {{ docs: Array<{ id: string, data: () => object }>, docChanges: () => Array<{ type: string, doc: { id: string, data: () => object } }> }} */
+/**
+ * @param docs
+ * @param changes
+ * @returns {{ docs: Array<{ id: string, data: () => object }>, docChanges: () => Array<{ type: string, doc: { id: string, data: () => object } }> }}
+ */
 function createMockSnapshot(docs, changes = []) {
   return {
     docs: docs.map((d) => ({

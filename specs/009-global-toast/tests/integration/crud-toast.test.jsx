@@ -106,6 +106,7 @@ import {
   hasUserLikedPosts,
   deletePost,
 } from '@/lib/firebase-posts';
+import { asMock } from '../../../test-utils/mock-helpers';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -126,11 +127,8 @@ const TEST_USER = {
  * @returns {import('react').ReactElement} Provider wrapper.
  */
 function AuthWrapper({ children, user = TEST_USER }) {
-  return (
-    <AuthContext.Provider value={{ user, setUser: vi.fn(), loading: false }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = { user, setUser: vi.fn(), loading: false };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 // ---------------------------------------------------------------------------
@@ -233,7 +231,7 @@ describe('Posts page — search params toast', () => {
 // ===========================================================================
 describe('Events page — CRUD handler toast calls', () => {
   it('shows success toast after creating an event', async () => {
-    createEvent.mockResolvedValueOnce({ id: 'new-event-1' });
+    asMock(createEvent).mockResolvedValueOnce({ id: 'new-event-1' });
 
     render(
       <AuthWrapper>
@@ -257,7 +255,7 @@ describe('Events page — CRUD handler toast calls', () => {
   });
 
   it('shows error toast when creating an event fails', async () => {
-    createEvent.mockRejectedValueOnce(new Error('Network error'));
+    asMock(createEvent).mockRejectedValueOnce(new Error('Network error'));
 
     render(
       <AuthWrapper>
@@ -279,7 +277,7 @@ describe('Events page — CRUD handler toast calls', () => {
   });
 
   it('shows success toast after updating an event', async () => {
-    fetchLatestEvents.mockResolvedValueOnce({
+    asMock(fetchLatestEvents).mockResolvedValueOnce({
       events: [
         {
           id: 'ev-1',
@@ -296,7 +294,7 @@ describe('Events page — CRUD handler toast calls', () => {
       ],
       lastDoc: null,
     });
-    updateEvent.mockResolvedValueOnce();
+    asMock(updateEvent).mockResolvedValueOnce();
 
     render(
       <AuthWrapper>
@@ -314,7 +312,7 @@ describe('Events page — CRUD handler toast calls', () => {
   });
 
   it('shows success toast after deleting an event', async () => {
-    fetchLatestEvents.mockResolvedValueOnce({
+    asMock(fetchLatestEvents).mockResolvedValueOnce({
       events: [
         {
           id: 'ev-del-1',
@@ -331,7 +329,7 @@ describe('Events page — CRUD handler toast calls', () => {
       ],
       lastDoc: null,
     });
-    deleteEvent.mockResolvedValueOnce();
+    asMock(deleteEvent).mockResolvedValueOnce();
 
     render(
       <AuthWrapper>
@@ -367,7 +365,7 @@ describe('Events page — CRUD handler toast calls', () => {
   });
 
   it('shows error toast when deleting an event fails', async () => {
-    fetchLatestEvents.mockResolvedValueOnce({
+    asMock(fetchLatestEvents).mockResolvedValueOnce({
       events: [
         {
           id: 'ev-fail-del',
@@ -384,7 +382,7 @@ describe('Events page — CRUD handler toast calls', () => {
       ],
       lastDoc: null,
     });
-    deleteEvent.mockRejectedValueOnce(new Error('Delete failed'));
+    asMock(deleteEvent).mockRejectedValueOnce(new Error('Delete failed'));
 
     render(
       <AuthWrapper>
@@ -437,9 +435,9 @@ describe('Events page — CRUD handler toast calls', () => {
 // ===========================================================================
 describe('Posts page — CRUD handler toast calls', () => {
   it('shows success toast after creating a post', async () => {
-    getLatestPosts.mockResolvedValueOnce([]);
-    createPost.mockResolvedValueOnce({ id: 'new-post-1' });
-    getPostDetail.mockResolvedValueOnce({
+    asMock(getLatestPosts).mockResolvedValueOnce([]);
+    asMock(createPost).mockResolvedValueOnce({ id: 'new-post-1' });
+    asMock(getPostDetail).mockResolvedValueOnce({
       id: 'new-post-1',
       title: 'New Post',
       content: 'Content',
@@ -479,8 +477,8 @@ describe('Posts page — CRUD handler toast calls', () => {
   });
 
   it('shows error toast when creating a post fails', async () => {
-    getLatestPosts.mockResolvedValueOnce([]);
-    createPost.mockRejectedValueOnce(new Error('Create failed'));
+    asMock(getLatestPosts).mockResolvedValueOnce([]);
+    asMock(createPost).mockRejectedValueOnce(new Error('Create failed'));
 
     const user = userEvent.setup();
 
@@ -511,7 +509,7 @@ describe('Posts page — CRUD handler toast calls', () => {
   });
 
   it('shows success toast after updating a post', async () => {
-    getLatestPosts.mockResolvedValueOnce([
+    asMock(getLatestPosts).mockResolvedValueOnce([
       {
         id: 'post-edit-1',
         title: 'Old Title',
@@ -520,8 +518,8 @@ describe('Posts page — CRUD handler toast calls', () => {
         likesCount: 0,
       },
     ]);
-    hasUserLikedPosts.mockResolvedValueOnce(new Set());
-    updatePost.mockResolvedValueOnce();
+    asMock(hasUserLikedPosts).mockResolvedValueOnce(new Set());
+    asMock(updatePost).mockResolvedValueOnce();
 
     const user = userEvent.setup();
 
@@ -558,7 +556,7 @@ describe('Posts page — CRUD handler toast calls', () => {
   });
 
   it('shows error toast when updating a post fails', async () => {
-    getLatestPosts.mockResolvedValueOnce([
+    asMock(getLatestPosts).mockResolvedValueOnce([
       {
         id: 'post-fail-edit',
         title: 'Edit Fail Title',
@@ -567,8 +565,8 @@ describe('Posts page — CRUD handler toast calls', () => {
         likesCount: 0,
       },
     ]);
-    hasUserLikedPosts.mockResolvedValueOnce(new Set());
-    updatePost.mockRejectedValueOnce(new Error('Update failed'));
+    asMock(hasUserLikedPosts).mockResolvedValueOnce(new Set());
+    asMock(updatePost).mockRejectedValueOnce(new Error('Update failed'));
 
     const user = userEvent.setup();
 
@@ -597,7 +595,7 @@ describe('Posts page — CRUD handler toast calls', () => {
   });
 
   it('shows success toast after deleting a post', async () => {
-    getLatestPosts.mockResolvedValueOnce([
+    asMock(getLatestPosts).mockResolvedValueOnce([
       {
         id: 'post-del-1',
         title: 'Delete Me',
@@ -606,8 +604,8 @@ describe('Posts page — CRUD handler toast calls', () => {
         likesCount: 0,
       },
     ]);
-    hasUserLikedPosts.mockResolvedValueOnce(new Set());
-    deletePost.mockResolvedValueOnce();
+    asMock(hasUserLikedPosts).mockResolvedValueOnce(new Set());
+    asMock(deletePost).mockResolvedValueOnce();
 
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
@@ -637,7 +635,7 @@ describe('Posts page — CRUD handler toast calls', () => {
   });
 
   it('shows error toast when deleting a post fails', async () => {
-    getLatestPosts.mockResolvedValueOnce([
+    asMock(getLatestPosts).mockResolvedValueOnce([
       {
         id: 'post-fail-del',
         title: 'Fail Delete Post',
@@ -646,8 +644,8 @@ describe('Posts page — CRUD handler toast calls', () => {
         likesCount: 0,
       },
     ]);
-    hasUserLikedPosts.mockResolvedValueOnce(new Set());
-    deletePost.mockRejectedValueOnce(new Error('Delete failed'));
+    asMock(hasUserLikedPosts).mockResolvedValueOnce(new Set());
+    asMock(deletePost).mockRejectedValueOnce(new Error('Delete failed'));
 
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();

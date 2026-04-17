@@ -165,7 +165,7 @@ describe('validatePostInput', () => {
   describe('edge cases', () => {
     it('counts emoji by string.length (😀 is 2 chars)', () => {
       // Arrange — 49 'a' + '😀' (length 2) = 51 total
-      const title = 'a'.repeat(POST_TITLE_MAX_LENGTH - 1) + '😀';
+      const title = `${'a'.repeat(POST_TITLE_MAX_LENGTH - 1)}😀`;
       const input = { title, content: '有效內容' };
 
       // Act
@@ -178,7 +178,7 @@ describe('validatePostInput', () => {
 
     it('trims leading/trailing spaces before length check', () => {
       // Arrange — 50 'a' padded with spaces = 50 after trim
-      const title = '  ' + 'a'.repeat(POST_TITLE_MAX_LENGTH) + '  ';
+      const title = `  ${'a'.repeat(POST_TITLE_MAX_LENGTH)}  `;
       const input = { title, content: '有效內容' };
 
       // Act

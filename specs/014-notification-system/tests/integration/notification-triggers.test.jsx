@@ -237,7 +237,10 @@ const mockedHasUserLikedPost = /** @type {import('vitest').Mock} */ (hasUserLike
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** 建立一個最小但完整的 mock 活動物件，hostUid 匹配 mockUser。 */
+/**
+ * 建立一個最小但完整的 mock 活動物件，hostUid 匹配 mockUser。
+ * @param overrides
+ */
 function buildMockEvent(overrides = {}) {
   return {
     id: 'evt1',

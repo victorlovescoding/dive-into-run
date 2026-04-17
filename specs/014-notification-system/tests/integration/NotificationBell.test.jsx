@@ -195,6 +195,9 @@ describe('NotificationContext', () => {
     /** @type {number | undefined} */
     let capturedCount;
 
+    /**
+     *
+     */
     function CountReader() {
       const ctx = require('react').useContext(NotificationContext);
       capturedCount = ctx.unreadCount;
