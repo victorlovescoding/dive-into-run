@@ -1,37 +1,91 @@
 // eslint.config.mjs
-// ESLint 9 Flat Config - 使用官方 FlatCompat 包裝 Airbnb 規則
-import { fixupConfigRules } from '@eslint/compat';
-import { FlatCompat } from '@eslint/eslintrc';
+// ESLint 9 Flat Config - 各 plugin 原生 flat config，無 FlatCompat 橋接
 import js from '@eslint/js';
+import react from 'eslint-plugin-react';
+import reactHooks from 'eslint-plugin-react-hooks';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+import importPlugin from 'eslint-plugin-import';
+import nextPlugin from '@next/eslint-plugin-next';
 import jsdoc from 'eslint-plugin-jsdoc';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import prettier from 'eslint-config-prettier';
+import globals from 'globals';
+import confusingGlobals from 'confusing-browser-globals';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-});
-
 export default [
-  // ESLint 官方推薦規則
+  // 1. ESLint 官方推薦
   js.configs.recommended,
 
-  // Airbnb 規則（使用官方 FlatCompat 轉換）
-  ...fixupConfigRules(compat.extends('airbnb', 'airbnb/hooks')),
+  // 1.5 全域變數定義（等效 Airbnb 的 env: { browser: true, node: true }）
+  {
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+  },
 
-  // Next.js 規則
-  ...fixupConfigRules(compat.extends('next/core-web-vitals')),
+  // 2. React（recommended + jsx-runtime 關掉 react-in-jsx-scope）
+  react.configs.flat.recommended,
+  react.configs.flat['jsx-runtime'],
 
-  // JSDoc 規則
+  // 3. React Hooks（手動控制：12 條 error + 5 compiler off）
+  {
+    plugins: { 'react-hooks': reactHooks },
+    rules: {
+      // 原始 2 條
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+      // v7 品質規則（React purity 規範）
+      'react-hooks/purity': 'error',
+      'react-hooks/immutability': 'error',
+      'react-hooks/globals': 'error',
+      'react-hooks/refs': 'error',
+      'react-hooks/set-state-in-render': 'error',
+      'react-hooks/set-state-in-effect': 'error',
+      'react-hooks/static-components': 'error',
+      'react-hooks/use-memo': 'error',
+      'react-hooks/error-boundaries': 'error',
+      'react-hooks/component-hook-factories': 'error',
+      // Compiler 專用（目前不用）
+      'react-hooks/preserve-manual-memoization': 'off',
+      'react-hooks/incompatible-library': 'off',
+      'react-hooks/unsupported-syntax': 'off',
+      'react-hooks/config': 'off',
+      'react-hooks/gating': 'off',
+    },
+  },
+
+  // 4. Accessibility
+  jsxA11y.flatConfigs.recommended,
+
+  // 5. Import（recommended + resolver 設定）
+  importPlugin.flatConfigs.recommended,
+  {
+    settings: {
+      'import/resolver': {
+        alias: {
+          map: [['@', './src']],
+          extensions: ['.js', '.jsx', '.mjs', '.json'],
+        },
+      },
+    },
+  },
+
+  // 6. Next.js（原生 flat config）
+  nextPlugin.flatConfig.coreWebVitals,
+
+  // 7. JSDoc
   jsdoc.configs['flat/recommended'],
 
-  // 專案自訂設定
+  // 8. 品質規則（Airbnb 精選 + reviewer 補充，非格式）
   {
     files: ['**/*.js', '**/*.jsx'],
     languageOptions: {
@@ -39,30 +93,121 @@ export default [
       sourceType: 'module',
     },
     rules: {
-      // ===== 與專案現有程式碼相容的調整 =====
+      // === Best Practices ===
+      'no-alert': 'warn',
+      'no-await-in-loop': 'error',
+      'array-callback-return': ['error', { allowImplicit: true }],
+      'consistent-return': 'error',
+      'default-case': 'error',
+      'default-case-last': 'error',
+      'dot-notation': 'error',
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
+      'guard-for-in': 'error',
+      'no-caller': 'error',
+      'no-constructor-return': 'error',
+      'no-empty-function': [
+        'error',
+        {
+          allow: ['arrowFunctions', 'functions', 'methods'],
+        },
+      ],
+      'no-eval': 'error',
+      'no-extend-native': 'error',
+      'no-extra-bind': 'error',
+      'no-implied-eval': 'error',
+      'no-iterator': 'error',
+      'no-labels': 'error',
+      'no-lone-blocks': 'error',
+      'no-loop-func': 'error',
+      'no-new': 'error',
+      'no-new-func': 'error',
+      'no-new-wrappers': 'error',
+      'no-param-reassign': [
+        'error',
+        {
+          props: true,
+          ignorePropertyModificationsFor: [
+            'acc',
+            'accumulator',
+            'e',
+            'ctx',
+            'context',
+            'req',
+            'request',
+            'res',
+            'response',
+            '$scope',
+            'staticContext',
+          ],
+        },
+      ],
+      'no-promise-executor-return': 'error',
+      'no-proto': 'error',
+      'no-restricted-globals': ['error', ...confusingGlobals],
+      'no-return-assign': ['error', 'always'],
+      'no-script-url': 'error',
+      'no-self-compare': 'error',
+      'no-sequences': 'error',
+      'no-throw-literal': 'error',
+      'no-unused-expressions': [
+        'error',
+        {
+          allowShortCircuit: true,
+          allowTernary: true,
+          allowTaggedTemplates: true,
+        },
+      ],
+      'no-useless-concat': 'error',
+      'no-useless-constructor': 'error',
+      'no-void': 'error',
+      'prefer-promise-reject-errors': 'error',
+      radix: 'error',
+      yoda: 'error',
 
-      // console.log 警告，但允許 console.warn / console.error（錯誤紀錄用途）
+      // === Modern JS ===
+      'no-var': 'error',
+      'prefer-const': 'error',
+      'prefer-template': 'error',
+      'object-shorthand': 'error',
+      'prefer-arrow-callback': 'error',
+      'prefer-rest-params': 'error',
+      'prefer-spread': 'error',
+      'prefer-destructuring': [
+        'error',
+        {
+          VariableDeclarator: { array: false, object: true },
+          AssignmentExpression: { array: true, object: false },
+        },
+      ],
+      'arrow-body-style': ['error', 'as-needed'],
+
+      // === Variables ===
+      'no-shadow': 'error',
+      'no-underscore-dangle': 'error',
+      'no-use-before-define': 'error',
+
+      // === Import（超出 recommended 的部分）===
+      'import/first': 'error',
+      'import/no-mutable-exports': 'error',
+      'import/no-self-import': 'error',
+      'import/no-cycle': 'error',
+      'import/no-useless-path-segments': 'error',
+      'import/newline-after-import': 'error',
+      'import/prefer-default-export': 'error',
+      'import/order': [
+        'error',
+        {
+          groups: [['builtin', 'external', 'internal']],
+        },
+      ],
+
+      // === 專案自訂覆寫（保持不變）===
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-
-      // 允許未使用的變數被標記為警告而非錯誤
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-
-      // React: 不強制 prop-types（我們用 JSDoc）
       'react/prop-types': 'off',
-
-      // React: 允許 JSX 在 .js 檔案中
       'react/jsx-filename-extension': ['warn', { extensions: ['.js', '.jsx'] }],
-
-      // React: 不強制 default props
       'react/require-default-props': 'off',
-
-      // React: 允許展開 props
       'react/jsx-props-no-spreading': 'off',
-
-      // React: React 17+ (Next.js) 不再需要引入 React
-      'react/react-in-jsx-scope': 'off',
-
-      // Import: 允許 devDependencies 在測試檔案中
       'import/no-extraneous-dependencies': [
         'error',
         {
@@ -84,21 +229,15 @@ export default [
           ],
         },
       ],
-
-      // Import: 關閉副檔名檢查（Next.js 不需要）
       'import/extensions': 'off',
-
-      // Import: 關閉路徑解析（讓 Next.js 處理 @/ 別名）
       'import/no-unresolved': 'off',
-
-      // JSDoc: 調整為警告
       'jsdoc/require-jsdoc': 'warn',
       'jsdoc/require-param-description': 'warn',
       'jsdoc/require-returns-description': 'warn',
     },
   },
 
-  // Type-aware linting：抓 deprecated API 使用
+  // 9. Type-aware linting：抓 deprecated API 使用
   {
     files: ['**/*.js', '**/*.jsx'],
     languageOptions: {
@@ -114,10 +253,10 @@ export default [
     },
   },
 
-  // Prettier 相容：關閉所有與 Prettier 衝突的格式規則
+  // 10. Prettier 相容：關掉所有與 Prettier 衝突的格式規則
   prettier,
 
-  // 忽略的檔案和資料夾
+  // 11. 忽略的檔案和資料夾
   {
     ignores: [
       'node_modules/**',
@@ -129,16 +268,17 @@ export default [
       '**/*.d.ts',
     ],
   },
-  // Next.js Route Handlers must use named exports (GET, POST, etc.)
+
+  // 12. Next.js Route Handlers must use named exports (GET, POST, etc.)
   {
     files: ['**/app/api/**/route.js'],
     rules: {
       'import/prefer-default-export': 'off',
     },
   },
-  // 針對測試檔案的嚴格規範
+
+  // 13. 針對測試檔案的嚴格規範
   {
-    // 鎖定目標：測試資料夾與所有測試副檔名
     files: [
       'tests/**/*.{js,jsx,mjs}',
       '**/*.test.{js,jsx,mjs}',
@@ -147,19 +287,19 @@ export default [
       'specs/**/e2e/**/*.{js,jsx,mjs}',
     ],
     rules: {
-      // 1. 開啟依賴檢查，但允許測試檔案使用 devDependencies (比 off 更安全！)
+      // 開啟依賴檢查，但允許測試檔案使用 devDependencies
       'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
 
-      // 2. 測試檔案也要求 JSDoc (這條如果不習慣，隨時可以改成 'off')
+      // 測試檔案也要求 JSDoc
       'jsdoc/require-jsdoc': 'warn',
 
-      // 3. 禁止使用 console.log (保持測試輸出乾淨，逼 AI 寫出乾淨的 Code)
+      // 禁止使用 console.log（保持測試輸出乾淨）
       'no-console': 'error',
 
       // 測試輔助只 export 一個 helper 很正常
       'import/prefer-default-export': 'off',
 
-      // B 類：Vitest 測試環境本質衝突，放寬
+      // Vitest 測試環境本質衝突，放寬
       'import/first': 'off',
       'no-shadow': 'off',
       'global-require': 'off',
@@ -168,9 +308,9 @@ export default [
       'no-underscore-dangle': 'off',
       'class-methods-use-this': 'off',
       'no-await-in-loop': 'off',
-      'react/jsx-no-constructed-context-values': 'off', // 測試 wrapper Provider value 重建無害
+      'react/jsx-no-constructed-context-values': 'off',
 
-      // B 類 warnings
+      // 測試環境 warnings
       'jsdoc/reject-any-type': 'off',
       '@next/next/no-img-element': 'off',
       'jsx-a11y/alt-text': 'off',
