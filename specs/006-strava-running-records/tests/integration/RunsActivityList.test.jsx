@@ -114,7 +114,7 @@ describe('RunsActivityList', () => {
         />,
       );
 
-      intersectionCallback([{ isIntersecting: true }]);
+      intersectionCallback([/** @type {IntersectionObserverEntry} */ ({ isIntersecting: true })]);
 
       expect(loadMore).toHaveBeenCalledTimes(1);
     });
