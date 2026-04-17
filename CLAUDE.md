@@ -26,8 +26,9 @@ npm run test         # Vitest (unit + integration, jsdom env)
 npx vitest run specs/path/to/file.test.jsx  # Run a single test file
 npx playwright test  # E2E tests (Chromium only, needs dev server)
 npx playwright test specs/path/to/file.spec.js  # Single E2E test
-npm run test:e2e:emulator  # E2E with Firebase Emulator (需先啟動 emulator)
-firebase emulators:exec --only auth,firestore,storage "npm run test:e2e:emulator"  # 一行啟動 emulator + 跑 E2E
+npm run test:e2e:branch  # 自動偵測 branch → feature，選擇正確 config（emulator 或一般）
+E2E_FEATURE=004-event-edit-delete npm run test:e2e:emulator  # 指定 feature 跑 E2E + emulator
+firebase emulators:exec --only auth,firestore,storage "E2E_FEATURE=004-event-edit-delete npm run test:e2e:emulator"
 ```
 
 ## Architecture

@@ -1,31 +1,56 @@
 /**
  * @file Playwright config for E2E tests that require Firebase Emulator.
  * @description
- * Picks up E2E specs from any feature under `specs/*\/tests/e2e/**\/*.spec.js`.
+ * Requires `E2E_FEATURE` env var to specify which feature's E2E tests to run.
+ * Resolves `testDir` and `globalSetup` dynamically from `specs/<feature>/tests/e2e/`.
  *
- * Prerequisites:
- *   1. firebase emulators:start --only auth,firestore,storage
- *      (or one-shot: firebase emulators:exec --only auth,firestore,storage "npm run test:e2e:emulator")
- *   2. npx playwright test --config playwright.emulator.config.mjs
+ * Usage:
+ *   E2E_FEATURE=004-event-edit-delete npx playwright test --config playwright.emulator.config.mjs
+ *
+ * One-shot with emulator:
+ *   firebase emulators:exec --only auth,firestore,storage \
+ *     "E2E_FEATURE=004-event-edit-delete npm run test:e2e:emulator"
  *
  * The webServer block injects admin SDK emulator hosts so Next.js API routes
  * under src/app/api/** that use firebase-admin also talk to the local emulator
  * instead of production Firebase.
  */
 
+import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
+const feature = process.env.E2E_FEATURE;
+
+if (!feature) {
+  throw new Error(
+    'E2E_FEATURE env var is required.\n' +
+      'Usage: E2E_FEATURE=004-event-edit-delete npx playwright test --config playwright.emulator.config.mjs\n' +
+      'Value must match a directory name under specs/ (e.g. "004-event-edit-delete")',
+  );
+}
+
+const featureE2eDir = `./specs/${feature}/tests/e2e`;
+if (!existsSync(featureE2eDir)) {
+  throw new Error(
+    `E2E_FEATURE="${feature}" but ${featureE2eDir} does not exist.\n` +
+      'Value must match a directory name under specs/ that contains tests/e2e/',
+  );
+}
+
+const globalSetupPath = `${featureE2eDir}/global-setup.js`;
+
 export default defineConfig({
-  testDir: './specs',
-  testMatch: '**/tests/e2e/**/*.spec.js',
+  testDir: featureE2eDir,
+  testMatch: '**/*.spec.js',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,
+  timeout: 60000,
   reporter: 'html',
-  globalSetup: './specs/004-event-edit-delete/tests/e2e/global-setup.js',
+  globalSetup: existsSync(globalSetupPath) ? globalSetupPath : undefined,
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'retain-on-failure',
