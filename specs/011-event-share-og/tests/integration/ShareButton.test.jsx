@@ -234,7 +234,9 @@ describe('Integration: ShareButton', () => {
     matchMediaResult = false; // 桌面
     delete navigator.share;
     mockWriteText.mockRejectedValueOnce(new Error('Clipboard denied'));
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- testing execCommand fallback
     if (!document.execCommand) {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- testing execCommand fallback
       document.execCommand = () => false; // jsdom 沒有預設實作，先 stub
     }
     const execSpy = vi.spyOn(document, 'execCommand').mockReturnValue(true);
@@ -256,7 +258,9 @@ describe('Integration: ShareButton', () => {
     matchMediaResult = false; // 桌面
     delete navigator.share;
     mockWriteText.mockRejectedValueOnce(new Error('Clipboard denied'));
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- testing execCommand fallback
     if (!document.execCommand) {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- testing execCommand fallback
       document.execCommand = () => false; // jsdom 沒有預設實作，先 stub
     }
     vi.spyOn(document, 'execCommand').mockReturnValue(false);

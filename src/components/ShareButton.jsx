@@ -18,6 +18,7 @@ function copyViaTextarea(text) {
   document.body.appendChild(textarea);
   try {
     textarea.select();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Clipboard API fallback for non-secure contexts
     return document.execCommand('copy');
   } catch {
     return false;

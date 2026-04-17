@@ -4,6 +4,8 @@ import { fixupConfigRules } from '@eslint/compat';
 import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
 import jsdoc from 'eslint-plugin-jsdoc';
+import tsParser from '@typescript-eslint/parser';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
 import prettier from 'eslint-config-prettier';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -93,6 +95,22 @@ export default [
       'jsdoc/require-jsdoc': 'warn',
       'jsdoc/require-param-description': 'warn',
       'jsdoc/require-returns-description': 'warn',
+    },
+  },
+
+  // Type-aware linting：抓 deprecated API 使用
+  {
+    files: ['**/*.js', '**/*.jsx'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: __dirname,
+      },
+    },
+    plugins: { '@typescript-eslint': tsPlugin },
+    rules: {
+      '@typescript-eslint/no-deprecated': 'error',
     },
   },
 
