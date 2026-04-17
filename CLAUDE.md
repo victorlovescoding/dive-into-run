@@ -19,8 +19,9 @@ npm run dev          # Dev server (Next.js + Turbopack) on localhost:3000
 npm run build        # Production build
 npm run lint         # ESLint (Airbnb + React Hooks + JSDoc via flat config)
 npm run lint:changed # 只 lint git changed files
-npm run type-check   # TypeScript-powered JSDoc type checking (tsc -p tsconfig.check.json)
+npm run type-check   # TypeScript-powered JSDoc type checking (tsc --noEmit)
 npm run type-check:changed  # 只顯示 changed files 的 type errors
+npm run spellcheck   # cSpell 拼字檢查 (src + specs)
 npm run test         # Vitest (unit + integration, jsdom env)
 npx vitest run specs/path/to/file.test.jsx  # Run a single test file
 npx playwright test  # E2E tests (Chromium only, needs dev server)
@@ -61,6 +62,7 @@ firebase emulators:exec --only auth,firestore,storage "npm run test:e2e:emulator
 5. **Task completion requires** 以下全部 pass：
    - `npm run type-check:branch` — 只檢查 branch 上改過的檔案的 JSDoc 型別
    - `npm run lint:branch` — 只檢查 branch 上改過的檔案的 ESLint
+   - `npm run spellcheck` — cSpell 拼字檢查（全專案）
    - `npm run test:branch` — 只跑當前 branch 的 Vitest unit + integration 測試
    - `npm run test:e2e:branch` — 只跑當前 branch 的 Playwright E2E 測試（無 E2E 目錄時自動跳過）
      開發中可用 `type-check:changed` / `lint:changed`（只看未 commit 的改動）加速迭代。
