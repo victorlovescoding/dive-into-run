@@ -11,10 +11,12 @@ const { toastReducer, default: ToastProvider, useToast } = await import('@/conte
 
 const mockedUsePathname = vi.mocked(usePathname);
 
-/** @param {string} [pathname='/'] - 模擬的 pathname。 */
+/** @param {string} [pathname] - 模擬的 pathname。 */
 function wrapper(pathname = '/') {
   mockedUsePathname.mockReturnValue(pathname);
-  return ({ children }) => <ToastProvider>{children}</ToastProvider>;
+  return function ({ children }) {
+    return <ToastProvider>{children}</ToastProvider>;
+  };
 }
 
 describe('toastReducer', () => {

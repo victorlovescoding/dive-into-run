@@ -89,7 +89,7 @@ describe('ComposeModal', () => {
 
   it('isEditing=true 時顯示「編輯文章」標題和「更新」按鈕', async () => {
     const user = userEvent.setup();
-    render(<ModalWrapper isEditing={true} />);
+    render(<ModalWrapper isEditing />);
     await user.click(screen.getByRole('button', { name: '開啟 Modal' }));
     expect(screen.getByText('編輯文章')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /更新/ })).toBeInTheDocument();

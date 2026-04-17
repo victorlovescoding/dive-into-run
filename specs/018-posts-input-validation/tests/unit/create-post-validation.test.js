@@ -21,8 +21,8 @@ vi.mock('firebase/firestore', () => ({
   documentId: vi.fn(),
 }));
 
-import { createPost } from '@/lib/firebase-posts';
 import { addDoc } from 'firebase/firestore';
+import { createPost } from '@/lib/firebase-posts';
 
 const mockedAddDoc = /** @type {import('vitest').Mock} */ (addDoc);
 

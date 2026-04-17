@@ -6,7 +6,6 @@ import userEvent from '@testing-library/user-event';
 // Hoisted shared state (available inside vi.mock factories)
 // ---------------------------------------------------------------------------
 const { mockShowToast, mockReplace, mockSearchParamsGet, mockAuthContext } = vi.hoisted(() => {
-  // eslint-disable-next-line global-require -- dynamic require in hoisted factory
   const { createContext } = require('react');
   return {
     mockShowToast: vi.fn(),

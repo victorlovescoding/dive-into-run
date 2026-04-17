@@ -30,7 +30,6 @@ import {
 // Hoisted shared state
 // ---------------------------------------------------------------------------
 const { mockShowToast, mockPush, mockReplace, mockAuthContext } = vi.hoisted(() => {
-  // eslint-disable-next-line global-require -- dynamic require in hoisted factory
   const { createContext } = require('react');
   return {
     mockShowToast: vi.fn(),

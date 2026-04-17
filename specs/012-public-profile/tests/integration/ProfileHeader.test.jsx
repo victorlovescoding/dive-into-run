@@ -35,10 +35,7 @@ vi.mock('next/image', () => ({
    * @param {string} props.alt - Image alt text.
    * @returns {import('react').ReactElement} Mocked img element.
    */
-  default: ({ src, alt, ...rest }) => (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} {...rest} />
-  ),
+  default: ({ src, alt, ...rest }) => <img src={src} alt={alt} {...rest} />,
 }));
 
 vi.mock('next/link', () => ({

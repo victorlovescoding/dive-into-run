@@ -40,7 +40,6 @@ vi.mock('next/image', () => ({
    * @returns {import('react').ReactElement} Mocked img element.
    */
   default: ({ src, alt, width, height, ...rest }) => (
-    // eslint-disable-next-line @next/next/no-img-element
     <img src={src} alt={alt} width={width} height={height} {...rest} />
   ),
 }));

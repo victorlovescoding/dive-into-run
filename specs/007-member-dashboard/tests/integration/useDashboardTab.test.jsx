@@ -20,9 +20,13 @@ beforeEach(() => {
       constructor(cb) {
         observerCallback = cb;
       }
+
       observe = mockObserve;
+
       unobserve = vi.fn();
+
       disconnect = mockDisconnect;
+
       takeRecords = () => /** @type {IntersectionObserverEntry[]} */ ([]);
     }
   );

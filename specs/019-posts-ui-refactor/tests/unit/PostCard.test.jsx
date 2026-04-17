@@ -63,7 +63,7 @@ describe('PostCard', () => {
     });
 
     it('truncate=true 時標題是連結到 /posts/{post.id}', () => {
-      render(<PostCard post={basePost} truncate={true} />);
+      render(<PostCard post={basePost} truncate />);
       const link = screen.getByRole('link', { name: '今天跑了 10K' });
       expect(link).toHaveAttribute('href', '/posts/post-1');
     });
@@ -167,7 +167,7 @@ describe('PostCard', () => {
 
     it('超過 150 字的內容顯示截斷文字和「查看更多」按鈕', () => {
       const post = { ...basePost, content: longContent };
-      render(<PostCard post={post} truncate={true} />);
+      render(<PostCard post={post} truncate />);
       // 完整內容在 DOM 中，靠 CSS max-height 視覺裁切
       expect(screen.getByText(longContent)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /查看更多/ })).toBeInTheDocument();
@@ -176,7 +176,7 @@ describe('PostCard', () => {
     it('150 字以內的內容完整顯示，不顯示「查看更多」', () => {
       const shortContent = '今天跑了五公里，感覺不錯。';
       const post = { ...basePost, content: shortContent };
-      render(<PostCard post={post} truncate={true} />);
+      render(<PostCard post={post} truncate />);
       expect(screen.getByText(shortContent)).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /查看更多/ })).not.toBeInTheDocument();
     });
@@ -185,14 +185,14 @@ describe('PostCard', () => {
       // 剛好 150 字
       const exactly150 = longContent.slice(0, 150);
       const post = { ...basePost, content: exactly150 };
-      render(<PostCard post={post} truncate={true} />);
+      render(<PostCard post={post} truncate />);
       expect(screen.getByText(exactly150)).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /查看更多/ })).not.toBeInTheDocument();
     });
 
     it('點擊「查看更多」後展示完整內容', () => {
       const post = { ...basePost, content: longContent };
-      render(<PostCard post={post} truncate={true} />);
+      render(<PostCard post={post} truncate />);
       fireEvent.click(screen.getByRole('button', { name: /查看更多/ }));
       expect(screen.getByText(longContent)).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /查看更多/ })).not.toBeInTheDocument();
@@ -200,7 +200,7 @@ describe('PostCard', () => {
 
     it('展開後不顯示「收起」按鈕', () => {
       const post = { ...basePost, content: longContent };
-      render(<PostCard post={post} truncate={true} />);
+      render(<PostCard post={post} truncate />);
       fireEvent.click(screen.getByRole('button', { name: /查看更多/ }));
       expect(screen.queryByRole('button', { name: /收起/ })).not.toBeInTheDocument();
     });

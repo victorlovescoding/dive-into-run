@@ -13,6 +13,9 @@ import useStravaActivities from '@/hooks/useStravaActivities';
 
 const mockedGetActivities = /** @type {import('vitest').Mock} */ (getStravaActivities);
 
+/**
+ *
+ */
 function TestComponent() {
   const { activities, isLoading, error, loadMore, hasMore, isLoadingMore, refresh } =
     useStravaActivities();

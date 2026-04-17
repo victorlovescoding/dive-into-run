@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { queryEvents } from '@/lib/firebase-events';
 import * as firestore from 'firebase/firestore';
+import { queryEvents } from '@/lib/firebase-events';
 
 // Mock Firestore
 vi.mock('firebase/firestore', async () => {

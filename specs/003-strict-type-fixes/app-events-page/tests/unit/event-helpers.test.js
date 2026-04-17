@@ -1,4 +1,3 @@
-/* eslint-disable jsdoc/reject-any-type */
 import { describe, it, expect } from 'vitest';
 import {
   formatPace,
