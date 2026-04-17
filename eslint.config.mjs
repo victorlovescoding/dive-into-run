@@ -150,6 +150,7 @@ export default [
       'no-underscore-dangle': 'off',
       'class-methods-use-this': 'off',
       'no-await-in-loop': 'off',
+      'react/jsx-no-constructed-context-values': 'off', // 測試 wrapper Provider value 重建無害
 
       // B 類 warnings
       'jsdoc/reject-any-type': 'off',
