@@ -127,15 +127,6 @@ vi.mock('@/lib/event-helpers', async (importOriginal) => {
 // Mocks — contexts
 // ---------------------------------------------------------------------------
 
-const mockUser = {
-  uid: 'host1',
-  name: 'Host User',
-  email: null,
-  photoURL: 'https://photo.url/host.jpg',
-  bio: null,
-  getIdToken: async () => '',
-};
-
 vi.mock('@/contexts/AuthContext', () => {
   const { createContext } = require('react');
   return {
@@ -182,10 +173,8 @@ vi.mock('next/dynamic', () => ({
 }));
 
 vi.mock('next/image', () => ({
-  default: (props) => {
-    const { fill, priority, ...rest } = props;
-    return require('react').createElement('img', rest);
-  },
+  default: ({ fill: _fill, priority: _priority, ...rest }) =>
+    require('react').createElement('img', rest),
 }));
 
 // ---------------------------------------------------------------------------
@@ -238,8 +227,9 @@ const mockedHasUserLikedPost = /** @type {import('vitest').Mock} */ (hasUserLike
 // ---------------------------------------------------------------------------
 
 /**
- * 建立一個最小但完整的 mock 活動物件，hostUid 匹配 mockUser。
- * @param overrides
+ * 建立一個最小但完整的 mock 活動物件，hostUid 匹配 AuthContext mock user。
+ * @param {object} overrides - 覆蓋預設值的欄位。
+ * @returns {object} mock 活動物件。
  */
 function buildMockEvent(overrides = {}) {
   return {

@@ -29,8 +29,7 @@ test.describe('E2E: Events Page Refactor', () => {
 
     // 3. Verify Event Cards are rendered
     // We expect at least some events or a "No events" message
-    const eventCards = page.locator('article'); // Assuming 'article' tag or a specific class for event cards
-    // Or better:
+    // Verify event cards or empty state exist
     // await expect(page.getByText('Date:')).toBeVisible(); // Just checking if event details are shown
 
     // Note: Since we cannot easily "login" in this generic E2E without setup,

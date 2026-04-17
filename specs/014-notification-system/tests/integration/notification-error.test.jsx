@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -144,10 +144,8 @@ vi.mock('next/dynamic', () => ({
 }));
 
 vi.mock('next/image', () => ({
-  default: (props) => {
-    const { fill, priority, ...rest } = props;
-    return require('react').createElement('img', rest);
-  },
+  default: ({ fill: _fill, priority: _priority, ...rest }) =>
+    require('react').createElement('img', rest),
 }));
 
 // ---------------------------------------------------------------------------
@@ -236,7 +234,7 @@ describe('NotificationContext onError → ToastContext', () => {
       return mockUnsubscribe;
     });
 
-    mockedWatchNotifications.mockImplementation((uid, onNext, onError, onNew) => {
+    mockedWatchNotifications.mockImplementation((uid, onNext, onError, _onNew) => {
       onNext([], null);
       allOnError = onError;
       return mockUnsubscribe;

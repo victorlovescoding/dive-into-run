@@ -115,7 +115,7 @@ describe('DashboardCommentCard', () => {
     const comment = createComment();
 
     // Act
-    const { container } = render(<DashboardCommentCard comment={comment} />);
+    render(<DashboardCommentCard comment={comment} />);
 
     // Assert
     const textEl = screen.getByText(comment.text);

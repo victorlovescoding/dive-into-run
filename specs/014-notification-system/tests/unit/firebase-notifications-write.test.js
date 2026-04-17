@@ -27,7 +27,7 @@ vi.mock('@/lib/notification-helpers', () => ({
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
-import { collection, addDoc, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
 import { fetchParticipants } from '@/lib/firebase-events';
 import {
   notifyEventModified,
@@ -55,7 +55,7 @@ const actor = {
 
 const participants = [{ uid: 'user-1' }, { uid: 'user-2' }, { uid: 'actor-uid' }];
 
-/** @returns {{ set: import('vitest').Mock, commit: import('vitest').Mock }} */
+/** @returns {{ set: import('vitest').Mock, commit: import('vitest').Mock }} mock WriteBatch。 */
 function createMockBatch() {
   return { set: vi.fn(), commit: vi.fn(() => Promise.resolve()) };
 }

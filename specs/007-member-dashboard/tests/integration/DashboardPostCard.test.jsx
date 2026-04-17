@@ -14,8 +14,8 @@ vi.mock('@/lib/event-helpers', () => ({
 const mockFormatDateTime = /** @type {any} */ (await import('@/lib/event-helpers')).formatDateTime;
 
 /**
- * @param overrides
- * @returns {import('@/lib/firebase-posts').Post}
+ * @param {Partial<import('@/lib/firebase-posts').Post>} overrides - 覆蓋預設值的欄位。
+ * @returns {import('@/lib/firebase-posts').Post} 組合後的 mock Post。
  */
 function makePost(overrides = {}) {
   return {

@@ -21,25 +21,25 @@ import EventActionButtons from '@/components/EventActionButtons';
 
 /**
  * @typedef {object} EventData
- * @property {string} id
- * @property {string} hostUid
- * @property {string} hostName
- * @property {number} maxParticipants
- * @property {string[]} participants
- * @property {number} [participantsCount]
- * @property {string} title
- * @property {string} time
- * @property {string} registrationDeadline
- * @property {string} city
- * @property {string} district
- * @property {string} meetPlace
- * @property {number} distanceKm
- * @property {number} paceSec
+ * @property {string} id - 活動 ID。
+ * @property {string} hostUid - 主辦者 UID。
+ * @property {string} hostName - 主辦者名稱。
+ * @property {number} maxParticipants - 人數上限。
+ * @property {string[]} participants - 參加者 UID 列表。
+ * @property {number} [participantsCount] - 參加者人數。
+ * @property {string} title - 活動標題。
+ * @property {string} time - 活動時間。
+ * @property {string} registrationDeadline - 報名截止時間。
+ * @property {string} city - 縣市。
+ * @property {string} district - 鄉鎮區。
+ * @property {string} meetPlace - 集合地點。
+ * @property {number} distanceKm - 距離（公里）。
+ * @property {number} paceSec - 配速（秒）。
  */
 
 /**
  * @typedef {object} User
- * @property {string} uid
+ * @property {string} uid - 使用者 UID。
  */
 
 describe('Integration: EventActionButtons', () => {

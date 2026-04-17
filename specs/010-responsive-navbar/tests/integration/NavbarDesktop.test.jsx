@@ -153,7 +153,6 @@ describe('Navbar Desktop (T009-T012)', () => {
 
       // No avatar or login button during loading
       const avatarBtn = container.querySelector('[class*="avatar"]');
-      const loginBtns = screen.queryAllByRole('button', { name: /登入/i });
       // Filter to only desktop login buttons (inside nav)
       const nav = screen.getByRole('navigation', { name: '主要導覽' });
       expect(within(nav).queryByRole('button', { name: /登入/i })).not.toBeInTheDocument();
@@ -197,7 +196,7 @@ describe('Navbar Desktop (T009-T012)', () => {
 
     it('shows SVG fallback when user has no photoURL', async () => {
       // Arrange & Act
-      const { container } = await renderNavbar({ user: mockUserNoPhoto });
+      await renderNavbar({ user: mockUserNoPhoto });
 
       // Assert
       const nav = screen.getByRole('navigation', { name: '主要導覽' });

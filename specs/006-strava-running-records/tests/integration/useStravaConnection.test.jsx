@@ -43,6 +43,7 @@ function renderWithAuth(ui, { user = null, loading = false } = {}) {
 
 /**
  * 消費 useStravaConnection hook 的測試元件。
+ * @returns {import('react').ReactElement} 渲染結果。
  */
 function TestComponent() {
   const { connection, isLoading, error } = useStravaConnection();

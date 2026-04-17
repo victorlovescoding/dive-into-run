@@ -117,15 +117,6 @@ beforeAll(() => {
 // ---------------------------------------------------------------------------
 // Test constants
 // ---------------------------------------------------------------------------
-const TEST_USER = {
-  uid: 'test-uid',
-  photoURL: 'https://example.com/me.jpg',
-  name: 'Test User',
-  email: 'test@test.com',
-  bio: null,
-  getIdToken: vi.fn().mockResolvedValue('token'),
-};
-
 /** @type {Array<object>} */
 const mockPosts = [
   {

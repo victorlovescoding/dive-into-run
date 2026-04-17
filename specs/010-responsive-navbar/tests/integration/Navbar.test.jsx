@@ -1,7 +1,6 @@
 import { createContext } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 
 vi.mock('next/link', () => ({
   default: ({ href, children, ...props }) => (
@@ -38,12 +37,8 @@ vi.mock('@/lib/firebase-auth-helpers', () => ({
 }));
 
 describe('Navbar base', () => {
-  /** @type {ReturnType<typeof userEvent.setup>} */
-  let user;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    user = userEvent.setup();
 
     Object.defineProperty(window, 'matchMedia', {
       writable: true,

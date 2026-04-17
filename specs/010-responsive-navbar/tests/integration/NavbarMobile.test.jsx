@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, screen, within, waitFor } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // -- Mocks --
@@ -171,7 +171,7 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
 
     it('clicking hamburger opens drawer and shows overlay', async () => {
       // Arrange
-      const { user } = await renderAndOpenDrawer();
+      await renderAndOpenDrawer();
 
       // Assert
       const drawer = document.getElementById('mobile-drawer');
@@ -184,7 +184,6 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
 
       // Assert
       const drawer = document.getElementById('mobile-drawer');
-      const links = within(drawer).getAllByRole('link');
       const labels = ['回首頁', '會員頁面', '文章', '揪團頁面', '跑步'];
       for (const label of labels) {
         expect(within(drawer).getByRole('link', { name: label })).toBeInTheDocument();

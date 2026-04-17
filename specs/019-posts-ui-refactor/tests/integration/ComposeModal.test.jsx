@@ -16,10 +16,10 @@ vi.mock('next/image', () => ({
 // jsdom 不支援 showModal / close，手動 mock
 // ---------------------------------------------------------------------------
 beforeAll(() => {
-  HTMLDialogElement.prototype.showModal = vi.fn(function () {
+  HTMLDialogElement.prototype.showModal = vi.fn(function showModal() {
     this.setAttribute('open', '');
   });
-  HTMLDialogElement.prototype.close = vi.fn(function () {
+  HTMLDialogElement.prototype.close = vi.fn(function close() {
     this.removeAttribute('open');
   });
 });
@@ -32,6 +32,7 @@ beforeAll(() => {
  * 測試用 wrapper，管理 ComposeModal 的 state 與 dialog ref。
  * @param {object} props - wrapper props。
  * @param {boolean} [props.isEditing] - 是否為編輯模式。
+ * @returns {import('react').ReactElement} 渲染結果。
  */
 function ModalWrapper({ isEditing = false }) {
   const dialogRef = useRef(null);

@@ -31,7 +31,7 @@ vi.mock('@/lib/notification-helpers', () => ({
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
-import { collection, writeBatch, doc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, writeBatch, getDocs } from 'firebase/firestore';
 import { buildNotificationMessage } from '@/lib/notification-helpers';
 import { notifyPostCommentReply } from '@/lib/firebase-notifications';
 
@@ -41,8 +41,7 @@ import { notifyPostCommentReply } from '@/lib/firebase-notifications';
 const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
 const mockedCollection = /** @type {import('vitest').Mock} */ (collection);
 const mockedWriteBatch = /** @type {import('vitest').Mock} */ (writeBatch);
-const mockedDoc = /** @type {import('vitest').Mock} */ (doc);
-const mockedServerTimestamp = /** @type {import('vitest').Mock} */ (serverTimestamp);
+// doc and serverTimestamp are used via vi.mock only — no typed alias needed
 const mockedBuildMessage = /** @type {import('vitest').Mock} */ (buildNotificationMessage);
 
 // ---------------------------------------------------------------------------

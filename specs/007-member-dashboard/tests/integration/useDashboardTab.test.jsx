@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { StrictMode } from 'react';
 
-/** @type {IntersectionObserverCallback | null} */
+/** @type {((entries: IntersectionObserverEntry[], observer: IntersectionObserver) => void) | null} */
 let observerCallback = null;
 /** @type {import('vitest').Mock} */
 let mockObserve;
@@ -16,7 +16,7 @@ beforeEach(() => {
 
   global.IntersectionObserver = /** @type {any} */ (
     class {
-      /** @param {IntersectionObserverCallback} cb */
+      /** @param {(entries: IntersectionObserverEntry[], observer: IntersectionObserver) => void} cb - Observer callback。 */
       constructor(cb) {
         observerCallback = cb;
       }
@@ -90,7 +90,10 @@ describe('useDashboardTab', () => {
     mockFetchFn.mockResolvedValueOnce({ items: [{ id: '1' }] });
 
     const { result, rerender } = renderHook(
-      /** @param {{ isActive: boolean }} props */
+      /**
+       * @param {{ isActive: boolean }} props - renderHook props。
+       * @returns {ReturnType<typeof useDashboardTab>} hook 回傳值。
+       */
       ({ isActive }) => useDashboardTab('user-1', mockFetchFn, 10, isActive),
       { initialProps: { isActive: false } },
     );
@@ -116,7 +119,10 @@ describe('useDashboardTab', () => {
     mockFetchFn.mockResolvedValueOnce({ items: [{ id: '1' }] });
 
     const { result, rerender } = renderHook(
-      /** @param {{ isActive: boolean }} props */
+      /**
+       * @param {{ isActive: boolean }} props - renderHook props。
+       * @returns {ReturnType<typeof useDashboardTab>} hook 回傳值。
+       */
       ({ isActive }) => useDashboardTab('user-1', mockFetchFn, 10, isActive),
       { initialProps: { isActive: true } },
     );
@@ -389,7 +395,10 @@ describe('useDashboardTab', () => {
         }),
     );
 
-    /** @param {{ children: import('react').ReactNode }} props */
+    /**
+     * @param {{ children: import('react').ReactNode }} props - wrapper props。
+     * @returns {import('react').ReactElement} StrictMode 包裝元件。
+     */
     function StrictWrapper({ children }) {
       return <StrictMode>{children}</StrictMode>;
     }
@@ -432,7 +441,10 @@ describe('useDashboardTab', () => {
     const useDashboardTab = await importHook();
     mockFetchFn.mockRejectedValueOnce(new Error('network error'));
 
-    /** @param {{ children: import('react').ReactNode }} props */
+    /**
+     * @param {{ children: import('react').ReactNode }} props - wrapper props。
+     * @returns {import('react').ReactElement} StrictMode 包裝元件。
+     */
     function StrictWrapper({ children }) {
       return <StrictMode>{children}</StrictMode>;
     }

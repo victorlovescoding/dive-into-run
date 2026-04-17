@@ -84,7 +84,7 @@ describe('Unit: listenStravaConnection', () => {
     const callback = vi.fn();
     mockDoc.mockReturnValue({ _type: 'docRef' });
 
-    /** @type {Function} */
+    /** @type {(snapshot: any) => void} */
     let snapshotHandler;
     mockOnSnapshot.mockImplementation((_, onNext) => {
       snapshotHandler = onNext;
@@ -122,7 +122,7 @@ describe('Unit: listenStravaConnection', () => {
     const callback = vi.fn();
     mockDoc.mockReturnValue({ _type: 'docRef' });
 
-    /** @type {Function} */
+    /** @type {(snapshot: any) => void} */
     let snapshotHandler;
     mockOnSnapshot.mockImplementation((_, onNext) => {
       snapshotHandler = onNext;
@@ -161,7 +161,7 @@ describe('Unit: listenStravaConnection', () => {
     const callback = vi.fn();
     mockDoc.mockReturnValue({ _type: 'docRef' });
 
-    /** @type {Function} */
+    /** @type {(error: Error) => void} */
     let errorHandler;
     mockOnSnapshot.mockImplementation((_, _onNext, onError) => {
       errorHandler = onError;

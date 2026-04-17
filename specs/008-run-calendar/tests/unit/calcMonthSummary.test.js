@@ -15,7 +15,7 @@ import { calcMonthSummary, RUN_TYPE_LABELS } from '@/lib/strava-helpers';
  * 建立一筆 DayActivities 測試資料。
  * @param {number} day - 日期（1-31）。
  * @param {Array<{ type: string, totalMeters: number }>} runs - 當日跑步紀錄。
- * @returns {{ dateKey: string, day: number, runs: Array<{ type: string, totalMeters: number }>, totalMeters: number }}
+ * @returns {{ dateKey: string, day: number, runs: Array<{ type: string, totalMeters: number }>, totalMeters: number }} mock DayActivities。
  */
 function makeDayActivities(day, runs) {
   const totalMeters = runs.reduce((sum, r) => sum + r.totalMeters, 0);
