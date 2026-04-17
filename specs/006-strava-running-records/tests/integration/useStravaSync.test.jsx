@@ -41,6 +41,7 @@ function renderWithAuth(ui, user = mockUser) {
  * 消費 useStravaSync hook 的測試元件。
  * @param {object} props - 元件 props。
  * @param {{ toDate: () => Date } | null} props.lastSyncAt - 上次同步時間。
+ * @returns {import('react').ReactElement} 渲染結果。
  */
 function TestComponent({ lastSyncAt }) {
   const { sync, isSyncing, cooldownRemaining, error } = useStravaSync(lastSyncAt);

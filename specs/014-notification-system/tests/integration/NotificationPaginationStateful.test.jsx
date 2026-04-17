@@ -100,6 +100,7 @@ function createNotification(id, index, read = false) {
  * 建立 stateful pagination mock，模擬 Firestore cursor 行為。
  * @param {import('@/lib/notification-helpers').NotificationItem[]} allNotifications - 完整 dataset，已依 createdAt desc 排序。
  * @param {number} listenerLimit - listener 回傳筆數。
+ * @returns {{ fireAllListener: () => void, fireUnreadListener: (items: any[]) => void, fireAllListenerWith: (items: any[]) => void }} mock 控制器。
  */
 function setupStatefulMocks(allNotifications, listenerLimit = 5) {
   /** @type {((items: import('@/lib/notification-helpers').NotificationItem[], lastDoc?: unknown) => void) | undefined} */
@@ -416,7 +417,6 @@ describe('NotificationPagination — stateful cursor tests', () => {
 
     // Phase 1: expand client-side slice from 5 to 100 (19 clicks × +5)
     for (let i = 0; i < 19; i++) {
-      // eslint-disable-next-line no-await-in-loop
       await user.click(screen.getByRole('button', { name: '查看先前通知' }));
     }
 

@@ -65,9 +65,9 @@ const mockedCollection = /** @type {import('vitest').Mock} */ (collection);
 // Shared fixtures
 // ---------------------------------------------------------------------------
 /**
- * @param docs
- * @param changes
- * @returns {{ docs: Array<{ id: string, data: () => object }>, docChanges: () => Array<{ type: string, doc: { id: string, data: () => object } }> }}
+ * @param {Array<{ id: string, data: object }>} docs - 模擬的 Firestore 文件。
+ * @param {Array<{ type: string, id: string, data: object }>} changes - 模擬的 docChanges。
+ * @returns {{ docs: Array<{ id: string, data: () => object }>, docChanges: () => Array<{ type: string, doc: { id: string, data: () => object } }> }} mock Firestore snapshot。
  */
 function createMockSnapshot(docs, changes = []) {
   return {
@@ -129,7 +129,7 @@ describe('watchNotifications', () => {
 
   it('should call onNext with mapped notifications on first snapshot (initial load)', () => {
     // Arrange
-    /** @type {Function} */
+    /** @type {(snapshot: any) => void} */
     let snapshotCallback;
     mockedOnSnapshot.mockImplementation((q, onNextCb) => {
       snapshotCallback = onNextCb;
@@ -159,7 +159,7 @@ describe('watchNotifications', () => {
 
   it('should NOT call onNew on first snapshot (initial load)', () => {
     // Arrange
-    /** @type {Function} */
+    /** @type {(snapshot: any) => void} */
     let snapshotCallback;
     mockedOnSnapshot.mockImplementation((q, onNextCb) => {
       snapshotCallback = onNextCb;
@@ -182,7 +182,7 @@ describe('watchNotifications', () => {
 
   it('should call onNext and onNew on subsequent snapshots', () => {
     // Arrange
-    /** @type {Function} */
+    /** @type {(snapshot: any) => void} */
     let snapshotCallback;
     mockedOnSnapshot.mockImplementation((q, onNextCb) => {
       snapshotCallback = onNextCb;
@@ -215,7 +215,7 @@ describe('watchNotifications', () => {
 
   it('should not throw when onNew is not provided on subsequent snapshots', () => {
     // Arrange
-    /** @type {Function} */
+    /** @type {(snapshot: any) => void} */
     let snapshotCallback;
     mockedOnSnapshot.mockImplementation((q, onNextCb) => {
       snapshotCallback = onNextCb;
@@ -282,7 +282,7 @@ describe('watchUnreadNotifications', () => {
 
   it('should map snapshot docs to NotificationItem array', () => {
     // Arrange
-    /** @type {Function} */
+    /** @type {(snapshot: any) => void} */
     let snapshotCallback;
     mockedOnSnapshot.mockImplementation((q, onNextCb) => {
       snapshotCallback = onNextCb;

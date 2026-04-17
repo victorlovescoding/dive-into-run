@@ -14,7 +14,8 @@ import useStravaActivities from '@/hooks/useStravaActivities';
 const mockedGetActivities = /** @type {import('vitest').Mock} */ (getStravaActivities);
 
 /**
- *
+ * 測試用元件，消費 useStravaActivities hook。
+ * @returns {import('react').ReactElement} 渲染結果。
  */
 function TestComponent() {
   const { activities, isLoading, error, loadMore, hasMore, isLoadingMore, refresh } =

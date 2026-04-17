@@ -126,24 +126,18 @@ function renderWithProviders(ui, { user = null } = {}) {
 
 /** @type {((notifications: any[]) => void) | undefined} */
 let unreadCallback;
-/** @type {((notifications: any[]) => void) | undefined} */
-let notificationsCallback;
 const mockUnsubscribeUnread = vi.fn();
 const mockUnsubscribeAll = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
   unreadCallback = undefined;
-  notificationsCallback = undefined;
 
   mockedWatchUnreadNotifications.mockImplementation((uid, onNext) => {
     unreadCallback = onNext;
     return mockUnsubscribeUnread;
   });
-  mockedWatchNotifications.mockImplementation((uid, onNext) => {
-    notificationsCallback = onNext;
-    return mockUnsubscribeAll;
-  });
+  mockedWatchNotifications.mockImplementation(() => mockUnsubscribeAll);
 });
 
 // ===========================================================================
@@ -196,7 +190,8 @@ describe('NotificationContext', () => {
     let capturedCount;
 
     /**
-     *
+     * 讀取 NotificationContext 中 unreadCount 的測試元件。
+     * @returns {null} 不渲染任何 UI。
      */
     function CountReader() {
       const ctx = require('react').useContext(NotificationContext);

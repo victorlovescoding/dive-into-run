@@ -96,15 +96,6 @@ vi.mock('@/lib/firebase-notifications', () => ({
 // Mocks -- contexts
 // ---------------------------------------------------------------------------
 
-const mockUser = {
-  uid: 'user1',
-  name: 'Test User',
-  email: null,
-  photoURL: 'http://photo.jpg',
-  bio: null,
-  getIdToken: async () => '',
-};
-
 vi.mock('@/contexts/AuthContext', async () => {
   const { createContext } = await import('react');
   return {
@@ -150,10 +141,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('next/image', async () => {
   const { createElement } = await import('react');
   return {
-    default: (props) => {
-      const { fill, priority, ...rest } = props;
-      return createElement('img', rest);
-    },
+    default: ({ fill: _fill, priority: _priority, ...rest }) => createElement('img', rest),
   };
 });
 

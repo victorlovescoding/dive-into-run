@@ -51,10 +51,10 @@ describe('RunCalendarDialog', () => {
     vi.clearAllMocks();
 
     // jsdom 不支援 showModal / close，需要手動 mock
-    HTMLDialogElement.prototype.showModal = vi.fn(function () {
+    HTMLDialogElement.prototype.showModal = vi.fn(function showModal() {
       this.open = true;
     });
-    HTMLDialogElement.prototype.close = vi.fn(function () {
+    HTMLDialogElement.prototype.close = vi.fn(function close() {
       this.open = false;
     });
 

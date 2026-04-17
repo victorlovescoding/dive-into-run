@@ -66,14 +66,14 @@ describe('RunsActivityList', () => {
   });
 
   describe('infinite scroll', () => {
-    /** @type {Function | null} */
+    /** @type {((entries: IntersectionObserverEntry[]) => void) | null} */
     let intersectionCallback;
 
     beforeEach(() => {
       intersectionCallback = null;
       vi.stubGlobal(
         'IntersectionObserver',
-        vi.fn((/** @type {Function} */ callback) => {
+        vi.fn((/** @type {(entries: IntersectionObserverEntry[]) => void} */ callback) => {
           intersectionCallback = callback;
           return {
             observe: vi.fn(),
