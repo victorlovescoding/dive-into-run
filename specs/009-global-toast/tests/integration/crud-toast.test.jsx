@@ -127,11 +127,8 @@ const TEST_USER = {
  * @returns {import('react').ReactElement} Provider wrapper.
  */
 function AuthWrapper({ children, user = TEST_USER }) {
-  return (
-    <AuthContext.Provider value={{ user, setUser: vi.fn(), loading: false }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = { user, setUser: vi.fn(), loading: false };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 // ---------------------------------------------------------------------------
