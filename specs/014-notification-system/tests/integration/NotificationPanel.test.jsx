@@ -80,6 +80,33 @@ function createMockNotification(overrides = {}) {
 }
 
 /**
+ * 建立 NotificationContext 預設 mock value。
+ * @param {Partial<import('@/contexts/NotificationContext').NotificationContextValue>} [overrides] - 覆寫欄位。
+ * @returns {import('@/contexts/NotificationContext').NotificationContextValue} mock context value。
+ */
+function createContextValue(overrides = {}) {
+  return {
+    unreadCount: 0,
+    notifications: [],
+    isPanelOpen: true,
+    togglePanel: vi.fn(),
+    closePanel: vi.fn(),
+    markAsRead: vi.fn(),
+    activeTab: 'all',
+    setActiveTab: vi.fn(),
+    hasMore: false,
+    isLoadingMore: false,
+    hasLoadedMore: false,
+    loadMore: vi.fn(),
+    currentToast: null,
+    bellButtonRef: /** @type {import('react').RefObject<HTMLButtonElement | null>} */ ({
+      current: null,
+    }),
+    ...overrides,
+  };
+}
+
+/**
  * 用 NotificationContext.Provider 包裹 NotificationPanel 渲染。
  * @param {object} [options] - 渲染選項。
  * @param {import('@/lib/notification-helpers').NotificationItem[]} [options.notifications] - 通知列表。
@@ -90,14 +117,12 @@ function createMockNotification(overrides = {}) {
 function renderPanel({ notifications = [], isPanelOpen = true, closePanel = vi.fn() } = {}) {
   return render(
     <NotificationContext.Provider
-      value={{
+      value={createContextValue({
         unreadCount: notifications.filter((n) => !n.read).length,
         notifications,
         isPanelOpen,
-        togglePanel: vi.fn(),
         closePanel,
-        markAsRead: vi.fn(),
-      }}
+      })}
     >
       <NotificationPanel />
     </NotificationContext.Provider>,
@@ -152,16 +177,7 @@ describe('NotificationPanel', () => {
     render(
       <div>
         <button type="button">外面的按鈕</button>
-        <NotificationContext.Provider
-          value={{
-            unreadCount: 0,
-            notifications: [],
-            isPanelOpen: true,
-            togglePanel: vi.fn(),
-            closePanel,
-            markAsRead: vi.fn(),
-          }}
-        >
+        <NotificationContext.Provider value={createContextValue({ closePanel })}>
           <NotificationPanel />
         </NotificationContext.Provider>
       </div>,
@@ -178,16 +194,7 @@ describe('NotificationPanel', () => {
     const notifications = [createMockNotification({ id: 'n1', message: '第一則' })];
 
     const { rerender } = render(
-      <NotificationContext.Provider
-        value={{
-          unreadCount: 1,
-          notifications,
-          isPanelOpen: true,
-          togglePanel: vi.fn(),
-          closePanel: vi.fn(),
-          markAsRead: vi.fn(),
-        }}
-      >
+      <NotificationContext.Provider value={createContextValue({ unreadCount: 1, notifications })}>
         <NotificationPanel />
       </NotificationContext.Provider>,
     );
@@ -201,14 +208,7 @@ describe('NotificationPanel', () => {
 
     rerender(
       <NotificationContext.Provider
-        value={{
-          unreadCount: 2,
-          notifications: updatedNotifications,
-          isPanelOpen: true,
-          togglePanel: vi.fn(),
-          closePanel: vi.fn(),
-          markAsRead: vi.fn(),
-        }}
+        value={createContextValue({ unreadCount: 2, notifications: updatedNotifications })}
       >
         <NotificationPanel />
       </NotificationContext.Provider>,

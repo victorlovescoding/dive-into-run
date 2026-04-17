@@ -35,7 +35,10 @@ const mockedListen = /** @type {import('vitest').Mock} */ (listenStravaConnectio
  * @param {boolean} [options.loading] - 驗證狀態載入中。
  * @returns {import('@testing-library/react').RenderResult} render 結果。
  */
-function renderWithAuth(ui, { user = null, loading = false } = {}) {
+function renderWithAuth(ui, { user: partialUser = null, loading = false } = {}) {
+  const user = partialUser
+    ? { bio: null, getIdToken: () => Promise.resolve(''), ...partialUser }
+    : null;
   return render(
     <AuthContext.Provider value={{ user, setUser: vi.fn(), loading }}>{ui}</AuthContext.Provider>,
   );

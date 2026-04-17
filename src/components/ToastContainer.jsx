@@ -17,7 +17,6 @@ export default function ToastContainer() {
   return (
     <div className={styles.container} aria-live="polite" aria-relevant="additions removals">
       {toasts.map((toast) => (
-        // @ts-expect-error — key 是 React 特殊 prop，不在 Toast JSDoc 型別中但為合法用法
         <Toast key={toast.id} toast={toast} onClose={removeToast} />
       ))}
     </div>

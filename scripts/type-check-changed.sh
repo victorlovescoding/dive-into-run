@@ -26,7 +26,7 @@ fi
 ERRORS=$(awk '
   FNR == NR { if ($0 != "") set[$0] = 1; next }
   { path = $0; sub(/[(:].*$/, "", path); if (path in set) print }
-' <(printf '%s\n' "$FILES") <(tsc -p tsconfig.check.json 2>&1) || true)
+' <(printf '%s\n' "$FILES") <(tsc --noEmit 2>&1) || true)
 
 if [ -z "$ERRORS" ]; then
   echo "✓ No type errors in changed files."

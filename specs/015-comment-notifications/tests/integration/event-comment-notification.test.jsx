@@ -99,7 +99,10 @@ const mockedAddComment = /** @type {import('vitest').Mock} */ (addComment);
  * @typedef {object} MockUser
  * @property {string} uid - 使用者 UID。
  * @property {string} name - 使用者名稱。
+ * @property {string} email - 使用者電子信箱。
  * @property {string} photoURL - 使用者大頭貼 URL。
+ * @property {string | null} bio - 使用者簡介。
+ * @property {() => Promise<string>} getIdToken - 取得 ID token。
  */
 
 /* ==========================================================================
@@ -110,7 +113,10 @@ const mockedAddComment = /** @type {import('vitest').Mock} */ (addComment);
 const MOCK_USER = {
   uid: 'user1',
   name: 'Test User',
+  email: 'test@example.com',
   photoURL: 'http://photo.jpg',
+  bio: null,
+  getIdToken: () => Promise.resolve('mock-token'),
 };
 
 const MOCK_EVENT_ID = 'event1';
@@ -149,7 +155,7 @@ describe('CommentSection — onCommentAdded 回呼', () => {
     const user = userEvent.setup();
 
     render(
-      <AuthContext.Provider value={{ user: MOCK_USER }}>
+      <AuthContext.Provider value={{ user: MOCK_USER, setUser: vi.fn(), loading: false }}>
         <CommentSection eventId={MOCK_EVENT_ID} onCommentAdded={mockOnCommentAdded} />
       </AuthContext.Provider>,
     );
@@ -170,7 +176,7 @@ describe('CommentSection — onCommentAdded 回呼', () => {
     const user = userEvent.setup();
 
     render(
-      <AuthContext.Provider value={{ user: MOCK_USER }}>
+      <AuthContext.Provider value={{ user: MOCK_USER, setUser: vi.fn(), loading: false }}>
         <CommentSection eventId={MOCK_EVENT_ID} onCommentAdded={mockOnCommentAdded} />
       </AuthContext.Provider>,
     );

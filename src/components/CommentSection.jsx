@@ -138,10 +138,7 @@ export default function CommentSection({ eventId, onCommentAdded }) {
           送出失敗，請再試一次
         </div>
       )}
-      {user && (
-        // @ts-expect-error — key 是 React 特殊 prop，不在 CommentInput JSDoc 型別中但為合法用法
-        <CommentInput key={submitKey} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
-      )}
+      {user && <CommentInput key={submitKey} onSubmit={handleSubmit} isSubmitting={isSubmitting} />}
       {editingComment && (
         <CommentEditModal
           comment={editingComment}

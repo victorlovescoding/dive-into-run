@@ -44,7 +44,7 @@ export function formatDuration(seconds) {
 /**
  * 解碼 Google Encoded Polyline 為座標陣列。
  * @param {string | null | undefined} encoded - 編碼後的 polyline 字串。
- * @returns {number[][]} 座標陣列 [[lat, lng], ...]，輸入為空時回傳空陣列。
+ * @returns {[number, number][]} 座標陣列 [[lat, lng], ...]，輸入為空時回傳空陣列。
  */
 export function decodePolyline(encoded) {
   if (!encoded) {

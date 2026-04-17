@@ -43,10 +43,13 @@ function TestComponent() {
 
 /**
  * 使用 AuthContext 包裹 TestComponent。
- * @param {{ uid: string, name: string | null, email: string | null, photoURL: string | null } | null} user - 測試用使用者物件。
+ * @param {{ uid: string, name: string | null, email: string | null, photoURL: string | null } | null} partialUser - 測試用使用者物件。
  * @returns {import('@testing-library/react').RenderResult} render 結果。
  */
-function renderWithAuth(user = null) {
+function renderWithAuth(partialUser = null) {
+  const user = partialUser
+    ? { bio: null, getIdToken: () => Promise.resolve(''), ...partialUser }
+    : null;
   return render(
     <AuthContext.Provider value={{ user, setUser: () => {}, loading: false }}>
       <TestComponent />

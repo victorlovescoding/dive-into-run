@@ -9,7 +9,7 @@ import styles from './RunsRouteMap.module.css';
 /**
  * 自動 fit bounds 到 polyline 範圍的內部元件。
  * @param {object} props - 元件 props。
- * @param {number[][]} props.coords - 座標陣列 [[lat, lng], ...]。
+ * @param {[number, number][]} props.coords - 座標陣列 [[lat, lng], ...]。
  * @returns {null} 不渲染任何 DOM。
  */
 function FitBounds({ coords }) {

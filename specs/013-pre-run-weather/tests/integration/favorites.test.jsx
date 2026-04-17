@@ -140,11 +140,13 @@ const { authValue, mockShowToast } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
-  AuthContext: /** @type {import('react').Context<object>} */ ({
-    Provider: ({ children }) => children,
-    Consumer: ({ children }) => children(authValue),
-    _currentValue: authValue,
-  }),
+  AuthContext: /** @type {import('react').Context<object>} */ (
+    /** @type {unknown} */ ({
+      Provider: ({ children }) => children,
+      Consumer: ({ children }) => children(authValue),
+      _currentValue: authValue,
+    })
+  ),
 }));
 
 vi.mock('@/contexts/ToastContext', () => ({

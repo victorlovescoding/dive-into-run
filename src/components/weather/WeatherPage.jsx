@@ -1,14 +1,6 @@
 'use client';
 
 import { useState, useRef, useCallback, useMemo, useEffect, useContext } from 'react';
-import TaiwanMap from './TaiwanMap';
-import WeatherCard from './WeatherCard';
-import WeatherCardEmpty from './WeatherCardEmpty';
-import WeatherCardSkeleton from './WeatherCardSkeleton';
-import WeatherCardError from './WeatherCardError';
-import BackToOverviewButton from './BackToOverviewButton';
-import FavoriteButton from './FavoriteButton';
-import FavoritesBar from './FavoritesBar';
 import { fetchWeather } from '@/lib/weather-api';
 import { getFavorites, isFavorited, removeFavorite } from '@/lib/firebase-weather-favorites';
 import {
@@ -20,6 +12,14 @@ import {
 } from '@/lib/weather-helpers';
 import { AuthContext } from '@/contexts/AuthContext';
 import { countiesGeoJson, townsGeoJson } from '@/lib/weather-geo-cache';
+import TaiwanMap from './TaiwanMap';
+import WeatherCard from './WeatherCard';
+import WeatherCardEmpty from './WeatherCardEmpty';
+import WeatherCardSkeleton from './WeatherCardSkeleton';
+import WeatherCardError from './WeatherCardError';
+import BackToOverviewButton from './BackToOverviewButton';
+import FavoriteButton from './FavoriteButton';
+import FavoritesBar from './FavoritesBar';
 import styles from './weather.module.css';
 
 // #region Types
@@ -122,7 +122,7 @@ export default function WeatherPage() {
   // #endregion
 
   // #region Refs
-  /** @type {import('react').MutableRefObject<AbortController | null>} */
+  /** @type {import('react').RefObject<AbortController | null>} */
   const abortRef = useRef(null);
   /** @type {import('react').RefObject<HTMLDivElement | null>} */
   const cardPanelRef = useRef(null);

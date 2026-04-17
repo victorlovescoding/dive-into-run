@@ -205,7 +205,7 @@ function RouteViewer({ encodedPolylines, bbox }) {
       } else {
         const combined = layers.reduce(
           (acc, line) => acc.extend(line.getBounds()),
-          L.latLngBounds(layers[0].getBounds()),
+          layers[0].getBounds(),
         );
         map.fitBounds(combined, { padding: [18, 18] });
       }
@@ -240,7 +240,7 @@ export default function EventMap({
   bbox,
   height = 500,
 }) {
-  const taipeiCenter = [25.033964, 121.564468];
+  const taipeiCenter = /** @type {[number, number]} */ ([25.033964, 121.564468]);
 
   const mapStyle = {
     height: `${height}px`,

@@ -241,11 +241,13 @@ vi.mock('@/lib/firebase-weather-favorites', () => ({
 
 // --- Mock AuthContext ---
 vi.mock('@/contexts/AuthContext', () => ({
-  AuthContext: /** @type {import('react').Context<object>} */ ({
-    Provider: ({ children }) => children,
-    Consumer: ({ children }) => children({ user: null, loading: false }),
-    _currentValue: { user: null, setUser: () => {}, loading: false },
-  }),
+  AuthContext: /** @type {import('react').Context<object>} */ (
+    /** @type {unknown} */ ({
+      Provider: ({ children }) => children,
+      Consumer: ({ children }) => children({ user: null, loading: false }),
+      _currentValue: { user: null, setUser: () => {}, loading: false },
+    })
+  ),
 }));
 
 // --- Mock ToastContext ---
