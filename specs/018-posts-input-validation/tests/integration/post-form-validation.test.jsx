@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useMemo } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -126,11 +127,8 @@ const TEST_USER = {
  * @returns {import('react').ReactElement} 包裹後的元件。
  */
 function AuthWrapper({ children, user = TEST_USER }) {
-  return (
-    <AuthContext.Provider value={{ user, setUser: vi.fn(), loading: false }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const authValue = useMemo(() => ({ user, setUser: vi.fn(), loading: false }), [user]);
+  return <AuthContext.Provider value={authValue}>{children}</AuthContext.Provider>;
 }
 
 /**

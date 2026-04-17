@@ -14,9 +14,11 @@ const mockedUsePathname = vi.mocked(usePathname);
 /** @param {string} [pathname] - 模擬的 pathname。 */
 function wrapper(pathname = '/') {
   mockedUsePathname.mockReturnValue(pathname);
-  return function ({ children }) {
+  /** @param {{ children: import('react').ReactNode }} props - Wrapper props. */
+  function Wrapper({ children }) {
     return <ToastProvider>{children}</ToastProvider>;
-  };
+  }
+  return Wrapper;
 }
 
 describe('toastReducer', () => {

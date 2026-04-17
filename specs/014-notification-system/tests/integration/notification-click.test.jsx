@@ -245,7 +245,6 @@ describe('Notification click behavior', () => {
 
     // Verify unread dot exists before click
     const panel = screen.getByRole('region', { name: '通知面板' });
-    // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access -- 驗證 CSS class 呈現的視覺元素
     expect(panel.querySelector('[class*="unreadDot"]')).toBeInTheDocument();
 
     // Act — click the notification (panel closes, re-open to inspect)
@@ -256,7 +255,6 @@ describe('Notification click behavior', () => {
 
     // The notification should now be marked as read — no blue dot
     const reopenedPanel = screen.getByRole('region', { name: '通知面板' });
-    // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access -- 驗證 CSS class 呈現的視覺元素
     expect(reopenedPanel.querySelector('[class*="unreadDot"]')).not.toBeInTheDocument();
   });
 });

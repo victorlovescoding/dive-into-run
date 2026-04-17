@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as firestore from 'firebase/firestore';
+import { asMock } from '../../../test-utils/mock-helpers';
 import {
   normalizeEventPayload,
   createEvent,
@@ -77,6 +78,7 @@ describe('firebase-events', () => {
 
     it('should throw error for invalid time', () => {
       const raw = { time: 'invalid' };
+      // @ts-expect-error -- 故意傳不完整 payload 測試 error path
       expect(() => normalizeEventPayload(raw)).toThrow();
     });
 
@@ -86,6 +88,7 @@ describe('firebase-events', () => {
         registrationDeadline: '2023-10-09T10:00',
         distanceKm: 'abc',
       };
+      // @ts-expect-error -- 故意缺少 paceMinutes/paceSeconds 測試距離驗證
       expect(() => normalizeEventPayload(raw)).toThrow('距離（公里）請輸入有效數字');
     });
   });
@@ -103,13 +106,14 @@ describe('firebase-events', () => {
       };
       const extra = { hostId: 'u1' };
       const mockRef = { id: 'new-id' };
-      firestore.addDoc.mockResolvedValueOnce(mockRef);
+      asMock(firestore.addDoc).mockResolvedValueOnce(mockRef);
 
+      // @ts-expect-error -- hostId 未在 extra typedef 中，但 spread 後仍寫入 payload
       const result = await createEvent(raw, extra);
 
       expect(firestore.collection).toHaveBeenCalledWith(expect.anything(), 'events');
       expect(firestore.addDoc).toHaveBeenCalled();
-      const payload = firestore.addDoc.mock.calls[0][1];
+      const payload = asMock(firestore.addDoc).mock.calls[0][1];
       expect(payload.hostId).toBe('u1');
       expect(payload.paceSec).toBe(300);
       expect(result).toBe(mockRef);
@@ -122,7 +126,7 @@ describe('firebase-events', () => {
         { id: '1', data: () => ({ title: 'E1' }) },
         { id: '2', data: () => ({ title: 'E2' }) },
       ];
-      firestore.getDocs.mockResolvedValueOnce({ docs: mockDocs });
+      asMock(firestore.getDocs).mockResolvedValueOnce({ docs: mockDocs });
 
       const result = await fetchLatestEvents(2);
 
@@ -137,7 +141,7 @@ describe('firebase-events', () => {
   describe('queryEvents', () => {
     it('should query with filters', async () => {
       const mockDocs = [{ id: '1', data: () => ({ time: {}, city: 'Tao', distanceKm: 5 }) }];
-      firestore.getDocs.mockResolvedValueOnce({ docs: mockDocs });
+      asMock(firestore.getDocs).mockResolvedValueOnce({ docs: mockDocs });
 
       const result = await queryEvents({ city: 'Tao' });
       expect(result).toHaveLength(1);
@@ -146,7 +150,7 @@ describe('firebase-events', () => {
 
     it('should filter by time', async () => {
       const mockDocs = [];
-      firestore.getDocs.mockResolvedValueOnce({ docs: mockDocs });
+      asMock(firestore.getDocs).mockResolvedValueOnce({ docs: mockDocs });
       await queryEvents({ startTime: '2023-01-01', endTime: '2023-01-02' });
       expect(firestore.where).toHaveBeenCalledTimes(2);
     });
@@ -154,15 +158,15 @@ describe('firebase-events', () => {
 
   describe('fetchEventById', () => {
     it('should return null if not found', async () => {
-      firestore.doc.mockReturnValueOnce({});
-      firestore.getDoc.mockResolvedValueOnce({ exists: () => false });
+      asMock(firestore.doc).mockReturnValueOnce({});
+      asMock(firestore.getDoc).mockResolvedValueOnce({ exists: () => false });
       const result = await fetchEventById('1');
       expect(result).toBeNull();
     });
 
     it('should return event data if found', async () => {
-      firestore.doc.mockReturnValueOnce({});
-      firestore.getDoc.mockResolvedValueOnce({
+      asMock(firestore.doc).mockReturnValueOnce({});
+      asMock(firestore.getDoc).mockResolvedValueOnce({
         exists: () => true,
         id: '1',
         data: () => ({ title: 'E1' }),
@@ -175,7 +179,8 @@ describe('firebase-events', () => {
   describe('fetchNextEvents', () => {
     it('should use startAfter', async () => {
       const mockAfterDoc = {};
-      firestore.getDocs.mockResolvedValueOnce({ docs: [] });
+      asMock(firestore.getDocs).mockResolvedValueOnce({ docs: [] });
+      // @ts-expect-error -- 測試用空物件代替 QueryDocumentSnapshot
       await fetchNextEvents(mockAfterDoc);
       expect(firestore.startAfter).toHaveBeenCalledWith(mockAfterDoc);
     });
@@ -188,7 +193,7 @@ describe('firebase-events', () => {
 
   describe('joinEvent', () => {
     it('should succeed if valid', async () => {
-      firestore.runTransaction.mockImplementation(async (db, callback) => {
+      asMock(firestore.runTransaction).mockImplementation(async (db, callback) => {
         // Mock transaction context
         const tx = {
           get: vi.fn(),
@@ -217,7 +222,7 @@ describe('firebase-events', () => {
 
   describe('leaveEvent', () => {
     it('should succeed if joined', async () => {
-      firestore.runTransaction.mockImplementation(async (db, callback) => {
+      asMock(firestore.runTransaction).mockImplementation(async (db, callback) => {
         const tx = {
           get: vi.fn(),
           delete: vi.fn(),
@@ -245,7 +250,7 @@ describe('firebase-events', () => {
 
   describe('fetchParticipants', () => {
     it('should return list', async () => {
-      firestore.getDocs.mockResolvedValueOnce({ docs: [{ id: 'p1', data: () => ({}) }] });
+      asMock(firestore.getDocs).mockResolvedValueOnce({ docs: [{ id: 'p1', data: () => ({}) }] });
       const result = await fetchParticipants('eid');
       expect(result).toHaveLength(1);
       expect(firestore.collection).toHaveBeenCalledWith(
@@ -259,7 +264,7 @@ describe('firebase-events', () => {
 
   describe('fetchMyJoinedEventsForIds', () => {
     it('should return set of joined ids', async () => {
-      firestore.getDoc
+      asMock(firestore.getDoc)
         .mockResolvedValueOnce({ exists: () => true }) // e1 joined
         .mockResolvedValueOnce({ exists: () => false }); // e2 not joined
 

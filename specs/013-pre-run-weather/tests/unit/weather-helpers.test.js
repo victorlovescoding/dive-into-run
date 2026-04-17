@@ -222,7 +222,6 @@ describe('saveLastLocation / loadLastLocation', () => {
   });
 
   afterEach(() => {
-    // @ts-expect-error — clean up mock
     delete globalThis.localStorage;
   });
 

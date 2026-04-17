@@ -215,7 +215,7 @@ const mockFavorites = [
 /**
  * 渲染 WeatherPage 並選取臺北市使天氣卡出現。
  * @param {object} [opts] - 選項。
- * @param {ReturnType<typeof userEvent.setup>} opts.user - userEvent instance。
+ * @param {ReturnType<typeof userEvent.setup>} [opts.user] - userEvent instance。
  * @returns {Promise<void>} 渲染完成。
  */
 async function renderAndSelectTaipei({ user } = {}) {
