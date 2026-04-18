@@ -25,9 +25,9 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
-      - run: npm install
-      # Workaround: npm bug #4828 — lock file from macOS misses Linux optional deps
-      - run: npm install --no-save @rollup/rollup-linux-x64-gnu || true
+      - run: npm ci
+      # Workaround: npm bug #4828 — macOS lock file misses Linux optional deps
+      - run: npm install --no-save @rollup/rollup-linux-x64-gnu lightningcss-linux-x64-gnu || true
 
       - name: Lint
         run: npm run lint -- --max-warnings 0
@@ -60,8 +60,8 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
-      - run: npm install
-      - run: npm install --no-save @rollup/rollup-linux-x64-gnu || true
+      - run: npm ci
+      - run: npm install --no-save @rollup/rollup-linux-x64-gnu lightningcss-linux-x64-gnu || true
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
