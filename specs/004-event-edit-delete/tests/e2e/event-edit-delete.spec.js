@@ -161,8 +161,11 @@ test.describe('Event Edit & Delete - User Story 1: 編輯活動', () => {
     await loginAsUser(page, 'test-host@example.com', 'test-password');
     await page.goto('/events');
 
-    // 記住原始標題
-    const firstEventTitle = await page.locator('[class*="eventTitle"]').first().innerText();
+    // 記住原始標題（取第一張活動卡片的標題連結文字）
+    const firstEventTitle = await page
+      .getByRole('link', { name: /測試活動/ })
+      .first()
+      .innerText();
 
     // 打開編輯表單
     const menuButton = page.getByRole('button', { name: /更多操作/i }).first();
@@ -208,7 +211,10 @@ test.describe('Event Edit & Delete - User Story 2: 刪除活動', () => {
     await loginAsUser(page, 'test-host@example.com', 'test-password');
     await page.goto('/events');
 
-    const firstEventTitle = await page.locator('[class*="eventTitle"]').first().innerText();
+    const firstEventTitle = await page
+      .getByRole('link', { name: /測試活動/ })
+      .first()
+      .innerText();
 
     // 打開刪除確認
     const menuButton = page.getByRole('button', { name: /更多操作/i }).first();
@@ -230,7 +236,10 @@ test.describe('Event Edit & Delete - User Story 2: 刪除活動', () => {
     await loginAsUser(page, 'test-host@example.com', 'test-password');
     await page.goto('/events');
 
-    const firstEventTitle = await page.locator('[class*="eventTitle"]').first().innerText();
+    const firstEventTitle = await page
+      .getByRole('link', { name: /測試活動/ })
+      .first()
+      .innerText();
 
     // 打開刪除確認
     const menuButton = page.getByRole('button', { name: /更多操作/i }).first();

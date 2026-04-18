@@ -1,7 +1,8 @@
 /**
- * @file Playwright global setup for E2E tests using Firebase Emulator.
+ * @file Playwright global setup for 001-event-filtering E2E tests using Firebase Emulator.
  * @description
- * Creates test users in the Auth Emulator and seeds Firestore with test events.
+ * Creates a test user in the Auth Emulator and seeds Firestore with test events
+ * that have varied city/district/distanceKm values for meaningful filter testing.
  * Prerequisite: `firebase emulators:start` must be running before executing E2E tests.
  */
 
@@ -10,7 +11,7 @@ const AUTH_EMULATOR_URL = 'http://localhost:9099';
 const FIRESTORE_EMULATOR_URL = 'http://localhost:8080';
 
 /**
- * Wraps a raw Firestore timestamp string into the REST API value format.
+ * Wraps a raw ISO string into the Firestore REST API timestamp format.
  * @param {string} isoString - ISO 8601 timestamp string.
  * @returns {{ timestampValue: string }} Firestore timestamp value.
  */
@@ -47,10 +48,10 @@ function toFirestoreDoc(data) {
 
 /**
  * Creates a test user in the Auth Emulator.
- * @param {string} email - User's email.
+ * @param {string} email - User's email address.
  * @param {string} password - User's password.
  * @param {string} displayName - User's display name.
- * @returns {Promise<{ localId: string, idToken: string }>} Created user info.
+ * @returns {Promise<{ localId: string, idToken: string }>} Created user info with auth token.
  */
 async function createTestUser(email, password, displayName) {
   const res = await fetch(
@@ -68,11 +69,11 @@ async function createTestUser(email, password, displayName) {
 }
 
 /**
- * Creates or replaces a Firestore document in the Emulator.
- * @param {string} collection - Collection ID.
+ * Creates or replaces a Firestore document in the Emulator via REST API.
+ * @param {string} collection - Firestore collection ID.
  * @param {string} docId - Document ID.
- * @param {Record<string, unknown>} data - Document data.
- * @param {string} idToken - Firebase Auth ID token for the request (must satisfy security rules).
+ * @param {Record<string, unknown>} data - Document data as plain object.
+ * @param {string} idToken - Firebase Auth ID token for authorization.
  * @returns {Promise<void>}
  */
 async function seedDoc(collection, docId, data, idToken) {
@@ -91,7 +92,8 @@ async function seedDoc(collection, docId, data, idToken) {
 }
 
 /**
- * Playwright global setup: creates test accounts and seeds test events in the Firebase Emulator.
+ * Playwright global setup: creates a test account and seeds test events
+ * with varied city/district/distance values for filter E2E testing.
  * @returns {Promise<void>}
  */
 export default async function globalSetup() {
@@ -100,7 +102,7 @@ export default async function globalSetup() {
     await fetch(`${AUTH_EMULATOR_URL}/`);
   } catch {
     throw new Error(
-      '❌ Firebase Auth Emulator is not running.\n' +
+      'Firebase Auth Emulator is not running.\n' +
         '   Run: firebase emulators:start --only auth,firestore',
     );
   }
@@ -108,9 +110,7 @@ export default async function globalSetup() {
   // Clear all emulator auth accounts
   const authCleanup = await fetch(
     `${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`,
-    {
-      method: 'DELETE',
-    },
+    { method: 'DELETE' },
   );
   if (!authCleanup.ok) {
     console.warn(`Auth cleanup failed (${authCleanup.status}): ${await authCleanup.text()}`);
@@ -127,53 +127,59 @@ export default async function globalSetup() {
     );
   }
 
-  // Create test accounts
-  const { localId: testHostUid, idToken: hostIdToken } = await createTestUser(
-    'test-host@example.com',
+  // Create test user
+  const { localId: hostUid, idToken } = await createTestUser(
+    'filter-test-host@example.com',
     'test-password',
-    'Test Host',
+    'Filter Test Host',
   );
-  await createTestUser('test-participant@example.com', 'test-password', 'Test Participant');
 
-  // Seed 2 events owned by test-host (delete test removes one, leaving one for subsequent tests)
   /** @type {Record<string, unknown>} */
   const baseEvent = {
-    city: '台北市',
-    district: '信義區',
-    meetPlace: '象山捷運站',
+    hostUid,
+    hostName: 'Filter Test Host',
+    hostPhotoURL: '',
     runType: 'road',
-    distanceKm: 5.0,
-    paceSec: 360,
     maxParticipants: 10,
     participantsCount: 0,
     remainingSeats: 10,
-    description: 'E2E 測試用活動，請勿操作',
-    hostUid: testHostUid,
-    hostName: 'Test Host',
-    hostPhotoURL: '',
-    registrationDeadline: ts('2026-04-14T23:59:59Z'),
-    createdAt: ts('2026-03-30T00:00:00Z'),
+    description: 'E2E 篩選測試用活動',
+    createdAt: ts('2026-04-01T00:00:00Z'),
   };
 
+  // Event 1: 台北市信義區, 5km — 讓 city/district 篩選有資料
   await seedDoc(
     'events',
-    'test-event-1',
+    'filter-event-1',
     {
       ...baseEvent,
-      title: 'E2E 測試活動一',
-      time: ts('2026-04-15T10:00:00Z'),
+      title: 'E2E 篩選活動一',
+      city: '台北市',
+      district: '信義區',
+      meetPlace: '象山捷運站',
+      distanceKm: 5.0,
+      paceSec: 360,
+      time: ts('2027-06-15T08:00:00Z'),
+      registrationDeadline: ts('2027-06-14T23:59:59Z'),
     },
-    hostIdToken,
+    idToken,
   );
 
+  // Event 2: 桃園市龜山區, 10km — 讓 city/district 連動和距離篩選有差異
   await seedDoc(
     'events',
-    'test-event-2',
+    'filter-event-2',
     {
       ...baseEvent,
-      title: 'E2E 測試活動二',
-      time: ts('2026-04-16T10:00:00Z'),
+      title: 'E2E 篩選活動二',
+      city: '桃園市',
+      district: '龜山區',
+      meetPlace: '體育大學',
+      distanceKm: 10.0,
+      paceSec: 330,
+      time: ts('2027-07-20T07:00:00Z'),
+      registrationDeadline: ts('2027-07-19T23:59:59Z'),
     },
-    hostIdToken,
+    idToken,
   );
 }

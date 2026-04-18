@@ -6,7 +6,7 @@
  * Prerequisite: `firebase emulators:start` must be running before executing E2E tests.
  */
 
-const PROJECT_ID = 'dive-into-run';
+const PROJECT_ID = 'demo-dive-into-run';
 const AUTH_EMULATOR_URL = 'http://localhost:9099';
 const FIRESTORE_EMULATOR_URL = 'http://localhost:8080';
 
@@ -108,15 +108,26 @@ export default async function globalSetup() {
   }
 
   // Clear all emulator auth accounts
-  await fetch(`${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`, {
-    method: 'DELETE',
-  });
+  const authCleanup = await fetch(
+    `${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`,
+    {
+      method: 'DELETE',
+    },
+  );
+  if (!authCleanup.ok) {
+    console.warn(`Auth cleanup failed (${authCleanup.status}): ${await authCleanup.text()}`);
+  }
 
   // Clear all Firestore emulator documents
-  await fetch(
+  const firestoreCleanup = await fetch(
     `${FIRESTORE_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/databases/(default)/documents`,
     { method: 'DELETE' },
   );
+  if (!firestoreCleanup.ok) {
+    console.warn(
+      `Firestore cleanup failed (${firestoreCleanup.status}): ${await firestoreCleanup.text()}`,
+    );
+  }
 
   // Create 3 test accounts
   const { localId: hostUid, idToken: hostToken } = await createTestUser(

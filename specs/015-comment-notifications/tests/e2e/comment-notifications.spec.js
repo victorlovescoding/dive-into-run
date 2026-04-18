@@ -20,7 +20,7 @@ import { test, expect } from '@playwright/test';
 
 const AUTH_EMULATOR_URL = 'http://localhost:9099';
 const FIRESTORE_EMULATOR_URL = 'http://localhost:8080';
-const PROJECT_ID = 'dive-into-run';
+const PROJECT_ID = 'demo-dive-into-run';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -172,13 +172,24 @@ test.describe('Scenario 1: 文章留言跟帖通知', () => {
 
   test.beforeAll(async () => {
     // 清除 Auth + Firestore emulator 資料
-    await fetch(`${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`, {
-      method: 'DELETE',
-    });
-    await fetch(
+    const authCleanup = await fetch(
+      `${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`,
+      {
+        method: 'DELETE',
+      },
+    );
+    if (!authCleanup.ok) {
+      console.warn(`Auth cleanup failed (${authCleanup.status}): ${await authCleanup.text()}`);
+    }
+    const firestoreCleanup = await fetch(
       `${FIRESTORE_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/databases/(default)/documents`,
       { method: 'DELETE' },
     );
+    if (!firestoreCleanup.ok) {
+      console.warn(
+        `Firestore cleanup failed (${firestoreCleanup.status}): ${await firestoreCleanup.text()}`,
+      );
+    }
 
     // 建立三個測試使用者
     const userA = await createTestUser(USER_A_EMAIL, TEST_PASSWORD, 'User A');
@@ -309,13 +320,24 @@ test.describe('Scenario 2: 活動留言通知（主揪人與參加者）', () =>
 
   test.beforeAll(async () => {
     // 清除 emulator 資料
-    await fetch(`${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`, {
-      method: 'DELETE',
-    });
-    await fetch(
+    const authCleanup = await fetch(
+      `${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`,
+      {
+        method: 'DELETE',
+      },
+    );
+    if (!authCleanup.ok) {
+      console.warn(`Auth cleanup failed (${authCleanup.status}): ${await authCleanup.text()}`);
+    }
+    const firestoreCleanup = await fetch(
       `${FIRESTORE_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/databases/(default)/documents`,
       { method: 'DELETE' },
     );
+    if (!firestoreCleanup.ok) {
+      console.warn(
+        `Firestore cleanup failed (${firestoreCleanup.status}): ${await firestoreCleanup.text()}`,
+      );
+    }
 
     // 建立三個測試使用者
     const userA = await createTestUser(USER_A_EMAIL, TEST_PASSWORD, 'User A');
@@ -510,13 +532,24 @@ test.describe('Scenario 3: 去重驗證 — 主揪人兼留言者只收一則通
 
   test.beforeAll(async () => {
     // 清除 emulator 資料
-    await fetch(`${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`, {
-      method: 'DELETE',
-    });
-    await fetch(
+    const authCleanup = await fetch(
+      `${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`,
+      {
+        method: 'DELETE',
+      },
+    );
+    if (!authCleanup.ok) {
+      console.warn(`Auth cleanup failed (${authCleanup.status}): ${await authCleanup.text()}`);
+    }
+    const firestoreCleanup = await fetch(
       `${FIRESTORE_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/databases/(default)/documents`,
       { method: 'DELETE' },
     );
+    if (!firestoreCleanup.ok) {
+      console.warn(
+        `Firestore cleanup failed (${firestoreCleanup.status}): ${await firestoreCleanup.text()}`,
+      );
+    }
 
     // 建立兩個測試使用者
     const userA = await createTestUser(USER_A_EMAIL, TEST_PASSWORD, 'User A');
@@ -640,13 +673,24 @@ test.describe('Scenario 4: Toast 即時提示', () => {
 
   test.beforeAll(async () => {
     // 清除 emulator 資料
-    await fetch(`${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`, {
-      method: 'DELETE',
-    });
-    await fetch(
+    const authCleanup = await fetch(
+      `${AUTH_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/accounts`,
+      {
+        method: 'DELETE',
+      },
+    );
+    if (!authCleanup.ok) {
+      console.warn(`Auth cleanup failed (${authCleanup.status}): ${await authCleanup.text()}`);
+    }
+    const firestoreCleanup = await fetch(
       `${FIRESTORE_EMULATOR_URL}/emulator/v1/projects/${PROJECT_ID}/databases/(default)/documents`,
       { method: 'DELETE' },
     );
+    if (!firestoreCleanup.ok) {
+      console.warn(
+        `Firestore cleanup failed (${firestoreCleanup.status}): ${await firestoreCleanup.text()}`,
+      );
+    }
 
     // 建立測試使用者
     const userB = await createTestUser(USER_B_EMAIL, TEST_PASSWORD, 'User B');
