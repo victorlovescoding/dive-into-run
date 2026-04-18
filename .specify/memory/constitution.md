@@ -142,4 +142,6 @@ Version: 1.3.0 -> 1.4.0
 
 本憲法凌駕於所有其他慣例之上。
 
-**Version**: 1.6.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-04-08
+**Harness 框架**: 本專案的 AI agent 治理基於 Guides（前饋控制）+ Sensors（反饋控制）框架。CLAUDE.md 定義具體的 Guides 和 Sensors，本憲法定義不可違反的核心原則。
+
+**Version**: 1.7.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-04-19
