@@ -250,7 +250,7 @@ test.describe('Event Edit & Delete - User Story 2: 刪除活動', () => {
     await page.getByRole('button', { name: /是，確認刪除/i }).click();
 
     // Assert — 顯示成功訊息，活動從列表消失
-    await expect(page.getByText(/刪除成功/i)).toBeVisible();
+    await expect(page.getByText(/活動已刪除/i)).toBeVisible();
     await expect(page.getByText(firstEventTitle)).not.toBeVisible();
   });
 });

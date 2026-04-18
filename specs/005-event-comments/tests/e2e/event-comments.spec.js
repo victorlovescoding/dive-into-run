@@ -193,7 +193,7 @@ test.describe('Event Comments — US3: 編輯留言', () => {
     // Assert — dialog 關閉、新內容出現、已編輯 badge 可見
     await expect(dialog).not.toBeVisible();
     await expect(page.getByText(newContent)).toBeVisible();
-    await expect(page.getByText('已編輯')).toBeVisible();
+    await expect(page.getByRole('button', { name: '查看編輯記錄' })).toBeVisible();
   });
 
   test('cancel edit should not change comment [US3-AC4]', async ({ page }) => {

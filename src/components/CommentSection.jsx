@@ -106,7 +106,7 @@ export default function CommentSection({ eventId, onCommentAdded }) {
       {!isLoading && comments.length > 0 && (
         <ul className={styles.list} style={user ? { paddingBottom: 80 } : undefined}>
           {comments.map((c) => (
-            <li key={c.id} id={c.id} className={styles.listItem}>
+            <li key={c.id} className={styles.listItem}>
               <CommentCard
                 comment={c}
                 isOwner={user?.uid === c.authorUid}

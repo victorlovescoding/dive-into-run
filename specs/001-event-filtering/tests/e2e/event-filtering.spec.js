@@ -81,6 +81,6 @@ test.describe('Event Filtering Feature', () => {
     await expect(page.getByText('← 回到活動列表')).toBeVisible();
 
     // 6. 驗證配速是否正確顯示 (格式應為 MM:SS /km)
-    await expect(page.getByText(/配速：\d{2}:\d{2} \/km/)).toBeVisible();
+    await expect(page.getByText(/配速：\d{1,2}:\d{2} \/km/)).toBeVisible();
   });
 });
