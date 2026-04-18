@@ -5,7 +5,7 @@
  * Prerequisite: `firebase emulators:start` must be running before executing E2E tests.
  */
 
-const PROJECT_ID = 'demo-dive-into-run';
+const PROJECT_ID = 'dive-into-run';
 const AUTH_EMULATOR_URL = 'http://localhost:9099';
 const FIRESTORE_EMULATOR_URL = 'http://localhost:8080';
 

@@ -6,7 +6,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # 1. Start Firebase Emulator
 # ---------------------------------------------------------------------------
-firebase emulators:start --only auth,firestore,storage --project demo-dive-into-run &
+firebase emulators:start --only auth,firestore,storage --project dive-into-run &
 EMULATOR_PID=$!
 
 echo "Waiting for Firebase Emulator..."
@@ -26,7 +26,6 @@ done
 # 2. Start Next.js dev server with emulator env vars
 # ---------------------------------------------------------------------------
 NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true \
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-dive-into-run \
 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 \
 FIRESTORE_EMULATOR_HOST=localhost:8080 \
 FIREBASE_STORAGE_EMULATOR_HOST=localhost:9199 \
@@ -62,8 +61,8 @@ for e2e_dir in specs/*/tests/e2e; do
 
   # Reset emulator state before each feature
   echo "Resetting emulator state..."
-  curl -s -X DELETE "http://localhost:9099/emulator/v1/projects/demo-dive-into-run/accounts" || true
-  curl -s -X DELETE "http://localhost:8080/emulator/v1/projects/demo-dive-into-run/databases/(default)/documents" || true
+  curl -s -X DELETE "http://localhost:9099/emulator/v1/projects/dive-into-run/accounts" || true
+  curl -s -X DELETE "http://localhost:8080/emulator/v1/projects/dive-into-run/databases/(default)/documents" || true
 
   echo ""
   echo "=========================================="

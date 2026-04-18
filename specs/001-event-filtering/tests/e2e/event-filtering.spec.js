@@ -30,7 +30,7 @@ test.describe('Event Filtering Feature', () => {
     await expect(filterModal).toBeHidden();
   });
 
-  test('清除按鈕應該重置欄位但保留名額勾選 (UI-003)', async ({ page }) => {
+  test('清除按鈕應該重置所有篩選欄位 (UI-003)', async ({ page }) => {
     await page.getByRole('button', { name: '篩選活動' }).click();
 
     // 填寫最小距離
@@ -42,9 +42,9 @@ test.describe('Event Filtering Feature', () => {
     // 驗證數字欄位被清空
     await expect(page.getByLabel('最小跑步距離')).toHaveValue('');
 
-    // 驗證名額 checkbox 還是勾選的 (預設)
+    // 驗證名額 checkbox 被重置為未勾選
     const checkbox = page.getByLabel('只顯示還有名額的活動');
-    await expect(checkbox).toBeChecked();
+    await expect(checkbox).not.toBeChecked();
   });
 
   test('當搜尋無結果時應顯示提示 (UI-007)', async ({ page }) => {

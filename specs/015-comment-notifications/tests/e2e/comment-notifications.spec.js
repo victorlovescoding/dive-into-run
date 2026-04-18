@@ -20,7 +20,7 @@ import { test, expect } from '@playwright/test';
 
 const AUTH_EMULATOR_URL = 'http://localhost:9099';
 const FIRESTORE_EMULATOR_URL = 'http://localhost:8080';
-const PROJECT_ID = 'demo-dive-into-run';
+const PROJECT_ID = 'dive-into-run';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
