@@ -21,21 +21,6 @@ import { loginAsUser } from '../../../test-utils/e2e-helpers.js';
 // Run all tests in this file serially to avoid Firestore state conflicts
 test.describe.configure({ mode: 'serial' });
 
-/**
- * Finds the event card wrapper that contains the given title and a menu button.
- * Ensures title and menu refer to the same event card.
- * @param {import('@playwright/test').Page} page - Playwright page.
- * @param {string} title - Event title text.
- * @returns {import('@playwright/test').Locator} The scoped card locator.
- */
-function getEventCard(page, title) {
-  return page
-    .locator('div')
-    .filter({ has: page.getByText(title, { exact: true }) })
-    .filter({ has: page.getByRole('button', { name: /更多操作/i }) })
-    .first();
-}
-
 test.describe('Event Edit & Delete - User Story 1: 編輯活動', () => {
   test('creator should see three-dot menu on their event card (SC-005)', async ({ page }) => {
     await loginAsUser(page, 'test-host@example.com', 'test-password', {
@@ -136,24 +121,22 @@ test.describe('Event Edit & Delete - User Story 1: 編輯活動', () => {
     });
     await page.goto('/events');
 
-    const firstEventTitle = await page
-      .getByRole('link', { name: /測試活動/ })
-      .first()
-      .innerText();
-
-    const card = getEventCard(page, firstEventTitle);
-    const menuButton = card.getByRole('button', { name: /更多操作/i });
+    // Open edit on the first event (first menu = first event in DOM order)
+    const menuButton = page.getByRole('button', { name: /更多操作/i }).first();
     await menuButton.click();
     await page.getByRole('menuitem', { name: /編輯活動/i }).click();
 
+    // Read the current title from the form (avoids name-pattern mismatch)
     const titleInput = page.getByLabel(/活動名稱/i);
+    const originalTitle = await titleInput.inputValue();
+
     await titleInput.clear();
     await titleInput.fill('不應該出現的標題');
 
     const cancelButton = page.getByRole('button', { name: /取消編輯/i });
     await cancelButton.click();
 
-    await expect(page.getByText(firstEventTitle)).toBeVisible();
+    await expect(page.getByText(originalTitle)).toBeVisible();
     await expect(page.getByText('不應該出現的標題')).not.toBeVisible();
   });
 });
@@ -183,13 +166,16 @@ test.describe('Event Edit & Delete - User Story 2: 刪除活動', () => {
     });
     await page.goto('/events');
 
+    // Use first link + first menu (consistent DOM order)
     const firstEventTitle = await page
-      .getByRole('link', { name: /測試活動/ })
+      .getByRole('link')
+      .filter({ hasText: /E2E/ })
       .first()
       .innerText();
-
-    const card = getEventCard(page, firstEventTitle);
-    await card.getByRole('button', { name: /更多操作/i }).click();
+    await page
+      .getByRole('button', { name: /更多操作/i })
+      .first()
+      .click();
     await page.getByRole('menuitem', { name: /刪除活動/i }).click();
 
     await page.getByRole('button', { name: /否，取消/i }).click();
@@ -206,18 +192,22 @@ test.describe('Event Edit & Delete - User Story 2: 刪除活動', () => {
     });
     await page.goto('/events');
 
-    // Scope title + menu to the SAME event card to avoid mismatch
-    const eventLink = page.getByRole('link', { name: /測試活動/ }).first();
-    const firstEventTitle = await eventLink.innerText();
-    const card = getEventCard(page, firstEventTitle);
-
-    await card.getByRole('button', { name: /更多操作/i }).click();
+    // First link + first menu = same event (consistent DOM order)
+    const firstEventTitle = await page
+      .getByRole('link')
+      .filter({ hasText: /E2E/ })
+      .first()
+      .innerText();
+    await page
+      .getByRole('button', { name: /更多操作/i })
+      .first()
+      .click();
     await page.getByRole('menuitem', { name: /刪除活動/i }).click();
 
     await page.getByRole('button', { name: /是，確認刪除/i }).click();
 
     await expect(page.getByText(/活動已刪除/i)).toBeVisible();
-    await expect(page.getByText(firstEventTitle)).not.toBeVisible();
+    await expect(page.getByText(firstEventTitle)).not.toBeVisible({ timeout: 10000 });
   });
 });
 

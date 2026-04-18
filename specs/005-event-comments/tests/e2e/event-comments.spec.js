@@ -223,7 +223,8 @@ test.describe('Event Comments — US4: 刪除留言', () => {
     await page.getByRole('button', { name: /確定刪除/i }).click();
 
     await expect(dialog).not.toBeVisible();
-    await expect(page.getByText(deleteTarget)).not.toBeVisible();
+    // Firestore delete is async — wait for onSnapshot to propagate removal
+    await expect(page.getByText(deleteTarget)).not.toBeVisible({ timeout: 10000 });
   });
 
   test('cancel delete should keep comment intact [US4-AC4]', async ({ page }) => {
