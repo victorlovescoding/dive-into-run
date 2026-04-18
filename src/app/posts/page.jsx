@@ -2,7 +2,6 @@
 
 import { useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import styles from './posts.module.css';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import PostCard from '@/components/PostCard';
@@ -20,6 +19,7 @@ import {
   getPostDetail,
   validatePostInput,
 } from '@/lib/firebase-posts';
+import styles from './posts.module.css';
 
 /**
  * 文章列表頁面，含發文、編輯、刪除、按讚與無限滾動。

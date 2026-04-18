@@ -31,6 +31,120 @@ const TAB_CONFIGS = [
 const PAGE_SIZE = 5;
 
 /**
+ * 依 tab 索引渲染對應的 Card 元件列表。
+ * @param {object} props - 元件屬性。
+ * @param {object[]} props.items - 資料項目。
+ * @param {number} props.tabIndex - tab 索引。
+ * @param {Set<string>} [props.hostedIds] - 主辦活動 ID 集合（僅 events tab 使用）。
+ * @returns {import('react').ReactElement} Card 元件。
+ */
+function ItemList({ items, tabIndex, hostedIds }) {
+  if (tabIndex === 0) {
+    const events = /** @type {import('@/lib/firebase-member').MyEventItem[]} */ (items);
+    return (
+      <>
+        {events.map((event) => (
+          <Fragment key={event.id}>
+            <DashboardEventCard event={event} isHost={hostedIds?.has(event.id) ?? false} />
+          </Fragment>
+        ))}
+      </>
+    );
+  }
+
+  if (tabIndex === 1) {
+    const posts = /** @type {import('@/lib/firebase-posts').Post[]} */ (items);
+    return (
+      <>
+        {posts.map((post) => (
+          <Fragment key={post.id}>
+            <DashboardPostCard post={post} />
+          </Fragment>
+        ))}
+      </>
+    );
+  }
+
+  const comments = /** @type {import('@/lib/firebase-member').MyCommentItem[]} */ (items);
+  return (
+    <>
+      {comments.map((comment) => (
+        <Fragment key={comment.id}>
+          <DashboardCommentCard comment={comment} />
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+/**
+ * 單一 tab panel 的內容。
+ * @param {object} props - 元件屬性。
+ * @param {import('@/hooks/useDashboardTab').UseDashboardTabReturn} props.tab - hook 回傳值。
+ * @param {number} props.tabIndex - tab 索引（0=events, 1=posts, 2=comments）。
+ * @param {string} props.emptyText - 空資料提示文字。
+ * @returns {import('react').ReactElement} panel 內容。
+ */
+function TabPanel({ tab, tabIndex, emptyText }) {
+  const {
+    items,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    error,
+    retry,
+    loadMoreError,
+    retryLoadMore,
+    sentinelRef,
+    prevResult,
+  } = tab;
+
+  if (isLoading) {
+    return <p className={styles.loading}>載入中…</p>;
+  }
+
+  if (error) {
+    return (
+      <div className={styles.error}>
+        <p>{error}</p>
+        <button type="button" onClick={retry}>
+          重試
+        </button>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return <p className={styles.empty}>{emptyText}</p>;
+  }
+
+  return (
+    <div className={styles.cardList}>
+      <ItemList
+        items={items}
+        tabIndex={tabIndex}
+        hostedIds={
+          tabIndex === 0
+            ? /** @type {{ hostedIds?: Set<string> }} */ (prevResult)?.hostedIds
+            : undefined
+        }
+      />
+      <div ref={sentinelRef} />
+      {isLoadingMore && <p className={styles.loadingMore}>載入更多...</p>}
+      {loadMoreError && (
+        <div className={styles.error}>
+          <p>{loadMoreError}</p>
+          <button type="button" onClick={retryLoadMore}>
+            重試
+          </button>
+        </div>
+      )}
+      {!hasMore && items.length > 0 && <p className={styles.endHint}>已顯示全部</p>}
+    </div>
+  );
+}
+
+/**
  * 會員 Dashboard Tab 容器。
  * @param {object} props - 元件屬性。
  * @param {string} props.uid - 使用者 UID。
@@ -116,119 +230,5 @@ export default function DashboardTabs({ uid }) {
         </div>
       ))}
     </div>
-  );
-}
-
-/**
- * 單一 tab panel 的內容。
- * @param {object} props - 元件屬性。
- * @param {import('@/hooks/useDashboardTab').UseDashboardTabReturn} props.tab - hook 回傳值。
- * @param {number} props.tabIndex - tab 索引（0=events, 1=posts, 2=comments）。
- * @param {string} props.emptyText - 空資料提示文字。
- * @returns {import('react').ReactElement} panel 內容。
- */
-function TabPanel({ tab, tabIndex, emptyText }) {
-  const {
-    items,
-    isLoading,
-    isLoadingMore,
-    hasMore,
-    error,
-    retry,
-    loadMoreError,
-    retryLoadMore,
-    sentinelRef,
-    prevResult,
-  } = tab;
-
-  if (isLoading) {
-    return <p className={styles.loading}>載入中…</p>;
-  }
-
-  if (error) {
-    return (
-      <div className={styles.error}>
-        <p>{error}</p>
-        <button type="button" onClick={retry}>
-          重試
-        </button>
-      </div>
-    );
-  }
-
-  if (items.length === 0) {
-    return <p className={styles.empty}>{emptyText}</p>;
-  }
-
-  return (
-    <div className={styles.cardList}>
-      <ItemList
-        items={items}
-        tabIndex={tabIndex}
-        hostedIds={
-          tabIndex === 0
-            ? /** @type {{ hostedIds?: Set<string> }} */ (prevResult)?.hostedIds
-            : undefined
-        }
-      />
-      <div ref={sentinelRef} />
-      {isLoadingMore && <p className={styles.loadingMore}>載入更多...</p>}
-      {loadMoreError && (
-        <div className={styles.error}>
-          <p>{loadMoreError}</p>
-          <button type="button" onClick={retryLoadMore}>
-            重試
-          </button>
-        </div>
-      )}
-      {!hasMore && items.length > 0 && <p className={styles.endHint}>已顯示全部</p>}
-    </div>
-  );
-}
-
-/**
- * 依 tab 索引渲染對應的 Card 元件列表。
- * @param {object} props - 元件屬性。
- * @param {object[]} props.items - 資料項目。
- * @param {number} props.tabIndex - tab 索引。
- * @param {Set<string>} [props.hostedIds] - 主辦活動 ID 集合（僅 events tab 使用）。
- * @returns {import('react').ReactElement} Card 元件。
- */
-function ItemList({ items, tabIndex, hostedIds }) {
-  if (tabIndex === 0) {
-    const events = /** @type {import('@/lib/firebase-member').MyEventItem[]} */ (items);
-    return (
-      <>
-        {events.map((event) => (
-          <Fragment key={event.id}>
-            <DashboardEventCard event={event} isHost={hostedIds?.has(event.id) ?? false} />
-          </Fragment>
-        ))}
-      </>
-    );
-  }
-
-  if (tabIndex === 1) {
-    const posts = /** @type {import('@/lib/firebase-posts').Post[]} */ (items);
-    return (
-      <>
-        {posts.map((post) => (
-          <Fragment key={post.id}>
-            <DashboardPostCard post={post} />
-          </Fragment>
-        ))}
-      </>
-    );
-  }
-
-  const comments = /** @type {import('@/lib/firebase-member').MyCommentItem[]} */ (items);
-  return (
-    <>
-      {comments.map((comment) => (
-        <Fragment key={comment.id}>
-          <DashboardCommentCard comment={comment} />
-        </Fragment>
-      ))}
-    </>
   );
 }

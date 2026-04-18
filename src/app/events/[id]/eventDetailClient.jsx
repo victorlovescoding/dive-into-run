@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
-import styles from '../events.module.css';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import {
@@ -35,6 +34,7 @@ import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import CommentSection from '@/components/CommentSection';
 import ShareButton from '@/components/ShareButton';
 import UserLink from '@/components/UserLink';
+import styles from '../events.module.css';
 
 // Leaflet 只能在瀏覽器端跑
 const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });

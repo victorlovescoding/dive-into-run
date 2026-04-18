@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as firestore from 'firebase/firestore';
-import { asMock } from '../../../../test-utils/mock-helpers';
 import {
   normalizeEventPayload,
   createEvent,
@@ -13,6 +12,7 @@ import {
   fetchParticipants,
   fetchMyJoinedEventsForIds,
 } from '@/lib/firebase-events';
+import { asMock } from '../../../../test-utils/mock-helpers';
 
 // Mock dependencies
 vi.mock('@/lib/firebase-client', () => ({
