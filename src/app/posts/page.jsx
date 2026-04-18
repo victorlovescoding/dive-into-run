@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useContext, useEffect, useRef, useCallback } from 'react';
+import { Suspense, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -25,7 +25,7 @@ import styles from './posts.module.css';
  * 文章列表頁面，含發文、編輯、刪除、按讚與無限滾動。
  * @returns {import('react').JSX.Element} 文章列表頁面。
  */
-export default function PostPage() {
+function PostPageContent() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [originalTitle, setOriginalTitle] = useState('');
@@ -355,5 +355,17 @@ export default function PostPage() {
         isSubmitting={isSubmitting}
       />
     </div>
+  );
+}
+
+/**
+ * 貼文主頁面（包含 Suspense boundary 以支援 useSearchParams）。
+ * @returns {import('react').ReactElement} 頁面組件。
+ */
+export default function PostPage() {
+  return (
+    <Suspense>
+      <PostPageContent />
+    </Suspense>
   );
 }

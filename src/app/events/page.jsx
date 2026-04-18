@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useContext, useRef, useCallback } from 'react';
-import dynamic from 'next/dynamic'; // 導入 dynamic
+import { Suspense, useEffect, useState, useContext, useRef, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
@@ -53,10 +53,10 @@ function renderRouteLabel(ev) {
 }
 
 /**
- * 揪團跑步主頁面。
- * @returns {import('react').ReactElement} 頁面組件。
+ * 揪團跑步頁面內容。
+ * @returns {import('react').ReactElement} 頁面內容。
  */
-export default function RunTogetherPage() {
+function RunTogetherPageContent() {
   const [isFormOpen, setFormOpen] = useState(false);
   // ✅ 篩選浮層（先做空白 UI）
   const [isFilterOpen, setFilterOpen] = useState(false);
@@ -1510,5 +1510,17 @@ export default function RunTogetherPage() {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * 揪團跑步主頁面（包含 Suspense boundary 以支援 useSearchParams）。
+ * @returns {import('react').ReactElement} 頁面組件。
+ */
+export default function RunTogetherPage() {
+  return (
+    <Suspense>
+      <RunTogetherPageContent />
+    </Suspense>
   );
 }
