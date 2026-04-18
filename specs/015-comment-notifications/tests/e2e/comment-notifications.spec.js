@@ -455,6 +455,24 @@ test.describe('Scenario 4: Toast 即時提示', () => {
       likesCount: 0,
       commentsCount: 0,
     });
+
+    // Seed marker notification — 讓 onSnapshot initial snapshot 有資料，
+    // 登入後等 badge 出現即可確認 listener 已完成初次載入（isInitialLoad = false）。
+    // 這避免 seedDoc 在 initial snapshot 之前執行導致新通知被當舊資料跳過。
+    await seedDoc('notifications', 'cnotif-toast-marker', {
+      recipientUid: userBUid,
+      type: 'post_comment_reply',
+      actorUid: userCUid,
+      actorName: 'User C',
+      actorPhotoURL: '',
+      entityType: 'post',
+      entityId: TEST_POST_ID,
+      entityTitle: 'E2E Toast 測試文章',
+      commentId: 'marker-comment',
+      message: 'marker notification',
+      read: false,
+      createdAt: ts(new Date(Date.now() - 60000).toISOString()),
+    });
   });
 
   test('登入後新通知產生 → toast 即時出現', async ({ page }) => {
@@ -463,7 +481,11 @@ test.describe('Scenario 4: Toast 即時提示', () => {
       waitForSelector: '[aria-controls="notification-panel"]',
     });
 
-    // 登入後，透過 REST API seed 一筆新通知（模擬即時推送）
+    // 等 badge 出現 → 證明 watchUnreadNotifications + watchNotifications
+    // 都已完成 initial snapshot（同一個 useEffect，isInitialLoad 已設為 false）
+    await expect(page.locator('[class*="badge"]')).toBeVisible({ timeout: 15000 });
+
+    // 現在 seed 新通知 → 觸發第二次 onSnapshot → onNew callback → toast 出現
     await seedDoc('notifications', toastNotifId, {
       recipientUid: userBUid,
       type: 'post_comment_reply',

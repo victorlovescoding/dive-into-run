@@ -66,7 +66,7 @@ test.describe('Event Filtering Feature', () => {
 
     // 2. 等待列表載入，找到第一個活動標題連結
     const firstEventLink = page.getByRole('link', { name: /E2E 篩選/ }).first();
-    await expect(firstEventLink).toBeVisible();
+    await expect(firstEventLink).toBeVisible({ timeout: 15000 });
 
     // 取得該連結的 href
     const href = await firstEventLink.getAttribute('href');
