@@ -45,7 +45,10 @@ export default function CommentCard({
   const isoString = toIsoString(comment.createdAt);
 
   return (
-    <article className={`${styles.card} ${isHighlighted ? styles.highlighted : ''}`}>
+    <article
+      id={comment.id}
+      className={`${styles.card} ${isHighlighted ? styles.highlighted : ''}`}
+    >
       <div className={styles.headerRow}>
         <div className={styles.header}>
           <UserLink

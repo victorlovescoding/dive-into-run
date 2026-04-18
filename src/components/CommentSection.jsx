@@ -68,21 +68,28 @@ export default function CommentSection({ eventId, onCommentAdded }) {
     const commentId = searchParams.get('commentId');
     if (!commentId) return undefined;
 
-    const timer = setTimeout(() => {
+    let attempts = 0;
+    const maxAttempts = 20;
+    const timer = setInterval(() => {
+      attempts += 1;
       const el = document.getElementById(commentId);
-      if (!el) return;
+      if (el) {
+        clearInterval(timer);
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('commentHighlight');
+        el.addEventListener(
+          'animationend',
+          () => {
+            el.classList.remove('commentHighlight');
+          },
+          { once: true },
+        );
+      } else if (attempts >= maxAttempts) {
+        clearInterval(timer);
+      }
+    }, 200);
 
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('commentHighlight');
-
-      /** 動畫結束後移除高亮 class。 */
-      const handleAnimationEnd = () => {
-        el.classList.remove('commentHighlight');
-      };
-      el.addEventListener('animationend', handleAnimationEnd, { once: true });
-    }, 300);
-
-    return () => clearTimeout(timer);
+    return () => clearInterval(timer);
   }, [searchParams]);
 
   return (
@@ -106,7 +113,7 @@ export default function CommentSection({ eventId, onCommentAdded }) {
       {!isLoading && comments.length > 0 && (
         <ul className={styles.list} style={user ? { paddingBottom: 80 } : undefined}>
           {comments.map((c) => (
-            <li key={c.id} id={c.id} className={styles.listItem}>
+            <li key={c.id} className={styles.listItem}>
               <CommentCard
                 comment={c}
                 isOwner={user?.uid === c.authorUid}

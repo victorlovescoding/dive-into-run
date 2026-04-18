@@ -6,7 +6,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # 1. Start Firebase Emulator
 # ---------------------------------------------------------------------------
-firebase emulators:start --only auth,firestore,storage --project demo-dive-into-run &
+firebase emulators:start --only auth,firestore,storage --project dive-into-run &
 EMULATOR_PID=$!
 
 echo "Waiting for Firebase Emulator..."
@@ -58,6 +58,14 @@ SKIPPED=0
 for e2e_dir in specs/*/tests/e2e; do
   [ -d "$e2e_dir" ] || continue
   feature=$(echo "$e2e_dir" | cut -d'/' -f2)
+
+  # Reset emulator state before each feature (wait for completion)
+  echo "Resetting emulator state..."
+  auth_status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "http://localhost:9099/emulator/v1/projects/dive-into-run/accounts")
+  fs_status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "http://localhost:8080/emulator/v1/projects/dive-into-run/databases/(default)/documents")
+  if [ "$auth_status" != "200" ]; then echo "  Warning: Auth cleanup returned $auth_status"; fi
+  if [ "$fs_status" != "200" ]; then echo "  Warning: Firestore cleanup returned $fs_status"; fi
+  sleep 1  # Let emulator finish internal cleanup
 
   echo ""
   echo "=========================================="
