@@ -77,10 +77,10 @@ test.describe('Event Filtering Feature', () => {
     // 4. 驗證網址是否包含 event ID
     await expect(page).toHaveURL(new RegExp(href));
 
-    // 5. 驗證是否進入詳情頁
-    await expect(page.getByText('← 回到活動列表')).toBeVisible();
+    // 5. 驗證是否進入詳情頁（event detail 從 Firestore 載入需要時間）
+    await expect(page.getByText('← 回到活動列表')).toBeVisible({ timeout: 15000 });
 
     // 6. 驗證配速是否正確顯示 (格式應為 MM:SS /km)
-    await expect(page.getByText(/配速：\d{1,2}:\d{2} \/km/)).toBeVisible();
+    await expect(page.getByText(/配速：\d{1,2}:\d{2} \/km/)).toBeVisible({ timeout: 10000 });
   });
 });

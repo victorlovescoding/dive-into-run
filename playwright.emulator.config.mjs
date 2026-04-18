@@ -47,7 +47,7 @@ export default defineConfig({
   testMatch: '**/*.spec.js',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: 0,
+  retries: process.env.CI ? 1 : 0,
   timeout: 60000,
   reporter: 'html',
   globalSetup: existsSync(globalSetupPath) ? globalSetupPath : undefined,

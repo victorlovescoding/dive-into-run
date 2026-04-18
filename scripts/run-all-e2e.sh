@@ -59,10 +59,13 @@ for e2e_dir in specs/*/tests/e2e; do
   [ -d "$e2e_dir" ] || continue
   feature=$(echo "$e2e_dir" | cut -d'/' -f2)
 
-  # Reset emulator state before each feature
+  # Reset emulator state before each feature (wait for completion)
   echo "Resetting emulator state..."
-  curl -s -X DELETE "http://localhost:9099/emulator/v1/projects/dive-into-run/accounts" || true
-  curl -s -X DELETE "http://localhost:8080/emulator/v1/projects/dive-into-run/databases/(default)/documents" || true
+  auth_status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "http://localhost:9099/emulator/v1/projects/dive-into-run/accounts")
+  fs_status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "http://localhost:8080/emulator/v1/projects/dive-into-run/databases/(default)/documents")
+  if [ "$auth_status" != "200" ]; then echo "  Warning: Auth cleanup returned $auth_status"; fi
+  if [ "$fs_status" != "200" ]; then echo "  Warning: Firestore cleanup returned $fs_status"; fi
+  sleep 1  # Let emulator finish internal cleanup
 
   echo ""
   echo "=========================================="
