@@ -127,7 +127,9 @@ export default function WeatherCard({ locationName, today, tomorrow }) {
           height={64}
           unoptimized
         />
-        <div className={styles.temperature}>{today.currentTemp}°</div>
+        <div className={styles.temperature} data-testid="current-temperature">
+          {today.currentTemp}°
+        </div>
       </div>
 
       <div className={styles.weatherDesc}>{today.weatherDesc}</div>

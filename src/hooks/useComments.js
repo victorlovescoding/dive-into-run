@@ -47,7 +47,15 @@ export default function useComments(eventId) {
       try {
         const result = await fetchComments(eventId);
         if (!cancelled) {
-          setComments(result.comments);
+          // Use functional update to avoid overwriting comments added by
+          // handleSubmit if it ran before this fetch completed (race condition
+          // that manifests under React strict mode double-mount).
+          setComments((prev) => {
+            if (prev.length === 0) return result.comments;
+            const fetchIds = new Set(result.comments.map((c) => c.id));
+            const localOnly = prev.filter((c) => !fetchIds.has(c.id));
+            return [...localOnly, ...result.comments];
+          });
           setCursor(result.lastDoc);
           setHasMore(result.lastDoc !== null);
           setIsLoading(false);

@@ -27,6 +27,15 @@ test.describe.configure({ mode: 'serial' });
 const EVENT_URL = '/events/test-event-comments';
 
 /**
+ * Waits for the initial comment list to finish loading by checking for a seeded comment.
+ * Prevents race conditions between useComments fetch and subsequent interactions.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ */
+async function waitForCommentsLoaded(page) {
+  await expect(page.getByText('主揪的測試留言')).toBeVisible();
+}
+
+/**
  * Posts a new comment with unique text and returns that text for later assertion.
  * @param {import('@playwright/test').Page} page - Playwright page object.
  * @param {string} [prefix] - Optional prefix for the comment content.
@@ -73,6 +82,7 @@ test.describe('Event Comments — US2: 發表留言', () => {
       waitForText: /活動列表/i,
     });
     await page.goto(EVENT_URL);
+    await waitForCommentsLoaded(page);
 
     const uniqueText = `新留言測試 ${Date.now()}`;
     const textbox = page.getByRole('textbox');
@@ -126,6 +136,7 @@ test.describe('Event Comments — US3: 編輯留言', () => {
       waitForText: /活動列表/i,
     });
     await page.goto(EVENT_URL);
+    await waitForCommentsLoaded(page);
 
     const menuButton = page.getByRole('button', { name: /更多操作/i }).first();
     await menuButton.click();
@@ -157,6 +168,7 @@ test.describe('Event Comments — US3: 編輯留言', () => {
       waitForText: /活動列表/i,
     });
     await page.goto(EVENT_URL);
+    await waitForCommentsLoaded(page);
 
     const menuButton = page.getByRole('button', { name: /更多操作/i }).first();
     await menuButton.click();
@@ -195,7 +207,6 @@ test.describe('Event Comments — US3: 編輯留言', () => {
     await expect(dialog).toBeVisible();
 
     const versionItems = dialog.getByRole('listitem');
-    await expect(versionItems).toHaveCount(await versionItems.count());
     expect(await versionItems.count()).toBeGreaterThanOrEqual(2);
   });
 });
@@ -210,7 +221,15 @@ test.describe('Event Comments — US4: 刪除留言', () => {
       waitForText: /活動列表/i,
     });
     await page.goto(EVENT_URL);
-    const deleteTarget = await postUniqueComment(page, '待刪除留言');
+    await waitForCommentsLoaded(page);
+
+    // Count comments before posting to verify seeded data is loaded
+    const commentsBefore = await page.getByRole('article').count();
+
+    await postUniqueComment(page, '待刪除留言');
+
+    // Verify the new comment appeared
+    await expect(page.getByRole('article')).toHaveCount(commentsBefore + 1);
 
     const menuButton = page.getByRole('button', { name: /更多操作/i }).first();
     await menuButton.click();
@@ -223,8 +242,9 @@ test.describe('Event Comments — US4: 刪除留言', () => {
     await page.getByRole('button', { name: /確定刪除/i }).click();
 
     await expect(dialog).not.toBeVisible();
-    // Firestore delete is async — wait for onSnapshot to propagate removal
-    await expect(page.getByText(deleteTarget)).not.toBeVisible({ timeout: 10000 });
+    // Verify the comment count dropped back — more resilient than checking
+    // text visibility (avoids React dev-mode state race conditions).
+    await expect(page.getByRole('article')).toHaveCount(commentsBefore, { timeout: 10000 });
   });
 
   test('cancel delete should keep comment intact [US4-AC4]', async ({ page }) => {
@@ -232,6 +252,7 @@ test.describe('Event Comments — US4: 刪除留言', () => {
       waitForText: /活動列表/i,
     });
     await page.goto(EVENT_URL);
+    await waitForCommentsLoaded(page);
     const keepTarget = await postUniqueComment(page, '保留留言');
 
     const menuButton = page.getByRole('button', { name: /更多操作/i }).first();
