@@ -178,13 +178,13 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       expect(drawer.className).toMatch(/drawerOpen/);
     });
 
-    it('drawer shows all 5 nav links after opening', async () => {
+    it('drawer shows all 6 nav links after opening', async () => {
       // Arrange & Act
       await renderAndOpenDrawer();
 
       // Assert
       const drawer = document.getElementById('mobile-drawer');
-      const labels = ['回首頁', '會員頁面', '文章', '揪團頁面', '跑步'];
+      const labels = ['回首頁', '會員頁面', '文章', '揪團頁面', '跑步', '天氣'];
       for (const label of labels) {
         expect(within(drawer).getByRole('link', { name: label })).toBeInTheDocument();
       }

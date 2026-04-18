@@ -85,12 +85,15 @@ vi.mock('@/lib/firebase-events', () => ({
 // ---------------------------------------------------------------------------
 
 vi.mock('@/lib/firebase-notifications', () => ({
-  notifyEventModified: vi.fn(),
-  notifyEventCancelled: vi.fn(),
-  notifyPostNewComment: vi.fn(),
+  notifyEventModified: vi.fn().mockResolvedValue(undefined),
+  notifyEventCancelled: vi.fn().mockResolvedValue(undefined),
+  notifyPostNewComment: vi.fn().mockResolvedValue(undefined),
+  notifyPostCommentReply: vi.fn().mockResolvedValue(undefined),
+  notifyEventNewComment: vi.fn().mockResolvedValue(undefined),
+  fetchDistinctCommentAuthors: vi.fn().mockResolvedValue([]),
   watchNotifications: vi.fn(() => vi.fn()),
   watchUnreadNotifications: vi.fn(() => vi.fn()),
-  markNotificationAsRead: vi.fn(),
+  markNotificationAsRead: vi.fn().mockResolvedValue(undefined),
 }));
 
 // ---------------------------------------------------------------------------

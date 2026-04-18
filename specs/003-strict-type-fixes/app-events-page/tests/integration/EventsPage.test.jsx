@@ -4,6 +4,7 @@ import '@testing-library/jest-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import EventsPage from '@/app/events/page';
 import { AuthContext } from '@/contexts/AuthContext';
+import ToastProvider from '@/contexts/ToastContext';
 import * as firebaseEvents from '@/lib/firebase-events';
 
 /**
@@ -31,6 +32,18 @@ vi.mock('@/lib/firebase-events', () => ({
 // Mock Next.js dynamic
 vi.mock('next/dynamic', () => ({
   default: () => () => <div data-testid="event-map">Map Mock</div>,
+}));
+
+// Mock Next.js navigation (required by ToastProvider + EventsPage)
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/events',
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 const mockAuthUser = {
@@ -73,7 +86,9 @@ describe('EventsPage Integration Tests', () => {
     };
     return render(
       <AuthContext.Provider value={contextValue}>
-        <EventsPage />
+        <ToastProvider>
+          <EventsPage />
+        </ToastProvider>
       </AuthContext.Provider>,
     );
   };

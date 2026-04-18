@@ -220,6 +220,7 @@ export default [
             '**/*.spec.mjs',
             '**/vitest.config.js',
             '**/vitest.config.mjs',
+            '**/vitest.setup.*',
             '**/playwright.config.js',
             '**/playwright.config.mjs',
             '**/playwright.*.config.mjs',
@@ -243,7 +244,9 @@ export default [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        projectService: true,
+        projectService: {
+          allowDefaultProject: ['vitest.setup.jsx'],
+        },
         tsconfigRootDir: __dirname,
       },
     },

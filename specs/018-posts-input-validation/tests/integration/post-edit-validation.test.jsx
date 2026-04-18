@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -10,7 +10,7 @@ const { mockShowToast, mockAuthContext } = vi.hoisted(() => {
   return {
     mockShowToast: vi.fn(),
     mockAuthContext: createContext({
-      user: { uid: 'test-uid', name: 'Test User', photoURL: 'test.jpg' },
+      user: { uid: 'test-uid', name: 'Test User', photoURL: '/test.jpg' },
       setUser: () => {},
       loading: false,
     }),
@@ -136,6 +136,18 @@ async function enterEditMode(user) {
 }
 
 // ---------------------------------------------------------------------------
+// jsdom HTMLDialogElement patch (jsdom 未實作 showModal / close)
+// ---------------------------------------------------------------------------
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = vi.fn(function showModalPolyfill() {
+    this.setAttribute('open', '');
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function closePolyfill() {
+    this.removeAttribute('open');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -148,8 +160,8 @@ describe('PostDetailClient edit form validation', () => {
       authorUid: 'test-uid',
       title: '原始標題',
       content: '原始內容',
-      authorImgURL: 'test.jpg',
-      postAt: { seconds: 1000, nanoseconds: 0 },
+      authorImgURL: '/test.jpg',
+      postAt: { seconds: 1000, nanoseconds: 0, toDate: () => new Date(1000 * 1000) },
       likesCount: 0,
       commentsCount: 0,
     });
@@ -167,12 +179,12 @@ describe('PostDetailClient edit form validation', () => {
       await enterEditMode(user);
 
       const titleInput = screen.getByPlaceholderText('標題');
-      const contentInput = screen.getByPlaceholderText('有什麼新鮮的？');
+      const contentInput = screen.getByPlaceholderText('分享你的想法...');
 
       // Act — clear both fields and submit
       await user.clear(titleInput);
       await user.clear(contentInput);
-      await user.click(screen.getByRole('button', { name: '發佈' }));
+      await user.click(screen.getByRole('button', { name: '更新' }));
 
       // Assert
       expect(mockShowToast).toHaveBeenCalledWith('請輸入標題和內容', 'error');
@@ -189,7 +201,7 @@ describe('PostDetailClient edit form validation', () => {
 
       // Act — clear title only, keep content
       await user.clear(titleInput);
-      await user.click(screen.getByRole('button', { name: '發佈' }));
+      await user.click(screen.getByRole('button', { name: '更新' }));
 
       // Assert
       expect(mockShowToast).toHaveBeenCalledWith('請輸入標題', 'error');
@@ -202,11 +214,11 @@ describe('PostDetailClient edit form validation', () => {
       render(<PostDetailClient postId="post-1" />);
       await enterEditMode(user);
 
-      const contentInput = screen.getByPlaceholderText('有什麼新鮮的？');
+      const contentInput = screen.getByPlaceholderText('分享你的想法...');
 
       // Act — clear content only, keep title
       await user.clear(contentInput);
-      await user.click(screen.getByRole('button', { name: '發佈' }));
+      await user.click(screen.getByRole('button', { name: '更新' }));
 
       // Assert
       expect(mockShowToast).toHaveBeenCalledWith('請輸入內容', 'error');
@@ -225,7 +237,7 @@ describe('PostDetailClient edit form validation', () => {
       // Act — replace title with 51-char string
       await user.clear(titleInput);
       await user.type(titleInput, longTitle);
-      await user.click(screen.getByRole('button', { name: '發佈' }));
+      await user.click(screen.getByRole('button', { name: '更新' }));
 
       // Assert
       expect(mockShowToast).toHaveBeenCalledWith('標題不可超過 50 字', 'error');
@@ -241,14 +253,14 @@ describe('PostDetailClient edit form validation', () => {
       await enterEditMode(user);
 
       const titleInput = screen.getByPlaceholderText('標題');
-      const contentInput = screen.getByPlaceholderText('有什麼新鮮的？');
+      const contentInput = screen.getByPlaceholderText('分享你的想法...');
 
       // Act — edit both fields to valid values and submit
       await user.clear(titleInput);
       await user.type(titleInput, '新標題');
       await user.clear(contentInput);
       await user.type(contentInput, '新內容');
-      await user.click(screen.getByRole('button', { name: '發佈' }));
+      await user.click(screen.getByRole('button', { name: '更新' }));
 
       // Assert
       await waitFor(() => {

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { AuthContext } from '@/contexts/AuthContext';
+import ToastProvider from '@/contexts/ToastContext';
 
 // Mock Firebase to avoid initialization errors
 vi.mock('@/lib/firebase-client', () => ({
@@ -85,7 +86,9 @@ const connectedUser = {
  */
 function renderWithAuth(ui, { user = null, loading = false } = {}) {
   return render(
-    <AuthContext.Provider value={{ user, setUser: vi.fn(), loading }}>{ui}</AuthContext.Provider>,
+    <ToastProvider>
+      <AuthContext.Provider value={{ user, setUser: vi.fn(), loading }}>{ui}</AuthContext.Provider>
+    </ToastProvider>,
   );
 }
 

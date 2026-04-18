@@ -43,6 +43,10 @@ vi.mock('@/lib/firebase-comments', () => ({
 
 vi.mock('@/lib/firebase-client', () => ({ db: {} }));
 
+vi.mock('next/navigation', () => ({
+  useSearchParams: vi.fn(() => new URLSearchParams()),
+}));
+
 /* Cast mocked imports — vi.mock() 替換為 vi.fn()，TS 需要 Mock 型別才認 .mockXxx() */
 const mockedFetchComments = /** @type {import('vitest').Mock} */ (fetchComments);
 const mockedAddComment = /** @type {import('vitest').Mock} */ (addComment);

@@ -71,8 +71,8 @@ vi.mock('@/lib/firebase-posts', () => ({
 }));
 
 vi.mock('@/lib/firebase-notifications', () => ({
-  notifyPostNewComment: vi.fn(),
-  notifyPostCommentReply: vi.fn(),
+  notifyPostNewComment: vi.fn().mockResolvedValue(undefined),
+  notifyPostCommentReply: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('next/link', () => ({
