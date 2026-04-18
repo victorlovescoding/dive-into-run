@@ -2,13 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Constitution（最高約束）
-
-**[專案憲法](.specify/memory/constitution.md)** 凌駕於所有其他慣例之上。遇到規則衝突時，以 Constitution 為準。
-
-## Communication Style
-
-- Respond in **Taiwan Traditional Chinese** (正體中文)
 - Be terse, casual, and treat the user as an expert
 - Give actual code and concrete explanations — no high-level hand-waving
 - Give the answer first, then explain if needed
