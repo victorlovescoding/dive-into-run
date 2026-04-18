@@ -63,15 +63,17 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: {
-    command: [
-      'NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true',
-      'FIREBASE_AUTH_EMULATOR_HOST=localhost:9099',
-      'FIRESTORE_EMULATOR_HOST=localhost:8080',
-      'FIREBASE_STORAGE_EMULATOR_HOST=localhost:9199',
-      'npm run dev',
-    ].join(' '),
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: process.env.CI_E2E_SERVER_STARTED
+    ? undefined
+    : {
+        command: [
+          'NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true',
+          'FIREBASE_AUTH_EMULATOR_HOST=localhost:9099',
+          'FIRESTORE_EMULATOR_HOST=localhost:8080',
+          'FIREBASE_STORAGE_EMULATOR_HOST=localhost:9199',
+          'npm run dev',
+        ].join(' '),
+        url: 'http://localhost:3000',
+        reuseExistingServer: !process.env.CI,
+      },
 });
