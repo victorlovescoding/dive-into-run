@@ -113,7 +113,7 @@ const el = /** @type {HTMLInputElement} */ (document.getElementById('x'));
 
 ### Testing Standards (Kent C. Dodds / Testing Trophy)
 
-> 完整測試手冊 → `.claude/references/testing-handbook.md`（待建）
+> 完整測試手冊 → `.claude/references/testing-handbook.md`
 
 - **Integration (60%)** / **Unit (20%)** / **E2E (20%)**
 - Test structure: `specs/<feature>/tests/[unit|integration|e2e]/`
@@ -191,7 +191,7 @@ Merge 前需通過 codereview-roasted 取得 🟢 Good taste + ✅ Worth merging
 | 文件                                     | 狀態    | 用途                         |
 | ---------------------------------------- | ------- | ---------------------------- |
 | `.claude/references/coding-standards.md` | ✅ 已有 | 完整編碼規範與品質防線       |
-| `.claude/references/testing-handbook.md` | 🔜 待建 | 測試撰寫完整手冊             |
+| `.claude/references/testing-handbook.md` | ✅ 已有 | 測試撰寫完整手冊             |
 | `.claude/references/review-standards.md` | 🔜 待建 | Code Review 標準與 checklist |
 
 ## Environment & Secrets
