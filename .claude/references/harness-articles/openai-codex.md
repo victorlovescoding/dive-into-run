@@ -180,7 +180,7 @@ docs/
 Agent 在**嚴格邊界和可預測結構**的環境中最有效。每個業務 domain 劃分為固定層級，依賴方向嚴格驗證：
 
 ```
-Types ↔ Config ↔ Repo → Service ↔ Runtime ↔ UI
+Types → Config → Repo → Service → Runtime → UI
 
 橫切關注點（auth、connectors、telemetry、feature flags）
   → 透過單一明確介面進入：Providers
@@ -188,7 +188,7 @@ Types ↔ Config ↔ Repo → Service ↔ Runtime ↔ UI
 Utils（頂層共用）
 ```
 
-層級圖中 Providers 與 App wiring + UI 雙向連接，Service/Runtime/UI 之間互通，但都建立在 Types/Config/Repo 基礎上。
+層級圖中所有依賴嚴格單向（forward-only）：Types → Config → Repo → Service → Runtime → UI。Providers 作為橫切關注點的單一入口，單向接入 Service 與 App Wiring + UI。Utils 作為頂層共用工具，單向注入整個 domain。
 
 這是**通常到百人規模才做的架構**，但在 agent 環境中是**早期前提**：約束是速度不衰退的條件。
 
