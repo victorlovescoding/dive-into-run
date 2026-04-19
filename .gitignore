@@ -58,5 +58,8 @@ firestore-debug.log*
 .gemini/.username
 test-results/
 
+# Claude Code — local (gitignored) settings
+.claude/settings.local.json
+
 # Personal planning docs
 FEATURE_ROADMAP.md
