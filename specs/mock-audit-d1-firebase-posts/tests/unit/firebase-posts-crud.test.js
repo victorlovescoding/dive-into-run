@@ -138,6 +138,20 @@ describe('Unit: createPost', () => {
     expect(mockAddDoc.mock.calls[0][1].authorName).toBe('匿名使用者');
   });
 
+  it('should pass authorImgURL as undefined when user.photoURL missing', async () => {
+    // Arrange
+    const { createPost } = await import('@/lib/firebase-posts');
+    mockAddDoc.mockResolvedValueOnce({ id: 'p1' });
+    /** @type {MockUser} */
+    const user = { uid: 'u1', name: 'Alice' };
+
+    // Act
+    await createPost({ title: 'T', content: 'C', user });
+
+    // Assert
+    expect(mockAddDoc.mock.calls[0][1].authorImgURL).toBeUndefined();
+  });
+
   it('should throw with createPost: prefix when validation fails and not call addDoc', async () => {
     // Arrange
     const { createPost } = await import('@/lib/firebase-posts');
@@ -293,9 +307,8 @@ describe('Unit: deletePost (cascade delete)', () => {
     await deletePost(/** @type {string} */ (/** @type {unknown} */ (123)));
 
     // Assert: postRef call is doc('mock-db', 'posts', '123') — String coercion
-    const postRefCall = mockDoc.mock.calls.find((c) => c.length === 3 && c[1] === 'posts');
-    expect(postRefCall?.[2]).toBe('123');
-    expect(typeof postRefCall?.[2]).toBe('string');
+    expect(mockDoc).toHaveBeenCalledWith('mock-db', 'posts', '123');
+    expect(typeof mockDoc.mock.calls[0][2]).toBe('string');
   });
 
   it('should propagate batch.commit rejection', async () => {
