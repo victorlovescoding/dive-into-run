@@ -39,29 +39,18 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/lib/firebase-client', () => ({ db: 'mock-db' }));
 
 // ---------------------------------------------------------------------------
-// Typedefs
-// ---------------------------------------------------------------------------
-
-/**
- * @typedef {object} MockFbUser
- * @property {string} uid - Firebase Auth 使用者 UID。
- * @property {string} displayName - 使用者顯示名稱。
- * @property {string} email - 使用者 email。
- * @property {string} photoURL - 大頭貼 URL。
- */
-
-// ---------------------------------------------------------------------------
 // Test Suites
 // ---------------------------------------------------------------------------
 
 describe('firebase-users › loginCheckUserData', () => {
-  /** @type {MockFbUser} */
-  const fbUser = {
-    uid: 'user-1',
-    displayName: 'Alice',
-    email: 'alice@example.com',
-    photoURL: 'https://example.com/alice.jpg',
-  };
+  const fbUser = /** @type {import('firebase/auth').User} */ (
+    /** @type {unknown} */ ({
+      uid: 'user-1',
+      displayName: 'Alice',
+      email: 'alice@example.com',
+      photoURL: 'https://example.com/alice.jpg',
+    })
+  );
 
   beforeEach(() => {
     vi.clearAllMocks();
