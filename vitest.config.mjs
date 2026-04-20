@@ -29,7 +29,7 @@ export default defineConfig({
         'src/lib/**/__tests__/**',
       ],
       thresholds: {
-        lines: 83,
+        lines: 86,
       },
     },
     projects: [
