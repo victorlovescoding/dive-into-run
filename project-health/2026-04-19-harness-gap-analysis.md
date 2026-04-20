@@ -103,12 +103,17 @@
 #### G10. 架構分層無自動強制
 
 - **來源**：OpenAI Codex — 剛性分層架構強制
-- **現況**：Constitution Principle II 說「UI 不得直接匯入 Firebase SDK」，但只是文字規範，沒有 ESLint 攔截。
+- **現況**：Constitution Principle II 明列「所有 Firebase 邏輯（Firestore, Auth, Storage）必須封裝在 `src/lib/`」。G4/G4b 已在 `eslint.config.mjs` Sections 14-17 為 `src/app/` + `src/components/` + `src/hooks/` + `src/contexts/` 四層建立 `no-restricted-imports`，但初期只擋 `firebase/firestore` + `firebase/auth`，缺 `firebase/storage`（憲法明列）及未來可能新增的 SDK。`eslint-plugin-boundaries` 未引入，沿用原生 `no-restricted-imports` 足矣。
 - **建議**：
-  1. eslint.config.mjs 加 `import/no-restricted-paths`：src/app/ 和 src/components/ 禁止 import firebase/\*
-  2. 或用 `eslint-plugin-boundaries` 定義 ui → lib 單向依賴
-  3. CI 作為 blocking check
+  1. Sections 14-17 改用 `patterns: [{ group: ['firebase/*'], ... }]`，一次涵蓋所有 firebase SDK 子模組、自動防未來漂移
+  2. 合併四 Section 為單一 config（files glob 陣列），DRY 維護
+  3. 驗證 `firebase-admin`（裸 package 名）不受 `firebase/*` 影響
 - **複雜度**：Low
+- **2026-04-20 執行決策**：
+  - ✅ **G4 初版** 於 2026-04-20 完成（Section 14 擋 `firebase/firestore`）
+  - ✅ **G4b 橫向擴展** 同日完成（Sections 15-17 覆蓋 `app/hooks/contexts` + 加 `firebase/auth`）
+  - ✅ **G10 Session 1 收尾**（本次）：四 Section 合併為單一 config + 改 `patterns: ['firebase/*']`，一次涵蓋 storage + 未來所有 SDK。`npx eslint src specs` dry-run 零違規通過。JSDoc `@type {import('firebase/firestore')...}` 不受影響（ESLint `no-restricted-imports` 只檢查 `ImportDeclaration` AST 節點，不檢查註解）。`firebase-admin` 裸 package 不被匹配（gitignore-glob 要求 `/` 分隔）
+  - ✅ **G10 Session 2 完成**（2026-04-20）：抽 `src/lib/firebase-storage-helpers.js`，把 `uploadUserAvatar` 從 `firebase-users.js` 拆出獨立檔案，完整對齊憲法 Firestore/Auth/Storage 分開封裝精神。呼叫端 `src/app/member/page.jsx` 分拆 import；新增 `specs/g10-storage-helper/tests/unit/firebase-storage-helpers.test.js`（6 test，jsdom + stub `createImageBitmap`/`canvas.getContext`/`canvas.toBlob` + mock `firebase/storage`），覆蓋小圖不縮放、橫/縱向縮放、正方形走縱向分支、URL 含/不含 query 的 cache-bust、`toBlob` 失敗 reject 六條路徑。全 repo coverage Lines 由 80.4% 升至 83.35%（threshold 78）
 
 ---
 

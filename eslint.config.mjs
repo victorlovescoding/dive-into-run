@@ -310,99 +310,28 @@ export default [
     },
   },
 
-  // 14. Structural tests: src/components/ must delegate Firebase access to src/lib/
-  //     Rationale: Constitution Principle II — UI layer must not import Firebase SDK directly.
+  // 14. Structural tests: UI integration layers must delegate Firebase access to src/lib/
+  //     Rationale: Constitution Principle II — UI layer (app/components/hooks/contexts)
+  //     must not import Firebase SDK directly. Pattern 'firebase/*' covers firestore, auth,
+  //     storage, and all future SDK submodules. Bare 'firebase-admin' package is NOT matched
+  //     (gitignore-glob requires '/' separator), allowing legitimate server-side use in
+  //     src/app/api/**/route.js.
   {
-    files: ['src/components/**/*.{js,jsx}'],
+    files: [
+      'src/app/**/*.{js,jsx}',
+      'src/components/**/*.{js,jsx}',
+      'src/hooks/**/*.{js,jsx}',
+      'src/contexts/**/*.{js,jsx}',
+    ],
     rules: {
       'no-restricted-imports': [
         'error',
         {
-          paths: [
+          patterns: [
             {
-              name: 'firebase/firestore',
+              group: ['firebase/*'],
               message:
-                'src/components/ must call src/lib/firebase-*.js helpers — do not import firebase/firestore directly.',
-            },
-            {
-              name: 'firebase/auth',
-              message:
-                'src/components/ must call src/lib/firebase-auth-helpers.js — do not import firebase/auth directly.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  // 15. Structural tests: src/app/ must delegate Firebase access to src/lib/
-  //     Rationale: Constitution Principle II — UI layer must not import Firebase SDK directly.
-  {
-    files: ['src/app/**/*.{js,jsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: 'firebase/firestore',
-              message:
-                'src/app/ must call src/lib/firebase-*.js helpers — do not import firebase/firestore directly.',
-            },
-            {
-              name: 'firebase/auth',
-              message:
-                'src/app/ must call src/lib/firebase-auth-helpers.js — do not import firebase/auth directly.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  // 16. Structural tests: src/hooks/ must delegate Firebase access to src/lib/
-  //     Rationale: Constitution Principle II — UI integration layer must not import Firebase SDK directly.
-  {
-    files: ['src/hooks/**/*.{js,jsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: 'firebase/firestore',
-              message:
-                'src/hooks/ must call src/lib/firebase-*.js helpers — do not import firebase/firestore directly.',
-            },
-            {
-              name: 'firebase/auth',
-              message:
-                'src/hooks/ must call src/lib/firebase-auth-helpers.js — do not import firebase/auth directly.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  // 17. Structural tests: src/contexts/ must delegate Firebase access to src/lib/
-  //     Rationale: Constitution Principle II — UI integration layer must not import Firebase SDK directly.
-  {
-    files: ['src/contexts/**/*.{js,jsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: 'firebase/firestore',
-              message:
-                'src/contexts/ must call src/lib/firebase-*.js helpers — do not import firebase/firestore directly.',
-            },
-            {
-              name: 'firebase/auth',
-              message:
-                'src/contexts/ must call src/lib/firebase-auth-helpers.js — do not import firebase/auth directly.',
+                'UI integration layers (src/app, src/components, src/hooks, src/contexts) must call src/lib/firebase-*.js helpers instead of importing Firebase SDK directly. See Constitution Principle II.',
             },
           ],
         },
