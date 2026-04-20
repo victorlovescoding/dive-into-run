@@ -9,7 +9,6 @@ import { storage } from '@/lib/firebase-client';
  * @param {string} uid - 使用者 UID。
  * @returns {Promise<string>} 含快取破壞參數的圖片下載網址。
  */
-// eslint-disable-next-line import/prefer-default-export -- 與 client 版 firebase-*.js 對齊 named export 風格；未來預計加入 download / remove 等 storage helper
 export async function uploadUserAvatar(file, uid) {
   // File解碼成bitmap
   const imageBitmap = await window.createImageBitmap(file);
