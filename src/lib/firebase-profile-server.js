@@ -48,7 +48,6 @@ function toPublicProfile(uid, data) {
  * @returns {Promise<PublicProfile | null>} 使用者公開資料；文件不存在時為 `null`。
  * @throws {Error} 當 `uid` 為空字串。
  */
-// eslint-disable-next-line import/prefer-default-export -- 此檔案是 server-only namespace，預期日後新增更多 admin SDK 查詢函式皆採 named export，與 client 版 firebase-profile.js 保持一致
 export async function getUserProfileServer(uid) {
   if (!uid) throw new Error('uid is required');
 

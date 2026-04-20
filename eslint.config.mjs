@@ -280,6 +280,19 @@ export default [
     },
   },
 
+  // 12.5 src/lib/** uses named exports for SDK mirror + cross-lib consistency
+  //      Rationale: All lib modules are namespace starting points. Named export
+  //      aligns with Firebase SDK API style (import { getDocs } from ...),
+  //      maintains cross-lib consistency, and improves IDE auto-import.
+  //      Four historical disables removed in this commit — promoting the
+  //      decision from per-file disable annotations to config level.
+  {
+    files: ['src/lib/**/*.{js,jsx}'],
+    rules: {
+      'import/prefer-default-export': 'off',
+    },
+  },
+
   // 13. Structural tests: src/lib/ must not import UI layers
   //     Rationale: Constitution Principle II — lib is a pure service layer.
   {

@@ -9,7 +9,6 @@
  * @returns {Promise<WeatherInfo>} 天氣資訊。
  * @throws {Error} 當 API 回傳錯誤或網路失敗時。
  */
-// eslint-disable-next-line import/prefer-default-export -- named export for consistency with other lib modules
 export async function fetchWeather({ county, township, signal }) {
   const params = new URLSearchParams({ county });
   if (township) {
