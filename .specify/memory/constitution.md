@@ -1,11 +1,10 @@
 <!--
 SYNC IMPACT REPORT
-Version: 1.3.0 -> 1.4.0
-- Updated Principle I: Test structure migrated from tests/ to specs/<feature>/tests/ and specs/<feature>/test-results/
-- Updated Principle I: Added <feature> = git branch name convention
-- Updated Quality Gates: Added lint:changed and type-check:changed scoped commands
-- Updated grep path: src tests → src specs
-- Templates updated: plan-template.md (✅), tasks-template.md (✅)
+Version: 1.7.0 -> 1.8.0
+- Updated Principle II (UI 限制): 涵蓋範圍從「Pages/Components」擴大為「UI 整合層（Pages、Components、Hooks、Contexts）」，明列四個目錄 src/app、src/components、src/hooks、src/contexts
+- Updated Principle II: 「非同步函式」改為「函式（含純同步工具與非同步包裝）」，以涵蓋 firestore-types re-export 的 Timestamp 等非函式型別
+- Rationale: G4b harness expansion — ESLint 結構測試擴到 src/hooks + src/contexts 之前，憲法原文必須先涵蓋
+- Templates updated: 無需更動（plan/tasks template 引用的 principle 編號不變）
 - No deferred TODOs.
 -->
 
@@ -35,7 +34,7 @@ Version: 1.3.0 -> 1.4.0
 **不可協商**: UI 層與業務邏輯層必須完全分離。
 
 - **隔離 (Isolation)**: 所有 Firebase 邏輯 (Firestore, Auth, Storage) 必須封裝在 `src/lib/` 中。
-- **UI 限制**: UI 元件 (Pages/Components) **不得**直接匯入 Firebase SDK。它們只能呼叫 `src/lib/` 匯出的非同步函式。
+- **UI 限制**: UI 整合層（Pages、Components、Hooks、Contexts，即 `src/app/`、`src/components/`、`src/hooks/`、`src/contexts/`）**不得**直接匯入 Firebase SDK。它們只能呼叫 `src/lib/` 匯出的函式（含純同步工具與非同步包裝）。
 - **資料正規化**: 資料驗證與正規化必須在服務層處理。
 
 ### III. 使用者體驗與一致性 (UX & Consistency)
@@ -144,4 +143,4 @@ Version: 1.3.0 -> 1.4.0
 
 **Harness 框架**: 本專案的 AI agent 治理基於 Guides（前饋控制）+ Sensors（反饋控制）框架。CLAUDE.md 定義具體的 Guides 和 Sensors，本憲法定義不可違反的核心原則。
 
-**Version**: 1.7.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-04-19
+**Version**: 1.8.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-04-20

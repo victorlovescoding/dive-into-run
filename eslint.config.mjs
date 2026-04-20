@@ -360,7 +360,57 @@ export default [
     },
   },
 
-  // 16. 針對測試檔案的嚴格規範
+  // 16. Structural tests: src/hooks/ must delegate Firebase access to src/lib/
+  //     Rationale: Constitution Principle II — UI integration layer must not import Firebase SDK directly.
+  {
+    files: ['src/hooks/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'firebase/firestore',
+              message:
+                'src/hooks/ must call src/lib/firebase-*.js helpers — do not import firebase/firestore directly.',
+            },
+            {
+              name: 'firebase/auth',
+              message:
+                'src/hooks/ must call src/lib/firebase-auth-helpers.js — do not import firebase/auth directly.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // 17. Structural tests: src/contexts/ must delegate Firebase access to src/lib/
+  //     Rationale: Constitution Principle II — UI integration layer must not import Firebase SDK directly.
+  {
+    files: ['src/contexts/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'firebase/firestore',
+              message:
+                'src/contexts/ must call src/lib/firebase-*.js helpers — do not import firebase/firestore directly.',
+            },
+            {
+              name: 'firebase/auth',
+              message:
+                'src/contexts/ must call src/lib/firebase-auth-helpers.js — do not import firebase/auth directly.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // 18. 針對測試檔案的嚴格規範
   {
     files: [
       'tests/**/*.{js,jsx,mjs}',
