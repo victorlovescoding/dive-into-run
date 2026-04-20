@@ -24,11 +24,13 @@ export default defineConfig({
       exclude: [
         'src/lib/taiwan-locations.js',
         'src/lib/weather-types.js',
+        'src/lib/firebase-client.js',
+        'src/lib/firestore-types.js',
         'src/lib/**/*.test.{js,jsx}',
         'src/lib/**/__tests__/**',
       ],
       thresholds: {
-        lines: 78,
+        lines: 83,
       },
     },
     projects: [
