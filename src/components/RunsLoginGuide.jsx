@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signInWithPopup } from 'firebase/auth';
-import { auth, provider } from '@/lib/firebase-client';
+import { signInWithGoogle } from '@/lib/firebase-auth-helpers';
 import styles from './RunsLoginGuide.module.css';
 
 /**
@@ -16,7 +15,7 @@ export default function RunsLoginGuide() {
   /** 觸發 Google 登入彈窗流程。 */
   function handleLogin() {
     setBusy(true);
-    signInWithPopup(auth, provider)
+    signInWithGoogle()
       .then(() => {
         setBusy(false);
       })

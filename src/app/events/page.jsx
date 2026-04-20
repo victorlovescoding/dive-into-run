@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useContext, useRef, useCallback } from '
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
+import { Timestamp as FirestoreTimestamp } from '@/lib/firestore-types';
 import {
   buildRoutePayload,
   countTotalPoints,

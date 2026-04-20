@@ -310,7 +310,7 @@ export default [
     },
   },
 
-  // 14. Structural tests: src/components/ must delegate Firestore access to src/lib/
+  // 14. Structural tests: src/components/ must delegate Firebase access to src/lib/
   //     Rationale: Constitution Principle II — UI layer must not import Firebase SDK directly.
   {
     files: ['src/components/**/*.{js,jsx}'],
@@ -324,13 +324,43 @@ export default [
               message:
                 'src/components/ must call src/lib/firebase-*.js helpers — do not import firebase/firestore directly.',
             },
+            {
+              name: 'firebase/auth',
+              message:
+                'src/components/ must call src/lib/firebase-auth-helpers.js — do not import firebase/auth directly.',
+            },
           ],
         },
       ],
     },
   },
 
-  // 15. 針對測試檔案的嚴格規範
+  // 15. Structural tests: src/app/ must delegate Firebase access to src/lib/
+  //     Rationale: Constitution Principle II — UI layer must not import Firebase SDK directly.
+  {
+    files: ['src/app/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'firebase/firestore',
+              message:
+                'src/app/ must call src/lib/firebase-*.js helpers — do not import firebase/firestore directly.',
+            },
+            {
+              name: 'firebase/auth',
+              message:
+                'src/app/ must call src/lib/firebase-auth-helpers.js — do not import firebase/auth directly.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // 16. 針對測試檔案的嚴格規範
   {
     files: [
       'tests/**/*.{js,jsx,mjs}',
