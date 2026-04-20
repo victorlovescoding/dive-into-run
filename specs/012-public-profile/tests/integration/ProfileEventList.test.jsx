@@ -294,18 +294,16 @@ describe('Integration: ProfileEventList', () => {
     // Act — 觸發 sentinel intersection
     fireIntersection();
 
-    // Assert — 第二次呼叫應帶 lastDoc
-    await waitFor(() => {
-      expect(mockedGetHostedEvents).toHaveBeenCalledTimes(2);
-    });
-    expect(mockedGetHostedEvents.mock.calls[1][1]).toMatchObject({
-      lastDoc: { __cursor: 'page1-last' },
-    });
+    // Assert — 等新一頁出現（= 第二次呼叫已完成），比 toHaveBeenCalledTimes 穩定
+    await screen.findByTestId('event-p2-0');
 
-    // Assert — 新一頁的項目 append 到列表
-    await waitFor(() => {
-      expect(screen.getByTestId('event-p2-0')).toBeInTheDocument();
-    });
+    // Assert — 第二次呼叫帶了 lastDoc
+    expect(mockedGetHostedEvents).toHaveBeenCalledWith(
+      TEST_UID,
+      expect.objectContaining({ lastDoc: { __cursor: 'page1-last' } }),
+    );
+
+    // Assert — 原本的項目仍在
     expect(screen.getByTestId('event-p1-0')).toBeInTheDocument();
   });
 
@@ -360,16 +358,11 @@ describe('Integration: ProfileEventList', () => {
     // Act
     fireIntersection();
 
-    // Assert — 原本的項目還在
-    await waitFor(() => {
-      expect(mockedGetHostedEvents).toHaveBeenCalledTimes(2);
-    });
+    // Assert — 等錯誤提示出現（= 第二次呼叫已 reject），比 toHaveBeenCalledTimes 穩定
+    await screen.findByText(/載入更多失敗|載入失敗|無法載入/);
+
+    // Assert — 原本的項目仍在
     expect(screen.getByTestId('event-p1-0')).toBeInTheDocument();
     expect(screen.getByTestId('event-p1-4')).toBeInTheDocument();
-
-    // 應顯示載入更多失敗的提示
-    await waitFor(() => {
-      expect(screen.getByText(/載入更多失敗|載入失敗|無法載入/)).toBeInTheDocument();
-    });
   });
 });
