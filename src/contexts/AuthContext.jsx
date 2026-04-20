@@ -3,8 +3,7 @@
 'use client';
 
 import { createContext, useState, useEffect, useMemo } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase-client'; // 依你的路徑調整
+import { subscribeToAuthChanges } from '@/lib/firebase-auth-helpers';
 import { loginCheckUserData, watchUserProfile } from '@/lib/firebase-users';
 
 /**
@@ -33,7 +32,7 @@ export default function UserDataHandler({ children }) {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let unSubProfile = null; // 保存 users/{uid} 監聽的退訂函式
-    const unSubAuth = onAuthStateChanged(auth, async (fbUser) => {
+    const unSubAuth = subscribeToAuthChanges(async (fbUser) => {
       try {
         if (unSubProfile) {
           unSubProfile();

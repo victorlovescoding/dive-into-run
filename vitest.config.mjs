@@ -14,17 +14,50 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'jsdom',
     globals: true,
-    setupFiles: './vitest.setup.jsx',
-    exclude: ['**/e2e/**', '**/node_modules/**'],
-    alias: {
-      '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    },
-    css: {
-      modules: {
-        classNameStrategy: 'non-scoped',
+    testTimeout: 15000,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'html', 'json-summary', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['src/lib/**'],
+      exclude: [
+        'src/lib/taiwan-locations.js',
+        'src/lib/weather-types.js',
+        'src/lib/**/*.test.{js,jsx}',
+        'src/lib/**/__tests__/**',
+      ],
+      thresholds: {
+        lines: 78,
       },
     },
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'browser',
+          environment: 'jsdom',
+          setupFiles: './vitest.setup.jsx',
+          exclude: ['specs/g8-server-coverage/**', '**/e2e/**', '**/node_modules/**'],
+          alias: {
+            '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+          },
+          css: {
+            modules: {
+              classNameStrategy: 'non-scoped',
+            },
+          },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'server',
+          environment: 'node',
+          setupFiles: './vitest.setup.server.js',
+          include: ['specs/g8-server-coverage/**/*.test.js'],
+        },
+      },
+    ],
   },
 });

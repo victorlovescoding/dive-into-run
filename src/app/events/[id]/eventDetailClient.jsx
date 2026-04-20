@@ -4,7 +4,7 @@ import { useContext, useEffect, useMemo, useRef, useState, useCallback } from 'r
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
+import { Timestamp as FirestoreTimestamp } from '@/lib/firestore-types';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import {

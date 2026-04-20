@@ -280,7 +280,137 @@ export default [
     },
   },
 
-  // 13. 針對測試檔案的嚴格規範
+  // 13. Structural tests: src/lib/ must not import UI layers
+  //     Rationale: Constitution Principle II — lib is a pure service layer.
+  {
+    files: ['src/lib/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            { name: 'react', message: 'src/lib/ is a pure service layer — do not import React.' },
+            {
+              name: 'react-dom',
+              message: 'src/lib/ is a pure service layer — do not import React.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['next/*'],
+              message: 'src/lib/ is a pure service layer — do not import Next.',
+            },
+            {
+              group: ['react-leaflet', 'react-leaflet/*'],
+              message: 'src/lib/ must not depend on UI libraries.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // 14. Structural tests: src/components/ must delegate Firebase access to src/lib/
+  //     Rationale: Constitution Principle II — UI layer must not import Firebase SDK directly.
+  {
+    files: ['src/components/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'firebase/firestore',
+              message:
+                'src/components/ must call src/lib/firebase-*.js helpers — do not import firebase/firestore directly.',
+            },
+            {
+              name: 'firebase/auth',
+              message:
+                'src/components/ must call src/lib/firebase-auth-helpers.js — do not import firebase/auth directly.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // 15. Structural tests: src/app/ must delegate Firebase access to src/lib/
+  //     Rationale: Constitution Principle II — UI layer must not import Firebase SDK directly.
+  {
+    files: ['src/app/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'firebase/firestore',
+              message:
+                'src/app/ must call src/lib/firebase-*.js helpers — do not import firebase/firestore directly.',
+            },
+            {
+              name: 'firebase/auth',
+              message:
+                'src/app/ must call src/lib/firebase-auth-helpers.js — do not import firebase/auth directly.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // 16. Structural tests: src/hooks/ must delegate Firebase access to src/lib/
+  //     Rationale: Constitution Principle II — UI integration layer must not import Firebase SDK directly.
+  {
+    files: ['src/hooks/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'firebase/firestore',
+              message:
+                'src/hooks/ must call src/lib/firebase-*.js helpers — do not import firebase/firestore directly.',
+            },
+            {
+              name: 'firebase/auth',
+              message:
+                'src/hooks/ must call src/lib/firebase-auth-helpers.js — do not import firebase/auth directly.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // 17. Structural tests: src/contexts/ must delegate Firebase access to src/lib/
+  //     Rationale: Constitution Principle II — UI integration layer must not import Firebase SDK directly.
+  {
+    files: ['src/contexts/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'firebase/firestore',
+              message:
+                'src/contexts/ must call src/lib/firebase-*.js helpers — do not import firebase/firestore directly.',
+            },
+            {
+              name: 'firebase/auth',
+              message:
+                'src/contexts/ must call src/lib/firebase-auth-helpers.js — do not import firebase/auth directly.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // 18. 針對測試檔案的嚴格規範
   {
     files: [
       'tests/**/*.{js,jsx,mjs}',
