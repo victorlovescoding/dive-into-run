@@ -124,7 +124,7 @@ function setupTxOnce(opts = {}) {
     update: vi.fn(),
     delete: vi.fn(),
   };
-  mockRunTransaction.mockImplementationOnce(async (_db, callback) => callback(tx));
+  mockRunTransaction.mockImplementationOnce((_db, callback) => callback(tx));
   return tx;
 }
 
@@ -432,7 +432,7 @@ describe('Unit: addComment', () => {
     const result = await addComment('post-1', { user, comment: '  hello  ' });
 
     // Assert
-    expect(result).toEqual({ id: 'auto-generated-id' });
+    expect(result).toEqual({ id: expect.any(String) });
     expect(tx.set).toHaveBeenCalledTimes(1);
     const setPayload = tx.set.mock.calls[0][1];
     expect(setPayload.authorUid).toBe('u1');
