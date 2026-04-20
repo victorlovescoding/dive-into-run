@@ -113,7 +113,7 @@
   - ✅ **G4 初版** 於 2026-04-20 完成（Section 14 擋 `firebase/firestore`）
   - ✅ **G4b 橫向擴展** 同日完成（Sections 15-17 覆蓋 `app/hooks/contexts` + 加 `firebase/auth`）
   - ✅ **G10 Session 1 收尾**（本次）：四 Section 合併為單一 config + 改 `patterns: ['firebase/*']`，一次涵蓋 storage + 未來所有 SDK。`npx eslint src specs` dry-run 零違規通過。JSDoc `@type {import('firebase/firestore')...}` 不受影響（ESLint `no-restricted-imports` 只檢查 `ImportDeclaration` AST 節點，不檢查註解）。`firebase-admin` 裸 package 不被匹配（gitignore-glob 要求 `/` 分隔）
-  - 📋 **Session 2 已排程**：抽 `firebase-storage-helpers.js`（把 `uploadUserAvatar` 從 `firebase-users.js` 拆出獨立檔案，完整對齊憲法 Firestore/Auth/Storage 分開封裝精神）。任務清單記於 memory `project_harness_g10_session2_storage_helper.md`，下個 session 執行
+  - ✅ **G10 Session 2 完成**（2026-04-20）：抽 `src/lib/firebase-storage-helpers.js`，把 `uploadUserAvatar` 從 `firebase-users.js` 拆出獨立檔案，完整對齊憲法 Firestore/Auth/Storage 分開封裝精神。呼叫端 `src/app/member/page.jsx` 分拆 import；新增 `specs/g10-storage-helper/tests/unit/firebase-storage-helpers.test.js`（6 test，jsdom + stub `createImageBitmap`/`canvas.getContext`/`canvas.toBlob` + mock `firebase/storage`），覆蓋小圖不縮放、橫/縱向縮放、正方形走縱向分支、URL 含/不含 query 的 cache-bust、`toBlob` 失敗 reject 六條路徑。全 repo coverage Lines 由 80.4% 升至 83.35%（threshold 78）
 
 ---
 
