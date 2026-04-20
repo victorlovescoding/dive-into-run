@@ -280,7 +280,57 @@ export default [
     },
   },
 
-  // 13. 針對測試檔案的嚴格規範
+  // 13. Structural tests: src/lib/ must not import UI layers
+  //     Rationale: Constitution Principle II — lib is a pure service layer.
+  {
+    files: ['src/lib/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            { name: 'react', message: 'src/lib/ is a pure service layer — do not import React.' },
+            {
+              name: 'react-dom',
+              message: 'src/lib/ is a pure service layer — do not import React.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['next/*'],
+              message: 'src/lib/ is a pure service layer — do not import Next.',
+            },
+            {
+              group: ['react-leaflet', 'react-leaflet/*'],
+              message: 'src/lib/ must not depend on UI libraries.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // 14. Structural tests: src/components/ must delegate Firestore access to src/lib/
+  //     Rationale: Constitution Principle II — UI layer must not import Firebase SDK directly.
+  {
+    files: ['src/components/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'firebase/firestore',
+              message:
+                'src/components/ must call src/lib/firebase-*.js helpers — do not import firebase/firestore directly.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // 15. 針對測試檔案的嚴格規範
   {
     files: [
       'tests/**/*.{js,jsx,mjs}',
