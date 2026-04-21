@@ -7,7 +7,6 @@
 目標架構來自 OpenAI harness engineering 文章（Ryan Lopopolo）：每個 business domain 內部固定六層 Types → Config → Repo → Service → Runtime → UI，嚴格 forward-only 依賴；橫切關注點走 Providers；跨 domain 工具走 Utils。規則用 ESLint 機械攔截，錯誤訊息給 agent 修復指引。
 
 用戶決策：
-
 1. Scope = 7 domain（events, posts, comments, weather, members, strava, notifications）+ 3 providers（auth, firebase-connector, toast）+ utils
 2. Service 層建立並從 helpers 搬
 3. PR 策略：barrel re-export 過渡 → 最後 codemod 掃除
@@ -45,17 +44,17 @@ src/
 
 ## 分層定義（每層允許 import 的範圍）
 
-| 層                 | 可 import                                                                      | 禁止                                           |
-| ------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------- |
-| **utils**          | 只自己                                                                         | 任何 domain、provider                          |
-| **provider**       | utils、另一個 provider                                                         | 任何 domain（不反向依賴）                      |
-| **domain types**   | 同 domain types + utils                                                        | 其他 domain、任何 runtime 值                   |
-| **domain config**  | 同 domain types/config + utils                                                 | 其他 domain、Repo、SDK                         |
-| **domain repo**    | 同 domain types/config + provider + utils                                      | 其他 domain repo（★修掉現況違規）、React、Next |
-| **domain service** | 同 domain 內一切 + 其他 domain 的 public index + provider + utils              | 其他 domain internal（只走 index）             |
-| **domain runtime** | 同 domain 內一切 + 其他 domain 的 public index + provider + utils + React 生態 | 其他 domain internal                           |
-| **domain ui**      | 同 domain types/config/service/runtime/ui + public index + provider + utils    | **Repo 絕對禁止**                              |
-| **app (Next.js)**  | domain public index + domain ui + provider + utils                             | —                                              |
+| 層 | 可 import | 禁止 |
+|---|---|---|
+| **utils** | 只自己 | 任何 domain、provider |
+| **provider** | utils、另一個 provider | 任何 domain（不反向依賴） |
+| **domain types** | 同 domain types + utils | 其他 domain、任何 runtime 值 |
+| **domain config** | 同 domain types/config + utils | 其他 domain、Repo、SDK |
+| **domain repo** | 同 domain types/config + provider + utils | 其他 domain repo（★修掉現況違規）、React、Next |
+| **domain service** | 同 domain 內一切 + 其他 domain 的 public index + provider + utils | 其他 domain internal（只走 index） |
+| **domain runtime** | 同 domain 內一切 + 其他 domain 的 public index + provider + utils + React 生態 | 其他 domain internal |
+| **domain ui** | 同 domain types/config/service/runtime/ui + public index + provider + utils | **Repo 絕對禁止** |
+| **app (Next.js)** | domain public index + domain ui + provider + utils | — |
 
 ### 歸屬細節
 
@@ -69,28 +68,25 @@ src/
 ## PR 分批（13 個 atomic PR）
 
 ### 基礎建設（3 PR）
-
-| PR       | 內容                                                                                                                          | 檔數 |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------- | ---- |
-| **PR 1** | 建空 `src/domains/`、`src/providers/`、`src/utils/` + 裝 `eslint-plugin-boundaries` + 設 `boundaries/elements` 但規則全 `off` | ~3   |
-| **PR 2** | Providers: firebase-connector（搬 `firebase-client.js` + `firebase-admin.js` + `firestore-types.js`，舊位置留 barrel）        | 6    |
-| **PR 3** | Providers: auth + toast（搬 `AuthContext` + `firebase-auth-helpers` + `ToastContext` + `Toast*.jsx`）                         | 12   |
-| **PR 4** | Utils: `og-helpers` → `utils/og.js`、`taiwan-locations.js` → `utils/`                                                         | 4    |
+| PR | 內容 | 檔數 |
+|---|---|---|
+| **PR 1** | 建空 `src/domains/`、`src/providers/`、`src/utils/` + 裝 `eslint-plugin-boundaries` + 設 `boundaries/elements` 但規則全 `off` | ~3 |
+| **PR 2** | Providers: firebase-connector（搬 `firebase-client.js` + `firebase-admin.js` + `firestore-types.js`，舊位置留 barrel） | 6 |
+| **PR 3** | Providers: auth + toast（搬 `AuthContext` + `firebase-auth-helpers` + `ToastContext` + `Toast*.jsx`） | 12 |
+| **PR 4** | Utils: `og-helpers` → `utils/og.js`、`taiwan-locations.js` → `utils/` | 4 |
 
 ### 各 domain 搬遷（7 PR，耦合度由低到高）
-
-| PR        | Domain        | 關鍵動作                                                                                                                                                     |
-| --------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **PR 5**  | weather       | 自成一體最低耦合；包含 `weather-api.js` 的 route handler 邏輯搬 runtime                                                                                      |
-| **PR 6**  | strava        | 含 `useStrava*`、`useRunCalendar`、4 個 `app/api/strava/*/route.js` 的內部邏輯                                                                               |
-| **PR 7**  | posts         | 相對獨立                                                                                                                                                     |
-| **PR 8**  | comments      | 依賴 posts/events/notifications，barrel 擋住                                                                                                                 |
-| **PR 9**  | events        | **體積最大**，`src/app/events/page.jsx`（1500+ 行）要拆到 `domains/events/ui/EventsPageClient.jsx`，保留 `app/events/page.jsx` 當 server component薄 wrapper |
-| **PR 10** | notifications | **最複雜**，修掉 `firebase-notifications.js:17` Repo→Repo 違規：`fetchParticipants` 呼叫移到 `notifications/service/`，透過 `@/domains/events` public index  |
-| **PR 11** | members       | Navbar + Dashboard + Profile 交織，拆 `firebase-profile.js`（client）+ `firebase-profile-server.js`（server）為 `members-repo.js` + `members-server-repo.js` |
+| PR | Domain | 關鍵動作 |
+|---|---|---|
+| **PR 5** | weather | 自成一體最低耦合；包含 `weather-api.js` 的 route handler 邏輯搬 runtime |
+| **PR 6** | strava | 含 `useStrava*`、`useRunCalendar`、4 個 `app/api/strava/*/route.js` 的內部邏輯 |
+| **PR 7** | posts | 相對獨立 |
+| **PR 8** | comments | 依賴 posts/events/notifications，barrel 擋住 |
+| **PR 9** | events | **體積最大**，`src/app/events/page.jsx`（1500+ 行）要拆到 `domains/events/ui/EventsPageClient.jsx`，保留 `app/events/page.jsx` 當 server component薄 wrapper |
+| **PR 10** | notifications | **最複雜**，修掉 `firebase-notifications.js:17` Repo→Repo 違規：`fetchParticipants` 呼叫移到 `notifications/service/`，透過 `@/domains/events` public index |
+| **PR 11** | members | Navbar + Dashboard + Profile 交織，拆 `firebase-profile.js`（client）+ `firebase-profile-server.js`（server）為 `members-repo.js` + `members-server-repo.js` |
 
 每個 domain PR 的標準步驟：
-
 1. 建六層子目錄 + `index.js` public API barrel
 2. 搬檔，舊位置留 barrel（`export * from '@/domains/<d>/...'`）
 3. 該 domain 的消費端 import **不改**（全走舊 barrel）
@@ -98,10 +94,9 @@ src/
 5. 跑 domain 相關 test + 全量 lint + tsc
 
 ### 收尾（2 PR）
-
-| PR        | 內容                                                                                                                                                                                                                        |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **PR 12** | 全域開啟 boundaries `"error"` + 修跨 domain 殘留違規（預估 5–15 檔 import 調整）                                                                                                                                            |
+| PR | 內容 |
+|---|---|
+| **PR 12** | 全域開啟 boundaries `"error"` + 修跨 domain 殘留違規（預估 5–15 檔 import 調整） |
 | **PR 13** | Codemod cleanup：寫 `scripts/harness-codemod.mjs`（jscodeshift）一次改 137 處 `vi.mock('@/lib/firebase-*')` + 所有剩餘 `from '@/lib/...'`；刪 `src/lib/`、`src/hooks/`、`src/contexts/`、`src/components/` 裡的 barrel 殘留 |
 
 **PR 大小上限**：單 PR ≤ 20 檔（理想）/ ≤ 40 檔（硬上限）。超過就拆。
@@ -111,7 +106,6 @@ src/
 ## ESLint 規則（eslint-plugin-boundaries + no-restricted-imports 分工）
 
 **分工**：
-
 - `boundaries/dependencies`：管「誰能依賴誰」的拓撲
 - `no-restricted-imports`（現有）：繼續管「這個 package 不能出現在這裡」的黑名單
 
@@ -146,15 +140,12 @@ settings: {
 ### 錯誤訊息範例（給 agent 的 remediation）
 
 **UI → Repo 直連**：
-
 > UI {{from.captured.domain}} 嘗試 import domain-repo {{dependency.source}}。UI 層不能直接觸碰 Repo — Firestore CRUD 應該封裝在 Service 或 Runtime（hook）後才暴露。修復方法：1) 資料讀取寫 useX hook 放 runtime/；2) 寫入/跨 collection 寫 service/；3) UI 只 import hook 或 service 函式。
 
 **Repo → 另一個 Repo**（修掉現況 `firebase-notifications.js:17`）：
-
 > Repo {{from.captured.domain}} 不能 import Repo {{to.captured.domain}}。Repo 層是 collection-level wrapper，跨 collection 的寫入流程應該放在 service/。請把 `fetchParticipants` 的呼叫移到 `domains/notifications/service/notifications-service.js` 的 `notifyNewComment` 裡，並透過 `@/domains/events` public index 呼叫。
 
 **跨 domain 進 internal**：
-
 > UI {{from.captured.domain}} 嘗試 import domain-ui `{{dependency.source}}`。跨 domain 只能透過 public index（`@/domains/<d>`）。修復方法：1) 確認該元件要不要從 index 暴露；2) 若是共用 UI primitive，升到 `src/utils/ui/`。
 
 ### Barrel 過渡期豁免（PR 5–11 期間）
@@ -163,7 +154,6 @@ settings: {
 { files: ['src/lib/**', 'src/hooks/**', 'src/contexts/**', 'src/components/**'],
   rules: { 'boundaries/dependencies': 'off' } }
 ```
-
 PR 13 codemod 完成後刪除此 block。
 
 ---
@@ -179,19 +169,16 @@ export * from '@/domains/events/types/event-types';
 ```
 
 **重點**：
-
 - 用 `export *` 而非 named re-export（named re-export 某些情況不帶 typedef）
 - 同時 re-export repo + types，避免 JSDoc `import('@/lib/firebase-events').EventData` 失效
 - 每個 barrel 一定要 line-level eslint-disable，標明 transitional
 
 **Server-only 檔的 barrel**（`firebase-admin`、`firebase-profile-server` 等）：
-
 ```javascript
 import 'server-only';
 // eslint-disable-next-line boundaries/dependencies
 export * from '@/providers/firebase-connector/firebase-admin';
 ```
-
 必須 mirror 原檔的 `server-only` / `'use server'` directive，否則 client bundle 防護失效。
 
 ---
@@ -203,12 +190,10 @@ export * from '@/providers/firebase-connector/firebase-admin';
 - 預估 PR 13 codemod 要動 **150–170 檔 test file**
 
 **過渡期 vi.mock 不用改**（barrel forward 生效），例外：
-
 - `importActual + override`（partial mock）在 ESM 下部分 getter 可能 readonly，要直接指向 canonical path
 - Emulator server 測試若用 `await import('@/lib/firebase-events')` 動態 load 可能觸發 firebase-admin lazy init 順序問題（memory `feedback_firebase_emulator_vitest` 坑之一）—— PR 9 合入前全量跑 `npm run test:server`
 
 **Service 層必寫 unit test**（防 coverage 黑洞）：
-
 - 每個 domain PR 同時產出 `specs/harness-<domain>-service/tests/unit/<domain>-service.test.js`
 - Service test 用 `vi.mock('@/domains/<other>', ...)` mock 其他 domain 的 public index
 - PR 13 後新增 CI check：`src/domains/*/service/**` line coverage ≥ 60%
@@ -220,30 +205,25 @@ export * from '@/providers/firebase-connector/firebase-admin';
 ## Top 5 風險 + 緩解
 
 ### 風險 1：`firebase-admin` 洩漏進 client bundle
-
 - `providers/firebase-connector/firebase-admin.js` 第一行 `import 'server-only';`（Next.js 15 原生）
 - Providers public index 只 export client symbol；admin 強制走完整路徑便於 grep
 - 新增 no-restricted-imports：非 `src/app/api/**` 或 server repo/runtime 的檔案禁 import `firebase-admin`
 
 ### 風險 2：Next.js `'use client'` 邊界在薄 wrapper 失效
-
 - **絕對不用 `export { default } from` 做 page wrapper**
 - 標準 pattern：`page.jsx` 是 server component，`import EventsPageClient + render`，`EventsPageClient.jsx` 自標 `'use client'`
 - `generateMetadata` 留在 `page.jsx` 或從 `@/domains/<d>/ui/<d>-metadata.js`（server helper）import
 
 ### 風險 3：JSDoc typedef 跨檔 import 在 tsc 下壞掉
-
 - Barrel 一律 `export *` 同時 re-export repo + types
 - 每個 domain PR 跑 `tsc --noEmit` 針對 `src/domains/<d>/**`
 - 備案：PR 1 就建立關鍵 types 檔（`event-types.js` 等）空殼，讓 import 路徑提前穩定
 
 ### 風險 4：server-only barrel 沒 mirror directive
-
 - 寫死在 barrel 模板（見上節）
 - PR 11（members）特別注意 `firebase-profile-server.js` 這個 hack 要正名為 `members-server-repo.js`
 
 ### 風險 5：husky pre-commit 中途狀態卡住
-
 - PR 內中間 WIP commit 允許 `--no-verify`（僅本地 rebase 前）
 - **最後一個 commit 必須綠**（barrel 齊、lint 過、tsc 過、test 過）
 - PR 13 codemod 絕對不能 bypass，codemod 完一次跑 `npm run lint && type-check && test`
@@ -253,7 +233,6 @@ export * from '@/providers/firebase-connector/firebase-admin';
 ## 驗證（每階段 gate）
 
 ### 每個 PR 完成
-
 - [ ] `npm run lint` 全綠
 - [ ] `npm run type-check` 全綠
 - [ ] `npm run test` 全綠
@@ -262,29 +241,24 @@ export * from '@/providers/firebase-connector/firebase-admin';
 - [ ] Reviewer agent 對照 plan 逐項核對 → 合格（見下「執行工作流程」）
 
 ### PR 5–11（各 domain）
-
 - [ ] 該 domain 所有 test 檔執行通過（unit + integration）
 - [ ] `tsc --noEmit` 針對 `src/domains/<d>/**` 無錯
 - [ ] 該 domain 的 boundaries 規則打開後無 violation
 - [ ] Service 層至少 smoke test 覆蓋
 
 ### PR 9（events，最大）特別
-
 - [ ] `src/app/events/page.jsx` 搬完後仍是 server component（`generateMetadata` 執行正常）
 - [ ] `'use client'` 邊界在 bundle analyzer 下正確（client chunk 不含 server 邏輯）
 
 ### PR 10（notifications）特別
-
 - [ ] `firebase-notifications.js:17` Repo→Repo 違規消失
 - [ ] boundaries 規則能抓到還原測試（故意加一行 Repo→Repo 要被擋）
 
 ### PR 12（全域開規則）
-
 - [ ] `npm run lint` 在 `src/domains/`、`src/providers/`、`src/utils/` 上無 violation
 - [ ] Barrel 區域 豁免 block 仍存在，舊 path 能 resolve
 
 ### PR 13（codemod cleanup）
-
 - [ ] `src/lib/`、`src/hooks/`、`src/contexts/`、`src/components/` 除 `icons/` 外清空或刪除
 - [ ] 0 個 `@/lib/firebase-*` import 或 `vi.mock('@/lib/*')` 殘留（grep 驗證）
 - [ ] 全量 test 綠（含 emulator `test:server`）
@@ -296,7 +270,6 @@ export * from '@/providers/firebase-connector/firebase-admin';
 ## 關鍵檔案
 
 ### 必讀（啟動前）
-
 - `/Users/chentzuyu/Desktop/dive-into-run/eslint.config.mjs` — 現有 flat config + no-restricted-imports
 - `/Users/chentzuyu/Desktop/dive-into-run/src/lib/firebase-notifications.js` — Repo→Repo 違規樣本
 - `/Users/chentzuyu/Desktop/dive-into-run/src/lib/firebase-events.js` — 最大 Repo
@@ -305,11 +278,9 @@ export * from '@/providers/firebase-connector/firebase-admin';
 - `/Users/chentzuyu/Desktop/dive-into-run/tsconfig.json` — `@/*` alias、`checkJs`
 
 ### PR 13 要產出
-
 - `/Users/chentzuyu/Desktop/dive-into-run/scripts/harness-codemod.mjs` — jscodeshift 腳本
 
 ### 可重用的既有工具
-
 - `scripts/lint-changed.sh`、`type-check-branch.sh`、`test:branch` — 每 PR 跑 branch-level check
 - `.husky/pre-commit` — 維持跑 lint + type-check + spellcheck + vitest
 
@@ -319,11 +290,11 @@ export * from '@/providers/firebase-connector/firebase-admin';
 
 ### 角色分工
 
-| 角色                       | 身份                                                | 主要職責                                                                                   | 工具權限                                 |
-| -------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------- |
-| **Tech Lead**              | 主對話 Claude（我）                                 | 分派任務、轉遞 feedback、追蹤 13 PR 進度、處理卡關                                         | 全部                                     |
-| **Executor**（subagent A） | `general-purpose` agent，name: `executor`           | 按照當前 PR 規格施工（搬檔、改 import、寫 barrel、寫 Service test、跑 lint/tsc/test 自測） | Write / Edit / Bash / Read / Grep / Glob |
-| **Reviewer**（subagent B） | `Explore` agent（read-only 取向），name: `reviewer` | 對照 plan 逐項核對 Executor 產出；發現偏離立即回報具體違規點 + 修復指引；**不允許改 code** | Read / Grep / Glob / Bash（只讀）        |
+| 角色 | 身份 | 主要職責 | 工具權限 |
+|---|---|---|---|
+| **Tech Lead** | 主對話 Claude（我） | 分派任務、轉遞 feedback、追蹤 13 PR 進度、處理卡關 | 全部 |
+| **Executor**（subagent A）| `general-purpose` agent，name: `executor` | 按照當前 PR 規格施工（搬檔、改 import、寫 barrel、寫 Service test、跑 lint/tsc/test 自測） | Write / Edit / Bash / Read / Grep / Glob |
+| **Reviewer**（subagent B）| `Explore` agent（read-only 取向），name: `reviewer` | 對照 plan 逐項核對 Executor 產出；發現偏離立即回報具體違規點 + 修復指引；**不允許改 code** | Read / Grep / Glob / Bash（只讀） |
 
 ### 每個 PR 的標準循環（Checkpoint-Based Review）
 
@@ -352,13 +323,11 @@ Executor 修 → 回報 → Reviewer 再審 → 通過為止
 ```
 
 **為什麼這個 pattern 關鍵**：
-
 - 早期 CP 出錯（例如 ESLint 規則寫錯）若累積到最後才發現，修改面積大
 - 配置類 CP（裝套件、改 config）風險最高，要第一時間審
 - 「完工才審」實際上等於 agent-to-agent 的 YOLO，違反 Reviewer 存在的意義
 
 **CP 切法原則**（Executor 自行拆分，Reviewer 審 CP 切法是否合理）：
-
 - 1 CP 約 5-15 分鐘 agent 時間
 - 按**類別**切（配置、新建檔案、重構、驗證），不按行數
 - 高風險類別（配置、server-only、跨層依賴）一定獨立成 CP
@@ -377,7 +346,6 @@ Executor 修 → 回報 → Reviewer 再審 → 通過為止
 ### Reviewer 每 PR 核對清單（對照 plan 的「驗證」section）
 
 **共通項**（每 PR 都查）：
-
 - [ ] 檔案搬動範圍 = plan 該 PR 指定範圍（不多搬、不少搬）
 - [ ] Barrel 格式符合模板（`export *`、`// eslint-disable-next-line`、`TRANSITIONAL BARREL` 標記）
 - [ ] Server-only 檔的 barrel 有 mirror `import 'server-only'`
@@ -391,7 +359,6 @@ Executor 修 → 回報 → Reviewer 再審 → 通過為止
 ### Final Audit（全 13 PR 完成後）
 
 Reviewer 做一次完整 audit，不限 PR 範圍：
-
 - [ ] `src/lib/`、`src/hooks/`、`src/contexts/`、`src/components/`（除 `icons/`）已空或刪除
 - [ ] `grep -r "@/lib/firebase-" src specs` 結果為 0
 - [ ] `grep -r "vi.mock('@/lib/" specs` 結果為 0
@@ -437,61 +404,53 @@ docs/harness-migration/
 > Plan：見 [PLAN.md](./PLAN.md)。本檔追蹤進度與當前狀態。
 
 ## Quick Context（新 session 30 秒上手）
-
 - 在做：per-domain 六層架構遷移（OpenAI harness pattern）
 - Scope：7 domain + 3 providers + utils
 - 總計 13 atomic PR，barrel re-export 過渡 → 最後 codemod 掃除
 - Agent 模式：Tech Lead 發包 → Executor 施工 → Reviewer 監督
 
 ## 進度儀表板
-
-| PR  | 內容                                  | 狀態      | Executor | Reviewer | PR Link | Notes |
-| --- | ------------------------------------- | --------- | -------- | -------- | ------- | ----- |
-| 1   | Scaffold + eslint 骨架                | ⬜ 待開始 | —        | —        | —       | —     |
-| 2   | Providers: firebase-connector         | ⬜        | —        | —        | —       | —     |
-| 3   | Providers: auth + toast               | ⬜        | —        | —        | —       | —     |
-| 4   | Utils                                 | ⬜        | —        | —        | —       | —     |
-| 5   | Domain: weather                       | ⬜        | —        | —        | —       | —     |
-| 6   | Domain: strava                        | ⬜        | —        | —        | —       | —     |
-| 7   | Domain: posts                         | ⬜        | —        | —        | —       | —     |
-| 8   | Domain: comments                      | ⬜        | —        | —        | —       | —     |
-| 9   | Domain: events（最大）                | ⬜        | —        | —        | —       | —     |
-| 10  | Domain: notifications（修 Repo→Repo） | ⬜        | —        | —        | —       | —     |
-| 11  | Domain: members                       | ⬜        | —        | —        | —       | —     |
-| 12  | ESLint 全開                           | ⬜        | —        | —        | —       | —     |
-| 13  | Codemod cleanup + final audit         | ⬜        | —        | —        | —       | —     |
+| PR | 內容 | 狀態 | Executor | Reviewer | PR Link | Notes |
+|---|---|---|---|---|---|---|
+| 1 | Scaffold + eslint 骨架 | ⬜ 待開始 | — | — | — | — |
+| 2 | Providers: firebase-connector | ⬜ | — | — | — | — |
+| 3 | Providers: auth + toast | ⬜ | — | — | — | — |
+| 4 | Utils | ⬜ | — | — | — | — |
+| 5 | Domain: weather | ⬜ | — | — | — | — |
+| 6 | Domain: strava | ⬜ | — | — | — | — |
+| 7 | Domain: posts | ⬜ | — | — | — | — |
+| 8 | Domain: comments | ⬜ | — | — | — | — |
+| 9 | Domain: events（最大）| ⬜ | — | — | — | — |
+| 10 | Domain: notifications（修 Repo→Repo）| ⬜ | — | — | — | — |
+| 11 | Domain: members | ⬜ | — | — | — | — |
+| 12 | ESLint 全開 | ⬜ | — | — | — | — |
+| 13 | Codemod cleanup + final audit | ⬜ | — | — | — | — |
 
 狀態圖例：⬜ 待開始 / 🟨 進行中 / 🔄 Review 中 / 🔴 卡關 / 🟢 已合併
 
 ## 當前 PR 狀態
-
 （進行中時填，空閒時寫 "無"）
 
 ### PR-X 實作紀錄
-
 - Executor 上一輪動作：...
 - 產出 diff 摘要：...
 - 自測結果：lint/tsc/test 是否全綠
 
 ### PR-X Review 紀錄
-
 - Reviewer 上一輪結論：✅ / ❌
 - 若 ❌：違規清單 + 修復指引
 - 第幾輪 review（超過 2 輪要 Tech Lead 介入）
 
 ## Session Handoff Notes
-
 （每次 session 結束由 Tech Lead 寫，下一 session 第一件事讀這裡）
 
 ### 最新 handoff（日期 YYYY-MM-DD）
-
 - 上輪結束時狀態：PR X 進到哪一步
 - 遇到但未解決的問題：...
 - 下 session 該做什麼：...
 - 需要使用者決策的事項：...
 
 ## 已完成 PR 紀錄（append-only）
-
 （每個 PR 合併後填）
 ```
 
@@ -503,7 +462,6 @@ docs/harness-migration/
 實作過程中遇到的非預期決策點 append 在這。格式：
 
 ## YYYY-MM-DD — <決策標題>
-
 - **情境**：遇到什麼問題
 - **選項**：A / B / C
 - **選擇**：B
@@ -513,35 +471,33 @@ docs/harness-migration/
 
 ### 更新責任矩陣
 
-| 檔案                   | 誰寫                          | 何時寫                                                                                             |
-| ---------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------- |
-| `PLAN.md`              | Tech Lead                     | PR 1 開始時複製 plan file 進 repo；之後 immutable（若需修改走 DECISIONS.md + 更新 PLAN.md 並註明） |
-| `PROGRESS.md` 儀表板   | Tech Lead                     | 每 PR 開始、完成、卡關時                                                                           |
-| `PROGRESS.md` 當前狀態 | Tech Lead                     | 每輪 Executor/Reviewer 回報後                                                                      |
-| `PROGRESS.md` Handoff  | Tech Lead                     | 每次 session 結束時                                                                                |
-| `DECISIONS.md`         | Tech Lead                     | 遇到 plan 沒涵蓋的決策點                                                                           |
-| Executor 實作紀錄      | Executor 產出、Tech Lead 貼入 | 每輪 Executor 完成後                                                                               |
-| Reviewer 結論          | Reviewer 產出、Tech Lead 貼入 | 每輪 Reviewer 完成後                                                                               |
+| 檔案 | 誰寫 | 何時寫 |
+|---|---|---|
+| `PLAN.md` | Tech Lead | PR 1 開始時複製 plan file 進 repo；之後 immutable（若需修改走 DECISIONS.md + 更新 PLAN.md 並註明） |
+| `PROGRESS.md` 儀表板 | Tech Lead | 每 PR 開始、完成、卡關時 |
+| `PROGRESS.md` 當前狀態 | Tech Lead | 每輪 Executor/Reviewer 回報後 |
+| `PROGRESS.md` Handoff | Tech Lead | 每次 session 結束時 |
+| `DECISIONS.md` | Tech Lead | 遇到 plan 沒涵蓋的決策點 |
+| Executor 實作紀錄 | Executor 產出、Tech Lead 貼入 | 每輪 Executor 完成後 |
+| Reviewer 結論 | Reviewer 產出、Tech Lead 貼入 | 每輪 Reviewer 完成後 |
 
 ### Pitfall → Memory 流程（避免後續 agent 踩坑）
 
 **三種紀錄分工**（別搞混）：
 
-| 紀錄           | 目的                          | 生命週期                                |
-| -------------- | ----------------------------- | --------------------------------------- |
-| `PROGRESS.md`  | 進度狀態（做到哪）            | PR 結束後歸檔                           |
-| `DECISIONS.md` | 有意決策（為何選 A 不選 B）   | 專案 lifetime                           |
-| **memory**     | 踩過的坑 + 不要再這樣做的教訓 | **跨 session、跨專案**（feedback type） |
+| 紀錄 | 目的 | 生命週期 |
+|---|---|---|
+| `PROGRESS.md` | 進度狀態（做到哪） | PR 結束後歸檔 |
+| `DECISIONS.md` | 有意決策（為何選 A 不選 B） | 專案 lifetime |
+| **memory** | 踩過的坑 + 不要再這樣做的教訓 | **跨 session、跨專案**（feedback type） |
 
 **觸發條件**（符合任一就寫 memory）：
-
 - 非預期的工具行為（例：某個 barrel 寫法在 tsc 下壞、某個 ESLint 規則在 flat config 的 regex 坑、Next.js bundler 對 `'use client'` re-export 的 edge case）
 - 踩了既有 memory（如 `feedback_firebase_emulator_vitest`）沒涵蓋的新坑
 - Agent（包含自己未來的 session）容易再犯的陷阱
 - 「為什麼這樣寫？因為那樣會炸，上次炸過」這類**經驗性**教訓
 
 **不觸發**（這些走別的紀錄）：
-
 - 決定 A 而非 B（→ DECISIONS.md）
 - PR 進度延誤（→ PROGRESS.md）
 - 程式碼層級的 convention（→ `.claude/rules/` 或 CLAUDE.md）
@@ -551,7 +507,6 @@ docs/harness-migration/
 1. 踩坑當下：Tech Lead 停手，先搞清楚根因（不是症狀修完就走）
 2. 寫入 memory：到 `~/.claude/projects/-Users-chentzuyu-Desktop-dive-into-run/memory/` 建 `feedback_harness_<topic>.md`
 3. 格式（feedback type 標準）：
-
    ```markdown
    ---
    name: <短標題>
@@ -564,13 +519,11 @@ docs/harness-migration/
    **Why:** <為什麼會踩這個坑，具體事件>
    **How to apply:** <下次遇到什麼情境要套用這條>
    ```
-
 4. 加到 `MEMORY.md` index：`- [標題](feedback_harness_<topic>.md) — 一句話 hook`
 5. 若這個坑也影響 plan → 同時更新 DECISIONS.md + 修正 PLAN.md 對應段落
 6. 若既有 memory 已涵蓋類似主題 → **優先 update 既有檔案**，不要新建重複
 
 **Reviewer 的額外責任**：
-
 - 若 Reviewer 發現 Executor 做的方式和 memory 中既有 feedback 衝突 → 在 review 回報引用具體 memory 檔名 + 段落
 - 若發現 Executor 踩的坑已經在 memory，代表 memory 沒被讀到 → 除了修 code，也要 flag「agent 沒讀 memory 的流程問題」
 
