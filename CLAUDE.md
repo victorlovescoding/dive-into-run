@@ -80,12 +80,13 @@ Path-scoped rules（只在碰到對應檔案時自動載入）：
 
 ## Reference Docs（分層 Context — 按需載入）
 
-| 文件                                     | 狀態    | 用途                                                                            |
-| ---------------------------------------- | ------- | ------------------------------------------------------------------------------- |
-| `.claude/references/coding-standards.md` | ✅ 已有 | 完整編碼規範與品質防線                                                          |
-| `.claude/references/testing-handbook.md` | ✅ 已有 | 測試撰寫完整手冊                                                                |
-| `.claude/references/review-standards.md` | 🔜 待建 | Code Review 標準與 checklist                                                    |
-| `.claude/references/harness-articles/`   | ✅ 已有 | 5 篇 harness engineering 文章摘要（Fowler、OpenAI、Anthropic、Datadog、Stripe） |
+| 文件                                     | 狀態      | 用途                                                                            |
+| ---------------------------------------- | --------- | ------------------------------------------------------------------------------- |
+| `.claude/references/coding-standards.md` | ✅ 已有   | 完整編碼規範與品質防線                                                          |
+| `.claude/references/testing-handbook.md` | ✅ 已有   | 測試撰寫完整手冊                                                                |
+| `.claude/references/review-standards.md` | 🔜 待建   | Code Review 標準與 checklist                                                    |
+| `.claude/references/harness-articles/`   | ✅ 已有   | 5 篇 harness engineering 文章摘要（Fowler、OpenAI、Anthropic、Datadog、Stripe） |
+| `docs/harness-migration/PROGRESS.md`     | 🔄 進行中 | Harness 六層架構遷移進度（13 PR）                                               |
 
 ## Environment & Secrets
 

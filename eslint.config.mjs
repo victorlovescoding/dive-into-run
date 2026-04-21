@@ -7,6 +7,7 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 import importPlugin from 'eslint-plugin-import';
 import nextPlugin from '@next/eslint-plugin-next';
 import jsdoc from 'eslint-plugin-jsdoc';
+import boundaries from 'eslint-plugin-boundaries';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import prettier from 'eslint-config-prettier';
@@ -389,6 +390,33 @@ export default [
       'jsdoc/reject-any-type': 'off',
       '@next/next/no-img-element': 'off',
       'jsx-a11y/alt-text': 'off',
+    },
+  },
+
+  // 19. Harness migration scaffold — boundaries plugin settings only (rules off)
+  //     Rationale: PR 1 installs the plugin and declares element topology so later
+  //     PRs can switch rules on incrementally without restructuring config. All
+  //     boundaries/* rules remain 'off' here; PR 12 flips them to 'error' globally.
+  {
+    plugins: { boundaries },
+    settings: {
+      'boundaries/elements': [
+        { type: 'provider', pattern: 'src/providers/*', mode: 'folder', capture: ['name'] },
+        { type: 'util', pattern: 'src/utils/**/*', mode: 'file' },
+        { type: 'domain-types', pattern: 'src/domains/*/types/**/*', capture: ['domain'] },
+        { type: 'domain-config', pattern: 'src/domains/*/config/**/*', capture: ['domain'] },
+        { type: 'domain-repo', pattern: 'src/domains/*/repo/**/*', capture: ['domain'] },
+        { type: 'domain-service', pattern: 'src/domains/*/service/**/*', capture: ['domain'] },
+        { type: 'domain-runtime', pattern: 'src/domains/*/runtime/**/*', capture: ['domain'] },
+        { type: 'domain-ui', pattern: 'src/domains/*/ui/**/*', capture: ['domain'] },
+        { type: 'domain-index', pattern: 'src/domains/*/index.js', capture: ['domain'] },
+        { type: 'app', pattern: 'src/app/**/*', mode: 'file' },
+      ],
+    },
+    rules: {
+      'boundaries/dependencies': 'off',
+      'boundaries/no-private': 'off',
+      'boundaries/no-unknown-files': 'off',
     },
   },
 ];
