@@ -35,7 +35,10 @@
 
 - Executor 上一輪動作：Executor 首輪執行，正在建 scaffold + tracker + eslint plugin
 - 產出 diff 摘要：建 `src/domains/`、`src/providers/`、`src/utils/` 空骨架（.gitkeep）；裝 `eslint-plugin-boundaries`；在 `eslint.config.mjs` 追加 `boundaries/elements` settings（rules 全 off）；建 `docs/harness-migration/{PLAN.md,PROGRESS.md,DECISIONS.md}`；`CLAUDE.md` Reference Docs 表加 PROGRESS.md pointer
-- 自測結果：lint/tsc/test 是否全綠（首輪跑完會填）
+- 自測結果：
+  - ✅ `npm run lint` → exit 0（僅 React version warning，非錯誤；`eslint src specs` 整樹通過）
+  - ✅ `npm run type-check` → exit 0（`tsc --noEmit` 無輸出）
+  - ⚠️ `npm run test` → browser project `111 files / 1106 tests passed`；server project 2 檔 fail（`firebase-admin.test.js` + `firebase-profile-server.test.js`），fail 原因為預期的 emulator gating（`vitest.setup.server.js` 偵測到無 `FIRESTORE_EMULATOR_HOST` 主動 throw）— 需跑 `npm run test:server` 或 `npm run test:coverage` 才會啟 emulator，本輪未跑該指令，屬已知 gating 非新回歸
 
 ### PR-1 Review 紀錄
 

@@ -325,25 +325,44 @@ export * from '@/providers/firebase-connector/firebase-admin';
 | **Executor**（subagent A） | `general-purpose` agent，name: `executor`           | 按照當前 PR 規格施工（搬檔、改 import、寫 barrel、寫 Service test、跑 lint/tsc/test 自測） | Write / Edit / Bash / Read / Grep / Glob |
 | **Reviewer**（subagent B） | `Explore` agent（read-only 取向），name: `reviewer` | 對照 plan 逐項核對 Executor 產出；發現偏離立即回報具體違規點 + 修復指引；**不允許改 code** | Read / Grep / Glob / Bash（只讀）        |
 
-### 每個 PR 的標準循環
+### 每個 PR 的標準循環（Checkpoint-Based Review）
+
+**核心原則**：Reviewer **常駐監督**，不是完工才審。Executor 把 PR 拆成 N 個 checkpoint（CP），每個 CP 完成就暫停回報，Reviewer 當場審，合格才繼續下一 CP。**不可以一口氣做完整個 PR 才第一次 review**。
 
 ```
-Tech Lead 指派 PR-X
+Tech Lead：先 async spawn Reviewer（idle 等命令）
      ↓
-Executor 施工 + 自測（lint/tsc/test 全綠）+ 回報 diff 摘要
+Tech Lead：spawn Executor，明示「拆 N 個 checkpoint，每個做完暫停回報」
      ↓
-Tech Lead 把 diff 摘要 + PR-X 規格轉 Reviewer
+Executor 做 CP1 → 回報 diff + 執行紀錄 → 暫停等 Tech Lead 指令
      ↓
-Reviewer 逐項核對 plan ── ✅ 合格 ──→ 進 PR-(X+1)
+Tech Lead：SendMessage Reviewer 「審 CP1，規格見 plan X 段」+ 附 diff
      ↓
-   ❌ 不合格：列出具體違規點（檔案:行 + 為何違規 + 修復指引）
+Reviewer ── ✅ 合格 ─→ Tech Lead：SendMessage Executor「CP1 過，做 CP2」
+             ↓
+          ❌ 不合格：列具體違規（檔案:行 + 為何違規 + 修復指引）
+             ↓
+Tech Lead：SendMessage Executor「CP1 修：[Reviewer feedback]」
+             ↓
+Executor 修 → 回報 → Reviewer 再審 → 通過為止
      ↓
-Tech Lead 把 Reviewer feedback 轉給 Executor
+（repeat 到 CP-N）
      ↓
-Executor 當場修正（不拖到後面 PR）
-     ↓
-回到 Reviewer 再審 → 通過為止
+最後 CP = commit + PR 開啟；Reviewer 在 PR diff 上做 PR-level 總 audit
 ```
+
+**為什麼這個 pattern 關鍵**：
+
+- 早期 CP 出錯（例如 ESLint 規則寫錯）若累積到最後才發現，修改面積大
+- 配置類 CP（裝套件、改 config）風險最高，要第一時間審
+- 「完工才審」實際上等於 agent-to-agent 的 YOLO，違反 Reviewer 存在的意義
+
+**CP 切法原則**（Executor 自行拆分，Reviewer 審 CP 切法是否合理）：
+
+- 1 CP 約 5-15 分鐘 agent 時間
+- 按**類別**切（配置、新建檔案、重構、驗證），不按行數
+- 高風險類別（配置、server-only、跨層依賴）一定獨立成 CP
+- CP 之間要能獨立 revert（Executor 用多 commit 而非 amend）
 
 ### 關鍵原則（非協商項）
 
