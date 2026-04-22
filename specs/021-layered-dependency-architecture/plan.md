@@ -20,6 +20,7 @@
 **Target Platform**: Web (Next.js App Router; browser + server route handlers)  
 **Project Type**: Single Next.js application  
 **Constraints**:
+
 - `dependency-cruiser` 首次正式接線必須 `0 violation`
 - `Providers` 必須入模
 - `specs/**/tests` 不可整包排除，需拆成四桶規則
@@ -28,17 +29,17 @@
 
 ## Constitution Check
 
-| 原則 | 狀態 | 備註 |
-| --- | --- | --- |
-| I. SDD/TDD | ✅ PASS | 重構分 session 進行，測試調整在專屬 session 處理 |
-| II. 嚴格服務層 | ✅ PASS | 本計畫的核心就是把 service/repo/runtime/ui 邊界機械化 |
-| III. UX 一致性 | ✅ PASS | Session 1 僅建立 docs/guardrails，未更動產品 UX |
-| IV. 效能與併發 | ✅ PASS | 先做架構與邊界拆分，避免大檔混層持續擴大 |
-| V. 程式碼品質 | ✅ PASS | 以責任拆分 + mechanical enforcement 為主，不做表面搬目錄 |
-| VI. 現代化標準 | ✅ PASS | 依既有 JSDoc / React / ESLint 慣例進行 |
-| VII. 安全與機密 | ✅ PASS | server-only 邊界將在後續 session 正式入模 |
+| 原則             | 狀態    | 備註                                                             |
+| ---------------- | ------- | ---------------------------------------------------------------- |
+| I. SDD/TDD       | ✅ PASS | 重構分 session 進行，測試調整在專屬 session 處理                 |
+| II. 嚴格服務層   | ✅ PASS | 本計畫的核心就是把 service/repo/runtime/ui 邊界機械化            |
+| III. UX 一致性   | ✅ PASS | Session 1 僅建立 docs/guardrails，未更動產品 UX                  |
+| IV. 效能與併發   | ✅ PASS | 先做架構與邊界拆分，避免大檔混層持續擴大                         |
+| V. 程式碼品質    | ✅ PASS | 以責任拆分 + mechanical enforcement 為主，不做表面搬目錄         |
+| VI. 現代化標準   | ✅ PASS | 依既有 JSDoc / React / ESLint 慣例進行                           |
+| VII. 安全與機密  | ✅ PASS | server-only 邊界將在後續 session 正式入模                        |
 | VIII. 代理人互動 | ✅ PASS | 每個 task 一個 session，worker + reviewer 平行，handoff 作為真相 |
-| IX. 絕對編碼鐵律 | ✅ PASS | 先固定 write scopes 與 review checklist，避免大範圍混改 |
+| IX. 絕對編碼鐵律 | ✅ PASS | 先固定 write scopes 與 review checklist，避免大範圍混改          |
 
 ## Target Structure
 
@@ -117,14 +118,29 @@ Additional rules:
 
 ### Test bucket rules
 
+- S014 的唯一 canonical rules artifact path 是 `specs/021-layered-dependency-architecture/test-bucket-policy.js`；`specs/021-layered-dependency-architecture/test-buckets/policy.js` 僅保留 compatibility re-export，S016 應直接接這份 artifact。
+- policy 目前驗證的是真實 tests import graph，包含 `import` / `import()` / `export ... from`；representative allow/deny 則由 Vitest 直接驗 helper，避免把 `vi.mock(...)` 與實際 import graph 混在一起。
 - `unit`: `specs/**/tests/unit/**/*.{js,jsx,mjs}`  
-  allow `src/lib/**`、`src/app/api/**`、external mocks/harness、relative imports
+  allow external、relative、`src/lib/**`、`src/config/**`、`src/repo/**`、`src/service/**`、`src/runtime/**`、`src/app/api/**`
+  deny `src/components/**`、`src/contexts/**`、`src/hooks/**`、`src/app/**` non-api、`src/runtime/providers/**`
 - `integration`: `specs/**/tests/integration/**/*.{js,jsx,mjs}`  
-  allow `src/app/**`、`src/components/**`、`src/hooks/**`、`src/contexts/**`、`src/lib/**`、`src/app/api/**`、external、relative
+  allow external、relative、`src/app/**`、`src/components/**`、`src/contexts/**`、`src/hooks/**`、`src/runtime/**`、`src/lib/**`、client-facing `src/config/{client,geo}/**`、`src/data/**`
+  deny direct `src/repo/**`、`src/service/**`、`src/config/server/**`
 - `e2e`: `specs/**/tests/e2e/**/*.{js,jsx,mjs}`  
-  allow external + local e2e helpers only; deny direct `src/**` imports
+  allow external、same-feature e2e relative imports、`specs/test-utils/e2e-helpers.js`
+  deny direct `src/**` imports；目前真實 repo graph 對 `src/**` 為 `0 violation`
 - `specs-test-utils`: `specs/test-utils/**/*.js`  
-  allow external + internal relative imports only
+  allow external + internal relative imports that stay inside `specs/test-utils/**`；目前真實 repo graph 對 `src/**` 為 `0 violation`
+- 以上 policy 在真實 repo graph 下，目前 `unit` bucket 固定是 4 個 violation files；`integration`、`e2e`、`specs-test-utils` 皆為 `0 violation`
+  - `specs/009-global-toast/tests/unit/toast-context.test.jsx`
+  - `specs/010-responsive-navbar/tests/unit/isActivePath.test.js`
+  - `specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx`
+  - `specs/019-posts-ui-refactor/tests/unit/PostCardSkeleton.test.jsx`
+- 以上 policy 在真實 repo import graph 下，目前 `unit` bucket 正好只剩 4 個真衝突，留待 S015 處理；`integration`、`e2e`、`specs-test-utils` 皆為 0 violation
+  - `specs/009-global-toast/tests/unit/toast-context.test.jsx`
+  - `specs/010-responsive-navbar/tests/unit/isActivePath.test.js`
+  - `specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx`
+  - `specs/019-posts-ui-refactor/tests/unit/PostCardSkeleton.test.jsx`
 
 ## Known Blockers
 
@@ -138,7 +154,7 @@ Additional rules:
 6. `src/lib/firebase-storage-helpers.js` 同時使用 browser runtime 與 storage repo。
 7. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx` 直接依賴 repo，Providers 尚未正式化。
 8. `src/app/events/page.jsx`、`eventDetailClient.jsx`、`PostDetailClient.jsx`、`components/weather/WeatherPage.jsx` 等大檔同時承擔 UI + runtime + service/repo。
-9. tests 需要四桶規則，且目前真衝突的 unit 檔為：
+9. tests 四桶 policy 已先以 feature-local artifact 落地，但 S016 尚未正式接線 `dependency-cruiser`；目前真衝突的 unit 檔仍為：
    - `specs/009-global-toast/tests/unit/toast-context.test.jsx`
    - `specs/010-responsive-navbar/tests/unit/isActivePath.test.js`
    - `specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx`

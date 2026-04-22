@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S013 completed
-**Next Recommended Session**: S014
+**Current Session**: S014 completed
+**Next Recommended Session**: S015
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -75,7 +75,11 @@
 - `specs/006-strava-running-records/tests/unit/*route*.test.js` 與 `sync-token-revocation.test.js` 已改為 mock `@/runtime/server/use-cases/strava-server-use-cases`，不再直接驗 route 內部 Firestore/fetch 細節
 - `specs/006-strava-running-records/tests/unit/firebase-admin-helpers.test.js`、`sync-strava-activities.test.js`、`specs/g8-server-coverage/tests/unit/firebase-admin.test.js` 已改為直接驗 split 後的 config/repo/runtime 模組
 - `specs/012-public-profile/tests/unit/firebase-profile-server.test.js` 已改為 mock server repo；`specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js` 也已補 repo split coverage
+- `specs/021-layered-dependency-architecture/test-bucket-policy.js` 已成為 S014 的唯一 canonical artifact path；`test-buckets/policy.js` 僅保留 compatibility re-export
+- `specs/021-layered-dependency-architecture/tests/unit/test-bucket-policy.test.js` 已固定驗四類契約：canonical artifact path、bucket classify、representative allow/deny、repo-wide scan
+- repo-wide scan 目前固定為 `unit=4 files`、`integration=0 files`、`e2e=0 files`、`specs-test-utils=0 files`
 - repo 尚未安裝 `dependency-cruiser`
+- S014 刻意沒有新增 `dependency-cruiser` package、config、scripts、CI wiring；這些仍屬 S016/S017
 - 目前 enforcement 仍主要靠 ESLint 的局部結構限制
 - `src/lib` 其餘混層檔案仍待後續 session 繼續拆分
 
@@ -83,25 +87,25 @@
 
 > completion 真相來源以 `tasks.md` checkbox 為準；本表是方便新 session 快速閱讀的鏡像摘要。
 
-| Session | Status | Goal |
-| --- | --- | --- |
-| S001 | done | docs bootstrap |
-| S002 | done | foundation leaf extraction + remove `firestore-types` |
-| S003 | done | split `firebase-admin` + Strava server flow |
-| S004 | done | split `firebase-profile-server` |
-| S005 | done | repo/service extraction A |
-| S006 | done | repo/service extraction B |
-| S007 | done | weather/storage mixed runtime split |
-| S008 | done | formalize providers |
-| S009 | done | formalize runtime hooks |
-| S010 | done | split `events/page.jsx` |
-| S011 | done | split `eventDetailClient.jsx` |
-| S012 | done | split `PostDetailClient.jsx` |
-| S013 | done | split weather/dashboard UI-runtime mixed files |
-| S014 | todo | tests four-bucket rules |
-| S015 | todo | clean the 4 real test conflicts |
-| S016 | todo | add dep-cruise package/config/scripts |
-| S017 | todo | CI wiring + final 0-violation verification |
+| Session | Status | Goal                                                  |
+| ------- | ------ | ----------------------------------------------------- |
+| S001    | done   | docs bootstrap                                        |
+| S002    | done   | foundation leaf extraction + remove `firestore-types` |
+| S003    | done   | split `firebase-admin` + Strava server flow           |
+| S004    | done   | split `firebase-profile-server`                       |
+| S005    | done   | repo/service extraction A                             |
+| S006    | done   | repo/service extraction B                             |
+| S007    | done   | weather/storage mixed runtime split                   |
+| S008    | done   | formalize providers                                   |
+| S009    | done   | formalize runtime hooks                               |
+| S010    | done   | split `events/page.jsx`                               |
+| S011    | done   | split `eventDetailClient.jsx`                         |
+| S012    | done   | split `PostDetailClient.jsx`                          |
+| S013    | done   | split weather/dashboard UI-runtime mixed files        |
+| S014    | done   | tests four-bucket rules                               |
+| S015    | todo   | clean the 4 real test conflicts                       |
+| S016    | todo   | add dep-cruise package/config/scripts                 |
+| S017    | todo   | CI wiring + final 0-violation verification            |
 
 ## Known Pitfalls
 
@@ -125,6 +129,8 @@ tests 不可整包排除。已知真衝突 unit 檔：
 - `specs/010-responsive-navbar/tests/unit/isActivePath.test.js`
 - `specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx`
 - `specs/019-posts-ui-refactor/tests/unit/PostCardSkeleton.test.jsx`
+
+S014 的 policy test 目前會把上面 4 個檔案固定驗成 unit violation files；raw edge count 只是同一份 repo-wide scan 的附帶觀測值，不是 handoff 的主契約。若檔案數變多，代表有新違規流入；若檔案數變少，代表有人在 S015 之前改動了測試 bucket 邊界或直接修掉衝突，必須同步更新 handoff 與 task 狀態。
 
 不應被當作 production-bound 覆蓋證據的測試：
 
@@ -379,6 +385,7 @@ tests 不可整包排除。已知真衝突 unit 檔：
   - write scope 以 `src/contexts/{AuthContext,NotificationContext}.jsx`、新的 `src/runtime/providers/**`、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
   - 目標是把 providers 正式收進 runtime 邊界，禁止 provider 直接碰 repo
   - reviewer 要特別盯 provider 是否只依賴 runtime/service，而不是把 repo import 換個路徑繼續保留
+
 ### S008
 
 - **Goal**: 把 `AuthContext`、`NotificationContext`、`ToastContext` 正式遷入 `src/runtime/providers/**`，讓 provider 只依賴 runtime/service，`src/contexts/**` 僅保留 compatibility facade。
@@ -582,3 +589,32 @@ tests 不可整包排除。已知真衝突 unit 檔：
   - write scope 以 `dependency-cruiser` 的 tests bucket 規則與相關 `specs/**/tests` import policy 為主，並同步更新 `specs/021-layered-dependency-architecture/handoff.md`
   - 目標是在 tests 引入 `unit / integration / e2e / specs-test-utils` 四桶規則，開始把目前已經拆好的 runtime/ui 邊界轉成可被 dep-cruise 機械驗證的 graph
   - reviewer 要特別盯新規則是否真的反映 production/runtime/ui 的終態依賴方向，而不是靠例外白名單把舊問題蓋過去
+
+### S014
+
+- **Goal**: 把 tests 的 `unit / integration / e2e / specs-test-utils` 四桶規則做成可被 Vitest 驗證的 feature-local policy artifact，保留 S015 的 4 個真衝突為 violation，但不碰 `dependency-cruiser` 安裝或正式接線。
+- **Write Scope**:
+  - `specs/021-layered-dependency-architecture/test-bucket-policy.js`
+  - `specs/021-layered-dependency-architecture/test-buckets/policy.js`
+  - `specs/021-layered-dependency-architecture/tests/unit/test-bucket-policy.test.js`
+  - `specs/021-layered-dependency-architecture/{plan.md,tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - created `specs/021-layered-dependency-architecture/test-buckets/policy.js` as the full implementation, and created `specs/021-layered-dependency-architecture/test-bucket-policy.js` as the canonical entry re-export that S016 should wire to
+  - created `specs/021-layered-dependency-architecture/tests/unit/test-bucket-policy.test.js` to validate canonical artifact path, bucket classify, representative allow/deny cases, and full-repo import graph scan
+  - encoded unit allowlist as `src/lib/**`、`src/config/**`、`src/repo/**`、`src/service/**`、`src/runtime/**`、`src/app/api/**` plus external/relative, while explicitly denying `src/components/**`、`src/contexts/**`、`src/hooks/**`、`src/app/**` non-api、`src/runtime/providers/**`
+  - encoded integration allowlist as `src/app/**`、`src/components/**`、`src/contexts/**`、`src/hooks/**`、`src/runtime/**`、`src/lib/**`、client-facing `src/config/{client,geo}/**`、`src/data/**`, while explicitly denying `src/repo/**`、`src/service/**`、`src/config/server/**`
+  - kept `e2e` limited to external + same-feature relative imports + `specs/test-utils/e2e-helpers.js`, and kept `specs-test-utils` limited to external + internal relative imports that stay inside `specs/test-utils/**`
+  - verified that the repo-wide scan currently reports exactly `unit=4 files` and `integration=0 files`、`e2e=0 files`、`specs-test-utils=0 files`; raw edge count is tracked separately by the scan helper
+  - updated `plan.md`、`tasks.md`、and this handoff so path and count wording matches the actual canonical policy implementation
+  - intentionally did not add `dependency-cruiser` package/config/scripts or CI wiring
+- **Pitfalls recorded**:
+  - S016 必須直接 wire `specs/021-layered-dependency-architecture/test-bucket-policy.js`，不要再把 `test-buckets/policy.js` 當主檔
+  - repo-wide scan 現在只看真實 import graph；如果未來要把 `vi.mock(...)` 也納入政策檢查，必須另開明確規則，不可混進目前的 S014 scan contract
+  - unit bucket 雖然允許 `src/runtime/**`，但不能粗暴放行 `src/runtime/providers/**`；否則 `toast-context.test.jsx` 會被錯誤洗成合法
+  - S014 只能交付 rule definition + Vitest verification；一旦新增 package、scripts、dep-cruise config、或 CI wiring，就已越界到 S016/S017
+- **Next Session Brief**:
+  - 做 S015
+  - write scope 以 4 個已知衝突測試為主：`specs/009-global-toast/tests/unit/toast-context.test.jsx`、`specs/010-responsive-navbar/tests/unit/isActivePath.test.js`、`specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx`、`specs/019-posts-ui-refactor/tests/unit/PostCardSkeleton.test.jsx`
+  - 目標是把這 4 個檔案移到正確 bucket 或改成正確測試邊界，讓 S014 policy scan 變成 `0 violation`
+  - 不要在 S015 透過放寬 S014 policy 解題；應修測試本身，讓 `test-bucket-policy.test.js` 自然轉綠

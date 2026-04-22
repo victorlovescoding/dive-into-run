@@ -47,7 +47,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
 
 ## Phase 7: Test Realignment
 
-- [ ] S014 在 tests 引入 `unit / integration / e2e / specs-test-utils` 四桶 dep-cruise 規則。
+- [x] S014 建立 canonical `test-bucket-policy.js` 四桶 tests bucket policy artifact 與真實 repo import 圖譜 Vitest 驗證，供 S016 直接接線。
 - [ ] S015 清理目前已知 4 個真衝突測試：`toast-context.test.jsx`、`isActivePath.test.js`、`PostCard.test.jsx`、`PostCardSkeleton.test.jsx`。
 
 ## Phase 8: Enforcement Rollout
