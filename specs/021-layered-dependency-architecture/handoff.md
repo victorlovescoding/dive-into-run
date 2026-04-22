@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S009 completed
-**Next Recommended Session**: S010
+**Current Session**: S010 completed
+**Next Recommended Session**: S011
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -51,7 +51,12 @@
 - `WeatherPage` 已補 `hasHydratedInitialLocationRef`，避免 mount 時先清 URL query 再做 restore，導致初始 URL state 失效
 - `src/repo/client/firebase-events-repo.js` 已補 `fetchParticipantUids()`，notifications runtime 只拿 participant uid / author uid 清單做 orchestration，不再自己拼 Firestore ref
 - `src/runtime/hooks/{useComments,useCommentMutations,useDashboardTab,useRunCalendar,useStravaConnection,useStravaActivities,useStravaSync}.js` 已成為 canonical hooks 實作；`src/hooks/**` 現在只保留 thin re-export facade 與 type-only alias
+- `src/app/events/page.jsx` 已收斂成 pure thin entry，只保留 `Suspense + EventsPageScreen`
+- `src/repo/client/taiwan-location-repo.js` 與 `src/service/taiwan-location-service.js` 已建立，events page 的縣市/行政區選項不再由 runtime 直接 import config
+- `src/runtime/hooks/useEventsPageRuntime.js` 已成為 events 列表頁的 canonical runtime boundary，承接 router/searchParams/toast/pagination/create/edit/delete/join/leave orchestration
+- `src/ui/events/{EventsPageScreen.jsx,EventsPageScreen.module.css}` 已建立；events 列表頁 UI 不再直接 import `@/lib/firebase-events` 或 `@/contexts/**`
 - `src/components/{CommentSection,DashboardTabs,RunCalendarDialog}.jsx` 與 `src/app/runs/page.jsx` 已改為直接 import `@/runtime/hooks/**`，不再把 runtime orchestration 掛在 compatibility hooks namespace
+- `specs/003-strict-type-fixes/app-events-page/tests/integration/EventsPage.test.jsx` 與 `specs/009-global-toast/tests/integration/crud-toast.test.jsx` 已同步 retarget 到 `@/runtime/client/use-cases/event-use-cases` / runtime providers，避免 page-level tests 與 production import target 脫鉤
 - `specs/006-strava-running-records/tests/unit/*route*.test.js` 與 `sync-token-revocation.test.js` 已改為 mock `@/runtime/server/use-cases/strava-server-use-cases`，不再直接驗 route 內部 Firestore/fetch 細節
 - `specs/006-strava-running-records/tests/unit/firebase-admin-helpers.test.js`、`sync-strava-activities.test.js`、`specs/g8-server-coverage/tests/unit/firebase-admin.test.js` 已改為直接驗 split 後的 config/repo/runtime 模組
 - `specs/012-public-profile/tests/unit/firebase-profile-server.test.js` 已改為 mock server repo；`specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js` 也已補 repo split coverage
@@ -74,7 +79,7 @@
 | S007 | done | weather/storage mixed runtime split |
 | S008 | done | formalize providers |
 | S009 | done | formalize runtime hooks |
-| S010 | todo | split `events/page.jsx` |
+| S010 | done | split `events/page.jsx` |
 | S011 | todo | split `eventDetailClient.jsx` |
 | S012 | todo | split `PostDetailClient.jsx` |
 | S013 | todo | split weather/dashboard UI-runtime mixed files |
@@ -90,7 +95,7 @@
 1. `src/lib/firebase-profile-mapper.js` 目前先留在 `src/lib/**` compatibility namespace，真正把 profile mapper 納入終態 `src/service/**` 的遷移要配合後續更大範圍 profile split 一起做。
 2. `WeatherPage` 雖已把 URL/localStorage persistence 收斂到 `runtime/client/use-cases/weather-location-use-cases.js`，但頁面本身仍同時承擔 fetch orchestration / favorites / map interaction，多層責任尚未完全拆乾淨。
 3. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx`、`ToastContext.jsx` 已收斂成 thin compatibility facades；真正 provider 實作現在在 `src/runtime/providers/**`。
-4. `src/app/events/page.jsx`、`eventDetailClient.jsx`、`PostDetailClient.jsx`、`components/weather/WeatherPage.jsx` 都是多層混檔。
+4. `src/app/events/[id]/eventDetailClient.jsx`、`PostDetailClient.jsx`、`components/weather/WeatherPage.jsx` 都是多層混檔。
 5. `src/repo/client/firebase-auth-repo.js` 已建立，`src/lib/firebase-auth-helpers.js` 現在只是 re-export facade。
 6. `server-only` 目前先靠 `src/config/server/**` / `src/repo/server/**` / `src/runtime/server/**` 路徑邊界與測試隔離維持；真正的機械 enforcement 仍待後續 dep-cruise / lint 規則接線。
 7. UI integration layers 仍受 ESLint `no-restricted-imports` 保護，不能直接 import `firebase/*`；若 local state 需要 Firestore `Timestamp`，必須經由 `src/lib/firebase-*.js` helper。
@@ -429,3 +434,35 @@ tests 不可整包排除。已知真衝突 unit 檔：
   - write scope 以 `src/app/events/page.jsx`、新的 runtime/ui entry points、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
   - 目標是把 `events/page.jsx` 拆成 thin entry + runtime + ui，同時維持 S009 建立的「page/component 直接吃 runtime 邊界，不回流 compatibility facade」原則
   - reviewer 要特別盯 page-level tests 是否跟著 production import target 同步更新，避免再出現 mock target 與真實依賴脫鉤
+
+### S010
+
+- **Goal**: 把 `src/app/events/page.jsx` 拆成 thin entry + runtime hook + UI screen，並同步把 page-level tests 的 mock target 收斂到 production 真實依賴。
+- **Write Scope**:
+  - `src/app/events/page.jsx`
+  - `src/runtime/hooks/useEventsPageRuntime.js`
+  - `src/ui/events/**`
+  - `specs/003-strict-type-fixes/app-events-page/tests/integration/EventsPage.test.jsx`
+  - `specs/009-global-toast/tests/integration/crud-toast.test.jsx`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - reduced `src/app/events/page.jsx` to pure thin entry that only renders `Suspense + EventsPageScreen`
+  - created `src/repo/client/taiwan-location-repo.js` and `src/service/taiwan-location-service.js` so location options flow through `Config -> Repo -> Service -> Runtime`
+  - created `src/runtime/hooks/useEventsPageRuntime.js` and moved router/searchParams/toast/pagination/membership/create/edit/delete/join/leave orchestration there
+  - created `src/ui/events/{EventsPageScreen.jsx,EventsPageScreen.module.css}` so the events list page UI only consumes runtime state/handlers
+  - retargeted `EventsPage.test.jsx` and `crud-toast.test.jsx` to mock `@/runtime/client/use-cases/event-use-cases`, matching the new production import target
+  - verified with `npm run type-check:changed`
+  - verified with `npm run lint:changed`
+  - verified with `npx vitest run specs/003-strict-type-fixes/app-events-page/tests/integration/EventsPage.test.jsx specs/009-global-toast/tests/integration/crud-toast.test.jsx`
+- **Pitfalls recorded**:
+  - once `events/page.jsx` delegates through `useEventsPageRuntime`, page-level tests that still mock `@/lib/firebase-events` stop intercepting the real code path; the runtime use-case mock retarget is mandatory in the same session.
+  - `useEventsPageRuntime` must keep mounted-state guards around async page-load flows; dropping the old cancellation behavior causes unmount-time state updates during initial fetch.
+  - `taiwan-locations` is a config leaf, so runtime cannot import it directly. Static option data still has to travel through `repo -> service` even when there is no network IO.
+  - `src/app/events/events.module.css` cannot be removed yet because `src/app/events/[id]/eventDetailClient.jsx` still imports it; S010 copied list-page styles into `src/ui/events/EventsPageScreen.module.css` instead of breaking the detail page mid-session.
+  - `src/ui/events/EventsPageScreen.jsx` must stay render-only. Reintroducing router/searchParams/toast/CRUD side effects there would immediately violate S010’s boundary split.
+- **Next Session Brief**:
+  - 做 S011
+  - write scope 以 `src/app/events/[id]/eventDetailClient.jsx`、新的 runtime/ui entry points、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
+  - 目標是把 detail page 拆成 thin entry + runtime + ui，並延續 S010 的「page-level tests/mock target 必須跟 production import target 同步」原則
+  - reviewer 要特別盯 detail page 的 edit/delete/comment/highlight 行為是否真的下沉到 runtime，而不是只把 JSX 挪進 `src/ui/**`

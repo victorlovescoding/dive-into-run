@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import EventsPage from '@/app/events/page';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import ToastProvider from '@/runtime/providers/ToastProvider';
-import * as firebaseEvents from '@/lib/firebase-events';
+import * as eventUseCases from '@/runtime/client/use-cases/event-use-cases';
 
 /**
  * @typedef {object} MockUser
@@ -19,8 +19,8 @@ vi.mock('@/config/client/firebase-client', () => ({
   db: {},
 }));
 
-// Mock Firebase Events Service
-vi.mock('@/lib/firebase-events', () => ({
+// Mock Events runtime use-cases
+vi.mock('@/runtime/client/use-cases/event-use-cases', () => ({
   fetchLatestEvents: vi.fn(),
   fetchNextEvents: vi.fn(),
   queryEvents: vi.fn(),
@@ -92,11 +92,11 @@ const mockEvents = [
 describe('EventsPage Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(firebaseEvents.fetchLatestEvents).mockResolvedValue({
+    vi.mocked(eventUseCases.fetchLatestEvents).mockResolvedValue({
       events: mockEvents,
       lastDoc: /** @type {*} */ ({}),
     });
-    vi.mocked(firebaseEvents.fetchMyJoinedEventsForIds).mockResolvedValue(new Set(['event-1']));
+    vi.mocked(eventUseCases.fetchMyJoinedEventsForIds).mockResolvedValue(new Set(['event-1']));
   });
 
   const renderPage = (user = mockAuthUser) => {
@@ -147,13 +147,13 @@ describe('EventsPage Integration Tests', () => {
   });
 
   it('should trigger joinEvent when clicking join button', async () => {
-    vi.mocked(firebaseEvents.fetchMyJoinedEventsForIds).mockResolvedValue(new Set());
+    vi.mocked(eventUseCases.fetchMyJoinedEventsForIds).mockResolvedValue(new Set());
     const user = userEvent.setup();
     renderPage();
 
     const joinBtn = await screen.findByRole('button', { name: /參加/i });
     await user.click(joinBtn);
 
-    expect(firebaseEvents.joinEvent).toHaveBeenCalled();
+    expect(eventUseCases.joinEvent).toHaveBeenCalled();
   });
 });

@@ -14,7 +14,7 @@ let mockSearchParams = new URLSearchParams();
 // ---------------------------------------------------------------------------
 // Module mocks (hoisted)
 // ---------------------------------------------------------------------------
-vi.mock('@/contexts/ToastContext', () => ({
+vi.mock('@/runtime/providers/ToastProvider', () => ({
   useToast: () => ({ showToast: mockShowToast, removeToast: mockRemoveToast }),
 }));
 
@@ -53,7 +53,7 @@ vi.mock('@/lib/firebase-users', () => ({
   watchUserProfile: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-events', () => ({
+vi.mock('@/runtime/client/use-cases/event-use-cases', () => ({
   createEvent: vi.fn(),
   fetchLatestEvents: vi.fn().mockResolvedValue({ events: [], lastDoc: null }),
   fetchNextEvents: vi.fn(),
@@ -93,11 +93,16 @@ vi.mock('@/lib/firebase-posts', () => ({
 // ---------------------------------------------------------------------------
 // Imports (after vi.mock — Vitest hoists mocks above these)
 // ---------------------------------------------------------------------------
-import { AuthContext } from '@/contexts/AuthContext';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import RunTogetherPage from '@/app/events/page';
 import PostPage from '@/app/posts/page';
-import { createEvent, fetchLatestEvents, updateEvent, deleteEvent } from '@/lib/firebase-events';
+import {
+  createEvent,
+  fetchLatestEvents,
+  updateEvent,
+  deleteEvent,
+} from '@/runtime/client/use-cases/event-use-cases';
 import {
   createPost,
   updatePost,
