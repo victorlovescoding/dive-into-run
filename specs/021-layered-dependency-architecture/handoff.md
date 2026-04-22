@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S008 completed
-**Next Recommended Session**: S009
+**Current Session**: S009 completed
+**Next Recommended Session**: S010
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -50,7 +50,8 @@
 - `src/components/weather/{FavoritesBar,WeatherCard,TaiwanMap,WeatherPage}.jsx` 與 `src/app/member/page.jsx` 已改指向 runtime entry；`src/app/api/weather/route.js` 改直連 service 純函式，維持 thin entry
 - `WeatherPage` 已補 `hasHydratedInitialLocationRef`，避免 mount 時先清 URL query 再做 restore，導致初始 URL state 失效
 - `src/repo/client/firebase-events-repo.js` 已補 `fetchParticipantUids()`，notifications runtime 只拿 participant uid / author uid 清單做 orchestration，不再自己拼 Firestore ref
-- `src/hooks/{useComments,useCommentMutations}.js` 與 `src/components/DashboardTabs.jsx` 已改為直接依賴新的 runtime client use-cases，而不是舊 `src/lib/**` 混檔
+- `src/runtime/hooks/{useComments,useCommentMutations,useDashboardTab,useRunCalendar,useStravaConnection,useStravaActivities,useStravaSync}.js` 已成為 canonical hooks 實作；`src/hooks/**` 現在只保留 thin re-export facade 與 type-only alias
+- `src/components/{CommentSection,DashboardTabs,RunCalendarDialog}.jsx` 與 `src/app/runs/page.jsx` 已改為直接 import `@/runtime/hooks/**`，不再把 runtime orchestration 掛在 compatibility hooks namespace
 - `specs/006-strava-running-records/tests/unit/*route*.test.js` 與 `sync-token-revocation.test.js` 已改為 mock `@/runtime/server/use-cases/strava-server-use-cases`，不再直接驗 route 內部 Firestore/fetch 細節
 - `specs/006-strava-running-records/tests/unit/firebase-admin-helpers.test.js`、`sync-strava-activities.test.js`、`specs/g8-server-coverage/tests/unit/firebase-admin.test.js` 已改為直接驗 split 後的 config/repo/runtime 模組
 - `specs/012-public-profile/tests/unit/firebase-profile-server.test.js` 已改為 mock server repo；`specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js` 也已補 repo split coverage
@@ -72,7 +73,7 @@
 | S006 | done | repo/service extraction B |
 | S007 | done | weather/storage mixed runtime split |
 | S008 | done | formalize providers |
-| S009 | todo | formalize runtime hooks |
+| S009 | done | formalize runtime hooks |
 | S010 | todo | split `events/page.jsx` |
 | S011 | todo | split `eventDetailClient.jsx` |
 | S012 | todo | split `PostDetailClient.jsx` |
@@ -394,3 +395,37 @@ tests 不可整包排除。已知真衝突 unit 檔：
   - write scope 以 `src/runtime/hooks/**`、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
   - 目標是把通用 hooks 正式收進 runtime/hooks，避免 orchestration 再回流到 components/pages
   - reviewer 要特別盯 hooks 是否真的只依賴 runtime boundary，而不是把 provider orchestration 原封不動搬過去
+
+### S009
+
+- **Goal**: 把通用 hooks 正式收斂到 `src/runtime/hooks/**`，清掉 `src/hooks/**` 的重複實作，並讓實際 caller / tests 跟著改用 runtime hooks 作為真實入口。
+- **Write Scope**:
+  - `src/runtime/hooks/**`
+  - `src/hooks/**`
+  - `src/components/{CommentSection,DashboardTabs,RunCalendarDialog}.jsx`
+  - `src/app/runs/page.jsx`
+  - 受影響的 hooks / caller integration tests
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - kept `src/runtime/hooks/{useComments,useCommentMutations,useDashboardTab,useRunCalendar,useStravaConnection,useStravaActivities,useStravaSync}.js` as canonical runtime implementations
+  - converted `src/hooks/{useComments,useCommentMutations,useDashboardTab,useRunCalendar,useStravaConnection,useStravaActivities,useStravaSync}.js` to thin re-export facades only
+  - preserved type-only compatibility in `src/hooks/**` by aliasing runtime typedefs, so legacy `import('@/hooks/...').TypeName` references do not regress during the transition
+  - retargeted `src/components/CommentSection.jsx`, `src/components/DashboardTabs.jsx`, `src/components/RunCalendarDialog.jsx`, and `src/app/runs/page.jsx` to import `@/runtime/hooks/**`
+  - retargeted direct hook tests and component-level hook mocks to `@/runtime/hooks/**`, including Strava hooks, dashboard tab hook, run calendar hook, and event comment notification coverage
+  - verified with `npm run type-check:changed`
+  - verified with `npm run lint:changed`
+  - verified with `npx vitest run specs/005-event-comments/tests/integration/CommentSection.test.jsx specs/007-member-dashboard/tests/integration/useDashboardTab.test.jsx specs/007-member-dashboard/tests/integration/DashboardTabs.test.jsx specs/006-strava-running-records/tests/integration/useStravaConnection.test.jsx specs/006-strava-running-records/tests/integration/useStravaActivities.test.jsx specs/006-strava-running-records/tests/integration/useStravaSync.test.jsx specs/006-strava-running-records/tests/integration/RunsPage.test.jsx specs/006-strava-running-records/tests/integration/runs-page-sync-error.test.jsx specs/008-run-calendar/tests/integration/RunCalendarDialog.test.jsx specs/015-comment-notifications/tests/integration/event-comment-notification.test.jsx`
+- **Serious problems encountered and handling**:
+  - session start inherited a partial untracked `src/runtime/hooks/**` tree while the tracked `src/hooks/**` files still contained full logic. This created a real dual-source-of-truth hazard: editing only one side would leave production imports, tests, and future sessions disagreeing on which hook was authoritative. The fix was to freeze `src/runtime/hooks/**` as canonical immediately, then collapse every tracked `src/hooks/**` file to facade-only instead of trying to keep two synchronized implementations.
+  - once production callers moved to `@/runtime/hooks/**`, any tests that still mocked `@/hooks/**` would silently stop intercepting the code path under test. This was not theoretical; `RunsPage`, `RunCalendarDialog`, and the notification-focused `CommentSection` test all depended on hook mocks. The fix was to retarget every direct import/mock that exercised these callers, not just the direct hook tests.
+  - a facade-only conversion can break JSDoc type imports such as `import('@/hooks/useDashboardTab').UseDashboardTabReturn` even if runtime behavior stays correct. To avoid an unnecessary cross-session typing regression, the facades keep type-only typedef aliases that point at the runtime modules while exporting no runtime logic of their own.
+- **Pitfalls recorded**:
+  - if a future session changes a component/page import from `@/hooks/**` to `@/runtime/hooks/**`, its tests must be updated in the same session; otherwise mocks will keep passing compile-time resolution but stop matching runtime behavior.
+  - `src/hooks/**` is now compatibility-only. Any new state/orchestration added there would recreate the exact split-brain problem S009 just removed.
+  - `src/runtime/hooks/**` entered this session as untracked copies, so future large refactors should verify `git status` before assuming all runtime boundary work is already versioned.
+- **Next Session Brief**:
+  - 做 S010
+  - write scope 以 `src/app/events/page.jsx`、新的 runtime/ui entry points、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
+  - 目標是把 `events/page.jsx` 拆成 thin entry + runtime + ui，同時維持 S009 建立的「page/component 直接吃 runtime 邊界，不回流 compatibility facade」原則
+  - reviewer 要特別盯 page-level tests 是否跟著 production import target 同步更新，避免再出現 mock target 與真實依賴脫鉤

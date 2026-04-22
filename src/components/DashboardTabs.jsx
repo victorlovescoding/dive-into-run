@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, Fragment } from 'react';
-import useDashboardTab from '@/hooks/useDashboardTab';
+import useDashboardTab from '@/runtime/hooks/useDashboardTab';
 import {
   fetchMyEvents,
   fetchMyPosts,
@@ -84,7 +84,7 @@ function ItemList({ items, tabIndex, hostedIds }) {
 /**
  * 單一 tab panel 的內容。
  * @param {object} props - 元件屬性。
- * @param {import('@/hooks/useDashboardTab').UseDashboardTabReturn} props.tab - hook 回傳值。
+ * @param {import('@/runtime/hooks/useDashboardTab').UseDashboardTabReturn} props.tab - hook 回傳值。
  * @param {number} props.tabIndex - tab 索引（0=events, 1=posts, 2=comments）。
  * @param {string} props.emptyText - 空資料提示文字。
  * @returns {import('react').ReactElement} panel 內容。

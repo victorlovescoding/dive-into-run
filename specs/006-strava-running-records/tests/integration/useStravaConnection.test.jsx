@@ -23,7 +23,7 @@ vi.mock('@/lib/firebase-strava', () => ({
 }));
 
 import { listenStravaConnection } from '@/lib/firebase-strava';
-import useStravaConnection from '@/hooks/useStravaConnection';
+import useStravaConnection from '@/runtime/hooks/useStravaConnection';
 
 const mockedListen = /** @type {import('vitest').Mock} */ (listenStravaConnection);
 

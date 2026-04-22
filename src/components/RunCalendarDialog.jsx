@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import useRunCalendar from '@/hooks/useRunCalendar';
+import useRunCalendar from '@/runtime/hooks/useRunCalendar';
 import { buildCalendarGrid, formatDistance } from '@/lib/strava-helpers';
 import RunOutdoorIcon from '@/components/icons/RunOutdoorIcon';
 import RunIndoorIcon from '@/components/icons/RunIndoorIcon';

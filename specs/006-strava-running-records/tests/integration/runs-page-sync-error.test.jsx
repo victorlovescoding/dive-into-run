@@ -19,13 +19,13 @@ vi.mock('@/lib/firebase-users', () => ({
 }));
 
 // Mock hooks
-vi.mock('@/hooks/useStravaConnection', () => ({
+vi.mock('@/runtime/hooks/useStravaConnection', () => ({
   default: vi.fn(),
 }));
-vi.mock('@/hooks/useStravaActivities', () => ({
+vi.mock('@/runtime/hooks/useStravaActivities', () => ({
   default: vi.fn(),
 }));
-vi.mock('@/hooks/useStravaSync', () => ({
+vi.mock('@/runtime/hooks/useStravaSync', () => ({
   default: vi.fn(),
 }));
 
@@ -46,9 +46,9 @@ vi.mock('@/components/RunsActivityList', () => ({
   ),
 }));
 
-import useStravaConnection from '@/hooks/useStravaConnection';
-import useStravaActivities from '@/hooks/useStravaActivities';
-import useStravaSync from '@/hooks/useStravaSync';
+import useStravaConnection from '@/runtime/hooks/useStravaConnection';
+import useStravaActivities from '@/runtime/hooks/useStravaActivities';
+import useStravaSync from '@/runtime/hooks/useStravaSync';
 import RunsPage from '@/app/runs/page';
 
 const mockedUseConnection = /** @type {import('vitest').Mock} */ (useStravaConnection);

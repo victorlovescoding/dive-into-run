@@ -11,7 +11,7 @@ vi.mock('@/config/client/firebase-client', () => ({
 vi.stubGlobal('fetch', vi.fn());
 const mockedFetch = /** @type {import('vitest').Mock} */ (globalThis.fetch);
 
-import useStravaSync from '@/hooks/useStravaSync';
+import useStravaSync from '@/runtime/hooks/useStravaSync';
 
 const mockGetIdToken = vi.fn().mockResolvedValue('mock-id-token');
 

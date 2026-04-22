@@ -2,9 +2,9 @@
 
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
-import useStravaConnection from '@/hooks/useStravaConnection';
-import useStravaActivities from '@/hooks/useStravaActivities';
-import useStravaSync from '@/hooks/useStravaSync';
+import useStravaConnection from '@/runtime/hooks/useStravaConnection';
+import useStravaActivities from '@/runtime/hooks/useStravaActivities';
+import useStravaSync from '@/runtime/hooks/useStravaSync';
 import RunsLoginGuide from '@/components/RunsLoginGuide';
 import RunsConnectGuide from '@/components/RunsConnectGuide';
 import RunsActivityList from '@/components/RunsActivityList';

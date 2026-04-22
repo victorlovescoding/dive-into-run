@@ -41,7 +41,7 @@ vi.mock('@/runtime/client/use-cases/event-comment-use-cases', () => ({
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
 
-vi.mock('@/hooks/useComments', () => ({
+vi.mock('@/runtime/hooks/useComments', () => ({
   default: vi.fn(() => ({
     comments: [],
     setComments: vi.fn(),
