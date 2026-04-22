@@ -1,6 +1,6 @@
 /**
  * @typedef {import('firebase/firestore').QueryDocumentSnapshot} QueryDocumentSnapshot
- * @typedef {import('@/lib/firebase-posts').Post} Post
+ * @typedef {import('@/service/post-service').Post} Post
  * @typedef {import('@/repo/client/firebase-member-repo').MemberFirestoreDocument} MemberFirestoreDocument
  * @typedef {import('@/repo/client/firebase-member-repo').MemberCommentDocument} MemberCommentDocument
  * @typedef {import('@/repo/client/firebase-member-repo').ParentTitleLookup} ParentTitleLookup

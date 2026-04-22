@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S005 completed
-**Next Recommended Session**: S006
+**Current Session**: S006 completed
+**Next Recommended Session**: S007
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -43,6 +43,8 @@
 - `src/lib/firebase-profile-server.js` 已改為透過 server repo + shared mapper 組裝，不再直接碰 `adminDb`
 - `src/repo/client/{firebase-events-repo,firebase-event-comments-repo,firebase-member-repo}.js`、`src/service/{event-service,event-comment-service,member-dashboard-service}.js`、`src/runtime/client/use-cases/{event-use-cases,event-comment-use-cases,member-dashboard-use-cases}.js` 已建立
 - `src/lib/firebase-{events,comments,member}.js` 已收斂為 compatibility facade；混合的 Firestore/query/validation/cache orchestration 已移出 `src/lib/**`
+- `src/lib/firebase-{posts,notifications,profile}.js` 也已收斂為 compatibility facade；posts/notifications/profile 的 query、transaction、batch write、notification fan-out orchestration 已下沉到 `src/repo/**`、`src/service/**`、`src/runtime/**`
+- `src/repo/client/firebase-events-repo.js` 已補 `fetchParticipantUids()`，notifications runtime 只拿 participant uid / author uid 清單做 orchestration，不再自己拼 Firestore ref
 - `src/hooks/{useComments,useCommentMutations}.js` 與 `src/components/DashboardTabs.jsx` 已改為直接依賴新的 runtime client use-cases，而不是舊 `src/lib/**` 混檔
 - `specs/006-strava-running-records/tests/unit/*route*.test.js` 與 `sync-token-revocation.test.js` 已改為 mock `@/runtime/server/use-cases/strava-server-use-cases`，不再直接驗 route 內部 Firestore/fetch 細節
 - `specs/006-strava-running-records/tests/unit/firebase-admin-helpers.test.js`、`sync-strava-activities.test.js`、`specs/g8-server-coverage/tests/unit/firebase-admin.test.js` 已改為直接驗 split 後的 config/repo/runtime 模組
@@ -62,7 +64,7 @@
 | S003 | done | split `firebase-admin` + Strava server flow |
 | S004 | done | split `firebase-profile-server` |
 | S005 | done | repo/service extraction A |
-| S006 | todo | repo/service extraction B |
+| S006 | done | repo/service extraction B |
 | S007 | todo | weather/storage mixed runtime split |
 | S008 | todo | formalize providers |
 | S009 | todo | formalize runtime hooks |
@@ -86,7 +88,7 @@
 5. `src/app/events/page.jsx`、`eventDetailClient.jsx`、`PostDetailClient.jsx`、`components/weather/WeatherPage.jsx` 都是多層混檔。
 6. `server-only` 目前先靠 `src/config/server/**` / `src/repo/server/**` / `src/runtime/server/**` 路徑邊界與測試隔離維持；真正的機械 enforcement 仍待後續 dep-cruise / lint 規則接線。
 7. UI integration layers 仍受 ESLint `no-restricted-imports` 保護，不能直接 import `firebase/*`；若 local state 需要 Firestore `Timestamp`，必須經由 `src/lib/firebase-*.js` helper。
-8. `src/app/events/page.jsx`、`src/app/events/[id]/eventDetailClient.jsx`、`src/lib/firebase-notifications.js` 仍暫時走 `src/lib/firebase-events.js` facade；真正把 events caller 全數改成 runtime/use-case 還要配合後續 UI / runtime split session 一起收。
+8. `src/runtime/client/use-cases/notification-use-cases.js` 現在依賴 repo client primitives（`fetchParticipantUids` / `fetchDistinctPostCommentAuthors` / `fetchDistinctEventCommentAuthors`）；後續若再調整 notification flow，請維持 side effects 留在 runtime/use-case，不要把 participant / recipient lookup 再塞回 repo 寫入函式內。
 9. `member-dashboard` 的 `titleCache` 仍只以 `parentId` 當 key，這是為了保留既有行為；若未來 post/event 出現相同 id，cache 仍可能互撞，這筆債要在後續 dashboard/profile 整理時一起處理。
 
 ### Test blockers
@@ -275,36 +277,75 @@ tests 不可整包排除。已知真衝突 unit 檔：
   - 做 S006
   - write scope 以 `src/lib/firebase-posts.js`、`src/lib/firebase-notifications.js`、`src/lib/firebase-profile.js`、新的 `src/repo/**` / `src/service/**` / `src/runtime/**` 拆分入口、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
   - 目標是延續 S005 的做法，把 posts/notifications/profile 的 repo vs service vs runtime 責任拆乾淨，同時注意 notification flow 的跨 aggregate orchestration 不可下沉回 repo
-  - reviewer 要特別盯 `firebase-notifications.js` 的通知流程是否被拆成「repo 寫入」與「runtime orchestration」，避免把 fetch participants / recipient filtering / side-effect sequencing 又塞成下一個 God file
+- reviewer 要特別盯 `firebase-notifications.js` 的通知流程是否被拆成「repo 寫入」與「runtime orchestration」，避免把 fetch participants / recipient filtering / side-effect sequencing 又塞成下一個 God file
+
+### S006
+
+- **Goal**: 拆 `firebase-posts.js` / `firebase-notifications.js` / `firebase-profile.js` 的 repo / service / runtime(use-case) 混檔責任，讓 `src/lib/**` 回到 compatibility facade。
+- **Write Scope**:
+  - `src/lib/firebase-posts.js`
+  - `src/lib/firebase-notifications.js`
+  - `src/lib/firebase-profile.js`
+  - `src/repo/client/**`
+  - `src/service/**`
+  - `src/runtime/client/use-cases/**`
+  - 受影響 callers / tests
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - created `src/repo/client/firebase-posts-repo.js`
+  - created `src/repo/client/firebase-notifications-repo.js`
+  - created `src/repo/client/firebase-profile-repo.js`
+  - created `src/service/post-service.js`
+  - created `src/service/notification-service.js`
+  - created `src/service/profile-service.js`
+  - created `src/runtime/client/use-cases/post-use-cases.js`
+  - created `src/runtime/client/use-cases/notification-use-cases.js`
+  - updated `src/lib/firebase-{posts,notifications,profile}.js` to compatibility facades only
+  - moved notification participant / comment-author lookup into repo primitives (`fetchParticipantUids`, `fetchDistinctPostCommentAuthors`, `fetchDistinctEventCommentAuthors`); runtime only orchestrates the returned UID lists
+  - preserved `PostDetailClient`, `PostPage`, `ProfileClient`, `ProfileEventList`, `BioEditor`, and `src/app/posts/[id]/page.jsx` `getPostDetail` contracts
+  - restored `buildAddCommentPayload()` anonymous fallback to `匿名使用者`
+  - restored `createPost()` missing `photoURL` behavior to `authorImgURL: undefined`
+  - verified with `npm run type-check:changed`
+  - verified with `npm run lint:changed`
+  - verified with `npx vitest run specs/021-layered-dependency-architecture/tests/unit/post-use-cases.test.js specs/021-layered-dependency-architecture/tests/unit/notification-use-cases.test.js specs/021-layered-dependency-architecture/tests/unit/profile-service.test.js specs/mock-audit-d1-firebase-posts/tests/unit/firebase-posts-crud.test.js specs/014-notification-system/tests/unit/firebase-notifications-write.test.js specs/012-public-profile/tests/unit/firebase-profile.test.js specs/012-public-profile/tests/integration/ProfileClient.test.jsx specs/012-public-profile/tests/integration/ProfileEventList.test.jsx specs/012-public-profile/tests/integration/BioEditor.test.jsx`
+- **Pitfalls recorded**:
+  - notifications runtime must not import another runtime use-case; participant lookup now lives in repo primitives and tests need to mock repo layer, not `event-use-cases`.
+  - `notifyPostNewComment()` stays single-document `addDoc`, while fan-out cases (`notifyEventModified`, `notifyEventCancelled`, `notifyPostCommentReply`, `notifyEventNewComment`) use batch writes.
+  - `buildAddCommentPayload()` must keep the legacy `"匿名使用者"` fallback; `createPost()` must keep missing `photoURL` as `undefined` to satisfy posts mock-audit coverage.
+- **Next Session Brief**:
+  - 做 S007
+  - write scope 以 `src/lib/weather-helpers.js`、`src/lib/firebase-storage-helpers.js`、相關 runtime/service/repo 拆分入口、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
+  - 目標是清掉 weather/storage 的混層問題，延續 `Types -> Config -> Repo -> Service -> Runtime -> UI`
+  - reviewer 要特別盯 browser runtime 與 storage repo 是否被拆開，以及是否還有混在 `src/lib/**` 的業務 orchestration
 
 ## Next Session Brief
 
-### S006: Repo / Service Extraction B
+### S007: Weather / Storage Split
 
 **Goal**
 
-- 拆 `firebase-posts.js` / `firebase-notifications.js` / `firebase-profile.js` 的 repo vs service vs use-case 責任
-- 延續 S005 的 client-side split，讓 posts/notifications/profile flow 往終態 `Types -> Config -> Repo -> Service -> Runtime -> UI` 方向收斂
-- 避免把通知 fan-out、profile normalization、post/comment side effects 繼續留在單一 `src/lib/**` God file
+- 拆 `weather-helpers.js` 與 `firebase-storage-helpers.js` 的 runtime/service/repo 混層問題
+- 延續 S006 的 client-side split，讓 weather / storage flow 往終態 `Types -> Config -> Repo -> Service -> Runtime -> UI` 方向收斂
+- 避免把 browser runtime、storage side effects、以及 weather 常數與查詢邏輯繼續留在單一 `src/lib/**` God file
 
 **Write Scope**
 
-- `src/lib/firebase-posts.js`
-- `src/lib/firebase-notifications.js`
-- `src/lib/firebase-profile.js`
+- `src/lib/weather-helpers.js`
+- `src/lib/firebase-storage-helpers.js`
 - 新的 `src/repo/**` / `src/service/**` / `src/runtime/**` 入口
 - 受影響的 callers / tests
 - `specs/021-layered-dependency-architecture/handoff.md`
 
 **Acceptance**
 
-- posts/notifications/profile flow 不再停留在單一混檔內
-- repo / service / use-case 責任有實際拆開，而不是只改 import path
+- weather/storage flow 不再停留在單一混檔內
+- repo / service / runtime 責任有實際拆開，而不是只改 import path
 - 新舊 caller 都指向新的分層入口
 - `npm run type-check:changed` 與 `npm run lint:changed` 通過
 
 **Reviewer focus**
 
-- posts/notifications/profile 是否真的拆責任，而不是只搬目錄
-- notification side effects 是否留在 runtime/use-case，而不是被藏回 repo/service
+- weather/storage 是否真的拆責任，而不是只搬目錄
+- browser runtime 與 storage side effects 是否留在正確層級，而不是被藏回 repo/service
 - 是否只改動本 session 的 write scope

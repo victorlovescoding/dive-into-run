@@ -30,7 +30,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
 ## Phase 4: Repo / Service Extraction
 
 - [x] S005 拆 `firebase-events.js` / `firebase-comments.js` / `firebase-member.js` 的 repo vs service vs use-case 責任。
-- [ ] S006 拆 `firebase-posts.js` / `firebase-notifications.js` / `firebase-profile.js` 的 repo vs service vs use-case 責任。
+- [x] S006 拆 `firebase-posts.js` / `firebase-notifications.js` / `firebase-profile.js` 的 repo vs service vs use-case 責任。
 - [ ] S007 拆 `weather-helpers.js` 與 `firebase-storage-helpers.js` 的 runtime/service/repo 混層問題。
 
 ## Phase 5: Runtime Formalization

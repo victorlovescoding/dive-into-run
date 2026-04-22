@@ -16,8 +16,8 @@ vi.mock('@/config/client/firebase-client', () => ({
   db: 'mock-db',
 }));
 
-vi.mock('@/lib/firebase-events', () => ({
-  fetchParticipants: vi.fn(),
+vi.mock('@/repo/client/firebase-events-repo', () => ({
+  fetchParticipantUids: vi.fn(),
 }));
 
 vi.mock('@/lib/notification-helpers', () => ({
@@ -28,7 +28,7 @@ vi.mock('@/lib/notification-helpers', () => ({
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
 import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
-import { fetchParticipants } from '@/lib/firebase-events';
+import { fetchParticipantUids } from '@/repo/client/firebase-events-repo';
 import {
   notifyEventModified,
   notifyEventCancelled,
@@ -42,7 +42,7 @@ const mockedWriteBatch = /** @type {import('vitest').Mock} */ (writeBatch);
 const mockedAddDoc = /** @type {import('vitest').Mock} */ (addDoc);
 const mockedCollection = /** @type {import('vitest').Mock} */ (collection);
 const mockedDoc = /** @type {import('vitest').Mock} */ (doc);
-const mockedFetchParticipants = /** @type {import('vitest').Mock} */ (fetchParticipants);
+const mockedFetchParticipantUids = /** @type {import('vitest').Mock} */ (fetchParticipantUids);
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -71,19 +71,19 @@ describe('notifyEventModified', () => {
     vi.clearAllMocks();
     mockBatch = createMockBatch();
     mockedWriteBatch.mockReturnValue(mockBatch);
-    mockedFetchParticipants.mockResolvedValue(participants);
+    mockedFetchParticipantUids.mockResolvedValue(participants.map((participant) => participant.uid));
     mockedCollection.mockReturnValue('mock-collection-ref');
     mockedDoc.mockImplementation(() => `mock-doc-ref-${Math.random()}`);
   });
 
-  it('should call fetchParticipants with the eventId', async () => {
+  it('should call fetchParticipantUids with the eventId', async () => {
     // Arrange — done in beforeEach
 
     // Act
     await notifyEventModified('evt-1', '週末登山團', actor);
 
     // Assert
-    expect(mockedFetchParticipants).toHaveBeenCalledWith('evt-1');
+    expect(mockedFetchParticipantUids).toHaveBeenCalledWith('evt-1');
   });
 
   it('should create batch.set for each participant excluding actor', async () => {
@@ -143,7 +143,7 @@ describe('notifyEventModified', () => {
 
   it('should skip batch entirely when all participants are the actor', async () => {
     // Arrange
-    mockedFetchParticipants.mockResolvedValue([{ uid: 'actor-uid' }]);
+    mockedFetchParticipantUids.mockResolvedValue(['actor-uid']);
 
     // Act
     await notifyEventModified('evt-1', '週末登山團', actor);
@@ -177,7 +177,7 @@ describe('notifyEventCancelled', () => {
 
     // Assert — 3 minus actor = 2
     expect(mockBatch.set).toHaveBeenCalledTimes(2);
-    expect(mockedFetchParticipants).not.toHaveBeenCalled();
+    expect(mockedFetchParticipantUids).not.toHaveBeenCalled();
   });
 
   it('should set correct fields with type event_cancelled', async () => {

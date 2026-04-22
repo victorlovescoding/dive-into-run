@@ -205,6 +205,17 @@ export async function fetchParticipantDocuments(eventId, limitCount) {
 }
 
 /**
+ * 取得活動參加者 UID 列表。
+ * @param {string} eventId - 活動 ID。
+ * @param {number} [limitCount] - 最大回傳數量。
+ * @returns {Promise<string[]>} 參加者 UID 列表。
+ */
+export async function fetchParticipantUids(eventId, limitCount = 50) {
+  const docs = await fetchParticipantDocuments(eventId, limitCount);
+  return docs.map((snapshot) => snapshot.data().uid || snapshot.id);
+}
+
+/**
  * 取得一批活動中「我是否已參加」的文件快照。
  * @param {string} uid - 使用者 UID。
  * @param {string[]} eventIds - 活動 ID 列表。
