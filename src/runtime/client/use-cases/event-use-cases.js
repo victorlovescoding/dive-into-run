@@ -60,12 +60,8 @@ export async function queryEvents(filters = {}) {
   const { startTime, endTime, ...restFilters } = filters;
   const docs = await queryEventDocumentsWithTimeValues({
     ...restFilters,
-    startTimeValue: startTime
-      ? FirestoreTimestamp.fromDate(new Date(startTime))
-      : undefined,
-    endTimeValue: endTime
-      ? FirestoreTimestamp.fromDate(new Date(endTime))
-      : undefined,
+    startTimeValue: startTime ? FirestoreTimestamp.fromDate(new Date(startTime)) : undefined,
+    endTimeValue: endTime ? FirestoreTimestamp.fromDate(new Date(endTime)) : undefined,
   });
 
   return filterEventsByDistanceAndSeats(toEventDataList(docs), filters);

@@ -132,7 +132,12 @@ export async function fetchEventDocument(eventId) {
  */
 export async function fetchNextEventPage(afterDoc, limitCount) {
   const snapshot = await getDocs(
-    query(collection(db, 'events'), orderBy('time', 'desc'), startAfter(afterDoc), limit(limitCount)),
+    query(
+      collection(db, 'events'),
+      orderBy('time', 'desc'),
+      startAfter(afterDoc),
+      limit(limitCount),
+    ),
   );
 
   return {
@@ -263,7 +268,9 @@ export async function deleteEventTree(eventId) {
     throw new Error(EVENT_NOT_FOUND_MESSAGE);
   }
 
-  const participantsSnapshot = await getDocs(collection(db, 'events', String(eventId), 'participants'));
+  const participantsSnapshot = await getDocs(
+    collection(db, 'events', String(eventId), 'participants'),
+  );
   const commentsSnapshot = await getDocs(collection(db, 'events', String(eventId), 'comments'));
   const historySnapshots = await Promise.all(
     commentsSnapshot.docs.map((commentDoc) =>

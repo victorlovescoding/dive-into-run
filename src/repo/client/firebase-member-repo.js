@@ -76,7 +76,9 @@ export async function fetchHostedEventIdsByUid(uid) {
  * @returns {Promise<MemberFirestoreDocument[]>} Existing event documents.
  */
 export async function fetchEventDocumentsByIds(eventIds) {
-  const snapshots = await Promise.all(eventIds.map((eventId) => getDoc(doc(db, 'events', eventId))));
+  const snapshots = await Promise.all(
+    eventIds.map((eventId) => getDoc(doc(db, 'events', eventId))),
+  );
 
   return snapshots
     .filter((snapshot) => snapshot.exists())

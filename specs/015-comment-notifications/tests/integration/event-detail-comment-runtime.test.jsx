@@ -50,7 +50,11 @@ vi.mock('next/dynamic', () => ({
 
 vi.mock('next/link', () => ({
   default: (
-    /** @type {{ children: import('react').ReactNode, href: string }} */ { children, href, ...props }
+    /** @type {{ children: import('react').ReactNode, href: string }} */ {
+      children,
+      href,
+      ...props
+    },
   ) => (
     <a href={href} {...props}>
       {children}
@@ -67,9 +71,7 @@ vi.mock('@/components/UserLink', () => ({
 }));
 
 vi.mock('@/components/CommentSection', () => ({
-  default: (
-    /** @type {{ onCommentAdded?: (commentId: string) => void }} */ { onCommentAdded },
-  ) => (
+  default: (/** @type {{ onCommentAdded?: (commentId: string) => void }} */ { onCommentAdded }) => (
     <button type="button" onClick={() => onCommentAdded?.('comment-123')}>
       trigger comment callback
     </button>

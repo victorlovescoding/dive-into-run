@@ -294,9 +294,15 @@ describe('notifyEventNewComment', () => {
       const participants = Array.from({ length: 50 }, (_, i) => ({
         uid: `p${i + 1}`,
       }));
-      mockedFetchParticipantUids.mockResolvedValue(participants.map((participant) => participant.uid));
+      mockedFetchParticipantUids.mockResolvedValue(
+        participants.map((participant) => participant.uid),
+      );
       // commenter-a and commenter-b are new; p1 already covered as participant
-      mockedFetchDistinctEventCommentAuthors.mockResolvedValue(['commenter-a', 'commenter-b', 'p1']);
+      mockedFetchDistinctEventCommentAuthors.mockResolvedValue([
+        'commenter-a',
+        'commenter-b',
+        'p1',
+      ]);
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);

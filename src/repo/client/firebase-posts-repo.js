@@ -54,7 +54,12 @@ export async function updatePostDocument(postId, payload) {
  */
 export async function fetchLatestPostDocuments(limitCount) {
   const snapshot = await getDocs(
-    query(collection(db, 'posts'), orderBy('postAt', 'desc'), orderBy(documentId(), 'desc'), limit(limitCount)),
+    query(
+      collection(db, 'posts'),
+      orderBy('postAt', 'desc'),
+      orderBy(documentId(), 'desc'),
+      limit(limitCount),
+    ),
   );
 
   return {

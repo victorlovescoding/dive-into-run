@@ -108,10 +108,7 @@ export default function useEventsPageRuntime() {
   const hostName = user?.name || (user?.email ? user.email.split('@')[0] : '');
   const cityOptions = useMemo(() => listTaiwanCities(), []);
   const filterDistrictOptions = useMemo(() => listTaiwanDistricts(filterCity), [filterCity]);
-  const selectedDistrictOptions = useMemo(
-    () => listTaiwanDistricts(selectedCity),
-    [selectedCity],
-  );
+  const selectedDistrictOptions = useMemo(() => listTaiwanDistricts(selectedCity), [selectedCity]);
   const routePointCount = useMemo(
     () => (Array.isArray(routeCoordinates) ? countTotalPoints(routeCoordinates) : 0),
     [routeCoordinates],
@@ -424,7 +421,9 @@ export default function useEventsPageRuntime() {
       }
 
       const routeCoordinatesSnapshot = Array.isArray(routeCoordinates)
-        ? routeCoordinates.map((segment) => segment.map((point) => ({ lat: point.lat, lng: point.lng })))
+        ? routeCoordinates.map((segment) =>
+            segment.map((point) => ({ lat: point.lat, lng: point.lng })),
+          )
         : null;
 
       const paceMin = Number(data.paceMinutes);
@@ -452,7 +451,10 @@ export default function useEventsPageRuntime() {
           remainingSeats: toNumber(String(data.maxParticipants)),
         };
 
-        setEvents((previous) => [newEventCard, ...previous.filter((item) => item.id !== newEventCard.id)]);
+        setEvents((previous) => [
+          newEventCard,
+          ...previous.filter((item) => item.id !== newEventCard.id),
+        ]);
         setDraftFormData(null);
         setFormOpen(false);
         setShowMap(false);

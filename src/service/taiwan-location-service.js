@@ -1,7 +1,4 @@
-import {
-  fetchTaiwanCityNames,
-  fetchTaiwanDistrictNames,
-} from '@/repo/client/taiwan-location-repo';
+import { fetchTaiwanCityNames, fetchTaiwanDistrictNames } from '@/repo/client/taiwan-location-repo';
 
 /**
  * 取得 events page 用的縣市選項。

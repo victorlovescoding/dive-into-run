@@ -109,9 +109,8 @@ describe('getUserProfileDocument', () => {
         createdAt: new Date('2024-03-01T00:00:00Z'),
       });
 
-    const { default: getUserProfileDocument } = await import(
-      '@/repo/server/firebase-profile-server-repo'
-    );
+    const { default: getUserProfileDocument } =
+      await import('@/repo/server/firebase-profile-server-repo');
     const result = await getUserProfileDocument('u3');
 
     expect(result).toMatchObject({
@@ -126,9 +125,8 @@ describe('getUserProfileDocument', () => {
   });
 
   it('returns null when the user doc does not exist', async () => {
-    const { default: getUserProfileDocument } = await import(
-      '@/repo/server/firebase-profile-server-repo'
-    );
+    const { default: getUserProfileDocument } =
+      await import('@/repo/server/firebase-profile-server-repo');
     const result = await getUserProfileDocument('missing-user');
     expect(result).toBeNull();
   });

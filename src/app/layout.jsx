@@ -3,11 +3,7 @@ import { Geist, Geist_Mono as GeistMono } from 'next/font/google';
 import Navbar from '@/components/Navbar/Navbar';
 import NotificationToast from '@/components/Notifications/NotificationToast';
 import ToastContainer from '@/components/ToastContainer';
-import {
-  AuthProvider,
-  NotificationProvider,
-  ToastProvider,
-} from '@/runtime/providers';
+import { AuthProvider, NotificationProvider, ToastProvider } from '@/runtime/providers';
 import './globals.css';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';

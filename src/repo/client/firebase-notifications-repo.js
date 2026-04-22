@@ -93,7 +93,10 @@ export function watchNotificationDocuments(uid, onNext, onError, onNew) {
   return onSnapshot(
     q,
     (snapshot) => {
-      onNext(snapshot.docs, snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
+      onNext(
+        snapshot.docs,
+        snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
+      );
 
       if (isInitialLoad) {
         isInitialLoad = false;
@@ -134,7 +137,10 @@ export function watchUnreadNotificationDocuments(uid, onNext, onError) {
   return onSnapshot(
     q,
     (snapshot) => {
-      onNext(snapshot.docs, snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
+      onNext(
+        snapshot.docs,
+        snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
+      );
     },
     onError,
   );

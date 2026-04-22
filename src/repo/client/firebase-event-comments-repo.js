@@ -116,7 +116,10 @@ export async function deleteEventCommentDocument(eventId, commentId) {
  */
 export async function fetchEventCommentHistoryDocuments(eventId, commentId) {
   const snapshot = await getDocs(
-    query(collection(db, 'events', eventId, 'comments', commentId, 'history'), orderBy('editedAt', 'asc')),
+    query(
+      collection(db, 'events', eventId, 'comments', commentId, 'history'),
+      orderBy('editedAt', 'asc'),
+    ),
   );
 
   return snapshot.docs;

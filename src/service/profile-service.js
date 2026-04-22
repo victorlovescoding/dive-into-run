@@ -41,7 +41,10 @@ export async function getUserProfile(uid) {
 export async function getProfileStats(uid) {
   if (!uid) throw new Error('uid is required');
 
-  const [hostedCount, joinedCount] = await Promise.all([fetchHostedCount(uid), fetchJoinedCount(uid)]);
+  const [hostedCount, joinedCount] = await Promise.all([
+    fetchHostedCount(uid),
+    fetchJoinedCount(uid),
+  ]);
   return { hostedCount, joinedCount, totalDistanceKm: null };
 }
 

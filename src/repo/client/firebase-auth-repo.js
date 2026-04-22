@@ -64,7 +64,11 @@ export function watchUserProfileDocument(uid, onData, onError) {
   return onSnapshot(
     docRef,
     (snap) => {
-      onData?.(/** @type {{ name?: string | null, email?: string | null, photoURL?: string | null, bio?: string | null } | null} */ (snap.data() ?? null));
+      onData?.(
+        /** @type {{ name?: string | null, email?: string | null, photoURL?: string | null, bio?: string | null } | null} */ (
+          snap.data() ?? null
+        ),
+      );
     },
     (err) => {
       onError?.(err);

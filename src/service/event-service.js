@@ -217,13 +217,7 @@ export function filterEventsByDistanceAndSeats(events, filters = {}) {
  * @param {unknown} params.joinedAtValue - 由 runtime 注入的 joinedAt 值。
  * @returns {{ result: JoinResult, participantCreate?: object, eventUpdates?: object }} transaction plan。
  */
-export function buildJoinEventPlan({
-  eventData,
-  participantExists,
-  user,
-  eventId,
-  joinedAtValue,
-}) {
+export function buildJoinEventPlan({ eventData, participantExists, user, eventId, joinedAtValue }) {
   const maxParticipants = Number(eventData.maxParticipants ?? 0);
   const participantsCount = Number(eventData.participantsCount ?? 0);
   const remainingSeats =

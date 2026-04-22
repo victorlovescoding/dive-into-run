@@ -109,8 +109,7 @@ export function getForecastIds(countyName) {
 export function findIslandMarker(countyName, townshipName) {
   return (
     ISLAND_MARKERS.find(
-      (marker) =>
-        marker.targetCounty === countyName && marker.targetTownship === townshipName,
+      (marker) => marker.targetCounty === countyName && marker.targetTownship === townshipName,
     ) ?? null
   );
 }

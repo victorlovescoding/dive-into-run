@@ -28,7 +28,12 @@ import {
   updatePostDocument,
 } from '@/repo/client/firebase-posts-repo';
 
-export { POST_NOT_FOUND_MESSAGE, POST_TITLE_MAX_LENGTH, POST_CONTENT_MAX_LENGTH, validatePostInput } from '@/service/post-service';
+export {
+  POST_NOT_FOUND_MESSAGE,
+  POST_TITLE_MAX_LENGTH,
+  POST_CONTENT_MAX_LENGTH,
+  validatePostInput,
+} from '@/service/post-service';
 
 /**
  * @typedef {import('@/service/post-service').Post} Post

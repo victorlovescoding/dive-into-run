@@ -71,7 +71,9 @@ describe('notifyEventModified', () => {
     vi.clearAllMocks();
     mockBatch = createMockBatch();
     mockedWriteBatch.mockReturnValue(mockBatch);
-    mockedFetchParticipantUids.mockResolvedValue(participants.map((participant) => participant.uid));
+    mockedFetchParticipantUids.mockResolvedValue(
+      participants.map((participant) => participant.uid),
+    );
     mockedCollection.mockReturnValue('mock-collection-ref');
     mockedDoc.mockImplementation(() => `mock-doc-ref-${Math.random()}`);
   });

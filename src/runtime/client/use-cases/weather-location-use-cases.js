@@ -71,9 +71,7 @@ export function syncWeatherLocationToUrl(
   } = {},
 ) {
   const url = new URL(currentHref);
-  url.search = location
-    ? encodeLocationParams(location.countyCode, location.townshipCode)
-    : '';
+  url.search = location ? encodeLocationParams(location.countyCode, location.townshipCode) : '';
   history?.replaceState({}, '', url.toString());
   return url.toString();
 }

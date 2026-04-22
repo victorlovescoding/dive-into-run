@@ -7,9 +7,11 @@ vi.mock('next/navigation', () => ({
 }));
 
 // 延遲 import，讓 mock 先生效
-const { toastReducer, default: ToastProvider, useToast } = await import(
-  '@/runtime/providers/ToastProvider'
-);
+const {
+  toastReducer,
+  default: ToastProvider,
+  useToast,
+} = await import('@/runtime/providers/ToastProvider');
 
 const mockedUsePathname = vi.mocked(usePathname);
 

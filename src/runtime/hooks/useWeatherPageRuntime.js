@@ -74,7 +74,12 @@ function normalizeSelectedLocation(location) {
  * @returns {boolean} 是否相同。
  */
 function isSameLocation(left, right) {
-  return !!left && !!right && left.countyCode === right.countyCode && left.townshipCode === right.townshipCode;
+  return (
+    !!left &&
+    !!right &&
+    left.countyCode === right.countyCode &&
+    left.townshipCode === right.townshipCode
+  );
 }
 
 /**
@@ -102,9 +107,13 @@ export default function useWeatherPageRuntime(geoLookup) {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [mapLayer, setMapLayer] = useState('overview');
   const [weatherState, setWeatherState] = useState(/** @type {WeatherStatus} */ ('idle'));
-  const [weatherData, setWeatherData] = useState(/** @type {import('@/lib/weather-api').WeatherInfo | null} */ (null));
+  const [weatherData, setWeatherData] = useState(
+    /** @type {import('@/lib/weather-api').WeatherInfo | null} */ (null),
+  );
   const [favorites, setFavorites] = useState(/** @type {FavoriteItem[]} */ ([]));
-  const [favSummaries, setFavSummaries] = useState(/** @type {Record<string, WeatherSummaryData>} */ ({}));
+  const [favSummaries, setFavSummaries] = useState(
+    /** @type {Record<string, WeatherSummaryData>} */ ({}),
+  );
   const [currentFavStatus, setCurrentFavStatus] = useState(
     /** @type {FavoriteStatus} */ (DEFAULT_FAVORITE_STATUS),
   );
@@ -132,8 +141,7 @@ export default function useWeatherPageRuntime(geoLookup) {
   const resolveLocation = useCallback(
     (location) => {
       const countyCode = location.countyCode ?? '';
-      const countyName =
-        location.countyName || geoLookup.countyNameByCode[countyCode] || '';
+      const countyName = location.countyName || geoLookup.countyNameByCode[countyCode] || '';
       if (!countyName) return null;
 
       const townshipCode = location.townshipCode ?? null;
@@ -266,7 +274,11 @@ export default function useWeatherPageRuntime(geoLookup) {
       }
 
       try {
-        const favoriteStatus = await isFavorited(user.uid, location.countyCode, location.townshipCode);
+        const favoriteStatus = await isFavorited(
+          user.uid,
+          location.countyCode,
+          location.townshipCode,
+        );
         if (isMountedRef.current) {
           setCurrentFavStatus(favoriteStatus);
         }

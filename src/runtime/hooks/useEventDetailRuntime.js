@@ -89,7 +89,9 @@ function getRemainingSeats(event, fallbackParticipantsCount = 0) {
   if (typeof event?.remainingSeats === 'number') return event.remainingSeats;
   const max = toNumber(event?.maxParticipants);
   const count =
-    typeof event?.participantsCount === 'number' ? event.participantsCount : fallbackParticipantsCount;
+    typeof event?.participantsCount === 'number'
+      ? event.participantsCount
+      : fallbackParticipantsCount;
   return Math.max(0, max - toNumber(count));
 }
 

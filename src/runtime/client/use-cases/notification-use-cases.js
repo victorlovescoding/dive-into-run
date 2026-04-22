@@ -254,9 +254,7 @@ export function watchNotifications(uid, onNext, onError, onNew) {
     uid,
     (docs, lastDoc) => onNext(toNotificationItems(docs), lastDoc),
     onError,
-    onNew
-      ? (docs) => onNew(toNotificationItems(docs))
-      : undefined,
+    onNew ? (docs) => onNew(toNotificationItems(docs)) : undefined,
   );
 }
 
@@ -268,7 +266,11 @@ export function watchNotifications(uid, onNext, onError, onNew) {
  * @returns {() => void} 退訂函式。
  */
 export function watchUnreadNotifications(uid, onNext, onError) {
-  return watchUnreadNotificationDocuments(uid, (docs, lastDoc) => onNext(toNotificationItems(docs), lastDoc), onError);
+  return watchUnreadNotificationDocuments(
+    uid,
+    (docs, lastDoc) => onNext(toNotificationItems(docs), lastDoc),
+    onError,
+  );
 }
 
 /**

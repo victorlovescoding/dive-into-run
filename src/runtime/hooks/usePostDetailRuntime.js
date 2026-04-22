@@ -81,7 +81,9 @@ export default function usePostDetailRuntime(postId) {
 
   const highlightedCommentId = searchParams.get('commentId');
   const shareUrl =
-    typeof window !== 'undefined' ? `${window.location.origin}/posts/${postId}` : `/posts/${postId}`;
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/posts/${postId}`
+      : `/posts/${postId}`;
 
   const actor = useMemo(() => {
     if (!user?.uid) return null;
@@ -138,18 +140,17 @@ export default function usePostDetailRuntime(postId) {
         if (cancelled || !isMountedRef.current) return;
 
         const last = commentsData[commentsData.length - 1] ?? null;
-        const nextPostDetail =
-          user?.uid
-            ? {
-                ...postDetailData,
-                liked: await hasUserLikedPost(user.uid, postId),
-                isAuthor: postDetailData.authorUid === user.uid,
-              }
-            : {
-                ...postDetailData,
-                liked: false,
-                isAuthor: false,
-              };
+        const nextPostDetail = user?.uid
+          ? {
+              ...postDetailData,
+              liked: await hasUserLikedPost(user.uid, postId),
+              isAuthor: postDetailData.authorUid === user.uid,
+            }
+          : {
+              ...postDetailData,
+              liked: false,
+              isAuthor: false,
+            };
 
         if (cancelled || !isMountedRef.current) return;
         setPostDetail(nextPostDetail);
@@ -456,15 +457,14 @@ export default function usePostDetailRuntime(postId) {
         setComment('');
 
         const mine = await getCommentById(postId, id);
-        const hydratedComment =
-          mine ?? {
-            id,
-            authorUid: user.uid,
-            authorName: user.name || '我',
-            authorImgURL: user.photoURL || '',
-            comment: rawComment,
-            createdAt: createFirestoreTimestamp(new Date()),
-          };
+        const hydratedComment = mine ?? {
+          id,
+          authorUid: user.uid,
+          authorName: user.name || '我',
+          authorImgURL: user.photoURL || '',
+          comment: rawComment,
+          createdAt: createFirestoreTimestamp(new Date()),
+        };
 
         setComments((prev) => [{ ...hydratedComment, isAuthor: true }, ...prev]);
         setPostDetail((prev) =>
@@ -479,7 +479,8 @@ export default function usePostDetailRuntime(postId) {
       }
 
       const newText = comment.trim();
-      const prevText = comments.find((commentItem) => commentItem.id === commentEditing.id)?.comment ?? '';
+      const prevText =
+        comments.find((commentItem) => commentItem.id === commentEditing.id)?.comment ?? '';
 
       setComments((prev) =>
         prev.map((commentItem) =>

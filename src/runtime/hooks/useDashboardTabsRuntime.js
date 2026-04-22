@@ -32,7 +32,8 @@ export default function useDashboardTabsRuntime(uid) {
     {
       ...TAB_CONFIGS[0],
       tab: eventsTab,
-      hostedIds: /** @type {{ hostedIds?: Set<string> } | null} */ (eventsTab.prevResult)?.hostedIds,
+      hostedIds: /** @type {{ hostedIds?: Set<string> } | null} */ (eventsTab.prevResult)
+        ?.hostedIds,
     },
     {
       ...TAB_CONFIGS[1],

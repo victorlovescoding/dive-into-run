@@ -88,8 +88,9 @@ describe('notification-use-cases split', () => {
     const unsubscribe = runtime.watchNotifications('u1', onNext, onError);
 
     expect(typeof unsubscribe).toBe('function');
-    expect(onNext).toHaveBeenCalledWith([
-      expect.objectContaining({ id: 'n1', recipientUid: 'u1' }),
-    ], null);
+    expect(onNext).toHaveBeenCalledWith(
+      [expect.objectContaining({ id: 'n1', recipientUid: 'u1' })],
+      null,
+    );
   });
 });
