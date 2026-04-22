@@ -26,14 +26,10 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { db } from '@/config/client/firebase-client';
+import { toPublicProfile } from '@/lib/firebase-profile-mapper';
 
 /**
- * @typedef {object} PublicProfile
- * @property {string} uid - 使用者 UID（= Firestore document ID）。
- * @property {string} name - 顯示名稱。
- * @property {string} photoURL - 頭像 URL，可能為空字串。
- * @property {string} [bio] - 個人簡介（0–150 字），未設定時 undefined。
- * @property {import('firebase/firestore').Timestamp} createdAt - 加入平台日期。
+ * @typedef {import('@/lib/firebase-profile-mapper').PublicProfile} PublicProfile
  */
 
 /**
@@ -51,27 +47,6 @@ import { db } from '@/config/client/firebase-client';
  *   下次呼叫 `getHostedEvents` 時可傳入 `options.lastDoc` 取下一頁。
  * @property {boolean} hasMore - 是否還有下一頁可載入。
  */
-
-/**
- * 將 Firestore document data 正規化成 `PublicProfile`，刻意排除 email
- * 與其他私有欄位以避免在公開讀取場景外洩 PII。
- * @param {string} uid - 使用者 UID（fallback 用，data 內若有 uid 會優先使用）。
- * @param {Record<string, unknown>} data - Firestore document data。
- * @returns {PublicProfile} 正規化後的 PublicProfile 物件。
- */
-function toPublicProfile(uid, data) {
-  /** @type {PublicProfile} */
-  const profile = {
-    uid: /** @type {string} */ (data.uid ?? uid),
-    name: /** @type {string} */ (data.name ?? ''),
-    photoURL: /** @type {string} */ (data.photoURL ?? ''),
-    createdAt: /** @type {import('firebase/firestore').Timestamp} */ (data.createdAt),
-  };
-  if (typeof data.bio === 'string' && data.bio.length > 0) {
-    profile.bio = data.bio;
-  }
-  return profile;
-}
 
 /**
  * 取得使用者的公開檔案資料。

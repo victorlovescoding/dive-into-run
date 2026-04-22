@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S003 completed
-**Next Recommended Session**: S004
+**Current Session**: S004 completed
+**Next Recommended Session**: S005
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -38,9 +38,12 @@
 - `src/config/server/{firebase-admin-app.js,strava-server-config.js}`、`src/repo/server/{firebase-auth-admin-repo.js,strava-api-repo.js,strava-server-repo.js}`、`src/runtime/server/use-cases/strava-server-use-cases.js` 已建立
 - `src/app/api/strava/{callback,sync,disconnect,webhook}/route.js` 已收斂成 thin entry，僅保留 request parsing / auth guard / JSON forwarding
 - `src/lib/firebase-admin.js` 已移除；原本直接依賴它的 server caller / tests 已改指向分層後入口
-- `src/lib/firebase-profile-server.js` 已改為直接依賴 `@/config/server/firebase-admin-app`，但完整 server repo + shared mapper 拆分仍留在 S004
+- `src/repo/server/firebase-profile-server-repo.js` 已建立，`users/{uid}` 的 Admin SDK 讀取責任已下沉到 repo 層
+- `src/lib/firebase-profile-mapper.js` 已建立，client/server profile service 現在共用同一個 `PublicProfile` normalization
+- `src/lib/firebase-profile-server.js` 已改為透過 server repo + shared mapper 組裝，不再直接碰 `adminDb`
 - `specs/006-strava-running-records/tests/unit/*route*.test.js` 與 `sync-token-revocation.test.js` 已改為 mock `@/runtime/server/use-cases/strava-server-use-cases`，不再直接驗 route 內部 Firestore/fetch 細節
 - `specs/006-strava-running-records/tests/unit/firebase-admin-helpers.test.js`、`sync-strava-activities.test.js`、`specs/g8-server-coverage/tests/unit/firebase-admin.test.js` 已改為直接驗 split 後的 config/repo/runtime 模組
+- `specs/012-public-profile/tests/unit/firebase-profile-server.test.js` 已改為 mock server repo；`specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js` 也已補 repo split coverage
 - repo 尚未安裝 `dependency-cruiser`
 - 目前 enforcement 仍主要靠 ESLint 的局部結構限制
 - `src/lib` 其餘混層檔案仍待後續 session 繼續拆分
@@ -54,7 +57,7 @@
 | S001 | done | docs bootstrap |
 | S002 | done | foundation leaf extraction + remove `firestore-types` |
 | S003 | done | split `firebase-admin` + Strava server flow |
-| S004 | todo | split `firebase-profile-server` |
+| S004 | done | split `firebase-profile-server` |
 | S005 | todo | repo/service extraction A |
 | S006 | todo | repo/service extraction B |
 | S007 | todo | weather/storage mixed runtime split |
@@ -73,7 +76,7 @@
 
 ### Architecture blockers
 
-1. `src/lib/firebase-profile-server.js` 是 server-only adapter，但尚未被正式建模。
+1. `src/lib/firebase-profile-mapper.js` 目前先留在 `src/lib/**` compatibility namespace，真正把 profile mapper 納入終態 `src/service/**` 的遷移要配合後續更大範圍 profile split 一起做。
 2. `src/lib/weather-helpers.js` 混 service / runtime / constants / persistence。
 3. `src/lib/firebase-storage-helpers.js` 混 browser runtime 與 storage repo。
 4. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx` 直接依賴 repo，provider 邊界未立起來。
@@ -194,35 +197,70 @@ tests 不可整包排除。已知真衝突 unit 檔：
 - **Next Session Brief**:
   - 做 S004
   - write scope 以 `src/lib/firebase-profile-server.js`、新的 `src/repo/server/**` / shared service mapper、受影響的 profile server tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
-  - 目標是把 `firebase-profile-server.js` 變成明確的 server repo + shared mapper，而不是停留在直接操作 `adminDb` 的 server-only adapter
-  - reviewer 要特別盯 profile mapper 是否與 client `firebase-profile.js` 共享 shape、以及是否只改 S004 的 write scope
+- 目標是把 `firebase-profile-server.js` 變成明確的 server repo + shared mapper，而不是停留在直接操作 `adminDb` 的 server-only adapter
+- reviewer 要特別盯 profile mapper 是否與 client `firebase-profile.js` 共享 shape、以及是否只改 S004 的 write scope
+
+### S004
+
+- **Goal**: 把 `firebase-profile-server.js` 收斂成薄 service，建立 `repo/server -> shared mapper -> server service` 的 public profile server flow。
+- **Write Scope**:
+  - `src/repo/server/firebase-profile-server-repo.js`
+  - `src/lib/firebase-profile-{mapper,server}.js`
+  - `src/lib/firebase-profile.js`
+  - `specs/012-public-profile/tests/unit/{firebase-profile,firebase-profile-server}.test.js`
+  - `specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - created `src/repo/server/firebase-profile-server-repo.js`
+  - created `src/lib/firebase-profile-mapper.js`
+  - updated `src/lib/firebase-profile-server.js` to delegate Admin reads to the server repo and use the shared mapper
+  - updated `src/lib/firebase-profile.js` to reuse the shared mapper so client/server `PublicProfile` shape stays aligned
+- updated `specs/012-public-profile/tests/unit/firebase-profile-server.test.js` to mock the server repo instead of `adminDb`
+- updated `specs/012-public-profile/tests/unit/firebase-profile.test.js` to pin the shared mapper behavior
+- updated `specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js` to cover the split repo entry point with emulator-backed execution
+- verified with `npm run type-check:changed`
+- verified with `npm run lint:changed`
+- verified with `npx vitest run specs/012-public-profile/tests/unit/firebase-profile.test.js specs/012-public-profile/tests/unit/firebase-profile-server.test.js`
+- verified with `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js"`
+- **Pitfalls recorded**:
+  - `import/prefer-default-export` 會卡住只有單一 export 的 repo 檔；S004 直接改成 default export，避免留下 lint exception。
+  - `firebase-profile-server` 的 unit tests 不能再把 `adminDb.collection(...).doc(...).get()` 當 service contract；repo call 與 raw payload 應在 repo 層測。
+  - shared mapper 先放在 `src/lib/firebase-profile-mapper.js` compatibility namespace，避免在 S004 同步開 profile 全量 service-dir 遷移，這個 namespace debt 要留給後續 profile split session 一起收。
+- **Next Session Brief**:
+  - 做 S005
+  - write scope 以 `src/lib/firebase-events.js`、`src/lib/firebase-comments.js`、`src/lib/firebase-member.js`、新的 `src/repo/**` / `src/service/**` / `src/runtime/**` 拆分入口、受影響測試與 `specs/021-layered-dependency-architecture/handoff.md` 為主
+  - 目標是拆掉 events/comments/member 的 repo vs service vs use-case 混檔責任
+  - reviewer 要特別盯是否真的從 `src/lib/**` 抽出責任邊界，而不是只搬檔名
 
 ## Next Session Brief
 
-### S004: Firebase Profile Server Split
+### S005: Repo / Service Extraction A
 
 **Goal**
 
-- 將 `src/lib/firebase-profile-server.js` 改為明確的 server repo + shared service mapper
-- 建立可驗證的 profile server-only 邊界，避免 `adminDb` 直接裸露在 `src/lib/**`
-- 讓 profile server flow 與 S003 新的 server layering 一致
+- 拆 `firebase-events.js` / `firebase-comments.js` / `firebase-member.js` 的 repo vs service vs use-case 責任
+- 讓 events/comments/member flow 往終態 `Types -> Config -> Repo -> Service -> Runtime -> UI` 方向收斂
+- 避免繼續把 Firestore access、business rules、UI-facing orchestration 混在同一個 `src/lib/**` 檔案
 
 **Write Scope**
 
-- `src/repo/server/**`
-- `src/lib/firebase-profile-server.js`
-- 受影響的 profile server tests / callers
+- `src/lib/firebase-events.js`
+- `src/lib/firebase-comments.js`
+- `src/lib/firebase-member.js`
+- 新的 `src/repo/**` / `src/service/**` / `src/runtime/**` 入口
+- 受影響的 callers / tests
 - `specs/021-layered-dependency-architecture/handoff.md`
 
 **Acceptance**
 
-- `firebase-profile-server.js` 不再直接裸用 `adminDb`
-- profile server flow 依賴方向符合目前的 server split
-- mapper shape 與 client `firebase-profile.js` 保持一致
+- events/comments/member flow 不再停留在單一混檔內
+- repo / service / use-case 責任有實際拆開，而不是只改 import path
+- 新舊 caller 都指向新的分層入口
 - `npm run type-check:changed` 與 `npm run lint:changed` 通過
 
 **Reviewer focus**
 
-- profile server repo / mapper 是否真的拆責任，而不是只換 import 路徑
-- 是否維持與 client profile shape 對齊
+- events/comments/member 是否真的拆責任，而不是只搬目錄
+- 是否讓 repo / service / runtime 的方向更接近終態分層
 - 是否只改動本 session 的 write scope
