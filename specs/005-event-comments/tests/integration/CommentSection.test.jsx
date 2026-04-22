@@ -41,7 +41,7 @@ vi.mock('@/lib/firebase-comments', () => ({
   fetchCommentHistory: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({ db: {} }));
+vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
 
 vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn(() => new URLSearchParams()),

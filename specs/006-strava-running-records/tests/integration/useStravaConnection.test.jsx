@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { AuthContext } from '@/contexts/AuthContext';
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: {},
   auth: {},
 }));

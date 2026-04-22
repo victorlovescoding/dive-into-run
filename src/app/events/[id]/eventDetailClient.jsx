@@ -4,9 +4,9 @@ import { useContext, useEffect, useMemo, useRef, useState, useCallback } from 'r
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Timestamp as FirestoreTimestamp } from '@/lib/firestore-types';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+import { createFirestoreTimestamp } from '@/lib/firebase-firestore-timestamp';
 import {
   fetchEventById,
   fetchParticipants,
@@ -324,13 +324,13 @@ export default function EventDetailClient({ id }) {
 
         const mergedFields = { ...fields };
         if (typeof mergedFields.time === 'string' && mergedFields.time) {
-          mergedFields.time = FirestoreTimestamp.fromDate(new Date(mergedFields.time));
+          mergedFields.time = createFirestoreTimestamp(new Date(mergedFields.time));
         }
         if (
           typeof mergedFields.registrationDeadline === 'string' &&
           mergedFields.registrationDeadline
         ) {
-          mergedFields.registrationDeadline = FirestoreTimestamp.fromDate(
+          mergedFields.registrationDeadline = createFirestoreTimestamp(
             new Date(/** @type {string} */ (mergedFields.registrationDeadline)),
           );
         }

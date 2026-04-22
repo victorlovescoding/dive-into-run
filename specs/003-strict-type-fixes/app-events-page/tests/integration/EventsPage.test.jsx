@@ -15,7 +15,7 @@ import * as firebaseEvents from '@/lib/firebase-events';
  */
 
 // Mock Firebase client
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: {},
 }));
 

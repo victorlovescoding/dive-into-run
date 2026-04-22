@@ -37,7 +37,7 @@ vi.mock('next/navigation', () => ({
 // --- Mock firebase-client auth ---
 const mockGetIdToken = vi.fn().mockResolvedValue('mock-id-token');
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   auth: {
     currentUser: {
       getIdToken: (...args) => mockGetIdToken(...args),

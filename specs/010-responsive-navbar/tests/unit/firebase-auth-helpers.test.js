@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { signInWithGoogle, signOutUser, subscribeToAuthChanges } from '@/lib/firebase-auth-helpers';
-import { auth, provider } from '@/lib/firebase-client';
+import { auth, provider } from '@/config/client/firebase-client';
 
 vi.mock('firebase/auth', () => ({
   onAuthStateChanged: vi.fn(),
@@ -9,7 +9,7 @@ vi.mock('firebase/auth', () => ({
   signOut: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   auth: { name: 'mock-auth' },
   provider: { providerId: 'google.com' },
 }));

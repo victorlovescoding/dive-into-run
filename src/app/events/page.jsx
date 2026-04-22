@@ -4,7 +4,6 @@ import { Suspense, useEffect, useState, useContext, useRef, useCallback } from '
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Timestamp as FirestoreTimestamp } from '@/lib/firestore-types';
 import {
   buildRoutePayload,
   countTotalPoints,
@@ -16,6 +15,7 @@ import {
   getRemainingSeats,
   buildUserPayload,
 } from '@/lib/event-helpers';
+import { createFirestoreTimestamp } from '@/lib/firebase-firestore-timestamp';
 import { AuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import EventActionButtons from '@/components/EventActionButtons';
@@ -34,7 +34,7 @@ import EventCardMenu from '@/components/EventCardMenu';
 import EventEditForm from '@/components/EventEditForm';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import UserLink from '@/components/UserLink';
-import taiwanLocations from '@/lib/taiwan-locations';
+import taiwanLocations from '@/config/geo/taiwan-locations';
 import styles from './events.module.css';
 
 // 動態載入 EventMap 元件，關閉 SSR
@@ -669,13 +669,13 @@ function RunTogetherPageContent() {
         // 將 string timestamp 轉回 Firestore Timestamp，避免本地 state 與 Firestore 資料型別不一致
         const mergedFields = { ...fields };
         if (typeof mergedFields.time === 'string' && mergedFields.time) {
-          mergedFields.time = FirestoreTimestamp.fromDate(new Date(mergedFields.time));
+          mergedFields.time = createFirestoreTimestamp(new Date(mergedFields.time));
         }
         if (
           typeof mergedFields.registrationDeadline === 'string' &&
           mergedFields.registrationDeadline
         ) {
-          mergedFields.registrationDeadline = FirestoreTimestamp.fromDate(
+          mergedFields.registrationDeadline = createFirestoreTimestamp(
             new Date(mergedFields.registrationDeadline),
           );
         }

@@ -25,7 +25,7 @@ import {
   getCountFromServer,
   setDoc,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase-client';
+import { db } from '@/config/client/firebase-client';
 
 /**
  * @typedef {object} PublicProfile

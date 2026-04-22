@@ -29,7 +29,7 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(() => ({ _type: 'serverTimestamp' })),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: {},
 }));
 

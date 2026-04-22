@@ -1,6 +1,6 @@
 // 這個檔案專門處理 Firestore 中使用者資料的讀寫與監聽
 import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase-client';
+import { db } from '@/config/client/firebase-client';
 
 /**
  * 登入時檢查使用者資料，若 Firestore 無資料則自動建立。

@@ -1,6 +1,6 @@
 // 這個檔案專門處理 Firebase Storage 相關操作（大頭貼壓縮上傳、下載網址取得）
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase-client';
+import { storage } from '@/config/client/firebase-client';
 
 // 把拿到的檔案壓縮並且傳到Storage，最後呼叫 getDownloadURL(ref) 拿到檔案的網址
 /**

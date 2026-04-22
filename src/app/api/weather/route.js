@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server';
 import { getForecastIds, formatLocationName, formatLocationNameShort } from '@/lib/weather-helpers';
 
 // #region JSDoc Type Definitions
-/** @typedef {import('@/lib/weather-types').UvInfo} UvInfo */
-/** @typedef {import('@/lib/weather-types').AqiInfo} AqiInfo */
-/** @typedef {import('@/lib/weather-types').TodayWeather} TodayWeather */
-/** @typedef {import('@/lib/weather-types').TomorrowWeather} TomorrowWeather */
-/** @typedef {import('@/lib/weather-types').WeatherInfo} WeatherInfo */
+/** @typedef {import('@/types/weather-types').UvInfo} UvInfo */
+/** @typedef {import('@/types/weather-types').AqiInfo} AqiInfo */
+/** @typedef {import('@/types/weather-types').TodayWeather} TodayWeather */
+/** @typedef {import('@/types/weather-types').TomorrowWeather} TomorrowWeather */
+/** @typedef {import('@/types/weather-types').WeatherInfo} WeatherInfo */
 // --- County (F-C0032-001) response types ---
 /**
  * @typedef {object} CountyTimePeriod

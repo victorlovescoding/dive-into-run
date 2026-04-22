@@ -9,7 +9,7 @@ import {
   orderBy,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase-client';
+import { db } from '@/config/client/firebase-client';
 
 /**
  * 新增天氣收藏地點。重複 (countyCode+townshipCode) 則 no-op。

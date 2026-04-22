@@ -20,7 +20,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
 
 ## Phase 2: Foundation Leaf Extraction
 
-- [ ] S002 建立 `src/types/**` 與 `src/config/**` 初始結構；搬移 `weather-types`、`firebase-client`、geo cache、location data；移除 `src/lib/firestore-types.js` 並修正所有受影響 JSDoc / value imports。
+- [x] S002 建立 `src/types/**` 與 `src/config/**` 初始結構；搬移 `weather-types`、`firebase-client`、geo cache、location data；移除 `src/lib/firestore-types.js` 並修正所有受影響 JSDoc / value imports。
 
 ## Phase 3: Server-only Split
 

@@ -11,7 +11,7 @@ import {
   loadLastLocation,
 } from '@/lib/weather-helpers';
 import { AuthContext } from '@/contexts/AuthContext';
-import { countiesGeoJson, townsGeoJson } from '@/lib/weather-geo-cache';
+import { countiesGeoJson, townsGeoJson } from '@/config/geo/weather-geo-cache';
 import TaiwanMap from './TaiwanMap';
 import WeatherCard from './WeatherCard';
 import WeatherCardEmpty from './WeatherCardEmpty';

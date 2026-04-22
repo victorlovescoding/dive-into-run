@@ -26,16 +26,18 @@
 
 ## Current State
 
-**Current Session**: S001 completed  
-**Next Recommended Session**: S002  
+**Current Session**: S002 completed
+**Next Recommended Session**: S003
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
 
+- `src/types/weather-types.js`、`src/config/client/firebase-client.js`、`src/config/geo/{weather-geo-cache.js,taiwan-locations.js}` 已建立
+- `src/lib/firestore-types.js` 已移除，UI/runtime 層若要建立 Firestore `Timestamp` 必須走 `src/lib/firebase-firestore-timestamp.js`
+- 受影響的 production callers 與測試 mocks 已改用新的 `@/types/**` / `@/config/**` 路徑
 - repo 尚未安裝 `dependency-cruiser`
-- repo 尚未建立六層實體目錄
 - 目前 enforcement 仍主要靠 ESLint 的局部結構限制
-- 本目錄的三份文件已建立，可供後續低 context 接手
+- `src/lib` 其餘混層檔案仍待後續 session 繼續拆分
 
 ## Session Queue Snapshot
 
@@ -44,7 +46,7 @@
 | Session | Status | Goal |
 | --- | --- | --- |
 | S001 | done | docs bootstrap |
-| S002 | todo | foundation leaf extraction + remove `firestore-types` |
+| S002 | done | foundation leaf extraction + remove `firestore-types` |
 | S003 | todo | split `firebase-admin` + Strava server flow |
 | S004 | todo | split `firebase-profile-server` |
 | S005 | todo | repo/service extraction A |
@@ -65,13 +67,13 @@
 
 ### Architecture blockers
 
-1. `src/lib/firestore-types.js` 是 value re-export leak，不能留下。
-2. `src/lib/firebase-admin.js` 同時是 config + repo + use-case。
-3. `src/lib/firebase-profile-server.js` 是 server-only adapter，但尚未被正式建模。
-4. `src/lib/weather-helpers.js` 混 service / runtime / constants / persistence。
-5. `src/lib/firebase-storage-helpers.js` 混 browser runtime 與 storage repo。
-6. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx` 直接依賴 repo，provider 邊界未立起來。
-7. `src/app/events/page.jsx`、`eventDetailClient.jsx`、`PostDetailClient.jsx`、`components/weather/WeatherPage.jsx` 都是多層混檔。
+1. `src/lib/firebase-admin.js` 同時是 config + repo + use-case。
+2. `src/lib/firebase-profile-server.js` 是 server-only adapter，但尚未被正式建模。
+3. `src/lib/weather-helpers.js` 混 service / runtime / constants / persistence。
+4. `src/lib/firebase-storage-helpers.js` 混 browser runtime 與 storage repo。
+5. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx` 直接依賴 repo，provider 邊界未立起來。
+6. `src/app/events/page.jsx`、`eventDetailClient.jsx`、`PostDetailClient.jsx`、`components/weather/WeatherPage.jsx` 都是多層混檔。
+7. UI integration layers 仍受 ESLint `no-restricted-imports` 保護，不能直接 import `firebase/*`；若 local state 需要 Firestore `Timestamp`，必須經由 `src/lib/firebase-*.js` helper。
 
 ### Test blockers
 
@@ -119,33 +121,64 @@ tests 不可整包排除。已知真衝突 unit 檔：
   - 必須完成 `src/lib/firestore-types.js` 移除與替代方案
   - reviewer 要特別盯 value/type leak 是否真的消失
 
+### S002
+
+- **Goal**: 建立第一批 `types/config` leaf，完成 foundation leaf extraction，並清掉 `firestore-types` 的 value leak。
+- **Write Scope**:
+  - `src/types/**`
+  - `src/config/**`
+  - 所有直接依賴 `src/lib/firestore-types.js`、`firebase-client.js`、`weather-types.js`、`weather-geo-cache.js`、`taiwan-locations.js` 的 production callers 與測試 mocks
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - created `src/config/client/firebase-client.js`
+  - created `src/config/geo/weather-geo-cache.js`
+  - created `src/config/geo/taiwan-locations.js`
+  - created `src/types/weather-types.js`
+  - created `src/lib/firebase-firestore-timestamp.js` to keep Firestore `Timestamp` creation inside allowed `src/lib/firebase-*.js` boundary
+  - removed `src/lib/firebase-client.js`, `src/lib/firestore-types.js`, `src/lib/weather-types.js`, `src/lib/weather-geo-cache.js`, `src/lib/taiwan-locations.js`
+  - retargeted affected `src/**` imports and `specs/**` test mocks to new `@/config/**` / `@/types/**` paths
+  - verified with `npm run type-check:changed`
+  - verified with `npm run lint:changed`
+  - verified with `npx vitest run specs/003-strict-type-fixes/app-events-page/tests/integration/EventsPage.test.jsx specs/fix/event-detail-deleted-guard/tests/integration/EventDetailClient-delete-race.test.jsx specs/005-event-comments/tests/integration/CommentSection.test.jsx`
+- **Pitfalls recorded**:
+  - 單純把 UI 層 `Timestamp` 使用改成 direct `firebase/firestore` import 會被 ESLint structural rule 擋下；要改成 `src/lib/firebase-*.js` helper。
+  - 刪除 `src/lib/firebase-client.js` 代表所有依賴它的測試 mock path 也必須同步搬到 `@/config/client/firebase-client`。
+  - S002 雖然是 leaf extraction，但如果移除 compatibility path，就不能只改 production callers，測試邊界也要一起收斂。
+- **Next Session Brief**:
+  - 做 S003
+  - write scope 以 `src/config/server/**`、`src/repo/server/**`、`src/runtime/server/use-cases/**`、`src/lib/firebase-admin.js`、Strava server callers、`specs/021-layered-dependency-architecture/handoff.md` 為主
+  - `firebase-admin.js` 必須拆掉 config / repo / use-case 混檔狀態
+  - reviewer 要特別盯 `server-only` 邊界與 Strava route handler 的依賴方向
+
 ## Next Session Brief
 
-### S002: Foundation Leaf Extraction
+### S003: Server-only Split
 
 **Goal**
 
-- 建立 `src/types/**` 與 `src/config/**` 的第一批實體結構
-- 搬 `weather-types`、`firebase-client`、geo cache、location data
-- 移除 `src/lib/firestore-types.js`
-- 修正受影響 import 與 JSDoc
+- 拆 `src/lib/firebase-admin.js` 成 `src/config/server/**`、`src/repo/server/**`、`src/runtime/server/use-cases/**`
+- 同步整理 Strava route handlers 的依賴方向
+- 建立可驗證的 server-only 邊界，避免 admin/config/use-case 繼續混在同一檔
 
 **Write Scope**
 
-- `src/types/**`
-- `src/config/**`
-- 所有直接依賴 `src/lib/firestore-types.js`、`firebase-client.js`、`weather-types.js`、`weather-geo-cache.js`、`taiwan-locations.js` 的 callers
+- `src/config/server/**`
+- `src/repo/server/**`
+- `src/runtime/server/use-cases/**`
+- `src/lib/firebase-admin.js`
+- `src/app/api/strava/**` 與其他直接依賴 `firebase-admin.js` 的 server callers
 - `specs/021-layered-dependency-architecture/handoff.md`
 
 **Acceptance**
 
-- `src/lib/firestore-types.js` 不存在
-- 所有原先 callers 改用正確 type-only JSDoc 或新 config/types 路徑
-- 沒有新增 runtime 依賴回邊
+- `firebase-admin.js` 不再同時承擔 config / repo / use-case
+- Strava server flow 依賴方向符合 `Config -> Repo -> Runtime`
+- 沒有 client/runtime/ui 對 server-only 模組的回流依賴
 - `npm run type-check:changed` 與 `npm run lint:changed` 通過
 
 **Reviewer focus**
 
-- `firestore-types` 的 value leak 是否真的消失
-- `firebase-client` 是否被正確視為 `config`，而不是繼續當 service/repo
+- `server-only` 邊界是否真的立起來，而不是只搬目錄
+- Strava route handlers 是否仍偷吃 config/repo 細節
 - 是否只改動本 session 的 write scope

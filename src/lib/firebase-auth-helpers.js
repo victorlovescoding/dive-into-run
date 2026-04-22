@@ -1,5 +1,5 @@
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { auth, provider } from '@/lib/firebase-client';
+import { auth, provider } from '@/config/client/firebase-client';
 
 /**
  * 使用 Google 帳號登入。

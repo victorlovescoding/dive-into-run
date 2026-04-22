@@ -3,7 +3,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { uploadUserAvatar } from '@/lib/firebase-storage-helpers';
 import { asMock } from '../../../test-utils/mock-helpers';
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   storage: { _isMockStorage: true },
 }));
 

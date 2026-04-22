@@ -35,6 +35,14 @@ vi.mock('@/contexts/AuthContext', () => ({
   AuthContext: MockAuthContext,
 }));
 
+vi.mock('@/components/Notifications/NotificationBell', () => ({
+  default: () => null,
+}));
+
+vi.mock('@/components/Notifications/NotificationPanel', () => ({
+  default: () => null,
+}));
+
 const mockSignIn = vi.fn();
 const mockSignOut = vi.fn();
 vi.mock('@/lib/firebase-auth-helpers', () => ({

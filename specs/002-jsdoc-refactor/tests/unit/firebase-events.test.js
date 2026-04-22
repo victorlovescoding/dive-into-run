@@ -15,7 +15,7 @@ import {
 import { asMock } from '../../../test-utils/mock-helpers';
 
 // Mock dependencies
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: { _isMockDb: true },
 }));
 

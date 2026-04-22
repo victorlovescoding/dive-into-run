@@ -17,7 +17,7 @@ import {
   startAfter,
   documentId,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase-client';
+import { db } from '@/config/client/firebase-client';
 
 /** @type {number} 文章標題最大長度。 */
 export const POST_TITLE_MAX_LENGTH = 50;

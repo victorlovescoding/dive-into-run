@@ -15,7 +15,7 @@ import {
   writeBatch,
   deleteField,
 } from 'firebase/firestore';
-import { db } from './firebase-client';
+import { db } from '@/config/client/firebase-client';
 
 /**
  * @typedef {FirestoreTimestamp} Timestamp

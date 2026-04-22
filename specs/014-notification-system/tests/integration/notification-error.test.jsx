@@ -24,7 +24,7 @@ Object.defineProperty(window, 'matchMedia', {
 // Mocks — firebase-client
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   auth: {},
   db: {},
   provider: {},

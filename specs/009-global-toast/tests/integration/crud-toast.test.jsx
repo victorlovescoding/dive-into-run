@@ -42,7 +42,7 @@ vi.mock('firebase/auth', () => ({
   GoogleAuthProvider: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   auth: {},
   db: {},
   provider: {},
@@ -76,7 +76,7 @@ vi.mock('@/lib/event-helpers', () => ({
   buildUserPayload: vi.fn(() => ({ uid: 'u1', name: 'Test' })),
 }));
 
-vi.mock('@/lib/taiwan-locations', () => ({ default: {} }));
+vi.mock('@/config/geo/taiwan-locations', () => ({ default: {} }));
 
 vi.mock('@/lib/firebase-posts', () => ({
   createPost: vi.fn(),

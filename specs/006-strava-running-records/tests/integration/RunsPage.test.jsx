@@ -5,7 +5,7 @@ import { AuthContext } from '@/contexts/AuthContext';
 import ToastProvider from '@/contexts/ToastContext';
 
 // Mock Firebase to avoid initialization errors
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: {},
   auth: {},
 }));

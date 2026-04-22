@@ -1,4 +1,4 @@
-/** @typedef {import('@/lib/weather-types').WeatherInfo} WeatherInfo */
+/** @typedef {import('@/types/weather-types').WeatherInfo} WeatherInfo */
 
 /**
  * 從 /api/weather 取得天氣資訊。

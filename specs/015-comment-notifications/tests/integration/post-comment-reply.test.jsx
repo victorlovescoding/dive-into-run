@@ -24,7 +24,7 @@ Object.defineProperty(window, 'matchMedia', {
 // Mocks -- firebase-client (prevent real Firebase init)
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: {},
   auth: {},
   provider: {},

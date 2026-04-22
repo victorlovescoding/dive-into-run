@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AuthContext } from '@/contexts/AuthContext';
 
-vi.mock('@/lib/firebase-client', () => ({ db: {} }));
+vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
 vi.mock('@/lib/firebase-strava', () => ({
   getStravaActivities: vi.fn(),
 }));

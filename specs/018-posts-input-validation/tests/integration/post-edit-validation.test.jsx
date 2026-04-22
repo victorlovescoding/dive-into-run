@@ -50,7 +50,7 @@ vi.mock('@/lib/firebase-notifications', () => ({
   notifyPostNewComment: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({ db: {} }));
+vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
 
 vi.mock('firebase/firestore', () => ({
   addDoc: vi.fn(),

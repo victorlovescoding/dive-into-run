@@ -4,7 +4,7 @@ import { useMemo, useEffect, useCallback } from 'react';
 import { MapContainer, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { ISLAND_MARKERS } from '@/lib/weather-helpers';
-import { countiesGeoJson, townsGeoJson as allTownsGeoJson } from '@/lib/weather-geo-cache';
+import { countiesGeoJson, townsGeoJson as allTownsGeoJson } from '@/config/geo/weather-geo-cache';
 import styles from './weather.module.css';
 
 // #region Style constants

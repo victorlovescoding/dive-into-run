@@ -10,7 +10,7 @@ import {
   startAfter,
   doc,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase-client';
+import { db } from '@/config/client/firebase-client';
 
 /**
  * @typedef {import('firebase/firestore').QueryDocumentSnapshot} QueryDocumentSnapshot

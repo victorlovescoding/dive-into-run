@@ -13,7 +13,7 @@ import {
   limit,
   startAfter,
 } from 'firebase/firestore';
-import { db } from './firebase-client';
+import { db } from '@/config/client/firebase-client';
 import { fetchParticipants } from './firebase-events';
 import { buildNotificationMessage } from './notification-helpers';
 

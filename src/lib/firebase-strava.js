@@ -10,7 +10,7 @@ import {
   getDocs,
   Timestamp,
 } from 'firebase/firestore';
-import { db } from './firebase-client';
+import { db } from '@/config/client/firebase-client';
 
 /**
  * @typedef {import('firebase/firestore').QueryDocumentSnapshot} QueryDocumentSnapshot

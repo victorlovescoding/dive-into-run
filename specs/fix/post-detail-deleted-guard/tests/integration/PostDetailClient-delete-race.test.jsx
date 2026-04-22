@@ -33,7 +33,7 @@ vi.mock('@/contexts/ToastContext', () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({ db: {} }));
+vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
 
 vi.mock('firebase/firestore', () => ({
   addDoc: vi.fn(),

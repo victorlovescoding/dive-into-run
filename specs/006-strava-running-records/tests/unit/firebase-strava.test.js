@@ -48,7 +48,7 @@ vi.mock('firebase/firestore', () => ({
   getDocs: (...args) => mockGetDocs(...args),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({ db: 'mock-db' }));
+vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
 
 // ---------------------------------------------------------------------------
 // Test Suites — listenStravaConnection

@@ -22,7 +22,7 @@ vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({ db: 'mock-db' }));
+vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
 vi.mock('@/lib/firebase-events', () => ({ fetchParticipants: vi.fn() }));
 vi.mock('@/lib/notification-helpers', () => ({
   buildNotificationMessage: vi.fn(() => 'mock-message'),

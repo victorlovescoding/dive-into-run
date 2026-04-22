@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Timestamp } from '@/lib/firestore-types';
 import {
   addComment,
   updateComment,
   deleteComment,
   fetchCommentHistory,
 } from '@/lib/firebase-comments';
+import { getCurrentFirestoreTimestamp } from '@/lib/firebase-firestore-timestamp';
 
 /**
  * @typedef {import('@/lib/firebase-comments').CommentData} CommentData
@@ -122,7 +122,7 @@ export default function useCommentMutations(eventId, user, setComments, onSucces
                   ...c,
                   content: newContent.trim(),
                   isEdited: true,
-                  updatedAt: Timestamp.now(),
+                  updatedAt: getCurrentFirestoreTimestamp(),
                 }
               : c,
           ),
