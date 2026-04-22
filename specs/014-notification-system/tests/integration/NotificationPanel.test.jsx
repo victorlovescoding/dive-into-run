@@ -6,10 +6,16 @@ import userEvent from '@testing-library/user-event';
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-notifications', () => ({
+vi.mock('@/runtime/client/use-cases/auth-use-cases', () => ({
+  default: vi.fn(() => vi.fn()),
+}));
+
+vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
   watchNotifications: vi.fn(),
   watchUnreadNotifications: vi.fn(),
   markNotificationAsRead: vi.fn(),
+  fetchMoreNotifications: vi.fn(),
+  fetchMoreUnreadNotifications: vi.fn(),
 }));
 
 vi.mock('@/lib/notification-helpers', () => ({
@@ -30,22 +36,8 @@ vi.mock('next/image', () => ({
   },
 }));
 
-vi.mock('@/contexts/AuthContext', () => {
-  const { createContext } = require('react');
-  /** @type {import('react').Context<import('@/contexts/AuthContext').AuthContextValue>} */
-  const AuthContext = createContext({
-    user: null,
-    setUser: () => {},
-    loading: false,
-  });
-  return {
-    AuthContext,
-    default: ({ children }) => children,
-  };
-});
-
 import { formatRelativeTime } from '@/lib/notification-helpers';
-import { NotificationContext } from '@/contexts/NotificationContext';
+import { NotificationContext } from '@/runtime/providers/NotificationProvider';
 import NotificationPanel from '@/components/Notifications/NotificationPanel';
 import NotificationItem from '@/components/Notifications/NotificationItem';
 
@@ -81,8 +73,8 @@ function createMockNotification(overrides = {}) {
 
 /**
  * 建立 NotificationContext 預設 mock value。
- * @param {Partial<import('@/contexts/NotificationContext').NotificationContextValue>} [overrides] - 覆寫欄位。
- * @returns {import('@/contexts/NotificationContext').NotificationContextValue} mock context value。
+ * @param {Partial<import('@/runtime/providers/NotificationProvider').NotificationContextValue>} [overrides] - 覆寫欄位。
+ * @returns {import('@/runtime/providers/NotificationProvider').NotificationContextValue} mock context value。
  */
 function createContextValue(overrides = {}) {
   return {

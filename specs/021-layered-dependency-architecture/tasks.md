@@ -35,7 +35,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
 
 ## Phase 5: Runtime Formalization
 
-- [ ] S008 將 `AuthContext`、`NotificationContext`、`ToastContext` 正式遷入 `src/runtime/providers/**`，provider 僅依賴 runtime/service，不直接依賴 repo。
+- [x] S008 將 `AuthContext`、`NotificationContext`、`ToastContext` 正式遷入 `src/runtime/providers/**`，provider 僅依賴 runtime/service，不直接依賴 repo。
 - [ ] S009 將通用 hooks 正式遷入 `src/runtime/hooks/**`，收斂 runtime orchestration。
 
 ## Phase 6: UI / Entry Separation

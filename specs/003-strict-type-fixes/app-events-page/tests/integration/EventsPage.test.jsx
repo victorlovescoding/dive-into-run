@@ -3,8 +3,8 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import EventsPage from '@/app/events/page';
-import { AuthContext } from '@/contexts/AuthContext';
-import ToastProvider from '@/contexts/ToastContext';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import ToastProvider from '@/runtime/providers/ToastProvider';
 import * as firebaseEvents from '@/lib/firebase-events';
 
 /**

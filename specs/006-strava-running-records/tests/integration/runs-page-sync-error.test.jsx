@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { AuthContext } from '@/contexts/AuthContext';
-import ToastProvider from '@/contexts/ToastContext';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import ToastProvider from '@/runtime/providers/ToastProvider';
 
 // Mock Firebase to avoid initialization errors
 vi.mock('@/config/client/firebase-client', () => ({

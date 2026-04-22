@@ -7,7 +7,9 @@ vi.mock('next/navigation', () => ({
 }));
 
 // 延遲 import，讓 mock 先生效
-const { toastReducer, default: ToastProvider, useToast } = await import('@/contexts/ToastContext');
+const { toastReducer, default: ToastProvider, useToast } = await import(
+  '@/runtime/providers/ToastProvider'
+);
 
 const mockedUsePathname = vi.mocked(usePathname);
 
@@ -30,7 +32,7 @@ function wrapper(pathname = '/') {
 describe('toastReducer', () => {
   it('ADD action 新增 toast 到陣列', () => {
     const state = [];
-    /** @type {import('@/contexts/ToastContext').ToastItem} */
+    /** @type {import('@/runtime/providers/ToastProvider').ToastItem} */
     const toast = {
       id: 'abc',
       message: 'Hello',
@@ -43,7 +45,7 @@ describe('toastReducer', () => {
   });
 
   it('REMOVE action 移除指定 id 的 toast', () => {
-    /** @type {import('@/contexts/ToastContext').ToastItem[]} */
+    /** @type {import('@/runtime/providers/ToastProvider').ToastItem[]} */
     const state = [
       { id: '1', message: 'a', type: 'success', createdAt: 1 },
       { id: '2', message: 'b', type: 'error', createdAt: 2 },
@@ -54,7 +56,7 @@ describe('toastReducer', () => {
   });
 
   it('CLEAR_ALL action 清空陣列', () => {
-    /** @type {import('@/contexts/ToastContext').ToastItem[]} */
+    /** @type {import('@/runtime/providers/ToastProvider').ToastItem[]} */
     const state = [
       { id: '1', message: 'a', type: 'success', createdAt: 1 },
       { id: '2', message: 'b', type: 'info', createdAt: 2 },
@@ -64,14 +66,14 @@ describe('toastReducer', () => {
   });
 
   it('ADD 超過 5 個時移除最舊', () => {
-    /** @type {import('@/contexts/ToastContext').ToastItem[]} */
+    /** @type {import('@/runtime/providers/ToastProvider').ToastItem[]} */
     const state = Array.from({ length: 5 }, (_, i) => ({
       id: String(i),
       message: `msg-${i}`,
       type: /** @type {const} */ ('success'),
       createdAt: i,
     }));
-    /** @type {import('@/contexts/ToastContext').ToastItem} */
+    /** @type {import('@/runtime/providers/ToastProvider').ToastItem} */
     const newToast = {
       id: '5',
       message: 'msg-5',

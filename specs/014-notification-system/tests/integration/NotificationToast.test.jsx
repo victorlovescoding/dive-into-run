@@ -12,7 +12,11 @@ vi.mock('@/lib/firebase-users', () => ({
   watchUserProfile: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-notifications', () => ({
+vi.mock('@/runtime/client/use-cases/auth-use-cases', () => ({
+  default: vi.fn(() => vi.fn()),
+}));
+
+vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
   watchNotifications: vi.fn(),
   watchUnreadNotifications: vi.fn(),
   markNotificationAsRead: vi.fn(),
@@ -25,11 +29,14 @@ vi.mock('next/navigation', () => ({
   useRouter: vi.fn(() => ({ push: vi.fn() })),
 }));
 
-import { watchNotifications, watchUnreadNotifications } from '@/lib/firebase-notifications';
-import { AuthContext } from '@/contexts/AuthContext';
-import NotificationProvider from '@/contexts/NotificationContext';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import NotificationProvider from '@/runtime/providers/NotificationProvider';
 import NotificationToast from '@/components/Notifications/NotificationToast';
 import NotificationBell from '@/components/Notifications/NotificationBell';
+import {
+  watchNotifications,
+  watchUnreadNotifications,
+} from '@/runtime/client/use-cases/notification-use-cases';
 
 let notificationsCallback;
 let notificationsOnNew;

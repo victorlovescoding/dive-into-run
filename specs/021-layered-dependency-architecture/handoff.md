@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S007 completed
-**Next Recommended Session**: S008
+**Current Session**: S008 completed
+**Next Recommended Session**: S009
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -71,7 +71,7 @@
 | S005 | done | repo/service extraction A |
 | S006 | done | repo/service extraction B |
 | S007 | done | weather/storage mixed runtime split |
-| S008 | todo | formalize providers |
+| S008 | done | formalize providers |
 | S009 | todo | formalize runtime hooks |
 | S010 | todo | split `events/page.jsx` |
 | S011 | todo | split `eventDetailClient.jsx` |
@@ -88,8 +88,9 @@
 
 1. `src/lib/firebase-profile-mapper.js` 目前先留在 `src/lib/**` compatibility namespace，真正把 profile mapper 納入終態 `src/service/**` 的遷移要配合後續更大範圍 profile split 一起做。
 2. `WeatherPage` 雖已把 URL/localStorage persistence 收斂到 `runtime/client/use-cases/weather-location-use-cases.js`，但頁面本身仍同時承擔 fetch orchestration / favorites / map interaction，多層責任尚未完全拆乾淨。
-3. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx` 直接依賴 repo，provider 邊界未立起來。
+3. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx`、`ToastContext.jsx` 已收斂成 thin compatibility facades；真正 provider 實作現在在 `src/runtime/providers/**`。
 4. `src/app/events/page.jsx`、`eventDetailClient.jsx`、`PostDetailClient.jsx`、`components/weather/WeatherPage.jsx` 都是多層混檔。
+5. `src/repo/client/firebase-auth-repo.js` 已建立，`src/lib/firebase-auth-helpers.js` 現在只是 re-export facade。
 6. `server-only` 目前先靠 `src/config/server/**` / `src/repo/server/**` / `src/runtime/server/**` 路徑邊界與測試隔離維持；真正的機械 enforcement 仍待後續 dep-cruise / lint 規則接線。
 7. UI integration layers 仍受 ESLint `no-restricted-imports` 保護，不能直接 import `firebase/*`；若 local state 需要 Firestore `Timestamp`，必須經由 `src/lib/firebase-*.js` helper。
 8. `src/runtime/client/use-cases/notification-use-cases.js` 現在依賴 repo client primitives（`fetchParticipantUids` / `fetchDistinctPostCommentAuthors` / `fetchDistinctEventCommentAuthors`）；後續若再調整 notification flow，請維持 side effects 留在 runtime/use-case，不要把 participant / recipient lookup 再塞回 repo 寫入函式內。
@@ -357,32 +358,39 @@ tests 不可整包排除。已知真衝突 unit 檔：
   - write scope 以 `src/contexts/{AuthContext,NotificationContext}.jsx`、新的 `src/runtime/providers/**`、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
   - 目標是把 providers 正式收進 runtime 邊界，禁止 provider 直接碰 repo
   - reviewer 要特別盯 provider 是否只依賴 runtime/service，而不是把 repo import 換個路徑繼續保留
-## Next Session Brief
+### S008
 
-### S008: Provider Formalization
-
-**Goal**
-
-- 把 `AuthContext`、`NotificationContext` 等 provider 正式遷入 `src/runtime/providers/**`
-- 建立 provider 僅依賴 runtime/service、不直連 repo 的邊界
-- 繼續收斂 client-side orchestration，為後續 hooks / UI split 鋪路
-
-**Write Scope**
-
-- `src/contexts/{AuthContext,NotificationContext}.jsx`
-- 新的 `src/runtime/providers/**`
-- 受影響的 callers / tests
-- `specs/021-layered-dependency-architecture/handoff.md`
-
-**Acceptance**
-
-- provider 正式成為 runtime 邊界
-- provider 不再 direct import repo
-- 受影響 callers/tests 已切到新的 runtime provider 入口
-- `npm run type-check:changed` 與 `npm run lint:changed` 通過
-
-**Reviewer focus**
-
-- provider 是否真的脫離 repo 直連，而不是只換 import path
-- runtime/providers 是否維持 orchestration 邊界，不回流到 `src/contexts/**` 舊灰區
-- 是否只改動本 session 的 write scope
+- **Goal**: 把 `AuthContext`、`NotificationContext`、`ToastContext` 正式遷入 `src/runtime/providers/**`，讓 provider 只依賴 runtime/service，`src/contexts/**` 僅保留 compatibility facade。
+- **Write Scope**:
+  - `src/contexts/{AuthContext,NotificationContext,ToastContext}.jsx`
+  - `src/runtime/providers/**`
+  - `src/runtime/providers/ToastProvider.d.ts`
+  - `src/service/auth-service.js`
+  - `src/runtime/client/use-cases/auth-use-cases.js`
+  - `src/repo/client/firebase-auth-repo.js`
+  - `src/lib/firebase-auth-helpers.js`
+  - `src/contexts/ToastContext.d.ts`
+  - 受影響的 callers / tests
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - created `src/runtime/providers/{AuthProvider,NotificationProvider,ToastProvider}.jsx` and `src/runtime/providers/index.js`
+  - added type-only facades `src/runtime/providers/ToastProvider.d.ts` and `src/contexts/ToastContext.d.ts` so legacy ToastItem imports keep type-checking
+  - created `src/repo/client/firebase-auth-repo.js` and converted `src/lib/firebase-auth-helpers.js` into a re-export facade
+  - moved auth/profile orchestration into `src/service/auth-service.js` and `src/runtime/client/use-cases/auth-use-cases.js`
+  - kept `src/contexts/{AuthContext,NotificationContext,ToastContext}.jsx` as thin re-export facades only
+  - updated `src/app/layout.jsx` to keep `Auth -> Toast -> Notification` ordering while importing from `@/runtime/providers`
+  - retargeted provider-focused tests to runtime providers/use-cases and fixed `notification-triggers` to wrap both `AuthContext.Provider` and `ToastProvider`
+  - verified with `npm run type-check:changed`
+  - verified with `npm run lint:changed`
+  - verified with `npx vitest run specs/009-global-toast/tests/unit/toast-context.test.jsx specs/014-notification-system/tests/integration/NotificationBell.test.jsx specs/014-notification-system/tests/integration/NotificationToast.test.jsx specs/014-notification-system/tests/integration/NotificationPanel.test.jsx specs/014-notification-system/tests/integration/NotificationPagination.test.jsx specs/014-notification-system/tests/integration/NotificationPaginationStateful.test.jsx specs/014-notification-system/tests/integration/NotificationTabs.test.jsx specs/014-notification-system/tests/integration/notification-click.test.jsx specs/014-notification-system/tests/integration/notification-error.test.jsx specs/014-notification-system/tests/integration/notification-triggers.test.jsx`
+- **Pitfalls recorded**:
+  - auth IO must live in `src/repo/client/firebase-auth-repo.js`; leaving it in `src/service/auth-service.js` looks like a layer rename and triggers the same reviewer concern.
+  - notification provider tests must mock `@/runtime/client/use-cases/notification-use-cases`; leaving them on `@/lib/firebase-notifications` will reintroduce real Firebase init.
+  - `notification-triggers` needs both `AuthContext.Provider` and `ToastProvider`; without auth context the detail clients never expose the actions under test.
+  - `src/contexts/**` must stay thin compatibility only; any provider logic left there would violate the runtime boundary and likely get rejected in review.
+- **Next Session Brief**:
+  - 做 S009
+  - write scope 以 `src/runtime/hooks/**`、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
+  - 目標是把通用 hooks 正式收進 runtime/hooks，避免 orchestration 再回流到 components/pages
+  - reviewer 要特別盯 hooks 是否真的只依賴 runtime boundary，而不是把 provider orchestration 原封不動搬過去
