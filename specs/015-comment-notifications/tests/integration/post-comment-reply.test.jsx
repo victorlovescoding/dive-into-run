@@ -69,7 +69,7 @@ vi.mock('firebase/app', () => ({
 // Mocks -- firebase-posts
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-posts', () => ({
+vi.mock('@/runtime/client/use-cases/post-use-cases', () => ({
   getPostDetail: vi.fn(),
   addComment: vi.fn(),
   getLatestComments: vi.fn(),
@@ -87,7 +87,7 @@ vi.mock('@/lib/firebase-posts', () => ({
 // Mocks -- firebase-notifications
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-notifications', () => ({
+vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
   notifyPostNewComment: vi.fn(() => Promise.resolve()),
   notifyPostCommentReply: vi.fn(() => Promise.resolve()),
 }));
@@ -96,7 +96,7 @@ vi.mock('@/lib/firebase-notifications', () => ({
 // Mocks -- contexts
 // ---------------------------------------------------------------------------
 
-vi.mock('@/contexts/AuthContext', async () => {
+vi.mock('@/runtime/providers/AuthProvider', async () => {
   const { createContext } = await import('react');
   return {
     AuthContext: createContext({
@@ -116,7 +116,7 @@ vi.mock('@/contexts/AuthContext', async () => {
 });
 
 const mockShowToast = vi.fn();
-vi.mock('@/contexts/ToastContext', async () => {
+vi.mock('@/runtime/providers/ToastProvider', async () => {
   const { createContext } = await import('react');
   return {
     useToast: () => ({ showToast: mockShowToast }),
@@ -164,8 +164,11 @@ import {
   getLatestComments,
   getCommentById,
   hasUserLikedPost,
-} from '@/lib/firebase-posts';
-import { notifyPostNewComment, notifyPostCommentReply } from '@/lib/firebase-notifications';
+} from '@/runtime/client/use-cases/post-use-cases';
+import {
+  notifyPostNewComment,
+  notifyPostCommentReply,
+} from '@/runtime/client/use-cases/notification-use-cases';
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
 
 // cast to vi.Mock for convenience

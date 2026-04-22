@@ -106,7 +106,7 @@ vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
 // Mocks — firebase-posts
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-posts', () => ({
+vi.mock('@/runtime/client/use-cases/post-use-cases', () => ({
   getPostDetail: vi.fn(),
   addComment: vi.fn(),
   getLatestComments: vi.fn(),
@@ -179,7 +179,7 @@ import {
   getLatestComments,
   getCommentById,
   hasUserLikedPost,
-} from '@/lib/firebase-posts';
+} from '@/runtime/client/use-cases/post-use-cases';
 import ToastProvider from '@/runtime/providers/ToastProvider';
 import EventDetailClient from '@/app/events/[id]/eventDetailClient';
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';

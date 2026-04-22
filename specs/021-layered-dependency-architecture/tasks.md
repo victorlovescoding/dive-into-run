@@ -42,7 +42,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
 
 - [x] S010 拆 `src/app/events/page.jsx` 為 thin entry + runtime + ui。
 - [x] S011 拆 `src/app/events/[id]/eventDetailClient.jsx` 為 thin entry + runtime + ui。
-- [ ] S012 拆 `src/app/posts/[id]/PostDetailClient.jsx` 為 thin entry + runtime + ui。
+- [x] S012 拆 `src/app/posts/[id]/PostDetailClient.jsx` 為 thin entry + runtime + ui。
 - [ ] S013 拆 `src/components/weather/WeatherPage.jsx` 與 `DashboardTabs.jsx`，清掉 UI/runtime/service 回流。
 
 ## Phase 7: Test Realignment

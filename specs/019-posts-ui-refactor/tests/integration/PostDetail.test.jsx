@@ -25,11 +25,11 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-vi.mock('@/contexts/AuthContext', () => ({
+vi.mock('@/runtime/providers/AuthProvider', () => ({
   AuthContext: mockAuthContext,
 }));
 
-vi.mock('@/contexts/ToastContext', () => ({
+vi.mock('@/runtime/providers/ToastProvider', () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 
@@ -55,7 +55,7 @@ vi.mock('firebase/firestore', () => ({
   documentId: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-posts', () => ({
+vi.mock('@/runtime/client/use-cases/post-use-cases', () => ({
   getPostDetail: vi.fn(),
   addComment: vi.fn(),
   getLatestComments: vi.fn(),
@@ -70,7 +70,7 @@ vi.mock('@/lib/firebase-posts', () => ({
   validatePostInput: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-notifications', () => ({
+vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
   notifyPostNewComment: vi.fn().mockResolvedValue(undefined),
   notifyPostCommentReply: vi.fn().mockResolvedValue(undefined),
 }));
@@ -99,7 +99,7 @@ import {
   toggleLikePost,
   hasUserLikedPost,
   getMoreComments,
-} from '@/lib/firebase-posts';
+} from '@/runtime/client/use-cases/post-use-cases';
 
 /** @type {import('vitest').Mock} */
 const mockedGetPostDetail = /** @type {import('vitest').Mock} */ (getPostDetail);

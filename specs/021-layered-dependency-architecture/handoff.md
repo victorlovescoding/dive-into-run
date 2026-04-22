@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S011 completed
-**Next Recommended Session**: S012
+**Current Session**: S012 completed
+**Next Recommended Session**: S013
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -58,6 +58,10 @@
 - `src/app/events/[id]/eventDetailClient.jsx` 已收斂成 thin client entry，只保留 `useEventDetailRuntime + EventDetailScreen`
 - `src/runtime/hooks/useEventDetailRuntime.js` 已成為活動詳情頁的 canonical runtime boundary，承接 detail fetch、participants、isJoined、body scroll lock、overlay listeners、edit/delete、join/leave、comment notification、router push、toast 與 share URL orchestration
 - `src/ui/events/{EventDetailScreen.jsx,EventDetailScreen.module.css}` 已建立；活動詳情頁 UI 不再直接 import `@/lib/firebase-events`、`@/lib/firebase-notifications`、或 `@/contexts/**`
+- `src/app/posts/[id]/PostDetailClient.jsx` 已收斂成 thin client entry，只保留 `usePostDetailRuntime + PostDetailScreen`
+- `src/runtime/hooks/usePostDetailRuntime.js` 已成為文章詳情頁的 canonical runtime boundary，承接 detail load/hydration、comment infinite scroll + dedupe、scroll-to-comment/highlight、edit/update validation、delete race handling、optimistic like rollback、comment CRUD、notification fan-out、dialog/menu state、router/toast/auth interaction 與 share URL
+- `src/ui/posts/{PostDetailScreen.jsx,PostDetailScreen.module.css}` 已建立；文章詳情頁 UI 不再依賴 `src/app/posts/**` 樣式，也不直接 import runtime providers、router、或 post/notification use-cases
+- `specs/fix/post-detail-deleted-guard/tests/integration/PostDetailClient-delete-race.test.jsx`、`specs/014-notification-system/tests/integration/{notification-triggers,notification-error}.test.jsx`、`specs/015-comment-notifications/tests/integration/post-comment-reply.test.jsx`、`specs/018-posts-input-validation/tests/integration/post-edit-validation.test.jsx`、`specs/019-posts-ui-refactor/tests/integration/PostDetail.test.jsx`、`specs/020-post-edit-dirty-check/tests/integration/post-detail-edit-dirty.test.jsx` 已同步 retarget 到 runtime providers + runtime use-cases
 - `specs/fix/event-detail-deleted-guard/tests/integration/EventDetailClient-delete-race.test.jsx`、`specs/014-notification-system/tests/integration/{notification-triggers,notification-error}.test.jsx` 已同步 retarget 到 runtime providers + runtime use-cases
 - `specs/015-comment-notifications/tests/integration/event-detail-comment-runtime.test.jsx` 已補 detail runtime comment wiring coverage，`specs/015-comment-notifications/tests/integration/event-comment-notification.test.jsx` 也已改用 `@/runtime/providers/AuthProvider`，避免只靠舊 `@/contexts/**` 路徑當證據
 - `src/components/{CommentSection,DashboardTabs,RunCalendarDialog}.jsx` 與 `src/app/runs/page.jsx` 已改為直接 import `@/runtime/hooks/**`，不再把 runtime orchestration 掛在 compatibility hooks namespace
@@ -86,7 +90,7 @@
 | S009 | done | formalize runtime hooks |
 | S010 | done | split `events/page.jsx` |
 | S011 | done | split `eventDetailClient.jsx` |
-| S012 | todo | split `PostDetailClient.jsx` |
+| S012 | done | split `PostDetailClient.jsx` |
 | S013 | todo | split weather/dashboard UI-runtime mixed files |
 | S014 | todo | tests four-bucket rules |
 | S015 | todo | clean the 4 real test conflicts |
@@ -100,7 +104,7 @@
 1. `src/lib/firebase-profile-mapper.js` 目前先留在 `src/lib/**` compatibility namespace，真正把 profile mapper 納入終態 `src/service/**` 的遷移要配合後續更大範圍 profile split 一起做。
 2. `WeatherPage` 雖已把 URL/localStorage persistence 收斂到 `runtime/client/use-cases/weather-location-use-cases.js`，但頁面本身仍同時承擔 fetch orchestration / favorites / map interaction，多層責任尚未完全拆乾淨。
 3. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx`、`ToastContext.jsx` 已收斂成 thin compatibility facades；真正 provider 實作現在在 `src/runtime/providers/**`。
-4. `PostDetailClient.jsx` 與 `components/weather/WeatherPage.jsx` 仍是多層混檔；`eventDetailClient.jsx` 已在 S011 拆成 thin entry + runtime + ui。
+4. `components/weather/WeatherPage.jsx` 與 `DashboardTabs.jsx` 仍是 S013 的主要 mixed-layer target；`eventDetailClient.jsx` 與 `PostDetailClient.jsx` 都已拆成 thin entry + runtime + ui。
 5. `src/repo/client/firebase-auth-repo.js` 已建立，`src/lib/firebase-auth-helpers.js` 現在只是 re-export facade。
 6. `server-only` 目前先靠 `src/config/server/**` / `src/repo/server/**` / `src/runtime/server/**` 路徑邊界與測試隔離維持；真正的機械 enforcement 仍待後續 dep-cruise / lint 規則接線。
 7. UI integration layers 仍受 ESLint `no-restricted-imports` 保護，不能直接 import `firebase/*`；若 local state 需要 Firestore `Timestamp`，必須經由 `src/lib/firebase-*.js` helper。
@@ -503,3 +507,36 @@ tests 不可整包排除。已知真衝突 unit 檔：
   - write scope 以 `src/app/posts/[id]/PostDetailClient.jsx`、新的 runtime/ui entry points、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
   - 目標是把 post detail page 拆成 thin entry + runtime + ui，並比照 S011 把通知/留言/scroll-to-comment 行為的測試 mock target 一起收斂到 runtime 真實依賴
   - reviewer 要特別盯 post detail 的 comment/highlight/edit/delete/like 行為是否真的下沉到 runtime，而不是只把 JSX 挪進 `src/ui/**`
+
+### S012
+
+- **Goal**: 把 `src/app/posts/[id]/PostDetailClient.jsx` 拆成 thin client entry + runtime hook + UI screen，並確保文章詳情頁的 load/hydration、comment scroll/highlight、like/edit/delete/comment orchestration 真正下沉到 runtime。
+- **Write Scope**:
+  - `src/app/posts/[id]/PostDetailClient.jsx`
+  - `src/runtime/hooks/usePostDetailRuntime.js`
+  - `src/ui/posts/{PostDetailScreen.jsx,PostDetailScreen.module.css}`
+  - `specs/fix/post-detail-deleted-guard/tests/integration/PostDetailClient-delete-race.test.jsx`
+  - `specs/014-notification-system/tests/integration/{notification-triggers,notification-error}.test.jsx`
+  - `specs/015-comment-notifications/tests/integration/post-comment-reply.test.jsx`
+  - `specs/018-posts-input-validation/tests/integration/post-edit-validation.test.jsx`
+  - `specs/019-posts-ui-refactor/tests/integration/PostDetail.test.jsx`
+  - `specs/020-post-edit-dirty-check/tests/integration/post-detail-edit-dirty.test.jsx`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - reduced `src/app/posts/[id]/PostDetailClient.jsx` to a pure thin client entry that only binds `postId -> usePostDetailRuntime -> PostDetailScreen`
+  - created `src/runtime/hooks/usePostDetailRuntime.js` and moved detail load/hydration, comment infinite scroll + dedupe, scroll-to-comment/highlight, edit/update validation, delete race handling, optimistic like rollback, comment CRUD, notification fan-out, dialog/menu state, router/toast/auth/share URL orchestration there
+  - created `src/ui/posts/{PostDetailScreen.jsx,PostDetailScreen.module.css}` so post detail UI only consumes runtime state/handlers and no longer depends on `src/app/posts/postDetail.module.css` or runtime/provider/use-case modules directly
+  - retargeted `PostDetail.test.jsx`, `post-detail-edit-dirty.test.jsx`, `PostDetailClient-delete-race.test.jsx`, `notification-triggers.test.jsx`, `notification-error.test.jsx`, `post-comment-reply.test.jsx`, and `post-edit-validation.test.jsx` from legacy `@/lib/firebase-posts` / `@/lib/firebase-notifications` / `@/contexts/**` imports to runtime use-cases and runtime providers
+  - verified with `npm run type-check:changed`
+  - verified with `npm run lint:changed` (passes with existing eslint-plugin-react settings warning)
+  - verified with `npx vitest run specs/fix/post-detail-deleted-guard/tests/integration/PostDetailClient-delete-race.test.jsx specs/014-notification-system/tests/integration/notification-triggers.test.jsx specs/014-notification-system/tests/integration/notification-error.test.jsx specs/015-comment-notifications/tests/integration/post-comment-reply.test.jsx specs/018-posts-input-validation/tests/integration/post-edit-validation.test.jsx specs/019-posts-ui-refactor/tests/integration/PostDetail.test.jsx specs/020-post-edit-dirty-check/tests/integration/post-detail-edit-dirty.test.jsx`
+- **Pitfalls recorded**:
+  - once `PostDetailClient` moves to `@/runtime/client/use-cases/post-use-cases` and runtime providers, entry-level tests that keep mocking `@/lib/firebase-posts`, `@/lib/firebase-notifications`, or `@/contexts/**` stop intercepting the real code path; production import targets and test mock targets must move in the same session
+  - `PostDetailScreen.jsx` must stay render-only. Pulling router, auth, toast, notification use-cases, or app-scoped styles back into the screen would collapse the split back into a mixed UI/runtime file
+  - the runtime fallback path for newly-added comments needs a Firestore `Timestamp` shape, not a plain `Date`; use `createFirestoreTimestamp()` inside runtime rather than letting UI/comment-card type assumptions leak
+- **Next Session Brief**:
+  - 做 S013
+  - write scope 以 `src/components/weather/WeatherPage.jsx`、`src/components/DashboardTabs.jsx`、新的 runtime/ui entry points、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
+  - 目標是把 weather/dashboard 的 mixed-layer UI 與 orchestration 拆成 thin entry + runtime + ui，並比照 S010-S012 保持 production import targets 與 entry-level tests/mock targets 對齊
+  - reviewer 要特別盯 UI screen 是否仍回頭 import `src/app/**` 樣式或 runtime/service 依賴

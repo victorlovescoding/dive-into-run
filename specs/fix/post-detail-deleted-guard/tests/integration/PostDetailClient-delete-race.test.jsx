@@ -25,11 +25,11 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-vi.mock('@/contexts/AuthContext', () => ({
+vi.mock('@/runtime/providers/AuthProvider', () => ({
   AuthContext: mockAuthContext,
 }));
 
-vi.mock('@/contexts/ToastContext', () => ({
+vi.mock('@/runtime/providers/ToastProvider', () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 
@@ -55,23 +55,28 @@ vi.mock('firebase/firestore', () => ({
   documentId: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-posts', () => ({
-  getPostDetail: vi.fn(),
-  addComment: vi.fn(),
-  getLatestComments: vi.fn(),
-  getCommentById: vi.fn(),
-  toggleLikePost: vi.fn(),
-  hasUserLikedPost: vi.fn(),
-  updatePost: vi.fn(),
-  updateComment: vi.fn(),
-  deletePost: vi.fn(),
-  deleteComment: vi.fn(),
-  getMoreComments: vi.fn(),
-  validatePostInput: vi.fn(),
-  POST_NOT_FOUND_MESSAGE: '文章不存在',
-}));
+vi.mock('@/runtime/client/use-cases/post-use-cases', async (importOriginal) => {
+  const original = /** @type {import('@/runtime/client/use-cases/post-use-cases')} */ (
+    await importOriginal()
+  );
+  return {
+    validatePostInput: original.validatePostInput,
+    POST_NOT_FOUND_MESSAGE: original.POST_NOT_FOUND_MESSAGE,
+    getPostDetail: vi.fn(),
+    addComment: vi.fn(),
+    getLatestComments: vi.fn(),
+    getCommentById: vi.fn(),
+    toggleLikePost: vi.fn(),
+    hasUserLikedPost: vi.fn(),
+    updatePost: vi.fn(),
+    updateComment: vi.fn(),
+    deletePost: vi.fn(),
+    deleteComment: vi.fn(),
+    getMoreComments: vi.fn(),
+  };
+});
 
-vi.mock('@/lib/firebase-notifications', () => ({
+vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
   notifyPostNewComment: vi.fn(),
   notifyPostCommentReply: vi.fn(),
 }));
@@ -98,7 +103,7 @@ import {
   hasUserLikedPost,
   getMoreComments,
   deletePost,
-} from '@/lib/firebase-posts';
+} from '@/runtime/client/use-cases/post-use-cases';
 
 /** @type {import('vitest').Mock} */
 const mockedGetPostDetail = /** @type {import('vitest').Mock} */ (getPostDetail);
