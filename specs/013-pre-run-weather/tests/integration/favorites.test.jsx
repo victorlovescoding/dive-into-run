@@ -178,7 +178,7 @@ const { authValue, mockShowToast } = vi.hoisted(() => ({
   mockShowToast: vi.fn(),
 }));
 
-vi.mock('@/contexts/AuthContext', () => ({
+vi.mock('@/runtime/providers/AuthProvider', () => ({
   AuthContext: /** @type {import('react').Context<object>} */ (
     /** @type {unknown} */ ({
       Provider: ({ children }) => children,
@@ -188,7 +188,7 @@ vi.mock('@/contexts/AuthContext', () => ({
   ),
 }));
 
-vi.mock('@/contexts/ToastContext', () => ({
+vi.mock('@/runtime/providers/ToastProvider', () => ({
   useToast: () => ({ showToast: mockShowToast, removeToast: vi.fn(), toasts: [] }),
   ToastContext: /** @type {import('react').Context<object>} */ ({
     Provider: ({ children }) => children,

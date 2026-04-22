@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S012 completed
-**Next Recommended Session**: S013
+**Current Session**: S013 completed
+**Next Recommended Session**: S014
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -61,6 +61,12 @@
 - `src/app/posts/[id]/PostDetailClient.jsx` 已收斂成 thin client entry，只保留 `usePostDetailRuntime + PostDetailScreen`
 - `src/runtime/hooks/usePostDetailRuntime.js` 已成為文章詳情頁的 canonical runtime boundary，承接 detail load/hydration、comment infinite scroll + dedupe、scroll-to-comment/highlight、edit/update validation、delete race handling、optimistic like rollback、comment CRUD、notification fan-out、dialog/menu state、router/toast/auth interaction 與 share URL
 - `src/ui/posts/{PostDetailScreen.jsx,PostDetailScreen.module.css}` 已建立；文章詳情頁 UI 不再依賴 `src/app/posts/**` 樣式，也不直接 import runtime providers、router、或 post/notification use-cases
+- `src/components/weather/WeatherPage.jsx` 已收斂成 thin client entry，只保留 geo lookup wiring + `useWeatherPageRuntime + WeatherPageScreen`
+- `src/runtime/hooks/useWeatherPageRuntime.js` 已成為 weather page 的 canonical runtime boundary，承接選點、fetch/abort、hydration、URL/localStorage、favorites、toast/auth orchestration
+- `src/ui/weather/WeatherPageScreen.jsx` 已建立；weather page UI 只消費 runtime state/handlers，`FavoriteButton` 也已改成 dumb UI props 驅動
+- `src/components/DashboardTabs.jsx` 已收斂成 thin client entry，只保留 `useDashboardTabsRuntime + DashboardTabsScreen`
+- `src/runtime/hooks/useDashboardTabsRuntime.js` 已成為 dashboard tabs 的 page-level runtime boundary，承接 activeTab、keyboard nav、tab config，並在內部組合既有 `useDashboardTab`
+- `src/ui/member/DashboardTabsScreen.jsx` 已建立；dashboard tab UI 不再直接 import runtime hooks 或 member-dashboard use-cases
 - `specs/fix/post-detail-deleted-guard/tests/integration/PostDetailClient-delete-race.test.jsx`、`specs/014-notification-system/tests/integration/{notification-triggers,notification-error}.test.jsx`、`specs/015-comment-notifications/tests/integration/post-comment-reply.test.jsx`、`specs/018-posts-input-validation/tests/integration/post-edit-validation.test.jsx`、`specs/019-posts-ui-refactor/tests/integration/PostDetail.test.jsx`、`specs/020-post-edit-dirty-check/tests/integration/post-detail-edit-dirty.test.jsx` 已同步 retarget 到 runtime providers + runtime use-cases
 - `specs/fix/event-detail-deleted-guard/tests/integration/EventDetailClient-delete-race.test.jsx`、`specs/014-notification-system/tests/integration/{notification-triggers,notification-error}.test.jsx` 已同步 retarget 到 runtime providers + runtime use-cases
 - `specs/015-comment-notifications/tests/integration/event-detail-comment-runtime.test.jsx` 已補 detail runtime comment wiring coverage，`specs/015-comment-notifications/tests/integration/event-comment-notification.test.jsx` 也已改用 `@/runtime/providers/AuthProvider`，避免只靠舊 `@/contexts/**` 路徑當證據
@@ -91,7 +97,7 @@
 | S010 | done | split `events/page.jsx` |
 | S011 | done | split `eventDetailClient.jsx` |
 | S012 | done | split `PostDetailClient.jsx` |
-| S013 | todo | split weather/dashboard UI-runtime mixed files |
+| S013 | done | split weather/dashboard UI-runtime mixed files |
 | S014 | todo | tests four-bucket rules |
 | S015 | todo | clean the 4 real test conflicts |
 | S016 | todo | add dep-cruise package/config/scripts |
@@ -102,9 +108,9 @@
 ### Architecture blockers
 
 1. `src/lib/firebase-profile-mapper.js` 目前先留在 `src/lib/**` compatibility namespace，真正把 profile mapper 納入終態 `src/service/**` 的遷移要配合後續更大範圍 profile split 一起做。
-2. `WeatherPage` 雖已把 URL/localStorage persistence 收斂到 `runtime/client/use-cases/weather-location-use-cases.js`，但頁面本身仍同時承擔 fetch orchestration / favorites / map interaction，多層責任尚未完全拆乾淨。
+2. `WeatherPage` 的 fetch/hydration/favorites 已下沉到 `useWeatherPageRuntime`，但 geo lookup 目前刻意留在 thin entry 注入，避免 runtime 直接 import `@/config/geo/weather-geo-cache`；後續若要再收斂，請沿 `Config -> Repo/Service -> Runtime` 做乾淨流向，不要把 config 直接拉回 runtime。
 3. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx`、`ToastContext.jsx` 已收斂成 thin compatibility facades；真正 provider 實作現在在 `src/runtime/providers/**`。
-4. `components/weather/WeatherPage.jsx` 與 `DashboardTabs.jsx` 仍是 S013 的主要 mixed-layer target；`eventDetailClient.jsx` 與 `PostDetailClient.jsx` 都已拆成 thin entry + runtime + ui。
+4. S013 已把 `WeatherPage.jsx`、`FavoriteButton.jsx`、`DashboardTabs.jsx` 拆成 thin entry + runtime + ui；後續 reviewer 應改盯 weather/dashboard screen 是否重新拉回 runtime/service 依賴，而不是再把它們當未拆 target。
 5. `src/repo/client/firebase-auth-repo.js` 已建立，`src/lib/firebase-auth-helpers.js` 現在只是 re-export facade。
 6. `server-only` 目前先靠 `src/config/server/**` / `src/repo/server/**` / `src/runtime/server/**` 路徑邊界與測試隔離維持；真正的機械 enforcement 仍待後續 dep-cruise / lint 規則接線。
 7. UI integration layers 仍受 ESLint `no-restricted-imports` 保護，不能直接 import `firebase/*`；若 local state 需要 Firestore `Timestamp`，必須經由 `src/lib/firebase-*.js` helper。
@@ -540,3 +546,39 @@ tests 不可整包排除。已知真衝突 unit 檔：
   - write scope 以 `src/components/weather/WeatherPage.jsx`、`src/components/DashboardTabs.jsx`、新的 runtime/ui entry points、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
   - 目標是把 weather/dashboard 的 mixed-layer UI 與 orchestration 拆成 thin entry + runtime + ui，並比照 S010-S012 保持 production import targets 與 entry-level tests/mock targets 對齊
   - reviewer 要特別盯 UI screen 是否仍回頭 import `src/app/**` 樣式或 runtime/service 依賴
+
+### S013
+
+- **Goal**: 把 `src/components/weather/WeatherPage.jsx`、`FavoriteButton.jsx`、`DashboardTabs.jsx` 拆成 thin entry + runtime hook + UI screen，並確保 weather/dashboard 的 page-level orchestration 真正下沉到 runtime。
+- **Write Scope**:
+  - `src/components/weather/{WeatherPage,FavoriteButton}.jsx`
+  - `src/components/DashboardTabs.jsx`
+  - `src/runtime/hooks/{useWeatherPageRuntime,useDashboardTabsRuntime}.js`
+  - `src/ui/weather/WeatherPageScreen.jsx`
+  - `src/ui/member/DashboardTabsScreen.jsx`
+  - `specs/013-pre-run-weather/tests/integration/{weather-page,township-drilldown,favorites}.test.jsx`
+  - `specs/007-member-dashboard/tests/integration/DashboardTabs.test.jsx`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - reduced `src/components/weather/WeatherPage.jsx` to a thin client entry that only keeps geo lookup wiring and binds `useWeatherPageRuntime -> WeatherPageScreen`
+  - created `src/runtime/hooks/useWeatherPageRuntime.js` and moved weather selection, fetch/abort, hydration, URL/localStorage sync, favorites, toast/auth orchestration there
+  - created `src/ui/weather/WeatherPageScreen.jsx` so weather page UI only consumes runtime state/handlers and no longer imports auth/service modules directly
+  - converted `src/components/weather/FavoriteButton.jsx` into dumb UI props，收藏 mutation / toast / auth 全部回到 weather runtime
+  - reduced `src/components/DashboardTabs.jsx` to a thin client entry that only binds `useDashboardTabsRuntime -> DashboardTabsScreen`
+  - created `src/runtime/hooks/useDashboardTabsRuntime.js` and moved active tab state, keyboard navigation, tab configs into the page-level runtime while composing the existing `useDashboardTab`
+  - created `src/ui/member/DashboardTabsScreen.jsx` so dashboard tabs UI only consumes runtime state/handlers and card components
+  - retargeted weather integration tests from legacy `@/contexts/**` mocks to `@/runtime/providers/**`, keeping production import targets and test mock targets aligned with the new runtime boundary
+  - verified with `npm run type-check:changed`
+  - verified with `npm run lint:changed` (passes with existing eslint-plugin-react settings warning)
+  - verified with `npx vitest run specs/013-pre-run-weather/tests/integration/weather-page.test.jsx specs/013-pre-run-weather/tests/integration/township-drilldown.test.jsx specs/013-pre-run-weather/tests/integration/favorites.test.jsx specs/007-member-dashboard/tests/integration/DashboardTabs.test.jsx`
+- **Pitfalls recorded**:
+  - `FavoriteButton` 必須跟 `WeatherPage` 同棒處理；如果把收藏 mutation / toast / auth 留在按鈕內，weather split 只會是表面搬檔，reviewer 也不會接受
+  - weather runtime 需要 county/township lookup 才能從 URL/localStorage restore 名稱，但 reviewer 明確要求 runtime 不可直接 import `@/config/geo/weather-geo-cache`；S013 的做法是把 lookup 留在 thin entry 注入 runtime
+  - `DashboardTabs.test.jsx` 目前仍直接 mock `@/runtime/client/use-cases/member-dashboard-use-cases`，這是合理的，因為新的 `useDashboardTabsRuntime` 仍透過 `useDashboardTab` 組合這些 use-cases；不需要為了「有新 runtime hook」硬把 test 改去 mock hook 本身
+  - `src/ui/weather/WeatherPageScreen.jsx` 與 `src/ui/member/DashboardTabsScreen.jsx` 必須保持 render-only；一旦重新拉入 auth、toast、service/use-case import，就會把 S013 拆層直接打回 mixed file
+- **Next Session Brief**:
+  - 做 S014
+  - write scope 以 `dependency-cruiser` 的 tests bucket 規則與相關 `specs/**/tests` import policy 為主，並同步更新 `specs/021-layered-dependency-architecture/handoff.md`
+  - 目標是在 tests 引入 `unit / integration / e2e / specs-test-utils` 四桶規則，開始把目前已經拆好的 runtime/ui 邊界轉成可被 dep-cruise 機械驗證的 graph
+  - reviewer 要特別盯新規則是否真的反映 production/runtime/ui 的終態依賴方向，而不是靠例外白名單把舊問題蓋過去

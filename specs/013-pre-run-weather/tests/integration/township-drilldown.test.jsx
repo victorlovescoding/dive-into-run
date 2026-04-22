@@ -161,8 +161,8 @@ vi.mock('@/lib/firebase-weather-favorites', () => ({
   isFavorited: vi.fn().mockResolvedValue({ favorited: false, docId: null }),
 }));
 
-// --- Mock AuthContext ---
-vi.mock('@/contexts/AuthContext', () => ({
+// --- Mock AuthProvider ---
+vi.mock('@/runtime/providers/AuthProvider', () => ({
   AuthContext: /** @type {import('react').Context<object>} */ (
     /** @type {unknown} */ ({
       Provider: ({ children }) => children,
@@ -172,8 +172,8 @@ vi.mock('@/contexts/AuthContext', () => ({
   ),
 }));
 
-// --- Mock ToastContext ---
-vi.mock('@/contexts/ToastContext', () => ({
+// --- Mock ToastProvider ---
+vi.mock('@/runtime/providers/ToastProvider', () => ({
   useToast: () => ({ showToast: vi.fn(), removeToast: vi.fn(), toasts: [] }),
   ToastContext: /** @type {import('react').Context<object>} */ ({
     Provider: ({ children }) => children,
