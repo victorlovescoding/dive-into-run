@@ -2,8 +2,8 @@
  * @file Unit tests for firebase-profile-server.js (Server Component / Admin SDK).
  * @description
  * TDD RED phase — tests target `getUserProfileServer(uid)` which does NOT exist yet.
- * The function uses Firebase Admin SDK via `adminDb` exported from
- * `@/lib/firebase-admin.js` and is consumed by Server Components and
+ * The function uses Firebase Admin SDK via
+ * `@/config/server/firebase-admin-app.js` and is consumed by Server Components and
  * `generateMetadata` callbacks. Output shape must match the client-side
  * `getUserProfile` (PublicProfile, email excluded).
  *
@@ -16,7 +16,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
-// Module-level mocks — replace `@/lib/firebase-admin` so the service under test
+// Module-level mocks — replace `@/config/server/firebase-admin-app` so the service under test
 // receives a fake `adminDb` object whose `collection().doc().get()` chain
 // resolves to a controllable snapshot.
 // ---------------------------------------------------------------------------
@@ -28,7 +28,7 @@ const mockAdminDoc = vi.fn(() => ({ get: mockAdminGet }));
 /** @type {import('vitest').Mock} */
 const mockAdminCollection = vi.fn(() => ({ doc: mockAdminDoc }));
 
-vi.mock('@/lib/firebase-admin', () => ({
+vi.mock('@/config/server/firebase-admin-app', () => ({
   adminDb: {
     collection: mockAdminCollection,
   },

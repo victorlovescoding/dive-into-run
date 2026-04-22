@@ -24,7 +24,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
 
 ## Phase 3: Server-only Split
 
-- [ ] S003 拆 `src/lib/firebase-admin.js` 成 `src/config/server/**`、`src/repo/server/**`、`src/runtime/server/use-cases/**`；同步整理 Strava route handlers 的依賴方向。
+- [x] S003 拆 `src/lib/firebase-admin.js` 成 `src/config/server/**`、`src/repo/server/**`、`src/runtime/server/use-cases/**`；同步整理 Strava route handlers 的依賴方向。
 - [ ] S004 將 `src/lib/firebase-profile-server.js` 改為明確的 server repo + shared service mapper，建立可驗證的 server-only 邊界。
 
 ## Phase 4: Repo / Service Extraction

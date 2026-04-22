@@ -3,7 +3,7 @@
  *
  * Runs under the `server` vitest project (node env) wrapped by
  * `firebase emulators:exec --only auth,firestore`. Imports real
- * `firebase-profile-server.js` (and transitively real firebase-admin.js)
+ * `firebase-profile-server.js` (and transitively the real Admin SDK config)
  * so v8 coverage records actual execution rather than being stuck at 0%
  * like the mock-based counterpart at
  * specs/012-public-profile/tests/unit/firebase-profile-server.test.js.
@@ -35,7 +35,7 @@ beforeEach(async () => {
 
 describe('getUserProfileServer', () => {
   it('returns a PublicProfile without email when the user doc exists', async () => {
-    const { adminDb } = await import('@/lib/firebase-admin');
+    const { adminDb } = await import('@/config/server/firebase-admin-app');
     await adminDb
       .collection('users')
       .doc('u1')
@@ -60,7 +60,7 @@ describe('getUserProfileServer', () => {
   });
 
   it('omits bio from the result when the source doc has no bio field', async () => {
-    const { adminDb } = await import('@/lib/firebase-admin');
+    const { adminDb } = await import('@/config/server/firebase-admin-app');
     await adminDb
       .collection('users')
       .doc('u2')

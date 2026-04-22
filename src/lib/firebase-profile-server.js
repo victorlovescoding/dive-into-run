@@ -11,7 +11,7 @@
  * Handler 中使用。
  */
 
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb } from '@/config/server/firebase-admin-app';
 
 /**
  * @typedef {import('@/lib/firebase-profile').PublicProfile} PublicProfile

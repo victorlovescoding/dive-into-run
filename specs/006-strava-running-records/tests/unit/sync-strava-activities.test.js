@@ -52,6 +52,22 @@ vi.mock('firebase-admin', () => {
 vi.stubGlobal('fetch', vi.fn());
 const mockedFetch = /** @type {import('vitest').Mock} */ (globalThis.fetch);
 
+/**
+ * Imports the split S003 runtime module exports used by this suite.
+ * @returns {Promise<{
+ *   verifyAuthToken: typeof import('@/runtime/server/use-cases/strava-server-use-cases').verifyAuthToken,
+ *   syncStravaActivities: typeof import('@/runtime/server/use-cases/strava-server-use-cases').syncStravaActivities,
+ * }>} Runtime exports under test.
+ */
+async function importStravaRuntimeModules() {
+  const runtime = await import('@/runtime/server/use-cases/strava-server-use-cases');
+
+  return {
+    verifyAuthToken: runtime.verifyAuthToken,
+    syncStravaActivities: runtime.syncStravaActivities,
+  };
+}
+
 // --- Factory helpers ---
 
 /**
@@ -100,7 +116,7 @@ describe('verifyAuthToken', () => {
     });
 
     // Act
-    const { verifyAuthToken } = await import('@/lib/firebase-admin');
+    const { verifyAuthToken } = await importStravaRuntimeModules();
     const uid = await verifyAuthToken(request);
 
     // Assert
@@ -113,7 +129,7 @@ describe('verifyAuthToken', () => {
     const request = new Request('http://localhost/api/test');
 
     // Act
-    const { verifyAuthToken } = await import('@/lib/firebase-admin');
+    const { verifyAuthToken } = await importStravaRuntimeModules();
     const uid = await verifyAuthToken(request);
 
     // Assert
@@ -128,7 +144,7 @@ describe('verifyAuthToken', () => {
     });
 
     // Act
-    const { verifyAuthToken } = await import('@/lib/firebase-admin');
+    const { verifyAuthToken } = await importStravaRuntimeModules();
     const uid = await verifyAuthToken(request);
 
     // Assert
@@ -144,7 +160,7 @@ describe('verifyAuthToken', () => {
     });
 
     // Act
-    const { verifyAuthToken } = await import('@/lib/firebase-admin');
+    const { verifyAuthToken } = await importStravaRuntimeModules();
     const uid = await verifyAuthToken(request);
 
     // Assert
@@ -165,7 +181,7 @@ describe('syncStravaActivities', () => {
     });
 
     // Act
-    const { syncStravaActivities } = await import('@/lib/firebase-admin');
+    const { syncStravaActivities } = await importStravaRuntimeModules();
     await syncStravaActivities({
       uid: 'user-1',
       accessToken: 'strava-token-xyz',
@@ -197,7 +213,7 @@ describe('syncStravaActivities', () => {
     });
 
     // Act
-    const { syncStravaActivities } = await import('@/lib/firebase-admin');
+    const { syncStravaActivities } = await importStravaRuntimeModules();
     const count = await syncStravaActivities({
       uid: 'user-1',
       accessToken: 'token',
@@ -228,7 +244,7 @@ describe('syncStravaActivities', () => {
     });
 
     // Act
-    const { syncStravaActivities } = await import('@/lib/firebase-admin');
+    const { syncStravaActivities } = await importStravaRuntimeModules();
     await syncStravaActivities({
       uid: 'user-abc',
       accessToken: 'token',
@@ -265,7 +281,7 @@ describe('syncStravaActivities', () => {
     });
 
     // Act
-    const { syncStravaActivities } = await import('@/lib/firebase-admin');
+    const { syncStravaActivities } = await importStravaRuntimeModules();
     await syncStravaActivities({
       uid: 'user-1',
       accessToken: 'token',
@@ -288,7 +304,7 @@ describe('syncStravaActivities', () => {
     });
 
     // Act
-    const { syncStravaActivities } = await import('@/lib/firebase-admin');
+    const { syncStravaActivities } = await importStravaRuntimeModules();
     await syncStravaActivities({
       uid: 'user-sync',
       accessToken: 'token',
@@ -318,7 +334,7 @@ describe('syncStravaActivities', () => {
     });
 
     // Act
-    const { syncStravaActivities } = await import('@/lib/firebase-admin');
+    const { syncStravaActivities } = await importStravaRuntimeModules();
     const count = await syncStravaActivities({
       uid: 'user-1',
       accessToken: 'token',
@@ -338,7 +354,7 @@ describe('syncStravaActivities', () => {
     });
 
     // Act & Assert
-    const { syncStravaActivities } = await import('@/lib/firebase-admin');
+    const { syncStravaActivities } = await importStravaRuntimeModules();
     await expect(
       syncStravaActivities({
         uid: 'user-1',
@@ -360,7 +376,7 @@ describe('syncStravaActivities', () => {
       .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(page2) });
 
     // Act
-    const { syncStravaActivities } = await import('@/lib/firebase-admin');
+    const { syncStravaActivities } = await importStravaRuntimeModules();
     const count = await syncStravaActivities({
       uid: 'user-paginate',
       accessToken: 'token',
@@ -392,7 +408,7 @@ describe('syncStravaActivities', () => {
     });
 
     // Act
-    const { syncStravaActivities } = await import('@/lib/firebase-admin');
+    const { syncStravaActivities } = await importStravaRuntimeModules();
     const count = await syncStravaActivities({
       uid: 'user-1',
       accessToken: 'token',

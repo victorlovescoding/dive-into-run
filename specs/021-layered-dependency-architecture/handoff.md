@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S002 completed
-**Next Recommended Session**: S003
+**Current Session**: S003 completed
+**Next Recommended Session**: S004
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -35,6 +35,12 @@
 - `src/types/weather-types.js`、`src/config/client/firebase-client.js`、`src/config/geo/{weather-geo-cache.js,taiwan-locations.js}` 已建立
 - `src/lib/firestore-types.js` 已移除，UI/runtime 層若要建立 Firestore `Timestamp` 必須走 `src/lib/firebase-firestore-timestamp.js`
 - 受影響的 production callers 與測試 mocks 已改用新的 `@/types/**` / `@/config/**` 路徑
+- `src/config/server/{firebase-admin-app.js,strava-server-config.js}`、`src/repo/server/{firebase-auth-admin-repo.js,strava-api-repo.js,strava-server-repo.js}`、`src/runtime/server/use-cases/strava-server-use-cases.js` 已建立
+- `src/app/api/strava/{callback,sync,disconnect,webhook}/route.js` 已收斂成 thin entry，僅保留 request parsing / auth guard / JSON forwarding
+- `src/lib/firebase-admin.js` 已移除；原本直接依賴它的 server caller / tests 已改指向分層後入口
+- `src/lib/firebase-profile-server.js` 已改為直接依賴 `@/config/server/firebase-admin-app`，但完整 server repo + shared mapper 拆分仍留在 S004
+- `specs/006-strava-running-records/tests/unit/*route*.test.js` 與 `sync-token-revocation.test.js` 已改為 mock `@/runtime/server/use-cases/strava-server-use-cases`，不再直接驗 route 內部 Firestore/fetch 細節
+- `specs/006-strava-running-records/tests/unit/firebase-admin-helpers.test.js`、`sync-strava-activities.test.js`、`specs/g8-server-coverage/tests/unit/firebase-admin.test.js` 已改為直接驗 split 後的 config/repo/runtime 模組
 - repo 尚未安裝 `dependency-cruiser`
 - 目前 enforcement 仍主要靠 ESLint 的局部結構限制
 - `src/lib` 其餘混層檔案仍待後續 session 繼續拆分
@@ -47,7 +53,7 @@
 | --- | --- | --- |
 | S001 | done | docs bootstrap |
 | S002 | done | foundation leaf extraction + remove `firestore-types` |
-| S003 | todo | split `firebase-admin` + Strava server flow |
+| S003 | done | split `firebase-admin` + Strava server flow |
 | S004 | todo | split `firebase-profile-server` |
 | S005 | todo | repo/service extraction A |
 | S006 | todo | repo/service extraction B |
@@ -67,12 +73,12 @@
 
 ### Architecture blockers
 
-1. `src/lib/firebase-admin.js` 同時是 config + repo + use-case。
-2. `src/lib/firebase-profile-server.js` 是 server-only adapter，但尚未被正式建模。
-3. `src/lib/weather-helpers.js` 混 service / runtime / constants / persistence。
-4. `src/lib/firebase-storage-helpers.js` 混 browser runtime 與 storage repo。
-5. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx` 直接依賴 repo，provider 邊界未立起來。
-6. `src/app/events/page.jsx`、`eventDetailClient.jsx`、`PostDetailClient.jsx`、`components/weather/WeatherPage.jsx` 都是多層混檔。
+1. `src/lib/firebase-profile-server.js` 是 server-only adapter，但尚未被正式建模。
+2. `src/lib/weather-helpers.js` 混 service / runtime / constants / persistence。
+3. `src/lib/firebase-storage-helpers.js` 混 browser runtime 與 storage repo。
+4. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx` 直接依賴 repo，provider 邊界未立起來。
+5. `src/app/events/page.jsx`、`eventDetailClient.jsx`、`PostDetailClient.jsx`、`components/weather/WeatherPage.jsx` 都是多層混檔。
+6. `server-only` 目前先靠 `src/config/server/**` / `src/repo/server/**` / `src/runtime/server/**` 路徑邊界與測試隔離維持；真正的機械 enforcement 仍待後續 dep-cruise / lint 規則接線。
 7. UI integration layers 仍受 ESLint `no-restricted-imports` 保護，不能直接 import `firebase/*`；若 local state 需要 Firestore `Timestamp`，必須經由 `src/lib/firebase-*.js` helper。
 
 ### Test blockers
@@ -151,34 +157,72 @@ tests 不可整包排除。已知真衝突 unit 檔：
   - `firebase-admin.js` 必須拆掉 config / repo / use-case 混檔狀態
   - reviewer 要特別盯 `server-only` 邊界與 Strava route handler 的依賴方向
 
+### S003
+
+- **Goal**: 拆掉 `firebase-admin` 混檔，建立 `config/server -> repo/server -> runtime/server/use-cases` 的 Strava server flow，並把 `src/app/api/strava/**` 收斂成 thin entry。
+- **Write Scope**:
+  - `src/config/server/**`
+  - `src/repo/server/**`
+  - `src/runtime/server/use-cases/**`
+  - `src/lib/firebase-admin.js`
+  - `src/app/api/strava/**`
+  - `src/lib/firebase-profile-server.js`
+  - `specs/006-strava-running-records/tests/unit/**`
+  - `specs/012-public-profile/tests/unit/firebase-profile-server.test.js`
+  - `specs/g8-server-coverage/tests/unit/{firebase-admin,firebase-profile-server}.test.js`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - created `src/config/server/firebase-admin-app.js`
+  - created `src/config/server/strava-server-config.js`
+  - created `src/repo/server/firebase-auth-admin-repo.js`
+  - created `src/repo/server/strava-api-repo.js`
+  - created `src/repo/server/strava-server-repo.js`
+  - created `src/runtime/server/use-cases/strava-server-use-cases.js`
+  - updated `src/app/api/strava/{callback,sync,disconnect,webhook}/route.js` to thin entry files that only delegate to runtime use-cases
+  - deleted `src/lib/firebase-admin.js`
+  - retargeted `src/lib/firebase-profile-server.js` to `@/config/server/firebase-admin-app`
+  - retargeted affected route tests to mock runtime use-cases rather than route-internal Firestore/fetch details
+  - retargeted low-level Strava server tests and profile-server tests to the new config/repo/runtime entry points
+  - verified with `npm run type-check:changed`
+  - verified with `npm run lint:changed`
+  - verified with `npx vitest run specs/006-strava-running-records/tests/unit/strava-callback-route.test.js specs/006-strava-running-records/tests/unit/strava-sync-route.test.js specs/006-strava-running-records/tests/unit/strava-disconnect-route.test.js specs/006-strava-running-records/tests/unit/strava-webhook-route.test.js specs/006-strava-running-records/tests/unit/sync-token-revocation.test.js specs/006-strava-running-records/tests/unit/firebase-admin-helpers.test.js specs/006-strava-running-records/tests/unit/sync-strava-activities.test.js specs/012-public-profile/tests/unit/firebase-profile-server.test.js`
+- **Pitfalls recorded**:
+  - 這個 repo 目前的 browser Vitest 無法直接載入 bare `server-only` import；S003 先以 `src/config/server/**` / `src/repo/server/**` / `src/runtime/server/**` 路徑邊界與 route-level mocking 維持隔離，真正的 mechanical enforcement 留待後續 dep-cruise / lint rule session。
+  - thin-entry 後的 route tests 應只驗 request parsing、auth guard、use-case delegation、以及 `status/body` forwarding；Firestore batch、fetch payload、token refresh 細節要落在 runtime/repo 層測試。
+  - `firebase-profile-server.js` 雖已改成直接吃 `config/server`，但 service mapper / server repo 邊界仍未拆完，下一棒 S004 需要補完整。
+- **Next Session Brief**:
+  - 做 S004
+  - write scope 以 `src/lib/firebase-profile-server.js`、新的 `src/repo/server/**` / shared service mapper、受影響的 profile server tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
+  - 目標是把 `firebase-profile-server.js` 變成明確的 server repo + shared mapper，而不是停留在直接操作 `adminDb` 的 server-only adapter
+  - reviewer 要特別盯 profile mapper 是否與 client `firebase-profile.js` 共享 shape、以及是否只改 S004 的 write scope
+
 ## Next Session Brief
 
-### S003: Server-only Split
+### S004: Firebase Profile Server Split
 
 **Goal**
 
-- 拆 `src/lib/firebase-admin.js` 成 `src/config/server/**`、`src/repo/server/**`、`src/runtime/server/use-cases/**`
-- 同步整理 Strava route handlers 的依賴方向
-- 建立可驗證的 server-only 邊界，避免 admin/config/use-case 繼續混在同一檔
+- 將 `src/lib/firebase-profile-server.js` 改為明確的 server repo + shared service mapper
+- 建立可驗證的 profile server-only 邊界，避免 `adminDb` 直接裸露在 `src/lib/**`
+- 讓 profile server flow 與 S003 新的 server layering 一致
 
 **Write Scope**
 
-- `src/config/server/**`
 - `src/repo/server/**`
-- `src/runtime/server/use-cases/**`
-- `src/lib/firebase-admin.js`
-- `src/app/api/strava/**` 與其他直接依賴 `firebase-admin.js` 的 server callers
+- `src/lib/firebase-profile-server.js`
+- 受影響的 profile server tests / callers
 - `specs/021-layered-dependency-architecture/handoff.md`
 
 **Acceptance**
 
-- `firebase-admin.js` 不再同時承擔 config / repo / use-case
-- Strava server flow 依賴方向符合 `Config -> Repo -> Runtime`
-- 沒有 client/runtime/ui 對 server-only 模組的回流依賴
+- `firebase-profile-server.js` 不再直接裸用 `adminDb`
+- profile server flow 依賴方向符合目前的 server split
+- mapper shape 與 client `firebase-profile.js` 保持一致
 - `npm run type-check:changed` 與 `npm run lint:changed` 通過
 
 **Reviewer focus**
 
-- `server-only` 邊界是否真的立起來，而不是只搬目錄
-- Strava route handlers 是否仍偷吃 config/repo 細節
+- profile server repo / mapper 是否真的拆責任，而不是只換 import 路徑
+- 是否維持與 client profile shape 對齊
 - 是否只改動本 session 的 write scope

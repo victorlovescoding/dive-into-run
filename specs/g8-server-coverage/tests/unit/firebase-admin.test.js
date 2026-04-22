@@ -1,11 +1,11 @@
 /**
- * @file Server-env unit tests for src/lib/firebase-admin.js.
+ * @file Server-env unit tests for the split Strava server modules introduced in S003.
  *
  * Runs under the `server` vitest project (node env) wrapped by
  * `firebase emulators:exec --only auth,firestore`. Unlike the mock-based
  * tests under specs/006-strava-running-records/tests/unit/, this file does
- * NOT mock `firebase-admin` — it imports the real module so v8 coverage
- * records actual execution of firebase-admin.js.
+ * NOT mock `firebase-admin` — it imports the real split modules so v8 coverage
+ * records actual execution of the server config / repo / runtime layers.
  *
  * Strava HTTP calls are still mocked via `vi.stubGlobal('fetch', ...)`
  * because the emulator only speaks Firestore/Auth, not Strava.
@@ -17,6 +17,38 @@ const originalFetch = globalThis.fetch;
 const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST;
 const AUTH_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST;
 const PROJECT = process.env.GCLOUD_PROJECT || 'demo-test';
+
+/**
+ * Imports the split S003 server modules with the legacy test surface.
+ * @returns {Promise<{
+ *   adminDb: typeof import('@/config/server/firebase-admin-app').adminDb,
+ *   mapStravaActivityToDoc: typeof import('@/repo/server/strava-server-repo').mapStravaActivityToDoc,
+ *   getUidByAthleteId: typeof import('@/repo/server/strava-server-repo').getUidByAthleteId,
+ *   updateLastSyncAt: typeof import('@/repo/server/strava-server-repo').updateStravaLastSyncAt,
+ *   verifyAuthToken: typeof import('@/runtime/server/use-cases/strava-server-use-cases').verifyAuthToken,
+ *   ensureValidStravaToken: typeof import('@/runtime/server/use-cases/strava-server-use-cases').ensureValidStravaToken,
+ *   syncSingleStravaActivity: typeof import('@/runtime/server/use-cases/strava-server-use-cases').syncSingleStravaActivity,
+ *   syncStravaActivities: typeof import('@/runtime/server/use-cases/strava-server-use-cases').syncStravaActivities,
+ * }>} Split server module exports.
+ */
+async function importStravaServerModules() {
+  const [{ adminDb }, repo, runtime] = await Promise.all([
+    import('@/config/server/firebase-admin-app'),
+    import('@/repo/server/strava-server-repo'),
+    import('@/runtime/server/use-cases/strava-server-use-cases'),
+  ]);
+
+  return {
+    adminDb,
+    mapStravaActivityToDoc: repo.mapStravaActivityToDoc,
+    getUidByAthleteId: repo.getUidByAthleteId,
+    updateLastSyncAt: repo.updateStravaLastSyncAt,
+    verifyAuthToken: runtime.verifyAuthToken,
+    ensureValidStravaToken: runtime.ensureValidStravaToken,
+    syncSingleStravaActivity: runtime.syncSingleStravaActivity,
+    syncStravaActivities: runtime.syncStravaActivities,
+  };
+}
 
 /**
  * Clear all Firestore documents via emulator REST API.
@@ -64,7 +96,7 @@ afterEach(() => {
 
 describe('mapStravaActivityToDoc', () => {
   it('maps Strava API fields to Firestore document shape', async () => {
-    const { mapStravaActivityToDoc } = await import('@/lib/firebase-admin');
+    const { mapStravaActivityToDoc } = await importStravaServerModules();
     const activity = {
       id: 12345,
       name: 'Morning Run',
@@ -95,7 +127,7 @@ describe('mapStravaActivityToDoc', () => {
   });
 
   it('sets summaryPolyline to null when map is missing', async () => {
-    const { mapStravaActivityToDoc } = await import('@/lib/firebase-admin');
+    const { mapStravaActivityToDoc } = await importStravaServerModules();
     const doc = mapStravaActivityToDoc('u1', {
       id: 1,
       name: 'x',
@@ -116,7 +148,7 @@ describe('mapStravaActivityToDoc', () => {
 
 describe('getUidByAthleteId', () => {
   it('returns uid when an athlete doc with matching athleteId exists', async () => {
-    const { adminDb, getUidByAthleteId } = await import('@/lib/firebase-admin');
+    const { adminDb, getUidByAthleteId } = await importStravaServerModules();
     await adminDb.collection('stravaTokens').doc('uid-found').set({ athleteId: 99999 });
 
     const uid = await getUidByAthleteId(99999);
@@ -125,7 +157,7 @@ describe('getUidByAthleteId', () => {
   });
 
   it('returns null when no doc matches the athleteId', async () => {
-    const { getUidByAthleteId } = await import('@/lib/firebase-admin');
+    const { getUidByAthleteId } = await importStravaServerModules();
     const uid = await getUidByAthleteId(11111);
     expect(uid).toBeNull();
   });
@@ -137,13 +169,13 @@ describe('getUidByAthleteId', () => {
 
 describe('verifyAuthToken', () => {
   it('returns null when Authorization header is missing', async () => {
-    const { verifyAuthToken } = await import('@/lib/firebase-admin');
+    const { verifyAuthToken } = await importStravaServerModules();
     const req = new Request('http://test.local/');
     expect(await verifyAuthToken(req)).toBeNull();
   });
 
   it('returns null when Authorization header lacks Bearer prefix', async () => {
-    const { verifyAuthToken } = await import('@/lib/firebase-admin');
+    const { verifyAuthToken } = await importStravaServerModules();
     const req = new Request('http://test.local/', {
       headers: { Authorization: 'Basic abc' },
     });
@@ -151,7 +183,7 @@ describe('verifyAuthToken', () => {
   });
 
   it('returns null when Bearer token is invalid', async () => {
-    const { verifyAuthToken } = await import('@/lib/firebase-admin');
+    const { verifyAuthToken } = await importStravaServerModules();
     const req = new Request('http://test.local/', {
       headers: { Authorization: 'Bearer not-a-real-token' },
     });
@@ -159,7 +191,7 @@ describe('verifyAuthToken', () => {
   });
 
   it('returns uid when Bearer token is a valid Auth emulator idToken', async () => {
-    const { verifyAuthToken } = await import('@/lib/firebase-admin');
+    const { verifyAuthToken } = await importStravaServerModules();
     const { idToken, uid } = await createAuthUser();
     const req = new Request('http://test.local/', {
       headers: { Authorization: `Bearer ${idToken}` },
@@ -174,7 +206,7 @@ describe('verifyAuthToken', () => {
 
 describe('ensureValidStravaToken', () => {
   it('returns accessToken when current token is still valid', async () => {
-    const { adminDb, ensureValidStravaToken } = await import('@/lib/firebase-admin');
+    const { adminDb, ensureValidStravaToken } = await importStravaServerModules();
     await adminDb
       .collection('stravaTokens')
       .doc('u1')
@@ -202,7 +234,7 @@ describe('ensureValidStravaToken', () => {
     vi.stubEnv('STRAVA_CLIENT_ID', 'cid');
     vi.stubEnv('STRAVA_CLIENT_SECRET', 'test-secret');
 
-    const { adminDb, ensureValidStravaToken } = await import('@/lib/firebase-admin');
+    const { adminDb, ensureValidStravaToken } = await importStravaServerModules();
     await adminDb
       .collection('stravaTokens')
       .doc('u1')
@@ -231,7 +263,7 @@ describe('ensureValidStravaToken', () => {
     vi.stubEnv('STRAVA_CLIENT_ID', 'cid');
     vi.stubEnv('STRAVA_CLIENT_SECRET', 'test-secret');
 
-    const { adminDb, ensureValidStravaToken } = await import('@/lib/firebase-admin');
+    const { adminDb, ensureValidStravaToken } = await importStravaServerModules();
     await adminDb
       .collection('stravaTokens')
       .doc('u1')
@@ -250,7 +282,7 @@ describe('ensureValidStravaToken', () => {
   });
 
   it('returns error when no token doc exists', async () => {
-    const { ensureValidStravaToken } = await import('@/lib/firebase-admin');
+    const { ensureValidStravaToken } = await importStravaServerModules();
     const result = await ensureValidStravaToken('ghost');
     expect(result).toEqual({ error: 'Token not found' });
   });
@@ -262,7 +294,7 @@ describe('ensureValidStravaToken', () => {
 
 describe('updateLastSyncAt', () => {
   it('updates lastSyncAt on both stravaTokens and stravaConnections', async () => {
-    const { adminDb, updateLastSyncAt } = await import('@/lib/firebase-admin');
+    const { adminDb, updateLastSyncAt } = await importStravaServerModules();
     await adminDb.collection('stravaTokens').doc('u1').set({ accessToken: 'a' });
     await adminDb.collection('stravaConnections').doc('u1').set({ connected: true });
 
@@ -301,7 +333,7 @@ describe('syncSingleStravaActivity', () => {
       }),
     );
 
-    const { adminDb, syncSingleStravaActivity } = await import('@/lib/firebase-admin');
+    const { adminDb, syncSingleStravaActivity } = await importStravaServerModules();
     await adminDb.collection('stravaTokens').doc('u1').set({ accessToken: 'a' });
     await adminDb.collection('stravaConnections').doc('u1').set({ connected: true });
 
@@ -336,7 +368,7 @@ describe('syncSingleStravaActivity', () => {
       }),
     );
 
-    const { adminDb, syncSingleStravaActivity } = await import('@/lib/firebase-admin');
+    const { adminDb, syncSingleStravaActivity } = await importStravaServerModules();
 
     const result = await syncSingleStravaActivity({
       uid: 'u1',
@@ -352,7 +384,7 @@ describe('syncSingleStravaActivity', () => {
   it('deletes the Firestore doc and returns false when Strava returns 404', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
 
-    const { adminDb, syncSingleStravaActivity } = await import('@/lib/firebase-admin');
+    const { adminDb, syncSingleStravaActivity } = await importStravaServerModules();
     await adminDb.collection('stravaActivities').doc('999').set({ stale: true });
 
     const result = await syncSingleStravaActivity({
@@ -376,7 +408,7 @@ describe('syncSingleStravaActivity', () => {
       }),
     );
 
-    const { syncSingleStravaActivity } = await import('@/lib/firebase-admin');
+    const { syncSingleStravaActivity } = await importStravaServerModules();
 
     await expect(
       syncSingleStravaActivity({ uid: 'u1', accessToken: 'a', stravaActivityId: 1 }),
@@ -432,7 +464,7 @@ describe('syncStravaActivities', () => {
       }),
     );
 
-    const { adminDb, syncStravaActivities } = await import('@/lib/firebase-admin');
+    const { adminDb, syncStravaActivities } = await importStravaServerModules();
     await adminDb.collection('stravaTokens').doc('u1').set({ accessToken: 'a' });
     await adminDb.collection('stravaConnections').doc('u1').set({ connected: true });
 
@@ -447,7 +479,7 @@ describe('syncStravaActivities', () => {
   it('returns 0 and writes nothing when Strava returns an empty page', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => [] }));
 
-    const { adminDb, syncStravaActivities } = await import('@/lib/firebase-admin');
+    const { adminDb, syncStravaActivities } = await importStravaServerModules();
     await adminDb.collection('stravaTokens').doc('u1').set({ accessToken: 'a' });
     await adminDb.collection('stravaConnections').doc('u1').set({ connected: true });
 
@@ -468,7 +500,7 @@ describe('syncStravaActivities', () => {
       }),
     );
 
-    const { syncStravaActivities } = await import('@/lib/firebase-admin');
+    const { syncStravaActivities } = await importStravaServerModules();
 
     await expect(
       syncStravaActivities({ uid: 'u1', accessToken: 'a', afterEpoch: 0 }),
