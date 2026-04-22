@@ -92,7 +92,7 @@ vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
 // Mocks — firebase-events
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-events', () => ({
+vi.mock('@/runtime/client/use-cases/event-use-cases', () => ({
   fetchEventById: vi.fn(),
   fetchParticipants: vi.fn(),
   fetchMyJoinedEventsForIds: vi.fn(),
@@ -167,7 +167,7 @@ import {
   fetchParticipants,
   fetchMyJoinedEventsForIds,
   updateEvent,
-} from '@/lib/firebase-events';
+} from '@/runtime/client/use-cases/event-use-cases';
 import {
   getPostDetail,
   addComment,

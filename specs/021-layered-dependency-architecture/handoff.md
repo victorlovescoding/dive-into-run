@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S010 completed
-**Next Recommended Session**: S011
+**Current Session**: S011 completed
+**Next Recommended Session**: S012
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -55,6 +55,11 @@
 - `src/repo/client/taiwan-location-repo.js` 與 `src/service/taiwan-location-service.js` 已建立，events page 的縣市/行政區選項不再由 runtime 直接 import config
 - `src/runtime/hooks/useEventsPageRuntime.js` 已成為 events 列表頁的 canonical runtime boundary，承接 router/searchParams/toast/pagination/create/edit/delete/join/leave orchestration
 - `src/ui/events/{EventsPageScreen.jsx,EventsPageScreen.module.css}` 已建立；events 列表頁 UI 不再直接 import `@/lib/firebase-events` 或 `@/contexts/**`
+- `src/app/events/[id]/eventDetailClient.jsx` 已收斂成 thin client entry，只保留 `useEventDetailRuntime + EventDetailScreen`
+- `src/runtime/hooks/useEventDetailRuntime.js` 已成為活動詳情頁的 canonical runtime boundary，承接 detail fetch、participants、isJoined、body scroll lock、overlay listeners、edit/delete、join/leave、comment notification、router push、toast 與 share URL orchestration
+- `src/ui/events/{EventDetailScreen.jsx,EventDetailScreen.module.css}` 已建立；活動詳情頁 UI 不再直接 import `@/lib/firebase-events`、`@/lib/firebase-notifications`、或 `@/contexts/**`
+- `specs/fix/event-detail-deleted-guard/tests/integration/EventDetailClient-delete-race.test.jsx`、`specs/014-notification-system/tests/integration/{notification-triggers,notification-error}.test.jsx` 已同步 retarget 到 runtime providers + runtime use-cases
+- `specs/015-comment-notifications/tests/integration/event-detail-comment-runtime.test.jsx` 已補 detail runtime comment wiring coverage，`specs/015-comment-notifications/tests/integration/event-comment-notification.test.jsx` 也已改用 `@/runtime/providers/AuthProvider`，避免只靠舊 `@/contexts/**` 路徑當證據
 - `src/components/{CommentSection,DashboardTabs,RunCalendarDialog}.jsx` 與 `src/app/runs/page.jsx` 已改為直接 import `@/runtime/hooks/**`，不再把 runtime orchestration 掛在 compatibility hooks namespace
 - `specs/003-strict-type-fixes/app-events-page/tests/integration/EventsPage.test.jsx` 與 `specs/009-global-toast/tests/integration/crud-toast.test.jsx` 已同步 retarget 到 `@/runtime/client/use-cases/event-use-cases` / runtime providers，避免 page-level tests 與 production import target 脫鉤
 - `specs/006-strava-running-records/tests/unit/*route*.test.js` 與 `sync-token-revocation.test.js` 已改為 mock `@/runtime/server/use-cases/strava-server-use-cases`，不再直接驗 route 內部 Firestore/fetch 細節
@@ -80,7 +85,7 @@
 | S008 | done | formalize providers |
 | S009 | done | formalize runtime hooks |
 | S010 | done | split `events/page.jsx` |
-| S011 | todo | split `eventDetailClient.jsx` |
+| S011 | done | split `eventDetailClient.jsx` |
 | S012 | todo | split `PostDetailClient.jsx` |
 | S013 | todo | split weather/dashboard UI-runtime mixed files |
 | S014 | todo | tests four-bucket rules |
@@ -95,7 +100,7 @@
 1. `src/lib/firebase-profile-mapper.js` 目前先留在 `src/lib/**` compatibility namespace，真正把 profile mapper 納入終態 `src/service/**` 的遷移要配合後續更大範圍 profile split 一起做。
 2. `WeatherPage` 雖已把 URL/localStorage persistence 收斂到 `runtime/client/use-cases/weather-location-use-cases.js`，但頁面本身仍同時承擔 fetch orchestration / favorites / map interaction，多層責任尚未完全拆乾淨。
 3. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx`、`ToastContext.jsx` 已收斂成 thin compatibility facades；真正 provider 實作現在在 `src/runtime/providers/**`。
-4. `src/app/events/[id]/eventDetailClient.jsx`、`PostDetailClient.jsx`、`components/weather/WeatherPage.jsx` 都是多層混檔。
+4. `PostDetailClient.jsx` 與 `components/weather/WeatherPage.jsx` 仍是多層混檔；`eventDetailClient.jsx` 已在 S011 拆成 thin entry + runtime + ui。
 5. `src/repo/client/firebase-auth-repo.js` 已建立，`src/lib/firebase-auth-helpers.js` 現在只是 re-export facade。
 6. `server-only` 目前先靠 `src/config/server/**` / `src/repo/server/**` / `src/runtime/server/**` 路徑邊界與測試隔離維持；真正的機械 enforcement 仍待後續 dep-cruise / lint 規則接線。
 7. UI integration layers 仍受 ESLint `no-restricted-imports` 保護，不能直接 import `firebase/*`；若 local state 需要 Firestore `Timestamp`，必須經由 `src/lib/firebase-*.js` helper。
@@ -459,10 +464,42 @@ tests 不可整包排除。已知真衝突 unit 檔：
   - once `events/page.jsx` delegates through `useEventsPageRuntime`, page-level tests that still mock `@/lib/firebase-events` stop intercepting the real code path; the runtime use-case mock retarget is mandatory in the same session.
   - `useEventsPageRuntime` must keep mounted-state guards around async page-load flows; dropping the old cancellation behavior causes unmount-time state updates during initial fetch.
   - `taiwan-locations` is a config leaf, so runtime cannot import it directly. Static option data still has to travel through `repo -> service` even when there is no network IO.
-  - `src/app/events/events.module.css` cannot be removed yet because `src/app/events/[id]/eventDetailClient.jsx` still imports it; S010 copied list-page styles into `src/ui/events/EventsPageScreen.module.css` instead of breaking the detail page mid-session.
+  - `src/app/events/events.module.css` was left untouched in S010 because detail page still depended on it at the time; after S011 the detail page no longer imports it, but deleting the legacy file is a separate cleanup task.
   - `src/ui/events/EventsPageScreen.jsx` must stay render-only. Reintroducing router/searchParams/toast/CRUD side effects there would immediately violate S010’s boundary split.
 - **Next Session Brief**:
-  - 做 S011
-  - write scope 以 `src/app/events/[id]/eventDetailClient.jsx`、新的 runtime/ui entry points、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
-  - 目標是把 detail page 拆成 thin entry + runtime + ui，並延續 S010 的「page-level tests/mock target 必須跟 production import target 同步」原則
-  - reviewer 要特別盯 detail page 的 edit/delete/comment/highlight 行為是否真的下沉到 runtime，而不是只把 JSX 挪進 `src/ui/**`
+  - 做 S012
+  - write scope 以 `src/app/posts/[id]/PostDetailClient.jsx`、新的 runtime/ui entry points、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
+  - 目標是把 post detail page 拆成 thin entry + runtime + ui，並沿用 S011 的「page-level tests/mock target 要跟 production import target 同步」原則
+  - reviewer 要特別盯 post detail 的 like/comment/edit/delete/scroll-to-comment 行為是否真的下沉到 runtime，而不是只把 JSX 挪進 `src/ui/**`
+
+### S011
+
+- **Goal**: 把 `src/app/events/[id]/eventDetailClient.jsx` 拆成 thin client entry + runtime hook + UI screen，並確保 detail page 的 edit/delete/comment/highlight/join-leave orchestration 真正下沉到 runtime。
+- **Write Scope**:
+  - `src/app/events/[id]/eventDetailClient.jsx`
+  - `src/runtime/hooks/useEventDetailRuntime.js`
+  - `src/ui/events/{EventDetailScreen.jsx,EventDetailScreen.module.css}`
+  - `specs/fix/event-detail-deleted-guard/tests/integration/EventDetailClient-delete-race.test.jsx`
+  - `specs/014-notification-system/tests/integration/{notification-triggers,notification-error}.test.jsx`
+  - `specs/015-comment-notifications/tests/integration/{event-detail-comment-runtime,event-comment-notification}.test.jsx`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - reduced `src/app/events/[id]/eventDetailClient.jsx` to pure thin client entry that only binds `id -> useEventDetailRuntime -> EventDetailScreen`
+  - created `src/runtime/hooks/useEventDetailRuntime.js` and moved detail fetch/participants/isJoined/body scroll lock/overlay listeners/edit/delete/join/leave/comment notification/router push/toast/share URL orchestration there
+  - created `src/ui/events/{EventDetailScreen.jsx,EventDetailScreen.module.css}` so detail page UI only consumes runtime state/handlers and no longer imports `useEventDetailRuntime`, runtime providers, or event/notification use-cases directly
+  - kept `EventDetailClient-delete-race.test.jsx`, `notification-triggers.test.jsx`, and `notification-error.test.jsx` aligned on `@/runtime/providers/**` and `@/runtime/client/use-cases/**`, and additionally retargeted `event-comment-notification.test.jsx` from `@/contexts/AuthContext` to `@/runtime/providers/AuthProvider`
+  - added `specs/015-comment-notifications/tests/integration/event-detail-comment-runtime.test.jsx` to verify `CommentSection` callback is wired through the detail runtime hook to `notifyEventNewComment`
+  - verified with `npm run type-check:changed`
+  - verified with `npm run lint:changed` (passes with existing eslint-plugin-react settings warning)
+  - verified with `npx vitest run specs/fix/event-detail-deleted-guard/tests/integration/EventDetailClient-delete-race.test.jsx specs/014-notification-system/tests/integration/notification-triggers.test.jsx specs/014-notification-system/tests/integration/notification-error.test.jsx specs/015-comment-notifications/tests/integration/event-detail-comment-runtime.test.jsx specs/015-comment-notifications/tests/integration/event-comment-notification.test.jsx`
+- **Pitfalls recorded**:
+  - once detail page orchestration moves into `useEventDetailRuntime`, EventDetailClient integration tests that still mock `@/lib/firebase-events` or old `@/contexts/**` paths no longer intercept the real code path; retargeting to runtime providers/use-cases must happen in the same session
+  - `EventDetailScreen.jsx` must stay render-only. Re-importing `useEventDetailRuntime`, router, toast, or runtime providers there would collapse the split back into a mixed UI/runtime file even if the entry stays thin.
+  - `specs/015-comment-notifications/tests/integration/event-comment-notification.test.jsx` only proves `CommentSection` emits the callback; it is not sufficient proof that the detail page runtime actually calls `notifyEventNewComment`, so a dedicated wiring test is required
+  - `fetchEventById()` currently exposes the narrower service typedef while the detail runtime still needs route/meetPlace/host fields for UI orchestration; keep that cast localized inside the runtime hook for now instead of widening repo/service/use-case contracts inside S011
+- **Next Session Brief**:
+  - 做 S012
+  - write scope 以 `src/app/posts/[id]/PostDetailClient.jsx`、新的 runtime/ui entry points、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
+  - 目標是把 post detail page 拆成 thin entry + runtime + ui，並比照 S011 把通知/留言/scroll-to-comment 行為的測試 mock target 一起收斂到 runtime 真實依賴
+  - reviewer 要特別盯 post detail 的 comment/highlight/edit/delete/like 行為是否真的下沉到 runtime，而不是只把 JSX 挪進 `src/ui/**`

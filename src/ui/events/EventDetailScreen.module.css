@@ -1,0 +1,316 @@
+.pageContainer {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.eventsSection {
+  width: 65vw;
+  max-width: 1400px;
+  margin: 16px auto 0;
+}
+
+@media (min-width: 1024px) {
+  .eventsSection {
+    width: 70vw;
+  }
+}
+
+.backLink {
+  display: inline-block;
+  text-decoration: none;
+  color: inherit;
+  opacity: 0.9;
+  margin-bottom: 12px;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  border: 1px solid #e0e3e7;
+  color: #202124;
+  margin-bottom: 10px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #dadce0;
+  border-top-color: #673ab7;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorCard {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fce8e6;
+  border: 1px solid #f28b82;
+  color: #c5221f;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.eventCard {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e3e7;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 14px;
+  text-align: left;
+  margin-bottom: 10px;
+}
+
+.eventTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #202124;
+  margin-bottom: 8px;
+}
+
+.detailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.detailHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #ede7f6;
+  color: #5b34a7;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.eventMeta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  color: #3c4043;
+  font-size: 0.95rem;
+  margin-top: 6px;
+}
+
+@media (min-width: 768px) {
+  .eventMeta {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.hostRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.detailActions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cancelButton {
+  background: transparent;
+  border: none;
+  color: #673ab7;
+  padding: 10px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.cancelButton:hover {
+  background: rgba(103, 58, 183, 0.04);
+}
+
+.helperText {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: #70757a;
+}
+
+.alignSelfCenter {
+  align-self: center;
+}
+
+.submitButton {
+  composes: submitButton from '../../components/EventActionButtons.module.css';
+}
+
+.leaveButton {
+  composes: leaveButton from '../../components/EventActionButtons.module.css';
+}
+
+.soldOutButton {
+  composes: soldOutButton from '../../components/EventActionButtons.module.css';
+}
+
+.buttonSpinner {
+  composes: buttonSpinner from '../../components/EventActionButtons.module.css';
+}
+
+.spinnerLabel {
+  composes: spinnerLabel from '../../components/EventActionButtons.module.css';
+}
+
+.fontSize16 {
+  font-size: 16px;
+}
+
+.detailMapContainer {
+  margin-top: 10px;
+}
+
+.participantsOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px 12px;
+  overflow: hidden;
+}
+
+.participantsCard {
+  width: min(560px, 92vw);
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e0e3e7;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+.participantsHeader {
+  padding: 16px;
+  border-bottom: 1px solid #e0e3e7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.participantsTitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: #202124;
+}
+
+.participantsBody {
+  padding: 16px;
+}
+
+.marginBottom12 {
+  margin-bottom: 12px;
+}
+
+.retryButton {
+  margin-left: 10px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #f28b82;
+  background: #fff;
+  color: #c5221f;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.retryButton:hover {
+  background: rgba(197, 34, 31, 0.06);
+}
+
+.marginLeft10 {
+  margin-left: 10px;
+}
+
+.emptyHint {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px dashed #dadce0;
+  color: #5f6368;
+}
+
+.participantsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.participantItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid #e0e3e7;
+  border-radius: 10px;
+}
+
+.participantLink {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 800;
+  color: #202124;
+}
+
+.participantLink img {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.participantStatus {
+  font-size: 12px;
+  color: #5f6368;
+}
+
+.editFormOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.deleteConfirmOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
