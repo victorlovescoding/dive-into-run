@@ -4,12 +4,12 @@ import {
   updateComment,
   deleteComment,
   fetchCommentHistory,
-} from '@/lib/firebase-comments';
+} from '@/runtime/client/use-cases/event-comment-use-cases';
 import { getCurrentFirestoreTimestamp } from '@/lib/firebase-firestore-timestamp';
 
 /**
- * @typedef {import('@/lib/firebase-comments').CommentData} CommentData
- * @typedef {import('@/lib/firebase-comments').CommentHistoryEntry} CommentHistoryEntry
+ * @typedef {import('@/service/event-comment-service').CommentData} CommentData
+ * @typedef {import('@/service/event-comment-service').CommentHistoryEntry} CommentHistoryEntry
  */
 
 /**

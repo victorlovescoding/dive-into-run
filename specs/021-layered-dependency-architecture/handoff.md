@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S004 completed
-**Next Recommended Session**: S005
+**Current Session**: S005 completed
+**Next Recommended Session**: S006
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -41,6 +41,9 @@
 - `src/repo/server/firebase-profile-server-repo.js` 已建立，`users/{uid}` 的 Admin SDK 讀取責任已下沉到 repo 層
 - `src/lib/firebase-profile-mapper.js` 已建立，client/server profile service 現在共用同一個 `PublicProfile` normalization
 - `src/lib/firebase-profile-server.js` 已改為透過 server repo + shared mapper 組裝，不再直接碰 `adminDb`
+- `src/repo/client/{firebase-events-repo,firebase-event-comments-repo,firebase-member-repo}.js`、`src/service/{event-service,event-comment-service,member-dashboard-service}.js`、`src/runtime/client/use-cases/{event-use-cases,event-comment-use-cases,member-dashboard-use-cases}.js` 已建立
+- `src/lib/firebase-{events,comments,member}.js` 已收斂為 compatibility facade；混合的 Firestore/query/validation/cache orchestration 已移出 `src/lib/**`
+- `src/hooks/{useComments,useCommentMutations}.js` 與 `src/components/DashboardTabs.jsx` 已改為直接依賴新的 runtime client use-cases，而不是舊 `src/lib/**` 混檔
 - `specs/006-strava-running-records/tests/unit/*route*.test.js` 與 `sync-token-revocation.test.js` 已改為 mock `@/runtime/server/use-cases/strava-server-use-cases`，不再直接驗 route 內部 Firestore/fetch 細節
 - `specs/006-strava-running-records/tests/unit/firebase-admin-helpers.test.js`、`sync-strava-activities.test.js`、`specs/g8-server-coverage/tests/unit/firebase-admin.test.js` 已改為直接驗 split 後的 config/repo/runtime 模組
 - `specs/012-public-profile/tests/unit/firebase-profile-server.test.js` 已改為 mock server repo；`specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js` 也已補 repo split coverage
@@ -58,7 +61,7 @@
 | S002 | done | foundation leaf extraction + remove `firestore-types` |
 | S003 | done | split `firebase-admin` + Strava server flow |
 | S004 | done | split `firebase-profile-server` |
-| S005 | todo | repo/service extraction A |
+| S005 | done | repo/service extraction A |
 | S006 | todo | repo/service extraction B |
 | S007 | todo | weather/storage mixed runtime split |
 | S008 | todo | formalize providers |
@@ -83,6 +86,8 @@
 5. `src/app/events/page.jsx`、`eventDetailClient.jsx`、`PostDetailClient.jsx`、`components/weather/WeatherPage.jsx` 都是多層混檔。
 6. `server-only` 目前先靠 `src/config/server/**` / `src/repo/server/**` / `src/runtime/server/**` 路徑邊界與測試隔離維持；真正的機械 enforcement 仍待後續 dep-cruise / lint 規則接線。
 7. UI integration layers 仍受 ESLint `no-restricted-imports` 保護，不能直接 import `firebase/*`；若 local state 需要 Firestore `Timestamp`，必須經由 `src/lib/firebase-*.js` helper。
+8. `src/app/events/page.jsx`、`src/app/events/[id]/eventDetailClient.jsx`、`src/lib/firebase-notifications.js` 仍暫時走 `src/lib/firebase-events.js` facade；真正把 events caller 全數改成 runtime/use-case 還要配合後續 UI / runtime split session 一起收。
+9. `member-dashboard` 的 `titleCache` 仍只以 `parentId` 當 key，這是為了保留既有行為；若未來 post/event 出現相同 id，cache 仍可能互撞，這筆債要在後續 dashboard/profile 整理時一起處理。
 
 ### Test blockers
 
@@ -233,34 +238,73 @@ tests 不可整包排除。已知真衝突 unit 檔：
   - 目標是拆掉 events/comments/member 的 repo vs service vs use-case 混檔責任
   - reviewer 要特別盯是否真的從 `src/lib/**` 抽出責任邊界，而不是只搬檔名
 
+### S005
+
+- **Goal**: 拆掉 `firebase-events.js` / `firebase-comments.js` / `firebase-member.js` 的 repo / service / runtime(use-case) 混檔責任，讓 `src/lib/**` 回到 compatibility facade。
+- **Write Scope**:
+  - `src/lib/firebase-{events,comments,member}.js`
+  - `src/repo/client/**`
+  - `src/service/**`
+  - `src/runtime/client/use-cases/**`
+  - `src/hooks/{useComments,useCommentMutations}.js`
+  - `src/components/DashboardTabs.jsx`
+  - 受影響的 events/comments/member 測試
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - created `src/repo/client/firebase-events-repo.js`
+  - created `src/repo/client/firebase-event-comments-repo.js`
+  - created `src/repo/client/firebase-member-repo.js`
+  - created `src/service/event-service.js`
+  - created `src/service/event-comment-service.js`
+  - created `src/service/member-dashboard-service.js`
+  - created `src/runtime/client/use-cases/event-use-cases.js`
+  - created `src/runtime/client/use-cases/event-comment-use-cases.js`
+  - created `src/runtime/client/use-cases/member-dashboard-use-cases.js`
+  - updated `src/lib/firebase-{events,comments,member}.js` to compatibility facades that only re-export the new layered entry points
+  - updated `src/hooks/{useComments,useCommentMutations}.js` and `src/components/DashboardTabs.jsx` to depend on runtime use-cases instead of the old mixed `src/lib/**` implementations
+  - reviewer 明確卡住了「facade 不可再藏 query/transaction/cache logic」這條驗收線；worker 先完成 `firebase-member` 這條拆分，主 agent 再整合 events/comments 與全量驗證
+  - verified with `npm run type-check:changed`
+  - verified with `npm run lint:changed`
+  - verified with `npx vitest run specs/003-strict-type-fixes/lib-firebase-events/tests/unit/firebase-events.test.js specs/004-event-edit-delete/tests/unit/firebase-events-edit-delete.test.js specs/fix/event-detail-deleted-guard/tests/unit/EVENT_NOT_FOUND_MESSAGE.test.js specs/fix/event-detail-deleted-guard/tests/integration/EventDetailClient-delete-race.test.jsx specs/005-event-comments/tests/unit/firebase-comments.test.js specs/005-event-comments/tests/integration/CommentSection.test.jsx specs/007-member-dashboard/tests/unit/firebase-member.test.js specs/007-member-dashboard/tests/integration/DashboardTabs.test.jsx`
+- **Pitfalls recorded**:
+  - `deleteField()` 這種 Firestore sentinel 不可在 runtime 無條件取值，否則會把既有 unit mocks 弄壞；只有真的要刪 `route` 欄位時才可建立 sentinel。
+  - `normalizeEventPayload` 若改成 `const rest = { ...raw }` 這類做法，記得同步刪 `paceMinutes/paceSeconds`，否則會把 UI-only 欄位漏回 Firestore payload。
+  - compatibility facade 可以保留，但 reviewer 的檢查標準要很硬：`src/lib/**` 只要還含 query/transaction/writeBatch/validation/cache orchestration，就不算完成拆層。
+- **Next Session Brief**:
+  - 做 S006
+  - write scope 以 `src/lib/firebase-posts.js`、`src/lib/firebase-notifications.js`、`src/lib/firebase-profile.js`、新的 `src/repo/**` / `src/service/**` / `src/runtime/**` 拆分入口、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
+  - 目標是延續 S005 的做法，把 posts/notifications/profile 的 repo vs service vs runtime 責任拆乾淨，同時注意 notification flow 的跨 aggregate orchestration 不可下沉回 repo
+  - reviewer 要特別盯 `firebase-notifications.js` 的通知流程是否被拆成「repo 寫入」與「runtime orchestration」，避免把 fetch participants / recipient filtering / side-effect sequencing 又塞成下一個 God file
+
 ## Next Session Brief
 
-### S005: Repo / Service Extraction A
+### S006: Repo / Service Extraction B
 
 **Goal**
 
-- 拆 `firebase-events.js` / `firebase-comments.js` / `firebase-member.js` 的 repo vs service vs use-case 責任
-- 讓 events/comments/member flow 往終態 `Types -> Config -> Repo -> Service -> Runtime -> UI` 方向收斂
-- 避免繼續把 Firestore access、business rules、UI-facing orchestration 混在同一個 `src/lib/**` 檔案
+- 拆 `firebase-posts.js` / `firebase-notifications.js` / `firebase-profile.js` 的 repo vs service vs use-case 責任
+- 延續 S005 的 client-side split，讓 posts/notifications/profile flow 往終態 `Types -> Config -> Repo -> Service -> Runtime -> UI` 方向收斂
+- 避免把通知 fan-out、profile normalization、post/comment side effects 繼續留在單一 `src/lib/**` God file
 
 **Write Scope**
 
-- `src/lib/firebase-events.js`
-- `src/lib/firebase-comments.js`
-- `src/lib/firebase-member.js`
+- `src/lib/firebase-posts.js`
+- `src/lib/firebase-notifications.js`
+- `src/lib/firebase-profile.js`
 - 新的 `src/repo/**` / `src/service/**` / `src/runtime/**` 入口
 - 受影響的 callers / tests
 - `specs/021-layered-dependency-architecture/handoff.md`
 
 **Acceptance**
 
-- events/comments/member flow 不再停留在單一混檔內
+- posts/notifications/profile flow 不再停留在單一混檔內
 - repo / service / use-case 責任有實際拆開，而不是只改 import path
 - 新舊 caller 都指向新的分層入口
 - `npm run type-check:changed` 與 `npm run lint:changed` 通過
 
 **Reviewer focus**
 
-- events/comments/member 是否真的拆責任，而不是只搬目錄
-- 是否讓 repo / service / runtime 的方向更接近終態分層
+- posts/notifications/profile 是否真的拆責任，而不是只搬目錄
+- notification side effects 是否留在 runtime/use-case，而不是被藏回 repo/service
 - 是否只改動本 session 的 write scope

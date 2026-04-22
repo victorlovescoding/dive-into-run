@@ -31,9 +31,9 @@ import {
   updateComment,
   deleteComment,
   fetchCommentHistory,
-} from '@/lib/firebase-comments';
+} from '@/runtime/client/use-cases/event-comment-use-cases';
 
-vi.mock('@/lib/firebase-comments', () => ({
+vi.mock('@/runtime/client/use-cases/event-comment-use-cases', () => ({
   fetchComments: vi.fn(),
   addComment: vi.fn(),
   updateComment: vi.fn(),

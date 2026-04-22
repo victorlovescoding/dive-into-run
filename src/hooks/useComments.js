@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { fetchComments } from '@/lib/firebase-comments';
+import { fetchComments } from '@/runtime/client/use-cases/event-comment-use-cases';
 
 /**
  * @typedef {object} UseCommentsReturn
- * @property {import('@/lib/firebase-comments').CommentData[]} comments - 留言列表。
- * @property {(updater: (prev: import('@/lib/firebase-comments').CommentData[]) => import('@/lib/firebase-comments').CommentData[]) => void} setComments - 更新留言列表。
+ * @property {import('@/service/event-comment-service').CommentData[]} comments - 留言列表。
+ * @property {(updater: (prev: import('@/service/event-comment-service').CommentData[]) => import('@/service/event-comment-service').CommentData[]) => void} setComments - 更新留言列表。
  * @property {boolean} isLoading - 初始載入中。
  * @property {boolean} isLoadingMore - 載入更多中。
  * @property {boolean} hasMore - 是否還有更多留言。
@@ -22,7 +22,7 @@ import { fetchComments } from '@/lib/firebase-comments';
  */
 export default function useComments(eventId) {
   const [comments, setComments] = useState(
-    /** @type {import('@/lib/firebase-comments').CommentData[]} */ ([]),
+    /** @type {import('@/service/event-comment-service').CommentData[]} */ ([]),
   );
   const [cursor, setCursor] = useState(
     /** @type {import('firebase/firestore').DocumentSnapshot | null} */ (null),

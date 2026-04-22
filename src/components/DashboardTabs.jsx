@@ -2,7 +2,11 @@
 
 import { useState, useCallback, Fragment } from 'react';
 import useDashboardTab from '@/hooks/useDashboardTab';
-import { fetchMyEvents, fetchMyPosts, fetchMyComments } from '@/lib/firebase-member';
+import {
+  fetchMyEvents,
+  fetchMyPosts,
+  fetchMyComments,
+} from '@/runtime/client/use-cases/member-dashboard-use-cases';
 import DashboardEventCard from '@/components/DashboardEventCard';
 import DashboardPostCard from '@/components/DashboardPostCard';
 import DashboardCommentCard from '@/components/DashboardCommentCard';

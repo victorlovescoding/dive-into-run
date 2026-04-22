@@ -52,11 +52,33 @@ const mockAuthUser = {
   photoURL: 'https://example.com/photo.jpg',
 };
 
+/**
+ * 建立符合 Firestore Timestamp shape 的測試時間物件。
+ * @param {string} isoString - ISO 日期字串。
+ * @returns {import('firebase/firestore').Timestamp} mock timestamp。
+ */
+function createMockTimestamp(isoString) {
+  const date = new Date(isoString);
+  const seconds = Math.floor(date.getTime() / 1000);
+
+  return /** @type {import('firebase/firestore').Timestamp} */ (
+    /** @type {unknown} */ ({
+      seconds,
+      nanoseconds: 0,
+      toDate: () => date,
+      toMillis: () => date.getTime(),
+      isEqual: () => false,
+      toJSON: () => ({ seconds, nanoseconds: 0, type: 'timestamp' }),
+    })
+  );
+}
+
 const mockEvents = [
   {
     id: 'event-1',
     title: 'Morning Run',
-    time: { toDate: () => new Date('2026-02-14T08:00:00Z') },
+    time: createMockTimestamp('2027-05-14T08:00:00Z'),
+    registrationDeadline: createMockTimestamp('2027-05-13T08:00:00Z'),
     city: '臺北市',
     district: '信義區',
     distanceKm: 5,
