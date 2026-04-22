@@ -181,6 +181,45 @@ vi.mock('@/contexts/ToastContext', () => ({
 }));
 
 const mockedFetchWeather = /** @type {import('vitest').Mock} */ (fetchWeather);
+const originalLocalStorageDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+
+/**
+ * 安裝可重置的 localStorage stub，讓 township suite 不依賴 runner 提供的 Storage 細節。
+ * @returns {void}
+ */
+function installLocalStorageStub() {
+  /** @type {Record<string, string>} */
+  let storageState = {};
+
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: (key) => storageState[key] ?? null,
+      setItem: (key, value) => {
+        storageState[key] = String(value);
+      },
+      removeItem: (key) => {
+        delete storageState[key];
+      },
+      clear: () => {
+        storageState = {};
+      },
+    },
+  });
+}
+
+/**
+ * 還原 suite 開始前的 localStorage descriptor。
+ * @returns {void}
+ */
+function restoreLocalStorage() {
+  if (originalLocalStorageDescriptor) {
+    Object.defineProperty(globalThis, 'localStorage', originalLocalStorageDescriptor);
+    return;
+  }
+
+  delete globalThis.localStorage;
+}
 
 // #endregion
 
@@ -264,13 +303,15 @@ const mockZhongheWeather = {
 describe('Township drill-down integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    installLocalStorageStub();
     localStorage.clear();
     // Reset URL to clean state
     window.history.replaceState({}, '', '/weather');
   });
 
   afterEach(() => {
-    localStorage.clear();
+    restoreLocalStorage();
+    window.history.replaceState({}, '', '/weather');
   });
 
   // --- 1. County click → drill-down to township layer ---

@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S006 completed
-**Next Recommended Session**: S007
+**Current Session**: S007 completed
+**Next Recommended Session**: S008
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -44,6 +44,11 @@
 - `src/repo/client/{firebase-events-repo,firebase-event-comments-repo,firebase-member-repo}.js`、`src/service/{event-service,event-comment-service,member-dashboard-service}.js`、`src/runtime/client/use-cases/{event-use-cases,event-comment-use-cases,member-dashboard-use-cases}.js` 已建立
 - `src/lib/firebase-{events,comments,member}.js` 已收斂為 compatibility facade；混合的 Firestore/query/validation/cache orchestration 已移出 `src/lib/**`
 - `src/lib/firebase-{posts,notifications,profile}.js` 也已收斂為 compatibility facade；posts/notifications/profile 的 query、transaction、batch write、notification fan-out orchestration 已下沉到 `src/repo/**`、`src/service/**`、`src/runtime/**`
+- `src/service/weather-location-service.js`、`src/repo/client/weather-location-storage-repo.js`、`src/runtime/client/use-cases/weather-location-use-cases.js` 已建立；weather metadata 與 browser URL/localStorage persistence 已拆開
+- `src/service/avatar-upload-service.js`、`src/repo/client/firebase-storage-repo.js`、`src/runtime/client/use-cases/avatar-upload-use-cases.js` 已建立；browser image resize/canvas 與 Firebase Storage adapter 已拆層
+- `src/lib/weather-helpers.js`、`src/lib/firebase-storage-helpers.js` 已收斂為 facade-only compatibility entry
+- `src/components/weather/{FavoritesBar,WeatherCard,TaiwanMap,WeatherPage}.jsx` 與 `src/app/member/page.jsx` 已改指向 runtime entry；`src/app/api/weather/route.js` 改直連 service 純函式，維持 thin entry
+- `WeatherPage` 已補 `hasHydratedInitialLocationRef`，避免 mount 時先清 URL query 再做 restore，導致初始 URL state 失效
 - `src/repo/client/firebase-events-repo.js` 已補 `fetchParticipantUids()`，notifications runtime 只拿 participant uid / author uid 清單做 orchestration，不再自己拼 Firestore ref
 - `src/hooks/{useComments,useCommentMutations}.js` 與 `src/components/DashboardTabs.jsx` 已改為直接依賴新的 runtime client use-cases，而不是舊 `src/lib/**` 混檔
 - `specs/006-strava-running-records/tests/unit/*route*.test.js` 與 `sync-token-revocation.test.js` 已改為 mock `@/runtime/server/use-cases/strava-server-use-cases`，不再直接驗 route 內部 Firestore/fetch 細節
@@ -65,7 +70,7 @@
 | S004 | done | split `firebase-profile-server` |
 | S005 | done | repo/service extraction A |
 | S006 | done | repo/service extraction B |
-| S007 | todo | weather/storage mixed runtime split |
+| S007 | done | weather/storage mixed runtime split |
 | S008 | todo | formalize providers |
 | S009 | todo | formalize runtime hooks |
 | S010 | todo | split `events/page.jsx` |
@@ -82,10 +87,9 @@
 ### Architecture blockers
 
 1. `src/lib/firebase-profile-mapper.js` 目前先留在 `src/lib/**` compatibility namespace，真正把 profile mapper 納入終態 `src/service/**` 的遷移要配合後續更大範圍 profile split 一起做。
-2. `src/lib/weather-helpers.js` 混 service / runtime / constants / persistence。
-3. `src/lib/firebase-storage-helpers.js` 混 browser runtime 與 storage repo。
-4. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx` 直接依賴 repo，provider 邊界未立起來。
-5. `src/app/events/page.jsx`、`eventDetailClient.jsx`、`PostDetailClient.jsx`、`components/weather/WeatherPage.jsx` 都是多層混檔。
+2. `WeatherPage` 雖已把 URL/localStorage persistence 收斂到 `runtime/client/use-cases/weather-location-use-cases.js`，但頁面本身仍同時承擔 fetch orchestration / favorites / map interaction，多層責任尚未完全拆乾淨。
+3. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx` 直接依賴 repo，provider 邊界未立起來。
+4. `src/app/events/page.jsx`、`eventDetailClient.jsx`、`PostDetailClient.jsx`、`components/weather/WeatherPage.jsx` 都是多層混檔。
 6. `server-only` 目前先靠 `src/config/server/**` / `src/repo/server/**` / `src/runtime/server/**` 路徑邊界與測試隔離維持；真正的機械 enforcement 仍待後續 dep-cruise / lint 規則接線。
 7. UI integration layers 仍受 ESLint `no-restricted-imports` 保護，不能直接 import `firebase/*`；若 local state 需要 Firestore `Timestamp`，必須經由 `src/lib/firebase-*.js` helper。
 8. `src/runtime/client/use-cases/notification-use-cases.js` 現在依賴 repo client primitives（`fetchParticipantUids` / `fetchDistinctPostCommentAuthors` / `fetchDistinctEventCommentAuthors`）；後續若再調整 notification flow，請維持 side effects 留在 runtime/use-case，不要把 participant / recipient lookup 再塞回 repo 寫入函式內。
@@ -316,36 +320,69 @@ tests 不可整包排除。已知真衝突 unit 檔：
 - **Next Session Brief**:
   - 做 S007
   - write scope 以 `src/lib/weather-helpers.js`、`src/lib/firebase-storage-helpers.js`、相關 runtime/service/repo 拆分入口、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
-  - 目標是清掉 weather/storage 的混層問題，延續 `Types -> Config -> Repo -> Service -> Runtime -> UI`
-  - reviewer 要特別盯 browser runtime 與 storage repo 是否被拆開，以及是否還有混在 `src/lib/**` 的業務 orchestration
+- 目標是清掉 weather/storage 的混層問題，延續 `Types -> Config -> Repo -> Service -> Runtime -> UI`
+- reviewer 要特別盯 browser runtime 與 storage repo 是否被拆開，以及是否還有混在 `src/lib/**` 的業務 orchestration
 
+### S007
+
+- **Goal**: 拆掉 `weather-helpers.js` 與 `firebase-storage-helpers.js` 的 runtime / service / repo 混層，讓 browser persistence、image runtime、storage adapter 回到正確層級。
+- **Write Scope**:
+  - `src/lib/weather-helpers.js`
+  - `src/lib/firebase-storage-helpers.js`
+  - 新的 `src/repo/**` / `src/service/**` / `src/runtime/**` 入口
+  - 受影響的 callers / tests
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - created `src/service/weather-location-service.js`
+  - created `src/repo/client/weather-location-storage-repo.js`
+  - created `src/runtime/client/use-cases/weather-location-use-cases.js`
+  - created `src/service/avatar-upload-service.js`
+  - created `src/repo/client/firebase-storage-repo.js`
+  - created `src/runtime/client/use-cases/avatar-upload-use-cases.js`
+  - updated `src/lib/weather-helpers.js` and `src/lib/firebase-storage-helpers.js` to facade-only compatibility exports
+  - retargeted `src/components/weather/{FavoritesBar,WeatherCard,TaiwanMap,WeatherPage}.jsx` to runtime weather entry and `src/app/member/page.jsx` to runtime avatar upload entry
+  - retargeted `src/app/api/weather/route.js` to pure `@/service/weather-location-service` helpers so route stays thin
+  - added `WeatherPage` initial-hydration guard to stop URL-sync effect from clearing query params before browser restore runs
+  - retargeted weather/storage unit tests to the new layered modules and added browser-persistence coverage in `specs/013-pre-run-weather/tests/integration/weather-page.test.jsx`
+  - verified with `npm run type-check:changed`
+  - verified with `npm run lint:changed`
+  - verified with `npx vitest run specs/013-pre-run-weather/tests/unit/weather-helpers.test.js specs/013-pre-run-weather/tests/unit/weather-api-route.test.js specs/g10-storage-helper/tests/unit/firebase-storage-helpers.test.js specs/013-pre-run-weather/tests/integration/weather-page.test.jsx`
+- **Pitfalls recorded**:
+  - weather 的 URL query encode/decode 雖然是純字串轉換，但 reviewer 明確把它視為 browser persistence；S007 已把這段從 pure service 移到 runtime，避免再和 forecast/icon/formatter 混在同層。
+  - `WeatherPage` 原本的 effect 順序會先清 `window.location.search`，再做 URL restore；若未設 hydrate guard，初始 `?county=...` 會被自己抹掉，integration test 也抓得出來。
+  - browser Vitest project 的 `localStorage` 在這個 repo 不是完整 Web Storage；integration tests 需要自建可控 storage stub，否則 `clear()` 不存在會讓測試誤炸。
+- **Next Session Brief**:
+  - 做 S008
+  - write scope 以 `src/contexts/{AuthContext,NotificationContext}.jsx`、新的 `src/runtime/providers/**`、受影響 callers/tests、`specs/021-layered-dependency-architecture/handoff.md` 為主
+  - 目標是把 providers 正式收進 runtime 邊界，禁止 provider 直接碰 repo
+  - reviewer 要特別盯 provider 是否只依賴 runtime/service，而不是把 repo import 換個路徑繼續保留
 ## Next Session Brief
 
-### S007: Weather / Storage Split
+### S008: Provider Formalization
 
 **Goal**
 
-- 拆 `weather-helpers.js` 與 `firebase-storage-helpers.js` 的 runtime/service/repo 混層問題
-- 延續 S006 的 client-side split，讓 weather / storage flow 往終態 `Types -> Config -> Repo -> Service -> Runtime -> UI` 方向收斂
-- 避免把 browser runtime、storage side effects、以及 weather 常數與查詢邏輯繼續留在單一 `src/lib/**` God file
+- 把 `AuthContext`、`NotificationContext` 等 provider 正式遷入 `src/runtime/providers/**`
+- 建立 provider 僅依賴 runtime/service、不直連 repo 的邊界
+- 繼續收斂 client-side orchestration，為後續 hooks / UI split 鋪路
 
 **Write Scope**
 
-- `src/lib/weather-helpers.js`
-- `src/lib/firebase-storage-helpers.js`
-- 新的 `src/repo/**` / `src/service/**` / `src/runtime/**` 入口
+- `src/contexts/{AuthContext,NotificationContext}.jsx`
+- 新的 `src/runtime/providers/**`
 - 受影響的 callers / tests
 - `specs/021-layered-dependency-architecture/handoff.md`
 
 **Acceptance**
 
-- weather/storage flow 不再停留在單一混檔內
-- repo / service / runtime 責任有實際拆開，而不是只改 import path
-- 新舊 caller 都指向新的分層入口
+- provider 正式成為 runtime 邊界
+- provider 不再 direct import repo
+- 受影響 callers/tests 已切到新的 runtime provider 入口
 - `npm run type-check:changed` 與 `npm run lint:changed` 通過
 
 **Reviewer focus**
 
-- weather/storage 是否真的拆責任，而不是只搬目錄
-- browser runtime 與 storage side effects 是否留在正確層級，而不是被藏回 repo/service
+- provider 是否真的脫離 repo 直連，而不是只換 import path
+- runtime/providers 是否維持 orchestration 邊界，不回流到 `src/contexts/**` 舊灰區
 - 是否只改動本 session 的 write scope

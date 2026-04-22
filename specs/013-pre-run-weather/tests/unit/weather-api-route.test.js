@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getForecastIds, formatLocationName, formatLocationNameShort } from '@/lib/weather-helpers';
+import {
+  getForecastIds,
+  formatLocationName,
+  formatLocationNameShort,
+} from '@/service/weather-location-service';
 import { GET } from '@/app/api/weather/route';
 
-// Mock weather-helpers (vitest hoists vi.mock to top automatically)
-vi.mock('@/lib/weather-helpers', () => ({
+// Mock weather-location-service (vitest hoists vi.mock to top automatically)
+vi.mock('@/service/weather-location-service', () => ({
   getForecastIds: vi.fn(),
   formatLocationName: vi.fn(),
   formatLocationNameShort: vi.fn(),

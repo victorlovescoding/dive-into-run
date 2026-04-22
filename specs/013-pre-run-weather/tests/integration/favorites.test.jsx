@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { fetchWeather } from '@/lib/weather-api';
@@ -131,6 +131,45 @@ const mockedAddFavorite = /** @type {import('vitest').Mock} */ (addFavorite);
 const mockedRemoveFavorite = /** @type {import('vitest').Mock} */ (removeFavorite);
 const mockedGetFavorites = /** @type {import('vitest').Mock} */ (getFavorites);
 const mockedIsFavorited = /** @type {import('vitest').Mock} */ (isFavorited);
+const originalLocalStorageDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+
+/**
+ * 安裝可重置的 localStorage stub，避免測試間殘留 restore 狀態。
+ * @returns {void}
+ */
+function installLocalStorageStub() {
+  /** @type {Record<string, string>} */
+  let storageState = {};
+
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: (key) => storageState[key] ?? null,
+      setItem: (key, value) => {
+        storageState[key] = String(value);
+      },
+      removeItem: (key) => {
+        delete storageState[key];
+      },
+      clear: () => {
+        storageState = {};
+      },
+    },
+  });
+}
+
+/**
+ * 還原 suite 開始前的 localStorage descriptor。
+ * @returns {void}
+ */
+function restoreLocalStorage() {
+  if (originalLocalStorageDescriptor) {
+    Object.defineProperty(globalThis, 'localStorage', originalLocalStorageDescriptor);
+    return;
+  }
+
+  delete globalThis.localStorage;
+}
 
 // --- Hoisted values for mock factories (vi.mock is hoisted above all imports) ---
 const { authValue, mockShowToast } = vi.hoisted(() => ({
@@ -232,11 +271,19 @@ async function renderAndSelectTaipei({ user } = {}) {
 describe('Favorites integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.history.replaceState({}, '', '/weather');
+    installLocalStorageStub();
+    localStorage.clear();
     authValue.user = null;
     mockedGetFavorites.mockResolvedValue([]);
     mockedIsFavorited.mockResolvedValue({ favorited: false, docId: null });
     mockedAddFavorite.mockResolvedValue('new-doc-id');
     mockedRemoveFavorite.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    restoreLocalStorage();
+    window.history.replaceState({}, '', '/weather');
   });
 
   // --- 1. 未登入點收藏 → toast 提示 ---

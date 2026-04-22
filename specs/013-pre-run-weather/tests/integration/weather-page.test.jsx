@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { fetchWeather } from '@/lib/weather-api';
@@ -259,6 +259,45 @@ vi.mock('@/contexts/ToastContext', () => ({
 }));
 
 const mockedFetchWeather = /** @type {import('vitest').Mock} */ (fetchWeather);
+const originalLocalStorageDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+
+/**
+ * 安裝可重置的 localStorage stub，避免 browser test runner 的 storage 實作差異污染其他 suites。
+ * @returns {void}
+ */
+function installLocalStorageStub() {
+  /** @type {Record<string, string>} */
+  let storageState = {};
+
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: (key) => storageState[key] ?? null,
+      setItem: (key, value) => {
+        storageState[key] = String(value);
+      },
+      removeItem: (key) => {
+        delete storageState[key];
+      },
+      clear: () => {
+        storageState = {};
+      },
+    },
+  });
+}
+
+/**
+ * 還原 suite 開始前的 localStorage descriptor。
+ * @returns {void}
+ */
+function restoreLocalStorage() {
+  if (originalLocalStorageDescriptor) {
+    Object.defineProperty(globalThis, 'localStorage', originalLocalStorageDescriptor);
+    return;
+  }
+
+  delete globalThis.localStorage;
+}
 
 /**
  * 建立測試用 WeatherInfo mock 資料。
@@ -296,7 +335,15 @@ function makeWeatherInfo(overrides = {}) {
 describe('WeatherPage integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedFetchWeather.mockReset();
+    window.history.replaceState({}, '', '/weather');
+    installLocalStorageStub();
     localStorage.clear();
+  });
+
+  afterEach(() => {
+    restoreLocalStorage();
+    window.history.replaceState({}, '', '/weather');
   });
 
   // --- Map rendering ---
@@ -359,6 +406,42 @@ describe('WeatherPage integration', () => {
       // Resolve the fetch to clean up
       resolveFetch?.(makeWeatherInfo());
       await screen.findByText(/28/);
+    });
+  });
+
+  describe('browser persistence', () => {
+    it('should restore selected location from URL params on mount', async () => {
+      window.history.replaceState({}, '', '/weather?county=63000');
+      mockedFetchWeather.mockResolvedValueOnce(makeWeatherInfo());
+
+      render(<WeatherPage />);
+
+      await waitFor(() => {
+        expect(mockedFetchWeather).toHaveBeenCalledWith(
+          expect.objectContaining({ county: '臺北市', township: null }),
+        );
+      });
+      expect(screen.getByTestId('current-temperature')).toHaveTextContent('28°');
+    });
+
+    it('should sync selected county into URL and localStorage after click', async () => {
+      const user = userEvent.setup();
+      window.history.replaceState({}, '', '/weather');
+      mockedFetchWeather.mockResolvedValueOnce(makeWeatherInfo());
+
+      render(<WeatherPage />);
+      await user.click(screen.getByTestId('feature-65000'));
+      await screen.findByText(/28/);
+
+      expect(window.location.search).toBe('?county=65000');
+      expect(JSON.parse(localStorage.getItem('dive-weather-last-location') ?? 'null')).toEqual(
+        expect.objectContaining({
+          countyCode: '65000',
+          countyName: '新北市',
+          townshipCode: null,
+          townshipName: null,
+        }),
+      );
     });
   });
 

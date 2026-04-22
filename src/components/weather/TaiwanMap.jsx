@@ -3,7 +3,7 @@
 import { useMemo, useEffect, useCallback } from 'react';
 import { MapContainer, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { ISLAND_MARKERS } from '@/lib/weather-helpers';
+import { ISLAND_MARKERS } from '@/runtime/client/use-cases/weather-location-use-cases';
 import { countiesGeoJson, townsGeoJson as allTownsGeoJson } from '@/config/geo/weather-geo-cache';
 import styles from './weather.module.css';
 

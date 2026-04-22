@@ -4,12 +4,12 @@ import { useState, useRef, useCallback, useMemo, useEffect, useContext } from 'r
 import { fetchWeather } from '@/lib/weather-api';
 import { getFavorites, isFavorited, removeFavorite } from '@/lib/firebase-weather-favorites';
 import {
-  ISLAND_MARKERS,
-  encodeLocationParams,
-  decodeLocationParams,
+  readWeatherLocationFromUrl,
+  syncWeatherLocationToUrl,
   saveLastLocation,
   loadLastLocation,
-} from '@/lib/weather-helpers';
+  findIslandMarkerByTarget,
+} from '@/runtime/client/use-cases/weather-location-use-cases';
 import { AuthContext } from '@/contexts/AuthContext';
 import { countiesGeoJson, townsGeoJson } from '@/config/geo/weather-geo-cache';
 import TaiwanMap from './TaiwanMap';
@@ -126,6 +126,8 @@ export default function WeatherPage() {
   const abortRef = useRef(null);
   /** @type {import('react').RefObject<HTMLDivElement | null>} */
   const cardPanelRef = useRef(null);
+  /** @type {import('react').RefObject<boolean>} */
+  const hasHydratedInitialLocationRef = useRef(false);
   // #endregion
 
   // #region Fetch helper
@@ -233,9 +235,7 @@ export default function WeatherPage() {
 
   const handleIslandClick = useCallback(
     (/** @type {string} */ targetCounty, /** @type {string} */ targetTownship) => {
-      const island = ISLAND_MARKERS.find(
-        (m) => m.targetCounty === targetCounty && m.targetTownship === targetTownship,
-      );
+      const island = findIslandMarkerByTarget(targetCounty, targetTownship);
       const countyCode = COUNTY_CODE_LOOKUP[targetCounty] ?? '';
 
       setSelectedLocation({
@@ -362,17 +362,8 @@ export default function WeatherPage() {
   // #region Effects
   // URL state sync — 每次 selectedLocation 改變時同步到 URL (FR-059)
   useEffect(() => {
-    if (!selectedLocation) {
-      const url = new URL(window.location.href);
-      url.search = '';
-      window.history.replaceState({}, '', url.toString());
-      return;
-    }
-    const { countyCode, townshipCode } = selectedLocation;
-    const params = encodeLocationParams(countyCode, townshipCode);
-    const url = new URL(window.location.href);
-    url.search = params;
-    window.history.replaceState({}, '', url.toString());
+    if (!hasHydratedInitialLocationRef.current) return;
+    syncWeatherLocationToUrl(selectedLocation);
   }, [selectedLocation]);
 
   // localStorage 儲存 — 每次 selectedLocation 改變時保存 (FR-063)
@@ -409,9 +400,9 @@ export default function WeatherPage() {
       if (loading) return;
 
       // 1. URL params 最優先
-      const params = new URLSearchParams(window.location.search);
-      const fromUrl = decodeLocationParams(params);
+      const fromUrl = readWeatherLocationFromUrl();
       if (fromUrl) {
+        hasHydratedInitialLocationRef.current = true;
         restoreLocation(fromUrl);
         return;
       }
@@ -428,11 +419,13 @@ export default function WeatherPage() {
                 (f) => f.countyCode === saved.countyCode && f.townshipCode === saved.townshipCode,
               );
             if (match) {
+              hasHydratedInitialLocationRef.current = true;
               restoreLocation(saved);
               return;
             }
             // 否則顯示最新收藏
             const first = favs[0];
+            hasHydratedInitialLocationRef.current = true;
             restoreLocation({
               countyCode: first.countyCode,
               countyName: first.countyName,
@@ -450,8 +443,12 @@ export default function WeatherPage() {
       // 3. localStorage
       const saved = loadLastLocation();
       if (saved) {
+        hasHydratedInitialLocationRef.current = true;
         restoreLocation(saved);
+        return;
       }
+
+      hasHydratedInitialLocationRef.current = true;
     }
 
     restoreInitial();

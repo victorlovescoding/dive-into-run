@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getForecastIds, formatLocationName, formatLocationNameShort } from '@/lib/weather-helpers';
+import {
+  getForecastIds,
+  formatLocationName,
+  formatLocationNameShort,
+} from '@/service/weather-location-service';
 
 // #region JSDoc Type Definitions
 /** @typedef {import('@/types/weather-types').UvInfo} UvInfo */

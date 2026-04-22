@@ -1,5 +1,8 @@
 import Image from 'next/image';
-import { formatLocationNameShort, getWeatherIconUrl } from '@/lib/weather-helpers';
+import {
+  formatLocationNameShort,
+  getWeatherIconUrl,
+} from '@/runtime/client/use-cases/weather-location-use-cases';
 import styles from './weather.module.css';
 
 // #region Types

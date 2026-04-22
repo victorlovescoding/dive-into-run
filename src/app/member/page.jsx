@@ -9,7 +9,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AuthContext } from '@/contexts/AuthContext';
 import { updateUserName, updateUserPhotoURL } from '@/lib/firebase-users';
-import { uploadUserAvatar } from '@/lib/firebase-storage-helpers';
+import { uploadUserAvatar } from '@/runtime/client/use-cases/avatar-upload-use-cases';
 import DashboardTabs from '@/components/DashboardTabs';
 import { useToast } from '@/contexts/ToastContext';
 import BioEditor from './BioEditor';
