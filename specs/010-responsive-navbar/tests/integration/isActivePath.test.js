@@ -25,7 +25,6 @@ import { isActivePath } from '@/components/Navbar/Navbar';
 
 describe('isActivePath', () => {
   it('returns true when pathname is "/" and href is "/"', () => {
-    // Arrange & Act & Assert
     expect(isActivePath('/', '/')).toBe(true);
   });
 

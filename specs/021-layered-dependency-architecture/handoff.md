@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S014 completed
-**Next Recommended Session**: S015
+**Current Session**: S015 completed
+**Next Recommended Session**: S016
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -77,7 +77,8 @@
 - `specs/012-public-profile/tests/unit/firebase-profile-server.test.js` 已改為 mock server repo；`specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js` 也已補 repo split coverage
 - `specs/021-layered-dependency-architecture/test-bucket-policy.js` 已成為 S014 的唯一 canonical artifact path；`test-buckets/policy.js` 僅保留 compatibility re-export
 - `specs/021-layered-dependency-architecture/tests/unit/test-bucket-policy.test.js` 已固定驗四類契約：canonical artifact path、bucket classify、representative allow/deny、repo-wide scan
-- repo-wide scan 目前固定為 `unit=4 files`、`integration=0 files`、`e2e=0 files`、`specs-test-utils=0 files`
+- S015 已把 `toast-context.test.jsx`、`isActivePath.test.js`、`PostCard.test.jsx`、`PostCardSkeleton.test.jsx` 全部移到對應 feature 的 `tests/integration/`
+- repo-wide scan 目前固定為 `unit=0 files`、`integration=0 files`、`e2e=0 files`、`specs-test-utils=0 files`
 - repo 尚未安裝 `dependency-cruiser`
 - S014 刻意沒有新增 `dependency-cruiser` package、config、scripts、CI wiring；這些仍屬 S016/S017
 - 目前 enforcement 仍主要靠 ESLint 的局部結構限制
@@ -103,7 +104,7 @@
 | S012    | done   | split `PostDetailClient.jsx`                          |
 | S013    | done   | split weather/dashboard UI-runtime mixed files        |
 | S014    | done   | tests four-bucket rules                               |
-| S015    | todo   | clean the 4 real test conflicts                       |
+| S015    | done   | clean the 4 real test conflicts                       |
 | S016    | todo   | add dep-cruise package/config/scripts                 |
 | S017    | todo   | CI wiring + final 0-violation verification            |
 
@@ -123,14 +124,7 @@
 
 ### Test blockers
 
-tests 不可整包排除。已知真衝突 unit 檔：
-
-- `specs/009-global-toast/tests/unit/toast-context.test.jsx`
-- `specs/010-responsive-navbar/tests/unit/isActivePath.test.js`
-- `specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx`
-- `specs/019-posts-ui-refactor/tests/unit/PostCardSkeleton.test.jsx`
-
-S014 的 policy test 目前會把上面 4 個檔案固定驗成 unit violation files；raw edge count 只是同一份 repo-wide scan 的附帶觀測值，不是 handoff 的主契約。若檔案數變多，代表有新違規流入；若檔案數變少，代表有人在 S015 之前改動了測試 bucket 邊界或直接修掉衝突，必須同步更新 handoff 與 task 狀態。
+tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確的 integration bucket，repo-wide scan 目前四桶皆為 `0 violation`。後續若數字再次上升，代表有新違規流入或有人把 component/provider/page-level test 放回 unit bucket，必須同步更新 handoff 與 task 狀態。
 
 不應被當作 production-bound 覆蓋證據的測試：
 
@@ -618,3 +612,35 @@ S014 的 policy test 目前會把上面 4 個檔案固定驗成 unit violation f
   - write scope 以 4 個已知衝突測試為主：`specs/009-global-toast/tests/unit/toast-context.test.jsx`、`specs/010-responsive-navbar/tests/unit/isActivePath.test.js`、`specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx`、`specs/019-posts-ui-refactor/tests/unit/PostCardSkeleton.test.jsx`
   - 目標是把這 4 個檔案移到正確 bucket 或改成正確測試邊界，讓 S014 policy scan 變成 `0 violation`
   - 不要在 S015 透過放寬 S014 policy 解題；應修測試本身，讓 `test-bucket-policy.test.js` 自然轉綠
+
+### S015
+
+- **Goal**: 清掉 S014 留下的 4 個真衝突測試，讓 tests bucket repo-wide scan 回到四桶 `0 violation`，且不靠放寬 policy、baseline、排除或白名單解題。
+- **Write Scope**:
+  - `specs/009-global-toast/tests/{unit,integration}/toast-context.test.jsx`
+  - `specs/010-responsive-navbar/tests/{unit,integration}/isActivePath.test.js`
+  - `specs/019-posts-ui-refactor/tests/{unit,integration}/{PostCard.test.jsx,PostCardSkeleton.test.jsx}`
+  - `specs/021-layered-dependency-architecture/tests/unit/test-bucket-policy.test.js`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - moved `specs/009-global-toast/tests/unit/toast-context.test.jsx` to `specs/009-global-toast/tests/integration/toast-context.test.jsx`
+  - moved `specs/010-responsive-navbar/tests/unit/isActivePath.test.js` to `specs/010-responsive-navbar/tests/integration/isActivePath.test.js`
+  - moved `specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx` to `specs/019-posts-ui-refactor/tests/integration/PostCard.test.jsx`
+  - moved `specs/019-posts-ui-refactor/tests/unit/PostCardSkeleton.test.jsx` to `specs/019-posts-ui-refactor/tests/integration/PostCardSkeleton.test.jsx`
+  - updated `specs/021-layered-dependency-architecture/tests/unit/test-bucket-policy.test.js` so the repo-wide scan now asserts `0 violation` across `unit / integration / e2e / specs-test-utils`
+  - verified with `npm run type-check:changed`
+  - attempted `npm run lint:changed`; current failure is caused by pre-existing untracked `.codex/hooks/block-dangerous-commands.js` and `.codex/skills/test-driven-development/references/boilerplate.js`, not by the S015 patch
+  - verified with `npx eslint specs/009-global-toast/tests/integration/toast-context.test.jsx specs/010-responsive-navbar/tests/integration/isActivePath.test.js specs/019-posts-ui-refactor/tests/integration/PostCard.test.jsx specs/019-posts-ui-refactor/tests/integration/PostCardSkeleton.test.jsx specs/021-layered-dependency-architecture/tests/unit/test-bucket-policy.test.js`
+  - verified with `npx vitest run specs/009-global-toast/tests/integration/toast-context.test.jsx specs/010-responsive-navbar/tests/integration/isActivePath.test.js specs/019-posts-ui-refactor/tests/integration/PostCard.test.jsx specs/019-posts-ui-refactor/tests/integration/PostCardSkeleton.test.jsx specs/021-layered-dependency-architecture/tests/unit/test-bucket-policy.test.js`
+  - verified with `npx vitest run specs/021-layered-dependency-architecture/tests/unit/test-bucket-policy.test.js`
+- **Pitfalls recorded**:
+  - reviewer 已明確否決把 `isActivePath.test.js` 改成直接打 `@/components/Navbar/nav-constants.js` 的作法，因為 resolved path 仍是 `src/components/**`，unit bucket 一樣違規；S015 因此改採「直接搬 integration」而不是偷換 import target
+  - S015 的修法必須是修測試 bucket 歸位，不是修改 `test-bucket-policy.js` 規則；policy artifact 本身維持不動
+  - `test-bucket-policy.test.js` 雖然屬於 S014 驗證，但 S015 完成後必須同步改成 `0 violation` 期望，否則 repo graph 已修正但契約測試仍會卡在舊基線
+  - `npm run lint:changed` 在這個 worktree 目前會被未納管的 `.codex/**` 檔案拖進 changed set 而失敗；S015 驗證因此改用受影響測試檔的 scoped `npx eslint ...` 作為可重現證據，直到後續 session 清理該噪音來源
+- **Next Session Brief**:
+  - 做 S016
+  - write scope 以 `dependency-cruiser` package / config / scripts 與對應 repo check wiring 為主，並同步更新 `specs/021-layered-dependency-architecture/handoff.md`
+  - 目標是把 S014/S015 已經在 Vitest 驗證過的 tests bucket policy 正式接到 dep-cruise resolved graph enforcement
+  - reviewer 要特別盯首次正式接線就必須 `0 violation`，不可引入 baseline、排除或 grandfathered 規則

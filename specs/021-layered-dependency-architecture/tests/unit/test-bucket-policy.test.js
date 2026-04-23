@@ -2,10 +2,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  KNOWN_S015_UNIT_CONFLICTS,
   TEST_BUCKET_DEPCRUISE_ARTIFACTS,
   classifyTestBucket,
-  collectBucketViolations,
   evaluateBucketImport,
   scanRepoTestImportGraph,
   summarizeBucketViolations,
@@ -148,33 +146,17 @@ describe('S014 test bucket policy', () => {
     );
   });
 
-  it('pins the repo-wide import graph to the verified 4 unit files / 8 edges and zero other buckets', () => {
+  it('pins the repo-wide import graph to zero violations across all four buckets after S015', () => {
     const graph = scanRepoTestImportGraph();
 
     expect(graph.files.length).toBeGreaterThan(0);
 
     const unitSummary = summarizeBucketViolations(graph, 'unit');
-    expect(unitSummary.fileCount).toBe(4);
-    expect(unitSummary.edgeCount).toBe(8);
-    expect(unitSummary.files).toEqual([
-      'specs/009-global-toast/tests/unit/toast-context.test.jsx',
-      'specs/010-responsive-navbar/tests/unit/isActivePath.test.js',
-      'specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx',
-      'specs/019-posts-ui-refactor/tests/unit/PostCardSkeleton.test.jsx',
-    ]);
-
-    const representativeUnitViolations = collectBucketViolations(graph, 'unit').map((entry) => ({
-      filePath: entry.importerPath,
-      blockedSpecifier: entry.specifier,
-      expectedSurfaceId: entry.surfaceId,
-    }));
-    expect(representativeUnitViolations).toEqual(
-      KNOWN_S015_UNIT_CONFLICTS.map((entry) => ({
-        filePath: entry.filePath,
-        blockedSpecifier: entry.blockedSpecifier,
-        expectedSurfaceId: entry.expectedSurfaceId,
-      })),
-    );
+    expect(unitSummary).toMatchObject({
+      fileCount: 0,
+      edgeCount: 0,
+      files: [],
+    });
 
     expect(summarizeBucketViolations(graph, 'integration')).toMatchObject({
       fileCount: 0,

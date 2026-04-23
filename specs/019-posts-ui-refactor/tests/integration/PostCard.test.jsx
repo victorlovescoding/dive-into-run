@@ -39,8 +39,6 @@ describe('PostCard', () => {
     vi.clearAllMocks();
   });
 
-  // ── 1. 渲染作者資訊 ──
-
   describe('作者資訊', () => {
     it('顯示作者名稱', () => {
       render(<PostCard post={basePost} />);
@@ -53,8 +51,6 @@ describe('PostCard', () => {
       expect(screen.getByText('跑者')).toBeInTheDocument();
     });
   });
-
-  // ── 2. 渲染標題 ──
 
   describe('標題', () => {
     it('顯示文章標題', () => {
@@ -75,8 +71,6 @@ describe('PostCard', () => {
     });
   });
 
-  // ── 3. 渲染 meta（按讚/留言數） ──
-
   describe('按讚與留言 meta', () => {
     it('顯示按讚數和留言數', () => {
       render(<PostCard post={basePost} />);
@@ -95,8 +89,6 @@ describe('PostCard', () => {
       expect(onLike).toHaveBeenCalledWith('post-1');
     });
   });
-
-  // ── 4. 作者操作選單 ──
 
   describe('作者操作選單', () => {
     it('isAuthor=true 時顯示選單按鈕', () => {
@@ -158,17 +150,13 @@ describe('PostCard', () => {
     });
   });
 
-  // ── 5. 內容截斷與展開 ──
-
   describe('內容截斷與展開', () => {
-    // 150 字以上的中文內容
     const longContent =
       '我今天跑了一場馬拉松比賽感覺非常棒天氣很好風景優美路上遇到很多跑友大家互相加油打氣讓我充滿動力一路跑到終點雖然途中有幾個上坡路段很辛苦但是堅持下來之後覺得一切都值得了完賽時間比預期快了十分鐘真的很開心下次還要繼續挑戰更好的成績大家一起加油跑步讓生活更美好期待下一場比賽的到來讓我們一起享受跑步的樂趣吧奔跑不止';
 
     it('超過 150 字的內容顯示截斷文字和「查看更多」按鈕', () => {
       const post = { ...basePost, content: longContent };
       render(<PostCard post={post} truncate />);
-      // 完整內容在 DOM 中，靠 CSS max-height 視覺裁切
       expect(screen.getByText(longContent)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /查看更多/ })).toBeInTheDocument();
     });
@@ -182,7 +170,6 @@ describe('PostCard', () => {
     });
 
     it('剛好 150 字不截斷', () => {
-      // 剛好 150 字
       const exactly150 = longContent.slice(0, 150);
       const post = { ...basePost, content: exactly150 };
       render(<PostCard post={post} truncate />);
@@ -212,8 +199,6 @@ describe('PostCard', () => {
       expect(screen.queryByRole('button', { name: /查看更多/ })).not.toBeInTheDocument();
     });
   });
-
-  // ── 6. Edge cases ──
 
   describe('edge cases', () => {
     it('content 為空字串時不顯示內容區域', () => {
