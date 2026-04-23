@@ -1,3 +1,4 @@
+import polyline from '@mapbox/polyline';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 
 export { EVENT_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
@@ -7,18 +8,64 @@ export { EVENT_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
  */
 
 /**
+ * @typedef {object} FirestoreDateLike
+ * @property {() => Date} toDate - 轉換為 Date 物件。
+ */
+
+/**
+ * @typedef {object} EventSeatsLike
+ * @property {number} [maxParticipants] - 人數上限。
+ * @property {number} [participantsCount] - 目前參加人數。
+ * @property {number} [remainingSeats] - 剩餘名額。
+ */
+
+/**
+ * @typedef {object} EventDeadlineLike
+ * @property {string | FirestoreDateLike | null | undefined} [registrationDeadline] - 報名截止時間。
+ */
+
+/**
+ * @typedef {object} RoutePoint
+ * @property {number} lat - 緯度。
+ * @property {number} lng - 經度。
+ */
+
+/**
+ * @typedef {object} RouteBBox
+ * @property {number} minLat - 最小緯度。
+ * @property {number} minLng - 最小經度。
+ * @property {number} maxLat - 最大緯度。
+ * @property {number} maxLng - 最大經度。
+ */
+
+/**
+ * @typedef {object} RoutePayload
+ * @property {string[]} polylines - 各段路線的壓縮字串陣列。
+ * @property {string} [polyline] - 舊格式單一壓縮路線字串（向後相容讀取用）。
+ * @property {number} pointsCount - 所有路線的座標點總數。
+ * @property {RouteBBox} bbox - 所有路線的聯集邊界範圍。
+ */
+
+/**
+ * @typedef {object} UserPayload
+ * @property {string} uid - 使用者 UID。
+ * @property {string} name - 使用者名稱。
+ * @property {string} photoURL - 大頭貼 URL。
+ */
+
+/**
  * @typedef {object} EventData
  * @property {string} [id] - Firestore 文件 ID。
  * @property {string} city - 活動所在縣市。
  * @property {string} district - 活動所在行政區。
- * @property {Timestamp} time - 活動開始時間。
- * @property {Timestamp} registrationDeadline - 報名截止時間。
+ * @property {FirestoreDateLike} time - 活動開始時間。
+ * @property {FirestoreDateLike} registrationDeadline - 報名截止時間。
  * @property {number} distanceKm - 跑步距離（公里）。
  * @property {number} maxParticipants - 人數上限。
  * @property {number} [participantsCount] - 目前報名人數。
  * @property {number} [remainingSeats] - 剩餘名額。
  * @property {number} paceSec - 每公里配速（秒）。
- * @property {Timestamp} [createdAt] - 活動建立時間。
+ * @property {FirestoreDateLike} [createdAt] - 活動建立時間。
  * @property {string} [hostUid] - 主辦者 UID。
  * @property {string} [title] - 活動標題。
  * @property {string} [location] - 活動地點名稱。
@@ -199,6 +246,128 @@ export function filterEventsByDistanceAndSeats(events, filters = {}) {
   }
 
   return results;
+}
+
+/**
+ * 安全轉換數字。
+ * @param {string | number | null | undefined} value - 要轉換的值。
+ * @returns {number} 轉換後的數字，無效值回傳 0。
+ */
+function coerceNumber(value) {
+  const numberValue = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(numberValue) ? numberValue : 0;
+}
+
+/**
+ * 將日期值轉為毫秒時間戳（支援 string 或 Firestore Timestamp）。
+ * @param {string | { toDate?: () => Date } | null | undefined} value - 日期值。
+ * @returns {number | null} 毫秒時間戳，無效值回傳 null。
+ */
+function toTimestampMs(value) {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.getTime();
+  }
+  if (typeof value?.toDate === 'function') {
+    return value.toDate().getTime();
+  }
+  return null;
+}
+
+/**
+ * 取得 RoutePayload 中的 polylines 陣列（相容新舊格式）。
+ * @param {RoutePayload | null | undefined} route - 路線資料。
+ * @returns {string[]} encoded polyline 字串陣列。
+ */
+export function normalizeRoutePolylines(route) {
+  if (route?.polylines) return route.polylines;
+  if (route?.polyline) return [route.polyline];
+  return [];
+}
+
+/**
+ * 計算活動的剩餘名額。
+ * @param {EventSeatsLike | null | undefined} event - 活動資料。
+ * @param {number} [fallbackParticipantsCount] - 備用參加人數。
+ * @returns {number} 剩餘名額數。
+ */
+export function getRemainingSeats(event, fallbackParticipantsCount = 0) {
+  if (typeof event?.remainingSeats === 'number') return event.remainingSeats;
+  const maxParticipants = coerceNumber(event?.maxParticipants);
+  const participantsCount =
+    typeof event?.participantsCount === 'number'
+      ? event.participantsCount
+      : fallbackParticipantsCount;
+  return Math.max(0, maxParticipants - coerceNumber(participantsCount));
+}
+
+/**
+ * 判斷活動的報名截止時間是否已過。
+ * @param {EventDeadlineLike | null | undefined} event - 活動資料。
+ * @returns {boolean} 若截止時間已過回傳 true，否則 false。
+ */
+export function isDeadlinePassed(event) {
+  const deadlineMs = toTimestampMs(event?.registrationDeadline);
+  if (deadlineMs === null) return false;
+  return Date.now() >= deadlineMs;
+}
+
+/**
+ * 建立使用者 payload。
+ * @param {{ uid?: string, name?: string, email?: string, photoURL?: string } | null} user - 使用者物件。
+ * @returns {UserPayload | null} 使用者 payload，或 null。
+ */
+export function buildUserPayload(user) {
+  if (!user?.uid) return null;
+  return {
+    uid: String(user.uid),
+    name: String(user.name || (user.email ? user.email.split('@')[0] : '')),
+    photoURL: String(user.photoURL || ''),
+  };
+}
+
+/**
+ * 將地圖繪製的多段座標壓縮成 encoded polyline 陣列。
+ * @param {RoutePoint[][] | null} routeCoordinates - 多段路線座標（每條路線一個子陣列）。
+ * @returns {RoutePayload | null} 壓縮後的路線資料，或 null。
+ */
+export function buildRoutePayload(routeCoordinates) {
+  if (!Array.isArray(routeCoordinates) || routeCoordinates.length === 0) return null;
+
+  /** @type {string[]} */
+  const encodedPolylines = [];
+  let totalPoints = 0;
+  let minLat = Infinity;
+  let maxLat = -Infinity;
+  let minLng = Infinity;
+  let maxLng = -Infinity;
+
+  routeCoordinates.forEach((segment) => {
+    if (!Array.isArray(segment) || segment.length === 0) return;
+
+    /** @type {[number, number][]} */
+    const points = segment.map((point) => [Number(point.lat), Number(point.lng)]);
+    if (points.some(([lat, lng]) => Number.isNaN(lat) || Number.isNaN(lng))) return;
+
+    encodedPolylines.push(polyline.encode(points));
+    totalPoints += points.length;
+
+    points.forEach(([lat, lng]) => {
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+    });
+  });
+
+  if (encodedPolylines.length === 0) return null;
+
+  return {
+    polylines: encodedPolylines,
+    pointsCount: totalPoints,
+    bbox: { minLat, minLng, maxLat, maxLng },
+  };
 }
 
 /**

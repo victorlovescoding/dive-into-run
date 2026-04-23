@@ -138,7 +138,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
     8. `npm run test` 全部通過
   - **Dependencies**: 無（可與 S018 平行）
 
-- [ ] S020 拆分 `event-helpers.js`（280L）+ 遷移 `firebase-firestore-timestamp.js`（18L）：event 業務規則遷入 service 層，Firestore timestamp wrapper 遷入 config 層。
+- [x] S020 拆分 `event-helpers.js`（280L）+ 遷移 `firebase-firestore-timestamp.js`（18L）：event 業務規則遷入 service 層，Firestore timestamp wrapper 遷入 config 層。
   - **event-helpers 拆分**:
     - 業務規則 → 併入 `src/service/event-service.js`：`getRemainingSeats()`、`isDeadlinePassed()`、`buildUserPayload()`、`buildRoutePayload()`、`normalizeRoutePolylines()`
     - 純格式化 → 留在 `src/lib/event-helpers.js`：`formatDateTime()`、`formatPace()`、`formatCommentTime()`、`formatCommentTimeFull()`、`chunkArray()`、`toNumber()`、`toMs()`、`countTotalPoints()`

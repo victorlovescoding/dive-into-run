@@ -2,18 +2,16 @@
 
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createFirestoreTimestamp } from '@/lib/firebase-firestore-timestamp';
+import { createFirestoreTimestamp } from '@/config/client/firebase-timestamp';
 import {
-  buildRoutePayload,
-  buildUserPayload,
   chunkArray,
   countTotalPoints,
   formatDateTime,
   formatPace,
-  getRemainingSeats,
   toMs,
   toNumber,
 } from '@/lib/event-helpers';
+import { buildRoutePayload, buildUserPayload, getRemainingSeats } from '@/service/event-service';
 import { listTaiwanCities, listTaiwanDistricts } from '@/service/taiwan-location-service';
 import {
   createEvent,

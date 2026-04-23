@@ -2,13 +2,19 @@
 
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createFirestoreTimestamp } from '@/lib/firebase-firestore-timestamp';
+import { createFirestoreTimestamp } from '@/config/client/firebase-timestamp';
+import {
+  formatDateTime,
+  formatPace,
+  toMs,
+  toNumber,
+} from '@/lib/event-helpers';
 import {
   buildUserPayload,
+  getRemainingSeats,
   isDeadlinePassed,
   normalizeRoutePolylines,
-  toMs,
-} from '@/lib/event-helpers';
+} from '@/service/event-service';
 import {
   deleteEvent,
   EVENT_NOT_FOUND_MESSAGE,
@@ -28,31 +34,6 @@ import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 
 /**
- * 格式化日期。
- * @param {string|object|null|undefined} value - 日期值。
- * @returns {string} 格式化後的字串。
- */
-function formatDateTime(value) {
-  if (!value) return '';
-
-  if (typeof value === 'string') {
-    return value.replace('T', ' ');
-  }
-
-  if (typeof value?.toDate === 'function') {
-    const date = value.toDate();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
-  }
-
-  return String(value);
-}
-
-/**
  * 計算活動狀態。
  * @param {object} params - 活動時間資料。
  * @param {string|object} params.time - 活動時間。
@@ -67,53 +48,6 @@ function computeStatus({ time, registrationDeadline }) {
   if (timeMs && now >= timeMs) return '活動已開始';
   if (deadlineMs && now >= deadlineMs) return '報名已截止';
   return '報名中';
-}
-
-/**
- * 安全轉換數字。
- * @param {string | number | null | undefined} value - 要轉換的值。
- * @returns {number} 轉換後的數字，無效值回傳 0。
- */
-function toNumber(value) {
-  const numberValue = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(numberValue) ? numberValue : 0;
-}
-
-/**
- * 計算剩餘名額。
- * @param {import('@/lib/event-helpers').EventData | null} event - 活動資料。
- * @param {number} [fallbackParticipantsCount] - 備用參加人數。
- * @returns {number} 剩餘名額。
- */
-function getRemainingSeats(event, fallbackParticipantsCount = 0) {
-  if (typeof event?.remainingSeats === 'number') return event.remainingSeats;
-  const max = toNumber(event?.maxParticipants);
-  const count =
-    typeof event?.participantsCount === 'number'
-      ? event.participantsCount
-      : fallbackParticipantsCount;
-  return Math.max(0, max - toNumber(count));
-}
-
-/**
- * 格式化配速。
- * @param {number|string|null|undefined} paceSec - 配速秒數。
- * @param {string} [fallbackText] - 備用文字。
- * @returns {string} 格式化後的配速。
- */
-function formatPace(paceSec, fallbackText = '') {
-  const numberValue = typeof paceSec === 'number' ? paceSec : Number(paceSec);
-  if (Number.isFinite(numberValue) && numberValue > 0) {
-    const minutes = Math.floor(numberValue / 60);
-    const seconds = numberValue % 60;
-    return `${minutes}:${String(seconds).padStart(2, '0')}`;
-  }
-
-  if (typeof fallbackText === 'string' && fallbackText.trim()) {
-    return fallbackText;
-  }
-
-  return '';
 }
 
 /**

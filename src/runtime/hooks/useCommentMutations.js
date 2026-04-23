@@ -5,7 +5,7 @@ import {
   deleteComment,
   fetchCommentHistory,
 } from '@/runtime/client/use-cases/event-comment-use-cases';
-import { getCurrentFirestoreTimestamp } from '@/lib/firebase-firestore-timestamp';
+import { getCurrentFirestoreTimestamp } from '@/config/client/firebase-timestamp';
 
 /**
  * @typedef {import('@/service/event-comment-service').CommentData} CommentData

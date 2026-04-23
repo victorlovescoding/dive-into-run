@@ -26,14 +26,14 @@
 
 ## Current State
 
-**Current Session**: S019 completed（Phase 9 service-tier done）
-**Next Recommended Session**: S020（event-helpers/service split）或 S021（posts thin-entry）— Phase 9 與 Phase 10 大部分可平行
+**Current Session**: S020 completed（event-helpers/service split + timestamp config retarget done）
+**Next Recommended Session**: S020a（utility canonical-readiness）或 S021（posts thin-entry）— Phase 9 與 Phase 10 大部分可平行
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
 
 - `src/types/weather-types.js`、`src/config/client/firebase-client.js`、`src/config/geo/{weather-geo-cache.js,taiwan-locations.js}` 已建立
-- `src/lib/firestore-types.js` 已移除，UI/runtime 層若要建立 Firestore `Timestamp` 必須走 `src/lib/firebase-firestore-timestamp.js`
+- `src/lib/firestore-types.js` 已移除；canonical runtime / client-facing 層若要建立 Firestore `Timestamp`，正式路徑是 `src/config/client/firebase-timestamp.js`；`src/lib/firebase-firestore-timestamp.js` 現在只保留 legacy compatibility facade
 - 受影響的 production callers 與測試 mocks 已改用新的 `@/types/**` / `@/config/**` 路徑
 - `src/config/server/{firebase-admin-app.js,strava-server-config.js}`、`src/repo/server/{firebase-auth-admin-repo.js,strava-api-repo.js,strava-server-repo.js}`、`src/runtime/server/use-cases/strava-server-use-cases.js` 已建立
 - `src/app/api/strava/{callback,sync,disconnect,webhook}/route.js` 已收斂成 thin entry，僅保留 request parsing / auth guard / JSON forwarding
@@ -56,6 +56,9 @@
 - `src/app/events/page.jsx` 已收斂成 pure thin entry，只保留 `Suspense + EventsPageScreen`
 - `src/repo/client/taiwan-location-repo.js` 與 `src/service/taiwan-location-service.js` 已建立，events page 的縣市/行政區選項不再由 runtime 直接 import config
 - `src/runtime/hooks/useEventsPageRuntime.js` 已成為 events 列表頁的 canonical runtime boundary，承接 router/searchParams/toast/pagination/create/edit/delete/join/leave orchestration
+- `src/service/event-service.js` 已承接 `event-helpers` 拆出的 event 規則：`getRemainingSeats`、`isDeadlinePassed`、`buildUserPayload`、`buildRoutePayload`、`normalizeRoutePolylines`
+- `src/lib/event-helpers.js` 現在只保留 formatting / pure utilities，migrated event 規則已退回 facade re-export，不再持有 implementation
+- `src/runtime/hooks/{useEventsPageRuntime,useEventDetailRuntime}.js` 已直接 import `@/service/event-service`；`src/runtime/hooks/{useEventsPageRuntime,useEventDetailRuntime,usePostDetailRuntime,useCommentMutations}.js` 已直接 import `@/config/client/firebase-timestamp`
 - `src/ui/events/{EventsPageScreen.jsx,EventsPageScreen.module.css}` 已建立；events 列表頁 UI 不再直接 import `@/lib/firebase-events` 或 `@/contexts/**`
 - `src/app/events/[id]/eventDetailClient.jsx` 已收斂成 thin client entry，只保留 `useEventDetailRuntime + EventDetailScreen`
 - `src/runtime/hooks/useEventDetailRuntime.js` 已成為活動詳情頁的 canonical runtime boundary，承接 detail fetch、participants、isJoined、body scroll lock、overlay listeners、edit/delete、join/leave、comment notification、router push、toast 與 share URL orchestration
@@ -115,7 +118,7 @@
 | S017    | done   | CI wiring + final 0-violation verification            |
 | S018    | done   | repo-tier: strava/users/weather-favorites → repo      |
 | S019    | done   | svc-tier: profile-mapper/server/weather-api → svc     |
-| S020    | todo   | split event-helpers: biz rules → svc, formatters stay |
+| S020    | done   | split event-helpers: biz rules → svc, formatters stay |
 | S021    | todo   | thin-entry `posts/page.jsx`                           |
 | S022    | todo   | thin-entry `runs/page.jsx` + callback                 |
 | S023    | todo   | thin-entry `member/page.jsx` + ProfileClient          |
@@ -131,7 +134,7 @@
 - ✅ 六層分層方向、forward-only dependency、dep-cruise enforcement、CI+pre-commit gate 全部到位
 - ⚠️ `src/lib/**` 不在 `CANONICAL_LAYER_PATTERNS`，dep-cruise 對所有涉及 `src/lib/**` 的邊完全不攔（11 條 canonical → lib 的 runtime import 未被偵測）
 - ⚠️ 6 個 thick entry 未拆（posts list 371L、runs 165L、callback 131L、member 130L、ProfileClient 147L、api/weather 590L）
-- ⚠️ `src/lib/` 仍有 8 個 IMPLEMENTATION 檔含真實業務邏輯（strava 131L、users 102L、weather-favorites 110L、event-helpers 280L、profile-mapper 37L、profile-server 36L、weather-api 26L、firestore-timestamp 18L）
+- ⚠️ S001-S017 截止時 `src/lib/` 曾有 8 個 IMPLEMENTATION 檔含真實業務邏輯；經 S018-S020 後，`event-helpers`、`profile-mapper`、`profile-server`、`weather-api`、`firestore-timestamp` 已退出這個 bucket，剩餘重點債是 S020a 要處理的 `notification-helpers` / `strava-helpers`
 
 Phase 9-11（S018-S025）即為補完這三類缺口的任務。
 
@@ -143,7 +146,7 @@ Phase 9-11（S018-S025）即為補完這三類缺口的任務。
 4. S013 已把 `WeatherPage.jsx`、`FavoriteButton.jsx`、`DashboardTabs.jsx` 拆成 thin entry + runtime + ui；後續 reviewer 應改盯 weather/dashboard screen 是否重新拉回 runtime/service 依賴，而不是再把它們當未拆 target。
 5. `src/repo/client/firebase-auth-repo.js` 已建立，`src/lib/firebase-auth-helpers.js` 現在只是 re-export facade。
 6. `server-only` 目前先靠 `src/config/server/**` / `src/repo/server/**` / `src/runtime/server/**` 路徑邊界與測試隔離維持；真正的機械 enforcement 仍待後續 dep-cruise / lint 規則接線。
-7. UI integration layers 仍受 ESLint `no-restricted-imports` 保護，不能直接 import `firebase/*`；若 local state 需要 Firestore `Timestamp`，必須經由 `src/lib/firebase-*.js` helper。
+7. UI integration layers 仍受 ESLint `no-restricted-imports` 保護，不能直接 import `firebase/*`；若 canonical runtime / client-facing code 需要 Firestore `Timestamp`，正式 helper 路徑是 `src/config/client/firebase-timestamp.js`，`src/lib/firebase-firestore-timestamp.js` 只剩 legacy facade。
 8. `src/runtime/client/use-cases/notification-use-cases.js` 現在依賴 repo client primitives（`fetchParticipantUids` / `fetchDistinctPostCommentAuthors` / `fetchDistinctEventCommentAuthors`）；後續若再調整 notification flow，請維持 side effects 留在 runtime/use-case，不要把 participant / recipient lookup 再塞回 repo 寫入函式內。
 9. `member-dashboard` 的 `titleCache` 仍只以 `parentId` 當 key，這是為了保留既有行為；若未來 post/event 出現相同 id，cache 仍可能互撞，這筆債要在後續 dashboard/profile 整理時一起處理。
 
@@ -202,14 +205,14 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - created `src/config/geo/weather-geo-cache.js`
   - created `src/config/geo/taiwan-locations.js`
   - created `src/types/weather-types.js`
-  - created `src/lib/firebase-firestore-timestamp.js` to keep Firestore `Timestamp` creation inside allowed `src/lib/firebase-*.js` boundary
+  - created `src/lib/firebase-firestore-timestamp.js` to keep Firestore `Timestamp` creation inside the then-available allowed helper boundary（later superseded by S020 canonical path `src/config/client/firebase-timestamp.js`）
   - removed `src/lib/firebase-client.js`, `src/lib/firestore-types.js`, `src/lib/weather-types.js`, `src/lib/weather-geo-cache.js`, `src/lib/taiwan-locations.js`
   - retargeted affected `src/**` imports and `specs/**` test mocks to new `@/config/**` / `@/types/**` paths
   - verified with `npm run type-check:changed`
   - verified with `npm run lint:changed`
   - verified with `npx vitest run specs/003-strict-type-fixes/app-events-page/tests/integration/EventsPage.test.jsx specs/fix/event-detail-deleted-guard/tests/integration/EventDetailClient-delete-race.test.jsx specs/005-event-comments/tests/integration/CommentSection.test.jsx`
 - **Pitfalls recorded**:
-  - 單純把 UI 層 `Timestamp` 使用改成 direct `firebase/firestore` import 會被 ESLint structural rule 擋下；要改成 `src/lib/firebase-*.js` helper。
+  - 在 S002 當下，單純把 UI 層 `Timestamp` 使用改成 direct `firebase/firestore` import 會被 ESLint structural rule 擋下，所以先走 `src/lib/firebase-firestore-timestamp.js`；此約束在 S020 已收斂為 canonical path `src/config/client/firebase-timestamp.js` + legacy lib facade。
   - 刪除 `src/lib/firebase-client.js` 代表所有依賴它的測試 mock path 也必須同步搬到 `@/config/client/firebase-client`。
   - S002 雖然是 leaf extraction，但如果移除 compatibility path，就不能只改 production callers，測試邊界也要一起收斂。
 - **Next Session Brief**:
@@ -809,3 +812,41 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - 若做 S020，write scope 以 `event-helpers` 的業務規則/service split 與受影響 runtime hook / unit test 為主
   - 若做 S021，write scope 以 `src/app/posts/page.jsx` 的 thin-entry split 與對應 runtime/ui/test retarget 為主
   - reviewer 要特別盯兩件事：一是不要把 facade-only `src/lib/**` 重新長回 implementation；二是 integration test 必須持續對齊「實際 production import surface」，不是對齊舊 task 描述
+
+### S020
+
+- **Goal**: 把 `event-helpers` 中的 event 業務規則遷到 canonical service 層，讓 `src/lib/event-helpers.js` 退回 formatting / pure utility + facade re-export；同時把 Firestore timestamp wrapper 遷到 `src/config/client/firebase-timestamp.js`，讓 4 個 runtime hooks 不再從 `src/lib/**` 取 timestamp helper。
+- **Write Scope**:
+  - `src/lib/event-helpers.js`
+  - `src/service/event-service.js`
+  - `src/lib/firebase-firestore-timestamp.js`
+  - `src/config/client/firebase-timestamp.js`
+  - `src/runtime/hooks/{useEventsPageRuntime,useEventDetailRuntime,usePostDetailRuntime,useCommentMutations}.js`
+  - `specs/003-strict-type-fixes/app-events-page/tests/unit/event-helpers.test.js`
+  - `specs/021-layered-dependency-architecture/tests/unit/event-service-rules.test.js`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - created `src/config/client/firebase-timestamp.js`
+  - updated `src/lib/firebase-firestore-timestamp.js` to facade-only re-export
+  - moved `getRemainingSeats`、`isDeadlinePassed`、`buildUserPayload`、`buildRoutePayload`、`normalizeRoutePolylines` into `src/service/event-service.js`
+  - updated `src/lib/event-helpers.js` to keep only formatting / utility implementations plus facade re-exports for the migrated business rules
+  - retargeted `src/runtime/hooks/useEventsPageRuntime.js` and `src/runtime/hooks/useEventDetailRuntime.js` to import migrated event rules from `@/service/event-service`
+  - removed duplicated local helper implementations from `src/runtime/hooks/useEventDetailRuntime.js`, so event detail runtime no longer keeps a second copy of seats/pace/date logic
+  - retargeted `src/runtime/hooks/{useEventsPageRuntime,useEventDetailRuntime,usePostDetailRuntime,useCommentMutations}.js` to `@/config/client/firebase-timestamp`
+  - split `specs/003-strict-type-fixes/app-events-page/tests/unit/event-helpers.test.js` so it now only covers formatting / utility behavior
+  - created `specs/021-layered-dependency-architecture/tests/unit/event-service-rules.test.js` to cover the migrated event business rules via `@/service/event-service`
+  - verified with `npx vitest run specs/003-strict-type-fixes/app-events-page/tests/unit/event-helpers.test.js specs/021-layered-dependency-architecture/tests/unit/event-service-rules.test.js` -> `Test Files 2 passed (2)` / `Tests 21 passed (21)`
+  - verified with `npm run type-check:changed` -> `✓ No type errors in changed files.`
+  - verified with `npm run lint:changed` -> exit `0`; only printed the existing `eslint-plugin-react` version warning, no lint errors
+  - verified with `npm run depcruise` -> `✔ no dependency violations found (1342 modules, 3316 dependencies cruised)`
+  - verified with `npx vitest run specs/009-global-toast/tests/integration/crud-toast.test.jsx specs/014-notification-system/tests/integration/notification-triggers.test.jsx` -> `Test Files 2 passed (2)` / `Tests 21 passed (21)`
+- **Pitfalls recorded**:
+  - `useEventDetailRuntime.js` 原本自己複製了一份 `formatDateTime` / `formatPace` / `toNumber` / `getRemainingSeats`；如果先搬 service 再不清掉，S020 會留下第二份 event 規則邏輯，等於 facade-only 只是表面成立
+  - integration bucket 不能升級 mock target 到 `@/service/**`；S020 實際驗證顯示 `crud-toast.test.jsx`、`notification-triggers.test.jsx`、`notification-error.test.jsx` 內殘留的 `@/lib/event-helpers` mock 在現況下屬於 non-blocking dead residue / cleanup debt：它們已不再攔截這次 retarget 後的真正 production path，但目前也沒有造成 fail，因此這輪不擴 scope 清理
+  - `src/lib/event-helpers.js` 與 `src/lib/firebase-firestore-timestamp.js` 必須真的只剩 facade；不能為了相容保留 migrated implementation，否則 S025 無法機械化封住 canonical -> lib import
+- **Next Session Brief**:
+  - 做 S020a 或 S021
+  - 若做 S020a，write scope 以 `notification-helpers` / `strava-helpers` 被 canonical layers runtime-import 的函式遷移為主，先把 S025 的最後前置條件補齊
+  - 若做 S021，write scope 以 `src/app/posts/page.jsx` 的 thin-entry split 與對應 runtime/ui/test retarget 為主
+  - reviewer 要特別盯兩件事：一是 canonical runtime 是否還有任何新的 `src/lib/**` runtime import 回流；二是 integration tests 若還保留 facade mock，必須確認那只是無害兼容，不是錯誤地以為自己攔到真正 production surface

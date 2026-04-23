@@ -2,7 +2,7 @@
 
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createFirestoreTimestamp } from '@/lib/firebase-firestore-timestamp';
+import { createFirestoreTimestamp } from '@/config/client/firebase-timestamp';
 import {
   POST_NOT_FOUND_MESSAGE,
   addComment,
