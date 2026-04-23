@@ -36,9 +36,13 @@ vi.mock('@/repo/client/firebase-notifications-repo', async (importOriginal) => {
     fetchDistinctEventCommentAuthors: vi.fn(),
   };
 });
-vi.mock('@/lib/notification-helpers', () => ({
-  buildNotificationMessage: vi.fn((type) => `mock-message-${type}`),
-}));
+vi.mock('@/service/notification-service', async (importOriginal) => {
+  const actual = /** @type {Record<string, unknown>} */ (await importOriginal());
+  return {
+    ...actual,
+    buildNotificationMessage: vi.fn((type) => `mock-message-${type}`),
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Imports (after mocks)

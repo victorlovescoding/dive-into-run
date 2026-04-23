@@ -1,5 +1,4 @@
 import { serverTimestamp } from 'firebase/firestore';
-import { buildNotificationMessage } from '@/lib/notification-helpers';
 import {
   addNotificationDocument,
   addNotificationDocuments,
@@ -13,7 +12,11 @@ import {
   watchUnreadNotificationDocuments,
 } from '@/repo/client/firebase-notifications-repo';
 import { fetchParticipantUids } from '@/repo/client/firebase-events-repo';
-import { buildNotificationDoc, toNotificationItems } from '@/service/notification-service';
+import {
+  buildNotificationDoc,
+  buildNotificationMessage,
+  toNotificationItems,
+} from '@/service/notification-service';
 
 /**
  * @typedef {import('@/service/notification-service').Actor} Actor

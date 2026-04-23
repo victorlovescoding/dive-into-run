@@ -26,6 +26,28 @@
  * @typedef {'event_modified'|'event_cancelled'|'post_new_comment'|'post_comment_reply'|'event_host_comment'|'event_participant_comment'|'event_comment_reply'} NotificationType
  */
 
+/** @type {Record<NotificationType, (title: string) => string>} */
+const MESSAGE_BUILDERS = {
+  event_modified: (title) => `你所參加的『${title}』活動資訊有更動`,
+  event_cancelled: (title) => `你所參加的『${title}』已取消`,
+  post_new_comment: (title) => `你的文章『${title}』有一則新的留言`,
+  post_comment_reply: (title) => `你留言過的文章『${title}』有一則新的留言`,
+  event_host_comment: (title) => `你主辦的活動『${title}』有一則新的留言`,
+  event_participant_comment: (title) => `你參加的活動『${title}』有一則新的留言`,
+  event_comment_reply: (title) => `你留言過的活動『${title}』有一則新的留言`,
+};
+
+/**
+ * 根據通知類型與實體標題組合通知訊息。
+ * @param {NotificationType} type - 通知類型。
+ * @param {string} entityTitle - 實體標題。
+ * @returns {string} 完整通知訊息。
+ */
+export function buildNotificationMessage(type, entityTitle) {
+  const builder = MESSAGE_BUILDERS[type];
+  return builder(entityTitle);
+}
+
 /**
  * 建立 Firestore notification document 的共用 helper。
  * @param {object} params - 通知文件欄位。

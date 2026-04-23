@@ -3,15 +3,15 @@
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
 import { getStravaActivitiesByMonth } from '@/repo/client/firebase-strava-repo';
-import { groupActivitiesByDay, calcMonthSummary } from '@/lib/strava-helpers';
+import { calcMonthSummary, groupActivitiesByDay } from '@/service/strava-data-service';
 
-/** @type {import('@/lib/strava-helpers').MonthSummary} */
+/** @type {import('@/service/strava-data-service').MonthSummary} */
 const EMPTY_SUMMARY = { totalMeters: 0, byType: [] };
 
 /**
  * @typedef {object} UseRunCalendarResult
- * @property {Map<number, import('@/lib/strava-helpers').DayActivities>} dayMap - 以日期數字為 key 的每日聚合資料。
- * @property {import('@/lib/strava-helpers').MonthSummary} monthSummary - 當月總結。
+ * @property {Map<number, import('@/service/strava-data-service').DayActivities>} dayMap - 以日期數字為 key 的每日聚合資料。
+ * @property {import('@/service/strava-data-service').MonthSummary} monthSummary - 當月總結。
  * @property {boolean} isLoading - 是否載入中。
  * @property {string|null} error - 錯誤訊息。
  */
@@ -24,10 +24,10 @@ const EMPTY_SUMMARY = { totalMeters: 0, byType: [] };
  */
 export default function useRunCalendar(year, month) {
   const [dayMap, setDayMap] = useState(
-    /** @type {Map<number, import('@/lib/strava-helpers').DayActivities>} */ (new Map()),
+    /** @type {Map<number, import('@/service/strava-data-service').DayActivities>} */ (new Map()),
   );
   const [monthSummary, setMonthSummary] = useState(
-    /** @type {import('@/lib/strava-helpers').MonthSummary} */ (EMPTY_SUMMARY),
+    /** @type {import('@/service/strava-data-service').MonthSummary} */ (EMPTY_SUMMARY),
   );
   const [error, setError] = useState(/** @type {string|null} */ (null));
   const [loaded, setLoaded] = useState(

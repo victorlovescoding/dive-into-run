@@ -5,7 +5,7 @@
  * 空陣列回傳空 Map、以及 runs 陣列按 Run > VirtualRun > TrailRun 排序。
  */
 import { describe, it, expect } from 'vitest';
-import { groupActivitiesByDay } from '@/lib/strava-helpers';
+import { groupActivitiesByDay } from '@/service/strava-data-service';
 
 /**
  * 建立測試用 StravaActivity stub。

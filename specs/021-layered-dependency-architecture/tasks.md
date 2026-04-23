@@ -166,7 +166,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
     7. `npm run test` 全部通過
   - **Dependencies**: S018 完成後較佳（避免同時改太多 runtime hook import）
 
-- [ ] S020a Utility canonical-readiness：把 `notification-helpers` 和 `strava-helpers` 中被 canonical layers runtime-import 的函式遷入正確 canonical layer，確保 S025 硬化規則不會產生 violation。
+- [x] S020a Utility canonical-readiness：把 `notification-helpers` 和 `strava-helpers` 中被 canonical layers runtime-import 的函式遷入正確 canonical layer，確保 S025 硬化規則不會產生 violation。
   - **notification-helpers.js**（107L）— canonical caller：`src/runtime/client/use-cases/notification-use-cases.js:2`
     - `buildNotificationMessage` → 併入 `src/service/notification-service.js`
     - 其餘函式（`formatRelativeTime`、`getNotificationLink`、typedefs）留在 `src/lib/notification-helpers.js`（僅被 `src/components/**` 使用，non-canonical surface）
@@ -197,6 +197,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
     3. `src/lib/notification-helpers.js` 和 `src/lib/strava-helpers.js` 保留未遷函式 + facade re-export 遷移函式
     4. `npm run depcruise` 仍為 0 violation
     5. `npm run test` 全部通過
+  - **Verification note**: 此 task 的 session evidence已達成 targeted verification 綠、canonical import 清零、`depcruise` 綠；但 emulator 下全量 `npm run test` 目前被既有 repo-level aggregate/isolation 問題阻擋，唯一 failing suite 是 `specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js`，其 isolation run 會通過，因此 `[x]` 不代表 repo-wide full test green。
   - **Dependencies**: 無（可與 S018-S020 平行）；必須在 S025 之前完成
 
 ## Phase 10: 剩餘 Thick Entry 拆分

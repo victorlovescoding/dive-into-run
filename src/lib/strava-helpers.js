@@ -64,9 +64,6 @@ export const RUN_TYPE_LABELS = {
   TrailRun: '越野',
 };
 
-/** @type {string[]} 類型固定排序順序。 */
-const TYPE_ORDER = ['Run', 'VirtualRun', 'TrailRun'];
-
 /**
  * 產生月曆網格陣列。
  * @param {number} year - 年份。
@@ -97,44 +94,6 @@ export function buildCalendarGrid(year, month) {
  */
 
 /**
- * 將活動列表按日期分組並聚合同類型距離。
- * @param {import('./firebase-strava').StravaActivity[]} activities - 活動列表。
- * @returns {Map<number, DayActivities>} 以日期數字為 key 的聚合 map。
- */
-export function groupActivitiesByDay(activities) {
-  /** @type {Map<number, { dateKey: string, day: number, typeMap: Map<string, number> }>} */
-  const intermediate = new Map();
-
-  activities.forEach((activity) => {
-    const { startDateLocal, type, distanceMeters } = activity;
-    const dateKey = startDateLocal.slice(0, 10);
-    const day = parseInt(dateKey.split('-')[2], 10);
-
-    if (!intermediate.has(day)) {
-      intermediate.set(day, { dateKey, day, typeMap: new Map() });
-    }
-    const entry = intermediate.get(day);
-    entry.typeMap.set(type, (entry.typeMap.get(type) || 0) + distanceMeters);
-  });
-
-  /** @type {Map<number, DayActivities>} */
-  const result = new Map();
-
-  Array.from(intermediate.entries()).forEach(([day, { dateKey, typeMap }]) => {
-    /** @type {DayRunSummary[]} */
-    const runs = TYPE_ORDER.filter((t) => typeMap.has(t)).map((t) => ({
-      type: t,
-      totalMeters: /** @type {number} */ (typeMap.get(t)),
-    }));
-
-    const totalMeters = runs.reduce((sum, r) => sum + r.totalMeters, 0);
-    result.set(day, { dateKey, day, runs, totalMeters });
-  });
-
-  return result;
-}
-
-/**
  * @typedef {object} MonthTypeSummary
  * @property {string} type - 活動類型。
  * @property {number} totalMeters - 該類型當月總距離（公尺）。
@@ -147,29 +106,4 @@ export function groupActivitiesByDay(activities) {
  * @property {MonthTypeSummary[]} byType - 各類型小計（僅含有紀錄的類型）。
  */
 
-/**
- * 計算月份跑步總結。
- * @param {Map<number, DayActivities>} dayMap - 每日聚合資料。
- * @returns {MonthSummary} 月份總結。
- */
-export function calcMonthSummary(dayMap) {
-  /** @type {Map<string, number>} */
-  const typeAccum = new Map();
-  let totalMeters = 0;
-
-  Array.from(dayMap.values()).forEach((dayData) => {
-    totalMeters += dayData.totalMeters;
-    dayData.runs.forEach((run) => {
-      typeAccum.set(run.type, (typeAccum.get(run.type) || 0) + run.totalMeters);
-    });
-  });
-
-  /** @type {MonthTypeSummary[]} */
-  const byType = TYPE_ORDER.filter((t) => typeAccum.has(t)).map((t) => ({
-    type: t,
-    totalMeters: /** @type {number} */ (typeAccum.get(t)),
-    label: RUN_TYPE_LABELS[t] || t,
-  }));
-
-  return { totalMeters, byType };
-}
+export { groupActivitiesByDay, calcMonthSummary } from '@/service/strava-data-service';

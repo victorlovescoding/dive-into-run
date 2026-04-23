@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildNotificationMessage, getNotificationLink } from '@/lib/notification-helpers';
+import { getNotificationLink } from '@/lib/notification-helpers';
+import { buildNotificationMessage } from '@/service/notification-service';
 
 /**
  * 建立測試用的最小通知物件（僅含 getNotificationLink 需要的欄位）。
@@ -7,10 +8,10 @@ import { buildNotificationMessage, getNotificationLink } from '@/lib/notificatio
  * @param {string} partial.type - 通知類型。
  * @param {string} partial.entityId - 實體 ID。
  * @param {string|null} partial.commentId - 留言 ID。
- * @returns {import('@/lib/notification-helpers').NotificationItem} 測試用通知物件。
+ * @returns {import('@/service/notification-service').NotificationItem} 測試用通知物件。
  */
 function makeNotification({ type, entityId, commentId }) {
-  return /** @type {import('@/lib/notification-helpers').NotificationItem} */ ({
+  return /** @type {import('@/service/notification-service').NotificationItem} */ ({
     type,
     entityId,
     commentId,

@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S020 completed（event-helpers/service split + timestamp config retarget done）
-**Next Recommended Session**: S020a（utility canonical-readiness）或 S021（posts thin-entry）— Phase 9 與 Phase 10 大部分可平行
+**Current Session**: S020a completed（notification/strava utility canonical-readiness done）
+**Next Recommended Session**: S021（posts thin-entry）或 S025（canonical no-import-lib rule）— Phase 10 與 Phase 11 現在可並行評估
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -58,6 +58,12 @@
 - `src/runtime/hooks/useEventsPageRuntime.js` 已成為 events 列表頁的 canonical runtime boundary，承接 router/searchParams/toast/pagination/create/edit/delete/join/leave orchestration
 - `src/service/event-service.js` 已承接 `event-helpers` 拆出的 event 規則：`getRemainingSeats`、`isDeadlinePassed`、`buildUserPayload`、`buildRoutePayload`、`normalizeRoutePolylines`
 - `src/lib/event-helpers.js` 現在只保留 formatting / pure utilities，migrated event 規則已退回 facade re-export，不再持有 implementation
+- `src/service/notification-service.js` 已承接 `buildNotificationMessage`；`src/runtime/client/use-cases/notification-use-cases.js` 不再 runtime import `@/lib/notification-helpers`
+- `src/service/strava-data-service.js` 已建立，承接 `groupActivitiesByDay` / `calcMonthSummary`；`src/runtime/hooks/useRunCalendar.js` 不再 runtime import `@/lib/strava-helpers`
+- `src/lib/{notification-helpers,strava-helpers}.js` 現在只保留未遷移的 UI-facing helper 實作，加上 migrated function 的 facade re-export；沒有雙實作殘留
+- `specs/008-run-calendar/tests/unit/{groupActivitiesByDay,calcMonthSummary}.test.js` 已 retarget 到 canonical `@/service/strava-data-service`，其中月份摘要測試只驗 observable label 結果，沒有為了測常數把 `RUN_TYPE_LABELS` 擴成 canonical surface
+- `specs/014-notification-system/tests/unit/notification-helpers.test.js` 與 `specs/015-comment-notifications/tests/unit/notification-helpers.test.js` 已改為直接驗 canonical `@/service/notification-service` 的 `buildNotificationMessage`；留在 `@/lib/notification-helpers` 的 `formatRelativeTime` / `getNotificationLink` 仍各自留在原 surface
+- 受影響的 notification unit tests (`firebase-notifications-{read,write}`、`notify-{post-comment-reply,event-new-comment}`、`fetch-distinct-comment-authors`) 已把 mock target 從 `@/lib/notification-helpers` 收斂到 `@/service/notification-service`，避免 production import path 與 test mock 脫鉤
 - `src/runtime/hooks/{useEventsPageRuntime,useEventDetailRuntime}.js` 已直接 import `@/service/event-service`；`src/runtime/hooks/{useEventsPageRuntime,useEventDetailRuntime,usePostDetailRuntime,useCommentMutations}.js` 已直接 import `@/config/client/firebase-timestamp`
 - `src/ui/events/{EventsPageScreen.jsx,EventsPageScreen.module.css}` 已建立；events 列表頁 UI 不再直接 import `@/lib/firebase-events` 或 `@/contexts/**`
 - `src/app/events/[id]/eventDetailClient.jsx` 已收斂成 thin client entry，只保留 `useEventDetailRuntime + EventDetailScreen`
@@ -119,6 +125,7 @@
 | S018    | done   | repo-tier: strava/users/weather-favorites → repo      |
 | S019    | done   | svc-tier: profile-mapper/server/weather-api → svc     |
 | S020    | done   | split event-helpers: biz rules → svc, formatters stay |
+| S020a   | done   | utility canonical-readiness                           |
 | S021    | todo   | thin-entry `posts/page.jsx`                           |
 | S022    | todo   | thin-entry `runs/page.jsx` + callback                 |
 | S023    | todo   | thin-entry `member/page.jsx` + ProfileClient          |
@@ -134,7 +141,7 @@
 - ✅ 六層分層方向、forward-only dependency、dep-cruise enforcement、CI+pre-commit gate 全部到位
 - ⚠️ `src/lib/**` 不在 `CANONICAL_LAYER_PATTERNS`，dep-cruise 對所有涉及 `src/lib/**` 的邊完全不攔（11 條 canonical → lib 的 runtime import 未被偵測）
 - ⚠️ 6 個 thick entry 未拆（posts list 371L、runs 165L、callback 131L、member 130L、ProfileClient 147L、api/weather 590L）
-- ⚠️ S001-S017 截止時 `src/lib/` 曾有 8 個 IMPLEMENTATION 檔含真實業務邏輯；經 S018-S020 後，`event-helpers`、`profile-mapper`、`profile-server`、`weather-api`、`firestore-timestamp` 已退出這個 bucket，剩餘重點債是 S020a 要處理的 `notification-helpers` / `strava-helpers`
+- ✅ Phase 9（S018-S020a）已完成：canonical runtime/service 對 `src/lib/**` 的實際 runtime import 已歸零；接下來若要機械化封住這條規則，直接做 S025，不要再回頭把 utility 常數或 UI formatter 搬進 canonical surface
 
 Phase 9-11（S018-S025）即為補完這三類缺口的任務。
 
@@ -850,3 +857,45 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - 若做 S020a，write scope 以 `notification-helpers` / `strava-helpers` 被 canonical layers runtime-import 的函式遷移為主，先把 S025 的最後前置條件補齊
   - 若做 S021，write scope 以 `src/app/posts/page.jsx` 的 thin-entry split 與對應 runtime/ui/test retarget 為主
   - reviewer 要特別盯兩件事：一是 canonical runtime 是否還有任何新的 `src/lib/**` runtime import 回流；二是 integration tests 若還保留 facade mock，必須確認那只是無害兼容，不是錯誤地以為自己攔到真正 production surface
+
+### S020a
+
+- **Goal**: 把 `notification-helpers` / `strava-helpers` 中被 canonical layers runtime-import 的函式遷到正確 canonical service，讓 `src/lib/**` 只剩 UI-facing helper + facade re-export，並把受影響 unit tests 全部對齊新的 production import surface。
+- **Write Scope**:
+  - `src/service/notification-service.js`
+  - `src/service/strava-data-service.js`
+  - `src/lib/{notification-helpers,strava-helpers}.js`
+  - `src/runtime/client/use-cases/notification-use-cases.js`
+  - `src/runtime/hooks/useRunCalendar.js`
+  - `specs/008-run-calendar/tests/unit/{groupActivitiesByDay,calcMonthSummary}.test.js`
+  - `specs/014-notification-system/tests/unit/{notification-helpers,firebase-notifications-write,firebase-notifications-read}.test.js`
+  - `specs/015-comment-notifications/tests/unit/{notification-helpers,notify-post-comment-reply,notify-event-new-comment,fetch-distinct-comment-authors}.test.js`
+  - `specs/021-layered-dependency-architecture/tests/unit/notification-use-cases.test.js`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - updated `src/service/notification-service.js` to own `buildNotificationMessage` and its message builders
+  - created `src/service/strava-data-service.js` to own `groupActivitiesByDay` and `calcMonthSummary`
+  - updated `src/lib/notification-helpers.js` to re-export `buildNotificationMessage` from `@/service/notification-service` while keeping `formatRelativeTime` / `getNotificationLink` in place
+  - updated `src/lib/strava-helpers.js` to re-export `groupActivitiesByDay` / `calcMonthSummary` from `@/service/strava-data-service` while keeping `formatDistance` / `formatPace` / `formatDuration` / `decodePolyline` / `buildCalendarGrid` / `RUN_TYPE_LABELS` in place
+  - retargeted canonical callers `src/runtime/client/use-cases/notification-use-cases.js` and `src/runtime/hooks/useRunCalendar.js` to the new service paths
+  - retargeted moved-function unit tests to canonical imports: `specs/008-run-calendar/tests/unit/{groupActivitiesByDay,calcMonthSummary}.test.js`, `specs/014-notification-system/tests/unit/notification-helpers.test.js`, `specs/015-comment-notifications/tests/unit/notification-helpers.test.js`
+  - kept integration tests on facade surfaces untouched; only updated unit-test mock targets that would otherwise miss the new runtime import path
+  - updated affected notification unit tests to mock `@/service/notification-service` instead of `@/lib/notification-helpers`, so they still intercept the real runtime/use-case import path
+  - verified with `rg -n "from '@/lib/notification-helpers'|from '@/lib/strava-helpers'" src/runtime src/service` -> no runtime import matches
+  - verified with `npm run type-check:changed` -> `✓ No type errors in changed files.`
+  - verified with `npm run lint:changed` -> exit `0`; only printed the existing `eslint-plugin-react` version warning, no lint errors
+  - verified with `npx vitest run specs/008-run-calendar/tests/unit/groupActivitiesByDay.test.js specs/008-run-calendar/tests/unit/calcMonthSummary.test.js specs/014-notification-system/tests/unit/notification-helpers.test.js specs/014-notification-system/tests/unit/firebase-notifications-write.test.js specs/014-notification-system/tests/unit/firebase-notifications-read.test.js specs/015-comment-notifications/tests/unit/notification-helpers.test.js specs/015-comment-notifications/tests/unit/notify-post-comment-reply.test.js specs/015-comment-notifications/tests/unit/notify-event-new-comment.test.js specs/015-comment-notifications/tests/unit/fetch-distinct-comment-authors.test.js specs/021-layered-dependency-architecture/tests/unit/notification-use-cases.test.js` -> `Test Files 10 passed (10)` / `Tests 86 passed (86)`
+  - verified with `npm run depcruise` -> `✔ no dependency violations found (1343 modules, 3319 dependencies cruised)`
+  - verified with `firebase emulators:exec --only auth,firestore --project=demo-test "npm run test"` -> exit `1`; only failing suite was `specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js`
+  - verified with `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js"` -> exit `0`; `Test Files 1 passed (1)` / `Tests 6 passed (6)`
+- **Pitfalls recorded**:
+  - `RUN_TYPE_LABELS` 屬於 UI-facing helper 常數，不值得為了 canonical test 把它搬進 service surface；S020a 的正確做法是讓 canonical test 只驗 `calcMonthSummary()` 的 observable label 結果
+  - `src/lib/**` facade migration 之後，最容易漏的是 unit test mock target：如果 production import 已改到 `@/service/**`，test 還 mock `@/lib/**` 就會變成攔不到真正路徑的假綠或脫鉤測試
+  - facade-only 的要求是「migrated function 不留第二份實作」，不是把所有同檔 helper 一起搬走；`formatRelativeTime`、`getNotificationLink`、`formatDistance`、`buildCalendarGrid` 這些 non-canonical/UI-facing helper 在本 task 應維持原位
+  - emulator 下的 full-suite failure 目前呈現 aggregate fail / isolation pass：同一個 failing suite `specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js` 在獨立 emulator run 會通過，因此這看起來是 repo-level order-dependent / shared-state 問題，不在 S020a write scope；S020a 不能宣稱 repo-wide test green
+- **Next Session Brief**:
+  - 做 S021 或 S025
+  - 若做 S021，write scope 以 `src/app/posts/page.jsx` 的 thin-entry split 與對應 runtime/ui/test retarget 為主
+  - 若做 S025，直接把 canonical layer `no-import-lib` 規則機械化，先以 `rg` / dep-cruise 驗證 Phase 9 的前置條件，再補 rule 與對應測試
+  - reviewer 要特別盯兩件事：一是新的禁止規則不能把 JSDoc type-only import 誤判成 runtime violation；二是不要為了 rule 漂亮把 UI-facing helper 反向搬進 canonical surface
