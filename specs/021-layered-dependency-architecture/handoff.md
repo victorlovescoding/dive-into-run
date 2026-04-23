@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S021 completed（posts thin-entry + runtime/ui/test retarget done）
-**Next Recommended Session**: S022（runs thin-entry）或 S025（canonical no-import-lib rule）
+**Current Session**: S022 completed（runs/callback thin-entry + runtime/ui/test retarget done）
+**Next Recommended Session**: S023（member/ProfileClient thin-entry）或 S025（canonical no-import-lib rule）
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -81,6 +81,10 @@
 - `src/app/posts/page.jsx` 已收斂成 thin client entry（`Suspense + usePostsPageRuntime + PostsPageScreen`）
 - `src/runtime/hooks/usePostsPageRuntime.js` 已成為 posts list 的 canonical runtime boundary，承接最新貼文 hydrate、searchParams toast、IntersectionObserver 分頁、create/edit/delete、optimistic like、modal state 與 auth/toast/router orchestration
 - `src/ui/posts/PostsPageScreen.jsx` 已建立；posts list UI 只消費 runtime state/handlers，不直接 import `@/lib/**`、`@/contexts/**`、`@/runtime/client/use-cases/**`、`next/navigation`
+- `src/app/runs/page.jsx` 與 `src/app/runs/callback/page.jsx` 已收斂成 thin client entry；主頁只保留 `useRunsPageRuntime + RunsPageScreen`，callback 只保留 `Suspense + useStravaCallbackRuntime + StravaCallbackScreen`
+- `src/runtime/hooks/{useRunsPageRuntime,useStravaCallbackRuntime}.js` 已建立，分別承接 runs page 的 auth gating / auto-refresh / sync / disconnect / calendar orchestration，以及 callback page 的 search param parse / OAuth exchange / redirect / error handling / single-flight guard
+- `src/ui/runs/{RunsPageScreen,StravaCallbackScreen}.jsx` 已建立；兩個 screen 都維持 render-only，沒有 `@/contexts/**`、`next/navigation`、fetch、或 async orchestration
+- `specs/006-strava-running-records/tests/integration/{RunsPage,runs-page-sync-error,CallbackPage}.test.jsx` 已 retarget 到新的 page runtime boundary；page-level tests 不再綁在舊厚頁內部的 `next/navigation` / `fetch` / legacy facade mock 細節上
 - `specs/019-posts-ui-refactor/tests/integration/PostFeed.test.jsx`、`specs/018-posts-input-validation/tests/integration/post-form-validation.test.jsx`、`specs/020-post-edit-dirty-check/tests/integration/posts-page-edit-dirty.test.jsx` 與 `specs/009-global-toast/tests/integration/crud-toast.test.jsx` 的 posts page mock surfaces 已 retarget 到 runtime providers + `@/runtime/client/use-cases/post-use-cases`
 - `specs/fix/post-detail-deleted-guard/tests/integration/PostDetailClient-delete-race.test.jsx`、`specs/014-notification-system/tests/integration/{notification-triggers,notification-error}.test.jsx`、`specs/015-comment-notifications/tests/integration/post-comment-reply.test.jsx`、`specs/018-posts-input-validation/tests/integration/post-edit-validation.test.jsx`、`specs/019-posts-ui-refactor/tests/integration/PostDetail.test.jsx`、`specs/020-post-edit-dirty-check/tests/integration/post-detail-edit-dirty.test.jsx` 已同步 retarget 到 runtime providers + runtime use-cases
 - `specs/fix/event-detail-deleted-guard/tests/integration/EventDetailClient-delete-race.test.jsx`、`specs/014-notification-system/tests/integration/{notification-triggers,notification-error}.test.jsx` 已同步 retarget 到 runtime providers + runtime use-cases
@@ -131,7 +135,7 @@
 | S020    | done   | split event-helpers: biz rules → svc, formatters stay |
 | S020a   | done   | utility canonical-readiness                           |
 | S021    | done   | thin-entry `posts/page.jsx`                           |
-| S022    | todo   | thin-entry `runs/page.jsx` + callback                 |
+| S022    | done   | thin-entry `runs/page.jsx` + callback                 |
 | S023    | todo   | thin-entry `member/page.jsx` + ProfileClient          |
 | S024    | todo   | thin-entry `api/weather/route.js` (590L)              |
 | S025    | todo   | dep-cruise: canonical no-import-lib rule              |
@@ -144,7 +148,7 @@
 
 - ✅ 六層分層方向、forward-only dependency、dep-cruise enforcement、CI+pre-commit gate 全部到位
 - ⚠️ `src/lib/**` 不在 `CANONICAL_LAYER_PATTERNS`，dep-cruise 對所有涉及 `src/lib/**` 的邊完全不攔（11 條 canonical → lib 的 runtime import 未被偵測）
-- ⚠️ 6 個 thick entry 未拆（posts list 371L、runs 165L、callback 131L、member 130L、ProfileClient 147L、api/weather 590L）
+- ⚠️ 3 個 thick entry 未拆（member 130L、ProfileClient 147L、api/weather 590L）
 - ✅ Phase 9（S018-S020a）已完成：canonical runtime/service 對 `src/lib/**` 的實際 runtime import 已歸零；接下來若要機械化封住這條規則，直接做 S025，不要再回頭把 utility 常數或 UI formatter 搬進 canonical surface
 
 Phase 9-11（S018-S025）即為補完這三類缺口的任務。
@@ -939,3 +943,41 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - 若做 S022，write scope 以 `src/app/runs/page.jsx` / `src/app/runs/callback/page.jsx` 的 thin-entry split 與對應 runtime/ui/test retarget 為主
   - 若做 S025，直接把 canonical layer `no-import-lib` 規則機械化，並優先確認不會誤傷 JSDoc type-only imports
   - reviewer 要特別盯兩件事：一是 runs/page 級整合測試不要再殘留 legacy facade mock；二是新的 no-import-lib 規則不能只做靜態樣子貨
+
+### S022
+
+- **Goal**: 把 `src/app/runs/page.jsx` 與 `src/app/runs/callback/page.jsx` 拆成 thin entry + page runtime + render-only screen，並把直接 render 這兩個 page 的 integration tests retarget 到新 runtime boundary。
+- **Write Scope**:
+  - `src/app/runs/page.jsx`
+  - `src/app/runs/callback/page.jsx`
+  - `src/runtime/hooks/useRunsPageRuntime.js`
+  - `src/runtime/hooks/useStravaCallbackRuntime.js`
+  - `src/ui/runs/RunsPageScreen.jsx`
+  - `src/ui/runs/StravaCallbackScreen.jsx`
+  - `specs/006-strava-running-records/tests/integration/RunsPage.test.jsx`
+  - `specs/006-strava-running-records/tests/integration/runs-page-sync-error.test.jsx`
+  - `specs/006-strava-running-records/tests/integration/CallbackPage.test.jsx`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - updated `src/app/runs/page.jsx` to a thin client entry under 20 lines, leaving only the minimal `useRunsPageRuntime -> RunsPageScreen` wiring
+  - updated `src/app/runs/callback/page.jsx` to a thin client entry under 20 lines, preserving the `Suspense` boundary while moving page logic to `useStravaCallbackRuntime`
+  - created `src/runtime/hooks/useRunsPageRuntime.js` to own auth gating, webhook `lastSyncAt` auto-refresh, sync label/disabled state, disconnect confirm/fetch/toast, and calendar open/close orchestration
+  - created `src/runtime/hooks/useStravaCallbackRuntime.js` to own callback search param parsing, OAuth code exchange, redirect/error/loading states, and single-flight guard
+  - created `src/ui/runs/RunsPageScreen.jsx` and `src/ui/runs/StravaCallbackScreen.jsx` as render-only screens; neither screen imports `@/contexts/**`, `next/navigation`, `@/repo/**`, or performs fetch/async work
+  - retargeted `RunsPage.test.jsx` and `runs-page-sync-error.test.jsx` to mock `@/runtime/hooks/useRunsPageRuntime`, so page-level assertions now target the new runtime boundary instead of thick-page internals or legacy facade mocks
+  - retargeted `CallbackPage.test.jsx` to mock `@/runtime/hooks/useStravaCallbackRuntime`, so the page test now validates the page/screen render contract rather than `searchParams` / `router` / `fetch` internals
+  - verified with `npm run type-check:changed` -> `✓ No type errors in changed files.`
+  - verified with `npm run lint:changed` -> exit `0`; only printed the existing `eslint-plugin-react` version warning, no lint errors
+  - verified with `npm run depcruise` -> `✔ no dependency violations found (1349 modules, 3319 dependencies cruised)`
+  - verified with `npx vitest run specs/006-strava-running-records/tests/integration/RunsPage.test.jsx specs/006-strava-running-records/tests/integration/runs-page-sync-error.test.jsx specs/006-strava-running-records/tests/integration/CallbackPage.test.jsx` -> `Test Files 3 passed (3)` / `Tests 17 passed (17)`
+- **Pitfalls recorded**:
+  - runs page-level integration tests 在 thin-entry 後必須 mock `@/runtime/hooks/useRunsPageRuntime`；若繼續綁在舊厚頁 hook/fetch/context 細節上，測試很容易變成假綠
+  - `runs-page-sync-error.test.jsx` 若不 mock `RunCalendarDialog`，會沿 import chain 把 `useRunCalendar -> firebase-client` 帶進來，在 browser test 環境觸發 `auth/invalid-api-key`
+  - callback page-level tests 在 thin-entry 後應對準 `useStravaCallbackRuntime` 的輸出契約，不要再把 page test 綁在 `next/navigation` / `fetch` / `searchParams` 實作細節上；那是 runtime hook 的責任
+  - callback thin entry 必須同時保留 `Suspense` 邊界與 20 行內約束，因此正確做法是把 `useStravaCallbackRuntime()` 留在最小 wrapper，而不是把 logic 回塞到 page entry
+- **Next Session Brief**:
+  - 做 S023 或 S025
+  - 若做 S023，write scope 以 `src/app/member/page.jsx`、`src/app/users/[uid]/ProfileClient.jsx`、對應 runtime/ui 檔與 page-level integration tests retarget 為主
+  - 若做 S025，直接把 canonical layer `no-import-lib` 規則機械化，並優先檢查不會誤傷 JSDoc type-only imports
+  - reviewer 要特別盯兩件事：一是 runs screens 是否真的維持 render-only；二是 callback tests 是否已完全脫離舊厚頁 internals、只對準新 runtime boundary

@@ -222,7 +222,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
     5. `npm run test` 全部通過（含受影響 integration tests）
   - **Dependencies**: 無（可獨立開始）
 
-- [ ] S022 Thin-entry `src/app/runs/page.jsx`（165L）+ `runs/callback/page.jsx`（131L）：拆成 thin entry + runtime + ui。
+- [x] S022 Thin-entry `src/app/runs/page.jsx`（165L）+ `runs/callback/page.jsx`（131L）：拆成 thin entry + runtime + ui。
   - `runs/page.jsx`：新建 `src/runtime/hooks/useRunsPageRuntime.js`（sync/disconnect/auto-refresh/auth-state）+ `src/ui/runs/RunsPageScreen.jsx`
   - `runs/callback/page.jsx`：新建 `src/runtime/hooks/useStravaCallbackRuntime.js`（OAuth code exchange/error handling）+ `src/ui/runs/StravaCallbackScreen.jsx`
   - **Write Scope**: 兩個 page entry、4 個新建 runtime/ui 檔、受影響 tests、handoff.md

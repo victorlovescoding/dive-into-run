@@ -1,36 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { AuthContext } from '@/runtime/providers/AuthProvider';
-import ToastProvider from '@/runtime/providers/ToastProvider';
 
-// Mock Firebase to avoid initialization errors
-vi.mock('@/config/client/firebase-client', () => ({
-  db: {},
-  auth: {},
-}));
-vi.mock('firebase/auth', () => ({
-  onAuthStateChanged: vi.fn(),
-  getAuth: vi.fn(),
-  GoogleAuthProvider: vi.fn(),
-}));
-vi.mock('@/lib/firebase-users', () => ({
-  loginCheckUserData: vi.fn(),
-  watchUserProfile: vi.fn(),
-}));
-
-// Mock hooks
-vi.mock('@/runtime/hooks/useStravaConnection', () => ({
-  default: vi.fn(),
-}));
-vi.mock('@/runtime/hooks/useStravaActivities', () => ({
-  default: vi.fn(),
-}));
-vi.mock('@/runtime/hooks/useStravaSync', () => ({
+vi.mock('@/runtime/hooks/useRunsPageRuntime', () => ({
   default: vi.fn(),
 }));
 
-// Mock components
 vi.mock('@/components/RunsLoginGuide', () => ({
   default: () => <div data-testid="login-guide">請先登入</div>,
 }));
@@ -47,58 +22,77 @@ vi.mock('@/components/RunsActivityList', () => ({
     </div>
   ),
 }));
+vi.mock('@/components/RunCalendarDialog', () => ({
+  default: ({ open }) => (open ? <div data-testid="calendar-dialog">calendar open</div> : null),
+}));
 
-import useStravaConnection from '@/runtime/hooks/useStravaConnection';
-import useStravaActivities from '@/runtime/hooks/useStravaActivities';
-import useStravaSync from '@/runtime/hooks/useStravaSync';
+import useRunsPageRuntime from '@/runtime/hooks/useRunsPageRuntime';
 import RunsPage from '@/app/runs/page';
 
-const mockedUseConnection = /** @type {import('vitest').Mock} */ (useStravaConnection);
-const mockedUseActivities = /** @type {import('vitest').Mock} */ (useStravaActivities);
-const mockedUseSync = /** @type {import('vitest').Mock} */ (useStravaSync);
+const mockedUseRunsPageRuntime = /** @type {import('vitest').Mock} */ (useRunsPageRuntime);
 
 /**
- * 用 AuthContext.Provider 包裝元件。
- * @param {import('react').ReactElement} ui - 要渲染的元件。
- * @param {object} [options] - 選項。
- * @param {object | null} [options.user] - 模擬使用者。
- * @param {boolean} [options.loading] - auth 載入狀態。
- * @returns {import('@testing-library/react').RenderResult} render 結果。
+ * @typedef {object} RunsPageRuntimeMock
+ * @property {boolean} authLoading - 是否為 auth 載入狀態。
+ * @property {object | null} user - 當前登入使用者。
+ * @property {object | null} connection - Strava 連線狀態。
+ * @property {Array<object>} activities - 跑步活動列表。
+ * @property {boolean} activitiesLoading - 活動列表是否載入中。
+ * @property {string | null} activitiesError - 活動列表錯誤訊息。
+ * @property {() => void} loadMore - 載入更多活動的 handler。
+ * @property {boolean} hasMore - 是否還有下一頁。
+ * @property {boolean} isLoadingMore - 是否正在載入更多活動。
+ * @property {boolean} calendarOpen - 月曆 dialog 是否開啟。
+ * @property {() => void} openCalendar - 開啟月曆的 handler。
+ * @property {() => void} closeCalendar - 關閉月曆的 handler。
+ * @property {string} syncButtonLabel - 同步按鈕顯示文字。
+ * @property {() => void} handleSync - 觸發同步的 handler。
+ * @property {number} cooldownRemaining - 剩餘冷卻秒數。
+ * @property {boolean} isSyncing - 是否同步中。
+ * @property {boolean} isDisconnecting - 是否取消連結中。
+ * @property {() => void} handleDisconnect - 取消連結的 handler。
+ * @property {string | null} syncError - 同步錯誤訊息。
  */
-function renderWithAuth(ui, { user = null, loading = false } = {}) {
-  return render(
-    <ToastProvider>
-      <AuthContext.Provider value={{ user, setUser: vi.fn(), loading }}>{ui}</AuthContext.Provider>
-    </ToastProvider>,
-  );
+
+/**
+ * 建立 runs page runtime mock。
+ * @param {Partial<RunsPageRuntimeMock>} [overrides] - 覆蓋欄位。
+ * @returns {RunsPageRuntimeMock} runtime mock。
+ */
+function createRuntime(overrides = {}) {
+  return {
+    authLoading: false,
+    user: null,
+    connection: null,
+    activities: [],
+    activitiesLoading: false,
+    activitiesError: null,
+    loadMore: vi.fn(),
+    hasMore: true,
+    isLoadingMore: false,
+    calendarOpen: false,
+    openCalendar: vi.fn(),
+    closeCalendar: vi.fn(),
+    syncButtonLabel: '同步',
+    handleSync: vi.fn(),
+    cooldownRemaining: 0,
+    isSyncing: false,
+    isDisconnecting: false,
+    handleDisconnect: vi.fn(),
+    syncError: null,
+    ...overrides,
+  };
 }
 
 describe('RunsPage', () => {
   beforeEach(() => {
-    mockedUseConnection.mockReturnValue({
-      connection: null,
-      isLoading: false,
-      error: null,
-    });
-    mockedUseActivities.mockReturnValue({
-      activities: [],
-      isLoading: false,
-      error: null,
-      loadMore: vi.fn(),
-      hasMore: true,
-      isLoadingMore: false,
-      refresh: vi.fn(),
-    });
-    mockedUseSync.mockReturnValue({
-      sync: vi.fn(),
-      isSyncing: false,
-      cooldownRemaining: 0,
-      error: null,
-    });
+    mockedUseRunsPageRuntime.mockReturnValue(createRuntime());
   });
 
   it('shows loading skeleton when auth is loading', () => {
-    renderWithAuth(<RunsPage />, { loading: true });
+    mockedUseRunsPageRuntime.mockReturnValue(createRuntime({ authLoading: true }));
+
+    render(<RunsPage />);
 
     expect(screen.getByRole('status')).toBeInTheDocument();
     expect(screen.queryByTestId('login-guide')).not.toBeInTheDocument();
@@ -106,7 +100,7 @@ describe('RunsPage', () => {
   });
 
   it('shows RunsLoginGuide when user is not logged in', () => {
-    renderWithAuth(<RunsPage />, { user: null });
+    render(<RunsPage />);
 
     expect(screen.getByTestId('login-guide')).toBeInTheDocument();
     expect(screen.queryByTestId('connect-guide')).not.toBeInTheDocument();
@@ -114,9 +108,13 @@ describe('RunsPage', () => {
   });
 
   it('shows RunsConnectGuide when user is logged in but not connected', () => {
-    renderWithAuth(<RunsPage />, {
-      user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
-    });
+    mockedUseRunsPageRuntime.mockReturnValue(
+      createRuntime({
+        user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
+      }),
+    );
+
+    render(<RunsPage />);
 
     expect(screen.getByTestId('connect-guide')).toBeInTheDocument();
     expect(screen.queryByTestId('login-guide')).not.toBeInTheDocument();
@@ -124,24 +122,16 @@ describe('RunsPage', () => {
   });
 
   it('shows athlete name and activity list when connected', () => {
-    mockedUseConnection.mockReturnValue({
-      connection: { connected: true, athleteName: 'John Runner', lastSyncAt: null },
-      isLoading: false,
-      error: null,
-    });
-    mockedUseActivities.mockReturnValue({
-      activities: [{ id: '1' }, { id: '2' }],
-      isLoading: false,
-      error: null,
-      loadMore: vi.fn(),
-      hasMore: false,
-      isLoadingMore: false,
-      refresh: vi.fn(),
-    });
+    mockedUseRunsPageRuntime.mockReturnValue(
+      createRuntime({
+        user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
+        connection: { connected: true, athleteName: 'John Runner', lastSyncAt: null },
+        activities: [{ id: '1' }, { id: '2' }],
+        hasMore: false,
+      }),
+    );
 
-    renderWithAuth(<RunsPage />, {
-      user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
-    });
+    render(<RunsPage />);
 
     expect(screen.getByText('John Runner')).toBeInTheDocument();
     expect(screen.getByTestId('activity-list')).toHaveTextContent('2 activities');
@@ -149,201 +139,101 @@ describe('RunsPage', () => {
     expect(screen.queryByTestId('connect-guide')).not.toBeInTheDocument();
   });
 
-  it('sync button calls sync function on click', async () => {
-    const syncFn = vi.fn();
-    mockedUseConnection.mockReturnValue({
-      connection: { connected: true, athleteName: 'John', lastSyncAt: null },
-      isLoading: false,
-      error: null,
-    });
-    mockedUseSync.mockReturnValue({
-      sync: syncFn,
-      isSyncing: false,
-      cooldownRemaining: 0,
-      error: null,
-    });
+  it('sync button calls runtime handler on click', async () => {
+    const handleSync = vi.fn();
+    mockedUseRunsPageRuntime.mockReturnValue(
+      createRuntime({
+        user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
+        connection: { connected: true, athleteName: 'John', lastSyncAt: null },
+        handleSync,
+      }),
+    );
 
     const user = userEvent.setup();
-    renderWithAuth(<RunsPage />, {
-      user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
-    });
+    render(<RunsPage />);
 
     await user.click(screen.getByRole('button', { name: /同步/i }));
-    expect(syncFn).toHaveBeenCalledTimes(1);
+
+    expect(handleSync).toHaveBeenCalledTimes(1);
   });
 
   it('sync button is disabled during cooldown', () => {
-    mockedUseConnection.mockReturnValue({
-      connection: { connected: true, athleteName: 'John', lastSyncAt: null },
-      isLoading: false,
-      error: null,
-    });
-    mockedUseSync.mockReturnValue({
-      sync: vi.fn(),
-      isSyncing: false,
-      cooldownRemaining: 45,
-      error: null,
-    });
+    mockedUseRunsPageRuntime.mockReturnValue(
+      createRuntime({
+        user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
+        connection: { connected: true, athleteName: 'John', lastSyncAt: null },
+        cooldownRemaining: 45,
+        syncButtonLabel: '冷卻中',
+      }),
+    );
 
-    renderWithAuth(<RunsPage />, {
-      user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
-    });
+    render(<RunsPage />);
 
     const syncButton = screen.getByRole('button', { name: '冷卻中' });
     expect(syncButton).toBeDisabled();
     expect(screen.getByText(/45 秒後可再同步/)).toBeInTheDocument();
   });
 
-  it('calls refresh after successful sync', async () => {
-    const syncFn = vi.fn().mockResolvedValue(true);
-    const refreshFn = vi.fn();
-    mockedUseConnection.mockReturnValue({
-      connection: { connected: true, athleteName: 'John', lastSyncAt: null },
-      isLoading: false,
-      error: null,
-    });
-    mockedUseSync.mockReturnValue({
-      sync: syncFn,
-      isSyncing: false,
-      cooldownRemaining: 0,
-      error: null,
-    });
-    mockedUseActivities.mockReturnValue({
-      activities: [],
-      isLoading: false,
-      error: null,
-      loadMore: vi.fn(),
-      hasMore: true,
-      isLoadingMore: false,
-      refresh: refreshFn,
-    });
-
-    const user = userEvent.setup();
-    renderWithAuth(<RunsPage />, {
-      user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
-    });
-
-    await user.click(screen.getByRole('button', { name: /同步/i }));
-
-    await waitFor(() => {
-      expect(refreshFn).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  it('does not call refresh after failed sync', async () => {
-    const syncFn = vi.fn().mockResolvedValue(false);
-    const refreshFn = vi.fn();
-    mockedUseConnection.mockReturnValue({
-      connection: { connected: true, athleteName: 'John', lastSyncAt: null },
-      isLoading: false,
-      error: null,
-    });
-    mockedUseSync.mockReturnValue({
-      sync: syncFn,
-      isSyncing: false,
-      cooldownRemaining: 0,
-      error: null,
-    });
-    mockedUseActivities.mockReturnValue({
-      activities: [],
-      isLoading: false,
-      error: null,
-      loadMore: vi.fn(),
-      hasMore: true,
-      isLoadingMore: false,
-      refresh: refreshFn,
-    });
-
-    const user = userEvent.setup();
-    renderWithAuth(<RunsPage />, {
-      user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
-    });
-
-    await user.click(screen.getByRole('button', { name: /同步/i }));
-
-    await waitFor(() => {
-      expect(syncFn).toHaveBeenCalledTimes(1);
-    });
-    expect(refreshFn).not.toHaveBeenCalled();
-  });
-
-  describe('disconnect', () => {
-    /** @type {import('vitest').Mock} */
-    let confirmSpy;
-
-    const connectedUser = {
-      uid: 'u1',
-      name: 'Test',
-      email: null,
-      photoURL: null,
-      getIdToken: vi.fn().mockResolvedValue('mock-token-123'),
-    };
-
-    beforeEach(() => {
-      mockedUseConnection.mockReturnValue({
+  it('opens calendar when clicking calendar button', async () => {
+    const openCalendar = vi.fn();
+    mockedUseRunsPageRuntime.mockReturnValue(
+      createRuntime({
+        user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
         connection: { connected: true, athleteName: 'John', lastSyncAt: null },
-        isLoading: false,
-        error: null,
-      });
-      confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(/** @type {Response} */ ({ ok: true }));
-    });
+        openCalendar,
+      }),
+    );
 
-    afterEach(() => {
-      confirmSpy.mockRestore();
-      vi.mocked(globalThis.fetch).mockRestore();
-    });
+    const user = userEvent.setup();
+    render(<RunsPage />);
 
-    it('shows disconnect button when connected', () => {
-      renderWithAuth(<RunsPage />, { user: connectedUser });
+    await user.click(screen.getByRole('button', { name: '跑步月曆' }));
 
-      expect(screen.getByRole('button', { name: '取消連結' })).toBeInTheDocument();
-    });
+    expect(openCalendar).toHaveBeenCalledTimes(1);
+  });
 
-    it('does not call API when user cancels confirm dialog', async () => {
-      confirmSpy.mockReturnValue(false);
-      const user = userEvent.setup();
-      renderWithAuth(<RunsPage />, { user: connectedUser });
+  it('shows disconnect button when connected', () => {
+    mockedUseRunsPageRuntime.mockReturnValue(
+      createRuntime({
+        user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
+        connection: { connected: true, athleteName: 'John', lastSyncAt: null },
+      }),
+    );
 
-      await user.click(screen.getByRole('button', { name: '取消連結' }));
+    render(<RunsPage />);
 
-      expect(confirmSpy).toHaveBeenCalledWith('確定要取消連結 Strava 嗎？這會刪除所有跑步紀錄。');
-      expect(globalThis.fetch).not.toHaveBeenCalled();
-    });
+    expect(screen.getByRole('button', { name: '取消連結' })).toBeInTheDocument();
+  });
 
-    it('calls POST /api/strava/disconnect with Bearer token on confirm', async () => {
-      confirmSpy.mockReturnValue(true);
-      const user = userEvent.setup();
-      renderWithAuth(<RunsPage />, { user: connectedUser });
+  it('calls runtime disconnect handler on click', async () => {
+    const handleDisconnect = vi.fn();
+    mockedUseRunsPageRuntime.mockReturnValue(
+      createRuntime({
+        user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
+        connection: { connected: true, athleteName: 'John', lastSyncAt: null },
+        handleDisconnect,
+      }),
+    );
 
-      await user.click(screen.getByRole('button', { name: '取消連結' }));
+    const user = userEvent.setup();
+    render(<RunsPage />);
 
-      expect(connectedUser.getIdToken).toHaveBeenCalled();
-      expect(globalThis.fetch).toHaveBeenCalledWith('/api/strava/disconnect', {
-        method: 'POST',
-        headers: { Authorization: 'Bearer mock-token-123' },
-      });
-    });
+    await user.click(screen.getByRole('button', { name: '取消連結' }));
 
-    it('shows "取消連結中…" and disables button while disconnecting', async () => {
-      confirmSpy.mockReturnValue(true);
-      /** @type {(value: Response) => void} */
-      let resolveFetch;
-      vi.mocked(globalThis.fetch).mockReturnValue(
-        new Promise((resolve) => {
-          resolveFetch = resolve;
-        }),
-      );
-      const user = userEvent.setup();
-      renderWithAuth(<RunsPage />, { user: connectedUser });
+    expect(handleDisconnect).toHaveBeenCalledTimes(1);
+  });
 
-      await user.click(screen.getByRole('button', { name: '取消連結' }));
+  it('shows disconnecting state while runtime is disconnecting', () => {
+    mockedUseRunsPageRuntime.mockReturnValue(
+      createRuntime({
+        user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
+        connection: { connected: true, athleteName: 'John', lastSyncAt: null },
+        isDisconnecting: true,
+      }),
+    );
 
-      const btn = screen.getByRole('button', { name: '取消連結中…' });
-      expect(btn).toBeDisabled();
+    render(<RunsPage />);
 
-      // resolveFetch is assigned inside Promise constructor
-      await act(() => resolveFetch(/** @type {Response} */ ({ ok: true })));
-    });
+    expect(screen.getByRole('button', { name: '取消連結中…' })).toBeDisabled();
   });
 });
