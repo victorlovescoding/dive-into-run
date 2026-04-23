@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S025 completed（canonical no-import-lib rule + canonical textual cleanup done）
-**Next Recommended Session**: reviewer final pass（確認 S025 rule / textual contract / non-canonical evidence）
+**Current Session**: S026-S029 completed（Phase 12 harness engineering hardening — all 4 tasks done in single session）
+**Next Recommended Session**: Phase 12 complete — 021 branch 可準備 merge 回 main
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -1116,3 +1116,36 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
 - **Next Session Brief**:
   - 先做 reviewer final pass，特別檢查 `canonical-no-import-lib` 規則、`canonical-no-import-lib.test.js` 的 textual contract，以及 non-canonical `@/lib/**` 證據是否足夠
   - 若 reviewer 沒新 blocking issue，這個 task 可以進入 final review / commit 準備；不要再擴 scope 去清 `src/app/**` 或 `src/components/**` 的 compatibility imports
+
+---
+
+### S026-S029 Session Record（Phase 12 Harness Engineering Hardening）
+
+- **Session date**: 2026-04-23
+- **Tasks completed**: S026, S027, S028, S029（all 4 Phase 12 tasks）
+- **Execution model**: Tech Lead + 4 engineer/reviewer pairs（subagent teammate mode）
+- **Files created**:
+  - `src/runtime/hooks/useProfileEventsRuntime.js` — ProfileEventList runtime hook
+  - `src/ui/users/ProfileEventListScreen.jsx` — ProfileEventList render-only screen
+  - `specs/021-layered-dependency-architecture/tests/unit/server-only-enforcement.test.js` — S027 rule test
+  - `specs/021-layered-dependency-architecture/tests/unit/provider-cross-cutting.test.js` — S028 rule test
+  - `specs/021-layered-dependency-architecture/tests/unit/profile-events-runtime.test.js` — S029 runtime hook unit test
+- **Files modified**:
+  - `.dependency-cruiser.mjs` — S026 remediation comments + S027 `server-deps-require-server-path` rule + S028 `provider-no-service` rule
+  - `src/app/users/[uid]/ProfileEventList.jsx` — 189L → 15L thin wrapper
+  - `specs/012-public-profile/tests/integration/ProfileEventList.test.jsx` — mock target changed to `@/runtime/hooks/useProfileEventsRuntime`
+  - `specs/021-layered-dependency-architecture/tasks.md` — S026-S029 marked [x]
+  - `specs/021-layered-dependency-architecture/handoff.md` — this record
+- **Evidence**:
+  - `npm run depcruise` → 0 violations (1366 modules, 3348 dependencies)
+  - `npx vitest run specs/021-layered-dependency-architecture/tests/unit/` → 10 files, 49 tests passed
+  - `npx vitest run specs/012-public-profile/tests/integration/ProfileEventList.test.jsx` → 8 tests passed
+  - S026: all forbidden rule comments now contain (a) violation description, (b) remediation steps, (c) concrete path examples
+  - S027: `from.path: '^src/'` + `from.pathNot: SERVER_ONLY_PATTERN` correctly scopes to non-server production code only
+  - S028: `provider-no-service` with `withDependencyTypeFilter` correctly exempts JSDoc type-only (NotificationProvider's `@typedef` import survives)
+  - S029: thin wrapper 15 lines, runtime hook imports `@/service/profile-service` (canonical), Screen is render-only
+- **Pitfalls recorded**:
+  - S027 工程師主動加了 `from.path: '^src/'` 限制，因為原始 task spec 只寫 `from.pathNot`，但那會讓 node_modules 和 specs 的 firebase-admin import 也被攔（false positive）。這是正確的工程判斷。
+  - S029 的 `toDashboardItem()` 放在 runtime hook 而非 Screen，是因為 mapping 邏輯需在 state 更新前執行；Reviewer 確認這不違反 render-only screen 的約束，因為 Screen 接到的 `items` 已經是 mapped 過的。
+- **Next Session Brief**:
+  - Phase 12 全部完成。021 branch 可準備開 PR merge 回 main。

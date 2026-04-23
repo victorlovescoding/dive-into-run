@@ -307,7 +307,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
 >
 > 所有 tasks 可獨立實施、互不依賴。
 
-- [ ] S026 dep-cruise comment 加入 remediation 指引：把每條 forbidden rule 的 `comment` 從描述性改為 agent-actionable remediation 指引。
+- [x] S026 dep-cruise comment 加入 remediation 指引：把每條 forbidden rule 的 `comment` 從描述性改為 agent-actionable remediation 指引。
   - **文章依據**: _"we write the error messages to inject remediation instructions into agent context"_
   - **要改的檔案**: `.dependency-cruiser.mjs`
   - **做法**: 每條 rule 的 `comment` 改為結構化 remediation 格式：violation 描述 + 修復步驟 + 具體範例。涵蓋：
@@ -344,7 +344,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
     4. `npx depcruise --config .dependency-cruiser.mjs --output-type err-long src specs 2>&1 | head -5` 確認 output format 正確
   - **Dependencies**: 無
 
-- [ ] S027 Server-only 漏標封堵：加 dep-cruise rule 確保 import `firebase-admin` 的檔案必須在 server path。
+- [x] S027 Server-only 漏標封堵：加 dep-cruise rule 確保 import `firebase-admin` 的檔案必須在 server path。
   - **Gap**: `server-only-no-client-import` 防止 client→server 匯入，但不防止 server-only code 放在非 server path。如果有人把 `firebase-admin` import 放在 `src/service/foo.js`，dep-cruise 不會攔。
   - **要改的檔案**: `.dependency-cruiser.mjs`
   - **做法**: 在 `forbidden` 陣列新增一條 `server-deps-require-server-path` rule：
@@ -384,7 +384,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
     4. `npm run test` 全部通過
   - **Dependencies**: 無
 
-- [ ] S028 `provider-no-service` cross-cutting 隔離規則：加 dep-cruise rule 確保 Providers 不直接 import Service 層。
+- [x] S028 `provider-no-service` cross-cutting 隔離規則：加 dep-cruise rule 確保 Providers 不直接 import Service 層。
   - **文章依據**: Image #5 顯示 Providers 與 Service→Runtime→UI 鏈平行，是獨立的 cross-cutting 注入通道，不應參與業務邏輯鏈。
   - **前置確認**: ✅ 已驗證現有 3 個 Providers 的 runtime imports：
     - `AuthProvider.jsx` → `@/runtime/client/use-cases/auth-use-cases`（同層 Runtime，不碰 Service）
@@ -424,7 +424,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
     5. `npm run test` 全部通過
   - **Dependencies**: 無
 
-- [ ] S029 ProfileEventList 走 runtime hook：消除最後一個 thick-ish entry component，把 fetch + IntersectionObserver 邏輯搬到 runtime hook。
+- [x] S029 ProfileEventList 走 runtime hook：消除最後一個 thick-ish entry component，把 fetch + IntersectionObserver 邏輯搬到 runtime hook。
   - **現況**: `src/app/users/[uid]/ProfileEventList.jsx`（189L）直接 import `@/lib/firebase-profile` 的 `getHostedEvents`，自己管 state（items, loading, hasMore, lastDoc, error）+ IntersectionObserver，是最後一個未走 runtime hook 的 entry-level component。
   - **Integration test 現況**: `specs/012-public-profile/tests/integration/ProfileEventList.test.jsx` mock `@/lib/firebase-profile`、`@/components/DashboardEventCard`、`next/link`，直接 render `ProfileEventList` 並驗 infinite scroll 行為。`ProfileClient.test.jsx` 已 mock 整個 `ProfileEventList` component。
   - **做法**:
