@@ -1,5 +1,5 @@
 /**
- * @typedef {import('@/lib/firebase-profile-mapper').PublicProfile} PublicProfile
+ * @typedef {import('@/service/profile-mapper').PublicProfile} PublicProfile
  * @typedef {object} ProfileStats
  * @property {number} hostedCount - 主辦活動數量。
  * @property {number} joinedCount - 參加活動數量（透過 collectionGroup 計算）。
@@ -10,7 +10,7 @@
  * @property {boolean} hasMore - 是否還有下一頁可載入。
  */
 
-import { toPublicProfile } from '@/lib/firebase-profile-mapper';
+import { toPublicProfile } from '@/service/profile-mapper';
 import {
   fetchHostedCount,
   fetchHostedEventDocumentsPage,

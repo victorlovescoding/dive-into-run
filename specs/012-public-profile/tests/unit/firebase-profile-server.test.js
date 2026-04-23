@@ -48,7 +48,7 @@ describe('Unit: getUserProfileServer', () => {
     mockGetUserProfileDocument.mockResolvedValueOnce(fields);
 
     // Act
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     const result = await getUserProfileServer('user-1');
 
     // Assert
@@ -68,7 +68,7 @@ describe('Unit: getUserProfileServer', () => {
     mockGetUserProfileDocument.mockResolvedValueOnce(null);
 
     // Act
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     const result = await getUserProfileServer('missing');
 
     // Assert
@@ -87,7 +87,7 @@ describe('Unit: getUserProfileServer', () => {
     mockGetUserProfileDocument.mockResolvedValueOnce(fields);
 
     // Act
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     const result = await getUserProfileServer('user-2');
 
     // Assert
@@ -102,7 +102,7 @@ describe('Unit: getUserProfileServer', () => {
     mockGetUserProfileDocument.mockResolvedValueOnce(null);
 
     // Act
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     await getUserProfileServer('user-x');
 
     // Assert
@@ -112,7 +112,7 @@ describe('Unit: getUserProfileServer', () => {
 
   it('當 uid 為空字串時應拋出 Error', async () => {
     // Act + Assert
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     await expect(getUserProfileServer('')).rejects.toThrow('uid is required');
     expect(mockGetUserProfileDocument).not.toHaveBeenCalled();
   });
@@ -132,7 +132,7 @@ describe('Unit: getUserProfileServer', () => {
     mockGetUserProfileDocument.mockResolvedValueOnce(fields);
 
     // Act
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     const result = await getUserProfileServer('user-3');
 
     // Assert — 核心欄位完全相符

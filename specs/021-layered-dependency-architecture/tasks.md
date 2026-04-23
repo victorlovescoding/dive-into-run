@@ -112,7 +112,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
     8. `npm run test` 全部通過
   - **Dependencies**: 無（可獨立開始）
 
-- [ ] S019 Service-tier 遷移：把 `src/lib/` 中屬於 service 層的 3 個 IMPLEMENTATION 檔遷移到 canonical layers，原檔收斂為 facade re-export。
+- [x] S019 Service-tier 遷移：把 `src/lib/` 中屬於 service 層的 3 個 IMPLEMENTATION 檔遷移到 canonical layers，原檔收斂為 facade re-export。
   - `firebase-profile-mapper.js`（37L）→ `src/service/profile-mapper.js`：`toPublicProfile` normalization，client/server 共用
   - `firebase-profile-server.js`（36L）→ `src/service/profile-server-service.js`：server profile fetch + mapping
   - `weather-api.js`（26L）→ `src/repo/client/weather-api-repo.js`：HTTP fetch to `/api/weather`
@@ -125,8 +125,8 @@ description: 'Session task list for 021-layered-dependency-architecture'
       - `specs/012-public-profile/tests/integration/ProfileClient.test.jsx` — mock `@/lib/firebase-profile` ✅
       - `specs/012-public-profile/tests/integration/ProfileEventList.test.jsx` — 同上 ✅
       - `specs/012-public-profile/tests/integration/BioEditor.test.jsx` — 同上 ✅
-      - `specs/013-pre-run-weather/tests/integration/weather-page.test.jsx` — mock `@/lib/weather-api` ✅
-      - `specs/013-pre-run-weather/tests/integration/township-drilldown.test.jsx` — mock `@/lib/weather-api` ✅
+      - `specs/013-pre-run-weather/tests/integration/weather-page.test.jsx` — 維持 mock `@/runtime/hooks/useWeatherPageRuntime`，因為這才是 `WeatherPage` 的實際 production surface ✅
+      - `specs/013-pre-run-weather/tests/integration/township-drilldown.test.jsx` — 同上，維持 runtime hook mock ✅
   - **驗收標準**:
     1. `profile-mapper` 不依賴 repo/runtime/ui
     2. `profile-server-service` 只依賴 `src/repo/server/**` + `src/service/profile-mapper`

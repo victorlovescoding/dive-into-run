@@ -14,7 +14,7 @@ import styles from '@/components/weather/weather.module.css';
  * 依照 runtime weather state 渲染卡片內容。
  * @param {object} props - Render props。
  * @param {'idle' | 'loading' | 'success' | 'error'} props.weatherState - 目前天氣狀態。
- * @param {import('@/lib/weather-api').WeatherInfo | null} props.weatherData - 天氣資料。
+ * @param {import('@/types/weather-types').WeatherInfo | null} props.weatherData - 天氣資料。
  * @param {() => void | Promise<void>} props.onRetry - 重試 handler。
  * @returns {import('react').ReactElement | null} 天氣卡片內容。
  */

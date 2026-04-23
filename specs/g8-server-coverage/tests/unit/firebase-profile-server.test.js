@@ -3,7 +3,7 @@
  *
  * Runs under the `server` vitest project (node env) wrapped by
  * `firebase emulators:exec --only auth,firestore`. Imports real
- * `firebase-profile-server.js` plus the server repo so v8 coverage records
+ * `profile-server-service.js` plus the server repo so v8 coverage records
  * actual execution rather than being stuck at 0% like the mock-based
  * counterpart at
  * specs/012-public-profile/tests/unit/firebase-profile-server.test.js.
@@ -48,7 +48,7 @@ describe('getUserProfileServer', () => {
         createdAt: new Date('2024-01-01T00:00:00Z'),
       });
 
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     const result = await getUserProfileServer('u1');
 
     expect(result).not.toBeNull();
@@ -72,7 +72,7 @@ describe('getUserProfileServer', () => {
         createdAt: new Date('2024-02-01T00:00:00Z'),
       });
 
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     const result = await getUserProfileServer('u2');
 
     expect(result).not.toBeNull();
@@ -82,13 +82,13 @@ describe('getUserProfileServer', () => {
   });
 
   it('returns null when the user doc does not exist', async () => {
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     const result = await getUserProfileServer('missing-user');
     expect(result).toBeNull();
   });
 
   it('throws when uid is an empty string', async () => {
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     await expect(getUserProfileServer('')).rejects.toThrow('uid is required');
   });
 });

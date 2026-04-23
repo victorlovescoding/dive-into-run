@@ -129,7 +129,7 @@ function makeCountSnap(count) {
 
 describe('Unit: toPublicProfile', () => {
   it('should normalize the shared PublicProfile shape and omit private fields', async () => {
-    const { toPublicProfile } = await import('@/lib/firebase-profile-mapper');
+    const { toPublicProfile } = await import('@/service/profile-mapper');
     const createdAt = { seconds: 1700000000, nanoseconds: 0 };
     const result = toPublicProfile('user-1', {
       uid: 'user-1',

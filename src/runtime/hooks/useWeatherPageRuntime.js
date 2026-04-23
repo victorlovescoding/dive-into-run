@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { fetchWeather } from '@/lib/weather-api';
+import { fetchWeather } from '@/repo/client/weather-api-repo';
 import {
   addFavorite,
   getFavorites,
@@ -84,7 +84,7 @@ function isSameLocation(left, right) {
 
 /**
  * 將天氣資料縮成收藏列摘要。
- * @param {import('@/lib/weather-api').WeatherInfo} weatherData - 完整天氣資料。
+ * @param {import('@/types/weather-types').WeatherInfo} weatherData - 完整天氣資料。
  * @returns {WeatherSummaryData} 收藏列摘要。
  */
 function buildFavoriteSummary(weatherData) {
@@ -108,7 +108,7 @@ export default function useWeatherPageRuntime(geoLookup) {
   const [mapLayer, setMapLayer] = useState('overview');
   const [weatherState, setWeatherState] = useState(/** @type {WeatherStatus} */ ('idle'));
   const [weatherData, setWeatherData] = useState(
-    /** @type {import('@/lib/weather-api').WeatherInfo | null} */ (null),
+    /** @type {import('@/types/weather-types').WeatherInfo | null} */ (null),
   );
   const [favorites, setFavorites] = useState(/** @type {FavoriteItem[]} */ ([]));
   const [favSummaries, setFavSummaries] = useState(

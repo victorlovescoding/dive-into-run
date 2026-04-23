@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S018 completed（Phase 9 repo-tier done）
-**Next Recommended Session**: S019（service-tier 遷移）或 S021（posts thin-entry）— Phase 9 與 Phase 10 大部分可平行
+**Current Session**: S019 completed（Phase 9 service-tier done）
+**Next Recommended Session**: S020（event-helpers/service split）或 S021（posts thin-entry）— Phase 9 與 Phase 10 大部分可平行
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -39,8 +39,10 @@
 - `src/app/api/strava/{callback,sync,disconnect,webhook}/route.js` 已收斂成 thin entry，僅保留 request parsing / auth guard / JSON forwarding
 - `src/lib/firebase-admin.js` 已移除；原本直接依賴它的 server caller / tests 已改指向分層後入口
 - `src/repo/server/firebase-profile-server-repo.js` 已建立，`users/{uid}` 的 Admin SDK 讀取責任已下沉到 repo 層
-- `src/lib/firebase-profile-mapper.js` 已建立，client/server profile service 現在共用同一個 `PublicProfile` normalization
-- `src/lib/firebase-profile-server.js` 已改為透過 server repo + shared mapper 組裝，不再直接碰 `adminDb`
+- `src/service/profile-mapper.js` 已建立，client/server profile service 現在共用同一個 `PublicProfile` normalization
+- `src/service/profile-server-service.js` 已建立，server profile fetch + mapping 已正式落在 canonical service 層
+- `src/repo/client/weather-api-repo.js` 已建立，`/api/weather` HTTP fetch 不再留在 `src/lib/**` implementation
+- `src/lib/{firebase-profile-mapper,firebase-profile-server,weather-api}.js` 已收斂為 facade-only compatibility entry
 - `src/repo/client/{firebase-events-repo,firebase-event-comments-repo,firebase-member-repo}.js`、`src/service/{event-service,event-comment-service,member-dashboard-service}.js`、`src/runtime/client/use-cases/{event-use-cases,event-comment-use-cases,member-dashboard-use-cases}.js` 已建立
 - `src/lib/firebase-{events,comments,member}.js` 已收斂為 compatibility facade；混合的 Firestore/query/validation/cache orchestration 已移出 `src/lib/**`
 - `src/lib/firebase-{posts,notifications,profile}.js` 也已收斂為 compatibility facade；posts/notifications/profile 的 query、transaction、batch write、notification fan-out orchestration 已下沉到 `src/repo/**`、`src/service/**`、`src/runtime/**`
@@ -112,7 +114,7 @@
 | S016    | done   | add dep-cruise package/config/scripts                 |
 | S017    | done   | CI wiring + final 0-violation verification            |
 | S018    | done   | repo-tier: strava/users/weather-favorites → repo      |
-| S019    | todo   | svc-tier: profile-mapper/server/weather-api → svc     |
+| S019    | done   | svc-tier: profile-mapper/server/weather-api → svc     |
 | S020    | todo   | split event-helpers: biz rules → svc, formatters stay |
 | S021    | todo   | thin-entry `posts/page.jsx`                           |
 | S022    | todo   | thin-entry `runs/page.jsx` + callback                 |
@@ -135,7 +137,7 @@ Phase 9-11（S018-S025）即為補完這三類缺口的任務。
 
 ### Architecture blockers
 
-1. `src/lib/firebase-profile-mapper.js` 目前先留在 `src/lib/**` compatibility namespace，真正把 profile mapper 納入終態 `src/service/**` 的遷移要配合後續更大範圍 profile split 一起做。→ **S019 處理**
+1. `profile-mapper` / `profile-server-service` / `weather-api-repo` 已經 canonicalize 完成；後續若整理 profile/weather 相關頁面，不能把實作再拉回 `src/lib/**` compatibility namespace。剩餘大塊是 **S023** 的 `ProfileClient` thin-entry split 與 **S024** 的 weather route/service 深拆。
 2. `WeatherPage` 的 fetch/hydration/favorites 已下沉到 `useWeatherPageRuntime`，但 geo lookup 目前刻意留在 thin entry 注入，避免 runtime 直接 import `@/config/geo/weather-geo-cache`；後續若要再收斂，請沿 `Config -> Repo/Service -> Runtime` 做乾淨流向，不要把 config 直接拉回 runtime。
 3. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx`、`ToastContext.jsx` 已收斂成 thin compatibility facades；真正 provider 實作現在在 `src/runtime/providers/**`。
 4. S013 已把 `WeatherPage.jsx`、`FavoriteButton.jsx`、`DashboardTabs.jsx` 拆成 thin entry + runtime + ui；後續 reviewer 應改盯 weather/dashboard screen 是否重新拉回 runtime/service 依賴，而不是再把它們當未拆 target。
@@ -766,3 +768,44 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - 若做 S019，write scope 以 `firebase-profile-mapper`、`firebase-profile-server`、`weather-api` 的 service-tier 遷移與受影響 tests 為主
   - 若做 S021，write scope 以 `src/app/posts/page.jsx` 的 thin-entry split 與對應 runtime/ui/test retarget 為主
   - reviewer 要特別盯兩件事：一是不要再把 page-level integration tests退回 facade/repo mock；二是如果後續 session 需要引用「全量測試通過」，要明確說明 server project 依賴 emulator 的前提
+
+### S019
+
+- **Goal**: 把 `firebase-profile-mapper`、`firebase-profile-server`、`weather-api` 從 `src/lib/**` implementation 遷到 canonical service/repo 層，讓舊 `src/lib/*.js` 退回 facade-only，並把真正直連它們的 caller / unit test 對齊 canonical path。
+- **Write Scope**:
+  - `src/service/{profile-mapper.js,profile-server-service.js}`
+  - `src/repo/client/weather-api-repo.js`
+  - `src/lib/{firebase-profile-mapper.js,firebase-profile-server.js,weather-api.js}`
+  - `src/service/profile-service.js`
+  - `src/lib/firebase-profile.js`
+  - `src/app/users/[uid]/page.jsx`
+  - `src/runtime/hooks/useWeatherPageRuntime.js`
+  - `src/ui/weather/WeatherPageScreen.jsx`
+  - `specs/012-public-profile/tests/unit/{firebase-profile.test.js,firebase-profile-server.test.js}`
+  - `specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js`
+  - `specs/mock-audit-b-weather-api/tests/unit/weather-api.test.js`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - created `src/service/profile-mapper.js`
+  - created `src/service/profile-server-service.js`
+  - created `src/repo/client/weather-api-repo.js`
+  - updated `src/lib/{firebase-profile-mapper,firebase-profile-server,weather-api}.js` to facade-only re-exports with no remaining implementation logic
+  - retargeted canonical callers `src/service/profile-service.js`, `src/app/users/[uid]/page.jsx`, and `src/runtime/hooks/useWeatherPageRuntime.js` to the new canonical paths
+  - simplified Weather page type imports to `@/types/weather-types`, avoiding a UI/runtime type dependency on repo or facade surfaces
+  - retargeted unit tests `specs/012-public-profile/tests/unit/firebase-profile.test.js`, `specs/012-public-profile/tests/unit/firebase-profile-server.test.js`, `specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js`, and `specs/mock-audit-b-weather-api/tests/unit/weather-api.test.js` to canonical paths
+  - kept `specs/013-pre-run-weather/tests/integration/{weather-page,township-drilldown}.test.jsx` on runtime-hook mocking because the actual production surface is `WeatherPage -> useWeatherPageRuntime`, not `@/lib/weather-api`
+  - verified with `npm run type-check:changed` -> `✓ No type errors in changed files.`
+  - verified with `npm run lint:changed` -> exit `0`; only printed the existing `eslint-plugin-react` version warning, no lint errors
+  - verified with `npx vitest run specs/012-public-profile/tests/unit/firebase-profile.test.js specs/012-public-profile/tests/unit/firebase-profile-server.test.js specs/mock-audit-b-weather-api/tests/unit/weather-api.test.js` -> `Test Files 3 passed (3)` / `Tests 37 passed (37)`
+  - verified with `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server specs/g8-server-coverage/tests/unit/firebase-profile-server.test.js"` -> `Test Files 1 passed (1)` / `Tests 6 passed (6)`; this server-env suite requires Firebase Emulator precondition
+  - verified with `npm run depcruise` -> `✔ no dependency violations found (1340 modules, 3310 dependencies cruised)`
+- **Pitfalls recorded**:
+  - `tasks.md` 內對 weather integration tests 的 facade mock 提示已過時；S013 之後的真實 import graph 是 `WeatherPage -> @/runtime/hooks/useWeatherPageRuntime`，若硬改回 `@/lib/weather-api` mock 反而會跟 production surface 脫鉤
+  - facade-only 的要求不等於把 JSDoc compatibility typedef 一起刪掉；`src/lib/*` 仍可保留 type alias，但不得再保留任何實作或實體依賴組裝
+  - `src/ui/**` 與 `src/runtime/**` 若只需要 `WeatherInfo` type，應直接指向 `@/types/weather-types`，不要為了型別去綁 repo/facade path
+- **Next Session Brief**:
+  - 做 S020 或 S021
+  - 若做 S020，write scope 以 `event-helpers` 的業務規則/service split 與受影響 runtime hook / unit test 為主
+  - 若做 S021，write scope 以 `src/app/posts/page.jsx` 的 thin-entry split 與對應 runtime/ui/test retarget 為主
+  - reviewer 要特別盯兩件事：一是不要把 facade-only `src/lib/**` 重新長回 implementation；二是 integration test 必須持續對齊「實際 production import surface」，不是對齊舊 task 描述
