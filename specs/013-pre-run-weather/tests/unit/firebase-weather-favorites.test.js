@@ -14,7 +14,7 @@ import {
   removeFavorite,
   getFavorites,
   isFavorited,
-} from '@/lib/firebase-weather-favorites';
+} from '@/repo/client/firebase-weather-favorites-repo';
 
 // #region Mocks
 vi.mock('firebase/firestore', () => ({

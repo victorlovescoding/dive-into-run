@@ -2,7 +2,7 @@
 
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
-import { getStravaActivitiesByMonth } from '@/lib/firebase-strava';
+import { getStravaActivitiesByMonth } from '@/repo/client/firebase-strava-repo';
 import { groupActivitiesByDay, calcMonthSummary } from '@/lib/strava-helpers';
 
 /** @type {import('@/lib/strava-helpers').MonthSummary} */

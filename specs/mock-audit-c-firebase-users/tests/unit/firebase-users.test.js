@@ -1,5 +1,5 @@
 /**
- * @file Unit Test for src/lib/firebase-users.js
+ * @file Unit Test for src/repo/client/firebase-users-repo.js
  * @description
  * Self-test for firebase-users — 覆蓋 Session C mock-audit 黑洞（0/26 lines → 26/26）。
  * 不 mock `@/lib/firebase-users`，mock 邊界在 `firebase/firestore` + `@/config/client/firebase-client`。
@@ -14,7 +14,7 @@ import {
   updateUserName,
   watchUserProfile,
   updateUserPhotoURL,
-} from '@/lib/firebase-users';
+} from '@/repo/client/firebase-users-repo';
 
 // ---------------------------------------------------------------------------
 // Module-level mocks (via vi.hoisted so they exist when vi.mock factory runs)

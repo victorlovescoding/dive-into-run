@@ -1,6 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
-import { AuthContext } from '@/contexts/AuthContext';
+
+const { mockedAuthState } = vi.hoisted(() => ({
+  mockedAuthState: { user: null },
+}));
+
+vi.mock('react', async () => {
+  const actual = await vi.importActual('react');
+  return {
+    ...actual,
+    useContext: () => mockedAuthState,
+  };
+});
 
 vi.mock('@/config/client/firebase-client', () => ({
   db: {},
@@ -18,30 +29,27 @@ vi.mock('@/lib/firebase-users', () => ({
   watchUserProfile: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-strava', () => ({
+vi.mock('@/repo/client/firebase-strava-repo', () => ({
   listenStravaConnection: vi.fn(),
 }));
 
-import { listenStravaConnection } from '@/lib/firebase-strava';
+import { listenStravaConnection } from '@/repo/client/firebase-strava-repo';
 import useStravaConnection from '@/runtime/hooks/useStravaConnection';
 
 const mockedListen = /** @type {import('vitest').Mock} */ (listenStravaConnection);
 
 /**
- * 包裝 AuthContext Provider 的 render helper。
+ * 透過 mocked React.useContext 注入測試用使用者。
  * @param {import('react').ReactElement} ui - 要渲染的元件。
  * @param {object} [options] - 選項。
  * @param {{ uid: string, name: string|null, email: string|null, photoURL: string|null }|null} [options.user] - 使用者。
- * @param {boolean} [options.loading] - 驗證狀態載入中。
  * @returns {import('@testing-library/react').RenderResult} render 結果。
  */
-function renderWithAuth(ui, { user: partialUser = null, loading = false } = {}) {
-  const user = partialUser
+function renderWithAuth(ui, { user: partialUser = null } = {}) {
+  mockedAuthState.user = partialUser
     ? { bio: null, getIdToken: () => Promise.resolve(''), ...partialUser }
     : null;
-  return render(
-    <AuthContext.Provider value={{ user, setUser: vi.fn(), loading }}>{ui}</AuthContext.Provider>,
-  );
+  return render(ui);
 }
 
 /**
@@ -58,6 +66,7 @@ function TestComponent() {
 describe('useStravaConnection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedAuthState.user = null;
   });
 
   it('shows loading initially then displays connection data', async () => {

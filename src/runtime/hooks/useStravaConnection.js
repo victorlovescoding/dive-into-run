@@ -1,10 +1,10 @@
 import { useState, useContext, useEffect, useRef, useMemo } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
-import { listenStravaConnection } from '@/lib/firebase-strava';
+import { listenStravaConnection } from '@/repo/client/firebase-strava-repo';
 
 /**
  * @typedef {object} UseStravaConnectionReturn
- * @property {import('@/lib/firebase-strava').StravaConnection|null} connection - Strava 連結狀態，未登入或無資料時為 null。
+ * @property {import('@/repo/client/firebase-strava-repo').StravaConnection|null} connection - Strava 連結狀態，未登入或無資料時為 null。
  * @property {boolean} isLoading - 是否正在載入連結狀態。
  * @property {string|null} error - 錯誤訊息，無錯誤時為 null。
  */
@@ -19,7 +19,7 @@ export default function useStravaConnection() {
   const prevUidRef = useRef(uid);
 
   const [connection, setConnection] = useState(
-    /** @type {import('@/lib/firebase-strava').StravaConnection|null} */ (null),
+    /** @type {import('@/repo/client/firebase-strava-repo').StravaConnection|null} */ (null),
   );
   const [isLoading, setIsLoading] = useState(/** @type {boolean} */ (!!uid));
   const [error, setError] = useState(/** @type {string|null} */ (null));

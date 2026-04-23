@@ -7,7 +7,7 @@ import {
   getFavorites,
   isFavorited,
   removeFavorite,
-} from '@/lib/firebase-weather-favorites';
+} from '@/repo/client/firebase-weather-favorites-repo';
 import {
   findIslandMarkerByTarget,
   loadLastLocation,

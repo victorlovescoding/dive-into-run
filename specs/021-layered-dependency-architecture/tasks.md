@@ -81,7 +81,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
 
 > S001-S017 已把大部分業務邏輯從 `src/lib/**` 拆到 canonical layers，但 `src/lib/` 仍有 8 個 IMPLEMENTATION 檔含真實業務邏輯（非 facade），加上 3 個 UTILITY 檔（`notification-helpers`、`strava-helpers`、`firebase-firestore-timestamp`）中有函式被 canonical layers runtime-import。dep-cruise 的 `CANONICAL_LAYER_PATTERNS` 不含 `lib`，所以這些違規完全不被攔截。Phase 9 的目標是把剩餘實作與被 canonical layers 依賴的 utility 函式搬到正確 canonical layer，讓 canonical layers 對 `src/lib/**` 的 runtime import 歸零。
 
-- [ ] S018 Repo-tier 遷移：把 `src/lib/` 中屬於 repo 層的 3 個 IMPLEMENTATION 檔遷移到 `src/repo/client/`，原檔收斂為 facade re-export。
+- [x] S018 Repo-tier 遷移：把 `src/lib/` 中屬於 repo 層的 3 個 IMPLEMENTATION 檔遷移到 `src/repo/client/`，原檔收斂為 facade re-export。
   - `firebase-strava.js`（131L）→ `src/repo/client/firebase-strava-repo.js`：realtime listener + paginated/monthly Firestore query
   - `firebase-users.js`（102L）→ `src/repo/client/firebase-users-repo.js`：login check + user CRUD + realtime listener
   - `firebase-weather-favorites.js`（110L）→ `src/repo/client/firebase-weather-favorites-repo.js`：favorites CRUD + dedup
@@ -98,7 +98,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
       - `specs/006-strava-running-records/tests/integration/RunsPage.test.jsx` — mock `@/lib/firebase-users` ✅（page 未拆）
       - `specs/006-strava-running-records/tests/integration/runs-page-sync-error.test.jsx` — 同上 ✅
       - `specs/009-global-toast/tests/integration/crud-toast.test.jsx` — mock `@/lib/firebase-users` ✅
-      - `specs/013-pre-run-weather/tests/integration/favorites.test.jsx` — mock `@/lib/firebase-weather-favorites` ✅
+      - `specs/013-pre-run-weather/tests/integration/favorites.test.jsx` — 實際改為 mock `@/runtime/hooks/useWeatherPageRuntime`，因為 thin-entry `WeatherPage` 已直接吃 runtime hook
       - `specs/014-notification-system/tests/integration/notification-error.test.jsx` — mock `@/lib/firebase-users` ✅
       - `specs/014-notification-system/tests/integration/NotificationToast.test.jsx` — mock `@/lib/firebase-users` ✅
   - **驗收標準**:

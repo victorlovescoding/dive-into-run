@@ -1,14 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { AuthContext } from '@/contexts/AuthContext';
+
+const { mockedAuthState } = vi.hoisted(() => ({
+  mockedAuthState: { user: null },
+}));
+
+vi.mock('react', async () => {
+  const actual = await vi.importActual('react');
+  return {
+    ...actual,
+    useContext: () => mockedAuthState,
+  };
+});
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
-vi.mock('@/lib/firebase-strava', () => ({
+vi.mock('@/repo/client/firebase-strava-repo', () => ({
   getStravaActivities: vi.fn(),
 }));
 
-import { getStravaActivities } from '@/lib/firebase-strava';
+import { getStravaActivities } from '@/repo/client/firebase-strava-repo';
 import useStravaActivities from '@/runtime/hooks/useStravaActivities';
 
 const mockedGetActivities = /** @type {import('vitest').Mock} */ (getStravaActivities);
@@ -42,24 +53,21 @@ function TestComponent() {
 }
 
 /**
- * 使用 AuthContext 包裹 TestComponent。
+ * 透過 mocked React.useContext 注入測試用使用者。
  * @param {{ uid: string, name: string | null, email: string | null, photoURL: string | null } | null} partialUser - 測試用使用者物件。
  * @returns {import('@testing-library/react').RenderResult} render 結果。
  */
 function renderWithAuth(partialUser = null) {
-  const user = partialUser
+  mockedAuthState.user = partialUser
     ? { bio: null, getIdToken: () => Promise.resolve(''), ...partialUser }
     : null;
-  return render(
-    <AuthContext.Provider value={{ user, setUser: () => {}, loading: false }}>
-      <TestComponent />
-    </AuthContext.Provider>,
-  );
+  return render(<TestComponent />);
 }
 
 describe('useStravaActivities', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedAuthState.user = null;
   });
 
   it('shows loading then displays activities', async () => {

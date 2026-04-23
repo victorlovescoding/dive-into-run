@@ -16,8 +16,8 @@ import { formatDistance, formatPace, formatDuration } from '@/lib/strava-helpers
 
 /**
  * 建立 mock StravaActivity 物件。
- * @param {Partial<import('@/lib/firebase-strava').StravaActivity>} [overrides] - 覆寫屬性。
- * @returns {import('@/lib/firebase-strava').StravaActivity} mock activity。
+ * @param {Partial<import('@/repo/client/firebase-strava-repo').StravaActivity>} [overrides] - 覆寫屬性。
+ * @returns {import('@/repo/client/firebase-strava-repo').StravaActivity} mock activity。
  */
 function createMockActivity(overrides = {}) {
   return {

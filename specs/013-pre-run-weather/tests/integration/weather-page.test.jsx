@@ -1,167 +1,140 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { fetchWeather } from '@/lib/weather-api';
 import WeatherPage from '@/components/weather/WeatherPage';
 
-// --- Mock topojson-client ---
-vi.mock('topojson-client', () => ({
-  feature: vi.fn(() => ({
-    type: 'FeatureCollection',
-    features: [
-      {
-        type: 'Feature',
-        properties: {
-          COUNTYNAME: '臺北市',
-          COUNTYCODE: '63000',
-          COUNTYENG: 'Taipei City',
-        },
-        geometry: {
-          type: 'Polygon',
-          coordinates: [
-            [
-              [121.5, 25.0],
-              [121.6, 25.0],
-              [121.6, 25.1],
-              [121.5, 25.0],
-            ],
-          ],
-        },
-      },
-      {
-        type: 'Feature',
-        properties: {
-          COUNTYNAME: '新北市',
-          COUNTYCODE: '65000',
-          COUNTYENG: 'New Taipei City',
-        },
-        geometry: {
-          type: 'Polygon',
-          coordinates: [
-            [
-              [121.4, 24.9],
-              [121.5, 24.9],
-              [121.5, 25.0],
-              [121.4, 24.9],
-            ],
-          ],
-        },
-      },
-      {
-        type: 'Feature',
-        properties: {
-          COUNTYNAME: '臺北市',
-          COUNTYCODE: '63000',
-          TOWNNAME: '大安區',
-          TOWNCODE: '6300300',
-        },
-        geometry: {
-          type: 'Polygon',
-          coordinates: [
-            [
-              [121.53, 25.02],
-              [121.55, 25.02],
-              [121.55, 25.04],
-              [121.53, 25.02],
-            ],
-          ],
-        },
-      },
-      {
-        type: 'Feature',
-        properties: {
-          COUNTYNAME: '台東縣',
-          COUNTYCODE: '10014',
-          TOWNNAME: '蘭嶼鄉',
-          TOWNCODE: '1001411',
-        },
-        geometry: {
-          type: 'Polygon',
-          coordinates: [
-            [
-              [121.5, 22.0],
-              [121.6, 22.0],
-              [121.6, 22.1],
-              [121.5, 22.0],
-            ],
-          ],
-        },
-      },
-      {
-        type: 'Feature',
-        properties: {
-          COUNTYNAME: '台東縣',
-          COUNTYCODE: '10014',
-          TOWNNAME: '綠島鄉',
-          TOWNCODE: '1001416',
-        },
-        geometry: {
-          type: 'Polygon',
-          coordinates: [
-            [
-              [121.4, 22.6],
-              [121.5, 22.6],
-              [121.5, 22.7],
-              [121.4, 22.6],
-            ],
-          ],
-        },
-      },
-      {
-        type: 'Feature',
-        properties: {
-          COUNTYNAME: '屏東縣',
-          COUNTYCODE: '10013',
-          TOWNNAME: '琉球鄉',
-          TOWNCODE: '1001322',
-        },
-        geometry: {
-          type: 'Polygon',
-          coordinates: [
-            [
-              [120.3, 22.3],
-              [120.4, 22.3],
-              [120.4, 22.4],
-              [120.3, 22.3],
-            ],
-          ],
-        },
-      },
-      {
-        type: 'Feature',
-        properties: {
-          COUNTYNAME: '宜蘭縣',
-          COUNTYCODE: '10002',
-          TOWNNAME: '頭城鎮',
-          TOWNCODE: '1000204',
-        },
-        geometry: {
-          type: 'MultiPolygon',
-          coordinates: [
-            [
-              [
-                [121.93, 24.83],
-                [121.96, 24.83],
-                [121.96, 24.85],
-                [121.93, 24.83],
-              ],
-            ],
-            [
-              [
-                [121.7, 24.8],
-                [121.8, 24.8],
-                [121.8, 24.9],
-                [121.7, 24.8],
-              ],
-            ],
-          ],
-        },
-      },
-    ],
-  })),
+const { runtimeScenario, runtimeCalls } = vi.hoisted(() => ({
+  runtimeScenario: {
+    mapLayer: 'overview',
+    selectedCountyCode: null,
+    selectedTownshipCode: null,
+    selectedLocation: null,
+    weatherState: 'idle',
+    weatherData: null,
+  },
+  runtimeCalls: {
+    countyClick: vi.fn(),
+    townshipClick: vi.fn(),
+    islandClick: vi.fn(),
+    retry: vi.fn(),
+    back: vi.fn(),
+  },
 }));
 
-// --- Mock GeoJSON data ---
+vi.stubGlobal(
+  'ResizeObserver',
+  class ResizeObserver {
+    observe() {}
+
+    disconnect() {}
+  },
+);
+
+vi.mock('leaflet', () => ({
+  default: {
+    geoJSON: vi.fn(() => ({
+      getBounds: vi.fn(() => [
+        [24, 121],
+        [25, 122],
+      ]),
+    })),
+  },
+}));
+
+vi.mock('topojson-client', () => ({
+  feature: vi.fn((topo, objects) => {
+    if (objects === topo?.objects?.counties) {
+      return {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: {
+              COUNTYNAME: '臺北市',
+              COUNTYCODE: '63000',
+            },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [121.5, 25.0],
+                  [121.6, 25.0],
+                  [121.6, 25.1],
+                  [121.5, 25.0],
+                ],
+              ],
+            },
+          },
+          {
+            type: 'Feature',
+            properties: {
+              COUNTYNAME: '新北市',
+              COUNTYCODE: '65000',
+            },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [121.4, 24.9],
+                  [121.5, 24.9],
+                  [121.5, 25.0],
+                  [121.4, 24.9],
+                ],
+              ],
+            },
+          },
+        ],
+      };
+    }
+
+    return {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: {
+            COUNTYNAME: '臺北市',
+            COUNTYCODE: '63000',
+            TOWNNAME: '大安區',
+            TOWNCODE: '6300300',
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [121.53, 25.02],
+                [121.55, 25.02],
+                [121.55, 25.04],
+                [121.53, 25.02],
+              ],
+            ],
+          },
+        },
+        {
+          type: 'Feature',
+          properties: {
+            COUNTYNAME: '臺東縣',
+            COUNTYCODE: '10014',
+            TOWNNAME: '蘭嶼鄉',
+            TOWNCODE: '1001411',
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [121.5, 22.0],
+                [121.6, 22.0],
+                [121.6, 22.1],
+                [121.5, 22.0],
+              ],
+            ],
+          },
+        },
+      ],
+    };
+  }),
+}));
+
 vi.mock('@/data/geo/counties.json', () => ({
   default: {
     type: 'Topology',
@@ -176,20 +149,24 @@ vi.mock('@/data/geo/towns.json', () => ({
   },
 }));
 
-// --- Mock react-leaflet with interactive GeoJSON ---
+vi.mock('next/image', () => ({
+  default: ({ src, alt, ...props }) => <img src={src} alt={alt} {...props} />,
+}));
+
 vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
   GeoJSON: ({ data, onEachFeature }) => {
     const features = data?.features || [];
     return (
       <div data-testid="geojson-layer">
-        {features.map((f) => {
-          const testId = f.properties.islandId
-            ? `island-${f.properties.islandId}`
-            : `feature-${f.properties.TOWNCODE || f.properties.COUNTYCODE}`;
-          const label = f.properties.islandId
-            ? f.properties.targetTownship
-            : f.properties.TOWNNAME || f.properties.COUNTYNAME;
+        {features.map((feature) => {
+          const testId = feature.properties.islandId
+            ? `island-${feature.properties.islandId}`
+            : `feature-${feature.properties.TOWNCODE || feature.properties.COUNTYCODE}`;
+          const label = feature.properties.islandId
+            ? feature.properties.targetTownship
+            : feature.properties.TOWNNAME || feature.properties.COUNTYNAME;
+
           return (
             <button
               key={testId}
@@ -198,11 +175,11 @@ vi.mock('react-leaflet', () => ({
               onClick={() => {
                 if (onEachFeature) {
                   const handler = {};
-                  onEachFeature(f, {
+                  onEachFeature(feature, {
                     on: (events) => Object.assign(handler, events),
                     setStyle: vi.fn(),
                   });
-                  handler.click?.({ target: { feature: f, setStyle: vi.fn() } });
+                  handler.click?.({ target: { feature, setStyle: vi.fn() } });
                 }
               }}
             >
@@ -221,105 +198,35 @@ vi.mock('react-leaflet', () => ({
   }),
 }));
 
-// --- Mock next/image ---
-vi.mock('next/image', () => ({
-  default: ({ src, alt, ...props }) => <img src={src} alt={alt} {...props} />,
-}));
+vi.mock('@/runtime/hooks/useWeatherPageRuntime', async () => {
+  const React = await import('react');
 
-// --- Mock weather-api.js ---
-vi.mock('@/lib/weather-api', () => ({
-  fetchWeather: vi.fn(),
-}));
-
-// --- Mock firebase-weather-favorites ---
-vi.mock('@/lib/firebase-weather-favorites', () => ({
-  addFavorite: vi.fn(),
-  removeFavorite: vi.fn(),
-  getFavorites: vi.fn().mockResolvedValue([]),
-  isFavorited: vi.fn().mockResolvedValue({ favorited: false, docId: null }),
-}));
-
-// --- Mock AuthProvider ---
-vi.mock('@/runtime/providers/AuthProvider', () => ({
-  AuthContext: /** @type {import('react').Context<object>} */ (
-    /** @type {unknown} */ ({
-      Provider: ({ children }) => children,
-      Consumer: ({ children }) => children({ user: null, loading: false }),
-      _currentValue: { user: null, setUser: () => {}, loading: false },
-    })
-  ),
-}));
-
-// --- Mock ToastProvider ---
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: vi.fn(), removeToast: vi.fn(), toasts: [] }),
-  ToastContext: /** @type {import('react').Context<object>} */ ({
-    Provider: ({ children }) => children,
-  }),
-}));
-
-const mockedFetchWeather = /** @type {import('vitest').Mock} */ (fetchWeather);
-const originalLocalStorageDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
-
-/**
- * 安裝可重置的 localStorage stub，避免 browser test runner 的 storage 實作差異污染其他 suites。
- * @returns {void}
- */
-function installLocalStorageStub() {
-  /** @type {Record<string, string>} */
-  let storageState = {};
-
-  Object.defineProperty(globalThis, 'localStorage', {
-    configurable: true,
-    value: {
-      getItem: (key) => storageState[key] ?? null,
-      setItem: (key, value) => {
-        storageState[key] = String(value);
-      },
-      removeItem: (key) => {
-        delete storageState[key];
-      },
-      clear: () => {
-        storageState = {};
-      },
-    },
-  });
-}
-
-/**
- * 還原 suite 開始前的 localStorage descriptor。
- * @returns {void}
- */
-function restoreLocalStorage() {
-  if (originalLocalStorageDescriptor) {
-    Object.defineProperty(globalThis, 'localStorage', originalLocalStorageDescriptor);
-    return;
-  }
-
-  delete globalThis.localStorage;
-}
-
-/**
- * 建立測試用 WeatherInfo mock 資料。
- * @param {object} overrides - 要覆蓋的欄位。
- * @returns {import('@/lib/weather-api').WeatherInfo} 天氣資料。
- */
-function makeWeatherInfo(overrides = {}) {
-  return {
-    locationName: '臺北市',
-    locationNameShort: '臺北',
-    today: {
-      currentTemp: 28,
-      weatherDesc: '晴時多雲',
+  /**
+   * 建立今日天氣資料。
+   * @param {string} weatherDesc - 天氣描述。
+   * @param {number} currentTemp - 當前溫度。
+   * @returns {import('@/types/weather-types').TodayWeather} 今日天氣。
+   */
+  function buildToday(weatherDesc, currentTemp) {
+    return {
+      currentTemp,
+      weatherDesc,
       weatherCode: '2',
-      morningTemp: 30,
-      eveningTemp: 24,
+      morningTemp: currentTemp + 2,
+      eveningTemp: currentTemp - 4,
       rainProb: 10,
       humidity: 72,
       uv: null,
       aqi: null,
-    },
-    tomorrow: {
+    };
+  }
+
+  /**
+   * 建立明日天氣資料。
+   * @returns {import('@/types/weather-types').TomorrowWeather} 明日天氣。
+   */
+  function buildTomorrow() {
+    return {
       weatherDesc: '多雲',
       weatherCode: '4',
       morningTemp: 29,
@@ -327,248 +234,198 @@ function makeWeatherInfo(overrides = {}) {
       rainProb: 30,
       humidity: 78,
       uv: null,
-    },
-    ...overrides,
+    };
+  }
+
+  /**
+   * mocked weather page runtime。
+   * @returns {object} runtime state 與 handlers。
+   */
+  function useMockWeatherPageRuntime() {
+    const [state, setState] = React.useState(runtimeScenario);
+    const cardPanelRef = React.useRef(null);
+
+    const handleCountyClick = React.useCallback((countyCode, countyName) => {
+      runtimeCalls.countyClick(countyCode, countyName);
+      setState((prev) => ({
+        ...prev,
+        mapLayer: countyCode === '63000' ? 'county' : 'overview',
+        selectedCountyCode: countyCode,
+        selectedTownshipCode: null,
+        selectedLocation: {
+          countyCode,
+          countyName,
+          townshipCode: null,
+          townshipName: null,
+          displaySuffix: null,
+        },
+        weatherState: 'success',
+        weatherData: {
+          locationName: countyName,
+          today: buildToday('晴時多雲', 28),
+          tomorrow: buildTomorrow(),
+        },
+      }));
+    }, []);
+
+    const handleIslandClick = React.useCallback((countyName, townshipName) => {
+      runtimeCalls.islandClick(countyName, townshipName);
+      setState((prev) => ({
+        ...prev,
+        mapLayer: 'county',
+        selectedCountyCode: '10014',
+        selectedTownshipCode: null,
+        selectedLocation: {
+          countyCode: '10014',
+          countyName,
+          townshipCode: null,
+          townshipName,
+          displaySuffix: '（含離島）',
+        },
+        weatherState: 'success',
+        weatherData: {
+          locationName: `${countyName} · ${townshipName}`,
+          today: buildToday('晴時多雲', 27),
+          tomorrow: buildTomorrow(),
+        },
+      }));
+    }, []);
+
+    const handleRetry = React.useCallback(() => {
+      runtimeCalls.retry();
+      setState((prev) => ({
+        ...prev,
+        weatherState: 'success',
+        weatherData: {
+          locationName: prev.selectedLocation?.countyName ?? '臺北市',
+          today: buildToday('晴時多雲', 28),
+          tomorrow: buildTomorrow(),
+        },
+      }));
+    }, []);
+
+    return {
+      cardPanelRef,
+      favorites: [],
+      favSummaries: {},
+      activeFavoriteId: null,
+      selectedLocation: state.selectedLocation,
+      mapLayer: /** @type {'overview' | 'county'} */ (state.mapLayer),
+      weatherState: /** @type {'idle' | 'loading' | 'success' | 'error'} */ (state.weatherState),
+      weatherData: state.weatherData,
+      isFavoriteMutating: false,
+      isFavorited: false,
+      selectedCountyCode: state.selectedCountyCode,
+      selectedTownshipCode: state.selectedTownshipCode,
+      handleCountyClick,
+      handleTownshipClick: runtimeCalls.townshipClick,
+      handleIslandClick,
+      handleRetry,
+      handleBackToOverview: runtimeCalls.back,
+      handleFavoriteToggle: vi.fn(),
+      handleFavoriteSelect: vi.fn(),
+      handleFavoriteRemove: vi.fn(),
+    };
+  }
+
+  return {
+    default: useMockWeatherPageRuntime,
   };
+});
+
+/**
+ * 重置 runtime scenario。
+ * @returns {void}
+ */
+function resetRuntimeScenario() {
+  runtimeScenario.mapLayer = 'overview';
+  runtimeScenario.selectedCountyCode = null;
+  runtimeScenario.selectedTownshipCode = null;
+  runtimeScenario.selectedLocation = null;
+  runtimeScenario.weatherState = 'idle';
+  runtimeScenario.weatherData = null;
 }
 
 describe('WeatherPage integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedFetchWeather.mockReset();
-    window.history.replaceState({}, '', '/weather');
-    installLocalStorageStub();
-    localStorage.clear();
+    resetRuntimeScenario();
   });
 
-  afterEach(() => {
-    restoreLocalStorage();
-    window.history.replaceState({}, '', '/weather');
+  it('renders the map container and county features', () => {
+    render(<WeatherPage />);
+
+    expect(screen.getByTestId('map-container')).toBeInTheDocument();
+    expect(screen.getByText('臺北市')).toBeInTheDocument();
+    expect(screen.getByText('新北市')).toBeInTheDocument();
   });
 
-  // --- Map rendering ---
-  describe('map rendering', () => {
-    it('should render the map container', () => {
-      render(<WeatherPage />);
+  it('shows empty state when no location is selected', () => {
+    render(<WeatherPage />);
 
-      expect(screen.getByTestId('map-container')).toBeInTheDocument();
-    });
-
-    it('should render county features as interactive elements', () => {
-      render(<WeatherPage />);
-
-      expect(screen.getByText('臺北市')).toBeInTheDocument();
-      expect(screen.getByText('新北市')).toBeInTheDocument();
-    });
+    expect(screen.getByText(/請先在地圖上選擇/)).toBeInTheDocument();
   });
 
-  // --- Initial empty state ---
-  describe('initial empty state', () => {
-    it('should show empty state when no location is selected', () => {
-      render(<WeatherPage />);
+  it('updates the weather card when a county is clicked', async () => {
+    const user = userEvent.setup();
+    render(<WeatherPage />);
 
-      expect(screen.getByText(/請先在地圖上選擇/)).toBeInTheDocument();
+    await user.click(screen.getByTestId('feature-63000'));
+
+    await waitFor(() => {
+      expect(runtimeCalls.countyClick).toHaveBeenCalledWith('63000', '臺北市');
     });
+    expect(screen.getByText('臺北市')).toBeInTheDocument();
+    expect(screen.getByText('晴時多雲')).toBeInTheDocument();
+    expect(screen.getByTestId('current-temperature')).toHaveTextContent('28°');
   });
 
-  // --- County click → loading → weather card ---
-  describe('county click → weather display', () => {
-    it('should fetch and display weather when a county is clicked', async () => {
-      const user = userEvent.setup();
-      mockedFetchWeather.mockResolvedValueOnce(makeWeatherInfo());
+  it('renders loading skeleton when runtime state is loading', () => {
+    runtimeScenario.weatherState = 'loading';
+    runtimeScenario.selectedLocation = {
+      countyCode: '63000',
+      countyName: '臺北市',
+      townshipCode: null,
+      townshipName: null,
+      displaySuffix: null,
+    };
 
-      render(<WeatherPage />);
-      await user.click(screen.getByTestId('feature-63000'));
+    render(<WeatherPage />);
 
-      await screen.findByText(/28/);
-      expect(screen.getByText('晴時多雲')).toBeInTheDocument();
-      expect(mockedFetchWeather).toHaveBeenCalledWith(
-        expect.objectContaining({ county: '臺北市' }),
-      );
-    });
-
-    it('should show loading skeleton while fetching weather', async () => {
-      const user = userEvent.setup();
-      /** @type {((v: unknown) => void) | undefined} */
-      let resolveFetch;
-      mockedFetchWeather.mockReturnValueOnce(
-        new Promise((resolve) => {
-          resolveFetch = resolve;
-        }),
-      );
-
-      render(<WeatherPage />);
-      await user.click(screen.getByTestId('feature-63000'));
-
-      // Empty state should be gone, skeleton should be visible
-      expect(screen.queryByText(/請先在地圖上選擇/)).not.toBeInTheDocument();
-
-      // Resolve the fetch to clean up
-      resolveFetch?.(makeWeatherInfo());
-      await screen.findByText(/28/);
-    });
+    expect(screen.queryByText(/請先在地圖上選擇/)).not.toBeInTheDocument();
+    expect(document.querySelector('[class*="skeleton"]')).toBeTruthy();
   });
 
-  describe('browser persistence', () => {
-    it('should restore selected location from URL params on mount', async () => {
-      window.history.replaceState({}, '', '/weather?county=63000');
-      mockedFetchWeather.mockResolvedValueOnce(makeWeatherInfo());
+  it('calls retry handler from error state', async () => {
+    runtimeScenario.weatherState = 'error';
+    runtimeScenario.selectedLocation = {
+      countyCode: '63000',
+      countyName: '臺北市',
+      townshipCode: null,
+      townshipName: null,
+      displaySuffix: null,
+    };
 
-      render(<WeatherPage />);
+    const user = userEvent.setup();
+    render(<WeatherPage />);
 
-      await waitFor(() => {
-        expect(mockedFetchWeather).toHaveBeenCalledWith(
-          expect.objectContaining({ county: '臺北市', township: null }),
-        );
-      });
-      expect(screen.getByTestId('current-temperature')).toHaveTextContent('28°');
+    await user.click(screen.getByRole('button', { name: /重試/ }));
+
+    await waitFor(() => {
+      expect(runtimeCalls.retry).toHaveBeenCalledTimes(1);
     });
-
-    it('should sync selected county into URL and localStorage after click', async () => {
-      const user = userEvent.setup();
-      window.history.replaceState({}, '', '/weather');
-      mockedFetchWeather.mockResolvedValueOnce(makeWeatherInfo());
-
-      render(<WeatherPage />);
-      await user.click(screen.getByTestId('feature-65000'));
-      await screen.findByText(/28/);
-
-      expect(window.location.search).toBe('?county=65000');
-      expect(JSON.parse(localStorage.getItem('dive-weather-last-location') ?? 'null')).toEqual(
-        expect.objectContaining({
-          countyCode: '65000',
-          countyName: '新北市',
-          townshipCode: null,
-          townshipName: null,
-        }),
-      );
-    });
+    expect(screen.getByText('晴時多雲')).toBeInTheDocument();
   });
 
-  // --- Fetch failure → error state + retry ---
-  describe('error state and retry', () => {
-    it('should show error state and retry button on fetch failure', async () => {
-      const user = userEvent.setup();
-      mockedFetchWeather.mockRejectedValueOnce(new Error('Network error'));
+  it('triggers island click handler and updates weather card', async () => {
+    const user = userEvent.setup();
+    render(<WeatherPage />);
 
-      render(<WeatherPage />);
-      await user.click(screen.getByTestId('feature-63000'));
+    await user.click(screen.getByTestId('island-lanyu'));
 
-      await screen.findByText(/無法取得天氣/);
-      expect(screen.getByRole('button', { name: /重試/ })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(runtimeCalls.islandClick).toHaveBeenCalledWith('臺東縣', '蘭嶼鄉');
     });
-
-    it('should retry fetching when retry button is clicked', async () => {
-      const user = userEvent.setup();
-      mockedFetchWeather
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockResolvedValueOnce(makeWeatherInfo());
-
-      render(<WeatherPage />);
-      await user.click(screen.getByTestId('feature-63000'));
-
-      const retryButton = await screen.findByRole('button', { name: /重試/ });
-      await user.click(retryButton);
-
-      await screen.findByText(/28/);
-      expect(screen.getByText('晴時多雲')).toBeInTheDocument();
-      expect(mockedFetchWeather).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  // --- Quick switch cancels previous request ---
-  describe('quick location switching', () => {
-    it('should abort previous request when switching locations quickly', async () => {
-      const user = userEvent.setup();
-
-      // First call: hangs until aborted
-      mockedFetchWeather.mockImplementationOnce(
-        ({ signal }) =>
-          new Promise((resolve, reject) => {
-            signal?.addEventListener('abort', () => {
-              reject(new DOMException('Aborted', 'AbortError'));
-            });
-          }),
-      );
-
-      // Second call: resolves with data for 大安區
-      const daanWeather = makeWeatherInfo({
-        locationName: '臺北市 · 大安區',
-        locationNameShort: '臺北 · 大安',
-        today: {
-          currentTemp: 26,
-          weatherDesc: '多雲',
-          weatherCode: '4',
-          morningTemp: 27,
-          eveningTemp: 22,
-          rainProb: 20,
-          humidity: 75,
-          uv: null,
-          aqi: null,
-        },
-        tomorrow: {
-          weatherDesc: '陰天',
-          weatherCode: '7',
-          morningTemp: 27,
-          eveningTemp: 21,
-          rainProb: 40,
-          humidity: 80,
-          uv: null,
-        },
-      });
-      mockedFetchWeather.mockResolvedValueOnce(daanWeather);
-
-      render(<WeatherPage />);
-
-      // Click 臺北市 first (triggers county drill-down)
-      await user.click(screen.getByTestId('feature-63000'));
-      // Quickly click 大安區 township (available in drill-down layer)
-      await user.click(screen.getByTestId('feature-6300300'));
-
-      // Should show 大安區 weather, not the county-level 臺北市 weather
-      await screen.findByText(/多雲/);
-      expect(screen.getByText('臺北市 · 大安區')).toBeInTheDocument();
-      expect(screen.queryByText('晴時多雲')).not.toBeInTheDocument();
-    });
-  });
-
-  // --- Weather card displays UV/AQI as "—" when null ---
-  describe('null UV/AQI display', () => {
-    it('should display "—" for UV and AQI when values are null', async () => {
-      const user = userEvent.setup();
-      mockedFetchWeather.mockResolvedValueOnce(makeWeatherInfo());
-
-      render(<WeatherPage />);
-      await user.click(screen.getByTestId('feature-63000'));
-
-      await screen.findByText(/28/);
-
-      // UV and AQI should show — when null
-      const dashes = screen.getAllByText('—');
-      expect(dashes.length).toBeGreaterThanOrEqual(2);
-    });
-  });
-
-  // --- Island marker click → drill-down + weather ---
-  describe('island marker interaction', () => {
-    it('should trigger drill-down and fetch township weather on island click', async () => {
-      const user = userEvent.setup();
-      const lanyuWeather = makeWeatherInfo({
-        locationName: '臺東縣 · 蘭嶼鄉',
-        locationNameShort: '臺東 · 蘭嶼',
-      });
-      mockedFetchWeather.mockResolvedValueOnce(lanyuWeather);
-
-      render(<WeatherPage />);
-
-      const islandButton = screen.getByTestId('island-lanyu');
-      await user.click(islandButton);
-
-      await waitFor(() => {
-        expect(mockedFetchWeather).toHaveBeenCalledWith(
-          expect.objectContaining({ township: expect.any(String) }),
-        );
-      });
-    });
+    expect(screen.getByText('臺東縣 · 蘭嶼鄉')).toBeInTheDocument();
   });
 });

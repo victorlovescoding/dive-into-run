@@ -1,12 +1,12 @@
 import { useState, useContext, useEffect, useCallback } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
-import { getStravaActivities } from '@/lib/firebase-strava';
+import { getStravaActivities } from '@/repo/client/firebase-strava-repo';
 
 const PAGE_SIZE = 10;
 
 /**
  * @typedef {object} UseStravaActivitiesReturn
- * @property {import('@/lib/firebase-strava').StravaActivity[]} activities - Strava 活動列表。
+ * @property {import('@/repo/client/firebase-strava-repo').StravaActivity[]} activities - Strava 活動列表。
  * @property {boolean} isLoading - 是否載入中。
  * @property {string | null} error - 錯誤訊息。
  * @property {() => void} loadMore - 載入更多活動。
@@ -21,7 +21,7 @@ const PAGE_SIZE = 10;
  */
 export default function useStravaActivities() {
   const [activities, setActivities] = useState(
-    /** @type {import('@/lib/firebase-strava').StravaActivity[]} */ ([]),
+    /** @type {import('@/repo/client/firebase-strava-repo').StravaActivity[]} */ ([]),
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(/** @type {string | null} */ (null));

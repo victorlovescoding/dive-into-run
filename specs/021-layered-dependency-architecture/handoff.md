@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S017 completed（Phase 8 done）
-**Next Recommended Session**: S018（repo-tier 遷移）或 S021（posts thin-entry）— Phase 9 與 Phase 10 大部分可平行
+**Current Session**: S018 completed（Phase 9 repo-tier done）
+**Next Recommended Session**: S019（service-tier 遷移）或 S021（posts thin-entry）— Phase 9 與 Phase 10 大部分可平行
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -111,7 +111,7 @@
 | S015    | done   | clean the 4 real test conflicts                       |
 | S016    | done   | add dep-cruise package/config/scripts                 |
 | S017    | done   | CI wiring + final 0-violation verification            |
-| S018    | todo   | repo-tier: strava/users/weather-favorites → repo      |
+| S018    | done   | repo-tier: strava/users/weather-favorites → repo      |
 | S019    | todo   | svc-tier: profile-mapper/server/weather-api → svc     |
 | S020    | todo   | split event-helpers: biz rules → svc, formatters stay |
 | S021    | todo   | thin-entry `posts/page.jsx`                           |
@@ -723,5 +723,46 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - verified local hook parity with `bash .husky/pre-commit` -> `Test Files 116 passed (116)`, `Tests 1105 passed (1105)`, while the dep-cruise step still reported `0 violation`
 - **Pitfalls recorded**:
   - reviewer boundary for S017 was tightened to minimal wiring only; `pre-push` was intentionally left unchanged because its existing job remains the E2E gate, and no extra repo-check script or `package.json` wiring was kept
-  - `MODULE_TYPELESS_PACKAGE_JSON` from Node is an existing non-blocking warning because repo `package.json` is not `"type": "module"`; S017 does not change or fix that packaging warning
-  - browser Vitest still prints jsdom's `Not implemented: Window's scrollTo() method` during `bash .husky/pre-commit`; this is also an existing non-blocking warning, and the hook still exits `0` with `116 passed`
+- `MODULE_TYPELESS_PACKAGE_JSON` from Node is an existing non-blocking warning because repo `package.json` is not `"type": "module"`; S017 does not change or fix that packaging warning
+- browser Vitest still prints jsdom's `Not implemented: Window's scrollTo() method` during `bash .husky/pre-commit`; this is also an existing non-blocking warning, and the hook still exits `0` with `116 passed`
+
+### S018
+
+- **Goal**: 把 `firebase-strava`、`firebase-users`、`firebase-weather-favorites` 從 `src/lib/**` repo-tier implementation 遷到 `src/repo/client/**`，讓原 `src/lib/*.js` 退回 facade-only，並把 S018 受影響 runtime callers / tests 對齊 actual import path 與 test-bucket policy。
+- **Write Scope**:
+  - `src/repo/client/{firebase-strava-repo.js,firebase-users-repo.js,firebase-weather-favorites-repo.js}`
+  - `src/lib/{firebase-strava.js,firebase-users.js,firebase-weather-favorites.js}`
+  - `src/runtime/hooks/{useStravaConnection.js,useStravaActivities.js,useRunCalendar.js,useWeatherPageRuntime.js}`
+  - `specs/006-strava-running-records/tests/{unit/firebase-strava.test.js,unit/useStravaActivities.test.jsx,unit/useStravaConnection.test.jsx,integration/RunsActivityCard.test.jsx}`
+  - `specs/mock-audit-c-firebase-users/tests/unit/firebase-users.test.js`
+  - `specs/013-pre-run-weather/tests/{unit/firebase-weather-favorites.test.js,integration/weather-page.test.jsx,integration/favorites.test.jsx,integration/township-drilldown.test.jsx}`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - created `src/repo/client/firebase-strava-repo.js`
+  - created `src/repo/client/firebase-users-repo.js`
+  - created `src/repo/client/firebase-weather-favorites-repo.js`
+  - updated `src/lib/{firebase-strava,firebase-users,firebase-weather-favorites}.js` to facade-only re-exports with no Firestore SDK imports
+  - retargeted canonical runtime callers `useStravaConnection` / `useStravaActivities` / `useRunCalendar` / `useWeatherPageRuntime` to the new repo entry points
+  - retargeted Strava runtime JSDoc type imports and the affected `RunsActivityCard` test type references to `@/repo/client/firebase-strava-repo`
+  - retargeted unit tests `specs/006-strava-running-records/tests/unit/firebase-strava.test.js`, `specs/mock-audit-c-firebase-users/tests/unit/firebase-users.test.js`, and `specs/013-pre-run-weather/tests/unit/firebase-weather-favorites.test.js` to canonical repo paths
+  - moved `specs/006-strava-running-records/tests/integration/useStravaActivities.test.jsx` and `useStravaConnection.test.jsx` into `tests/unit/` and aligned them to canonical repo mocks while removing direct `src/contexts/**` imports so unit bucket stays clean
+  - kept `src/app/member/page.jsx` untouched because it is a thick entry outside S018 scope
+  - page-level WeatherPage integration tests now mock `@/runtime/hooks/useWeatherPageRuntime` instead of repo/facade internals, matching the actual thin-entry import surface of `src/components/weather/WeatherPage.jsx`
+  - verified with `npx vitest run specs/013-pre-run-weather/tests/integration/weather-page.test.jsx`
+  - verified with `npx vitest run specs/013-pre-run-weather/tests/integration/township-drilldown.test.jsx`
+  - verified with `npx vitest run specs/013-pre-run-weather/tests/integration/favorites.test.jsx`
+  - verified with `npm run depcruise` -> `✔ no dependency violations found (1337 modules, 3307 dependencies cruised)`
+  - verified with `npm run type-check:changed` -> `✓ No type errors in changed files.`
+  - verified full suite with `firebase emulators:exec --only auth,firestore --project=demo-test "npm run test"` -> `Test Files 118 passed (118)` / `Tests 1118 passed (1118)`
+- **Pitfalls recorded**:
+  - `tasks.md` 原本把 `specs/013-pre-run-weather/tests/integration/favorites.test.jsx` 列成 facade mock path，但實際 import graph 已是 `WeatherPage -> useWeatherPageRuntime`；若沿用 `@/lib/firebase-weather-favorites` mock，runtime retarget 後不會攔截到真正被測 surface
+  - S018 對 WeatherPage 類 page integration tests 的最終策略是 mock `@/runtime/hooks/useWeatherPageRuntime`，而不是在 integration bucket 直接 mock `@/repo/**`
+  - Weather page tests 的第一個真正 root cause 不是 jsdom `scrollTo` warning，而是 runtime retarget 後若沒有攔住實際 import surface，測試會在 module-load 階段進到真 `@/config/client/firebase-client`，先撞 `auth/invalid-api-key`
+  - repo 目前的 raw `npm run test` 仍會先帶到 server project；在沒有 emulator env 的情況下，會先撞既有 `Server tests require Firebase Emulator`。S018 的全量驗證因此如實採用 `firebase emulators:exec --only auth,firestore --project=demo-test "npm run test"` 作為 pass evidence，而沒有改 repo-wide script contract
+  - WeatherPage runtime-hook mock tests 仍會印 jsdom 的 `Not implemented: Window's scrollTo() method` warning，但這是既有非 blocking warning，不影響 pass/fail
+- **Next Session Brief**:
+  - 做 S019 或 S021
+  - 若做 S019，write scope 以 `firebase-profile-mapper`、`firebase-profile-server`、`weather-api` 的 service-tier 遷移與受影響 tests 為主
+  - 若做 S021，write scope 以 `src/app/posts/page.jsx` 的 thin-entry split 與對應 runtime/ui/test retarget 為主
+  - reviewer 要特別盯兩件事：一是不要再把 page-level integration tests退回 facade/repo mock；二是如果後續 session 需要引用「全量測試通過」，要明確說明 server project 依賴 emulator 的前提
