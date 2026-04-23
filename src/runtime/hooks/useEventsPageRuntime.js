@@ -6,11 +6,9 @@ import { createFirestoreTimestamp } from '@/config/client/firebase-timestamp';
 import {
   chunkArray,
   countTotalPoints,
-  formatDateTime,
-  formatPace,
   toMs,
   toNumber,
-} from '@/lib/event-helpers';
+} from '@/runtime/events/event-runtime-helpers';
 import { buildRoutePayload, buildUserPayload, getRemainingSeats } from '@/service/event-service';
 import { listTaiwanCities, listTaiwanDistricts } from '@/service/taiwan-location-service';
 import {
@@ -26,6 +24,9 @@ import {
 } from '@/runtime/client/use-cases/event-use-cases';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
+/**
+ * @typedef {import('@/service/event-service').EventData} EventData
+ */
 
 /**
  * 依 event id 合併列表，保留第一次出現的項目順序。
@@ -42,18 +43,6 @@ function mergeEventsById(current, incoming) {
     }
   });
   return Array.from(map.values());
-}
-
-/**
- * 將活動的路線資料格式化為顯示文字（已設定/未設定）。
- * @param {import('@/lib/event-helpers').EventData} event - 活動資料。
- * @returns {string} 顯示用的路線狀態描述。
- */
-function renderRouteLabel(event) {
-  const points = countTotalPoints(event.routeCoordinates);
-  if (points > 0) return `已設定（${points} 點）`;
-  if (event.route?.pointsCount) return `已設定（${event.route.pointsCount} 點）`;
-  return '未設定';
 }
 
 /**
@@ -92,7 +81,7 @@ export default function useEventsPageRuntime() {
   const membershipCheckedRef = useRef(new Set());
   const [draftFormData, setDraftFormData] = useState(null);
   const [editingEvent, setEditingEvent] = useState(
-    /** @type {import('@/lib/event-helpers').EventData | null} */ (null),
+    /** @type {EventData | null} */ (null),
   );
   const [isUpdating, setIsUpdating] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState(/** @type {string | null} */ (null));
@@ -480,7 +469,7 @@ export default function useEventsPageRuntime() {
   const handleJoinClick = useCallback(
     /**
      * 處理點擊參加活動。
-     * @param {import('@/lib/event-helpers').EventData} event - 活動資料。
+     * @param {EventData} event - 活動資料。
      * @param {import('react').MouseEvent} clickEvent - 點擊事件。
      * @returns {Promise<void>}
      */
@@ -565,7 +554,7 @@ export default function useEventsPageRuntime() {
   const handleLeaveClick = useCallback(
     /**
      * 處理點擊退出活動。
-     * @param {import('@/lib/event-helpers').EventData} event - 活動資料。
+     * @param {EventData} event - 活動資料。
      * @param {import('react').MouseEvent} clickEvent - 點擊事件。
      * @returns {Promise<void>}
      */
@@ -638,7 +627,7 @@ export default function useEventsPageRuntime() {
   const handleEditEvent = useCallback(
     /**
      * 開啟編輯活動表單。
-     * @param {import('@/lib/event-helpers').EventData} event - 活動資料。
+     * @param {EventData} event - 活動資料。
      */
     (event) => {
       setEditingEvent(event);
@@ -719,7 +708,7 @@ export default function useEventsPageRuntime() {
   const handleDeleteEventRequest = useCallback(
     /**
      * 開啟刪除活動確認對話框。
-     * @param {import('@/lib/event-helpers').EventData} event - 活動資料。
+     * @param {EventData} event - 活動資料。
      */
     (event) => {
       setDeletingEventId(String(event.id));
@@ -796,10 +785,7 @@ export default function useEventsPageRuntime() {
     cityOptions,
     filterDistrictOptions,
     selectedDistrictOptions,
-    formatDateTime,
-    formatPace,
     getRemainingSeats,
-    renderRouteLabel,
     setFilterTimeStart,
     setFilterTimeEnd,
     setFilterDistanceMin,

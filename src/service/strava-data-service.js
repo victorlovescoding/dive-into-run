@@ -37,7 +37,7 @@ const TYPE_ORDER = ['Run', 'VirtualRun', 'TrailRun'];
 
 /**
  * 將活動列表按日期分組並聚合同類型距離。
- * @param {import('@/lib/firebase-strava').StravaActivity[]} activities - 活動列表。
+ * @param {import('@/repo/client/firebase-strava-repo').StravaActivity[]} activities - 活動列表。
  * @returns {Map<number, DayActivities>} 以日期數字為 key 的聚合 map。
  */
 export function groupActivitiesByDay(activities) {

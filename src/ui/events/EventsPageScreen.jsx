@@ -8,6 +8,7 @@ import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import EventEditForm from '@/components/EventEditForm';
 import UserLink from '@/components/UserLink';
 import useEventsPageRuntime from '@/runtime/hooks/useEventsPageRuntime';
+import { formatDateTime, formatPace, renderRouteLabel } from './event-formatters';
 import styles from './EventsPageScreen.module.css';
 
 const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
@@ -55,10 +56,7 @@ export default function EventsPageScreen() {
     cityOptions,
     filterDistrictOptions,
     selectedDistrictOptions,
-    formatDateTime,
-    formatPace,
     getRemainingSeats,
-    renderRouteLabel,
     setFilterTimeStart,
     setFilterTimeEnd,
     setFilterDistanceMin,

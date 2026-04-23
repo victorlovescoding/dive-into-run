@@ -5,7 +5,7 @@
  * @property {number} joinedCount - 參加活動數量（透過 collectionGroup 計算）。
  * @property {number | null} totalDistanceKm - 累計跑步公里數。
  * @typedef {object} HostedEventsPage
- * @property {import('@/lib/firebase-events').EventData[]} items - 活動列表。
+ * @property {import('@/service/event-service').EventData[]} items - 活動列表。
  * @property {import('firebase/firestore').QueryDocumentSnapshot | null} lastDoc - 分頁游標。
  * @property {boolean} hasMore - 是否還有下一頁可載入。
  */
@@ -68,7 +68,7 @@ export async function getHostedEvents(uid, options = {}) {
 
   const hasMore = docs.length > pageSize;
   const visibleDocs = hasMore ? docs.slice(0, pageSize) : docs;
-  const items = /** @type {import('@/lib/firebase-events').EventData[]} */ (
+  const items = /** @type {import('@/service/event-service').EventData[]} */ (
     visibleDocs.map((d) => ({
       id: d.id,
       .../** @type {object} */ (d.data()),

@@ -49,7 +49,7 @@ function stripRegexAnchors(pattern) {
 
 /**
  * Combines multiple anchored path regexes into one anchored alternation.
- * @param {string[]} patterns - Canonical dependency-cruiser path patterns.
+ * @param {readonly string[]} patterns - Canonical dependency-cruiser path patterns.
  * @returns {string} One merged path alternation.
  */
 function combinePathPatterns(patterns) {
@@ -141,6 +141,18 @@ function createTestBucketRules() {
 
 const forbidden = [
   ...createLayerDirectionRules(),
+  {
+    name: 'canonical-no-import-lib',
+    comment:
+      'Canonical layers may not runtime-import src/lib/**; lib remains the compatibility layer for non-canonical surfaces and specs.',
+    severity: 'error',
+    from: {
+      path: combinePathPatterns(Object.values(CANONICAL_LAYER_PATTERNS)),
+    },
+    to: withDependencyTypeFilter({
+      path: '^src/lib(?:/|$)',
+    }),
+  },
   {
     name: 'provider-no-repo',
     comment: 'Runtime providers must not import repo adapters directly.',

@@ -58,19 +58,26 @@ export { EVENT_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
  * @property {string} [id] - Firestore 文件 ID。
  * @property {string} city - 活動所在縣市。
  * @property {string} district - 活動所在行政區。
- * @property {FirestoreDateLike} time - 活動開始時間。
- * @property {FirestoreDateLike} registrationDeadline - 報名截止時間。
+ * @property {string | FirestoreDateLike} time - 活動開始時間。
+ * @property {string | FirestoreDateLike} registrationDeadline - 報名截止時間。
+ * @property {string} [meetPlace] - 集合地點。
  * @property {number} distanceKm - 跑步距離（公里）。
  * @property {number} maxParticipants - 人數上限。
  * @property {number} [participantsCount] - 目前報名人數。
  * @property {number} [remainingSeats] - 剩餘名額。
  * @property {number} paceSec - 每公里配速（秒）。
+ * @property {string} [pace] - 配速文字。
  * @property {FirestoreDateLike} [createdAt] - 活動建立時間。
  * @property {string} [hostUid] - 主辦者 UID。
+ * @property {string} [hostName] - 主辦者名稱。
+ * @property {string} [hostPhotoURL] - 主辦者頭像 URL。
  * @property {string} [title] - 活動標題。
  * @property {string} [location] - 活動地點名稱。
  * @property {string} [description] - 活動描述。
+ * @property {string} [runType] - 跑步類型。
  * @property {string} [routeImage] - 路線圖片 URL。
+ * @property {RoutePayload} [route] - 路線資料。
+ * @property {RoutePoint[][]} [routeCoordinates] - 路線座標（每條路線一個子陣列）。
  */
 
 /**

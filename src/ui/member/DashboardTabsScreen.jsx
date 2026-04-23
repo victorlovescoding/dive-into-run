@@ -16,7 +16,9 @@ import styles from '@/components/DashboardTabs.module.css';
  */
 function ItemList({ items, tabIndex, hostedIds }) {
   if (tabIndex === 0) {
-    const events = /** @type {import('@/lib/firebase-member').MyEventItem[]} */ (items);
+    const events = /** @type {import('@/service/member-dashboard-service').MyEventItem[]} */ (
+      items
+    );
     return (
       <>
         {events.map((event) => (
@@ -29,7 +31,7 @@ function ItemList({ items, tabIndex, hostedIds }) {
   }
 
   if (tabIndex === 1) {
-    const posts = /** @type {import('@/lib/firebase-posts').Post[]} */ (items);
+    const posts = /** @type {import('@/service/post-service').Post[]} */ (items);
     return (
       <>
         {posts.map((post) => (
@@ -41,7 +43,9 @@ function ItemList({ items, tabIndex, hostedIds }) {
     );
   }
 
-  const comments = /** @type {import('@/lib/firebase-member').MyCommentItem[]} */ (items);
+  const comments = /** @type {import('@/service/member-dashboard-service').MyCommentItem[]} */ (
+    items
+  );
   return (
     <>
       {comments.map((comment) => (

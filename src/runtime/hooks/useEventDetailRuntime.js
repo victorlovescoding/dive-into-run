@@ -3,12 +3,7 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createFirestoreTimestamp } from '@/config/client/firebase-timestamp';
-import {
-  formatDateTime,
-  formatPace,
-  toMs,
-  toNumber,
-} from '@/lib/event-helpers';
+import { toMs, toNumber } from '@/runtime/events/event-runtime-helpers';
 import {
   buildUserPayload,
   getRemainingSeats,
@@ -32,6 +27,9 @@ import {
 } from '@/runtime/client/use-cases/notification-use-cases';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
+/**
+ * @typedef {import('@/service/event-service').EventData} EventData
+ */
 
 /**
  * 計算活動狀態。
@@ -61,7 +59,7 @@ export default function useEventDetailRuntime(id) {
   const router = useRouter();
 
   const [event, setEvent] = useState(
-    /** @type {import('@/lib/event-helpers').EventData | null} */ (null),
+    /** @type {EventData | null} */ (null),
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -74,7 +72,7 @@ export default function useEventDetailRuntime(id) {
 
   const [pending, setPending] = useState(/** @type {'joining' | 'leaving' | null} */ (null));
   const [editingEvent, setEditingEvent] = useState(
-    /** @type {import('@/lib/event-helpers').EventData | null} */ (null),
+    /** @type {EventData | null} */ (null),
   );
   const [isUpdating, setIsUpdating] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState(/** @type {string | null} */ (null));
@@ -152,7 +150,7 @@ export default function useEventDetailRuntime(id) {
         }
 
         setEvent(
-          /** @type {import('@/lib/event-helpers').EventData} */ (/** @type {unknown} */ (data)),
+          /** @type {EventData} */ (/** @type {unknown} */ (data)),
         );
       } catch (loadError) {
         console.error('讀取活動詳情失敗:', loadError);
@@ -259,10 +257,10 @@ export default function useEventDetailRuntime(id) {
   const handleEditEvent = useCallback(
     /**
      * 開啟編輯表單。
-     * @param {import('@/lib/event-helpers').EventData} nextEvent - 活動資料。
+     * @param {EventData} nextEvent - 活動資料。
      */
     (nextEvent) => {
-      setEditingEvent(/** @type {import('@/lib/event-helpers').EventData} */ (nextEvent));
+      setEditingEvent(/** @type {EventData} */ (nextEvent));
     },
     [],
   );
@@ -345,7 +343,7 @@ export default function useEventDetailRuntime(id) {
   const handleDeleteEventRequest = useCallback(
     /**
      * 開啟刪除確認對話框。
-     * @param {import('@/lib/event-helpers').EventData} nextEvent - 活動資料。
+     * @param {EventData} nextEvent - 活動資料。
      */
     (nextEvent) => {
       setDeletingEventId(String(nextEvent.id));
@@ -591,8 +589,6 @@ export default function useEventDetailRuntime(id) {
     remainingSeats,
     participationState,
     shareUrl,
-    formatDateTime,
-    formatPace,
     handleOpenParticipants,
     handleCloseParticipants,
     refreshParticipants,

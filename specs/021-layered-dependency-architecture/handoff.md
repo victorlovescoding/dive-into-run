@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S024 completed（weather API route thin-entry + service/repo/test retarget done）
-**Next Recommended Session**: S025（canonical no-import-lib rule）
+**Current Session**: S025 completed（canonical no-import-lib rule + canonical textual cleanup done）
+**Next Recommended Session**: reviewer final pass（確認 S025 rule / textual contract / non-canonical evidence）
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -148,7 +148,7 @@
 | S022    | done   | thin-entry `runs/page.jsx` + callback                 |
 | S023    | done   | thin-entry `member/page.jsx` + ProfileClient          |
 | S024    | done   | thin-entry `api/weather/route.js` (590L)              |
-| S025    | todo   | dep-cruise: canonical no-import-lib rule              |
+| S025    | done   | dep-cruise: canonical no-import-lib rule              |
 
 ## Known Pitfalls
 
@@ -158,14 +158,14 @@
 
 - ✅ 六層分層方向、forward-only dependency、dep-cruise enforcement、CI+pre-commit gate 全部到位
 - ⚠️ `src/lib/**` 不在 `CANONICAL_LAYER_PATTERNS`，dep-cruise 對所有涉及 `src/lib/**` 的邊完全不攔（11 條 canonical → lib 的 runtime import 未被偵測）
-- ✅ 最後一個 thick entry `api/weather 590L` 已在 S024 拆完；剩餘缺口只剩 S025 的 dep-cruise mechanical enforcement
-- ✅ Phase 9（S018-S020a）已完成：canonical runtime/service 對 `src/lib/**` 的實際 runtime import 已歸零；接下來若要機械化封住這條規則，直接做 S025，不要再回頭把 utility 常數或 UI formatter 搬進 canonical surface
+- ✅ 最後一個 thick entry `api/weather 590L` 已在 S024 拆完；S025 也已補上 canonical `no-import-lib` mechanical enforcement
+- ✅ Phase 9（S018-S020a）已完成：canonical runtime/service 對 `src/lib/**` 的實際 runtime import 已歸零；S025 已把這條規則機械化，且沒有把 non-canonical surfaces 的 compatibility imports 一起封死
 
 Phase 9-11（S018-S025）即為補完這三類缺口的任務。
 
 ### Architecture blockers
 
-1. `profile-mapper` / `profile-server-service` / `weather-api-repo` / `weather-forecast-service` 已經 canonicalize 完成；後續若整理 profile/weather 相關頁面，不能把實作再拉回 `src/lib/**` compatibility namespace。剩餘較大的機械化缺口是 **S025** 的 canonical `no-import-lib` rule。
+1. `profile-mapper` / `profile-server-service` / `weather-api-repo` / `weather-forecast-service` 已經 canonicalize 完成；S025 也已把 canonical `no-import-lib` rule 接上。後續若整理 profile/weather 相關頁面，不能把實作再拉回 `src/lib/**` compatibility namespace，否則會直接被 dep-cruise 擋下。
 2. `WeatherPage` 的 fetch/hydration/favorites 已下沉到 `useWeatherPageRuntime`，但 geo lookup 目前刻意留在 thin entry 注入，避免 runtime 直接 import `@/config/geo/weather-geo-cache`；後續若要再收斂，請沿 `Config -> Repo/Service -> Runtime` 做乾淨流向，不要把 config 直接拉回 runtime。
 3. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx`、`ToastContext.jsx` 已收斂成 thin compatibility facades；真正 provider 實作現在在 `src/runtime/providers/**`。
 4. S013 已把 `WeatherPage.jsx`、`FavoriteButton.jsx`、`DashboardTabs.jsx` 拆成 thin entry + runtime + ui；後續 reviewer 應改盯 weather/dashboard screen 是否重新拉回 runtime/service 依賴，而不是再把它們當未拆 target。
@@ -176,6 +176,7 @@ Phase 9-11（S018-S025）即為補完這三類缺口的任務。
 9. `member-dashboard` 的 `titleCache` 仍只以 `parentId` 當 key，這是為了保留既有行為；若未來 post/event 出現相同 id，cache 仍可能互撞，這筆債要在後續 dashboard/profile 整理時一起處理。
 10. posts list page-level tests 若還 mock `@/lib/firebase-posts` 或 legacy `@/contexts/**`，thin-entry 後就會攔不到真正 runtime 路徑；後續新增同類測試要沿用 runtime providers + `@/runtime/client/use-cases/post-use-cases`。
 11. `src/app/users/[uid]/ProfileEventList.jsx` 目前仍自行處理 hosted-events fetch（透過 `@/lib/firebase-profile` facade）。這是 S023 刻意保留的 scope debt；不要把 hosted-events fetch 複製進 `useProfileRuntime` 或 `ProfileScreen`，若要整理必須另開 session 專做 `ProfileEventList`。
+12. S025 的 dep-cruise rule 與 textual cleanup 是兩層不同契約：mechanical rule 只禁止 canonical runtime edges 指向 `src/lib/**`，但本 repo 現在額外要求 canonical layers 也不再保留任何 JSDoc/type-only `@/lib/**` 字串。若未來有人只改回 JSDoc alias，dep-cruise 不一定會報錯，但 `canonical-no-import-lib.test.js` 會先擋下。
 
 ### Test blockers
 
@@ -1065,3 +1066,53 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - write scope 以 `.dependency-cruiser.mjs`、殘留 canonical-layer JSDoc/lib imports、`specs/021-layered-dependency-architecture/handoff.md` 為主
   - 先用 `grep -rn "from '@/lib/" src/{types,config,repo,service,runtime,ui}/ --include=\"*.js\" --include=\"*.jsx\"` 做 pre-flight，確認 canonical layers runtime import `src/lib/**` 仍為 0
   - reviewer 要特別盯 no-import-lib 規則是否只打到 canonical layers，不能誤傷 permanent compatibility facade 與合法的 non-canonical surfaces
+
+### S025
+
+- **Goal**: 把 canonical layers → `src/lib/**` 的 runtime import 機械化封住，並把 canonical JSDoc/type-only `@/lib/**` refs 一併收斂到 0 textual refs。
+- **Write Scope**:
+  - `.dependency-cruiser.mjs`
+  - `src/service/event-service.js`
+  - `src/runtime/events/event-runtime-helpers.js`
+  - `src/ui/events/event-formatters.js`
+  - `src/runtime/hooks/{useEventsPageRuntime.js,useEventDetailRuntime.js}`
+  - `src/ui/events/{EventsPageScreen.jsx,EventDetailScreen.jsx}`
+  - `src/service/{profile-service.js,strava-data-service.js}`
+  - `src/runtime/providers/NotificationProvider.jsx`
+  - `src/ui/member/DashboardTabsScreen.jsx`
+  - `src/ui/posts/PostDetailScreen.jsx`
+  - `specs/021-layered-dependency-architecture/tests/unit/canonical-no-import-lib.test.js`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Pre-flight**:
+  - Tech Lead 指定的 `rg -n "^import .*@/lib/|^} from '@/lib/|^import .+ from '@/lib/' src/types src/config src/repo src/service src/runtime src/ui --glob '*.js' --glob '*.jsx'"` 只抓到兩條真實 value imports：
+    - `src/runtime/hooks/useEventsPageRuntime.js` → `@/lib/event-helpers`
+    - `src/runtime/hooks/useEventDetailRuntime.js` → `@/lib/event-helpers`
+  - 其餘 canonical 命中都只是 JSDoc type-only imports。
+- **Evidence**:
+  - added `.dependency-cruiser.mjs` rule `canonical-no-import-lib`，只對 canonical importers 生效，且沿用 `dependencyTypesNot` 排除 type-only / JSDoc edges
+  - retargeted the two real runtime imports away from `@/lib/event-helpers` by splitting runtime-only helpers to `src/runtime/events/event-runtime-helpers.js` and UI-only formatters to `src/ui/events/event-formatters.js`
+  - kept UI-facing helpers out of `src/service/**`; runtime hooks no longer own UI formatting, and UI screens now import their own formatters directly
+  - retargeted all canonical JSDoc/type-only `@/lib/**` imports to canonical homes:
+    - `EventData` → `@/service/event-service`
+    - `NotificationItem` → `@/service/notification-service`
+    - `MyEventItem` / `MyCommentItem` → `@/service/member-dashboard-service`
+    - `Post` → `@/service/post-service`
+    - `CommentData` → `@/service/event-comment-service`
+    - `StravaActivity` → `@/repo/client/firebase-strava-repo`
+  - added `specs/021-layered-dependency-architecture/tests/unit/canonical-no-import-lib.test.js` to pin two contracts:
+    - dep-cruise really exposes `canonical-no-import-lib` only for canonical layers
+    - canonical source files now have `0 textual @/lib/ refs`
+  - verified canonical textual cleanup with `rg -n '@/lib/' src/types src/config src/repo src/service src/runtime src/ui --glob '*.{js,jsx,mjs}'` -> exit `1` / no matches
+  - verified non-canonical compatibility survived with `rg -n '@/lib/' src/app src/components src/contexts src/hooks --glob '*.{js,jsx,mjs}'` -> multiple matches remain in `src/app/**` and `src/components/**`, proving S025 did not ban permanent compatibility surfaces
+  - verified with `npm run depcruise` -> `✔ no dependency violations found (1361 modules, 3338 dependencies cruised)`
+  - verified with `npm run type-check:changed` -> `✓ No type errors in changed files.`
+  - verified with `npm run lint:changed` -> exit `0`; only printed the existing `eslint-plugin-react` version warning, with no lint errors or warnings after the JSDoc alignment fix
+  - verified with `npx vitest run specs/021-layered-dependency-architecture/tests/unit/canonical-no-import-lib.test.js` -> `Test Files 1 passed (1)` / `Tests 3 passed (3)`
+- **Pitfalls recorded**:
+  - S025 的 mechanical rule 與 textual contract 不是同一件事；dep-cruise 只會擋 runtime edges，canonical JSDoc/type-only cleanup 是本 session 刻意加嚴的 repo policy，兩者都要在交接文件明講
+  - reviewer 應特別盯 `ui` formatter ownership；如果有人把 `formatDateTime` / `formatPace` 之類的 UI helper 再搬進 `src/service/**`，雖然可能繞過 `src/lib/**`，但會重新污染 layer ownership
+  - `src/lib/**` 是永久 compatibility layer，不是待刪垃圾桶；S025 不能把 `src/app/**`、`src/components/**`、`src/contexts/**`、`src/hooks/**` 的既有 imports 一起封死
+- **Next Session Brief**:
+  - 先做 reviewer final pass，特別檢查 `canonical-no-import-lib` 規則、`canonical-no-import-lib.test.js` 的 textual contract，以及 non-canonical `@/lib/**` 證據是否足夠
+  - 若 reviewer 沒新 blocking issue，這個 task 可以進入 final review / commit 準備；不要再擴 scope 去清 `src/app/**` 或 `src/components/**` 的 compatibility imports

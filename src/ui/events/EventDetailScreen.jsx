@@ -8,6 +8,7 @@ import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import EventEditForm from '@/components/EventEditForm';
 import ShareButton from '@/components/ShareButton';
 import UserLink from '@/components/UserLink';
+import { formatDateTime, formatPace } from './event-formatters';
 import styles from './EventDetailScreen.module.css';
 
 const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
@@ -42,8 +43,6 @@ export default function EventDetailScreen({ id, runtime }) {
     remainingSeats,
     participationState,
     shareUrl,
-    formatDateTime,
-    formatPace,
     handleOpenParticipants,
     handleCloseParticipants,
     refreshParticipants,

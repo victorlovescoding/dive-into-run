@@ -18,7 +18,7 @@ import styles from './PostDetailScreen.module.css';
  * @param {string} [commentItem.authorImgURL] - 留言者頭像 URL。
  * @param {string} commentItem.comment - 留言內容。
  * @param {import('firebase/firestore').Timestamp} commentItem.createdAt - 建立時間。
- * @returns {import('@/lib/firebase-comments').CommentData} CommentCard 格式資料。
+ * @returns {import('@/service/event-comment-service').CommentData} CommentCard 格式資料。
  */
 function mapToCommentCardData(commentItem) {
   return {

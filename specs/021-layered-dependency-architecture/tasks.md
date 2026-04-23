@@ -275,23 +275,30 @@ description: 'Session task list for 021-layered-dependency-architecture'
 
 > Phase 9 完成後（含 S020a），canonical layers 對 `src/lib/**` 的 runtime import 應已歸零。`src/lib/` 只剩 facade re-exports + non-canonical-only utilities（僅被 `src/app/**`、`src/components/**` 等使用的格式化函式）。Phase 11 用 dep-cruise 規則機械化封住 canonical layers → `src/lib/**` 的 runtime import。
 
-- [ ] S025 dep-cruise 規則硬化：canonical layers 禁止 runtime-import `src/lib/**`。
+- [x] S025 dep-cruise 規則硬化：canonical layers 禁止 runtime-import `src/lib/**`。
   - `.dependency-cruiser.mjs` 新增 forbidden rule：`src/{types,config,repo,service,runtime,ui}/**` 不可 runtime-import `src/lib/**`
-  - 清理殘留的 canonical → `src/lib/**` JSDoc type-only 指向（改指向 `src/types/**` 或 `src/service/**`）
+  - 清理殘留的 canonical → `src/lib/**` JSDoc type-only 指向（改指向 `src/types/**`、`src/service/**`、`src/repo/**`）
   - **Pre-flight check**（開始前必須驗證）:
     ```bash
     grep -rn "from '@/lib/" src/{types,config,repo,service,runtime,ui}/ --include="*.js" --include="*.jsx"
     ```
-    應回傳 0 結果（扣除 JSDoc type-only），否則表示 S018-S020a 有遺漏，須先回補
-  - **Write Scope**: `.dependency-cruiser.mjs`、殘留 JSDoc import retarget、handoff.md
+    session pre-flight 實測只有兩條真實 value import：
+    - `src/runtime/hooks/useEventsPageRuntime.js` → `@/lib/event-helpers`
+    - `src/runtime/hooks/useEventDetailRuntime.js` → `@/lib/event-helpers`
+    其餘命中皆為 canonical JSDoc type-only imports。
+  - **Write Scope**: `.dependency-cruiser.mjs`、最小 canonical source retarget、殘留 JSDoc import retarget、S025 專屬 Vitest、`tasks.md`、`handoff.md`
+  - **本 session 刻意加嚴的 repo contract**:
+    - mechanical rule 只禁止 canonical runtime edges 指向 `src/lib/**`
+    - 但本 session 也把 canonical JSDoc/type-only imports 一併 retarget，讓 canonical layers 額外收斂成 `0 textual @/lib/ refs`
   - **驗收標準**:
     1. 新規則下 `npm run depcruise` 仍為 0 violation
-    2. Type-only imports（JSDoc）已同步遷移或確認豁免
-    3. FACADE 與 UTILITY 仍可被 non-canonical surfaces（`src/app/**`、`src/components/**`、`src/contexts/**`、`src/hooks/**`）import — 確認未誤擋
+    2. Type-only imports（JSDoc）已同步遷移，不保留 canonical `@/lib/**` textual refs
+    3. FACADE 與 UTILITY 仍可被 non-canonical surfaces（`src/app/**`、`src/components/**`、`src/contexts/**`、`src/hooks/**`）import — 必須保留證據確認未誤擋
     4. `npm run type-check:changed` 通過
-    5. `npm run test` 全部通過
-    6. test-bucket-policy 不需更新（tests 在 `specs/` 不受 canonical layer 規則約束，`src-lib` surface 對 unit/integration bucket 仍為允許）
-    7. **Facade 定位聲明**：`src/lib/` 的 facade 和 utility 為**永久相容層**（permanent compatibility layer），供 non-canonical surfaces 和 `specs/` tests 使用，不計畫移除
+    5. `npm run lint:changed` 通過；若被 changed-set 噪音污染，需改用 scoped eslint 並在 handoff 明講
+    6. `npx vitest run specs/021-layered-dependency-architecture/tests/unit/canonical-no-import-lib.test.js` 通過
+    7. test-bucket-policy 不需更新（tests 在 `specs/` 不受 canonical layer 規則約束，`src-lib` surface 對 unit/integration bucket 仍為允許）
+    8. **Facade 定位聲明**：`src/lib/` 的 facade 和 utility 為**永久相容層**（permanent compatibility layer），供 non-canonical surfaces 和 `specs/` tests 使用，不計畫移除
   - **Dependencies**: S018 + S019 + S020 + S020a 全部完成
 
 ## Phase 9-11 依賴圖

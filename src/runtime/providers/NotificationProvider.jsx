@@ -22,7 +22,7 @@ import { ToastContext } from './ToastProvider';
 /**
  * @typedef {object} NotificationContextValue
  * @property {number} unreadCount - 未讀通知數量。
- * @property {import('@/lib/notification-helpers').NotificationItem[]} notifications - 目前顯示的通知列表。
+ * @property {import('@/service/notification-service').NotificationItem[]} notifications - 目前顯示的通知列表。
  * @property {boolean} isPanelOpen - 通知面板是否開啟。
  * @property {() => void} togglePanel - 切換面板開關。
  * @property {() => void} closePanel - 關閉面板。
@@ -82,10 +82,12 @@ function toMillis(ts) {
  */
 export default function NotificationProvider({ children }) {
   const [unreadNotifications, setUnreadNotifications] = useState(
-    /** @type {import('@/lib/notification-helpers').NotificationItem[]} */ ([]),
+    /** @type {import('@/service/notification-service').NotificationItem[]} */ ([]),
   );
   const [notificationsMap, setNotificationsMap] = useState(
-    /** @type {Map<string, import('@/lib/notification-helpers').NotificationItem>} */ (new Map()),
+    /** @type {Map<string, import('@/service/notification-service').NotificationItem>} */ (
+      new Map()
+    ),
   );
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(/** @type {'all'|'unread'} */ ('all'));
@@ -108,7 +110,7 @@ export default function NotificationProvider({ children }) {
   );
   const [unreadServerExhausted, setUnreadServerExhausted] = useState(false);
   const [extraUnreadNotifications, setExtraUnreadNotifications] = useState(
-    /** @type {import('@/lib/notification-helpers').NotificationItem[]} */ ([]),
+    /** @type {import('@/service/notification-service').NotificationItem[]} */ ([]),
   );
   const [toastQueue, setToastQueue] = useState(
     /** @type {{ id: string, message: string }[]} */ ([]),
