@@ -252,20 +252,23 @@ description: 'Session task list for 021-layered-dependency-architecture'
     5. `npm run test` 全部通過
   - **Dependencies**: S018 + S019 完成後較佳（`firebase-users-repo` 在 S018、`profile-mapper` 在 S019）
 
-- [ ] S024 Thin-entry `src/app/api/weather/route.js`（590L）：業務邏輯下沉到 service 層，route 只保留 request parsing + response forwarding。
+- [x] S024 Thin-entry `src/app/api/weather/route.js`（590L）：業務邏輯下沉到 service 層，route 只保留 request parsing + response forwarding。
   - 新建 `src/service/weather-forecast-service.js`：CWA/EPA API fetch chain、UV/AQI extraction、county/township normalization、response 組裝
   - 可能需要 `src/repo/server/weather-api-repo.js`：封裝 CWA/EPA 原始 HTTP 呼叫
   - `route.js` → thin route
+  - 介面契約以 `getWeatherForecast()` / `getWeatherForecastErrorStatus()` 為唯一準則；route、service、tests 必須同步對齊，不能各自漂移命名
   - **Write Scope**: `src/app/api/weather/route.js`、新建 service/repo 檔、受影響 tests、handoff.md
   - **受影響 Tests**:
-    - `specs/013-pre-run-weather/tests/unit/weather-api-route.test.js` — 已用 `@/service/weather-location-service`，評估是否需改
+    - `specs/013-pre-run-weather/tests/unit/weather-api-route.test.js` — 改為 mock `@/service/weather-forecast-service`，只驗 route contract
     - 新建 `specs/021-layered-dependency-architecture/tests/unit/weather-forecast-service.test.js`：service 層可獨立 unit test（不需 NextRequest mock）
   - **驗收標準**:
     1. `route.js` ≤ 30 行，只有 request → service → NextResponse
     2. Service 函式可獨立 unit test（不需 NextRequest mock）
     3. CWA/EPA API key 從 env 讀取的邏輯在 config 或 service，不在 route
-    4. `npm run depcruise` 仍為 0 violation
-    5. `npm run test` 全部通過
+    4. 缺少 API key 時要在組 upstream URL 前 fail-fast，不能送出空 key / undefined query
+    5. mandatory upstream rejection 與 normalization throw 都要被 service 包成 public error contract
+    6. `npm run depcruise` 仍為 0 violation
+    7. `npm run test` 全部通過
   - **Dependencies**: S019（weather-api.js 已遷）
 
 ## Phase 11: Enforcement 收斂

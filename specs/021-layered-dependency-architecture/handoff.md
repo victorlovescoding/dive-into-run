@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S023 completed（member/ProfileClient thin-entry + runtime/ui/test retarget done）
-**Next Recommended Session**: S024（weather API route thin-entry）或 S025（canonical no-import-lib rule）
+**Current Session**: S024 completed（weather API route thin-entry + service/repo/test retarget done）
+**Next Recommended Session**: S025（canonical no-import-lib rule）
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -49,7 +49,10 @@
 - `src/service/weather-location-service.js`、`src/repo/client/weather-location-storage-repo.js`、`src/runtime/client/use-cases/weather-location-use-cases.js` 已建立；weather metadata 與 browser URL/localStorage persistence 已拆開
 - `src/service/avatar-upload-service.js`、`src/repo/client/firebase-storage-repo.js`、`src/runtime/client/use-cases/avatar-upload-use-cases.js` 已建立；browser image resize/canvas 與 Firebase Storage adapter 已拆層
 - `src/lib/weather-helpers.js`、`src/lib/firebase-storage-helpers.js` 已收斂為 facade-only compatibility entry
-- `src/components/weather/{FavoritesBar,WeatherCard,TaiwanMap,WeatherPage}.jsx` 與 `src/app/member/page.jsx` 已改指向 runtime entry；`src/app/api/weather/route.js` 改直連 service 純函式，維持 thin entry
+- `src/components/weather/{FavoritesBar,WeatherCard,TaiwanMap,WeatherPage}.jsx` 與 `src/app/member/page.jsx` 已改指向 runtime entry；`src/app/api/weather/route.js` 在 S024 前僅抽過 location helpers，完整 thin-route split 已於 S024 完成
+- `src/service/weather-forecast-service.js` 與 `src/repo/server/weather-api-repo.js` 已建立；weather route 的 CWA/EPA fetch chain、UV/AQI fallback、county/township normalization、WeatherInfo 組裝都已下沉到 canonical service/repo
+- `src/app/api/weather/route.js` 已收斂成 24 行 thin route，只保留 query parsing、service delegation、`NextResponse` success/error forwarding
+- `specs/013-pre-run-weather/tests/unit/weather-api-route.test.js` 已改成 mock `@/service/weather-forecast-service`，只留下 route contract 斷言：query forwarding、cache header、400/502 status forwarding；county/township flow、UV/EPA fallback、時間選擇、normalized `WeatherInfo` shape 已搬到 `specs/021-layered-dependency-architecture/tests/unit/weather-forecast-service.test.js`
 - `WeatherPage` 已補 `hasHydratedInitialLocationRef`，避免 mount 時先清 URL query 再做 restore，導致初始 URL state 失效
 - `src/repo/client/firebase-events-repo.js` 已補 `fetchParticipantUids()`，notifications runtime 只拿 participant uid / author uid 清單做 orchestration，不再自己拼 Firestore ref
 - `src/runtime/hooks/{useComments,useCommentMutations,useDashboardTab,useRunCalendar,useStravaConnection,useStravaActivities,useStravaSync}.js` 已成為 canonical hooks 實作；`src/hooks/**` 現在只保留 thin re-export facade 與 type-only alias
@@ -144,7 +147,7 @@
 | S021    | done   | thin-entry `posts/page.jsx`                           |
 | S022    | done   | thin-entry `runs/page.jsx` + callback                 |
 | S023    | done   | thin-entry `member/page.jsx` + ProfileClient          |
-| S024    | todo   | thin-entry `api/weather/route.js` (590L)              |
+| S024    | done   | thin-entry `api/weather/route.js` (590L)              |
 | S025    | todo   | dep-cruise: canonical no-import-lib rule              |
 
 ## Known Pitfalls
@@ -162,7 +165,7 @@ Phase 9-11（S018-S025）即為補完這三類缺口的任務。
 
 ### Architecture blockers
 
-1. `profile-mapper` / `profile-server-service` / `weather-api-repo` 已經 canonicalize 完成；後續若整理 profile/weather 相關頁面，不能把實作再拉回 `src/lib/**` compatibility namespace。剩餘大塊是 **S024** 的 weather route/service 深拆。
+1. `profile-mapper` / `profile-server-service` / `weather-api-repo` / `weather-forecast-service` 已經 canonicalize 完成；後續若整理 profile/weather 相關頁面，不能把實作再拉回 `src/lib/**` compatibility namespace。剩餘較大的機械化缺口是 **S025** 的 canonical `no-import-lib` rule。
 2. `WeatherPage` 的 fetch/hydration/favorites 已下沉到 `useWeatherPageRuntime`，但 geo lookup 目前刻意留在 thin entry 注入，避免 runtime 直接 import `@/config/geo/weather-geo-cache`；後續若要再收斂，請沿 `Config -> Repo/Service -> Runtime` 做乾淨流向，不要把 config 直接拉回 runtime。
 3. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx`、`ToastContext.jsx` 已收斂成 thin compatibility facades；真正 provider 實作現在在 `src/runtime/providers/**`。
 4. S013 已把 `WeatherPage.jsx`、`FavoriteButton.jsx`、`DashboardTabs.jsx` 拆成 thin entry + runtime + ui；後續 reviewer 應改盯 weather/dashboard screen 是否重新拉回 runtime/service 依賴，而不是再把它們當未拆 target。
@@ -416,7 +419,7 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - created `src/runtime/client/use-cases/avatar-upload-use-cases.js`
   - updated `src/lib/weather-helpers.js` and `src/lib/firebase-storage-helpers.js` to facade-only compatibility exports
   - retargeted `src/components/weather/{FavoritesBar,WeatherCard,TaiwanMap,WeatherPage}.jsx` to runtime weather entry and `src/app/member/page.jsx` to runtime avatar upload entry
-  - retargeted `src/app/api/weather/route.js` to pure `@/service/weather-location-service` helpers so route stays thin
+  - retargeted `src/app/api/weather/route.js` to `@/service/weather-location-service` helper usage only; full route thin-entry split was intentionally deferred to S024
   - added `WeatherPage` initial-hydration guard to stop URL-sync effect from clearing query params before browser restore runs
   - retargeted weather/storage unit tests to the new layered modules and added browser-persistence coverage in `specs/013-pre-run-weather/tests/integration/weather-page.test.jsx`
   - verified with `npm run type-check:changed`
@@ -1025,3 +1028,37 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - 若做 S024，write scope 以 `src/app/api/weather/route.js` 的 thin-route split 與對應 service/repo/tests retarget 為主
   - 若做 S025，直接把 canonical layer `no-import-lib` 規則機械化，並優先確認不會誤傷 JSDoc type-only imports
   - reviewer 要特別盯兩件事：一是 `api/weather/route.js` 不可只搬 helper 名字而保留 route God file；二是新的 no-import-lib 規則不能把 compatibility facade 的合法使用或 JSDoc-only import 誤判成 violation
+
+### S024
+
+- **Goal**: 把 `src/app/api/weather/route.js` 真正收斂成 thin route，並把 weather route 的上游 fetch chain / normalization / fallback 邏輯下沉到 canonical service/repo。
+- **Write Scope**:
+  - `src/app/api/weather/route.js`
+  - `src/service/weather-forecast-service.js`
+  - `src/repo/server/weather-api-repo.js`
+  - `specs/013-pre-run-weather/tests/unit/weather-api-route.test.js`
+  - `specs/021-layered-dependency-architecture/tests/unit/weather-forecast-service.test.js`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - created `src/service/weather-forecast-service.js` to own county/township validation, `台 -> 臺` normalization, CWA/EPA API key reads, county/township upstream orchestration, UV/AQI fallback handling, time-period selection, and final `WeatherInfo` assembly
+  - created `src/repo/server/weather-api-repo.js` as an ultra-thin server repo that only executes upstream CWA/EPA HTTP requests and returns raw JSON; it does not use `next/server` and does not contain normalization or error-mapping logic
+  - reduced `src/app/api/weather/route.js` to a 24-line thin route that only reads `searchParams`, calls `getWeatherForecast()`, and forwards success/error payloads through `NextResponse`; route/service/tests all share the same `getWeatherForecast()` + `getWeatherForecastErrorStatus()` contract
+  - retargeted `specs/013-pre-run-weather/tests/unit/weather-api-route.test.js` to `mock @/service/weather-forecast-service`; the route suite now only checks query forwarding, cache headers, and public error/status forwarding, not service internals
+  - created `specs/021-layered-dependency-architecture/tests/unit/weather-forecast-service.test.js`; county/township flow, UV/EPA fallback, time selection, `WeatherInfo` normalization, missing-API-key fail-fast, normalization-throw wrapping, and upstream-failure mapping now live at the service boundary instead of the route boundary
+  - updated `specs/021-layered-dependency-architecture/tasks.md` to mark S024 done
+  - verified with `npm run type-check:changed` -> `✓ No type errors in changed files.`
+  - verified with `npm run lint:changed` -> exit `0`; only printed the pre-existing `eslint-plugin-react` version warning, no lint warnings or errors
+  - verified with `npm run depcruise` -> `✔ no dependency violations found (1357 modules, 3328 dependencies cruised)`
+  - verified with `npx vitest run specs/013-pre-run-weather/tests/unit/weather-api-route.test.js specs/021-layered-dependency-architecture/tests/unit/weather-forecast-service.test.js` -> `Test Files 2 passed (2)` / `Tests 12 passed (12)`
+- **Pitfalls recorded**:
+  - weather route tests 不能再 mock `fetch` 或 `@/service/weather-location-service`；thin-route 後若還測 county/township branching、UV/EPA fallback、時間選擇，等於把 service 行為偷留在 route suite
+  - `src/repo/server/weather-api-repo.js` 的責任必須保持超薄；若把 normalization、fallback 決策、或 `WeatherServiceError` 映射塞進 repo，會重新把 service 邊界打穿
+  - `process.env.CWA_API_KEY` / `EPA_API_KEY` 讀取現在刻意留在 `weather-forecast-service`；但讀取時必須 `trim()` + fail-fast，不能再用 `?? ''` 組出空 Authorization / api_key URL
+  - `getWeatherForecast()` 若在 `try/catch` 內直接 `return getCountyWeatherForecast()` / `return getTownshipWeatherForecast()`，async rejection 與 normalize 階段 throw 都不會被包成 public 502；這層必須 `await`
+  - `weather-forecast-service` suite 需要在 `beforeEach` 清空 module mocks；否則 fail-fast case 會被前面測試殘留的 request call history 汙染，產生假失敗
+- **Next Session Brief**:
+  - 做 S025
+  - write scope 以 `.dependency-cruiser.mjs`、殘留 canonical-layer JSDoc/lib imports、`specs/021-layered-dependency-architecture/handoff.md` 為主
+  - 先用 `grep -rn "from '@/lib/" src/{types,config,repo,service,runtime,ui}/ --include=\"*.js\" --include=\"*.jsx\"` 做 pre-flight，確認 canonical layers runtime import `src/lib/**` 仍為 0
+  - reviewer 要特別盯 no-import-lib 規則是否只打到 canonical layers，不能誤傷 permanent compatibility facade 與合法的 non-canonical surfaces
