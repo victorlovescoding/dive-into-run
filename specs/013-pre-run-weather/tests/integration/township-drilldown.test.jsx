@@ -254,7 +254,10 @@ vi.mock('@/runtime/hooks/useWeatherPageRuntime', async () => {
           weatherState: 'success',
           weatherData: {
             locationName: `${countyName} · ${townshipName}`,
-            today: buildToday(townshipCode === '65000010' ? '晴時多雲' : '陰時多雲', townshipCode === '65000010' ? 28 : 26),
+            today: buildToday(
+              townshipCode === '65000010' ? '晴時多雲' : '陰時多雲',
+              townshipCode === '65000010' ? 28 : 26,
+            ),
             tomorrow: buildTomorrow(),
           },
         }));

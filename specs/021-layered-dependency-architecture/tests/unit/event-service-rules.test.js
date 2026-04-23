@@ -44,9 +44,10 @@ describe('event-service business rules', () => {
   });
 
   it('normalizeRoutePolylines supports new and legacy route payloads', () => {
-    expect(
-      normalizeRoutePolylines(/** @type {any} */ ({ polylines: ['abc', 'def'] })),
-    ).toEqual(['abc', 'def']);
+    expect(normalizeRoutePolylines(/** @type {any} */ ({ polylines: ['abc', 'def'] }))).toEqual([
+      'abc',
+      'def',
+    ]);
     expect(normalizeRoutePolylines(/** @type {any} */ ({ polyline: 'legacy' }))).toEqual([
       'legacy',
     ]);

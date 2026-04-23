@@ -11,5 +11,16 @@ import ProfileStats from './ProfileStats';
  */
 export default function ProfileClient(props) {
   const runtime = useProfileRuntime(props.user);
-  return <ProfileScreen runtime={runtime} header={<ProfileHeader user={runtime.headerUser} />} statsSection={runtime.stats && !runtime.isStatsLoading && !runtime.statsError ? <ProfileStats stats={runtime.stats} /> : null} eventList={<ProfileEventList uid={runtime.profileUid} />} />;
+  return (
+    <ProfileScreen
+      runtime={runtime}
+      header={<ProfileHeader user={runtime.headerUser} />}
+      statsSection={
+        runtime.stats && !runtime.isStatsLoading && !runtime.statsError ? (
+          <ProfileStats stats={runtime.stats} />
+        ) : null
+      }
+      eventList={<ProfileEventList uid={runtime.profileUid} />}
+    />
+  );
 }

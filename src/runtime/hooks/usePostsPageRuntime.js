@@ -159,7 +159,9 @@ export default function usePostsPageRuntime() {
           const hydratedPosts = hydratePosts(morePosts, userUid, likedPostIds);
 
           setPosts((previousPosts) => mergeUniquePosts(previousPosts, hydratedPosts));
-          setNextCursor(morePosts.length < PAGE_SIZE ? null : (morePosts[morePosts.length - 1] ?? null));
+          setNextCursor(
+            morePosts.length < PAGE_SIZE ? null : (morePosts[morePosts.length - 1] ?? null),
+          );
         } catch (error) {
           console.error(error);
         } finally {
@@ -255,13 +257,10 @@ export default function usePostsPageRuntime() {
    * @param {string} postId - 文章 ID。
    * @param {import('react').MouseEvent} event - click event。
    */
-  const handleToggleOwnerMenu = useCallback(
-    (postId, event) => {
-      event.stopPropagation();
-      setOpenMenuPostId((currentPostId) => (currentPostId === postId ? '' : postId));
-    },
-    [],
-  );
+  const handleToggleOwnerMenu = useCallback((postId, event) => {
+    event.stopPropagation();
+    setOpenMenuPostId((currentPostId) => (currentPostId === postId ? '' : postId));
+  }, []);
 
   /**
    * 刪除文章。

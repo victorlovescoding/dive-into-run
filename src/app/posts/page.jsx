@@ -9,5 +9,9 @@ function PostsPageContent() {
 }
 /** @returns {import('react').ReactElement} posts page thin entry。 */
 export default function PostPage() {
-  return <Suspense><PostsPageContent /></Suspense>;
+  return (
+    <Suspense>
+      <PostsPageContent />
+    </Suspense>
+  );
 }

@@ -563,7 +563,9 @@ function normalizeTownshipWeather(cwaData, uvData, aqiInfo, county, township, no
 async function getCountyWeatherForecast({ county, forecastIds, now, apiKeys }) {
   const [countyData, uvData, epaData] = await Promise.all([
     requestCwaJson(buildCwaUrl('F-C0032-001', 'locationName', county, apiKeys.cwaApiKey)),
-    requestCwaJson(buildCwaUrl(forecastIds.twelveHour, null, null, apiKeys.cwaApiKey)).catch(() => null),
+    requestCwaJson(buildCwaUrl(forecastIds.twelveHour, null, null, apiKeys.cwaApiKey)).catch(
+      () => null,
+    ),
     requestEpaJson(buildEpaUrl(apiKeys.epaApiKey)).catch(() => null),
   ]);
 
@@ -588,9 +590,9 @@ async function getCountyWeatherForecast({ county, forecastIds, now, apiKeys }) {
 async function getTownshipWeatherForecast({ county, township, forecastIds, now, apiKeys }) {
   const [townshipData, uvData, epaData] = await Promise.all([
     requestCwaJson(buildCwaUrl(forecastIds.threeHour, 'LocationName', township, apiKeys.cwaApiKey)),
-    requestCwaJson(buildCwaUrl(forecastIds.twelveHour, 'LocationName', township, apiKeys.cwaApiKey)).catch(
-      () => null,
-    ),
+    requestCwaJson(
+      buildCwaUrl(forecastIds.twelveHour, 'LocationName', township, apiKeys.cwaApiKey),
+    ).catch(() => null),
     requestEpaJson(buildEpaUrl(apiKeys.epaApiKey)).catch(() => null),
   ]);
 

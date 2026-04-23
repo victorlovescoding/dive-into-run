@@ -94,9 +94,7 @@ describe('RunsPage sync error handling', () => {
   });
 
   it('should display sync error message when sync fails', () => {
-    mockedUseRunsPageRuntime.mockReturnValue(
-      createRuntime({ syncError: '同步失敗，請稍後再試' }),
-    );
+    mockedUseRunsPageRuntime.mockReturnValue(createRuntime({ syncError: '同步失敗，請稍後再試' }));
 
     render(<RunsPage />);
 
@@ -104,9 +102,7 @@ describe('RunsPage sync error handling', () => {
   });
 
   it('should still display cached activities when sync fails', () => {
-    mockedUseRunsPageRuntime.mockReturnValue(
-      createRuntime({ syncError: '同步失敗，請稍後再試' }),
-    );
+    mockedUseRunsPageRuntime.mockReturnValue(createRuntime({ syncError: '同步失敗，請稍後再試' }));
 
     render(<RunsPage />);
 

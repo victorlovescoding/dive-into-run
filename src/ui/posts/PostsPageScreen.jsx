@@ -18,7 +18,15 @@ import styles from '@/app/posts/posts.module.css';
  * @param {(postId: string) => void | Promise<void>} props.onLike - 按讚文章。
  * @returns {import('react').ReactNode} 文章列表內容。
  */
-function renderPostList({ isLoading, posts, openMenuPostId, onToggleMenu, onEdit, onDelete, onLike }) {
+function renderPostList({
+  isLoading,
+  posts,
+  openMenuPostId,
+  onToggleMenu,
+  onEdit,
+  onDelete,
+  onLike,
+}) {
   if (isLoading) {
     return <PostCardSkeleton count={3} />;
   }

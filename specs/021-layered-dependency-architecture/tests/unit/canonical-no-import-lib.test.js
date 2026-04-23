@@ -73,9 +73,15 @@ describe('S025 canonical no-import-lib enforcement', () => {
   });
 
   it('keeps the new runtime and ui helpers behaviorally stable', () => {
-    expect(countTotalPoints([[{ lat: 1, lng: 2 }], [{ lat: 3, lng: 4 }, { lat: 5, lng: 6 }]])).toBe(
-      3,
-    );
+    expect(
+      countTotalPoints([
+        [{ lat: 1, lng: 2 }],
+        [
+          { lat: 3, lng: 4 },
+          { lat: 5, lng: 6 },
+        ],
+      ]),
+    ).toBe(3);
     expect(toNumber('12')).toBe(12);
     expect(toNumber('oops')).toBe(0);
     expect(toMs('2026-04-23T08:30:00Z')).toBe(new Date('2026-04-23T08:30:00Z').getTime());

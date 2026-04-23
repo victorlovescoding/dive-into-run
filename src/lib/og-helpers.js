@@ -73,10 +73,7 @@ export function buildEventOgDescription(event) {
   if (!event) return FALLBACK_DESCRIPTION;
 
   const { time, city, district } = event;
-  const date =
-    typeof time === 'string'
-      ? new Date(time)
-      : time?.toDate?.() ?? null;
+  const date = typeof time === 'string' ? new Date(time) : (time?.toDate?.() ?? null);
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
     return FALLBACK_DESCRIPTION;
   }

@@ -511,7 +511,9 @@ describe('getWeatherForecast', () => {
       twelveHour: 'F-D0047-063',
     });
 
-    const error = await getWeatherForecast({ county: '臺北市', now: NOW }).catch((caught) => caught);
+    const error = await getWeatherForecast({ county: '臺北市', now: NOW }).catch(
+      (caught) => caught,
+    );
 
     expect(error).toMatchObject({
       message: 'Missing required server env: CWA_API_KEY',
@@ -566,27 +568,27 @@ describe('getWeatherForecast', () => {
       threeHour: 'F-D0047-061',
       twelveHour: 'F-D0047-063',
     });
-    mockedRequestCwaJson
-      .mockResolvedValueOnce(mockCountyForecastResponse)
-      .mockResolvedValueOnce({
-        records: {
-          Locations: [
-            {
-              Location: [
-                {
-                  ...mockCountyUvResponse.records.Locations[0].Location[0],
-                  LocationName: '高雄市',
-                },
-              ],
-            },
-          ],
-        },
-      });
+    mockedRequestCwaJson.mockResolvedValueOnce(mockCountyForecastResponse).mockResolvedValueOnce({
+      records: {
+        Locations: [
+          {
+            Location: [
+              {
+                ...mockCountyUvResponse.records.Locations[0].Location[0],
+                LocationName: '高雄市',
+              },
+            ],
+          },
+        ],
+      },
+    });
     mockedRequestEpaJson.mockResolvedValueOnce({
       records: [{ county: '臺北市', aqi: '45', status: '良好' }],
     });
 
-    const error = await getWeatherForecast({ county: '臺北市', now: NOW }).catch((caught) => caught);
+    const error = await getWeatherForecast({ county: '臺北市', now: NOW }).catch(
+      (caught) => caught,
+    );
 
     expect(error).toMatchObject({
       message: 'Failed to fetch weather data',

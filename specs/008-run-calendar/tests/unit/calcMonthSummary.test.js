@@ -136,6 +136,5 @@ describe('Unit: calcMonthSummary', () => {
     expect(runType.label).toBe('戶外');
     expect(virtualType.label).toBe('室內');
     expect(trailType.label).toBe('越野');
-
   });
 });

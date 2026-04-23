@@ -126,7 +126,9 @@ describe('GET /api/weather', () => {
     const validationError = new Error('Missing required parameter: county');
     mockedGetWeatherForecast.mockRejectedValue(validationError);
     mockedGetWeatherForecastErrorStatus.mockReturnValue(400);
-    mockedGetWeatherForecastPublicErrorMessage.mockReturnValue('Missing required parameter: county');
+    mockedGetWeatherForecastPublicErrorMessage.mockReturnValue(
+      'Missing required parameter: county',
+    );
 
     const response = await GET(createRequest({}));
 

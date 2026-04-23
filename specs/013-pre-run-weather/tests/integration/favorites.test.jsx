@@ -3,29 +3,24 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WeatherPage from '@/components/weather/WeatherPage';
 
-const {
-  runtimeScenario,
-  mockAddFavorite,
-  mockRemoveFavorite,
-  mockShowToast,
-  mockSelectFavorite,
-} = vi.hoisted(() => ({
-  runtimeScenario: {
-    userLoggedIn: false,
-    favorites: [],
-    favSummaries: {},
-    weatherState: 'idle',
-    weatherData: null,
-    selectedLocation: null,
-    currentFavStatus: { favorited: false, docId: null },
-    toggleShouldFail: false,
-    nextFavoriteDocId: 'new-doc-id',
-  },
-  mockAddFavorite: vi.fn(),
-  mockRemoveFavorite: vi.fn(),
-  mockShowToast: vi.fn(),
-  mockSelectFavorite: vi.fn(),
-}));
+const { runtimeScenario, mockAddFavorite, mockRemoveFavorite, mockShowToast, mockSelectFavorite } =
+  vi.hoisted(() => ({
+    runtimeScenario: {
+      userLoggedIn: false,
+      favorites: [],
+      favSummaries: {},
+      weatherState: 'idle',
+      weatherData: null,
+      selectedLocation: null,
+      currentFavStatus: { favorited: false, docId: null },
+      toggleShouldFail: false,
+      nextFavoriteDocId: 'new-doc-id',
+    },
+    mockAddFavorite: vi.fn(),
+    mockRemoveFavorite: vi.fn(),
+    mockShowToast: vi.fn(),
+    mockSelectFavorite: vi.fn(),
+  }));
 
 vi.mock('topojson-client', () => ({
   feature: vi.fn(() => ({
@@ -143,10 +138,14 @@ vi.mock('@/runtime/hooks/useWeatherPageRuntime', async () => {
   function useMockWeatherPageRuntime() {
     const [favorites, setFavorites] = React.useState(runtimeScenario.favorites);
     const [favSummaries, setFavSummaries] = React.useState(runtimeScenario.favSummaries);
-    const [selectedLocation, setSelectedLocation] = React.useState(runtimeScenario.selectedLocation);
+    const [selectedLocation, setSelectedLocation] = React.useState(
+      runtimeScenario.selectedLocation,
+    );
     const [weatherState, setWeatherState] = React.useState(runtimeScenario.weatherState);
     const [weatherData, setWeatherData] = React.useState(runtimeScenario.weatherData);
-    const [currentFavStatus, setCurrentFavStatus] = React.useState(runtimeScenario.currentFavStatus);
+    const [currentFavStatus, setCurrentFavStatus] = React.useState(
+      runtimeScenario.currentFavStatus,
+    );
     const [isFavoriteMutating, setIsFavoriteMutating] = React.useState(false);
     const cardPanelRef = React.useRef(null);
 
@@ -231,46 +230,43 @@ vi.mock('@/runtime/hooks/useWeatherPageRuntime', async () => {
       setIsFavoriteMutating(false);
     }, [currentFavStatus, selectedLocation]);
 
-    const handleFavoriteSelect = React.useCallback(
-      (favorite) => {
-        mockSelectFavorite(favorite);
-        setSelectedLocation({
-          countyCode: favorite.countyCode,
-          countyName: favorite.countyName,
-          townshipCode: favorite.townshipCode,
-          townshipName: favorite.townshipName,
-          displaySuffix: favorite.displaySuffix ?? null,
-        });
-        setCurrentFavStatus({ favorited: true, docId: favorite.id });
-        setWeatherData({
-          locationName: favorite.townshipName
-            ? `${favorite.countyName} · ${favorite.townshipName}`
-            : favorite.countyName,
-          today: {
-            currentTemp: favorite.id === 'fav-2' ? 26 : 28,
-            weatherDesc: favorite.id === 'fav-2' ? '多雲' : '晴時多雲',
-            weatherCode: favorite.id === 'fav-2' ? '4' : '2',
-            morningTemp: 27,
-            eveningTemp: 22,
-            rainProb: 20,
-            humidity: 75,
-            uv: null,
-            aqi: null,
-          },
-          tomorrow: {
-            weatherDesc: '陰天',
-            weatherCode: '7',
-            morningTemp: 27,
-            eveningTemp: 21,
-            rainProb: 40,
-            humidity: 80,
-            uv: null,
-          },
-        });
-        setWeatherState('success');
-      },
-      [],
-    );
+    const handleFavoriteSelect = React.useCallback((favorite) => {
+      mockSelectFavorite(favorite);
+      setSelectedLocation({
+        countyCode: favorite.countyCode,
+        countyName: favorite.countyName,
+        townshipCode: favorite.townshipCode,
+        townshipName: favorite.townshipName,
+        displaySuffix: favorite.displaySuffix ?? null,
+      });
+      setCurrentFavStatus({ favorited: true, docId: favorite.id });
+      setWeatherData({
+        locationName: favorite.townshipName
+          ? `${favorite.countyName} · ${favorite.townshipName}`
+          : favorite.countyName,
+        today: {
+          currentTemp: favorite.id === 'fav-2' ? 26 : 28,
+          weatherDesc: favorite.id === 'fav-2' ? '多雲' : '晴時多雲',
+          weatherCode: favorite.id === 'fav-2' ? '4' : '2',
+          morningTemp: 27,
+          eveningTemp: 22,
+          rainProb: 20,
+          humidity: 75,
+          uv: null,
+          aqi: null,
+        },
+        tomorrow: {
+          weatherDesc: '陰天',
+          weatherCode: '7',
+          morningTemp: 27,
+          eveningTemp: 21,
+          rainProb: 40,
+          humidity: 80,
+          uv: null,
+        },
+      });
+      setWeatherState('success');
+    }, []);
 
     const handleFavoriteRemove = React.useCallback((favorite) => {
       mockRemoveFavorite('test-uid', favorite.id);

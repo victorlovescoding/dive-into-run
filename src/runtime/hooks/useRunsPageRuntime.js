@@ -29,9 +29,12 @@ export default function useRunsPageRuntime() {
     isLoadingMore,
     refresh,
   } = useStravaActivities();
-  const { sync, isSyncing, cooldownRemaining, error: syncError } = useStravaSync(
-    connection?.lastSyncAt ?? null,
-  );
+  const {
+    sync,
+    isSyncing,
+    cooldownRemaining,
+    error: syncError,
+  } = useStravaSync(connection?.lastSyncAt ?? null);
   const lastSyncRef = useRef(connection?.lastSyncAt ?? null);
 
   useEffect(() => {
@@ -84,8 +87,7 @@ export default function useRunsPageRuntime() {
     calendarOpen,
     openCalendar: () => setCalendarOpen(true),
     closeCalendar: () => setCalendarOpen(false),
-    syncButtonLabel:
-      isSyncing ? '同步中…' : cooldownRemaining > 0 ? '冷卻中' : '同步',
+    syncButtonLabel: isSyncing ? '同步中…' : cooldownRemaining > 0 ? '冷卻中' : '同步',
     handleSync,
     cooldownRemaining,
     isSyncing,

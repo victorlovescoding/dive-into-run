@@ -58,9 +58,7 @@ export default function useEventDetailRuntime(id) {
   const { showToast } = useToast();
   const router = useRouter();
 
-  const [event, setEvent] = useState(
-    /** @type {EventData | null} */ (null),
-  );
+  const [event, setEvent] = useState(/** @type {EventData | null} */ (null));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -71,9 +69,7 @@ export default function useEventDetailRuntime(id) {
   const participantsOverlayRef = useRef(/** @type {HTMLDivElement | null} */ (null));
 
   const [pending, setPending] = useState(/** @type {'joining' | 'leaving' | null} */ (null));
-  const [editingEvent, setEditingEvent] = useState(
-    /** @type {EventData | null} */ (null),
-  );
+  const [editingEvent, setEditingEvent] = useState(/** @type {EventData | null} */ (null));
   const [isUpdating, setIsUpdating] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState(/** @type {string | null} */ (null));
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
@@ -149,9 +145,7 @@ export default function useEventDetailRuntime(id) {
           return;
         }
 
-        setEvent(
-          /** @type {EventData} */ (/** @type {unknown} */ (data)),
-        );
+        setEvent(/** @type {EventData} */ (/** @type {unknown} */ (data)));
       } catch (loadError) {
         console.error('讀取活動詳情失敗:', loadError);
         if (!cancelled && isMountedRef.current) {

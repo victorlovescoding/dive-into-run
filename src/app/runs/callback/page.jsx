@@ -12,7 +12,9 @@ function CallbackContent() {
 /** @returns {import('react').ReactElement} callback page thin entry。 */
 export default function CallbackPage() {
   return (
-    <Suspense fallback={<StravaCallbackScreen runtime={{ status: 'loading', message: '載入中...' }} />}>
+    <Suspense
+      fallback={<StravaCallbackScreen runtime={{ status: 'loading', message: '載入中...' }} />}
+    >
       <CallbackContent />
     </Suspense>
   );

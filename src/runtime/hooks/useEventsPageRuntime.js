@@ -80,9 +80,7 @@ export default function useEventsPageRuntime() {
   const isMountedRef = useRef(false);
   const membershipCheckedRef = useRef(new Set());
   const [draftFormData, setDraftFormData] = useState(null);
-  const [editingEvent, setEditingEvent] = useState(
-    /** @type {EventData | null} */ (null),
-  );
+  const [editingEvent, setEditingEvent] = useState(/** @type {EventData | null} */ (null));
   const [isUpdating, setIsUpdating] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState(/** @type {string | null} */ (null));
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
