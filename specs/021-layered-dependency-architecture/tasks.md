@@ -237,12 +237,12 @@ description: 'Session task list for 021-layered-dependency-architecture'
     5. `npm run test` 全部通過
   - **Dependencies**: S018 完成後較佳（runtime hooks 需 import `@/repo/client/firebase-strava-repo` + `firebase-users-repo`）
 
-- [ ] S023 Thin-entry `src/app/member/page.jsx`（130L）+ `src/app/users/[uid]/ProfileClient.jsx`（147L）：拆成 thin entry + runtime + ui。
+- [x] S023 Thin-entry `src/app/member/page.jsx`（130L）+ `src/app/users/[uid]/ProfileClient.jsx`（147L）：拆成 thin entry + runtime + ui。
   - `member/page.jsx`：新建 `src/runtime/hooks/useMemberPageRuntime.js`（avatar upload/name update/auth）+ `src/ui/member/MemberPageScreen.jsx`
   - `ProfileClient.jsx`：新建 `src/runtime/hooks/useProfileRuntime.js`（stats fetch/profile data/own-profile check）+ `src/ui/users/ProfileScreen.jsx`
   - **Write Scope**: 兩個 entry、4 個新建 runtime/ui 檔、受影響 tests、handoff.md
   - **受影響 Tests**:
-    - `specs/012-public-profile/tests/integration/ProfileClient.test.jsx` — 拆分後改為 render `ProfileScreen` + mock `@/runtime/hooks/useProfileRuntime`
+    - `specs/012-public-profile/tests/integration/ProfileClient.test.jsx` — 拆分後改為 mock `@/runtime/hooks/useProfileRuntime` + render thin entry `ProfileClient`
     - `specs/012-public-profile/tests/integration/BioEditor.test.jsx` — 評估是否需改 mock target
   - **驗收標準**:
     1. 兩個 entry 各 ≤ 20 行

@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S022 completed（runs/callback thin-entry + runtime/ui/test retarget done）
-**Next Recommended Session**: S023（member/ProfileClient thin-entry）或 S025（canonical no-import-lib rule）
+**Current Session**: S023 completed（member/ProfileClient thin-entry + runtime/ui/test retarget done）
+**Next Recommended Session**: S024（weather API route thin-entry）或 S025（canonical no-import-lib rule）
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -85,6 +85,13 @@
 - `src/runtime/hooks/{useRunsPageRuntime,useStravaCallbackRuntime}.js` 已建立，分別承接 runs page 的 auth gating / auto-refresh / sync / disconnect / calendar orchestration，以及 callback page 的 search param parse / OAuth exchange / redirect / error handling / single-flight guard
 - `src/ui/runs/{RunsPageScreen,StravaCallbackScreen}.jsx` 已建立；兩個 screen 都維持 render-only，沒有 `@/contexts/**`、`next/navigation`、fetch、或 async orchestration
 - `specs/006-strava-running-records/tests/integration/{RunsPage,runs-page-sync-error,CallbackPage}.test.jsx` 已 retarget 到新的 page runtime boundary；page-level tests 不再綁在舊厚頁內部的 `next/navigation` / `fetch` / legacy facade mock 細節上
+- `src/app/member/page.jsx` 已收斂成 thin client entry，只保留 `useMemberPageRuntime + MemberPageScreen`，並由 thin entry slot 注入 `BioEditor` / `DashboardTabs`，避免 `src/ui/** -> src/app/**` 回流
+- `src/runtime/hooks/useMemberPageRuntime.js` 已建立，承接 auth、name state、avatar upload、display-name update、file-input reset 與 toast orchestration；runtime 只使用 `@/runtime/providers/**`、`@/repo/client/firebase-users-repo`、`@/runtime/client/use-cases/avatar-upload-use-cases`
+- `src/ui/member/MemberPageScreen.jsx` 已建立；member page UI 只消費 runtime state/handlers 與 entry 注入的 slots，不直接 import service/repo/contexts/app components
+- `src/app/users/[uid]/ProfileClient.jsx` 已收斂成 thin client entry，只保留 `useProfileRuntime + ProfileScreen`，並由 entry 組合 `ProfileHeader` / `ProfileStats` / `ProfileEventList`
+- `src/runtime/hooks/useProfileRuntime.js` 已建立，承接 `createdAt` adapter、stats fetch/error/loading 與 own-profile 判定；runtime 只使用 `@/runtime/providers/AuthProvider` + `@/service/profile-service`
+- `src/ui/users/{ProfileScreen.jsx,ProfileScreen.module.css}` 已建立；profile screen 不再依賴 `src/app/**` 樣式，也不直接 import service/repo/contexts
+- `specs/012-public-profile/tests/integration/ProfileClient.test.jsx` 已 retarget 到 `mock @/runtime/hooks/useProfileRuntime + render thin entry ProfileClient`，不再 mock legacy facade `@/lib/firebase-profile`
 - `specs/019-posts-ui-refactor/tests/integration/PostFeed.test.jsx`、`specs/018-posts-input-validation/tests/integration/post-form-validation.test.jsx`、`specs/020-post-edit-dirty-check/tests/integration/posts-page-edit-dirty.test.jsx` 與 `specs/009-global-toast/tests/integration/crud-toast.test.jsx` 的 posts page mock surfaces 已 retarget 到 runtime providers + `@/runtime/client/use-cases/post-use-cases`
 - `specs/fix/post-detail-deleted-guard/tests/integration/PostDetailClient-delete-race.test.jsx`、`specs/014-notification-system/tests/integration/{notification-triggers,notification-error}.test.jsx`、`specs/015-comment-notifications/tests/integration/post-comment-reply.test.jsx`、`specs/018-posts-input-validation/tests/integration/post-edit-validation.test.jsx`、`specs/019-posts-ui-refactor/tests/integration/PostDetail.test.jsx`、`specs/020-post-edit-dirty-check/tests/integration/post-detail-edit-dirty.test.jsx` 已同步 retarget 到 runtime providers + runtime use-cases
 - `specs/fix/event-detail-deleted-guard/tests/integration/EventDetailClient-delete-race.test.jsx`、`specs/014-notification-system/tests/integration/{notification-triggers,notification-error}.test.jsx` 已同步 retarget 到 runtime providers + runtime use-cases
@@ -136,7 +143,7 @@
 | S020a   | done   | utility canonical-readiness                           |
 | S021    | done   | thin-entry `posts/page.jsx`                           |
 | S022    | done   | thin-entry `runs/page.jsx` + callback                 |
-| S023    | todo   | thin-entry `member/page.jsx` + ProfileClient          |
+| S023    | done   | thin-entry `member/page.jsx` + ProfileClient          |
 | S024    | todo   | thin-entry `api/weather/route.js` (590L)              |
 | S025    | todo   | dep-cruise: canonical no-import-lib rule              |
 
@@ -148,14 +155,14 @@
 
 - ✅ 六層分層方向、forward-only dependency、dep-cruise enforcement、CI+pre-commit gate 全部到位
 - ⚠️ `src/lib/**` 不在 `CANONICAL_LAYER_PATTERNS`，dep-cruise 對所有涉及 `src/lib/**` 的邊完全不攔（11 條 canonical → lib 的 runtime import 未被偵測）
-- ⚠️ 3 個 thick entry 未拆（member 130L、ProfileClient 147L、api/weather 590L）
+- ⚠️ 1 個 thick entry 未拆（api/weather 590L）
 - ✅ Phase 9（S018-S020a）已完成：canonical runtime/service 對 `src/lib/**` 的實際 runtime import 已歸零；接下來若要機械化封住這條規則，直接做 S025，不要再回頭把 utility 常數或 UI formatter 搬進 canonical surface
 
 Phase 9-11（S018-S025）即為補完這三類缺口的任務。
 
 ### Architecture blockers
 
-1. `profile-mapper` / `profile-server-service` / `weather-api-repo` 已經 canonicalize 完成；後續若整理 profile/weather 相關頁面，不能把實作再拉回 `src/lib/**` compatibility namespace。剩餘大塊是 **S023** 的 `ProfileClient` thin-entry split 與 **S024** 的 weather route/service 深拆。
+1. `profile-mapper` / `profile-server-service` / `weather-api-repo` 已經 canonicalize 完成；後續若整理 profile/weather 相關頁面，不能把實作再拉回 `src/lib/**` compatibility namespace。剩餘大塊是 **S024** 的 weather route/service 深拆。
 2. `WeatherPage` 的 fetch/hydration/favorites 已下沉到 `useWeatherPageRuntime`，但 geo lookup 目前刻意留在 thin entry 注入，避免 runtime 直接 import `@/config/geo/weather-geo-cache`；後續若要再收斂，請沿 `Config -> Repo/Service -> Runtime` 做乾淨流向，不要把 config 直接拉回 runtime。
 3. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx`、`ToastContext.jsx` 已收斂成 thin compatibility facades；真正 provider 實作現在在 `src/runtime/providers/**`。
 4. S013 已把 `WeatherPage.jsx`、`FavoriteButton.jsx`、`DashboardTabs.jsx` 拆成 thin entry + runtime + ui；後續 reviewer 應改盯 weather/dashboard screen 是否重新拉回 runtime/service 依賴，而不是再把它們當未拆 target。
@@ -165,6 +172,7 @@ Phase 9-11（S018-S025）即為補完這三類缺口的任務。
 8. `src/runtime/client/use-cases/notification-use-cases.js` 現在依賴 repo client primitives（`fetchParticipantUids` / `fetchDistinctPostCommentAuthors` / `fetchDistinctEventCommentAuthors`）；後續若再調整 notification flow，請維持 side effects 留在 runtime/use-case，不要把 participant / recipient lookup 再塞回 repo 寫入函式內。
 9. `member-dashboard` 的 `titleCache` 仍只以 `parentId` 當 key，這是為了保留既有行為；若未來 post/event 出現相同 id，cache 仍可能互撞，這筆債要在後續 dashboard/profile 整理時一起處理。
 10. posts list page-level tests 若還 mock `@/lib/firebase-posts` 或 legacy `@/contexts/**`，thin-entry 後就會攔不到真正 runtime 路徑；後續新增同類測試要沿用 runtime providers + `@/runtime/client/use-cases/post-use-cases`。
+11. `src/app/users/[uid]/ProfileEventList.jsx` 目前仍自行處理 hosted-events fetch（透過 `@/lib/firebase-profile` facade）。這是 S023 刻意保留的 scope debt；不要把 hosted-events fetch 複製進 `useProfileRuntime` 或 `ProfileScreen`，若要整理必須另開 session 專做 `ProfileEventList`。
 
 ### Test blockers
 
@@ -981,3 +989,39 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - 若做 S023，write scope 以 `src/app/member/page.jsx`、`src/app/users/[uid]/ProfileClient.jsx`、對應 runtime/ui 檔與 page-level integration tests retarget 為主
   - 若做 S025，直接把 canonical layer `no-import-lib` 規則機械化，並優先檢查不會誤傷 JSDoc type-only imports
   - reviewer 要特別盯兩件事：一是 runs screens 是否真的維持 render-only；二是 callback tests 是否已完全脫離舊厚頁 internals、只對準新 runtime boundary
+
+### S023
+
+- **Goal**: 把 `src/app/member/page.jsx` 與 `src/app/users/[uid]/ProfileClient.jsx` 拆成 thin entry + page runtime + render-only screen，並把 `ProfileClient` page-level integration test retarget 到新的 runtime boundary。
+- **Write Scope**:
+  - `src/app/member/page.jsx`
+  - `src/app/users/[uid]/ProfileClient.jsx`
+  - `src/runtime/hooks/useMemberPageRuntime.js`
+  - `src/runtime/hooks/useProfileRuntime.js`
+  - `src/ui/member/MemberPageScreen.jsx`
+  - `src/ui/users/{ProfileScreen.jsx,ProfileScreen.module.css}`
+  - `specs/012-public-profile/tests/integration/ProfileClient.test.jsx`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - updated `src/app/member/page.jsx` to a thin client entry under 20 lines, leaving only `useMemberPageRuntime -> MemberPageScreen` wiring plus `BioEditor` / `DashboardTabs` slot injection
+  - updated `src/app/users/[uid]/ProfileClient.jsx` to a thin client entry under 20 lines, leaving only `useProfileRuntime -> ProfileScreen` wiring plus `ProfileHeader` / `ProfileStats` / `ProfileEventList` composition
+  - created `src/runtime/hooks/useMemberPageRuntime.js` to own auth gating, local name state, avatar upload, display-name update, same-file reselect reset, and toast orchestration using only canonical imports (`@/runtime/providers/AuthProvider`, `@/runtime/providers/ToastProvider`, `@/repo/client/firebase-users-repo`, `@/runtime/client/use-cases/avatar-upload-use-cases`)
+  - created `src/runtime/hooks/useProfileRuntime.js` to own `createdAt` normalization, stats load/error/loading, and own-profile detection using only `@/runtime/providers/AuthProvider` + `@/service/profile-service`
+  - created `src/ui/member/MemberPageScreen.jsx` and `src/ui/users/{ProfileScreen.jsx,ProfileScreen.module.css}` as render-only UI; `MemberPageScreen` receives `BioEditor` / `DashboardTabs` via thin-entry slots, and `ProfileScreen` no longer imports `src/app/**` CSS
+  - retargeted `specs/012-public-profile/tests/integration/ProfileClient.test.jsx` to `mock @/runtime/hooks/useProfileRuntime + render thin entry ProfileClient`, so the page-level suite now targets the new runtime boundary instead of the old `@/lib/firebase-profile` facade
+  - verified `specs/012-public-profile/tests/integration/BioEditor.test.jsx` does not need retarget because `BioEditor` itself was not moved in S023: it still lives at `src/app/member/BioEditor.jsx` and still intentionally imports `@/lib/firebase-profile`, so its existing test boundary remains aligned with production import paths
+  - verified with `npm run type-check:changed` -> `✓ No type errors in changed files.`
+  - verified with `npm run lint:changed` -> exit `0`; only printed the pre-existing `eslint-plugin-react` version warning, no lint errors
+  - verified with `npm run depcruise` -> `✔ no dependency violations found (1353 modules, 3322 dependencies cruised)`
+  - verified with `npx vitest run specs/012-public-profile/tests/integration/ProfileClient.test.jsx specs/012-public-profile/tests/integration/BioEditor.test.jsx` -> `Test Files 2 passed (2)` / `Tests 17 passed (17)`
+- **Pitfalls recorded**:
+  - `MemberPageScreen.jsx` 不可直接 import `BioEditor` 或 `DashboardTabs`；S023 用 thin-entry slot injection 是刻意為了避免 `src/ui/** -> src/app/**` 反向依賴
+  - `ProfileClient` page-level integration test 在 thin-entry 後必須 mock `@/runtime/hooks/useProfileRuntime`；若繼續 mock `@/lib/firebase-profile`，就會變成對舊 facade surface 的假綠測試
+  - `src/app/users/[uid]/ProfileEventList.jsx` 目前仍自行處理 hosted-events fetch；這是 S023 刻意留存的 scope debt，不能因為 `ProfileClient` 已 thin-entry 就把這段 fetch 複製進 `useProfileRuntime` 或 `ProfileScreen`
+  - `BioEditor.test.jsx` 不該在 S023 順手改 mock target，因為 production `BioEditor` import path 沒變；硬改只會製造 test / production path 脫鉤
+- **Next Session Brief**:
+  - 做 S024 或 S025
+  - 若做 S024，write scope 以 `src/app/api/weather/route.js` 的 thin-route split 與對應 service/repo/tests retarget 為主
+  - 若做 S025，直接把 canonical layer `no-import-lib` 規則機械化，並優先確認不會誤傷 JSDoc type-only imports
+  - reviewer 要特別盯兩件事：一是 `api/weather/route.js` 不可只搬 helper 名字而保留 route God file；二是新的 no-import-lib 規則不能把 compatibility facade 的合法使用或 JSDoc-only import 誤判成 violation
