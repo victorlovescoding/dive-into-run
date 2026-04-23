@@ -18,10 +18,10 @@ import userEvent from '@testing-library/user-event';
 
 /* ==========================================================================
    SECTION 1: UNIT TEST EXAMPLE (Pure Logic)
-   Target: src/lib/math-helper.js
+   Target: src/service/math-helper.js
    ========================================================================== */
 
-// import { calculateTotal } from '@/lib/math-helper'; // Example import
+// import { calculateTotal } from '@/service/math-helper'; // Example import
 
 /**
  * Mock function to simulate a pure logic function.
