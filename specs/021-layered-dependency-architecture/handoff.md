@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S017 completed
-**Next Recommended Session**: none
+**Current Session**: S017 completed（Phase 8 done）
+**Next Recommended Session**: S018（repo-tier 遷移）或 S021（posts thin-entry）— Phase 9 與 Phase 10 大部分可平行
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -111,12 +111,31 @@
 | S015    | done   | clean the 4 real test conflicts                       |
 | S016    | done   | add dep-cruise package/config/scripts                 |
 | S017    | done   | CI wiring + final 0-violation verification            |
+| S018    | todo   | repo-tier: strava/users/weather-favorites → repo      |
+| S019    | todo   | svc-tier: profile-mapper/server/weather-api → svc     |
+| S020    | todo   | split event-helpers: biz rules → svc, formatters stay |
+| S021    | todo   | thin-entry `posts/page.jsx`                           |
+| S022    | todo   | thin-entry `runs/page.jsx` + callback                 |
+| S023    | todo   | thin-entry `member/page.jsx` + ProfileClient          |
+| S024    | todo   | thin-entry `api/weather/route.js` (590L)              |
+| S025    | todo   | dep-cruise: canonical no-import-lib rule              |
 
 ## Known Pitfalls
 
+### 文章對照分析結論（2026-04-23）
+
+對照 OpenAI Codex「Harness engineering」文章的分層架構模型，S001-S017 判定為「**部分符合**」：
+
+- ✅ 六層分層方向、forward-only dependency、dep-cruise enforcement、CI+pre-commit gate 全部到位
+- ⚠️ `src/lib/**` 不在 `CANONICAL_LAYER_PATTERNS`，dep-cruise 對所有涉及 `src/lib/**` 的邊完全不攔（11 條 canonical → lib 的 runtime import 未被偵測）
+- ⚠️ 6 個 thick entry 未拆（posts list 371L、runs 165L、callback 131L、member 130L、ProfileClient 147L、api/weather 590L）
+- ⚠️ `src/lib/` 仍有 8 個 IMPLEMENTATION 檔含真實業務邏輯（strava 131L、users 102L、weather-favorites 110L、event-helpers 280L、profile-mapper 37L、profile-server 36L、weather-api 26L、firestore-timestamp 18L）
+
+Phase 9-11（S018-S025）即為補完這三類缺口的任務。
+
 ### Architecture blockers
 
-1. `src/lib/firebase-profile-mapper.js` 目前先留在 `src/lib/**` compatibility namespace，真正把 profile mapper 納入終態 `src/service/**` 的遷移要配合後續更大範圍 profile split 一起做。
+1. `src/lib/firebase-profile-mapper.js` 目前先留在 `src/lib/**` compatibility namespace，真正把 profile mapper 納入終態 `src/service/**` 的遷移要配合後續更大範圍 profile split 一起做。→ **S019 處理**
 2. `WeatherPage` 的 fetch/hydration/favorites 已下沉到 `useWeatherPageRuntime`，但 geo lookup 目前刻意留在 thin entry 注入，避免 runtime 直接 import `@/config/geo/weather-geo-cache`；後續若要再收斂，請沿 `Config -> Repo/Service -> Runtime` 做乾淨流向，不要把 config 直接拉回 runtime。
 3. `src/contexts/AuthContext.jsx`、`NotificationContext.jsx`、`ToastContext.jsx` 已收斂成 thin compatibility facades；真正 provider 實作現在在 `src/runtime/providers/**`。
 4. S013 已把 `WeatherPage.jsx`、`FavoriteButton.jsx`、`DashboardTabs.jsx` 拆成 thin entry + runtime + ui；後續 reviewer 應改盯 weather/dashboard screen 是否重新拉回 runtime/service 依賴，而不是再把它們當未拆 target。

@@ -502,17 +502,17 @@ test.describe.configure({ mode: 'serial' });
 
 ### 關鍵檔案
 
-| 用途             | 路徑                                                                        |
-| ---------------- | --------------------------------------------------------------------------- |
+| 用途             | 路徑                                                                         |
+| ---------------- | ---------------------------------------------------------------------------- |
 | TDD skill 入口   | `.agents/skills/test-driven-development/SKILL.md`                            |
 | Mock 語法規範    | `.agents/skills/test-driven-development/references/coding-style.md`          |
 | JSDoc 進階       | `.agents/skills/test-driven-development/references/jsdoc-cheatsheet.md`      |
 | 測試 boilerplate | `.agents/skills/test-driven-development/references/boilerplate.js`           |
 | 反模式全集       | `.agents/skills/test-driven-development/references/testing-anti-patterns.md` |
-| Vitest 配置      | `vitest.config.mjs`、`vitest.setup.jsx`                                     |
-| Playwright 配置  | `playwright.config.mjs`、`playwright.emulator.config.mjs`                   |
-| E2E 共用 helper  | `specs/test-utils/e2e-helpers.js`                                           |
-| Mock helper      | `specs/test-utils/mock-helpers.js`                                          |
+| Vitest 配置      | `vitest.config.mjs`、`vitest.setup.jsx`                                      |
+| Playwright 配置  | `playwright.config.mjs`、`playwright.emulator.config.mjs`                    |
+| E2E 共用 helper  | `specs/test-utils/e2e-helpers.js`                                            |
+| Mock helper      | `specs/test-utils/mock-helpers.js`                                           |
 
 ### 常用斷言速查
 

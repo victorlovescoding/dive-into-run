@@ -165,7 +165,8 @@ const forbidden = [
   },
   {
     name: 'server-only-no-client-import',
-    comment: 'Client/runtime/ui surfaces and non-api app-router files may not import server-only modules.',
+    comment:
+      'Client/runtime/ui surfaces and non-api app-router files may not import server-only modules.',
     severity: 'error',
     from: {
       path: `(?:${CLIENTISH_IMPORTER_PATTERN})`,

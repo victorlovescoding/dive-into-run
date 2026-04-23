@@ -65,13 +65,13 @@ npx vitest run specs/path/to/file.test.jsx   # 單一 vitest 檔
 
 下列 `.codex/rules/*.md` 是 repo 內的參考文件與檢查清單，供 Codex 按需閱讀；它們不是 Codex 官方 Rules DSL，也不保證會被 runtime 自動載入。`.claude/rules/*.md` 保留作 legacy provenance。
 
-| 文件                                 | 建議查閱時機                  | 內容                                                                                   |
-| ------------------------------------ | ----------------------------- | -------------------------------------------------------------------------------------- |
-| `.codex/rules/coding-rules.md`       | `src/**`, `specs/**`          | 4 條 Non-Negotiable（無 @ts-ignore、無 JSX logic、無 eslint-disable a11y、JSDoc 規範） |
-| `.codex/rules/code-style.md`         | `src/**`, `specs/**` (js/jsx) | Formatting + JSDoc patterns                                                            |
-| `.codex/rules/testing-standards.md`  | `specs/**`, test/spec 檔      | Testing Trophy、AAA、userEvent                                                         |
-| `.codex/rules/e2e-commands.md`       | `specs/**/e2e/**`             | Playwright + emulator 指令                                                             |
-| `.codex/rules/sensors.md`            | 需要跑驗證或檢查 gate 時      | type-check/lint/test + IDE Diagnostics + pre-commit gate                               |
+| 文件                                | 建議查閱時機                  | 內容                                                                                   |
+| ----------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
+| `.codex/rules/coding-rules.md`      | `src/**`, `specs/**`          | 4 條 Non-Negotiable（無 @ts-ignore、無 JSX logic、無 eslint-disable a11y、JSDoc 規範） |
+| `.codex/rules/code-style.md`        | `src/**`, `specs/**` (js/jsx) | Formatting + JSDoc patterns                                                            |
+| `.codex/rules/testing-standards.md` | `specs/**`, test/spec 檔      | Testing Trophy、AAA、userEvent                                                         |
+| `.codex/rules/e2e-commands.md`      | `specs/**/e2e/**`             | Playwright + emulator 指令                                                             |
+| `.codex/rules/sensors.md`           | 需要跑驗證或檢查 gate 時      | type-check/lint/test + IDE Diagnostics + pre-commit gate                               |
 
 ### Git Workflow (Non-Negotiable)
 
