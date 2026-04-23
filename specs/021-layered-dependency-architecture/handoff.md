@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S015 completed
-**Next Recommended Session**: S016
+**Current Session**: S016 completed
+**Next Recommended Session**: S017
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -79,9 +79,11 @@
 - `specs/021-layered-dependency-architecture/tests/unit/test-bucket-policy.test.js` 已固定驗四類契約：canonical artifact path、bucket classify、representative allow/deny、repo-wide scan
 - S015 已把 `toast-context.test.jsx`、`isActivePath.test.js`、`PostCard.test.jsx`、`PostCardSkeleton.test.jsx` 全部移到對應 feature 的 `tests/integration/`
 - repo-wide scan 目前固定為 `unit=0 files`、`integration=0 files`、`e2e=0 files`、`specs-test-utils=0 files`
-- repo 尚未安裝 `dependency-cruiser`
-- S014 刻意沒有新增 `dependency-cruiser` package、config、scripts、CI wiring；這些仍屬 S016/S017
-- 目前 enforcement 仍主要靠 ESLint 的局部結構限制
+- `dependency-cruiser` 已安裝，`package.json` 新增 `depcruise` / `depcruise:json` scripts，repo check wiring 目前集中在 `.dependency-cruiser.mjs`
+- `.dependency-cruiser.mjs` 已直接 consume canonical artifact `specs/021-layered-dependency-architecture/test-bucket-policy.js`；沒有回退去讀 `test-buckets/policy.js`
+- production enforcement 已落地為 canonical layer reverse-dependency 禁令、`provider-no-repo`、`src/app/**` 不得直連 `config/repo`、`server-only-no-client-import`、`production-no-specs-import`
+- `src/types/not-found-messages.js` 已建立，只承接 `EVENT_NOT_FOUND_MESSAGE` / `POST_NOT_FOUND_MESSAGE` 這兩個 domain sentinel，目的是清掉 `src/repo/client/firebase-{events,posts}-repo.js` 原本對 `src/service/**` 的兩條真違規，同時保留 service 層的既有 re-export surface
+- `npm run lint:changed` 目前仍會被 pre-existing untracked `.agents/skills/test-driven-development/references/boilerplate.js` 與 `.codex/hooks/block-dangerous-commands.js` 拖進 changed set；S016 本身新增/修改檔已用 scoped `npx eslint ...` 驗證為 0 error
 - `src/lib` 其餘混層檔案仍待後續 session 繼續拆分
 
 ## Session Queue Snapshot
@@ -105,7 +107,7 @@
 | S013    | done   | split weather/dashboard UI-runtime mixed files        |
 | S014    | done   | tests four-bucket rules                               |
 | S015    | done   | clean the 4 real test conflicts                       |
-| S016    | todo   | add dep-cruise package/config/scripts                 |
+| S016    | done   | add dep-cruise package/config/scripts                 |
 | S017    | todo   | CI wiring + final 0-violation verification            |
 
 ## Known Pitfalls
@@ -644,3 +646,39 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - write scope 以 `dependency-cruiser` package / config / scripts 與對應 repo check wiring 為主，並同步更新 `specs/021-layered-dependency-architecture/handoff.md`
   - 目標是把 S014/S015 已經在 Vitest 驗證過的 tests bucket policy 正式接到 dep-cruise resolved graph enforcement
   - reviewer 要特別盯首次正式接線就必須 `0 violation`，不可引入 baseline、排除或 grandfathered 規則
+
+### S016
+
+- **Goal**: 加入 `dependency-cruiser` package、單一 config 與 repo scripts，直接接 canonical tests bucket artifact，並把 production 規則正式接到 resolved-graph enforcement，首次接線即 `0 violation`。
+- **Write Scope**:
+  - `package.json`
+  - `package-lock.json`
+  - `.dependency-cruiser.mjs`
+  - `specs/021-layered-dependency-architecture/test-bucket-policy.js`
+  - `src/types/not-found-messages.js`
+  - `src/service/{event-service.js,post-service.js}`
+  - `src/repo/client/{firebase-events-repo.js,firebase-posts-repo.js}`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - installed `dependency-cruiser@^17.3.10` and added `depcruise` / `depcruise:json` scripts to `package.json`
+  - created `.dependency-cruiser.mjs` as the single dep-cruise config and wired it directly to `specs/021-layered-dependency-architecture/test-bucket-policy.js`
+  - materialized tests bucket enforcement from the canonical artifact via `depCruiseTestBucketRules` / `TEST_BUCKET_DEPCRUISE_ARTIFACTS`, without reading `test-buckets/policy.js` directly from the dep-cruise config
+  - landed production resolved-graph rules for canonical layer reverse imports, `provider-no-repo`, `src/app/**` direct `config/repo` imports, `server-only-no-client-import`, and `production-no-specs-import`
+  - created `src/types/not-found-messages.js` and moved only `EVENT_NOT_FOUND_MESSAGE` / `POST_NOT_FOUND_MESSAGE` there so the two repo adapters stop importing `src/service/**`, while `src/service/{event-service,post-service}.js` keep re-exporting the same public constants
+  - verified with `npm run type-check:changed`
+  - attempted `npm run lint:changed`; current failure is caused by pre-existing untracked `.agents/skills/test-driven-development/references/boilerplate.js` and `.codex/hooks/block-dangerous-commands.js`, not by the S016 patch
+  - verified S016-owned files with `npx eslint .dependency-cruiser.mjs specs/021-layered-dependency-architecture/test-bucket-policy.js src/types/not-found-messages.js src/service/event-service.js src/service/post-service.js src/repo/client/firebase-events-repo.js src/repo/client/firebase-posts-repo.js`
+  - verified with `npx vitest run specs/021-layered-dependency-architecture/tests/unit/test-bucket-policy.test.js`
+  - verified with `npm run depcruise` -> `✔ no dependency violations found (1334 modules, 3307 dependencies cruised)`
+- **Pitfalls recorded**:
+  - `plan.md` 的 layer matrix 寫的是 `runtime -> service | types`，但這個 branch 的 `src/runtime/*/use-cases/**` 目前是 orchestration layer，真實上會直接 import `repo + service`；S016 因此用「canonical layer 不可回頭 import 更高層」來落地六層規則，而不是硬砍 `runtime -> repo`
+  - `entry-no-config-repo-direct-import` 原本想只打 thin entry file regex，但 dependency-cruiser 對該 regex 報 unsafe regular expression；S016 改採更保守且可證明的 `^src/app(?:/|$)` 禁令，不放寬規則，也不引入 partial scan
+  - canonical artifact 不需要額外的 default export surface；最後保留的是 explicit import + explicit named export，讓 `.dependency-cruiser.mjs` 可以直接 consume canonical artifact，同時避免留下多餘 export
+- `npm run depcruise` 目前會印出 `MODULE_TYPELESS_PACKAGE_JSON` warning，原因是 repo `package.json` 沒有 `"type": "module"`；S016 不處理這個 packaging 警告，因為它不影響 enforcement 結果，而且超出本 task write scope
+- `server-only-no-client-import` 不能只靠 `src/app/*Client.*` 這種命名 matcher；repo 內已有多個 `'use client'` page entry（如 `src/app/weather/page.jsx`、`src/app/runs/page.jsx`、`src/app/member/page.jsx`），S016 最後因此把 `src/app/**` 非 API route 整體視為 client-sensitive surface，避免 app-router client entries 漏網
+- **Next Session Brief**:
+  - 做 S017
+  - write scope 以 CI / repo checks wiring、最終全量驗證與 PR readiness 為主，避免回頭改 S016 的 policy artifact 或 dep-cruise 規則
+  - 目標是把已經在本地驗證為 `0 violation` 的 dep-cruise gate 正式接到 CI / repo checks
+  - reviewer 要特別盯不可把 S017 變成重新協商 baseline / exclude / grandfathered rule 的 session

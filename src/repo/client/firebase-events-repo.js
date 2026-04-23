@@ -13,7 +13,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/config/client/firebase-client';
-import { EVENT_NOT_FOUND_MESSAGE } from '@/service/event-service';
+import { EVENT_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
 
 /**
  * @typedef {import('firebase/firestore').QueryConstraint} QueryConstraint

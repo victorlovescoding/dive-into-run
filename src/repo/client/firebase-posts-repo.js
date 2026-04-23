@@ -18,7 +18,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/config/client/firebase-client';
-import { POST_NOT_FOUND_MESSAGE } from '@/service/post-service';
+import { POST_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
 
 /**
  * @typedef {import('firebase/firestore').QueryDocumentSnapshot} QueryDocumentSnapshot

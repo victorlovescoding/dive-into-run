@@ -1,3 +1,5 @@
+export { POST_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
+
 /**
  * @typedef {object} Post
  * @property {string} id - 文章 ID。
@@ -26,12 +28,6 @@ export const POST_TITLE_MAX_LENGTH = 50;
 
 /** @type {number} 文章內容最大長度。 */
 export const POST_CONTENT_MAX_LENGTH = 10000;
-
-/**
- * 當文章不存在時 deletePost 拋出的錯誤訊息常數。
- * @type {string}
- */
-export const POST_NOT_FOUND_MESSAGE = '文章不存在';
 
 /**
  * 驗證文章輸入是否合規。

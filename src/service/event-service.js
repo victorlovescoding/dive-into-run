@@ -1,5 +1,7 @@
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 
+export { EVENT_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
+
 /**
  * @typedef {import('firebase/firestore').Timestamp} Timestamp
  */
@@ -35,14 +37,6 @@ import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
  * @property {boolean} ok - 操作是否成功。
  * @property {'left'|'not_joined'} status - 退出結果狀態。
  */
-
-/**
- * 當活動不存在時 deleteEvent 拋出的錯誤訊息常數。
- *
- * 與 `POST_NOT_FOUND_MESSAGE` 同 pattern，先保留字串 sentinel 給既有 UI 判別，
- * 後續若引入 Error class 再一起升級。
- */
-export const EVENT_NOT_FOUND_MESSAGE = '活動不存在';
 
 /**
  * 將 UI 表單送出的 raw data 正規化成 Firestore 友善的 payload。

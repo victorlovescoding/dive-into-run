@@ -3,7 +3,7 @@
  * Full implementation lives in ./test-buckets/policy.js.
  * S016 should wire dependency-cruiser to this path.
  */
-export {
+import {
   KNOWN_S015_CONFLICTS,
   KNOWN_S015_UNIT_CONFLICTS,
   TEST_BUCKET_DEPCRUISE_ARTIFACTS,
@@ -29,3 +29,30 @@ export {
   summarizeBucketViolations,
   testBucketPolicy,
 } from './test-buckets/policy.js';
+
+export {
+  KNOWN_S015_CONFLICTS,
+  KNOWN_S015_UNIT_CONFLICTS,
+  TEST_BUCKET_DEPCRUISE_ARTIFACTS,
+  TEST_BUCKET_MATCHERS,
+  TEST_BUCKET_POLICY_ARTIFACT_PATH,
+  TEST_BUCKET_RULES,
+  TEST_DEPENDENCY_SURFACES,
+  classifyDependencySurface,
+  classifyTestBucket,
+  collectBucketViolations,
+  collectTestBucketFiles,
+  depCruiseTestBucketRules,
+  evaluateBucketImport,
+  evaluateTestDependency,
+  evaluateTestModuleSpecifier,
+  extractModuleSpecifiers,
+  getKnownS015Conflict,
+  isAllowedTestDependency,
+  matchTestBucket,
+  normalizeRepoPath,
+  resolveImportSpecifier,
+  scanRepoTestImportGraph,
+  summarizeBucketViolations,
+  testBucketPolicy,
+};
