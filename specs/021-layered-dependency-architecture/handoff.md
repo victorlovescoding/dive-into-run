@@ -1051,7 +1051,7 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - verified with `npm run type-check:changed` -> `✓ No type errors in changed files.`
   - verified with `npm run lint:changed` -> exit `0`; only printed the pre-existing `eslint-plugin-react` version warning, no lint warnings or errors
   - verified with `npm run depcruise` -> `✔ no dependency violations found (1357 modules, 3328 dependencies cruised)`
-  - verified with `npx vitest run specs/013-pre-run-weather/tests/unit/weather-api-route.test.js specs/021-layered-dependency-architecture/tests/unit/weather-forecast-service.test.js` -> `Test Files 2 passed (2)` / `Tests 12 passed (12)`
+  - verified with `npx vitest run specs/013-pre-run-weather/tests/unit/weather-api-route.test.js specs/021-layered-dependency-architecture/tests/unit/weather-forecast-service.test.js` -> `Test Files 2 passed (2)` / `Tests 15 passed (15)`
 - **Pitfalls recorded**:
   - weather route tests 不能再 mock `fetch` 或 `@/service/weather-location-service`；thin-route 後若還測 county/township branching、UV/EPA fallback、時間選擇，等於把 service 行為偷留在 route suite
   - `src/repo/server/weather-api-repo.js` 的責任必須保持超薄；若把 normalization、fallback 決策、或 `WeatherServiceError` 映射塞進 repo，會重新把 service 邊界打穿
