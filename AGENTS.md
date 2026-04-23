@@ -107,8 +107,8 @@ Six canonical layers with forward-only dependency: Types → Config → Repo →
 
 ## Reference Docs（分層 Context — 按需載入）
 
-| 文件                                     | 狀態    | 用途                                                                            |
-| ---------------------------------------- | ------- | ------------------------------------------------------------------------------- |
+| 文件                                    | 狀態    | 用途                                                                            |
+| --------------------------------------- | ------- | ------------------------------------------------------------------------------- |
 | `.codex/references/coding-standards.md` | ✅ 已有 | 完整編碼規範與品質防線                                                          |
 | `.codex/references/testing-handbook.md` | ✅ 已有 | 測試撰寫完整手冊                                                                |
 | `.codex/references/review-standards.md` | 🔜 待建 | Code Review 標準與 checklist                                                    |

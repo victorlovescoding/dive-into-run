@@ -78,7 +78,7 @@ function UserCard({ user, onUpdate }) {}
 ### Import External Types
 
 ```js
-/** @param {import('@/lib/types').Event} event - 活動資料。 */
+/** @param {import('@/service/event-service').EventData} event - 活動資料。 */
 ```
 
 ### Type Casting
