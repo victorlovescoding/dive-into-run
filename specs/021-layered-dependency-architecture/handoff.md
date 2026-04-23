@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S020a completed（notification/strava utility canonical-readiness done）
-**Next Recommended Session**: S021（posts thin-entry）或 S025（canonical no-import-lib rule）— Phase 10 與 Phase 11 現在可並行評估
+**Current Session**: S021 completed（posts thin-entry + runtime/ui/test retarget done）
+**Next Recommended Session**: S022（runs thin-entry）或 S025（canonical no-import-lib rule）
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -78,6 +78,10 @@
 - `src/components/DashboardTabs.jsx` 已收斂成 thin client entry，只保留 `useDashboardTabsRuntime + DashboardTabsScreen`
 - `src/runtime/hooks/useDashboardTabsRuntime.js` 已成為 dashboard tabs 的 page-level runtime boundary，承接 activeTab、keyboard nav、tab config，並在內部組合既有 `useDashboardTab`
 - `src/ui/member/DashboardTabsScreen.jsx` 已建立；dashboard tab UI 不再直接 import runtime hooks 或 member-dashboard use-cases
+- `src/app/posts/page.jsx` 已收斂成 thin client entry（`Suspense + usePostsPageRuntime + PostsPageScreen`）
+- `src/runtime/hooks/usePostsPageRuntime.js` 已成為 posts list 的 canonical runtime boundary，承接最新貼文 hydrate、searchParams toast、IntersectionObserver 分頁、create/edit/delete、optimistic like、modal state 與 auth/toast/router orchestration
+- `src/ui/posts/PostsPageScreen.jsx` 已建立；posts list UI 只消費 runtime state/handlers，不直接 import `@/lib/**`、`@/contexts/**`、`@/runtime/client/use-cases/**`、`next/navigation`
+- `specs/019-posts-ui-refactor/tests/integration/PostFeed.test.jsx`、`specs/018-posts-input-validation/tests/integration/post-form-validation.test.jsx`、`specs/020-post-edit-dirty-check/tests/integration/posts-page-edit-dirty.test.jsx` 與 `specs/009-global-toast/tests/integration/crud-toast.test.jsx` 的 posts page mock surfaces 已 retarget 到 runtime providers + `@/runtime/client/use-cases/post-use-cases`
 - `specs/fix/post-detail-deleted-guard/tests/integration/PostDetailClient-delete-race.test.jsx`、`specs/014-notification-system/tests/integration/{notification-triggers,notification-error}.test.jsx`、`specs/015-comment-notifications/tests/integration/post-comment-reply.test.jsx`、`specs/018-posts-input-validation/tests/integration/post-edit-validation.test.jsx`、`specs/019-posts-ui-refactor/tests/integration/PostDetail.test.jsx`、`specs/020-post-edit-dirty-check/tests/integration/post-detail-edit-dirty.test.jsx` 已同步 retarget 到 runtime providers + runtime use-cases
 - `specs/fix/event-detail-deleted-guard/tests/integration/EventDetailClient-delete-race.test.jsx`、`specs/014-notification-system/tests/integration/{notification-triggers,notification-error}.test.jsx` 已同步 retarget 到 runtime providers + runtime use-cases
 - `specs/015-comment-notifications/tests/integration/event-detail-comment-runtime.test.jsx` 已補 detail runtime comment wiring coverage，`specs/015-comment-notifications/tests/integration/event-comment-notification.test.jsx` 也已改用 `@/runtime/providers/AuthProvider`，避免只靠舊 `@/contexts/**` 路徑當證據
@@ -126,7 +130,7 @@
 | S019    | done   | svc-tier: profile-mapper/server/weather-api → svc     |
 | S020    | done   | split event-helpers: biz rules → svc, formatters stay |
 | S020a   | done   | utility canonical-readiness                           |
-| S021    | todo   | thin-entry `posts/page.jsx`                           |
+| S021    | done   | thin-entry `posts/page.jsx`                           |
 | S022    | todo   | thin-entry `runs/page.jsx` + callback                 |
 | S023    | todo   | thin-entry `member/page.jsx` + ProfileClient          |
 | S024    | todo   | thin-entry `api/weather/route.js` (590L)              |
@@ -156,6 +160,7 @@ Phase 9-11（S018-S025）即為補完這三類缺口的任務。
 7. UI integration layers 仍受 ESLint `no-restricted-imports` 保護，不能直接 import `firebase/*`；若 canonical runtime / client-facing code 需要 Firestore `Timestamp`，正式 helper 路徑是 `src/config/client/firebase-timestamp.js`，`src/lib/firebase-firestore-timestamp.js` 只剩 legacy facade。
 8. `src/runtime/client/use-cases/notification-use-cases.js` 現在依賴 repo client primitives（`fetchParticipantUids` / `fetchDistinctPostCommentAuthors` / `fetchDistinctEventCommentAuthors`）；後續若再調整 notification flow，請維持 side effects 留在 runtime/use-case，不要把 participant / recipient lookup 再塞回 repo 寫入函式內。
 9. `member-dashboard` 的 `titleCache` 仍只以 `parentId` 當 key，這是為了保留既有行為；若未來 post/event 出現相同 id，cache 仍可能互撞，這筆債要在後續 dashboard/profile 整理時一起處理。
+10. posts list page-level tests 若還 mock `@/lib/firebase-posts` 或 legacy `@/contexts/**`，thin-entry 後就會攔不到真正 runtime 路徑；後續新增同類測試要沿用 runtime providers + `@/runtime/client/use-cases/post-use-cases`。
 
 ### Test blockers
 
@@ -899,3 +904,38 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - 若做 S021，write scope 以 `src/app/posts/page.jsx` 的 thin-entry split 與對應 runtime/ui/test retarget 為主
   - 若做 S025，直接把 canonical layer `no-import-lib` 規則機械化，先以 `rg` / dep-cruise 驗證 Phase 9 的前置條件，再補 rule 與對應測試
   - reviewer 要特別盯兩件事：一是新的禁止規則不能把 JSDoc type-only import 誤判成 runtime violation；二是不要為了 rule 漂亮把 UI-facing helper 反向搬進 canonical surface
+
+### S021
+
+- **Goal**: 把 `src/app/posts/page.jsx` 拆成 thin entry + `usePostsPageRuntime` + `PostsPageScreen`，並把所有直接 render posts page 的 integration tests retarget 到新的 runtime chain。
+- **Write Scope**:
+  - `src/app/posts/page.jsx`
+  - `src/runtime/hooks/usePostsPageRuntime.js`
+  - `src/ui/posts/PostsPageScreen.jsx`
+  - `specs/019-posts-ui-refactor/tests/integration/PostFeed.test.jsx`
+  - `specs/018-posts-input-validation/tests/integration/post-form-validation.test.jsx`
+  - `specs/020-post-edit-dirty-check/tests/integration/posts-page-edit-dirty.test.jsx`
+  - `specs/009-global-toast/tests/integration/crud-toast.test.jsx`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - updated `src/app/posts/page.jsx` to a thin client entry under 20 lines, leaving only `Suspense` + the minimal runtime-to-screen wiring
+  - created `src/runtime/hooks/usePostsPageRuntime.js` to own posts fetch/hydration, searchParams toast, IntersectionObserver pagination, create/edit/delete, optimistic like, modal state, and auth/toast/router orchestration
+  - created `src/ui/posts/PostsPageScreen.jsx` as render-only UI consuming runtime state/handlers; it does not import `@/lib/**`, `@/contexts/**`, `@/runtime/client/use-cases/**`, or `next/navigation`
+  - retargeted page-level integration tests `PostFeed.test.jsx`, `post-form-validation.test.jsx`, `posts-page-edit-dirty.test.jsx`, and the posts section of `crud-toast.test.jsx` from legacy `@/lib/firebase-posts` / `@/contexts/**` mocks to runtime providers + `@/runtime/client/use-cases/post-use-cases`
+  - `post-form-validation.test.jsx` and the posts section of `crud-toast.test.jsx` are in-scope S021 tests, not scope creep, because both directly render `@/app/posts/page` and assert page-owned behavior that moved into `usePostsPageRuntime` during the thin-entry split: form validation / submit orchestration in the former, searchParams toast handling and posts CRUD toast flow in the latter
+  - verified remaining surface with `rg -n "import PostPage from '@/app/posts/page'|from '@/app/posts/page'" specs --glob 'specs/**/tests/integration/*.jsx' --glob 'specs/**/tests/integration/*.js'` -> only 4 matches (`PostFeed.test.jsx`, `post-form-validation.test.jsx`, `posts-page-edit-dirty.test.jsx`, `crud-toast.test.jsx`), and those 4 files no longer contain `@/lib/firebase-posts` or legacy `@/contexts/**` mock targets
+  - verified with `npm run type-check:changed` -> `✓ No type errors in changed files.`
+  - verified with `npm run lint:changed` -> exit `0`; only printed the existing `eslint-plugin-react` version warning, no lint errors
+  - verified with `npm run depcruise` -> `✔ no dependency violations found (1345 modules, 3322 dependencies cruised)`
+  - verified with `npx vitest run specs/019-posts-ui-refactor/tests/integration/PostFeed.test.jsx specs/018-posts-input-validation/tests/integration/post-form-validation.test.jsx specs/020-post-edit-dirty-check/tests/integration/posts-page-edit-dirty.test.jsx specs/009-global-toast/tests/integration/crud-toast.test.jsx` -> `Test Files 4 passed (4)` / `Tests 38 passed (38)`
+- **Pitfalls recorded**:
+  - posts list page-level tests 若繼續 mock `@/lib/firebase-posts`，在 thin-entry 後不一定會再攔到真正 runtime 路徑；S021 的正確攔截點是 runtime providers + `@/runtime/client/use-cases/post-use-cases`
+  - `post-form-validation.test.jsx` / `crud-toast.test.jsx` 雖然 spec 名稱不是「posts-ui-refactor」，但只要它們 render 的 still 是 `@/app/posts/page`，就必須跟著 thin-entry session 一起 retarget；否則會留下「render 同一個 page、卻 mock 舊 surface」的假綠測試
+  - `PostsPageScreen.jsx` 必須維持 render-only；一旦把 `next/navigation`、provider、或 use-case import 拉回 screen，S021 的 boundary 就會立刻失真
+  - `page.jsx` 需要同時滿足 `useSearchParams` 的 Suspense 邊界與 thin-entry 約束；S021 的做法是把 `usePostsPageRuntime()` 留在 Suspense 內層的最小 wrapper，不把任何業務邏輯留在 entry
+- **Next Session Brief**:
+  - 做 S022 或 S025
+  - 若做 S022，write scope 以 `src/app/runs/page.jsx` / `src/app/runs/callback/page.jsx` 的 thin-entry split 與對應 runtime/ui/test retarget 為主
+  - 若做 S025，直接把 canonical layer `no-import-lib` 規則機械化，並優先確認不會誤傷 JSDoc type-only imports
+  - reviewer 要特別盯兩件事：一是 runs/page 級整合測試不要再殘留 legacy facade mock；二是新的 no-import-lib 規則不能只做靜態樣子貨

@@ -206,13 +206,13 @@ description: 'Session task list for 021-layered-dependency-architecture'
 >
 > **Test 策略**：thin-entry split 後，integration test 應 mock runtime hook（`@/runtime/hooks/*` 是 integration bucket 允許的 surface），不再直接 mock `@/lib/*` facade 的 repo/service 函式。如果既有 integration test 直接 render thick page + mock `@/lib/*`，拆分後需改為 render Screen + mock runtime hook，或改分類為 unit test。
 
-- [ ] S021 Thin-entry `src/app/posts/page.jsx`（371L）：拆成 thin entry + runtime hook + UI screen。
+- [x] S021 Thin-entry `src/app/posts/page.jsx`（371L）：拆成 thin entry + runtime hook + UI screen。
   - 新建 `src/runtime/hooks/usePostsPageRuntime.js`：承接 posts fetch/pagination（IntersectionObserver）/CRUD/optimistic like/edit/search params/toast orchestration
   - 新建 `src/ui/posts/PostsPageScreen.jsx`：render-only，消費 runtime state/handlers
   - `src/app/posts/page.jsx` → thin entry（Suspense + PostsPageScreen）
   - **Write Scope**: `src/app/posts/page.jsx`、新建 runtime/ui 檔、受影響 tests retarget、handoff.md
   - **受影響 Tests**:
-    - `specs/019-posts-ui-refactor/tests/integration/PostFeed.test.jsx` — mock `@/lib/firebase-posts` → 評估：被測 component 的 import 是否因拆分改變，若是則改 mock runtime hook
+    - `specs/019-posts-ui-refactor/tests/integration/PostFeed.test.jsx`、`specs/018-posts-input-validation/tests/integration/post-form-validation.test.jsx`、`specs/020-post-edit-dirty-check/tests/integration/posts-page-edit-dirty.test.jsx`、`specs/009-global-toast/tests/integration/crud-toast.test.jsx` — legacy `@/lib/firebase-posts` / `@/contexts/**` mocks 已 retarget 到 runtime providers + `@/runtime/client/use-cases/post-use-cases`
     - `specs/019-posts-ui-refactor/tests/integration/PostCard.test.jsx` — mock `@/lib/notification-helpers` → component 層級不變，維持 ✅
   - **驗收標準**:
     1. `src/app/posts/page.jsx` ≤ 20 行，只有 Suspense + Screen

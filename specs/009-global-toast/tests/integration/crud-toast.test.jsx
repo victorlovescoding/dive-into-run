@@ -78,7 +78,7 @@ vi.mock('@/lib/event-helpers', () => ({
 
 vi.mock('@/config/geo/taiwan-locations', () => ({ default: {} }));
 
-vi.mock('@/lib/firebase-posts', () => ({
+vi.mock('@/runtime/client/use-cases/post-use-cases', () => ({
   createPost: vi.fn(),
   updatePost: vi.fn(),
   getLatestPosts: vi.fn().mockResolvedValue([]),
@@ -110,7 +110,7 @@ import {
   getPostDetail,
   hasUserLikedPosts,
   deletePost,
-} from '@/lib/firebase-posts';
+} from '@/runtime/client/use-cases/post-use-cases';
 import { asMock } from '../../../test-utils/mock-helpers';
 
 // ---------------------------------------------------------------------------

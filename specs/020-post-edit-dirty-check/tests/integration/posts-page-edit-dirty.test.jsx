@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useMemo } from 'react';
-import { AuthContext } from '@/contexts/AuthContext';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
 import PostPage from '@/app/posts/page';
 import {
   getLatestPosts,
@@ -11,7 +11,7 @@ import {
   getMorePosts,
   createPost,
   getPostDetail,
-} from '@/lib/firebase-posts';
+} from '@/runtime/client/use-cases/post-use-cases';
 
 // ---------------------------------------------------------------------------
 // Hoisted shared state (available inside vi.mock factories)
@@ -34,11 +34,11 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => ({ get: mockSearchParamsGet }),
 }));
 
-vi.mock('@/contexts/AuthContext', () => ({
+vi.mock('@/runtime/providers/AuthProvider', () => ({
   AuthContext: mockAuthContext,
 }));
 
-vi.mock('@/contexts/ToastContext', () => ({
+vi.mock('@/runtime/providers/ToastProvider', () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 
@@ -64,8 +64,10 @@ vi.mock('firebase/firestore', () => ({
   documentId: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-posts', async (importOriginal) => {
-  const original = /** @type {import('@/lib/firebase-posts')} */ (await importOriginal());
+vi.mock('@/runtime/client/use-cases/post-use-cases', async (importOriginal) => {
+  const original = /** @type {import('@/runtime/client/use-cases/post-use-cases')} */ (
+    await importOriginal()
+  );
   return {
     validatePostInput: original.validatePostInput,
     POST_TITLE_MAX_LENGTH: original.POST_TITLE_MAX_LENGTH,

@@ -24,7 +24,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => ({ get: mockSearchParamsGet }),
 }));
 
-vi.mock('@/contexts/AuthContext', () => ({
+vi.mock('@/runtime/providers/AuthProvider', () => ({
   AuthContext: mockAuthContext,
 }));
 
@@ -32,7 +32,7 @@ vi.mock('next/image', () => ({
   default: (props) => <img {...props} />,
 }));
 
-vi.mock('@/contexts/ToastContext', () => ({
+vi.mock('@/runtime/providers/ToastProvider', () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 
@@ -58,8 +58,10 @@ vi.mock('firebase/firestore', () => ({
   documentId: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-posts', async (importOriginal) => {
-  const actual = /** @type {import('@/lib/firebase-posts')} */ (await importOriginal());
+vi.mock('@/runtime/client/use-cases/post-use-cases', async (importOriginal) => {
+  const actual = /** @type {import('@/runtime/client/use-cases/post-use-cases')} */ (
+    await importOriginal()
+  );
   return {
     validatePostInput: actual.validatePostInput,
     POST_TITLE_MAX_LENGTH: actual.POST_TITLE_MAX_LENGTH,
@@ -86,7 +88,7 @@ vi.mock('@/lib/firebase-posts', async (importOriginal) => {
 // ---------------------------------------------------------------------------
 // Imports (after vi.mock — Vitest hoists mocks above these)
 // ---------------------------------------------------------------------------
-import { AuthContext } from '@/contexts/AuthContext';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
 import PostPage from '@/app/posts/page';
 import {
   createPost,
@@ -94,7 +96,7 @@ import {
   getLatestPosts,
   getPostDetail,
   hasUserLikedPosts,
-} from '@/lib/firebase-posts';
+} from '@/runtime/client/use-cases/post-use-cases';
 
 /** @type {import('vitest').Mock} */
 const mockedCreatePost = /** @type {import('vitest').Mock} */ (createPost);
