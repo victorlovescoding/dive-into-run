@@ -26,8 +26,8 @@
 
 ## Current State
 
-**Current Session**: S016 completed
-**Next Recommended Session**: S017
+**Current Session**: S017 completed
+**Next Recommended Session**: none
 **Current Branch**: `021-layered-dependency-architecture`
 
 **What exists now**
@@ -83,6 +83,8 @@
 - `.dependency-cruiser.mjs` 已直接 consume canonical artifact `specs/021-layered-dependency-architecture/test-bucket-policy.js`；沒有回退去讀 `test-buckets/policy.js`
 - production enforcement 已落地為 canonical layer reverse-dependency 禁令、`provider-no-repo`、`src/app/**` 不得直連 `config/repo`、`server-only-no-client-import`、`production-no-specs-import`
 - `src/types/not-found-messages.js` 已建立，只承接 `EVENT_NOT_FOUND_MESSAGE` / `POST_NOT_FOUND_MESSAGE` 這兩個 domain sentinel，目的是清掉 `src/repo/client/firebase-{events,posts}-repo.js` 原本對 `src/service/**` 的兩條真違規，同時保留 service 層的既有 re-export surface
+- `.husky/pre-commit` 現在會在 `lint` 與 `type-check` 之後直接跑 `npm run depcruise`，讓 dependency-cruiser 正式進入本地 blocking gate
+- `.github/workflows/ci.yml` 的 `ci` job 已新增 `Dependency cruiser` step，讓 required status check 直接驗證 `npm run depcruise`
 - `npm run lint:changed` 目前仍會被 pre-existing untracked `.agents/skills/test-driven-development/references/boilerplate.js` 與 `.codex/hooks/block-dangerous-commands.js` 拖進 changed set；S016 本身新增/修改檔已用 scoped `npx eslint ...` 驗證為 0 error
 - `src/lib` 其餘混層檔案仍待後續 session 繼續拆分
 
@@ -108,7 +110,7 @@
 | S014    | done   | tests four-bucket rules                               |
 | S015    | done   | clean the 4 real test conflicts                       |
 | S016    | done   | add dep-cruise package/config/scripts                 |
-| S017    | todo   | CI wiring + final 0-violation verification            |
+| S017    | done   | CI wiring + final 0-violation verification            |
 
 ## Known Pitfalls
 
@@ -682,3 +684,25 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - write scope 以 CI / repo checks wiring、最終全量驗證與 PR readiness 為主，避免回頭改 S016 的 policy artifact 或 dep-cruise 規則
   - 目標是把已經在本地驗證為 `0 violation` 的 dep-cruise gate 正式接到 CI / repo checks
   - reviewer 要特別盯不可把 S017 變成重新協商 baseline / exclude / grandfathered rule 的 session
+
+### S017
+
+- **Goal**: 把既有 `npm run depcruise` 正式接到 `ci` job 與本地 blocking gate，維持首次正式 gate 即 `0 violation`，並補齊 rollout 所需的最終全量驗證。
+- **Write Scope**:
+  - `.github/workflows/ci.yml`
+  - `.husky/pre-commit`
+  - `specs/021-layered-dependency-architecture/{tasks.md,handoff.md}`
+- **Completed**: yes
+- **Evidence**:
+  - added `Dependency cruiser` step to `.github/workflows/ci.yml` `ci` job, directly running `npm run depcruise`
+  - inserted `npm run depcruise` into `.husky/pre-commit`, so CI `ci` job and local pre-commit blocking gate now both run `npm run depcruise`
+  - verified with `npm run type-check` -> exit 0
+  - verified with `npm run lint -- --max-warnings 0` -> exit 0 (only existing React-version warning from eslint-plugin-react settings)
+  - verified with `npm run spellcheck` -> `CSpell: Files checked: 307, Issues found: 0 in 0 files.`
+  - verified with `npm run depcruise` -> `✔ no dependency violations found (1334 modules, 3307 dependencies cruised)`
+  - verified with `npm run test:branch` -> `Test Files 4 passed (4)`, `Tests 15 passed (15)`
+  - verified local hook parity with `bash .husky/pre-commit` -> `Test Files 116 passed (116)`, `Tests 1105 passed (1105)`, while the dep-cruise step still reported `0 violation`
+- **Pitfalls recorded**:
+  - reviewer boundary for S017 was tightened to minimal wiring only; `pre-push` was intentionally left unchanged because its existing job remains the E2E gate, and no extra repo-check script or `package.json` wiring was kept
+  - `MODULE_TYPELESS_PACKAGE_JSON` from Node is an existing non-blocking warning because repo `package.json` is not `"type": "module"`; S017 does not change or fix that packaging warning
+  - browser Vitest still prints jsdom's `Not implemented: Window's scrollTo() method` during `bash .husky/pre-commit`; this is also an existing non-blocking warning, and the hook still exits `0` with `116 passed`

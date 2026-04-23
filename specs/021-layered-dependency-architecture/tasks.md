@@ -53,7 +53,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
 ## Phase 8: Enforcement Rollout
 
 - [x] S016 加入 `dependency-cruiser` package、config、scripts，完成 ESLint / dep-cruise 分工。
-- [ ] S017 接線 CI / repo checks，確認首次正式 gate 即 `0 violation`，完成最終全量驗證與 PR 準備。
+- [x] S017 接線 CI / repo checks，確認首次正式 gate 即 `0 violation`，完成最終全量驗證與 PR 準備。
 
 ## Global Reviewer Checklist
 
