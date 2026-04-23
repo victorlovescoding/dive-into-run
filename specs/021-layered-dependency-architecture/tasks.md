@@ -285,7 +285,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
     session pre-flight 實測只有兩條真實 value import：
     - `src/runtime/hooks/useEventsPageRuntime.js` → `@/lib/event-helpers`
     - `src/runtime/hooks/useEventDetailRuntime.js` → `@/lib/event-helpers`
-    其餘命中皆為 canonical JSDoc type-only imports。
+      其餘命中皆為 canonical JSDoc type-only imports。
   - **Write Scope**: `.dependency-cruiser.mjs`、最小 canonical source retarget、殘留 JSDoc import retarget、S025 專屬 Vitest、`tasks.md`、`handoff.md`
   - **本 session 刻意加嚴的 repo contract**:
     - mechanical rule 只禁止 canonical runtime edges 指向 `src/lib/**`
@@ -300,6 +300,158 @@ description: 'Session task list for 021-layered-dependency-architecture'
     7. test-bucket-policy 不需更新（tests 在 `specs/` 不受 canonical layer 規則約束，`src-lib` surface 對 unit/integration bucket 仍為允許）
     8. **Facade 定位聲明**：`src/lib/` 的 facade 和 utility 為**永久相容層**（permanent compatibility layer），供 non-canonical surfaces 和 `specs/` tests 使用，不計畫移除
   - **Dependencies**: S018 + S019 + S020 + S020a 全部完成
+
+## Phase 12: Harness Engineering Hardening
+
+> 對照 OpenAI「Harness engineering: leveraging Codex in an agent-first world」文章，S001-S025 已達「高度符合」。Phase 12 針對文章明確要求但 codebase 尚未落實的三個面向做 hardening：(A) remediation error messages、(B) server-only 漏標封堵、(C) provider cross-cutting 隔離。另追加 (D) 最後一個 thick-ish entry 的 scope debt 清理。
+>
+> 所有 tasks 可獨立實施、互不依賴。
+
+- [ ] S026 dep-cruise comment 加入 remediation 指引：把每條 forbidden rule 的 `comment` 從描述性改為 agent-actionable remediation 指引。
+  - **文章依據**: _"we write the error messages to inject remediation instructions into agent context"_
+  - **要改的檔案**: `.dependency-cruiser.mjs`
+  - **做法**: 每條 rule 的 `comment` 改為結構化 remediation 格式：violation 描述 + 修復步驟 + 具體範例。涵蓋：
+    - 5 條 layer direction rules（`createLayerDirectionRules()` 的 comment template）
+    - `canonical-no-import-lib`
+    - `provider-no-repo`
+    - `entry-no-config-repo-direct-import`
+    - `server-only-no-client-import`
+    - `production-no-specs-import`
+    - test bucket rules（`createTestBucketRules()` 的 comment template）
+  - **範例 — layer direction**:
+    ```
+    現在: "config may not depend on canonical layers above it in the forward-only architecture."
+    改成: "config layer imports a higher layer (repo/service/runtime/ui). Move the needed
+           function down to src/config/ or src/types/, or accept the value as a parameter
+           from a higher-layer caller. If this is a type-only reference, switch to a JSDoc
+           @typedef import which is exempt from this rule."
+    ```
+  - **範例 — canonical-no-import-lib**:
+    ```
+    現在: "Canonical layers may not runtime-import src/lib/**; lib remains the compatibility
+           layer for non-canonical surfaces and specs."
+    改成: "Canonical layer runtime-imports src/lib/**. Import from the canonical home instead
+           (e.g. @/lib/firebase-events → @/repo/client/firebase-events-repo). Type-only
+           imports via JSDoc are exempt. To find the canonical target: grep the src/lib/
+           facade file for its re-export source."
+    ```
+  - **Write Scope**: `.dependency-cruiser.mjs`（只改 `comment` 字串）
+  - **受影響 Tests**: ✅ 無。已確認 `canonical-no-import-lib.test.js` 和 `test-bucket-policy.test.js` 都不 assert `comment` 欄位內容。
+  - **驗收標準**:
+    1. 所有 forbidden rules 的 `comment` 包含：(a) 明確的 violation 描述、(b) 至少一個修復步驟、(c) 具體路徑範例或指令
+    2. `npm run depcruise` 仍為 0 violation
+    3. `npm run test` 全部通過（comment 改動不影響 rule 行為）
+    4. `npx depcruise --config .dependency-cruiser.mjs --output-type err-long src specs 2>&1 | head -5` 確認 output format 正確
+  - **Dependencies**: 無
+
+- [ ] S027 Server-only 漏標封堵：加 dep-cruise rule 確保 import `firebase-admin` 的檔案必須在 server path。
+  - **Gap**: `server-only-no-client-import` 防止 client→server 匯入，但不防止 server-only code 放在非 server path。如果有人把 `firebase-admin` import 放在 `src/service/foo.js`，dep-cruise 不會攔。
+  - **要改的檔案**: `.dependency-cruiser.mjs`
+  - **做法**: 在 `forbidden` 陣列新增一條 `server-deps-require-server-path` rule：
+    ```js
+    {
+      name: 'server-deps-require-server-path',
+      comment: 'Files importing firebase-admin must be in a server path (src/*/server/ or '
+             + '*.server.js). Move this file to src/{layer}/server/ or rename to *.server.js. '
+             + 'If you only need a type, use a JSDoc @typedef import instead.',
+      severity: 'error',
+      from: {
+        pathNot: SERVER_ONLY_PATTERN,
+      },
+      to: withDependencyTypeFilter({
+        path: '^(?:node_modules/firebase-admin|src/config/server/firebase-admin-app)',
+      }),
+    }
+    ```
+  - **Pre-flight check**: 開始前必須驗證現有 code 沒有漏標：
+    ```bash
+    grep -rn "from 'firebase-admin" src/ --include="*.js" --include="*.jsx"
+    grep -rn "from '@/config/server/firebase-admin-app'" src/ --include="*.js" --include="*.jsx"
+    ```
+    確認所有命中都在 `src/*/server/` 或 `.server.js` 內。
+  - **Write Scope**: `.dependency-cruiser.mjs`、新增 `specs/021-layered-dependency-architecture/tests/unit/server-only-enforcement.test.js`
+  - **受影響 Tests**: ⚠️ 新增測試檔。
+  - **新增測試** `server-only-enforcement.test.js`：
+    1. 從 `.dependency-cruiser.mjs` import config，驗證 `server-deps-require-server-path` rule 存在
+    2. 驗證 severity = `'error'`
+    3. 驗證 `from.pathNot` 包含 `SERVER_ONLY_PATTERN` 的等效內容
+    4. 驗證 `to.path` 匹配 `firebase-admin` 和 `firebase-admin-app`
+    5. 跑 `npm run depcruise` 確認 0 violation
+  - **驗收標準**:
+    1. 新規則下 `npm run depcruise` 仍為 0 violation
+    2. 新 Vitest 測試通過
+    3. 非 server path 的檔案如果 import `firebase-admin`，dep-cruise 會報 error（可手動建一個違規檔驗證後刪除）
+    4. `npm run test` 全部通過
+  - **Dependencies**: 無
+
+- [ ] S028 `provider-no-service` cross-cutting 隔離規則：加 dep-cruise rule 確保 Providers 不直接 import Service 層。
+  - **文章依據**: Image #5 顯示 Providers 與 Service→Runtime→UI 鏈平行，是獨立的 cross-cutting 注入通道，不應參與業務邏輯鏈。
+  - **前置確認**: ✅ 已驗證現有 3 個 Providers 的 runtime imports：
+    - `AuthProvider.jsx` → `@/runtime/client/use-cases/auth-use-cases`（同層 Runtime，不碰 Service）
+    - `NotificationProvider.jsx` → `./AuthProvider`, `./ToastProvider`（同目錄）+ JSDoc type-only from `@/service/notification-service`（被 `withDependencyTypeFilter` 排除）
+    - `ToastProvider.jsx` → React + `next/navigation`（外部）
+    - **結論**: 規則加上去會直接 0 violation，不需重構現有 code。
+  - **要改的檔案**: `.dependency-cruiser.mjs`
+  - **做法**: 在 `forbidden` 陣列新增 `provider-no-service` rule（放在 `provider-no-repo` 之後）：
+    ```js
+    {
+      name: 'provider-no-service',
+      comment: 'Providers inject cross-cutting context only (auth, notifications, toast). '
+             + 'Business logic belongs in use-cases under src/runtime/client/use-cases/. '
+             + 'If a provider needs service-layer data, route it through a use-case.',
+      severity: 'error',
+      from: {
+        path: '^src/runtime/providers(?:/|$)',
+      },
+      to: withDependencyTypeFilter({
+        path: '^src/service(?:/|$)',
+      }),
+    }
+    ```
+  - **Write Scope**: `.dependency-cruiser.mjs`、新增或追加 test
+  - **受影響 Tests**: ⚠️ 需新增 test case。
+  - **新增測試**（在 `specs/021-layered-dependency-architecture/tests/unit/` 新建 `provider-cross-cutting.test.js` 或追加到 `canonical-no-import-lib.test.js`）：
+    1. 驗證 `provider-no-service` rule 存在於 dep-cruise config
+    2. 驗證 severity = `'error'`
+    3. 驗證 `from.path` 匹配 `src/runtime/providers/`
+    4. 驗證 `to.path` 匹配 `src/service/`
+    5. 驗證 `to.dependencyTypesNot` 包含 `NON_RUNTIME_DEPENDENCY_TYPES`（JSDoc type-only 豁免）
+  - **驗收標準**:
+    1. 新規則下 `npm run depcruise` 仍為 0 violation
+    2. Vitest 測試通過
+    3. 如果未來有人在 Provider 中 `import { foo } from '@/service/bar'`，dep-cruise 會報 error
+    4. JSDoc type-only imports（如 `@typedef {import('@/service/notification-service').NotificationItem}`）仍被允許
+    5. `npm run test` 全部通過
+  - **Dependencies**: 無
+
+- [ ] S029 ProfileEventList 走 runtime hook：消除最後一個 thick-ish entry component，把 fetch + IntersectionObserver 邏輯搬到 runtime hook。
+  - **現況**: `src/app/users/[uid]/ProfileEventList.jsx`（189L）直接 import `@/lib/firebase-profile` 的 `getHostedEvents`，自己管 state（items, loading, hasMore, lastDoc, error）+ IntersectionObserver，是最後一個未走 runtime hook 的 entry-level component。
+  - **Integration test 現況**: `specs/012-public-profile/tests/integration/ProfileEventList.test.jsx` mock `@/lib/firebase-profile`、`@/components/DashboardEventCard`、`next/link`，直接 render `ProfileEventList` 並驗 infinite scroll 行為。`ProfileClient.test.jsx` 已 mock 整個 `ProfileEventList` component。
+  - **做法**:
+    1. 新建 `src/runtime/hooks/useProfileEventsRuntime.js`：承接 `getHostedEvents` fetch 邏輯（首次載入 + loadMore + IntersectionObserver + state），import canonical path `@/service/profile-service` 的 `getHostedEvents`（而非 `@/lib/firebase-profile`）
+    2. `ProfileEventList.jsx` 瘦身為 render-only：消費 runtime hook 回傳的 state/handlers，搬到 `src/ui/users/ProfileEventListScreen.jsx`
+    3. `src/app/users/[uid]/ProfileEventList.jsx` 變成 thin wrapper：import runtime hook + render Screen
+    4. `toDashboardItem()` mapping 函式搬到 `src/service/profile-service.js` 或保留在 Screen（UI 層 display fallback）
+  - **Write Scope**: `src/app/users/[uid]/ProfileEventList.jsx`（thin wrapper 化）、新建 `src/runtime/hooks/useProfileEventsRuntime.js`、新建 `src/ui/users/ProfileEventListScreen.jsx`、受影響 tests、handoff.md
+  - **受影響 Tests**:
+    - `specs/012-public-profile/tests/integration/ProfileEventList.test.jsx` — **需重構**：
+      - 現在：mock `@/lib/firebase-profile`（`getHostedEvents`），直接 render `ProfileEventList`
+      - 改成：mock `@/runtime/hooks/useProfileEventsRuntime`，render thin wrapper `ProfileEventList` 或直接 render `ProfileEventListScreen`
+      - 或者：降級為 unit test（搬到 `tests/unit/`），直接測 `useProfileEventsRuntime` hook + mock `@/service/profile-service`（canonical path）
+    - `specs/012-public-profile/tests/integration/ProfileClient.test.jsx` — 已 mock 整個 `ProfileEventList` component，拆分後 **mock path 不變**（`@/app/users/[uid]/ProfileEventList` thin wrapper 仍在同路徑）✅
+    - 新增 `specs/021-layered-dependency-architecture/tests/unit/profile-events-runtime.test.js`：
+      - Unit test for `useProfileEventsRuntime` hook
+      - Mock `@/service/profile-service`（canonical path，不透過 facade）
+      - 驗首次載入、loadMore、error handling、hasMore=false 停止
+  - **驗收標準**:
+    1. `ProfileEventList.jsx` 或其 thin wrapper ≤ 20 行
+    2. `ProfileEventListScreen.jsx` 不 import `@/lib/**`、`@/repo/**`、`@/service/**`（render-only）
+    3. `useProfileEventsRuntime.js` import canonical path `@/service/profile-service`，不透過 `@/lib/` facade
+    4. IntersectionObserver + state management 全在 runtime hook
+    5. `npm run depcruise` 仍為 0 violation
+    6. `npm run test` 全部通過（含重構後的 integration test + 新增 unit test）
+    7. `toDashboardItem()` 若搬到 service 層，不依賴 UI/runtime
+  - **Dependencies**: 無（但建議在 S026-S028 之後做，避免同時改太多檔案）
 
 ## Phase 9-11 依賴圖
 
