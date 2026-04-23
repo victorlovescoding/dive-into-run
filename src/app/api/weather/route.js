@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import getWeatherForecast, {
   getWeatherForecastErrorStatus,
+  getWeatherForecastPublicErrorMessage,
 } from '@/service/weather-forecast-service';
 
 const CACHE_HEADERS = { 'Cache-Control': 's-maxage=600, stale-while-revalidate=300' };
@@ -22,7 +23,7 @@ export async function GET(request) {
     return NextResponse.json({ ok: true, data }, { headers: CACHE_HEADERS });
   } catch (error) {
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : 'Failed to fetch weather data' },
+      { ok: false, error: getWeatherForecastPublicErrorMessage(error) },
       { status: getWeatherForecastErrorStatus(error) },
     );
   }

@@ -158,7 +158,7 @@
 
 - ✅ 六層分層方向、forward-only dependency、dep-cruise enforcement、CI+pre-commit gate 全部到位
 - ⚠️ `src/lib/**` 不在 `CANONICAL_LAYER_PATTERNS`，dep-cruise 對所有涉及 `src/lib/**` 的邊完全不攔（11 條 canonical → lib 的 runtime import 未被偵測）
-- ⚠️ 1 個 thick entry 未拆（api/weather 590L）
+- ✅ 最後一個 thick entry `api/weather 590L` 已在 S024 拆完；剩餘缺口只剩 S025 的 dep-cruise mechanical enforcement
 - ✅ Phase 9（S018-S020a）已完成：canonical runtime/service 對 `src/lib/**` 的實際 runtime import 已歸零；接下來若要機械化封住這條規則，直接做 S025，不要再回頭把 utility 常數或 UI formatter 搬進 canonical surface
 
 Phase 9-11（S018-S025）即為補完這三類缺口的任務。
@@ -1024,10 +1024,10 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - `src/app/users/[uid]/ProfileEventList.jsx` 目前仍自行處理 hosted-events fetch；這是 S023 刻意留存的 scope debt，不能因為 `ProfileClient` 已 thin-entry 就把這段 fetch 複製進 `useProfileRuntime` 或 `ProfileScreen`
   - `BioEditor.test.jsx` 不該在 S023 順手改 mock target，因為 production `BioEditor` import path 沒變；硬改只會製造 test / production path 脫鉤
 - **Next Session Brief**:
-  - 做 S024 或 S025
-  - 若做 S024，write scope 以 `src/app/api/weather/route.js` 的 thin-route split 與對應 service/repo/tests retarget 為主
-  - 若做 S025，直接把 canonical layer `no-import-lib` 規則機械化，並優先確認不會誤傷 JSDoc type-only imports
-  - reviewer 要特別盯兩件事：一是 `api/weather/route.js` 不可只搬 helper 名字而保留 route God file；二是新的 no-import-lib 規則不能把 compatibility facade 的合法使用或 JSDoc-only import 誤判成 violation
+  - 做 S025
+  - write scope 以 `.dependency-cruiser.mjs`、殘留 canonical-layer JSDoc/lib imports、`specs/021-layered-dependency-architecture/handoff.md` 為主
+  - 先用 `grep -rn "from '@/lib/" src/{types,config,repo,service,runtime,ui}/ --include="*.js" --include="*.jsx"` 做 pre-flight，確認 canonical layers runtime import `src/lib/**` 仍為 0
+  - reviewer 要特別盯 no-import-lib 規則是否只打到 canonical layers，不能誤傷 permanent compatibility facade 與合法的 non-canonical surfaces
 
 ### S024
 
@@ -1044,8 +1044,9 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - created `src/service/weather-forecast-service.js` to own county/township validation, `台 -> 臺` normalization, CWA/EPA API key reads, county/township upstream orchestration, UV/AQI fallback handling, time-period selection, and final `WeatherInfo` assembly
   - created `src/repo/server/weather-api-repo.js` as an ultra-thin server repo that only executes upstream CWA/EPA HTTP requests and returns raw JSON; it does not use `next/server` and does not contain normalization or error-mapping logic
   - reduced `src/app/api/weather/route.js` to a 24-line thin route that only reads `searchParams`, calls `getWeatherForecast()`, and forwards success/error payloads through `NextResponse`; route/service/tests all share the same `getWeatherForecast()` + `getWeatherForecastErrorStatus()` contract
+  - post-commit follow-up tightened the public error boundary: route now uses the service’s public-error helper so missing env keys still fail fast with internal `WeatherForecastError(500, ...)`, but client-facing 500 bodies stay generic
   - retargeted `specs/013-pre-run-weather/tests/unit/weather-api-route.test.js` to `mock @/service/weather-forecast-service`; the route suite now only checks query forwarding, cache headers, and public error/status forwarding, not service internals
-  - created `specs/021-layered-dependency-architecture/tests/unit/weather-forecast-service.test.js`; county/township flow, UV/EPA fallback, time selection, `WeatherInfo` normalization, missing-API-key fail-fast, normalization-throw wrapping, and upstream-failure mapping now live at the service boundary instead of the route boundary
+  - created `specs/021-layered-dependency-architecture/tests/unit/weather-forecast-service.test.js`; county/township flow, UV/EPA fallback, time selection, `WeatherInfo` normalization, CWA/EPA missing-API-key fail-fast, normalization-throw wrapping, township/UV fail-closed behavior, and upstream-failure mapping now live at the service boundary instead of the route boundary
   - updated `specs/021-layered-dependency-architecture/tasks.md` to mark S024 done
   - verified with `npm run type-check:changed` -> `✓ No type errors in changed files.`
   - verified with `npm run lint:changed` -> exit `0`; only printed the pre-existing `eslint-plugin-react` version warning, no lint warnings or errors
@@ -1055,7 +1056,9 @@ tests 不可整包排除。S015 已把先前 4 個真衝突測試改放到正確
   - weather route tests 不能再 mock `fetch` 或 `@/service/weather-location-service`；thin-route 後若還測 county/township branching、UV/EPA fallback、時間選擇，等於把 service 行為偷留在 route suite
   - `src/repo/server/weather-api-repo.js` 的責任必須保持超薄；若把 normalization、fallback 決策、或 `WeatherServiceError` 映射塞進 repo，會重新把 service 邊界打穿
   - `process.env.CWA_API_KEY` / `EPA_API_KEY` 讀取現在刻意留在 `weather-forecast-service`；但讀取時必須 `trim()` + fail-fast，不能再用 `?? ''` 組出空 Authorization / api_key URL
+  - 500 級別的 service error 不能直接把 `error.message` 回給 client；env 缺值、upstream mismatch 等 internal detail 只留在 service error object，route 一律走 public-error helper
   - `getWeatherForecast()` 若在 `try/catch` 內直接 `return getCountyWeatherForecast()` / `return getTownshipWeatherForecast()`，async rejection 與 normalize 階段 throw 都不會被包成 public 502；這層必須 `await`
+  - township forecast 與 UV lookup 若找不到 target location，不能再 fallback 到第一筆資料；那會把錯鄉鎮/錯縣市的資料包進成功回應，正確做法是 fail closed 並包成 502
   - `weather-forecast-service` suite 需要在 `beforeEach` 清空 module mocks；否則 fail-fast case 會被前面測試殘留的 request call history 汙染，產生假失敗
 - **Next Session Brief**:
   - 做 S025

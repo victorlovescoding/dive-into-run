@@ -96,6 +96,19 @@ function getWeatherForecastErrorStatus(error) {
 }
 
 /**
+ * @param {unknown} error 要轉成 client response 的錯誤物件。
+ * @returns {string} 可安全公開的錯誤訊息。
+ */
+function getWeatherForecastPublicErrorMessage(error) {
+  const status = getWeatherForecastErrorStatus(error);
+  if (status < 500 && error instanceof Error) {
+    return error.message;
+  }
+
+  return 'Failed to fetch weather data';
+}
+
+/**
  * @param {'CWA_API_KEY' | 'EPA_API_KEY'} envName - 必填 upstream API key 環境變數名。
  * @returns {string} 已去空白的 API key。
  */
@@ -295,11 +308,12 @@ function extractUvInfo(uvData, targetLocationName, now, isTomorrow) {
     const locations = uvData.records?.Locations?.[0]?.Location;
     if (!locations?.length) return null;
 
-    const location =
-      locations.find((item) => item.LocationName === targetLocationName) ??
-      (targetLocationName ? null : locations[0]) ??
-      locations[0];
-    if (!location) return null;
+    const location = targetLocationName
+      ? locations.find((item) => item.LocationName === targetLocationName)
+      : locations[0];
+    if (!location) {
+      throw new Error(`No UV data found for location: ${targetLocationName}`);
+    }
 
     const uvElement = location.WeatherElement?.find(
       (element) => element.ElementName === '紫外線指數',
@@ -334,7 +348,11 @@ function extractUvInfo(uvData, targetLocationName, now, isTomorrow) {
       value,
       level: uvElement.Time[periodIndex]?.ElementValue?.[0]?.UVExposureLevel ?? '',
     };
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('No UV data found for location:')) {
+      throw error;
+    }
+
     return null;
   }
 }
@@ -445,10 +463,9 @@ function normalizeCountyWeather(cwaData, uvData, aqiInfo, county, now) {
  */
 function normalizeTownshipWeather(cwaData, uvData, aqiInfo, county, township, now) {
   const locations = cwaData.records?.Locations?.[0]?.Location;
-  const location =
-    locations?.find((item) => item.LocationName === township) ?? cwaData.records?.Locations?.[0]?.Location?.[0];
+  const location = locations?.find((item) => item.LocationName === township);
   if (!location) {
-    throw new Error('No township weather data found');
+    throw new Error(`No township weather data found for: ${township}`);
   }
 
   const elements = location.WeatherElement;
@@ -614,5 +631,9 @@ async function getWeatherForecast({ county, township = null, now = new Date() })
   }
 }
 
-export { WeatherForecastError, getWeatherForecastErrorStatus };
+export {
+  WeatherForecastError,
+  getWeatherForecastErrorStatus,
+  getWeatherForecastPublicErrorMessage,
+};
 export default getWeatherForecast;

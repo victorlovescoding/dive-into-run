@@ -259,7 +259,7 @@ description: 'Session task list for 021-layered-dependency-architecture'
   - 介面契約以 `getWeatherForecast()` / `getWeatherForecastErrorStatus()` 為唯一準則；route、service、tests 必須同步對齊，不能各自漂移命名
   - **Write Scope**: `src/app/api/weather/route.js`、新建 service/repo 檔、受影響 tests、handoff.md
   - **受影響 Tests**:
-    - `specs/013-pre-run-weather/tests/unit/weather-api-route.test.js` — 改為 mock `@/service/weather-forecast-service`，只驗 route contract
+    - `specs/013-pre-run-weather/tests/unit/weather-api-route.test.js` — 改為 mock `@/service/weather-forecast-service`，只驗 route contract / status / body / cache header
     - 新建 `specs/021-layered-dependency-architecture/tests/unit/weather-forecast-service.test.js`：service 層可獨立 unit test（不需 NextRequest mock）
   - **驗收標準**:
     1. `route.js` ≤ 30 行，只有 request → service → NextResponse
