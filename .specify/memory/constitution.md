@@ -1,9 +1,12 @@
 <!--
 SYNC IMPACT REPORT
-Version: 1.7.0 -> 1.8.0
-- Updated Principle II (UI 限制): 涵蓋範圍從「Pages/Components」擴大為「UI 整合層（Pages、Components、Hooks、Contexts）」，明列四個目錄 src/app、src/components、src/hooks、src/contexts
-- Updated Principle II: 「非同步函式」改為「函式（含純同步工具與非同步包裝）」，以涵蓋 firestore-types re-export 的 Timestamp 等非函式型別
-- Rationale: G4b harness expansion — ESLint 結構測試擴到 src/hooks + src/contexts 之前，憲法原文必須先涵蓋
+Version: 1.8.0 -> 1.9.0
+- Updated Principle I (Mocking 規範): 整合測試 Mock 目標從「src/lib/」擴大為「src/lib/ facade 或 src/repo/、src/service/」
+- Updated Principle II: 標題從「Strict Service Layer」→「Strict Layered Architecture」
+- Updated Principle II (隔離): 從「封裝在 src/lib/」→ 分層描述（config/repo/service + lib facade）
+- Updated Principle II (UI 限制): 加入 src/runtime/ 路徑，保留 src/lib/ facade 作為既有 UI 消費者入口
+- Updated Principle II: 加入六層 forward-only dependency 宣告 + dependency-cruiser 機械強制
+- Rationale: 021-layered-dependency-architecture 已將架構遷移至 canonical layers，憲法原文仍指向 src/lib/ 造成 doc drift — agent 可能將新 Firebase 邏輯放錯位置
 - Templates updated: 無需更動（plan/tasks template 引用的 principle 編號不變）
 - No deferred TODOs.
 -->
@@ -26,16 +29,17 @@ Version: 1.7.0 -> 1.8.0
   - **E2E 測試 (20%)**: 專注於關鍵使用者旅程 (Happy Paths)。
 - **Mocking 規範**:
   - **單元測試**: 嚴格禁止使用真實 Firebase SDK 或模擬器，必須使用 Factory Mocks。
-  - **整合測試**: 優先 Mock 服務層 (`src/lib/`) 以加速測試。
+  - **整合測試**: 優先 Mock 服務層 (`src/lib/` facade 或 `src/repo/`、`src/service/`) 以加速測試。
 - **零容忍**: 嚴格遵守 紅-綠-重構 (Red-Green-Refactor) 循環。
 
-### II. 嚴格的服務層架構 (Strict Service Layer)
+### II. 嚴格的分層架構 (Strict Layered Architecture)
 
-**不可協商**: UI 層與業務邏輯層必須完全分離。
+**不可協商**: UI 層與業務邏輯層必須完全分離，依賴方向嚴格單向。
 
-- **隔離 (Isolation)**: 所有 Firebase 邏輯 (Firestore, Auth, Storage) 必須封裝在 `src/lib/` 中。
-- **UI 限制**: UI 整合層（Pages、Components、Hooks、Contexts，即 `src/app/`、`src/components/`、`src/hooks/`、`src/contexts/`）**不得**直接匯入 Firebase SDK。它們只能呼叫 `src/lib/` 匯出的函式（含純同步工具與非同步包裝）。
-- **資料正規化**: 資料驗證與正規化必須在服務層處理。
+- **六層架構**: Types → Config → Repo → Service → Runtime → UI，forward-only dependency（由 dependency-cruiser 機械式強制）。
+- **Firebase 隔離**: Firebase SDK 初始化在 `src/config/`，資料存取在 `src/repo/`，業務邏輯在 `src/service/`。`src/lib/` 為 compatibility facade，re-exports canonical layers 供既有 UI 消費者使用。
+- **UI 限制**: UI 整合層（`src/app/`、`src/components/`、`src/hooks/`、`src/contexts/`）**不得**直接匯入 Firebase SDK。它們透過 `src/runtime/` hooks/use-cases 或 `src/lib/` facade 存取服務。
+- **資料正規化**: 資料驗證與正規化必須在 `src/service/` 處理。
 
 ### III. 使用者體驗與一致性 (UX & Consistency)
 
@@ -143,4 +147,4 @@ Version: 1.7.0 -> 1.8.0
 
 **Harness 框架**: 本專案的 AI agent 治理基於 Guides（前饋控制）+ Sensors（反饋控制）框架。CLAUDE.md 定義具體的 Guides 和 Sensors，本憲法定義不可違反的核心原則。
 
-**Version**: 1.8.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-04-20
+**Version**: 1.9.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-04-24
