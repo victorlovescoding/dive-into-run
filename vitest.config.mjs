@@ -57,6 +57,7 @@ export default defineConfig({
           environment: 'node',
           setupFiles: './vitest.setup.server.js',
           include: ['specs/g8-server-coverage/**/*.test.js'],
+          fileParallelism: false,
         },
       },
     ],
