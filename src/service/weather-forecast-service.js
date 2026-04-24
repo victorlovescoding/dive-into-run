@@ -72,6 +72,7 @@ import { requestCwaJson, requestEpaJson } from '@/repo/server/weather-api-repo';
 const CWA_BASE = 'https://opendata.cwa.gov.tw/api/v1/rest/datastore';
 const EPA_AQI_URL = 'https://data.moenv.gov.tw/api/v2/aqx_p_432';
 const COUNTY_DEFAULT_HUMIDITY = 70;
+const TW_OFFSET_MS = 8 * 3600000;
 
 class WeatherForecastError extends Error {
   /**
@@ -206,18 +207,26 @@ function isPeriodCurrent(startTime, endTime, now) {
 }
 
 /**
+ * @param {string | Date} input 要轉換的日期輸入。
+ * @returns {Date} 以 UTC 表示台灣本地時間的 Date（用 getUTC* 讀取台灣時間分量）。
+ */
+function toTwDate(input) {
+  return new Date(new Date(String(input)).getTime() + TW_OFFSET_MS);
+}
+
+/**
  * @param {string | undefined} startTime 要判斷的開始時間。
  * @param {Date} now 目前比較基準時間。
  * @returns {boolean} 該開始時間是否落在明天。
  */
 function isPeriodTomorrow(startTime, now) {
-  const start = new Date(String(startTime));
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const start = toTwDate(startTime);
+  const tomorrow = toTwDate(now);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
   return (
-    start.getDate() === tomorrow.getDate() &&
-    start.getMonth() === tomorrow.getMonth() &&
-    start.getFullYear() === tomorrow.getFullYear()
+    start.getUTCDate() === tomorrow.getUTCDate() &&
+    start.getUTCMonth() === tomorrow.getUTCMonth() &&
+    start.getUTCFullYear() === tomorrow.getUTCFullYear()
   );
 }
 
@@ -226,7 +235,7 @@ function isPeriodTomorrow(startTime, now) {
  * @returns {boolean} 該開始時間是否屬於白天時段。
  */
 function isDaytimePeriod(startTime) {
-  const hour = new Date(String(startTime)).getHours();
+  const hour = toTwDate(startTime).getUTCHours();
   return hour >= 6 && hour < 18;
 }
 
