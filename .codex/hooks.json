@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$(git rev-parse --show-toplevel)/.codex/hooks/notify-permission.sh\""
+            "command": "\"${CODEX_PROJECT_DIR:-$CLAUDE_PROJECT_DIR}/.codex/hooks/notify-permission.sh\""
           }
         ]
       }
