@@ -113,6 +113,7 @@ Six canonical layers with forward-only dependency: Types → Config → Repo →
 | `.codex/references/testing-handbook.md` | ✅ 已有 | 測試撰寫完整手冊                                                                |
 | `.codex/references/review-standards.md` | 🔜 待建 | Code Review 標準與 checklist                                                    |
 | `.codex/references/harness-articles/`   | ✅ 已有 | 5 篇 harness engineering 文章摘要（Fowler、OpenAI、Anthropic、Datadog、Stripe） |
+| `docs/QUALITY_SCORE.md`                 | ✅ 已有 | Per-layer + per-domain 品質矩陣（coverage、lint、type-check、JSDoc、test 分佈） |
 
 ## Environment & Secrets
 
