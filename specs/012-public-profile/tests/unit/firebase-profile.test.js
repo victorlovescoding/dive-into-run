@@ -64,7 +64,7 @@ vi.mock('firebase/firestore', () => ({
   setDoc: mockSetDoc,
 }));
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: 'mock-db',
 }));
 
@@ -122,6 +122,35 @@ function makeCountSnap(count) {
     data: () => ({ count }),
   };
 }
+
+// ---------------------------------------------------------------------------
+// toPublicProfile(uid, data)
+// ---------------------------------------------------------------------------
+
+describe('Unit: toPublicProfile', () => {
+  it('should normalize the shared PublicProfile shape and omit private fields', async () => {
+    const { toPublicProfile } = await import('@/service/profile-mapper');
+    const createdAt = { seconds: 1700000000, nanoseconds: 0 };
+    const result = toPublicProfile('user-1', {
+      uid: 'user-1',
+      name: 'Alice',
+      email: 'alice@example.com',
+      photoURL: 'https://example.com/alice.jpg',
+      bio: '熱愛跑步的工程師',
+      createdAt,
+      nameChangedAt: { seconds: 1700001000, nanoseconds: 0 },
+    });
+
+    expect(result).toEqual({
+      uid: 'user-1',
+      name: 'Alice',
+      photoURL: 'https://example.com/alice.jpg',
+      bio: '熱愛跑步的工程師',
+      createdAt,
+    });
+    expect(result).not.toHaveProperty('email');
+  });
+});
 
 // ---------------------------------------------------------------------------
 // getUserProfile(uid)

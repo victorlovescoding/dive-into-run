@@ -35,7 +35,7 @@ paths:
 function UserCard({ user, onUpdate }) {}
 
 // Import external type
-/** @param {import('@/lib/types').Event} event */
+/** @param {import('@/service/event-service').EventData} event */
 
 // Type casting
 const el = /** @type {HTMLInputElement} */ (document.getElementById('x'));

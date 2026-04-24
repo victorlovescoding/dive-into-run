@@ -104,7 +104,7 @@ vi.mock('firebase/firestore', () => ({
   writeBatch: mockWriteBatch,
 }));
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: 'mock-db',
 }));
 

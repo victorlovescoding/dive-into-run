@@ -1,30 +1,9 @@
 import { NextResponse } from 'next/server';
 import {
-  adminDb,
-  getUidByAthleteId,
-  ensureValidStravaToken,
-  syncSingleStravaActivity,
-} from '@/lib/firebase-admin';
-
-/**
- * Handles Strava webhook subscription validation.
- * Strava sends a GET request with hub.mode, hub.challenge, and hub.verify_token
- * to verify the callback URL is active.
- * @param {Request} request - Incoming GET request from Strava.
- * @returns {NextResponse} JSON response echoing hub.challenge or 403.
- */
-export function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const mode = searchParams.get('hub.mode');
-  const challenge = searchParams.get('hub.challenge');
-  const verifyToken = searchParams.get('hub.verify_token');
-
-  if (mode === 'subscribe' && verifyToken === process.env.STRAVA_WEBHOOK_VERIFY_TOKEN) {
-    return NextResponse.json({ 'hub.challenge': challenge });
-  }
-
-  return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-}
+  buildStravaWebhookChallengeResponse,
+  hasMatchingStravaWebhookSubscription,
+  processWebhookEvent,
+} from '@/runtime/server/use-cases/strava-server-use-cases';
 
 /**
  * @typedef {object} StravaWebhookEvent
@@ -38,78 +17,13 @@ export function GET(request) {
  */
 
 /**
- * Handles an activity create or update event by fetching the activity
- * from Strava and writing it to Firestore.
- * @param {number} ownerId - Strava athlete ID.
- * @param {number} activityId - Strava activity ID.
- * @returns {Promise<void>}
+ * Handles Strava webhook subscription validation.
+ * @param {Request} request - Incoming GET request from Strava.
+ * @returns {NextResponse} JSON response echoing hub.challenge or 403.
  */
-async function handleActivityCreateOrUpdate(ownerId, activityId) {
-  const uid = await getUidByAthleteId(ownerId);
-  if (!uid) return;
-
-  const result = await ensureValidStravaToken(uid);
-  if (result.error) return;
-
-  await syncSingleStravaActivity({
-    uid,
-    accessToken: result.accessToken,
-    stravaActivityId: activityId,
-  });
-}
-
-/**
- * Handles an activity delete event by removing it from Firestore.
- * @param {number} activityId - Strava activity ID to delete.
- * @returns {Promise<void>}
- */
-async function handleActivityDelete(activityId) {
-  await adminDb.collection('stravaActivities').doc(String(activityId)).delete();
-}
-
-/**
- * Handles athlete deauthorization by marking the connection as disconnected
- * and deleting stored tokens. Historical activities are preserved.
- * @param {number} ownerId - Strava athlete ID.
- * @returns {Promise<void>}
- */
-async function handleAthleteDeauth(ownerId) {
-  const uid = await getUidByAthleteId(ownerId);
-  if (!uid) return;
-
-  const batch = adminDb.batch();
-  batch.delete(adminDb.collection('stravaTokens').doc(uid));
-  batch.update(adminDb.collection('stravaConnections').doc(uid), { connected: false });
-  await batch.commit();
-}
-
-/**
- * Processes a Strava webhook event asynchronously. Dispatches to the
- * appropriate handler based on object_type and aspect_type.
- * @param {StravaWebhookEvent} event - Parsed webhook event payload.
- * @returns {Promise<void>}
- */
-async function processWebhookEvent(event) {
-  const {
-    object_type: objectType,
-    object_id: objectId,
-    aspect_type: aspectType,
-    owner_id: ownerId,
-    updates,
-  } = event;
-
-  if (objectType === 'athlete' && aspectType === 'update' && updates?.authorized === 'false') {
-    await handleAthleteDeauth(ownerId);
-    return;
-  }
-
-  if (objectType !== 'activity') return;
-
-  if (aspectType === 'create' || aspectType === 'update') {
-    await handleActivityCreateOrUpdate(ownerId, objectId);
-  } else if (aspectType === 'delete') {
-    await handleActivityDelete(objectId);
-  }
+export function GET(request) {
+  const result = buildStravaWebhookChallengeResponse(request);
+  return NextResponse.json(result.body, { status: result.status });
 }
 
 /**
@@ -122,7 +36,7 @@ async function processWebhookEvent(event) {
 export async function POST(request) {
   const event = /** @type {StravaWebhookEvent} */ (await request.json());
 
-  if (String(event.subscription_id) !== process.env.STRAVA_WEBHOOK_SUBSCRIPTION_ID) {
+  if (!hasMatchingStravaWebhookSubscription(event.subscription_id)) {
     return NextResponse.json({ error: 'Invalid subscription' }, { status: 403 });
   }
 

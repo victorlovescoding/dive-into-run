@@ -1,5 +1,3 @@
-import polyline from '@mapbox/polyline';
-
 // #region JSDoc Type Definitions
 /**
  * @typedef {object} RoutePoint
@@ -60,16 +58,13 @@ import polyline from '@mapbox/polyline';
  */
 // #endregion JSDoc Type Definitions
 
-/**
- * 取得 RoutePayload 中的 polylines 陣列（相容新舊格式）。
- * @param {RoutePayload | null | undefined} route - 路線資料。
- * @returns {string[]} encoded polyline 字串陣列。
- */
-export function normalizeRoutePolylines(route) {
-  if (route?.polylines) return route.polylines;
-  if (route?.polyline) return [route.polyline];
-  return [];
-}
+export {
+  buildRoutePayload,
+  buildUserPayload,
+  getRemainingSeats,
+  isDeadlinePassed,
+  normalizeRoutePolylines,
+} from '@/service/event-service';
 
 /**
  * 計算多段路線座標的總點數。
@@ -79,49 +74,6 @@ export function normalizeRoutePolylines(route) {
 export function countTotalPoints(coordsArray) {
   if (!Array.isArray(coordsArray)) return 0;
   return coordsArray.reduce((sum, line) => sum + line.length, 0);
-}
-
-/**
- * 將地圖繪製的多段座標壓縮成 encoded polyline 陣列。
- * @param {RoutePoint[][] | null} routeCoordinates - 多段路線座標（每條路線一個子陣列）。
- * @returns {RoutePayload | null} 壓縮後的路線資料，或 null。
- */
-export function buildRoutePayload(routeCoordinates) {
-  if (!Array.isArray(routeCoordinates) || routeCoordinates.length === 0) return null;
-
-  /** @type {string[]} */
-  const encodedPolylines = [];
-  let totalPoints = 0;
-  let minLat = Infinity;
-  let maxLat = -Infinity;
-  let minLng = Infinity;
-  let maxLng = -Infinity;
-
-  routeCoordinates.forEach((segment) => {
-    if (!Array.isArray(segment) || segment.length === 0) return;
-
-    /** @type {[number, number][]} */
-    const points = segment.map((p) => [Number(p.lat), Number(p.lng)]);
-    if (points.some(([lat, lng]) => Number.isNaN(lat) || Number.isNaN(lng))) return;
-
-    encodedPolylines.push(polyline.encode(points));
-    totalPoints += points.length;
-
-    points.forEach(([lat, lng]) => {
-      if (lat < minLat) minLat = lat;
-      if (lat > maxLat) maxLat = lat;
-      if (lng < minLng) minLng = lng;
-      if (lng > maxLng) maxLng = lng;
-    });
-  });
-
-  if (encodedPolylines.length === 0) return null;
-
-  return {
-    polylines: encodedPolylines,
-    pointsCount: totalPoints,
-    bbox: { minLat, minLng, maxLat, maxLng },
-  };
 }
 
 /**
@@ -194,18 +146,6 @@ export function toNumber(v) {
 }
 
 /**
- * 計算活動的剩餘名額
- * @param {EventData} ev - 活動資料
- * @returns {number} 剩餘名額數
- */
-export function getRemainingSeats(ev) {
-  if (typeof ev?.remainingSeats === 'number') return ev.remainingSeats;
-  const max = toNumber(ev?.maxParticipants);
-  const count = toNumber(ev?.participantsCount);
-  return Math.max(0, max - count);
-}
-
-/**
  * 將日期值轉為毫秒時間戳（支援 string 或 Firestore Timestamp）。
  * @param {string | FirestoreTimestamp | null | undefined} value - 日期值。
  * @returns {number | null} 毫秒時間戳，無效值回傳 null。
@@ -218,31 +158,6 @@ export function toMs(value) {
   }
   if (typeof value?.toDate === 'function') return value.toDate().getTime();
   return null;
-}
-
-/**
- * 判斷活動的報名截止時間是否已過。
- * @param {EventData} event - 活動資料。
- * @returns {boolean} 若截止時間已過回傳 true，否則 false。
- */
-export function isDeadlinePassed(event) {
-  const ddl = toMs(event?.registrationDeadline);
-  if (ddl === null) return false;
-  return Date.now() >= ddl;
-}
-
-/**
- * 建立使用者 payload
- * @param {{ uid?: string, name?: string, email?: string, photoURL?: string } | null} user - 使用者物件
- * @returns {UserPayload | null} 使用者 payload，或 null
- */
-export function buildUserPayload(user) {
-  if (!user?.uid) return null;
-  return {
-    uid: String(user.uid),
-    name: String(user.name || (user.email ? user.email.split('@')[0] : '')),
-    photoURL: String(user.photoURL || ''),
-  };
 }
 
 /**

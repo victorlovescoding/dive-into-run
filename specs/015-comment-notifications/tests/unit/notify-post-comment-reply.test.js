@@ -22,17 +22,21 @@ vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({ db: 'mock-db' }));
+vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
 vi.mock('@/lib/firebase-events', () => ({ fetchParticipants: vi.fn() }));
-vi.mock('@/lib/notification-helpers', () => ({
-  buildNotificationMessage: vi.fn(() => 'mock-message'),
-}));
+vi.mock('@/service/notification-service', async (importOriginal) => {
+  const actual = /** @type {Record<string, unknown>} */ (await importOriginal());
+  return {
+    ...actual,
+    buildNotificationMessage: vi.fn(() => 'mock-message'),
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
 import { collection, writeBatch, getDocs } from 'firebase/firestore';
-import { buildNotificationMessage } from '@/lib/notification-helpers';
+import { buildNotificationMessage } from '@/service/notification-service';
 import { notifyPostCommentReply } from '@/lib/firebase-notifications';
 
 // ---------------------------------------------------------------------------

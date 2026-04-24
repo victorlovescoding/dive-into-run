@@ -24,7 +24,7 @@ import {
   fetchMyJoinedEventsForIds,
   deleteEvent,
   EVENT_NOT_FOUND_MESSAGE,
-} from '@/lib/firebase-events';
+} from '@/runtime/client/use-cases/event-use-cases';
 
 // ---------------------------------------------------------------------------
 // Hoisted shared state
@@ -48,15 +48,15 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
-vi.mock('@/contexts/AuthContext', () => ({
+vi.mock('@/runtime/providers/AuthProvider', () => ({
   AuthContext: mockAuthContext,
 }));
 
-vi.mock('@/contexts/ToastContext', () => ({
+vi.mock('@/runtime/providers/ToastProvider', () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({ db: {} }));
+vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
 
 vi.mock('firebase/firestore', () => ({
   Timestamp: {
@@ -68,7 +68,7 @@ vi.mock('firebase/firestore', () => ({
   },
 }));
 
-vi.mock('@/lib/firebase-events', () => ({
+vi.mock('@/runtime/client/use-cases/event-use-cases', () => ({
   fetchEventById: vi.fn(),
   fetchParticipants: vi.fn(),
   fetchMyJoinedEventsForIds: vi.fn(),
@@ -79,7 +79,7 @@ vi.mock('@/lib/firebase-events', () => ({
   EVENT_NOT_FOUND_MESSAGE: '活動不存在',
 }));
 
-vi.mock('@/lib/firebase-notifications', () => ({
+vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
   notifyEventModified: vi.fn().mockResolvedValue(undefined),
   notifyEventCancelled: vi.fn().mockResolvedValue(undefined),
   notifyEventNewComment: vi.fn().mockResolvedValue(undefined),

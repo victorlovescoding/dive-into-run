@@ -58,7 +58,7 @@ export function truncate(text, maxLen) {
 
 /**
  * @typedef {object} EventForOg
- * @property {{ toDate: () => Date }} time - 活動時間 Timestamp。
+ * @property {string | { toDate: () => Date }} time - 活動時間。
  * @property {string} city - 活動所在縣市。
  * @property {string} district - 活動所在區域。
  */
@@ -73,7 +73,10 @@ export function buildEventOgDescription(event) {
   if (!event) return FALLBACK_DESCRIPTION;
 
   const { time, city, district } = event;
-  const date = time.toDate();
+  const date = typeof time === 'string' ? new Date(time) : (time?.toDate?.() ?? null);
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return FALLBACK_DESCRIPTION;
+  }
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');

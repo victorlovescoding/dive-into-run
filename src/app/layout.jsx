@@ -1,11 +1,9 @@
 import React from 'react';
 import { Geist, Geist_Mono as GeistMono } from 'next/font/google';
 import Navbar from '@/components/Navbar/Navbar';
-import UserDataHandler from '@/contexts/AuthContext';
-import NotificationProvider from '@/contexts/NotificationContext';
-import ToastProvider from '@/contexts/ToastContext';
 import NotificationToast from '@/components/Notifications/NotificationToast';
 import ToastContainer from '@/components/ToastContainer';
+import { AuthProvider, NotificationProvider, ToastProvider } from '@/runtime/providers';
 import './globals.css';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
@@ -40,7 +38,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="zh-Hant-TW">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <UserDataHandler>
+        <AuthProvider>
           <ToastProvider>
             <NotificationProvider>
               <Navbar />
@@ -49,7 +47,7 @@ export default function RootLayout({ children }) {
               <ToastContainer />
             </NotificationProvider>
           </ToastProvider>
-        </UserDataHandler>
+        </AuthProvider>
       </body>
     </html>
   );

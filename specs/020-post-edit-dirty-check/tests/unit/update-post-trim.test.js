@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { updateDoc } from 'firebase/firestore';
 import { updatePost } from '@/lib/firebase-posts';
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: {},
 }));
 

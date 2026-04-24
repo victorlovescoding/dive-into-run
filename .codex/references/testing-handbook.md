@@ -24,11 +24,11 @@ Skill 是**流程**（做什麼、照什麼順序），handbook 是**字典**（
 
 ## 2. Testing Trophy（Kent C. Dodds）
 
-| 層級        | 比例 | 目標                        | 工具                                 |
-| ----------- | ---- | --------------------------- | ------------------------------------ |
-| Integration | 60%  | UI + 使用者互動（最高 ROI） | Vitest + Testing Library + userEvent |
-| Unit        | 20%  | `src/lib/` 純商業邏輯       | Vitest（jsdom）                      |
-| E2E         | 20%  | Critical user journeys      | Playwright（Chromium）               |
+| 層級        | 比例 | 目標                                          | 工具                                 |
+| ----------- | ---- | --------------------------------------------- | ------------------------------------ |
+| Integration | 60%  | UI + 使用者互動（最高 ROI）                   | Vitest + Testing Library + userEvent |
+| Unit        | 20%  | `src/service/**` 純商業邏輯與 DOM-free helper | Vitest（jsdom）                      |
+| E2E         | 20%  | Critical user journeys                        | Playwright（Chromium）               |
 
 **為何 integration 居首**：
 
@@ -66,7 +66,7 @@ specs/
 
 ## 4. Unit Tests 指南
 
-**Target**：`src/lib/` 的純函式、helper。禁 DOM、禁 Testing Library。
+**Target**：以 `src/service/**` 的純函式、驗證/轉換邏輯為主；`src/lib/**` 僅在需要驗證 compatibility facade 契約時補測。禁 DOM、禁 Testing Library。
 
 ### AAA Pattern
 
@@ -96,7 +96,7 @@ it('should return the correct sum', () => {
 
 ### vi.mock + typed alias
 
-語法細節見 `.codex/skills/test-driven-development/references/coding-style.md`。一句話規則：`vi.mock()` 後**立刻**為每個被 mock 的 function 建 `/** @type {import('vitest').Mock} */` alias，否則 `.mockResolvedValueOnce` 會觸發 TS2339。
+語法細節見 `.agents/skills/test-driven-development/references/coding-style.md`。一句話規則：`vi.mock()` 後**立刻**為每個被 mock 的 function 建 `/** @type {import('vitest').Mock} */` alias，否則 `.mockResolvedValueOnce` 會觸發 TS2339。
 
 ### 實際範例
 
@@ -106,7 +106,7 @@ it('should return the correct sum', () => {
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { signInWithPopup, signOut } from 'firebase/auth';
 import { signInWithGoogle, signOutUser } from '@/lib/firebase-auth-helpers';
-import { auth, provider } from '@/lib/firebase-client';
+import { auth, provider } from '@/config/client/firebase-client';
 
 vi.mock('firebase/auth', () => ({
   signInWithPopup: vi.fn(),
@@ -349,7 +349,7 @@ const mockResponse = {
 };
 ```
 
-詳細見 `.codex/skills/test-driven-development/references/testing-anti-patterns.md` Anti-Pattern 4。
+詳細見 `.agents/skills/test-driven-development/references/testing-anti-patterns.md` Anti-Pattern 4。
 
 ### Typedef 對齊生產型別
 
@@ -402,7 +402,7 @@ const mockResponse = {
 
 ## 10. Anti-Patterns 速查表
 
-詳細案例見 `.codex/skills/test-driven-development/references/testing-anti-patterns.md`。
+詳細案例見 `.agents/skills/test-driven-development/references/testing-anti-patterns.md`。
 
 | #   | 反模式                          | 一句話修復                              |
 | --- | ------------------------------- | --------------------------------------- |
@@ -504,11 +504,11 @@ test.describe.configure({ mode: 'serial' });
 
 | 用途             | 路徑                                                                         |
 | ---------------- | ---------------------------------------------------------------------------- |
-| TDD skill 入口   | `.codex/skills/test-driven-development/SKILL.md`                            |
-| Mock 語法規範    | `.codex/skills/test-driven-development/references/coding-style.md`          |
-| JSDoc 進階       | `.codex/skills/test-driven-development/references/jsdoc-cheatsheet.md`      |
-| 測試 boilerplate | `.codex/skills/test-driven-development/references/boilerplate.js`           |
-| 反模式全集       | `.codex/skills/test-driven-development/references/testing-anti-patterns.md` |
+| TDD skill 入口   | `.agents/skills/test-driven-development/SKILL.md`                            |
+| Mock 語法規範    | `.agents/skills/test-driven-development/references/coding-style.md`          |
+| JSDoc 進階       | `.agents/skills/test-driven-development/references/jsdoc-cheatsheet.md`      |
+| 測試 boilerplate | `.agents/skills/test-driven-development/references/boilerplate.js`           |
+| 反模式全集       | `.agents/skills/test-driven-development/references/testing-anti-patterns.md` |
 | Vitest 配置      | `vitest.config.mjs`、`vitest.setup.jsx`                                      |
 | Playwright 配置  | `playwright.config.mjs`、`playwright.emulator.config.mjs`                    |
 | E2E 共用 helper  | `specs/test-utils/e2e-helpers.js`                                            |

@@ -1,11 +1,11 @@
 /**
- * @file Server-env unit tests for src/lib/firebase-profile-server.js.
+ * @file Server-env unit tests for the public profile server repo/service split.
  *
  * Runs under the `server` vitest project (node env) wrapped by
  * `firebase emulators:exec --only auth,firestore`. Imports real
- * `firebase-profile-server.js` (and transitively real firebase-admin.js)
- * so v8 coverage records actual execution rather than being stuck at 0%
- * like the mock-based counterpart at
+ * `profile-server-service.js` plus the server repo so v8 coverage records
+ * actual execution rather than being stuck at 0% like the mock-based
+ * counterpart at
  * specs/012-public-profile/tests/unit/firebase-profile-server.test.js.
  */
 
@@ -35,7 +35,7 @@ beforeEach(async () => {
 
 describe('getUserProfileServer', () => {
   it('returns a PublicProfile without email when the user doc exists', async () => {
-    const { adminDb } = await import('@/lib/firebase-admin');
+    const { adminDb } = await import('@/config/server/firebase-admin-app');
     await adminDb
       .collection('users')
       .doc('u1')
@@ -48,7 +48,7 @@ describe('getUserProfileServer', () => {
         createdAt: new Date('2024-01-01T00:00:00Z'),
       });
 
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     const result = await getUserProfileServer('u1');
 
     expect(result).not.toBeNull();
@@ -60,7 +60,7 @@ describe('getUserProfileServer', () => {
   });
 
   it('omits bio from the result when the source doc has no bio field', async () => {
-    const { adminDb } = await import('@/lib/firebase-admin');
+    const { adminDb } = await import('@/config/server/firebase-admin-app');
     await adminDb
       .collection('users')
       .doc('u2')
@@ -72,7 +72,7 @@ describe('getUserProfileServer', () => {
         createdAt: new Date('2024-02-01T00:00:00Z'),
       });
 
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     const result = await getUserProfileServer('u2');
 
     expect(result).not.toBeNull();
@@ -82,13 +82,52 @@ describe('getUserProfileServer', () => {
   });
 
   it('returns null when the user doc does not exist', async () => {
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     const result = await getUserProfileServer('missing-user');
     expect(result).toBeNull();
   });
 
   it('throws when uid is an empty string', async () => {
-    const { getUserProfileServer } = await import('@/lib/firebase-profile-server');
+    const { getUserProfileServer } = await import('@/service/profile-server-service');
     await expect(getUserProfileServer('')).rejects.toThrow('uid is required');
+  });
+});
+
+describe('getUserProfileDocument', () => {
+  it('returns the raw profile document payload so the shared mapper can normalize it', async () => {
+    const { adminDb } = await import('@/config/server/firebase-admin-app');
+    await adminDb
+      .collection('users')
+      .doc('u3')
+      .set({
+        uid: 'u3',
+        name: 'Carol',
+        email: 'carol@example.com',
+        photoURL: 'https://example.com/carol.jpg',
+        bio: '馬拉松愛好者',
+        privateNote: 'should stay in repo layer',
+        createdAt: new Date('2024-03-01T00:00:00Z'),
+      });
+
+    const { default: getUserProfileDocument } =
+      await import('@/repo/server/firebase-profile-server-repo');
+    const result = await getUserProfileDocument('u3');
+
+    expect(result).toMatchObject({
+      uid: 'u3',
+      name: 'Carol',
+      email: 'carol@example.com',
+      photoURL: 'https://example.com/carol.jpg',
+      bio: '馬拉松愛好者',
+      privateNote: 'should stay in repo layer',
+    });
+    expect(result?.createdAt).toBeDefined();
+  });
+
+  it('returns null when the user doc does not exist', async () => {
+    const { default: getUserProfileDocument } =
+      await import('@/repo/server/firebase-profile-server-repo');
+    const result = await getUserProfileDocument('missing-user');
+    expect(result).toBeNull();
   });
 });

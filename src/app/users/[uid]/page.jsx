@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
-import { getUserProfileServer } from '@/lib/firebase-profile-server';
+import { getUserProfileServer } from '@/service/profile-server-service';
 import ProfileClient from './ProfileClient';
 
 /**
- * @typedef {import('@/lib/firebase-profile').PublicProfile} PublicProfile
+ * @typedef {import('@/service/profile-mapper').PublicProfile} PublicProfile
  */
 
 /**

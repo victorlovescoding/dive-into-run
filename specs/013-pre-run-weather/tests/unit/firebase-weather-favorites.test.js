@@ -14,7 +14,7 @@ import {
   removeFavorite,
   getFavorites,
   isFavorited,
-} from '@/lib/firebase-weather-favorites';
+} from '@/repo/client/firebase-weather-favorites-repo';
 
 // #region Mocks
 vi.mock('firebase/firestore', () => ({
@@ -29,7 +29,7 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(() => ({ _type: 'serverTimestamp' })),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: {},
 }));
 

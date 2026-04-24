@@ -1,19 +1,30 @@
 import { describe, it, expect } from 'vitest';
 import {
+  countTotalPoints,
+  formatDateTime,
+  formatCommentTime,
+  formatCommentTimeFull,
   formatPace,
   toNumber,
+  toMs,
   chunkArray,
-  getRemainingSeats,
-  buildRoutePayload,
 } from '@/lib/event-helpers';
 
-/**
- * @typedef {object} MockEvent
- * @property {number} maxParticipants - The maximum number of participants.
- * @property {number} [participantsCount] - The current number of participants.
- */
-
 describe('event-helpers unit tests', () => {
+  describe('formatDateTime', () => {
+    it('formats Firestore timestamp-like values', () => {
+      const value = {
+        toDate: () => new Date('2026-04-23T08:30:00'),
+      };
+
+      expect(formatDateTime(value)).toBe('2026-04-23 08:30');
+    });
+
+    it('keeps string values readable', () => {
+      expect(formatDateTime('2026-04-23T08:30')).toBe('2026-04-23 08:30');
+    });
+  });
+
   describe('formatPace', () => {
     it('should format seconds into mm:ss format', () => {
       expect(formatPace(300)).toBe('05:00');
@@ -60,47 +71,52 @@ describe('event-helpers unit tests', () => {
     });
   });
 
-  describe('getRemainingSeats', () => {
-    it('should calculate remaining seats correctly', () => {
-      const event = { maxParticipants: 10, participantsCount: 4 };
-      expect(getRemainingSeats(/** @type {*} */ (event))).toBe(6);
+  describe('toMs', () => {
+    it('converts strings and Firestore timestamp-like values', () => {
+      const value = {
+        toDate: () => new Date('2026-04-23T08:30:00'),
+      };
+
+      expect(toMs('2026-04-23T08:30:00')).toBe(new Date('2026-04-23T08:30:00').getTime());
+      expect(toMs(value)).toBe(new Date('2026-04-23T08:30:00').getTime());
     });
 
-    it('should return 0 if full or oversubscribed', () => {
-      const event = { maxParticipants: 10, participantsCount: 12 };
-      expect(getRemainingSeats(/** @type {*} */ (event))).toBe(0);
-    });
-
-    it('should handle missing participantsCount', () => {
-      const event = { maxParticipants: 10 };
-      expect(getRemainingSeats(/** @type {*} */ (event))).toBe(10);
+    it('returns null for invalid values', () => {
+      expect(toMs('bad-time')).toBeNull();
+      expect(toMs(null)).toBeNull();
+      expect(toMs(undefined)).toBeNull();
     });
   });
 
-  describe('buildRoutePayload', () => {
-    it('should build payload from coordinates', () => {
-      const coords = [
-        [
-          { lat: 1, lng: 2 },
-          { lat: 3, lng: 4 },
-        ],
-      ];
-      const result = buildRoutePayload(coords);
-      expect(result).toBeDefined();
-      if (result) {
-        expect(result.pointsCount).toBe(2);
-        expect(result.bbox).toEqual({
-          minLat: 1,
-          minLng: 2,
-          maxLat: 3,
-          maxLng: 4,
-        });
-      }
+  describe('countTotalPoints', () => {
+    it('counts points across all segments', () => {
+      expect(
+        countTotalPoints([
+          [
+            { lat: 1, lng: 2 },
+            { lat: 3, lng: 4 },
+          ],
+          [{ lat: 5, lng: 6 }],
+        ]),
+      ).toBe(3);
     });
 
-    it('should return null for empty coordinates', () => {
-      expect(buildRoutePayload([])).toBeNull();
-      expect(buildRoutePayload(null)).toBeNull();
+    it('returns 0 for non-array values', () => {
+      expect(countTotalPoints(null)).toBe(0);
+    });
+  });
+
+  describe('comment time formatters', () => {
+    const value = {
+      toDate: () => new Date('2026-04-23T08:30:00'),
+    };
+
+    it('formats short comment time', () => {
+      expect(formatCommentTime(value)).toBe('4/23 08:30');
+    });
+
+    it('formats full comment time', () => {
+      expect(formatCommentTimeFull(value)).toBe('2026年4月23日 08:30');
     });
   });
 });

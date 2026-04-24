@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { adminDb, verifyAuthToken } from '@/lib/firebase-admin';
-
-const BATCH_LIMIT = 500;
+import {
+  disconnectStravaAccount,
+  verifyAuthToken,
+} from '@/runtime/server/use-cases/strava-server-use-cases';
 
 /**
  * Handles Strava disconnect requests. Deletes stored tokens, marks connection
@@ -15,34 +16,6 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const connectionRef = adminDb.collection('stravaConnections').doc(uid);
-  const connectionDoc = await connectionRef.get();
-
-  if (!connectionDoc.exists || !connectionDoc.data()?.connected) {
-    return NextResponse.json({ error: 'Not connected to Strava' }, { status: 400 });
-  }
-
-  // Atomic: delete token + mark disconnected in one batch
-  const atomicBatch = adminDb.batch();
-  atomicBatch.delete(adminDb.collection('stravaTokens').doc(uid));
-  atomicBatch.update(connectionRef, { connected: false });
-  await atomicBatch.commit();
-
-  // Delete all stravaActivities for this user in batches of 500
-  const activitiesRef = adminDb.collection('stravaActivities');
-  const activitiesQuery = activitiesRef.where('uid', '==', uid).limit(BATCH_LIMIT);
-  let snapshot = await activitiesQuery.get();
-
-  while (!snapshot.empty) {
-    const batch = adminDb.batch();
-    snapshot.docs.forEach((activityDoc) => {
-      batch.delete(activityDoc.ref);
-    });
-    // eslint-disable-next-line no-await-in-loop -- batch deletes must run sequentially to avoid exceeding Firestore limits
-    await batch.commit();
-    // eslint-disable-next-line no-await-in-loop -- must re-query after each batch commit
-    snapshot = await activitiesQuery.get();
-  }
-
-  return NextResponse.json({ success: true });
+  const result = await disconnectStravaAccount(uid);
+  return NextResponse.json(result.body, { status: result.status });
 }

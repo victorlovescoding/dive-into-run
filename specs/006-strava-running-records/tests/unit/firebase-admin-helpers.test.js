@@ -52,6 +52,27 @@ vi.mock('firebase-admin', () => {
 vi.stubGlobal('fetch', vi.fn());
 const mockedFetch = /** @type {import('vitest').Mock} */ (globalThis.fetch);
 
+/**
+ * Imports the split S003 Strava server modules with a legacy-friendly shape.
+ * @returns {Promise<{
+ *   mapStravaActivityToDoc: typeof import('@/repo/server/strava-server-repo').mapStravaActivityToDoc,
+ *   getUidByAthleteId: typeof import('@/repo/server/strava-server-repo').getUidByAthleteId,
+ *   ensureValidStravaToken: typeof import('@/runtime/server/use-cases/strava-server-use-cases').ensureValidStravaToken,
+ *   syncSingleStravaActivity: typeof import('@/runtime/server/use-cases/strava-server-use-cases').syncSingleStravaActivity,
+ * }>} Split server module exports.
+ */
+async function importStravaServerModules() {
+  const repo = await import('@/repo/server/strava-server-repo');
+  const runtime = await import('@/runtime/server/use-cases/strava-server-use-cases');
+
+  return {
+    mapStravaActivityToDoc: repo.mapStravaActivityToDoc,
+    getUidByAthleteId: repo.getUidByAthleteId,
+    ensureValidStravaToken: runtime.ensureValidStravaToken,
+    syncSingleStravaActivity: runtime.syncSingleStravaActivity,
+  };
+}
+
 // --- Helpers ---
 
 /**
@@ -80,7 +101,7 @@ describe('mapStravaActivityToDoc', () => {
     const activity = createStravaActivity();
 
     // Act
-    const { mapStravaActivityToDoc } = await import('@/lib/firebase-admin');
+    const { mapStravaActivityToDoc } = await importStravaServerModules();
     const doc = mapStravaActivityToDoc('user-1', activity);
 
     // Assert
@@ -104,7 +125,7 @@ describe('mapStravaActivityToDoc', () => {
     const activity = createStravaActivity({ map: undefined });
 
     // Act
-    const { mapStravaActivityToDoc } = await import('@/lib/firebase-admin');
+    const { mapStravaActivityToDoc } = await importStravaServerModules();
     const doc = mapStravaActivityToDoc('user-1', activity);
 
     // Assert
@@ -127,7 +148,7 @@ describe('getUidByAthleteId', () => {
     });
 
     // Act
-    const { getUidByAthleteId } = await import('@/lib/firebase-admin');
+    const { getUidByAthleteId } = await importStravaServerModules();
     const uid = await getUidByAthleteId(99999);
 
     // Assert
@@ -141,7 +162,7 @@ describe('getUidByAthleteId', () => {
     mockQueryGet.mockResolvedValue({ empty: true, docs: [] });
 
     // Act
-    const { getUidByAthleteId } = await import('@/lib/firebase-admin');
+    const { getUidByAthleteId } = await importStravaServerModules();
     const uid = await getUidByAthleteId(11111);
 
     // Assert
@@ -165,7 +186,7 @@ describe('ensureValidStravaToken', () => {
     });
 
     // Act
-    const { ensureValidStravaToken } = await import('@/lib/firebase-admin');
+    const { ensureValidStravaToken } = await importStravaServerModules();
     const result = await ensureValidStravaToken('uid-123');
 
     // Assert
@@ -194,7 +215,7 @@ describe('ensureValidStravaToken', () => {
     });
 
     // Act
-    const { ensureValidStravaToken } = await import('@/lib/firebase-admin');
+    const { ensureValidStravaToken } = await importStravaServerModules();
     const result = await ensureValidStravaToken('uid-123');
 
     // Assert
@@ -225,7 +246,7 @@ describe('ensureValidStravaToken', () => {
     mockedFetch.mockResolvedValue({ ok: false, status: 400 });
 
     // Act
-    const { ensureValidStravaToken } = await import('@/lib/firebase-admin');
+    const { ensureValidStravaToken } = await importStravaServerModules();
     const result = await ensureValidStravaToken('uid-123');
 
     // Assert
@@ -238,7 +259,7 @@ describe('ensureValidStravaToken', () => {
     mockGet.mockResolvedValue({ exists: false });
 
     // Act
-    const { ensureValidStravaToken } = await import('@/lib/firebase-admin');
+    const { ensureValidStravaToken } = await importStravaServerModules();
     const result = await ensureValidStravaToken('uid-ghost');
 
     // Assert
@@ -261,7 +282,7 @@ describe('syncSingleStravaActivity', () => {
     });
 
     // Act
-    const { syncSingleStravaActivity } = await import('@/lib/firebase-admin');
+    const { syncSingleStravaActivity } = await importStravaServerModules();
     const result = await syncSingleStravaActivity({
       uid: 'uid-123',
       accessToken: 'token-abc',
@@ -289,7 +310,7 @@ describe('syncSingleStravaActivity', () => {
     });
 
     // Act
-    const { syncSingleStravaActivity } = await import('@/lib/firebase-admin');
+    const { syncSingleStravaActivity } = await importStravaServerModules();
     const result = await syncSingleStravaActivity({
       uid: 'uid-123',
       accessToken: 'token-abc',
@@ -306,7 +327,7 @@ describe('syncSingleStravaActivity', () => {
     mockedFetch.mockResolvedValue({ ok: false, status: 404 });
 
     // Act
-    const { syncSingleStravaActivity } = await import('@/lib/firebase-admin');
+    const { syncSingleStravaActivity } = await importStravaServerModules();
     const result = await syncSingleStravaActivity({
       uid: 'uid-123',
       accessToken: 'token-abc',
@@ -327,7 +348,7 @@ describe('syncSingleStravaActivity', () => {
     });
 
     // Act & Assert
-    const { syncSingleStravaActivity } = await import('@/lib/firebase-admin');
+    const { syncSingleStravaActivity } = await importStravaServerModules();
     await expect(
       syncSingleStravaActivity({
         uid: 'uid-123',

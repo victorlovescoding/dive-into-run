@@ -25,7 +25,7 @@ Object.defineProperty(window, 'matchMedia', {
 // Mocks — firebase-client (prevent real Firebase init)
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: {},
   auth: {},
   provider: {},
@@ -70,7 +70,7 @@ vi.mock('firebase/app', () => ({
 // Mocks — firebase-events
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-events', () => ({
+vi.mock('@/runtime/client/use-cases/event-use-cases', () => ({
   fetchEventById: vi.fn(),
   fetchParticipants: vi.fn(),
   fetchMyJoinedEventsForIds: vi.fn(),
@@ -80,11 +80,11 @@ vi.mock('@/lib/firebase-events', () => ({
   deleteEvent: vi.fn(),
 }));
 
-// ---------------------------------------------------------------------------
-// Mocks — firebase-notifications
-// ---------------------------------------------------------------------------
+vi.mock('@/runtime/client/use-cases/auth-use-cases', () => ({
+  default: vi.fn(() => vi.fn()),
+}));
 
-vi.mock('@/lib/firebase-notifications', () => ({
+vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
   notifyEventModified: vi.fn().mockResolvedValue(undefined),
   notifyEventCancelled: vi.fn().mockResolvedValue(undefined),
   notifyPostNewComment: vi.fn().mockResolvedValue(undefined),
@@ -94,13 +94,19 @@ vi.mock('@/lib/firebase-notifications', () => ({
   watchNotifications: vi.fn(() => vi.fn()),
   watchUnreadNotifications: vi.fn(() => vi.fn()),
   markNotificationAsRead: vi.fn().mockResolvedValue(undefined),
+  fetchMoreNotifications: vi.fn().mockResolvedValue({ docs: [] }),
+  fetchMoreUnreadNotifications: vi.fn().mockResolvedValue({ docs: [] }),
 }));
+
+// ---------------------------------------------------------------------------
+// Mocks — firebase-notifications
+// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Mocks — firebase-posts
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-posts', () => ({
+vi.mock('@/runtime/client/use-cases/post-use-cases', () => ({
   getPostDetail: vi.fn(),
   addComment: vi.fn(),
   getLatestComments: vi.fn(),
@@ -129,36 +135,6 @@ vi.mock('@/lib/event-helpers', async (importOriginal) => {
 // ---------------------------------------------------------------------------
 // Mocks — contexts
 // ---------------------------------------------------------------------------
-
-vi.mock('@/contexts/AuthContext', () => {
-  const { createContext } = require('react');
-  return {
-    AuthContext: createContext({
-      user: {
-        uid: 'host1',
-        name: 'Host User',
-        email: null,
-        photoURL: 'https://photo.url/host.jpg',
-        bio: null,
-        getIdToken: async () => '',
-      },
-      setUser: () => {},
-      loading: false,
-    }),
-    default: ({ children }) => children,
-  };
-});
-
-const mockShowToast = vi.fn();
-vi.mock('@/contexts/ToastContext', () => ({
-  useToast: () => ({ showToast: mockShowToast }),
-  ToastContext: require('react').createContext({
-    toasts: [],
-    showToast: () => {},
-    removeToast: () => {},
-  }),
-  default: ({ children }) => children,
-}));
 
 // ---------------------------------------------------------------------------
 // Mocks — next
@@ -190,19 +166,21 @@ import {
   fetchMyJoinedEventsForIds,
   updateEvent,
   deleteEvent,
-} from '@/lib/firebase-events';
+} from '@/runtime/client/use-cases/event-use-cases';
 import {
   notifyEventModified,
   notifyEventCancelled,
   notifyPostNewComment,
-} from '@/lib/firebase-notifications';
+} from '@/runtime/client/use-cases/notification-use-cases';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
 import {
   getPostDetail,
   addComment,
   getLatestComments,
   getCommentById,
   hasUserLikedPost,
-} from '@/lib/firebase-posts';
+} from '@/runtime/client/use-cases/post-use-cases';
+import ToastProvider from '@/runtime/providers/ToastProvider';
 import EventDetailClient from '@/app/events/[id]/eventDetailClient';
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
 
@@ -225,12 +203,34 @@ const mockedGetLatestComments = /** @type {import('vitest').Mock} */ (getLatestC
 const mockedGetCommentById = /** @type {import('vitest').Mock} */ (getCommentById);
 const mockedHasUserLikedPost = /** @type {import('vitest').Mock} */ (hasUserLikedPost);
 
+const mockUser = {
+  uid: 'host1',
+  name: 'Host User',
+  email: null,
+  photoURL: 'https://photo.url/host.jpg',
+  bio: null,
+  getIdToken: async () => '',
+};
+
+/**
+ * 用 Auth + Toast providers 包裹測試元件。
+ * @param {import('react').ReactElement} children - 要渲染的元件。
+ * @returns {import('@testing-library/react').RenderResult} render 結果。
+ */
+function renderWithProviders(children) {
+  return render(
+    <AuthContext.Provider value={{ user: mockUser, setUser: () => {}, loading: false }}>
+      <ToastProvider>{children}</ToastProvider>
+    </AuthContext.Provider>,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 /**
- * 建立一個最小但完整的 mock 活動物件，hostUid 匹配 AuthContext mock user。
+ * 建立一個最小但完整的 mock 活動物件，hostUid 匹配預設 mock user。
  * @param {object} overrides - 覆蓋預設值的欄位。
  * @returns {object} mock 活動物件。
  */
@@ -279,7 +279,7 @@ describe('EventDetailClient notification triggers', () => {
 
   it('calls notifyEventModified after successful edit', async () => {
     const user = userEvent.setup();
-    render(<EventDetailClient id="evt1" />);
+    renderWithProviders(<EventDetailClient id="evt1" />);
 
     // 等活動載入完成
     await waitFor(() => {
@@ -330,7 +330,7 @@ describe('EventDetailClient notification triggers', () => {
 
   it('calls notifyEventCancelled then deleteEvent on delete confirm', async () => {
     const user = userEvent.setup();
-    render(<EventDetailClient id="evt1" />);
+    renderWithProviders(<EventDetailClient id="evt1" />);
 
     // 等活動載入完成
     await waitFor(() => {
@@ -414,7 +414,7 @@ describe('PostDetailClient notification triggers', () => {
     });
 
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post1" />);
+    renderWithProviders(<PostDetailClient postId="post1" />);
 
     // 等文章載入
     await waitFor(() => {
@@ -469,7 +469,7 @@ describe('PostDetailClient notification triggers', () => {
     });
 
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post2" />);
+    renderWithProviders(<PostDetailClient postId="post2" />);
 
     // 等文章載入
     await waitFor(() => {

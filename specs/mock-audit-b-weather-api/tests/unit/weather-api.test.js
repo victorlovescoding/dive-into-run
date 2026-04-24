@@ -1,12 +1,12 @@
 /**
- * @file Unit Test for src/lib/weather-api.js
+ * @file Unit test for src/repo/client/weather-api-repo.js
  * @description
  * Self-test for fetchWeather — 覆蓋 Session B mock-audit 黑洞。
- * 不 mock `@/lib/weather-api`，用 fetch stub 驅動每個分支。
+ * 不 mock `@/repo/client/weather-api-repo`，用 fetch stub 驅動每個分支。
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fetchWeather } from '@/lib/weather-api';
+import { fetchWeather } from '@/repo/client/weather-api-repo';
 
 /**
  * 組一個 fake Response，只露 fetchWeather 會用到的 json()。
@@ -18,7 +18,7 @@ function fakeResponse(payload) {
 }
 
 /**
- * Self-test for src/lib/weather-api.js › fetchWeather。
+ * Self-test for src/repo/client/weather-api-repo.js › fetchWeather。
  * Stub globalThis.fetch 驅動每個分支（URL 組法、回應處理、錯誤 fallback、signal 傳遞）。
  * Pattern 對齊 specs/013-pre-run-weather/tests/unit/weather-api-route.test.js。
  */

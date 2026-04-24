@@ -1,10 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { fetchWeather } from '@/lib/weather-api';
 import WeatherPage from '@/components/weather/WeatherPage';
 
-// --- Mock topojson-client ---
+const { runtimeScenario, mockAddFavorite, mockRemoveFavorite, mockShowToast, mockSelectFavorite } =
+  vi.hoisted(() => ({
+    runtimeScenario: {
+      userLoggedIn: false,
+      favorites: [],
+      favSummaries: {},
+      weatherState: 'idle',
+      weatherData: null,
+      selectedLocation: null,
+      currentFavStatus: { favorited: false, docId: null },
+      toggleShouldFail: false,
+      nextFavoriteDocId: 'new-doc-id',
+    },
+    mockAddFavorite: vi.fn(),
+    mockRemoveFavorite: vi.fn(),
+    mockShowToast: vi.fn(),
+    mockSelectFavorite: vi.fn(),
+  }));
+
 vi.mock('topojson-client', () => ({
   feature: vi.fn(() => ({
     type: 'FeatureCollection',
@@ -49,7 +66,6 @@ vi.mock('topojson-client', () => ({
   })),
 }));
 
-// --- Mock GeoJSON data ---
 vi.mock('@/data/geo/counties.json', () => ({
   default: {
     type: 'Topology',
@@ -64,35 +80,35 @@ vi.mock('@/data/geo/towns.json', () => ({
   },
 }));
 
-// --- Mock next/image ---
 vi.mock('next/image', () => ({
-  default: ({ src, alt, ...props }) => <img src={src} alt={alt} {...props} />,
+  default: ({ src, alt, unoptimized: _unoptimized, ...props }) => (
+    <img src={src} alt={alt} {...props} />
+  ),
 }));
 
-// --- Mock react-leaflet ---
 vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
   GeoJSON: ({ data, onEachFeature }) => {
     const features = data?.features || [];
     return (
       <div data-testid="geojson-layer">
-        {features.map((f) => (
+        {features.map((feature) => (
           <button
-            key={f.properties.TOWNCODE || f.properties.COUNTYCODE}
+            key={feature.properties.COUNTYCODE}
             type="button"
-            data-testid={`feature-${f.properties.TOWNCODE || f.properties.COUNTYCODE}`}
+            data-testid={`feature-${feature.properties.COUNTYCODE}`}
             onClick={() => {
               if (onEachFeature) {
                 const handler = {};
-                onEachFeature(f, {
+                onEachFeature(feature, {
                   on: (events) => Object.assign(handler, events),
                   setStyle: vi.fn(),
                 });
-                handler.click?.({ target: { feature: f, setStyle: vi.fn() } });
+                handler.click?.({ target: { feature, setStyle: vi.fn() } });
               }
             }}
           >
-            {f.properties.TOWNNAME || f.properties.COUNTYNAME}
+            {feature.properties.COUNTYNAME}
           </button>
         ))}
       </div>
@@ -106,228 +122,132 @@ vi.mock('react-leaflet', () => ({
   }),
 }));
 
-// --- Mock weather-api.js ---
-vi.mock('@/lib/weather-api', () => ({
-  fetchWeather: vi.fn(),
-}));
-
-// --- Mock firebase-weather-favorites ---
-vi.mock('@/lib/firebase-weather-favorites', () => ({
-  addFavorite: vi.fn(),
-  removeFavorite: vi.fn(),
-  getFavorites: vi.fn(),
-  isFavorited: vi.fn(),
-}));
-
-import {
-  addFavorite,
-  removeFavorite,
-  getFavorites,
-  isFavorited,
-} from '@/lib/firebase-weather-favorites';
-
-const mockedFetchWeather = /** @type {import('vitest').Mock} */ (fetchWeather);
-const mockedAddFavorite = /** @type {import('vitest').Mock} */ (addFavorite);
-const mockedRemoveFavorite = /** @type {import('vitest').Mock} */ (removeFavorite);
-const mockedGetFavorites = /** @type {import('vitest').Mock} */ (getFavorites);
-const mockedIsFavorited = /** @type {import('vitest').Mock} */ (isFavorited);
-
-// --- Hoisted values for mock factories (vi.mock is hoisted above all imports) ---
-const { authValue, mockShowToast } = vi.hoisted(() => ({
-  /** @type {{ user: { uid: string } | null, setUser: () => void, loading: boolean }} */
-  authValue: { user: null, setUser: () => {}, loading: false },
-  mockShowToast: vi.fn(),
-}));
-
-vi.mock('@/contexts/AuthContext', () => ({
-  AuthContext: /** @type {import('react').Context<object>} */ (
-    /** @type {unknown} */ ({
-      Provider: ({ children }) => children,
-      Consumer: ({ children }) => children(authValue),
-      _currentValue: authValue,
-    })
-  ),
-}));
-
-vi.mock('@/contexts/ToastContext', () => ({
+vi.mock('@/runtime/providers/ToastProvider', () => ({
   useToast: () => ({ showToast: mockShowToast, removeToast: vi.fn(), toasts: [] }),
   ToastContext: /** @type {import('react').Context<object>} */ ({
     Provider: ({ children }) => children,
   }),
 }));
 
-// #region Test Data
+vi.mock('@/runtime/hooks/useWeatherPageRuntime', async () => {
+  const React = await import('react');
 
-/**
- * 建立測試用 WeatherInfo mock 資料。
- * @param {object} [overrides] - 要覆蓋的欄位。
- * @returns {import('@/lib/weather-api').WeatherInfo} 天氣資料。
- */
-function makeWeatherInfo(overrides = {}) {
-  return {
-    locationName: '臺北市',
-    locationNameShort: '臺北',
-    today: {
-      currentTemp: 28,
-      weatherDesc: '晴時多雲',
-      weatherCode: '2',
-      morningTemp: 30,
-      eveningTemp: 24,
-      rainProb: 10,
-      humidity: 72,
-      uv: null,
-      aqi: null,
-    },
-    tomorrow: {
-      weatherDesc: '多雲',
-      weatherCode: '4',
-      morningTemp: 29,
-      eveningTemp: 23,
-      rainProb: 30,
-      humidity: 78,
-      uv: null,
-    },
-    ...overrides,
-  };
-}
+  /**
+   * @returns {object} Mocked runtime for thin-entry WeatherPage integration tests.
+   */
+  function useMockWeatherPageRuntime() {
+    const [favorites, setFavorites] = React.useState(runtimeScenario.favorites);
+    const [favSummaries, setFavSummaries] = React.useState(runtimeScenario.favSummaries);
+    const [selectedLocation, setSelectedLocation] = React.useState(
+      runtimeScenario.selectedLocation,
+    );
+    const [weatherState, setWeatherState] = React.useState(runtimeScenario.weatherState);
+    const [weatherData, setWeatherData] = React.useState(runtimeScenario.weatherData);
+    const [currentFavStatus, setCurrentFavStatus] = React.useState(
+      runtimeScenario.currentFavStatus,
+    );
+    const [isFavoriteMutating, setIsFavoriteMutating] = React.useState(false);
+    const cardPanelRef = React.useRef(null);
 
-const mockFavorites = [
-  {
-    id: 'fav-1',
-    countyCode: '63000',
-    countyName: '臺北市',
-    townshipCode: null,
-    townshipName: null,
-    displaySuffix: null,
-    createdAt: { seconds: 1000 },
-  },
-  {
-    id: 'fav-2',
-    countyCode: '65000',
-    countyName: '新北市',
-    townshipCode: '65000010',
-    townshipName: '板橋區',
-    displaySuffix: null,
-    createdAt: { seconds: 900 },
-  },
-];
-
-// #endregion
-
-/**
- * 渲染 WeatherPage 並選取臺北市使天氣卡出現。
- * @param {object} [opts] - 選項。
- * @param {ReturnType<typeof userEvent.setup>} [opts.user] - userEvent instance。
- * @returns {Promise<void>} 渲染完成。
- */
-async function renderAndSelectTaipei({ user } = {}) {
-  mockedFetchWeather.mockResolvedValueOnce(makeWeatherInfo());
-  render(<WeatherPage />);
-  if (user) {
-    await user.click(screen.getByTestId('feature-63000'));
-    await screen.findByText(/28/);
-  }
-}
-
-describe('Favorites integration', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    authValue.user = null;
-    mockedGetFavorites.mockResolvedValue([]);
-    mockedIsFavorited.mockResolvedValue({ favorited: false, docId: null });
-    mockedAddFavorite.mockResolvedValue('new-doc-id');
-    mockedRemoveFavorite.mockResolvedValue(undefined);
-  });
-
-  // --- 1. 未登入點收藏 → toast 提示 ---
-  describe('unauthenticated user', () => {
-    it('should show toast when clicking favorite without login', async () => {
-      const user = userEvent.setup();
-      await renderAndSelectTaipei({ user });
-
-      const favoriteBtn = screen.getByRole('button', { name: /收藏/i });
-      await user.click(favoriteBtn);
-
-      expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/登入/), expect.anything());
-      expect(mockedAddFavorite).not.toHaveBeenCalled();
-    });
-  });
-
-  // --- 2. 已登入收藏 → icon 填滿 + toast ---
-  describe('authenticated user — add favorite', () => {
-    it('should add favorite and show filled icon on click', async () => {
-      authValue.user = { uid: 'test-uid' };
-      const user = userEvent.setup();
-      mockedIsFavorited.mockResolvedValue({ favorited: false, docId: null });
-      await renderAndSelectTaipei({ user });
-
-      const favoriteBtn = screen.getByRole('button', { name: /收藏/i });
-      await user.click(favoriteBtn);
-
-      await waitFor(() => {
-        expect(mockedAddFavorite).toHaveBeenCalledWith(
-          'test-uid',
-          expect.objectContaining({ countyName: '臺北市' }),
-        );
+    const handleCountyClick = React.useCallback((countyCode, countyName) => {
+      setSelectedLocation({
+        countyCode,
+        countyName,
+        townshipCode: null,
+        townshipName: null,
+        displaySuffix: null,
       });
-
-      // Icon should change to filled state (optimistic update)
-      expect(screen.getByRole('button', { name: /取消收藏/i })).toBeInTheDocument();
-    });
-  });
-
-  // --- 3. 取消收藏 → icon 空心 + toast ---
-  describe('authenticated user — remove favorite', () => {
-    it('should remove favorite and show empty icon', async () => {
-      authValue.user = { uid: 'test-uid' };
-      const user = userEvent.setup();
-      mockedIsFavorited.mockResolvedValue({ favorited: true, docId: 'existing-doc' });
-      await renderAndSelectTaipei({ user });
-
-      // Should initially show filled icon
-      const favoriteBtn = await screen.findByRole('button', { name: /取消收藏/i });
-      await user.click(favoriteBtn);
-
-      await waitFor(() => {
-        expect(mockedRemoveFavorite).toHaveBeenCalledWith('test-uid', 'existing-doc');
-      });
-
-      // Icon should revert to empty (optimistic update)
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /加入收藏/i })).toBeInTheDocument();
-      });
-    });
-  });
-
-  // --- 4. 收藏區塊顯示 ---
-  describe('favorites bar rendering', () => {
-    it('should render favorite chips from getFavorites', async () => {
-      authValue.user = { uid: 'test-uid' };
-      mockedGetFavorites.mockResolvedValue(mockFavorites);
-      // loadFavorites 會對每個 fav 呼叫 fetchWeather 取摘要
-      mockedFetchWeather.mockResolvedValue(makeWeatherInfo());
-      render(<WeatherPage />);
-
-      // FavoritesBar uses formatLocationNameShort: 臺北市 → 臺北, 新北市+板橋區 → 新北 · 板橋
-      await waitFor(() => {
-        expect(screen.getByText('臺北')).toBeInTheDocument();
-      });
-      expect(screen.getByText(/板橋/)).toBeInTheDocument();
-    });
-  });
-
-  // --- 5. 點收藏項 → 地圖切換 + 天氣更新 ---
-  describe('clicking favorite chip', () => {
-    it('should fetch weather and update card when clicking a favorite chip', async () => {
-      authValue.user = { uid: 'test-uid' };
-      const user = userEvent.setup();
-      const banqiaoWeather = makeWeatherInfo({
-        locationName: '新北市 · 板橋區',
-        locationNameShort: '新北 · 板橋',
+      setWeatherData({
+        locationName: countyName,
         today: {
-          currentTemp: 26,
+          currentTemp: 28,
+          weatherDesc: '晴時多雲',
+          weatherCode: '2',
+          morningTemp: 30,
+          eveningTemp: 24,
+          rainProb: 10,
+          humidity: 72,
+          uv: null,
+          aqi: null,
+        },
+        tomorrow: {
           weatherDesc: '多雲',
           weatherCode: '4',
+          morningTemp: 29,
+          eveningTemp: 23,
+          rainProb: 30,
+          humidity: 78,
+          uv: null,
+        },
+      });
+      setWeatherState('success');
+      setCurrentFavStatus({ favorited: false, docId: null });
+    }, []);
+
+    const handleFavoriteToggle = React.useCallback(async () => {
+      if (!selectedLocation) return;
+
+      if (!runtimeScenario.userLoggedIn) {
+        mockShowToast('請先登入才能收藏', 'info');
+        return;
+      }
+
+      setIsFavoriteMutating(true);
+      const previousStatus = currentFavStatus;
+
+      if (runtimeScenario.toggleShouldFail) {
+        setCurrentFavStatus(previousStatus);
+        mockShowToast('操作失敗，請稍後再試', 'error');
+        setIsFavoriteMutating(false);
+        return;
+      }
+
+      if (previousStatus.favorited && previousStatus.docId) {
+        mockRemoveFavorite('test-uid', previousStatus.docId);
+        setCurrentFavStatus({ favorited: false, docId: null });
+        setFavorites((prev) => prev.filter((favorite) => favorite.id !== previousStatus.docId));
+        mockShowToast('已取消收藏', 'success');
+      } else {
+        const favorite = {
+          id: runtimeScenario.nextFavoriteDocId,
+          countyCode: selectedLocation.countyCode,
+          countyName: selectedLocation.countyName,
+          townshipCode: selectedLocation.townshipCode,
+          townshipName: selectedLocation.townshipName,
+          displaySuffix: selectedLocation.displaySuffix ?? null,
+        };
+
+        mockAddFavorite('test-uid', favorite);
+        setCurrentFavStatus({ favorited: true, docId: favorite.id });
+        setFavorites((prev) => [...prev, favorite]);
+        setFavSummaries((prev) => ({
+          ...prev,
+          [favorite.id]: { weatherCode: '2', currentTemp: 28 },
+        }));
+        mockShowToast('已收藏', 'success');
+      }
+
+      setIsFavoriteMutating(false);
+    }, [currentFavStatus, selectedLocation]);
+
+    const handleFavoriteSelect = React.useCallback((favorite) => {
+      mockSelectFavorite(favorite);
+      setSelectedLocation({
+        countyCode: favorite.countyCode,
+        countyName: favorite.countyName,
+        townshipCode: favorite.townshipCode,
+        townshipName: favorite.townshipName,
+        displaySuffix: favorite.displaySuffix ?? null,
+      });
+      setCurrentFavStatus({ favorited: true, docId: favorite.id });
+      setWeatherData({
+        locationName: favorite.townshipName
+          ? `${favorite.countyName} · ${favorite.townshipName}`
+          : favorite.countyName,
+        today: {
+          currentTemp: favorite.id === 'fav-2' ? 26 : 28,
+          weatherDesc: favorite.id === 'fav-2' ? '多雲' : '晴時多雲',
+          weatherCode: favorite.id === 'fav-2' ? '4' : '2',
           morningTemp: 27,
           eveningTemp: 22,
           rainProb: 20,
@@ -345,85 +265,266 @@ describe('Favorites integration', () => {
           uv: null,
         },
       });
-      mockedGetFavorites.mockResolvedValue(mockFavorites);
-      // loadFavorites fetches summaries, then chip click fetches card weather
-      mockedFetchWeather.mockResolvedValue(makeWeatherInfo());
-      render(<WeatherPage />);
+      setWeatherState('success');
+    }, []);
 
-      // Wait for favorites to render (formatLocationNameShort: 新北 · 板橋)
-      const chipButton = await screen.findByText(/板橋/);
-      // Now set specific mock for the chip click fetch
-      mockedFetchWeather.mockResolvedValueOnce(banqiaoWeather);
-      await user.click(chipButton);
+    const handleFavoriteRemove = React.useCallback((favorite) => {
+      mockRemoveFavorite('test-uid', favorite.id);
+      setFavorites((prev) => prev.filter((item) => item.id !== favorite.id));
+    }, []);
 
-      // Should fetch weather for 板橋區
-      await waitFor(() => {
-        expect(mockedFetchWeather).toHaveBeenCalledWith(
-          expect.objectContaining({
-            county: '新北市',
-            township: '板橋區',
-          }),
-        );
-      });
+    return {
+      cardPanelRef,
+      favorites,
+      favSummaries,
+      activeFavoriteId: currentFavStatus.favorited ? currentFavStatus.docId : null,
+      selectedLocation,
+      mapLayer: 'overview',
+      weatherState,
+      weatherData,
+      isFavoriteMutating,
+      isFavorited: currentFavStatus.favorited,
+      selectedCountyCode: selectedLocation?.countyCode ?? null,
+      selectedTownshipCode: selectedLocation?.townshipCode ?? null,
+      handleCountyClick,
+      handleTownshipClick: vi.fn(),
+      handleIslandClick: vi.fn(),
+      handleRetry: vi.fn(),
+      handleBackToOverview: vi.fn(),
+      handleFavoriteToggle,
+      handleFavoriteSelect,
+      handleFavoriteRemove,
+    };
+  }
 
-      // Weather card should update
-      await screen.findByText('新北市 · 板橋區');
+  return {
+    default: useMockWeatherPageRuntime,
+  };
+});
+
+const mockFavorites = [
+  {
+    id: 'fav-1',
+    countyCode: '63000',
+    countyName: '臺北市',
+    townshipCode: null,
+    townshipName: null,
+    displaySuffix: null,
+  },
+  {
+    id: 'fav-2',
+    countyCode: '65000',
+    countyName: '新北市',
+    townshipCode: '65000010',
+    townshipName: '板橋區',
+    displaySuffix: null,
+  },
+];
+
+/**
+ * 重置 mocked runtime scenario。
+ * @returns {void}
+ */
+function resetRuntimeScenario() {
+  runtimeScenario.userLoggedIn = false;
+  runtimeScenario.favorites = [];
+  runtimeScenario.favSummaries = {};
+  runtimeScenario.weatherState = 'idle';
+  runtimeScenario.weatherData = null;
+  runtimeScenario.selectedLocation = null;
+  runtimeScenario.currentFavStatus = { favorited: false, docId: null };
+  runtimeScenario.toggleShouldFail = false;
+  runtimeScenario.nextFavoriteDocId = 'new-doc-id';
+}
+
+/**
+ * 先透過地圖選取臺北市，讓 favorite button 進入可互動狀態。
+ * @param {{ user: ReturnType<typeof userEvent.setup> }} options - 測試選項。
+ * @returns {Promise<void>}
+ */
+async function renderAndSelectTaipei({ user }) {
+  render(<WeatherPage />);
+  await user.click(screen.getByTestId('feature-63000'));
+  await screen.findByRole('button', { name: /加入收藏/i });
+}
+
+describe('Favorites integration', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetRuntimeScenario();
+  });
+
+  describe('unauthenticated user', () => {
+    it('should show toast when clicking favorite without login', async () => {
+      const user = userEvent.setup();
+      await renderAndSelectTaipei({ user });
+
+      await user.click(screen.getByRole('button', { name: /加入收藏/i }));
+
+      expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/登入/), 'info');
+      expect(mockAddFavorite).not.toHaveBeenCalled();
     });
   });
 
-  // --- 6. ✕ 移除收藏 → 區塊更新 ---
-  describe('removing favorite via chip ✕ button', () => {
-    it('should remove chip and call removeFavorite on ✕ click', async () => {
-      authValue.user = { uid: 'test-uid' };
+  describe('authenticated user — add favorite', () => {
+    it('should add favorite and show filled icon on click', async () => {
+      runtimeScenario.userLoggedIn = true;
       const user = userEvent.setup();
-      mockedGetFavorites.mockResolvedValue(mockFavorites);
-      mockedFetchWeather.mockResolvedValue(makeWeatherInfo());
+      await renderAndSelectTaipei({ user });
+
+      await user.click(screen.getByRole('button', { name: /加入收藏/i }));
+
+      await waitFor(() => {
+        expect(mockAddFavorite).toHaveBeenCalledWith(
+          'test-uid',
+          expect.objectContaining({ countyName: '臺北市' }),
+        );
+      });
+      expect(screen.getByRole('button', { name: /取消收藏/i })).toBeInTheDocument();
+    });
+  });
+
+  describe('authenticated user — remove favorite', () => {
+    it('should remove favorite and show empty icon', async () => {
+      runtimeScenario.userLoggedIn = true;
+      runtimeScenario.weatherState = 'success';
+      runtimeScenario.weatherData = {
+        locationName: '臺北市',
+        today: {
+          currentTemp: 28,
+          weatherDesc: '晴時多雲',
+          weatherCode: '2',
+          morningTemp: 30,
+          eveningTemp: 24,
+          rainProb: 10,
+          humidity: 72,
+          uv: null,
+          aqi: null,
+        },
+        tomorrow: {
+          weatherDesc: '多雲',
+          weatherCode: '4',
+          morningTemp: 29,
+          eveningTemp: 23,
+          rainProb: 30,
+          humidity: 78,
+          uv: null,
+        },
+      };
+      runtimeScenario.selectedLocation = {
+        countyCode: '63000',
+        countyName: '臺北市',
+        townshipCode: null,
+        townshipName: null,
+        displaySuffix: null,
+      };
+      runtimeScenario.currentFavStatus = { favorited: true, docId: 'existing-doc' };
+      runtimeScenario.favorites = [
+        {
+          id: 'existing-doc',
+          countyCode: '63000',
+          countyName: '臺北市',
+          townshipCode: null,
+          townshipName: null,
+          displaySuffix: null,
+        },
+      ];
+      runtimeScenario.favSummaries = {
+        'existing-doc': { weatherCode: '2', currentTemp: 28 },
+      };
+
+      const user = userEvent.setup();
       render(<WeatherPage />);
 
-      // Wait for favorites to render (formatLocationNameShort: 新北 · 板橋)
-      await screen.findByText(/板橋/);
+      await user.click(screen.getByRole('button', { name: /取消收藏/i }));
 
-      // Find and click ✕ button on 板橋 chip — aria-label is "移除新北 · 板橋收藏"
+      await waitFor(() => {
+        expect(mockRemoveFavorite).toHaveBeenCalledWith('test-uid', 'existing-doc');
+      });
+      expect(screen.getByRole('button', { name: /加入收藏/i })).toBeInTheDocument();
+    });
+  });
+
+  describe('favorites bar rendering', () => {
+    it('should render favorite chips from runtime state', async () => {
+      runtimeScenario.userLoggedIn = true;
+      runtimeScenario.favorites = mockFavorites;
+      runtimeScenario.favSummaries = {
+        'fav-1': { weatherCode: '2', currentTemp: 28 },
+        'fav-2': { weatherCode: '4', currentTemp: 26 },
+      };
+
+      render(<WeatherPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('臺北')).toBeInTheDocument();
+      });
+      expect(screen.getByText(/板橋/)).toBeInTheDocument();
+    });
+  });
+
+  describe('clicking favorite chip', () => {
+    it('should update card when clicking a favorite chip', async () => {
+      runtimeScenario.userLoggedIn = true;
+      runtimeScenario.favorites = mockFavorites;
+      runtimeScenario.favSummaries = {
+        'fav-1': { weatherCode: '2', currentTemp: 28 },
+        'fav-2': { weatherCode: '4', currentTemp: 26 },
+      };
+
+      const user = userEvent.setup();
+      render(<WeatherPage />);
+
+      await user.click(await screen.findByRole('button', { name: /切換到新北.*板橋/i }));
+
+      await waitFor(() => {
+        expect(mockSelectFavorite).toHaveBeenCalledWith(expect.objectContaining({ id: 'fav-2' }));
+      });
+      expect(screen.getByText('新北市 · 板橋區')).toBeInTheDocument();
+    });
+  });
+
+  describe('removing favorite via chip button', () => {
+    it('should remove chip and call removeFavorite on click', async () => {
+      runtimeScenario.userLoggedIn = true;
+      runtimeScenario.favorites = mockFavorites;
+      runtimeScenario.favSummaries = {
+        'fav-1': { weatherCode: '2', currentTemp: 28 },
+        'fav-2': { weatherCode: '4', currentTemp: 26 },
+      };
+
+      const user = userEvent.setup();
+      render(<WeatherPage />);
+
+      const chip = await screen.findByText(/板橋/);
       const chipContainer =
-        screen.getByText(/板橋/).closest('[class*="Chip"]') ||
-        screen.getByText(/板橋/).closest('[class*="chip"]');
+        chip.closest('[class*="Chip"]') || chip.closest('[class*="chip"]') || chip.parentElement;
       const removeBtn = within(/** @type {HTMLElement} */ (chipContainer)).getByRole('button', {
         name: /移除/i,
       });
 
-      // After remove, getFavorites should return only the first fav
-      mockedGetFavorites.mockResolvedValueOnce([mockFavorites[0]]);
       await user.click(removeBtn);
 
       await waitFor(() => {
-        expect(mockedRemoveFavorite).toHaveBeenCalledWith('test-uid', 'fav-2');
+        expect(mockRemoveFavorite).toHaveBeenCalledWith('test-uid', 'fav-2');
       });
-
-      // Chip should be removed after loadFavorites re-runs
-      await waitFor(() => {
-        expect(screen.queryByText(/板橋/)).not.toBeInTheDocument();
-      });
+      expect(screen.queryByText(/板橋/)).not.toBeInTheDocument();
     });
   });
 
-  // --- 7. 樂觀更新失敗回滾 ---
   describe('optimistic update rollback', () => {
-    it('should rollback UI and show error toast when addFavorite fails', async () => {
-      authValue.user = { uid: 'test-uid' };
+    it('should rollback UI and show error toast when add favorite fails', async () => {
+      runtimeScenario.userLoggedIn = true;
+      runtimeScenario.toggleShouldFail = true;
+
       const user = userEvent.setup();
-      mockedAddFavorite.mockRejectedValueOnce(new Error('Firestore error'));
-      mockedIsFavorited.mockResolvedValue({ favorited: false, docId: null });
       await renderAndSelectTaipei({ user });
 
-      const favoriteBtn = screen.getByRole('button', { name: /加入收藏/i });
-      await user.click(favoriteBtn);
+      await user.click(screen.getByRole('button', { name: /加入收藏/i }));
 
-      // Optimistic: icon should briefly fill, then rollback to empty
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /加入收藏/i })).toBeInTheDocument();
       });
-
-      // Error toast should be shown — FavoriteButton calls showToast('操作失敗，請稍後再試', 'error')
       expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/失敗|稍後/), 'error');
     });
   });

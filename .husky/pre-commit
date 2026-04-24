@@ -1,4 +1,5 @@
 npm run lint -- --max-warnings 0
 npm run type-check
+npm run depcruise
 npm run spellcheck
 npx vitest run --project=browser

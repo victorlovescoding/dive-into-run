@@ -45,6 +45,9 @@ jobs:
       - name: Type check
         run: npm run type-check
 
+      - name: Dependency cruiser
+        run: npm run depcruise
+
       - name: Spellcheck
         run: npm run spellcheck
 

@@ -80,7 +80,7 @@ vi.mock('firebase/firestore', () => ({
   documentId: mockDocumentId,
 }));
 
-vi.mock('@/lib/firebase-client', () => ({ db: 'mock-db' }));
+vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
 
 // ---------------------------------------------------------------------------
 // Typedefs

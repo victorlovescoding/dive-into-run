@@ -2,7 +2,7 @@
 
 > **用途**：implement / plan 階段的強制參考（Quality Gate）。
 > **來源**：彙整自 `AGENTS.md`、constitution.md (Principle V/VI/IX)、`.prettierrc`、`eslint.config.mjs`。
-> **測試專用規範**請見 `.codex/skills/test-driven-development/references/`。
+> **測試專用規範**請見 `.agents/skills/test-driven-development/references/`。
 
 ---
 
@@ -78,7 +78,7 @@ function UserCard({ user, onUpdate }) {}
 ### Import External Types
 
 ```js
-/** @param {import('@/lib/types').Event} event - 活動資料。 */
+/** @param {import('@/service/event-service').EventData} event - 活動資料。 */
 ```
 
 ### Type Casting
@@ -129,7 +129,7 @@ function EventList({ events }) {
 
 ## Architecture
 
-- **Firebase 隔離**：所有 Firebase 邏輯封裝在 `src/lib/`，UI 元件 **禁止**直接 import Firebase SDK
+- **Firebase 隔離**：Firebase / 外部 I/O 放在 `src/repo/**`，商業邏輯放在 `src/service/**`；`src/runtime/**`、`src/ui/**`、`src/app/**`、`src/components/**` 禁止直接 import Firebase SDK
 - **Path alias**：`@/` → `./src/`
 - **樣式**：CSS Modules + Tailwind CSS
 - **地圖**：Leaflet 必須透過 `next/dynamic`（SSR: false）載入
@@ -139,7 +139,7 @@ function EventList({ events }) {
 import { doc, getDoc } from 'firebase/firestore';
 
 // ✅ GOOD — 透過 service layer
-import { getEvent } from '@/lib/firebase-events';
+import { getUserProfile } from '@/service/profile-service';
 ```
 
 ---
@@ -161,7 +161,7 @@ import { getEvent } from '@/lib/firebase-events';
 
 測試完整規範請讀以下檔案（TDD skill Quality Gate）：
 
-1. `.codex/skills/test-driven-development/references/coding-style.md` — vi.mock typed alias、mock typedef 對齊
-2. `.codex/skills/test-driven-development/references/jsdoc-cheatsheet.md` — @callback、TypeScript vs Closure syntax
-3. `.codex/skills/test-driven-development/references/boilerplate.js` — 測試 golden sample
-4. `.codex/skills/test-driven-development/references/testing-anti-patterns.md` — 不測試 mock 行為、不污染生產代碼
+1. `.agents/skills/test-driven-development/references/coding-style.md` — vi.mock typed alias、mock typedef 對齊
+2. `.agents/skills/test-driven-development/references/jsdoc-cheatsheet.md` — @callback、TypeScript vs Closure syntax
+3. `.agents/skills/test-driven-development/references/boilerplate.js` — 測試 golden sample
+4. `.agents/skills/test-driven-development/references/testing-anti-patterns.md` — 不測試 mock 行為、不污染生產代碼

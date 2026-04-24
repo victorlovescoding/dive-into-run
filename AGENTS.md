@@ -38,40 +38,47 @@ npm run test                # Vitest (unit + integration, jsdom env)
 npx vitest run specs/path/to/file.test.jsx   # 單一 vitest 檔
 ```
 
-> E2E 指令 → `.claude/rules/e2e-commands.md`（碰 `specs/**/e2e/` 時自動載入）
+> E2E 指令參考 → `.codex/rules/e2e-commands.md`（參考文件，不是 Codex native Rules auto-load）
 > Repo-wide audit 一律用 `npx eslint src specs`，不是 `npm run lint`
 
 ## Architecture
 
 - **Next.js 15 / React 19** with App Router — pure JavaScript (no TypeScript), type safety via JSDoc + `checkJs: true`
 - **Path alias**: `@/` → `./src/`
-- **Firebase v9+** (Firestore) as backend — all Firebase interactions go through `src/lib/firebase-*.js`
+- **Firebase v9+** (Firestore) as backend — all Firebase interactions go through canonical layers (`src/repo/`, `src/service/`); `src/lib/firebase-*.js` serves as compatibility facade
 - **Leaflet / React-Leaflet** for map features
 - **CSS Modules** + Tailwind CSS 4 for styling
 - **Vitest** for unit/integration tests (jsdom), **Playwright** for E2E (Chromium only)
+- **dependency-cruiser** enforces forward-only layer dependencies (`npm run depcruise`)
 
 ### Key Directories
 
-| Path              | Purpose                                                               |
-| ----------------- | --------------------------------------------------------------------- |
-| `src/app/`        | Next.js App Router pages (events, login, member, posts, signout)      |
-| `src/lib/`        | Service layer — Firebase clients, domain helpers (`event-helpers.js`) |
-| `src/components/` | Shared React components                                               |
-| `src/contexts/`   | React Context providers (Auth)                                        |
-| `src/types/`      | Type declarations (CSS modules)                                       |
-| `specs/`          | Feature specs + tests — one folder per git branch/feature             |
+Six canonical layers with forward-only dependency: Types → Config → Repo → Service → Runtime → UI
+
+| Path              | Purpose                                                     |
+| ----------------- | ----------------------------------------------------------- |
+| `src/types/`      | Domain type declarations, shared constants                  |
+| `src/config/`     | Infrastructure config (Firebase client/server, geo data)    |
+| `src/repo/`       | Data access adapters (Firestore CRUD, external APIs)        |
+| `src/service/`    | Business logic, validation, data transformations            |
+| `src/runtime/`    | React hooks, providers (Auth/Toast/Notification), use-cases |
+| `src/ui/`         | Render-only screen components (receive state from runtime)  |
+| `src/app/`        | Next.js App Router thin entries (page/layout/route only)    |
+| `src/lib/`        | Compatibility facade — re-exports to canonical layers       |
+| `src/components/` | Shared React components                                     |
+| `specs/`          | Feature specs + tests — one folder per git branch/feature   |
 
 ## Guides（前饋控制）
 
-Path-scoped rules（只在碰到對應檔案時自動載入）：
+下列 `.codex/rules/*.md` 是 repo 內的參考文件與檢查清單，供 Codex 按需閱讀；它們不是 Codex 官方 Rules DSL，也不保證會被 runtime 自動載入。`.claude/rules/*.md` 保留作 legacy provenance。
 
-| Rule                                 | 觸發路徑                      | 內容                                                                                   |
-| ------------------------------------ | ----------------------------- | -------------------------------------------------------------------------------------- |
-| `.claude/rules/coding-rules.md`      | `src/**`, `specs/**`          | 4 條 Non-Negotiable（無 @ts-ignore、無 JSX logic、無 eslint-disable a11y、JSDoc 規範） |
-| `.claude/rules/code-style.md`        | `src/**`, `specs/**` (js/jsx) | Formatting + JSDoc patterns                                                            |
-| `.claude/rules/testing-standards.md` | `specs/**`, test/spec 檔      | Testing Trophy、AAA、userEvent                                                         |
-| `.claude/rules/e2e-commands.md`      | `specs/**/e2e/**`             | Playwright + emulator 指令                                                             |
-| `.claude/rules/sensors.md`           | 無 paths（always loaded）     | type-check/lint/test + IDE Diagnostics + pre-commit gate                               |
+| 文件                                | 建議查閱時機                  | 內容                                                                                   |
+| ----------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
+| `.codex/rules/coding-rules.md`      | `src/**`, `specs/**`          | 4 條 Non-Negotiable（無 @ts-ignore、無 JSX logic、無 eslint-disable a11y、JSDoc 規範） |
+| `.codex/rules/code-style.md`        | `src/**`, `specs/**` (js/jsx) | Formatting + JSDoc patterns                                                            |
+| `.codex/rules/testing-standards.md` | `specs/**`, test/spec 檔      | Testing Trophy、AAA、userEvent                                                         |
+| `.codex/rules/e2e-commands.md`      | `specs/**/e2e/**`             | Playwright + emulator 指令                                                             |
+| `.codex/rules/sensors.md`           | 需要跑驗證或檢查 gate 時      | type-check/lint/test + IDE Diagnostics + pre-commit gate                               |
 
 ### Git Workflow (Non-Negotiable)
 
@@ -100,12 +107,12 @@ Path-scoped rules（只在碰到對應檔案時自動載入）：
 
 ## Reference Docs（分層 Context — 按需載入）
 
-| 文件                                     | 狀態    | 用途                                                                            |
-| ---------------------------------------- | ------- | ------------------------------------------------------------------------------- |
-| `.claude/references/coding-standards.md` | ✅ 已有 | 完整編碼規範與品質防線                                                          |
-| `.claude/references/testing-handbook.md` | ✅ 已有 | 測試撰寫完整手冊                                                                |
-| `.claude/references/review-standards.md` | 🔜 待建 | Code Review 標準與 checklist                                                    |
-| `.claude/references/harness-articles/`   | ✅ 已有 | 5 篇 harness engineering 文章摘要（Fowler、OpenAI、Anthropic、Datadog、Stripe） |
+| 文件                                    | 狀態    | 用途                                                                            |
+| --------------------------------------- | ------- | ------------------------------------------------------------------------------- |
+| `.codex/references/coding-standards.md` | ✅ 已有 | 完整編碼規範與品質防線                                                          |
+| `.codex/references/testing-handbook.md` | ✅ 已有 | 測試撰寫完整手冊                                                                |
+| `.codex/references/review-standards.md` | 🔜 待建 | Code Review 標準與 checklist                                                    |
+| `.codex/references/harness-articles/`   | ✅ 已有 | 5 篇 harness engineering 文章摘要（Fowler、OpenAI、Anthropic、Datadog、Stripe） |
 
 ## Environment & Secrets
 

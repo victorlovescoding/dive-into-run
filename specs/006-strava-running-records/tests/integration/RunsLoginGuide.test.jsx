@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-vi.mock('@/lib/firebase-client', () => ({ auth: {}, provider: {} }));
+vi.mock('@/config/client/firebase-client', () => ({ auth: {}, provider: {} }));
 vi.mock('firebase/auth', () => ({
   signInWithPopup: vi.fn(),
 }));

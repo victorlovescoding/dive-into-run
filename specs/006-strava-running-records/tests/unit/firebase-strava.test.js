@@ -48,7 +48,7 @@ vi.mock('firebase/firestore', () => ({
   getDocs: (...args) => mockGetDocs(...args),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({ db: 'mock-db' }));
+vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
 
 // ---------------------------------------------------------------------------
 // Test Suites — listenStravaConnection
@@ -61,7 +61,7 @@ describe('Unit: listenStravaConnection', () => {
 
   it('should set up onSnapshot on correct doc path stravaConnections/{uid}', async () => {
     // Arrange
-    const { listenStravaConnection } = await import('@/lib/firebase-strava');
+    const { listenStravaConnection } = await import('@/repo/client/firebase-strava-repo');
     const mockDocRef = { _type: 'docRef' };
     mockDoc.mockReturnValue(mockDocRef);
     mockOnSnapshot.mockReturnValue(vi.fn());
@@ -80,7 +80,7 @@ describe('Unit: listenStravaConnection', () => {
 
   it('should call callback with doc data when snapshot fires (doc exists)', async () => {
     // Arrange
-    const { listenStravaConnection } = await import('@/lib/firebase-strava');
+    const { listenStravaConnection } = await import('@/repo/client/firebase-strava-repo');
     const callback = vi.fn();
     mockDoc.mockReturnValue({ _type: 'docRef' });
 
@@ -118,7 +118,7 @@ describe('Unit: listenStravaConnection', () => {
 
   it('should call callback with null when doc does not exist', async () => {
     // Arrange
-    const { listenStravaConnection } = await import('@/lib/firebase-strava');
+    const { listenStravaConnection } = await import('@/repo/client/firebase-strava-repo');
     const callback = vi.fn();
     mockDoc.mockReturnValue({ _type: 'docRef' });
 
@@ -143,7 +143,7 @@ describe('Unit: listenStravaConnection', () => {
 
   it('should return unsubscribe function from onSnapshot', async () => {
     // Arrange
-    const { listenStravaConnection } = await import('@/lib/firebase-strava');
+    const { listenStravaConnection } = await import('@/repo/client/firebase-strava-repo');
     const mockUnsub = vi.fn();
     mockDoc.mockReturnValue({ _type: 'docRef' });
     mockOnSnapshot.mockReturnValue(mockUnsub);
@@ -157,7 +157,7 @@ describe('Unit: listenStravaConnection', () => {
 
   it('should pass error handler to onSnapshot that calls callback with null', async () => {
     // Arrange
-    const { listenStravaConnection } = await import('@/lib/firebase-strava');
+    const { listenStravaConnection } = await import('@/repo/client/firebase-strava-repo');
     const callback = vi.fn();
     mockDoc.mockReturnValue({ _type: 'docRef' });
 
@@ -188,7 +188,7 @@ describe('Unit: getStravaActivities', () => {
 
   it('should query with correct where/orderBy/limit', async () => {
     // Arrange
-    const { getStravaActivities } = await import('@/lib/firebase-strava');
+    const { getStravaActivities } = await import('@/repo/client/firebase-strava-repo');
     const mockCollRef = { _type: 'collRef' };
     const mockQueryRef = { _type: 'queryRef' };
     const mockWhereConstraint = { _type: 'where' };
@@ -221,7 +221,7 @@ describe('Unit: getStravaActivities', () => {
 
   it('should return activities array and lastDoc from query result', async () => {
     // Arrange
-    const { getStravaActivities } = await import('@/lib/firebase-strava');
+    const { getStravaActivities } = await import('@/repo/client/firebase-strava-repo');
 
     const mockDocSnap1 = {
       id: 'activity-1',
@@ -277,7 +277,7 @@ describe('Unit: getStravaActivities', () => {
 
   it('should handle pagination with startAfter when lastDoc provided', async () => {
     // Arrange
-    const { getStravaActivities } = await import('@/lib/firebase-strava');
+    const { getStravaActivities } = await import('@/repo/client/firebase-strava-repo');
     const cursorDoc = /** @type {import('firebase/firestore').QueryDocumentSnapshot} */ (
       /** @type {unknown} */ ({ id: 'cursor-doc' })
     );
@@ -313,7 +313,7 @@ describe('Unit: getStravaActivities', () => {
 
   it('should return empty array and null lastDoc when no results', async () => {
     // Arrange
-    const { getStravaActivities } = await import('@/lib/firebase-strava');
+    const { getStravaActivities } = await import('@/repo/client/firebase-strava-repo');
 
     mockCollection.mockReturnValue({ _type: 'collRef' });
     mockWhere.mockReturnValue({ _type: 'where' });
@@ -332,7 +332,7 @@ describe('Unit: getStravaActivities', () => {
 
   it('should propagate query error', async () => {
     // Arrange
-    const { getStravaActivities } = await import('@/lib/firebase-strava');
+    const { getStravaActivities } = await import('@/repo/client/firebase-strava-repo');
 
     mockCollection.mockReturnValue({ _type: 'collRef' });
     mockWhere.mockReturnValue({ _type: 'where' });

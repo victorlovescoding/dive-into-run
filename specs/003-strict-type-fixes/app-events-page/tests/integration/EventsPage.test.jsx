@@ -3,9 +3,9 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import EventsPage from '@/app/events/page';
-import { AuthContext } from '@/contexts/AuthContext';
-import ToastProvider from '@/contexts/ToastContext';
-import * as firebaseEvents from '@/lib/firebase-events';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import ToastProvider from '@/runtime/providers/ToastProvider';
+import * as eventUseCases from '@/runtime/client/use-cases/event-use-cases';
 
 /**
  * @typedef {object} MockUser
@@ -15,12 +15,12 @@ import * as firebaseEvents from '@/lib/firebase-events';
  */
 
 // Mock Firebase client
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: {},
 }));
 
-// Mock Firebase Events Service
-vi.mock('@/lib/firebase-events', () => ({
+// Mock Events runtime use-cases
+vi.mock('@/runtime/client/use-cases/event-use-cases', () => ({
   fetchLatestEvents: vi.fn(),
   fetchNextEvents: vi.fn(),
   queryEvents: vi.fn(),
@@ -52,11 +52,33 @@ const mockAuthUser = {
   photoURL: 'https://example.com/photo.jpg',
 };
 
+/**
+ * 建立符合 Firestore Timestamp shape 的測試時間物件。
+ * @param {string} isoString - ISO 日期字串。
+ * @returns {import('firebase/firestore').Timestamp} mock timestamp。
+ */
+function createMockTimestamp(isoString) {
+  const date = new Date(isoString);
+  const seconds = Math.floor(date.getTime() / 1000);
+
+  return /** @type {import('firebase/firestore').Timestamp} */ (
+    /** @type {unknown} */ ({
+      seconds,
+      nanoseconds: 0,
+      toDate: () => date,
+      toMillis: () => date.getTime(),
+      isEqual: () => false,
+      toJSON: () => ({ seconds, nanoseconds: 0, type: 'timestamp' }),
+    })
+  );
+}
+
 const mockEvents = [
   {
     id: 'event-1',
     title: 'Morning Run',
-    time: { toDate: () => new Date('2026-02-14T08:00:00Z') },
+    time: createMockTimestamp('2027-05-14T08:00:00Z'),
+    registrationDeadline: createMockTimestamp('2027-05-13T08:00:00Z'),
     city: '臺北市',
     district: '信義區',
     distanceKm: 5,
@@ -70,11 +92,11 @@ const mockEvents = [
 describe('EventsPage Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(firebaseEvents.fetchLatestEvents).mockResolvedValue({
+    vi.mocked(eventUseCases.fetchLatestEvents).mockResolvedValue({
       events: mockEvents,
       lastDoc: /** @type {*} */ ({}),
     });
-    vi.mocked(firebaseEvents.fetchMyJoinedEventsForIds).mockResolvedValue(new Set(['event-1']));
+    vi.mocked(eventUseCases.fetchMyJoinedEventsForIds).mockResolvedValue(new Set(['event-1']));
   });
 
   const renderPage = (user = mockAuthUser) => {
@@ -125,13 +147,13 @@ describe('EventsPage Integration Tests', () => {
   });
 
   it('should trigger joinEvent when clicking join button', async () => {
-    vi.mocked(firebaseEvents.fetchMyJoinedEventsForIds).mockResolvedValue(new Set());
+    vi.mocked(eventUseCases.fetchMyJoinedEventsForIds).mockResolvedValue(new Set());
     const user = userEvent.setup();
     renderPage();
 
     const joinBtn = await screen.findByRole('button', { name: /參加/i });
     await user.click(joinBtn);
 
-    expect(firebaseEvents.joinEvent).toHaveBeenCalled();
+    expect(eventUseCases.joinEvent).toHaveBeenCalled();
   });
 });

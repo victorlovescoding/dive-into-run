@@ -21,10 +21,16 @@ Object.defineProperty(window, 'matchMedia', {
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-notifications', () => ({
+vi.mock('@/runtime/client/use-cases/auth-use-cases', () => ({
+  default: vi.fn(() => vi.fn()),
+}));
+
+vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
   watchNotifications: vi.fn(),
   watchUnreadNotifications: vi.fn(),
   markNotificationAsRead: vi.fn(),
+  fetchMoreNotifications: vi.fn(),
+  fetchMoreUnreadNotifications: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -44,23 +50,15 @@ vi.mock('@/lib/firebase-auth-helpers', () => ({
   signInWithGoogle: vi.fn(),
 }));
 
-vi.mock('@/contexts/AuthContext', () => {
-  const { createContext } = require('react');
-  /** @type {import('react').Context<import('@/contexts/AuthContext').AuthContextValue>} */
-  const AuthContext = createContext({
-    user: null,
-    setUser: () => {},
-    loading: false,
-  });
-  return {
-    AuthContext,
-    default: ({ children }) => children,
-  };
-});
-
-import { watchNotifications, watchUnreadNotifications } from '@/lib/firebase-notifications';
-import { AuthContext } from '@/contexts/AuthContext';
-import NotificationProvider, { NotificationContext } from '@/contexts/NotificationContext';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import {
+  NotificationContext,
+  default as NotificationProvider,
+} from '@/runtime/providers/NotificationProvider';
+import {
+  watchNotifications,
+  watchUnreadNotifications,
+} from '@/runtime/client/use-cases/notification-use-cases';
 import NotificationBell from '@/components/Notifications/NotificationBell';
 import Navbar from '@/components/Navbar/Navbar';
 

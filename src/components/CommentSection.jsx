@@ -3,8 +3,8 @@
 import { useSearchParams } from 'next/navigation';
 import { useContext, useEffect } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
-import useComments from '@/hooks/useComments';
-import useCommentMutations from '@/hooks/useCommentMutations';
+import useComments from '@/runtime/hooks/useComments';
+import useCommentMutations from '@/runtime/hooks/useCommentMutations';
 import CommentCard from '@/components/CommentCard';
 import CommentInput from '@/components/CommentInput';
 import CommentEditModal from '@/components/CommentEditModal';

@@ -55,10 +55,10 @@ describe('useDashboardTab', () => {
 
   /**
    * 動態 import，避免 module cache 影響 IntersectionObserver mock。
-   * @returns {Promise<typeof import('@/hooks/useDashboardTab').default>} hook 函式。
+   * @returns {Promise<typeof import('@/runtime/hooks/useDashboardTab').default>} hook 函式。
    */
   async function importHook() {
-    const mod = await import('@/hooks/useDashboardTab');
+    const mod = await import('@/runtime/hooks/useDashboardTab');
     return mod.default;
   }
 

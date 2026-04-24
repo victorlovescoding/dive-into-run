@@ -15,7 +15,7 @@ import {
 import { asMock } from '../../../test-utils/mock-helpers';
 
 // Mock dependencies
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: { _isMockDb: true },
 }));
 
@@ -108,7 +108,6 @@ describe('firebase-events', () => {
       const mockRef = { id: 'new-id' };
       asMock(firestore.addDoc).mockResolvedValueOnce(mockRef);
 
-      // @ts-expect-error -- hostId 未在 extra typedef 中，但 spread 後仍寫入 payload
       const result = await createEvent(raw, extra);
 
       expect(firestore.collection).toHaveBeenCalledWith(expect.anything(), 'events');

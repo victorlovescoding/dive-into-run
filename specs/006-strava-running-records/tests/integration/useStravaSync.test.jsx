@@ -3,7 +3,7 @@ import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AuthContext } from '@/contexts/AuthContext';
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: {},
   auth: {},
 }));
@@ -11,7 +11,7 @@ vi.mock('@/lib/firebase-client', () => ({
 vi.stubGlobal('fetch', vi.fn());
 const mockedFetch = /** @type {import('vitest').Mock} */ (globalThis.fetch);
 
-import useStravaSync from '@/hooks/useStravaSync';
+import useStravaSync from '@/runtime/hooks/useStravaSync';
 
 const mockGetIdToken = vi.fn().mockResolvedValue('mock-id-token');
 

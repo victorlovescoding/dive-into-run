@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  formatRelativeTime,
-  buildNotificationMessage,
-  getNotificationLink,
-} from '@/lib/notification-helpers';
+import { formatRelativeTime, getNotificationLink } from '@/lib/notification-helpers';
+import { buildNotificationMessage } from '@/service/notification-service';
 
 // ---------------------------------------------------------------------------
 // formatRelativeTime
@@ -168,7 +165,7 @@ describe('buildNotificationMessage', () => {
 describe('getNotificationLink', () => {
   it('should return event URL for event_modified', () => {
     // Arrange
-    const notification = /** @type {import('@/lib/notification-helpers').NotificationItem} */ ({
+    const notification = /** @type {import('@/service/notification-service').NotificationItem} */ ({
       type: 'event_modified',
       entityType: 'event',
       entityId: 'evt123',
@@ -184,7 +181,7 @@ describe('getNotificationLink', () => {
 
   it('should return event URL for event_cancelled', () => {
     // Arrange
-    const notification = /** @type {import('@/lib/notification-helpers').NotificationItem} */ ({
+    const notification = /** @type {import('@/service/notification-service').NotificationItem} */ ({
       type: 'event_cancelled',
       entityType: 'event',
       entityId: 'evt456',
@@ -200,7 +197,7 @@ describe('getNotificationLink', () => {
 
   it('should return post URL with commentId for post_new_comment', () => {
     // Arrange
-    const notification = /** @type {import('@/lib/notification-helpers').NotificationItem} */ ({
+    const notification = /** @type {import('@/service/notification-service').NotificationItem} */ ({
       type: 'post_new_comment',
       entityType: 'post',
       entityId: 'post789',

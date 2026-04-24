@@ -124,11 +124,11 @@ describe('Integration: UserProfile', () => {
    Create typed aliases IMMEDIATELY after vi.mock() to avoid TS2339.
    ========================================================================== */
 
-// import { fetchItems, addItem } from '@/lib/firebase-items'; // Example import
+// import { fetchEvents, joinEvent } from '@/lib/firebase-events'; // Example import
 
-// vi.mock('@/lib/firebase-items', () => ({
-//   fetchItems: vi.fn(),
-//   addItem: vi.fn(),
+// vi.mock('@/lib/firebase-events', () => ({
+//   fetchEvents: vi.fn(),
+//   joinEvent: vi.fn(),
 // }));
 
 // /* Cast mocked imports — TS needs Mock type to recognize .mockXxx() */

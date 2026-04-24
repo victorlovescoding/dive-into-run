@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   getForecastIds,
   ISLAND_MARKERS,
@@ -6,11 +6,15 @@ import {
   townshipShort,
   formatLocationName,
   formatLocationNameShort,
+} from '@/service/weather-location-service';
+import {
   encodeLocationParams,
   decodeLocationParams,
+  readWeatherLocationFromUrl,
+  syncWeatherLocationToUrl,
   saveLastLocation,
   loadLastLocation,
-} from '@/lib/weather-helpers';
+} from '@/runtime/client/use-cases/weather-location-use-cases';
 
 describe('getForecastIds', () => {
   it('returns threeHour and twelveHour IDs for a valid county', () => {
@@ -189,6 +193,46 @@ describe('encodeLocationParams / decodeLocationParams', () => {
     const params = new URLSearchParams('');
 
     expect(decodeLocationParams(params)).toBeNull();
+  });
+});
+
+describe('weather URL runtime', () => {
+  it('reads location from browser search string', () => {
+    expect(readWeatherLocationFromUrl('?county=63000&township=63000060')).toEqual({
+      countyCode: '63000',
+      townshipCode: '63000060',
+    });
+  });
+
+  it('syncs selected location back to browser URL', () => {
+    const replaceState = vi.fn();
+
+    const nextUrl = syncWeatherLocationToUrl(
+      { countyCode: '63000', townshipCode: '63000060' },
+      {
+        currentHref: 'https://example.com/weather?foo=bar',
+        history: { replaceState },
+      },
+    );
+
+    expect(nextUrl).toBe('https://example.com/weather?county=63000&township=63000060');
+    expect(replaceState).toHaveBeenCalledWith(
+      {},
+      '',
+      'https://example.com/weather?county=63000&township=63000060',
+    );
+  });
+
+  it('clears search params when selected location is null', () => {
+    const replaceState = vi.fn();
+
+    const nextUrl = syncWeatherLocationToUrl(null, {
+      currentHref: 'https://example.com/weather?county=63000',
+      history: { replaceState },
+    });
+
+    expect(nextUrl).toBe('https://example.com/weather');
+    expect(replaceState).toHaveBeenCalledWith({}, '', 'https://example.com/weather');
   });
 });
 

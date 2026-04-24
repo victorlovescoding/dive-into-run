@@ -24,7 +24,7 @@ Object.defineProperty(window, 'matchMedia', {
 // Mocks — firebase-client
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   auth: {},
   db: {},
   provider: {},
@@ -70,11 +70,29 @@ vi.mock('@/lib/firebase-users', () => ({
   watchUserProfile: vi.fn(),
 }));
 
+vi.mock('@/runtime/client/use-cases/auth-use-cases', () => ({
+  default: vi.fn(() => vi.fn()),
+}));
+
+vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
+  watchNotifications: vi.fn(),
+  watchUnreadNotifications: vi.fn(),
+  markNotificationAsRead: vi.fn(),
+  fetchMoreNotifications: vi.fn(),
+  fetchMoreUnreadNotifications: vi.fn(),
+  notifyEventModified: vi.fn().mockResolvedValue(undefined),
+  notifyEventCancelled: vi.fn().mockResolvedValue(undefined),
+  notifyPostNewComment: vi.fn().mockResolvedValue(undefined),
+  notifyPostCommentReply: vi.fn().mockResolvedValue(undefined),
+  notifyEventNewComment: vi.fn().mockResolvedValue(undefined),
+  fetchDistinctCommentAuthors: vi.fn().mockResolvedValue([]),
+}));
+
 // ---------------------------------------------------------------------------
 // Mocks — firebase-events
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-events', () => ({
+vi.mock('@/runtime/client/use-cases/event-use-cases', () => ({
   fetchEventById: vi.fn(),
   fetchParticipants: vi.fn(),
   fetchMyJoinedEventsForIds: vi.fn(),
@@ -85,27 +103,10 @@ vi.mock('@/lib/firebase-events', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mocks — firebase-notifications
-// ---------------------------------------------------------------------------
-
-vi.mock('@/lib/firebase-notifications', () => ({
-  watchNotifications: vi.fn(),
-  watchUnreadNotifications: vi.fn(),
-  markNotificationAsRead: vi.fn().mockResolvedValue(undefined),
-  fetchMoreNotifications: vi.fn().mockResolvedValue({ docs: [] }),
-  notifyEventModified: vi.fn().mockResolvedValue(undefined),
-  notifyEventCancelled: vi.fn().mockResolvedValue(undefined),
-  notifyPostNewComment: vi.fn().mockResolvedValue(undefined),
-  notifyPostCommentReply: vi.fn().mockResolvedValue(undefined),
-  notifyEventNewComment: vi.fn().mockResolvedValue(undefined),
-  fetchDistinctCommentAuthors: vi.fn().mockResolvedValue([]),
-}));
-
-// ---------------------------------------------------------------------------
 // Mocks — firebase-posts
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/firebase-posts', () => ({
+vi.mock('@/runtime/client/use-cases/post-use-cases', () => ({
   getPostDetail: vi.fn(),
   addComment: vi.fn(),
   getLatestComments: vi.fn(),
@@ -160,23 +161,23 @@ import {
   watchUnreadNotifications,
   notifyEventModified,
   notifyPostNewComment,
-} from '@/lib/firebase-notifications';
+} from '@/runtime/client/use-cases/notification-use-cases';
 import {
   fetchEventById,
   fetchParticipants,
   fetchMyJoinedEventsForIds,
   updateEvent,
-} from '@/lib/firebase-events';
+} from '@/runtime/client/use-cases/event-use-cases';
 import {
   getPostDetail,
   addComment,
   getLatestComments,
   getCommentById,
   hasUserLikedPost,
-} from '@/lib/firebase-posts';
-import { AuthContext } from '@/contexts/AuthContext';
-import { ToastContext } from '@/contexts/ToastContext';
-import NotificationProvider from '@/contexts/NotificationContext';
+} from '@/runtime/client/use-cases/post-use-cases';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
+import NotificationProvider from '@/runtime/providers/NotificationProvider';
 import EventDetailClient from '@/app/events/[id]/eventDetailClient';
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
 

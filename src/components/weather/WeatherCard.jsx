@@ -1,9 +1,9 @@
 import Image from 'next/image';
-import { getWeatherIconUrl } from '@/lib/weather-helpers';
+import { getWeatherIconUrl } from '@/runtime/client/use-cases/weather-location-use-cases';
 import styles from './weather.module.css';
 
-/** @typedef {import('@/lib/weather-types').TodayWeather} TodayWeather */
-/** @typedef {import('@/lib/weather-types').TomorrowWeather} TomorrowWeather */
+/** @typedef {import('@/types/weather-types').TodayWeather} TodayWeather */
+/** @typedef {import('@/types/weather-types').TomorrowWeather} TomorrowWeather */
 
 // #region Helpers
 

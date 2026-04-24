@@ -12,7 +12,6 @@ vi.mock('firebase/firestore', () => ({
   doc: vi.fn(() => 'mock-doc-ref'),
   serverTimestamp: vi.fn(() => 'mock-timestamp'),
   onSnapshot: vi.fn(),
-  getDocs: vi.fn(),
   updateDoc: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
@@ -22,24 +21,43 @@ vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({ db: 'mock-db' }));
-vi.mock('@/lib/firebase-events', () => ({ fetchParticipants: vi.fn() }));
-vi.mock('@/lib/notification-helpers', () => ({
-  buildNotificationMessage: vi.fn((type) => `mock-message-${type}`),
-}));
+vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
+vi.mock('@/repo/client/firebase-events-repo', async (importOriginal) => {
+  const actual = /** @type {Record<string, unknown>} */ (await importOriginal());
+  return {
+    ...actual,
+    fetchParticipantUids: vi.fn(),
+  };
+});
+vi.mock('@/repo/client/firebase-notifications-repo', async (importOriginal) => {
+  const actual = /** @type {Record<string, unknown>} */ (await importOriginal());
+  return {
+    ...actual,
+    fetchDistinctEventCommentAuthors: vi.fn(),
+  };
+});
+vi.mock('@/service/notification-service', async (importOriginal) => {
+  const actual = /** @type {Record<string, unknown>} */ (await importOriginal());
+  return {
+    ...actual,
+    buildNotificationMessage: vi.fn((type) => `mock-message-${type}`),
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
-import { getDocs } from 'firebase/firestore';
 import { notifyEventNewComment } from '@/lib/firebase-notifications';
-import { fetchParticipants } from '@/lib/firebase-events';
+import { fetchParticipantUids } from '@/repo/client/firebase-events-repo';
+import { fetchDistinctEventCommentAuthors } from '@/repo/client/firebase-notifications-repo';
 
 // ---------------------------------------------------------------------------
 // Typed aliases
 // ---------------------------------------------------------------------------
-const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
-const mockedFetchParticipants = /** @type {import('vitest').Mock} */ (fetchParticipants);
+const mockedFetchParticipantUids = /** @type {import('vitest').Mock} */ (fetchParticipantUids);
+const mockedFetchDistinctEventCommentAuthors = /** @type {import('vitest').Mock} */ (
+  fetchDistinctEventCommentAuthors
+);
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -75,16 +93,6 @@ function getRecipientUids() {
   );
 }
 
-/**
- * 模擬 getDocs 回傳的 comment authors。
- * @param {string[]} authorUids - comment author uid 陣列（可重複）。
- */
-function mockCommentAuthors(authorUids) {
-  mockedGetDocs.mockResolvedValue({
-    docs: authorUids.map((uid) => ({ data: () => ({ authorUid: uid }) })),
-  });
-}
-
 // ---------------------------------------------------------------------------
 // notifyEventNewComment
 // ---------------------------------------------------------------------------
@@ -99,8 +107,8 @@ describe('notifyEventNewComment', () => {
   describe('Core Delivery — 正確發送', () => {
     it('主揪人收到 event_host_comment', async () => {
       // Arrange
-      mockedFetchParticipants.mockResolvedValue([]);
-      mockCommentAuthors([]);
+      mockedFetchParticipantUids.mockResolvedValue([]);
+      mockedFetchDistinctEventCommentAuthors.mockResolvedValue([]);
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
@@ -135,8 +143,8 @@ describe('notifyEventNewComment', () => {
 
     it('參加者收到 event_participant_comment', async () => {
       // Arrange
-      mockedFetchParticipants.mockResolvedValue([{ uid: 'p1' }, { uid: 'p2' }]);
-      mockCommentAuthors([]);
+      mockedFetchParticipantUids.mockResolvedValue(['p1', 'p2']);
+      mockedFetchDistinctEventCommentAuthors.mockResolvedValue([]);
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
@@ -164,8 +172,8 @@ describe('notifyEventNewComment', () => {
 
     it('跟帖者收到 event_comment_reply', async () => {
       // Arrange — commenter 不是 host、不是 participant
-      mockedFetchParticipants.mockResolvedValue([]);
-      mockCommentAuthors(['commenter1', 'commenter2']);
+      mockedFetchParticipantUids.mockResolvedValue([]);
+      mockedFetchDistinctEventCommentAuthors.mockResolvedValue(['commenter1', 'commenter2']);
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
@@ -198,8 +206,8 @@ describe('notifyEventNewComment', () => {
   describe('Dedup Logic — 去重', () => {
     it('主揪人+跟帖者 → 只收 event_host_comment', async () => {
       // Arrange — host 也是過去的 commenter
-      mockedFetchParticipants.mockResolvedValue([]);
-      mockCommentAuthors([HOST_UID, 'commenter1']);
+      mockedFetchParticipantUids.mockResolvedValue([]);
+      mockedFetchDistinctEventCommentAuthors.mockResolvedValue([HOST_UID, 'commenter1']);
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
@@ -223,8 +231,8 @@ describe('notifyEventNewComment', () => {
 
     it('參加者+跟帖者 → 只收 event_participant_comment', async () => {
       // Arrange — p1 同時是 participant 和 past commenter
-      mockedFetchParticipants.mockResolvedValue([{ uid: 'p1' }]);
-      mockCommentAuthors(['p1', 'commenter1']);
+      mockedFetchParticipantUids.mockResolvedValue(['p1']);
+      mockedFetchDistinctEventCommentAuthors.mockResolvedValue(['p1', 'commenter1']);
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
@@ -248,8 +256,8 @@ describe('notifyEventNewComment', () => {
     it('留言者本人不收通知', async () => {
       // Arrange — actor 出現在 host、participant、commenter 全部
       const actorAsHost = ACTOR.uid;
-      mockedFetchParticipants.mockResolvedValue([{ uid: ACTOR.uid }, { uid: 'p1' }]);
-      mockCommentAuthors([ACTOR.uid, 'commenter1']);
+      mockedFetchParticipantUids.mockResolvedValue([ACTOR.uid, 'p1']);
+      mockedFetchDistinctEventCommentAuthors.mockResolvedValue([ACTOR.uid, 'commenter1']);
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, actorAsHost, COMMENT_ID, ACTOR);
@@ -270,8 +278,8 @@ describe('notifyEventNewComment', () => {
   describe('Edge Cases', () => {
     it('無參加者+無跟帖者 → 只有 host 通知', async () => {
       // Arrange
-      mockedFetchParticipants.mockResolvedValue([]);
-      mockCommentAuthors([]);
+      mockedFetchParticipantUids.mockResolvedValue([]);
+      mockedFetchDistinctEventCommentAuthors.mockResolvedValue([]);
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
@@ -290,9 +298,15 @@ describe('notifyEventNewComment', () => {
       const participants = Array.from({ length: 50 }, (_, i) => ({
         uid: `p${i + 1}`,
       }));
-      mockedFetchParticipants.mockResolvedValue(participants);
+      mockedFetchParticipantUids.mockResolvedValue(
+        participants.map((participant) => participant.uid),
+      );
       // commenter-a and commenter-b are new; p1 already covered as participant
-      mockCommentAuthors(['commenter-a', 'commenter-b', 'p1']);
+      mockedFetchDistinctEventCommentAuthors.mockResolvedValue([
+        'commenter-a',
+        'commenter-b',
+        'p1',
+      ]);
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);

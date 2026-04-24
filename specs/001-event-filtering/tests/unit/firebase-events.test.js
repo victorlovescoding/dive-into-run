@@ -21,7 +21,7 @@ vi.mock('firebase/firestore', async () => {
 });
 
 // Mock firebase-client
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   db: {},
 }));
 

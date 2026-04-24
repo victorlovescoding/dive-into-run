@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ShareButton from '@/components/ShareButton';
-import ToastProvider from '@/contexts/ToastContext';
+import ToastProvider from '@/runtime/providers/ToastProvider';
 import ToastContainer from '@/components/ToastContainer';
 
 vi.mock('next/navigation', () => ({

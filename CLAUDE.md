@@ -25,21 +25,28 @@ npx vitest run specs/path/to/file.test.jsx   # 單一 vitest 檔
 
 - **Next.js 15 / React 19** with App Router — pure JavaScript (no TypeScript), type safety via JSDoc + `checkJs: true`
 - **Path alias**: `@/` → `./src/`
-- **Firebase v9+** (Firestore) as backend — all Firebase interactions go through `src/lib/firebase-*.js`
+- **Firebase v9+** (Firestore) as backend — all Firebase interactions go through canonical layers (`src/repo/`, `src/service/`); `src/lib/firebase-*.js` serves as compatibility facade
 - **Leaflet / React-Leaflet** for map features
 - **CSS Modules** + Tailwind CSS 4 for styling
 - **Vitest** for unit/integration tests (jsdom), **Playwright** for E2E (Chromium only)
+- **dependency-cruiser** enforces forward-only layer dependencies (`npm run depcruise`)
 
 ### Key Directories
 
-| Path              | Purpose                                                               |
-| ----------------- | --------------------------------------------------------------------- |
-| `src/app/`        | Next.js App Router pages (events, login, member, posts, signout)      |
-| `src/lib/`        | Service layer — Firebase clients, domain helpers (`event-helpers.js`) |
-| `src/components/` | Shared React components                                               |
-| `src/contexts/`   | React Context providers (Auth)                                        |
-| `src/types/`      | Type declarations (CSS modules)                                       |
-| `specs/`          | Feature specs + tests — one folder per git branch/feature             |
+Six canonical layers with forward-only dependency: Types → Config → Repo → Service → Runtime → UI
+
+| Path              | Purpose                                                     |
+| ----------------- | ----------------------------------------------------------- |
+| `src/types/`      | Domain type declarations, shared constants                  |
+| `src/config/`     | Infrastructure config (Firebase client/server, geo data)    |
+| `src/repo/`       | Data access adapters (Firestore CRUD, external APIs)        |
+| `src/service/`    | Business logic, validation, data transformations            |
+| `src/runtime/`    | React hooks, providers (Auth/Toast/Notification), use-cases |
+| `src/ui/`         | Render-only screen components (receive state from runtime)  |
+| `src/app/`        | Next.js App Router thin entries (page/layout/route only)    |
+| `src/lib/`        | Compatibility facade — re-exports to canonical layers       |
+| `src/components/` | Shared React components                                     |
+| `specs/`          | Feature specs + tests — one folder per git branch/feature   |
 
 ## Guides（前饋控制）
 

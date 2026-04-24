@@ -1,0 +1,1001 @@
+/* events.module.css */
+
+.pageContainer {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  position: relative; /* 讓 absolute 的按鈕以此容器為定位基準 */
+}
+
+.mainButton {
+  padding: 10px 24px;
+  background-color: #673ab7; /* Google Form 紫色 */
+  color: white;
+  border: none;
+  border-radius: 999px; /* 讓它更像浮動按鈕 */
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  margin: 0; /* 取消原本的置中 margin，避免影響定位 */
+  z-index: 50;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+.mainButton:hover {
+  background-color: #512da8;
+}
+
+/* 表單浮在最上層：全螢幕遮罩 */
+.formOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999; /* 要高於右上角新增按鈕 */
+  background: rgba(0, 0, 0, 0.45);
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  padding: 24px 12px;
+  overflow: hidden; /* 外層不要滾；讓內層卡片自己滾 */
+}
+
+/* 讓表單像個卡片置中顯示 */
+.googleFormCard {
+  background: white;
+  width: 65vw; /* Mobile-first: Default max-width for smaller screens */
+  margin: 0; /* 由 overlay 的 padding 控制留白，避免外層出現滾輪 */
+  border-radius: 8px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+  position: relative;
+  text-align: left;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+@media (min-width: 1024px) {
+  /* For desktop screens */
+  .googleFormCard {
+    width: 70vw; /* Set to user's desired 70% viewport width */
+    max-width: 1400px; /* A generous max-width for very large screens */
+  }
+}
+
+/* 頂部裝飾條 (Google Form 風格) */
+.formHeaderAccent {
+  height: 10px;
+  background-color: #673ab7;
+  width: 100%;
+}
+
+.formHeader {
+  padding: 24px;
+  border-bottom: 1px solid #dadce0;
+}
+
+.formHeader h2 {
+  margin: 0 0 8px 0;
+  font-size: 2rem;
+  font-weight: 400;
+  color: #000000;
+}
+
+.formDescription {
+  color: #5f6368;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* 每個問題的區塊 */
+.formGroup {
+  padding: 24px;
+  background: white;
+  margin-bottom: 2px; /* 區塊間的微小距離 */
+  border-radius: 8px;
+  transition: background 0.2s;
+  position: relative;
+}
+
+/* 當使用者點擊某個問題時，加上左側邊框強調 */
+.formGroup:focus-within {
+  background-color: #f8f9fa;
+}
+
+.formLabel {
+  display: block;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+  color: #202124;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+  color: #202124;
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 8px 0;
+  font-size: 1rem;
+  border: none;
+  border-bottom: 1px solid #dadce0; /* 只有底線 */
+  background: transparent;
+  outline: none;
+  color: #202124; /* 明確設定文字顏色為深色 */
+  transition: border-bottom 0.3s;
+}
+
+/* 輸入框聚焦時的底部動畫條 */
+.formGroup input:focus {
+  border-bottom: 2px solid #673ab7;
+}
+
+/* textarea 的基本樣式 */
+.textareaField {
+  width: 100%;
+  padding: 8px 0;
+  font-size: 1rem;
+  border: none;
+  border-bottom: 1px solid #dadce0; /* 只有底線 */
+  background: transparent;
+  outline: none;
+  color: #202124;
+  transition: border-bottom 0.3s;
+  resize: vertical; /* 允許垂直調整大小 */
+}
+
+/* textarea 聚焦時的底部動畫條 */
+.textareaField:focus {
+  border-bottom: 2px solid #673ab7;
+}
+
+/* 針對 datetime-local 的特殊調整 */
+.formGroup input[type='datetime-local'] {
+  color: #444;
+}
+
+.helperText {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: #70757a;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 20px; /* 控制單選按鈕之間的間距 */
+  margin-top: 10px; /* 與問題文字的間距 */
+}
+
+.radioGroup label {
+  display: flex;
+  align-items: center;
+  font-weight: normal; /* 單選按鈕的標籤文字不需要加粗 */
+  margin-bottom: 0; /* 覆寫 formGroup label 的 margin-bottom */
+  cursor: pointer;
+}
+
+.radioGroup input[type='radio'] {
+  width: auto; /* 讓 radio button 保持原本大小 */
+  margin-right: 8px;
+  border-bottom: none; /* 移除 input 的底線樣式 */
+}
+
+/* 按鈕區 */
+.formActions {
+  padding: 16px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  border-top: 1px solid #dadce0;
+}
+
+.cancelButton {
+  background: transparent;
+  border: none;
+  color: #673ab7;
+  padding: 10px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.cancelButton:hover {
+  background: rgba(103, 58, 183, 0.04);
+}
+
+.formGroup input::placeholder {
+  color: #70757a; /* 改成深灰色，這樣會清楚很多 */
+  opacity: 1; /* 確保透明度是 100% (Firefox 預設會變淡，這行很重要) */
+}
+
+/* --- Leaflet GeoSearch 覆寫（讓建議文字更清楚） --- */
+.formGroup :global(.leaflet-control-geosearch form input::placeholder) {
+  color: #5f6368; /* 深一點的灰，和表單 placeholder 一致 */
+  opacity: 1; /* 取消瀏覽器預設淡化 */
+}
+
+.formGroup :global(.leaflet-control-geosearch .results > *) {
+  color: #202124; /* 建議列表的文字加深 */
+}
+
+.formGroup :global(.leaflet-control-geosearch .results > .active),
+.formGroup :global(.leaflet-control-geosearch .results > *:hover) {
+  color: #111; /* hover/選取更深 */
+  background: #f1f3f4; /* 提升可視對比 */
+}
+
+/* 下拉選單樣式，與 input 保持一致的顏色與底線 */
+.selectField {
+  width: 100%;
+  padding: 8px 0;
+  font-size: 1rem;
+  border: none;
+  border-bottom: 1px solid #dadce0;
+  background: transparent;
+  outline: none;
+  color: #202124; /* 與 .formGroup input 同色 */
+  -webkit-text-fill-color: #202124; /* Safari 強制文字顏色 */
+  appearance: none; /* 交給瀏覽器原生箭頭即可（不自訂） */
+}
+.selectField:focus {
+  border-bottom: 2px solid #673ab7;
+}
+.selectField option {
+  /* 清單項與選中值文字顏色 */
+  color: #202124;
+}
+.selectField option[disabled] {
+  /* placeholder 選項顏色 */
+  color: #9aa0a6;
+}
+
+.paceUnit {
+  color: #202124; /* 與標籤和輸入框文字顏色一致 */
+  font-weight: 500; /* 加粗以更突出 */
+  -webkit-text-fill-color: #202124; /* Safari 強制文字顏色 */
+  opacity: 1; /* 避免瀏覽器預設淡化 */
+  line-height: 1.6; /* 與下拉高度對齊 */
+}
+
+.centerSelect {
+  text-align: center; /* Safari/iOS */
+  text-align-last: center; /* Chrome/Edge */
+  -moz-text-align-last: center; /* Firefox */
+}
+.centerSelect option {
+  text-align: left; /* Keep dropdown menu left-aligned */
+}
+
+/* --- 活動列表區（events list） --- */
+
+.eventsSection {
+  width: 65vw;
+  max-width: 1400px;
+  margin: 16px auto 0;
+}
+
+@media (min-width: 1024px) {
+  .eventsSection {
+    width: 70vw;
+  }
+}
+
+.eventsTitle {
+  margin: 12px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+/* --- 篩選按鈕（漏斗 icon） --- */
+
+.eventsHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.filterButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid #e0e3e7;
+  background: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition:
+    transform 0.06s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.filterButton:hover {
+  background: #f8f9fa;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.14);
+}
+
+.filterButton:active {
+  transform: translateY(1px);
+}
+
+.filterIcon {
+  width: 18px;
+  height: 18px;
+  color: #673ab7; /* 跟你主題紫一致 */
+}
+
+/* --- 篩選浮層 --- */
+
+.filterOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000; /* 要比表單浮層(999)還高，避免被蓋住 */
+  background: rgba(0, 0, 0, 0.45);
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  padding: 24px 12px;
+  overflow: hidden; /* 外層不滾，內層卡片滾 */
+}
+
+.overlayBackground {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  cursor: pointer;
+}
+
+.filterCard {
+  background: white;
+  width: 65vw;
+  max-width: 900px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+@media (min-width: 1024px) {
+  .filterCard {
+    width: 70vw;
+  }
+}
+
+.filterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #e0e3e7;
+}
+
+.filterHeaderTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #202124;
+}
+
+.filterCloseButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1.5px solid #5f6368;
+  background: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #202124;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.filterCloseButton:hover {
+  background: #f1f3f4;
+  border-color: #202124;
+}
+
+.filterBody {
+  padding: 18px;
+  color: #5f6368;
+}
+
+/* 篩選表單內的欄位（比 .formGroup 更精簡） */
+.filterGroup {
+  padding: 14px 16px;
+  border: 1px solid #e0e3e7;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.filterGroup + .filterGroup {
+  margin-top: 12px;
+}
+
+.filterRowWithMargin {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 篩選區塊內的並排容器 (For Date Range, Number Range) */
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filterRowItem {
+  flex: 1;
+}
+
+.filterSeparator {
+  color: #70757a;
+  font-weight: 500;
+}
+
+/* Checkbox 改為 Toggle Switch 樣式 */
+.filterToggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.filterToggleLabel {
+  font-size: 1rem;
+  color: #3c4043;
+}
+
+/* Switch Container */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: '';
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.switch input:checked + .slider {
+  background-color: #673ab7;
+}
+
+.switch input:focus + .slider {
+  box-shadow: 0 0 1px #673ab7;
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.filterLabel {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #202124;
+}
+
+.filterPaceLabel {
+  font-size: 0.9rem;
+  color: #5f6368;
+  min-width: 60px;
+}
+
+.filterHint {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: #70757a;
+}
+
+/* 篩選用文字輸入框（風格對齊 selectField / input） */
+.filterTextField {
+  width: 100%;
+  padding: 8px 0;
+  font-size: 1rem;
+  border: none;
+  border-bottom: 1px solid #dadce0;
+  background: transparent;
+  outline: none;
+  color: #202124;
+  -webkit-text-fill-color: #202124;
+}
+
+.filterTextField:focus {
+  border-bottom: 2px solid #673ab7;
+}
+
+.filterTextField::placeholder {
+  color: #70757a;
+  opacity: 1;
+}
+
+/* 移除 input[list] 右側的下拉箭頭（datalist 的 UI）
+   ⚠️ 注意：不能寫在 .filterTextField 上，會把 datetime-local 的日曆 icon 也一起隱藏 */
+.filterTextField[list]::-webkit-calendar-picker-indicator {
+  display: none !important;
+  opacity: 0;
+}
+
+/* datetime-local 保留原生日曆/時間 icon（Chrome / Safari） */
+.filterTextField[type='datetime-local']::-webkit-calendar-picker-indicator {
+  display: block;
+  opacity: 1;
+  cursor: pointer;
+}
+
+/* 有些瀏覽器會把它當作可點擊區域，順便禁用 */
+.filterTextField[list] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.filterFooter {
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* 篩選器底部按鈕區 */
+.filterActions {
+  padding: 16px 18px;
+  border-top: 1px solid #e0e3e7;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #f8f9fa;
+}
+
+.filterClearButton {
+  background: transparent;
+  border: 1px solid #dadce0;
+  color: #5f6368;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.filterClearButton:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: #202124;
+}
+
+/* 按鈕基底（composes from EventActionButtons，與列表頁共用相同樣式） */
+.submitButton {
+  composes: submitButton from '../../components/EventActionButtons.module.css';
+}
+
+.leaveButton {
+  composes: leaveButton from '../../components/EventActionButtons.module.css';
+}
+
+.soldOutButton {
+  composes: soldOutButton from '../../components/EventActionButtons.module.css';
+}
+
+.buttonSpinner {
+  composes: buttonSpinner from '../../components/EventActionButtons.module.css';
+}
+
+.spinnerLabel {
+  composes: spinnerLabel from '../../components/EventActionButtons.module.css';
+}
+
+.filterSearchButton {
+  background-color: #1a73e8;
+  color: white;
+  border: 1px solid rgba(26, 115, 232, 0.35);
+  padding: 8px 20px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 100px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.06s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.filterSearchButton:hover {
+  background-color: #1558b0;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.14);
+}
+
+.filterSearchButton:active {
+  transform: translateY(1px);
+}
+
+/* 建立中/載入中狀態列（spinner row） */
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  border: 1px solid #e0e3e7;
+  color: #202124;
+  margin-bottom: 10px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #dadce0;
+  border-top-color: #673ab7;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 失敗字卡 */
+.errorCard {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fce8e6;
+  border: 1px solid #f28b82;
+  color: #c5221f;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+/* 卡片列表 */
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eventCardWrapper {
+  position: relative; /* eventCardMenuWrapper 的 absolute 定位基準 */
+}
+
+.eventCard {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e3e7;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 14px;
+  text-align: left;
+}
+
+.eventLink {
+  text-decoration: none;
+  color: inherit;
+}
+
+.eventTitleLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.eventTitleLink:hover .eventTitle {
+  color: #673ab7;
+}
+
+.eventTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #202124;
+  margin-bottom: 8px;
+}
+
+.eventMeta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  color: #3c4043;
+  font-size: 0.95rem;
+  margin-top: 6px;
+}
+
+@media (min-width: 768px) {
+  .eventMeta {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+/* Utility classes */
+.flex1 {
+  flex: 1;
+}
+
+.flexAlignCenter {
+  display: flex;
+  align-items: center;
+}
+
+.emptyHint {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px dashed #dadce0;
+  color: #5f6368;
+}
+
+/* --- 無限滾動：底部載入區 --- */
+
+.loadMoreArea {
+  margin-top: 10px;
+}
+
+.retryButton {
+  margin-left: 10px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #f28b82;
+  background: #fff;
+  color: #c5221f;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.retryButton:hover {
+  background: rgba(197, 34, 31, 0.06);
+}
+
+.endHint {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px dashed #dadce0;
+  color: #5f6368;
+  text-align: center;
+}
+
+.sentinel {
+  height: 1px;
+}
+
+/* Participants Overlay */
+.participantsOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px 12px;
+  overflow: hidden;
+}
+
+.participantsCard {
+  width: min(560px, 92vw);
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e0e3e7;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+.participantsHeader {
+  padding: 16px;
+  border-bottom: 1px solid #e0e3e7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.participantsTitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: #202124;
+}
+
+.participantsBody {
+  padding: 16px;
+}
+
+.participantsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.participantItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid #e0e3e7;
+  border-radius: 10px;
+}
+
+/*
+ * participantLink：合併 avatar + name 的單一 UserLink。
+ * UserLink 根元素已是 inline-flex + gap 8px，這裡只補 flex 伸縮與字重。
+ */
+.participantLink {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 800;
+  color: #202124;
+}
+
+.participantLink img {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.hostRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.participantStatus {
+  font-size: 12px;
+  color: #5f6368;
+}
+
+.backLink {
+  display: inline-block;
+  text-decoration: none;
+  color: inherit;
+  opacity: 0.9;
+  margin-bottom: 12px;
+}
+
+.detailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.detailHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detailActions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.detailMapContainer {
+  margin-top: 10px;
+}
+
+.alignSelfCenter {
+  align-self: center;
+}
+
+.marginBottom12 {
+  margin-bottom: 12px;
+}
+
+.marginLeft10 {
+  margin-left: 10px;
+}
+
+.fontSize16 {
+  font-size: 16px;
+}
+
+/* Accessible utility class to hide elements visually while keeping them for screen readers */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ======================================================
+   004-event-edit-delete: 編輯 / 刪除相關樣式
+   ====================================================== */
+
+/* 卡片右上角選單定位 */
+.eventCardMenuWrapper {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+}
+
+/* 編輯表單 overlay */
+.editFormOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* 刪除確認 overlay */
+.deleteConfirmOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

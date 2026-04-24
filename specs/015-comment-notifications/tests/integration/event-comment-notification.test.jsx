@@ -26,22 +26,22 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthContext } from '@/contexts/AuthContext';
 import CommentSection from '@/components/CommentSection';
-import { addComment } from '@/lib/firebase-comments';
+import { addComment } from '@/runtime/client/use-cases/event-comment-use-cases';
 
 /* ==========================================================================
    Mocks
    ========================================================================== */
 
-vi.mock('@/lib/firebase-comments', () => ({
+vi.mock('@/runtime/client/use-cases/event-comment-use-cases', () => ({
   addComment: vi.fn(),
   updateComment: vi.fn(),
   deleteComment: vi.fn(),
   fetchCommentHistory: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({ db: {} }));
+vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
 
-vi.mock('@/hooks/useComments', () => ({
+vi.mock('@/runtime/hooks/useComments', () => ({
   default: vi.fn(() => ({
     comments: [],
     setComments: vi.fn(),

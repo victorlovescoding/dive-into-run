@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { fetchMyEvents, fetchMyPosts, fetchMyComments } from '@/lib/firebase-member';
+import {
+  fetchMyEvents,
+  fetchMyPosts,
+  fetchMyComments,
+} from '@/runtime/client/use-cases/member-dashboard-use-cases';
 
 // Mock service layer
-vi.mock('@/lib/firebase-member', () => ({
+vi.mock('@/runtime/client/use-cases/member-dashboard-use-cases', () => ({
   fetchMyEvents: vi.fn(),
   fetchMyPosts: vi.fn(),
   fetchMyComments: vi.fn(),

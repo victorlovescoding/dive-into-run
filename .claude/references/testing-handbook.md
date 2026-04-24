@@ -24,11 +24,11 @@ Skill 是**流程**（做什麼、照什麼順序），handbook 是**字典**（
 
 ## 2. Testing Trophy（Kent C. Dodds）
 
-| 層級        | 比例 | 目標                        | 工具                                 |
-| ----------- | ---- | --------------------------- | ------------------------------------ |
-| Integration | 60%  | UI + 使用者互動（最高 ROI） | Vitest + Testing Library + userEvent |
-| Unit        | 20%  | `src/lib/` 純商業邏輯       | Vitest（jsdom）                      |
-| E2E         | 20%  | Critical user journeys      | Playwright（Chromium）               |
+| 層級        | 比例 | 目標                                          | 工具                                 |
+| ----------- | ---- | --------------------------------------------- | ------------------------------------ |
+| Integration | 60%  | UI + 使用者互動（最高 ROI）                   | Vitest + Testing Library + userEvent |
+| Unit        | 20%  | `src/service/**` 純商業邏輯與 DOM-free helper | Vitest（jsdom）                      |
+| E2E         | 20%  | Critical user journeys                        | Playwright（Chromium）               |
 
 **為何 integration 居首**：
 
@@ -66,7 +66,7 @@ specs/
 
 ## 4. Unit Tests 指南
 
-**Target**：`src/lib/` 的純函式、helper。禁 DOM、禁 Testing Library。
+**Target**：以 `src/service/**` 的純函式、驗證/轉換邏輯為主；`src/lib/**` 僅在需要驗證 compatibility facade 契約時補測。禁 DOM、禁 Testing Library。
 
 ### AAA Pattern
 
@@ -106,7 +106,7 @@ it('should return the correct sum', () => {
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { signInWithPopup, signOut } from 'firebase/auth';
 import { signInWithGoogle, signOutUser } from '@/lib/firebase-auth-helpers';
-import { auth, provider } from '@/lib/firebase-client';
+import { auth, provider } from '@/config/client/firebase-client';
 
 vi.mock('firebase/auth', () => ({
   signInWithPopup: vi.fn(),

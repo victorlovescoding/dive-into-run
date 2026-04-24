@@ -30,11 +30,11 @@ vi.mock('next/image', () => ({
   default: (props) => <img {...props} />,
 }));
 
-vi.mock('@/contexts/ToastContext', () => ({
+vi.mock('@/runtime/providers/ToastProvider', () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 
-vi.mock('@/contexts/AuthContext', () => ({
+vi.mock('@/runtime/providers/AuthProvider', () => ({
   AuthContext: mockAuthContext,
 }));
 
@@ -46,11 +46,11 @@ vi.mock('@/components/UserLink', () => ({
   default: ({ name }) => <span>{name}</span>,
 }));
 
-vi.mock('@/lib/firebase-notifications', () => ({
+vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
   notifyPostNewComment: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-client', () => ({ db: {} }));
+vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
 
 vi.mock('firebase/firestore', () => ({
   addDoc: vi.fn(),
@@ -72,8 +72,10 @@ vi.mock('firebase/firestore', () => ({
   documentId: vi.fn(),
 }));
 
-vi.mock('@/lib/firebase-posts', async (importOriginal) => {
-  const original = /** @type {import('@/lib/firebase-posts')} */ (await importOriginal());
+vi.mock('@/runtime/client/use-cases/post-use-cases', async (importOriginal) => {
+  const original = /** @type {import('@/runtime/client/use-cases/post-use-cases')} */ (
+    await importOriginal()
+  );
   return {
     validatePostInput: original.validatePostInput,
     POST_TITLE_MAX_LENGTH: original.POST_TITLE_MAX_LENGTH,
@@ -104,7 +106,7 @@ import {
   getLatestComments,
   updatePost,
   POST_TITLE_MAX_LENGTH,
-} from '@/lib/firebase-posts';
+} from '@/runtime/client/use-cases/post-use-cases';
 
 const mockedGetPostDetail = /** @type {import('vitest').Mock} */ (getPostDetail);
 const mockedHasUserLikedPost = /** @type {import('vitest').Mock} */ (hasUserLikedPost);

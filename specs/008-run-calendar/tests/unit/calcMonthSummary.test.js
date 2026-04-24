@@ -2,10 +2,10 @@
  * @file Unit tests for calcMonthSummary — 計算月份跑步摘要。
  *
  * 驗證總距離加總、各類型小計、零紀錄類型排除、空 Map 處理，
- * 以及 RUN_TYPE_LABELS 標籤映射正確性。
+ * 以及 observable label 映射正確性。
  */
 import { describe, it, expect } from 'vitest';
-import { calcMonthSummary, RUN_TYPE_LABELS } from '@/lib/strava-helpers';
+import { calcMonthSummary } from '@/service/strava-data-service';
 
 // ---------------------------------------------------------------------------
 // helpers — 建立測試用 DayActivities
@@ -112,7 +112,7 @@ describe('Unit: calcMonthSummary', () => {
   // -----------------------------------------------------------------------
   // 5. label 映射正確（Run→戶外, VirtualRun→室內, TrailRun→越野）
   // -----------------------------------------------------------------------
-  it('should map labels correctly via RUN_TYPE_LABELS', () => {
+  it('should map labels correctly in byType results', () => {
     // Arrange — all three types present
     const dayMap = new Map([
       [
@@ -136,12 +136,5 @@ describe('Unit: calcMonthSummary', () => {
     expect(runType.label).toBe('戶外');
     expect(virtualType.label).toBe('室內');
     expect(trailType.label).toBe('越野');
-
-    // Also verify RUN_TYPE_LABELS constant is correctly defined
-    expect(RUN_TYPE_LABELS).toEqual({
-      Run: '戶外',
-      VirtualRun: '室內',
-      TrailRun: '越野',
-    });
   });
 });

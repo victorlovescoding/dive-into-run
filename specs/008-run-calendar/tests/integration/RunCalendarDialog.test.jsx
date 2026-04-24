@@ -3,11 +3,11 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Mock useRunCalendar hook
-vi.mock('@/hooks/useRunCalendar', () => ({
+vi.mock('@/runtime/hooks/useRunCalendar', () => ({
   default: vi.fn(),
 }));
 
-import useRunCalendar from '@/hooks/useRunCalendar';
+import useRunCalendar from '@/runtime/hooks/useRunCalendar';
 import RunCalendarDialog from '@/components/RunCalendarDialog';
 
 const mockedUseRunCalendar = /** @type {import('vitest').Mock} */ (useRunCalendar);

@@ -1,8 +1,8 @@
 /**
- * @file Unit Test for src/lib/firebase-users.js
+ * @file Unit Test for src/repo/client/firebase-users-repo.js
  * @description
  * Self-test for firebase-users — 覆蓋 Session C mock-audit 黑洞（0/26 lines → 26/26）。
- * 不 mock `@/lib/firebase-users`，mock 邊界在 `firebase/firestore` + `@/lib/firebase-client`。
+ * 不 mock `@/lib/firebase-users`，mock 邊界在 `firebase/firestore` + `@/config/client/firebase-client`。
  * 對應 4 exports：loginCheckUserData、updateUserName、watchUserProfile、updateUserPhotoURL。
  *
  * Pattern 對齊 specs/005-event-comments/tests/unit/firebase-comments.test.js。
@@ -14,7 +14,7 @@ import {
   updateUserName,
   watchUserProfile,
   updateUserPhotoURL,
-} from '@/lib/firebase-users';
+} from '@/repo/client/firebase-users-repo';
 
 // ---------------------------------------------------------------------------
 // Module-level mocks (via vi.hoisted so they exist when vi.mock factory runs)
@@ -36,7 +36,7 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: mockServerTimestamp,
 }));
 
-vi.mock('@/lib/firebase-client', () => ({ db: 'mock-db' }));
+vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
 
 // ---------------------------------------------------------------------------
 // Test Suites

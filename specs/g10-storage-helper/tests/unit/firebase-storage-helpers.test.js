@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { uploadUserAvatar } from '@/lib/firebase-storage-helpers';
+import { uploadUserAvatar } from '@/runtime/client/use-cases/avatar-upload-use-cases';
 import { asMock } from '../../../test-utils/mock-helpers';
 
-vi.mock('@/lib/firebase-client', () => ({
+vi.mock('@/config/client/firebase-client', () => ({
   storage: { _isMockStorage: true },
 }));
 
