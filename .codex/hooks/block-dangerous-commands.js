@@ -25,7 +25,9 @@ const dangerousPatterns = [
   // 4. 盲目執行網路腳本
   /(curl|wget).+?\|\s*(sh|bash|zsh)/,
   // 5. 強制操作 (Git)
-  /git\s+push\s+.*(-f|--force)/,
+  /git\s+push\b[^\n]*?(?:(?:^|\s)-[a-zA-Z]*f[a-zA-Z]*(?=\s|$)|--force|\s\+\S+)/,
+  /git\s+push\s+.*--delete\b/,
+  /git\s+push\s+\S+\s+:\S+/,
   /git\s+reset\s+--hard/,
   /git\s+clean\b/,
   // 6. 權限與所有權變更
