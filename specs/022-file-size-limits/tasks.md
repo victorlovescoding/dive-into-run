@@ -61,7 +61,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 來源：`src/runtime/hooks/useEventsPageRuntime.js`
 提取目標目錄：`src/runtime/hooks/`
 
-### [ ] T01 提取 `useEventsFilter.js`
+### [x] T01 提取 `useEventsFilter.js`
 
 **搬移內容**：
 
@@ -75,7 +75,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 - [ ] 源檔案呼叫 `useEventsFilter()` 並解構回傳值
 - [ ] `grep -n 'handleOpenFilter\|handleCloseFilter\|handleClearFilters\|handleSearchFilters'` 的函式定義只出現在新檔案
 
-### [ ] T02 提取 `useEventParticipation.js`
+### [x] T02 提取 `useEventParticipation.js`
 
 **搬移內容**：
 
@@ -89,7 +89,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 - [ ] `grep -n 'handleJoinClick\|handleLeaveClick\|pendingJoin\|pendingLeave'` 的定義只出現在新檔案
 - [ ] join/leave 邏輯（seat availability check, recalc）完整搬移
 
-### [ ] T03 提取 `useEventMutations.js`
+### [x] T03 提取 `useEventMutations.js`
 
 **搬移內容**：
 
@@ -109,7 +109,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 來源：`src/ui/events/EventsPageScreen.jsx`
 提取目標目錄：`src/ui/events/`
 
-### [ ] T04 提取 `EventCreateForm.jsx`
+### [x] T04 提取 `EventCreateForm.jsx`
 
 **搬移內容**：
 
@@ -121,7 +121,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 - [ ] 源檔案用 `<EventCreateForm ... />` 取代原本的 inline JSX
 - [ ] 表單所有欄位（title, time, location, route, pace, maxParticipants, description）都在新檔案
 
-### [ ] T05 提取 `EventsFilterPanel.jsx`
+### [x] T05 提取 `EventsFilterPanel.jsx`
 
 **搬移內容**：
 
@@ -141,7 +141,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 來源：`src/runtime/hooks/useEventDetailRuntime.js`
 提取目標目錄：`src/runtime/hooks/`
 
-### [ ] T06 提取 `useEventDetailParticipation.js`
+### [x] T06 提取 `useEventDetailParticipation.js`
 
 **搬移內容**：
 
@@ -154,7 +154,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 - [ ] hook 接受必要參數（event, user/actor），回傳 participation state + handlers
 - [ ] `grep -n 'handleJoin\|handleLeave\|handleOpenParticipants\|refreshParticipants'` 的定義只出現在新檔案
 
-### [ ] T07 提取 `useEventDetailMutations.js`
+### [x] T07 提取 `useEventDetailMutations.js`
 
 **搬移內容**：
 
@@ -175,7 +175,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 來源：`src/runtime/hooks/usePostDetailRuntime.js`
 提取目標目錄：`src/runtime/hooks/`
 
-### [ ] T08 提取 `usePostComments.js`
+### [x] T08 提取 `usePostComments.js`
 
 **搬移內容**：
 
@@ -197,7 +197,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 
 來源：`src/components/EventEditForm.jsx`
 
-### [ ] T09 提取 `EventRouteEditor.jsx`（放 `src/components/`）
+### [x] T09 提取 `EventRouteEditor.jsx`（放 `src/components/`）
 
 **搬移內容**：
 
@@ -210,7 +210,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 - [ ] 源檔案用 `<EventRouteEditor ... />` 取代原本的三模式 JSX block
 - [ ] 三種 route mode（view/none/draw）的 conditional rendering 都在新檔案
 
-### [ ] T10 提取 `useEventEditForm.js`（放 `src/runtime/hooks/`）
+### [x] T10 提取 `useEventEditForm.js`（放 `src/runtime/hooks/`）
 
 **搬移內容**：
 
@@ -231,7 +231,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 來源：`src/runtime/hooks/useWeatherPageRuntime.js`
 提取目標目錄：`src/runtime/hooks/`
 
-### [ ] T11 提取 `useWeatherFavorites.js`
+### [x] T11 提取 `useWeatherFavorites.js`
 
 **搬移內容**：
 
@@ -252,7 +252,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 來源：`src/service/weather-forecast-service.js`
 提取目標目錄：`src/service/`
 
-### [ ] T12 提取 `weather-forecast-helpers.js`
+### [x] T12 提取 `weather-forecast-helpers.js`
 
 **搬移內容**：
 
@@ -273,7 +273,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 來源：`src/ui/events/EventDetailScreen.jsx`
 提取目標目錄：`src/ui/events/`
 
-### [ ] T13 提取 `ParticipantsModal.jsx`
+### [x] T13 提取 `ParticipantsModal.jsx`
 
 **搬移內容**：
 
@@ -292,7 +292,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 來源：`src/runtime/providers/NotificationProvider.jsx`
 提取目標目錄：`src/runtime/providers/`
 
-### [ ] T14 提取 `notification-context.js`
+### [x] T14 提取 `notification-context.js`
 
 **搬移內容**：
 
@@ -311,7 +311,7 @@ All Groups ──→ T15          (ESLint rule，依賴全部完成)
 
 ---
 
-## T15: ESLint max-lines Rule
+## [x] T15: ESLint max-lines Rule
 
 **依賴**：T01-T14 全部完成
 **修改**：`eslint.config.mjs`
