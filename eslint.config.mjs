@@ -405,4 +405,13 @@ export default [
       'jsx-a11y/alt-text': 'off',
     },
   },
+
+  // 19. File size limits (D2: mechanical enforcement)
+  {
+    files: ['src/**/*.{js,jsx}'],
+    ignores: ['src/config/geo/**'],
+    rules: {
+      'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
+    },
+  },
 ];

@@ -10,6 +10,7 @@ import ShareButton from '@/components/ShareButton';
 import UserLink from '@/components/UserLink';
 import { formatDateTime, formatPace } from './event-formatters';
 import styles from './EventDetailScreen.module.css';
+import ParticipantsModal from './ParticipantsModal';
 
 const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
 
@@ -252,78 +253,16 @@ export default function EventDetailScreen({ id, runtime }) {
 
             <CommentSection eventId={id} onCommentAdded={handleCommentAdded} />
 
-            {isParticipantsOpen && (
-              <div
-                ref={participantsOverlayRef}
-                role="dialog"
-                aria-modal="true"
-                className={styles.participantsOverlay}
-                tabIndex={-1}
-              >
-                <div className={styles.participantsCard}>
-                  <div className={styles.participantsHeader}>
-                    <div className={styles.participantsTitle}>參加名單</div>
-                    <button
-                      type="button"
-                      className={styles.cancelButton}
-                      onClick={handleCloseParticipants}
-                    >
-                      關閉
-                    </button>
-                  </div>
-
-                  <div className={styles.participantsBody}>
-                    {participantsLoading && (
-                      <div
-                        className={`${styles.statusRow} ${styles.marginBottom12}`}
-                        role="status"
-                        aria-live="polite"
-                      >
-                        <div className={styles.spinner} aria-hidden="true" />
-                        <span>正在載入參加名單…</span>
-                      </div>
-                    )}
-
-                    {participantsError && (
-                      <div className={styles.errorCard} role="alert">
-                        {participantsError}
-                        <button
-                          type="button"
-                          className={`${styles.retryButton} ${styles.marginLeft10}`}
-                          onClick={refreshParticipants}
-                        >
-                          重試
-                        </button>
-                      </div>
-                    )}
-
-                    {!participantsLoading && !participantsError && participants.length === 0 ? (
-                      <div className={styles.emptyHint}>目前還沒有人報名</div>
-                    ) : (
-                      <div className={styles.participantsList}>
-                        {participants.map((participant) => (
-                          <div
-                            key={String(participant.uid || participant.id)}
-                            className={styles.participantItem}
-                          >
-                            <UserLink
-                              uid={String(participant.uid || participant.id)}
-                              name={participant.name || '（未命名）'}
-                              photoURL={participant.photoURL}
-                              size={36}
-                              className={styles.participantLink}
-                            />
-                            <div className={styles.participantStatus}>
-                              {participant.uid === event.hostUid ? '主揪' : '已參加'}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+            <ParticipantsModal
+              participants={participants}
+              loading={participantsLoading}
+              error={participantsError}
+              isOpen={isParticipantsOpen}
+              onClose={handleCloseParticipants}
+              onRetry={refreshParticipants}
+              overlayRef={participantsOverlayRef}
+              hostUid={event.hostUid}
+            />
           </>
         )}
       </div>

@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  createContext,
-  useState,
-  useEffect,
-  useContext,
-  useCallback,
-  useMemo,
-  useRef,
-} from 'react';
+import { useState, useEffect, useContext, useCallback, useMemo, useRef } from 'react';
 import {
   fetchMoreNotifications,
   fetchMoreUnreadNotifications,
@@ -18,45 +10,13 @@ import {
 } from '@/runtime/client/use-cases/notification-use-cases';
 import { AuthContext } from './AuthProvider';
 import { ToastContext } from './ToastProvider';
+import { NotificationContext } from './notification-context';
+
+export { NotificationContext, useNotificationContext } from './notification-context';
 
 /**
- * @typedef {object} NotificationContextValue
- * @property {number} unreadCount - 未讀通知數量。
- * @property {import('@/service/notification-service').NotificationItem[]} notifications - 目前顯示的通知列表。
- * @property {boolean} isPanelOpen - 通知面板是否開啟。
- * @property {() => void} togglePanel - 切換面板開關。
- * @property {() => void} closePanel - 關閉面板。
- * @property {'all'|'unread'} activeTab - 目前分頁標籤。
- * @property {(tab: 'all'|'unread') => void} setActiveTab - 切換分頁。
- * @property {(notificationId: string) => Promise<void>} markAsRead - 標記單則通知已讀。
- * @property {boolean} hasMore - 是否有更多通知可載入。
- * @property {boolean} isLoadingMore - 是否正在載入更多。
- * @property {boolean} hasLoadedMore - 是否已執行過查看先前通知。
- * @property {() => Promise<void>} loadMore - 載入更多通知。
- * @property {{ id: string, message: string } | null} currentToast - 目前顯示的 toast。
- * @property {import('react').RefObject<HTMLButtonElement | null>} bellButtonRef - 鈴鐺按鈕 ref，用於 focus restore。
+ * @typedef {import('./notification-context').NotificationContextValue} NotificationContextValue
  */
-
-/** @type {NotificationContextValue} */
-const defaultValue = {
-  unreadCount: 0,
-  notifications: [],
-  isPanelOpen: false,
-  togglePanel: () => {},
-  activeTab: 'all',
-  setActiveTab: () => {},
-  closePanel: () => {},
-  markAsRead: async () => {},
-  hasMore: false,
-  isLoadingMore: false,
-  hasLoadedMore: false,
-  loadMore: async () => {},
-  currentToast: null,
-  bellButtonRef: { current: null },
-};
-
-export const NotificationContext =
-  /** @type {import('react').Context<NotificationContextValue>} */ (createContext(defaultValue));
 
 /**
  * 將 Firestore Timestamp 或 JS Date 轉為毫秒數，用於排序比較。
