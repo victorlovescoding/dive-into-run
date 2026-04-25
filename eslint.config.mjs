@@ -9,6 +9,7 @@ import nextPlugin from '@next/eslint-plugin-next';
 import jsdoc from 'eslint-plugin-jsdoc';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
+import eslintCommentsPlugin from '@eslint-community/eslint-plugin-eslint-comments';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 import confusingGlobals from 'confusing-browser-globals';
@@ -232,9 +233,9 @@ export default [
       ],
       'import/extensions': 'off',
       'import/no-unresolved': 'off',
-      'jsdoc/require-jsdoc': 'warn',
-      'jsdoc/require-param-description': 'warn',
-      'jsdoc/require-returns-description': 'warn',
+      'jsdoc/require-jsdoc': 'error',
+      'jsdoc/require-param-description': 'error',
+      'jsdoc/require-returns-description': 'error',
     },
   },
 
@@ -349,6 +350,19 @@ export default [
           ],
         },
       ],
+    },
+  },
+
+  // 15. Ban eslint-disable for a11y rules (Constitution IX: No ESLint Abuse)
+  //     Agent remediation: fix the HTML structure (add roles, labels, key handlers)
+  //     instead of disabling a11y rules.
+  {
+    files: ['src/**/*.{js,jsx}'],
+    plugins: {
+      '@eslint-community/eslint-comments': eslintCommentsPlugin,
+    },
+    rules: {
+      '@eslint-community/eslint-comments/no-restricted-disable': ['error', 'jsx-a11y/*'],
     },
   },
 
