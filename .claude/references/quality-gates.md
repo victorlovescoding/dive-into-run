@@ -177,7 +177,6 @@ Run these during development, don't wait for pre-commit:
 | `npm run type-check:changed` | Git changed files (filtered tsc) | After modifying function signatures |
 | `npm run test:branch`        | Branch vitest only               | After completing a feature slice    |
 
-PostToolUse hook auto-runs single-file ESLint after every Edit/Write (non-blocking).
 Full sensor reference -> `.claude/rules/sensors.md`
 
 ---

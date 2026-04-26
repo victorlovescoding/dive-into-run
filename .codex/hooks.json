@@ -29,10 +29,6 @@
           {
             "type": "command",
             "command": "node .codex/hooks/prettier-on-save.js"
-          },
-          {
-            "type": "command",
-            "command": "node .codex/hooks/eslint-on-save.js"
           }
         ]
       }
