@@ -25,6 +25,6 @@
       }
     ]
   },
-  "include": ["specs", "src", ".next/types/**/*.ts"],
+  "include": ["specs", "src", "tests", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }
