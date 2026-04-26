@@ -72,13 +72,13 @@ Six canonical layers with forward-only dependency: Types → Config → Repo →
 
 下列 `.codex/rules/*.md` 是 repo 內的參考文件與檢查清單，供 Codex 按需閱讀；它們不是 Codex 官方 Rules DSL，也不保證會被 runtime 自動載入。`.claude/rules/*.md` 保留作 legacy provenance。
 
-| 文件                                | 建議查閱時機                  | 內容                                                                                   |
-| ----------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
-| `.codex/rules/coding-rules.md`      | `src/**`, `specs/**`          | 4 條 Non-Negotiable（無 @ts-ignore、無 JSX logic、無 eslint-disable a11y、JSDoc 規範） |
-| `.codex/rules/code-style.md`        | `src/**`, `specs/**` (js/jsx) | Formatting + JSDoc patterns                                                            |
-| `.codex/rules/testing-standards.md` | `specs/**`, test/spec 檔      | Testing Trophy、AAA、userEvent                                                         |
-| `.codex/rules/e2e-commands.md`      | `specs/**/e2e/**`             | Playwright + emulator 指令                                                             |
-| `.codex/rules/sensors.md`           | 需要跑驗證或檢查 gate 時      | type-check/lint/test + IDE Diagnostics + pre-commit gate                               |
+| 文件                                | 建議查閱時機                  | 內容                                                                                                                     |
+| ----------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `.codex/rules/coding-rules.md`      | `src/**`, `specs/**`          | 6 條 Non-Negotiable（無 @ts-ignore、無 JSX logic、無 eslint-disable a11y、JSDoc 規範、forward-only imports、300 行上限） |
+| `.codex/rules/code-style.md`        | `src/**`, `specs/**` (js/jsx) | Formatting + JSDoc patterns                                                                                              |
+| `.codex/rules/testing-standards.md` | `specs/**`, test/spec 檔      | Testing Trophy、AAA、userEvent                                                                                           |
+| `.codex/rules/e2e-commands.md`      | `specs/**/e2e/**`             | Playwright + emulator 指令                                                                                               |
+| `.codex/rules/sensors.md`           | 需要跑驗證或檢查 gate 時      | type-check/lint/test + IDE Diagnostics + pre-commit gate                                                                 |
 
 ### Git Workflow (Non-Negotiable)
 
@@ -109,7 +109,6 @@ Six canonical layers with forward-only dependency: Types → Config → Repo →
 
 | 文件                                    | 狀態    | 用途                                                                            |
 | --------------------------------------- | ------- | ------------------------------------------------------------------------------- |
-| `.codex/references/coding-standards.md` | ✅ 已有 | 完整編碼規範與品質防線                                                          |
 | `.codex/references/quality-gates.md`    | ✅ 已有 | Pre-commit gate、架構層規則、ESLint 防線、ban list 一覽                         |
 | `.codex/references/testing-handbook.md` | ✅ 已有 | 測試撰寫完整手冊                                                                |
 | `.codex/references/review-standards.md` | 🔜 待建 | Code Review 標準與 checklist                                                    |
