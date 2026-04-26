@@ -126,6 +126,10 @@ describe('S014 test bucket policy', () => {
       'integration',
       'e2e',
       'specs-test-utils',
+      'unit-tests-root',
+      'integration-tests-root',
+      'e2e-tests-root',
+      'tests-helpers',
     ]);
     expect(
       TEST_BUCKET_DEPCRUISE_ARTIFACTS.find((artifact) => artifact.bucket === 'unit'),
