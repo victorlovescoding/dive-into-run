@@ -92,6 +92,10 @@
           {
             "type": "command",
             "command": "npx prettier --write \"$CLAUDE_FILE_PATH\""
+          },
+          {
+            "type": "command",
+            "command": "npx eslint \"$CLAUDE_FILE_PATH\" --max-warnings 0 2>&1; exit 0"
           }
         ]
       }
