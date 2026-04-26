@@ -52,13 +52,13 @@ Six canonical layers with forward-only dependency: Types → Config → Repo →
 
 Path-scoped rules（只在碰到對應檔案時自動載入）：
 
-| Rule                                 | 觸發路徑                      | 內容                                                                                   |
-| ------------------------------------ | ----------------------------- | -------------------------------------------------------------------------------------- |
-| `.claude/rules/coding-rules.md`      | `src/**`, `specs/**`          | 4 條 Non-Negotiable（無 @ts-ignore、無 JSX logic、無 eslint-disable a11y、JSDoc 規範） |
-| `.claude/rules/code-style.md`        | `src/**`, `specs/**` (js/jsx) | Formatting + JSDoc patterns                                                            |
-| `.claude/rules/testing-standards.md` | `specs/**`, test/spec 檔      | Testing Trophy、AAA、userEvent                                                         |
-| `.claude/rules/e2e-commands.md`      | `specs/**/e2e/**`             | Playwright + emulator 指令                                                             |
-| `.claude/rules/sensors.md`           | 無 paths（always loaded）     | type-check/lint/test + IDE Diagnostics + pre-commit gate                               |
+| Rule                                 | 觸發路徑                      | 內容                                                                                                                |
+| ------------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `.claude/rules/coding-rules.md`      | `src/**`, `specs/**`          | 6 條 Non-Negotiable（無 @ts-ignore、無 JSX logic、無 eslint-disable a11y、JSDoc、forward-only imports、300 行上限） |
+| `.claude/rules/code-style.md`        | `src/**`, `specs/**` (js/jsx) | Formatting + JSDoc patterns                                                                                         |
+| `.claude/rules/testing-standards.md` | `specs/**`, test/spec 檔      | Testing Trophy、AAA、userEvent                                                                                      |
+| `.claude/rules/e2e-commands.md`      | `specs/**/e2e/**`             | Playwright + emulator 指令                                                                                          |
+| `.claude/rules/sensors.md`           | 無 paths（always loaded）     | type-check/lint/test + IDE Diagnostics + pre-commit gate                                                            |
 
 ### Git Workflow (Non-Negotiable)
 
@@ -89,7 +89,7 @@ Path-scoped rules（只在碰到對應檔案時自動載入）：
 
 | 文件                                     | 狀態    | 用途                                                                            |
 | ---------------------------------------- | ------- | ------------------------------------------------------------------------------- |
-| `.claude/references/coding-standards.md` | ✅ 已有 | 完整編碼規範與品質防線                                                          |
+| `.claude/references/quality-gates.md`    | ✅ 已有 | Pre-commit gate、架構層規則、ESLint 防線、ban list 一覽                         |
 | `.claude/references/testing-handbook.md` | ✅ 已有 | 測試撰寫完整手冊                                                                |
 | `.claude/references/review-standards.md` | 🔜 待建 | Code Review 標準與 checklist                                                    |
 | `.claude/references/harness-articles/`   | ✅ 已有 | 5 篇 harness engineering 文章摘要（Fowler、OpenAI、Anthropic、Datadog、Stripe） |
