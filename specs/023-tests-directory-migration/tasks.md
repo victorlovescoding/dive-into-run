@@ -3670,8 +3670,8 @@ for old in "'unit'" "'integration'" "'e2e'" "'specs-test-utils'"; do
 done
 
 # 3. test 檔 .toEqual array 從 8 變 4
-arr_count=$(awk '/\.toEqual\(\[/,/\]\);/' "$T" | grep -c "^\s*'")
-[ "$arr_count" -eq 4 ] || { echo "FAIL: .toEqual has $arr_count elements expect 4"; exit 1; }
+arrlen=$(awk '/\.toEqual\(\[/,/\]\);/' "$T" | grep -c "^\s*'")
+[ "$arrlen" -eq 4 ] || { echo "FAIL: .toEqual has $arrlen elements expect 4"; exit 1; }
 
 # 4. depcruise / lint / type-check / vitest 全綠
 npm run depcruise 2>&1 | tail -3 | grep -qiE 'error|fail' && { echo "FAIL: depcruise"; exit 1; } || true

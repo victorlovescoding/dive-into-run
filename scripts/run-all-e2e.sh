@@ -55,9 +55,11 @@ FAILED_FEATURES=()
 PASSED=0
 SKIPPED=0
 
-for e2e_dir in specs/*/tests/e2e; do
-  [ -d "$e2e_dir" ] || continue
-  feature=$(echo "$e2e_dir" | cut -d'/' -f2)
+# Loop every feature globalSetup file under tests/e2e/_setup/
+# Each *-global-setup.js corresponds to a feature → run with emulator config
+for setup in tests/e2e/_setup/*-global-setup.js; do
+  [ -f "$setup" ] || continue
+  feature=$(basename "$setup" -global-setup.js)
 
   # Reset emulator state before each feature (wait for completion)
   echo "Resetting emulator state..."
@@ -81,6 +83,21 @@ for e2e_dir in specs/*/tests/e2e; do
     FAILED_FEATURES+=("$feature")
   fi
 done
+
+# Run any vanilla E2E specs (no globalSetup, don't need emulator)
+if find tests/e2e -maxdepth 1 -name '*.spec.js' 2>/dev/null | head -1 | grep -q .; then
+  echo ""
+  echo "=========================================="
+  echo "Running vanilla E2E specs (no globalSetup)"
+  echo "=========================================="
+  if npx playwright test --config playwright.config.mjs; then
+    echo "PASSED: vanilla"
+    PASSED=$((PASSED + 1))
+  else
+    echo "FAILED: vanilla"
+    FAILED_FEATURES+=("vanilla")
+  fi
+fi
 
 # ---------------------------------------------------------------------------
 # 4. Cleanup

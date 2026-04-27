@@ -12,18 +12,12 @@ import {
 
 describe('S014 test bucket policy', () => {
   it('classifies the four bucket paths', () => {
-    expect(
-      classifyTestBucket('specs/021-layered-dependency-architecture/tests/unit/foo.test.js'),
-    ).toBe('unit');
-    expect(
-      classifyTestBucket(
-        'specs/021-layered-dependency-architecture/tests/integration/foo.test.jsx',
-      ),
-    ).toBe('integration');
-    expect(
-      classifyTestBucket('specs/014-notification-system/tests/e2e/notification-flow.spec.js'),
-    ).toBe('e2e');
-    expect(classifyTestBucket('specs/test-utils/e2e-helpers.js')).toBe('specs-test-utils');
+    expect(classifyTestBucket('tests/unit/lib/foo.test.js')).toBe('unit-tests-root');
+    expect(classifyTestBucket('tests/integration/events/foo.test.jsx')).toBe(
+      'integration-tests-root',
+    );
+    expect(classifyTestBucket('tests/e2e/notification-flow.spec.js')).toBe('e2e-tests-root');
+    expect(classifyTestBucket('tests/_helpers/e2e-helpers.js')).toBe('tests-helpers');
     expect(
       classifyTestBucket('specs/021-layered-dependency-architecture/test-buckets/policy.js'),
     ).toBe(null);
@@ -32,7 +26,7 @@ describe('S014 test bucket policy', () => {
   it('allows and denies representative imports for each bucket', () => {
     expect(
       evaluateBucketImport(
-        'specs/021-layered-dependency-architecture/tests/unit/post-use-cases.test.js',
+        'tests/unit/runtime/post-use-cases.test.js',
         '@/runtime/client/use-cases/post-use-cases',
       ),
     ).toMatchObject({
@@ -42,7 +36,7 @@ describe('S014 test bucket policy', () => {
 
     expect(
       evaluateBucketImport(
-        'specs/g8-server-coverage/tests/unit/firebase-admin.test.js',
+        'tests/unit/config/firebase-admin.test.js',
         '@/config/server/firebase-admin-app',
       ),
     ).toMatchObject({
@@ -52,7 +46,7 @@ describe('S014 test bucket policy', () => {
 
     expect(
       evaluateBucketImport(
-        'specs/009-global-toast/tests/unit/toast-context.test.jsx',
+        'tests/unit/runtime/toast-context.test.jsx',
         '@/runtime/providers/ToastProvider',
       ),
     ).toMatchObject({
@@ -62,7 +56,7 @@ describe('S014 test bucket policy', () => {
 
     expect(
       evaluateBucketImport(
-        'specs/006-strava-running-records/tests/integration/useStravaConnection.test.jsx',
+        'tests/integration/strava/useStravaConnection.test.jsx',
         '@/config/client/firebase-client',
       ),
     ).toMatchObject({
@@ -72,7 +66,7 @@ describe('S014 test bucket policy', () => {
 
     expect(
       evaluateBucketImport(
-        'specs/014-notification-system/tests/integration/notification-triggers.test.jsx',
+        'tests/integration/notifications/notification-triggers.test.jsx',
         '@/repo/client/firebase-notifications-repo',
       ),
     ).toMatchObject({
@@ -81,36 +75,30 @@ describe('S014 test bucket policy', () => {
     });
 
     expect(
-      evaluateBucketImport(
-        'specs/005-event-comments/tests/e2e/event-comments.spec.js',
-        '../../../test-utils/e2e-helpers.js',
-      ),
+      evaluateBucketImport('tests/e2e/event-comments.spec.js', '../_helpers/e2e-helpers.js'),
     ).toMatchObject({
       verdict: 'allow',
-      kind: 'specs-test-utils-helper',
-      resolvedPath: 'specs/test-utils/e2e-helpers.js',
+      kind: 'tests-helpers-e2e-helper',
+      resolvedPath: 'tests/_helpers/e2e-helpers.js',
     });
 
     expect(
-      evaluateBucketImport(
-        'specs/014-notification-system/tests/e2e/comment-notification-flow.spec.js',
-        '@/app/events/page',
-      ),
+      evaluateBucketImport('tests/e2e/comment-notification-flow.spec.js', '@/app/events/page'),
     ).toMatchObject({
       verdict: 'deny',
       kind: 'src-app-non-api',
     });
 
     expect(
-      evaluateBucketImport('specs/test-utils/mock-helpers.js', './e2e-helpers.js'),
+      evaluateBucketImport('tests/_helpers/mock-helpers.js', './e2e-helpers.js'),
     ).toMatchObject({
       verdict: 'allow',
-      kind: 'specs-test-utils-helper',
-      resolvedPath: 'specs/test-utils/e2e-helpers.js',
+      kind: 'tests-helpers-e2e-helper',
+      resolvedPath: 'tests/_helpers/e2e-helpers.js',
     });
 
     expect(
-      evaluateBucketImport('specs/test-utils/e2e-helpers.js', '@/lib/firebase-events'),
+      evaluateBucketImport('tests/_helpers/e2e-helpers.js', '@/lib/firebase-events'),
     ).toMatchObject({
       verdict: 'deny',
       kind: 'src-lib',
@@ -122,17 +110,13 @@ describe('S014 test bucket policy', () => {
       'specs/021-layered-dependency-architecture/test-bucket-policy.js',
     );
     expect(TEST_BUCKET_DEPCRUISE_ARTIFACTS.map((artifact) => artifact.bucket)).toEqual([
-      'unit',
-      'integration',
-      'e2e',
-      'specs-test-utils',
       'unit-tests-root',
       'integration-tests-root',
       'e2e-tests-root',
       'tests-helpers',
     ]);
     expect(
-      TEST_BUCKET_DEPCRUISE_ARTIFACTS.find((artifact) => artifact.bucket === 'unit'),
+      TEST_BUCKET_DEPCRUISE_ARTIFACTS.find((artifact) => artifact.bucket === 'unit-tests-root'),
     ).toMatchObject({
       allow: {
         resolvedPathPatterns: expect.arrayContaining(['^src/runtime/(?!providers(?:/|$))']),
@@ -145,7 +129,7 @@ describe('S014 test bucket policy', () => {
         ]),
       },
     });
-    expect(testBucketPolicy.depCruise.integration.allowedPathPatterns).toContain(
+    expect(testBucketPolicy.depCruise['integration-tests-root'].allowedPathPatterns).toContain(
       '^src/config/(?:client|geo)(?:/|$)',
     );
   });
@@ -155,24 +139,22 @@ describe('S014 test bucket policy', () => {
 
     expect(graph.files.length).toBeGreaterThan(0);
 
-    const unitSummary = summarizeBucketViolations(graph, 'unit');
-    expect(unitSummary).toMatchObject({
+    expect(summarizeBucketViolations(graph, 'unit-tests-root')).toMatchObject({
       fileCount: 0,
       edgeCount: 0,
       files: [],
     });
-
-    expect(summarizeBucketViolations(graph, 'integration')).toMatchObject({
+    expect(summarizeBucketViolations(graph, 'integration-tests-root')).toMatchObject({
       fileCount: 0,
       edgeCount: 0,
       files: [],
     });
-    expect(summarizeBucketViolations(graph, 'e2e')).toMatchObject({
+    expect(summarizeBucketViolations(graph, 'e2e-tests-root')).toMatchObject({
       fileCount: 0,
       edgeCount: 0,
       files: [],
     });
-    expect(summarizeBucketViolations(graph, 'specs-test-utils')).toMatchObject({
+    expect(summarizeBucketViolations(graph, 'tests-helpers')).toMatchObject({
       fileCount: 0,
       edgeCount: 0,
       files: [],
