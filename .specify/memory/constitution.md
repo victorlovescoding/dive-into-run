@@ -20,9 +20,9 @@ Version: 1.8.0 -> 1.9.0
 **不可協商**: 在沒有明確的書面規格 (SDD) 和失敗的測試 (TDD) 之前，不得開始任何實作。
 
 - **文件即法律**: **嚴格禁止偏離文件開發**。任何實作細節若與規格書不符，視為重大缺失。
-- **Spec artifacts**: `specs/<feature>/`
-- **Executable tests**: `tests/{unit/<layer>,integration/<domain>,e2e,_helpers}/`
-- **Server Vitest exception**: `specs/g8-server-coverage/tests/unit/**`
+- **Spec artifacts**: `specs/<feature>/` for planning artifacts only; executable tests and test directories must not live under `specs/`
+- **Executable tests**: `tests/{unit/<layer>,integration/<domain>,e2e,server,_helpers}/`
+- **Server Vitest tests**: `tests/server/g8-server-coverage/**`
 - **測試結果**: `tests/test-results/[unit|integration|e2e]/`
   - `<feature>` 對應 git 分支名稱（e.g. `003-strict-type-fixes`）
 - **測試策略 (Testing Trophy)**: 遵循 Kent C. Dodds 的測試獎盃模型。

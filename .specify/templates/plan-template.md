@@ -64,10 +64,12 @@ src/
 ├── cli/
 └── lib/
 
-specs/[###-feature]/tests/
-├── contract/
+tests/
+├── unit/
 ├── integration/
-└── unit/
+├── e2e/
+├── server/
+└── _helpers/
 
 # [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
 backend/

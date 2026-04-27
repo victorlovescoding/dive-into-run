@@ -43,7 +43,7 @@ export default defineConfig({
           name: 'browser',
           environment: 'jsdom',
           setupFiles: './vitest.setup.jsx',
-          exclude: ['specs/g8-server-coverage/**', '**/e2e/**', '**/node_modules/**'],
+          exclude: ['tests/server/**', '**/e2e/**', '**/node_modules/**'],
           alias: {
             '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
           },
@@ -60,7 +60,7 @@ export default defineConfig({
           name: 'server',
           environment: 'node',
           setupFiles: './vitest.setup.server.js',
-          include: ['specs/g8-server-coverage/**/*.test.js'],
+          include: ['tests/server/g8-server-coverage/**/*.test.js'],
           fileParallelism: false,
         },
       },

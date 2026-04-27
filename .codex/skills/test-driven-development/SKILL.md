@@ -1,6 +1,6 @@
 ---
 name: test-driven-development
-description: Test-Driven-Development（測試驅動開發）。當需要撰寫功能測試、Bug 修復測試，或在實作前建立失敗測試案例（RED phase）時使用。涵蓋 Unit / Integration / E2E 三層級測試的撰寫規範與品質防線。
+description: Test-Driven-Development（測試驅動開發）。當需要撰寫功能測試、Bug 修復測試，或在實作前建立失敗測試案例（RED phase）時使用。涵蓋 Unit / Integration / E2E / Server 測試的撰寫規範與品質防線。
 ---
 
 # Step 3: Test Driven Development (TDD)
@@ -57,11 +57,11 @@ _ **Action 2 (Anti-Patterns)**: `Read` 讀取並理解 `.claude/skills/test-driv
       - **Verification**: 確保測試覆蓋了 Spec 的所有驗收標準 (AC)。
 
 2.5 **決定測試路徑 (Path Strategy)**:
-_ **Action**: 執行以下邏輯以決定測試檔案存放位置：1. 取得當前分支名稱: `BRANCH=$(git branch --show-current)` 2. **定位 Spec 資料夾**: - 在 `specs/` 目錄下尋找與分支名稱相同的資料夾 (e.g., `specs/$BRANCH/`)。- 若不存在，**必須**詢問使用者確認正確路徑後再繼續。- `specs/$BRANCH/` 只作為 `spec.md` / `plan.md` / `tasks.md` 的 artifact 來源，不再作為測試根目錄。3. **設定 repo-root 測試路徑**: - **Unit**: `tests/unit/<layer>/<name>.test.js[x]` - **Integration**: `tests/integration/<domain>/<name>.test.jsx` - **E2E**: `tests/e2e/<name>.spec.js` - **Results**: `tests/test-results/[unit|integration|e2e]/`。4. **Create Directories**: 使用 `mkdir -p` 一次建立需要的子資料夾：
+_ **Action**: 執行以下邏輯以決定測試檔案存放位置：1. 取得當前分支名稱: `BRANCH=$(git branch --show-current)` 2. **定位 Spec 資料夾**: - 在 `specs/` 目錄下尋找與分支名稱相同的資料夾 (e.g., `specs/$BRANCH/`)。- 若不存在，**必須**詢問使用者確認正確路徑後再繼續。- `specs/$BRANCH/` 只作為 `spec.md` / `plan.md` / `tasks.md` 的 planning artifact 來源，不得建立 test/test directories。3. **設定 repo-root 測試路徑**: - **Unit**: `tests/unit/<layer>/<name>.test.js[x]` - **Integration**: `tests/integration/<domain>/<name>.test.jsx` - **E2E**: `tests/e2e/<name>.spec.js` - **Server**: `tests/server/<suite>/<name>.test.js`（g8 server coverage 使用 `tests/server/g8-server-coverage/`） - **Results**: `tests/test-results/[unit|integration|e2e]/`。4. **Create Directories**: 使用 `mkdir -p` 一次建立需要的子資料夾：
 `             mkdir -p tests/unit/<layer> tests/integration/<domain> tests/e2e
             mkdir -p tests/test-results/unit tests/test-results/integration tests/test-results/e2e
             `
-_ **Result**: 輸出你決定的 unit / integration / e2e 測試檔路徑與 `tests/test-results/[unit|integration|e2e]/` 結果路徑供使用者確認。`specs/g8-server-coverage/tests/unit` 是既有 server-project exception，不是新 TDD 測試的預設位置。
+_ **Result**: 輸出你決定的 unit / integration / e2e / server 測試檔路徑與 `tests/test-results/[unit|integration|e2e]/` 結果路徑供使用者確認。Server Vitest 測試必須放在 `tests/server/**`；g8 server coverage 測試固定使用 `tests/server/g8-server-coverage/`。
 
 2.7 **建立 Stub 檔案 (Stub Creation)**: - **Why**: Vite/Vitest 在跑測試時會真的解析 import 路徑。即使測試用了 `vi.mock()`，如果被 import 的檔案本身不存在，Vite 會直接 crash（`Failed to resolve import`），導致測試連跑都跑不了、無法得到有效的 RED。- **When**: 在撰寫測試（Step 3）**之前**。根據 `plan.md` 的「新增檔案清單」，為所有尚未存在的 source 檔案建立 stub。- **How**: - **Service layer functions** → `export async function xxx() { throw new Error('Not implemented'); }` - **React components** → `export default function Xxx() { return null; }` - **Helper functions**（加在既有檔案中）→ `export function xxx() { return ''; }` 或合適的零值 - **原則**: - 只有 export signature + JSDoc，**不寫任何邏輯**（這不算 production code，只是讓 import 能解析）。- Stub **必須附完整 JSDoc**（`@param` / `@returns`），這樣測試的 type check 不會因為型別不明而報錯。- **Example**:
 `js
@@ -79,10 +79,10 @@ _ **Result**: 輸出你決定的 unit / integration / e2e 測試檔路徑與 `te
       `
 
 3.  **撰寫測試 (Testing)**:
-    - **Parallel Strategy**: 三個層級的測試**可以平行撰寫**（用 3 個 subagent 各負責一份）。若平行執行：
+    - **Parallel Strategy**: Unit / Integration / E2E / Server 測試**可以平行撰寫**（用 subagent 各負責一份）。若平行執行：
       - 每個 subagent **必須獨立讀取** Step 1.5 的 4 份 reference 文件（coding-style, jsdoc-cheatsheet, boilerplate, testing-anti-patterns）。
-      - 每個 subagent **應參考前一個 feature 同層級的測試檔案**作為 pattern reference（用 `Glob` 找 `tests/unit/**/*.test.js[x]`、`tests/integration/**/*.test.jsx`、`tests/e2e/**/*.spec.js` 等取最近的範本），確保 mock scaffold、import pattern、JSDoc style 一致。
-    - **Requirement**: 必須**明確處理**以下三個層級的測試。對於每一個層級，**必須**建立測試檔案，**或**明確說明「為何本任務不需要此層級測試」(例如：純 UI 修改不涉邏輯則免 Unit Test)。
+      - 每個 subagent **應參考前一個 feature 同層級的測試檔案**作為 pattern reference（用 `Glob` 找 `tests/unit/**/*.test.js[x]`、`tests/integration/**/*.test.jsx`、`tests/e2e/**/*.spec.js`、`tests/server/**/*.test.js` 等取最近的範本），確保 mock scaffold、import pattern、JSDoc style 一致。
+    - **Requirement**: 必須**明確處理**以下四類測試。對於每一類，**必須**建立測試檔案，**或**明確說明「為何本任務不需要此類測試」(例如：純 UI 修改不涉 server logic 則免 Server Test)。
     - **Unit Tests**:
       - **Target**: `src/lib/` 中的純商業邏輯。
       - **Path**: `tests/unit/<layer>/<name>.test.js[x]`。
@@ -111,11 +111,16 @@ _ **Result**: 輸出你決定的 unit / integration / e2e 測試檔路徑與 `te
       - **Standards**:
         1. **Locators**: 優先使用 `page.getByRole`, `page.getByText`。禁止使用脆弱的 CSS selector。
         2. **Stability**: **嚴格禁止使用 `page.waitForTimeout()`**。必須使用 Playwright 的自動等待特性與 Assertions。
+    - **Server Tests**:
+      - **Target**: 必須在 node/server Vitest project 執行的 server-only 邏輯、Firebase Admin、route/server adapters。
+      - **Path**: `tests/server/<suite>/<name>.test.js`；g8 server coverage 使用 `tests/server/g8-server-coverage/<name>.test.js`。
+      - **Tool**: Vitest server project；需要 Firebase Emulator 時使用 server test command，不要放進 browser unit bucket。
+      - **Action**: 使用 `Write` 建立測試檔案，或明確說明本任務沒有 server-only surface。
 
 4.  **The Iron Wall (絕對防線 - Zero Tolerance)**:
     - **Mandatory**: 提交測試前，**必須**確保測試程式碼通過靜態分析。測試邏輯應失敗 (Red)，但語法與類型必須正確。
     - **Strict Rule**: **絕對沒有任何不遵守的空間 (NO EXCEPTIONS)**。任何錯誤 (Error) 或警告 (Warning) 都是攔路虎，禁止繞過。
-    - **Variable Definition**: 下列指令中的 `$TEST_FILE_PATH` 代表**你剛剛建立的測試檔案路徑** (e.g. `tests/unit/service/login.test.js`、`tests/integration/auth/login-form.test.jsx`、`tests/e2e/login.spec.js`)。
+    - **Variable Definition**: 下列指令中的 `$TEST_FILE_PATH` 代表**你剛剛建立的測試檔案路徑** (e.g. `tests/unit/service/login.test.js`、`tests/integration/auth/login-form.test.jsx`、`tests/e2e/login.spec.js`、`tests/server/g8-server-coverage/firebase-admin.test.js`)。
     - **Mandatory Protocol (Loop until Green)**:
       1.  **Type Check**: 執行 `npx tsc $TEST_FILE_PATH --noEmit --allowJs --checkJs --jsx react-jsx --moduleResolution bundler --target esnext --module esnext` (僅檢查此檔案)。
           - 結果必須為 **0 errors**。
@@ -142,12 +147,13 @@ _ **Result**: 輸出你決定的 unit / integration / e2e 測試檔路徑與 `te
       - Unit: `mkdir -p tests/test-results/unit && npx vitest run tests/unit/<layer>/<name>.test.js --reporter=junit --outputFile=tests/test-results/unit/results.xml`
       - Integration: `mkdir -p tests/test-results/integration && npx vitest run tests/integration/<domain>/<name>.test.jsx --reporter=junit --outputFile=tests/test-results/integration/results.xml`
       - E2E: `mkdir -p tests/test-results/e2e && PLAYWRIGHT_JUNIT_OUTPUT_NAME=tests/test-results/e2e/results.xml npx playwright test tests/e2e/<name>.spec.js --reporter=junit`
+      - Server: `npm run test:server -- tests/server/<suite>/<name>.test.js`
     - **Test Results (Output)**:
       - `tests/test-results/[unit | integration | e2e]/`
 
 ## 下一步
 
-當**所有需要的測試檔案** (Unit / Integration / E2E) 都已建立且確認為 Red 狀態後，請提示使用者執行以下指令（一次性提交）：
+當**所有需要的測試檔案** (Unit / Integration / E2E / Server) 都已建立且確認為 Red 狀態後，請提示使用者執行以下指令（一次性提交）：
 
 > **Command**: `git add . && git commit -m "test($(git branch --show-current)): add failing tests (RED)"`
 
