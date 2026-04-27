@@ -1,4 +1,11 @@
-# Phase 1 MV Inventory
+# Migration Inventory（測試目錄遷移：mv 對照表 + 每 phase handoff）
+
+> 跨 Phase 1-3 的 mv 對照表 + 完成後的 handoff 紀錄。每個 phase 一節，按時間順序累加。
+> Phase 0/1 的完整 handoff 細節在姐妹檔 [`./migration-handoff.md`](./migration-handoff.md)（保留為 archive，本檔不重複），本檔 Phase 1 Handoff Highlights 段只放最精煉的「下個 session 必看」要點。
+
+---
+
+## Phase 1 Inventory（unit tests，2026-04-27 完成）
 
 > 產出時間：Phase 1 Wave 1 inventory，列每個 unit test 的 source/target/layer/import-evidence。
 > **本文件不執行 mv**，僅作 Phase 1 batch mv 的 ground-truth；後續 wave 依此表執行 `git mv` 並驗證。
@@ -91,3 +98,39 @@ Renames (filename collision after flatten):
 DUP_DELETE (content identical) — 0 flagged.
 
 KEEP IN PLACE — 2 (g8-server-coverage server project tests; vitest.config.mjs:59 hardcoded).
+
+---
+
+## Phase 1 Handoff Highlights（精煉要點 — 詳見 migration-handoff.md）
+
+> 完整紀錄在 [`./migration-handoff.md`](./migration-handoff.md) Phase 1 Handoff 段。本節只列下個 session 啟動 Phase 2 前必須記住的 4-6 條。
+
+- **inventory 真實數 < plan 估算**：plan 估 60，實際 59 row（57 mv + 2 KEEP）。Phase 2 verify command 別寫死 row 數，用 `find` 動態算
+- **KNOWN_S015 改 Option C 改成「刪 8 條 dead entry」**：grep 全 codebase 確認 zero consumer + 原 filePath 從建表起就指向不存在檔案 → dead config 直接刪比改正確
+- **`git mv` 不會改檔內 import path**：8 個檔的相對 import 全壞（多 1 個 `..`），Wave 5 type-check 是早期警報；Phase 2 mv integration 也會踩。Wave 5 smoke 排 type-check 在最前面
+- **`path.resolve(..., '../../../../')` 字串 type-check 抓不到**：vitest runtime 才會炸；fix-imports 完成後再 grep `path.resolve.*\.\.` / `path.join.*\.\.` 找這類 runtime path arithmetic
+- **staged 檔被後續 edit 不會自動 re-stage**：commit subagent prompt 要 require「stage 後 + commit 前再跑一次 `git add` on 已 staged 檔」
+- **vitest threshold.lines 70 暫降中**：觀察期，依新增測試節奏分階段提回 80 → 90 → 95
+- **subagent Bash deny 在 Phase 1 已不重現**：可放心派 subagent 跑 `node -e` / `npm run *` / `git mv` runtime verify
+
+---
+
+## Phase 2 Inventory（integration tests）
+
+> _待 Phase 2 Wave 1 T202 inventory engineer 完成後填入；T211 smoke 完成後 freeze。_
+
+（placeholder：Wave 1 T202 engineer 會把 domain 對照表（Source Path / Domain / Target Path / Main Import Evidence / Notes 五欄）落筆於此。預估 ~65 row，依 `find specs -path '*/tests/integration/*' -type f` 實測為準。）
+
+---
+
+## Phase 2 Handoff Highlights
+
+> _待 Phase 2 Wave 6b T213 handoff engineer 完成後填入。_
+
+（placeholder：參考 Phase 1 體例，T213 engineer 會落筆 4-6 條精煉要點：plan 與實際的落差、踩過的坑、subagent permission 狀態變化、outstanding tech debt。）
+
+---
+
+## Phase 3 Inventory + Handoff（E2E + helpers）
+
+> _待 Phase 3 開工後填入。_
