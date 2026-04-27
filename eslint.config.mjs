@@ -372,8 +372,6 @@ export default [
       'tests/**/*.{js,jsx,mjs}',
       '**/*.test.{js,jsx,mjs}',
       '**/*.spec.{js,jsx,mjs}',
-      'specs/test-utils/**/*.{js,jsx,mjs}',
-      'specs/**/e2e/**/*.{js,jsx,mjs}',
     ],
     rules: {
       // 開啟依賴檢查，但允許測試檔案使用 devDependencies

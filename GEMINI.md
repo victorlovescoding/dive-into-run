@@ -88,7 +88,7 @@
 
 - **Structure**: `tests/[unit | integration | e2e | server | _helpers]/`
   - Phase 3 完成，舊 feature-local test folders 已清空，僅 git history 保留
-- **Test Results (Output)**: `tests/test-results/[unit | integration | e2e]/`
+- **Test Results (Output)**: generated reports belong under `tests/test-results/[unit | integration | e2e]/`; this is artifact output, not an executable test bucket.
   - `unit/`: Pure logic and service layer testing (e.g., `src/lib/`). No DOM/React.
     - **Logic**: Follow **AAA pattern** (Arrange, Act, Assert) for test structure.
     - **Quality**: Adhere to **F.I.R.S.T principles** (Fast, Independent, Repeatable, Self-Validating, Timely).
