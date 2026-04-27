@@ -1798,7 +1798,7 @@ git push origin 023-tests-directory-migration
 
 ## Phase 1 完成判準（總體）
 
-- [ ] T101-T114 全 PASS（含 Wave 6 拆 T112 + T113 兩 commit）
+- [ ] T101-T113 全 PASS（含 Wave 6 拆 T112 + T113 兩 commit；T114 user manual cancel）
 - [ ] PR opened + merged + main 24h 無 CI 紅
 - [ ] parent 藍圖 ([`./plan.md`](./plan.md)) Verification Checklist「Phase 1 完成」全部 `[x]`：
   - [ ] `npm run depcruise` 全綠 — `unit-tests-root` bucket 啟動，src/service/X.test.js 試 import src/components/Y.jsx 應 fail
