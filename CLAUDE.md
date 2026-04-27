@@ -47,8 +47,8 @@ Six canonical layers with forward-only dependency: Types → Config → Repo →
 | `src/app/`        | Next.js App Router thin entries (page/layout/route only)    |
 | `src/lib/`        | Compatibility facade — re-exports to canonical layers       |
 | `src/components/` | Shared React components                                     |
-| `specs/`          | Feature specs and planning artifacts — one folder per branch/feature |
-| `tests/`          | Executable tests: unit, integration, e2e, and shared `_helpers` |
+| `specs/`          | Feature specs and planning artifacts only — no executable tests or test directories |
+| `tests/`          | Executable tests: unit, integration, e2e, server, and shared `_helpers` |
 
 ## Guides（前饋控制）
 

@@ -403,3 +403,24 @@ npx vitest list --project=server
 npx vitest list --project=browser
 npm run test:server
 ```
+
+## Phase 4C Outcomes Handoff
+
+> 2026-04-27 Phase 4C 完成 `specs/**/test(s)` 歸零；本段供 future agents 接手驗證、review 或 commit 前快速對齊。
+
+- **g8 server tests moved**：`specs/g8-server-coverage/tests/unit/*` -> `tests/server/g8-server-coverage/unit/*`
+- **Relative import check**：C002/C003 搬 g8 server tests 後，reviewer 用 `rg -n "from ['\"]\.\./|from ['\"]\.\./\.\./|require\(['\"]\.\./" tests/server/g8-server-coverage` 檢查無命中；兩個 server test 沒有 relative import path 需要調整。不要把舊 Phase 1/3 relative import 記錄當作 Phase 4C 證據
+- **Vitest config settled**：`vitest.config.mjs` server include 改為 `tests/server/g8-server-coverage/**/*.test.js`；browser exclude 加入 `tests/server/**`；不再保留 specs g8 exception
+- **Specs test dirs removed**：`specs/` 下所有 `test` / `tests` 目錄已刪；`find specs -type d \( -name test -o -name tests \) -print` 為 0 輸出
+- **C006 verification summary**：`find specs` dirs/files 0；server `npx vitest list --project=server` 裸跑被 emulator guard 擋，但 `firebase emulators:exec ... npx vitest list --project=server` PASS 26 tests；browser list 不列 `tests/server`；`npm run test:server` PASS 2 files / 26 tests；`npm run lint:changed` PASS 0 errors / 1 warning；`npm run depcruise` PASS；`npm run spellcheck` PASS 352 files / 0 issues；`git diff --check` PASS
+- **Future rule**：不要 reintroduce `specs/**/test(s)` 或 g8 specs exception；`specs/023-tests-directory-migration/**` 中的 migration history references 只作歷史紀錄，允許保留
+
+### Phase 4C 踩坑 / Pitfalls
+
+- Server `npx vitest list --project=server` 裸跑會被 emulator guard 擋；list 要用 `firebase emulators:exec ... npx vitest list --project=server`，或用 `npm run test:server` 驗證
+- 第一次 emulator wrapper 少 `npx` 會 `vitest: command not found`
+- Linked worktree `git mv` 可能遇 `.git/worktrees/.../index.lock: Operation not permitted`；需 escalated `git mv` 後再驗證
+- C004 active docs scan 用 zsh 多行 `ACTIVE_DOCS` 不可靠；robust scan 用 bash/null-delimited
+- C004 reviewer 抓到 `server` bucket 漏寫與 `tests/contract` template drift；避免未來 reintroduce
+- C005 `find ... -empty -delete` 被 safety hook 擋；改用 `rmdir` 只刪空目錄
+- Staging 狀態曾有 rename staged 但 `vitest.config.mjs` / docs unstaged；commit 前必須重新 `git add` Phase 4C 全部檔案

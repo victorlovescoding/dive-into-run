@@ -86,7 +86,7 @@
 
 ## Testing Standards (Kent C. Dodds Style)
 
-- **Structure**: `tests/[unit | integration | e2e | _helpers]/`
+- **Structure**: `tests/[unit | integration | e2e | server | _helpers]/`
   - Phase 3 完成，舊 feature-local test folders 已清空，僅 git history 保留
 - **Test Results (Output)**: `tests/test-results/[unit | integration | e2e]/`
   - `unit/`: Pure logic and service layer testing (e.g., `src/lib/`). No DOM/React.
@@ -96,6 +96,7 @@
   - `e2e/`: Full user journey testing using Playwright.
     - **Locators**: Prioritize `page.getByRole`, `page.getByText`. Avoid CSS/XPath selectors.
     - **Stability**: **NO** `page.waitForTimeout()`. Rely on auto-waiting and web-first assertions.
+  - `server/`: Server Vitest project tests, including `tests/server/g8-server-coverage/`.
 - **Testing Guardrails**:
   - When writing integration tests, ALWAYS prioritize `userEvent` over direct state manipulation.
   - If a service layer (`src/lib/`) change occurs, corresponding Unit Tests MUST be updated before proceeding to UI.
@@ -125,5 +126,5 @@
 - `src/lib/`: Service layer and business logic (Firebase interactions).
 - `src/lib/event-helpers.js`: 純邏輯 helper functions（formatPace, buildRoutePayload 等），從 page.jsx 抽出。
 - `src/app/`: Next.js App Router pages and layouts.
-- `specs/`: Feature specs and planning artifacts — one folder per branch/feature.
-- `tests/`: Executable tests: unit, integration, e2e, and shared `_helpers`.
+- `specs/`: Feature specs and planning artifacts only — no executable tests or test directories.
+- `tests/`: Executable tests: unit, integration, e2e, server, and shared `_helpers`.
