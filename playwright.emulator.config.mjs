@@ -31,10 +31,7 @@ const featureSpecMatches = {
   '001-event-filtering': ['event-filtering.spec.js'],
   '004-event-edit-delete': ['event-edit-delete.spec.js'],
   '005-event-comments': ['event-comments.spec.js'],
-  '014-notification-system': [
-    'comment-notification-flow.spec.js',
-    'notification-flow.spec.js',
-  ],
+  '014-notification-system': ['comment-notification-flow.spec.js', 'notification-flow.spec.js'],
   '019-posts-ui-refactor': ['posts-ui.spec.js'],
 };
 

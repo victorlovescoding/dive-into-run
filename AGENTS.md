@@ -59,31 +59,31 @@ npx playwright test tests/e2e/path/to/file.spec.js # 單一 Playwright 檔
 
 Six canonical layers with forward-only dependency: Types → Config → Repo → Service → Runtime → UI
 
-| Path              | Purpose                                                     |
-| ----------------- | ----------------------------------------------------------- |
-| `src/types/`      | Domain type declarations, shared constants                  |
-| `src/config/`     | Infrastructure config (Firebase client/server, geo data)    |
-| `src/repo/`       | Data access adapters (Firestore CRUD, external APIs)        |
-| `src/service/`    | Business logic, validation, data transformations            |
-| `src/runtime/`    | React hooks, providers (Auth/Toast/Notification), use-cases |
-| `src/ui/`         | Render-only screen components (receive state from runtime)  |
-| `src/app/`        | Next.js App Router thin entries (page/layout/route only)    |
-| `src/lib/`        | Compatibility facade — re-exports to canonical layers       |
-| `src/components/` | Shared React components                                     |
+| Path              | Purpose                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| `src/types/`      | Domain type declarations, shared constants                                          |
+| `src/config/`     | Infrastructure config (Firebase client/server, geo data)                            |
+| `src/repo/`       | Data access adapters (Firestore CRUD, external APIs)                                |
+| `src/service/`    | Business logic, validation, data transformations                                    |
+| `src/runtime/`    | React hooks, providers (Auth/Toast/Notification), use-cases                         |
+| `src/ui/`         | Render-only screen components (receive state from runtime)                          |
+| `src/app/`        | Next.js App Router thin entries (page/layout/route only)                            |
+| `src/lib/`        | Compatibility facade — re-exports to canonical layers                               |
+| `src/components/` | Shared React components                                                             |
 | `specs/`          | Feature specs and planning artifacts only — no executable tests or test directories |
-| `tests/`          | Executable tests: unit, integration, e2e, server, and shared `_helpers` |
+| `tests/`          | Executable tests: unit, integration, e2e, server, and shared `_helpers`             |
 
 ## Guides（前饋控制）
 
 下列 `.codex/rules/*.md` 是 repo 內的參考文件與檢查清單，供 Codex 按需閱讀；它們不是 Codex 官方 Rules DSL，也不保證會被 runtime 自動載入。`.claude/rules/*.md` 保留作 legacy provenance。
 
-| 文件                                | 建議查閱時機                  | 內容                                                                                                                     |
-| ----------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `.codex/rules/coding-rules.md`      | `src/**`, `specs/**`, `tests/**` | 6 條 Non-Negotiable（無 @ts-ignore、無 JSX logic、無 eslint-disable a11y、JSDoc 規範、forward-only imports、300 行上限） |
+| 文件                                | 建議查閱時機                              | 內容                                                                                                                     |
+| ----------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `.codex/rules/coding-rules.md`      | `src/**`, `specs/**`, `tests/**`          | 6 條 Non-Negotiable（無 @ts-ignore、無 JSX logic、無 eslint-disable a11y、JSDoc 規範、forward-only imports、300 行上限） |
 | `.codex/rules/code-style.md`        | `src/**`, `specs/**`, `tests/**` (js/jsx) | Formatting + JSDoc patterns                                                                                              |
-| `.codex/rules/testing-standards.md` | `tests/**`, test/spec 檔      | Testing Trophy、AAA、userEvent                                                                                           |
-| `.codex/rules/e2e-commands.md`      | `tests/e2e/**`                | Playwright + emulator 指令                                                                                               |
-| `.codex/rules/sensors.md`           | 需要跑驗證或檢查 gate 時      | type-check/lint/test + IDE Diagnostics + pre-commit gate                                                                 |
+| `.codex/rules/testing-standards.md` | `tests/**`, test/spec 檔                  | Testing Trophy、AAA、userEvent                                                                                           |
+| `.codex/rules/e2e-commands.md`      | `tests/e2e/**`                            | Playwright + emulator 指令                                                                                               |
+| `.codex/rules/sensors.md`           | 需要跑驗證或檢查 gate 時                  | type-check/lint/test + IDE Diagnostics + pre-commit gate                                                                 |
 
 ### Git Workflow (Non-Negotiable)
 
