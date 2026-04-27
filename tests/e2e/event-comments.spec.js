@@ -18,7 +18,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { loginAsUser } from '../../../test-utils/e2e-helpers.js';
+import { loginAsUser } from '../_helpers/e2e-helpers.js';
 
 // Run all tests in this file serially to avoid Firestore state conflicts
 test.describe.configure({ mode: 'serial' });
