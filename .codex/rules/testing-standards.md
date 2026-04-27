@@ -1,6 +1,7 @@
 ---
 paths:
-  - 'specs/**'
+  - 'tests/**'
+  - 'specs/g8-server-coverage/tests/unit/**'
   - '**/*.test.*'
   - '**/*.spec.*'
 ---
@@ -10,9 +11,13 @@ paths:
 > 完整測試手冊 → `.codex/references/testing-handbook.md`
 
 - **Integration (60%)** / **Unit (20%)** / **E2E (20%)**
-- Test structure: `specs/<feature>/tests/[unit|integration|e2e]/`
-- Test results: `specs/<feature>/test-results/[unit|integration|e2e]/`
-  - `<feature>` 對應 git 分支名稱（e.g. `003-strict-type-fixes`）
+- Test structure:
+  - Unit: `tests/unit/<layer>/`
+  - Integration: `tests/integration/<domain>/`
+  - E2E: `tests/e2e/`
+- Shared helpers: `tests/_helpers/`
+- Test results: `tests/test-results/[unit|integration|e2e]/`
+- Legacy exception: `specs/g8-server-coverage/tests/unit/**` belongs to the server Vitest project and is not part of the browser unit bucket.
 - Unit tests: AAA pattern, F.I.R.S.T principles, 100% isolated (mock Firebase with `vi.mock`)
 - Integration tests: **must** use `@testing-library/user-event` (`userEvent.setup()`). Never `fireEvent`. Use `screen.getByRole` over `container.querySelector`
 - E2E tests: `page.getByRole`/`page.getByText` for locators. No `page.waitForTimeout()`
