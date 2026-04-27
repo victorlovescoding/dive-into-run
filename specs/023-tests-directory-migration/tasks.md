@@ -2814,3 +2814,1503 @@ git push origin 023-tests-directory-migration
   - [ ] domain 對應表存於 [`./migration-inventory.md`](./migration-inventory.md) Phase 2 Inventory 段
 - [ ] [`./migration-inventory.md`](./migration-inventory.md) Phase 2 Handoff Highlights 段已填 4-7 條 bullet（給下個 session / Phase 3 開工參考）
 - [ ] tests/\_placeholder.js 仍保留（Phase 3 完才移除，per Phase 0 handoff §「給下個 session 的 Phase 1-3 注意事項」第 2 條）
+
+---
+
+# Phase 3 Tasks: E2E + helpers + cleanup
+
+> **Parent 藍圖**：[`./plan.md`](./plan.md) Phase 3 段（Step 3.1-3.9）
+> **Branch**：`023-tests-directory-migration`（接 Phase 2 兩 commit 之後直接累加，不另開 sub-branch）
+> **預估工期**：1.5-2 天
+> **總任務數**：16（13 engineer + 1 reviewer-only gate + 1 smoke + 1 user PR）
+> **Phase 3 範圍**：plan.md Step 3.1-3.9 全包，含 e2e mv、test-utils → \_helpers mv、playwright config × 2 重寫、branch scripts × 3 重寫、policy.js 舊 bucket 拆除、`tests/_placeholder.js` 移除、root docs 同步、Phase 3 Inventory + Handoff 落筆
+
+---
+
+## Phase 3 並行策略
+
+**同時最多 3 個 worker agent**（與 Phase 0/1/2 同口徑）。Engineer = `general-purpose`，Reviewer = `Explore`（read-only + Bash query）。重試上限 3 次，超過 → 主 agent STOP escalate user。
+
+主 Agent 角色邊界**完全沿用 Phase 0/1/2 規則**：
+
+- ✅ Agent 派 / SendMessage 帶 reviewer feedback / Read 純讀檔 / TaskCreate
+- ❌ **絕對禁止** Edit / Write / 任何 mutate Bash（npm / node / git mv / git add / git commit / mkdir / rm / gh / git push）
+- ❌ 從頭到尾包含**後續修改循環**全派 subagent；user 授權的「主 agent 例外」**Phase 3 不啟用**（Phase 1 已驗證 subagent Bash deny 不再重現）
+
+---
+
+## Phase 3 依賴圖
+
+```
+Wave 0 (gate, reviewer-only):
+  └─ Reviewer-Bootstrap-P3: T301
+                           │ PASS
+                           ▼
+Wave 1 (1 agent):
+  └─ Engineer-Inventory-P3: T302  (Phase 3 Inventory 段填入 mv 對照表)
+                           │ PASS
+                           ▼
+Wave 2 (3 並行):
+  ├─ Engineer-E2E-Mv-P3:    T303  (.spec.js × 11 + global-setup × 5 + window.d.ts × 4 + README × 1)
+  ├─ Engineer-Helpers-P3:   T304  (specs/test-utils/ → tests/_helpers/ + 改用該 helpers 的 import)
+  └─ Engineer-PWConfig-P3:  T305  (playwright.config.mjs testDir swap — 與 mv 解耦但路徑後端依賴 mv 結果，issue commit 時刻同 mv)
+                           │ ALL PASS
+                           ▼
+Wave 3 (3 並行 — 配置同步 mv 結果):
+  ├─ Engineer-PWEmu-P3:     T306  (playwright.emulator.config.mjs 架構重寫，HIGH RISK)
+  ├─ Engineer-Scripts-P3:   T307  (test-branch.sh / test-e2e-branch.sh / run-all-e2e.sh 三個 shell script)
+  └─ Engineer-Rules-P3:     T308  (.claude/rules/e2e-commands.md frontmatter paths)
+                           │ ALL PASS
+                           ▼
+Wave 4 (2 並行 — cleanup):
+  ├─ Engineer-Policy-P3:    T309  (policy.js 拆除舊 4 bucket：unit/integration/e2e/specs-test-utils)
+  └─ Engineer-Docs-P3:      T310  (CLAUDE.md / AGENTS.md / GEMINI.md root docs 同步)
+                           │ ALL PASS
+                           ▼
+Wave 5 (1 agent — placeholder removal，獨立 wave 因為觸發 ESLint 空目錄抱怨的條件變了):
+  └─ Engineer-Placeholder-P3: T311  (rm tests/_placeholder.js + tsconfig include `tests` 維持)
+                           │ PASS
+                           ▼
+Wave 6 (1 agent — smoke):
+  └─ Engineer-Smoke-P3:     T312
+                           │ PASS
+                           ▼
+Wave 7a (1 agent — Commit 1):
+  └─ Engineer-Commit-Mv-P3: T313  ("Phase 3 part 1": mv only — e2e + helpers)
+                           │ PASS
+                           ▼
+Wave 7b (1 agent — Commit 2):
+  └─ Engineer-Commit-Cfg-P3: T314 ("Phase 3 part 2": config + cleanup + inventory + handoff)
+                           │ PASS
+                           ▼
+Wave 8 (manual):
+  └─ User: T315  (push + open PR + 24h 觀察)
+```
+
+---
+
+## Phase 3 Wave 0 — 前置確認（gate only，不動工）
+
+### T301 [Reviewer-Bootstrap-P3] 前置條件確認
+
+**Files**：純讀取，不動
+
+**Description**：Phase 3 開工硬性 gate。Phase 2 兩 commit 必須已存在於 branch head；worktree 必須 clean；`tests/e2e/` 仍是空殼（除 `_setup/.gitkeep`）；`tests/_helpers/` 仍只有 `.gitkeep`；`specs/test-utils/` 仍存在（待 Phase 3 mv）。
+
+**Reviewer Prompt** (派 Reviewer-Bootstrap-P3, `Explore`):
+
+> 你是 Phase 3 開工 gate 檢查 reviewer。依序跑下列 7 步，**全 PASS** 才回報「APPROVE — Phase 3 可開工」。任一 FAIL → 列出原因 escalate user，**不嘗試修**。
+>
+> ```bash
+> cd /Users/chentzuyu/Desktop/dive-into-run-023-tests-directory-migration
+>
+> # 1. worktree clean
+> dirty=$(git status --porcelain | grep -vE '^\?\? (project-health/|\.claude/scheduled_tasks\.lock)' | wc -l | tr -d ' ')
+> [ "$dirty" -eq 0 ] || { echo "FAIL 1: worktree dirty"; git status -s; exit 1; }
+>
+> # 2. branch
+> [ "$(git branch --show-current)" = "023-tests-directory-migration" ] || { echo "FAIL 2: wrong branch"; exit 1; }
+>
+> # 3. Phase 2 part 2 commit 存在於 head
+> git log -1 --pretty='%s' | grep -qE 'Phase 2 part 2' || { echo "FAIL 3: HEAD not Phase 2 part 2"; exit 1; }
+> git log -2 --pretty='%s' | tail -1 | grep -qE 'Phase 2 part 1' || { echo "FAIL 3: HEAD~1 not Phase 2 part 1"; exit 1; }
+>
+> # 4. tests/e2e/ 仍空（除 _setup/.gitkeep）
+> e2e_files=$(find tests/e2e -type f -not -name '.gitkeep' 2>/dev/null | wc -l | tr -d ' ')
+> [ "$e2e_files" -eq 0 ] || { echo "FAIL 4: tests/e2e already has $e2e_files real files"; find tests/e2e -type f -not -name '.gitkeep'; exit 1; }
+>
+> # 5. tests/_helpers/ 仍空（只 .gitkeep）
+> helpers_files=$(find tests/_helpers -type f -not -name '.gitkeep' 2>/dev/null | wc -l | tr -d ' ')
+> [ "$helpers_files" -eq 0 ] || { echo "FAIL 5: tests/_helpers already has files"; exit 1; }
+>
+> # 6. specs/test-utils/ 仍存在（Phase 3 來源）
+> [ -d specs/test-utils ] || { echo "FAIL 6: specs/test-utils missing — already moved?"; exit 1; }
+> [ -f specs/test-utils/e2e-helpers.js ] || { echo "FAIL 6: e2e-helpers.js missing"; exit 1; }
+>
+> # 7. tests/_placeholder.js 仍存在（Phase 3 Wave 5 才 rm）
+> [ -f tests/_placeholder.js ] || { echo "FAIL 7: _placeholder.js already gone"; exit 1; }
+> ```
+>
+> 全部 PASS 才 APPROVE。任一 FAIL：回報具體哪步、實際 output、推測原因（Phase 2 沒 commit / tests 已被別人動過 / test-utils 已被搬走），**stop**。
+
+**Acceptance Criteria**:
+
+- [ ] worktree clean（除 untracked `project-health/` / `.claude/scheduled_tasks.lock`）
+- [ ] branch = `023-tests-directory-migration`
+- [ ] HEAD = Phase 2 part 2，HEAD~1 = Phase 2 part 1
+- [ ] `tests/e2e/` 內無真實測試檔
+- [ ] `tests/_helpers/` 內只有 `.gitkeep`
+- [ ] `specs/test-utils/` 仍存在含 `e2e-helpers.js`
+- [ ] `tests/_placeholder.js` 仍存在
+
+**失敗處理**：任一步 FAIL → 主 agent **不啟 Wave 1**，escalate user。
+
+---
+
+## Phase 3 Wave 1 — Inventory（1 agent）
+
+### T302 [Engineer-Inventory-P3] Phase 3 Inventory 對照表
+
+**Files**：`specs/023-tests-directory-migration/migration-inventory.md`（**Phase 3 Inventory + Handoff 段**，現為 placeholder block quote — 改寫 Inventory 部分；Handoff 留 Wave 7b T314 寫）
+
+**Description**：產出 Phase 3 所有要搬 / 改 / 拆的檔案對照表。e2e 檔不只 `.spec.js`（11 個），還包含支援檔（global-setup × 5、window.d.ts × 4、README × 1，total ~21 e2e 檔）+ test-utils 2 個 helper。Engineer **不動任何測試檔 / 配置 / 規則**，只填 Phase 3 Inventory 段 markdown。
+
+**Engineer Prompt** (派 Engineer-Inventory-P3, `general-purpose`):
+
+> 你是 Phase 3 inventory engineer。在 `specs/023-tests-directory-migration/migration-inventory.md` 的「Phase 3 Inventory + Handoff（E2E + helpers）」段（現為 placeholder），改寫為兩張 markdown table + Decision Log。
+>
+> ### Table 1：E2E 檔案對照（執行 `find specs -path '*/tests/e2e/*' -type f | sort` 列全部，依下列規則填）
+>
+> 對照規則：
+>
+> - `.spec.js` 直接搬到 `tests/e2e/<name>.spec.js`（plan.md Step 3.1：「15 檔不多，可平鋪在 tests/e2e/ 不分 domain」），檔名衝突 → 加 spec 編號 tag（如 `events.spec.js` 與 `events-page.spec.js` 已不衝突；003 兩個 sub-folder 注意衝突）
+> - `global-setup.js` 各 spec 內容不同（每個 seed 不同 fixture），搬到 `tests/e2e/_setup/<feature>-global-setup.js`（檔名加 spec 編號避免衝突）
+> - `window.d.ts` 多個（004/005/014/015）：先 `diff` 比對是否完全相同；**完全相同** → 保留一個放 `tests/e2e/_setup/window.d.ts`，其他標 `DUP_DELETE`；**不同** → 各自搬到 `tests/e2e/_setup/<feature>-window.d.ts`
+> - `README.md`（001 only）：搬到 `tests/e2e/_setup/<feature>-README.md` 或標 `DUP_DELETE` 看內容（純導覽 README 可刪）
+>
+> Schema：
+>
+> ```markdown
+> | #   | Source Path                                                 | Type         | Target Path                                           | Notes                                                                          |
+> | --- | ----------------------------------------------------------- | ------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------ |
+> | 1   | specs/001-event-filtering/tests/e2e/event-filtering.spec.js | spec         | tests/e2e/event-filtering.spec.js                     | imports `../../../test-utils/e2e-helpers.js` → 改 `../_helpers/e2e-helpers.js` |
+> | 2   | specs/001-event-filtering/tests/e2e/global-setup.js         | global-setup | tests/e2e/\_setup/001-event-filtering-global-setup.js | seeds events with city/district variation                                      |
+> | 3   | specs/001-event-filtering/tests/e2e/README.md               | README       | (DUP_DELETE) or tests/e2e/\_setup/001-README.md       | content snapshot：`<head -3>`                                                  |
+> | ... | ...                                                         | ...          | ...                                                   | ...                                                                            |
+> ```
+>
+> ### Table 2：test-utils 對照（specs/test-utils/ → tests/\_helpers/）
+>
+> ```markdown
+> | #   | Source                           | Target                          | Importers (via grep)                                        |
+> | --- | -------------------------------- | ------------------------------- | ----------------------------------------------------------- |
+> | 1   | specs/test-utils/e2e-helpers.js  | tests/\_helpers/e2e-helpers.js  | `grep -rn "specs/test-utils\|test-utils/e2e-helpers"` 結果  |
+> | 2   | specs/test-utils/mock-helpers.js | tests/\_helpers/mock-helpers.js | `grep -rn "specs/test-utils\|test-utils/mock-helpers"` 結果 |
+> ```
+>
+> ### Decision Log（必填，作為 Wave 2-5 engineer 的 ground truth）
+>
+> 列下列 4 個決策結果（engineer 一次決定，後續 wave engineer 不再各自決定，避免漂移）：
+>
+> 1. **window.d.ts 合併或分散**：`diff` 結果（全相同 vs 部分不同）+ 採用方案
+> 2. **README 處理**：head 內容看是否值得保留 + 採用方案
+> 3. **filename collision**：spec 編號相同的 source（003 / 004 / 005 / 014 / 015）`global-setup.js` 與 `window.d.ts` 都用 `<feature>-` prefix
+> 4. **test-utils importer 範圍**：`grep -rn 'specs/test-utils\|\.\./test-utils\|\.\./\.\./test-utils\|\.\./\.\./\.\./test-utils\|test-utils/e2e-helpers\|test-utils/mock-helpers' specs tests scripts playwright*.mjs` 命中的所有檔案路徑 + import 字串（給 T304 import 修正用）
+>
+> ### 自我驗證
+>
+> ```bash
+> # 1. row 數對齊
+> e2e_total=$(find specs -path '*/tests/e2e/*' -type f | wc -l | tr -d ' ')
+> rows1=$(awk '/^### Table 1/,/^### Table 2/' specs/023-tests-directory-migration/migration-inventory.md | grep -c '^| [0-9]')
+> echo "table1 rows=$rows1 e2e_total=$e2e_total"   # 期望相等
+>
+> # 2. test-utils row 數
+> rows2=$(awk '/^### Table 2/,/^### Decision Log/' specs/023-tests-directory-migration/migration-inventory.md | grep -c '^| [0-9]')
+> echo "table2 rows=$rows2"   # 期望 = 2
+> ```
+>
+> 回報「Table 1 N rows, Table 2 2 rows, k DUP_DELETE flagged, decision log 4 條全填」。
+
+**Acceptance Criteria**:
+
+- [ ] migration-inventory.md「Phase 3 Inventory」段不再是 placeholder
+- [ ] Table 1 row 數 = `find specs -path '*/tests/e2e/*' -type f | wc -l`（預估 21）
+- [ ] Table 2 row 數 = 2
+- [ ] 每筆 Table 1 target path 以 `tests/e2e/` 開頭
+- [ ] Decision Log 4 條全填（含 importer grep 結果）
+- [ ] target name 同 sub-folder 內 unique
+
+**Verify Command** (Reviewer-Inventory-P3, `Explore` 跑):
+
+```bash
+INV=specs/023-tests-directory-migration/migration-inventory.md
+
+# 1. 不再是 placeholder
+awk '/^## Phase 3 Inventory/,/^---/' "$INV" | grep -q '_待 Phase 3' && { echo "FAIL: still placeholder"; exit 1; }
+
+# 2. Table 1 row 數對齊 find
+expected=$(find specs -path '*/tests/e2e/*' -type f | wc -l | tr -d ' ')
+rows=$(awk '/^### Table 1/,/^### Table 2/' "$INV" | grep -c '^| [0-9]')
+[ "$rows" -eq "$expected" ] || { echo "FAIL: Table1 rows=$rows expected=$expected"; exit 1; }
+
+# 3. Table 2 row 數
+rows2=$(awk '/^### Table 2/,/^### Decision Log/' "$INV" | grep -c '^| [0-9]')
+[ "$rows2" -eq 2 ] || { echo "FAIL: Table2 rows=$rows2 expected=2"; exit 1; }
+
+# 4. target unique
+dup=$(awk '/^### Table 1/,/^### Table 2/' "$INV" | grep -oE '\| tests/e2e/[A-Za-z0-9._/-]+' | sort | uniq -d)
+[ -z "$dup" ] || { echo "FAIL: duplicate targets:"; echo "$dup"; exit 1; }
+
+# 5. Decision Log 4 條
+dl=$(awk '/^### Decision Log/,/^---|^## /' "$INV" | grep -cE '^[0-9]\.\s+\*\*')
+[ "$dl" -ge 4 ] || { echo "FAIL: Decision Log only $dl entries"; exit 1; }
+
+echo "PASS"
+```
+
+**期望**：`PASS`。
+
+---
+
+## Phase 3 Wave 2 — git mv（並行 3 agents）
+
+> **共通規則（T303-T305 全適用）**：
+>
+> 1. Engineer **只跑 `git mv` + 必要 `mkdir` + `git add .gitkeep` + 必要 `Edit` 修 import path**（mv 後相對 path 必修，per Phase 1 坑 1）
+> 2. **不 commit**（commit 留 Wave 7a/7b）
+> 3. 若 inventory 標 `DUP_DELETE` → engineer 不 rm，**回報主 agent 決策**（destructive，user confirm）
+> 4. 若某筆 source 不存在（已被別 wave engineer 搬走 / 或 inventory 過時）→ 立即 STOP 回報
+
+### T303 [Engineer-E2E-Mv-P3] e2e .spec.js + global-setup + window.d.ts + README mv
+
+**Files**：依 inventory Table 1 全部 row（預估 21 檔；source = `specs/<NNN>/tests/e2e/...`，target = `tests/e2e/...`）
+
+**Description**：plan.md Step 3.1。把所有 e2e 相關檔案搬到頂層 `tests/e2e/`：spec 平鋪、global-setup / window.d.ts / README 集中 `tests/e2e/_setup/`。
+
+**Engineer Prompt** (派 Engineer-E2E-Mv-P3, `general-purpose`):
+
+> 你是 Phase 3 e2e mv engineer。**只跑 mv + 必要 import 修正**，不動 playwright config / scripts / rules（留 Wave 3）。
+>
+> 1. 確認 sub-folder 已存在（Phase 0 已建 `tests/e2e/_setup/`）：
+>    ```bash
+>    [ -d tests/e2e/_setup ] || { echo "FATAL: tests/e2e/_setup missing"; exit 1; }
+>    ```
+> 2. 讀 inventory Table 1：
+>    ```bash
+>    awk '/^### Table 1/,/^### Table 2/' specs/023-tests-directory-migration/migration-inventory.md
+>    ```
+> 3. 對 `Type == spec` row 跑 `git mv <source> tests/e2e/<target-basename>`（target 直接平鋪在 `tests/e2e/`）
+> 4. 對 `Type == global-setup` 跑 `git mv <source> tests/e2e/_setup/<feature>-global-setup.js`
+> 5. 對 `Type == window.d.ts`：
+>    - 若 inventory 標「全相同 → 保留一個」：保留 inventory 指定的那個 `git mv` 到 `tests/e2e/_setup/window.d.ts`，其他**列給主 agent** 回報「DUP_DELETE pending user confirm」**不自行 rm**
+>    - 若分散：各自 `git mv` 到 `tests/e2e/_setup/<feature>-window.d.ts`
+> 6. 對 `Type == README` 同上邏輯（DUP_DELETE 不自行 rm）
+> 7. **import 修正**：每搬一個 .spec.js 立刻 grep 它原本的相對 import：
+>    ```bash
+>    grep -E "from ['\"](\.\.|/)" tests/e2e/<file>.spec.js
+>    ```
+>    最常見：`'../../../test-utils/e2e-helpers.js'` → 從 `tests/e2e/X.spec.js` 出發要改成 `'../_helpers/e2e-helpers.js'`（注意：T304 同步把 test-utils 搬到 `tests/_helpers/`，所以這裡改成新路徑而非舊路徑）
+>    用 Edit 修正每個壞 import；mv 完跑：
+>    ```bash
+>    grep -rn "specs/test-utils\|\.\./\.\./\.\./test-utils\|\.\./\.\./test-utils\|\.\./test-utils" tests/e2e/
+>    # 期望：empty（mv 完所有 e2e import 都已轉向 tests/_helpers/）
+>    ```
+> 8. global-setup.js 內若有 import test-utils（例 001 引 `../../../test-utils/e2e-helpers.js`），同樣 Edit 修：從 `tests/e2e/_setup/X-global-setup.js` 出發 → `'../../_helpers/e2e-helpers.js'`
+> 9. **不 commit**、**不 edit 測試邏輯**（只改 import path）
+>
+> 完成後跑：
+>
+> ```bash
+> # mv 數對齊 inventory（spec + global-setup + window.d.ts + README，扣除 DUP_DELETE 標記）
+> moved=$(git status -s | grep -cE '^R.*-> tests/e2e/')
+> echo "moved=$moved"
+>
+> # 殘留檢查
+> remaining=$(find specs -path '*/tests/e2e/*' -type f | wc -l | tr -d ' ')
+> echo "remaining_in_specs=$remaining"   # 期望 = DUP_DELETE 待決策數（≥0）
+>
+> # type-check 早期警報（Phase 1 坑 1：mv 不會改 import；Phase 1 坑 2：path.resolve 字串 type-check 抓不到 — 這裡只算第一道網）
+> npm run type-check 2>&1 | tail -20
+> ```
+>
+> 回報三個數字 + DUP_DELETE 待決策清單（含原因）+ type-check exit code。
+
+**Acceptance Criteria**:
+
+- [ ] `git status -s | grep -c '^R.*-> tests/e2e/'` ≈ inventory Table 1 mv 行數（扣除 DUP_DELETE）
+- [ ] `tests/e2e/*.spec.js` 數 = inventory `Type == spec` row 數（11）
+- [ ] `tests/e2e/_setup/` 下含搬入的 global-setup / window.d.ts / README
+- [ ] 所有 mv 過的 e2e 檔內 `specs/test-utils` / `../test-utils` 字串為 0 命中（已轉向 `_helpers`）
+- [ ] `npm run type-check` 通過（mv + import 修正後）
+- [ ] DUP_DELETE 待決策清單已回報主 agent，**未自行 rm**
+- [ ] 不 commit
+
+**Verify Command** (Reviewer-E2E-Mv-P3, `Explore` 跑):
+
+```bash
+INV=specs/023-tests-directory-migration/migration-inventory.md
+# 1. spec 數對齊
+spec_expected=$(awk '/^### Table 1/,/^### Table 2/' "$INV" | grep -E '\| spec ' | grep -vc 'DUP_DELETE')
+spec_actual=$(find tests/e2e -maxdepth 1 -name '*.spec.js' | wc -l | tr -d ' ')
+[ "$spec_actual" -eq "$spec_expected" ] || { echo "FAIL: specs actual=$spec_actual expected=$spec_expected"; exit 1; }
+
+# 2. R 標記數
+moved=$(git status -s | grep -cE '^R.*-> tests/e2e/')
+[ "$moved" -ge "$spec_expected" ] || { echo "FAIL: moved=$moved < expected $spec_expected"; exit 1; }
+
+# 3. 沒有 spec_test-utils 引用殘留
+leak=$(grep -rE "specs/test-utils|\.\./test-utils" tests/e2e/ 2>/dev/null | wc -l | tr -d ' ')
+[ "$leak" -eq 0 ] || { echo "FAIL: $leak test-utils refs leaked"; grep -rnE "specs/test-utils|\.\./test-utils" tests/e2e/; exit 1; }
+
+# 4. type-check
+npm run type-check 2>&1 | tail -3 | grep -qE 'error TS|Type-checking failed' && { echo "FAIL: type-check"; exit 1; } || true
+
+# 5. 沒誤動測試邏輯（diff 只應顯示 import path 變化）
+git diff tests/e2e/ | grep -E '^[+-][^+-]' | grep -vE "^[+-].*from ['\"]" | grep -vE '^[+-]\s*$' | head -5 && echo "WARN: non-import diff lines found above" || echo "OK: only import diffs"
+
+echo "PASS"
+```
+
+**期望**：`PASS`。
+
+---
+
+### T304 [Engineer-Helpers-P3] specs/test-utils/ → tests/\_helpers/ + 改 importer
+
+**Files**：`specs/test-utils/{e2e-helpers,mock-helpers}.js` → `tests/_helpers/{e2e-helpers,mock-helpers}.js` + 所有 importer
+
+**Description**：plan.md Step 3.2。把 test-utils 兩個 helper 搬到 `tests/_helpers/`，並修正所有引用它們的檔案的 import path。
+
+**Engineer Prompt** (派 Engineer-Helpers-P3, `general-purpose`):
+
+> 你是 Phase 3 helpers mv engineer。
+>
+> 1. 讀 inventory Table 2 + Decision Log 第 4 條（importer 範圍）
+> 2. `git mv specs/test-utils/e2e-helpers.js tests/_helpers/e2e-helpers.js`
+> 3. `git mv specs/test-utils/mock-helpers.js tests/_helpers/mock-helpers.js`
+> 4. `specs/test-utils/` 此時應為空（無其他檔），但**不 rmdir**（git 不追空目錄；下個 commit 自然消失）
+> 5. **修 importer**：對 inventory Decision Log 第 4 條列出的所有檔案，逐個用 Edit 把 import path 改成 `tests/_helpers/`。注意路徑深度：
+>    - 從 `tests/e2e/X.spec.js` 出發：`../_helpers/e2e-helpers.js`（被 T303 處理）
+>    - 從 `tests/e2e/_setup/Y-global-setup.js` 出發：`../../_helpers/e2e-helpers.js`（也被 T303 處理）
+>    - 從 `playwright.emulator.config.mjs` 出發：`./tests/_helpers/e2e-helpers.js`（T306 會處理，本 task 確認 grep 命中）
+>    - 從 `scripts/run-all-e2e.sh` 出發：bash 字串路徑通常不直接 import，但若有 `node -e "require('./specs/test-utils/...')"` 之類要改
+>    - 注意：T303 已修 e2e 內部的 import；T304 只修 e2e **以外** 的 importer（playwright config / scripts / 非 e2e 測試 / 任何 `.js` 引用）。**T303 與 T304 約定**：T304 不動 `tests/e2e/**` 的 import；T303 不動 e2e 以外的 import。**邊界明確**。
+> 6. 修完跑全 grep：
+>    ```bash
+>    grep -rnE "specs/test-utils|\.\./test-utils" specs/ scripts/ playwright*.mjs 2>/dev/null
+>    # 期望：empty（除非有 inventory 指出但 T303 範圍的檔）
+>    ```
+> 7. **不 commit**
+>
+> 回報修改檔案清單 + 殘留 grep 命中數 + 是否觸發 `tests/_helpers/.gitkeep` 衝突（mv 進去後 .gitkeep 仍在，無妨）。
+
+**Acceptance Criteria**:
+
+- [ ] `tests/_helpers/e2e-helpers.js` + `tests/_helpers/mock-helpers.js` 存在（git status R 標記）
+- [ ] `specs/test-utils/e2e-helpers.js` + `specs/test-utils/mock-helpers.js` 不存在
+- [ ] `tests/_helpers/.gitkeep` 仍在（不被 mv 影響）
+- [ ] e2e 範圍以外的 importer 全已改 import path（per inventory Decision Log 第 4 條）
+- [ ] `grep -rnE "specs/test-utils|\.\./test-utils" specs/ scripts/ playwright*.mjs` 為 0 命中
+- [ ] `npm run type-check` 通過
+- [ ] 不 commit
+
+**Verify Command** (Reviewer-Helpers-P3, `Explore` 跑):
+
+```bash
+# 1. mv done
+[ -f tests/_helpers/e2e-helpers.js ] || { echo "FAIL: e2e-helpers not at new path"; exit 1; }
+[ -f tests/_helpers/mock-helpers.js ] || { echo "FAIL: mock-helpers not at new path"; exit 1; }
+[ ! -f specs/test-utils/e2e-helpers.js ] || { echo "FAIL: source still exists"; exit 1; }
+
+# 2. git status R
+moved=$(git status -s | grep -c '^R.*-> tests/_helpers/')
+[ "$moved" -ge 2 ] || { echo "FAIL: R count=$moved < 2"; exit 1; }
+
+# 3. 沒有 test-utils 殘留 ref（除 e2e 內部由 T303 處理）
+leak=$(grep -rnE "specs/test-utils|(\.\./){1,5}test-utils" specs/ scripts/ playwright.config.mjs playwright.emulator.config.mjs 2>/dev/null | wc -l | tr -d ' ')
+[ "$leak" -eq 0 ] || { echo "FAIL: $leak refs leaked"; grep -rnE "specs/test-utils|(\.\./){1,5}test-utils" specs/ scripts/ playwright*.mjs; exit 1; }
+
+# 4. type-check
+npm run type-check 2>&1 | tail -3 | grep -qE 'error TS|Type-checking failed' && { echo "FAIL: type-check"; exit 1; } || true
+
+echo "PASS"
+```
+
+**期望**：`PASS`。
+
+---
+
+### T305 [Engineer-PWConfig-P3] playwright.config.mjs testDir swap
+
+**Files**：`playwright.config.mjs`（line 7-8）
+
+**Description**：plan.md Step 3.3。把預設 testDir 從 `./specs` 改成 `./tests/e2e`。低風險、單行改動。
+
+**Engineer Prompt** (派 Engineer-PWConfig-P3, `general-purpose`):
+
+> 你是 Phase 3 playwright.config.mjs engineer。**只動這一檔，不動 emulator config / scripts**（留 Wave 3）。
+>
+> 1. Read `playwright.config.mjs`
+> 2. line 7: `testDir: './specs',` → `testDir: './tests/e2e',`
+> 3. line 8 `testMatch: '**/*.spec.js'` 維持（mv 後仍對）
+> 4. 其餘不動
+> 5. 跑 `npm run type-check` 確認沒爆
+>
+> **不 commit**。回報 diff 與 type-check 結果。
+
+**Acceptance Criteria**:
+
+- [ ] line 7 改成 `testDir: './tests/e2e',`
+- [ ] 其他 line 完全不動（diff 只顯示這一行）
+- [ ] `npm run type-check` 通過
+- [ ] 不 commit
+
+**Verify Command** (Reviewer-PWConfig-P3, `Explore` 跑):
+
+```bash
+grep -q "testDir: './tests/e2e'" playwright.config.mjs || { echo "FAIL: testDir not changed"; exit 1; }
+grep -q "testDir: './specs'" playwright.config.mjs && { echo "FAIL: old testDir still present"; exit 1; }
+# diff 只有 1 行
+diff_lines=$(git diff playwright.config.mjs | grep -E '^[+-][^+-]' | grep -v '^---\|^+++' | wc -l | tr -d ' ')
+[ "$diff_lines" -eq 2 ] || { echo "FAIL: diff has $diff_lines changed lines (expect 2: 1 - and 1 +)"; git diff playwright.config.mjs; exit 1; }
+echo "PASS"
+```
+
+**期望**：`PASS`。
+
+---
+
+## Phase 3 Wave 3 — 配置 / 規則同步（並行 3 agents）
+
+> **啟動條件**：Wave 2 (T303 + T304 + T305) 全 PASS。
+>
+> **設計理由**：T306 emulator 重寫**最高風險**（plan.md Step 3.4 註明），但與 T307 / T308 動的是不同檔，並行不互相干擾；給每個 reviewer 各自把關。
+
+### T306 [Engineer-PWEmu-P3] playwright.emulator.config.mjs 架構重寫（HIGH RISK）
+
+**Files**：`playwright.emulator.config.mjs`（整檔重寫）
+
+**Description**：plan.md Step 3.4。拋棄 `E2E_FEATURE` env var ↔ spec folder 的三向綁定，改成「全跑 `tests/e2e/`，多 globalSetup 用 Playwright `projects` array 各自綁定」。global-setup.js 改路徑指向 `tests/e2e/_setup/<feature>-global-setup.js`。
+
+**Engineer Prompt** (派 Engineer-PWEmu-P3, `general-purpose`):
+
+> 你是 Phase 3 emulator config 架構重寫 engineer。**HIGH RISK** — 這是 plan.md Step 3.4 標註風險最高的改動。
+>
+> ### Step A：理解原邏輯
+>
+> 讀 `playwright.emulator.config.mjs` 全檔。重點：
+>
+> - line 25-46 用 `E2E_FEATURE` env var 動態組 `featureE2eDir = './specs/${feature}/tests/e2e'`
+> - 派生出 `globalSetupPath = ${featureE2eDir}/global-setup.js`
+> - `testDir` / `globalSetup` 兩個都吃這個動態路徑
+>
+> ### Step B：選定新架構（兩擇一）
+>
+> **方案 1**（推薦）：保留 `E2E_FEATURE` env var 但改成 selector，testDir 固定 `./tests/e2e`，globalSetup 改成 `./tests/e2e/_setup/${feature}-global-setup.js`。`testMatch` 改成 grep `<feature>` 字串的 spec？或維持全 spec？選一致選法。
+>
+> **方案 2**：完全拋棄 `E2E_FEATURE` — 每個 feature 變成 Playwright `projects` array 一個 entry，各自 `testMatch` + `globalSetup`。一次 `npx playwright test --config playwright.emulator.config.mjs` 就跑全部。
+>
+> 決策依據：方案 1 變動小（branch script 仍能用 `E2E_FEATURE` 帶 feature 跑），方案 2 對齊 plan.md「拋棄三向綁定」精神但變動大、且每個 spec 一個 project 配置變得繁雜。
+>
+> **建議方案 1**（變動小、向後相容 branch script），但要在重寫檔頭 JSDoc 註明「globalSetup 從 `./tests/e2e/_setup/${feature}-global-setup.js` 解析；feature 字串為 `<NNN-feature-name>` 對應原 spec folder 名」。
+>
+> ### Step C：實作（方案 1）
+>
+> 1. line 25-26：`const featureE2eDir = './specs/${feature}/tests/e2e';` 整段刪除（改成 `const setupDir = './tests/e2e/_setup';`）
+> 2. line 28-32 `if (!existsSync(featureE2eDir))` 改成 `const globalSetupPath = \`${setupDir}/${feature}-global-setup.js\`; if (!existsSync(globalSetupPath)) { throw ... }`
+> 3. `testDir` 改成 `'./tests/e2e'`（固定，不再吃 feature 變量）
+> 4. `globalSetup` 維持 `existsSync(globalSetupPath) ? globalSetupPath : undefined`（path 已換）
+> 5. 檔頭 JSDoc 改：
+>    - `Resolves testDir and globalSetup dynamically from specs/<feature>/tests/e2e/.` → `testDir is fixed at ./tests/e2e/. globalSetup is resolved from ./tests/e2e/_setup/<feature>-global-setup.js based on E2E_FEATURE env var.`
+>    - 範例 usage 不變（`E2E_FEATURE=004-event-edit-delete npx playwright test ...`）
+> 6. 報錯文字（line 31-33）同步更新到新路徑
+>
+> ### Step D：驗證
+>
+> ```bash
+> # 1. type-check（emulator config 是 .mjs，type-check 會掃）
+> npm run type-check 2>&1 | tail -10
+>
+> # 2. dry parse
+> node --input-type=module -e "import('./playwright.emulator.config.mjs').catch(e => { console.error(e.message); process.exit(0); })"
+> # 期望：無 syntax / import error；E2E_FEATURE 沒設時 throw 預期 error（這是 design）
+>
+> # 3. 帶 E2E_FEATURE 試 parse（只看 config 載入，不真跑 playwright）
+> E2E_FEATURE=004-event-edit-delete node --input-type=module -e "import('./playwright.emulator.config.mjs').then(m => console.log('testDir:', m.default.testDir, 'globalSetup:', m.default.globalSetup))"
+> # 期望：testDir: ./tests/e2e, globalSetup: ./tests/e2e/_setup/004-event-edit-delete-global-setup.js
+> ```
+>
+> **不真跑** `npx playwright test`（要 dev server + emulator，留 Wave 6 smoke）。**不 commit**。
+>
+> 回報：採用方案、diff 摘要、Step D 三個輸出。
+
+**Acceptance Criteria**:
+
+- [ ] `playwright.emulator.config.mjs` 內 `specs/${feature}/tests/e2e` 字串 0 命中
+- [ ] testDir 固定為 `'./tests/e2e'`（hard-coded，不再用 feature 變量組成）
+- [ ] globalSetup path 改成從 `./tests/e2e/_setup/<feature>-global-setup.js` 解析
+- [ ] 檔頭 JSDoc 已同步說明新邏輯
+- [ ] `node --input-type=module -e "import('./playwright.emulator.config.mjs')"` 在帶 `E2E_FEATURE` 時可成功 import 並 log 出 testDir / globalSetup 為新路徑
+- [ ] `npm run type-check` 通過
+- [ ] 不 commit
+
+**Verify Command** (Reviewer-PWEmu-P3, `Explore` 跑):
+
+```bash
+F=playwright.emulator.config.mjs
+# 1. 舊路徑字串 0 命中
+old=$(grep -cE 'specs/\$\{feature\}/tests/e2e|specs/.+/tests/e2e' "$F")
+[ "$old" -eq 0 ] || { echo "FAIL: $old old refs"; grep -nE 'specs/\$\{feature\}|specs/.+/tests/e2e' "$F"; exit 1; }
+
+# 2. 新路徑存在
+grep -q "tests/e2e/_setup" "$F" || { echo "FAIL: new _setup path missing"; exit 1; }
+grep -q "testDir: './tests/e2e'" "$F" || { echo "FAIL: testDir not fixed to ./tests/e2e"; exit 1; }
+
+# 3. dry import 帶 E2E_FEATURE
+out=$(E2E_FEATURE=004-event-edit-delete node --input-type=module -e "import('./playwright.emulator.config.mjs').then(m => { console.log('OK', m.default.testDir, m.default.globalSetup); }).catch(e => { console.error('FAIL', e.message); process.exit(1); })" 2>&1)
+echo "$out" | grep -q "^OK ./tests/e2e .*tests/e2e/_setup/004-event-edit-delete-global-setup.js" || { echo "FAIL: dry import wrong: $out"; exit 1; }
+
+# 4. type-check
+npm run type-check 2>&1 | tail -3 | grep -qE 'error TS' && { echo "FAIL: type-check"; exit 1; } || true
+echo "PASS"
+```
+
+**期望**：`PASS`。
+
+---
+
+### T307 [Engineer-Scripts-P3] branch scripts 重寫
+
+**Files**：`scripts/test-branch.sh` / `scripts/test-e2e-branch.sh` / `scripts/run-all-e2e.sh`
+
+**Description**：plan.md Step 3.5。三個 shell script 仍用 `specs/<branch>/tests/...` 找測試 — 改成從 `tests/{unit,integration,e2e}/` 找，並用 `git diff main...HEAD --name-only` 抓本 branch 的測試改動。
+
+**Engineer Prompt** (派 Engineer-Scripts-P3, `general-purpose`):
+
+> 你是 Phase 3 branch scripts engineer。動三個 shell script。每個檔的修法：
+>
+> ### scripts/test-branch.sh（Vitest unit + integration）
+>
+> 原邏輯：找 `specs/$BRANCH/tests/{unit,integration}/`。改成：
+>
+> ```bash
+> #!/usr/bin/env bash
+> # Run Vitest (unit + integration) only for current branch's changed test files
+> set -euo pipefail
+>
+> # Get changed .test.* files under tests/ between current branch and main
+> CHANGED_TESTS=$(git diff --name-only main...HEAD -- 'tests/unit/**' 'tests/integration/**' 'tests/_helpers/**' 2>/dev/null | grep -E '\.test\.(js|jsx)$' || true)
+>
+> if [ -z "$CHANGED_TESTS" ]; then
+>   echo "No changed unit/integration tests on this branch — skipping."
+>   exit 0
+> fi
+>
+> # Pass changed files to vitest (or fall back to dirs if too many)
+> echo "Running vitest on:"
+> echo "$CHANGED_TESTS"
+> # shellcheck disable=SC2086
+> npx vitest run --project=browser $CHANGED_TESTS
+> ```
+>
+> ### scripts/test-e2e-branch.sh（Playwright）
+>
+> 原邏輯：找 `specs/$BRANCH/tests/e2e/`。改成：
+>
+> ```bash
+> #!/usr/bin/env bash
+> # Run Playwright E2E for current branch's changed spec files
+> set -euo pipefail
+>
+> CHANGED_SPECS=$(git diff --name-only main...HEAD -- 'tests/e2e/**' 2>/dev/null | grep -E '\.spec\.(js|jsx)$' || true)
+>
+> if [ -z "$CHANGED_SPECS" ]; then
+>   echo "No changed E2E specs on this branch — skipping."
+>   exit 0
+> fi
+>
+> # E2E_FEATURE 仍可用：若有設，跑 emulator config + 該 feature 的 globalSetup
+> if [ -n "${E2E_FEATURE:-}" ]; then
+>   # shellcheck disable=SC2086
+>   npx playwright test --config playwright.emulator.config.mjs $CHANGED_SPECS
+> else
+>   # shellcheck disable=SC2086
+>   npx playwright test --config playwright.config.mjs $CHANGED_SPECS
+> fi
+> ```
+>
+> ### scripts/run-all-e2e.sh（CI 全跑）
+>
+> 原邏輯：`for e2e_dir in specs/*/tests/e2e`。改成：每個 globalSetup 對應一個 feature → loop globalSetup files，對每個 feature 個別跑 emulator config（保留每 feature 之間 reset emulator state 的邏輯）。
+>
+> ```bash
+> # ... emulator + dev server 啟動段不動 ...
+>
+> # 從 tests/e2e/_setup/*-global-setup.js 列出所有 feature
+> for setup in tests/e2e/_setup/*-global-setup.js; do
+>   feature=$(basename "$setup" -global-setup.js)
+>   echo "Running E2E for feature: $feature"
+>
+>   # Reset emulator state（不動）
+>   curl -s -o /dev/null -X DELETE "http://localhost:9099/emulator/v1/projects/dive-into-run/accounts" || true
+>   curl -s -o /dev/null -X DELETE "http://localhost:8080/emulator/v1/projects/dive-into-run/databases/(default)/documents" || true
+>   sleep 1
+>
+>   if E2E_FEATURE="$feature" npx playwright test --config playwright.emulator.config.mjs; then
+>     PASSED=$((PASSED + 1))
+>   else
+>     FAILED_FEATURES+=("$feature")
+>   fi
+> done
+>
+> # 再加一次跑「無 globalSetup 的 spec」（不需 emulator 的 vanilla e2e）
+> if find tests/e2e -maxdepth 1 -name '*.spec.js' | head -1 > /dev/null; then
+>   echo "Running E2E specs without globalSetup..."
+>   npx playwright test --config playwright.config.mjs || FAILED_FEATURES+=("vanilla")
+> fi
+> ```
+>
+> ### 共通檢查
+>
+> ```bash
+> bash -n scripts/test-branch.sh
+> bash -n scripts/test-e2e-branch.sh
+> bash -n scripts/run-all-e2e.sh
+> shellcheck scripts/test-branch.sh scripts/test-e2e-branch.sh scripts/run-all-e2e.sh 2>/dev/null || echo "(shellcheck not installed, skip)"
+> ```
+>
+> **不真跑 vitest / playwright**（留 Wave 6 smoke）。**不 commit**。
+>
+> 回報三個檔的 diff 摘要 + bash -n 結果。
+
+**Acceptance Criteria**:
+
+- [ ] `scripts/test-branch.sh` 不再含 `specs/$BRANCH/tests`、改成 `git diff main...HEAD -- tests/**`
+- [ ] `scripts/test-e2e-branch.sh` 同上
+- [ ] `scripts/run-all-e2e.sh` 不再含 `specs/*/tests/e2e`、改成從 `tests/e2e/_setup/*-global-setup.js` 列 feature
+- [ ] 三個 script `bash -n` 全綠
+- [ ] 不 commit
+
+**Verify Command** (Reviewer-Scripts-P3, `Explore` 跑):
+
+```bash
+for f in scripts/test-branch.sh scripts/test-e2e-branch.sh scripts/run-all-e2e.sh; do
+  bash -n "$f" || { echo "FAIL: $f bash -n"; exit 1; }
+  grep -qE "specs/.+/tests/(unit|integration|e2e)|specs/\\\$BRANCH/tests|specs/\\*/tests" "$f" && { echo "FAIL: $f still has specs/.../tests refs"; exit 1; } || true
+  grep -q "tests/" "$f" || { echo "FAIL: $f doesn't reference new tests/ path"; exit 1; }
+done
+echo "PASS"
+```
+
+**期望**：`PASS`。
+
+---
+
+### T308 [Engineer-Rules-P3] .claude/rules/e2e-commands.md frontmatter
+
+**Files**：`.claude/rules/e2e-commands.md`（frontmatter line 2-4 + 內容範例）
+
+**Description**：plan.md Step 3.6。`paths` frontmatter 從 `specs/**/e2e/**` 改成 `tests/e2e/**`，內容範例同步。
+
+**Engineer Prompt** (派 Engineer-Rules-P3, `general-purpose`):
+
+> 你是 Phase 3 e2e-commands rule engineer。
+>
+> 1. 啟動先試小 Edit 驗證 `.claude/**` 寫入是否仍 deny（Phase 0 警告，Phase 2 T203 已驗證可寫但仍小心）：
+>    ```bash
+>    # 試加空白並撤銷
+>    head -1 .claude/rules/e2e-commands.md
+>    ```
+>    若 Edit deny → 立即 STOP escalate user。
+> 2. Edit `.claude/rules/e2e-commands.md` frontmatter line 2-4：
+>    ```yaml
+>    paths:
+>      - 'specs/**/e2e/**' # 刪
+>      - '**/*.spec.js' # 維持
+>      - 'scripts/run-all-e2e.sh' # 維持
+>    ```
+>    改成：
+>    ```yaml
+>    paths:
+>      - 'tests/e2e/**'
+>      - '**/*.spec.js'
+>      - 'scripts/run-all-e2e.sh'
+>    ```
+> 3. 內容段（# E2E Commands 下方）若有寫死路徑範例（例 `npx playwright test specs/path/to/file.spec.js`）→ 改成 `tests/e2e/path/to/file.spec.js`
+> 4. **不 commit**
+>
+> 完成跑：
+>
+> ```bash
+> grep -c "specs/.*e2e" .claude/rules/e2e-commands.md   # 期望 0
+> grep -c "tests/e2e" .claude/rules/e2e-commands.md     # 期望 ≥ 1
+> ```
+
+**Acceptance Criteria**:
+
+- [ ] frontmatter `paths` 不再含 `specs/**/e2e/**`
+- [ ] 含 `tests/e2e/**`
+- [ ] 內容段範例路徑同步（無 `specs/.../e2e/` 殘留）
+- [ ] 不 commit
+
+**Verify Command** (Reviewer-Rules-P3, `Explore` 跑):
+
+```bash
+F=.claude/rules/e2e-commands.md
+old=$(grep -c "specs/.*e2e" "$F")
+[ "$old" -eq 0 ] || { echo "FAIL: $old old refs"; grep -n "specs/.*e2e" "$F"; exit 1; }
+new=$(grep -c "tests/e2e" "$F")
+[ "$new" -ge 1 ] || { echo "FAIL: no new refs"; exit 1; }
+echo "PASS"
+```
+
+**期望**：`PASS`。
+
+---
+
+## Phase 3 Wave 4 — cleanup（並行 2 agents）
+
+> **啟動條件**：Wave 3 (T306 + T307 + T308) 全 PASS。
+
+### T309 [Engineer-Policy-P3] policy.js 拆除舊 4 bucket
+
+**Files**：`specs/021-layered-dependency-architecture/test-buckets/policy.js`（多區塊 patch）+ 同一 commit 改 `specs/021-layered-dependency-architecture/tests/unit/test-bucket-policy.test.js:124`（已被 Phase 1 mv 到 `tests/unit/lib/test-bucket-policy.test.js`）
+
+**Description**：plan.md Step 3.7。Phase 0 留下的「並存期 8 bucket」拆回 4 bucket — 移除舊 `unit` / `integration` / `e2e` / `specs-test-utils`，保留新 `unit-tests-root` / `integration-tests-root` / `e2e-tests-root` / `tests-helpers`。`KNOWN_S015_UNIT_CONFLICTS` 已被 Phase 1 改成 `Object.freeze([])` 不動。
+
+**Engineer Prompt** (派 Engineer-Policy-P3, `general-purpose`):
+
+> 你是 Phase 3 policy.js 拆除 engineer。**HIGH SCOPE** — 觸碰 6 個區塊（Phase 0 patch A-F 對稱拆除）。
+>
+> ### Step A：先確認舊 bucket 已無 source match
+>
+> ```bash
+> # 舊 unit bucket：specs/.+/tests/unit/.+.test.{js,jsx}
+> find specs -path '*/tests/unit/*' \( -name '*.test.js' -o -name '*.test.jsx' \) | wc -l
+> # 期望 0（Phase 1 全 mv 完）；若 >0 → STOP 回報殘留檔，不能拆 bucket
+>
+> # 舊 integration
+> find specs -path '*/tests/integration/*' \( -name '*.test.js' -o -name '*.test.jsx' \) | wc -l
+> # 期望 0（Phase 2 全 mv 完）
+>
+> # 舊 e2e
+> find specs -path '*/tests/e2e/*' \( -name '*.spec.js' -o -name '*.spec.jsx' \) | wc -l
+> # 期望 0（Phase 3 Wave 2 T303 mv 完，扣除 DUP_DELETE 的 README/window.d.ts，這條只算 .spec.*）
+>
+> # 舊 specs-test-utils
+> [ -d specs/test-utils ] && find specs/test-utils -name '*.js' | wc -l || echo 0
+> # 期望 0（T304 mv 完）
+> ```
+>
+> 任一 > 0 → 立即 STOP 回報殘留路徑，**不繼續拆 bucket**。
+>
+> ### Step B：拆除舊 bucket（policy.js 6 個對稱區塊）
+>
+> 對下列每個區塊：找出 `unit:` / `integration:` / `e2e:` / `'specs-test-utils':` 4 條 entry，刪除（保留新加的 `*-tests-root` / `tests-helpers`）。
+>
+> 1. **TEST_BUCKET_FILE_PATTERNS**（line 11-20）：刪 4 條
+> 2. **DEPCRUISE_DENY_PATTERNS**（line 22-51 附近）：刪 4 條
+> 3. **TEST_BUCKET_RULES**（Phase 0 加的對應區塊）：刪 4 條
+> 4. **depCruiseTestBucketRules**：刪 4 條
+> 5. **TEST_BUCKET_DEPCRUISE_ARTIFACTS**：刪 4 條
+> 6. **`isAllowedRelativeDependency`** 早返分支：原本 unit/integration/e2e/specs-test-utils 各自分支 — 全刪（新 4 個分支保留）
+>
+> ### Step C：同步改 test-bucket-policy.test.js `.toEqual` 從 8-bucket 改回 4-bucket
+>
+> Edit `tests/unit/lib/test-bucket-policy.test.js`（Phase 1 已從 `specs/021-.../tests/unit/test-bucket-policy.test.js` mv 過來）。找到 `.toEqual([` 後 8 個字串 array：
+>
+> ```js
+> .toEqual([
+>   'unit',                    // 刪
+>   'integration',             // 刪
+>   'e2e',                     // 刪
+>   'specs-test-utils',        // 刪
+>   'unit-tests-root',
+>   'integration-tests-root',
+>   'e2e-tests-root',
+>   'tests-helpers',
+> ]);
+> ```
+>
+> 改成：
+>
+> ```js
+> .toEqual([
+>   'unit-tests-root',
+>   'integration-tests-root',
+>   'e2e-tests-root',
+>   'tests-helpers',
+> ]);
+> ```
+>
+> ### Step D：驗證
+>
+> ```bash
+> # 1. bucket count = 4
+> node -e "import('./specs/021-layered-dependency-architecture/test-buckets/policy.js').then(m => console.log('buckets:', Object.keys(m.testBucketPolicy.bucketMatchers).length))"
+> # 期望：buckets: 4
+>
+> # 2. depcruise 全綠（新 bucket 仍 catch tests/ 下的測試）
+> npm run depcruise 2>&1 | tail -10
+>
+> # 3. 全 quality gate
+> npm run lint -- --max-warnings 0 2>&1 | tail -5
+> npm run type-check 2>&1 | tail -5
+> npx vitest run --project=browser tests/unit/lib/test-bucket-policy.test.js 2>&1 | tail -10
+> # 期望：8-bucket .toEqual 改 4-bucket 後 test 仍綠
+> ```
+>
+> **不 commit**。policy.js + test-bucket-policy.test.js 兩個改動會在 Wave 7b T314 一起 commit。
+>
+> 回報：6 個區塊 diff line 數 + Step A 4 個 find 結果 + Step D 驗證輸出。
+
+**Acceptance Criteria**:
+
+- [ ] Step A 4 個 find 全 = 0（無殘留 source）
+- [ ] policy.js 內 6 個對稱區塊各刪 4 條舊 entry，保留 4 條新 entry
+- [ ] `node -e "import().then(m => Object.keys(m.testBucketPolicy.bucketMatchers).length)"` = 4
+- [ ] `tests/unit/lib/test-bucket-policy.test.js` `.toEqual` array 從 8 elements 改回 4 elements（只保留 `*-tests-root` + `tests-helpers`）
+- [ ] `npm run depcruise && npm run lint && npm run type-check && npx vitest run --project=browser tests/unit/lib/test-bucket-policy.test.js` 全綠
+- [ ] 不 commit
+
+**Verify Command** (Reviewer-Policy-P3, `Explore` 跑):
+
+```bash
+P=specs/021-layered-dependency-architecture/test-buckets/policy.js
+T=tests/unit/lib/test-bucket-policy.test.js
+
+# 1. policy.js bucket 數
+buckets=$(node -e "import('./$P').then(m => console.log(Object.keys(m.testBucketPolicy.bucketMatchers).length)).catch(e => { console.error(e.message); process.exit(1); })" 2>&1)
+[ "$buckets" -eq 4 ] || { echo "FAIL: buckets=$buckets expect 4"; exit 1; }
+
+# 2. 舊 bucket key 全清除
+for old in "'unit'" "'integration'" "'e2e'" "'specs-test-utils'"; do
+  grep -E "^\s+$old:" "$P" && { echo "FAIL: old bucket $old still in policy.js"; exit 1; } || true
+done
+
+# 3. test 檔 .toEqual array 從 8 變 4
+arr_count=$(awk '/\.toEqual\(\[/,/\]\);/' "$T" | grep -c "^\s*'")
+[ "$arr_count" -eq 4 ] || { echo "FAIL: .toEqual has $arr_count elements expect 4"; exit 1; }
+
+# 4. depcruise / lint / type-check / vitest 全綠
+npm run depcruise 2>&1 | tail -3 | grep -qiE 'error|fail' && { echo "FAIL: depcruise"; exit 1; } || true
+npm run type-check 2>&1 | tail -3 | grep -qiE 'error TS' && { echo "FAIL: type-check"; exit 1; } || true
+npx vitest run --project=browser "$T" 2>&1 | tail -3 | grep -qE 'failed|FAIL' && { echo "FAIL: vitest"; exit 1; } || true
+echo "PASS"
+```
+
+**期望**：`PASS`。
+
+---
+
+### T310 [Engineer-Docs-P3] root docs 同步（CLAUDE.md / AGENTS.md / GEMINI.md）
+
+**Files**：`CLAUDE.md` / `AGENTS.md` / `GEMINI.md`（grep 命中行）
+
+**Description**：plan.md Step 3.8。三個 root doc 仍寫舊 `specs/<feature>/tests/...` 範例 — 同步到新 `tests/{unit,integration,e2e}/`。
+
+**Engineer Prompt** (派 Engineer-Docs-P3, `general-purpose`):
+
+> 你是 Phase 3 root docs engineer。
+>
+> 1. `grep -nE 'specs/<.+>/tests|specs/\$BRANCH/tests|specs/\*/tests|specs/.+/test-results' CLAUDE.md AGENTS.md GEMINI.md` 列所有命中行
+> 2. 對每個命中：
+>    - `specs/<feature>/tests/[unit|integration|e2e]/` → `tests/[unit|integration|e2e]/`
+>    - `specs/<feature>/test-results/` → `tests/test-results/`（per Phase 0 testing-standards.md 並存期描述體例）
+>    - 若行內含「並存期」說明（Phase 0 加過）→ 改成「Phase 3 完成，舊 specs/<feature>/tests/ 已清空，僅 git history 保留」
+> 3. **不動** `.claude/rules/coding-rules.md` / `.claude/rules/testing-standards.md`（前者只是 lint hint paths，後者 Phase 0 已改）
+> 4. **不動** `.claude/rules/e2e-commands.md`（T308 已改）
+> 5. **不 commit**
+>
+> 完成跑：
+>
+> ```bash
+> grep -cnE 'specs/.+/tests' CLAUDE.md AGENTS.md GEMINI.md
+> # 期望全 0（除非是 git history / archive 用語的引用，例外要在 Notes 說明）
+> ```
+
+**Acceptance Criteria**:
+
+- [ ] CLAUDE.md / AGENTS.md / GEMINI.md 不含 `specs/<feature>/tests/` / `specs/$BRANCH/tests/` / `specs/*/tests/` 字串
+- [ ] 三檔內 `tests/{unit,integration,e2e}` 字串至少各 1 處（用新路徑）
+- [ ] 不 commit
+
+**Verify Command** (Reviewer-Docs-P3, `Explore` 跑):
+
+```bash
+for f in CLAUDE.md AGENTS.md GEMINI.md; do
+  old=$(grep -cE 'specs/[^/]+/tests/(unit|integration|e2e)|specs/\$BRANCH/tests|specs/\*/tests/(unit|integration|e2e)' "$f")
+  [ "$old" -eq 0 ] || { echo "FAIL: $f has $old old refs"; grep -nE 'specs/[^/]+/tests' "$f"; exit 1; }
+done
+echo "PASS"
+```
+
+**期望**：`PASS`。
+
+---
+
+## Phase 3 Wave 5 — placeholder removal（1 agent）
+
+> **啟動條件**：Wave 4 (T309 + T310) 全 PASS。
+>
+> **獨立 wave 設計理由**：`tests/_placeholder.js` 是 Phase 0 為「ESLint 9 對空 `tests/` 抱怨」加的補丁；Phase 1-3 把真實測試搬進來後失去存在意義（per Phase 0 handoff §「給下個 session 的 Phase 1-3 注意事項」第 2 條）。但 rm 它要先確認 `tests/` 內已有真實測試 — 順序上必須在 Wave 2-4 之後。獨立 wave 也方便 reviewer 專心驗。
+
+### T311 [Engineer-Placeholder-P3] rm tests/\_placeholder.js + 維持 tsconfig include
+
+**Files**：`tests/_placeholder.js`（刪除）
+
+**Description**：plan.md 隱含（per Phase 0 handoff）。Phase 1-3 完成後 `tests/` 已有大量真實 .js / .jsx 測試 — 三道 quality gate（depcruise / ESLint / spellcheck）對「空 tests/」的抱怨自動消失，placeholder 可拆。
+
+**Engineer Prompt** (派 Engineer-Placeholder-P3, `general-purpose`):
+
+> 你是 Phase 3 placeholder removal engineer。
+>
+> 1. 確認 `tests/` 內已有真實測試（>10 個 .test 檔）：
+>    ```bash
+>    test_count=$(find tests -type f \( -name '*.test.js' -o -name '*.test.jsx' -o -name '*.spec.js' \) | wc -l | tr -d ' ')
+>    echo "real test files: $test_count"
+>    [ "$test_count" -ge 10 ] || { echo "ABORT: too few real tests, do not remove _placeholder yet"; exit 1; }
+>    ```
+> 2. `git rm tests/_placeholder.js`
+> 3. 跑 quality gate 全套確認 `_placeholder.js` 沒了之後仍綠：
+>    ```bash
+>    npm run depcruise 2>&1 | tail -5
+>    npm run lint -- --max-warnings 0 2>&1 | tail -5
+>    npm run type-check 2>&1 | tail -5
+>    npm run spellcheck 2>&1 | tail -5
+>    ```
+> 4. **不動** `tsconfig.json` 的 `include: ["tests"]`（Phase 0 加進去的；現在 tests/ 有大量真實檔，更需要保留 include）
+> 5. **不 commit**
+>
+> 回報：刪除確認 + 4 個 gate 結果。
+
+**Acceptance Criteria**:
+
+- [ ] `tests/_placeholder.js` 不存在（`git status` 顯示 D）
+- [ ] `tsconfig.json` 仍含 `"tests"` 在 include array
+- [ ] depcruise / lint / type-check / spellcheck 全綠
+- [ ] 不 commit
+
+**Verify Command** (Reviewer-Placeholder-P3, `Explore` 跑):
+
+```bash
+[ ! -f tests/_placeholder.js ] || { echo "FAIL: still exists"; exit 1; }
+git status -s | grep -q '^D.*tests/_placeholder.js' || { echo "FAIL: not staged for delete"; git status -s | head; exit 1; }
+grep -q '"tests"' tsconfig.json || { echo "FAIL: tsconfig include lost tests"; exit 1; }
+for cmd in 'depcruise' 'lint -- --max-warnings 0' 'type-check' 'spellcheck'; do
+  npm run $cmd 2>&1 | tail -3 | grep -qiE 'error|fail' && { echo "FAIL: npm run $cmd"; exit 1; } || true
+done
+echo "PASS"
+```
+
+**期望**：`PASS`。
+
+---
+
+## Phase 3 Wave 6 — Smoke test（1 agent）
+
+### T312 [Engineer-Smoke-P3] 完整 quality gate smoke + Phase 3 specific 驗證
+
+**Dependency**：T301-T311 全完成
+
+**Description**：跟 Phase 0 T012 / Phase 1 T111 / Phase 2 T211 同設計，分區塊驗證。**主 agent 派 Engineer-Smoke-P3 跑，主 agent 不自己跑**。
+
+**Engineer Prompt** (派 Engineer-Smoke-P3, `general-purpose`):
+
+> 你是 Phase 3 Wave 6 smoke test engineer。依序跑下列 5 + 5 區塊。**任一失敗 → 不要嘗試修，回報具體哪步、stderr 摘要、推測對應 source task**。
+>
+> ```bash
+> # ---------- Quality Gate 5 連跑（type-check 排首位 — Phase 1/2 經驗）----------
+> # 1. type-check
+> npm run type-check
+>
+> # 2. depcruise — 4 bucket pattern 啟動（舊已拆，新 4 bucket 對 tests/ 全 source 0 violations）
+> npm run depcruise
+>
+> # 3. lint
+> npm run lint -- --max-warnings 0
+>
+> # 4. spellcheck
+> npm run spellcheck
+>
+> # 5. vitest browser project（避 g8 server emulator throw）
+> npx vitest run --project=browser
+>
+> # ---------- Phase 3 specific 5 區塊 ----------
+> # 6. bucket count = 4（舊 4 已拆）
+> node -e "import('./specs/021-layered-dependency-architecture/test-buckets/policy.js').then(m => { const n = Object.keys(m.testBucketPolicy.bucketMatchers).length; console.log('bucket_count=', n); process.exit(n === 4 ? 0 : 1); })"
+>
+> # 7. tests/_placeholder.js 已刪
+> [ ! -f tests/_placeholder.js ] && echo "OK: placeholder gone" || { echo "FAIL: placeholder still"; exit 1; }
+>
+> # 8. specs/<NNN>/tests/{unit,integration,e2e}/ 全清空
+> find specs -path '*/tests/unit/*' -type f | wc -l   # 期望 0（除 g8 KEEP 2 檔）
+> find specs -path '*/tests/integration/*' -type f | wc -l   # 期望 0
+> find specs -path '*/tests/e2e/*' -type f | wc -l   # 期望 0 (扣除 DUP_DELETE 後)
+> find specs/test-utils -type f 2>/dev/null | wc -l   # 期望 0
+> # g8 兩檔例外：
+> find specs/g8-server-coverage/tests -type f | wc -l   # 期望 2 (KEEP)
+>
+> # 9. tests/e2e/ 結構（spec 平鋪 + _setup 集中）
+> ls tests/e2e/ | head
+> spec_count=$(find tests/e2e -maxdepth 1 -name '*.spec.js' | wc -l | tr -d ' ')
+> echo "tests/e2e spec count: $spec_count"   # 期望 ≥ 11（扣 DUP_DELETE）
+> setup_count=$(find tests/e2e/_setup -maxdepth 1 -name '*-global-setup.js' | wc -l | tr -d ' ')
+> echo "global-setup count: $setup_count"   # 期望 5
+>
+> # 10. playwright config dry import
+> node --input-type=module -e "import('./playwright.config.mjs').then(m => console.log('default config testDir:', m.default.testDir))"
+> # 期望：testDir: ./tests/e2e
+> E2E_FEATURE=004-event-edit-delete node --input-type=module -e "import('./playwright.emulator.config.mjs').then(m => console.log('emu testDir:', m.default.testDir, 'globalSetup:', m.default.globalSetup))"
+> # 期望：./tests/e2e + tests/e2e/_setup/004-event-edit-delete-global-setup.js
+> ```
+>
+> ### 失敗處理表（給主 agent dispatch 修）
+>
+> | 失敗區塊                        | 對應 source task | 修法                                                                          |
+> | ------------------------------- | ---------------- | ----------------------------------------------------------------------------- |
+> | 1 type-check                    | T303 / T304      | mv 後 import 沒修；派回對應 engineer grep 殘留 import 修                      |
+> | 2 depcruise                     | T309             | 舊 bucket 沒拆乾淨 / 新 bucket pattern 沒 catch；派回 T309 engineer 看 6 區塊 |
+> | 3 lint                          | T303-T310        | mv 帶來的 ESLint warning（未用 import）；派回對應 engineer 修                 |
+> | 5 vitest                        | T303 / T304      | mv 後 path arithmetic 錯（Phase 1 坑 2）；派回對應 engineer grep 修           |
+> | 6 bucket count                  | T309             | policy.js 6 區塊沒拆完整；派回 T309                                           |
+> | 7 placeholder                   | T311             | 沒刪；派回 T311                                                               |
+> | 8 specs 殘留                    | T303 / T304      | mv 沒搬完；派回對應 engineer                                                  |
+> | 9 e2e 結構                      | T303             | spec 平鋪 / setup 集中沒做對；派回 T303                                       |
+> | 10 playwright config dry import | T305 / T306      | config 沒改對；派回對應 engineer                                              |
+>
+> 不嘗試修 — 回報具體哪步 + 推測 source task。
+
+**Acceptance Criteria**:
+
+- [ ] 區塊 1-5（quality gate 5 連跑）全綠
+- [ ] 區塊 6 bucket count = 4
+- [ ] 區塊 7 placeholder 已刪
+- [ ] 區塊 8 `specs/<NNN>/tests/` 全空（除 g8 KEEP 2 檔）；`specs/test-utils/` 空
+- [ ] 區塊 9 `tests/e2e/*.spec.js` ≥ 11、`tests/e2e/_setup/*-global-setup.js` = 5
+- [ ] 區塊 10 兩個 playwright config dry import 都印出新路徑
+
+---
+
+## Phase 3 Wave 7a — Commit 1: mv（1 agent）
+
+> **拆 commit 設計理由**（沿用 Phase 2 體例）：
+>
+> - **mv 與 mv 帶來的 import 修正同 commit**（Wave 2 T303-T305 改動）→ Commit 1 純粹 mv + import 同步
+> - **config 重寫 / cleanup / inventory + handoff 與 mv 解耦**（Wave 3-5 + inventory）→ Commit 2
+> - 兩 commit 各自 pre-commit 全綠，PR review 較容易（Commit 1 看 mv，Commit 2 看 config rewrite + cleanup）
+
+### T313 [Engineer-Commit-Mv-P3] Commit 1: mv only
+
+**Dependency**：T312 全綠
+
+**Engineer Prompt** (派 Engineer-Commit-Mv-P3, `general-purpose`):
+
+> 你是 Phase 3 Commit 1 engineer。**只 commit「mv + mv 帶來的 import 修正」一組**。
+>
+> ### Commit 1 該包
+>
+> - `R  specs/<NNN>/tests/e2e/X.spec.js -> tests/e2e/X.spec.js`（11 個 spec）
+> - `R  specs/<NNN>/tests/e2e/global-setup.js -> tests/e2e/_setup/<NNN>-global-setup.js`（5 個）
+> - `R  specs/<NNN>/tests/e2e/window.d.ts -> tests/e2e/_setup/...` 或 DUP_DELETE 走 D
+> - `R  specs/<NNN>/tests/e2e/README.md -> tests/e2e/_setup/...` 或 DUP_DELETE 走 D
+> - `R  specs/test-utils/e2e-helpers.js -> tests/_helpers/e2e-helpers.js`
+> - `R  specs/test-utils/mock-helpers.js -> tests/_helpers/mock-helpers.js`
+> - `M  tests/e2e/**/*.spec.js`（T303 修的相對 import）
+> - `M  tests/e2e/_setup/*-global-setup.js`（T303 修的相對 import）
+> - `M  其他 importer`（T304 改的非 e2e importer，例如可能的 playwright config 內字串引用 — 但 playwright config 重寫留 Commit 2，這裡只該有 helpers import 修正命中的非 config 檔）
+>
+> ### Commit 1 不該包
+>
+> - `M  playwright.config.mjs`（T305，留 Commit 2）
+> - `M  playwright.emulator.config.mjs`（T306）
+> - `M  scripts/test-branch.sh / test-e2e-branch.sh / run-all-e2e.sh`（T307）
+> - `M  .claude/rules/e2e-commands.md`（T308）
+> - `M  policy.js / test-bucket-policy.test.js`（T309）
+> - `M  CLAUDE.md / AGENTS.md / GEMINI.md`（T310）
+> - `D  tests/_placeholder.js`（T311，留 Commit 2）
+> - `M  migration-inventory.md`（T302 + T314 handoff，留 Commit 2）
+>
+> ### Step 1：精準 stage
+>
+> ```bash
+> # 確認 R 標記數
+> git status -s | grep -c '^R.*-> tests/e2e/'   # 期望：spec 11 + global-setup 5 + window.d.ts ? + README ? = ≥ 16（扣 DUP_DELETE）
+> git status -s | grep -c '^R.*-> tests/_helpers/'   # 期望：2
+>
+> # git mv 已自動 stage 所有 R；只需要把 fix-imports 的 M 加進來：
+> git add tests/e2e/ tests/_helpers/   # 注意會把 .gitkeep 也撈進來，要排除
+> # 用 git reset HEAD 退回不該 stage 的 .gitkeep（per Phase 2 經驗，git restore --staged 被 block-dangerous-commands.js 攔，改用 git reset HEAD）
+> git reset HEAD tests/e2e/_setup/.gitkeep tests/_helpers/.gitkeep 2>/dev/null || true
+>
+> # 驗證 staged 清單
+> git diff --cached --name-status -M | head -30
+> # 期望：只有 R + M(*.spec.js / *-global-setup.js)，無 playwright config / scripts / rules / docs / policy.js
+> ```
+>
+> ### Step 2：DUP_DELETE 處理
+>
+> 如有 `D  specs/<NNN>/tests/e2e/window.d.ts` 或 `D  README.md`（T303 引導 user 確認後若批准刪除）— 也加進 Commit 1（mv 邏輯同源）。**未 user 批准的 DUP_DELETE 不刪**。
+>
+> ### Step 3：commit
+>
+> ```bash
+> git commit -m "$(cat <<'EOF'
+> refactor(tests): mv e2e + helpers to top-level tests/ (Phase 3 part 1)
+>
+> - 11 個 e2e spec 從 specs/<NNN>/tests/e2e/ 搬到 tests/e2e/（平鋪不分 domain，per plan.md Step 3.1）
+> - 5 個 global-setup.js 集中到 tests/e2e/_setup/<feature>-global-setup.js（emulator config rewrite 配套）
+> - window.d.ts / README 集中（依 inventory Decision Log，重複者 DUP_DELETE）
+> - specs/test-utils/ → tests/_helpers/（e2e-helpers + mock-helpers）+ 所有 importer 同步改 import path
+> - 對齊 Playwright 官方 testDir 預設 + spec-kit 頂層 tests/ 結構
+> - 配置/cleanup（playwright config × 2 / scripts × 3 / rules / root docs / policy.js bucket 拆 / placeholder 移除 / inventory 落筆）拆到下一個 commit
+> EOF
+> )"
+> ```
+>
+> **不加** `Co-Authored-By`（per Phase 0/1/2）。
+>
+> ### Step 4：回報
+>
+> `git log -1 --stat | tail -20` + `git status -s` — 應仍顯示大量 M（playwright config / scripts / rules / docs / policy.js / test-bucket-policy.test.js / migration-inventory.md）+ D（\_placeholder.js）等 Commit 2 內容。
+
+**Acceptance Criteria**:
+
+- [ ] Commit 1 成功（pre-commit hook 全綠）
+- [ ] subject 含 `Phase 3 part 1` 與 `mv e2e + helpers`
+- [ ] **不含** `Co-Authored-By`
+- [ ] R 標記 ≥ 18（11 spec + 5 setup + 2 helpers，扣除 DUP_DELETE 補回）
+- [ ] **不含** playwright config / scripts / rules / root docs / policy.js / test-bucket-policy.test.js / migration-inventory.md / `D _placeholder.js`（這些留 Commit 2）
+
+**Verify Command** (Reviewer-Commit-Mv-P3, `Explore` 跑):
+
+```bash
+git log -1 --pretty='%s' | grep -qE 'Phase 3 part 1' || { echo "FAIL: subject"; exit 1; }
+git log -1 --pretty='%s' | grep -qE 'mv e2e' || { echo "FAIL: subject mv e2e"; exit 1; }
+git log -1 --pretty='%b' | grep -qi 'co-authored-by' && { echo "FAIL: Co-Author"; exit 1; } || true
+
+# R 標記 ≥ 13
+renames=$(git show --name-status HEAD | grep -c '^R')
+[ "$renames" -ge 13 ] || { echo "FAIL: renames=$renames < 13"; exit 1; }
+
+# 不該包進 Commit 1 的檔
+forbidden=$(git show --name-only HEAD | grep -E '(playwright\.config\.mjs|playwright\.emulator\.config\.mjs|scripts/(test-branch|test-e2e-branch|run-all-e2e)\.sh|\.claude/rules/e2e-commands\.md|test-buckets/policy\.js|test-bucket-policy\.test\.js|CLAUDE\.md|AGENTS\.md|GEMINI\.md|migration-inventory\.md|_placeholder\.js)' || true)
+[ -z "$forbidden" ] || { echo "FAIL: Commit 1 should not include: $forbidden"; exit 1; }
+
+# Commit 1 該含的至少有 1 個 .spec.js R
+git show --name-only HEAD | grep -qE 'tests/e2e/.+\.spec\.js' || { echo "FAIL: no spec mv"; exit 1; }
+
+# status 仍有待 stage 的（Commit 2 內容）
+remaining=$(git status -s | grep -E '(playwright|scripts/.+\.sh|policy\.js|migration-inventory|_placeholder)' | wc -l | tr -d ' ')
+[ "$remaining" -ge 5 ] || { echo "FAIL: Commit 2 內容不足 remaining=$remaining"; exit 1; }
+echo "PASS"
+```
+
+**期望**：`PASS`。
+
+---
+
+## Phase 3 Wave 7b — Commit 2: config + cleanup + inventory + handoff（1 agent）
+
+### T314 [Engineer-Commit-Cfg-P3] Commit 2: config rewrite + cleanup + Phase 3 Handoff Highlights
+
+**Dependency**：T313（Commit 1）已成功
+
+**Description**：把 Wave 3-5 的所有改動 + Phase 3 Handoff Highlights 一次 commit。
+
+**Engineer Prompt** (派 Engineer-Commit-Cfg-P3, `general-purpose`):
+
+> 你是 Phase 3 Commit 2 engineer。**先填 Phase 3 Handoff Highlights，再 commit**。
+>
+> ### Step 1：填 Phase 3 Handoff Highlights（必須先做）
+>
+> Edit `specs/023-tests-directory-migration/migration-inventory.md` 的「## Phase 3 Inventory + Handoff（E2E + helpers）」段（T302 已填 Inventory + Decision Log，本步補 Handoff Highlights）。**體例參考 Phase 1 / Phase 2 Handoff Highlights 段**，新增 sub-heading「### Phase 3 Handoff Highlights」並列 5-8 條 bullet。
+>
+> 必須涵蓋（從 Phase 3 Wave 1-7a 跑下來的實際觀察整理 — 給下個 session 啟動「Phase 4 / 後續維護期」時必看）：
+>
+> 1. **e2e 數對 plan 估算的落差**（plan.md 估 15，實際 11 specs + 5 global-setup + 4 window.d.ts + 1 README，扣除 DUP_DELETE 後最終 mv 多少）
+> 2. **playwright.emulator.config.mjs 重寫採用方案**（方案 1 vs 方案 2、實際 diff line 數、E2E_FEATURE 仍保留 vs 廢除）— 因為這檔是 plan.md 註明 Phase 3 最高風險點
+> 3. **window.d.ts 合併或分散**（diff 結果 + 最終決策；如有 type 衝突坑要記）
+> 4. **DUP_DELETE 走 git rm 還是保留決策**（README / 多餘 window.d.ts；user 簽核流程紀錄）
+> 5. **policy.js 舊 4 bucket 拆除過程**：6 個對稱區塊各動了多少 line、`isAllowedRelativeDependency` 早返分支拆掉是否觸發新坑、`KNOWN_S015_UNIT_CONFLICTS` 是否仍是 frozen empty
+> 6. **branch scripts 重寫採用 `git diff main...HEAD` 抓改動的策略**：與舊 `specs/$BRANCH/tests/` 邏輯的差異、是否需要 fallback（branch base 不是 main 時）
+> 7. **subagent permission 狀態**（Phase 1/2 已驗證 OK；Phase 3 是否 regress？特別 `.claude/rules/e2e-commands.md` Edit 是否再次 deny）
+> 8. **outstanding tech debt**（vitest threshold.lines 70 → 80 → 95 路線圖、`tests/_placeholder.js` 已移除後 ESLint 9 / depcruise 是否真的不再抱怨、`tests/e2e/` 是否需後續分 domain、`tests/_helpers/` 是否該拆 e2e/unit 兩套 helper）
+>
+> 不必每類都列 — 只列**實際在 Phase 3 跑下來有觀察到**的；最少 5 條、最多 8 條。
+>
+> 格式範例（與 Phase 2 同）：
+>
+> ```markdown
+> ### Phase 3 Handoff Highlights
+>
+> > 完整紀錄請翻 Phase 3 各 Wave commit message 與本檔上方 Inventory Table。本節只列下個 session 啟動「Phase 4 / 後續維護」前必須記住的 5-8 條。
+>
+> - **<重點 title>**：<具體內容>。<為何記錄 / 觸發場景>
+> ```
+>
+> ### Step 2：commit
+>
+> 1. `git status -s` 確認剩下：
+>    - `M  playwright.config.mjs`（T305）
+>    - `M  playwright.emulator.config.mjs`（T306）
+>    - `M  scripts/test-branch.sh / test-e2e-branch.sh / run-all-e2e.sh`（T307）
+>    - `M  .claude/rules/e2e-commands.md`（T308）
+>    - `M  specs/021-layered-dependency-architecture/test-buckets/policy.js`（T309）
+>    - `M  tests/unit/lib/test-bucket-policy.test.js`（T309 同步改）
+>    - `M  CLAUDE.md / AGENTS.md / GEMINI.md`（T310）
+>    - `D  tests/_placeholder.js`（T311）
+>    - `M  specs/023-tests-directory-migration/migration-inventory.md`（T302 + Step 1 剛填）
+>    - 不該有：上述以外的（已被 Commit 1 帶走）、untracked（project-health/ / scheduled_tasks.lock 不 add）
+> 2. 逐項 add：
+>    ```bash
+>    git add playwright.config.mjs playwright.emulator.config.mjs
+>    git add scripts/test-branch.sh scripts/test-e2e-branch.sh scripts/run-all-e2e.sh
+>    git add .claude/rules/e2e-commands.md
+>    git add specs/021-layered-dependency-architecture/test-buckets/policy.js
+>    git add tests/unit/lib/test-bucket-policy.test.js
+>    git add CLAUDE.md AGENTS.md GEMINI.md
+>    git add tests/_placeholder.js   # add D
+>    git add specs/023-tests-directory-migration/migration-inventory.md
+>    ```
+> 3. commit:
+>
+>    ```bash
+>    git commit -m "$(cat <<'EOF'
+>    chore(tests): Phase 3 config rewrite + bucket cleanup + handoff (Phase 3 part 2)
+>
+>    - playwright.config.mjs testDir → ./tests/e2e
+>    - playwright.emulator.config.mjs 架構重寫：testDir 固定 ./tests/e2e；globalSetup 從 ./tests/e2e/_setup/<feature>-global-setup.js 解析（拋棄 specs/<feature>/tests/e2e/ 三向綁定）
+>    - branch scripts × 3 (test-branch.sh / test-e2e-branch.sh / run-all-e2e.sh) 重寫，改從 git diff main...HEAD + tests/ glob 抓改動
+>    - .claude/rules/e2e-commands.md frontmatter paths → tests/e2e/**
+>    - policy.js 拆除舊 4 bucket（unit/integration/e2e/specs-test-utils），保留新 4 bucket（*-tests-root + tests-helpers）；test-bucket-policy.test.js .toEqual 8→4
+>    - CLAUDE.md / AGENTS.md / GEMINI.md root docs 同步新路徑
+>    - tests/_placeholder.js 移除（Phase 1-3 已搬入大量真實測試 → ESLint 9 / depcruise 對空目錄抱怨自動消失）
+>    - migration-inventory.md Phase 3 Inventory + Decision Log + Handoff Highlights 段落筆
+>    - Phase 0 / Phase 1 / Phase 2 / Phase 3 四波 commit 同 branch 連續累加，spec-kit + Playwright 對齊完成
+>    EOF
+>    )"
+>    ```
+>
+>    **不加** `Co-Authored-By`。
+>
+> 4. 回報：`git log -1 --stat | tail -20` + `git log --oneline -7`（看到 Phase 3 part 2 / Phase 3 part 1 / Phase 2 part 2 / Phase 2 part 1 / Phase 1 part 2 / Phase 1 part 1 / Phase 0 共 7 個 commit）+ `git status -s` 應 clean（除 untracked）。
+>
+> **不要** push。
+
+**Acceptance Criteria**:
+
+- [ ] Commit 2 成功（pre-commit hook 全綠）
+- [ ] subject 含 `Phase 3 part 2` 與 `config rewrite + bucket cleanup + handoff`
+- [ ] **不含** `Co-Authored-By`
+- [ ] migration-inventory.md「Phase 3 Handoff Highlights」段已填 5-8 條 bullet（涵蓋至少 5 個 plan-mandated 類別）
+- [ ] `git log -1` 顯示所有 Commit 2 該包的檔（playwright × 2 / scripts × 3 / rules / policy.js / test-bucket-policy.test.js / 3 root docs / inventory + D placeholder）
+- [ ] `git log --oneline -7` 顯示 7 個 commit 順序：part 2 / part 1（Phase 3）→ part 2 / part 1（Phase 2）→ part 2 / part 1（Phase 1）→ Phase 0
+- [ ] `git status -s` clean（除 untracked `project-health/` / `.claude/scheduled_tasks.lock`）
+
+**Verify Command** (Reviewer-Commit-Cfg-P3, `Explore` 跑):
+
+```bash
+# 1. subject
+git log -1 --pretty='%s' | grep -qE 'Phase 3 part 2' || { echo "FAIL: subject"; exit 1; }
+git log -1 --pretty='%b' | grep -qi 'co-authored-by' && { echo "FAIL: Co-Author"; exit 1; } || true
+
+# 2. Commit 2 該含
+for f in playwright.config.mjs playwright.emulator.config.mjs \
+         scripts/test-branch.sh scripts/test-e2e-branch.sh scripts/run-all-e2e.sh \
+         .claude/rules/e2e-commands.md \
+         specs/021-layered-dependency-architecture/test-buckets/policy.js \
+         tests/unit/lib/test-bucket-policy.test.js \
+         CLAUDE.md AGENTS.md GEMINI.md \
+         specs/023-tests-directory-migration/migration-inventory.md; do
+  git show --name-only HEAD | grep -qF "$f" || { echo "FAIL: missing $f in commit"; exit 1; }
+done
+
+# 3. _placeholder.js 是 D
+git show --name-status HEAD | grep -q '^D.*tests/_placeholder.js' || { echo "FAIL: placeholder not D"; exit 1; }
+
+# 4. Commit 2 不該含（mv 已被 Commit 1 帶走）
+forbidden=$(git show --name-status HEAD | grep -E '^R' || true)
+[ -z "$forbidden" ] || { echo "FAIL: Commit 2 should not include R: $forbidden"; exit 1; }
+
+# 5. Phase 3 Handoff Highlights 填了 5-8 條
+INV=specs/023-tests-directory-migration/migration-inventory.md
+hf=$(awk '/^### Phase 3 Handoff Highlights/,0' "$INV" | grep -c '^- \*\*')
+[ "$hf" -ge 5 ] && [ "$hf" -le 8 ] || { echo "FAIL: handoff bullets=$hf (expect 5-8)"; exit 1; }
+
+# 6. log --oneline 7 個 commit
+git log --oneline -7 | head -1 | grep -qE 'Phase 3 part 2' || { echo "FAIL: HEAD~0"; exit 1; }
+git log --oneline -7 | sed -n '2p' | grep -qE 'Phase 3 part 1' || { echo "FAIL: HEAD~1"; exit 1; }
+git log --oneline -7 | sed -n '3p' | grep -qE 'Phase 2 part 2' || { echo "FAIL: HEAD~2"; exit 1; }
+
+# 7. status clean
+remaining=$(git status -s | grep -vE '^\?\? (project-health/|\.claude/scheduled_tasks\.lock)' | wc -l | tr -d ' ')
+[ "$remaining" -eq 0 ] || { echo "FAIL: dirty"; git status -s; exit 1; }
+
+echo "PASS"
+```
+
+**期望**：`PASS`。
+
+---
+
+## Phase 3 Wave 8 — User PR（manual）
+
+### T315 [User] push + open PR + 24h 觀察
+
+**Description**：T313 + T314 兩 commit 完後 user 親跑（涉及 push 到 remote — destructive 程度需 user confirm）。Phase 0/1/2/3 全部累積在同一 branch 一個 PR（user 之前確認 Phase 1-3 共一條 branch 連續累加；若 user 改主意要拆 Phase 3 獨立 PR，主 agent 配合改 PR target branch）。
+
+```bash
+git push origin 023-tests-directory-migration
+gh pr create --title "refactor(tests): Phase 3 e2e + helpers + cleanup" --body "$(cat <<'EOF'
+## Summary
+- 11 個 e2e spec 從 specs/<NNN>/tests/e2e/ 搬到 tests/e2e/（平鋪不分 domain，per Playwright 官方 testDir 預設）
+- 5 個 global-setup.js 集中到 tests/e2e/_setup/<feature>-global-setup.js
+- specs/test-utils/ → tests/_helpers/（e2e-helpers / mock-helpers）+ 所有 importer 同步
+- playwright.emulator.config.mjs 架構重寫：拋棄 E2E_FEATURE ↔ spec folder 三向綁定，改從 _setup/ 解析 globalSetup
+- branch scripts × 3 重寫成 `git diff main...HEAD` 邏輯
+- policy.js 舊 4 bucket（unit/integration/e2e/specs-test-utils）拆除，剩 4 bucket（*-tests-root + tests-helpers）
+- tests/_placeholder.js 移除
+- root docs (CLAUDE / AGENTS / GEMINI) 同步
+- migration-inventory.md Phase 3 Inventory + Decision Log + Handoff Highlights 落筆
+- spec-kit 官方頂層 tests/ + Playwright 預設 testDir 對齊完成（plan.md Trade-off Summary「全做完」）
+
+## Test plan
+- [x] type-check / depcruise / lint / spellcheck / vitest --project=browser 全綠
+- [x] bucket count = 4
+- [x] tests/_placeholder.js 已刪
+- [x] specs/<NNN>/tests/{unit,integration,e2e}/ 全空（除 g8 KEEP 2 檔）
+- [x] tests/e2e/*.spec.js ≥ 11；tests/e2e/_setup/*-global-setup.js = 5
+- [x] playwright config dry import 印出新路徑
+- [ ] main merge 後 24h 無 CI 紅 + `npx playwright test` 從 tests/e2e/ 跑起全綠（由 user 在 main 觀察）
+EOF
+)"
+```
+
+**Acceptance**:
+
+- [ ] PR 通過 review
+- [ ] CI 全綠
+- [ ] merge 後 main 觀察 24h 無 regression
+- [ ] parent 藍圖 ([`./plan.md`](./plan.md)) Verification Checklist「Phase 3 完成」全部 `[x]`
+
+---
+
+## Phase 3 執行 SOP
+
+### Step 0：Wave 0 gate check（派 Reviewer）
+
+主 agent 派 Reviewer-Bootstrap-P3（`Explore`）跑 T301 七個檢查。**FAIL → STOP，escalate user**。PASS 才進 Step 1。
+
+### Step 1：Wave 1（1 agent）
+
+主 agent 派 Engineer-Inventory-P3（`general-purpose`）跑 T302。完成後派 Reviewer-Inventory-P3 驗。FAIL → SendMessage 帶 feedback 重派 engineer，重試上限 3。
+
+### Step 2：Wave 2（並行 3 agents）
+
+T302 PASS 後，主 agent **Read** migration-inventory.md Phase 3 Inventory 確認 Table 1 / Table 2 / Decision Log 完整，然後 **單一 message** 派：
+
+```
+Engineer-E2E-Mv-P3   (general-purpose):  "T303 e2e mv（spec + global-setup + window.d.ts + README + 修 import）"
+Engineer-Helpers-P3  (general-purpose):  "T304 specs/test-utils → tests/_helpers + 改 importer（不動 e2e 內部 import，T303 範圍）"
+Engineer-PWConfig-P3 (general-purpose):  "T305 playwright.config.mjs testDir 改 ./tests/e2e（單行）"
+```
+
+完成後 **單一 message** 派 3 個 Reviewers（Explore）。FAIL 處理同 Phase 2 SOP。
+
+### Step 3：Wave 3（並行 3 agents）
+
+Wave 2 全 PASS 後派：
+
+```
+Engineer-PWEmu-P3    (general-purpose):  "T306 playwright.emulator.config.mjs 架構重寫（HIGH RISK，方案 1 推薦）"
+Engineer-Scripts-P3  (general-purpose):  "T307 三個 branch script 重寫（git diff main...HEAD 邏輯）"
+Engineer-Rules-P3    (general-purpose):  "T308 .claude/rules/e2e-commands.md frontmatter（先試 Edit 驗證 .claude/** 寫入是否仍 deny）"
+```
+
+配對 reviewers。**T306 失敗時主 agent 不主動代修** — 透過 SendMessage 把 reviewer feedback 送回 engineer 修；超過重試上限直接 escalate user。
+
+### Step 4：Wave 4（並行 2 agents）
+
+Wave 3 全 PASS 後派：
+
+```
+Engineer-Policy-P3   (general-purpose):  "T309 policy.js 拆 6 個對稱區塊舊 4 bucket + test-bucket-policy.test.js .toEqual 改 4-element"
+Engineer-Docs-P3     (general-purpose):  "T310 root docs (CLAUDE/AGENTS/GEMINI) 同步新路徑"
+```
+
+配對 reviewers。**T309 是 Phase 3 第二大風險點**（多區塊對稱 patch 易漏） — reviewer 跑滿 6 個 verify check。
+
+### Step 5：Wave 5（1 agent）
+
+Wave 4 PASS 後派 Engineer-Placeholder-P3 跑 T311。配對 reviewer。
+
+### Step 6：Wave 6 smoke（1 agent，集中 verify 點）
+
+主 agent 派 Engineer-Smoke-P3 跑 T312 的 10 個 check。配對 Reviewer-Smoke-P3 重跑。
+
+任一失敗 → 依 T312 失敗處理表 dispatch 對應 wave engineer 修，**主 agent 不自己診斷**。修完重跑 Wave 6。
+
+### Step 7a：Wave 7a Commit 1（1 agent）
+
+主 agent 派 Engineer-Commit-Mv-P3 跑 T313（純 mv + import 同步 commit）。配對 Reviewer-Commit-Mv-P3 跑 verify。**Reviewer FAIL → 主 agent 透過 SendMessage 把具體 feedback 傳回 Engineer-Commit-Mv-P3 修**。修完再驗，重試上限 3 次。
+
+### Step 7b：Wave 7b Commit 2（1 agent）
+
+T313 PASS 後立即派 Engineer-Commit-Cfg-P3 跑 T314（先填 Phase 3 Handoff Highlights 5-8 條 bullet，再 commit config + cleanup）。配對 Reviewer-Commit-Cfg-P3 跑 7 個 verify check。
+
+注意：T314 dependency 是 T313 已成功（git log 看到 Phase 3 part 1）；若 T313 失敗 / 還未 PASS → 不啟動 T314。
+
+### Step 8：Wave 8 PR（user manual）
+
+主 agent 通報「Phase 3 commit 完成（part 1 sha: <X>, part 2 sha: <Y>），可開 PR」+ 提供 T315 範本給 user 複製貼上。**主 agent 不自己跑 push / gh**。
+
+### 主 agent 全程紀律
+
+從頭到尾**不跑** `npm` / `node` / `git mv` / `git add` / `git commit` / `git push` / `mkdir` / `rm` / `gh` 命令。`Read` 純讀檔（含 inventory）允許；`git status` / `find` 等 query Bash「優先派 Reviewer」。
+
+**Phase 0 user 授權的「主 agent 一次例外」 — Phase 3 不啟用**。
+
+---
+
+## Phase 3 失敗回滾
+
+任一 wave 完成度低於 100%（reviewer 持續 FAIL ≥ 3 次）→ 主 agent **立即 STOP + escalate user**，不派 subagent 跑回滾命令（涉及 destructive 操作）。
+
+回滾命令給 user 親跑（依失敗時點，沿用 Phase 1/2 體例）：
+
+### Wave 2-5 中途失敗（mv / config 已開始，commit 尚未下）
+
+```bash
+# user 親跑
+git reset HEAD .                                          # unstage 所有改動（per Phase 2 用 reset HEAD 而非 restore --staged）
+git restore .                                             # 把改動還原到 working tree（包含 git mv 反向）
+git clean -nfd tests/e2e/ tests/_helpers/ 2>/dev/null     # dry-run 看會刪什麼新建檔
+git clean -fd tests/e2e/ tests/_helpers/ 2>/dev/null      # 實際刪（destructive，user confirm）
+git log -1 --pretty='%h %s'                               # 期望含 'Phase 2 part 2'
+git status -s                                              # 期望 empty + untracked project-health/
+```
+
+### Wave 7a Commit 1 後失敗（part 1 已下，part 2 尚未）
+
+```bash
+git reset --soft HEAD~1                                   # 退 commit 1 但保留改動回 staged
+# 重跑 T313 修問題後重 commit
+```
+
+### Wave 7b Commit 2 後失敗（part 1+2 都已下，push 未做）
+
+```bash
+git reset --soft HEAD~2                                   # 退兩個 commit 但保留改動
+# 或全砍回 Phase 2 head（destructive，user confirm）
+PHASE2_HEAD=$(git log --grep='Phase 2 part 2' --pretty='%H' | head -1)
+git reset --hard "$PHASE2_HEAD"
+```
+
+### Wave 8 push 後失敗（PR 已開，CI 紅）
+
+```bash
+# fix-forward 優先：派 Engineer 修問題 + 新 commit + push
+# 若必須撤銷：用 git revert（不要 force push）
+git revert HEAD~1..HEAD                                   # revert 最近 2 commit
+git push origin 023-tests-directory-migration
+```
+
+**force push 一律 destructive — user 必須親跑且明確 confirm。**
+
+---
+
+## Phase 3 完成判準（總體）
+
+- [ ] T301-T314 全 PASS（含 Wave 7 拆 T313 + T314 兩 commit；T315 user manual）
+- [ ] PR opened + merged + main 24h 無 CI 紅
+- [ ] parent 藍圖 ([`./plan.md`](./plan.md)) Verification Checklist「Phase 3 完成」全部 `[x]`：
+  - [ ] `npx playwright test` 從 `tests/e2e/` 跑起，全綠
+  - [ ] `ls specs/<NNN>/` 不再含 `tests/` 子目錄，只剩 spec artifacts
+  - [ ] 開新 feature branch 用 TDD skill 跑 Step 2.5，新測試直接落 `tests/{unit,integration,e2e}/`
+  - [ ] 全 repo 找不到 `specs/<feature>/tests/` 的引用（grep `specs/.+/tests/` 無命中）
+- [ ] [`./migration-inventory.md`](./migration-inventory.md) Phase 3 Handoff Highlights 段已填 5-8 條 bullet（給下個 session / Phase 4 / 後續維護期參考）
+- [ ] tests/\_placeholder.js 已移除（Phase 0 handoff §「Phase 1-3 注意事項」第 2 條條件達成 — `tests/` 已有大量真實測試）
+- [ ] policy.js bucket count = 4（舊 4 拆完）
+- [ ] 4 階段全部完成 — plan.md Trade-off Summary「全做完」一欄全 ✅
