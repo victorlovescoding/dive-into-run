@@ -387,3 +387,19 @@ find specs -path '*/tests/*' -type f | sort
 E2E_FEATURE=004-event-edit-delete npx playwright test --config playwright.emulator.config.mjs --list
 E2E_FEATURE=014-notification-system npx playwright test --config playwright.emulator.config.mjs --list
 ```
+
+## Phase 4C Planning Handoff
+
+> 2026-04-27 新增使用者要求：`specs` 底下所有 `test` / `tests` 目錄最終必須為 0；原本 `specs/g8-server-coverage/tests/unit/**` server-project exception 不能再長期保留。下一 session 只做搬遷計劃或實作時，先驗證現況再動手，完成後回來補記實作資訊與坑。
+
+- **已知事實**：tracked `specs/**/tests/**` 目前只剩 `specs/g8-server-coverage/tests/unit/{firebase-admin,firebase-profile-server}.test.js` 兩個 server tests；workspace 仍存在很多空的 `specs/**/tests` 目錄；`.specify/templates/tasks-template.md` 仍有 `specs/<feature>/tests` drift
+- **後續方向**：把 g8 server tests 搬到 `tests/server/g8-server-coverage/`，同步更新 `vitest.config.mjs` server include、相關 docs/templates，刪除空 `specs/**/{test,tests}` 目錄；不要再把 g8 exception 視為長期例外
+- **下一 session 必驗證命令**：
+
+```bash
+find specs -type d \( -name test -o -name tests \) -print | sort
+find specs -path '*/tests/*' -type f | sort
+npx vitest list --project=server
+npx vitest list --project=browser
+npm run test:server
+```
