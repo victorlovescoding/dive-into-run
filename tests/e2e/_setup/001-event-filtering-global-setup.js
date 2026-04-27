@@ -11,7 +11,7 @@ import {
   createTestUser,
   seedDoc,
   ts,
-} from '../../../test-utils/e2e-helpers.js';
+} from '../../_helpers/e2e-helpers.js';
 
 /**
  * Playwright global setup: creates a test account and seeds test events

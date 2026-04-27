@@ -25,7 +25,7 @@ import {
   loginAsUser,
   signOutUser,
   ts,
-} from '../../../test-utils/e2e-helpers.js';
+} from '../_helpers/e2e-helpers.js';
 
 // ---------------------------------------------------------------------------
 // Test data IDs

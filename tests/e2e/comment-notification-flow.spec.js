@@ -18,7 +18,7 @@ import {
   loginAsUser,
   FIRESTORE_EMULATOR_URL,
   PROJECT_ID,
-} from '../../../test-utils/e2e-helpers.js';
+} from '../_helpers/e2e-helpers.js';
 
 test.describe('Notification Flow - Post Comment (T037)', () => {
   test('author sees notification after a comment notification is created', async ({ page }) => {
