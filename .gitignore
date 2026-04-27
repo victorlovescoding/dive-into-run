@@ -60,6 +60,8 @@ test-results/
 
 # Claude Code — local (gitignored) settings
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
+project-health/
 
 # Personal planning docs
 FEATURE_ROADMAP.md
