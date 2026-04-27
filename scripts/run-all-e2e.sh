@@ -3,6 +3,164 @@
 # Starts Firebase Emulator + dev server once, then loops every feature.
 set -euo pipefail
 
+MODE="run"
+if [ "${1:-}" = "--list" ] || [ "${1:-}" = "--dry-run" ]; then
+  MODE="list"
+  shift
+fi
+
+if [ $# -gt 0 ]; then
+  echo "Usage: $0 [--list|--dry-run]" >&2
+  exit 2
+fi
+
+specs_for_feature() {
+  case "$1" in
+    001-event-filtering)
+      echo "tests/e2e/event-filtering.spec.js"
+      ;;
+    004-event-edit-delete)
+      echo "tests/e2e/event-edit-delete.spec.js"
+      ;;
+    005-event-comments)
+      echo "tests/e2e/event-comments.spec.js"
+      ;;
+    014-notification-system)
+      echo "tests/e2e/comment-notification-flow.spec.js"
+      echo "tests/e2e/notification-flow.spec.js"
+      ;;
+    019-posts-ui-refactor)
+      echo "tests/e2e/posts-ui.spec.js"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+feature_for_spec() {
+  case "$(basename "$1")" in
+    event-filtering.spec.js)
+      echo "001-event-filtering"
+      ;;
+    event-edit-delete.spec.js)
+      echo "004-event-edit-delete"
+      ;;
+    event-comments.spec.js)
+      echo "005-event-comments"
+      ;;
+    comment-notification-flow.spec.js | notification-flow.spec.js)
+      echo "014-notification-system"
+      ;;
+    posts-ui.spec.js)
+      echo "019-posts-ui-refactor"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+discover_features() {
+  for setup in tests/e2e/_setup/*-global-setup.js; do
+    [ -f "$setup" ] || continue
+    basename "$setup" -global-setup.js
+  done
+}
+
+discover_vanilla_specs() {
+  find tests/e2e -maxdepth 1 -name '*.spec.js' -print 2>/dev/null | sort | while IFS= read -r spec; do
+    if feature_for_spec "$spec" > /dev/null; then
+      continue
+    fi
+    echo "$spec"
+  done
+}
+
+print_plan() {
+  echo "E2E run-all plan:"
+  echo ""
+  echo "Seeded feature specs:"
+  seeded_count=0
+  for feature in "${FEATURES[@]}"; do
+    feature_specs=()
+    while IFS= read -r spec; do
+      [ -n "$spec" ] || continue
+      feature_specs+=("$spec")
+    done <<EOF
+$(specs_for_feature "$feature" 2>/dev/null || true)
+EOF
+    if [ ${#feature_specs[@]} -eq 0 ]; then
+      echo "No spec mapping for setup feature '$feature'." >&2
+      echo "Add it to scripts/run-all-e2e.sh before running." >&2
+      exit 1
+    fi
+    seeded_count=$((seeded_count + 1))
+    echo "- $feature"
+    echo "  setup: tests/e2e/_setup/$feature-global-setup.js"
+    echo "  config: playwright.emulator.config.mjs"
+    echo "  specs:"
+    for spec in "${feature_specs[@]}"; do
+      echo "    - $spec"
+    done
+  done
+  if [ "$seeded_count" -eq 0 ]; then
+    echo "- (none)"
+  fi
+
+  echo ""
+  echo "Vanilla specs:"
+  if [ ${#VANILLA_SPECS[@]} -eq 0 ]; then
+    echo "- (none)"
+  else
+    echo "  setup: (none)"
+    echo "  config: playwright.config.mjs"
+    for spec in "${VANILLA_SPECS[@]}"; do
+      echo "  - $spec"
+    done
+  fi
+}
+
+validate_plan() {
+  for feature in "${FEATURES[@]}"; do
+    feature_specs=()
+    while IFS= read -r spec; do
+      [ -n "$spec" ] || continue
+      feature_specs+=("$spec")
+    done <<EOF
+$(specs_for_feature "$feature" 2>/dev/null || true)
+EOF
+    if [ ${#feature_specs[@]} -eq 0 ]; then
+      echo "No spec mapping for setup feature '$feature'." >&2
+      echo "Add it to scripts/run-all-e2e.sh before running." >&2
+      exit 1
+    fi
+  done
+}
+
+FEATURES=()
+while IFS= read -r feature; do
+  [ -n "$feature" ] || continue
+  FEATURES+=("$feature")
+done <<EOF
+$(discover_features)
+EOF
+
+VANILLA_SPECS=()
+while IFS= read -r spec; do
+  [ -n "$spec" ] || continue
+  VANILLA_SPECS+=("$spec")
+done <<EOF
+$(discover_vanilla_specs)
+EOF
+
+if [ "$MODE" = "list" ]; then
+  print_plan
+  exit 0
+fi
+
+validate_plan
+
 # ---------------------------------------------------------------------------
 # 1. Start Firebase Emulator
 # ---------------------------------------------------------------------------
@@ -56,10 +214,21 @@ PASSED=0
 SKIPPED=0
 
 # Loop every feature globalSetup file under tests/e2e/_setup/
-# Each *-global-setup.js corresponds to a feature → run with emulator config
-for setup in tests/e2e/_setup/*-global-setup.js; do
-  [ -f "$setup" ] || continue
-  feature=$(basename "$setup" -global-setup.js)
+# Each *-global-setup.js corresponds to a mapped feature spec subset.
+for feature in "${FEATURES[@]}"; do
+  feature_specs=()
+  while IFS= read -r spec; do
+    [ -n "$spec" ] || continue
+    feature_specs+=("$spec")
+  done <<EOF
+$(specs_for_feature "$feature" 2>/dev/null || true)
+EOF
+
+  if [ ${#feature_specs[@]} -eq 0 ]; then
+    echo "No spec mapping for setup feature '$feature'." >&2
+    echo "Add it to scripts/run-all-e2e.sh before running." >&2
+    exit 1
+  fi
 
   # Reset emulator state before each feature (wait for completion)
   echo "Resetting emulator state..."
@@ -75,7 +244,8 @@ for setup in tests/e2e/_setup/*-global-setup.js; do
   echo "=========================================="
 
   if E2E_FEATURE="$feature" npx playwright test \
-    --config playwright.emulator.config.mjs; then
+    --config playwright.emulator.config.mjs \
+    "${feature_specs[@]}"; then
     echo "PASSED: $feature"
     PASSED=$((PASSED + 1))
   else
@@ -85,12 +255,12 @@ for setup in tests/e2e/_setup/*-global-setup.js; do
 done
 
 # Run any vanilla E2E specs (no globalSetup, don't need emulator)
-if find tests/e2e -maxdepth 1 -name '*.spec.js' 2>/dev/null | head -1 | grep -q .; then
+if [ ${#VANILLA_SPECS[@]} -gt 0 ]; then
   echo ""
   echo "=========================================="
   echo "Running vanilla E2E specs (no globalSetup)"
   echo "=========================================="
-  if npx playwright test --config playwright.config.mjs; then
+  if npx playwright test --config playwright.config.mjs "${VANILLA_SPECS[@]}"; then
     echo "PASSED: vanilla"
     PASSED=$((PASSED + 1))
   else

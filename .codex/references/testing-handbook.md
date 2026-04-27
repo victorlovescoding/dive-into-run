@@ -496,7 +496,10 @@ test.describe.configure({ mode: 'serial' });
 
 | 指令                                                          | 用途                                      |
 | ------------------------------------------------------------- | ----------------------------------------- |
-| `npm run test`                                                | 全專案 Vitest（unit + integration）       |
+| `npm run test`                                                | 全專案 Vitest projects；server project 需要 Firebase Emulator |
+| `npm run test:browser`                                        | Browser/jsdom Vitest（unit + integration） |
+| `npm run test:server`                                         | Server Vitest（Firebase Auth/Firestore emulator wrapper） |
+| `npm run test:coverage`                                       | Coverage（Firebase Auth/Firestore emulator wrapper） |
 | `npm run test:branch`                                         | 僅當前 branch 的 Vitest                   |
 | `npx vitest run tests/unit/service/x.test.js`                 | 單檔 unit                                 |
 | `npx vitest run tests/integration/notifications/x.test.jsx`   | 單檔 integration                          |

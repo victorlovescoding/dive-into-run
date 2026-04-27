@@ -353,6 +353,23 @@ Renames（filename collision after flatten 至 `tests/e2e/`）: 0 spec 檔衝突
 - **`test-e2e-branch.sh` changed-only 缺少 changed spec → setup 對應**：changed spec 可以被 `git diff main...HEAD` 找到，但 script 不能因此知道該 spec 需要哪個 seeded emulator setup。無法推導時應 fail loud 或 fallback 到 `run-all-e2e.sh`，不能 silently 用 vanilla config
 - **branch diff fallback 是 P1，不是 P0 根因**：`main...HEAD` 對未 commit、feature-on-feature、local main stale 會有 false skip 風險，但這是 base selection 問題；要排在 E2E setup/spec 對應語意修正之後
 
+### Phase 4B Handoff Highlights
+
+> 2026-04-27 Phase 4B P0 工具修正完成；本節只記可交接的完成項目、驗證證據與後續例外。
+
+- **B001 PASS — `E2E_FEATURE` 語意修正**：現在 selector 同時選 setup + spec subset；`004-event-edit-delete` list 為 `12` tests / `1` file，`014-notification-system` list 為 `2` tests / `2` files，無 feature 的 vanilla config list 為 `56` tests / `11` files。vanilla config 保持 intact，沒有被改成 seeded-only
+- **B002 PASS — E2E script 對應關係收斂**：`test-e2e-branch.sh --dry-run` / `run-all-e2e.sh --list` 已顯示 seeded + vanilla 對應；unknown spec 必須 fail loud。vanilla allowlist 是刻意防 silent pass；`run-all-e2e.sh` 不再重複跑 seeded specs
+- **B003 PASS — branch diff 行為補強**：支援 `TEST_BASE_REF` override、missing base warning、staged + unstaged inclusion、clear skip reason。macOS Bash `set -u` 對空 array 會炸，已用 count guard 處理
+- **B004 PASS — Vitest scripts 文件化**：新增/文件化 `test:browser`；`npm test` 是 full Vitest，server project 仍 requires emulator；`test:server -- --run` 參數會 forwarding 到 inner Vitest。驗證證據：browser `121` files / `1108` tests passed；server `2` files / `26` tests passed。曾遇 transient `CommentSection` failure，但單檔與 full suite 後續都過，未改測試
+- **B006 PASS — placeholder 清理**：刪除 `19` 個 tracked `tests/**/.gitkeep`，只刪 `.gitkeep`；`lint` / `depcruise` / `spellcheck` / `diff-check` 全過
+- **B005 未做 — g8 server exception 維持**：`specs/g8-server-coverage/tests/unit/**` 兩個 server tests 短期仍保留例外，不搬到 browser `tests/unit/`；若要收斂，應另設 `tests/server/` 並同步調整 Vitest server project include
+
+### Phase 4B Pitfalls
+
+- **Playwright `--list` 不要平行跑**：HTML reporter 會搶 `playwright-report/index.html`，曾出現 reporter `ENOENT`，導致互相干擾；list/dry-run 類驗證請序列跑
+- **reviewer scope 要對齊 task ownership**：B003 / B004 reviewer 不應把同一 worktree 其他 subtask 的 dirty diff 誤判成 fail；只檢查該 task 宣告 ownership 的檔案與行為
+- **`bash -n a b` 不可靠地檢第二支**：實測只可信地檢第一支；多個 script 要分開跑 `bash -n`
+
 ### 下一 session 驗證提示
 
 ```bash
