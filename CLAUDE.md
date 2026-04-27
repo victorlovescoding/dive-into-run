@@ -13,13 +13,14 @@ npm run lint                # ESLint (Airbnb + React Hooks + JSDoc via flat conf
 npm run lint:changed        # 只 lint git changed files
 npm run type-check          # TypeScript-powered JSDoc type checking (tsc --noEmit)
 npm run type-check:changed  # 只顯示 changed files 的 type errors
-npm run spellcheck          # cSpell 拼字檢查 (src + specs)
+npm run spellcheck          # cSpell 拼字檢查 (src + specs + tests)
 npm run test                # Vitest (unit + integration, jsdom env)
-npx vitest run specs/path/to/file.test.jsx   # 單一 vitest 檔
+npx vitest run tests/unit/path/to/file.test.jsx   # 單一 Vitest 檔
+npx playwright test tests/e2e/path/to/file.spec.js # 單一 Playwright 檔
 ```
 
-> E2E 指令 → `.claude/rules/e2e-commands.md`（碰 `specs/**/e2e/` 時自動載入）
-> Repo-wide audit 一律用 `npx eslint src specs`，不是 `npm run lint`
+> E2E 指令 → `.claude/rules/e2e-commands.md`（碰 `tests/e2e/**` 時自動載入）
+> Repo-wide audit 一律用 `npx eslint src specs tests`，不是 `npm run lint`
 
 ## Architecture
 
@@ -46,7 +47,8 @@ Six canonical layers with forward-only dependency: Types → Config → Repo →
 | `src/app/`        | Next.js App Router thin entries (page/layout/route only)    |
 | `src/lib/`        | Compatibility facade — re-exports to canonical layers       |
 | `src/components/` | Shared React components                                     |
-| `specs/`          | Feature specs + tests — one folder per git branch/feature   |
+| `specs/`          | Feature specs and planning artifacts — one folder per branch/feature |
+| `tests/`          | Executable tests: unit, integration, e2e, and shared `_helpers` |
 
 ## Guides（前饋控制）
 
@@ -54,10 +56,10 @@ Path-scoped rules（只在碰到對應檔案時自動載入）：
 
 | Rule                                 | 觸發路徑                      | 內容                                                                                                                |
 | ------------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `.claude/rules/coding-rules.md`      | `src/**`, `specs/**`          | 6 條 Non-Negotiable（無 @ts-ignore、無 JSX logic、無 eslint-disable a11y、JSDoc、forward-only imports、300 行上限） |
-| `.claude/rules/code-style.md`        | `src/**`, `specs/**` (js/jsx) | Formatting + JSDoc patterns                                                                                         |
-| `.claude/rules/testing-standards.md` | `specs/**`, test/spec 檔      | Testing Trophy、AAA、userEvent                                                                                      |
-| `.claude/rules/e2e-commands.md`      | `specs/**/e2e/**`             | Playwright + emulator 指令                                                                                          |
+| `.claude/rules/coding-rules.md`      | `src/**`, `specs/**`, `tests/**` | 6 條 Non-Negotiable（無 @ts-ignore、無 JSX logic、無 eslint-disable a11y、JSDoc、forward-only imports、300 行上限） |
+| `.claude/rules/code-style.md`        | `src/**`, `specs/**`, `tests/**` (js/jsx) | Formatting + JSDoc patterns                                                                                         |
+| `.claude/rules/testing-standards.md` | `tests/**`, test/spec 檔      | Testing Trophy、AAA、userEvent                                                                                      |
+| `.claude/rules/e2e-commands.md`      | `tests/e2e/**`                | Playwright + emulator 指令                                                                                          |
 | `.claude/rules/sensors.md`           | 無 paths（always loaded）     | type-check/lint/test + IDE Diagnostics + pre-commit gate                                                            |
 
 ### Git Workflow (Non-Negotiable)
