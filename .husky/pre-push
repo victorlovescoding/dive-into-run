@@ -1,1 +1,2 @@
-npm run test:e2e:branch
+# Fast gate only. E2E runs in CI (.github/workflows/ci.yml `e2e` job).
+npm run test:branch
