@@ -4314,3 +4314,647 @@ git push origin 023-tests-directory-migration
 - [ ] tests/\_placeholder.js 已移除（Phase 0 handoff §「Phase 1-3 注意事項」第 2 條條件達成 — `tests/` 已有大量真實測試）
 - [ ] policy.js bucket count = 4（舊 4 拆完）
 - [ ] 4 階段全部完成 — plan.md Trade-off Summary「全做完」一欄全 ✅
+
+---
+
+# Phase 4 Tasks: 文件收斂 + 後續維護拆分
+
+> **Parent 藍圖**：[`./plan.md`](./plan.md) Phase 4A / 4B
+> **Handoff 必讀**：[`./migration-inventory.md`](./migration-inventory.md)「Phase 3 Handoff Highlights」與「Phase 3 → Phase 4 Supplemental Handoff」
+> **工作性質**：Phase 4A 是 active docs 收斂；Phase 4B 是另開 session 的工具/結構候選，不在 Phase 4A 混做
+> **主 agent 邊界**：Phase 4 從頭到尾主 agent 只做 orchestrator，不做任何 Edit / Write / Bash mutate。包含 reviewer FAIL 後的修正，也一律交回 engineer subagent。
+
+## Phase 4A 並行策略總覽
+
+### 同時最多 3 個 engineer subagent + 3 個 reviewer subagent
+
+**上限：3 對，瞬時 active 6 agents。**
+
+- Wave 1 有 3 組互不重疊文件：Codex rules、Codex TDD skill、root onboarding，可並行
+- Wave 2 有 2 組文件：testing handbooks、Specify constitution，可並行
+- Wave 3 是全域驗證與 commit，必須串行
+- Reviewer 必須在對應 engineer 完成後立即跑 acceptance，不等整個 wave 結束才審
+
+### 主 Agent 角色邊界（Phase 4A Non-Negotiable）
+
+| 動作 | 主 Agent | 備註 |
+| ---- | -------- | ---- |
+| 派 engineer / reviewer subagent | ✅ | 唯一執行手段 |
+| `SendMessage` 把 reviewer feedback 交回 engineer | ✅ | reviewer FAIL 後也不能主 agent 自修 |
+| Read plan/tasks/inventory active docs | ✅ | 純讀允許 |
+| Edit / Write `tasks.md` 以外的 Phase 4A target docs | ❌ | 必須交 engineer subagent |
+| Bash 跑 `rg` / `npm` / `git add` / `git commit` | ❌ | verify 與 commit 也交 subagent |
+| Reviewer FAIL ≥ 3 次 | STOP | 回報 user，不啟用主 agent 例外 |
+
+### Engineer / Reviewer 配對規則
+
+- **Engineer subagent**：負責修改指定 file set；不可碰任務外文件
+- **Reviewer subagent**：read-only + verify command；不可修檔
+- **重試循環**：Reviewer FAIL → 主 agent 把具體 feedback 原文轉給同一 engineer 修 → reviewer 重驗；最多 3 輪
+- **文件標準**：所有 active docs 必須導向 `tests/{unit,integration,e2e,_helpers}`；唯一保留的 `specs/**/tests/**` 是 `specs/g8-server-coverage/tests/unit/**` server Vitest project exception
+
+## Phase 4A 依賴圖
+
+```
+Wave 0:
+  T401 Bootstrap / active-docs drift audit（reviewer only）
+
+Wave 1 (最多 3 並行):
+  T402 Codex rules
+  T403 Codex TDD skill
+  T404 Root onboarding
+
+Wave 2 (最多 2 並行):
+  T405 Testing handbooks
+  T406 Specify constitution
+
+Wave 3 (串行):
+  T407 Active-docs semantic grep
+  T408 Quality sanity
+  T409 Phase 4A commit
+
+Wave 4 (manual):
+  T410 User push / PR / main observation
+```
+
+---
+
+## Phase 4A Wave 0 — Bootstrap Gate
+
+### T401 [Reviewer-Bootstrap-P4A] Phase 3 完成狀態 + active docs drift audit
+
+**Files**：read-only
+
+**Description**：確認 Phase 4A 可開工；只盤點，不修。若 Phase 3 未完成或 target docs 不存在，STOP。
+
+**Reviewer Prompt**:
+
+> 你是 Phase 4A bootstrap reviewer。不要改檔。請確認：
+>
+> 1. `plan.md` Phase 4A / 4B 存在
+> 2. `migration-inventory.md` 有 Phase 3 Handoff Highlights
+> 3. `specs/**/tests/**` 只剩 `specs/g8-server-coverage/tests/unit/{firebase-admin,firebase-profile-server}.test.js`
+> 4. active docs 仍有哪些舊路徑要收斂，輸出檔案與行號
+> 5. worktree 狀態，若已有 unrelated dirty files，列出並 STOP 等 user 決定
+
+**Verify Command**:
+
+```bash
+set -e
+test -f specs/023-tests-directory-migration/plan.md
+test -f specs/023-tests-directory-migration/migration-inventory.md
+rg -n '^#### Phase 4A|^#### Phase 4B' specs/023-tests-directory-migration/plan.md
+rg -n '^## Phase 3 Handoff Highlights' specs/023-tests-directory-migration/migration-inventory.md
+
+remaining=$(find specs -path '*/tests/*' -type f | sort)
+printf '%s\n' "$remaining"
+printf '%s\n' "$remaining" | grep -vE '^specs/g8-server-coverage/tests/unit/(firebase-admin|firebase-profile-server)\.test\.js$' && {
+  echo "FAIL: non-g8 specs tests remain"; exit 1;
+} || true
+
+rg -n "specs/(<feature>|\\$BRANCH)/tests|specs/\\*\\*/e2e|npx playwright test specs|specs/test-utils|testDir: ./specs|Feature specs \\+ tests" \
+  AGENTS.md CLAUDE.md GEMINI.md \
+  .codex/rules/testing-standards.md .codex/rules/e2e-commands.md \
+  .codex/skills/test-driven-development/SKILL.md \
+  .codex/references/testing-handbook.md .claude/references/testing-handbook.md \
+  .specify/memory/constitution.md || true
+
+git status -s
+```
+
+**Acceptance Criteria**:
+
+- [ ] Phase 4A / 4B plan section exists
+- [ ] Phase 3 Handoff Highlights exists
+- [ ] `specs/**/tests/**` remaining files are exactly the 2 g8 server project exceptions
+- [ ] active docs drift list is captured for Wave 1/2 engineers
+- [ ] No unrelated dirty files block the session
+
+---
+
+## Phase 4A Wave 1 — Active 指引文件第一批（最多 3 並行）
+
+### T402 [Engineer-Codex-Rules-P4A] Codex rules 路徑收斂
+
+**Files**：
+
+- `.codex/rules/testing-standards.md`
+- `.codex/rules/e2e-commands.md`
+
+**Description**：把 Codex-native rules 從舊 `specs/<feature>/tests` / `specs/**/e2e/**` 改成 Phase 3 後終局路徑。
+
+**Engineer Prompt**:
+
+> 你是 Phase 4A Codex rules engineer。只改 `.codex/rules/testing-standards.md` 與 `.codex/rules/e2e-commands.md`。
+>
+> 目標：
+> - 新增測試一律導向 `tests/unit/<layer>/`、`tests/integration/<domain>/`、`tests/e2e/`
+> - 共用 helper 一律導向 `tests/_helpers/`
+> - test results 一律導向 `tests/test-results/[unit|integration|e2e]/`
+> - E2E 指令示例改成 `npx playwright test tests/e2e/<file>.spec.js`
+> - 唯一舊路徑例外：`specs/g8-server-coverage/tests/unit/**` 是 server Vitest project，不屬於 browser unit bucket
+> - 不要改 `.claude/**`、root docs、handbook、constitution
+
+**Acceptance Criteria**:
+
+- [ ] `.codex/rules/testing-standards.md` 不再指導新測試放 `specs/<feature>/tests/[unit|integration|e2e]/`
+- [ ] `.codex/rules/e2e-commands.md` frontmatter / globs / command examples 改為 `tests/e2e/**`
+- [ ] 文件清楚標示 g8 server Vitest exception
+- [ ] 沒有新增與 Phase 4B tooling 行為不一致的指令
+
+**Reviewer Verify Command**:
+
+```bash
+set -e
+rg -n "specs/<feature>/tests|specs/\\*\\*/e2e|npx playwright test specs|testDir: ./specs" \
+  .codex/rules/testing-standards.md .codex/rules/e2e-commands.md && exit 1 || true
+rg -n "tests/unit|tests/integration|tests/e2e|tests/_helpers|specs/g8-server-coverage/tests/unit" \
+  .codex/rules/testing-standards.md .codex/rules/e2e-commands.md
+```
+
+---
+
+### T403 [Engineer-Codex-TDD-Skill-P4A] Codex TDD skill 新測試落點收斂
+
+**Files**：`.codex/skills/test-driven-development/SKILL.md`
+
+**Description**：修正 TDD skill Step 2.5 仍建立 `specs/$BRANCH/tests` / `specs/$BRANCH/test-results` 的問題。
+
+**Engineer Prompt**:
+
+> 你是 Phase 4A Codex TDD skill engineer。只改 `.codex/skills/test-driven-development/SKILL.md`。
+>
+> 必改：
+> - `TEST_PATH` 不再是 `specs/$BRANCH/tests`
+> - 新測試位置改成：
+>   - unit: `tests/unit/<layer>/<name>.test.js[x]`
+>   - integration: `tests/integration/<domain>/<name>.test.jsx`
+>   - e2e: `tests/e2e/<name>.spec.js`
+> - result path 改成 `tests/test-results/[unit|integration|e2e]/`
+> - pattern reference glob 改成 `tests/unit/**/*.test.js[x]`、`tests/integration/**/*.test.jsx`、`tests/e2e/**/*.spec.js`
+> - spec folder `specs/$BRANCH/` 只保留為 `spec.md` / `plan.md` / `tasks.md` artifact 定位，不再當測試根目錄
+> - g8 server tests 是既有 server-project exception，不是新 TDD test default
+
+**Acceptance Criteria**:
+
+- [ ] skill 不再建立 `specs/$BRANCH/tests`
+- [ ] skill 不再建立 `specs/$BRANCH/test-results`
+- [ ] examples / globs / verify commands 全部指向 repo-root `tests/`
+- [ ] skill 仍要求先定位 `specs/$BRANCH/` 作為 spec artifact 來源
+
+**Reviewer Verify Command**:
+
+```bash
+set -e
+rg -n "specs/\\$BRANCH/tests|specs/\\$BRANCH/test-results|specs/\\*/tests/unit|specs/<branch-name>/test-results|\\$TEST_PATH" \
+  .codex/skills/test-driven-development/SKILL.md && exit 1 || true
+rg -n "tests/unit/<layer>|tests/integration/<domain>|tests/e2e|tests/test-results|specs/\\$BRANCH/" \
+  .codex/skills/test-driven-development/SKILL.md
+```
+
+---
+
+### T404 [Engineer-Root-Onboarding-P4A] Root onboarding 三份文件收斂
+
+**Files**：
+
+- `AGENTS.md`
+- `CLAUDE.md`
+- `GEMINI.md`
+
+**Description**：把 root onboarding 仍寫 `specs = feature specs + tests`、E2E 舊 glob、Playwright `testDir: ./specs` 等內容改成 Phase 3 後現況。
+
+**Engineer Prompt**:
+
+> 你是 Phase 4A root onboarding engineer。只改 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md`。
+>
+> 必改：
+> - `specs/` 描述改成 feature specs / planning artifacts，不再說 tests
+> - `tests/` 描述補上 unit/integration/e2e/_helpers
+> - E2E guide 觸發時機改 `tests/e2e/**`
+> - 單檔 Vitest / Playwright 範例改用 `tests/...`
+> - `GEMINI.md` 的 Playwright `testDir: ./specs` 改成 `./tests/e2e`
+> - 內容要與 `package.json` scripts、`playwright.config.mjs`、`vitest.config.mjs` 現況一致
+
+**Acceptance Criteria**:
+
+- [ ] 三份 root docs 都不再描述 `specs/` 包含 executable tests
+- [ ] 三份 root docs 都有 repo-root `tests/` 的終局描述
+- [ ] `GEMINI.md` 不再寫 Playwright `testDir: ./specs`
+- [ ] `AGENTS.md` 保持 Codex source of truth 語意，不被 Claude/Gemini wording 覆蓋
+
+**Reviewer Verify Command**:
+
+```bash
+set -e
+rg -n "Feature specs \\+ tests|testDir: ./specs|specs/\\*\\*/e2e|specs/<feature>/tests" \
+  AGENTS.md CLAUDE.md GEMINI.md && exit 1 || true
+rg -n "tests/|tests/e2e|tests/_helpers|Feature specs|spec artifacts" AGENTS.md CLAUDE.md GEMINI.md
+```
+
+---
+
+## Phase 4A Wave 2 — Active 指引文件第二批（最多 2 並行）
+
+### T405 [Engineer-Handbooks-P4A] Codex / Claude testing handbook 終局化
+
+**Files**：
+
+- `.codex/references/testing-handbook.md`
+- `.claude/references/testing-handbook.md`
+
+**Description**：兩份 handbook 目前仍有 `specs/test-utils/`、`specs/<feature>/tests/e2e`、Phase 2 過渡語與舊單檔 command。改成 Phase 3 後終局。
+
+**Engineer Prompt**:
+
+> 你是 Phase 4A testing handbook engineer。只改 `.codex/references/testing-handbook.md` 與 `.claude/references/testing-handbook.md`。
+>
+> 必改：
+> - helper path: `specs/test-utils/` → `tests/_helpers/`
+> - single-file Vitest command: `npx vitest run tests/unit/...` 或 `tests/integration/...`
+> - E2E examples: `tests/e2e/<file>.spec.js`
+> - Phase 2/Phase 3 過渡語改成完成後終局
+> - 舊 source path 若作為歷史來源引用，必須標示 `legacy source before migration`，不得像新工作指引
+> - 保留測試撰寫原則、AAA、userEvent、mock discipline，不做內容重寫
+
+**Acceptance Criteria**:
+
+- [ ] 兩份 handbook 不再把 `specs/test-utils/` 當現行 helper 位置
+- [ ] 兩份 handbook 不再把 `specs/<feature>/tests/**` 當新增測試位置
+- [ ] 歷史來源引用若保留，語意上清楚是 migration 前來源，不是新檔路徑
+- [ ] Codex / Claude 兩份內容一致或差異只在 agent-specific wording
+
+**Reviewer Verify Command**:
+
+```bash
+set -e
+rg -n "共用 helper 放 `specs/test-utils|抽到 `specs/test-utils|npx vitest run specs/<feature>/tests|E2E 共用 helper  \\| `specs/test-utils|Mock helper      \\| `specs/test-utils" \
+  .codex/references/testing-handbook.md .claude/references/testing-handbook.md && exit 1 || true
+rg -n "tests/_helpers|tests/unit|tests/integration|tests/e2e|legacy source before migration" \
+  .codex/references/testing-handbook.md .claude/references/testing-handbook.md
+```
+
+---
+
+### T406 [Engineer-Constitution-P4A] Specify constitution 測試結構收斂
+
+**Files**：`.specify/memory/constitution.md`
+
+**Description**：constitution 仍把測試結構定義為 `specs/<feature>/tests/[unit|integration|e2e]/`。改成 repo-root `tests/` 終局，並保留 spec artifacts 定義。
+
+**Engineer Prompt**:
+
+> 你是 Phase 4A Specify constitution engineer。只改 `.specify/memory/constitution.md`。
+>
+> 必改：
+> - executable tests: `tests/{unit/<layer>,integration/<domain>,e2e,_helpers}/`
+> - spec artifacts: `specs/<feature>/`
+> - server Vitest exception: `specs/g8-server-coverage/tests/unit/**`
+> - test results: `tests/test-results/[unit|integration|e2e]/`
+> - 不要新增 implementation 細節或改 constitution 其他原則
+
+**Acceptance Criteria**:
+
+- [ ] constitution 不再把一般測試結構定義成 `specs/<feature>/tests/[unit|integration|e2e]/`
+- [ ] constitution 明確分開 spec artifacts 與 executable tests
+- [ ] g8 server project exception 有被寫入
+- [ ] test results 位置更新
+
+**Reviewer Verify Command**:
+
+```bash
+set -e
+rg -n "specs/<feature>/tests/\\[unit\\|integration\\|e2e\\]|specs/<feature>/test-results" \
+  .specify/memory/constitution.md && exit 1 || true
+rg -n "tests/\\{unit/<layer>,integration/<domain>,e2e,_helpers\\}|specs/<feature>/|specs/g8-server-coverage/tests/unit|tests/test-results" \
+  .specify/memory/constitution.md
+```
+
+---
+
+## Phase 4A Wave 3 — 全域驗證與 commit（串行）
+
+### T407 [Engineer-Active-Docs-Verify-P4A] Active docs semantic grep
+
+**Files**：read-only
+
+**Description**：跑 active docs grep，確認沒有會指導新工作寫回舊測試路徑的內容。歷史 plan / inventory / migration-handoff 可以保留舊路徑，不納入此 gate。
+
+**Engineer Prompt**:
+
+> 你是 Phase 4A active-docs verify engineer。不要改檔。只檢查 active docs。若有 FAIL，回報哪個前序 task 應修，不要自己修。
+
+**Verify Command**:
+
+```bash
+set -e
+ACTIVE_DOCS="
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.codex/rules/testing-standards.md
+.codex/rules/e2e-commands.md
+.codex/skills/test-driven-development/SKILL.md
+.codex/references/testing-handbook.md
+.claude/references/testing-handbook.md
+.specify/memory/constitution.md
+"
+
+rg -n "specs/(<feature>|\\$BRANCH)/tests|specs/\\*\\*/e2e|npx playwright test specs|testDir: ./specs|Feature specs \\+ tests" $ACTIVE_DOCS && {
+  echo "FAIL: active docs still contain executable-test old-path guidance"; exit 1;
+} || true
+
+rg -n "specs/test-utils" .codex/references/testing-handbook.md .claude/references/testing-handbook.md && {
+  echo "FAIL: handbooks still treat specs/test-utils as current helper path"; exit 1;
+} || true
+
+rg -n "specs/g8-server-coverage/tests/unit" $ACTIVE_DOCS
+rg -n "tests/unit|tests/integration|tests/e2e|tests/_helpers|tests/test-results" $ACTIVE_DOCS
+echo "PASS"
+```
+
+**Acceptance Criteria**:
+
+- [ ] Command prints `PASS`
+- [ ] Any remaining `specs/**/tests/**` in active docs is only the g8 server project exception
+- [ ] `specs/023-*` historical docs are intentionally excluded from this gate
+
+---
+
+### T408 [Engineer-Quality-Sanity-P4A] Phase 4A quality sanity
+
+**Files**：read-only
+
+**Description**：Phase 4A 是 docs-only，但仍需跑低成本 sanity，確保 markdown edit 沒破壞 lint/spellcheck 的 file coverage expectation。若 full gate 太慢，至少跑 changed-file focused checks。
+
+**Engineer Prompt**:
+
+> 你是 Phase 4A quality sanity engineer。不要修檔。依序跑下列命令，任一失敗回報 stderr 摘要與可能對應 task。
+
+**Verify Command**:
+
+```bash
+set -e
+npm run lint:changed
+npm run spellcheck
+git diff --check
+git status -s
+```
+
+**Acceptance Criteria**:
+
+- [ ] `npm run lint:changed` passes
+- [ ] `npm run spellcheck` passes
+- [ ] `git diff --check` passes
+- [ ] Dirty files only include intended Phase 4A docs
+
+---
+
+### T409 [Engineer-Commit-P4A] Commit Phase 4A docs
+
+**Files**：Phase 4A docs only
+
+**Description**：只 commit Phase 4A 文件收斂，不含 Phase 4B tool/code changes。
+
+**Engineer Prompt**:
+
+> 你是 Phase 4A commit engineer。只 stage Phase 4A docs：
+>
+> - `AGENTS.md`
+> - `CLAUDE.md`
+> - `GEMINI.md`
+> - `.codex/rules/testing-standards.md`
+> - `.codex/rules/e2e-commands.md`
+> - `.codex/skills/test-driven-development/SKILL.md`
+> - `.codex/references/testing-handbook.md`
+> - `.claude/references/testing-handbook.md`
+> - `.specify/memory/constitution.md`
+>
+> 不 stage `specs/023-tests-directory-migration/tasks.md` / `migration-inventory.md`，除非 user 明確要把 Phase 4 planning docs 一起入 commit。commit message 不加 Co-Authored-By。
+
+**Commit Message**:
+
+```text
+docs(tests): align active guides with top-level tests
+
+- update Codex rules and TDD skill to create tests under repo-root tests/
+- align root onboarding and testing handbooks with Phase 3 final layout
+- update Specify constitution with g8 server-project exception
+```
+
+**Reviewer Verify Command**:
+
+```bash
+set -e
+git log -1 --pretty='%s' | grep -q '^docs(tests): align active guides with top-level tests$'
+git log -1 --pretty='%b' | grep -qi 'co-authored-by' && { echo "FAIL: Co-Author"; exit 1; } || true
+
+for f in AGENTS.md CLAUDE.md GEMINI.md \
+  .codex/rules/testing-standards.md .codex/rules/e2e-commands.md \
+  .codex/skills/test-driven-development/SKILL.md \
+  .codex/references/testing-handbook.md .claude/references/testing-handbook.md \
+  .specify/memory/constitution.md; do
+  git show --name-only HEAD | grep -qF "$f" || { echo "FAIL: missing $f"; exit 1; }
+done
+
+git show --name-only HEAD | grep -qE '^(playwright|scripts/|src/|tests/.*\.js)' && {
+  echo "FAIL: Phase 4A commit contains tool/code/test changes"; exit 1;
+} || true
+
+echo "PASS"
+```
+
+---
+
+## Phase 4A Wave 4 — User PR（manual）
+
+### T410 [User] push + open PR + main 觀察
+
+**Description**：Phase 4A docs commit 完後由 user 決定 push / PR。若 user 要把 Phase 4A planning docs (`tasks.md` / `migration-inventory.md`) 也入 PR，另開 docs commit，避免混進 active guides commit。
+
+```bash
+git push origin 023-tests-directory-migration
+gh pr create --title "docs(tests): align active guides with top-level tests" --body "$(cat <<'EOF'
+## Summary
+- Codex rules / TDD skill 改成 Phase 3 後終局 tests/ 路徑
+- Root onboarding (AGENTS / CLAUDE / GEMINI) 與 Playwright/Vitest 現況對齊
+- Codex + Claude testing handbooks 改用 tests/_helpers 與 repo-root tests/
+- Specify constitution 更新測試結構與 g8 server Vitest exception
+
+## Test plan
+- [x] active docs grep 無 `specs/<feature>/tests` 新工作指引
+- [x] g8 server project exception 保留
+- [x] npm run lint:changed
+- [x] npm run spellcheck
+- [x] git diff --check
+EOF
+)"
+```
+
+---
+
+## Phase 4B Backlog — 另開 session 的工具 / 結構候選
+
+> Phase 4B 不跟 Phase 4A 混做。每個候選都要另開 session、另派 engineer+reviewer；主 agent 同樣只做 orchestrator。P0/P1/P2 是排程優先級，不是同一 session 的 wave。
+
+### Phase 4B 並行規則
+
+- P0 E2E tooling 兩項共享 `playwright.emulator.config.mjs` / e2e scripts，**不可並行**
+- P1 branch-script fallback 可在 P0 完成後做；最多 1 engineer + 1 reviewer
+- P1 `npm test` entrypoint docs/script 與 `.gitkeep` cleanup 可並行，最多 2 對
+- P1 `tests/server/` 設計不可與 `npm test` entrypoint 並行，兩者都會碰 `vitest.config.mjs` / docs
+- P2 全部觸發型延後債，不主動做；只有觸發條件成立才開 session
+
+### B001 [P0] `E2E_FEATURE` selector 語意修正
+
+**Scope**：`playwright.emulator.config.mjs`、必要時 `tests/e2e/_setup/*-global-setup.js`、相關 docs
+
+**問題**：`E2E_FEATURE=004-event-edit-delete npx playwright test --config playwright.emulator.config.mjs --list` 會列出全部 tests；目前 `E2E_FEATURE` 只選 globalSetup，不選 spec。
+
+**Acceptance**:
+
+- [ ] `E2E_FEATURE=<feature>` 同時選到該 feature 的 setup 與 spec subset，或文件明確改成全域 seed 模式並廢除 selector 語意
+- [ ] 無 `E2E_FEATURE` 時仍可跑全量 e2e
+- [ ] 不破壞 vanilla `playwright.config.mjs`
+
+**Verify Direction**:
+
+```bash
+E2E_FEATURE=004-event-edit-delete npx playwright test --config playwright.emulator.config.mjs --list
+E2E_FEATURE=014-notification-system npx playwright test --config playwright.emulator.config.mjs --list
+npx playwright test --config playwright.emulator.config.mjs --list
+```
+
+### B002 [P0] `scripts/test-e2e-branch.sh` changed-only + setup 對應
+
+**Scope**：`scripts/test-e2e-branch.sh`、必要時 `scripts/run-all-e2e.sh`
+
+**問題**：changed-only e2e 若沒自動帶對應 globalSetup，會用 vanilla config 跑需要 emulator seed 的 spec。
+
+**Acceptance**:
+
+- [ ] changed e2e spec 可推導是否需要 feature setup
+- [ ] 不能推導時明確 fallback 到 `run-all-e2e.sh` 或 STOP with actionable message，不 silent pass
+- [ ] script dry-run / list 模式能顯示將跑哪些 spec 與 setup
+
+**Verify Direction**:
+
+```bash
+bash scripts/test-e2e-branch.sh --dry-run
+bash scripts/run-all-e2e.sh --list
+```
+
+### B003 [P1] branch scripts diff base fallback
+
+**Scope**：`scripts/test-branch.sh`、`scripts/test-e2e-branch.sh`、`scripts/run-all-e2e.sh`
+
+**問題**：`git diff main...HEAD` 對未 commit changes、feature-on-feature、local main stale、merge-base 異常可能 false skip。
+
+**Acceptance**:
+
+- [ ] base 可用 env override
+- [ ] `main...HEAD` 失敗時有 warning
+- [ ] staged / unstaged changed tests 也會被偵測
+- [ ] 沒有 changed tests 時輸出明確 skip reason
+
+**Verify Direction**:
+
+```bash
+TEST_BASE_REF=main bash scripts/test-branch.sh --dry-run
+git diff --name-only
+git diff --cached --name-only
+```
+
+### B004 [P1] `npm test` / browser-server entrypoint 收斂
+
+**Scope**：`package.json`、testing docs
+
+**問題**：裸 `npm test` 可能觸發 server project emulator guard；正確入口是 browser project 或 `npm run test:server`。
+
+**Acceptance**:
+
+- [ ] 新增或文件化 `npm run test:browser`
+- [ ] `npm test` 語意清楚：若保留 full Vitest，文件必須說 server project 需要 emulator
+- [ ] `test:server` / `test:coverage` emulator wrapper 不被破壞
+
+**Verify Direction**:
+
+```bash
+npm run test:browser -- --run
+npm run test:server -- --run
+```
+
+### B005 [P1] g8 server tests 長期位置決策
+
+**Scope**：`vitest.config.mjs`、`specs/g8-server-coverage/**`、可能新 `tests/server/**`
+
+**問題**：tracked `specs/**/tests/**` 只剩 g8 server tests；目前是合理 exception，但長期若要收斂需設計 `tests/server/`，不能搬到 browser `tests/unit/`。
+
+**Acceptance**:
+
+- [ ] 若不搬，docs 明確標示 exception
+- [ ] 若搬，server project include 改到 `tests/server/**`，且 browser project 不吃 server tests
+- [ ] emulator test 仍只能透過 server wrapper 跑
+
+**Verify Direction**:
+
+```bash
+npx vitest list --project=browser
+npx vitest list --project=server
+npm run test:server
+```
+
+### B006 [P1] `.gitkeep` 過渡檔 cleanup
+
+**Scope**：`tests/**/.gitkeep`
+
+**問題**：Phase 0 空目錄需求已消失，`tests/` 內已有大量真實檔案。
+
+**Acceptance**:
+
+- [ ] 刪除 tracked `tests/**/.gitkeep`
+- [ ] 不刪任何真實 test/helper/setup file
+- [ ] lint / depcruise / spellcheck 不因空目錄失敗
+
+**Verify Direction**:
+
+```bash
+find tests -name '.gitkeep' -print
+npm run lint:changed
+npm run depcruise
+npm run spellcheck
+```
+
+### B007 [P2] coverage threshold ratchet
+
+**Trigger**：coverage summary 實測穩定高於下一階至少約 2%。
+
+**Acceptance**：只做 70 → 75 → 80 的小步 ratchet；不一次跳 95。
+
+**Verify Direction**：`npm run test:coverage` + 讀 `coverage/coverage-summary.json`。
+
+### B008 [P2] E2E spec 拆分，而非目錄分組
+
+**Trigger**：`tests/e2e/*.spec.js` 達 30+ 或單檔明顯過長；短期優先拆大 spec，不急著改目錄。
+
+**Acceptance**：拆分後 `--list` 與 setup mapping 正確；不引入 domain folder 前先完成 P0 tooling。
+
+### B009 [P2] `tests/_helpers/` 拆子目錄
+
+**Trigger**：第三類 helper 出現、`e2e-helpers.js` > 300 行，或 helper 職責真的混雜。
+
+**Acceptance**：先改 policy / imports / docs，再搬 helper；不要只做目錄美化。
+
+### B010 [P2] `window.d.ts` 多型別整合
+
+**Trigger**：新的 E2E helper 引入第二個 `window.*` global、`window.d.ts` 出現 feature-specific 分歧，或 type-check 對新 global 報錯。
+
+**Acceptance**：新增型別與 setup 實作同 commit；`npm run type-check` 必過。
+
+### B011 [P2] policy dead export cleanup
+
+**Scope**：`specs/021-layered-dependency-architecture/test-buckets/policy.js`
+
+**問題**：`KNOWN_S015_UNIT_CONFLICTS` 已是 empty export shape。非行為風險，下次碰 policy.js 再順手收斂。
+
+**Acceptance**：先 grep zero consumer，再移除 export/function/test fixture；`npm run depcruise` + `npx vitest run tests/unit/lib/test-bucket-policy.test.js` 必過。
