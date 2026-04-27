@@ -513,6 +513,44 @@ npm run depcruise         # 全綠
 
 ---
 
+### Phase 4：文件收斂 + 後續維護拆分
+
+**Phase 0+1+2+3 已完成主要測試目錄遷移**：browser unit/integration/e2e/helper 已從 `specs/<feature>/tests/` 收斂到 repo-root `tests/`，policy bucket 也已拆成 4 個 root bucket。Phase 4 不再做大批 `git mv`；它分成「本 session 文件收斂」與「後續工具/結構修正候選」兩類。
+
+#### Phase 4A：文件收斂（本 session 負責）
+
+本 session 只負責文件與 agent 指引收斂，目標是避免後續 Codex/Claude/Gemini session 再被舊路徑導回 `specs/$BRANCH/tests`。
+
+| Task | 範圍 | 具體問題 | 驗收 |
+| ---- | ---- | -------- | ---- |
+| P4-D01 | Codex-native rules | `.codex/rules/testing-standards.md` 仍寫 `specs/<feature>/tests/[unit|integration|e2e]`；`.codex/rules/e2e-commands.md` 仍寫 `specs/**/e2e/**` 與 `npx playwright test specs/...` | Codex rules 改成 `tests/{unit,integration,e2e,_helpers}`，只把 `specs/g8-server-coverage/tests/unit/**` 標為 server-project exception |
+| P4-D02 | Codex TDD skill | `.codex/skills/test-driven-development/SKILL.md` 仍建立 `specs/$BRANCH/tests` 與 `specs/$BRANCH/test-results`，會把新測試寫回舊位置 | 新測試一律導向 `tests/unit/<layer>/`、`tests/integration/<domain>/`、`tests/e2e/`、`tests/test-results/` |
+| P4-D03 | Testing handbooks | `.codex/references/testing-handbook.md` 還以舊 `specs/<feature>/tests` tree 為主；`.claude/references/testing-handbook.md` 仍有「Phase 2 進行中」、`specs/test-utils/`、`specs/<feature>/tests/e2e` 過渡語 | Codex/Claude handbook 都描述 Phase 3 後終局：spec artifacts 在 `specs/`，可執行測試在 `tests/`，helpers 在 `tests/_helpers/` |
+| P4-D04 | Root onboarding | `AGENTS.md` / `CLAUDE.md` / `GEMINI.md` 仍有 `specs = feature specs + tests`、單檔 Vitest 舊範例、spellcheck 掃描範圍舊描述；`GEMINI.md` 還寫 Playwright `testDir: ./specs` | 三份 root onboarding 與 `package.json` / Playwright / Vitest 目前設定一致 |
+| P4-D05 | 文件驗證 | 歷史 plan / inventory 會保留舊路徑，不能用全 repo grep 當唯一判斷 | `rg` active docs 時不得再出現會指導新工作寫到 `specs/<feature>/tests` 的內容；`specs/023-*` 內歷史記錄可保留 |
+
+**本 session 不負責**：改 Playwright script 行為、搬 g8 server tests、拉高 coverage threshold、刪 `.gitkeep`、拆 helper/domain、移除 policy dead export。這些列在 Phase 4B。
+
+#### Phase 4B：工具 / 結構後續候選（需另開 session）
+
+| 優先級 | 項目 | 觸發條件 / 證據 | 建議 |
+| ------ | ---- | --------------- | ---- |
+| P0 | `playwright.emulator.config.mjs` + `scripts/run-all-e2e.sh` 語意修正 | 實測 `E2E_FEATURE=004-event-edit-delete npx playwright test --config playwright.emulator.config.mjs --list` 會列出全部 56 tests / 11 files；目前 `E2E_FEATURE` 只選 globalSetup，不選 spec | 另開工具修正 session：讓 feature setup 對應 feature spec，或改成全域 seed；修前後都用 `--list` 驗證 |
+| P0 | `scripts/test-e2e-branch.sh` changed-only 可信度 | 沒有 `E2E_FEATURE` 時會用 vanilla config 跑 changed specs，無法自動對應需要 emulator/globalSetup 的 spec | 另開工具修正 session：依 changed spec 推導 setup，或明確 fallback 到 `run-all-e2e.sh` |
+| P1 | g8 server tests 長期位置 | tracked `specs/**/tests/**` 只剩 `specs/g8-server-coverage/tests/unit/{firebase-admin,firebase-profile-server}.test.js`；目前是 server vitest project exception | 不搬到 `tests/unit/`；若要收斂，設計 `tests/server/` 並同步改 `vitest.config.mjs` server include + docs |
+| P1 | `npm test` / server project 易誤用 | `npm test` 是裸 `vitest`，server project 沒 emulator env 會 fail；正確入口是 `npm run test:server` / `test:coverage` | 可新增 `test:browser` 並文件化「server/full coverage 需 emulator」 |
+| P1 | `.gitkeep` 過渡檔 | Phase 0 為空 `tests/` 建 `.gitkeep`；Phase 1-3 已有大量真測試檔 | 可另開 cleanup：刪 tracked `tests/**/.gitkeep` 後跑 lint/depcruise/spellcheck |
+| P2 | coverage threshold ratchet | `vitest.config.mjs` 目前 `lines: 70`，實測約 70.55%，不夠拉回 80/95 | main 穩定後採 70 → 75 → 80 ratchet；不要一次跳 95 |
+| P2 | `tests/e2e/` domain 分組 | 目前 11 個 `.spec.js` 平鋪，未達壓力 | 30+ 或同 domain E2E 大量增加再拆 |
+| P2 | `tests/_helpers/` 拆子目錄 | 目前只有 `e2e-helpers.js` 與 `mock-helpers.js` | 第三類 helper 出現或 `e2e-helpers.js` > 300 行再拆 |
+| P2 | policy dead export cleanup | `KNOWN_S015_UNIT_CONFLICTS` 已是 empty export shape | 下次碰 `test-buckets/policy.js` 時再收斂；非行為風險 |
+
+#### Phase 4 Retro 參考
+
+下個 session 啟動 Phase 4 / 後續維護期前必讀：[`./migration-inventory.md`](./migration-inventory.md) **「## Phase 3 Handoff Highlights」段（8 條 bullet）**。該段保留 Phase 3 實作踩坑與實際決策；本節只放 Phase 4 的行動拆分。
+
+---
+
 ## Critical Files（總覽）
 
 ### Phase 0 必改（quality gate 整備，獨立 PR）
@@ -585,10 +623,10 @@ npm run depcruise         # 全綠
 
 ### Phase 3 完成
 
-- [ ] `npx playwright test` 從 `tests/e2e/` 跑起，全綠
-- [ ] `ls specs/<NNN>/` 不再含 `tests/` 子目錄，只剩 spec artifacts
-- [ ] 開新 feature branch 用 TDD skill 跑 Step 2.5，新測試直接落 tests/{unit,integration,e2e}/
-- [ ] 全 repo 找不到 `specs/<feature>/tests/` 的引用（grep `specs/.+/tests/` 無命中）
+- [ ] `npx playwright test` 從 `tests/e2e/` 跑起，全綠（**pending**：需 emulator + dev server，本 session 未實跑；T312 smoke 已用 dry import 驗 config 正確）
+- [x] `ls specs/<NNN>/` 不再含 `tests/` 子目錄，只剩 spec artifacts（除 `specs/g8-server-coverage/tests/unit/` 2 檔 KEEP — design intent）
+- [x] 開新 feature branch 用 TDD skill 跑 Step 2.5，新測試直接落 `tests/{unit,integration,e2e}/`（SKILL.md 已在 Phase 0 改成新路徑）
+- [x] 全 repo 找不到 `specs/<feature>/tests/` 的引用（grep `specs/.+/tests/` 無命中）（除 g8 KEEP / 文件 archive 引用）
 
 ---
 
