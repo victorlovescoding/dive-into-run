@@ -111,7 +111,7 @@ import {
   hasUserLikedPosts,
   deletePost,
 } from '@/runtime/client/use-cases/post-use-cases';
-import { asMock } from '../../../test-utils/mock-helpers';
+import { asMock } from '../../../specs/test-utils/mock-helpers';
 
 // ---------------------------------------------------------------------------
 // Helpers

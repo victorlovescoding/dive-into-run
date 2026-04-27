@@ -27,6 +27,7 @@ export default defineConfig({
         'src/lib/firestore-types.js',
         'src/**/*.test.{js,jsx}',
         'src/**/__tests__/**',
+        '**/*.d.ts',
       ],
       thresholds: {
         // TODO: Phase 1 將 include 擴到 src/{service,repo,runtime,lib,config}/**，實測 lines ~70.55%。
