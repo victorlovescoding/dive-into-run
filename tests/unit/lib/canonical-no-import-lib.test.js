@@ -6,9 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { countTotalPoints, toMs, toNumber } from '@/runtime/events/event-runtime-helpers';
-import depCruiseConfig from '../../../../.dependency-cruiser.mjs';
+import depCruiseConfig from '../../../.dependency-cruiser.mjs';
 
-const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../');
+const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../');
 const CANONICAL_DIRECTORIES = [
   'src/types',
   'src/config',

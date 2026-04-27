@@ -12,7 +12,7 @@ import {
   fetchParticipants,
   fetchMyJoinedEventsForIds,
 } from '@/lib/firebase-events';
-import { asMock } from '../../../../test-utils/mock-helpers';
+import { asMock } from '../../../specs/test-utils/mock-helpers';
 
 // Mock dependencies
 vi.mock('@/config/client/firebase-client', () => ({
