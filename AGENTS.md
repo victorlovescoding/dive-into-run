@@ -34,7 +34,10 @@ npm run lint:changed        # 只 lint git changed files
 npm run type-check          # TypeScript-powered JSDoc type checking (tsc --noEmit)
 npm run type-check:changed  # 只顯示 changed files 的 type errors
 npm run spellcheck          # cSpell 拼字檢查 (src + specs + tests)
-npm run test                # Vitest (unit + integration, jsdom env)
+npm run test                # Full Vitest projects; server project requires Firebase Emulator
+npm run test:browser        # Browser/jsdom Vitest only (unit + integration)
+npm run test:server         # Server Vitest via Firebase Auth/Firestore emulator
+npm run test:coverage       # Coverage via Firebase Auth/Firestore emulator
 npx vitest run tests/unit/path/to/file.test.jsx   # 單一 Vitest 檔
 npx playwright test tests/e2e/path/to/file.spec.js # 單一 Playwright 檔
 ```
