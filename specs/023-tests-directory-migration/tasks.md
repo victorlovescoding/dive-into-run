@@ -4958,3 +4958,274 @@ npm run spellcheck
 **問題**：`KNOWN_S015_UNIT_CONFLICTS` 已是 empty export shape。非行為風險，下次碰 policy.js 再順手收斂。
 
 **Acceptance**：先 grep zero consumer，再移除 export/function/test fixture；`npm run depcruise` + `npx vitest run tests/unit/lib/test-bucket-policy.test.js` 必過。
+
+## Phase 4C Tasks: remove specs test directories
+
+**新增要求**：刪除 `specs/` 底下所有 `test` / `tests` 目錄。原 B005 的 g8 server exception 不能再保留，所有 g8 server tests 必須搬到 `tests/server/g8-server-coverage/`，並同步更新 Vitest config、active docs、migration inventory、handoff 與 PR guidance。
+
+**並行 / 委派規則**：
+
+- 主 agent 從頭到尾只做 orchestration：拆派任務、整理順序、彙整 subagent 回報、確認 reviewer 是否完成，不直接做工程實作、review、修改、驗證或 commit。
+- 所有工程實作、code review、修正、驗證、commit 都交給 subagent。每個 engineer subagent 必須配一個 reviewer subagent，reviewer 需獨立查檔與跑 verify command，不可只讀 engineer 回報。
+- 保守建議最多同時 2 組 `engineer + reviewer`。C001 可單獨先跑；C002 與 C003 有強依賴，必須同一組或串行完成；C004 可在 C002/C003 初稿後並行；C005 必須等 C002/C004 完成後再做；C006 必須最後全域驗證；C007 必須在 C006 後寫入最新踩坑與結論；C008 必須最後整理 commit/PR guidance。
+- 可並行：C001 bootstrap audit 與 C004 docs drift 掃描可平行蒐證；C004 active docs 更新可和 C002/C003 的實作 reviewer 初審重疊，但合併前要等 server test 位置確定。
+- 不可並行：C002 server tests 搬移、C003 Vitest include/exclude、C005 刪除 specs 空 test 目錄、C006 全域驗證、C007 inventory handoff、C008 commit/PR guidance 必須依序收斂。
+
+### C001 [P0] bootstrap audit for specs test directories
+
+**Scope**：`specs/**`、`vitest.config.mjs`、`package.json`、`specs/023-tests-directory-migration/migration-inventory.md`、active testing docs
+
+**Description**：盤點目前所有 `specs/` 底下 `test` / `tests` 目錄、g8 server test 檔、Vitest project include/exclude、文件中仍提到 `specs/<feature>/tests` 或 g8 exception 的位置。此任務只做稽核與回報，不修改檔案。
+
+**Engineer Prompt**：
+
+```text
+You are the engineer subagent for C001. Do not edit files. Audit all specs test/test directories and every active reference to specs/<feature>/tests or the g8 server exception. Report exact paths, owning docs/configs, and migration order risks. Include command output summaries for find/rg/vitest list probes.
+```
+
+**Acceptance Criteria**：
+
+- [ ] 列出 `find specs -type d \( -name test -o -name tests \)` 的完整結果。
+- [ ] 列出 `find specs -path '*/tests/*' -type f` 的完整結果，特別標出 g8 server tests。
+- [ ] 找到所有 active docs / templates / config 中的 `specs/<feature>/tests`、`specs/**/tests`、`g8 server exception`、`g8-server-coverage` 相關 references。
+- [ ] 確認目前 `npx vitest list --project=server` 是否列出 `specs/` 底下 test 檔。
+- [ ] 確認目前 `npx vitest list --project=browser` 是否錯吃 server tests。
+- [ ] 產出 C002-C005 的建議執行順序與風險，不做任何修改。
+
+**Reviewer Verify Command**：
+
+```bash
+find specs -type d \( -name test -o -name tests \) -print
+find specs -path '*/tests/*' -type f -print
+rg -n "specs/.*/tests|specs/<feature>/tests|g8 server|g8-server-coverage|tests directory|test directory" specs .codex vitest.config.mjs package.json
+npx vitest list --project=server
+npx vitest list --project=browser
+git diff -- specs vitest.config.mjs package.json .codex
+```
+
+### C002 [P0] move g8 server tests to `tests/server/g8-server-coverage/`
+
+**Scope**：`specs/g8-server-coverage/**/tests/**` 或 C001 找到的 g8 server test files、`tests/server/g8-server-coverage/**`
+
+**Description**：把所有 g8 server tests 從 `specs/` 搬到 `tests/server/g8-server-coverage/`，保留測試意圖與分組命名，更新 imports、relative paths、fixtures/helper paths。不得把 server tests 搬到 browser-oriented `tests/unit/` 或 `tests/integration/`。
+
+**Engineer Prompt**：
+
+```text
+You are the engineer subagent for C002. Move all g8 server tests out of specs and into tests/server/g8-server-coverage/. Update imports and relative paths without changing test behavior. Do not edit Vitest config unless C003 is assigned to you in the same work packet. Do not delete empty specs test directories yet; leave that for C005.
+```
+
+**Acceptance Criteria**：
+
+- [ ] g8 server test files 全部位於 `tests/server/g8-server-coverage/`。
+- [ ] `specs/g8-server-coverage/**/test/**` 與 `specs/g8-server-coverage/**/tests/**` 下沒有殘留 test files。
+- [ ] 所有搬移後 test imports、fixture paths、helper paths 正確，沒有用硬編碼工作目錄繞過。
+- [ ] 搬移只改測試位置與必要路徑，不改 production behavior。
+- [ ] 暫時允許空目錄留到 C005，但不得新增新的 `specs/**/test*` 檔案。
+
+**Reviewer Verify Command**：
+
+```bash
+find tests/server/g8-server-coverage -type f -print
+find specs -path '*/test/*' -type f -print
+find specs -path '*/tests/*' -type f -print
+rg -n "from ['\"]\\.\\./|from ['\"]\\.\\./\\.\\./|require\\(['\"]\\.\\./" tests/server/g8-server-coverage
+npx vitest list --project=server
+git diff -- tests/server specs
+```
+
+### C003 [P0] update Vitest server include and browser exclude
+
+**Scope**：`vitest.config.mjs`
+
+**Description**：更新 Vitest projects：server project 必須 include `tests/server/**`，並排除 browser project 吃到 `tests/server/**`。移除對 `specs/**/tests/**` 的 server exception，確保 server tests 只能透過 server project / emulator wrapper 跑。
+
+**Engineer Prompt**：
+
+```text
+You are the engineer subagent for C003. Update vitest.config.mjs so server tests are discovered from tests/server/** and specs/**/test(s) is no longer a server exception. Ensure browser project does not list tests/server. Keep config style consistent with the current file and do not broaden includes unnecessarily.
+```
+
+**Acceptance Criteria**：
+
+- [ ] `vitest.config.mjs` server project include 會列出 `tests/server/g8-server-coverage/**` 或合理的 `tests/server/**` pattern。
+- [ ] `vitest.config.mjs` 不再依賴 `specs/**/tests/**` 或 g8-specific specs exception。
+- [ ] Browser project exclude 明確排除 `tests/server/**`，或既有 include pattern 已經保證不會吃到 server tests 且 reviewer 有證據。
+- [ ] `npx vitest list --project=server` 只列 `tests/server` 底下 server tests，不列 `specs/`。
+- [ ] `npx vitest list --project=browser` 不列 `tests/server`。
+- [ ] `npm run test:server` 通過。
+
+**Reviewer Verify Command**：
+
+```bash
+rg -n "tests/server|specs/.*/tests|g8-server-coverage|exclude|include" vitest.config.mjs
+npx vitest list --project=server
+npx vitest list --project=browser
+npm run test:server
+git diff -- vitest.config.mjs
+```
+
+### C004 [P0] update active docs and remove template drift
+
+**Scope**：active docs/templates only: `.specify/templates/tasks-template.md`, `.codex/**` active testing docs, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and any C001-confirmed active guidance. Do not treat `specs/023-tests-directory-migration/**` as active guidance for this cleanup.
+
+**Description**：移除所有 active docs/templates 中「g8 server exception 可留在 specs」的說法，改成 server tests 位於 `tests/server/...`。修正 `.specify/templates/tasks-template.md` 仍暗示 `specs/<feature>/tests` 的 drift，避免未來新 feature 繼續建立 specs test directories。`specs/023-tests-directory-migration/**` 是 migration history，舊路徑可保留歷史語境；C007 負責補 Phase 4C handoff，不需要 C004 清掉全部歷史引用。
+
+**Engineer Prompt**：
+
+```text
+You are the engineer subagent for C004. Update active docs and templates to state that specs/ is for planning artifacts only and must not contain test/test directories. Remove the g8 exception. Fix .specify/templates/tasks-template.md drift away from specs/<feature>/tests. Do not edit legacy docs unless C001 identified them as active guidance.
+```
+
+**Acceptance Criteria**：
+
+- [ ] Active docs 不再保留「g8 server tests 可留在 specs」或等價 exception。
+- [ ] `.specify/templates/tasks-template.md` 不再要求或示範 `specs/<feature>/tests`。
+- [ ] Docs 明確說 server tests 應放 `tests/server/...`，g8 server tests 放 `tests/server/g8-server-coverage/`。
+- [ ] Docs 明確說 `specs/` 只放 planning artifacts，不放 executable tests。
+- [ ] 文件更新後沒有 stale references 會引導後續 agent 建立 `specs/**/test` 或 `specs/**/tests`。
+- [ ] Active docs/templates 不再引導建立 `specs/**/test` 或 `specs/**/tests`；migration history references are allowed if clearly historical.
+
+**Reviewer Verify Command**：
+
+```bash
+ACTIVE_DOCS="$(for path in .specify/templates/tasks-template.md AGENTS.md CLAUDE.md GEMINI.md; do [ -e "$path" ] && printf '%s\n' "$path"; done)"
+ACTIVE_DOCS="$ACTIVE_DOCS"$'\n'"$([ -d .codex ] && find .codex -type f \( -name '*.md' -o -name '*.json' \) -print)"
+rg -n "specs/.*/tests|specs/<feature>/tests|g8 server exception|g8.*exception|tests/server/g8-server-coverage|planning artifacts" $ACTIVE_DOCS
+git diff -- .specify/templates/tasks-template.md .codex AGENTS.md CLAUDE.md GEMINI.md
+```
+
+### C005 [P0] delete all empty `specs` test directories
+
+**Scope**：`specs/**/test/`、`specs/**/tests/`
+
+**Description**：在 C002-C004 完成後，刪除 `specs/` 底下所有空的 `test` / `tests` 目錄。不得刪除 specs planning artifacts，不得刪除 `tests/` 正式測試目錄。
+
+**Engineer Prompt**：
+
+```text
+You are the engineer subagent for C005. Delete every empty specs/**/test and specs/**/tests directory after confirming no files remain inside them. Do not delete planning artifacts or any tests/ directory outside specs. If a specs test directory still contains files, stop and report the blocker instead of deleting data.
+```
+
+**Acceptance Criteria**：
+
+- [ ] `find specs -type d \( -name test -o -name tests \)` 輸出為 0。
+- [ ] `find specs -path '*/tests/*' -type f` 輸出為 0。
+- [ ] `find specs -path '*/test/*' -type f` 輸出為 0。
+- [ ] 沒有刪除 specs planning artifacts。
+- [ ] 沒有刪除 `tests/` 正式測試檔或 helpers。
+
+**Reviewer Verify Command**：
+
+```bash
+find specs -type d \( -name test -o -name tests \) -print
+find specs -path '*/tests/*' -type f -print
+find specs -path '*/test/*' -type f -print
+git diff --stat -- specs tests
+git diff --name-status -- specs tests
+```
+
+### C006 [P0] global verification gate
+
+**Scope**：full changed set from C002-C005
+
+**Description**：完成移動、config、docs、目錄刪除後，跑完整驗證並保存結果摘要。任何失敗都必須回到對應 engineer subagent 修正，再由 reviewer 重跑。
+
+**Engineer Prompt**：
+
+```text
+You are the engineer subagent for C006. Run the global verification gate after C002-C005 are complete. Do not patch around failures without assigning the fix back to the owning task. Record exact pass/fail commands and the shortest useful failure excerpt.
+```
+
+**Acceptance Criteria**：
+
+- [ ] `find specs -type d \( -name test -o -name tests \)` 輸出為 0。
+- [ ] `find specs -path '*/tests/*' -type f` 輸出為 0。
+- [ ] `find specs -path '*/test/*' -type f` 輸出為 0。
+- [ ] `npx vitest list --project=server` 只列 `tests/server`，不列 `specs/`。
+- [ ] `npx vitest list --project=browser` 不列 `tests/server`。
+- [ ] `npm run test:server` 通過。
+- [ ] `npm run lint:changed` 通過。
+- [ ] `npm run depcruise` 通過。
+- [ ] `npm run spellcheck` 通過。
+- [ ] `git diff --check` 通過。
+
+**Reviewer Verify Command**：
+
+```bash
+find specs -type d \( -name test -o -name tests \) -print
+find specs -path '*/tests/*' -type f -print
+find specs -path '*/test/*' -type f -print
+npx vitest list --project=server
+npx vitest list --project=browser
+npm run test:server
+npm run lint:changed
+npm run depcruise
+npm run spellcheck
+git diff --check
+```
+
+### C007 [P0] update migration inventory handoff
+
+**Scope**：`specs/023-tests-directory-migration/migration-inventory.md`
+
+**Description**：把本次 Phase 4C 的重要資訊、搬移結果、驗證結果、踩坑、後續注意事項寫入 migration inventory。Reviewer 必須檢查真的有新增內容，不能只接受口頭回報。
+
+**Engineer Prompt**：
+
+```text
+You are the engineer subagent for C007. Update specs/023-tests-directory-migration/migration-inventory.md with Phase 4C outcomes: where g8 server tests moved, what Vitest config changed, exact verification status, any pitfalls, and what future agents must not reintroduce. Keep it concise but actionable.
+```
+
+**Acceptance Criteria**：
+
+- [ ] `migration-inventory.md` 新增 Phase 4C handoff 或等價區塊。
+- [ ] 明確記錄 g8 server tests 已搬到 `tests/server/g8-server-coverage/`。
+- [ ] 明確記錄 `specs/` 不可再有 `test` / `tests` 目錄。
+- [ ] 明確記錄 C006 每個驗證 command 的結果摘要。
+- [ ] 明確記錄踩坑，例如 Vitest browser/server discovery、relative import path、docs/template drift、empty directory cleanup。
+- [ ] Reviewer 用 diff 確認 `migration-inventory.md` 真的有新增，而不是只看 engineer 回報。
+
+**Reviewer Verify Command**：
+
+```bash
+git diff -- specs/023-tests-directory-migration/migration-inventory.md
+rg -n "Phase 4C|tests/server/g8-server-coverage|specs.*test|vitest list|test:server|lint:changed|depcruise|spellcheck|diff --check|pitfall|踩坑" specs/023-tests-directory-migration/migration-inventory.md
+```
+
+### C008 [P0] commit and PR guidance
+
+**Scope**：final changed set, commit message, PR body guidance
+
+**Description**：整理 commit / PR guidance。Commit 必須在 C006 全通、C007 handoff 更新且 reviewer 確認後才可做。PR body 需明確說明 specs test directories 已移除、g8 server tests 新位置、Vitest project discovery 證據、全域驗證結果。
+
+**Engineer Prompt**：
+
+```text
+You are the engineer subagent for C008. Prepare commit and PR guidance only after C006 and C007 are reviewer-approved. Ensure the commit is atomic for Phase 4C and the PR notes include verification evidence. Do not commit if specs still contains test/test directories or migration-inventory.md was not updated.
+```
+
+**Acceptance Criteria**：
+
+- [ ] Commit 前 `git status --short` 只包含 Phase 4C 相關改動。
+- [ ] Commit 前 C006 全部 commands 通過。
+- [ ] Commit 前 C007 reviewer 確認 `migration-inventory.md` 有新增重要資訊與踩坑。
+- [ ] Commit message 清楚描述 remove specs test directories / move g8 server tests。
+- [ ] PR guidance 包含：`find specs` zero results、server/browser Vitest list 證據、`npm run test:server`、`npm run lint:changed`、`npm run depcruise`、`npm run spellcheck`、`git diff --check`。
+- [ ] PR guidance 明確提醒 reviewers 檢查 `.specify/templates/tasks-template.md` 不再引導 `specs/<feature>/tests`。
+
+**Reviewer Verify Command**：
+
+```bash
+git status --short
+find specs -type d \( -name test -o -name tests \) -print
+find specs -path '*/tests/*' -type f -print
+npx vitest list --project=server
+npx vitest list --project=browser
+npm run test:server
+npm run lint:changed
+npm run depcruise
+npm run spellcheck
+git diff --check
+git diff -- specs/023-tests-directory-migration/migration-inventory.md .specify/templates/tasks-template.md vitest.config.mjs tests/server specs
+```
