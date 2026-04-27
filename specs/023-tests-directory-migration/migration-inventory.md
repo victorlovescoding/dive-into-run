@@ -317,3 +317,41 @@ Renames（filename collision after flatten 至 `tests/e2e/`）: 0 spec 檔衝突
 - **branch scripts × 3 重寫採 `git diff main...HEAD` 抓改動**：`test-branch.sh` / `test-e2e-branch.sh` / `run-all-e2e.sh` 全改用 `git diff --name-only main...HEAD -- 'tests/{unit,integration,e2e,_helpers}/**'` 列被改檔；`run-all-e2e.sh` 從「scan `tests/e2e/_setup/*-global-setup.js` 列 feature」+ 新增「vanilla e2e（無 globalSetup spec，如 003/008/013/019 部分 spec）」segment 一次跑完。**branch base 不是 main 時 fallback 行為未測**，留 Phase 4 觀察（user 在 feature branch 切換時若回報「branch test 沒跑到任何檔」，先檢查 `git merge-base HEAD main`）
 - **subagent permission 狀態 OK**：Phase 3 全程無 deny — `.claude/rules/e2e-commands.md` Edit 通過、subagent 跑 `npm run` / `node -e` / `git mv` / `git rm` / `git add` / `git commit` 全程順跑。先前 Phase 1/2 的 `git restore --staged` 阻擋（被 `block-dangerous-commands.js` regex 攔）Phase 3 未重現（沒走那條路徑）
 - **`tests/_placeholder.js` 終於可移除**：Phase 0 留作「ESLint 9 / depcruise 對空 `tests/` 目錄會抱怨」的 placeholder，Phase 1-3 已搬入大量真實測試檔（unit ~80、integration ~65、e2e ~18）→ 空目錄問題自動消失，T311 移除無 regression。下次有「空目錄 placeholder」需求時，先檢查是否為過渡期殘債
+
+---
+
+## Phase 3 → Phase 4 Supplemental Handoff
+
+> 2026-04-27 補充：Phase 3 已完成主要搬遷，但 Phase 4 啟動前要把「文件收斂」與「工具語意修正」分開處理。本段補強 Phase 3 Handoff Highlights，避免下一個 session 把歷史路徑、例外路徑與真正 drift 混在一起。
+
+### Phase 4A 文件收斂必知
+
+- **active docs 還有舊測試路徑 drift**：`AGENTS.md` / `CLAUDE.md` / `GEMINI.md`、`.codex/rules/testing-standards.md`、`.codex/rules/e2e-commands.md`、`.codex/skills/test-driven-development/SKILL.md`、`.codex/references/testing-handbook.md`、`.claude/references/testing-handbook.md`、`.specify/memory/constitution.md` 都需要檢查；目標是讓新工作只落 `tests/{unit,integration,e2e,_helpers}` 與 `tests/test-results/`
+- **文件驗證不能用全 repo `rg specs/.+/tests` 當唯一 gate**：`specs/023-tests-directory-migration/**` 是本遷移的歷史 plan / inventory；`specs/g8-server-coverage/tests/unit/**` 是刻意保留的 server Vitest project exception。Phase 4A grep 必須限定 active docs，並允許 g8 例外
+- **g8 server tests 不是漏搬**：目前 tracked `specs/**/tests/**` 只剩 `specs/g8-server-coverage/tests/unit/{firebase-admin,firebase-profile-server}.test.js`。短期維持例外；若要收斂需另設 `tests/server/` 並同步改 `vitest.config.mjs` server include，不能直接丟進 browser `tests/unit/`
+- **`npm test` 語意仍容易誤導**：`package.json` 的 `test` 是裸 `vitest`；server project 需要 emulator env，正確入口是 `npm run test:server` / `npm run test:coverage`。後續若看到 server suite fail，先確認是不是用錯入口，不要誤判成 Phase 3 regression
+
+### Phase 4B P0 工具風險
+
+- **`E2E_FEATURE` 目前只選 setup，不選 spec subset**：`playwright.emulator.config.mjs` 的 `testDir` 固定 `./tests/e2e`，`E2E_FEATURE=004-event-edit-delete` 只換 `globalSetup`，不會自動只跑 `event-edit-delete.spec.js`。Phase 4B P0 要嘛讓 feature selector 同時選 setup + spec，要嘛改成全域 seed 模式並停止宣稱 feature selector
+- **`run-all-e2e.sh` 可能重複跑全套 spec**：若 script 對每個 `_setup/*-global-setup.js` 都呼叫 emulator config，而 emulator config 又 match 全部 `*.spec.js`，就會用不同 setup 重跑全套。vanilla 段若再跑整個 `tests/e2e`，還會二次重複。下一 session 修 P0 時要先用 list/dry-run 證明每個 spec 被排入幾次
+- **`test-e2e-branch.sh` changed-only 缺少 changed spec → setup 對應**：changed spec 可以被 `git diff main...HEAD` 找到，但 script 不能因此知道該 spec 需要哪個 seeded emulator setup。無法推導時應 fail loud 或 fallback 到 `run-all-e2e.sh`，不能 silently 用 vanilla config
+- **branch diff fallback 是 P1，不是 P0 根因**：`main...HEAD` 對未 commit、feature-on-feature、local main stale 會有 false skip 風險，但這是 base selection 問題；要排在 E2E setup/spec 對應語意修正之後
+
+### 下一 session 驗證提示
+
+```bash
+# active docs drift：只掃 active docs，不掃 specs/023 歷史檔
+rg -n "specs/(<feature>|\\$BRANCH)/tests|specs/\\*\\*/e2e|npx playwright test specs|testDir: ./specs|specs/test-utils" \
+  AGENTS.md CLAUDE.md GEMINI.md \
+  .codex/rules .codex/skills/test-driven-development \
+  .codex/references/testing-handbook.md .claude/references/testing-handbook.md \
+  .specify/memory/constitution.md
+
+# specs/**/tests intentional exception check
+find specs -path '*/tests/*' -type f | sort
+
+# E2E P0 baseline：目前可能列出過多 spec，修正前先保存 baseline
+E2E_FEATURE=004-event-edit-delete npx playwright test --config playwright.emulator.config.mjs --list
+E2E_FEATURE=014-notification-system npx playwright test --config playwright.emulator.config.mjs --list
+```
