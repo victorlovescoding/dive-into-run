@@ -8,7 +8,7 @@ import {
   scanRepoTestImportGraph,
   summarizeBucketViolations,
   testBucketPolicy,
-} from '../../test-bucket-policy.js';
+} from '../../../specs/021-layered-dependency-architecture/test-bucket-policy.js';
 
 describe('S014 test bucket policy', () => {
   it('classifies the four bucket paths', () => {

@@ -224,48 +224,7 @@ export const TEST_BUCKET_RULES = Object.freeze({
   }),
 });
 
-export const KNOWN_S015_UNIT_CONFLICTS = Object.freeze([
-  Object.freeze({
-    filePath: 'specs/009-global-toast/tests/unit/toast-context.test.jsx',
-    blockedSpecifier: '@/runtime/providers/ToastProvider',
-    expectedSurfaceId: 'src-runtime-providers',
-  }),
-  Object.freeze({
-    filePath: 'specs/010-responsive-navbar/tests/unit/isActivePath.test.js',
-    blockedSpecifier: '@/components/Navbar/Navbar',
-    expectedSurfaceId: 'src-components',
-  }),
-  Object.freeze({
-    filePath: 'specs/010-responsive-navbar/tests/unit/isActivePath.test.js',
-    blockedSpecifier: '@/components/Notifications/NotificationBell',
-    expectedSurfaceId: 'src-components',
-  }),
-  Object.freeze({
-    filePath: 'specs/010-responsive-navbar/tests/unit/isActivePath.test.js',
-    blockedSpecifier: '@/components/Notifications/NotificationPanel',
-    expectedSurfaceId: 'src-components',
-  }),
-  Object.freeze({
-    filePath: 'specs/010-responsive-navbar/tests/unit/isActivePath.test.js',
-    blockedSpecifier: '@/contexts/AuthContext',
-    expectedSurfaceId: 'src-contexts',
-  }),
-  Object.freeze({
-    filePath: 'specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx',
-    blockedSpecifier: '@/components/PostCard',
-    expectedSurfaceId: 'src-components',
-  }),
-  Object.freeze({
-    filePath: 'specs/019-posts-ui-refactor/tests/unit/PostCard.test.jsx',
-    blockedSpecifier: '@/components/UserLink',
-    expectedSurfaceId: 'src-components',
-  }),
-  Object.freeze({
-    filePath: 'specs/019-posts-ui-refactor/tests/unit/PostCardSkeleton.test.jsx',
-    blockedSpecifier: '@/components/PostCardSkeleton',
-    expectedSurfaceId: 'src-components',
-  }),
-]);
+export const KNOWN_S015_UNIT_CONFLICTS = Object.freeze([]);
 
 export const KNOWN_S015_CONFLICTS = KNOWN_S015_UNIT_CONFLICTS;
 

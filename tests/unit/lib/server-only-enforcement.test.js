@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
-import depCruiseConfig from '../../../../.dependency-cruiser.mjs';
+import depCruiseConfig from '../../../.dependency-cruiser.mjs';
 
 /**
  * Finds a forbidden rule by name from the dependency-cruiser config.
