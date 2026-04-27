@@ -86,9 +86,9 @@
 
 ## Testing Standards (Kent C. Dodds Style)
 
-- **Structure**: `specs/<feature>/tests/[unit | integration | e2e]/`
-  - `<feature>` 對應 git 分支名稱（e.g. `003-strict-type-fixes`）
-- **Test Results (Output)**: `specs/<feature>/test-results/[unit | integration | e2e]/`
+- **Structure**: `tests/[unit | integration | e2e]/`
+  - Phase 3 完成，舊 `specs/<feature>/tests/` 已清空，僅 git history 保留
+- **Test Results (Output)**: `tests/test-results/[unit | integration | e2e]/`
   - `unit/`: Pure logic and service layer testing (e.g., `src/lib/`). No DOM/React.
     - **Logic**: Follow **AAA pattern** (Arrange, Act, Assert) for test structure.
     - **Quality**: Adhere to **F.I.R.S.T principles** (Fast, Independent, Repeatable, Self-Validating, Timely).

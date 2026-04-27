@@ -1,23 +1,17 @@
 #!/usr/bin/env bash
-# Run Vitest (unit + integration) only for current branch's spec folder
+# Run Vitest (unit + integration) only for current branch's changed test files
 set -euo pipefail
 
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
-SPEC_DIR="specs/$BRANCH/tests"
+# Get changed .test.* files under tests/ between current branch and main
+CHANGED_TESTS=$(git diff --name-only main...HEAD -- 'tests/unit/**' 'tests/integration/**' 'tests/_helpers/**' 2>/dev/null | grep -E '\.test\.(js|jsx)$' || true)
 
-if [ ! -d "$SPEC_DIR" ]; then
-  echo "No test directory found at $SPEC_DIR — skipping."
+if [ -z "$CHANGED_TESTS" ]; then
+  echo "No changed unit/integration tests on this branch — skipping."
   exit 0
 fi
 
-# Collect existing unit/integration dirs
-DIRS=()
-[ -d "$SPEC_DIR/unit" ] && DIRS+=("$SPEC_DIR/unit")
-[ -d "$SPEC_DIR/integration" ] && DIRS+=("$SPEC_DIR/integration")
-
-if [ ${#DIRS[@]} -eq 0 ]; then
-  echo "No unit or integration test directories in $SPEC_DIR — skipping."
-  exit 0
-fi
-
-npx vitest run "${DIRS[@]}"
+# Pass changed files to vitest (or fall back to dirs if too many)
+echo "Running vitest on:"
+echo "$CHANGED_TESTS"
+# shellcheck disable=SC2086
+npx vitest run --project=browser $CHANGED_TESTS

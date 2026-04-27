@@ -1,8 +1,9 @@
 /**
  * @file Playwright config for E2E tests that require Firebase Emulator.
  * @description
- * Requires `E2E_FEATURE` env var to specify which feature's E2E tests to run.
- * Resolves `testDir` and `globalSetup` dynamically from `specs/<feature>/tests/e2e/`.
+ * Requires `E2E_FEATURE` env var to select which feature's global-setup to load.
+ * `testDir` is fixed at `./tests/e2e/`. `globalSetup` is resolved from
+ * `./tests/e2e/_setup/<feature>-global-setup.js` based on `E2E_FEATURE` env var.
  *
  * Usage:
  *   E2E_FEATURE=004-event-edit-delete npx playwright test --config playwright.emulator.config.mjs
@@ -28,22 +29,22 @@ if (!feature) {
   throw new Error(
     'E2E_FEATURE env var is required.\n' +
       'Usage: E2E_FEATURE=004-event-edit-delete npx playwright test --config playwright.emulator.config.mjs\n' +
-      'Value must match a directory name under specs/ (e.g. "004-event-edit-delete")',
+      'Value must match a global-setup file under ./tests/e2e/_setup/ (e.g. "004-event-edit-delete" → ./tests/e2e/_setup/004-event-edit-delete-global-setup.js)',
   );
 }
 
-const featureE2eDir = `./specs/${feature}/tests/e2e`;
-if (!existsSync(featureE2eDir)) {
+const setupDir = './tests/e2e/_setup';
+const globalSetupPath = `${setupDir}/${feature}-global-setup.js`;
+
+if (!existsSync(globalSetupPath)) {
   throw new Error(
-    `E2E_FEATURE="${feature}" but ${featureE2eDir} does not exist.\n` +
-      'Value must match a directory name under specs/ that contains tests/e2e/',
+    `E2E_FEATURE="${feature}" but ${globalSetupPath} does not exist.\n` +
+      'Value must match a global-setup file under ./tests/e2e/_setup/',
   );
 }
-
-const globalSetupPath = `${featureE2eDir}/global-setup.js`;
 
 export default defineConfig({
-  testDir: featureE2eDir,
+  testDir: './tests/e2e',
   testMatch: '**/*.spec.js',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,

@@ -9,10 +9,6 @@ const TEST_FILE_PATTERN = String.raw`\.(js|jsx|mjs)$`;
 const TEST_FILE_EXTENSIONS = new Set(['.js', '.jsx', '.mjs']);
 
 const TEST_BUCKET_FILE_PATTERNS = Object.freeze({
-  unit: `^specs/.+/tests/unit/.+${TEST_FILE_PATTERN}$`,
-  integration: `^specs/.+/tests/integration/.+${TEST_FILE_PATTERN}$`,
-  e2e: `^specs/.+/tests/e2e/.+${TEST_FILE_PATTERN}$`,
-  'specs-test-utils': '^specs/test-utils/.+\\.js$',
   'unit-tests-root': `^tests/unit/.+${TEST_FILE_PATTERN}$`,
   'integration-tests-root': `^tests/integration/.+${TEST_FILE_PATTERN}$`,
   'e2e-tests-root': `^tests/e2e/.+${TEST_FILE_PATTERN}$`,
@@ -20,20 +16,6 @@ const TEST_BUCKET_FILE_PATTERNS = Object.freeze({
 });
 
 const DEPCRUISE_DENY_PATTERNS = Object.freeze({
-  unit: Object.freeze([
-    '^src/runtime/providers(?:/|$)',
-    '^src/components(?:/|$)',
-    '^src/contexts(?:/|$)',
-    '^src/hooks(?:/|$)',
-    '^src/app/(?!api(?:/|$))',
-  ]),
-  integration: Object.freeze([
-    '^src/repo(?:/|$)',
-    '^src/service(?:/|$)',
-    '^src/config/server(?:/|$)',
-  ]),
-  e2e: Object.freeze(['^src/']),
-  'specs-test-utils': Object.freeze(['^src/']),
   'unit-tests-root': Object.freeze([
     '^src/runtime/providers(?:/|$)',
     '^src/components(?:/|$)',
@@ -166,34 +148,6 @@ const INTEGRATION_ALLOWED_SURFACES = Object.freeze([
 ]);
 
 export const TEST_BUCKET_RULES = Object.freeze({
-  unit: Object.freeze({
-    filePattern: TEST_BUCKET_FILE_PATTERNS.unit,
-    description:
-      'Unit tests may target lib/config/repo/service/runtime modules and API routes, but not runtime providers or non-API app/UI entry surfaces.',
-    allowedSurfaceIds: UNIT_ALLOWED_SURFACES,
-    relativePolicy: 'any-relative',
-  }),
-  integration: Object.freeze({
-    filePattern: TEST_BUCKET_FILE_PATTERNS.integration,
-    description:
-      'Integration tests may target app/components/contexts/hooks/runtime/lib plus client-facing config/data surfaces.',
-    allowedSurfaceIds: INTEGRATION_ALLOWED_SURFACES,
-    relativePolicy: 'any-relative',
-  }),
-  e2e: Object.freeze({
-    filePattern: TEST_BUCKET_FILE_PATTERNS.e2e,
-    description:
-      'E2E files may only use external packages, same-feature e2e relatives, or specs/test-utils/e2e-helpers.js.',
-    allowedSurfaceIds: Object.freeze(['external', 'relative']),
-    relativePolicy: 'same-feature-e2e-or-shared-helper',
-  }),
-  'specs-test-utils': Object.freeze({
-    filePattern: TEST_BUCKET_FILE_PATTERNS['specs-test-utils'],
-    description:
-      'specs/test-utils may only use external packages or relative imports that stay inside specs/test-utils.',
-    allowedSurfaceIds: Object.freeze(['external', 'relative']),
-    relativePolicy: 'inside-specs-test-utils-only',
-  }),
   'unit-tests-root': Object.freeze({
     filePattern: TEST_BUCKET_FILE_PATTERNS['unit-tests-root'],
     description:
@@ -249,32 +203,6 @@ const INTEGRATION_ALLOWED_PATH_PATTERNS = Object.freeze([
 ]);
 
 export const depCruiseTestBucketRules = Object.freeze({
-  unit: Object.freeze({
-    sourcePattern: TEST_BUCKET_FILE_PATTERNS.unit,
-    allowedKinds: Object.freeze(['external', 'relative']),
-    allowedPathPatterns: UNIT_ALLOWED_PATH_PATTERNS,
-    deniedPathPatterns: DEPCRUISE_DENY_PATTERNS.unit,
-  }),
-  integration: Object.freeze({
-    sourcePattern: TEST_BUCKET_FILE_PATTERNS.integration,
-    allowedKinds: Object.freeze(['external', 'relative']),
-    allowedPathPatterns: INTEGRATION_ALLOWED_PATH_PATTERNS,
-    deniedPathPatterns: DEPCRUISE_DENY_PATTERNS.integration,
-  }),
-  e2e: Object.freeze({
-    sourcePattern: TEST_BUCKET_FILE_PATTERNS.e2e,
-    allowedKinds: Object.freeze(['external', 'relative']),
-    allowedPathPatterns: Object.freeze([]),
-    deniedPathPatterns: DEPCRUISE_DENY_PATTERNS.e2e,
-    relativePolicy: 'same-feature-e2e-or-shared-helper',
-  }),
-  'specs-test-utils': Object.freeze({
-    sourcePattern: TEST_BUCKET_FILE_PATTERNS['specs-test-utils'],
-    allowedKinds: Object.freeze(['external', 'relative']),
-    allowedPathPatterns: Object.freeze([]),
-    deniedPathPatterns: DEPCRUISE_DENY_PATTERNS['specs-test-utils'],
-    relativePolicy: 'inside-specs-test-utils-only',
-  }),
   'unit-tests-root': Object.freeze({
     sourcePattern: TEST_BUCKET_FILE_PATTERNS['unit-tests-root'],
     allowedKinds: Object.freeze(['external', 'relative']),
@@ -304,46 +232,6 @@ export const depCruiseTestBucketRules = Object.freeze({
 });
 
 export const TEST_BUCKET_DEPCRUISE_ARTIFACTS = Object.freeze([
-  Object.freeze({
-    bucket: 'unit',
-    allow: Object.freeze({
-      kinds: depCruiseTestBucketRules.unit.allowedKinds,
-      resolvedPathPatterns: depCruiseTestBucketRules.unit.allowedPathPatterns,
-    }),
-    deny: Object.freeze({
-      resolvedPathPatterns: depCruiseTestBucketRules.unit.deniedPathPatterns,
-    }),
-  }),
-  Object.freeze({
-    bucket: 'integration',
-    allow: Object.freeze({
-      kinds: depCruiseTestBucketRules.integration.allowedKinds,
-      resolvedPathPatterns: depCruiseTestBucketRules.integration.allowedPathPatterns,
-    }),
-    deny: Object.freeze({
-      resolvedPathPatterns: depCruiseTestBucketRules.integration.deniedPathPatterns,
-    }),
-  }),
-  Object.freeze({
-    bucket: 'e2e',
-    allow: Object.freeze({
-      kinds: depCruiseTestBucketRules.e2e.allowedKinds,
-      resolvedPathPatterns: depCruiseTestBucketRules.e2e.allowedPathPatterns,
-    }),
-    deny: Object.freeze({
-      resolvedPathPatterns: depCruiseTestBucketRules.e2e.deniedPathPatterns,
-    }),
-  }),
-  Object.freeze({
-    bucket: 'specs-test-utils',
-    allow: Object.freeze({
-      kinds: depCruiseTestBucketRules['specs-test-utils'].allowedKinds,
-      resolvedPathPatterns: depCruiseTestBucketRules['specs-test-utils'].allowedPathPatterns,
-    }),
-    deny: Object.freeze({
-      resolvedPathPatterns: depCruiseTestBucketRules['specs-test-utils'].deniedPathPatterns,
-    }),
-  }),
   Object.freeze({
     bucket: 'unit-tests-root',
     allow: Object.freeze({
@@ -532,24 +420,12 @@ export function classifyDependencySurface(reference) {
  * @returns {boolean}
  */
 function isAllowedRelativeDependency(bucketId, reference) {
-  if (
-    bucketId === 'unit' ||
-    bucketId === 'integration' ||
-    bucketId === 'unit-tests-root' ||
-    bucketId === 'integration-tests-root'
-  ) {
+  if (bucketId === 'unit-tests-root' || bucketId === 'integration-tests-root') {
     return true;
   }
 
   if (!reference.resolvedPath) {
     return false;
-  }
-
-  if (bucketId === 'specs-test-utils') {
-    return (
-      reference.resolvedPath === 'specs/test-utils' ||
-      reference.resolvedPath.startsWith('specs/test-utils/')
-    );
   }
 
   if (bucketId === 'tests-helpers') {
@@ -559,17 +435,14 @@ function isAllowedRelativeDependency(bucketId, reference) {
     );
   }
 
-  if (bucketId === 'e2e' || bucketId === 'e2e-tests-root') {
-    const featureRootMatch = reference.importerPath.match(
-      /^(specs\/.+\/tests\/e2e|tests\/e2e(?:\/[^/]+)?)(?:\/|$)/,
-    );
+  if (bucketId === 'e2e-tests-root') {
+    const featureRootMatch = reference.importerPath.match(/^(tests\/e2e(?:\/[^/]+)?)(?:\/|$)/);
     if (!featureRootMatch) {
       return false;
     }
 
     const featureRoot = featureRootMatch[1];
     return (
-      reference.resolvedPath === 'specs/test-utils/e2e-helpers.js' ||
       reference.resolvedPath === 'tests/_helpers/e2e-helpers.js' ||
       reference.resolvedPath === featureRoot ||
       reference.resolvedPath.startsWith(`${featureRoot}/`)
@@ -588,12 +461,12 @@ function buildViolationReason(bucketId, surfaceId) {
   const surface = TEST_DEPENDENCY_SURFACES[surfaceId];
   const bucketLabel = `${bucketId} bucket`;
 
-  if (surfaceId === 'relative' && bucketId === 'e2e') {
-    return 'e2e bucket only allows same-feature relatives or specs/test-utils/e2e-helpers.js';
+  if (surfaceId === 'relative' && bucketId === 'e2e-tests-root') {
+    return 'e2e-tests-root bucket only allows same-feature relatives or tests/_helpers/e2e-helpers.js';
   }
 
-  if (surfaceId === 'relative' && bucketId === 'specs-test-utils') {
-    return 'specs-test-utils bucket only allows relatives that stay inside specs/test-utils';
+  if (surfaceId === 'relative' && bucketId === 'tests-helpers') {
+    return 'tests-helpers bucket only allows relatives that stay inside tests/_helpers';
   }
 
   return `${bucketLabel} does not allow ${surface.description}`;
@@ -807,12 +680,12 @@ function walkPolicyFiles(dirPath, rootDir) {
  * @returns {string[]}
  */
 export function collectTestBucketFiles(rootDir = process.cwd()) {
-  const specsRoot = path.resolve(rootDir, 'specs');
-  if (!fs.existsSync(specsRoot)) {
+  const testsRoot = path.resolve(rootDir, 'tests');
+  if (!fs.existsSync(testsRoot)) {
     return [];
   }
 
-  return walkPolicyFiles(specsRoot, rootDir).sort((left, right) => left.localeCompare(right));
+  return walkPolicyFiles(testsRoot, rootDir).sort((left, right) => left.localeCompare(right));
 }
 
 /**
@@ -872,8 +745,8 @@ export function collectBucketViolations(graph, bucketId) {
  * @returns {string}
  */
 function getVerdictKind(evaluation) {
-  if (evaluation.resolvedPath === 'specs/test-utils/e2e-helpers.js') {
-    return 'specs-test-utils-helper';
+  if (evaluation.resolvedPath === 'tests/_helpers/e2e-helpers.js') {
+    return 'tests-helpers-e2e-helper';
   }
   if (evaluation.surfaceId === 'src-runtime-providers') {
     return 'src-runtime-provider';

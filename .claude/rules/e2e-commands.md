@@ -1,6 +1,6 @@
 ---
 paths:
-  - 'specs/**/e2e/**'
+  - 'tests/e2e/**'
   - '**/*.spec.js'
   - 'scripts/run-all-e2e.sh'
 ---
@@ -9,7 +9,7 @@ paths:
 
 ```bash
 npx playwright test                              # 所有 E2E（Chromium only, needs dev server）
-npx playwright test specs/path/to/file.spec.js   # 單一 E2E 檔
+npx playwright test tests/e2e/path/to/file.spec.js   # 單一 E2E 檔
 npm run test:e2e:branch                          # 自動偵測 branch → feature，選擇正確 config（emulator 或一般）
 E2E_FEATURE=004-event-edit-delete npm run test:e2e:emulator   # 指定 feature 跑 E2E + emulator
 firebase emulators:exec --only auth,firestore,storage "E2E_FEATURE=004-event-edit-delete npm run test:e2e:emulator"
