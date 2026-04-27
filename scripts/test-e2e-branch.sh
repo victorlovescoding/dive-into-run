@@ -90,35 +90,48 @@ add_changed_spec() {
   CHANGED_SPEC_COUNT=$((CHANGED_SPEC_COUNT + 1))
 }
 
+# Extract destination paths from `git diff -M --name-status` output, dropping
+# pure renames (R<sim>) so a directory move (e.g. specs/<NNN>/tests/e2e/* →
+# tests/e2e/*) does not trigger the entire E2E suite. Pathspec is intentionally
+# omitted from `git diff` because it disables rename pairing — we filter paths
+# afterwards.
+extract_changed_paths() {
+  awk -F'\t' '/^R[0-9]+\t/ { next } /^[AM]\t/ { print $2 }'
+}
+
 collect_changed_specs() {
   local diff_output
+  local filtered
   local path
 
-  if ! diff_output=$(git diff --name-only "$TEST_BASE_REF...HEAD" -- 'tests/e2e/**' 2>&1); then
+  if ! diff_output=$(git diff -M --name-status "$TEST_BASE_REF...HEAD" 2>&1); then
     echo "Warning: could not diff $TEST_BASE_REF...HEAD for changed E2E specs." >&2
     if [ -n "$diff_output" ]; then
       echo "Warning: git diff output: $diff_output" >&2
     fi
     diff_output=""
   fi
+  filtered=$(printf '%s\n' "$diff_output" | extract_changed_paths)
   while IFS= read -r path; do
     add_changed_spec "$path"
   done <<EOF
-$diff_output
+$filtered
 EOF
 
-  diff_output=$(git diff --name-only --cached -- 'tests/e2e/**' 2>/dev/null || true)
+  diff_output=$(git diff -M --name-status --cached 2>/dev/null || true)
+  filtered=$(printf '%s\n' "$diff_output" | extract_changed_paths)
   while IFS= read -r path; do
     add_changed_spec "$path"
   done <<EOF
-$diff_output
+$filtered
 EOF
 
-  diff_output=$(git diff --name-only -- 'tests/e2e/**' 2>/dev/null || true)
+  diff_output=$(git diff -M --name-status 2>/dev/null || true)
+  filtered=$(printf '%s\n' "$diff_output" | extract_changed_paths)
   while IFS= read -r path; do
     add_changed_spec "$path"
   done <<EOF
-$diff_output
+$filtered
 EOF
 }
 
@@ -237,6 +250,26 @@ fi
 
 if [ "$MODE" = "list" ]; then
   exit 0
+fi
+
+# Wrap seeded runs in a single Firebase Emulator session. Seeded global-setup
+# files use firebase-admin pointed at localhost emulator hosts; without an
+# emulator they throw at verifyEmulatorRunning(). emulators:exec spawns the
+# emulator, runs the inner command, then tears it down. INSIDE_EMULATOR_EXEC
+# stops the wrap from recursing on the inner invocation.
+needs_emulator() {
+  local spec
+  for spec in "${CHANGED_SPECS[@]}"; do
+    if feature_for_spec "$spec" >/dev/null 2>&1; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+if [ -z "${INSIDE_EMULATOR_EXEC:-}" ] && needs_emulator; then
+  exec firebase emulators:exec --only auth,firestore,storage --project=demo-test \
+    "INSIDE_EMULATOR_EXEC=1 bash $(printf '%q' "${BASH_SOURCE[0]}")"
 fi
 
 for feature in "${FEATURE_ORDER[@]}"; do
