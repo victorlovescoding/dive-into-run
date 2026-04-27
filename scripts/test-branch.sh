@@ -40,35 +40,47 @@ add_changed_test() {
   CHANGED_TEST_COUNT=$((CHANGED_TEST_COUNT + 1))
 }
 
+# Extract destination paths from `git diff -M --name-status`, dropping pure
+# renames (R<sim>) so directory moves don't trigger the entire suite. Pathspec
+# is omitted from `git diff` because it disables rename pairing — paths are
+# filtered afterwards via is_branch_test_file.
+extract_changed_paths() {
+  awk -F'\t' '/^R[0-9]+\t/ { next } /^[AM]\t/ { print $2 }'
+}
+
 collect_changed_tests() {
   local diff_output
+  local filtered
   local path
 
-  if ! diff_output=$(git diff --name-only "$TEST_BASE_REF...HEAD" -- 'tests/unit/**' 'tests/integration/**' 'tests/_helpers/**' 2>&1); then
+  if ! diff_output=$(git diff -M --name-status "$TEST_BASE_REF...HEAD" 2>&1); then
     echo "Warning: could not diff $TEST_BASE_REF...HEAD for changed unit/integration tests." >&2
     if [ -n "$diff_output" ]; then
       echo "Warning: git diff output: $diff_output" >&2
     fi
     diff_output=""
   fi
+  filtered=$(printf '%s\n' "$diff_output" | extract_changed_paths)
   while IFS= read -r path; do
     add_changed_test "$path"
   done <<EOF
-$diff_output
+$filtered
 EOF
 
-  diff_output=$(git diff --name-only --cached -- 'tests/unit/**' 'tests/integration/**' 'tests/_helpers/**' 2>/dev/null || true)
+  diff_output=$(git diff -M --name-status --cached 2>/dev/null || true)
+  filtered=$(printf '%s\n' "$diff_output" | extract_changed_paths)
   while IFS= read -r path; do
     add_changed_test "$path"
   done <<EOF
-$diff_output
+$filtered
 EOF
 
-  diff_output=$(git diff --name-only -- 'tests/unit/**' 'tests/integration/**' 'tests/_helpers/**' 2>/dev/null || true)
+  diff_output=$(git diff -M --name-status 2>/dev/null || true)
+  filtered=$(printf '%s\n' "$diff_output" | extract_changed_paths)
   while IFS= read -r path; do
     add_changed_test "$path"
   done <<EOF
-$diff_output
+$filtered
 EOF
 }
 
