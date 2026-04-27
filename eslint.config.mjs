@@ -368,11 +368,7 @@ export default [
 
   // 18. 針對測試檔案的嚴格規範
   {
-    files: [
-      'tests/**/*.{js,jsx,mjs}',
-      '**/*.test.{js,jsx,mjs}',
-      '**/*.spec.{js,jsx,mjs}',
-    ],
+    files: ['tests/**/*.{js,jsx,mjs}', '**/*.test.{js,jsx,mjs}', '**/*.spec.{js,jsx,mjs}'],
     rules: {
       // 開啟依賴檢查，但允許測試檔案使用 devDependencies
       'import/no-extraneous-dependencies': ['error', { devDependencies: true }],

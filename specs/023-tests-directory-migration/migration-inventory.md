@@ -343,7 +343,7 @@ Renames（filename collision after flatten 至 `tests/e2e/`）: 0 spec 檔衝突
 - **T408 quality sanity PASS**：`npm run lint:changed`、`npm run spellcheck`、`git diff --check` 全過；spellcheck 掃 `352` files / `0` issues
 - **T409 commit 已完成但未 push**：`ed84e2c docs(tests): align active guides with top-level tests`；commit 只含 9 個 active docs，不含 `tasks.md` / `migration-inventory.md`
 - **pre-commit hook 全綠**：lint、type-check、depcruise、spellcheck、Vitest 全過；Vitest `121` files / `1108` tests passed
-- **`.claude/references/**` 這次 subagent 可寫**：Phase 0 遇過的 `.claude/**` deny 沒重現；若後續再遇到權限差異，先當成 session / sandbox 狀態差異排查，不要直接回推成路徑不可寫
+- **`.claude/references/**`這次 subagent 可寫**：Phase 0 遇過的`.claude/\*\*` deny 沒重現；若後續再遇到權限差異，先當成 session / sandbox 狀態差異排查，不要直接回推成路徑不可寫
 - **inventory note 若要入 commit 要另開 docs commit**：這段 `migration-inventory.md` 是 Phase 4A 後補 handoff，不在 active guides commit 內；下一 session 若要 commit，應獨立做 docs commit，避免混進 active guides commit
 
 ### Phase 4B P0 工具風險

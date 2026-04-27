@@ -494,18 +494,18 @@ test.describe.configure({ mode: 'serial' });
 
 ### 常用指令
 
-| 指令                                                          | 用途                                      |
-| ------------------------------------------------------------- | ----------------------------------------- |
+| 指令                                                          | 用途                                                          |
+| ------------------------------------------------------------- | ------------------------------------------------------------- |
 | `npm run test`                                                | 全專案 Vitest projects；server project 需要 Firebase Emulator |
-| `npm run test:browser`                                        | Browser/jsdom Vitest（unit + integration） |
-| `npm run test:server`                                         | Server Vitest（Firebase Auth/Firestore emulator wrapper） |
-| `npm run test:coverage`                                       | Coverage（Firebase Auth/Firestore emulator wrapper） |
-| `npm run test:branch`                                         | 僅當前 branch 的 Vitest                   |
-| `npx vitest run tests/unit/service/x.test.js`                 | 單檔 unit                                 |
-| `npx vitest run tests/integration/notifications/x.test.jsx`   | 單檔 integration                          |
-| `npm run test:e2e:branch`                                     | 當前 branch E2E（自動選 emulator 或一般） |
-| `E2E_FEATURE=<feature> npm run test:e2e:emulator`             | 指定 feature 跑 E2E + emulator            |
-| `firebase emulators:exec --only auth,firestore,storage "..."` | 手動控制 emulator 生命週期                |
+| `npm run test:browser`                                        | Browser/jsdom Vitest（unit + integration）                    |
+| `npm run test:server`                                         | Server Vitest（Firebase Auth/Firestore emulator wrapper）     |
+| `npm run test:coverage`                                       | Coverage（Firebase Auth/Firestore emulator wrapper）          |
+| `npm run test:branch`                                         | 僅當前 branch 的 Vitest                                       |
+| `npx vitest run tests/unit/service/x.test.js`                 | 單檔 unit                                                     |
+| `npx vitest run tests/integration/notifications/x.test.jsx`   | 單檔 integration                                              |
+| `npm run test:e2e:branch`                                     | 當前 branch E2E（自動選 emulator 或一般）                     |
+| `E2E_FEATURE=<feature> npm run test:e2e:emulator`             | 指定 feature 跑 E2E + emulator                                |
+| `firebase emulators:exec --only auth,firestore,storage "..."` | 手動控制 emulator 生命週期                                    |
 
 ### 關鍵檔案
 

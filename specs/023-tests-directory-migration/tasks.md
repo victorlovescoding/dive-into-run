@@ -4337,14 +4337,14 @@ git push origin 023-tests-directory-migration
 
 ### 主 Agent 角色邊界（Phase 4A Non-Negotiable）
 
-| 動作 | 主 Agent | 備註 |
-| ---- | -------- | ---- |
-| 派 engineer / reviewer subagent | ✅ | 唯一執行手段 |
-| `SendMessage` 把 reviewer feedback 交回 engineer | ✅ | reviewer FAIL 後也不能主 agent 自修 |
-| Read plan/tasks/inventory active docs | ✅ | 純讀允許 |
-| Edit / Write `tasks.md` 以外的 Phase 4A target docs | ❌ | 必須交 engineer subagent |
-| Bash 跑 `rg` / `npm` / `git add` / `git commit` | ❌ | verify 與 commit 也交 subagent |
-| Reviewer FAIL ≥ 3 次 | STOP | 回報 user，不啟用主 agent 例外 |
+| 動作                                                | 主 Agent | 備註                                |
+| --------------------------------------------------- | -------- | ----------------------------------- |
+| 派 engineer / reviewer subagent                     | ✅       | 唯一執行手段                        |
+| `SendMessage` 把 reviewer feedback 交回 engineer    | ✅       | reviewer FAIL 後也不能主 agent 自修 |
+| Read plan/tasks/inventory active docs               | ✅       | 純讀允許                            |
+| Edit / Write `tasks.md` 以外的 Phase 4A target docs | ❌       | 必須交 engineer subagent            |
+| Bash 跑 `rg` / `npm` / `git add` / `git commit`     | ❌       | verify 與 commit 也交 subagent      |
+| Reviewer FAIL ≥ 3 次                                | STOP     | 回報 user，不啟用主 agent 例外      |
 
 ### Engineer / Reviewer 配對規則
 
@@ -4448,6 +4448,7 @@ git status -s
 > 你是 Phase 4A Codex rules engineer。只改 `.codex/rules/testing-standards.md` 與 `.codex/rules/e2e-commands.md`。
 >
 > 目標：
+>
 > - 新增測試一律導向 `tests/unit/<layer>/`、`tests/integration/<domain>/`、`tests/e2e/`
 > - 共用 helper 一律導向 `tests/_helpers/`
 > - test results 一律導向 `tests/test-results/[unit|integration|e2e]/`
@@ -4485,6 +4486,7 @@ rg -n "tests/unit|tests/integration|tests/e2e|tests/_helpers|specs/g8-server-cov
 > 你是 Phase 4A Codex TDD skill engineer。只改 `.codex/skills/test-driven-development/SKILL.md`。
 >
 > 必改：
+>
 > - `TEST_PATH` 不再是 `specs/$BRANCH/tests`
 > - 新測試位置改成：
 >   - unit: `tests/unit/<layer>/<name>.test.js[x]`
@@ -4529,8 +4531,9 @@ rg -n "tests/unit/<layer>|tests/integration/<domain>|tests/e2e|tests/test-result
 > 你是 Phase 4A root onboarding engineer。只改 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md`。
 >
 > 必改：
+>
 > - `specs/` 描述改成 feature specs / planning artifacts，不再說 tests
-> - `tests/` 描述補上 unit/integration/e2e/_helpers
+> - `tests/` 描述補上 unit/integration/e2e/\_helpers
 > - E2E guide 觸發時機改 `tests/e2e/**`
 > - 單檔 Vitest / Playwright 範例改用 `tests/...`
 > - `GEMINI.md` 的 Playwright `testDir: ./specs` 改成 `./tests/e2e`
@@ -4570,6 +4573,7 @@ rg -n "tests/|tests/e2e|tests/_helpers|Feature specs|spec artifacts" AGENTS.md C
 > 你是 Phase 4A testing handbook engineer。只改 `.codex/references/testing-handbook.md` 與 `.claude/references/testing-handbook.md`。
 >
 > 必改：
+>
 > - helper path: `specs/test-utils/` → `tests/_helpers/`
 > - single-file Vitest command: `npx vitest run tests/unit/...` 或 `tests/integration/...`
 > - E2E examples: `tests/e2e/<file>.spec.js`
@@ -4607,6 +4611,7 @@ rg -n "tests/_helpers|tests/unit|tests/integration|tests/e2e|legacy source befor
 > 你是 Phase 4A Specify constitution engineer。只改 `.specify/memory/constitution.md`。
 >
 > 必改：
+>
 > - executable tests: `tests/{unit/<layer>,integration/<domain>,e2e,_helpers}/`
 > - spec artifacts: `specs/<feature>/`
 > - server Vitest exception: `specs/g8-server-coverage/tests/unit/**`
