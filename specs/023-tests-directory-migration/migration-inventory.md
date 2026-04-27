@@ -331,6 +331,21 @@ Renames（filename collision after flatten 至 `tests/e2e/`）: 0 spec 檔衝突
 - **g8 server tests 不是漏搬**：目前 tracked `specs/**/tests/**` 只剩 `specs/g8-server-coverage/tests/unit/{firebase-admin,firebase-profile-server}.test.js`。短期維持例外；若要收斂需另設 `tests/server/` 並同步改 `vitest.config.mjs` server include，不能直接丟進 browser `tests/unit/`
 - **`npm test` 語意仍容易誤導**：`package.json` 的 `test` 是裸 `vitest`；server project 需要 emulator env，正確入口是 `npm run test:server` / `npm run test:coverage`。後續若看到 server suite fail，先確認是不是用錯入口，不要誤判成 Phase 3 regression
 
+## Phase 4A Handoff Highlights
+
+> 2026-04-27 Phase 4A 收斂 active guides 完成；本節只記下一個 session 接手必讀的執行事實、驗證證據與踩坑。
+
+- **T401 bootstrap PASS**：啟動時 worktree clean；`specs/**/tests/**` tracked 檢查只剩 `specs/g8-server-coverage/tests/unit/{firebase-admin,firebase-profile-server}.test.js` 兩個 server project 例外，不是漏搬
+- **Phase 4A 全程 subagent-only**：主 agent 只 orchestrate；實作、review、verify、commit 都交給 subagent。後續追 Phase 4A 變更時，先看 subagent commit / review 紀錄，不要假設主 agent 手動改過 active docs
+- **Wave 1/2 實際修改範圍**：T402 Codex rules、T403 Codex TDD skill、T404 root onboarding、T405 handbooks、T406 constitution；commit 內容只應對應 active guide / handbook / constitution 收斂
+- **T405 第一輪 reviewer FAIL → 第二輪 PASS**：`.claude/references/testing-handbook.md` 多補一行 integration domain mapping，但 `.codex/references/testing-handbook.md` 未同步；修法是把同一行同步補到 Codex handbook。之後改 handbook 要同時檢查 Codex / Claude 兩份一致性
+- **T407 active-docs grep 踩坑**：第一次在 zsh 用多行 `$ACTIVE_DOCS` / `$BRANCH` regex 展開，造成 `rg` parse error；改用 `bash -lc` 跑同一組 read-only grep 後 PASS。後續要嘛用 `bash -lc`，要嘛避免 shell 展開變數與多行 regex 交互影響
+- **T408 quality sanity PASS**：`npm run lint:changed`、`npm run spellcheck`、`git diff --check` 全過；spellcheck 掃 `352` files / `0` issues
+- **T409 commit 已完成但未 push**：`ed84e2c docs(tests): align active guides with top-level tests`；commit 只含 9 個 active docs，不含 `tasks.md` / `migration-inventory.md`
+- **pre-commit hook 全綠**：lint、type-check、depcruise、spellcheck、Vitest 全過；Vitest `121` files / `1108` tests passed
+- **`.claude/references/**` 這次 subagent 可寫**：Phase 0 遇過的 `.claude/**` deny 沒重現；若後續再遇到權限差異，先當成 session / sandbox 狀態差異排查，不要直接回推成路徑不可寫
+- **inventory note 若要入 commit 要另開 docs commit**：這段 `migration-inventory.md` 是 Phase 4A 後補 handoff，不在 active guides commit 內；下一 session 若要 commit，應獨立做 docs commit，避免混進 active guides commit
+
 ### Phase 4B P0 工具風險
 
 - **`E2E_FEATURE` 目前只選 setup，不選 spec subset**：`playwright.emulator.config.mjs` 的 `testDir` 固定 `./tests/e2e`，`E2E_FEATURE=004-event-edit-delete` 只換 `globalSetup`，不會自動只跑 `event-edit-delete.spec.js`。Phase 4B P0 要嘛讓 feature selector 同時選 setup + spec，要嘛改成全域 seed 模式並停止宣稱 feature selector
