@@ -2717,3 +2717,529 @@ git diff --name-only
 - `tests/integration/profile/`、`tests/integration/weather/`、`tests/integration/posts/`、`tests/integration/toast/`、`tests/integration/strava/` 仍可能 fail；不要把剩餘 domain 混進 S6。
 - `handoff.md` 記錄 Session 6 evidence 與 S7 checklist。
 - 不 commit、不 stage、不 push。
+
+---
+
+# Session 7 Tasks — Phase 4.4 profile + Phase 4.5 weather（純測試重構）
+
+> **Source**: `plan.md` §5 Phase 4.4 / 4.5 + §8.2 S7 + Appendix A（profile 3 處 + weather 2 處）
+> **Goal**: 1.5–2 hr — 把 profile + weather domain 的 `testing-library/no-node-access` 5 unique sites 全清為 0；不影響 S5/S6 已綠檔；不動 S8 scope（posts / toast / strava）
+> **執行模式**：所有任務一律由 subagent 執行；主 agent 只做派遣、彙整、驗收回饋；reviewer FAIL 一律重派 Engineer。
+> **Branch**：`024-eslint-testing-lib-cleanup`（worktree 路徑：`/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`）
+> **承接狀態**：Session 6 已完成（commit `7e74893`）；Session 7 規劃 commit 將包含 `tasks.md` / `handoff.md` 與 commit bridge 的 `eslint.config.mjs`（commit 後恢復 `error`）。下一 session 接手前以 fresh `git status` 為準。
+> **本 session 開工前必讀**：
+>
+> - `handoff.md` §0、§2.32–§2.43（含 S7 audit 新坑）、§4 Session 6/7 規劃段、§5 S7 開工 checklist
+> - 本檔 T36–T41 全文（每個 task 的 Engineer prompt 要點 + Acceptance Criteria + Reviewer 驗收指令）
+
+---
+
+## Parallelism — 同時最多 4 個 subagents（2 Engineer + 2 Reviewer 配對；Engineer 改不同檔不撞）
+
+| 階段                       | 並行度   | 原因                                                                                                        |
+| -------------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| T36 preflight              | **1**    | Read-only Explore，不寫檔；獨占執行                                                                         |
+| T37–T40 Engineer 寫檔      | **2**    | 4 個 task 各動不同檔；保守限制 2 並行避免 dirty file list 混雜難 review。Wave 1 = T37+T38；Wave 2 = T39+T40 |
+| T37–T40 Reviewer 驗收      | **2**    | Reviewer 跑 ESLint + 單檔 vitest；不同檔不撞。Wave 1 完才接 Wave 2                                          |
+| Engineer + Reviewer 同時跑 | **不行** | 同一檔同時讀寫會撞 — 同 task 的 Engineer 要先 PASS 完整 acceptance check 後才派 Reviewer                    |
+| T41 closeout               | **1**    | 獨占；只允許改 `handoff.md`；跑 repo-wide ESLint / vitest 確認 S5/S6 不退、S8 不被誤改                      |
+
+> **總 subagent 數估算**（first-pass 全綠）：T36×1 read-only + T37–T40 各 2（Engineer + Reviewer）= 9 次 Agent 呼叫 + T41×1 = **10 次**。每多一輪 reviewer FAIL +2。
+
+---
+
+## Task 拆分
+
+### T36：Session 7 preflight audit（read-only, sequential gate）
+
+**Engineer prompt 要點**（read-only Explore subagent）：
+
+1. cd 到 worktree 根 (`/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`)。
+2. 執行 fresh audit（**不要用 `tee`** — 避免 pipefail 議題；用 raw command 即可）：
+   ```bash
+   npx eslint tests/integration/profile/ tests/integration/weather/ --format stylish
+   ```
+   並記下 raw count + unique line:col + 違規 source line（**逐字 quote 自檔案**，不要 paraphrase）。
+3. 對每處違規，Read 周邊 5–15 行 context，記錄：
+   - 所在 it / describe block name（逐字 string）
+   - 查詢 pattern（如 `baseElement.querySelector('[aria-hidden="true"]')`）
+   - 該斷言要驗的事（一句話）
+   - 是否有 `const { container | baseElement } = render(...)` 解構
+   - 對應 production component 路徑與目前 affordance（grep `data-testid` / `role` / `aria-label` / `aria-hidden`）
+4. 對每處決定建議修法（plan §5 Phase 4 A/B/C）：
+   - **B 優先**：用 `within(scope)` / `screen.getByRole` / `screen.getByLabelText` / 既有 `data-testid`
+   - **C fallback**：production component 加最小 `data-testid`（與 S6 unreadDot 同 pattern）
+   - **A 禁止**：本 session 不改 a11y 結構（不加 role / 換 element type）；若工程師判斷需要 A，必須 escalate
+5. 邊界檢查（不要 fix，只報結果）：
+   ```bash
+   npx eslint tests/integration/notifications/NotificationPanel.test.jsx tests/integration/notifications/notification-click.test.jsx tests/integration/notifications/scroll-to-comment.test.jsx tests/integration/navbar/NavbarDesktop.test.jsx tests/integration/navbar/NavbarMobile.test.jsx
+   # 預期 exit 0
+   npx eslint tests/integration/posts/ tests/integration/toast/ tests/integration/strava/
+   # 預期 exit 1，每檔 raw / unique no-node-access count 列出（S8 scope）
+   ```
+6. ESLint config 健全度：
+   ```bash
+   rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+   ```
+   兩條應仍是 `error`；若 `no-node-access` 是 `off`，**停下回報 main agent**（commit bridge 沒恢復）。
+7. 整份報告以結構化呈現：(A) per-violation table、(B) 邊界檢查、(C) ESLint config 健全度、(D) 風險/scope changer。
+
+**禁止行為**：
+
+- 不寫任何檔（read-only）
+- 不跑 vitest
+- 不下任何 `git` 寫入指令
+- 不 paraphrase / 修飾違規 source line（必須逐字 quote）
+
+**Acceptance Criteria（Reviewer 必驗 — T36 由 main agent 直接驗收，不另派 Reviewer subagent）**：
+
+1. 報告涵蓋全部 5 unique sites（profile 3 + weather 2）含 line:col 與 verbatim source line
+2. 每處違規有指定建議 A/B/C；任何指 A 的處有 escalation 標記
+3. S5/S6 邊界 (`NotificationPanel` / `notification-click` / `scroll-to-comment` / `NavbarDesktop` / `NavbarMobile`) 全 exit 0
+4. S8 scope (`posts` / `toast` / `strava`) raw/unique count 有列；總 unique site 約 7 處（Phase 4 §5 line 542 估算）
+5. ESLint config `no-node-access` 仍是 `error`；ignores array 仍是 3 entry（`tests/e2e/**` / `tests/_helpers/e2e-helpers.js` / `tests/_helpers/notifications/scroll-to-comment-mock.jsx`）
+
+**Failure recovery**：
+
+- 若報告 paraphrase 違規 line（hallucinate；§2.38）→ 重派 Explore subagent，明確要求 verbatim Read
+- 若 S5/S6 邊界出現新 violation → 標 escalation；先停 T37 開工，主 agent 與用戶討論
+- 若 ESLint config 不對 → 主 agent 自行修 commit bridge（恢復 `error`），再重派 T36
+
+---
+
+### T37：ProfileEventList sentinel cleanup（Wave 1 並行 with T38）
+
+**前置**：T36 PASS，且 audit 確認 sentinel 沒有任何 stable affordance（無 testid / role / label，僅 `aria-hidden="true"` + ref）。
+
+**Engineer prompt 要點**：
+
+1. cd 到 worktree 根 (`/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`)。
+2. 改兩個檔：
+   - **Production**: `src/ui/users/ProfileEventListScreen.jsx` line ~58 sentinel `<div>`：
+
+     ```jsx
+     // 改前
+     {
+       hasMore && <div ref={sentinelRef} className={styles.sentinel} aria-hidden="true" />;
+     }
+     // 改後
+     {
+       hasMore && (
+         <div
+           ref={sentinelRef}
+           className={styles.sentinel}
+           aria-hidden="true"
+           data-testid="profile-event-list-sentinel"
+         />
+       );
+     }
+     ```
+
+     - 只加 `data-testid`，**不**改 className / aria-hidden / ref / 條件 render 邏輯
+     - 這是 plan §5 修法 C（minimal data-testid，與 S6 NotificationItem unreadDot 同 pattern；§2.32 / §2.42）
+
+   - **Test**: `tests/integration/profile/ProfileEventList.test.jsx` 兩個 it block：
+     - `renders sentinel when hasMore is true`（line ~230–243）：
+       ```js
+       // 改前
+       const { baseElement } = render(<ProfileEventList uid={TEST_UID} />);
+       const sentinel = baseElement.querySelector('[aria-hidden="true"]');
+       expect(sentinel).toBeInTheDocument();
+       // 改後
+       render(<ProfileEventList uid={TEST_UID} />);
+       expect(screen.getByTestId('profile-event-list-sentinel')).toBeInTheDocument();
+       ```
+     - `does not render sentinel when hasMore is false`（line ~246–259）：
+       ```js
+       // 改前
+       const { baseElement } = render(<ProfileEventList uid={TEST_UID} />);
+       const sentinel = baseElement.querySelector('[aria-hidden="true"]');
+       expect(sentinel).not.toBeInTheDocument();
+       // 改後
+       render(<ProfileEventList uid={TEST_UID} />);
+       expect(screen.queryByTestId('profile-event-list-sentinel')).not.toBeInTheDocument();
+       ```
+     - **「在場」用 `getByTestId`（找不到 throw）；「不在場」用 `queryByTestId`（找不到回 null）**，不能寫反（§2.32）
+     - 移除 `const { baseElement } = render(...)` 解構（§2.34）
+     - 不改其他 it block；不改 import；不改 mock 設定
+
+3. 跑：
+   ```bash
+   npx eslint src/ui/users/ProfileEventListScreen.jsx tests/integration/profile/ProfileEventList.test.jsx --format stylish
+   npx vitest run tests/integration/profile/ProfileEventList.test.jsx
+   ```
+   兩者皆需 exit 0；vitest 該檔全 PASS（含未動的其他 it block）。
+4. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不改 className / aria-hidden / ref / sentinel 條件邏輯
+- 不改 `ProfileEventListScreen` 其他 element / structure
+- 不改 test 檔其他 it block / mock / import 排序
+- 不在 ignores 加 helper 路徑（不需要）
+- 不關 ESLint rule
+- 不 git add / commit / push
+- 不動 `tests/integration/profile/ProfileHeader.test.jsx` 或 weather domain 任何檔
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動兩檔：`src/ui/users/ProfileEventListScreen.jsx`（加 `data-testid` 一行屬性）+ `tests/integration/profile/ProfileEventList.test.jsx`（兩 it block）
+2. `ProfileEventListScreen.jsx` sentinel `<div>` 維持 `ref` / `className` / `aria-hidden="true"`，多了 `data-testid="profile-event-list-sentinel"`
+3. Test 檔兩 it block：「在場」用 `screen.getByTestId(...)`、「不在場」用 `screen.queryByTestId(...)`
+4. Test 檔 `const { baseElement } = render(...)` 解構在這兩 it 已移除（其他 it 不必動）
+5. `npx eslint src/ui/users/ProfileEventListScreen.jsx tests/integration/profile/ProfileEventList.test.jsx` exit 0；該 test 檔 `testing-library/no-node-access` = 0
+6. `npx vitest run tests/integration/profile/ProfileEventList.test.jsx` 全 PASS（測試件數與 S6 audit 一致，沒有少跑或新增）
+7. **沒有**動 ProfileHeader.test.jsx / favorites.test.jsx / weather-page.test.jsx / 其他 src
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff src/ui/users/ProfileEventListScreen.jsx tests/integration/profile/ProfileEventList.test.jsx
+rg -n "data-testid|aria-hidden|className=\\{styles\\.sentinel\\}" src/ui/users/ProfileEventListScreen.jsx
+rg -n "baseElement|getByTestId|queryByTestId|profile-event-list-sentinel" tests/integration/profile/ProfileEventList.test.jsx
+npx eslint src/ui/users/ProfileEventListScreen.jsx tests/integration/profile/ProfileEventList.test.jsx --format stylish 2>&1 | tee /tmp/s7-t37-review.txt
+rg -n "testing-library/no-node-access" /tmp/s7-t37-review.txt
+npx vitest run tests/integration/profile/ProfileEventList.test.jsx
+```
+
+**Failure recovery**：
+
+- 仍有 `no-node-access`（query 寫錯 / 解構未移除）→ 重派 Engineer 修
+- 「不在場」用 `getByTestId` 會 throw → Reviewer FAIL，重派 Engineer 改 `queryByTestId`
+- Vitest 該檔 fail → 回報 failing test name + error，重派 Engineer
+- Diff 動到非 ProfileEventList 範圍 → 重派 Engineer 限縮（revert 越界改動，重做精確 diff）
+- 若 Engineer 主張「不應加 testid，純測試重構」並 escalate → 主 agent 與用戶討論：(a) 接受加 testid（推薦，§2.42）；(b) 改測 IntersectionObserver 行為（高成本，須拆 task）
+
+---
+
+### T38：ProfileHeader XSS test scope cleanup（Wave 1 並行 with T37）
+
+**前置**：T36 PASS。
+
+**Engineer prompt 要點**：
+
+1. cd 到 worktree 根。
+2. 只改 `tests/integration/profile/ProfileHeader.test.jsx` line ~170–184 的 `escapes <script> in bio content to prevent XSS` it block：
+   - **Production component 已有 affordance**：`src/app/users/[uid]/ProfileHeader.jsx:79` `<p data-testid="profile-bio">`，**不需動 component**。
+   - 修法（B — 用既有 testid scope，不再做 global document scan）：
+
+     ```js
+     // 改前（line 178–184）
+     render(<ProfileHeader user={profile} />);
+
+     // Assert — 原始字串應該被當文字 render，而不是 script tag
+     expect(screen.getByText(maliciousBio)).toBeInTheDocument();
+     // 確認 jsdom 不會真的產生 script element
+     expect(document.querySelectorAll('script').length).toBe(0);
+
+     // 改後
+     render(<ProfileHeader user={profile} />);
+
+     // Assert — 原始字串應該被當文字 render，而不是 script tag
+     const bio = screen.getByTestId('profile-bio');
+     expect(bio).toHaveTextContent(maliciousBio);
+     // 確認 React escape 後 bio 元素本身是 <p>，沒有真的產生 script element
+     expect(bio.tagName).toBe('P');
+     ```
+
+   - **`expect(bio).toHaveTextContent(maliciousBio)`**: jest-dom matcher，斷言 element 的可見文字 = `maliciousBio` 原始字串（不是被 parse 成 element）— 證明 React escape 成功。
+   - **`expect(bio.tagName).toBe('P')`**: 補強斷言，確認 bio 自己仍是 `<p>` 而非被 hijack 成其他 tag。`tagName` 是 Element property、非 DOM navigation API（`querySelector` / `parentElement` / `children` 才是 testing-library `no-node-access` 抓的對象；驗證請見 [v7 docs](https://github.com/testing-library/eslint-plugin-testing-library/blob/main/docs/rules/no-node-access.md)）。
+   - 安全測試論述：line 181 (`getByText(maliciousBio)`) + 改後 (`toHaveTextContent` + `tagName === 'P'`) 已等價驗證 React escape：若 React 沒 escape，`<script>alert("xss")</script>Hi there` 會被 parse 成 `<script>` element + 文字 "Hi there"，`getByText(maliciousBio)` 找不到完整原始字串、`toHaveTextContent(maliciousBio)` 也會 fail。
+
+3. 不改 import / mock / fixtures / `createProfile` helper。
+4. 跑：
+   ```bash
+   npx eslint tests/integration/profile/ProfileHeader.test.jsx --format stylish
+   npx vitest run tests/integration/profile/ProfileHeader.test.jsx
+   ```
+5. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不改 `src/app/users/[uid]/ProfileHeader.jsx`（component 已有所需 affordance）
+- 不刪 it block / 改 testname
+- 不用 `document.querySelectorAll` / `document.querySelector` / `bio.children` / `bio.querySelectorAll` 任何 DOM navigation
+- 不加 wrapper container 包 `render`（過度工程，現有 testid 已足夠）
+- 不關 ESLint rule
+- 不 git add / commit / push
+- 不動 ProfileEventList / favorites / weather-page
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動 `tests/integration/profile/ProfileHeader.test.jsx`
+2. `escapes <script> in bio content to prevent XSS` it block 已移除 `document.querySelectorAll('script')` 整行
+3. 改後同 it block 仍有 ≥ 2 個有效斷言（`toHaveTextContent(maliciousBio)` + `tagName === 'P'` 或等價組合）來驗證 React escape
+4. 沒有 `document.queryX` / `bio.children` / `bio.querySelectorX` / `bio.parentElement` 等 DOM navigation
+5. `npx eslint tests/integration/profile/ProfileHeader.test.jsx` exit 0；該檔 `testing-library/no-node-access` = 0
+6. `npx vitest run tests/integration/profile/ProfileHeader.test.jsx` 全 PASS（測試件數不變）
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff tests/integration/profile/ProfileHeader.test.jsx
+rg -n "querySelector|querySelectorAll|parentElement|children\\b|document\\." tests/integration/profile/ProfileHeader.test.jsx
+rg -n "toHaveTextContent|getByTestId|tagName|maliciousBio" tests/integration/profile/ProfileHeader.test.jsx
+npx eslint tests/integration/profile/ProfileHeader.test.jsx --format stylish 2>&1 | tee /tmp/s7-t38-review.txt
+rg -n "testing-library/no-node-access" /tmp/s7-t38-review.txt
+npx vitest run tests/integration/profile/ProfileHeader.test.jsx
+```
+
+**Failure recovery**：
+
+- 仍有 `no-node-access` → 重派 Engineer 修
+- 安全斷言被弱化（如只剩 `getByText` 而沒驗 React escape）→ Reviewer FAIL，重派 Engineer 補等價斷言
+- 動 `ProfileHeader.jsx` production code → Reviewer FAIL，重派 Engineer revert
+- Vitest 該 it fail（`toHaveTextContent` matcher 不 match） → 主 agent 與 Engineer 確認原始 string；可能需要 trim or normalise，但不可改回 `document.querySelectorAll`
+
+---
+
+### T39：favorites chip cleanup（Wave 2 並行 with T40）
+
+**前置**：T36 PASS（T37 / T38 不必先完成；T39 改檔不重疊）。
+
+**Engineer prompt 要點**：
+
+1. cd 到 worktree 根。
+2. 只改 `tests/integration/weather/favorites.test.jsx` line ~487–510 的 `should remove chip and call removeFavorite on click` it block：
+   - **Production affordance**：`src/components/weather/FavoritesBar.jsx` 已有 chip `<div role="listitem">` + remove button `aria-label="移除${name}收藏"`；**不需動 component**。
+   - 修法（B — 用 `screen.getByRole('button', { name: /移除.../ })` 直接拿 remove button，跳過 chip container 查詢）：
+     ```js
+     // 改前（line 499–504）
+     const chip = await screen.findByText(/板橋/);
+     const chipContainer =
+       chip.closest('[class*="Chip"]') || chip.closest('[class*="chip"]') || chip.parentElement;
+     const removeBtn = within(/** @type {HTMLElement} */ (chipContainer)).getByRole('button', {
+       name: /移除/i,
+     });
+     // 改後
+     // chip 文字仍可 await 讓 chip render 完成，再用語意 query 找 remove button
+     await screen.findByText(/板橋/);
+     const removeBtn = await screen.findByRole('button', { name: /移除.*板橋.*收藏/ });
+     ```
+   - 確認 fixture 中 `fav-2` 的 `formatLocationNameShort` 結果（看 mockFavorites + 實際 button label）：button aria-label 是 `移除${name}收藏`；regex `/移除.*板橋.*收藏/` 能 match 即可。若實際 label 不含「板橋」字樣（例如只剩縣名），engineer 改 regex 對齊實際 label，**不要**降級回 `closest()` chain。
+   - 移除不再需要的 import：若改後不再用 `within`，從 `@testing-library/react` import 移除（檢查檔內其他位置是否仍用 `within`，若無才移除；若有保留）
+3. 不改其他 it block / mock / fixtures。
+4. 跑：
+   ```bash
+   npx eslint tests/integration/weather/favorites.test.jsx --format stylish
+   npx vitest run tests/integration/weather/favorites.test.jsx
+   ```
+5. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不動 `src/components/weather/FavoritesBar.jsx`
+- 不用 `closest()` / `parentElement` / `querySelector` 任何形式
+- 不加 `data-testid`（既有 `aria-label` 已足夠 — B 修法優先）
+- 不關 ESLint rule
+- 不 git add / commit / push
+- 不動 weather-page / profile / S5/S6/S8 任何檔
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動 `tests/integration/weather/favorites.test.jsx`
+2. `should remove chip and call removeFavorite on click` it block 已移除 `chip.closest(...)` chain 與 `chip.parentElement`
+3. removeBtn 透過 `screen.findByRole('button', { name: /.../ })` 取得；regex 能 match 實際 fixture 下 chip 對應 button 的 aria-label
+4. 沒有 `chip.closest` / `chip.parentElement` / `container.querySelector` / `chipContainer` 變數
+5. `within` import 處理一致：若檔內其他 it block 仍用 `within`，保留 import；若已無使用，從 import 移除
+6. `npx eslint tests/integration/weather/favorites.test.jsx` exit 0；該檔 `testing-library/no-node-access` = 0
+7. `npx vitest run tests/integration/weather/favorites.test.jsx` 全 PASS（測試件數不變，含 `should remove chip` 仍 PASS）
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff tests/integration/weather/favorites.test.jsx
+rg -n "closest\\(|parentElement|chipContainer|querySelector" tests/integration/weather/favorites.test.jsx
+rg -n "findByRole|移除|within\\b" tests/integration/weather/favorites.test.jsx
+npx eslint tests/integration/weather/favorites.test.jsx --format stylish 2>&1 | tee /tmp/s7-t39-review.txt
+rg -n "testing-library/no-node-access" /tmp/s7-t39-review.txt
+npx vitest run tests/integration/weather/favorites.test.jsx
+```
+
+**Failure recovery**：
+
+- 仍有 `no-node-access` → 重派 Engineer 修
+- vitest fail（regex 不 match）→ Engineer 用實際 fixture 觀察 button aria-label，調整 regex，**不要**降級用 `closest()`
+- Diff 動到非 favorites.test.jsx → 重派 Engineer 限縮
+- Engineer 想用 `data-testid` → Reviewer FAIL，要求改 B（`getByRole` + aria-label）
+
+---
+
+### T40：weather-page skeleton cleanup（Wave 2 並行 with T39）
+
+**前置**：T36 PASS（與 T39 不撞檔）。
+
+**Engineer prompt 要點**：
+
+1. cd 到 worktree 根。
+2. 只改 `tests/integration/weather/weather-page.test.jsx` line ~393–397 的 `renders loading skeleton when runtime state is loading` it block 內的 line 396：
+   - **Production affordance**：`src/components/weather/WeatherCardSkeleton.jsx:9` `<div className={styles.weatherCard} aria-busy="true" aria-label="天氣資料載入中">`；**不需動 component**。
+   - 修法（B — 用既有 `aria-label`）：
+     ```js
+     // 改前（line 396）
+     expect(document.querySelector('[class*="skeleton"]')).toBeTruthy();
+     // 改後
+     expect(screen.getByLabelText('天氣資料載入中')).toBeInTheDocument();
+     ```
+   - 不改其他斷言 / it block；不改 mock / fixtures。
+3. 確認 import：`screen` / `getByLabelText` 透過 `import { screen } from '@testing-library/react'` 已存在（檔內其他 it block 預期已用 `screen`）。
+4. 跑：
+   ```bash
+   npx eslint tests/integration/weather/weather-page.test.jsx --format stylish
+   npx vitest run tests/integration/weather/weather-page.test.jsx
+   ```
+5. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不動 `src/components/weather/WeatherCardSkeleton.jsx` 或其他 production code
+- 不改其他 it block 斷言
+- 不用 `document.queryX` / `container.queryX` / `closest()` / `parentElement`
+- 不加新 testid（既有 aria-label 已足夠）
+- 不關 ESLint rule
+- 不 git add / commit / push
+- 不動 favorites.test.jsx / profile domain / S5/S6/S8 任何檔
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動 `tests/integration/weather/weather-page.test.jsx` 一行（line 396 替換）
+2. 改後使用 `screen.getByLabelText('天氣資料載入中')` 或等價 `screen.getByLabelText(/天氣資料載入中/)` regex
+3. 沒有 `document.querySelector` / `document.querySelectorAll` 在該 it block
+4. `npx eslint tests/integration/weather/weather-page.test.jsx` exit 0；該檔 `testing-library/no-node-access` = 0
+5. `npx vitest run tests/integration/weather/weather-page.test.jsx` 全 PASS（測試件數不變）
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff tests/integration/weather/weather-page.test.jsx
+rg -n "getByLabelText|querySelector|skeleton|天氣資料載入中" tests/integration/weather/weather-page.test.jsx
+npx eslint tests/integration/weather/weather-page.test.jsx --format stylish 2>&1 | tee /tmp/s7-t40-review.txt
+rg -n "testing-library/no-node-access" /tmp/s7-t40-review.txt
+npx vitest run tests/integration/weather/weather-page.test.jsx
+```
+
+**Failure recovery**：
+
+- 仍有 `no-node-access` → 重派 Engineer 修（多半是改錯行）
+- vitest fail（label not found）→ Engineer 確認實際 jsdom 下 skeleton render 是否真的有 `aria-label`；若 component 有條件 render 路徑，調整 fixture / regex；不可降級回 `document.querySelector`
+- Diff 動到非 line 396 範圍 → 重派 Engineer 限縮
+
+---
+
+### T41：Session 7 closeout + handoff update（獨占）
+
+**前置**：T37–T40 reviewer 全 PASS。
+
+**Engineer prompt 要點**：
+
+1. cd 到 worktree 根。
+2. 確認 working tree：
+   ```bash
+   git status --short
+   git diff --name-only
+   ```
+   預期 dirty：`eslint.config.mjs`（commit bridge 後恢復 `error` 留下的修改）+ T37/T38/T39/T40 寫過的 test 檔 + `src/ui/users/ProfileEventListScreen.jsx`（T37 加 testid）+ `specs/024-eslint-testing-lib-cleanup/handoff.md`。
+3. 跑 fresh verifications：
+   ```bash
+   # S7 target 全綠
+   npx eslint tests/integration/profile/ tests/integration/weather/ --format stylish
+   npx vitest run tests/integration/profile/ProfileEventList.test.jsx tests/integration/profile/ProfileHeader.test.jsx tests/integration/weather/favorites.test.jsx tests/integration/weather/weather-page.test.jsx
+   # ESLint config 仍 error
+   rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+   # S5/S6 邊界仍 0 errors
+   npx eslint tests/integration/notifications/ tests/integration/navbar/
+   # repo-wide 殘留 = S8 scope
+   npx eslint src specs tests > /tmp/s7-t41-repo-wide.txt 2>&1
+   echo "exit=$?"
+   rg -c "testing-library/no-node-access" /tmp/s7-t41-repo-wide.txt
+   ```
+4. 更新 `specs/024-eslint-testing-lib-cleanup/handoff.md`：
+   - **§0 入門 30 秒**：Session 7 完成；下一 session 接 S8（plan §8.2 S8 — `tests/integration/posts/`、`tests/integration/toast/`、`tests/integration/strava/`，repo-wide audit 估計 7 unique sites / 12 raw messages）。Repo lint state 改寫實際殘留分布。
+   - **§2 坑清單**：append S7 實際踩坑（如：sentinel 無 affordance 必須加 testid；ProfileHeader XSS 測試論述；`bio.tagName` 不算 DOM navigation；favorites 用 `getByRole('button', { name: /移除.../ })` 跳過 chip container 查詢；其他 surprise）
+   - **§4 Session 完成紀錄**：新增 `Session 7（profile + weather）— 完成` 段，記錄：
+     - T36–T41 各 task 結果（raw / unique 收斂數字、Reviewer PASS evidence）
+     - 4 個 target 檔 ESLint exit code、vitest pass 件數
+     - 動到的 production component（只有 `src/ui/users/ProfileEventListScreen.jsx` 加 testid）
+     - profile + weather domain `no-node-access` 全清確認
+     - S8 剩餘範圍（明確列 domain + 實測 unique sites）
+   - **§5 下個 session 開工 checklist**：改成 S8 checklist：scope = `tests/integration/posts/`（PostDetail / PostFeed）+ `tests/integration/toast/`（crud-toast / toast-container）+ `tests/integration/strava/`（RunsRouteMap），plan §8.2 S8「🧺 小量收尾雜項」。
+5. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不改 `eslint.config.mjs` / `src/**` / `tests/**`（T37 已加 testid，T41 不再動 production；commit bridge 由主 agent 處理）
+- 不為了 repo-wide lint 全綠去修 S8 domain
+- 不加 eslint disable / 關 rule / 加 broad ignores glob
+- 不 git add / commit / push
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. `npx eslint tests/integration/profile/ tests/integration/weather/` exit 0
+2. `npx vitest run` 4 個 target 檔全 PASS（測試件數記錄到 handoff）
+3. `npx eslint tests/integration/notifications/ tests/integration/navbar/` exit 0（S5/S6 不退）
+4. `eslint.config.mjs` line 399/400 仍是 `prefer-user-event: error` / `no-node-access: error`
+5. Repo-wide lint 殘留全部來自 S8 scope（`posts` / `toast` / `strava`）；profile / weather / notifications / navbar 全 0
+6. `handoff.md` §0 / §2 / §4 / §5 已按上述要求更新；§4 Session 7 段含 raw / unique / PASS evidence
+7. Working tree 未 staged、未 commit、未 push
+
+**Reviewer 驗收指令**：
+
+```bash
+npx eslint tests/integration/profile/ tests/integration/weather/ --format stylish
+npx vitest run tests/integration/profile/ProfileEventList.test.jsx tests/integration/profile/ProfileHeader.test.jsx tests/integration/weather/favorites.test.jsx tests/integration/weather/weather-page.test.jsx
+npx eslint tests/integration/notifications/ tests/integration/navbar/ --format stylish
+rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+npx eslint src specs tests > /tmp/s7-t41-review-repo-wide.txt 2>&1 || true
+rg -c "testing-library/no-node-access" /tmp/s7-t41-review-repo-wide.txt
+sed -n '/^## 0\./,/^## 1\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+sed -n '/Session 7/,/^## 5\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+sed -n '/^## 5\./,/^## 6\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+git status --short
+git diff --name-only
+```
+
+**Failure recovery**：
+
+- S7 target lint 仍 fail → Reviewer 回報 rule + line:col；主 agent 重派對應 T37/T38/T39/T40 Engineer
+- Vitest fail → 回報 failing command / test；重派對應 Engineer
+- S5/S6 邊界 regression → 嚴重，主 agent 立刻停 closeout、用 git diff 找哪 task 的改動越界，重派該 Engineer revert + redo
+- Repo-wide lint 殘留出現非 S8 domain → 重派對應 task Engineer 修
+- handoff 寫成 repo-wide 全綠 / S8 已清 → 重派 T41 Engineer 修文件
+- 發現 `eslint.config.mjs` rule level 被 task Engineer 改 → Reviewer FAIL；主 agent 不自行修，重派該 task Engineer revert
+
+---
+
+## Session 7 結束狀態（DOD）
+
+- `testing-library/no-node-access`: 維持 `error`（line 400）
+- `testing-library/prefer-user-event`: 維持 `error`（line 399）
+- `tests/integration/profile/ProfileEventList.test.jsx`: 0 `testing-library/no-node-access` errors
+- `tests/integration/profile/ProfileHeader.test.jsx`: 0 `testing-library/no-node-access` errors
+- `tests/integration/weather/favorites.test.jsx`: 0 `testing-library/no-node-access` errors
+- `tests/integration/weather/weather-page.test.jsx`: 0 `testing-library/no-node-access` errors
+- 必要 component affordance 僅限 `src/ui/users/ProfileEventListScreen.jsx`（sentinel `<div>` 加 `data-testid="profile-event-list-sentinel"`）
+- 整個 profile + weather domain `no-node-access` 全清
+- `tests/integration/posts/`、`tests/integration/toast/`、`tests/integration/strava/` 仍可能 fail（S8 scope）；不要把 S8 domain 混進 S7
+- `eslint.config.mjs` `ignores` array 維持 3 entries（不加新 helper、不加 broad glob）
+- `handoff.md` 記錄 Session 7 evidence 與 S8 開工 checklist
+- 不 commit、不 stage、不 push（commit 由主 agent 在規劃 commit / 收尾 commit 統一處理）
+
+---
+
+## 主 agent 派遣 SOP（給未來 session 參考）
+
+```text
+0. 主 agent 自行 commit bridge：暫關 'testing-library/no-node-access' error → off，commit 規劃文件，立刻恢復 error
+1. 派 T36 Explore（read-only）→ 主 agent 直接驗收（不另派 reviewer）
+2. Wave 1 並行：T37 Engineer + T38 Engineer 同時派；各自寫完回報後，並行派 T37 Reviewer + T38 Reviewer
+3. Wave 1 PASS 後，Wave 2 並行：T39 Engineer + T40 Engineer；同上接 reviewer
+4. T37–T40 全 PASS 後，T41 closeout + handoff update（獨占）；T41 也派 Reviewer 驗收
+5. 全綠 → main agent 在規劃 commit 之外不自行 commit；下個 session 接手時 working tree 仍 dirty（除主 agent 規劃 commit 帶走的部分）
+6. 任一 reviewer FAIL → 重派該 task Engineer 修；不主 agent 自己改檔
+```
+
+> 主 agent **不**自己跑 `npx eslint ... --fix`、不自己改 test / component / config（除 commit bridge 一行）。所有有副作用的指令都派 subagent 跑。

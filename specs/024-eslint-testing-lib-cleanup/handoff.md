@@ -7,22 +7,23 @@
 
 ## 0. 入門 30 秒（最新狀態給下個接手者讀）
 
-| Field           | Value                                                                                                                                                                                                                                                                                                                                                          |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Branch          | `024-eslint-testing-lib-cleanup`                                                                                                                                                                                                                                                                                                                               |
-| Worktree path   | `/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`                                                                                                                                                                                                                                                                                        |
-| 目前 Session    | **Session 6 完成（T30-T35）；下一 session 接 S7（plan §8.2 S7 — `tests/integration/profile/` 3 處 + `tests/integration/weather/` 2 處 純測試重構）**                                                                                                                                                                                                           |
-| Working tree    | Session 6 結束時 `eslint.config.mjs` 與 `tests/integration/notifications/NotificationPaginationStateful.test.jsx` 仍 dirty（未 commit，與前 sessions 同 pattern）；新增檔 `tests/_helpers/notifications/scroll-to-comment-mock.jsx` untracked。`testing-library/no-node-access` 維持 line 400 `error`。下一 session 接手仍以 fresh `git status --short` 為準。 |
-| ESLint plugin   | 已裝 (eslint-plugin-testing-library@^7.16.2)                                                                                                                                                                                                                                                                                                                   |
-| Sensors         | `testing-library/prefer-user-event` 維持 `error`（line 399）；`testing-library/no-node-access` 維持 `error`（line 400）。S6 T34 在 §17.5 `ignores` array 加了 `tests/_helpers/notifications/scroll-to-comment-mock.jsx` 一個精確路徑（line drift：原 line 396 → 400，因 ignores 多一行）。                                                                     |
-| Repo lint state | S6 三 target 檔（NotificationPanel / notification-click / scroll-to-comment）lint 全綠；notifications domain 10/10 檔 `no-node-access` 全清。Repo-wide `npx eslint src specs tests` 仍 24 problems (`no-node-access`)，分布：profile 2 / weather 2 / posts 2 / toast 2 / strava 1（S7-S8 scope）。                                                             |
-| Commit 計畫     | Session 6 execution（T30-T35）全部不 commit / push（與前 sessions 同 pattern）。下一 session 接手前以 fresh `git status` 為準。                                                                                                                                                                                                                                |
+| Field           | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Branch          | `024-eslint-testing-lib-cleanup`                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Worktree path   | `/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`                                                                                                                                                                                                                                                                                                                                                                                                               |
+| 目前 Session    | **Session 7 規劃完成（T36–T41 spec 寫進 tasks.md）；下一 session 接 S7 實作（profile + weather 5 unique sites）。S8 scope（posts / toast / strava，repo-wide audit 7 unique sites / 12 raw messages）保留給後續。**                                                                                                                                                                                                                                                                   |
+| Working tree    | Session 7 規劃 commit 完成後，主 agent 把 `eslint.config.mjs:400` `'testing-library/no-node-access'` 從 commit bridge 的 `off` 恢復成 `error`，留下 `M eslint.config.mjs` 一個 dirty 檔給下個 session 接手。下一 session 開工前先 fresh `git status --short` 確認。                                                                                                                                                                                                                   |
+| ESLint plugin   | 已裝 (eslint-plugin-testing-library@^7.16.2)                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Sensors         | `testing-library/prefer-user-event` 維持 `error`（line 399）；`testing-library/no-node-access` 維持 `error`（line 400，commit bridge 後恢復）。S6 T34 在 §17.5 `ignores` array 加了 `tests/_helpers/notifications/scroll-to-comment-mock.jsx` 一個精確路徑（line drift：原 line 396 → 400，因 ignores 多一行）。                                                                                                                                                                      |
+| Repo lint state | S5/S6 全綠（navbar 5 檔 + notifications 10 檔）。Repo-wide `npx eslint src specs tests` 仍 ~21 problems (`no-node-access`)，全分布在 S7-S8 scope：profile 3 unique（ProfileEventList line 241/257 + ProfileHeader line 183）、weather 2 unique（favorites line 501 三 col chain 算 1 unique + weather-page line 396）、posts 2 unique（PostDetail + PostFeed）、toast 3 unique（crud-toast 2 + toast-container 1）、strava 2 unique（RunsRouteMap）。S7 清 5 unique，S8 收 7 unique。 |
+| Commit 計畫     | Session 7 規劃 commit 已完成（含 `tasks.md` / `handoff.md` / `cspell.json` / `eslint.config.mjs` commit bridge）。Session 7 execution（T36–T41）全部不 commit / push，與前 sessions 同 pattern。                                                                                                                                                                                                                                                                                      |
 
 接手前必讀：
 
-1. 本檔 §2 **坑清單**（特別是 §2.28–§2.38：S5 / S6 line drift / boundary / helper ignore；§2.38 = T30 preflight subagent narrative hallucination）
-2. 本檔 §4 「Session 5（NavbarDesktop + NotificationBell SVG）— 完成」+「Session 6（NotificationPanel + notification-click + scroll-to-comment 收尾）— 完成」兩段
-3. 本檔 §5 S7 開工 checklist；S7 scope = `tests/integration/profile/`（3 處）+ `tests/integration/weather/`（2 處），plan §8.2 S7「純測試重構」
+1. 本檔 §2 **坑清單**（特別是 §2.28–§2.43：S5 / S6 line drift / boundary / helper ignore；§2.38 = subagent narrative hallucination；§2.39–§2.43 = S7 audit 新觀察）
+2. 本檔 §4 「Session 6（NotificationPanel + notification-click + scroll-to-comment 收尾）— 完成」與「Session 7 規劃 — 完成」兩段
+3. 本檔 §5 S7 開工 checklist；S7 scope = `tests/integration/profile/`（3 unique sites）+ `tests/integration/weather/`（2 unique sites），plan §8.2 S7「純測試重構」
+4. `tasks.md` Session 7 段（T36–T41）— 每 task 含 Engineer prompt 要點 + Acceptance Criteria + Reviewer 驗收指令；T36 read-only preflight、T37–T40 兩 wave 並行（Wave 1 = T37+T38；Wave 2 = T39+T40）、T41 closeout 獨占
 
 ---
 
@@ -387,6 +388,47 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 - **原因**：subagent 在 lint output 是定量真相、code excerpt 是 paraphrased context；narrative 字段（test name / 描述）是 LLM 從上下文 reconstruct，容易混淆相鄰 it block。
 - **對策**：closeout 時以 `npx eslint <files>` 真實 output 與 `rg` line:col 為準；subagent narrative 只當 hint，不可直接 quote 進 handoff / commit message。下次 preflight 也派只讀 subagent 即可，但要求 attach raw lint output 與 code excerpt（不只 reformatted summary）。
 
+### 2.39 ⚠️ 坑 39：S7 ProfileEventList sentinel 沒有 testid / role / label，B 修法不可行 → 必須走 C（加 testid）
+
+- **發生在**：Session 7 規劃 audit。
+- **已驗事實**：`src/ui/users/ProfileEventListScreen.jsx:58` sentinel `<div ref={sentinelRef} className={styles.sentinel} aria-hidden="true" />` 是 IntersectionObserver target，純視覺/行為元素，沒有 `data-testid` / `role` / `aria-label`；parent `<section aria-label="主辦活動列表">` 雖然可以 within scope，但 sentinel 本身沒語意身份能讓 `getByRole` 抓到。
+- **plan §8.2 S7 字眼**：「純測試重構 — sentinel / class-based query → testid 或 within，**不動 component**」。但 audit 顯示「不動 component」與「testid」互斥 — 既有 component 沒 testid，要用 testid 就得加。
+- **決策**：S7 為 sentinel `<div>` 加 `data-testid="profile-event-list-sentinel"`（與 S6 NotificationItem unreadDot 加 testid 同 pattern；§2.32）。這仍是 plan §5 修法 C（minimal data-testid），plan §8.2「不動 component」字眼視為 _偏好_ 而非 _硬性禁令_。
+- **對策**：T37 spec 要求只加 `data-testid` 一行屬性，不改 className / aria-hidden / ref / 條件 render 邏輯。Reviewer 要驗 minimal change。若未來類似 case（純視覺/行為元素需 testable），照同 pattern 處理。
+
+### 2.40 ⚠️ 坑 40：ProfileHeader XSS 測試 line 183 是冗餘，line 181 已足夠驗 React escape
+
+- **發生在**：Session 7 規劃 audit。
+- **已驗事實**：`tests/integration/profile/ProfileHeader.test.jsx:171` `escapes <script> in bio content to prevent XSS` it block 有兩個斷言：
+  - line 181: `expect(screen.getByText(maliciousBio)).toBeInTheDocument();`
+  - line 183: `expect(document.querySelectorAll('script').length).toBe(0);`（違規）
+- **觀察**：line 181 已足以證明 React escape — 若 React 沒 escape，`<script>alert("xss")</script>Hi there` 會被 parse 成真的 `<script>` element + 文字「Hi there」，line 181 的 `getByText(maliciousBio)` 會找不到完整原始字串。所以 line 183 的全域 `<script>` count 是 redundant defence-in-depth。
+- **修法決策**：T38 spec 要求改用 `expect(bio).toHaveTextContent(maliciousBio) + expect(bio.tagName).toBe('P')`（其中 `bio = screen.getByTestId('profile-bio')`，profile-bio testid 已存在於 production component），等價於 line 181+183 的安全強度，且不用 `document.querySelectorAll`。
+- **不可降級**：不可只刪 line 183、留 line 181 一個斷言（會弱化 it block 的 defence-in-depth；reviewer 要驗 ≥ 2 個有效斷言）。
+- **對策**：之後類似全域 DOM scan 安全測試（如「沒有 `<iframe>` 被 inject」「沒有 `<style>` override」），先看 production component 是否有 testid 可 scope；用 `getByTestId(...)` + `toHaveTextContent` / `tagName` 驗等價結果，不要 fallback 到 `document.querySelectorAll`。
+
+### 2.41 ⚠️ 坑 41：favorites chip `closest()` chain 可被 `getByRole('button', { name: /移除.../ })` 取代，跳過 chip container 查詢
+
+- **發生在**：Session 7 規劃 audit。
+- **已驗事實**：`tests/integration/weather/favorites.test.jsx:499–504` 用 `chip.closest('[class*="Chip"]') || chip.closest('[class*="chip"]') || chip.parentElement` 找 chip container，再 `within(chipContainer).getByRole('button', { name: /移除/i })` 拿 remove button。
+- **觀察**：`src/components/weather/FavoritesBar.jsx:83` remove button 已有 `aria-label="移除${name}收藏"` — 可以直接 `screen.getByRole('button', { name: /移除.*板橋.*收藏/ })` 拿 button，跳過 chip container 整個尋找步驟。
+- **規範對齊**：Testing Library 哲學是 query 應對應「使用者實際看到/聽到的 a11y tree」；既有 button aria-label 已是 a11y tree 的一部分，沒理由先繞 chip container 再 within。
+- **對策**：T39 spec 要求改成 `screen.findByRole('button', { name: /移除.*板橋.*收藏/ })`，不再用 closest / parentElement。若 fixture 下實際 button label 不含「板橋」字樣（`formatLocationNameShort` 結果差異），Engineer 用實際 label 對齊 regex，不可降級回 closest()。
+
+### 2.42 ⚠️ 坑 42：weather-page skeleton 已有 `aria-label="天氣資料載入中"`，用 `getByLabelText` 即可
+
+- **發生在**：Session 7 規劃 audit。
+- **已驗事實**：`src/components/weather/WeatherCardSkeleton.jsx:9` 根 `<div className={styles.weatherCard} aria-busy="true" aria-label="天氣資料載入中">`；`tests/integration/weather/weather-page.test.jsx:396` 用 `document.querySelector('[class*="skeleton"]')` 違規。
+- **修法**：B — `expect(screen.getByLabelText('天氣資料載入中')).toBeInTheDocument()`，直接利用 component 現有 affordance。
+- **對策**：T40 spec 是本 session 4 個 cleanup 中最簡單的（一行替換、不動 component）。若 vitest fail（label not found），先查 component 是否有條件 render 使 fixture 沒走到 loading 路徑，**不要**降級回 `document.querySelector`。
+
+### 2.43 ⚠️ 坑 43：`bio.tagName` 不算 testing-library `no-node-access` 違規
+
+- **發生在**：Session 7 規劃 T38 設計。
+- **背景**：`testing-library/no-node-access` rule 抓的是 DOM **navigation** API（`querySelector` / `querySelectorAll` / `getElementById` / `parentElement` / `parentNode` / `children` / `childNodes` / `firstChild` / `lastChild` / `nextElementSibling` / `previousElementSibling` 等）。Element **property**（如 `tagName` / `id` / `className` / `textContent` / `nodeType`）不在 rule 抓的範圍。
+- **延伸**：jest-dom matchers (`toHaveTextContent` / `toHaveAttribute` / `toContainHTML`) 也不算 DOM access — 它們是 assertion adapter，內部讀 property 但不暴露 navigation API 給測試。
+- **對策**：S7 / S8 修 `no-node-access` 時若需要驗證 element 屬性（tag、attribute、text content），用 jest-dom matcher 或 directly read property，不要用 navigation API 繞。Reviewer 不要把 `bio.tagName` / `bio.textContent` 誤判成違規。
+
 ---
 
 ## 3. Baseline Audit (Phase 1 Task 1.4)
@@ -702,22 +744,64 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
   - strava（S8）：`tests/integration/strava/RunsRouteMap.test.jsx`（共 1 處）
 - **commit 狀態**：未 `git add` / commit / push。Working tree dirty：`M eslint.config.mjs`、`M tests/integration/notifications/NotificationPaginationStateful.test.jsx`、`M src/components/Notifications/NotificationItem.jsx`、`M tests/integration/notifications/NotificationPanel.test.jsx`、`M tests/integration/notifications/notification-click.test.jsx`、`M tests/integration/notifications/scroll-to-comment.test.jsx`；untracked 新檔 `tests/_helpers/notifications/scroll-to-comment-mock.jsx`。
 
+### Session 7 規劃（profile + weather 純測試重構）— 完成
+
+- **Started**: 2026-04-28
+- **狀態**：✅ 規劃完成；⏳ 實作（T36–T41）尚未開始，後續修改都交 subagent。
+- **前置事實**（fresh audit 2026-04-28，由 read-only Explore subagent 收集）：
+  - ESLint config：`testing-library/prefer-user-event` line 399 `error`、`testing-library/no-node-access` line 400 `error`；ignores array 維持 3 entries（`tests/e2e/**` / `tests/_helpers/e2e-helpers.js` / `tests/_helpers/notifications/scroll-to-comment-mock.jsx`）。
+  - S7 scope 5 unique sites：
+    - `tests/integration/profile/ProfileEventList.test.jsx` line 241 / 257（兩 it block — `renders sentinel when hasMore is true` / `does not render sentinel when hasMore is false`）：`baseElement.querySelector('[aria-hidden="true"]')`
+    - `tests/integration/profile/ProfileHeader.test.jsx` line 183（`escapes <script> in bio content to prevent XSS`）：`document.querySelectorAll('script').length`
+    - `tests/integration/weather/favorites.test.jsx` line 501（`should remove chip and call removeFavorite on click`）：`chip.closest('[class*="Chip"]') || chip.closest('[class*="chip"]') || chip.parentElement`（同行 3 col chain，ESLint raw 算 3 但 unique site 1）
+    - `tests/integration/weather/weather-page.test.jsx` line 396（`renders loading skeleton when runtime state is loading`）：`document.querySelector('[class*="skeleton"]')`
+  - Production component affordance：
+    - `src/ui/users/ProfileEventListScreen.jsx:58` sentinel 無 testid / role / label（純 `aria-hidden`）→ T37 必須加 testid
+    - `src/app/users/[uid]/ProfileHeader.jsx:79` bio 已有 `data-testid="profile-bio"` → T38 可直接 scope，不動 component
+    - `src/components/weather/FavoritesBar.jsx:83` remove button 已有 `aria-label="移除${name}收藏"` → T39 用 `getByRole`，不動 component
+    - `src/components/weather/WeatherCardSkeleton.jsx:9` 根 div 已有 `aria-busy + aria-label="天氣資料載入中"` → T40 用 `getByLabelText`，不動 component
+  - 邊界檢查：S5/S6（NotificationPanel / notification-click / scroll-to-comment / NavbarDesktop / NavbarMobile）`npx eslint` exit 0；S8 scope 仍 fail（PostDetail 1 unique / PostFeed 1 / RunsRouteMap 2 / crud-toast 2 / toast-container 1 = 7 unique sites / 12 raw messages）。
+- **本輪做了什麼**：
+  1. 派 Explore subagent 跑 fresh audit，收集 5 unique sites 的 line:col / verbatim source line / it block / 對應 component affordance；同時驗 S5/S6 邊界與 S8 scope 計數。
+  2. 依 plan §5 Phase 4.4 / 4.5 與 §8.2 S7 與最新 audit evidence，追加 `tasks.md` Session 7 T36–T41。
+  3. 確認 S7 修法：
+     - T37 ProfileEventList sentinel：修法 C（加 `data-testid="profile-event-list-sentinel"` 給 sentinel `<div>`，同 §2.39 / §2.32 unreadDot pattern；移除 `baseElement` 解構）。
+     - T38 ProfileHeader XSS：修法 B（用既有 `data-testid="profile-bio"` + `toHaveTextContent` + `tagName` 替代全域 `document.querySelectorAll('script')`；§2.40 / §2.43）。
+     - T39 favorites chip：修法 B（直接 `getByRole('button', { name: /移除.*板橋.*收藏/ })` 跳過 chip container 查詢；§2.41）。
+     - T40 weather-page skeleton：修法 B（`getByLabelText('天氣資料載入中')` 用既有 component aria-label；§2.42）。
+  4. 並行設計：T36 preflight 獨占 → T37 + T38 並行 (Wave 1) → T39 + T40 並行 (Wave 2) → T41 closeout 獨占。同時最多 4 subagents（2 Engineer + 2 Reviewer 配對）。
+  5. 補本檔 §2.39–§2.43 五個新坑（sentinel 加 testid 必要性、XSS line 183 冗餘、favorites 跳過 closest、skeleton 用 getByLabelText、`tagName` / `textContent` 不算違規）。
+  6. 主 agent commit bridge：暫關 `eslint.config.mjs:400` `'testing-library/no-node-access'` `error → off` → commit `tasks.md` / `handoff.md` / `cspell.json`（補 `normalise` / `testname` / `defence`）/ `eslint.config.mjs` → 立即恢復 `error`。**只**改該行 rule level，不動其他 ESLint config / code / tests。
+- **待執行**：
+  - T36 Session 7 preflight audit（read-only Explore，獨占）
+  - T37 ProfileEventList sentinel cleanup（Wave 1，並行 with T38）
+  - T38 ProfileHeader XSS test scope cleanup（Wave 1，並行 with T37）
+  - T39 favorites chip cleanup（Wave 2，並行 with T40）
+  - T40 weather-page skeleton cleanup（Wave 2，並行 with T39）
+  - T41 Session 7 closeout + handoff update（獨占）
+- **commit 狀態**：本規劃 session commit 包含 `tasks.md` / `handoff.md` / `cspell.json` / `eslint.config.mjs`（commit bridge 後恢復 `error`）。Commit 完成後主 agent 立刻把 `eslint.config.mjs:400` 從 `off` 改回 `error`，下個 session 接手時應只看到 `M eslint.config.mjs` dirty。
+
 ---
 
 ## 5. 下個 Session 開工 checklist
 
-進 Session 7（plan §8.2 S7「🧹 純測試重構」— profile + weather）前：
+進 Session 7 實作（plan §8.2 S7「🧹 純測試重構」— profile + weather）前：
 
-- [ ] 讀本檔 §0、§2.28–§2.38、§4「Session 6（NotificationPanel + notification-click + scroll-to-comment 收尾）— 完成」。
-- [ ] 讀 plan §8.2 S7 段；S7 是純測試重構，scope = `tests/integration/profile/`（3 處 `no-node-access`，分布 `ProfileEventList.test.jsx` / `ProfileHeader.test.jsx`）+ `tests/integration/weather/`（2 處，分布 `favorites.test.jsx` / `weather-page.test.jsx`）；先別碰 S8 scope（posts / toast / strava 共 5 處）。
-- [ ] S7 規劃時派 read-only Explore subagent 跑 fresh `npx eslint <scope>`，列 raw / unique / line:col / 違規 code 與最近 it block；不要沿用本檔記載的「3 處 / 2 處」當唯一真相 — 對齊 §2.30 / §2.38。
-- [ ] 先跑 `git status --short`；fresh state 預期看到 S6 留下的 dirty 檔（見 §4 Session 6 commit 狀態段）。S7 規劃 commit 前需主 agent 決定如何處理 S6 dirty files（continuation commit 或 stash 隔離）。
-- [ ] 確認 `testing-library/no-node-access` 是 `error`：`rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs` 兩條都應 `error`（line drift 後現在是 line 399 / 400）。
-- [ ] S7 scope 嚴格限制在 `tests/integration/profile/` + `tests/integration/weather/`；不回頭改 S6 已綠的 notifications domain，除非 fresh lint 證明被 S7 改動打壞。
-- [ ] S7 修法傾向走 `screen` query + `data-testid` minimal affordance（同 S6 unreadDot pattern）；除非結構性無法重構才考慮 helper extraction（同 S6 scroll-to-comment pattern，需主 agent 核准 + 加精確路徑 ignore，禁 broad glob）。
+- [ ] 讀本檔 §0、§2.28–§2.43、§4「Session 6 完成」+「Session 7 規劃 — 完成」兩段。
+- [ ] 讀 `tasks.md` Session 7 段（T36–T41 全文），照順序派遣：T36 → Wave 1 (T37+T38) → Wave 2 (T39+T40) → T41。
+- [ ] S7 scope = `tests/integration/profile/`（ProfileEventList line 241/257 + ProfileHeader line 183 = 3 unique sites）+ `tests/integration/weather/`（favorites line 501 + weather-page line 396 = 2 unique sites）。先別碰 S8 scope（posts / toast / strava 7 unique sites）。
+- [ ] 先跑 `git status --short`；fresh state 預期只看到 `M eslint.config.mjs`（規劃 commit 後恢復 `error` 留下的修改）。若還看到其他 dirty 檔，主 agent 先釐清來源。
+- [ ] 確認 `testing-library/no-node-access` 是 `error`：`rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs` 兩條都應 `error`（line 399 / 400）。
+- [ ] T36 派 read-only Explore，要求 attach raw lint output + verbatim code excerpt（不只 reformatted summary，§2.38）。
+- [ ] T37 唯一被允許動 production component（`src/ui/users/ProfileEventListScreen.jsx` 加 testid 一行屬性）。T38–T40 全是純測試端 cleanup，不動 component。
+- [ ] T37 sentinel 加 testid 不算違反 plan §8.2「不動 component」 — 是 plan §5 修法 C minimal affordance，與 S6 unreadDot 同 pattern（§2.39 / §2.32）。Reviewer 不要因為動 component 就 FAIL。
+- [ ] T38 安全測試論述：line 181 + 改後 (`toHaveTextContent` + `tagName === 'P'`) 等價於原 line 181+183 的 defence-in-depth；不可只刪 line 183 留單斷言（§2.40）。
+- [ ] T39 不可降級回 `closest()` chain，即使 vitest fail；Engineer 用實際 fixture 對齊 button aria-label regex（§2.41）。
+- [ ] T40 不可降級回 `document.querySelector`；若 vitest fail，先查 fixture 是否真的走到 loading 路徑（§2.42）。
 - [ ] Boundary / audit 指令若用 `tee`，必須用 `zsh -o pipefail -c '...'` 或另跑 raw command 確認 exit code（§2.29）。
-- [ ] repo-wide lint 不是 S7 開工前提；S8 scope（posts / toast / strava 5 處）仍會 fail，不得聲稱 repo-wide 全綠。
-- [ ] S7 execution 期間所有 task 不 git add / commit / push（與前 sessions 同 pattern）；任何 commit 由主 agent 在規劃 commit / closeout commit bridge 內完成。
+- [ ] repo-wide lint 不是 S7 開工前提；S8 scope（posts / toast / strava 7 unique sites）仍會 fail，不得聲稱 repo-wide 全綠。
+- [ ] S7 execution 期間所有 task 不 git add / commit / push（與前 sessions 同 pattern）；任何 commit 由主 agent 在規劃 commit / closeout commit 統一處理。
+- [ ] Reviewer FAIL 一律重派 Engineer，**主 agent 不自己改檔 / 自己 revert**（除主 agent 自有的 commit bridge 一行）。
 
 ---
 
