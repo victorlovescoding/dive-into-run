@@ -181,11 +181,7 @@ describe('PostDetailClient', () => {
     const user = userEvent.setup();
     render(<PostDetailClient postId="post-1" />);
     await screen.findByText('晨跑日記');
-    const likeButtons = screen.getAllByRole('button');
-    const likeButton = likeButtons.find(
-      (btn) => btn.querySelector('svg') && btn.textContent.includes('5'),
-    );
-    expect(likeButton).toBeDefined();
+    const likeButton = screen.getByRole('button', { name: '按讚' });
     await user.click(likeButton);
     expect(toggleLikePost).toHaveBeenCalledWith('post-1', 'user-1');
   });

@@ -69,7 +69,7 @@ const mockUserNoPhoto = {
 /**
  * 渲染 Navbar 元件並包裹 MockAuthContext Provider。
  * @param {{ user?: object | null, loading?: boolean }} [authValue] - Auth context 值。
- * @returns {Promise<{ container: HTMLElement }>} render 回傳值。
+ * @returns {Promise<import('@testing-library/react').RenderResult>} render 回傳值。
  */
 async function renderNavbar(authValue = {}) {
   const { user = null, loading = false } = authValue;
@@ -153,18 +153,15 @@ describe('Navbar Desktop (T009-T012)', () => {
   describe('T010: Auth UI section', () => {
     it('shows skeleton when loading is true', async () => {
       // Arrange & Act
-      const { container } = await renderNavbar({ loading: true });
+      await renderNavbar({ loading: true });
 
       // Assert
-      const skeleton = container.querySelector('[class*="skeleton"]');
-      expect(skeleton).toBeInTheDocument();
+      expect(screen.getByTestId('user-menu-skeleton')).toBeInTheDocument();
 
       // No avatar or login button during loading
-      const avatarBtn = container.querySelector('[class*="avatar"]');
-      // Filter to only desktop login buttons (inside nav)
       const nav = screen.getByRole('navigation', { name: '主要導覽' });
       expect(within(nav).queryByRole('button', { name: /登入/i })).not.toBeInTheDocument();
-      expect(avatarBtn).not.toBeInTheDocument();
+      expect(within(nav).queryByRole('button', { name: '使用者選單' })).not.toBeInTheDocument();
     });
 
     it('shows login button when logged out', async () => {
@@ -209,8 +206,8 @@ describe('Navbar Desktop (T009-T012)', () => {
       // Assert
       const nav = screen.getByRole('navigation', { name: '主要導覽' });
       const avatarBtn = within(nav).getByRole('button', { name: '使用者選單' });
-      const svg = avatarBtn.querySelector('svg');
-      expect(svg).toBeInTheDocument();
+      const fallbackAvatar = within(avatarBtn).getByRole('img', { name: '預設使用者頭像' });
+      expect(fallbackAvatar).toBeInTheDocument();
       expect(within(nav).queryByAltText('使用者頭像')).not.toBeInTheDocument();
     });
   });
@@ -326,7 +323,7 @@ describe('Navbar Desktop (T009-T012)', () => {
       // Assert
       const menu = within(nav).getByRole('menu');
       expect(menu.className).not.toMatch(/dropdownOpen/);
-      expect(document.activeElement).toBe(avatarBtn);
+      expect(avatarBtn).toHaveFocus();
     });
 
     it('focus moves to first menuitem when dropdown opens', async () => {
@@ -341,7 +338,7 @@ describe('Navbar Desktop (T009-T012)', () => {
 
       // Assert
       const menuItem = within(nav).getByRole('menuitem', { name: /登出/i });
-      expect(document.activeElement).toBe(menuItem);
+      expect(menuItem).toHaveFocus();
     });
 
     it('focus returns to avatar button when dropdown closes', async () => {
@@ -356,7 +353,7 @@ describe('Navbar Desktop (T009-T012)', () => {
       await user.keyboard('{Escape}');
 
       // Assert
-      expect(document.activeElement).toBe(avatarBtn);
+      expect(avatarBtn).toHaveFocus();
     });
   });
 });

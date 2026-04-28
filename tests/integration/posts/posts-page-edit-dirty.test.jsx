@@ -188,10 +188,14 @@ function AuthWrapper({ children, user = TEST_USER }) {
 
 /**
  * 渲染 PostPage（含 AuthWrapper）並等待初始 API 呼叫完成。
- * @returns {Promise<import('@testing-library/user-event').UserEvent>} userEvent 實例。
+ *
+ * 回傳物件解構（非單值）以滿足 testing-library/render-result-naming-convention：
+ * 規則將呼叫 `render()` 的 wrapper 視為 render-returning function，僅允許
+ * `view` / `utils` 或解構命名；用解構保留語意正確的 `user` 名稱。
+ * @returns {Promise<{ user: import('@testing-library/user-event').UserEvent }>} userEvent 實例。
  */
 async function renderPostPage() {
-  const ue = userEvent.setup();
+  const user = userEvent.setup();
   render(
     <AuthWrapper>
       <PostPage />
@@ -202,7 +206,7 @@ async function renderPostPage() {
   });
   // 等文章載入完成
   await screen.findByText('Post A title');
-  return ue;
+  return { user };
 }
 
 /**
@@ -239,7 +243,7 @@ beforeEach(() => {
 describe('Posts page edit dirty gate', () => {
   it('keeps submit button disabled when no modification happens', async () => {
     // Arrange
-    const user = await renderPostPage();
+    const { user } = await renderPostPage();
     await enterEditMode(user, 0);
 
     // Act
@@ -257,7 +261,7 @@ describe('Posts page edit dirty gate', () => {
 
   it('disables submit again after typing then reverting the modification', async () => {
     // Arrange
-    const user = await renderPostPage();
+    const { user } = await renderPostPage();
     await enterEditMode(user, 0);
     const titleInput = screen.getByPlaceholderText('標題');
 
@@ -278,7 +282,7 @@ describe('Posts page edit dirty gate', () => {
 
   it('submits with raw (un-trimmed) values — trim is service-layer responsibility', async () => {
     // Arrange
-    const user = await renderPostPage();
+    const { user } = await renderPostPage();
     await enterEditMode(user, 0);
     const titleInput = screen.getByPlaceholderText('標題');
     const contentInput = screen.getByPlaceholderText('分享你的想法...');
@@ -301,7 +305,7 @@ describe('Posts page edit dirty gate', () => {
 
   it('restores original values when re-opening post A after cancel', async () => {
     // Arrange
-    const user = await renderPostPage();
+    const { user } = await renderPostPage();
     await enterEditMode(user, 0);
     const titleInput = screen.getByPlaceholderText('標題');
 
@@ -322,7 +326,7 @@ describe('Posts page edit dirty gate', () => {
 
   it('switches original baseline to post B when editing B after closing A', async () => {
     // Arrange
-    const user = await renderPostPage();
+    const { user } = await renderPostPage();
 
     // Act — 先編輯 A 然後關閉
     await enterEditMode(user, 0);

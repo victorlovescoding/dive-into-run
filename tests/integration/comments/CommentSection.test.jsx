@@ -14,7 +14,7 @@
  * Rules:
  * 1. Use `vitest` for test runner.
  * 2. Use `@testing-library/react` for components.
- * 3. Use `user-event` for interactions — NEVER `fireEvent`.
+ * 3. Use `user-event` for interactions — NEVER low-level event helpers.
  * 4. STRICT JSDoc is required.
  * 5. NO `console.log`.
  * 6. AAA Pattern (Arrange, Act, Assert) is mandatory.

@@ -12,6 +12,7 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import eslintCommentsPlugin from '@eslint-community/eslint-plugin-eslint-comments';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
+import testingLibrary from 'eslint-plugin-testing-library';
 import confusingGlobals from 'confusing-browser-globals';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -254,6 +255,16 @@ export default [
     plugins: { '@typescript-eslint': tsPlugin },
     rules: {
       '@typescript-eslint/no-deprecated': 'error',
+      '@typescript-eslint/ban-ts-comment': [
+        'error',
+        {
+          'ts-ignore': true,
+          'ts-expect-error': 'allow-with-description',
+          'ts-nocheck': true,
+          'ts-check': false,
+          minimumDescriptionLength: 10,
+        },
+      ],
     },
   },
 
@@ -363,6 +374,30 @@ export default [
     },
     rules: {
       '@eslint-community/eslint-comments/no-restricted-disable': ['error', 'jsx-a11y/*'],
+    },
+  },
+
+  // 17.5 testing-library 規則（Constitution: testing-standards.md）
+  //      Rationale: integration tests must use userEvent (not fireEvent),
+  //      query by role/label (not container.querySelector). Mechanical guard
+  //      so reviewers don't have to enforce manually.
+  //      e2e (Playwright) 不在 scope — Playwright 的 page.getByX() 是官方推薦寫法，
+  //      與 React Testing Library 的 screen.getByX() 是兩個不同生態。Plugin 只認
+  //      method shape 不認 library 來源，否則會誤報 187+ 處 false positive。
+  {
+    files: ['tests/**/*.{js,jsx,mjs}', '**/*.test.{js,jsx,mjs}', '**/*.spec.{js,jsx,mjs}'],
+    ignores: [
+      'tests/e2e/**',
+      'tests/_helpers/e2e-helpers.js',
+      'tests/_helpers/notifications/scroll-to-comment-mock.jsx',
+    ],
+    ...testingLibrary.configs['flat/react'],
+    rules: {
+      ...testingLibrary.configs['flat/react'].rules,
+      // Session 4 前置設定已恢復 no-node-access sensor；
+      // 後續 Phase 4 清 baseline violations，避免增量 commit gate 再放行 DOM access。
+      'testing-library/prefer-user-event': 'error',
+      'testing-library/no-node-access': 'error',
     },
   },
 

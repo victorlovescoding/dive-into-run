@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WeatherPage from '@/components/weather/WeatherPage';
 
@@ -496,12 +496,8 @@ describe('Favorites integration', () => {
       const user = userEvent.setup();
       render(<WeatherPage />);
 
-      const chip = await screen.findByText(/板橋/);
-      const chipContainer =
-        chip.closest('[class*="Chip"]') || chip.closest('[class*="chip"]') || chip.parentElement;
-      const removeBtn = within(/** @type {HTMLElement} */ (chipContainer)).getByRole('button', {
-        name: /移除/i,
-      });
+      await screen.findByText(/板橋/);
+      const removeBtn = await screen.findByRole('button', { name: /移除.*板橋.*收藏/ });
 
       await user.click(removeBtn);
 

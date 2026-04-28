@@ -393,7 +393,7 @@ describe('WeatherPage integration', () => {
     render(<WeatherPage />);
 
     expect(screen.queryByText(/請先在地圖上選擇/)).not.toBeInTheDocument();
-    expect(document.querySelector('[class*="skeleton"]')).toBeTruthy();
+    expect(screen.getByLabelText('天氣資料載入中')).toBeInTheDocument();
   });
 
   it('calls retry handler from error state', async () => {

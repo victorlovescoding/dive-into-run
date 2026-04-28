@@ -1,5 +1,6 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { fireEvent, render, screen, act, waitFor } from '@testing-library/react';
+import { useEffect } from 'react';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // ---------------------------------------------------------------------------
@@ -37,7 +38,9 @@ vi.mock('next/image', () => ({
 }));
 
 import { AuthContext } from '@/runtime/providers/AuthProvider';
-import NotificationProvider from '@/runtime/providers/NotificationProvider';
+import NotificationProvider, {
+  useNotificationContext,
+} from '@/runtime/providers/NotificationProvider';
 import NotificationPanel from '@/components/Notifications/NotificationPanel';
 import NotificationBell from '@/components/Notifications/NotificationBell';
 import {
@@ -166,10 +169,13 @@ function setupStatefulMocks(allNotifications, listenerLimit = 5) {
 
 /** @type {((entries: IntersectionObserverEntry[]) => void) | undefined} */
 let intersectionCallback;
+/** @type {import('@/runtime/providers/notification-context').NotificationContextValue | undefined} */
+let latestNotificationContext;
 
 beforeEach(() => {
   vi.clearAllMocks();
   intersectionCallback = undefined;
+  latestNotificationContext = undefined;
 
   global.IntersectionObserver = /** @type {typeof IntersectionObserver} */ (
     /** @type {unknown} */ (
@@ -184,6 +190,44 @@ beforeEach(() => {
 });
 
 /**
+ * Captures the real NotificationProvider context value for direct runtime assertions.
+ * @returns {null} This component does not render visible UI.
+ */
+function NotificationContextProbe() {
+  const context = useNotificationContext();
+
+  useEffect(() => {
+    latestNotificationContext = context;
+  }, [context]);
+
+  return null;
+}
+
+/**
+ * 取得目前最新的 NotificationProvider context。
+ * @returns {import('@/runtime/providers/notification-context').NotificationContextValue} context value。
+ */
+function getNotificationContext() {
+  if (!latestNotificationContext) {
+    throw new Error('NotificationContextProbe has not rendered');
+  }
+  return latestNotificationContext;
+}
+
+/**
+ * 使用 Provider 的 loadMore 邏輯把 unread listener slice 從 5 推進到 100。
+ * 這保留 production 的 +5 狀態轉移，但避開 19 次完整 pointer/click simulation。
+ * @returns {Promise<void>}
+ */
+async function expandUnreadSliceToListenerCapacity() {
+  await act(async () => {
+    for (let i = 0; i < 19; i += 1) {
+      await getNotificationContext().loadMore();
+    }
+  });
+}
+
+/**
  * 渲染完整通知面板（含 Bell + Panel + Provider）。
  * @returns {import('@testing-library/react').RenderResult} render 結果。
  */
@@ -193,6 +237,7 @@ function renderPanel() {
       <NotificationProvider>
         <NotificationBell />
         <NotificationPanel />
+        <NotificationContextProbe />
       </NotificationProvider>
     </AuthContext.Provider>,
   );
@@ -407,20 +452,11 @@ describe('NotificationPagination — stateful cursor tests', () => {
       // Switch to unread tab
       await user.click(screen.getByRole('tab', { name: '未讀' }));
 
-      // Phase 1: expand client-side slice from 5 to 100 (19 clicks × +5)
-      // Use fireEvent.click inside a single act() instead of 19 sequential
-      // userEvent.click calls. userEvent simulates full pointer-event sequences
-      // which causes timeouts under parallel test load (~500ms per click).
-      // React 18 batches the 19 functional setState((prev) => prev + 5) calls
-      // into one render, making this near-instant.
-      await act(async () => {
-        const btn = screen.getByRole('button', { name: '查看先前通知' });
-        for (let i = 0; i < 19; i++) {
-          fireEvent.click(btn);
-        }
-      });
+      // Phase 1: expand client-side slice from 5 to 100 (19 x +5).
+      await expandUnreadSliceToListenerCapacity();
 
       expect(screen.getAllByText(/^通知 u\d+$/)).toHaveLength(100);
+      expect(fetchMoreUnreadNotifications).not.toHaveBeenCalled();
 
       // Phase 2: still hasMore (listener at capacity 100), next loadMore hits server
       expect(screen.getByRole('button', { name: '查看先前通知' })).toBeInTheDocument();
@@ -429,6 +465,11 @@ describe('NotificationPagination — stateful cursor tests', () => {
       await waitFor(() => {
         expect(fetchMoreUnreadNotifications).toHaveBeenCalledTimes(1);
       });
+      expect(fetchMoreUnreadNotifications).toHaveBeenCalledWith(
+        'user1',
+        { _index: 99, id: 'u1' },
+        5,
+      );
 
       // Server returned < 5, hasMore becomes false
       await waitFor(() => {

@@ -54,18 +54,18 @@ describe('RunsRouteMap', () => {
   it('renders nothing meaningful when summaryPolyline is null', () => {
     mockedDecode.mockReturnValue([]);
 
-    const { container } = render(<RunsRouteMapInner summaryPolyline={null} />);
+    render(<RunsRouteMapInner summaryPolyline={null} />);
 
-    expect(container.firstChild).toBeNull();
     expect(screen.queryByTestId('map-container')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('polyline')).not.toBeInTheDocument();
   });
 
   it('renders nothing meaningful when summaryPolyline is empty string', () => {
     mockedDecode.mockReturnValue([]);
 
-    const { container } = render(<RunsRouteMapInner summaryPolyline="" />);
+    render(<RunsRouteMapInner summaryPolyline="" />);
 
-    expect(container.firstChild).toBeNull();
     expect(screen.queryByTestId('map-container')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('polyline')).not.toBeInTheDocument();
   });
 });

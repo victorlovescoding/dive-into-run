@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, within, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // ---------------------------------------------------------------------------
@@ -227,22 +227,16 @@ describe('NotificationItem', () => {
 
   it('should show blue dot for unread notification (read=false)', () => {
     const notification = createMockNotification({ read: false });
-    const { container } = render(
-      <NotificationItem notification={notification} onClick={vi.fn()} />,
-    );
+    render(<NotificationItem notification={notification} onClick={vi.fn()} />);
 
-    const dot = container.querySelector('[class*="unreadDot"]');
-    expect(dot).toBeInTheDocument();
+    expect(screen.getByTestId('notification-unread-dot')).toBeInTheDocument();
   });
 
   it('should NOT show blue dot for read notification (read=true)', () => {
     const notification = createMockNotification({ read: true });
-    const { container } = render(
-      <NotificationItem notification={notification} onClick={vi.fn()} />,
-    );
+    render(<NotificationItem notification={notification} onClick={vi.fn()} />);
 
-    const dot = container.querySelector('[class*="unreadDot"]');
-    expect(dot).not.toBeInTheDocument();
+    expect(screen.queryByTestId('notification-unread-dot')).not.toBeInTheDocument();
   });
 
   it('should call onClick when clicked', async () => {
@@ -257,17 +251,18 @@ describe('NotificationItem', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  it('should handle avatar error with fallback', () => {
+  it('should handle avatar error with fallback', async () => {
     const notification = createMockNotification({ actorPhotoURL: 'https://broken.url/img.jpg' });
     render(<NotificationItem notification={notification} onClick={vi.fn()} />);
 
     const img = screen.getByRole('img', { name: 'Test Actor 的頭像' });
 
-    // 用 fireEvent 觸發圖片載入錯誤（確保 React 狀態更新）
-    fireEvent.error(img);
+    img.dispatchEvent(new Event('error'));
 
     // 圖片消失，應顯示預設頭像（首字）
-    expect(screen.queryByRole('img', { name: 'Test Actor 的頭像' })).not.toBeInTheDocument();
-    expect(screen.getByText('T')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole('img', { name: 'Test Actor 的頭像' })).not.toBeInTheDocument();
+      expect(screen.getByText('T')).toBeInTheDocument();
+    });
   });
 });

@@ -12,7 +12,7 @@
  *   - Date format: 正體中文加入日期
  *
  * Rules:
- * 1. Use `@testing-library/react` + `user-event` — NEVER `fireEvent`.
+ * 1. Use `@testing-library/react` + `user-event` — NEVER low-level event helpers.
  * 2. Query by `getByRole` / `getByText`, NEVER `container.querySelector`.
  * 3. AAA Pattern (Arrange, Act, Assert).
  * 4. Strict JSDoc; no `any`.
@@ -178,9 +178,10 @@ describe('Integration: ProfileHeader', () => {
     render(<ProfileHeader user={profile} />);
 
     // Assert — 原始字串應該被當文字 render，而不是 script tag
-    expect(screen.getByText(maliciousBio)).toBeInTheDocument();
-    // 確認 jsdom 不會真的產生 script element
-    expect(document.querySelectorAll('script').length).toBe(0);
+    const bio = screen.getByTestId('profile-bio');
+    expect(bio).toHaveTextContent(maliciousBio);
+    // 確認 React escape 後 bio 元素本身是 <p>，沒有真的產生 script element
+    expect(bio.tagName).toBe('P');
   });
 
   // --- 加入日期格式正確性 ---

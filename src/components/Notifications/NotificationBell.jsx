@@ -32,7 +32,8 @@ export default function NotificationBell() {
         width="24"
         height="24"
         viewBox="0 0 24 24"
-        aria-hidden="true"
+        role="img"
+        aria-label="通知鈴鐺圖示"
         data-filled={String(isPanelOpen)}
       >
         <path

@@ -62,7 +62,7 @@ describe('ToastContainer', () => {
 
     render(<ToastContainer />);
 
-    const container = screen.getByTestId('toast-id-1').parentElement;
+    const container = screen.getByRole('region', { name: '通知列表' });
     expect(container).toHaveAttribute('aria-live', 'polite');
   });
 

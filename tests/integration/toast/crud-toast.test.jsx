@@ -261,9 +261,8 @@ describe('Events page — CRUD handler toast calls', () => {
     const user = userEvent.setup();
     await user.click(createButton);
 
-    // The form should now be open; submit it
-    const form = document.querySelector('form');
-    expect(form).not.toBeNull();
+    // The form should now be open; submit it（繞 native validation；§2.53）
+    const form = screen.getByRole('form', { name: '揪團表單' });
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
     await waitFor(() => {
@@ -284,8 +283,8 @@ describe('Events page — CRUD handler toast calls', () => {
     const user = userEvent.setup();
     await user.click(createButton);
 
-    const form = document.querySelector('form');
-    expect(form).not.toBeNull();
+    // The form should now be open; submit it（繞 native validation；§2.53）
+    const form = screen.getByRole('form', { name: '揪團表單' });
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
     await waitFor(() => {

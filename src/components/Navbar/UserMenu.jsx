@@ -27,7 +27,7 @@ export default function UserMenu({
 }) {
   return (
     <div className={styles.userSection} ref={dropdownRef}>
-      {loading && <div className={styles.skeleton} />}
+      {loading && <div className={styles.skeleton} data-testid="user-menu-skeleton" />}
       {!loading && !user && (
         <button
           type="button"
@@ -62,7 +62,8 @@ export default function UserMenu({
                 width="32"
                 height="32"
                 className={styles.avatarImage}
-                aria-hidden="true"
+                role="img"
+                aria-label="預設使用者頭像"
               >
                 <circle cx="16" cy="16" r="16" fill="#e5e7eb" />
                 <circle cx="16" cy="12" r="5" fill="#9ca3af" />
