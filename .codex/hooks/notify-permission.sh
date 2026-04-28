@@ -5,6 +5,17 @@ input=$(cat)
 echo "--- Permission Request Received ---" >&2
 echo "$input" >&2
 
+# 防禦性檢查：來自 subagent 的觸發不發聲。Codex 目前 PermissionRequest payload 沒有
+# agent_id 欄位（codex-rs/hooks/src/events/permission_request.rs build_command_input），
+# 所以這段現在是 noop；保留語意跟 .claude/hooks/notify-permission.sh 一致，未來
+# Codex 若加 subagent 機制可自動防呆。
+if command -v jq >/dev/null 2>&1 && echo "$input" | jq -e '.agent_id' >/dev/null 2>&1; then
+  agent_type=$(echo "$input" | jq -r '.agent_type // "unknown"')
+  echo "--- Skipped: triggered by subagent ($agent_type) ---" >&2
+  echo "{}"
+  exit 0
+fi
+
 (
     sleep 1.5
 

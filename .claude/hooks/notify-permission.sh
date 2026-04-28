@@ -7,7 +7,17 @@ input=$(cat)
 echo "--- Permission Request Received ---" >&2
 echo "$input" >&2
 
-# 3. 執行通知與語音 (PermissionRequest event 本身就代表需要確認，不需額外判斷 type)
+# 3. 來自 subagent 的觸發不發聲：subagent 內部需要權限時，主對話 UI 不會跳 dialog 給用戶，
+#    所以 say + terminal-notifier 等於誤響。靠 top-level agent_id 區分（官方文件保證此欄位
+#    僅在 subagent context 出現）。
+if echo "$input" | jq -e '.agent_id' >/dev/null 2>&1; then
+  agent_type=$(echo "$input" | jq -r '.agent_type // "unknown"')
+  echo "--- Skipped: triggered by subagent ($agent_type) ---" >&2
+  echo "{}"
+  exit 0
+fi
+
+# 4. 執行通知與語音 (PermissionRequest event 本身就代表需要確認，不需額外判斷 type)
 (
     # 增加延遲時間，確保 Terminal 已先印出提示
     sleep 1.5
