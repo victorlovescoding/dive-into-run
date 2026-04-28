@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // jsdom 缺少 matchMedia，Navbar 的 useMobileDrawer 需要它
@@ -273,13 +273,13 @@ describe('NotificationBell', () => {
     renderWithProviders(<NotificationBell />, { user: mockUser });
 
     const bell = screen.getByRole('button', { name: /通知/ });
-    const svg = bell.querySelector('svg');
+    const icon = within(bell).getByRole('img', { name: '通知鈴鐺圖示' });
 
     // Panel closed → outlined (stroke, no fill)
-    expect(svg).toHaveAttribute('data-filled', 'false');
+    expect(icon).toHaveAttribute('data-filled', 'false');
 
     await user.click(bell);
-    expect(svg).toHaveAttribute('data-filled', 'true');
+    expect(icon).toHaveAttribute('data-filled', 'true');
   });
 });
 

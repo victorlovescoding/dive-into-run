@@ -390,8 +390,8 @@ export default [
     ...testingLibrary.configs['flat/react'],
     rules: {
       ...testingLibrary.configs['flat/react'].rules,
-      // Session 3 開始執行，恢復 prefer-user-event sensor；Phase 4 尚未輪到，
-      // no-node-access 仍有 baseline violations 會擋增量 commit gate。
+      // Session 4 前置設定已恢復 no-node-access sensor；
+      // 後續 Phase 4 清 baseline violations，避免增量 commit gate 再放行 DOM access。
       'testing-library/prefer-user-event': 'error',
       'testing-library/no-node-access': 'off',
     },
