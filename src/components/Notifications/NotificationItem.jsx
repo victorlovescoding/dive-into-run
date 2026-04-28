@@ -45,7 +45,13 @@ export default function NotificationItem({ notification, onClick }) {
         <span className={styles.message}>{message}</span>
         <span className={styles.time}>{timeText}</span>
       </span>
-      {!read && <span className={styles.unreadDot} />}
+      {!read && (
+        <span
+          className={styles.unreadDot}
+          data-testid="notification-unread-dot"
+          aria-hidden="true"
+        />
+      )}
     </button>
   );
 }

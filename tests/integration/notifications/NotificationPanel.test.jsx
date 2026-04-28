@@ -227,23 +227,16 @@ describe('NotificationItem', () => {
 
   it('should show blue dot for unread notification (read=false)', () => {
     const notification = createMockNotification({ read: false });
-    const { baseElement } = render(
-      <NotificationItem notification={notification} onClick={vi.fn()} />,
-    );
+    render(<NotificationItem notification={notification} onClick={vi.fn()} />);
 
-    // unreadDot 是無語意的視覺 indicator span，只能透過 class 查詢
-    const dot = baseElement.querySelector('[class*="unreadDot"]');
-    expect(dot).toBeInTheDocument();
+    expect(screen.getByTestId('notification-unread-dot')).toBeInTheDocument();
   });
 
   it('should NOT show blue dot for read notification (read=true)', () => {
     const notification = createMockNotification({ read: true });
-    const { baseElement } = render(
-      <NotificationItem notification={notification} onClick={vi.fn()} />,
-    );
+    render(<NotificationItem notification={notification} onClick={vi.fn()} />);
 
-    const dot = baseElement.querySelector('[class*="unreadDot"]');
-    expect(dot).not.toBeInTheDocument();
+    expect(screen.queryByTestId('notification-unread-dot')).not.toBeInTheDocument();
   });
 
   it('should call onClick when clicked', async () => {

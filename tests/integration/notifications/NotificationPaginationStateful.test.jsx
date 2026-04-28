@@ -38,7 +38,9 @@ vi.mock('next/image', () => ({
 }));
 
 import { AuthContext } from '@/runtime/providers/AuthProvider';
-import NotificationProvider, { useNotificationContext } from '@/runtime/providers/NotificationProvider';
+import NotificationProvider, {
+  useNotificationContext,
+} from '@/runtime/providers/NotificationProvider';
 import NotificationPanel from '@/components/Notifications/NotificationPanel';
 import NotificationBell from '@/components/Notifications/NotificationBell';
 import {

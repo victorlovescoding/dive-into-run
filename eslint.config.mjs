@@ -386,7 +386,11 @@ export default [
   //      method shape 不認 library 來源，否則會誤報 187+ 處 false positive。
   {
     files: ['tests/**/*.{js,jsx,mjs}', '**/*.test.{js,jsx,mjs}', '**/*.spec.{js,jsx,mjs}'],
-    ignores: ['tests/e2e/**', 'tests/_helpers/e2e-helpers.js'],
+    ignores: [
+      'tests/e2e/**',
+      'tests/_helpers/e2e-helpers.js',
+      'tests/_helpers/notifications/scroll-to-comment-mock.jsx',
+    ],
     ...testingLibrary.configs['flat/react'],
     rules: {
       ...testingLibrary.configs['flat/react'].rules,

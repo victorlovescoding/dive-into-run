@@ -7,22 +7,22 @@
 
 ## 0. 入門 30 秒（最新狀態給下個接手者讀）
 
-| Field           | Value                                                                                                                                                                                                                                                                                                 |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Branch          | `024-eslint-testing-lib-cleanup`                                                                                                                                                                                                                                                                      |
-| Worktree path   | `/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`                                                                                                                                                                                                                               |
-| 目前 Session    | **Session 6 規劃完成；下一 session 接 S6 execution（T30 preflight → T31 affordance → T32/T33/T34 並行 → T35 closeout）**                                                                                                                                                                              |
-| Working tree    | S6 規劃 commit 完成後，主 agent 把 `eslint.config.mjs` line 396 `'testing-library/no-node-access'` 從 `off` 恢復成 `error`（commit bridge）。下一 session 接手前 fresh `git status --short` 預期只看到 `M eslint.config.mjs`。接手仍以 fresh `git status --short` 為準，不要沿用舊 dirty list。       |
-| ESLint plugin   | 已裝 (eslint-plugin-testing-library@^7.16.2)                                                                                                                                                                                                                                                          |
-| Sensors         | `testing-library/prefer-user-event` 維持 `error`（line 395）；`testing-library/no-node-access` 規劃 commit 期間短暫 `off`、commit 後立即恢復 `error`（line 396）。用戶 prompt 寫 `eslint.config.mjs:395` 但實際 `no-node-access` 在 line 396，line 395 是 `prefer-user-event` — 詳 §2.37 line drift。 |
-| Repo lint state | S5 target lint 已通過。S6 baseline：`NotificationPanel.test.jsx` raw 4 / 2 unique unreadDot、`notification-click.test.jsx` raw 2 / 2 unique unreadDot、`scroll-to-comment.test.jsx` raw 2 / 1 unique mock-internal `getElementById`。repo-wide lint 仍可能因 S6-S8 domain fail，不可寫成全綠。        |
-| Commit 計畫     | S6 規劃 commit 由主 agent 在 commit bridge 內完成（暫關 `no-node-access` → commit `tasks.md` / `handoff.md` / `eslint.config.mjs` → 立即恢復 `error`）。S6 execution（T30-T35）所有 task 都不 commit / push，與前面 sessions 同 pattern。                                                             |
+| Field           | Value                                                                                                                                                                                                                                                                                                                                                          |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Branch          | `024-eslint-testing-lib-cleanup`                                                                                                                                                                                                                                                                                                                               |
+| Worktree path   | `/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`                                                                                                                                                                                                                                                                                        |
+| 目前 Session    | **Session 6 完成（T30-T35）；下一 session 接 S7（plan §8.2 S7 — `tests/integration/profile/` 3 處 + `tests/integration/weather/` 2 處 純測試重構）**                                                                                                                                                                                                           |
+| Working tree    | Session 6 結束時 `eslint.config.mjs` 與 `tests/integration/notifications/NotificationPaginationStateful.test.jsx` 仍 dirty（未 commit，與前 sessions 同 pattern）；新增檔 `tests/_helpers/notifications/scroll-to-comment-mock.jsx` untracked。`testing-library/no-node-access` 維持 line 400 `error`。下一 session 接手仍以 fresh `git status --short` 為準。 |
+| ESLint plugin   | 已裝 (eslint-plugin-testing-library@^7.16.2)                                                                                                                                                                                                                                                                                                                   |
+| Sensors         | `testing-library/prefer-user-event` 維持 `error`（line 399）；`testing-library/no-node-access` 維持 `error`（line 400）。S6 T34 在 §17.5 `ignores` array 加了 `tests/_helpers/notifications/scroll-to-comment-mock.jsx` 一個精確路徑（line drift：原 line 396 → 400，因 ignores 多一行）。                                                                     |
+| Repo lint state | S6 三 target 檔（NotificationPanel / notification-click / scroll-to-comment）lint 全綠；notifications domain 10/10 檔 `no-node-access` 全清。Repo-wide `npx eslint src specs tests` 仍 24 problems (`no-node-access`)，分布：profile 2 / weather 2 / posts 2 / toast 2 / strava 1（S7-S8 scope）。                                                             |
+| Commit 計畫     | Session 6 execution（T30-T35）全部不 commit / push（與前 sessions 同 pattern）。下一 session 接手前以 fresh `git status` 為準。                                                                                                                                                                                                                                |
 
 接手前必讀：
 
-1. 本檔 §2 **坑清單**（特別是 §2.28–§2.37：S5 closeout dirty attribution / tee pipe / line drift / S6 boundary、以及 S6 規劃新增的 §2.32–§2.37：unreadDot 雙屬性、scroll-to-comment helper、`baseElement` 移除、`within(panel)` 模式、helper ignore 不是 escape hatch、line 395 vs 396 drift）
-2. 本檔 §4 「Session 5（NavbarDesktop + NotificationBell SVG）— 完成」+「Session 6 規劃 — 完成」兩段
-3. 本檔 §5 S6 execution checklist；S6 只接 NotificationPanel unreadDot + notification-click + scroll-to-comment，不回頭改 S5 scope；S7 之後再處理 profile / weather / posts / toast / strava
+1. 本檔 §2 **坑清單**（特別是 §2.28–§2.38：S5 / S6 line drift / boundary / helper ignore；§2.38 = T30 preflight subagent narrative hallucination）
+2. 本檔 §4 「Session 5（NavbarDesktop + NotificationBell SVG）— 完成」+「Session 6（NotificationPanel + notification-click + scroll-to-comment 收尾）— 完成」兩段
+3. 本檔 §5 S7 開工 checklist；S7 scope = `tests/integration/profile/`（3 處）+ `tests/integration/weather/`（2 處），plan §8.2 S7「純測試重構」
 
 ---
 
@@ -378,7 +378,14 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 - **發生在**：Session 6 規劃 commit bridge 設計。
 - **已驗事實**：`rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs` 顯示 line 395 是 `'testing-library/prefer-user-event': 'error'`、line 396 才是 `'testing-library/no-node-access': 'error'`。S5 §2.26 已記過同一 drift（用戶當時也說 395，實際 396）。
 - **原因**：Session 4 前置 config Engineer 把兩條 rule 都恢復 `error` 時排序為 `prefer-user-event` 在前、`no-node-access` 在後；不同瀏覽 / format 工具呈現的行號可能差 1。
-- **對策**：commit bridge 改的是 line 396 的 `no-node-access`，**不要**改 line 395 的 `prefer-user-event`。修改前 `rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs` 確認 rule name 對應的真正行號，**看 rule name 不看行號數字**。
+- **對策**：commit bridge 改的是 line 396 的 `no-node-access`，**不要**改 line 395 的 `prefer-user-event`。修改前 `rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs` 確認 rule name 對應的真正行號，**看 rule name 不看行號數字**。S6 T34 後 ignores 多一行，drift 變成 line 399（`prefer-user-event`）/ line 400（`no-node-access`）。
+
+### 2.38 ⚠️ 坑 38：T30 preflight subagent 的 narrative 字段不可全信，要對照 lint output 數據驗證
+
+- **發生在**：Session 6 T30 preflight。
+- **症狀**：T30 subagent 回報的 test name / 描述文字（narrative）與實際 code 不符（hallucinated 部分 it block 名字 / pattern），但 line:col 數字、raw / unique 計數、檔案路徑與 plan 預估完全一致。
+- **原因**：subagent 在 lint output 是定量真相、code excerpt 是 paraphrased context；narrative 字段（test name / 描述）是 LLM 從上下文 reconstruct，容易混淆相鄰 it block。
+- **對策**：closeout 時以 `npx eslint <files>` 真實 output 與 `rg` line:col 為準；subagent narrative 只當 hint，不可直接 quote 進 handoff / commit message。下次 preflight 也派只讀 subagent 即可，但要求 attach raw lint output 與 code excerpt（不只 reformatted summary）。
 
 ---
 
@@ -668,23 +675,49 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
   - T35 Session 6 closeout + handoff update（獨占）
 - **commit 狀態**：本規劃 session commit 包含 `tasks.md` / `handoff.md` / `eslint.config.mjs`（commit bridge 後恢復 `error`）/ `cspell.json`（補 `affordances` / `eperm`）。Commit 完成後主 agent 立刻把 `eslint.config.mjs:396` 從 `off` 改回 `error`，下個 session 接手時應只看到 `M eslint.config.mjs` dirty。
 
+### Session 6（NotificationPanel + notification-click + scroll-to-comment 收尾）— 完成
+
+- **Started**: 2026-04-28
+- **Completed**: 2026-04-28
+- **狀態**：✅ T30-T35 全綠；`testing-library/no-node-access` 維持 `error`。notifications domain `no-node-access` 全清（10/10 檔）。
+- **T30-T35 task 結果**：
+  - T30 preflight（read-only subagent）：`NotificationPanel.test.jsx` raw 4 unique 2（line 235:29、245:29），`notification-click.test.jsx` raw 2 unique 2（line 240:18、250:26），`scroll-to-comment.test.jsx` raw 2 unique 1（line 34）。subagent 回報的 test name 與實際 code 不完全相符（詳 §2.38 hallucination 坑），但 line:col / raw / unique 數字與 plan 一致。
+  - T31：`src/components/Notifications/NotificationItem.jsx` line 48 unreadDot `<span>` 加 `data-testid="notification-unread-dot"` + `aria-hidden="true"`。
+  - T32：`NotificationPanel.test.jsx` 兩個 it block (`should show blue dot` / `should NOT show blue dot`) 改用 `screen.getByTestId / queryByTestId('notification-unread-dot')`，移除 `const { baseElement } = render(...)` 解構。
+  - T33：`notification-click.test.jsx` line 240/250 改 `within(panel).getByTestId / queryByTestId(...)`，補 `within` 進 `@testing-library/react` import。
+  - T34：新檔 `tests/_helpers/notifications/scroll-to-comment-mock.jsx`（default export `ScrollTestComponent`，包含 `useEffect` 內 `document.getElementById(commentId)`）；test 檔 import helper 並移除原 `useEffect` import；`eslint.config.mjs` §17.5 ignores 加精確路徑 `'tests/_helpers/notifications/scroll-to-comment-mock.jsx'`，rule level 維持 `error`。line drift：`prefer-user-event` 395 → 399、`no-node-access` 396 → 400（ignores 多一行）。
+  - T35：closeout verification + handoff 更新；未改 `eslint.config.mjs` / `src/**` / `tests/**`，只改本檔。
+- **T35 verification（2026-04-28 fresh run）**:
+  - `npx eslint tests/integration/notifications/NotificationPanel.test.jsx tests/integration/notifications/notification-click.test.jsx tests/integration/notifications/scroll-to-comment.test.jsx`: exit 0。
+  - `npx eslint tests/integration/notifications/`: exit 0。
+  - `npx eslint src/components/Notifications/NotificationItem.jsx tests/_helpers/notifications/scroll-to-comment-mock.jsx`: exit 0。
+  - `npx vitest run` 三 target 檔：3 files passed，19 tests passed，1.32s。
+  - `rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs`: line 399 = `prefer-user-event: error`、line 400 = `no-node-access: error`。
+- **收斂數字**：NotificationPanel raw 4→0；notification-click raw 2→0；scroll-to-comment raw 2→0（透過 helper extraction + 精確路徑 ignore）。
+- **Repo-wide lint 殘留**（`npx eslint src specs tests` 24 problems，全為 `no-node-access`，分布為 S7-S8 scope）：
+  - profile（S7）：`tests/integration/profile/ProfileEventList.test.jsx`、`ProfileHeader.test.jsx`（共 2 處）
+  - weather（S7）：`tests/integration/weather/favorites.test.jsx`、`weather-page.test.jsx`（共 2 處）
+  - posts（S8）：`tests/integration/posts/PostDetail.test.jsx`、`PostFeed.test.jsx`（共 2 處）
+  - toast（S8）：`tests/integration/toast/crud-toast.test.jsx`、`toast-container.test.jsx`（共 2 處）
+  - strava（S8）：`tests/integration/strava/RunsRouteMap.test.jsx`（共 1 處）
+- **commit 狀態**：未 `git add` / commit / push。Working tree dirty：`M eslint.config.mjs`、`M tests/integration/notifications/NotificationPaginationStateful.test.jsx`、`M src/components/Notifications/NotificationItem.jsx`、`M tests/integration/notifications/NotificationPanel.test.jsx`、`M tests/integration/notifications/notification-click.test.jsx`、`M tests/integration/notifications/scroll-to-comment.test.jsx`；untracked 新檔 `tests/_helpers/notifications/scroll-to-comment-mock.jsx`。
+
 ---
 
 ## 5. 下個 Session 開工 checklist
 
-進 Session 6 execution（T30-T35）前：
+進 Session 7（plan §8.2 S7「🧹 純測試重構」— profile + weather）前：
 
-- [ ] 讀本檔 §0、§2.28–§2.37、§4「Session 5（NavbarDesktop + NotificationBell SVG）— 完成」+「Session 6 規劃 — 完成」。
-- [ ] 讀 `tasks.md` Session 6 段（T30-T35）；spec 已完整，不需另行規劃，直接派 Engineer。
-- [ ] 先跑 `git status --short` / `git diff --name-only`；應只看到 `M eslint.config.mjs`（commit bridge 後恢復 `error`）。不要把 parallel dirty files 直接歸因給 S6。
-- [ ] 確認 `testing-library/no-node-access` 是 `error`：`rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs` 兩條都應 `error`；若 `no-node-access` 是 `off`，停下回報，**不在 sensor 關閉時做 S6**。
-- [ ] S6 scope 只接 `NotificationPanel.test.jsx` unreadDot、`notification-click.test.jsx` unreadDot、`scroll-to-comment.test.jsx`，以及 `NotificationItem.jsx` 最小 affordance + `tests/_helpers/notifications/scroll-to-comment-mock.jsx` 新檔 + `eslint.config.mjs` ignores 一個精確路徑。
-- [ ] 不回頭改 S5 scope：`NavbarDesktop.test.jsx` / `UserMenu.jsx` / `NotificationBell.test.jsx` / `NotificationBell.jsx` 除非 fresh lint/test 證明被 S6 改動直接打壞。
-- [ ] T34 改 `eslint.config.mjs` 只能在 §17.5 testing-library block 的 `ignores` array 加 `'tests/_helpers/notifications/scroll-to-comment-mock.jsx'` 一個精確路徑；不可加 `tests/_helpers/**` broad glob、不可改 rule level、不可動其他 ignores。
+- [ ] 讀本檔 §0、§2.28–§2.38、§4「Session 6（NotificationPanel + notification-click + scroll-to-comment 收尾）— 完成」。
+- [ ] 讀 plan §8.2 S7 段；S7 是純測試重構，scope = `tests/integration/profile/`（3 處 `no-node-access`，分布 `ProfileEventList.test.jsx` / `ProfileHeader.test.jsx`）+ `tests/integration/weather/`（2 處，分布 `favorites.test.jsx` / `weather-page.test.jsx`）；先別碰 S8 scope（posts / toast / strava 共 5 處）。
+- [ ] S7 規劃時派 read-only Explore subagent 跑 fresh `npx eslint <scope>`，列 raw / unique / line:col / 違規 code 與最近 it block；不要沿用本檔記載的「3 處 / 2 處」當唯一真相 — 對齊 §2.30 / §2.38。
+- [ ] 先跑 `git status --short`；fresh state 預期看到 S6 留下的 dirty 檔（見 §4 Session 6 commit 狀態段）。S7 規劃 commit 前需主 agent 決定如何處理 S6 dirty files（continuation commit 或 stash 隔離）。
+- [ ] 確認 `testing-library/no-node-access` 是 `error`：`rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs` 兩條都應 `error`（line drift 後現在是 line 399 / 400）。
+- [ ] S7 scope 嚴格限制在 `tests/integration/profile/` + `tests/integration/weather/`；不回頭改 S6 已綠的 notifications domain，除非 fresh lint 證明被 S7 改動打壞。
+- [ ] S7 修法傾向走 `screen` query + `data-testid` minimal affordance（同 S6 unreadDot pattern）；除非結構性無法重構才考慮 helper extraction（同 S6 scroll-to-comment pattern，需主 agent 核准 + 加精確路徑 ignore，禁 broad glob）。
 - [ ] Boundary / audit 指令若用 `tee`，必須用 `zsh -o pipefail -c '...'` 或另跑 raw command 確認 exit code（§2.29）。
-- [ ] T30 preflight 重新跑 current lint，列 raw count + unique line:col；不要沿用本檔行號當唯一真相（§2.30）。
-- [ ] repo-wide lint 不是 S6 開工前提；除非真的跑過且通過，不得聲稱 repo-wide 全綠。S7-S8 domain（profile / weather / posts / toast / strava）仍會 fail。
-- [ ] T35 不 git add / commit / push；T31-T34 也不 commit（與前 sessions 同 pattern）。
+- [ ] repo-wide lint 不是 S7 開工前提；S8 scope（posts / toast / strava 5 處）仍會 fail，不得聲稱 repo-wide 全綠。
+- [ ] S7 execution 期間所有 task 不 git add / commit / push（與前 sessions 同 pattern）；任何 commit 由主 agent 在規劃 commit / closeout commit bridge 內完成。
 
 ---
 

@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // ---------------------------------------------------------------------------
@@ -237,7 +237,7 @@ describe('Notification click behavior', () => {
 
     // Verify unread dot exists before click
     const panel = screen.getByRole('region', { name: '通知面板' });
-    expect(panel.querySelector('[class*="unreadDot"]')).toBeInTheDocument();
+    expect(within(panel).getByTestId('notification-unread-dot')).toBeInTheDocument();
 
     // Act — click the notification (panel closes, re-open to inspect)
     await user.click(screen.getByRole('button', { name: /週末跑步/ }));
@@ -247,6 +247,6 @@ describe('Notification click behavior', () => {
 
     // The notification should now be marked as read — no blue dot
     const reopenedPanel = screen.getByRole('region', { name: '通知面板' });
-    expect(reopenedPanel.querySelector('[class*="unreadDot"]')).not.toBeInTheDocument();
+    expect(within(reopenedPanel).queryByTestId('notification-unread-dot')).not.toBeInTheDocument();
   });
 });
