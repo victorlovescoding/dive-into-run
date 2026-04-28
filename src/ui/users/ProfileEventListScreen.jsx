@@ -55,7 +55,14 @@ export default function ProfileEventListScreen({ runtime }) {
         </div>
       )}
 
-      {hasMore && <div ref={sentinelRef} className={styles.sentinel} aria-hidden="true" />}
+      {hasMore && (
+        <div
+          ref={sentinelRef}
+          className={styles.sentinel}
+          aria-hidden="true"
+          data-testid="profile-event-list-sentinel"
+        />
+      )}
 
       {isLoadingMore && <p className={styles.loadMoreStatus}>載入中...</p>}
 

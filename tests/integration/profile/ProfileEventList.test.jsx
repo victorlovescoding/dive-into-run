@@ -235,11 +235,10 @@ describe('Integration: ProfileEventList', () => {
     const ProfileEventList = await importProfileEventList();
 
     // Act
-    const { baseElement } = render(<ProfileEventList uid={TEST_UID} />);
+    render(<ProfileEventList uid={TEST_UID} />);
 
     // Assert — sentinel 是 IntersectionObserver target，aria-hidden 故無語意 role
-    const sentinel = baseElement.querySelector('[aria-hidden="true"]');
-    expect(sentinel).toBeInTheDocument();
+    expect(screen.getByTestId('profile-event-list-sentinel')).toBeInTheDocument();
   });
 
   // --- hasMore=false 時 sentinel 不存在 ---
@@ -251,11 +250,10 @@ describe('Integration: ProfileEventList', () => {
     const ProfileEventList = await importProfileEventList();
 
     // Act
-    const { baseElement } = render(<ProfileEventList uid={TEST_UID} />);
+    render(<ProfileEventList uid={TEST_UID} />);
 
     // Assert — sentinel 不存在
-    const sentinel = baseElement.querySelector('[aria-hidden="true"]');
-    expect(sentinel).not.toBeInTheDocument();
+    expect(screen.queryByTestId('profile-event-list-sentinel')).not.toBeInTheDocument();
   });
 
   // --- loadMore error → 保留既有項目顯示錯誤 ---
