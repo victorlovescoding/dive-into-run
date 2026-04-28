@@ -143,14 +143,16 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       expect(btn).toHaveAttribute('aria-expanded', 'false');
     });
 
-    it('hamburger contains 3 span elements for lines', async () => {
+    it('hamburger contains 3 aria-hidden line elements', async () => {
       // Arrange & Act
       await renderNavbar();
 
       // Assert
-      const btn = screen.getByRole('button', { name: '開啟導覽選單' });
-      const spans = btn.querySelectorAll('span');
-      expect(spans).toHaveLength(3);
+      const lines = screen.getAllByTestId('hamburger-line');
+      expect(lines).toHaveLength(3);
+      for (const line of lines) {
+        expect(line).toHaveAttribute('aria-hidden', 'true');
+      }
     });
   });
 
@@ -161,11 +163,12 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       await renderNavbar();
 
       // Assert
-      const drawer = document.getElementById('mobile-drawer');
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
       expect(drawer).toBeInTheDocument();
       expect(drawer).toHaveAttribute('role', 'dialog');
       expect(drawer).toHaveAttribute('aria-modal', 'true');
       expect(drawer).toHaveAttribute('aria-label', '導覽選單');
+      expect(drawer).toHaveAttribute('id', 'mobile-drawer');
     });
 
     it('drawer is not in open state initially', async () => {
@@ -173,8 +176,8 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       await renderNavbar();
 
       // Assert
-      const drawer = document.getElementById('mobile-drawer');
-      expect(drawer.className).not.toMatch(/drawerOpen/);
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
+      expect(drawer).not.toHaveClass(/drawerOpen/);
     });
 
     it('clicking hamburger opens drawer and shows overlay', async () => {
@@ -182,8 +185,10 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       await renderAndOpenDrawer();
 
       // Assert
-      const drawer = document.getElementById('mobile-drawer');
-      expect(drawer.className).toMatch(/drawerOpen/);
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
+      const overlay = screen.getByTestId('mobile-drawer-overlay');
+      expect(drawer).toHaveClass(/drawerOpen/);
+      expect(overlay).toHaveClass(/overlayVisible/);
     });
 
     it('drawer shows all 6 nav links after opening', async () => {
@@ -191,7 +196,7 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       await renderAndOpenDrawer();
 
       // Assert
-      const drawer = document.getElementById('mobile-drawer');
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
       const labels = ['回首頁', '會員頁面', '文章', '揪團頁面', '跑步', '天氣'];
       for (const label of labels) {
         expect(within(drawer).getByRole('link', { name: label })).toBeInTheDocument();
@@ -203,7 +208,7 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       await renderAndOpenDrawer();
 
       // Assert
-      const drawer = document.getElementById('mobile-drawer');
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
       const activeLink = within(drawer).getByRole('link', { name: '揪團頁面' });
       expect(activeLink).toHaveAttribute('aria-current', 'page');
     });
@@ -213,7 +218,7 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       await renderAndOpenDrawer();
 
       // Assert
-      const drawer = document.getElementById('mobile-drawer');
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
       const homeLink = within(drawer).getByRole('link', { name: '回首頁' });
       expect(homeLink).not.toHaveAttribute('aria-current');
     });
@@ -226,8 +231,9 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       await renderAndOpenDrawer({ user: null });
 
       // Assert
-      const drawer = document.getElementById('mobile-drawer');
-      const loginBtn = within(drawer).getByRole('button', { name: /登入/i });
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
+      const drawerScope = within(drawer);
+      const loginBtn = drawerScope.getByRole('button', { name: /登入/i });
       expect(loginBtn).toBeInTheDocument();
     });
 
@@ -236,8 +242,9 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       const { user } = await renderAndOpenDrawer({ user: null });
 
       // Act
-      const drawer = document.getElementById('mobile-drawer');
-      const loginBtn = within(drawer).getByRole('button', { name: /登入/i });
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
+      const drawerScope = within(drawer);
+      const loginBtn = drawerScope.getByRole('button', { name: /登入/i });
       await user.click(loginBtn);
 
       // Assert
@@ -249,9 +256,10 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       await renderAndOpenDrawer({ user: mockUser });
 
       // Assert
-      const drawer = document.getElementById('mobile-drawer');
-      expect(within(drawer).getByText('Test User')).toBeInTheDocument();
-      expect(within(drawer).getByRole('button', { name: /登出/i })).toBeInTheDocument();
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
+      const drawerScope = within(drawer);
+      expect(drawerScope.getByText('Test User')).toBeInTheDocument();
+      expect(drawerScope.getByRole('button', { name: /登出/i })).toBeInTheDocument();
     });
 
     it('clicking sign-out calls signOutUser', async () => {
@@ -259,8 +267,9 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       const { user } = await renderAndOpenDrawer({ user: mockUser });
 
       // Act
-      const drawer = document.getElementById('mobile-drawer');
-      const signOutBtn = within(drawer).getByRole('button', { name: /登出/i });
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
+      const drawerScope = within(drawer);
+      const signOutBtn = drawerScope.getByRole('button', { name: /登出/i });
       await user.click(signOutBtn);
 
       // Assert
@@ -274,8 +283,11 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       // Arrange
       await renderAndOpenDrawer();
 
-      // Assert — hamburger has aria-controls, drawer close button does not
-      const hamburger = document.querySelector('[aria-controls="mobile-drawer"]');
+      // Assert
+      const hamburger = screen.getByRole('button', {
+        name: /開啟導覽選單|關閉導覽選單/,
+        expanded: true,
+      });
       expect(hamburger).toHaveAttribute('aria-expanded', 'true');
     });
 
@@ -292,7 +304,7 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       const { user } = await renderAndOpenDrawer();
 
       // Act — use the close button inside the drawer to avoid ambiguity
-      const drawer = document.getElementById('mobile-drawer');
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
       const closeBtn = within(drawer).getByRole('button', { name: '關閉導覽選單' });
       await user.click(closeBtn);
 
@@ -303,27 +315,27 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
     it('clicking nav link closes drawer', async () => {
       // Arrange
       const { user } = await renderAndOpenDrawer();
-      const drawer = document.getElementById('mobile-drawer');
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
 
       // Act
       const link = within(drawer).getByRole('link', { name: '文章' });
       await user.click(link);
 
       // Assert
-      expect(drawer.className).not.toMatch(/drawerOpen/);
+      expect(drawer).not.toHaveClass(/drawerOpen/);
     });
 
     it('clicking overlay closes drawer', async () => {
       // Arrange
       const { user } = await renderAndOpenDrawer();
 
-      // Act - find overlay by its class pattern
-      const overlay = document.querySelector('[class*="overlay"]');
+      // Act
+      const overlay = screen.getByTestId('mobile-drawer-overlay');
       await user.click(overlay);
 
       // Assert
-      const drawer = document.getElementById('mobile-drawer');
-      expect(drawer.className).not.toMatch(/drawerOpen/);
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
+      expect(drawer).not.toHaveClass(/drawerOpen/);
     });
   });
 
@@ -334,7 +346,7 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       await renderAndOpenDrawer();
 
       // Assert
-      const drawer = document.getElementById('mobile-drawer');
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
       const closeBtn = within(drawer).getByRole('button', { name: '關閉導覽選單' });
       expect(closeBtn).toBeInTheDocument();
     });
@@ -347,8 +359,8 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       await user.keyboard('{Escape}');
 
       // Assert
-      const drawer = document.getElementById('mobile-drawer');
-      expect(drawer.className).not.toMatch(/drawerOpen/);
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
+      expect(drawer).not.toHaveClass(/drawerOpen/);
     });
 
     it('focus moves to close button when drawer opens', async () => {
@@ -361,9 +373,9 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       await user.click(hamburger);
 
       // Assert
-      const drawer = document.getElementById('mobile-drawer');
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
       const closeBtn = within(drawer).getByRole('button', { name: '關閉導覽選單' });
-      expect(document.activeElement).toBe(closeBtn);
+      expect(closeBtn).toHaveFocus();
     });
 
     it('focus returns to hamburger when drawer closes', async () => {
@@ -371,13 +383,13 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       const { user } = await renderAndOpenDrawer();
 
       // Act
-      const drawer = document.getElementById('mobile-drawer');
+      const drawer = screen.getByRole('dialog', { name: '導覽選單' });
       const closeBtn = within(drawer).getByRole('button', { name: '關閉導覽選單' });
       await user.click(closeBtn);
 
       // Assert
       const hamburger = screen.getByRole('button', { name: '開啟導覽選單' });
-      expect(document.activeElement).toBe(hamburger);
+      expect(hamburger).toHaveFocus();
     });
   });
 });

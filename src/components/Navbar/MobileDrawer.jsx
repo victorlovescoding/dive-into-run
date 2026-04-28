@@ -33,7 +33,12 @@ export default function MobileDrawer({
   return (
     <>
       {/* Overlay */}
-      <div className={overlayClass} onClick={closeDrawer} aria-hidden="true" />
+      <div
+        className={overlayClass}
+        onClick={closeDrawer}
+        aria-hidden="true"
+        data-testid="mobile-drawer-overlay"
+      />
 
       {/* Drawer (mobile) */}
       <div

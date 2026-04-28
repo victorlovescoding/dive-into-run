@@ -47,9 +47,9 @@ export default function Navbar() {
           aria-label={hamburgerLabel}
           onClick={toggleDrawer}
         >
-          <span className={styles.hamburgerLine} />
-          <span className={styles.hamburgerLine} />
-          <span className={styles.hamburgerLine} />
+          <span className={styles.hamburgerLine} aria-hidden="true" data-testid="hamburger-line" />
+          <span className={styles.hamburgerLine} aria-hidden="true" data-testid="hamburger-line" />
+          <span className={styles.hamburgerLine} aria-hidden="true" data-testid="hamburger-line" />
         </button>
 
         {/* Desktop links */}

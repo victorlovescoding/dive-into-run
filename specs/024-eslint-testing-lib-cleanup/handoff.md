@@ -11,18 +11,18 @@
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Branch          | `024-eslint-testing-lib-cleanup`                                                                                                                                                                   |
 | Worktree path   | `/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`                                                                                                                            |
-| 目前 Session    | **Session 4 planning ready；待 subagent 執行 T17-T23（NavbarMobile no-node-access）**                                                                                                              |
-| Working tree    | 前置 config Engineer 已打開 `no-node-access` 並由 Reviewer PASS；本規劃 session 只修改 `tasks.md` / `handoff.md`。接手請用 `git status --short` 驗證實際狀態，不要 revert 他人改動。                    |
+| 目前 Session    | **Session 4 完成；下一 session 接 S5（NavbarDesktop + notifications no-node-access）**                                                                                                             |
+| Working tree    | 目前 dirty files（2026-04-28T20:18+08:00）：`eslint.config.mjs`、`src/components/Navbar/MobileDrawer.jsx`、`src/components/Navbar/Navbar.jsx`、`tests/integration/navbar/NavbarMobile.test.jsx`、`specs/024-eslint-testing-lib-cleanup/handoff.md`。T23 只修改本檔；不要 revert 他人改動。 |
 | ESLint plugin   | 已裝 (eslint-plugin-testing-library@^7.16.2)                                                                                                                                                       |
 | Sensors         | `testing-library/prefer-user-event` 維持 `error`；`testing-library/no-node-access` 已恢復 `error`，不要關回 `off`                                                                                |
-| Repo lint state | 不再是 Session 3 的 repo-wide exit 0 狀態；`NavbarMobile.test.jsx` 目前 target lint exit 1，raw 42 `no-node-access` errors / 22 unique line:col sites。S4 完成後 repo-wide lint 仍可能因 S5-S8 domain fail。 |
-| Commit 計畫     | 本規劃 session 不 `git add` / commit / push；S4 執行與後續修正都交 subagent。                                                                                                                       |
+| Repo lint state | `NavbarMobile.test.jsx` target lint exit 0；S4 component+target lint exit 0；raw 42 / 22 unique `no-node-access` sites 已收斂到 0。T23 未跑 repo-wide lint；repo-wide lint 仍可能因 S5-S8 domain fail，不可寫成全綠。 |
+| Commit 計畫     | T23 不 `git add` / commit / push。                                                                                                                                                                  |
 
 接手前必讀：
 
-1. 本檔 §2 **二十個坑**（特別是 §2.18–§2.20：MobileDrawer dialog 已存在、raw count 會 duplicated、rule 打開後 repo-wide 會因剩餘 domain fail）
-2. 本檔 §4 「Session 4 規劃 — 完成」段
-3. `tasks.md` Session 4 T17-T23；S4 scope 只做 `NavbarMobile.test.jsx` + 必要 `Navbar.jsx` / `MobileDrawer.jsx` affordance
+1. 本檔 §2 **二十三個坑**（特別是 §2.18–§2.23：S4 已踩過的 NavbarMobile / line drift / allowed DOM target）
+2. 本檔 §4 「Session 4（Phase 4.1 NavbarMobile）— 完成」段
+3. 本檔 §5 S5 checklist；S5 只接 NavbarDesktop + notifications，不回頭改 S4 scope
 
 ---
 
@@ -65,7 +65,7 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 
 ---
 
-## 2. 二十個坑（從 plan §5 + §6 + Session 2/3/4 規劃萃取，先警告再執行）
+## 2. 二十三個坑（從 plan §5 + §6 + Session 2/3/4 規劃萃取，先警告再執行）
 
 ### 2.1 ⚠️ 坑 1：T2 commit 後 `npm run lint` 會 fail repo-wide
 
@@ -254,6 +254,25 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
   - `npx eslint src/components/Navbar/Navbar.jsx src/components/Navbar/MobileDrawer.jsx tests/integration/navbar/NavbarMobile.test.jsx` exit 0
   - `npx vitest run tests/integration/navbar/NavbarMobile.test.jsx` pass
 - **禁止**：不要把 rule 關回 `off`、不要加 eslint disable、不要為了 commit/gate 偷修 S5-S8 domain。
+
+### 2.21 ⚠️ 坑 21：T18 test affordance 是實際必要，不是多餘測試噪音
+
+- **發生在**：Session 4 T18。
+- **已驗事實**：為了清掉 NavbarMobile 的 DOM traversal，`Navbar.jsx` 的 hamburger line 需要穩定 hook（`data-testid="hamburger-line"` + `aria-hidden="true"`），`MobileDrawer.jsx` 的 overlay 也需要 `data-testid="mobile-drawer-overlay"`。
+- **原因**：hamburger line / overlay 本身不是適合用 role/name 查詢的互動目標；硬用 `children` / `querySelector` 會重新觸發 `testing-library/no-node-access`。
+- **對策**：後續 reviewer 不要把這兩個 affordance 當成可刪的「test-only noise」。若 S5 需要類似 affordance，先證明語意查詢不可用，再補最小穩定 hook。
+
+### 2.22 ⚠️ 坑 22：T19-T22 後 line number drift，reviewer 要看 current lint unique sites
+
+- **發生在**：Session 4 T19-T22 分段 cleanup。
+- **原因**：每輪把 DOM traversal 改成 helper / Testing Library query 後，`NavbarMobile.test.jsx` 行號會漂移；沿用 T17 的原始行號會誤判已修區塊還有問題。
+- **對策**：Reviewer 要以 fresh `npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish` 的 current output、unique `line:column`、test name / target range 為準，不要死背 planning preflight 的原行號。
+
+### 2.23 ⚠️ 坑 23：`document.body.style.overflow` 是允許的非 `no-node-access` target
+
+- **發生在**：Session 4 T22 closeout review。
+- **已驗事實**：`document.body.style.overflow` 不屬於本輪要清的 Testing Library DOM traversal 目標；它用來驗 body scroll-lock state，不是用 Testing Library result 去取 node。
+- **對策**：不要為了「看起來像 document access」把它誤清或改成脆弱替代寫法。除非 fresh lint 實際報 `testing-library/no-node-access` 或測試需求改變，S5 不應碰這類 body style assertion。
 
 ---
 
@@ -444,24 +463,44 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
   - T23 Session 4 closeout + handoff update
 - **commit 狀態**：本規劃 session 不 `git add` / commit / push；只留下 `tasks.md` / `handoff.md` 文件修改。
 
+### Session 4（Phase 4.1 NavbarMobile）— 完成
+
+- **Started**: 2026-04-28
+- **Completed**: 2026-04-28
+- **狀態**：✅ Session 4 完成（T17-T23）。`testing-library/no-node-access` 維持 `error`；S4 只收斂 NavbarMobile + 必要 Navbar mobile affordance。
+- **T17-T23 task 結果**：
+  - T17 preflight：`NavbarMobile.test.jsx` raw 42 `testing-library/no-node-access` errors / 22 unique line:col sites；`MobileDrawer.jsx` dialog a11y 已存在。
+  - T18：`Navbar.jsx` hamburger lines 加 `data-testid` / `aria-hidden`；`MobileDrawer.jsx` overlay 加 `data-testid`；component lint + target Vitest pass。
+  - T19：drawer panel / hamburger / overlay range PASS。
+  - T20：auth block PASS。
+  - T21：state management block PASS。
+  - T22：accessibility / focus block PASS；`npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish` exit 0，`testing-library/no-node-access` 0；target Vitest 23/23 pass。
+  - T23：closeout fresh verification + handoff update；未改 `src/**`、`tests/**`、`eslint.config.mjs`、package files。
+- **T23 verification（2026-04-28T20:18:23+08:00 fresh run）**:
+  - `npx eslint tests/integration/navbar/NavbarMobile.test.jsx`: exit 0；輸出只有 React version warning。
+  - `npx eslint src/components/Navbar/Navbar.jsx src/components/Navbar/MobileDrawer.jsx tests/integration/navbar/NavbarMobile.test.jsx`: exit 0；輸出只有 React version warning。
+  - `rg -n "'testing-library/no-node-access': 'error'" eslint.config.mjs`: exit 0；line 396 仍是 `error`。
+  - `npx vitest run tests/integration/navbar/NavbarMobile.test.jsx`: exit 0；1 file passed，23 tests passed。
+  - `npx vitest run tests/integration/navbar`: exit 0；4 files passed，49 tests passed。
+- **收斂數字**：`NavbarMobile.test.jsx` raw 42 / 22 unique `no-node-access` sites → 0。
+- **剩餘範圍**：repo-wide lint 未在 T23 跑；S5-S8 domain 仍可能 fail。下一 session 只接 S5（NavbarDesktop + notifications），不要把 S6-S8 domain 混進來。
+- **commit 狀態**：未 `git add` / commit / push。
+
 ---
 
 ## 5. 下個 Session 開工 checklist
 
-進 Session 4 執行前：
+進 Session 5 前：
 
-- [ ] 讀本檔 §0（目前是 Session 4 planning ready；`no-node-access` 已是 `error`，repo-wide lint 不再沿用 Session 3 exit 0 事實）
-- [ ] 讀本檔 §2.18–§2.20（MobileDrawer dialog a11y 已存在、raw count duplicated、rule 打開後 S4 不要求 repo-wide 全綠）
-- [ ] 讀本檔 §4 「Session 4 規劃 — 完成」段
-- [ ] 讀 `tasks.md` Session 4 T17-T23；主 agent 只派工，不實作
-- [ ] 跑 `git status --short` / `git diff --name-only`；若看到他人改動，先釐清來源，不要 revert
-- [ ] T17 先做只讀 preflight：確認 config rule、target raw/unique violations、MobileDrawer dialog a11y、target range 分組
-- [ ] S4 writer concurrency = 1；同時最多 2 個 subagents 只能是「1 Engineer + 1 Reviewer」
-- [ ] T18 只在必要時補 `Navbar.jsx` hamburger line / `MobileDrawer.jsx` overlay test affordance；不要改 drawer role/label
-- [ ] T19-T22 只改 `tests/integration/navbar/NavbarMobile.test.jsx`，按 drawer/auth/state/focus range 分段
-- [ ] Reviewer FAIL 時，主 agent 只能重派 Engineer/subagent 修改，不可自己修
-- [ ] T23 closeout 只要求 `NavbarMobile.test.jsx` 0 `no-node-access` + target vitest pass；repo-wide lint 剩餘 domain 交 S5+
-- [ ] 不改 `eslint.config.mjs`、不加 eslint disable、不 git add/commit/push
+- [ ] 讀本檔 §0、§2.18–§2.23、§4「Session 4（Phase 4.1 NavbarMobile）— 完成」。
+- [ ] 先跑 `git status --short` / `git diff --name-only`；看到 S4 dirty files 不要 revert，先確認來源。
+- [ ] S5 scope 只接 NavbarDesktop + notifications；不要回頭改 `NavbarMobile.test.jsx` / `Navbar.jsx` / `MobileDrawer.jsx`，除非 fresh verification 證明 S5 自己造成 regression。
+- [ ] 不得把 `testing-library/no-node-access` 關回 `off`；不得改 `eslint.config.mjs`；不得加 eslint disable。
+- [ ] 不得混 S6-S8 domain（posts/profile/weather/toast/strava 等）。
+- [ ] S5 preflight 要重新跑 current lint，列 raw count + unique line:col；不要沿用 S4 的行號或數字。
+- [ ] 若需要 component affordance，只補 NavbarDesktop / notifications 目標所需的最小 hook，並在 reviewer report 說明為何 role/name query 不足。
+- [ ] repo-wide lint 不是 S5 開工前提；除非真的跑過且通過，不得聲稱 repo-wide 全綠。
+- [ ] 不 git add / commit / push，除非主流程另行明確要求。
 
 ---
 
