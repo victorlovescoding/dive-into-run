@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useRef, useState } from 'react';
 import ComposePrompt from '@/components/ComposePrompt';
@@ -123,7 +123,7 @@ describe('ComposeModal', () => {
     expect(dialog).toHaveAttribute('open');
     // 觸發 cancel event 模擬 Escape（jsdom 不會自動呼叫 close）
     const cancelEvent = new Event('cancel', { cancelable: true });
-    fireEvent(dialog, cancelEvent);
+    dialog.dispatchEvent(cancelEvent);
     expect(cancelEvent.defaultPrevented).toBe(false);
   });
 });

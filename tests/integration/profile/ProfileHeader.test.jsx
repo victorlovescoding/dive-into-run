@@ -12,7 +12,7 @@
  *   - Date format: 正體中文加入日期
  *
  * Rules:
- * 1. Use `@testing-library/react` + `user-event` — NEVER `fireEvent`.
+ * 1. Use `@testing-library/react` + `user-event` — NEVER low-level event helpers.
  * 2. Query by `getByRole` / `getByText`, NEVER `container.querySelector`.
  * 3. AAA Pattern (Arrange, Act, Assert).
  * 4. Strict JSDoc; no `any`.

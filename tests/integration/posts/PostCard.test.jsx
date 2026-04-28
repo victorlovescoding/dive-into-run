@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 vi.mock('next/link', () => ({
   default: ({ children, href }) => <a href={href}>{children}</a>,
@@ -80,12 +81,13 @@ describe('PostCard', () => {
       expect(countValues).toContain('3');
     });
 
-    it('按讚按鈕點擊觸發 onLike', () => {
+    it('按讚按鈕點擊觸發 onLike', async () => {
+      const user = userEvent.setup();
       const onLike = vi.fn();
       render(<PostCard post={basePost} onLike={onLike} />);
       const buttons = screen.getAllByRole('button');
       const likeButton = buttons[0];
-      fireEvent.click(likeButton);
+      await user.click(likeButton);
       expect(onLike).toHaveBeenCalledWith('post-1');
     });
   });
@@ -117,7 +119,8 @@ describe('PostCard', () => {
       expect(screen.getByRole('menuitem', { name: /刪除/ })).toBeInTheDocument();
     });
 
-    it('點擊「編輯」觸發 onEdit', () => {
+    it('點擊「編輯」觸發 onEdit', async () => {
+      const user = userEvent.setup();
       const post = { ...basePost, isAuthor: true };
       const onEdit = vi.fn();
       render(
@@ -129,11 +132,12 @@ describe('PostCard', () => {
           onDelete={vi.fn()}
         />,
       );
-      fireEvent.click(screen.getByRole('menuitem', { name: /編輯/ }));
+      await user.click(screen.getByRole('menuitem', { name: /編輯/ }));
       expect(onEdit).toHaveBeenCalledWith('post-1');
     });
 
-    it('點擊「刪除」觸發 onDelete', () => {
+    it('點擊「刪除」觸發 onDelete', async () => {
+      const user = userEvent.setup();
       const post = { ...basePost, isAuthor: true };
       const onDelete = vi.fn();
       render(
@@ -145,7 +149,7 @@ describe('PostCard', () => {
           onDelete={onDelete}
         />,
       );
-      fireEvent.click(screen.getByRole('menuitem', { name: /刪除/ }));
+      await user.click(screen.getByRole('menuitem', { name: /刪除/ }));
       expect(onDelete).toHaveBeenCalledWith('post-1');
     });
   });
@@ -177,18 +181,20 @@ describe('PostCard', () => {
       expect(screen.queryByRole('button', { name: /查看更多/ })).not.toBeInTheDocument();
     });
 
-    it('點擊「查看更多」後展示完整內容', () => {
+    it('點擊「查看更多」後展示完整內容', async () => {
+      const user = userEvent.setup();
       const post = { ...basePost, content: longContent };
       render(<PostCard post={post} truncate />);
-      fireEvent.click(screen.getByRole('button', { name: /查看更多/ }));
+      await user.click(screen.getByRole('button', { name: /查看更多/ }));
       expect(screen.getByText(longContent)).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /查看更多/ })).not.toBeInTheDocument();
     });
 
-    it('展開後不顯示「收起」按鈕', () => {
+    it('展開後不顯示「收起」按鈕', async () => {
+      const user = userEvent.setup();
       const post = { ...basePost, content: longContent };
       render(<PostCard post={post} truncate />);
-      fireEvent.click(screen.getByRole('button', { name: /查看更多/ }));
+      await user.click(screen.getByRole('button', { name: /查看更多/ }));
       expect(screen.queryByRole('button', { name: /收起/ })).not.toBeInTheDocument();
     });
 

@@ -17,7 +17,7 @@
  *   layer (`@/lib/firebase-profile`) 即可驗證所有行為。
  *
  * Rules:
- * 1. Use `@testing-library/react` + `userEvent.setup()` — NEVER `fireEvent`.
+ * 1. Use `@testing-library/react` + `userEvent.setup()` — NEVER low-level event helpers.
  * 2. Query by `getByRole` / `getByLabelText` / `findByText`, never
  *    `container.querySelector`.
  * 3. AAA Pattern (Arrange, Act, Assert).

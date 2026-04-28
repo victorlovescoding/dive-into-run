@@ -887,3 +887,394 @@ for task in [T5, T6, T7, T8, T9, T10]:
 ```
 
 > 主 agent **不**自己跑 autofix、不自己改測試檔、不自己改 handoff.md。所有有副作用的指令都派 subagent 跑。
+
+---
+
+# Session 3 Tasks — Phase 3：Event API 遷移（prefer-user-event + fireEvent 清零）
+
+> **Source**: `specs/024-eslint-testing-lib-cleanup/plan.md` §5 Phase 3 + §8.2 S3 + §8.4 + §9
+> **Goal**: 清掉 Phase 3 event API 遷移：`prefer-user-event` 實際 6 errors → 0，並把 `tests/integration/` 內 8 個可執行 `fireEvent` 用法清到 raw grep 0 references。
+> **執行模式**：主 agent 不下場改測試或 config，所有後續修改交 subagent。主 agent 只做派遣、彙整、驗收回饋與最後交接文件更新。
+> **Branch**：`024-eslint-testing-lib-cleanup`（worktree 路徑：`/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`）
+> **承接狀態**：Session 2 已完成並提交在 `a74ca72`；2026-04-28 已先把 `testing-library/prefer-user-event` 恢復 `error`，讓 Session 3 問題在 lint gate 直接可見；`no-node-access` 仍暫時 `off`。
+
+開工前必讀：
+
+1. `plan.md` §5 Phase 3、§8.2、§8.4、§9
+2. `handoff.md` §0、§2.9-§2.14、§4 Session 2、§5 checklist
+3. 本章 T11-T16，尤其 `prefer-user-event` 6 errors vs `fireEvent` 8 references 的差異
+
+## Parallelism — 共享 worktree 最多同時 2 個 Engineer subagents
+
+| 階段                                      | 並行度 | 原因                                                                                                       |
+| ----------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------- |
+| Engineer 執行 T12-T15                     | **2**  | 四個 task 分別碰不同測試檔，可保守平行；同時超過 2 個容易讓 review / git diff 歸因混亂。                  |
+| 每個 Engineer task 對應 Reviewer task     | **1:1** | 每個 Engineer 完成後才派該 task Reviewer 驗收；Reviewer 不與同 task Engineer 並行。                       |
+| T11 Preflight audit                       | **1**  | 只讀現況，必須先完成，避免後續 task 基於錯的 baseline 動手。                                               |
+| T16 Rule verification + session closeout  | **1**  | Repo-wide verification、config 狀態確認、handoff 收尾必須獨占，不與任何 writer 並行。                    |
+| 主 agent                                  | **0 writers** | 主 agent 不改測試或 config；若 reviewer fail，主 agent只重派 Engineer 修，不直接下場。                    |
+
+建議批次：
+
+1. T11 獨占完成。
+2. 第一批：T12 + T13 最多 2 個 Engineer 並行；各自完成後派各自 Reviewer。
+3. 第二批：T14 + T15 最多 2 個 Engineer 並行；各自完成後派各自 Reviewer。
+4. T16 獨占完成。
+
+---
+
+## T11：Preflight audit（只讀確認，不改檔）
+
+**Engineer prompt 要點**：
+
+1. 確認 worktree：
+   ```bash
+   git status --short
+   ```
+   預期 clean；若不是 clean，回報所有 dirty path，不要修。
+2. 確認 config 暫態：
+   ```bash
+   rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+   ```
+   預期 `prefer-user-event: error`、`no-node-access: off`。`prefer-user-event` 已為 Session 3 打開，`no-node-access` 留給 Phase 4。
+3. 確認 `fireEvent` 現況：
+   ```bash
+   grep -rn "fireEvent" tests/integration/
+   ```
+   預期 8 個可執行用法：PostCard 5 click、NotificationToast 1 click、ComposeModal 1 generic `fireEvent(dialog, cancelEvent)`、NotificationPanel 1 `fireEvent.error(img)`。注意 raw grep 也會列出 import/comment；實作目標仍是最後 raw grep 0。
+   2026-04-28 文件規劃時另看到多個非目標檔的 comment-only hits（例如 `NEVER fireEvent` 測試準則註解）。這些不是 event migration callsite；T11 必須列出它們，交主 agent 決定 T16 raw grep 0 是否包含 comment cleanup，不能讓 Engineer 直接偷改未授權檔。
+4. 確認 rule-reported errors 只剩 6：
+   ```bash
+   npx eslint tests/integration/posts/PostCard.test.jsx tests/integration/notifications/NotificationToast.test.jsx tests/integration/posts/ComposeModal.test.jsx tests/integration/notifications/NotificationPanel.test.jsx --rule '{"testing-library/prefer-user-event":"error"}' 2>&1 | tee /tmp/session3-prefer-user-event.txt
+   grep -c "testing-library/prefer-user-event" /tmp/session3-prefer-user-event.txt
+   ```
+   預期 6：PostCard 5、NotificationToast 1。ComposeModal / NotificationPanel 是 hygiene + plan 目標，不是 rule-reported error。
+5. 回報實測數字，不改任何檔。
+
+**禁止行為**：
+
+- 不修改任何檔案。
+- 不用 `git add` / commit / push。
+- 不把 `prefer-user-event` 的 6 errors 誤寫成 fireEvent 只有 6 references。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. `git status --short` clean。
+2. config 仍為 `prefer-user-event: error`、`no-node-access: off`。
+3. `grep -rn "fireEvent" tests/integration/` 實測包含 8 個可執行用法，且分布符合本章 Goal；raw grep 額外 import/comment 行不可誤算成需要更多 event migration。
+4. 若 raw grep 顯示四個目標檔以外的 comment-only hits，Reviewer 要列出 path，標成 scope decision；不得自行清掉。
+5. `prefer-user-event` rule 強制開啟後實測 6 errors，分布為 PostCard 5 + NotificationToast 1。
+6. Engineer 未改任何檔。
+
+**Reviewer 驗收指令**：
+
+```bash
+git status --short
+rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+grep -rn "fireEvent" tests/integration/
+npx eslint tests/integration/posts/PostCard.test.jsx tests/integration/notifications/NotificationToast.test.jsx tests/integration/posts/ComposeModal.test.jsx tests/integration/notifications/NotificationPanel.test.jsx --rule '{"testing-library/prefer-user-event":"error"}' 2>&1 | tee /tmp/session3-prefer-user-event-review.txt
+grep -c "testing-library/prefer-user-event" /tmp/session3-prefer-user-event-review.txt
+git status --short
+```
+
+**Failure recovery**：
+
+- Dirty tree → 停止，回報主 agent；不要自行 revert。
+- 數字不符或 raw grep 有非目標 comment-only hits → 回報實際分布，主 agent 更新派工前先重新判斷。
+
+---
+
+## T12：PostCard 5x click migration
+
+**Engineer prompt 要點**：
+
+1. 只改 `tests/integration/posts/PostCard.test.jsx`。
+2. 將 5 個 `fireEvent.click(...)` 改為 `await user.click(...)`。
+3. 每個受影響的 `it` 改成 `async`。
+4. 每個受影響的 `it` 自己建立 `const user = userEvent.setup();`，不要跨 test 共用。
+5. 移除 `fireEvent` import；保留/新增 `userEvent` import 時沿用檔案既有 import style。
+6. 跑：
+   ```bash
+   npx vitest run tests/integration/posts/PostCard.test.jsx
+   npx eslint tests/integration/posts/PostCard.test.jsx --rule '{"testing-library/prefer-user-event":"error"}'
+   ```
+7. 回報改了哪 5 處、vitest / eslint 結果。
+
+**禁止行為**：
+
+- 不改其他檔案。
+- 不用 `fireEvent`、不加 eslint disable、不中途改 config。
+- 不把 `userEvent.setup()` 放到 `describe` / `beforeEach` 共用。
+- 不 commit。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. `PostCard.test.jsx` 無 `fireEvent` import / reference。
+2. 5 個 click 都是 `await user.click(...)`。
+3. 受影響 `it` 都是 async，且各自有 `userEvent.setup()`。
+4. 該檔 `prefer-user-event` errors = 0。
+5. 該檔 Vitest pass。
+6. diff 只動 `tests/integration/posts/PostCard.test.jsx`。
+
+**Reviewer 驗收指令**：
+
+```bash
+rg -n "fireEvent|userEvent.setup|await user.click|\\bit\\(" tests/integration/posts/PostCard.test.jsx
+npx eslint tests/integration/posts/PostCard.test.jsx --rule '{"testing-library/prefer-user-event":"error"}'
+npx vitest run tests/integration/posts/PostCard.test.jsx
+git diff --name-only
+git diff tests/integration/posts/PostCard.test.jsx
+```
+
+**Failure recovery**：
+
+- ESLint 還有 `prefer-user-event` → 回報殘留行號，重派 Engineer。
+- Vitest 紅 → 回報 failing test name + error，重派 Engineer 修 timing/query。
+- 改到其他檔 → 回報 off-scope path，主 agent 決定是否重派限縮；Reviewer 不自行 revert。
+
+---
+
+## T13：NotificationToast fake-timer click migration
+
+**Engineer prompt 要點**：
+
+1. 只改 `tests/integration/notifications/NotificationToast.test.jsx`。
+2. 將 `fireEvent.click(screen.getByRole('button', { name: /通知/ }))` 改為 `await user.click(...)`。
+3. 該 `it` 改成 `async`。
+4. 因本檔使用 fake timers，`userEvent.setup()` 必須使用：
+   ```js
+   const user = userEvent.setup({
+     advanceTimers: vi.advanceTimersByTime,
+   });
+   ```
+5. 移除 `fireEvent` import。
+6. 跑：
+   ```bash
+   npx vitest run tests/integration/notifications/NotificationToast.test.jsx
+   npx eslint tests/integration/notifications/NotificationToast.test.jsx --rule '{"testing-library/prefer-user-event":"error"}'
+   ```
+
+**禁止行為**：
+
+- 不改 fake timer 全域策略，除非 Reviewer 回報死鎖且主 agent 重派時明確授權。
+- 不退回 `fireEvent`。
+- 不加 eslint disable。
+- 不改其他檔案、不 commit。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. `NotificationToast.test.jsx` 無 `fireEvent` import / reference。
+2. 該 click 使用 `await user.click(...)`。
+3. `userEvent.setup({ advanceTimers: vi.advanceTimersByTime })` 存在。
+4. 該檔 `prefer-user-event` errors = 0。
+5. 該檔 Vitest pass，沒有 fake timer deadlock / timeout。
+6. diff 只動 `tests/integration/notifications/NotificationToast.test.jsx`。
+
+**Reviewer 驗收指令**：
+
+```bash
+rg -n "fireEvent|userEvent.setup|advanceTimers|await user.click" tests/integration/notifications/NotificationToast.test.jsx
+npx eslint tests/integration/notifications/NotificationToast.test.jsx --rule '{"testing-library/prefer-user-event":"error"}'
+npx vitest run tests/integration/notifications/NotificationToast.test.jsx
+git diff --name-only
+git diff tests/integration/notifications/NotificationToast.test.jsx
+```
+
+**Failure recovery**：
+
+- Vitest timeout / deadlock → 回報 timeout test name；重派 Engineer 優先檢查 `advanceTimers` 是否傳入，必要時才評估單一 `it` 的 timer 切換。
+- ESLint 殘留 → 回報行號，重派。
+- off-scope diff → 回報 path，不自行 revert。
+
+---
+
+## T14：ComposeModal `<dialog>` cancel event 改 native dispatchEvent
+
+**Engineer prompt 要點**：
+
+1. 只改 `tests/integration/posts/ComposeModal.test.jsx`。
+2. 將 generic `fireEvent(dialog, cancelEvent)` 改成：
+   ```js
+   dialog.dispatchEvent(cancelEvent);
+   ```
+3. 不用 `userEvent.keyboard('{Escape}')`，因 jsdom 不會自動實作 `<dialog>` ESC → cancel event。
+4. 移除 `fireEvent` import。
+5. 跑：
+   ```bash
+   npx vitest run tests/integration/posts/ComposeModal.test.jsx
+   npx eslint tests/integration/posts/ComposeModal.test.jsx --rule '{"testing-library/prefer-user-event":"error"}'
+   ```
+
+**禁止行為**：
+
+- 不改 production component。
+- 不把 cancel event 改成 `userEvent.keyboard`。
+- 不加 eslint disable。
+- 不改其他檔案、不 commit。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. `ComposeModal.test.jsx` 無 `fireEvent` import / reference。
+2. cancel event 使用 `dialog.dispatchEvent(cancelEvent)`。
+3. `cancelEvent.defaultPrevented` 既有 assertion 保留。
+4. 該檔 Vitest pass。
+5. diff 只動 `tests/integration/posts/ComposeModal.test.jsx`。
+
+**Reviewer 驗收指令**：
+
+```bash
+rg -n "fireEvent|dispatchEvent|cancelEvent|userEvent.keyboard" tests/integration/posts/ComposeModal.test.jsx
+npx eslint tests/integration/posts/ComposeModal.test.jsx --rule '{"testing-library/prefer-user-event":"error"}'
+npx vitest run tests/integration/posts/ComposeModal.test.jsx
+git diff --name-only
+git diff tests/integration/posts/ComposeModal.test.jsx
+```
+
+**Failure recovery**：
+
+- Vitest 紅 → 回報 failing assertion；重派 Engineer 保留 native cancel event 路線修。
+- 出現 `userEvent.keyboard` 或 eslint disable → 回報違反禁止行為，重派。
+- off-scope diff → 回報 path，不自行 revert。
+
+---
+
+## T15：NotificationPanel img error 改 native dispatchEvent
+
+**Engineer prompt 要點**：
+
+1. 只改 `tests/integration/notifications/NotificationPanel.test.jsx`。
+2. 將 `fireEvent.error(img)` 改成：
+   ```js
+   img.dispatchEvent(new Event('error'));
+   ```
+3. 移除 `fireEvent` import。
+4. 若 React state update 未 flush，將該 `it` 改成 `async` 並用 `waitFor` 包 fallback assertion：
+   ```js
+   await waitFor(() => {
+     expect(screen.queryByRole('img', { name: 'Test Actor 的頭像' })).not.toBeInTheDocument();
+   });
+   ```
+   只在測試實際需要時新增 `waitFor` import。
+5. 跑：
+   ```bash
+   npx vitest run tests/integration/notifications/NotificationPanel.test.jsx
+   npx eslint tests/integration/notifications/NotificationPanel.test.jsx --rule '{"testing-library/prefer-user-event":"error"}'
+   ```
+
+**禁止行為**：
+
+- 不退回 `fireEvent.error`。
+- 不改 production component。
+- 不加 eslint disable。
+- 不改其他檔案、不 commit。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. `NotificationPanel.test.jsx` 無 `fireEvent` import / reference（comment 也要清掉或改寫）。
+2. img error 使用 `img.dispatchEvent(new Event('error'))`。
+3. 若同步 assertion 不穩，使用 `async` + `waitFor`，而不是退回 fireEvent。
+4. 該檔 Vitest pass。
+5. diff 只動 `tests/integration/notifications/NotificationPanel.test.jsx`。
+
+**Reviewer 驗收指令**：
+
+```bash
+rg -n "fireEvent|dispatchEvent|waitFor|new Event\\('error'\\)" tests/integration/notifications/NotificationPanel.test.jsx
+npx eslint tests/integration/notifications/NotificationPanel.test.jsx --rule '{"testing-library/prefer-user-event":"error"}'
+npx vitest run tests/integration/notifications/NotificationPanel.test.jsx
+git diff --name-only
+git diff tests/integration/notifications/NotificationPanel.test.jsx
+```
+
+**Failure recovery**：
+
+- Vitest 紅且 img 還存在 → 重派 Engineer 改 `async` + `waitFor`。
+- comment/import 還殘留 `fireEvent` → 重派 Engineer 清掉。
+- off-scope diff → 回報 path，不自行 revert。
+
+---
+
+## T16：Rule verification + session closeout
+
+**Engineer prompt 要點**：
+
+1. 獨占執行；確認 T12-T15 reviewers 都 PASS 後才開始。
+2. 只允許改：
+   - `eslint.config.mjs`：只確認 `'testing-library/prefer-user-event': 'error'` 且 `'testing-library/no-node-access': 'off'`；若 `prefer-user-event` 被誤關才改回 `error`
+   - `specs/024-eslint-testing-lib-cleanup/handoff.md`：更新 Session 3 完成狀態與驗證結果
+3. 驗證 `fireEvent` 清零：
+   ```bash
+   grep -rn "fireEvent" tests/integration/
+   ```
+   預期無輸出，exit 1 可接受。
+4. 驗證 repo-wide lint：
+   ```bash
+   npx eslint src specs tests 2>&1 | tee /tmp/session3-final-lint.txt
+   grep -oE 'testing-library/[a-z-]+' /tmp/session3-final-lint.txt | sort | uniq -c | sort -rn
+   tail -3 /tmp/session3-final-lint.txt
+   ```
+   預期只剩 `testing-library/no-node-access` 83 errors；`prefer-user-event` 0。
+5. 跑 browser/server：
+   ```bash
+   npm run test:browser
+   npm run test:server
+   ```
+   若 server 在 sandbox 內因 Firebase emulator port `EPERM` 失敗，回報主 agent 申請 sandbox 外重跑，不自行改測試。
+6. 更新 `handoff.md`：
+   - §0 目前 Session → `Session 3 完成；待 Session 4 接手 Phase 4 no-node-access`
+   - §5 checklist → 下一 session 聚焦 Phase 4，並保留 Session 3 驗證結果
+   - §4 append `Session 3（Phase 3）— 完成`，記錄 T11-T16、subagent 並行、lint/test/grep 結果
+7. 不 commit / 不 git add / 不 push。
+
+**禁止行為**：
+
+- 不把 `testing-library/no-node-access` 打回 error；Phase 4 才做。
+- 不改 package / tests 以外新增檔；T16 自己不改測試。
+- 不用 `git add` / commit / push。
+- 不在 repo-wide verification 跑的同時讓其他 writer 繼續改檔。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. `eslint.config.mjs` 中 `prefer-user-event: error`、`no-node-access: off`。
+2. `grep -rn "fireEvent" tests/integration/` 無輸出。
+3. repo-wide lint 只剩 `testing-library/no-node-access` 83 errors；`prefer-user-event` 0。
+4. `npm run test:browser` pass。
+5. `npm run test:server` pass（必要時 sandbox 外重跑）。
+6. `handoff.md` §0、§4、§5 已更新，且紀錄 Session 3 實測。
+7. 未 staged、未 commit、未 push。
+
+**Reviewer 驗收指令**：
+
+```bash
+rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+grep -rn "fireEvent" tests/integration/
+npx eslint src specs tests 2>&1 | tee /tmp/session3-final-lint-review.txt
+grep -c "testing-library/prefer-user-event" /tmp/session3-final-lint-review.txt
+grep -c "testing-library/no-node-access" /tmp/session3-final-lint-review.txt
+tail -3 /tmp/session3-final-lint-review.txt
+npm run test:browser
+npm run test:server
+sed -n '/^## 0\./,/^## 1\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+sed -n '/Session 3/,/^## 5\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+git status --short
+```
+
+**Failure recovery**：
+
+- `fireEvent` 有殘留 → 回報檔案/行號，重派對應 T12-T15 Engineer。
+- `prefer-user-event` 仍報錯 → 回報行號，重派對應 Engineer；不要關 rule。
+- lint 不只 `no-node-access` → 回報 rule 分布，主 agent 判斷是否 regression。
+- browser/server fail → 回報 failing suite/test；主 agent 重派對應 Engineer 或申請 sandbox 外 server run。
+- handoff 未更新 → 重派 T16 Engineer 補文件，不改測試。
+
+---
+
+## Session 3 結束狀態（DOD）
+
+- `testing-library/prefer-user-event`: 保持 `error`，且 repo-wide 0 errors。
+- `testing-library/no-node-access`: 保持 `off`，Phase 4 才恢復。
+- `grep -rn "fireEvent" tests/integration/`: raw grep 0 references。
+- `PostCard` 5x click、`NotificationToast` 1x fake-timer click、`ComposeModal` cancel、`NotificationPanel` img error 全改完。
+- browser/server tests pass。
+- `handoff.md` 記錄 Session 3 完成 evidence。
+- 不 commit、不 stage、不 push。

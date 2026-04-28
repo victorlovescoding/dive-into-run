@@ -1,5 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 vi.mock('@/config/client/firebase-client', () => ({
   auth: {},
@@ -129,8 +130,11 @@ describe('NotificationToast', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
-  it('面板開啟時不顯示 toast', () => {
+  it('面板開啟時不顯示 toast', async () => {
     // Arrange
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime,
+    });
     renderWithProviders();
     act(() => {
       notificationsCallback([], null);
@@ -138,7 +142,9 @@ describe('NotificationToast', () => {
     });
 
     // Act — 點擊鈴鐺開啟面板
-    fireEvent.click(screen.getByRole('button', { name: /通知/ }));
+    const clickPromise = user.click(screen.getByRole('button', { name: /通知/ }));
+    await vi.advanceTimersByTimeAsync(0);
+    await clickPromise;
 
     act(() => {
       notificationsOnNew([{ id: 'n1', message: '不應顯示' }]);

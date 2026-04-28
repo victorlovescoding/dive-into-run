@@ -11,18 +11,18 @@
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Branch          | `024-eslint-testing-lib-cleanup`                                                                                                                                                                   |
 | Worktree path   | `/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`                                                                                                                            |
-| 目前 Session    | **Session 2 完成（T5-T10 全綠）** — 待 Session 3 接手 Phase 3                                                                                                                                    |
-| Working tree    | Dirty：Session 1 + T5-T9 + handoff 累積 modified files 仍在 working tree；2026-04-28 決策已暫關未輪到且會擋 commit 的兩條 rule，Session 1/2 可先不用 `--no-verify` commit               |
+| 目前 Session    | **Session 3 完成；待 Session 4 接手 Phase 4 no-node-access**                                                                                                                                       |
+| Working tree    | Session 3 變更已完成，將隨本 session commit 納入 Git history；後續接手請用 `git status --short` / `git log --oneline -5` 驗證實際狀態。 |
 | ESLint plugin   | 已裝 (eslint-plugin-testing-library@^7.16.2)                                                                                                                                                       |
-| Sensors         | 已完成 rules 保持 error；`no-node-access` / `prefer-user-event` 已驗證會 fire，但依 §2.13 暫時 off                                                                                                 |
-| Repo lint state | 2026-04-28 gate 策略後 repo-wide lint 預期 0；只暫關未輪到且目前會擋 commit 的 `testing-library/no-node-access` 83 + `testing-library/prefer-user-event` 6                                        |
-| Commit 計畫     | Session 1/2 累積改動可先不用 `--no-verify` commit；後續 Session 3 完成後把 `prefer-user-event` 打回 error，Phase 4 完成後把 `no-node-access` 打回 error                                           |
+| Sensors         | `testing-library/prefer-user-event` 維持 `error`；`testing-library/no-node-access` 仍暫時 `off`，等 Phase 4 完成後再恢復 `error`                                                               |
+| Repo lint state | `npx eslint src specs tests` fresh exit 0（只輸出 React version warning）；因 `no-node-access` 目前是 `off`，83 baseline violations 不會在 repo-wide lint 顯示                                    |
+| Commit 計畫     | 本 session 收尾會由主 agent 正常 commit；Session 4 接手 Phase 4，聚焦清 `no-node-access` 83 baseline，完成後再把 `testing-library/no-node-access` 改回 `error` 並做 commit/PR gate          |
 
 接手前必讀：
 
-1. 本檔 §2 **十三個坑**（特別是 §2.9 dirty files 歸因、§2.10 T8 baseElement 策略、§2.11 T9 userEvent timing、§2.12 T9/T10 timeout root cause、§2.13 增量 commit gate 策略）
-2. 本檔 §4 「Session 2（Phase 2）— 完成」段，含 T10 refresh audit/test 結果
-3. T8/T9/T10 notes：T8 已消 `no-container`，但 `baseElement.querySelector(...)` 可能保留 `no-node-access` 給 Phase 4；T9 移除 unnecessary act 時每次 `user.click` 都要 `await`；T10 timeout 後續已用 `NotificationContextProbe` 修掉並驗證通過
+1. 本檔 §2 **十七個坑**（特別是 §2.15 fake timers + userEvent deadlock、§2.16 native img error flush、§2.17 raw grep comment-only）
+2. 本檔 §4 「Session 3（Phase 3）— 完成」段
+3. Session 4 只接 Phase 4 `testing-library/no-node-access`；`prefer-user-event` 已清完且維持 `error`，`no-node-access` 目前仍是 `off`
 
 ---
 
@@ -65,7 +65,7 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 
 ---
 
-## 2. 十三個坑（從 plan §5 + §6 + Session 2 實作萃取，先警告再執行）
+## 2. 十七個坑（從 plan §5 + §6 + Session 2/3 規劃萃取，先警告再執行）
 
 ### 2.1 ⚠️ 坑 1：T2 commit 後 `npm run lint` 會 fail repo-wide
 
@@ -188,12 +188,48 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 ### 2.13 ⚠️ 坑 13：增量 commit gate 策略（2026-04-28 決策）
 
 - **決策**：不是「不相關就關」。只有「不相關且目前會擋 Session 1/2 commit gate」才暫關。
-- **目前只暫關兩條**：
+- **Session 1/2 commit 時曾暫關兩條**：
   - `testing-library/no-node-access`: 83 baseline violations，Phase 4 尚未輪到
   - `testing-library/prefer-user-event`: 6 baseline violations，Session 3 尚未輪到
+- **2026-04-28 Session 3 開工前更新**：`testing-library/prefer-user-event` 已恢復 `error`，只剩 `testing-library/no-node-access` 繼續暫關。
 - **保留 error 的已完成 rules**：`@typescript-eslint/ban-ts-comment`、`testing-library/prefer-screen-queries`、`testing-library/render-result-naming-convention`、`testing-library/no-container`、`testing-library/no-unnecessary-act`。
 - **保留 flat/react 預設 rules**：其他不相關但目前不報錯的 `testingLibrary.configs['flat/react'].rules` 繼續留著，不主動關。
-- **恢復點**：Session 3 清完 `prefer-user-event` 後，把 `testing-library/prefer-user-event` 改回 `error`；Phase 4 清完 `no-node-access` 後，把 `testing-library/no-node-access` 改回 `error`。
+- **恢復點**：`testing-library/prefer-user-event` 已先恢復 `error`，Session 3 清完後只需確認維持 error；Phase 4 清完 `no-node-access` 後，把 `testing-library/no-node-access` 改回 `error`。
+
+### 2.14 ⚠️ 坑 14：Session 3 `prefer-user-event` count 與 `fireEvent` reference count 不同
+
+- **最新現況**：Session 2 已提交在 `a74ca72` 後，`testing-library/prefer-user-event` 已為 Session 3 恢復 `error`；實測目前會報 **6 errors**：`PostCard.test.jsx` 5 + `NotificationToast.test.jsx` 1。
+- **同時仍有 8 個可執行 `fireEvent` 用法**：
+  - `PostCard.test.jsx`：5 `fireEvent.click`
+  - `NotificationToast.test.jsx`：1 `fireEvent.click`
+  - `ComposeModal.test.jsx`：1 generic `fireEvent(dialog, cancelEvent)`
+  - `NotificationPanel.test.jsx`：1 `fireEvent.error(img)`
+- **raw grep 注意**：`grep -rn "fireEvent" tests/integration/` 目前也會列出 import/comment 行；Session 3 目標是最後 raw grep 0 references。
+- **2026-04-28 文件規劃補充**：基本檢查時 raw grep 另外命中多個非目標檔的 comment-only guideline（例如 `NEVER fireEvent`）。這些不是 8 個 event migration callsite；T11 必須重新列出並交主 agent 做 scope decision，不能讓 Engineer 直接偷改未授權檔。
+- **原因**：`prefer-user-event` rule 只報應改成 `userEvent` 的使用者互動 click；`ComposeModal` 的 `<dialog>` cancel event 與 `NotificationPanel` 的 img error 屬於 DOM-event-only hygiene / plan 目標，應改 native `dispatchEvent`，不一定被 `prefer-user-event` 報出。
+- **處理策略**：Session 3 不只清 6 個 lint errors，也要清 8 個可執行 `fireEvent` 用法。若仍要求 `grep -rn "fireEvent" tests/integration/` 到 0，必須在 T11 先處理 comment-only hits 的 scope decision。不要因為 ComposeModal / NotificationPanel 沒被 rule 報錯就跳過。
+- **T16 gate**：清完後確認 `testing-library/prefer-user-event` 維持 `error`，保留 `testing-library/no-node-access` `off`；repo-wide lint 預期只剩 `no-node-access` 83 errors。
+
+### 2.15 ⚠️ 坑 15：T13 fake timers + `userEvent.click` 會 deadlock
+
+- **發生在**：Session 3 T13 `NotificationToast.test.jsx`。
+- **根因**：fake timers 環境中直接 `await user.click(...)` 可能卡住；`user-event` 內部排程需要 timer flush，測試若先 await click 會等不到後續 advancement。
+- **修法**：建立 `clickPromise = user.click(...)`，再 `await vi.advanceTimersByTimeAsync(0)` flush micro/timer queue，最後 `await clickPromise`。
+- **對策**：Phase 4 若碰到 fake timers + user interactions，照這個 sequencing，不要退回 low-level event helper。
+
+### 2.16 ⚠️ 坑 16：T15 native img error 需要 async + `waitFor` flush
+
+- **發生在**：Session 3 T15 `NotificationPanel.test.jsx`。
+- **根因**：改成 native `img.dispatchEvent(new Event('error'))` 後，React state update / fallback image render 不是同步可斷言；直接 assert 容易 race。
+- **修法**：用 async test flow 並搭配 `waitFor(...)` 等 fallback state flush。
+- **對策**：Phase 4 若把 DOM event 改成 native dispatch，斷言要跟 React update boundary 對齊。
+
+### 2.17 ⚠️ 坑 17：T16 raw grep 0 會被 comment-only guideline 擋
+
+- **發生在**：Session 3 T16 closeout。
+- **根因**：`grep -rn "fireEvent" tests/integration/` 不只抓 executable usage，也抓檔頭 guideline 註解，例如 `NEVER fireEvent`。
+- **修法**：只改註解文字成不含 literal 的等價 guideline（例如 `NEVER low-level event helpers`），不得改測試邏輯。
+- **本輪實測**：7 個 comment-only 檔案已改寫；`grep -rn "fireEvent" tests/integration/` exit 1 且無輸出。
 
 ---
 
@@ -321,22 +357,61 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 - **commit 狀態**：未 commit；不可用 `git commit --no-verify` 繞過。2026-04-28 §2.13 已暫關未輪到且會擋 gate 的兩條 rule，Session 1/2 可先正常 commit。
 - **下一步**：Session 3 可直接接手 Phase 3 `prefer-user-event` 6 處清理；不要把 dirty files 直接歸因給 Session 3。
 
+### Session 3 規劃 — 完成
+
+- **Started**: 2026-04-28
+- **狀態**：✅ 規劃完成；⏳ 實作尚未開始
+- **本輪做了什麼**：
+  1. 依 plan §5 Phase 3、§8.2 S3、§8.4、§9 追加 `tasks.md` Session 3 T11-T16。
+  2. 明確修正交接口徑：`prefer-user-event` 是 6 errors，但 `fireEvent` cleanup 是 8 個可執行用法，最後 raw grep 必須 0；ComposeModal / NotificationPanel 是 hygiene + plan 目標，不是 rule-reported error。
+  3. 設計保守並行：共享 worktree 下最多同時 2 個 Engineer subagents；每個 Engineer task 完成後配 1 個 Reviewer task；T11/T16 獨占，repo-wide verification / config / handoff 收尾不與 writer 並行。
+  4. 明確約束：主 agent 不下場改測試或 config，所有後續修改交 subagent；本輪只更新 `tasks.md` / `handoff.md`，不 commit / git add / push。
+- **待執行**：
+  - T11 Preflight audit
+  - T12 PostCard 5x click migration
+  - T13 NotificationToast fake-timer click migration
+  - T14 ComposeModal `<dialog>` cancel native dispatchEvent
+  - T15 NotificationPanel img error native dispatchEvent
+  - T16 Rule restore + session closeout
+- **commit 狀態**：未 commit；本輪文件工程只留下 `tasks.md` / `handoff.md` modified。
+
+### Session 3（Phase 3）— 完成
+
+- **Started**: 2026-04-28
+- **Completed**: 2026-04-28
+- **狀態**：✅ Session 3 完成（T11-T16 全部收斂）。`testing-library/prefer-user-event` 維持 `error`，`testing-library/no-node-access` 保持 `off` 給 Phase 4。
+- **T11-T16 task 結果**：
+  - T11 preflight 找到 8 個 executable usage + 7 個 comment-only guideline hits；主 agent scope decision 允許 T16 只改註解。
+  - T12 `PostCard.test.jsx` 5 個 click migration 完成，reviewer PASS。
+  - T13 `NotificationToast.test.jsx` fake-timer click migration 完成，reviewer PASS；新增 §2.15 deadlock 坑。
+  - T14 `ComposeModal.test.jsx` `<dialog>` cancel 改 native dispatchEvent，reviewer PASS。
+  - T15 `NotificationPanel.test.jsx` img error 改 native dispatchEvent，reviewer PASS；新增 §2.16 async flush 坑。
+  - T16 只改 7 個 comment-only guideline 檔案，沒有改測試邏輯；新增 §2.17 raw grep 坑。
+- **T16 verification（2026-04-28T19:09:55+08:00 fresh run）**:
+  - `rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs`: line 395 `prefer-user-event: error`、line 396 `no-node-access: off`
+  - `grep -rn "fireEvent" tests/integration/`: exit 1，無輸出（raw grep 0）
+  - `npx eslint src specs tests 2>&1 | tee /tmp/session3-final-lint.txt`: `lint_exit:0`；輸出只有 React version warning；`testing-library/prefer-user-event` count 0，`testing-library/no-node-access` count 0 because config is `off`
+  - `npm run test:browser`: exit 0，`121 passed / 121 files`，`1108 passed / 1108 tests`
+  - `npm run test:server`: exit 0，`2 passed / 2 files`，`26 passed / 26 tests`
+- **本次 subagent 並行**：T12/T13、T14/T15 以最多 2 個 Engineer 並行，之後各配 reviewer；T16 closeout 獨占驗證與 handoff 更新。
+- **commit 狀態**：本段隨 Session 3 commit 納入；不使用 `git commit --no-verify`；不 push。若接手時看到 staged/dirty，先用 `git status --short` / `git log --oneline -5` 釐清實際狀態；不要 revert T12-T15 reviewer 已 PASS 的測試改動。
+
 ---
 
 ## 5. 下個 Session 開工 checklist
 
-進 Session 3（Phase 3）之前：
+進 Session 4（Phase 4）之前：
 
-- [ ] 讀本檔 §0（注意：working tree dirty 是 Session 1 + T5-T9 累積，不要直接歸因給最後一個 task）
-- [ ] 讀本檔 §2.9–§2.13（dirty file 歸因、T8 baseElement 策略、T9 userEvent timing、T9/T10 timeout root cause、增量 commit gate 策略）
-- [ ] 讀本檔 §4 「Session 2（Phase 2）— 完成」段
-- [ ] 注意 `NotificationPaginationStateful.test.jsx` fallback timeout 已用 `NotificationContextProbe` 修復；若再次調整該測試，不要退回 `fireEvent`
-- [ ] 跑 `git status --short` 確認 dirty files 跟 §4 T10 狀態一致
-- [ ] 知道 `testing-library/prefer-user-event` 目前暫時 `off`；Session 3 清完 6 處後要改回 `error`
-- [ ] 知道 `testing-library/no-node-access` 目前暫時 `off`；Phase 4 清完 83 處後要改回 `error`
-- [ ] 跑 `npx eslint src specs tests > /tmp/session3-audit.txt 2>&1; echo "eslint_exit:$?"; tail -3 /tmp/session3-audit.txt` 確認 repo-wide lint 預期為 0；若不是 0，先確認是否為已完成 rules regression
+- [ ] 讀本檔 §0（Session 3 完成；repo-wide lint exit 0 是因 `no-node-access` 仍 `off`）
+- [ ] 讀本檔 §2.10、§2.13、§2.15–§2.17（T8 baseElement 策略、增量 commit gate、fake timer / native event / raw grep 坑）
+- [ ] 讀本檔 §4 「Session 3（Phase 3）— 完成」段
+- [ ] 跑 `git status --short` / `git log --oneline -5`；若看到 staged/dirty，先釐清來源；不要 revert T12-T15 已 PASS 的測試改動
+- [ ] 確認 `testing-library/prefer-user-event` 仍是 `error`，`testing-library/no-node-access` 仍是 `off`
+- [ ] Phase 4 目標：清 `testing-library/no-node-access` 83 baseline violations；完成後才把 `testing-library/no-node-access` 改回 `error`
+- [ ] Phase 4 可用暫時 audit 指令：`npx eslint src specs tests --rule '{"testing-library/no-node-access":"error"}'`，用來看 83 baseline，不要先改 config 擋住增量工作
+- [ ] 保留 Session 3 驗證結果：raw `grep -rn "fireEvent" tests/integration/` 已 0；`npx eslint src specs tests` exit 0；`npm run test:browser` / `npm run test:server` 都 exit 0
 - [ ] 確認 plugin 還在：`ls node_modules/eslint-plugin-testing-library/package.json`
-- [ ] 讀 `tasks.md` Session 3 / Phase 3 的 task 拆分，再開始清 `prefer-user-event` 6 處
+- [ ] 讀 `tasks.md` Phase 4 / no-node-access 拆分，再開始修 DOM access
 
 ---
 
