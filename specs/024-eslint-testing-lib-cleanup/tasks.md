@@ -906,13 +906,13 @@ for task in [T5, T6, T7, T8, T9, T10]:
 
 ## Parallelism — 共享 worktree 最多同時 2 個 Engineer subagents
 
-| 階段                                      | 並行度 | 原因                                                                                                       |
-| ----------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------- |
-| Engineer 執行 T12-T15                     | **2**  | 四個 task 分別碰不同測試檔，可保守平行；同時超過 2 個容易讓 review / git diff 歸因混亂。                  |
-| 每個 Engineer task 對應 Reviewer task     | **1:1** | 每個 Engineer 完成後才派該 task Reviewer 驗收；Reviewer 不與同 task Engineer 並行。                       |
-| T11 Preflight audit                       | **1**  | 只讀現況，必須先完成，避免後續 task 基於錯的 baseline 動手。                                               |
-| T16 Rule verification + session closeout  | **1**  | Repo-wide verification、config 狀態確認、handoff 收尾必須獨占，不與任何 writer 並行。                    |
-| 主 agent                                  | **0 writers** | 主 agent 不改測試或 config；若 reviewer fail，主 agent只重派 Engineer 修，不直接下場。                    |
+| 階段                                     | 並行度        | 原因                                                                                     |
+| ---------------------------------------- | ------------- | ---------------------------------------------------------------------------------------- |
+| Engineer 執行 T12-T15                    | **2**         | 四個 task 分別碰不同測試檔，可保守平行；同時超過 2 個容易讓 review / git diff 歸因混亂。 |
+| 每個 Engineer task 對應 Reviewer task    | **1:1**       | 每個 Engineer 完成後才派該 task Reviewer 驗收；Reviewer 不與同 task Engineer 並行。      |
+| T11 Preflight audit                      | **1**         | 只讀現況，必須先完成，避免後續 task 基於錯的 baseline 動手。                             |
+| T16 Rule verification + session closeout | **1**         | Repo-wide verification、config 狀態確認、handoff 收尾必須獨占，不與任何 writer 並行。    |
+| 主 agent                                 | **0 writers** | 主 agent 不改測試或 config；若 reviewer fail，主 agent只重派 Engineer 修，不直接下場。   |
 
 建議批次：
 
@@ -1291,12 +1291,12 @@ git status --short
 
 ## Session 4 Parallelism — 同時最多 2 個 subagents
 
-| 階段                         | 並行度        | 原因                                                                                                            |
-| ---------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------- |
-| Writer Engineer              | **1**         | 主要修改集中在同一個 `NavbarMobile.test.jsx`；同時兩個 Engineer 寫同一檔會互相覆蓋或造成 line/range 判讀失真。 |
-| Reviewer                     | **1**         | Reviewer 必須在 Engineer 交付後依目標 range 驗收。                                                             |
-| Engineer + Reviewer 配對     | **最多 2 個** | 允許「1 Engineer + 1 Reviewer」形成驗收配對；不得同時開兩個 Engineer 寫同一檔。                                |
-| T17 / T23                    | **1**         | preflight / closeout 是獨占任務，不能與任何 writer 並行。                                                       |
+| 階段                     | 並行度        | 原因                                                                                                           |
+| ------------------------ | ------------- | -------------------------------------------------------------------------------------------------------------- |
+| Writer Engineer          | **1**         | 主要修改集中在同一個 `NavbarMobile.test.jsx`；同時兩個 Engineer 寫同一檔會互相覆蓋或造成 line/range 判讀失真。 |
+| Reviewer                 | **1**         | Reviewer 必須在 Engineer 交付後依目標 range 驗收。                                                             |
+| Engineer + Reviewer 配對 | **最多 2 個** | 允許「1 Engineer + 1 Reviewer」形成驗收配對；不得同時開兩個 Engineer 寫同一檔。                                |
+| T17 / T23                | **1**         | preflight / closeout 是獨占任務，不能與任何 writer 並行。                                                      |
 
 **Reviewer FAIL 規則**：Reviewer 一旦 FAIL，主 agent 只能把 FAIL report 轉交並重派 Engineer/subagent 修正；主 agent 不可自己修改測試、component、config 或文件來補洞。
 
@@ -1551,7 +1551,7 @@ npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
 1. 只改 `NavbarMobile.test.jsx` state management target range。
 2. Hamburger button 用 role query，不用 selector：
    ```js
-   screen.getByRole('button', { name: /開啟導覽選單|關閉導覽選單/ })
+   screen.getByRole('button', { name: /開啟導覽選單|關閉導覽選單/ });
    ```
    若 Testing Library 支援且語意清楚，可用 `{ expanded: true }` / `{ expanded: false }`，但不得碰 DOM selector。
 3. Overlay 用 `screen.getByTestId('mobile-drawer-overlay')`。
@@ -1559,7 +1559,7 @@ npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
    - `expect(drawer).toHaveClass(...)`
    - `expect(drawer).toHaveAttribute('aria-modal', 'true')`
    - `expect(button).toHaveAttribute('aria-expanded', 'true')`
-   不讀 `.className`。
+     不讀 `.className`。
 5. 跑：
    ```bash
    npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish 2>&1 | tee /tmp/s4-t21-navbar-mobile.txt
@@ -1727,12 +1727,13 @@ git diff --name-only
 > **Source**: `specs/024-eslint-testing-lib-cleanup/plan.md` §8.2 S5, adjusted by fresh read-only audits from 2026-04-28.
 > **Goal**: 只清 S5 scope：`NavbarDesktop.test.jsx` + `NotificationBell.test.jsx` 的 `testing-library/no-node-access`。`NotificationPanel.test.jsx` 的 unreadDot 是 S6，不混進本 session。
 > **Allowed files**:
+>
 > - `src/components/Navbar/UserMenu.jsx`
 > - `tests/integration/navbar/NavbarDesktop.test.jsx`
 > - `src/components/Notifications/NotificationBell.jsx`
 > - `tests/integration/notifications/NotificationBell.test.jsx`
 > - `specs/024-eslint-testing-lib-cleanup/handoff.md`（T29 closeout only）
-> **Forbidden files**：不要改 `eslint.config.mjs`、NavbarMobile / `Navbar.jsx` / `MobileDrawer.jsx`、`NotificationPanel.test.jsx`、`NotificationItem.jsx`、S6-S8 domain、package files。
+>   **Forbidden files**：不要改 `eslint.config.mjs`、NavbarMobile / `Navbar.jsx` / `MobileDrawer.jsx`、`NotificationPanel.test.jsx`、`NotificationItem.jsx`、S6-S8 domain、package files。
 
 ---
 
@@ -1783,11 +1784,11 @@ NotificationPanel.test.jsx
 
 ## Parallelism — 同時最多開 4 個 subagents（2 Engineer + 2 Reviewer）
 
-| 類型 | 上限 | 規則 |
-| ---- | ---- | ---- |
-| Engineer writer | **2** | NavbarDesktop track 與 NotificationBell track 檔案不重疊，可同時做。不得兩個 Engineer 寫同一檔。 |
-| Reviewer | **2** | 每個 Engineer task 完成後，配一個 Reviewer 依 acceptance criteria 驗收；Reviewer 可與另一個 disjoint Engineer 同時跑。 |
-| Closeout | **1 Engineer + 1 Reviewer** | T29 handoff/update/verification 獨占，不與任何 writer 並行。 |
+| 類型            | 上限                        | 規則                                                                                                                   |
+| --------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Engineer writer | **2**                       | NavbarDesktop track 與 NotificationBell track 檔案不重疊，可同時做。不得兩個 Engineer 寫同一檔。                       |
+| Reviewer        | **2**                       | 每個 Engineer task 完成後，配一個 Reviewer 依 acceptance criteria 驗收；Reviewer 可與另一個 disjoint Engineer 同時跑。 |
+| Closeout        | **1 Engineer + 1 Reviewer** | T29 handoff/update/verification 獨占，不與任何 writer 並行。                                                           |
 
 > 實務排程：T24 先獨占 preflight；T25→T26→T27 是 NavbarDesktop track sequential；T28 可與 NavbarDesktop track 並行；每個 Engineer 完成後立刻派對應 Reviewer。Reviewer FAIL 時，主 agent 只重派 Engineer/subagent 修，不自行改。
 
@@ -2140,4 +2141,579 @@ git diff --name-only
 - `NotificationPanel.test.jsx` unreadDot、`notification-click.test.jsx` unreadDot、`scroll-to-comment.test.jsx` 留給 S6。
 - repo-wide lint 仍可能因 S6-S8 domain fail；不要把剩餘 domain 混進 S5。
 - `handoff.md` 記錄 Session 5 evidence 與 S6 checklist。
+- 不 commit、不 stage、不 push。
+
+---
+
+# Session 6 — Notifications domain 收尾（unreadDot + scroll-to-comment）
+
+> Plan §8.2 S6：「Phase 4.3 notifications 剩餘（unreadDot, scroll-to-comment, notification-click）」。Plan 原描述為 “🔖 notifications domain testid 補完”，但 S6 fresh audit 發現 `scroll-to-comment.test.jsx` line 34 是 **test-internal mock component (`ScrollTestComponent`) 內的 `useEffect` `getElementById`**，不是測試端 query — 因此 S6 修法分為兩類：
+>
+> 1. **unreadDot**（NotificationPanel + notification-click）：修法 C — `NotificationItem.jsx` 加 `data-testid` + `aria-hidden="true"`，測試改用 `screen.queryByTestId` / `within(panel).queryByTestId`
+> 2. **scroll-to-comment**：把 mock component 抽到 `tests/_helpers/notifications/scroll-to-comment-mock.jsx`，並在 `eslint.config.mjs` §17.5 testing-library block 的 `ignores` array 加上該 helper 路徑（`tests/_helpers/e2e-helpers.js` 已是先例）
+>
+> S6 不破壞 plan §2「`no-node-access` 不退到 Path B」原則：rule level 維持 `error`，scroll helper ignore 是檔案層級 scope 而非 rule level escape hatch。
+
+## Session 6 Fresh Audit 摘要（planning evidence, 2026-04-28）
+
+ESLint config 狀態：
+
+```text
+rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+395  'testing-library/prefer-user-event': 'error'
+396  'testing-library/no-node-access': 'error'
+```
+
+> 用戶 prompt 寫 `eslint.config.mjs:395：testing-library/no-node-access` — 實際 line 395 是 `prefer-user-event`，line 396 才是 `no-node-access`（line drift, 詳 handoff §2.37）。本 session 規劃 commit bridge 暫關的是 line 396 的 `no-node-access`。
+
+### NotificationPanel.test.jsx fresh lint
+
+```text
+npx eslint tests/integration/notifications/NotificationPanel.test.jsx --format stylish
+
+235:29  testing-library/no-node-access  (raw 2)
+245:29  testing-library/no-node-access  (raw 2)
+```
+
+- Raw count = 4
+- Unique line:col = 2
+- 對應 test：
+  - `235:29`：`should show blue dot for unread notification (read=false)` — `const { baseElement } = render(...)` + `baseElement.querySelector('[class*="unreadDot"]')` 在場
+  - `245:29`：`should NOT show blue dot for read notification (read=true)` — 同 pattern，斷言不在場
+
+### notification-click.test.jsx fresh lint
+
+```text
+npx eslint tests/integration/notifications/notification-click.test.jsx --format stylish
+
+240:18  testing-library/no-node-access
+250:26  testing-library/no-node-access
+```
+
+- Raw count = 2
+- Unique line:col = 2
+- 同一 test（`should immediately hide blue dot after click (optimistic update)`）：
+  - `240:18`：`expect(panel.querySelector('[class*="unreadDot"]')).toBeInTheDocument();`
+  - `250:26`：`expect(reopenedPanel.querySelector('[class*="unreadDot"]')).not.toBeInTheDocument();`
+- panel / reopenedPanel 由 `screen.getByRole('region', { name: '通知面板' })` 取得，再 `querySelector` unreadDot
+
+### scroll-to-comment.test.jsx fresh lint
+
+```text
+npx eslint tests/integration/notifications/scroll-to-comment.test.jsx --format stylish
+
+34:27  testing-library/no-node-access  (raw 2 — 同 line 被 2 個 it block 共用 mock component)
+```
+
+- Raw count = 2
+- Unique line:col = 1
+- 違規 code：`const el = document.getElementById(commentId);`
+- 位置：**test-internal `ScrollTestComponent` mock 內的 `useEffect`**（line 21–55），不是測試斷言端
+- 模擬對象：`src/components/CommentSection.jsx` line 75 的 production scroll-to-comment 行為（production code 本身不受 testing-library plugin lint）
+- 修法分析：
+  - 修法 A（改 component）→ 不適用：違規在 test-internal mock 內
+  - 修法 B（within）→ 不適用：違規不是 query 而是 effect 內 DOM lookup
+  - 修法 C（data-testid）→ 不適用：違規是 effect 內 `getElementById`，不是測試端 query
+  - **正確修法**：抽 `ScrollTestComponent` 到 `tests/_helpers/notifications/scroll-to-comment-mock.jsx`，並在 `eslint.config.mjs` §17.5 testing-library block 的 `ignores` array 加 helper 路徑
+
+### Component source 摘要
+
+`src/components/Notifications/NotificationItem.jsx` line 48：
+
+```jsx
+{
+  !read && <span className={styles.unreadDot} />;
+}
+```
+
+- 純視覺 indicator，對 a11y tree 應透明
+- 無 `data-testid` / `id` / `role` / `aria-label`
+- 修法 C：加 `data-testid="notification-unread-dot"` + `aria-hidden="true"`（雙重屬性是刻意設計，testid 是測試 hook、aria-hidden 是 a11y 抑制 — 兩條軸不衝突）
+
+### Notifications domain 邊界
+
+| 檔案                                      | no-node-access 狀態       |
+| ----------------------------------------- | ------------------------- |
+| `NotificationBell.test.jsx`               | ✅ S5 已清                |
+| `NotificationPagination.test.jsx`         | ✅ baseline 已乾淨        |
+| `NotificationPaginationStateful.test.jsx` | ✅ baseline 已乾淨        |
+| `NotificationPanel.test.jsx`              | 🔧 S6 接（unreadDot × 2） |
+| `NotificationTabs.test.jsx`               | ✅ baseline 已乾淨        |
+| `NotificationToast.test.jsx`              | ✅ S3 已清                |
+| `notification-click.test.jsx`             | 🔧 S6 接（unreadDot × 2） |
+| `notification-error.test.jsx`             | ✅ baseline 已乾淨        |
+| `notification-triggers.test.jsx`          | ✅ baseline 已乾淨        |
+| `scroll-to-comment.test.jsx`              | 🔧 S6 接（mock × 1）      |
+
+→ S6 完成後 notifications domain `no-node-access` 應該全清。
+
+---
+
+## Parallelism — 共享 worktree 同時最多 4 個 subagents（2 Engineer + 2 Reviewer）
+
+| 類型            | 上限                        | 規則                                                                                                                                                                                                                          |
+| --------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Engineer writer | **2**                       | T32 / T33 / T34 三個 task 檔案不重疊；可同時做最多 2 個 Engineer。不得兩個 Engineer 寫同一檔。T31 是 affordance gate，必先 PASS 才開 T32 / T33。T34 不依賴 T31，但仍與 T32 / T33 共享 worktree，總並行數不得超過 2 Engineer。 |
+| Reviewer        | **2**                       | 每個 Engineer task 完成後配一個 Reviewer 依 acceptance criteria 驗收；Reviewer 可與另一個 disjoint Engineer 同時跑。Reviewer FAIL → 主 agent 重派 Engineer 修，**主 agent 不自行修**。                                        |
+| Closeout        | **1 Engineer + 1 Reviewer** | T35 handoff/verification 獨占，不與任何 writer 並行。                                                                                                                                                                         |
+
+> 實務排程：T30 preflight 獨占 → T31 component affordance 獨占（T32 / T33 依賴）→ T32 + T33 並行（依賴 T31）；T34 可與 T32 / T33 任一個並行（不依賴 T31）→ T35 closeout 獨占。
+> Reviewer FAIL 時，主 agent 只重派 Engineer/subagent 修，不自行改測試 / component / config。
+
+---
+
+## T30：Session 6 preflight audit（read-only, sequential）
+
+**Engineer prompt 要點**：
+
+1. 只讀，不改檔。
+2. 確認 ESLint config rule level：
+   ```bash
+   rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+   ```
+   預期兩條都是 `error`；若 `no-node-access` 是 `off` → 停下回報，**不得自行打開**，等主 agent 介入（commit bridge 應已恢復 error，否則代表 bridge 失敗）。
+3. 跑三個目標檔的 fresh lint：
+   ```bash
+   npx eslint tests/integration/notifications/NotificationPanel.test.jsx --format stylish 2>&1 | tee /tmp/s6-panel-preflight.txt
+   npx eslint tests/integration/notifications/notification-click.test.jsx --format stylish 2>&1 | tee /tmp/s6-click-preflight.txt
+   npx eslint tests/integration/notifications/scroll-to-comment.test.jsx --format stylish 2>&1 | tee /tmp/s6-scroll-preflight.txt
+   ```
+4. 回報每檔 raw count + unique line:col + test name + 違規 code 一行。
+5. 跑 notifications domain 邊界（boundary check，避免動到不該碰的）：
+   ```bash
+   npx eslint tests/integration/notifications/ 2>&1 | rg "no-node-access|✖" | tee /tmp/s6-notifications-domain.txt
+   ```
+   只列違規分布，不需逐行 dump。
+6. 跑：
+   ```bash
+   git status --short
+   git log --oneline -3
+   ```
+   回報 working tree 與最近 commit；S6 規劃 commit 應已存在，working tree 應清空（或只剩 commit bridge 後恢復的 `eslint.config.mjs`）。
+
+**禁止行為**：
+
+- 不改任何檔案。
+- 不重寫 tasks/handoff。
+- 不關 ESLint rule、不加 eslint disable、不啟動 vitest 等其他 long-running 命令。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Engineer report 有 config rule 狀態，且 `no-node-access` 是 `error`。
+2. NotificationPanel / notification-click / scroll-to-comment 三檔 fresh lint 各自有 raw / unique count、line:col、test name、違規 code 對照。
+3. notifications domain 邊界：明確列出哪些檔已乾淨、哪些 S6 要修。
+4. Working tree 沒有因 T30 增加新 dirty files。
+
+**Reviewer 驗收指令**：
+
+```bash
+git status --short
+rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+npx eslint tests/integration/notifications/NotificationPanel.test.jsx --format stylish 2>&1 | tee /tmp/s6-t30-panel-review.txt
+npx eslint tests/integration/notifications/notification-click.test.jsx --format stylish 2>&1 | tee /tmp/s6-t30-click-review.txt
+npx eslint tests/integration/notifications/scroll-to-comment.test.jsx --format stylish 2>&1 | tee /tmp/s6-t30-scroll-review.txt
+rg -n "testing-library/no-node-access" /tmp/s6-t30-panel-review.txt /tmp/s6-t30-click-review.txt /tmp/s6-t30-scroll-review.txt
+```
+
+**Failure recovery**：
+
+- Config 不是 `error` → 停下回報；不得自行關 / 開 rule，主 agent 介入。
+- Fresh lint 與 planning evidence 差很多（line drift > 5 行 / unique count 偏離）→ 更新 task 範圍前先回報主 agent。
+- T30 造成 dirty files → Reviewer FAIL，重派 Engineer 清理。
+
+---
+
+## T31：NotificationItem unreadDot affordance（sequential gate, T32/T33 依賴）
+
+**Engineer prompt 要點**：
+
+1. 只改 `src/components/Notifications/NotificationItem.jsx`。
+2. line 48 的 unreadDot 加最小 test hook + a11y noise 抑制：
+
+   ```jsx
+   {
+     !read && (
+       <span
+         className={styles.unreadDot}
+         data-testid="notification-unread-dot"
+         aria-hidden="true"
+       />
+     );
+   }
+   ```
+
+   - 為何同時加 `aria-hidden="true"`：unreadDot 是純視覺 indicator，對 screen reader 應透明。`data-testid` 是測試 hook、`aria-hidden` 是 a11y 抑制，兩條軸不衝突。詳 handoff §2.32。
+
+3. 不改 onClick / handleAvatarError / 顯示邏輯 / className / `NotificationItem.module.css` / 其他 component。
+4. 跑：
+
+   ```bash
+   npx eslint src/components/Notifications/NotificationItem.jsx
+   npx vitest run tests/integration/notifications/NotificationPanel.test.jsx tests/integration/notifications/notification-click.test.jsx
+   ```
+
+   - 注意：Vitest 此時可能仍 fail（測試還沒改用 testid），這是預期；確認沒被 component 改動意外炸壞「avatar、message、time、onClick、img alt、Image src」等不相關 assertion。
+   - 若 Vitest 看到「unreadDot 還是用 querySelector」之類 assertion fail，這屬 T32/T33 範圍，不算 T31 fail。
+
+**禁止行為**：
+
+- 不改 `tests/integration/notifications/*.test.jsx`（留給 T32 / T33）。
+- 不改 `NotificationItem.module.css` / 其他 component。
+- 不加 eslint disable。
+- 不改 unreadDot 的 className / 顯示條件 (`!read`)。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動 `src/components/Notifications/NotificationItem.jsx`。
+2. unreadDot span 同時有 `data-testid="notification-unread-dot"` + `aria-hidden="true"`，並保留 `className={styles.unreadDot}` 與 `!read &&` 顯示條件。
+3. avatar / button / message / time / onClick 邏輯沒被改。
+4. `npx eslint src/components/Notifications/NotificationItem.jsx` exit 0。
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff src/components/Notifications/NotificationItem.jsx
+rg -n "notification-unread-dot|aria-hidden|unreadDot|onClick|handleAvatarError|!read" src/components/Notifications/NotificationItem.jsx
+npx eslint src/components/Notifications/NotificationItem.jsx
+```
+
+**Failure recovery**：
+
+- testid 拼錯 / aria-hidden 缺 → 重派 Engineer 修。
+- 改到 onClick / 顯示邏輯 / CSS module → Reviewer FAIL，重派 Engineer 限縮 diff。
+- Component lint fail → 回報錯誤，重派 Engineer。
+
+---
+
+## T32：NotificationPanel.test.jsx unreadDot cleanup（並行 with T33 / T34）
+
+**Engineer prompt 要點**：
+
+1. 只改 `tests/integration/notifications/NotificationPanel.test.jsx`。
+2. T31 PASS 後才開工；若 affordance 未到位，停下回報。
+3. 兩個 it block 改寫：
+   - `should show blue dot for unread notification (read=false)`（line ~228–237）：
+     ```js
+     // 改前
+     const { baseElement } = render(
+       <NotificationItem notification={notification} onClick={vi.fn()} />,
+     );
+     const dot = baseElement.querySelector('[class*="unreadDot"]');
+     expect(dot).toBeInTheDocument();
+     // 改後
+     render(<NotificationItem notification={notification} onClick={vi.fn()} />);
+     expect(screen.getByTestId('notification-unread-dot')).toBeInTheDocument();
+     ```
+   - `should NOT show blue dot for read notification (read=true)`（line ~239–247）：
+     ```js
+     // 改前
+     const { baseElement } = render(
+       <NotificationItem notification={notification} onClick={vi.fn()} />,
+     );
+     const dot = baseElement.querySelector('[class*="unreadDot"]');
+     expect(dot).not.toBeInTheDocument();
+     // 改後
+     render(<NotificationItem notification={notification} onClick={vi.fn()} />);
+     expect(screen.queryByTestId('notification-unread-dot')).not.toBeInTheDocument();
+     ```
+4. 兩個 it 移除 `const { baseElement } = render(...)` 解構（順手消潛在 `no-container` 風險），測試其他部分（`getByRole('img')`、`getByText`）保持不變。
+5. **「在場」測試用 `getByTestId`（找不到 throw）；「不在場」測試用 `queryByTestId`（找不到回 `null`）**，不能寫反。
+6. 跑：
+   ```bash
+   npx eslint tests/integration/notifications/NotificationPanel.test.jsx --format stylish 2>&1 | tee /tmp/s6-t32-panel.txt
+   npx vitest run tests/integration/notifications/NotificationPanel.test.jsx
+   ```
+
+**禁止行為**：
+
+- 不改 `NotificationItem.jsx`（T31 已做）。
+- 不改 `notification-click.test.jsx`（T33）。
+- 不改 `scroll-to-comment.test.jsx`（T34）。
+- 不用 `querySelector` / `.children` / `baseElement.X` 新增替代。
+- 不加 eslint disable。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動 `tests/integration/notifications/NotificationPanel.test.jsx`。
+2. 兩個 unreadDot it block 不再有 `baseElement.querySelector('[class*="unreadDot"]')`。
+3. 「在場」測試用 `screen.getByTestId('notification-unread-dot')`；「不在場」測試用 `screen.queryByTestId(...)`。
+4. `const { baseElement } = render(...)` 解構已移除（兩 it 都改成 `render(...)` 不解構）。
+5. 該檔 `testing-library/no-node-access` = 0；`testing-library/no-container` = 0。
+6. Vitest 該檔 PASS。
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff tests/integration/notifications/NotificationPanel.test.jsx
+rg -n "baseElement|querySelector|getByTestId|queryByTestId|notification-unread-dot" tests/integration/notifications/NotificationPanel.test.jsx
+npx eslint tests/integration/notifications/NotificationPanel.test.jsx --format stylish 2>&1 | tee /tmp/s6-t32-review.txt
+rg -n "testing-library/(no-node-access|no-container)" /tmp/s6-t32-review.txt
+npx vitest run tests/integration/notifications/NotificationPanel.test.jsx
+```
+
+**Failure recovery**：
+
+- 仍有 `no-node-access` → Reviewer 回報 line:col / test name，重派 Engineer。
+- 「不在場」測試用 `getByTestId` → Reviewer FAIL（會 throw），重派 Engineer 改 `queryByTestId`。
+- Vitest fail → 回報 failing test/error，重派 Engineer 修 query 寫法。
+- Diff 碰到非 panel 檔 → Reviewer FAIL，重派 Engineer 限縮。
+
+---
+
+## T33：notification-click.test.jsx unreadDot cleanup（並行 with T32 / T34）
+
+**Engineer prompt 要點**：
+
+1. 只改 `tests/integration/notifications/notification-click.test.jsx`。
+2. T31 PASS 後才開工；若 affordance 未到位，停下回報。
+3. 兩處改寫（在同一個 `should immediately hide blue dot after click (optimistic update)` test 內）：
+   - line ~240：
+     ```js
+     // 改前
+     const panel = screen.getByRole('region', { name: '通知面板' });
+     expect(panel.querySelector('[class*="unreadDot"]')).toBeInTheDocument();
+     // 改後
+     const panel = screen.getByRole('region', { name: '通知面板' });
+     expect(within(panel).getByTestId('notification-unread-dot')).toBeInTheDocument();
+     ```
+   - line ~250：
+     ```js
+     // 改前
+     const reopenedPanel = screen.getByRole('region', { name: '通知面板' });
+     expect(reopenedPanel.querySelector('[class*="unreadDot"]')).not.toBeInTheDocument();
+     // 改後
+     const reopenedPanel = screen.getByRole('region', { name: '通知面板' });
+     expect(within(reopenedPanel).queryByTestId('notification-unread-dot')).not.toBeInTheDocument();
+     ```
+4. 確認 import：`within` 是否已從 `@testing-library/react` import；若無，補上（`import { ..., within } from '@testing-library/react';`）。
+5. 不改 `user.click(...)` 流程、optimistic update 行為、provider mocks、`renderWithProviders` 設定。
+6. 跑：
+   ```bash
+   npx eslint tests/integration/notifications/notification-click.test.jsx --format stylish 2>&1 | tee /tmp/s6-t33-click.txt
+   npx vitest run tests/integration/notifications/notification-click.test.jsx
+   ```
+
+**禁止行為**：
+
+- 不改 `NotificationItem.jsx`（T31 已做）。
+- 不改 `NotificationPanel.test.jsx`（T32）。
+- 不改 `scroll-to-comment.test.jsx`（T34）。
+- 不用 `querySelector` / `.children` / `panel.X` 新增替代。
+- 不加 eslint disable。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動 `tests/integration/notifications/notification-click.test.jsx`。
+2. 兩處 unreadDot 斷言不再有 `querySelector('[class*="unreadDot"]')`。
+3. 「在場」斷言用 `within(panel).getByTestId(...)`；「不在場」斷言用 `within(reopenedPanel).queryByTestId(...)`。
+4. `within` 已從 `@testing-library/react` import。
+5. 該檔 `testing-library/no-node-access` = 0。
+6. Vitest 該檔 PASS（包含 optimistic update flow）。
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff tests/integration/notifications/notification-click.test.jsx
+rg -n "querySelector|within\\(|notification-unread-dot|getByTestId|queryByTestId" tests/integration/notifications/notification-click.test.jsx
+rg -n "^import.*within" tests/integration/notifications/notification-click.test.jsx
+npx eslint tests/integration/notifications/notification-click.test.jsx --format stylish 2>&1 | tee /tmp/s6-t33-review.txt
+rg -n "testing-library/no-node-access" /tmp/s6-t33-review.txt
+npx vitest run tests/integration/notifications/notification-click.test.jsx
+```
+
+**Failure recovery**：
+
+- 仍有 `no-node-access` → Reviewer 回報 line:col / test name，重派 Engineer。
+- Optimistic update flow timing fail（panel close / reopen 時序）→ **不可退回 fireEvent / direct DOM read**；重派 Engineer 用 `await user.click(...)` + `within` 重新對齊 timing。
+- Vitest fail → 回報 failing test/error，重派 Engineer。
+- Diff 碰到非 click 檔 → Reviewer FAIL，重派 Engineer 限縮。
+
+---
+
+## T34：scroll-to-comment mock helper extraction（並行 with T32 / T33）
+
+**Engineer prompt 要點**：
+
+1. 改三處：
+   - **新檔** `tests/_helpers/notifications/scroll-to-comment-mock.jsx`：把現有 `tests/integration/notifications/scroll-to-comment.test.jsx` line 21–55 的 `ScrollTestComponent` 整段抽過來（含 JSDoc、`useEffect` 邏輯、`useSearchParams` 的 import）。注意：
+     - `useSearchParams` 從 `next/navigation` import — helper 內也要 import
+     - Helper 默認 export `ScrollTestComponent`
+     - JSDoc 要完整（`@returns` + 元件目的；參考 `tests/_helpers/e2e-helpers.js` 的 doc 風格）
+     - 此 helper 在 `eslint.config.mjs` §17.5 testing-library block 的 `ignores` 內，不被 testing-library lint，但仍受 `js.configs.recommended` / a11y / jsdoc / import / type-aware 等其他 rule 覆蓋；helper 必須過全 `npx eslint tests/_helpers/notifications/scroll-to-comment-mock.jsx`
+   - **改 test 檔** `tests/integration/notifications/scroll-to-comment.test.jsx`：
+     - 移除 line 21–55 的 `ScrollTestComponent` 定義
+     - 移除 `import { useEffect } from 'react';`（helper 內才需要）
+     - 在頂部 import block 加 `import ScrollTestComponent from '<path>/scroll-to-comment-mock';`（路徑用 repo 既有 alias 慣例 — `@/` 是 src alias，tests helper 用相對路徑即可，例如 `'../../_helpers/notifications/scroll-to-comment-mock';`，與 e2e-helpers 既有 import 風格對齊）
+     - 確認 `vi.mock('next/navigation', ...)` 仍在 test 檔頂部（**不可搬到 helper**，`vi.mock` 必須在使用 component 的 test 檔）
+     - 4 個 it block 行為與斷言不變
+   - **改** `eslint.config.mjs`：在 §17.5 testing-library block 的 `ignores: ['tests/e2e/**', 'tests/_helpers/e2e-helpers.js']` array 加入 `'tests/_helpers/notifications/scroll-to-comment-mock.jsx'`，**只加這一個精確路徑**：
+     ```js
+     ignores: [
+       'tests/e2e/**',
+       'tests/_helpers/e2e-helpers.js',
+       'tests/_helpers/notifications/scroll-to-comment-mock.jsx',
+     ],
+     ```
+     不可加 `'tests/_helpers/**'` 或 `'tests/_helpers/notifications/**'` 等更廣 glob。
+2. **不改** production code (`src/components/CommentSection.jsx`)。
+3. **不改** `'testing-library/no-node-access'` rule level（line 396 必須仍是 `'error'`）。
+4. **不改**其他 ignores（`'tests/e2e/**'`、`'tests/_helpers/e2e-helpers.js'` 不動）。
+5. Helper 檔內仍可使用 `document.getElementById`，因為已被 ignored — 這是設計目的。
+6. 跑：
+
+   ```bash
+   npx eslint eslint.config.mjs tests/_helpers/notifications/scroll-to-comment-mock.jsx tests/integration/notifications/scroll-to-comment.test.jsx --format stylish 2>&1 | tee /tmp/s6-t34-scroll.txt
+   npx vitest run tests/integration/notifications/scroll-to-comment.test.jsx
+   ```
+
+   - Helper 自身應 exit 0（被 ignored 不會炸 `no-node-access`，但 jsdoc / import / a11y 等其他 rule 仍適用）。
+   - Test 檔自身應 exit 0 並 0 `no-node-access`。
+   - 4 個 it block 全 PASS。
+
+**禁止行為**：
+
+- 不改 `'testing-library/no-node-access': 'error'` → `'off'`。
+- 不在 ignores 加 `tests/_helpers/**` 之類 broad glob。
+- 不改 `tests/_helpers/e2e-helpers.js` 已有的 ignore entry。
+- 不改 `src/components/CommentSection.jsx` 或其他 production code。
+- 不改 test 行為（4 個 it block 應該全部仍通過、斷言文字不變）。
+- 不加 eslint disable。
+- 不改 `vi.mock('next/navigation', ...)` 位置（必須留在 test 檔）。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 含三處：新檔 `tests/_helpers/notifications/scroll-to-comment-mock.jsx`、改 `tests/integration/notifications/scroll-to-comment.test.jsx`、改 `eslint.config.mjs` ignores 一個路徑。
+2. `eslint.config.mjs` line 396 仍是 `'testing-library/no-node-access': 'error'`（未被改成 `off`）。
+3. `eslint.config.mjs` §17.5 ignores array 增加 `'tests/_helpers/notifications/scroll-to-comment-mock.jsx'`，且原本 `'tests/e2e/**'`、`'tests/_helpers/e2e-helpers.js'` 仍在；**沒有更廣 glob**。
+4. Helper 檔 default export `ScrollTestComponent`，內部仍用 `document.getElementById`；JSDoc 完整。
+5. Test 檔不再有 `ScrollTestComponent` 定義；`useEffect` import 已移除；改為 import helper；`vi.mock('next/navigation', ...)` 仍在 test 檔。
+6. `npx eslint eslint.config.mjs tests/_helpers/notifications/scroll-to-comment-mock.jsx tests/integration/notifications/scroll-to-comment.test.jsx` exit 0；test 檔 0 `no-node-access`；helper 0 `no-node-access`（因 ignored）。
+7. `npx vitest run tests/integration/notifications/scroll-to-comment.test.jsx` exit 0；4 個 it block 全 PASS。
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff eslint.config.mjs tests/integration/notifications/scroll-to-comment.test.jsx
+ls -la tests/_helpers/notifications/scroll-to-comment-mock.jsx
+cat tests/_helpers/notifications/scroll-to-comment-mock.jsx
+rg -n "'testing-library/no-node-access':" eslint.config.mjs
+rg -n "scroll-to-comment-mock|tests/_helpers/e2e-helpers|tests/e2e" eslint.config.mjs
+rg -n "ScrollTestComponent|document\\.getElementById|useEffect|vi\\.mock\\('next/navigation'" tests/integration/notifications/scroll-to-comment.test.jsx
+npx eslint eslint.config.mjs tests/_helpers/notifications/scroll-to-comment-mock.jsx tests/integration/notifications/scroll-to-comment.test.jsx --format stylish 2>&1 | tee /tmp/s6-t34-review.txt
+rg -n "testing-library/no-node-access" /tmp/s6-t34-review.txt
+npx vitest run tests/integration/notifications/scroll-to-comment.test.jsx
+```
+
+**Failure recovery**：
+
+- `'testing-library/no-node-access': 'error'` 被改成 `off` → Reviewer FAIL；重派 Engineer 恢復 error，並只在 ignores 加路徑。
+- ignores 加了 broad glob（`tests/_helpers/**`）→ FAIL；重派 Engineer 收斂到精確 helper 路徑。
+- Helper 檔自身 lint fail（非 testing-library rule）→ 重派 Engineer 補 JSDoc / import 順序 / a11y。
+- Vitest fail → 回報 failing test / error；可能 mock module path 沒接好 / `vi.mock('next/navigation')` 沒留在 test 檔，重派 Engineer 修。
+- Production code 被改 → FAIL，重派 Engineer revert。
+
+---
+
+## T35：Session 6 closeout + handoff update（獨占）
+
+**Engineer prompt 要點**：
+
+1. 獨占執行；確認 T30-T34 reviewers 都 PASS 後才開始。
+2. 只允許改 `specs/024-eslint-testing-lib-cleanup/handoff.md`；不得改 test / component / config。
+3. 驗證：
+   ```bash
+   npx eslint tests/integration/notifications/NotificationPanel.test.jsx tests/integration/notifications/notification-click.test.jsx tests/integration/notifications/scroll-to-comment.test.jsx
+   npx eslint tests/integration/notifications/
+   npx eslint src/components/Notifications/NotificationItem.jsx tests/_helpers/notifications/scroll-to-comment-mock.jsx
+   npx vitest run tests/integration/notifications/NotificationPanel.test.jsx tests/integration/notifications/notification-click.test.jsx tests/integration/notifications/scroll-to-comment.test.jsx
+   npx vitest run tests/integration/notifications
+   ```
+4. 確認 ESLint config rule level：
+   ```bash
+   rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+   ```
+   兩條都應仍是 `error`（commit bridge 已恢復）。
+5. Boundary check（用 `pipefail` 或 raw command 防 `tee` exit code 誤導，handoff §2.29 已記）：
+   ```bash
+   zsh -o pipefail -c 'npx eslint src specs tests 2>&1 | tee /tmp/s6-repo-wide.txt'
+   echo "exit=$?"
+   rg -c "testing-library/no-node-access" /tmp/s6-repo-wide.txt
+   rg "✖" /tmp/s6-repo-wide.txt
+   ```
+   把實際殘留 domain（profile / weather / posts / toast / strava 等）列在 handoff（S7-S8 範圍）。
+6. 更新 `handoff.md`：
+   - **§0** 最新狀態：Session 6 完成；下一 session 接 S7（plan §8.2 S7 — profile 3 處 + weather 2 處 純測試重構）。
+   - **§2** pitfalls：補 S6 實際踩坑（若有；若無新坑，仍在「Session 6 完成」段下記錄已驗事實）。
+   - **§4** append `Session 6（NotificationPanel + notification-click + scroll-to-comment 收尾）— 完成`，記錄：
+     - T30-T34 各 task 結果（raw / unique 收斂數字、Reviewer PASS evidence）
+     - 驗證指令 fresh run 結果
+     - helper extraction 結果（新檔路徑、ignores 修改）
+     - notifications domain `no-node-access` 全清確認
+     - S7-S8 剩餘範圍（明確列 domain + 大致數量）
+   - **§5** 下一 session checklist 改成 S7 checklist：scope = `tests/integration/profile/`（3 處） + `tests/integration/weather/`（2 處），plan §8.2 S7「🧹 純測試重構」。
+7. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不改 `eslint.config.mjs`（T34 已加 ignores 後，T35 不再動）。
+- 不改 `src/**` / `tests/**`。
+- 不為了 repo-wide lint 全綠去修 S7-S8 domain。
+- 不加 eslint disable，不關 rule。
+- 不 git add / commit / push。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. `NotificationPanel.test.jsx` ESLint exit 0。
+2. `notification-click.test.jsx` ESLint exit 0。
+3. `scroll-to-comment.test.jsx` ESLint exit 0。
+4. notifications domain target lint exit 0；`no-node-access` 在 notifications domain = 0。
+5. 三 target file 的 Vitest pass；notifications suite 整體 pass（若任何檔 fail，handoff 必須記實際 failure，不可寫全綠）。
+6. `eslint.config.mjs` `no-node-access` 仍是 `error`、`prefer-user-event` 仍是 `error`。
+7. `handoff.md` §0、§2、§4、§5 已更新。
+8. Repo-wide lint 結果有被記在 handoff，殘留 domain 明確列出（profile / weather / posts / toast / strava，視實測）。
+9. 未 staged、未 commit、未 push。
+
+**Reviewer 驗收指令**：
+
+```bash
+npx eslint tests/integration/notifications/NotificationPanel.test.jsx tests/integration/notifications/notification-click.test.jsx tests/integration/notifications/scroll-to-comment.test.jsx
+npx eslint tests/integration/notifications/
+npx eslint src/components/Notifications/NotificationItem.jsx tests/_helpers/notifications/scroll-to-comment-mock.jsx
+npx vitest run tests/integration/notifications/NotificationPanel.test.jsx tests/integration/notifications/notification-click.test.jsx tests/integration/notifications/scroll-to-comment.test.jsx
+npx vitest run tests/integration/notifications
+rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+zsh -o pipefail -c 'npx eslint src specs tests 2>&1 | tee /tmp/s6-t35-repo-wide-review.txt' || true
+rg -c "testing-library/no-node-access" /tmp/s6-t35-repo-wide-review.txt
+sed -n '/^## 0\./,/^## 1\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+sed -n '/Session 6/,/^## 5\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+sed -n '/^## 5\./,/^## 6\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+git status --short
+git diff --name-only
+```
+
+**Failure recovery**：
+
+- Notifications target lint still fails → Reviewer 回報 rule + line:col；主 agent 重派對應 T31 / T32 / T33 / T34 Engineer。
+- Vitest fail → 回報 failing command / test；重派對應 Engineer。
+- `handoff.md` 寫成 repo-wide 全綠 → 重派 T35 Engineer 修文件。
+- 發現 `eslint.config.mjs` rule level 被改 / ignores 多了 broad glob → Reviewer FAIL；主 agent 不自行修，重派 Engineer 收斂。
+
+---
+
+## Session 6 結束狀態（DOD）
+
+- `testing-library/no-node-access`: 維持 `error`。
+- `testing-library/prefer-user-event`: 維持 `error`。
+- `tests/integration/notifications/NotificationPanel.test.jsx`: 0 `testing-library/no-node-access` errors。
+- `tests/integration/notifications/notification-click.test.jsx`: 0 `testing-library/no-node-access` errors。
+- `tests/integration/notifications/scroll-to-comment.test.jsx`: 0 `testing-library/no-node-access` errors（透過 helper extraction + ignores entry 達成）。
+- 必要 component affordance 僅限 `src/components/Notifications/NotificationItem.jsx`（unreadDot 加 `data-testid` + `aria-hidden="true"`）。
+- 新增 helper：`tests/_helpers/notifications/scroll-to-comment-mock.jsx`，並在 `eslint.config.mjs` §17.5 ignores 增加該精確路徑（不加 broad glob）。
+- 整個 notifications domain `no-node-access` 全清。
+- `tests/integration/profile/`、`tests/integration/weather/`、`tests/integration/posts/`、`tests/integration/toast/`、`tests/integration/strava/` 仍可能 fail；不要把剩餘 domain 混進 S6。
+- `handoff.md` 記錄 Session 6 evidence 與 S7 checklist。
 - 不 commit、不 stage、不 push。
