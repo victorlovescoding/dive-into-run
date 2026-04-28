@@ -1278,3 +1278,446 @@ git status --short
 - browser/server tests pass。
 - `handoff.md` 記錄 Session 3 完成 evidence。
 - 不 commit、不 stage、不 push。
+
+---
+
+# Session 4 Tasks — Phase 4.1：NavbarMobile no-node-access cleanup
+
+> **Source**: `specs/024-eslint-testing-lib-cleanup/plan.md` §8.2 Session 4, adjusted by current preflight facts.
+> **Goal**: 只清 `tests/integration/navbar/NavbarMobile.test.jsx` 的 `testing-library/no-node-access`，必要時只補 Navbar mobile affordance。
+> **執行模式**：主 agent 只派工、彙整、驗收回饋；所有實作與後續修正都由 Engineer subagent 做，Reviewer subagent 依標準驗收。
+> **Allowed files**：`tests/integration/navbar/NavbarMobile.test.jsx`，以及必要 affordance 的 `src/components/Navbar/Navbar.jsx` / `src/components/Navbar/MobileDrawer.jsx`。
+> **Forbidden files**：不要改 `eslint.config.mjs`、不要碰 NavbarDesktop / notifications / posts / profile / weather / toast / strava、不要改非上述 allowed files。
+
+## Session 4 Parallelism — 同時最多 2 個 subagents
+
+| 階段                         | 並行度        | 原因                                                                                                            |
+| ---------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------- |
+| Writer Engineer              | **1**         | 主要修改集中在同一個 `NavbarMobile.test.jsx`；同時兩個 Engineer 寫同一檔會互相覆蓋或造成 line/range 判讀失真。 |
+| Reviewer                     | **1**         | Reviewer 必須在 Engineer 交付後依目標 range 驗收。                                                             |
+| Engineer + Reviewer 配對     | **最多 2 個** | 允許「1 Engineer + 1 Reviewer」形成驗收配對；不得同時開兩個 Engineer 寫同一檔。                                |
+| T17 / T23                    | **1**         | preflight / closeout 是獨占任務，不能與任何 writer 並行。                                                       |
+
+**Reviewer FAIL 規則**：Reviewer 一旦 FAIL，主 agent 只能把 FAIL report 轉交並重派 Engineer/subagent 修正；主 agent 不可自己修改測試、component、config 或文件來補洞。
+
+**Session 4 已驗事實（要沿用，不要倒退）**：
+
+- `testing-library/no-node-access` 已由前置 Engineer 改成 `error`，Reviewer PASS；Session 4 不要把 rule 關回 `off`。
+- `MobileDrawer.jsx` 目前已有 `role="dialog"`、`aria-modal="true"`、`aria-label="導覽選單"`；Session 4 不應盲目要求「加 dialog」。
+- `npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish` 目前 exit 1，raw 42 `testing-library/no-node-access` errors；實際是 22 個 unique line/column sites，因 rule 會對同一 callsite 重複報同 loc。
+- 進度判斷用 unique `line:column` / task target range，不只看 raw problem count。
+- Session 4 scope 只做 `NavbarMobile.test.jsx` 和必要 affordance 的 `Navbar.jsx` / `MobileDrawer.jsx`；S5 的 NavbarDesktop / notifications，以及 S6-S8 domain 不得混進來。
+- S4 完成後 repo-wide lint 預期仍可能因 S5-S8 domain fail；closeout 只要求 `NavbarMobile.test.jsx` 0 `no-node-access`，並在 handoff 記錄剩餘 domain 交給 S5+。
+
+---
+
+## T17：Session 4 preflight audit（只讀）
+
+**Engineer prompt 要點**：
+
+1. 只讀 audit，不改任何檔案。
+2. 確認 rule 狀態：
+   ```bash
+   rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+   ```
+   預期 `prefer-user-event: error`、`no-node-access: error`。
+3. 確認 git 狀態：
+   ```bash
+   git status --short
+   git diff --name-only
+   ```
+   只回報，不清理、不 revert。
+4. 跑 target lint 並產出 raw + unique report：
+   ```bash
+   npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish 2>&1 | tee /tmp/s4-navbar-mobile-preflight.txt
+   rg -n "^[[:space:]]+[0-9]+:[0-9]+.*testing-library/no-node-access" /tmp/s4-navbar-mobile-preflight.txt
+   rg -o "^[[:space:]]+[0-9]+:[0-9]+" /tmp/s4-navbar-mobile-preflight.txt | sort -u
+   ```
+5. 讀取 mobile drawer affordance 現況：
+   ```bash
+   rg -n "role=\"dialog\"|aria-modal|aria-label=\"導覽選單\"|data-testid|hamburgerLine|overlay|mobile-drawer" src/components/Navbar/Navbar.jsx src/components/Navbar/MobileDrawer.jsx tests/integration/navbar/NavbarMobile.test.jsx
+   ```
+6. 產出分組報告，至少包含：
+   - config rule 狀態
+   - dirty / changed files
+   - raw errors = 42，unique line:col = 22（若 drift，要列實測）
+   - `MobileDrawer` dialog a11y 是否已存在
+   - 建議 target range 分組：T19 drawer panel、T20 auth section、T21 state management、T22 accessibility/focus
+
+**禁止行為**：
+
+- 不改檔、不執行 formatter、不 git add/commit/push。
+- 不把 `no-node-access` 關回 `off`。
+- 不把 raw 42 直接當成 42 個獨立修點；必須 dedupe unique `line:col`。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Engineer report 有 `eslint.config.mjs` rule 狀態，且 `no-node-access` 是 `error`。
+2. 有 `git status --short` / `git diff --name-only` 原樣摘要。
+3. 有 `/tmp/s4-navbar-mobile-preflight.txt` raw output，並列 raw count + unique `line:col` count。
+4. 有確認 `MobileDrawer.jsx` 已有 dialog role/modal/label。
+5. 有明確 T19-T22 target range 分組，後續 reviewer 可照 range 驗收。
+6. 無任何檔案被 T17 修改。
+
+**Reviewer 驗收指令**：
+
+```bash
+rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+git status --short
+git diff --name-only
+test -s /tmp/s4-navbar-mobile-preflight.txt && echo OK
+rg -n "testing-library/no-node-access" /tmp/s4-navbar-mobile-preflight.txt | wc -l
+rg -o "^[[:space:]]+[0-9]+:[0-9]+" /tmp/s4-navbar-mobile-preflight.txt | sort -u | wc -l
+rg -n "role=\"dialog\"|aria-modal=\"true\"|aria-label=\"導覽選單\"" src/components/Navbar/MobileDrawer.jsx
+git diff -- specs/024-eslint-testing-lib-cleanup/tasks.md specs/024-eslint-testing-lib-cleanup/handoff.md src/components/Navbar/Navbar.jsx src/components/Navbar/MobileDrawer.jsx tests/integration/navbar/NavbarMobile.test.jsx
+```
+
+**Failure recovery**：
+
+- 若 T17 改了檔案：Reviewer 回報 path；主 agent 重派 Engineer 釐清並請 user 決定是否保留，不自行 revert。
+- 若 unique count / grouping 不清楚：重派 T17 Engineer 補報告。
+- 若 rule 不是 `error`：停止 S4 實作，回報主 agent；不得自行改 config。
+
+---
+
+## T18：Minimal component affordances
+
+**Engineer prompt 要點**：
+
+1. 只允許改 `src/components/Navbar/Navbar.jsx` / `src/components/Navbar/MobileDrawer.jsx`；不要改 test。
+2. 先讀 T17 report。若 `MobileDrawer` 已有 `role="dialog"`、`aria-modal="true"`、`aria-label="導覽選單"`，不要重複加或改 label。
+3. 建議最小 affordance：
+   - `Navbar.jsx` 的三個 hamburger line `<span className={styles.hamburgerLine} />` 補：
+     ```jsx
+     aria-hidden="true"
+     data-testid="hamburger-line"
+     ```
+   - `MobileDrawer.jsx` overlay 補：
+     ```jsx
+     data-testid="mobile-drawer-overlay"
+     ```
+4. 不要改 drawer role / label，除非 T17 實測發現缺失；若缺失，要在 report 說明為何與本文件已驗事實 drift。
+5. 跑：
+   ```bash
+   npx eslint src/components/Navbar/Navbar.jsx src/components/Navbar/MobileDrawer.jsx
+   npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
+   ```
+
+**禁止行為**：
+
+- 不改 `tests/integration/navbar/NavbarMobile.test.jsx`。
+- 不改 `eslint.config.mjs`。
+- 不新增可見文字、不改 CSS class、不改 drawer open/close 行為。
+- 不把 hamburger line 改成可聚焦或可讀出的 a11y 內容；它們是 decorative lines。
+- 不改 NavbarDesktop / UserMenu / notifications。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只包含 `src/components/Navbar/Navbar.jsx` / `src/components/Navbar/MobileDrawer.jsx`。
+2. `MobileDrawer` 仍有 `role="dialog"`、`aria-modal="true"`、`aria-label="導覽選單"`，且 label 沒被改掉。
+3. Hamburger line spans 有穩定 `data-testid="hamburger-line"`，且 `aria-hidden="true"`。
+4. Overlay 有 `data-testid="mobile-drawer-overlay"`。
+5. Component lint pass。
+6. `NavbarMobile.test.jsx` targeted Vitest pass。
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff src/components/Navbar/Navbar.jsx src/components/Navbar/MobileDrawer.jsx
+rg -n "data-testid=\"hamburger-line\"|aria-hidden=\"true\"|data-testid=\"mobile-drawer-overlay\"|role=\"dialog\"|aria-modal=\"true\"|aria-label=\"導覽選單\"" src/components/Navbar/Navbar.jsx src/components/Navbar/MobileDrawer.jsx
+npx eslint src/components/Navbar/Navbar.jsx src/components/Navbar/MobileDrawer.jsx
+npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
+```
+
+**Failure recovery**：
+
+- Off-scope diff → Reviewer 回報 path；主 agent 重派 Engineer 限縮，不自行 revert。
+- Drawer role/label 被誤改 → Reviewer FAIL，重派 Engineer 恢復語意並保留必要 affordance。
+- Vitest 紅 → Reviewer 回報 failing test name + error，重派 Engineer 修 component affordance，不碰 test。
+
+---
+
+## T19：`NavbarMobile.test.jsx` T005/T006 drawer panel cleanup
+
+**Engineer prompt 要點**：
+
+1. 只改 `tests/integration/navbar/NavbarMobile.test.jsx` 的 T005/T006 drawer panel + overlay target range；不要碰 auth/state/focus blocks。
+2. 用 role query 取代 `document.getElementById('mobile-drawer')`：
+   ```js
+   const drawer = screen.getByRole('dialog', { name: '導覽選單' });
+   ```
+3. 用 `screen.getAllByTestId('hamburger-line')` 取代 hamburger line 的 DOM selector / `.children` 類檢查。
+4. 用 `within(drawer)` 查 drawer 內部 link/button/text；不要從 drawer node 讀 `.querySelector`、`.children`、`.className`。
+5. Overlay 若需要互動，用 T18 的 `screen.getByTestId('mobile-drawer-overlay')`。
+6. 用 jest-dom matcher 取代 DOM property/class reads，例如 `toHaveAttribute`、`toHaveClass`、`toBeVisible`、`not.toHaveClass`。
+7. 跑：
+   ```bash
+   npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish 2>&1 | tee /tmp/s4-t19-navbar-mobile.txt
+   npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
+   ```
+
+**禁止行為**：
+
+- 不改 component；若發現缺 affordance，停止並回報主 agent 要補 T18，不要在 T19 偷改。
+- 不改 T20-T22 target blocks。
+- 不用 `document.*`、`Element.querySelector*`、`.children`、`.parentElement`、`.className`。
+- 不加 eslint disable。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動 `NavbarMobile.test.jsx`。
+2. T005/T006 target range 不再有 `testing-library/no-node-access` unique line:col。
+3. T005/T006 使用 `screen.getByRole('dialog', { name: '導覽選單' })` 或 helper 包裝後等價呼叫。
+4. Hamburger lines 使用 `screen.getAllByTestId('hamburger-line')`。
+5. Drawer 內查詢使用 `within(drawer)`。
+6. Targeted Vitest pass。
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff tests/integration/navbar/NavbarMobile.test.jsx
+rg -n "document\\.|querySelector|children|parentElement|className|getByRole\\('dialog'|getAllByTestId\\('hamburger-line'|within\\(" tests/integration/navbar/NavbarMobile.test.jsx
+npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish 2>&1 | tee /tmp/s4-t19-review.txt
+rg -n "testing-library/no-node-access" /tmp/s4-t19-review.txt
+npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
+```
+
+**Failure recovery**：
+
+- T005/T006 target range 還有 no-node-access → Reviewer 回報 line:col 和 test name，主 agent 重派 Engineer 修同 range。
+- Diff 碰到非 target blocks → Reviewer FAIL，主 agent 重派 Engineer 拆回正確 scope；主 agent 不自行改。
+- Vitest 紅 → 回報 failing test/error，重派 Engineer 修 query/timing。
+
+---
+
+## T20：`NavbarMobile.test.jsx` auth section cleanup
+
+**Engineer prompt 要點**：
+
+1. 只改 `NavbarMobile.test.jsx` auth describe block；沿用 T19 建立的 helper（例如 `getDrawer()`）可接受。
+2. Drawer 查詢統一走：
+   ```js
+   const drawer = screen.getByRole('dialog', { name: '導覽選單' });
+   const drawerScope = within(drawer);
+   ```
+3. Auth section 內所有 assertions 改用 `within(drawer)` / `screen` / jest-dom matcher。
+4. 不讀 `document.getElementById('mobile-drawer')`、`.querySelector`、`.children`、`.className`。
+5. 跑：
+   ```bash
+   npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish 2>&1 | tee /tmp/s4-t20-navbar-mobile.txt
+   npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
+   ```
+
+**禁止行為**：
+
+- 不改 component。
+- 不改 T21/T22 target blocks。
+- 不加 eslint disable。
+- 不用 DOM node traversal 或 raw class string 檢查。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動 `NavbarMobile.test.jsx`。
+2. Auth target range 不再有 `testing-library/no-node-access` unique line:col。
+3. Auth assertions 使用 `within(drawer)` / semantic queries。
+4. 沒新增 `document.*` / `querySelector*` / `.children` / `.className`。
+5. Targeted Vitest pass。
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff tests/integration/navbar/NavbarMobile.test.jsx
+rg -n "describe\\(|document\\.|querySelector|children|parentElement|className|getByRole\\('dialog'|within\\(" tests/integration/navbar/NavbarMobile.test.jsx
+npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish 2>&1 | tee /tmp/s4-t20-review.txt
+rg -n "testing-library/no-node-access" /tmp/s4-t20-review.txt
+npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
+```
+
+**Failure recovery**：
+
+- Auth target range 還有 no-node-access → Reviewer 回報 line:col/test name，重派 Engineer 修 auth block。
+- Helper 改壞前面 T19 → Reviewer 回報 regression range，重派 Engineer 修 helper。
+- Vitest 紅 → 回報 failing test/error，重派 Engineer。
+
+---
+
+## T21：`NavbarMobile.test.jsx` state management cleanup
+
+**Engineer prompt 要點**：
+
+1. 只改 `NavbarMobile.test.jsx` state management target range。
+2. Hamburger button 用 role query，不用 selector：
+   ```js
+   screen.getByRole('button', { name: /開啟導覽選單|關閉導覽選單/ })
+   ```
+   若 Testing Library 支援且語意清楚，可用 `{ expanded: true }` / `{ expanded: false }`，但不得碰 DOM selector。
+3. Overlay 用 `screen.getByTestId('mobile-drawer-overlay')`。
+4. Drawer state 用 matcher：
+   - `expect(drawer).toHaveClass(...)`
+   - `expect(drawer).toHaveAttribute('aria-modal', 'true')`
+   - `expect(button).toHaveAttribute('aria-expanded', 'true')`
+   不讀 `.className`。
+5. 跑：
+   ```bash
+   npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish 2>&1 | tee /tmp/s4-t21-navbar-mobile.txt
+   npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
+   ```
+
+**禁止行為**：
+
+- 不改 component，除非 T18 已明確缺 affordance 且主 agent 重新派工。
+- 不用 `document.querySelector('[aria-controls="mobile-drawer"]')`。
+- 不讀 `.className` / `.parentElement` / `.children`。
+- 不加 eslint disable。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. State management target range 不再有 `testing-library/no-node-access` unique line:col。
+2. Hamburger 查詢使用 role query。
+3. Overlay 查詢使用 `mobile-drawer-overlay` test id。
+4. Drawer open/closed state 不讀 `.className`，改用 matcher。
+5. Targeted Vitest pass。
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff tests/integration/navbar/NavbarMobile.test.jsx
+rg -n "aria-controls=\\\"mobile-drawer\\\"|document\\.|querySelector|children|parentElement|className|getByTestId\\('mobile-drawer-overlay'|getByRole\\('button'|toHaveAttribute\\('aria-expanded'|toHaveClass" tests/integration/navbar/NavbarMobile.test.jsx
+npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish 2>&1 | tee /tmp/s4-t21-review.txt
+rg -n "testing-library/no-node-access" /tmp/s4-t21-review.txt
+npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
+```
+
+**Failure recovery**：
+
+- State target range 還有 no-node-access → Reviewer 回報 line:col/test name，重派 Engineer。
+- Overlay test id 缺失導致無法查詢 → 回 T18 補 affordance，不在 T21 偷改 component。
+- Vitest 紅 → 回報 failing test/error，重派 Engineer。
+
+---
+
+## T22：`NavbarMobile.test.jsx` accessibility/focus cleanup
+
+**Engineer prompt 要點**：
+
+1. 只改 `NavbarMobile.test.jsx` accessibility / focus target range。
+2. 用 `toHaveFocus()` 取代 `document.activeElement`：
+   ```js
+   expect(closeButton).toHaveFocus();
+   ```
+3. Drawer 一律用 `screen.getByRole('dialog', { name: '導覽選單' })` 或既有 `getDrawer()` helper。
+4. Focus / keyboard assertions 使用 user-level queries + jest-dom matcher，不讀 raw DOM traversal。
+5. 跑：
+   ```bash
+   npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish 2>&1 | tee /tmp/s4-t22-navbar-mobile.txt
+   npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
+   ```
+
+**禁止行為**：
+
+- 不改 component。
+- 不用 `document.activeElement`、`document.getElementById`、`querySelector*`、`.children`、`.className`。
+- 不加 eslint disable。
+- 不擴 scope 到 NavbarDesktop 或其他 domain。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Accessibility/focus target range 不再有 `testing-library/no-node-access` unique line:col。
+2. `document.activeElement` 已改成 `toHaveFocus()` matcher。
+3. Drawer 用 role query。
+4. 全檔 `NavbarMobile.test.jsx` 的 `testing-library/no-node-access` = 0。
+5. Targeted Vitest pass。
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff tests/integration/navbar/NavbarMobile.test.jsx
+rg -n "activeElement|document\\.|querySelector|children|parentElement|className|toHaveFocus|getByRole\\('dialog'" tests/integration/navbar/NavbarMobile.test.jsx
+npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish 2>&1 | tee /tmp/s4-t22-review.txt
+rg -n "testing-library/no-node-access" /tmp/s4-t22-review.txt
+npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
+```
+
+**Failure recovery**：
+
+- 全檔仍有 no-node-access → Reviewer 回報 remaining unique line:col；主 agent 只重派 Engineer/subagent 補修，不自行改。
+- Focus test flaky → 回報 failing test/error；重派 Engineer 改 user interaction / focus target，不退回 DOM read。
+- Off-scope diff → Reviewer FAIL，重派 Engineer 限縮。
+
+---
+
+## T23：Session 4 closeout + handoff update
+
+**Engineer prompt 要點**：
+
+1. 獨占執行；確認 T17-T22 reviewers 都 PASS 後才開始。
+2. 只允許改 `specs/024-eslint-testing-lib-cleanup/handoff.md`；不得改 test/component/config。
+3. 驗證：
+   ```bash
+   npx eslint tests/integration/navbar/NavbarMobile.test.jsx
+   npx eslint src/components/Navbar/Navbar.jsx src/components/Navbar/MobileDrawer.jsx tests/integration/navbar/NavbarMobile.test.jsx
+   npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
+   ```
+4. 視需要加跑 navbar related vitest：
+   ```bash
+   npx vitest run tests/integration/navbar
+   ```
+5. 更新 `handoff.md`：
+   - §0 最新狀態：Session 4 完成或執行完成待下一 session；`no-node-access` 維持 `error`。
+   - §2 pitfalls：保留本輪三個坑與任何新踩坑。
+   - §4 append `Session 4（Phase 4.1 NavbarMobile）— 完成`，記錄 T17-T23、raw/unique count、驗證指令結果、剩餘 domain 交 S5+。
+   - §5 下一 session checklist：S5 只接 NavbarDesktop + notifications，不回頭改 S4 scope。
+6. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不改 `eslint.config.mjs`。
+- 不改 `src/**` / `tests/**`。
+- 不為了 repo-wide lint 全綠去修 S5-S8 domain。
+- 不加 eslint disable，不關 rule。
+- 不 git add / commit / push。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. `NavbarMobile.test.jsx` ESLint exit 0，且 `testing-library/no-node-access` = 0。
+2. Component + target test lint exit 0。
+3. Targeted Vitest pass。
+4. 若跑 `tests/integration/navbar`，結果已寫進 handoff。
+5. `handoff.md` §0、§2、§4、§5 已更新。
+6. `eslint.config.mjs` 未被 T23 修改；`no-node-access` 仍是 `error`。
+7. 未 staged、未 commit、未 push。
+
+**Reviewer 驗收指令**：
+
+```bash
+npx eslint tests/integration/navbar/NavbarMobile.test.jsx
+npx eslint src/components/Navbar/Navbar.jsx src/components/Navbar/MobileDrawer.jsx tests/integration/navbar/NavbarMobile.test.jsx
+npx vitest run tests/integration/navbar/NavbarMobile.test.jsx
+rg -n "'testing-library/no-node-access': 'error'" eslint.config.mjs
+sed -n '/^## 0\./,/^## 1\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+sed -n '/Session 4/,/^## 5\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+sed -n '/^## 5\./,/^## 6\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+git status --short
+git diff --name-only
+```
+
+**Failure recovery**：
+
+- `NavbarMobile.test.jsx` lint still fails → Reviewer 回報 rule + line:col；主 agent 重派對應 T19-T22 Engineer。
+- Component lint / Vitest fail → 回報 failing command/test；重派對應 Engineer。
+- `handoff.md` 未更新或寫成 repo-wide 已全綠 → 重派 T23 Engineer 修文件。
+- 發現 `eslint.config.mjs` 被改或 rule 被關 → Reviewer FAIL；主 agent 不自行修，重派 Engineer 並要求保留前置 Reviewer PASS 的 config 狀態。
+
+## Session 4 結束狀態（DOD）
+
+- `testing-library/no-node-access`: 維持 `error`。
+- `tests/integration/navbar/NavbarMobile.test.jsx`: 0 `testing-library/no-node-access` errors。
+- 必要 component affordance 僅限 `Navbar.jsx` / `MobileDrawer.jsx`。
+- repo-wide lint 仍可能因 S5-S8 domain fail；不要把剩餘 domain 混進 S4。
+- `handoff.md` 記錄 Session 4 evidence 與 S5 checklist。
+- 不 commit、不 stage、不 push。

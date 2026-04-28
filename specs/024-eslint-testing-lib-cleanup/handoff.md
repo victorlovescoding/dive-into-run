@@ -11,18 +11,18 @@
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Branch          | `024-eslint-testing-lib-cleanup`                                                                                                                                                                   |
 | Worktree path   | `/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`                                                                                                                            |
-| 目前 Session    | **Session 3 完成；待 Session 4 接手 Phase 4 no-node-access**                                                                                                                                       |
-| Working tree    | Session 3 變更已完成，將隨本 session commit 納入 Git history；後續接手請用 `git status --short` / `git log --oneline -5` 驗證實際狀態。 |
+| 目前 Session    | **Session 4 planning ready；待 subagent 執行 T17-T23（NavbarMobile no-node-access）**                                                                                                              |
+| Working tree    | 前置 config Engineer 已打開 `no-node-access` 並由 Reviewer PASS；本規劃 session 只修改 `tasks.md` / `handoff.md`。接手請用 `git status --short` 驗證實際狀態，不要 revert 他人改動。                    |
 | ESLint plugin   | 已裝 (eslint-plugin-testing-library@^7.16.2)                                                                                                                                                       |
-| Sensors         | `testing-library/prefer-user-event` 維持 `error`；`testing-library/no-node-access` 仍暫時 `off`，等 Phase 4 完成後再恢復 `error`                                                               |
-| Repo lint state | `npx eslint src specs tests` fresh exit 0（只輸出 React version warning）；因 `no-node-access` 目前是 `off`，83 baseline violations 不會在 repo-wide lint 顯示                                    |
-| Commit 計畫     | 本 session 收尾會由主 agent 正常 commit；Session 4 接手 Phase 4，聚焦清 `no-node-access` 83 baseline，完成後再把 `testing-library/no-node-access` 改回 `error` 並做 commit/PR gate          |
+| Sensors         | `testing-library/prefer-user-event` 維持 `error`；`testing-library/no-node-access` 已恢復 `error`，不要關回 `off`                                                                                |
+| Repo lint state | 不再是 Session 3 的 repo-wide exit 0 狀態；`NavbarMobile.test.jsx` 目前 target lint exit 1，raw 42 `no-node-access` errors / 22 unique line:col sites。S4 完成後 repo-wide lint 仍可能因 S5-S8 domain fail。 |
+| Commit 計畫     | 本規劃 session 不 `git add` / commit / push；S4 執行與後續修正都交 subagent。                                                                                                                       |
 
 接手前必讀：
 
-1. 本檔 §2 **十七個坑**（特別是 §2.15 fake timers + userEvent deadlock、§2.16 native img error flush、§2.17 raw grep comment-only）
-2. 本檔 §4 「Session 3（Phase 3）— 完成」段
-3. Session 4 只接 Phase 4 `testing-library/no-node-access`；`prefer-user-event` 已清完且維持 `error`，`no-node-access` 目前仍是 `off`
+1. 本檔 §2 **二十個坑**（特別是 §2.18–§2.20：MobileDrawer dialog 已存在、raw count 會 duplicated、rule 打開後 repo-wide 會因剩餘 domain fail）
+2. 本檔 §4 「Session 4 規劃 — 完成」段
+3. `tasks.md` Session 4 T17-T23；S4 scope 只做 `NavbarMobile.test.jsx` + 必要 `Navbar.jsx` / `MobileDrawer.jsx` affordance
 
 ---
 
@@ -65,7 +65,7 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 
 ---
 
-## 2. 十七個坑（從 plan §5 + §6 + Session 2/3 規劃萃取，先警告再執行）
+## 2. 二十個坑（從 plan §5 + §6 + Session 2/3/4 規劃萃取，先警告再執行）
 
 ### 2.1 ⚠️ 坑 1：T2 commit 後 `npm run lint` 會 fail repo-wide
 
@@ -230,6 +230,30 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 - **根因**：`grep -rn "fireEvent" tests/integration/` 不只抓 executable usage，也抓檔頭 guideline 註解，例如 `NEVER fireEvent`。
 - **修法**：只改註解文字成不含 literal 的等價 guideline（例如 `NEVER low-level event helpers`），不得改測試邏輯。
 - **本輪實測**：7 個 comment-only 檔案已改寫；`grep -rn "fireEvent" tests/integration/` exit 1 且無輸出。
+
+### 2.18 ⚠️ 坑 18：MobileDrawer dialog a11y 已存在，不要重複加
+
+- **發生在**：Session 4 planning preflight。
+- **已驗事實**：`src/components/Navbar/MobileDrawer.jsx` 目前已有 `id="mobile-drawer"`、`role="dialog"`、`aria-modal="true"`、`aria-label="導覽選單"`。
+- **風險**：plan §8.2 原本把 S4 描述成「MobileDrawer 加 `role="dialog"` / a11y label」的重型 component refactor；這已經過時。若 Engineer 盲目再加 role/label，可能改壞既有語意或造成測試重複查詢。
+- **對策**：Session 4 不應要求「加 dialog」。主要工作是改 `NavbarMobile.test.jsx` 的查詢方式：`screen.getByRole('dialog', { name: '導覽選單' })`、`within(drawer)`、jest-dom matcher。必要 component affordance 只限 overlay / hamburger line 的穩定 test hooks。
+
+### 2.19 ⚠️ 坑 19：`no-node-access` raw count 會 duplicated，進度看 unique line:col / target range
+
+- **發生在**：Session 4 planning preflight。
+- **已驗事實**：`npx eslint tests/integration/navbar/NavbarMobile.test.jsx --format stylish` 目前 exit 1，顯示 raw 42 個 `testing-library/no-node-access` errors，但實際是 22 個 unique `line:column` sites。
+- **根因**：同一 callsite 可能因 rule traversal 對同 loc 重複報錯；raw problem count 不是獨立修點數。
+- **對策**：Reviewer 驗收 T19-T22 時要用 unique `line:column` / target range 判斷進度，不要只看 raw problem count。每個 task 的 reviewer report 必須列 remaining unique sites。
+
+### 2.20 ⚠️ 坑 20：`no-node-access` 打開後 repo-wide lint 會因剩餘 domain fail，S4 不要關 rule 或跨 scope 修
+
+- **發生在**：前置 config Engineer 已把 `testing-library/no-node-access` 改回 `error` 且 Reviewer PASS 後。
+- **影響**：Session 3 的「repo-wide lint exit 0」已不再成立。S4 完成後，`NavbarMobile.test.jsx` 應該 0 `no-node-access`，但 repo-wide lint 仍可能因 S5-S8 domain（NavbarDesktop、notifications、posts/profile/weather/toast/strava 等）失敗。
+- **對策**：S4 closeout 不要求 repo-wide lint 全綠，只要求：
+  - `npx eslint tests/integration/navbar/NavbarMobile.test.jsx` exit 0
+  - `npx eslint src/components/Navbar/Navbar.jsx src/components/Navbar/MobileDrawer.jsx tests/integration/navbar/NavbarMobile.test.jsx` exit 0
+  - `npx vitest run tests/integration/navbar/NavbarMobile.test.jsx` pass
+- **禁止**：不要把 rule 關回 `off`、不要加 eslint disable、不要為了 commit/gate 偷修 S5-S8 domain。
 
 ---
 
@@ -396,22 +420,48 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 - **本次 subagent 並行**：T12/T13、T14/T15 以最多 2 個 Engineer 並行，之後各配 reviewer；T16 closeout 獨占驗證與 handoff 更新。
 - **commit 狀態**：本段隨 Session 3 commit 納入；不使用 `git commit --no-verify`；不 push。若接手時看到 staged/dirty，先用 `git status --short` / `git log --oneline -5` 釐清實際狀態；不要 revert T12-T15 reviewer 已 PASS 的測試改動。
 
+### Session 4 規劃 — 完成
+
+- **Started**: 2026-04-28
+- **狀態**：✅ 規劃完成；⏳ 實作尚未開始，後續修改都交 subagent。
+- **前置事實**：
+  - 前置 config Engineer 已把 `testing-library/no-node-access` 改為 `error`，Reviewer PASS；本規劃 session 不改 `eslint.config.mjs`。
+  - `MobileDrawer.jsx` 已有 `role="dialog"`、`aria-modal="true"`、`aria-label="導覽選單"`；S4 不再規劃「加 dialog」，改為測試查詢方式 cleanup。
+  - `NavbarMobile.test.jsx` target lint 目前 raw 42 `no-node-access` errors / 22 unique line:col sites；Reviewer 應看 unique site 與 target range。
+- **本輪做了什麼**：
+  1. 依 plan §8.2 Session 4 與最新 preflight 事實，追加 `tasks.md` Session 4 T17-T23。
+  2. 明確收斂 S4 scope：只做 `tests/integration/navbar/NavbarMobile.test.jsx`，以及必要 affordance 的 `src/components/Navbar/Navbar.jsx` / `src/components/Navbar/MobileDrawer.jsx`。
+  3. 明確排除 S5+：不要碰 NavbarDesktop、notifications、posts、profile、weather、toast、strava。
+  4. 設定 writer concurrency = 1；同時最多 2 個 subagents 僅限「1 Engineer + 1 Reviewer」驗收配對；不得同時開兩個 Engineer 寫同一檔。
+  5. 明確 Reviewer FAIL 流程：主 agent 只能重派 Engineer/subagent 修改，不可自己修。
+- **待執行**：
+  - T17 Session 4 preflight audit（只讀）
+  - T18 Minimal component affordances
+  - T19 `NavbarMobile.test.jsx` T005/T006 drawer panel cleanup
+  - T20 `NavbarMobile.test.jsx` auth section cleanup
+  - T21 `NavbarMobile.test.jsx` state management cleanup
+  - T22 `NavbarMobile.test.jsx` accessibility/focus cleanup
+  - T23 Session 4 closeout + handoff update
+- **commit 狀態**：本規劃 session 不 `git add` / commit / push；只留下 `tasks.md` / `handoff.md` 文件修改。
+
 ---
 
 ## 5. 下個 Session 開工 checklist
 
-進 Session 4（Phase 4）之前：
+進 Session 4 執行前：
 
-- [ ] 讀本檔 §0（Session 3 完成；repo-wide lint exit 0 是因 `no-node-access` 仍 `off`）
-- [ ] 讀本檔 §2.10、§2.13、§2.15–§2.17（T8 baseElement 策略、增量 commit gate、fake timer / native event / raw grep 坑）
-- [ ] 讀本檔 §4 「Session 3（Phase 3）— 完成」段
-- [ ] 跑 `git status --short` / `git log --oneline -5`；若看到 staged/dirty，先釐清來源；不要 revert T12-T15 已 PASS 的測試改動
-- [ ] 確認 `testing-library/prefer-user-event` 仍是 `error`，`testing-library/no-node-access` 仍是 `off`
-- [ ] Phase 4 目標：清 `testing-library/no-node-access` 83 baseline violations；完成後才把 `testing-library/no-node-access` 改回 `error`
-- [ ] Phase 4 可用暫時 audit 指令：`npx eslint src specs tests --rule '{"testing-library/no-node-access":"error"}'`，用來看 83 baseline，不要先改 config 擋住增量工作
-- [ ] 保留 Session 3 驗證結果：raw `grep -rn "fireEvent" tests/integration/` 已 0；`npx eslint src specs tests` exit 0；`npm run test:browser` / `npm run test:server` 都 exit 0
-- [ ] 確認 plugin 還在：`ls node_modules/eslint-plugin-testing-library/package.json`
-- [ ] 讀 `tasks.md` Phase 4 / no-node-access 拆分，再開始修 DOM access
+- [ ] 讀本檔 §0（目前是 Session 4 planning ready；`no-node-access` 已是 `error`，repo-wide lint 不再沿用 Session 3 exit 0 事實）
+- [ ] 讀本檔 §2.18–§2.20（MobileDrawer dialog a11y 已存在、raw count duplicated、rule 打開後 S4 不要求 repo-wide 全綠）
+- [ ] 讀本檔 §4 「Session 4 規劃 — 完成」段
+- [ ] 讀 `tasks.md` Session 4 T17-T23；主 agent 只派工，不實作
+- [ ] 跑 `git status --short` / `git diff --name-only`；若看到他人改動，先釐清來源，不要 revert
+- [ ] T17 先做只讀 preflight：確認 config rule、target raw/unique violations、MobileDrawer dialog a11y、target range 分組
+- [ ] S4 writer concurrency = 1；同時最多 2 個 subagents 只能是「1 Engineer + 1 Reviewer」
+- [ ] T18 只在必要時補 `Navbar.jsx` hamburger line / `MobileDrawer.jsx` overlay test affordance；不要改 drawer role/label
+- [ ] T19-T22 只改 `tests/integration/navbar/NavbarMobile.test.jsx`，按 drawer/auth/state/focus range 分段
+- [ ] Reviewer FAIL 時，主 agent 只能重派 Engineer/subagent 修改，不可自己修
+- [ ] T23 closeout 只要求 `NavbarMobile.test.jsx` 0 `no-node-access` + target vitest pass；repo-wide lint 剩餘 domain 交 S5+
+- [ ] 不改 `eslint.config.mjs`、不加 eslint disable、不 git add/commit/push
 
 ---
 
