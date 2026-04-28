@@ -3235,11 +3235,829 @@ git diff --name-only
 ```text
 0. 主 agent 自行 commit bridge：暫關 'testing-library/no-node-access' error → off，commit 規劃文件，立刻恢復 error
 1. 派 T36 Explore（read-only）→ 主 agent 直接驗收（不另派 reviewer）
-2. Wave 1 並行：T37 Engineer + T38 Engineer 同時派；各自寫完回報後，並行派 T37 Reviewer + T38 Reviewer
+2. Wave 1 並行：T37 Engineer + T38 Engineer 同時派；各自寫完回報後,並行派 T37 Reviewer + T38 Reviewer
 3. Wave 1 PASS 後，Wave 2 並行：T39 Engineer + T40 Engineer；同上接 reviewer
 4. T37–T40 全 PASS 後，T41 closeout + handoff update（獨占）；T41 也派 Reviewer 驗收
 5. 全綠 → main agent 在規劃 commit 之外不自行 commit；下個 session 接手時 working tree 仍 dirty（除主 agent 規劃 commit 帶走的部分）
 6. 任一 reviewer FAIL → 重派該 task Engineer 修；不主 agent 自己改檔
+```
+
+> 主 agent **不**自己跑 `npx eslint ... --fix`、不自己改 test / component / config（除 commit bridge 一行）。所有有副作用的指令都派 subagent 跑。
+
+---
+
+# Session 8 Tasks — Phase 4 收尾（posts + toast + strava）
+
+> **Source**: `plan.md` §5 Phase 4.2 / 4.6 / 4.7 + §8.2 S8（🧺 小量收尾雜項 — form a11y、container.firstChild 改 matcher）
+> **Goal**: 1.5–2 hr — 把 S8 7 unique sites / 12 raw `testing-library/no-node-access` errors 全清為 0；最後一個 cleanup session，目標讓 `npx eslint src specs tests` exit 0（首次 repo-wide 全綠）
+> **執行模式**：所有任務一律由 subagent 執行；主 agent 只做派遣、彙整、驗收回饋。從頭到尾包含後續修改都交 subagent。
+> **Branch**：`024-eslint-testing-lib-cleanup`（worktree 路徑：`/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`）
+> **承接狀態**：Session 7 完成 commit `07182d4`（profile + weather 5 unique sites 全清）；本 session 開工前 working tree 應僅 `M eslint.config.mjs`（commit bridge 後恢復 `error`）。
+> **本 session 開工前必讀**：
+>
+> - `handoff.md` §0、§2.49–§2.55（S8 audit 新觀察與 5 個修法決策）、§4「Session 8 規劃 — 完成」段
+> - 本檔 T42–T48 spec
+> - 本檔下方「主 agent 派遣 SOP」
+
+---
+
+## Session 8 Fresh Audit 摘要（planning evidence, 2026-04-28）
+
+> 由主 agent 在規劃時跑（**規劃時可以**；正式執行階段仍由 T42 read-only Explore 重新驗收）。實際 line:col 與 raw / unique 數字以 T42 結果為準（`tee` exit code 議題見 handoff §2.29）。
+
+### S8 scope per-file violation count
+
+| 檔案                                               | Line:Col        | Raw → Unique | 違規 code（verbatim）                                                                         |
+| -------------------------------------------------- | --------------- | ------------ | --------------------------------------------------------------------------------------------- |
+| `tests/integration/posts/PostDetail.test.jsx`      | 186:20          | 2 → 1        | `(btn) => btn.querySelector('svg') && btn.textContent.includes('5')`                          |
+| `tests/integration/posts/PostFeed.test.jsx`        | 224:39          | 2 → 1        | `const feedContainer = baseElement.querySelector('[class*="feed"]');`                         |
+| `tests/integration/strava/RunsRouteMap.test.jsx`   | 59:22 + 68:22   | 2 → 2        | `expect(container.firstChild).toBeNull();` ×2（兩個 null-render it block 各一處）             |
+| `tests/integration/toast/crud-toast.test.jsx`      | 265:27 + 287:27 | 4 → 2        | `const form = document.querySelector('form');` ×2（create-event success + error 兩 it block） |
+| `tests/integration/toast/toast-container.test.jsx` | 65:56           | 2 → 1        | `const container = screen.getByTestId('toast-id-1').parentElement;`                           |
+| **總計**                                           |                 | **12 → 7**   |                                                                                               |
+
+### Production component affordance summary
+
+| 檔案                                   | Line    | 現有 affordance                                                                  | T?? 修法（A/B/C）                                                                                                                         |
+| -------------------------------------- | ------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/PostCard.jsx`          | 315     | like button：無 aria-label / role override；HeartIcon 內含 svg + text            | T44 改法 A：加 `aria-label="按讚"` + `aria-pressed={post.liked}`                                                                          |
+| `src/ui/posts/PostsPageScreen.jsx`     | 82      | feed wrapper `<div className={styles.feed}>` 無 testid / role / label            | T43 改法 C：加 `data-testid="post-feed"`（同 §2.32 / §2.44 pattern）                                                                      |
+| `src/components/RunsRouteMapInner.jsx` | 36–38   | early return null when coords empty；map mock 已有 `data-testid="map-container"` | T45 純測試：不動 component                                                                                                                |
+| `src/ui/events/EventCreateForm.jsx`    | 72 + 76 | `<form>` 無 aria-label；`<h2>揪團表單</h2>` 無 id                                | T46 改法 A：加 `aria-labelledby="event-create-form-title"` + h2 `id`，重用既有 visible text                                               |
+| `src/components/ToastContainer.jsx`    | 18      | outer `<div>` 已有 `aria-live="polite"` + `aria-relevant`；無 role / aria-label  | T47 改法 A：加 `role="region"` + `aria-label="通知列表"`（landmark；不採 `role="status"`，因 individual Toast mock 也用 `role="status"`） |
+
+### 邊界檢查
+
+```
+npx eslint tests/integration/notifications/ tests/integration/navbar/ tests/integration/profile/ tests/integration/weather/  →  exit 0（S5/S6/S7 不退）
+npx eslint tests/integration/posts/ tests/integration/toast/ tests/integration/strava/                                       →  exit 1（7 unique sites）
+rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs                                              →  line 399 'error' / line 400 'error'
+```
+
+> 用戶 prompt `eslint.config.mjs:395` 是 line drift（§2.37 + §2.49）；當前實際 line 400 是 `'testing-library/no-node-access'`。Commit bridge 操作目標為 line 400，不是 line 395。
+
+### 風險 / scope changer
+
+- **T44 PostCard like button aria-label override accessible name**：加 `aria-label="按讚"` 後 button 的 accessible name 不再含可見 count "5"；視覺用戶仍看得到，screen reader 用戶聽不到 count。若用戶要保留 count 給 a11y 用戶，可改 `aria-label={\`按讚（${post.likesCount} 個讚）\`}`。本 plan 採 simpler 版本（與 PostCard 既有 menu button `aria-label="更多選項"` pattern 一致）。
+- **T46 form implicit role 'form' 啟用條件**：`<form>` element 必須有 accessible name（aria-label / aria-labelledby）才有 implicit role 'form'（§2.54）；若漏加 `aria-labelledby` 或 h2 漏 id → `screen.getByRole('form', { name: ... })` throw。
+- **T47 ToastContainer role 選擇**：`role="status"` 與 individual Toast mock `role="status"` collide，會造成 multi-status query 混亂 → 採 `role="region"` 避開 collision。
+
+---
+
+## Parallelism — 同時最多 4 個 subagents（2 Engineer + 2 Reviewer 配對；Engineer 改不同檔不撞）
+
+| 階段                       | 並行度   | 原因                                                                                                                                        |
+| -------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| T42 preflight              | **1**    | Read-only Explore，不寫檔；獨占執行                                                                                                         |
+| T43–T47 Engineer 寫檔      | **2**    | 5 個 task 各動不同檔；保守限制 2 並行避免 dirty file list 混雜難 review。Wave 1 = T43 + T44；Wave 2 = T45 + T46；Wave 3 = T47（toast 獨占） |
+| T43–T47 Reviewer 驗收      | **2**    | Reviewer 跑 ESLint + 單檔 vitest；不同檔不撞。每 wave Engineer 全 PASS 後才接 Reviewer                                                      |
+| Engineer + Reviewer 同時跑 | **不行** | 同一檔同時讀寫會撞 — 同 task 的 Engineer 要先 PASS 完整 acceptance check 後才派 Reviewer                                                    |
+| T48 closeout               | **1**    | 獨占；只允許改 `handoff.md`；跑 repo-wide ESLint / vitest 確認 0 violation 與 S5–S7 不退                                                    |
+
+> **總 subagent 數估算**（first-pass 全綠）：T42×1 read-only + T43–T47 各 2（Engineer + Reviewer）= 11 次 + T48×2（Engineer + Reviewer）= **13 次 Agent 呼叫**。每多一輪 reviewer FAIL +2。
+
+---
+
+## Task 拆分
+
+### T42：Session 8 preflight audit（read-only, sequential gate）
+
+**Engineer prompt 要點**（read-only Explore subagent）：
+
+1. cd 到 worktree 根 (`/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`)。
+2. 執行 fresh audit（**不要用 `tee`** — 避免 pipefail 議題；用 raw command 或 `zsh -o pipefail -c '...'`）：
+   ```bash
+   npx eslint tests/integration/posts/ tests/integration/toast/ tests/integration/strava/ --format stylish
+   ```
+   並記下 raw count + unique line:col + 違規 source line（**逐字 quote 自檔案**，不要 paraphrase；§2.38 hallucination 教訓）。
+3. 對每處違規，Read 周邊 5–15 行 context，記錄：
+   - 所在 it / describe block name（逐字 string）
+   - 查詢 pattern（如 `baseElement.querySelector('[class*="feed"]')`）
+   - 該斷言要驗的事（一句話）
+   - 是否有 `const { container | baseElement } = render(...)` 解構
+   - 對應 production component 路徑與目前 affordance（grep `data-testid` / `role` / `aria-label` / `aria-hidden` / `aria-labelledby`）
+4. 對每處決定建議修法（plan §5 Phase 4 A/B/C，本 session 已預決於 §Session 8 Fresh Audit 摘要）：
+   - **A**：T44 PostCard like button + T46 EventCreateForm form + T47 ToastContainer outer wrapper（皆加 a11y attr）
+   - **C**：T43 PostFeed feed wrapper（加 testid，無 a11y semantic）
+   - **純測試（不動 component）**：T45 RunsRouteMap（刪 container 解構 + 移除等價 firstChild 斷言）
+   - 若工程師判斷需要改其他 A 變體（如改 `<form>` 為其他 element），必須 escalate 給 main agent
+5. 邊界檢查（不要 fix，只報結果）：
+   ```bash
+   npx eslint tests/integration/notifications/ tests/integration/navbar/ tests/integration/profile/ tests/integration/weather/
+   # 預期 exit 0（S5/S6/S7 不退）
+   ```
+6. ESLint config 健全度：
+   ```bash
+   rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+   ```
+   兩條應仍是 `error`；若 `no-node-access` 是 `off`，**停下回報 main agent**（commit bridge 沒恢復；§2.26）。
+7. 整份報告以結構化呈現：(A) per-violation table 配 verbatim source line + it block name、(B) 邊界檢查、(C) ESLint config 健全度、(D) 風險/scope changer。
+
+**禁止行為**：
+
+- 不寫任何檔（read-only）
+- 不跑 vitest（T43–T47 Engineer 才跑）
+- 不下任何 `git` 寫入指令
+- 不 paraphrase / 修飾違規 source line（必須逐字 quote）
+- 不改 `eslint.config.mjs` / `src/**` / `tests/**` 任何檔
+
+**Acceptance Criteria（Reviewer 必驗 — T42 由 main agent 直接驗收，不另派 Reviewer subagent）**：
+
+1. 報告涵蓋全部 7 unique sites（posts 2 + toast 3 + strava 2）含 line:col + verbatim source line
+2. 每處違規有對應 T43–T47 task 編號 + 建議 A/B/C/「純測試」分類
+3. S5/S6/S7 邊界 (`notifications` / `navbar` / `profile` / `weather`) 全 exit 0
+4. ESLint config `no-node-access` 仍是 `error`（line 400）；ignores array 仍是 3 entry（`tests/e2e/**` / `tests/_helpers/e2e-helpers.js` / `tests/_helpers/notifications/scroll-to-comment-mock.jsx`）
+5. Production component affordance 摘要與 §Session 8 Fresh Audit 摘要對齊；若 audit 結果與規劃 evidence 不一致 → 報告標 ⚠️，main agent 重新評估
+
+**Failure recovery**：
+
+- 若報告 paraphrase 違規 line（hallucinate；§2.38）→ 重派 Explore subagent，明確要求 verbatim Read
+- 若 S5/S6/S7 邊界出現新 violation → 標 escalation；先停 T43 開工，主 agent 與用戶討論
+- 若 ESLint config 不對 → 主 agent 自行修 commit bridge（恢復 `error`），再重派 T42
+- 若 audit 數字 ≠ 規劃 evidence（例如多/少 unique sites）→ 報告標 ⚠️；main agent 與用戶討論是否 scope 變動
+
+---
+
+### T43：PostFeed feed wrapper testid + cleanup（Wave 1 並行 with T44）
+
+**前置**：T42 PASS。
+
+**Engineer prompt 要點**：
+
+1. cd 到 worktree 根 (`/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`)。
+2. 改兩個檔：
+   - **Production**: `src/ui/posts/PostsPageScreen.jsx` line 82 feed wrapper：
+
+     ```jsx
+     // 改前
+     <div className={styles.feed}>
+     // 改後
+     <div className={styles.feed} data-testid="post-feed">
+     ```
+
+     - 只加 `data-testid="post-feed"`，**不**改 className / 其他屬性 / 子元素
+     - 這是 plan §5 修法 C（minimal data-testid，與 §2.32 unreadDot / §2.44 sentinel 同 pattern）
+
+   - **Test**: `tests/integration/posts/PostFeed.test.jsx` line 211–226 it block (`wraps the feed in a container with the "feed" CSS class for max-width`)：
+
+     ```jsx
+     // 改前（line 214–225）
+     const { baseElement } = render(
+       <AuthWrapper>
+         <PostPage />
+       </AuthWrapper>,
+     );
+     await waitFor(() => {
+       expect(mockedGetLatestPosts).toHaveBeenCalled();
+     });
+
+     // feed wrapper 是 layout-only div，沒語意 role，僅能透過 class 驗證
+     const feedContainer = baseElement.querySelector('[class*="feed"]');
+     expect(feedContainer).toBeInTheDocument();
+
+     // 改後
+     render(
+       <AuthWrapper>
+         <PostPage />
+       </AuthWrapper>,
+     );
+     await waitFor(() => {
+       expect(mockedGetLatestPosts).toHaveBeenCalled();
+     });
+
+     // feed wrapper 是 layout-only div，沒語意 role；加 data-testid 後直接 query；保留 className 驗證原意圖
+     const feedContainer = screen.getByTestId('post-feed');
+     expect(feedContainer).toBeInTheDocument();
+     expect(feedContainer.className).toMatch(/feed/);
+     ```
+
+     - 移除 `const { baseElement } = render(...)` 解構（§2.34 / §2.56）
+     - 保留 `className` 驗證原意圖（驗 layout class 含 'feed' substring）— `.className` 是 Element property、非 navigation API（§2.43）
+     - 不改 it block 名稱、不改 `mockedGetLatestPosts` waitFor、不改 `AuthWrapper` 用法
+     - 不改其他 it block / mock / fixture / import
+
+3. 跑：
+   ```bash
+   npx eslint src/ui/posts/PostsPageScreen.jsx tests/integration/posts/PostFeed.test.jsx --format stylish
+   npx vitest run tests/integration/posts/PostFeed.test.jsx
+   ```
+   兩者皆需 exit 0；vitest 該檔全 PASS（含未動的其他 it block）。
+4. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不改 `<div className={styles.feed}>` 的其他屬性 / 子元素
+- 不改 `PostsPageScreen.jsx` 其他 element / structure / JSDoc
+- 不改 test 檔其他 it block / mock / import 排序
+- 不在 ignores 加路徑（不需要）
+- 不關 ESLint rule
+- 不 git add / commit / push
+- 不動 PostDetail.test.jsx / PostCard.jsx / 其他 domain
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動兩檔：`src/ui/posts/PostsPageScreen.jsx`（加 `data-testid` 一行屬性）+ `tests/integration/posts/PostFeed.test.jsx`（一個 it block）
+2. `PostsPageScreen.jsx` line 82 維持 `className={styles.feed}`，多了 `data-testid="post-feed"`
+3. Test 檔該 it block：用 `screen.getByTestId('post-feed')`、移除 `baseElement` 解構、保留 `className.toMatch(/feed/)` 驗證
+4. `npx eslint src/ui/posts/PostsPageScreen.jsx tests/integration/posts/PostFeed.test.jsx` exit 0；該 test 檔 `testing-library/no-node-access` = 0
+5. `npx vitest run tests/integration/posts/PostFeed.test.jsx` 全 PASS（測試件數不變）
+6. **沒有**動 PostDetail.test.jsx / RunsRouteMap.test.jsx / crud-toast.test.jsx / toast-container.test.jsx / 其他 src
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff src/ui/posts/PostsPageScreen.jsx tests/integration/posts/PostFeed.test.jsx
+rg -n 'data-testid|className=\{styles\.feed\}' src/ui/posts/PostsPageScreen.jsx
+rg -n 'baseElement|getByTestId|post-feed|className' tests/integration/posts/PostFeed.test.jsx
+npx eslint src/ui/posts/PostsPageScreen.jsx tests/integration/posts/PostFeed.test.jsx --format stylish 2>&1 | tee /tmp/s8-t43-review.txt
+rg -n "testing-library/no-node-access" /tmp/s8-t43-review.txt
+npx vitest run tests/integration/posts/PostFeed.test.jsx
+```
+
+**Failure recovery**：
+
+- 仍有 `no-node-access`（query 寫錯 / 解構未移除）→ 重派 Engineer 修
+- Vitest fail（feed wrapper 沒拿到，或 className 不含 'feed'）→ 確認 `styles.feed` CSS module hash 是否仍含 'feed' substring；若失效，回報 main agent
+- Diff 動到非 PostFeed 範圍 → 重派 Engineer 限縮（revert 越界改動）
+- 若 Engineer escalate「想用 `<main>` 或 `role`」→ main agent 拒絕（layout.jsx 已有 main；§2.51）
+
+---
+
+### T44：PostCard like button aria-label + PostDetail.test cleanup（Wave 1 並行 with T43）
+
+**前置**：T42 PASS。
+
+**Engineer prompt 要點**：
+
+1. cd 到 worktree 根。
+2. 改兩個檔：
+   - **Production**: `src/components/PostCard.jsx` line 315–318 like button：
+
+     ```jsx
+     // 改前
+     <button type="button" className={likeClassName} onClick={() => onLike?.(post.id)}>
+       <HeartIcon filled={post.liked} />
+       <span className={styles.metaCount}>{post.likesCount}</span>
+     </button>
+
+     // 改後
+     <button
+       type="button"
+       className={likeClassName}
+       onClick={() => onLike?.(post.id)}
+       aria-label="按讚"
+       aria-pressed={post.liked}
+     >
+       <HeartIcon filled={post.liked} />
+       <span className={styles.metaCount}>{post.likesCount}</span>
+     </button>
+     ```
+
+     - 加 `aria-label="按讚"` + `aria-pressed={post.liked}`（toggle button pattern）；**不**改 className / onClick / 子元素
+     - 這是 plan §5 修法 A（a11y improvement，與 PostCard 既有 menu button line 172 `aria-label="更多選項"` pattern 一致）
+     - **取捨記錄**：accessible name = `按讚`（aria-label override visible count "5"）；視覺用戶仍看得到 count，screen reader 用戶聽到 "按讚 toggle (pressed/not pressed)"；若 reviewer 要求保留 count 給 a11y 用戶 → escalate（不自行加 count regex）
+
+   - **Test**: `tests/integration/posts/PostDetail.test.jsx` line 180–191 it block (`按讚按鈕可點擊`)：
+
+     ```jsx
+     // 改前（line 180–191）
+     it('按讚按鈕可點擊', async () => {
+       const user = userEvent.setup();
+       render(<PostDetailClient postId="post-1" />);
+       await screen.findByText('晨跑日記');
+       const likeButtons = screen.getAllByRole('button');
+       const likeButton = likeButtons.find(
+         (btn) => btn.querySelector('svg') && btn.textContent.includes('5'),
+       );
+       expect(likeButton).toBeDefined();
+       await user.click(likeButton);
+       expect(toggleLikePost).toHaveBeenCalledWith('post-1', 'user-1');
+     });
+
+     // 改後
+     it('按讚按鈕可點擊', async () => {
+       const user = userEvent.setup();
+       render(<PostDetailClient postId="post-1" />);
+       await screen.findByText('晨跑日記');
+       const likeButton = screen.getByRole('button', { name: '按讚' });
+       await user.click(likeButton);
+       expect(toggleLikePost).toHaveBeenCalledWith('post-1', 'user-1');
+     });
+     ```
+
+     - 用 `screen.getByRole('button', { name: '按讚' })`（accessible name = aria-label）
+     - 移除 `screen.getAllByRole('button')` + `find()` + `btn.querySelector('svg')` + `btn.textContent.includes('5')` 整段
+     - 不改其他 it block / mock / fixture / `mockPost` 的 `likesCount: 5`
+
+3. 跑：
+   ```bash
+   npx eslint src/components/PostCard.jsx tests/integration/posts/PostDetail.test.jsx --format stylish
+   npx vitest run tests/integration/posts/PostDetail.test.jsx tests/integration/posts/PostCard.test.jsx
+   ```
+   兩者皆需 exit 0；vitest 兩檔皆全 PASS（PostCard.test.jsx 也跑因為動 PostCard.jsx 可能影響）。
+4. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不改 `PostCard.jsx` 其他 button / element / structure / JSDoc
+- 不改 `aria-label` 為其他文字（如「按讚 5 次」）— escalation only（§2.50）
+- 不改 PostDetail.test 其他 it block / mock / fixture
+- 不關 ESLint rule
+- 不 git add / commit / push
+- 不動 PostFeed.test.jsx / RunsRouteMap.test.jsx / 其他 domain
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動兩檔：`src/components/PostCard.jsx`（line 315–318 like button 加 2 屬性）+ `tests/integration/posts/PostDetail.test.jsx`（一個 it block）
+2. `PostCard.jsx` like button 維持 `type="button"` / `className` / `onClick`，多了 `aria-label="按讚"` + `aria-pressed={post.liked}`
+3. Test 檔該 it block：用 `screen.getByRole('button', { name: '按讚' })`，移除 `getAllByRole('button')` + `find` + `querySelector('svg')` + `textContent.includes('5')`
+4. `npx eslint src/components/PostCard.jsx tests/integration/posts/PostDetail.test.jsx` exit 0；該 test 檔 `testing-library/no-node-access` = 0
+5. `npx vitest run tests/integration/posts/PostDetail.test.jsx` 全 PASS（測試件數不變）
+6. `npx vitest run tests/integration/posts/PostCard.test.jsx` 全 PASS（PostCard.jsx 動了，回歸驗證）
+7. **沒有**動 PostFeed.test.jsx / 其他
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff src/components/PostCard.jsx tests/integration/posts/PostDetail.test.jsx
+rg -n 'aria-label="按讚"|aria-pressed=' src/components/PostCard.jsx
+rg -n 'getAllByRole|getByRole|querySelector|textContent\.includes' tests/integration/posts/PostDetail.test.jsx
+npx eslint src/components/PostCard.jsx tests/integration/posts/PostDetail.test.jsx --format stylish 2>&1 | tee /tmp/s8-t44-review.txt
+rg -n "testing-library/no-node-access" /tmp/s8-t44-review.txt
+npx vitest run tests/integration/posts/PostDetail.test.jsx tests/integration/posts/PostCard.test.jsx
+```
+
+**Failure recovery**：
+
+- 仍有 `no-node-access` → 重派 Engineer 修
+- Vitest PostDetail fail（`getByRole('button', { name: '按讚' })` 找不到）→ 確認 PostCard.jsx aria-label 是否實際 render（mock 結構問題？）
+- Vitest PostCard.test.jsx 回歸 fail → 主 agent 看回歸點是否來自 aria-label 或 aria-pressed；若 PostCard.test.jsx 既有 query 抓 like button 用其他方式（例如 textContent），可能要同步調整 PostCard.test.jsx — escalation
+- Diff 動到非 PostCard like button 範圍 → 重派 Engineer 限縮
+- Engineer escalate「保留 count 給 a11y」→ main agent 與用戶討論：(a) 用 `aria-label={\`按讚（${post.likesCount} 個讚）\`}`；(b) 保留 simple `aria-label="按讚"`（推薦）
+
+---
+
+### T45：RunsRouteMap container/firstChild cleanup — pure test（Wave 2 並行 with T46）
+
+**前置**：T42 PASS（T43 / T44 不必先完成；T45 改檔不重疊）。
+
+**Engineer prompt 要點**：
+
+1. cd 到 worktree 根。
+2. 只改 `tests/integration/strava/RunsRouteMap.test.jsx` 兩個 null-render it block：
+   - **Line 54–60** (`renders nothing meaningful when summaryPolyline is null`)：
+
+     ```jsx
+     // 改前
+     it('renders nothing meaningful when summaryPolyline is null', () => {
+       mockedDecode.mockReturnValue([]);
+
+       const { container } = render(<RunsRouteMapInner summaryPolyline={null} />);
+
+       expect(container.firstChild).toBeNull();
+       expect(screen.queryByTestId('map-container')).not.toBeInTheDocument();
+     });
+
+     // 改後
+     it('renders nothing meaningful when summaryPolyline is null', () => {
+       mockedDecode.mockReturnValue([]);
+
+       render(<RunsRouteMapInner summaryPolyline={null} />);
+
+       expect(screen.queryByTestId('map-container')).not.toBeInTheDocument();
+       expect(screen.queryByTestId('polyline')).not.toBeInTheDocument();
+     });
+     ```
+
+   - **Line 63–69** (`renders nothing meaningful when summaryPolyline is empty string`)：同 pattern：
+
+     ```jsx
+     // 改前
+     it('renders nothing meaningful when summaryPolyline is empty string', () => {
+       mockedDecode.mockReturnValue([]);
+
+       const { container } = render(<RunsRouteMapInner summaryPolyline="" />);
+
+       expect(container.firstChild).toBeNull();
+       expect(screen.queryByTestId('map-container')).not.toBeInTheDocument();
+     });
+
+     // 改後
+     it('renders nothing meaningful when summaryPolyline is empty string', () => {
+       mockedDecode.mockReturnValue([]);
+
+       render(<RunsRouteMapInner summaryPolyline="" />);
+
+       expect(screen.queryByTestId('map-container')).not.toBeInTheDocument();
+       expect(screen.queryByTestId('polyline')).not.toBeInTheDocument();
+     });
+     ```
+
+   - **修法理由**（§2.52）：`RunsRouteMapInner` 在 coords 為空時 `return null`（src line 36–38）→ DOM 樹完全沒有 map-container 也沒有 polyline。原本的 `container.firstChild === null` 與 `queryByTestId('map-container') === null` 等價。新版用 `queryByTestId('map-container')` + `queryByTestId('polyline')` 兩個負面斷言補回原來「子樹完全空」的強度。
+   - **不可改用 `expect(container).toBeEmptyDOMElement()`** — 仍踩 `no-container` rule（v7 plugin 仍會抓解構）。
+   - 不改其他 it block（line 37–52 兩個 positive case 不動）；不改 import / mock / fixtures。
+
+3. 跑：
+   ```bash
+   npx eslint tests/integration/strava/RunsRouteMap.test.jsx --format stylish
+   npx vitest run tests/integration/strava/RunsRouteMap.test.jsx
+   ```
+4. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不改 `src/components/RunsRouteMapInner.jsx`（component 已有 early return null；不需動）
+- 不改其他 it block（positive case）
+- 不用 `toBeEmptyDOMElement()` / `container.children` / 任何 navigation API
+- 不關 ESLint rule
+- 不 git add / commit / push
+- 不動 PostFeed.test.jsx / PostDetail.test.jsx / crud-toast.test.jsx / toast-container.test.jsx
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動 `tests/integration/strava/RunsRouteMap.test.jsx`（兩個 null-render it block）
+2. 兩個 it block：移除 `const { container } = render(...)` 解構、移除 `expect(container.firstChild).toBeNull()` 行、補 `expect(screen.queryByTestId('polyline')).not.toBeInTheDocument()` 斷言
+3. 兩個 it block：保留 `expect(screen.queryByTestId('map-container')).not.toBeInTheDocument()` 斷言
+4. 沒有 `container.X` / `baseElement.X` / `document.queryX` / 任何 DOM navigation API
+5. `npx eslint tests/integration/strava/RunsRouteMap.test.jsx` exit 0；`testing-library/no-node-access` = 0；`testing-library/no-container` = 0
+6. `npx vitest run tests/integration/strava/RunsRouteMap.test.jsx` 全 PASS（測試件數不變，4 個 it 全綠）
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff tests/integration/strava/RunsRouteMap.test.jsx
+rg -n 'container|baseElement|firstChild|queryByTestId' tests/integration/strava/RunsRouteMap.test.jsx
+npx eslint tests/integration/strava/RunsRouteMap.test.jsx --format stylish 2>&1 | tee /tmp/s8-t45-review.txt
+rg -n "testing-library/(no-node-access|no-container)" /tmp/s8-t45-review.txt
+npx vitest run tests/integration/strava/RunsRouteMap.test.jsx
+```
+
+**Failure recovery**：
+
+- 仍有 `no-node-access` / `no-container` → 重派 Engineer 修
+- Vitest fail（`queryByTestId('polyline')` 找不到）→ 確認 `react-leaflet` mock 是否仍 render `data-testid="polyline"`（line 13–15）；若 mock 結構不變，可能是 component 在 empty case 仍 render 空 wrapper → escalate
+- 動 `RunsRouteMapInner.jsx` → Reviewer FAIL，重派 Engineer revert
+- Diff 動到非 null-render it block → 重派 Engineer 限縮
+
+---
+
+### T46：crud-toast EventCreateForm aria-labelledby + cleanup（Wave 2 並行 with T45）
+
+**前置**：T42 PASS。
+
+**Engineer prompt 要點**：
+
+1. cd 到 worktree 根。
+2. 改兩個檔：
+   - **Production**: `src/ui/events/EventCreateForm.jsx` line 72 + 76：
+
+     ```jsx
+     // 改前（line 72）
+     <form className={styles.googleFormCard} onSubmit={onSubmit}>
+
+     // 改後（line 72）
+     <form
+       className={styles.googleFormCard}
+       aria-labelledby="event-create-form-title"
+       onSubmit={onSubmit}
+     >
+
+     // 改前（line 76）
+     <h2>揪團表單</h2>
+
+     // 改後（line 76）
+     <h2 id="event-create-form-title">揪團表單</h2>
+     ```
+
+     - 只加 `aria-labelledby` 到 form + `id` 到 h2；**不**改 className / onSubmit / 其他屬性 / 子元素
+     - 修法 A（a11y improvement，§2.53 / §2.54）：form element 有 accessible name → 啟用 implicit role 'form'，可被 `getByRole('form', { name: '揪團表單' })` 抓到
+     - **EventEditForm 不需動**：crud-toast.test.jsx line 296 `update event` it block 沒實際 dispatchEvent submit，line 328 `expect(updateEvent).not.toHaveBeenCalled()` 只驗 mock wiring
+
+   - **Test**: `tests/integration/toast/crud-toast.test.jsx` 兩個 it block：
+     - **Line 250–272** (`shows success toast after creating an event`)：
+
+       ```jsx
+       // 改前（line 264–267）
+       // The form should now be open; submit it
+       const form = document.querySelector('form');
+       expect(form).not.toBeNull();
+       form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+       // 改後
+       // The form should now be open; submit it（繞 native validation；§2.53）
+       const form = screen.getByRole('form', { name: '揪團表單' });
+       form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+       ```
+
+     - **Line 274–294** (`shows error toast when creating an event fails`)：同 pattern：
+
+       ```jsx
+       // 改前（line 287–289）
+       const form = document.querySelector('form');
+       expect(form).not.toBeNull();
+       form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+       // 改後
+       const form = screen.getByRole('form', { name: '揪團表單' });
+       form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+       ```
+
+     - 移除 `expect(form).not.toBeNull()` 行（`getByRole` 找不到會 throw，不需要 null check）
+     - 保留 `form.dispatchEvent(new Event('submit', ...))` — native DOM API，不踩 `prefer-user-event` 也不踩 `no-node-access`（§2.16 同精神）
+     - 不改其他 it block / mock / fixture / `userEvent.setup` / `await user.click(createButton)`
+
+3. 跑：
+   ```bash
+   npx eslint src/ui/events/EventCreateForm.jsx tests/integration/toast/crud-toast.test.jsx --format stylish
+   npx vitest run tests/integration/toast/crud-toast.test.jsx
+   ```
+4. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不動 `src/components/EventEditForm.jsx`（不必要；§2.53）
+- 不改 EventCreateForm 其他 element / structure / JSDoc / handler 名稱
+- 不改 `aria-labelledby` 為 `aria-label`（重用 h2 visible text 是 a11y 最佳實踐）
+- 不改 crud-toast.test 其他 it block / mock / fixture / `mockSearchParams` / `mockShowToast`
+- 不換 `dispatchEvent` 為 `userEvent.click(submit button)`（會被 native validation 擋；§2.53）
+- 不關 ESLint rule
+- 不 git add / commit / push
+- 不動 toast-container.test.jsx / 其他 domain
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動兩檔：`src/ui/events/EventCreateForm.jsx`（form `aria-labelledby` + h2 `id`）+ `tests/integration/toast/crud-toast.test.jsx`（兩個 create-event it block）
+2. `EventCreateForm.jsx` form line 72 維持 `className` / `onSubmit`，多了 `aria-labelledby="event-create-form-title"`；h2 line 76 維持 `揪團表單` 文字，多了 `id="event-create-form-title"`
+3. Test 檔兩個 create-event it block：用 `screen.getByRole('form', { name: '揪團表單' })`，移除 `document.querySelector('form')` 與 `expect(form).not.toBeNull()`
+4. 兩個 it block 仍用 `form.dispatchEvent(new Event('submit', ...))` 觸發 submit
+5. `npx eslint src/ui/events/EventCreateForm.jsx tests/integration/toast/crud-toast.test.jsx` exit 0；該 test 檔 `testing-library/no-node-access` = 0
+6. `npx vitest run tests/integration/toast/crud-toast.test.jsx` 全 PASS（測試件數不變）
+7. **沒有**動 EventEditForm.jsx / toast-container.test.jsx / RunTogetherPage 等
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff src/ui/events/EventCreateForm.jsx tests/integration/toast/crud-toast.test.jsx
+rg -n 'aria-labelledby|id="event-create-form-title"|揪團表單' src/ui/events/EventCreateForm.jsx
+rg -n 'document\.querySelector|getByRole.*form|揪團表單|dispatchEvent' tests/integration/toast/crud-toast.test.jsx
+npx eslint src/ui/events/EventCreateForm.jsx tests/integration/toast/crud-toast.test.jsx --format stylish 2>&1 | tee /tmp/s8-t46-review.txt
+rg -n "testing-library/(no-node-access|prefer-user-event)" /tmp/s8-t46-review.txt
+npx vitest run tests/integration/toast/crud-toast.test.jsx
+```
+
+**Failure recovery**：
+
+- 仍有 `no-node-access` → 重派 Engineer 修（特別是其他 it block 還有 `document.querySelector('form')`）
+- Vitest fail（`getByRole('form', { name: '揪團表單' })` 找不到）→ 確認 EventCreateForm h2 id 與 form `aria-labelledby` 是否拼字一致；若 collision（多個 form 都 named `揪團表單`）→ escalate
+- Vitest fail（form.dispatchEvent 沒觸發 React onSubmit）→ 確認 EventCreateForm wrap 在 RunTogetherPage 後是否只 render 一次（mock 順序問題）
+- 動 `EventEditForm.jsx` → Reviewer FAIL，重派 Engineer revert
+- Diff 動到非 EventCreateForm + crud-toast.test 兩個 it block → 重派 Engineer 限縮
+
+---
+
+### T47：ToastContainer role + aria-label + cleanup（Wave 3 獨占）
+
+**前置**：T42 PASS（T43–T46 不必先完成；T47 改檔不重疊但獨占以保持 dirty 控管簡單）。
+
+**Engineer prompt 要點**：
+
+1. cd 到 worktree 根。
+2. 改兩個檔：
+   - **Production**: `src/components/ToastContainer.jsx` line 17–22 outer wrapper：
+
+     ```jsx
+     // 改前（line 17–22）
+     return (
+       <div className={styles.container} aria-live="polite" aria-relevant="additions removals">
+         {toasts.map((toast) => (
+           <Toast key={toast.id} toast={toast} onClose={removeToast} />
+         ))}
+       </div>
+     );
+
+     // 改後
+     return (
+       <div
+         className={styles.container}
+         role="region"
+         aria-label="通知列表"
+         aria-live="polite"
+         aria-relevant="additions removals"
+       >
+         {toasts.map((toast) => (
+           <Toast key={toast.id} toast={toast} onClose={removeToast} />
+         ))}
+       </div>
+     );
+     ```
+
+     - 加 `role="region"` + `aria-label="通知列表"`（landmark，§2.55）；保留既有 `aria-live="polite"` + `aria-relevant`
+     - **不採 `role="status"`**：individual `<Toast>` 也用 `role="status"`（mock line 15），會 collide multi-status query
+     - 不改 className / Toast iteration / props 傳遞
+
+   - **Test**: `tests/integration/toast/toast-container.test.jsx` line 60–67 it block (`has aria-live="polite" on the container`)：
+
+     ```jsx
+     // 改前（line 60–67）
+     it('has aria-live="polite" on the container', () => {
+       mockUseToast.mockReturnValue({ toasts: mockToasts, removeToast });
+
+       render(<ToastContainer />);
+
+       const container = screen.getByTestId('toast-id-1').parentElement;
+       expect(container).toHaveAttribute('aria-live', 'polite');
+     });
+
+     // 改後
+     it('has aria-live="polite" on the container', () => {
+       mockUseToast.mockReturnValue({ toasts: mockToasts, removeToast });
+
+       render(<ToastContainer />);
+
+       const container = screen.getByRole('region', { name: '通知列表' });
+       expect(container).toHaveAttribute('aria-live', 'polite');
+     });
+     ```
+
+     - 用 `screen.getByRole('region', { name: '通知列表' })` 直接拿 container（無需 `parentElement` navigation）
+     - 保留 `expect(container).toHaveAttribute('aria-live', 'polite')` 斷言（保留測試本意）
+     - 不改其他 it block / mock / fixture / `mockToasts` / `mockUseToast.mockReturnValue`
+
+3. 跑：
+   ```bash
+   npx eslint src/components/ToastContainer.jsx tests/integration/toast/toast-container.test.jsx --format stylish
+   npx vitest run tests/integration/toast/toast-container.test.jsx
+   ```
+4. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不改 `ToastContainer.jsx` 其他 element / structure / Toast iteration / JSDoc
+- 不刪 `aria-live="polite"` / `aria-relevant`（保留 — 不 redundant，因 `role="region"` 不 implicitly aria-live）
+- 不改 `role="region"` 為其他 role（特別是不採 `status`，§2.55）
+- 不改 toast-container.test 其他 it block / mock / fixture
+- 不關 ESLint rule
+- 不 git add / commit / push
+- 不動 crud-toast.test.jsx / 其他 domain
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動兩檔：`src/components/ToastContainer.jsx`（outer wrapper 加 2 屬性）+ `tests/integration/toast/toast-container.test.jsx`（一個 it block）
+2. `ToastContainer.jsx` outer `<div>` 維持 `className` / `aria-live="polite"` / `aria-relevant`，多了 `role="region"` + `aria-label="通知列表"`
+3. Test 檔該 it block：用 `screen.getByRole('region', { name: '通知列表' })`，移除 `screen.getByTestId('toast-id-1').parentElement`
+4. 仍有 `expect(container).toHaveAttribute('aria-live', 'polite')` 斷言（保留測試本意）
+5. `npx eslint src/components/ToastContainer.jsx tests/integration/toast/toast-container.test.jsx` exit 0；該 test 檔 `testing-library/no-node-access` = 0
+6. `npx vitest run tests/integration/toast/toast-container.test.jsx` 全 PASS（測試件數不變，4 個 it 全綠）
+7. **沒有**動 crud-toast.test.jsx / Toast.jsx / 其他 domain
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff src/components/ToastContainer.jsx tests/integration/toast/toast-container.test.jsx
+rg -n 'role="region"|aria-label="通知列表"|aria-live' src/components/ToastContainer.jsx
+rg -n 'parentElement|getByRole.*region|通知列表' tests/integration/toast/toast-container.test.jsx
+npx eslint src/components/ToastContainer.jsx tests/integration/toast/toast-container.test.jsx --format stylish 2>&1 | tee /tmp/s8-t47-review.txt
+rg -n "testing-library/no-node-access" /tmp/s8-t47-review.txt
+npx vitest run tests/integration/toast/toast-container.test.jsx
+```
+
+**Failure recovery**：
+
+- 仍有 `no-node-access` → 重派 Engineer 修
+- Vitest fail（`getByRole('region', { name: '通知列表' })` 找不到）→ 確認 ToastContainer.jsx 是否實際 render 該 outer wrapper（toasts.length === 0 時 return null，line 15）；fixture 有 `mockToasts` 三筆，應 render
+- Engineer 自作主張改 `role="status"` → Reviewer FAIL，重派 Engineer 改回 `region`（§2.55）
+- 動 individual `Toast` mock / Toast.jsx → Reviewer FAIL，重派 Engineer revert
+- Diff 動到非 ToastContainer 1 it block 範圍 → 重派 Engineer 限縮
+
+---
+
+### T48：Session 8 closeout + handoff update（獨占）
+
+**前置**：T43–T47 reviewer 全 PASS。
+
+**Engineer prompt 要點**：
+
+1. cd 到 worktree 根。
+2. 確認 working tree：
+   ```bash
+   git status --short
+   git diff --name-only
+   ```
+   預期 dirty：`eslint.config.mjs`（commit bridge 後恢復 `error` 留下）+ T43/T44/T46/T47 動的 4 個 production component + T43/T44/T45/T46/T47 動的 5 個 test 檔 + `specs/024-eslint-testing-lib-cleanup/handoff.md`（T48 本次更新）。預估 **11 個 dirty 檔**（§2.48 同精神）。
+3. 跑 fresh verifications（**先驗 S8 target 全綠，再驗 repo-wide exit 0**）：
+
+   ```bash
+   # S8 target 全綠
+   npx eslint tests/integration/posts/ tests/integration/toast/ tests/integration/strava/ --format stylish
+
+   # S5/S6/S7 邊界仍 0 errors
+   npx eslint tests/integration/notifications/ tests/integration/navbar/ tests/integration/profile/ tests/integration/weather/
+
+   # ESLint config 仍 error
+   rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+
+   # ⭐ Repo-wide 全綠（首次達成 exit 0；§2.57）
+   npx eslint src specs tests > /tmp/s8-t48-repo-wide.txt 2>&1
+   echo "exit=$?"
+   rg -c "testing-library/no-node-access" /tmp/s8-t48-repo-wide.txt
+
+   # 全 vitest browser 跑一次（5 個動到的 test 檔 + 動到 src 的回歸）
+   npx vitest run tests/integration/posts/PostFeed.test.jsx tests/integration/posts/PostDetail.test.jsx tests/integration/posts/PostCard.test.jsx tests/integration/strava/RunsRouteMap.test.jsx tests/integration/toast/crud-toast.test.jsx tests/integration/toast/toast-container.test.jsx
+   ```
+
+4. 更新 `specs/024-eslint-testing-lib-cleanup/handoff.md`：
+   - **§0 入門 30 秒**：Session 8 完成；**Phase 4 全清；repo-wide `npx eslint src specs tests` exit 0 首次達成**；下一 session 接 Phase 5（plan §5 Phase 5 — Task 5.1 ESLint 0 violation ✅、Task 5.2 vitest 全綠、Task 5.3 type-check、Task 5.4 pre-commit gate full run、Task 5.5 push & PR、Task 5.6 post-merge worktree 同步 SOP）。Repo lint state 改寫 0 violation。
+   - **§2 坑清單**：append S8 實際踩坑（如：PostCard aria-label override accessible name；CSS module hash 對 `.feed` substring；EventCreateForm aria-labelledby 順序；ToastContainer role 與 individual Toast `role="status"` collision；其他 surprise）。坑編號從 §2.49 後續編。
+   - **§4 Session 完成紀錄**：新增 `Session 8（posts + toast + strava）— 完成` 段，記錄：
+     - T42–T48 各 task 結果（raw / unique 收斂數字、Reviewer PASS evidence）
+     - 5 個 target 檔 ESLint exit code、vitest pass 件數
+     - 動到的 production component（4 個：PostsPageScreen、PostCard、EventCreateForm、ToastContainer）
+     - posts + toast + strava domain `no-node-access` 全清確認
+     - **Repo-wide exit 0 首次達成**（記錄具體 violation count = 0）
+     - Phase 5 開工建議（commit / push 策略、PR description draft）
+   - **§5 下個 session 開工 checklist**：改成 Phase 5 checklist：scope = repo-wide verification + PR；plan §5 Phase 5 Task 5.1–5.6。
+5. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不改 `eslint.config.mjs` / `src/**` / `tests/**`（T43–T47 已完成；T48 不再動 production / test；commit bridge 由主 agent 處理）
+- 不為了 repo-wide lint exit 0 去修任何剩餘 rule（如果有非 `no-node-access` 殘留，escalate）
+- 不加 eslint disable / 關 rule / 加 broad ignores glob
+- 不 git add / commit / push
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. `npx eslint tests/integration/posts/ tests/integration/toast/ tests/integration/strava/` exit 0
+2. `npx eslint tests/integration/notifications/ tests/integration/navbar/ tests/integration/profile/ tests/integration/weather/` exit 0（S5–S7 不退）
+3. `eslint.config.mjs` line 399/400 仍是 `prefer-user-event: error` / `no-node-access: error`
+4. ⭐ `npx eslint src specs tests` exit 0（首次 repo-wide 全綠；§2.57）；`testing-library/no-node-access` count = 0；任何殘留必為非 testing-library rule
+5. `npx vitest run` 5 個 target test 檔 + PostCard.test.jsx 全 PASS（測試件數記錄到 handoff）
+6. `handoff.md` §0 / §2 / §4 / §5 已按上述要求更新；§4 Session 8 段含 raw / unique / PASS evidence + repo-wide exit 0 milestone
+7. Working tree 未 staged、未 commit、未 push
+
+**Reviewer 驗收指令**：
+
+```bash
+npx eslint tests/integration/posts/ tests/integration/toast/ tests/integration/strava/ --format stylish
+npx eslint tests/integration/notifications/ tests/integration/navbar/ tests/integration/profile/ tests/integration/weather/ --format stylish
+rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+npx eslint src specs tests > /tmp/s8-t48-review-repo-wide.txt 2>&1 || true
+echo "exit=$?"
+rg -c "testing-library/no-node-access" /tmp/s8-t48-review-repo-wide.txt
+npx vitest run tests/integration/posts/PostFeed.test.jsx tests/integration/posts/PostDetail.test.jsx tests/integration/posts/PostCard.test.jsx tests/integration/strava/RunsRouteMap.test.jsx tests/integration/toast/crud-toast.test.jsx tests/integration/toast/toast-container.test.jsx
+sed -n '/^## 0\./,/^## 1\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+sed -n '/Session 8/,/^## 5\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+sed -n '/^## 5\./,/^## 6\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+git status --short
+git diff --name-only
+```
+
+**Failure recovery**：
+
+- S8 target lint 仍 fail → Reviewer 回報 rule + line:col；主 agent 重派對應 T43/T44/T45/T46/T47 Engineer
+- Vitest fail → 回報 failing command / test；重派對應 Engineer
+- S5/S6/S7 邊界 regression → 嚴重，主 agent 立刻停 closeout、用 git diff 找哪 task 的改動越界，重派該 Engineer revert + redo
+- Repo-wide lint 殘留 `no-node-access` → 主 agent 找出殘留檔，重派對應 task Engineer 修
+- Repo-wide lint 殘留非 `no-node-access` rule → escalation：主 agent 與用戶討論是否本 PR 處理，可能延後到 Phase 5
+- handoff 寫成 Phase 5 已執行 / repo-wide 沒驗 / Session 8 漏記 evidence → 重派 T48 Engineer 修文件
+- 發現 `eslint.config.mjs` rule level 被 task Engineer 改 → Reviewer FAIL；主 agent 不自行修，重派該 task Engineer revert
+
+---
+
+## Session 8 結束狀態（DOD）
+
+- `testing-library/no-node-access`: 維持 `error`（line 400）
+- `testing-library/prefer-user-event`: 維持 `error`（line 399）
+- `tests/integration/posts/PostFeed.test.jsx`: 0 `testing-library/no-node-access` errors
+- `tests/integration/posts/PostDetail.test.jsx`: 0 `testing-library/no-node-access` errors
+- `tests/integration/strava/RunsRouteMap.test.jsx`: 0 `testing-library/no-node-access` errors
+- `tests/integration/toast/crud-toast.test.jsx`: 0 `testing-library/no-node-access` errors
+- `tests/integration/toast/toast-container.test.jsx`: 0 `testing-library/no-node-access` errors
+- 必要 component affordance：`src/ui/posts/PostsPageScreen.jsx`（feed wrapper testid）+ `src/components/PostCard.jsx`（like button aria-label / aria-pressed）+ `src/ui/events/EventCreateForm.jsx`（form aria-labelledby + h2 id）+ `src/components/ToastContainer.jsx`（role region + aria-label）
+- ⭐ **Repo-wide `npx eslint src specs tests` exit 0**（首次達成）
+- 整個 posts + toast + strava domain `no-node-access` 全清；S5/S6/S7 不退
+- `eslint.config.mjs` `ignores` array 維持 3 entries（不加新 helper、不加 broad glob）
+- `handoff.md` 記錄 Session 8 evidence + Phase 5 開工 checklist
+- 不 commit、不 stage、不 push（commit 由主 agent 在規劃 commit / 收尾 commit 統一處理）
+
+---
+
+## 主 agent 派遣 SOP（給未來 session 參考）
+
+```text
+0. 主 agent 自行 commit bridge：暫關 'testing-library/no-node-access' error → off，commit 規劃文件，立刻恢復 error
+1. 派 T42 Explore（read-only）→ 主 agent 直接驗收（不另派 reviewer）
+2. Wave 1 並行：T43 Engineer + T44 Engineer 同時派；各自寫完回報後，並行派 T43 Reviewer + T44 Reviewer
+3. Wave 1 PASS 後，Wave 2 並行：T45 Engineer + T46 Engineer；同上接 reviewer
+4. Wave 2 PASS 後，Wave 3：T47 Engineer 獨佔，PASS 後派 T47 Reviewer
+5. T43–T47 全 PASS 後，T48 closeout + handoff update（獨占）；T48 也派 Reviewer 驗收
+6. 全綠 → main agent 在規劃 commit 之外不自行 commit；下個 session 接手時 working tree 仍 dirty（除主 agent 規劃 commit 帶走的部分）
+7. 任一 reviewer FAIL → 重派該 task Engineer 修；不主 agent 自己改檔
 ```
 
 > 主 agent **不**自己跑 `npx eslint ... --fix`、不自己改 test / component / config（除 commit bridge 一行）。所有有副作用的指令都派 subagent 跑。
