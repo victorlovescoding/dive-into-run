@@ -11,18 +11,18 @@
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Branch          | `024-eslint-testing-lib-cleanup`                                                                                                                                                                   |
 | Worktree path   | `/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`                                                                                                                            |
-| 目前 Session    | **Session 4 完成；下一 session 接 S5（NavbarDesktop + notifications no-node-access）**                                                                                                             |
-| Working tree    | 目前 dirty files（2026-04-28T20:18+08:00）：`eslint.config.mjs`、`src/components/Navbar/MobileDrawer.jsx`、`src/components/Navbar/Navbar.jsx`、`tests/integration/navbar/NavbarMobile.test.jsx`、`specs/024-eslint-testing-lib-cleanup/handoff.md`。T23 只修改本檔；不要 revert 他人改動。 |
+| 目前 Session    | **Session 5 規劃完成；下一 session 執行 S5（NavbarDesktop + NotificationBell SVG no-node-access）**                                                                                                |
+| Working tree    | S5 planning commit 後預期只剩 `eslint.config.mjs` dirty（`testing-library/no-node-access` 恢復 `error` 給下一 session）。接手前仍以 fresh `git status --short` 為準，不要沿用舊 dirty list。 |
 | ESLint plugin   | 已裝 (eslint-plugin-testing-library@^7.16.2)                                                                                                                                                       |
-| Sensors         | `testing-library/prefer-user-event` 維持 `error`；`testing-library/no-node-access` 已恢復 `error`，不要關回 `off`                                                                                |
-| Repo lint state | `NavbarMobile.test.jsx` target lint exit 0；S4 component+target lint exit 0；raw 42 / 22 unique `no-node-access` sites 已收斂到 0。T23 未跑 repo-wide lint；repo-wide lint 仍可能因 S5-S8 domain fail，不可寫成全綠。 |
-| Commit 計畫     | T23 不 `git add` / commit / push。                                                                                                                                                                  |
+| Sensors         | `testing-library/prefer-user-event` 維持 `error`；S5 執行時 `testing-library/no-node-access` 必須是 `error`。若為了 commit 暫時關成 `off`，commit 後要立刻打回 `error`。 |
+| Repo lint state | `NavbarMobile.test.jsx` target lint exit 0；S5 preflight 顯示 `NavbarDesktop.test.jsx` raw 7 / 5 unique、`NotificationBell.test.jsx` raw 2 / 1 unique、`NotificationPanel.test.jsx` unreadDot raw 4 / 2 unique（S6）。repo-wide lint 仍可能因 S5-S8 domain fail，不可寫成全綠。 |
+| Commit 計畫     | S5 planning docs 先 commit；`no-node-access` 只為 commit gate 暫時 off，commit 後恢復 `error`，讓下一 session 直接看到 S5 violations。 |
 
 接手前必讀：
 
 1. 本檔 §2 **二十三個坑**（特別是 §2.18–§2.23：S4 已踩過的 NavbarMobile / line drift / allowed DOM target）
 2. 本檔 §4 「Session 4（Phase 4.1 NavbarMobile）— 完成」段
-3. 本檔 §5 S5 checklist；S5 只接 NavbarDesktop + notifications，不回頭改 S4 scope
+3. 本檔 §5 S5 execution checklist；S5 只接 NavbarDesktop + NotificationBell，不回頭改 S4 scope，也不偷做 S6 unreadDot
 
 ---
 
@@ -274,6 +274,39 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 - **已驗事實**：`document.body.style.overflow` 不屬於本輪要清的 Testing Library DOM traversal 目標；它用來驗 body scroll-lock state，不是用 Testing Library result 去取 node。
 - **對策**：不要為了「看起來像 document access」把它誤清或改成脆弱替代寫法。除非 fresh lint 實際報 `testing-library/no-node-access` 或測試需求改變，S5 不應碰這類 body style assertion。
 
+### 2.24 ⚠️ 坑 24：S5 的 `NotificationPanel` 描述已過時，unreadDot 留給 S6
+
+- **發生在**：Session 5 planning preflight。
+- **已驗事實**：`npx eslint tests/integration/notifications/NotificationBell.test.jsx tests/integration/notifications/NotificationPanel.test.jsx --format stylish` 實測 `NotificationBell.test.jsx` 只有 `bell.querySelector('svg')`；`NotificationPanel.test.jsx` 命中的是 `baseElement.querySelector('[class*="unreadDot"]')` 兩個 unique sites。
+- **差異**：plan §8.2 寫「NotificationBell/NotificationPanel SVG」，但 current code/lint 沒有 NotificationPanel SVG 修點。`NotificationPanel` unreadDot 是 plan §8.2 S6 的 testid 類型。
+- **對策**：S5 只做 `NotificationBell` SVG；不要因 plan 舊字眼去改 `NotificationPanel.test.jsx` / `NotificationItem.jsx`。S6 再處理 unreadDot。
+
+### 2.25 ⚠️ 坑 25：NavbarDesktop S5 實測是 5 unique sites，不是 plan 舊估 3 處
+
+- **發生在**：Session 5 planning preflight。
+- **已驗事實**：`NavbarDesktop.test.jsx` fresh lint raw 7 / 5 unique `line:col`：
+  - `159:36` skeleton class query（duplicated raw）
+  - `210:29` fallback SVG query（duplicated raw）
+  - `327:23`, `342:23`, `357:23` 三個 `document.activeElement`
+- **對策**：S5 task 要包含 dropdown focus cleanup，不能只做 skeleton/SVG。Reviewer 看 unique line:col 與 test name，不看 raw count 當修點數。
+
+### 2.26 ⚠️ 坑 26：S5 commit bridge 只暫關 `no-node-access`，commit 後必須恢復 `error`
+
+- **發生在**：Session 5 planning closeout。
+- **原因**：規劃文件需要先 commit，但 repo-wide lint 仍有 S5-S8 `no-node-access` baseline violations；為了讓 pre-commit gate 過，會短暫把 `testing-library/no-node-access` 改成 `off`。
+- **Line drift**：使用者提到 `eslint.config.mjs:395`，但 current file 實測 line 395 是 `prefer-user-event`；`no-node-access` 在 line 396。修改時要看 rule name，不要只看行號。
+- **對策**：
+  - 暫關只改 `'testing-library/no-node-access': 'error'` → `'off'`。
+  - Commit S5 planning docs 時不要把暫關狀態當成長期策略。
+  - Commit 後立刻改回 `'testing-library/no-node-access': 'error'`，讓下一 session 直接用 sensor 做 S5。
+  - 不得同時改 comments、其他 ESLint rules、或任何既有 S4 成果。
+
+### 2.27 ⚠️ 坑 27：`handoff.md` 的 dirty list 會漂移，接手一定 fresh `git status`
+
+- **發生在**：Session 5 planning preflight。
+- **已驗事實**：只讀 subagent 看到當下 `git status --short` 只有 `M eslint.config.mjs`，而本檔 §0 仍記著 S4 當時多檔 dirty list。
+- **對策**：任何新 session 接手都要先跑 `git status --short` / `git diff --name-only`，不要把舊 handoff 的 dirty list 當真相。handoff 記錄是交接脈絡，不是工作樹 current-state sensor。
+
 ---
 
 ## 3. Baseline Audit (Phase 1 Task 1.4)
@@ -486,19 +519,46 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 - **剩餘範圍**：repo-wide lint 未在 T23 跑；S5-S8 domain 仍可能 fail。下一 session 只接 S5（NavbarDesktop + notifications），不要把 S6-S8 domain 混進來。
 - **commit 狀態**：未 `git add` / commit / push。
 
+### Session 5 規劃（NavbarDesktop + NotificationBell SVG）— 完成
+
+- **Started**: 2026-04-28
+- **狀態**：✅ 規劃完成；⏳ 實作尚未開始，後續修改都交 subagent。
+- **前置事實**：
+  - `eslint.config.mjs` 執行時 `testing-library/no-node-access` 必須為 `error`；本次 planning commit 會短暫改 `off` 讓 commit gate 過，commit 後再恢復 `error`。
+  - `NavbarDesktop.test.jsx` fresh lint raw 7 / 5 unique `no-node-access` sites：skeleton、fallback SVG、三個 focus assertion。
+  - `NotificationBell.test.jsx` fresh lint raw 2 / 1 unique `no-node-access` site：`bell.querySelector('svg')`。
+  - `NotificationPanel.test.jsx` fresh lint raw 4 / 2 unique unreadDot sites，這是 S6，不是 S5。
+- **本輪做了什麼**：
+  1. 派兩個只讀 subagent 分別 audit NavbarDesktop 與 notifications S5/S6 邊界。
+  2. 依 plan §8.2 S5 與 current lint evidence，追加 `tasks.md` Session 5 T24-T29。
+  3. 明確收斂 S5 scope：`UserMenu.jsx` / `NavbarDesktop.test.jsx` / `NotificationBell.jsx` / `NotificationBell.test.jsx`。
+  4. 明確排除 S6：不碰 `NotificationPanel.test.jsx` / `NotificationItem.jsx` / `notification-click.test.jsx` / `scroll-to-comment.test.jsx`。
+  5. 設定同時最多 4 個 subagents：2 Engineer writer + 2 paired Reviewer；實際 writer 最多 2 且檔案不重疊。
+  6. 明確 Reviewer FAIL 流程：主 agent 只能重派 Engineer/subagent 修改，不自行修。
+- **待執行**：
+  - T24 Session 5 preflight audit + scope reconciliation
+  - T25 UserMenu minimal affordance for NavbarDesktop
+  - T26 NavbarDesktop auth UI no-node-access cleanup
+  - T27 NavbarDesktop dropdown focus no-node-access cleanup
+  - T28 NotificationBell SVG a11y no-node-access cleanup
+  - T29 Session 5 closeout + handoff update
+- **commit 狀態**：本規劃 session 會 commit `tasks.md` / `handoff.md`。`eslint.config.mjs` 的 `no-node-access` 只短暫關閉給 commit gate，commit 後恢復 `error`，下一 session 接手時應只看到 `eslint.config.mjs` dirty。
+
 ---
 
 ## 5. 下個 Session 開工 checklist
 
-進 Session 5 前：
+進 Session 5 執行前：
 
-- [ ] 讀本檔 §0、§2.18–§2.23、§4「Session 4（Phase 4.1 NavbarMobile）— 完成」。
-- [ ] 先跑 `git status --short` / `git diff --name-only`；看到 S4 dirty files 不要 revert，先確認來源。
-- [ ] S5 scope 只接 NavbarDesktop + notifications；不要回頭改 `NavbarMobile.test.jsx` / `Navbar.jsx` / `MobileDrawer.jsx`，除非 fresh verification 證明 S5 自己造成 regression。
-- [ ] 不得把 `testing-library/no-node-access` 關回 `off`；不得改 `eslint.config.mjs`；不得加 eslint disable。
-- [ ] 不得混 S6-S8 domain（posts/profile/weather/toast/strava 等）。
-- [ ] S5 preflight 要重新跑 current lint，列 raw count + unique line:col；不要沿用 S4 的行號或數字。
-- [ ] 若需要 component affordance，只補 NavbarDesktop / notifications 目標所需的最小 hook，並在 reviewer report 說明為何 role/name query 不足。
+- [ ] 讀本檔 §0、§2.24–§2.27、§4「Session 5 規劃（NavbarDesktop + NotificationBell SVG）— 完成」。
+- [ ] 讀 `tasks.md` Session 5 T24-T29，照 task 順序派 Engineer + Reviewer；主 agent 不自行改 S5 開發檔。
+- [ ] 先跑 `git status --short` / `git diff --name-only`；預期可能只剩 `eslint.config.mjs` dirty（`no-node-access` restored to `error`），但仍以 fresh status 為準。
+- [ ] 確認 `testing-library/no-node-access` 是 `error`；若是 `off`，先停下處理 config，不能在 sensor 關閉時做 S5。
+- [ ] S5 scope 只接 `NavbarDesktop.test.jsx` / `UserMenu.jsx` / `NotificationBell.test.jsx` / `NotificationBell.jsx`；不要回頭改 `NavbarMobile.test.jsx` / `Navbar.jsx` / `MobileDrawer.jsx`。
+- [ ] 不碰 `NotificationPanel.test.jsx` / `NotificationItem.jsx`；unreadDot 留給 S6。
+- [ ] 不得混 S6-S8 domain（posts/profile/weather/toast/strava、notification-click、scroll-to-comment 等）。
+- [ ] S5 preflight 要重新跑 current lint，列 raw count + unique line:col；不要沿用 planning 行號或數字。
+- [ ] 若需要 component affordance，只補 S5 目標所需最小 hook，並在 reviewer report 說明為何 role/name query 或 testid 是正確選擇。
 - [ ] repo-wide lint 不是 S5 開工前提；除非真的跑過且通過，不得聲稱 repo-wide 全綠。
 - [ ] 不 git add / commit / push，除非主流程另行明確要求。
 

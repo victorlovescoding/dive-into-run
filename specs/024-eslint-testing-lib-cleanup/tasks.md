@@ -1721,3 +1721,423 @@ git diff --name-only
 - repo-wide lint 仍可能因 S5-S8 domain fail；不要把剩餘 domain 混進 S4。
 - `handoff.md` 記錄 Session 4 evidence 與 S5 checklist。
 - 不 commit、不 stage、不 push。
+
+# Session 5 Tasks — Phase 4.1/4.3：NavbarDesktop + NotificationBell SVG no-node-access cleanup
+
+> **Source**: `specs/024-eslint-testing-lib-cleanup/plan.md` §8.2 S5, adjusted by fresh read-only audits from 2026-04-28.
+> **Goal**: 只清 S5 scope：`NavbarDesktop.test.jsx` + `NotificationBell.test.jsx` 的 `testing-library/no-node-access`。`NotificationPanel.test.jsx` 的 unreadDot 是 S6，不混進本 session。
+> **Allowed files**:
+> - `src/components/Navbar/UserMenu.jsx`
+> - `tests/integration/navbar/NavbarDesktop.test.jsx`
+> - `src/components/Notifications/NotificationBell.jsx`
+> - `tests/integration/notifications/NotificationBell.test.jsx`
+> - `specs/024-eslint-testing-lib-cleanup/handoff.md`（T29 closeout only）
+> **Forbidden files**：不要改 `eslint.config.mjs`、NavbarMobile / `Navbar.jsx` / `MobileDrawer.jsx`、`NotificationPanel.test.jsx`、`NotificationItem.jsx`、S6-S8 domain、package files。
+
+---
+
+## Session 5 Fresh Audit 摘要（planning evidence）
+
+NavbarDesktop fresh lint:
+
+```text
+npx eslint tests/integration/navbar/NavbarDesktop.test.jsx --format stylish
+
+159:36  testing-library/no-node-access
+159:36  testing-library/no-node-access
+210:29  testing-library/no-node-access
+210:29  testing-library/no-node-access
+327:23  testing-library/no-node-access
+342:23  testing-library/no-node-access
+357:23  testing-library/no-node-access
+```
+
+- Raw count = 7
+- Unique line:col = 5
+- 修法分類：
+  - `159:36` skeleton：component 加最小 `data-testid`
+  - `210:29` fallback avatar SVG：component SVG 改 `role="img" aria-label="預設使用者頭像"`
+  - `327:23`, `342:23`, `357:23` focus：`document.activeElement` 改 `toHaveFocus()`
+
+Notifications fresh lint:
+
+```text
+npx eslint tests/integration/notifications/NotificationBell.test.jsx tests/integration/notifications/NotificationPanel.test.jsx --format stylish
+
+NotificationBell.test.jsx
+  276:22  testing-library/no-node-access
+  276:22  testing-library/no-node-access
+
+NotificationPanel.test.jsx
+  235:29  testing-library/no-node-access
+  235:29  testing-library/no-node-access
+  245:29  testing-library/no-node-access
+  245:29  testing-library/no-node-access
+```
+
+- NotificationBell raw count = 2, unique line:col = 1
+- NotificationPanel unreadDot raw count = 4, unique line:col = 2
+- **S5/S6 邊界**：`NotificationBell` SVG 是 S5；`NotificationPanel` unreadDot 是 S6。Plan §8.2 寫「NotificationPanel SVG」已不符合 current code/lint，不要硬塞進 S5。
+
+---
+
+## Parallelism — 同時最多開 4 個 subagents（2 Engineer + 2 Reviewer）
+
+| 類型 | 上限 | 規則 |
+| ---- | ---- | ---- |
+| Engineer writer | **2** | NavbarDesktop track 與 NotificationBell track 檔案不重疊，可同時做。不得兩個 Engineer 寫同一檔。 |
+| Reviewer | **2** | 每個 Engineer task 完成後，配一個 Reviewer 依 acceptance criteria 驗收；Reviewer 可與另一個 disjoint Engineer 同時跑。 |
+| Closeout | **1 Engineer + 1 Reviewer** | T29 handoff/update/verification 獨占，不與任何 writer 並行。 |
+
+> 實務排程：T24 先獨占 preflight；T25→T26→T27 是 NavbarDesktop track sequential；T28 可與 NavbarDesktop track 並行；每個 Engineer 完成後立刻派對應 Reviewer。Reviewer FAIL 時，主 agent 只重派 Engineer/subagent 修，不自行改。
+
+---
+
+## T24：Session 5 preflight audit + scope reconciliation
+
+**Engineer prompt 要點**：
+
+1. 只讀，不改檔。
+2. 確認目前 config：
+   ```bash
+   rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+   ```
+   預期兩條都是 `error`。注意 `no-node-access` 目前實際在 line ~396；不要死背舊 line 395。
+3. 跑 fresh lint：
+   ```bash
+   npx eslint tests/integration/navbar/NavbarDesktop.test.jsx --format stylish 2>&1 | tee /tmp/s5-navbar-desktop-preflight.txt
+   npx eslint tests/integration/notifications/NotificationBell.test.jsx tests/integration/notifications/NotificationPanel.test.jsx --format stylish 2>&1 | tee /tmp/s5-notifications-preflight.txt
+   ```
+4. 回報 raw count + unique line:col + test names。
+5. 明確標出：`NotificationPanel.test.jsx` unreadDot 屬 S6，本 session 不修。
+
+**禁止行為**：
+
+- 不改任何檔案。
+- 不重寫 tasks/handoff。
+- 不關 ESLint rule、不加 eslint disable。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Engineer report 有 config rule 狀態，且 `no-node-access` 是 `error`。
+2. `NavbarDesktop.test.jsx` fresh lint 有 raw/unique count 與 test name 對照。
+3. Notification fresh lint 把 `NotificationBell` 與 `NotificationPanel` 分開列。
+4. 明確宣告 `NotificationPanel` deferred to S6。
+5. `git status --short` 沒有因 T24 增加新的 dirty files。
+
+**Reviewer 驗收指令**：
+
+```bash
+git status --short
+rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+npx eslint tests/integration/navbar/NavbarDesktop.test.jsx --format stylish 2>&1 | tee /tmp/s5-t24-navbar-review.txt
+npx eslint tests/integration/notifications/NotificationBell.test.jsx tests/integration/notifications/NotificationPanel.test.jsx --format stylish 2>&1 | tee /tmp/s5-t24-notifications-review.txt
+rg -n "testing-library/no-node-access" /tmp/s5-t24-navbar-review.txt /tmp/s5-t24-notifications-review.txt
+```
+
+**Failure recovery**：
+
+- Config 不是 `error` → 停下回報；不得自行關/開 rule。
+- Fresh lint 與 planning evidence 差很多 → 更新 task 範圍前先回報主 agent。
+- T24 造成 dirty files → Reviewer FAIL，重派 Engineer 清理自己造成的暫存檔或誤改。
+
+---
+
+## T25：UserMenu minimal affordance for NavbarDesktop
+
+**Engineer prompt 要點**：
+
+1. 只改 `src/components/Navbar/UserMenu.jsx`。
+2. Skeleton loading placeholder 加最小 test hook：
+   ```jsx
+   <div className={styles.skeleton} data-testid="user-menu-skeleton" />
+   ```
+   若同時加 `aria-hidden="true"`，需在 report 說明不改 loading 語意。
+3. Fallback avatar SVG 從 `aria-hidden="true"` 改為可由 role query 找到：
+   ```jsx
+   role="img"
+   aria-label="預設使用者頭像"
+   ```
+4. 不改登入、登出、dropdown、focus、Firebase auth 行為。
+5. 跑：
+   ```bash
+   npx eslint src/components/Navbar/UserMenu.jsx
+   ```
+
+**禁止行為**：
+
+- 不改 `NavbarDesktop.test.jsx`（留給 T26/T27）。
+- 不改 `Navbar.jsx` / `MobileDrawer.jsx` / notifications。
+- 不加 eslint disable。
+- 不用 role/name 包裝 skeleton；skeleton 是視覺 placeholder，不是互動或狀態訊息。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動 `src/components/Navbar/UserMenu.jsx`。
+2. Skeleton 有 `data-testid="user-menu-skeleton"`。
+3. Fallback SVG 有 `role="img"` 與 `aria-label="預設使用者頭像"`，且不再是 `aria-hidden="true"`。
+4. 登入按鈕、avatar button、menu roles、sign-out handler 沒被改。
+5. `npx eslint src/components/Navbar/UserMenu.jsx` exit 0。
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff src/components/Navbar/UserMenu.jsx
+rg -n "user-menu-skeleton|role=\"img\"|aria-label=\"預設使用者頭像\"|aria-hidden=\"true\"|signInWithGoogle|role=\"menu\"|role=\"menuitem\"" src/components/Navbar/UserMenu.jsx
+npx eslint src/components/Navbar/UserMenu.jsx
+```
+
+**Failure recovery**：
+
+- SVG 仍 `aria-hidden` → 重派 Engineer 修。
+- 改到登入/dropdown 邏輯 → Reviewer FAIL，重派 Engineer 限縮 diff。
+- Component lint fail → 回報錯誤，重派 Engineer。
+
+---
+
+## T26：NavbarDesktop auth UI no-node-access cleanup
+
+**Engineer prompt 要點**：
+
+1. 只改 `tests/integration/navbar/NavbarDesktop.test.jsx` 的 `T010: Auth UI section`。
+2. Skeleton assertion 改用 T25 affordance：
+   ```js
+   expect(screen.getByTestId('user-menu-skeleton')).toBeInTheDocument();
+   ```
+3. Fallback SVG assertion 改用 role query：
+   ```js
+   const fallbackAvatar = within(avatarBtn).getByRole('img', { name: '預設使用者頭像' });
+   expect(fallbackAvatar).toBeInTheDocument();
+   ```
+4. 移除 `baseElement` 解構與 `avatarBtn.querySelector('svg')`。
+5. 跑：
+   ```bash
+   npx eslint tests/integration/navbar/NavbarDesktop.test.jsx --format stylish 2>&1 | tee /tmp/s5-t26-navbar-desktop.txt
+   npx vitest run tests/integration/navbar/NavbarDesktop.test.jsx
+   ```
+
+**禁止行為**：
+
+- 不改 component（若 T25 未完成，先回報 blocker）。
+- 不碰 focus tests（T27）。
+- 不用 `querySelector` / `.children` / `.className` / `document.activeElement` 新增替代。
+- 不加 eslint disable。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動 `NavbarDesktop.test.jsx`。
+2. T010 不再有 `baseElement.querySelector` 或 `avatarBtn.querySelector('svg')`。
+3. T010 使用 `screen.getByTestId('user-menu-skeleton')` 與 `within(avatarBtn).getByRole('img', { name: '預設使用者頭像' })`。
+4. T010 target sites `159:36`、`210:29` 已清掉；若 full-file lint 仍 fail，只能剩 T27 focus lines。
+5. Targeted Vitest pass。
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff tests/integration/navbar/NavbarDesktop.test.jsx
+rg -n "baseElement|querySelector|user-menu-skeleton|預設使用者頭像|document\\.activeElement|toHaveFocus" tests/integration/navbar/NavbarDesktop.test.jsx
+npx eslint tests/integration/navbar/NavbarDesktop.test.jsx --format stylish 2>&1 | tee /tmp/s5-t26-review.txt
+rg -n "testing-library/no-node-access" /tmp/s5-t26-review.txt
+npx vitest run tests/integration/navbar/NavbarDesktop.test.jsx
+```
+
+**Failure recovery**：
+
+- T010 還有 no-node-access → Reviewer 回報 line:col/test name，重派 Engineer。
+- Focus lines 還在 → 不算 T26 fail，交 T27。
+- Vitest fail → 回報 failing test/error，重派 Engineer 修 T010。
+
+---
+
+## T27：NavbarDesktop dropdown focus no-node-access cleanup
+
+**Engineer prompt 要點**：
+
+1. 只改 `tests/integration/navbar/NavbarDesktop.test.jsx` 的 dropdown focus tests：
+   - `Escape closes dropdown and focuses avatar button`
+   - `focus moves to first menuitem when dropdown opens`
+   - `focus returns to avatar button when dropdown closes`
+2. 把 `expect(document.activeElement).toBe(...)` 改成 jest-dom focus matcher：
+   ```js
+   expect(avatarBtn).toHaveFocus();
+   expect(signOutButton).toHaveFocus();
+   ```
+3. 不改 dropdown open/close behavior，不重寫測試流程。
+4. 跑：
+   ```bash
+   npx eslint tests/integration/navbar/NavbarDesktop.test.jsx
+   npx vitest run tests/integration/navbar/NavbarDesktop.test.jsx
+   ```
+
+**禁止行為**：
+
+- 不改 component。
+- 不碰 Auth UI section（T26 已做）。
+- 不用 `document.activeElement`、`querySelector`、`.className` 新增替代。
+- 不加 eslint disable。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. `document.activeElement` 在 `NavbarDesktop.test.jsx` 內不再出現。
+2. Focus assertions 使用 `toHaveFocus()`。
+3. `npx eslint tests/integration/navbar/NavbarDesktop.test.jsx` exit 0。
+4. `npx vitest run tests/integration/navbar/NavbarDesktop.test.jsx` pass。
+5. Diff 只動 `NavbarDesktop.test.jsx`。
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff tests/integration/navbar/NavbarDesktop.test.jsx
+rg -n "document\\.activeElement|toHaveFocus|querySelector|baseElement" tests/integration/navbar/NavbarDesktop.test.jsx
+npx eslint tests/integration/navbar/NavbarDesktop.test.jsx
+npx vitest run tests/integration/navbar/NavbarDesktop.test.jsx
+```
+
+**Failure recovery**：
+
+- Lint still fails → Reviewer 回報 remaining unique line:col，重派 Engineer。
+- Focus test flaky/fail → 重派 Engineer 調整 user interaction / focus target，不退回 DOM read。
+- Off-scope diff → Reviewer FAIL，重派 Engineer 限縮。
+
+---
+
+## T28：NotificationBell SVG a11y no-node-access cleanup
+
+**Engineer prompt 要點**：
+
+1. 只改：
+   - `src/components/Notifications/NotificationBell.jsx`
+   - `tests/integration/notifications/NotificationBell.test.jsx`
+2. `NotificationBell.jsx` 的 SVG 從 `aria-hidden="true"` 改成可被 role query 找到：
+   ```jsx
+   role="img"
+   aria-label="通知鈴鐺圖示"
+   ```
+   保留 `data-filled={String(isPanelOpen)}`，測試仍可驗 outlined/filled state。
+3. Test 內把 `bell.querySelector('svg')` 改成：
+   ```js
+   const icon = within(bell).getByRole('img', { name: '通知鈴鐺圖示' });
+   ```
+4. 不碰 `NotificationPanel.test.jsx` / `NotificationItem.jsx`；unreadDot 留給 S6。
+5. 跑：
+   ```bash
+   npx eslint src/components/Notifications/NotificationBell.jsx tests/integration/notifications/NotificationBell.test.jsx
+   npx vitest run tests/integration/notifications/NotificationBell.test.jsx
+   ```
+
+**禁止行為**：
+
+- 不改 `NotificationPanel.test.jsx` 的 unreadDot。
+- 不改 NotificationContext 行為。
+- 不把 `data-filled` 移到 button，除非先回報並重寫測試意圖。
+- 不加 eslint disable。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. Diff 只動 `NotificationBell.jsx` + `NotificationBell.test.jsx`。
+2. Bell SVG 有 `role="img"` + `aria-label="通知鈴鐺圖示"`，不再 `aria-hidden="true"`。
+3. Test 用 `within(bell).getByRole('img', { name: '通知鈴鐺圖示' })`。
+4. `NotificationBell.test.jsx` 的 `testing-library/no-node-access` = 0。
+5. `NotificationPanel.test.jsx` unreadDot 殘留不算 S5 fail，但不得被本 task 修改。
+6. Targeted lint + Vitest pass。
+
+**Reviewer 驗收指令**：
+
+```bash
+git diff --name-only
+git diff src/components/Notifications/NotificationBell.jsx tests/integration/notifications/NotificationBell.test.jsx
+rg -n "role=\"img\"|通知鈴鐺圖示|aria-hidden=\"true\"|querySelector|within\\(bell\\)" src/components/Notifications/NotificationBell.jsx tests/integration/notifications/NotificationBell.test.jsx
+npx eslint src/components/Notifications/NotificationBell.jsx tests/integration/notifications/NotificationBell.test.jsx
+npx vitest run tests/integration/notifications/NotificationBell.test.jsx
+npx eslint tests/integration/notifications/NotificationPanel.test.jsx --format stylish 2>&1 | tee /tmp/s5-t28-panel-boundary.txt
+rg -n "testing-library/no-node-access" /tmp/s5-t28-panel-boundary.txt
+```
+
+**Failure recovery**：
+
+- Bell lint still fails → Reviewer 回報 line:col，重派 Engineer。
+- Diff 碰到 Panel/Item → Reviewer FAIL，重派 Engineer 拆回正確 scope。
+- Vitest fail → 回報 failing test/error，重派 Engineer。
+
+---
+
+## T29：Session 5 closeout + handoff update
+
+**Engineer prompt 要點**：
+
+1. 獨占執行；確認 T24-T28 reviewers 都 PASS 後才開始。
+2. 只允許改 `specs/024-eslint-testing-lib-cleanup/handoff.md`；不得改 test/component/config。
+3. 驗證：
+   ```bash
+   npx eslint tests/integration/navbar/NavbarDesktop.test.jsx tests/integration/notifications/NotificationBell.test.jsx
+   npx eslint src/components/Navbar/UserMenu.jsx src/components/Notifications/NotificationBell.jsx tests/integration/navbar/NavbarDesktop.test.jsx tests/integration/notifications/NotificationBell.test.jsx
+   npx vitest run tests/integration/navbar/NavbarDesktop.test.jsx tests/integration/notifications/NotificationBell.test.jsx
+   npx vitest run tests/integration/navbar tests/integration/notifications/NotificationBell.test.jsx
+   ```
+4. Boundary check：確認 `NotificationPanel.test.jsx` unreadDot 仍留給 S6，不要寫成 notifications domain 全清：
+   ```bash
+   npx eslint tests/integration/notifications/NotificationPanel.test.jsx --format stylish 2>&1 | tee /tmp/s5-panel-boundary.txt
+   ```
+5. 更新 `handoff.md`：
+   - §0 最新狀態：Session 5 完成；下一 session 接 S6（NotificationPanel unreadDot + notification-click + scroll-to-comment）。
+   - §2 pitfalls：補 S5 實際踩坑（若有）。
+   - §4 append `Session 5（NavbarDesktop + NotificationBell SVG）— 完成`，記錄 raw/unique count、驗證指令結果、S6 剩餘範圍。
+   - §5 下一 session checklist 改成 S6 checklist。
+6. 不 git add / commit / push。
+
+**禁止行為**：
+
+- 不改 `eslint.config.mjs`。
+- 不改 `src/**` / `tests/**`。
+- 不為了 repo-wide lint 全綠去修 S6-S8 domain。
+- 不加 eslint disable，不關 rule。
+- 不 git add / commit / push。
+
+**Acceptance Criteria（Reviewer 必驗）**：
+
+1. `NavbarDesktop.test.jsx` ESLint exit 0。
+2. `NotificationBell.test.jsx` ESLint exit 0。
+3. Component + target lint exit 0。
+4. Targeted Vitest pass。
+5. Navbar suite + NotificationBell suite pass（若跑失敗，handoff 必須記實際 failure，不可寫全綠）。
+6. `NotificationPanel.test.jsx` unreadDot 若仍 fail，要明確記為 S6 remaining，不可算 S5 fail。
+7. `handoff.md` §0、§2、§4、§5 已更新。
+8. `eslint.config.mjs` 未被 T29 修改；`no-node-access` 仍是 `error`。
+9. 未 staged、未 commit、未 push。
+
+**Reviewer 驗收指令**：
+
+```bash
+npx eslint tests/integration/navbar/NavbarDesktop.test.jsx tests/integration/notifications/NotificationBell.test.jsx
+npx eslint src/components/Navbar/UserMenu.jsx src/components/Notifications/NotificationBell.jsx tests/integration/navbar/NavbarDesktop.test.jsx tests/integration/notifications/NotificationBell.test.jsx
+npx vitest run tests/integration/navbar/NavbarDesktop.test.jsx tests/integration/notifications/NotificationBell.test.jsx
+npx vitest run tests/integration/navbar tests/integration/notifications/NotificationBell.test.jsx
+npx eslint tests/integration/notifications/NotificationPanel.test.jsx --format stylish 2>&1 | tee /tmp/s5-t29-panel-boundary-review.txt
+rg -n "'testing-library/no-node-access': 'error'" eslint.config.mjs
+sed -n '/^## 0\./,/^## 1\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+sed -n '/Session 5/,/^## 5\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+sed -n '/^## 5\./,/^## 6\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+git status --short
+git diff --name-only
+```
+
+**Failure recovery**：
+
+- NavbarDesktop or NotificationBell lint still fails → Reviewer 回報 rule + line:col；主 agent 重派對應 T26/T27/T28 Engineer。
+- Component lint / Vitest fail → 回報 failing command/test；重派對應 Engineer。
+- `handoff.md` 寫成 notifications 全清或 repo-wide 全綠 → 重派 T29 Engineer 修文件。
+- 發現 `eslint.config.mjs` 被改或 rule 被關 → Reviewer FAIL；主 agent 不自行修，重派 Engineer 並要求恢復前置 config。
+
+## Session 5 結束狀態（DOD）
+
+- `testing-library/no-node-access`: 維持 `error`。
+- `tests/integration/navbar/NavbarDesktop.test.jsx`: 0 `testing-library/no-node-access` errors。
+- `tests/integration/notifications/NotificationBell.test.jsx`: 0 `testing-library/no-node-access` errors。
+- 必要 component affordance 僅限 `UserMenu.jsx` / `NotificationBell.jsx`。
+- `NotificationPanel.test.jsx` unreadDot、`notification-click.test.jsx` unreadDot、`scroll-to-comment.test.jsx` 留給 S6。
+- repo-wide lint 仍可能因 S6-S8 domain fail；不要把剩餘 domain 混進 S5。
+- `handoff.md` 記錄 Session 5 evidence 與 S6 checklist。
+- 不 commit、不 stage、不 push。
