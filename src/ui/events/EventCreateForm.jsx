@@ -69,11 +69,15 @@ export default function EventCreateForm({
 }) {
   return (
     <div className={styles.formOverlay}>
-      <form className={styles.googleFormCard} onSubmit={onSubmit}>
+      <form
+        className={styles.googleFormCard}
+        aria-labelledby="event-create-form-title"
+        onSubmit={onSubmit}
+      >
         <div className={styles.formHeaderAccent} />
 
         <div className={styles.formHeader}>
-          <h2>揪團表單</h2>
+          <h2 id="event-create-form-title">揪團表單</h2>
           <p className={styles.formDescription}>請填寫詳細資訊讓跑友們加入</p>
         </div>
 

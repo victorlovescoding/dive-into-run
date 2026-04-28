@@ -211,7 +211,7 @@ describe('Feed layout', () => {
   it('wraps the feed in a container with the "feed" CSS class for max-width', async () => {
     // 重構後 page.jsx 會將外層 div 加上 styles.feed class（max-width 680px 置中）
     // 目前 page.jsx 外層 <div> 沒有 className → 此測試應 FAIL
-    const { baseElement } = render(
+    render(
       <AuthWrapper>
         <PostPage />
       </AuthWrapper>,
@@ -220,9 +220,10 @@ describe('Feed layout', () => {
       expect(mockedGetLatestPosts).toHaveBeenCalled();
     });
 
-    // feed wrapper 是 layout-only div，沒語意 role，僅能透過 class 驗證
-    const feedContainer = baseElement.querySelector('[class*="feed"]');
+    // feed wrapper 是 layout-only div，沒語意 role；加 data-testid 後直接 query；保留 className 驗證原意圖
+    const feedContainer = screen.getByTestId('post-feed');
     expect(feedContainer).toBeInTheDocument();
+    expect(feedContainer.className).toMatch(/feed/);
   });
 });
 

@@ -312,7 +312,13 @@ export default function PostCard({
       )}
 
       <div className={styles.metaBar}>
-        <button type="button" className={likeClassName} onClick={() => onLike?.(post.id)}>
+        <button
+          type="button"
+          className={likeClassName}
+          onClick={() => onLike?.(post.id)}
+          aria-label="按讚"
+          aria-pressed={post.liked}
+        >
           <HeartIcon filled={post.liked} />
           <span className={styles.metaCount}>{post.likesCount}</span>
         </button>

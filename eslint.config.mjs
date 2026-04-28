@@ -397,7 +397,7 @@ export default [
       // Session 4 前置設定已恢復 no-node-access sensor；
       // 後續 Phase 4 清 baseline violations，避免增量 commit gate 再放行 DOM access。
       'testing-library/prefer-user-event': 'error',
-      'testing-library/no-node-access': 'off',
+      'testing-library/no-node-access': 'error',
     },
   },
 
