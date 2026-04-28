@@ -27,6 +27,17 @@ echo "$input" >&2
             -sound default \
             -activate "$term_id"
     fi
+
+    webhook_url="${DISCORD_WEBHOOK_URL:-}"
+    if [ -z "$webhook_url" ] && [ -f "$HOME/.codex/discord-webhook-url" ]; then
+        webhook_url=$(tr -d '\r\n' < "$HOME/.codex/discord-webhook-url")
+    fi
+
+    if [ -n "$webhook_url" ] && command -v curl >/dev/null 2>&1; then
+        curl -s -X POST "$webhook_url" \
+            -H 'Content-Type: application/json' \
+            -d '{"content":"⚠️ Codex 需要權限確認，快去 App 看！"}'
+    fi
 ) >/dev/null 2>&1 &
 
 echo "{}"
