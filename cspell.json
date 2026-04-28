@@ -52,6 +52,7 @@
     "notif",
     "oneline",
     "opsz",
+    "osascript",
     "pipefail",
     "polyline",
     "reobserve",
