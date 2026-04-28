@@ -3246,6 +3246,404 @@ git diff --name-only
 
 ---
 
+# Session 9 Tasks — Phase 5：repo-wide verification + PR
+
+> **Source**: `plan.md` §5 Phase 5 Task 5.1–5.6 + §8.2 S9（✅ 驗證收尾）
+> **Goal**: fresh repo-wide verification → commit → push → PR → post-merge sync SOP。
+> **執行模式**：Session 9 從 T49 到 T57 **全程不准主 agent 做**。主 agent 只派 Engineer/Reviewer、彙整回報、決定下一個派遣；不跑驗證指令、不改檔、不修 code/test、不 git add/commit/push。
+> **Branch**：`024-eslint-testing-lib-cleanup`（worktree 路徑：`/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`）
+> **承接狀態**：最近 commit 應為 `3e987f9 Finish testing-library DOM cleanup`；`git status --short` 在本規劃時為乾淨。`handoff.md` 舊的「dirty 11 檔」是 T48 當時狀態，Session 9 必須 fresh 驗證。
+
+---
+
+## Parallelism — 同時最多 4 個 subagents（2 Engineer + 2 Reviewer）
+
+| 階段                          | 並行度      | 原因                                                                                 |
+| ----------------------------- | ----------- | ------------------------------------------------------------------------------------ |
+| T49 preflight                 | **1**       | Read-only scope audit；先確認 branch / commit / clean tree / Phase 5 是否可開工      |
+| T50–T53 verification Engineer | **最多 2**  | 只適用於互不寫檔的驗證 wave；ESLint / browser / server / static gates 可分批並行     |
+| T50–T53 Reviewer              | **最多 2**  | Reviewer 必須在同任務 Engineer 完成後跑；不和同任務 Engineer 同時跑                 |
+| T54 commit                    | **1**       | git add/commit/pre-commit gate 會改 index/history，必須獨占                           |
+| T55 push + PR                 | **1**       | push / PR 建立有外部副作用，必須獨占                                                  |
+| T56 post-merge sync SOP       | **1**       | merge 後 worktree sync / rebase / npm install 必須逐一處理，不能跟其他任務並行        |
+| T57 closeout                  | **1**       | 只更新交接文件；要彙整 T49–T56 evidence，避免和 verification/git 操作交錯             |
+
+**硬規則**：
+
+- 每個 Engineer 完成後都必須配 Reviewer；Reviewer 不通過就把修正交回同 Engineer 或 dedicated fix Engineer，直到 Reviewer PASS。
+- 主 agent 不跑指令、不改檔；遇到 failure 只彙整 failing command/log/檔案與重派。
+- 涉及 code/test behavior 的修正，主 agent 必須先停止並回報用戶，取得確認後才派 dedicated Engineer + Reviewer。
+- T54–T56（commit / push / PR / post-merge sync）獨占，不和任何其他 subagent 並行。
+- 不准 `--no-verify`；pre-commit 失敗就回到對應 task 或 fix Engineer。
+
+---
+
+## T49：fresh preflight / scope audit（read-only, sequential）
+
+**Engineer prompt 要點**：
+
+1. cd 到 `/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`。
+2. 只讀確認：
+   ```bash
+   git branch --show-current
+   git log -1 --oneline
+   git status --short
+   git diff --name-only
+   rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+   sed -n '1,120p' .husky/pre-commit
+   sed -n '1,220p' .codex/rules/sensors.md
+   ```
+3. 確認 `tasks.md` 有 Session 9 T49–T57，`handoff.md` §0 指向 Session 9。
+4. 回報是否可以進 T50–T53 verification wave；若 worktree 不乾淨，列出 dirty files 與是否只限 docs。
+
+**Acceptance Criteria**：
+
+1. Branch 是 `024-eslint-testing-lib-cleanup`。
+2. 最近 commit 是 `3e987f9 Finish testing-library DOM cleanup`，或 Engineer 明確回報 current commit drift。
+3. `git status --short` 乾淨；若不乾淨，列完整 dirty list 並停止。
+4. `prefer-user-event` / `no-node-access` 都維持 `error`。
+5. `.husky/pre-commit` 實際包含：`npm run lint -- --max-warnings 0`、`npm run type-check`、`npm run depcruise`、`npm run spellcheck`、`npx vitest run --project=browser`。
+
+**Reviewer 驗收指令**：
+
+```bash
+git branch --show-current
+git log -1 --oneline
+git status --short
+git diff --name-only
+rg -n "'testing-library/(prefer-user-event|no-node-access)':" eslint.config.mjs
+sed -n '1,120p' .husky/pre-commit
+```
+
+**Failure recovery**：
+
+- Branch / commit 不符 → Reviewer 回報 current branch + commit；主 agent 停下詢問是否仍在此 worktree 繼續。
+- Worktree dirty → 不進 T50；若 dirty 是 docs 以外，主 agent 不 revert，先回報用戶。
+- Rule level 非 `error` → 不由主 agent 修；派 dedicated config Engineer 前先回報用戶確認。
+
+---
+
+## T50：repo-wide ESLint 0（read-only verification）
+
+**Engineer prompt 要點**：
+
+1. 前置：T49 PASS。
+2. 跑 repo-wide ESLint：
+   ```bash
+   npx eslint src specs tests > /tmp/s9-t50-eslint.txt 2>&1
+   eslint_status=$?
+   echo "exit=$eslint_status"
+   grep -c "testing-library/no-node-access" /tmp/s9-t50-eslint.txt || true
+   grep -c "testing-library/" /tmp/s9-t50-eslint.txt || true
+   exit $eslint_status
+   ```
+3. 回報 exit code、是否有 output、testing-library count。不要用 `status=$?`（zsh read-only 變數坑）。
+
+**Acceptance Criteria**：
+
+1. `npx eslint src specs tests` exit 0。
+2. `testing-library/no-node-access` count = 0。
+3. `testing-library/` count = 0。
+4. 沒有修改任何檔案；沒有 git add/commit/push。
+
+**Reviewer 驗收指令**：
+
+```bash
+npx eslint src specs tests > /tmp/s9-t50-review-eslint.txt 2>&1
+eslint_status=$?
+echo "exit=$eslint_status"
+grep -c "testing-library/no-node-access" /tmp/s9-t50-review-eslint.txt || true
+grep -c "testing-library/" /tmp/s9-t50-review-eslint.txt || true
+git status --short
+exit $eslint_status
+```
+
+**Failure recovery**：
+
+- ESLint fail → Reviewer attach `/tmp/s9-t50-review-eslint.txt` relevant lines + failing rule/file/line。主 agent 不修，依檔案派 dedicated fix Engineer。
+- 若 failure 涉及 code/test behavior → 主 agent 先回報用戶取得確認，再派 fix Engineer + Reviewer。
+- 若只有 docs lint/spell issue → 仍由 docs fix Engineer 處理，不由主 agent 直接改。
+
+---
+
+## T51：full browser Vitest（read-only verification）
+
+**Engineer prompt 要點**：
+
+1. 前置：T49 PASS；可與 T50/T52/T53 不寫檔驗證 wave 並行，但同任務 Reviewer 必須等 Engineer 完成。
+2. 跑完整 browser/jsdom suite：
+   ```bash
+   npm run test:browser
+   ```
+3. 回報 exit code、Test Files / Tests pass count、任何 skipped/failing test。
+
+**Acceptance Criteria**：
+
+1. `npm run test:browser` exit 0。
+2. 回報完整 pass count。
+3. 沒有修改任何檔案；沒有 git add/commit/push。
+
+**Reviewer 驗收指令**：
+
+```bash
+npm run test:browser
+git status --short
+```
+
+**Failure recovery**：
+
+- Browser Vitest fail → Reviewer 回報 failing test name、檔案、錯誤摘要。主 agent 不修，派 dedicated test fix Engineer。
+- 若 fix 會改 production/test behavior → 先停下回報用戶，取得確認後才派 Engineer + Reviewer。
+- Flaky/timeout → Reviewer 重跑一次前先回報是否同檔同錯；不得自行調 timeout 或 skip test。
+
+---
+
+## T52：server Vitest（Firebase emulator verification）
+
+**Engineer prompt 要點**：
+
+1. 前置：T49 PASS。
+2. 跑 server suite：
+   ```bash
+   npm run test:server
+   ```
+3. 若因 emulator / port / credential / environment 問題 fail，回報原始錯誤，不自行改設定。
+4. 回報 exit code、Test Files / Tests pass count、emulator 啟動狀態。
+
+**Acceptance Criteria**：
+
+1. `npm run test:server` exit 0，或明確判定為環境 blocker 並附完整 failing command/error。
+2. 沒有修改任何檔案；沒有 git add/commit/push。
+
+**Reviewer 驗收指令**：
+
+```bash
+npm run test:server
+git status --short
+```
+
+**Failure recovery**：
+
+- Test assertion fail → 主 agent 不修；先回報用戶，取得確認後派 server fix Engineer + Reviewer。
+- Emulator/environment fail → Reviewer 記錄 command、port、錯誤訊息；主 agent 不改 package/firebase 設定，先回報 blocker。
+- 不得把 server failure 從 PR evidence 移除；PR description 要如實標示 blocker 或修復後 evidence。
+
+---
+
+## T53：type-check + depcruise + spellcheck（read-only verification）
+
+**Engineer prompt 要點**：
+
+1. 前置：T49 PASS。
+2. 跑 static gates：
+   ```bash
+   npm run type-check
+   npm run depcruise
+   npm run spellcheck
+   ```
+3. 分別回報三個 exit code；不要把三條 command 串成一個模糊結果。
+
+**Acceptance Criteria**：
+
+1. `npm run type-check` exit 0。
+2. `npm run depcruise` exit 0。
+3. `npm run spellcheck` exit 0。
+4. 沒有修改任何檔案；沒有 git add/commit/push。
+
+**Reviewer 驗收指令**：
+
+```bash
+npm run type-check
+npm run depcruise
+npm run spellcheck
+git status --short
+```
+
+**Failure recovery**：
+
+- Type/depcruise/spell fail → Reviewer 回報 failing command + exact output。主 agent 不修。
+- cSpell 只需要文件詞彙時，派 docs fix Engineer；若會改 `cspell.json`，先回報用戶確認是否允許超出 Session 9 原始 dirty scope。
+- depcruise fail 代表架構違規，不得用 ignore 繞過；先回報用戶再派 dedicated Engineer。
+
+---
+
+## T54：pre-commit gate + commit（exclusive）
+
+**Engineer prompt 要點**：
+
+1. 前置：T50、T51、T52、T53 Reviewer 全 PASS，且主 agent 已彙整 evidence。
+2. 獨占執行；不和任何 subagent 並行。
+3. 確認 scope：
+   ```bash
+   git status --short
+   git diff --stat
+   git diff --name-only
+   ```
+4. 若 scope 符合 024 cleanup，執行 commit：
+   ```bash
+   git add <allowed files from cleanup>
+   git commit -m "Finish testing-library cleanup"
+   ```
+   Commit 會觸發 `.husky/pre-commit`：`npm run lint -- --max-warnings 0` → `npm run type-check` → `npm run depcruise` → `npm run spellcheck` → `npx vitest run --project=browser`。
+5. 若 pre-commit 失敗，不准 `--no-verify`；保留 output，回報 failing command。
+
+**Acceptance Criteria**：
+
+1. Commit 前 scope 已列出並符合 cleanup PR。
+2. Pre-commit gate 全部通過。
+3. 產生一個 commit，回報 commit hash。
+4. Commit 後 `git status --short` 乾淨。
+5. 沒有使用 `--no-verify`。
+
+**Reviewer 驗收指令**：
+
+```bash
+git log -1 --oneline
+git status --short
+git show --stat --oneline --name-only HEAD
+```
+
+**Failure recovery**：
+
+- Pre-commit fail → 不可 bypass；Reviewer 回報 failing step/log。主 agent 回到 T50–T53 對應 task 或派 dedicated fix Engineer。
+- Scope 含非 cleanup 檔案 → 不 commit；主 agent 不 revert，先回報用戶決定是否排除或保留。
+- Commit message 需調整 → 派 git Engineer 修正；主 agent 不自行 amend。
+
+---
+
+## T55：push + PR（exclusive）
+
+**Engineer prompt 要點**：
+
+1. 前置：T54 Reviewer PASS 且 worktree clean。
+2. 獨占執行：
+   ```bash
+   git status --short
+   git push -u origin 024-eslint-testing-lib-cleanup
+   ```
+3. 開 PR。PR description 必含：
+   - baseline / cleanup summary（testing-library violations 收斂，尤其 `no-node-access` → 0）
+   - repo-wide ESLint 0 evidence
+   - browser/server/type-check/depcruise/spellcheck/pre-commit evidence
+   - post-merge `npm install` / worktree sync SOP
+   - 已知取捨或注意事項（例如 server test 若有環境 blocker，必須如實寫）
+4. 不 merge PR；不改 branch protection；不改 package/git 設定。
+
+**Acceptance Criteria**：
+
+1. Branch pushed successfully。
+2. PR created，回報 PR URL。
+3. PR description 包含 T50–T54 evidence 與 post-merge SOP。
+4. Worktree 仍 clean。
+
+**Reviewer 驗收指令**：
+
+```bash
+git status --short
+git branch --show-current
+git log -1 --oneline
+gh pr view --json url,title,body,headRefName,baseRefName
+```
+
+**Failure recovery**：
+
+- Push fail → Reviewer 回報 remote/error；主 agent 不改 remote 設定，先回報用戶。
+- PR create fail → Reviewer 回報 `gh` auth/error；主 agent 不改 token/credential。
+- PR body 缺 evidence → 派 PR docs Engineer 更新 PR description；不得假造未跑過的 evidence。
+
+---
+
+## T56：post-merge worktree sync SOP（exclusive, only after PR merge）
+
+**Engineer prompt 要點**：
+
+1. 前置：PR 已 merge。若尚未 merge，只回報「T56 blocked until merge」，不要執行。
+2. 獨占執行 main/worktree sync SOP：
+   ```bash
+   git worktree list
+   ```
+3. 對 main worktree：checkout/pull main，跑 `npm install`，再跑必要 sanity（至少 `npm run lint` 或依 reviewer 指示）。
+4. 對每個非 main worktree：先回報清單；逐一 rebase main。若 worktree dirty 或 rebase conflict，立即停止回報，不自動覆蓋。
+5. 不刪 worktree，不 reset，不強推。
+
+**Acceptance Criteria**：
+
+1. T56 只在 PR merge 後執行。
+2. main worktree 已 pull merged commit 並 `npm install`。
+3. 所有非 main worktree sync 狀態有清單；dirty/conflict 有明確 blocker。
+4. 沒有 destructive git command。
+
+**Reviewer 驗收指令**：
+
+```bash
+git worktree list
+git -C <main-worktree-path> status --short
+git -C <main-worktree-path> log -1 --oneline
+```
+
+**Failure recovery**：
+
+- PR 未 merge → 不做任何 sync；回報 blocked。
+- `npm install` fail → Reviewer 回報 error；主 agent 不改 package/lockfile，先回報用戶。
+- Rebase conflict/dirty worktree → 停止該 worktree，回報 path + conflict；不得自動 stash/drop/reset。
+
+---
+
+## T57：closeout + handoff update（exclusive docs）
+
+**Engineer prompt 要點**：
+
+1. 前置：T55 PR created；若 T56 尚未執行，明確記錄「post-merge sync pending」。
+2. 只允許修改：
+   - `specs/024-eslint-testing-lib-cleanup/handoff.md`
+   - 必要時 `specs/024-eslint-testing-lib-cleanup/tasks.md` 的 Session 9 status note
+3. 更新 `handoff.md`：
+   - §0：Session 9 執行結果（PR URL、commit hash、目前狀態）
+   - §2：append Phase 5 新坑（若有）
+   - §4：append `Session 9（repo-wide verification + PR）— 完成`
+   - §5：改成 post-merge / follow-up checklist，或標示全部完成
+4. 不改 src/tests/eslint/package/git 設定；不 git add/commit/push，除非使用者另行要求。
+
+**Acceptance Criteria**：
+
+1. Closeout 記錄包含 T49–T56 evidence 摘要、commit hash、PR URL。
+2. 若 server test 或 post-merge sync 有 blocker，handoff 明確寫 blocker 與下一步。
+3. §5 指向下一步，不再指向已完成的 T49–T57。
+4. `git status --short` 只顯示允許的 docs 變更。
+
+**Reviewer 驗收指令**：
+
+```bash
+sed -n '/^## 0\./,/^## 1\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+sed -n '/Session 9/,/^## 5\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+sed -n '/^## 5\./,/^## 6\./p' specs/024-eslint-testing-lib-cleanup/handoff.md
+git status --short
+git diff -- specs/024-eslint-testing-lib-cleanup/tasks.md specs/024-eslint-testing-lib-cleanup/handoff.md
+```
+
+**Failure recovery**：
+
+- handoff 寫成未跑的 gate 已 PASS → Reviewer FAIL，派 docs Engineer 修正。
+- closeout 動到非 docs → Reviewer FAIL；主 agent 不 revert，回報用戶並派 docs Engineer 限縮。
+- PR URL / commit hash 缺漏 → 派 docs Engineer 補齊。
+
+---
+
+## Session 9 主 agent 派遣 SOP
+
+```text
+0. 派 T49 Engineer → T49 Reviewer；不通過就停。
+1. T49 PASS 後，最多同時派 2 個 read-only verification Engineer（T50–T53），各自完成後再派對應 Reviewer；同一任務 Engineer/Reviewer 不可同時跑。
+2. T50–T53 全部 Reviewer PASS 後，獨占派 T54 Engineer commit；T54 Reviewer 驗 commit + clean tree。
+3. T54 PASS 後，獨占派 T55 Engineer push + PR；T55 Reviewer 驗 PR body/evidence。
+4. PR merge 後才派 T56 Engineer；未 merge 就標 blocked。
+5. 派 T57 Engineer 更新 handoff；T57 Reviewer 驗 docs。
+6. 任一 Reviewer FAIL → 回到該 task Engineer 或 dedicated fix Engineer；主 agent 不修。
+7. 涉及 code/test behavior 的 fix → 先問用戶，確認後才派 Engineer + Reviewer。
+```
+
+---
+
 # Session 8 Tasks — Phase 4 收尾（posts + toast + strava）
 
 > **Source**: `plan.md` §5 Phase 4.2 / 4.6 / 4.7 + §8.2 S8（🧺 小量收尾雜項 — form a11y、container.firstChild 改 matcher）

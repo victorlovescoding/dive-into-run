@@ -11,19 +11,19 @@
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Branch          | `024-eslint-testing-lib-cleanup`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Worktree path   | `/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| 目前 Session    | **Session 8（posts + toast + strava）已完成；Phase 4 全清；repo-wide `npx eslint src specs tests` exit 0 首次達成。下一 session 接 Phase 5：repo-wide verification + PR（plan §5 Phase 5 Task 5.1–5.6）。**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Working tree    | T48 closeout 後 dirty 預期 11 檔：`eslint.config.mjs`（commit bridge 後恢復 `error` 留下）+ 4 個 production component（`PostCard.jsx` / `ToastContainer.jsx` / `EventCreateForm.jsx` / `PostsPageScreen.jsx`）+ 5 個 test 檔（`PostDetail.test.jsx` / `PostFeed.test.jsx` / `RunsRouteMap.test.jsx` / `crud-toast.test.jsx` / `toast-container.test.jsx`）+ 本檔 `handoff.md`。T48 不 `git add` / commit / push；Phase 5 統一處理 PR。                                                                                                                                                                                                                                                                      |
+| 目前 Session    | **Session 9 規劃完成；下一步是執行 Phase 5 repo-wide verification / commit / push / PR（tasks.md T49–T57）。Session 9 從頭到尾不准主 agent 做，只能派 Engineer + Reviewer。**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Working tree    | 本規劃時 fresh `git status --short` 為乾淨，最近 commit 是 `3e987f9 Finish testing-library DOM cleanup`，代表 S8 實作似乎已 commit。舊的 T48「dirty 11 檔」是過時交接狀態；Session 9 T49 必須重新確認 branch / commit / clean tree 後才能進 verification wave。                                                                                                                                                                                                                                                                                                                                 |
 | ESLint plugin   | 已裝 (eslint-plugin-testing-library@^7.16.2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Sensors         | `testing-library/prefer-user-event` 維持 `error`（line 399）；`testing-library/no-node-access` 維持 `error`（line 400）。S6 T34 在 §17.5 `ignores` array 加了 `tests/_helpers/notifications/scroll-to-comment-mock.jsx` 一個精確路徑。**注意：用戶 prompt 寫 `eslint.config.mjs:395` 是 line drift（§2.37 + §2.49），實際 `no-node-access` 在 line 400。Commit bridge 改 line 400，不是 line 395。**                                                                                                                                                                                                                                                                                                                          |
 | Repo lint state | **0 violation**。T48 fresh `npx eslint src specs tests` exit 0；`testing-library/no-node-access` match count 0。S8 target domains (`tests/integration/posts/` + `tests/integration/toast/` + `tests/integration/strava/`) exit 0；S5/S6/S7 boundary (`tests/integration/notifications/` + `tests/integration/navbar/` + `tests/integration/profile/` + `tests/integration/weather/`) exit 0。                                                                                                                                                                                                                                                                                                            |
-| Commit 計畫     | Phase 5 統一處理：先重跑 repo-wide verification（ESLint / full browser Vitest / type-check / pre-commit full gate），再 push & PR；merge 後執行 worktree sync SOP。T48 不 commit / push。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Commit 計畫     | Phase 5 按 tasks.md T49–T57 執行：fresh preflight → ESLint 0 → full browser Vitest → server Vitest → type-check/depcruise/spellcheck → pre-commit gate + commit → push + PR → post-merge worktree sync SOP → closeout。T54–T56 必須獨占；pre-commit 失敗不得 `--no-verify`。                                                                                                                                                                                                                                                                                                      |
 
 接手前必讀：
 
-1. 本檔 §2 **坑清單**（特別是 §2.58–§2.62：S8 closeout 實際坑與 zsh/rg 驗證坑）
-2. 本檔 §4 「Session 8（posts + toast + strava）— 完成」
-3. 本檔 §5 Phase 5 checklist；下一步不是再做 S8 實作，而是 repo-wide verification + PR
-4. `tasks.md` Phase 5 Task 5.1–5.6（ESLint 0 re-run / full browser Vitest / type-check / pre-commit full gate / push & PR / post-merge worktree sync SOP）
+1. 本檔 §2 **坑清單**（特別是 §2.61–§2.67：zsh/rg、pre-commit、push/PR/sync、server emulator）
+2. 本檔 §4 「Session 8（posts + toast + strava）— 完成」與「Session 9 規劃（repo-wide verification + PR）— 完成」
+3. 本檔 §5 Session 9 checklist；下一步不是再做 S8 實作，而是照 T49–T57 派 Engineer/Reviewer
+4. `tasks.md` Session 9 T49–T57（每個 task 含 Engineer prompt / Acceptance Criteria / Reviewer 驗收指令 / Failure recovery）
 
 ---
 
@@ -593,6 +593,36 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 - **驗證**：`grep -c "testing-library/no-node-access" /tmp/s8-t48-repo-wide.txt` 輸出 `0`（grep 在 0 match 時 exit 1，但 count 可讀）。
 - **對策**：需要記錄 count 時，0 match 場景用 `grep -c ... || true` 或包成顯式 `if rg -q ...; then rg -c ...; else echo 0; fi`。
 
+### 2.63 ⚠️ 坑 63：Session 9 開工不能信 T48 dirty list，先 fresh preflight
+
+- **發生在**：Session 9 規劃。
+- **背景**：handoff §0 原本還寫 T48 closeout 後 dirty 11 檔，但本規劃時 `git status --short` 為乾淨，最近 commit 是 `3e987f9 Finish testing-library DOM cleanup`。代表 S8 實作很可能已 commit，舊 dirty list 已過時。
+- **對策**：T49 第一件事固定跑 `git branch --show-current` / `git log -1 --oneline` / `git status --short` / `git diff --name-only`。若不乾淨，不進 verification wave；先回報 dirty list，不要 revert。
+
+### 2.64 ⚠️ 坑 64：Phase 5 失敗不能讓主 agent 修，必須回 Engineer/Reviewer loop
+
+- **發生在**：Session 9 規劃。
+- **背景**：使用者明確要求 Session 9 任務從頭到尾不准主 agent 做；主 agent 只能派 Engineer/Reviewer、彙整回報。若 verification fail，主 agent 直接修 code/test 會破壞這個工作模式。
+- **對策**：每個 T49–T57 都有 Failure recovery。Reviewer 不通過時列 failing command/log/檔案；主 agent 重派同 Engineer 或 dedicated fix Engineer。涉及 code/test behavior 的修正，先停止並回報用戶，取得確認後才派。
+
+### 2.65 ⚠️ 坑 65：pre-commit 失敗不准 `--no-verify`
+
+- **發生在**：Session 9 T54 規劃。
+- **背景**：`.husky/pre-commit` 實際會跑 `npm run lint -- --max-warnings 0`、`npm run type-check`、`npm run depcruise`、`npm run spellcheck`、`npx vitest run --project=browser`。這是 Phase 5 的核心 gate，不是可繞過的形式檢查。
+- **對策**：T54 commit 若 pre-commit fail，保留 output 並回到 T50–T53 對應 task 或 dedicated fix Engineer；不得 `git commit --no-verify`，不得暫關 rule 或 broad ignore。
+
+### 2.66 ⚠️ 坑 66：push / PR / post-merge sync 都是獨占任務，不能跟 verification 並行
+
+- **發生在**：Session 9 規劃。
+- **背景**：T55 push + PR 會造成 remote/PR 外部副作用；T56 post-merge worktree sync 會對多個 worktree 做 pull/rebase/npm install。這些不能和其他 verification 或 fix agent 同時跑，否則 evidence 與 worktree state 會互相污染。
+- **對策**：T54–T56 都設為並行度 1。T55 PR description 必須含 baseline/cleanup summary、repo-wide ESLint 0、browser/server/type-check/depcruise/spellcheck/pre-commit evidence、post-merge npm install/worktree sync SOP。T56 若遇到 dirty worktree/rebase conflict/server env 問題，停止回報，不自動 stash/reset。
+
+### 2.67 ⚠️ 坑 67：server test 需要 emulator / 環境，失敗要分清是環境還是測試
+
+- **發生在**：Session 9 T52 規劃。
+- **背景**：Phase 5 Task 5.2 要跑 `npm run test:server`；server project 依賴 Firebase Auth/Firestore emulator 與本地環境。失敗不一定是 S8 cleanup regression，也可能是 emulator/port/credential 問題。
+- **對策**：T52 Reviewer 必須回報完整 command、exit code、emulator 啟動狀態與錯誤摘要。若是環境 blocker，不改 package/firebase 設定；PR evidence 要如實標示 blocker 或在修復後補跑。
+
 ---
 
 ## 3. Baseline Audit (Phase 1 Task 1.4)
@@ -1040,18 +1070,48 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 
 ---
 
+### Session 9 規劃（repo-wide verification + PR）— 完成
+
+- **Started / Closed**: 2026-04-29
+- **狀態**：✅ 規劃完成；⏳ T49–T57 尚未執行。下一 session 直接照 `tasks.md` Session 9 派 Engineer/Reviewer。
+- **前置事實（本規劃 fresh check）**：
+  - `git status --short`: 乾淨。
+  - `git log -1 --oneline`: `3e987f9 Finish testing-library DOM cleanup`。
+  - `.husky/pre-commit`: 實際命令為 `npm run lint -- --max-warnings 0` → `npm run type-check` → `npm run depcruise` → `npm run spellcheck` → `npx vitest run --project=browser`。
+  - `.codex/rules/sensors.md`: commit 前主要依 Husky pre-commit 執行 full lint/type-check/depcruise/spellcheck/browser Vitest；IDE diagnostics 若本 session tool 不可用，Reviewer 需明確標示無法執行。
+- **本輪做了什麼**：
+  1. 依 plan §5 Phase 5 Task 5.1–5.6 與 §8.2 S9，追加 `tasks.md` Session 9 T49–T57。
+  2. 每個 task 都寫入 Engineer prompt、Acceptance Criteria、Reviewer 驗收指令、Failure recovery。
+  3. 明確規定 Session 9 從頭到尾不准主 agent 做：主 agent 不跑指令、不改檔、不修 code/test、不 git add/commit/push，只能派 Engineer/Reviewer 與彙整回報。
+  4. 並行設計：同時最多 4 subagents（2 Engineer + 2 Reviewer），只適用於 T50–T53 互不寫檔的 verification wave；T54 commit、T55 push/PR、T56 post-merge sync、T57 closeout 全部獨占。Reviewer 必須在同任務 Engineer 完成後跑。
+  5. 補本檔 §2.63–§2.67：舊 dirty list 過時、main agent 不修 failure、pre-commit 不准 `--no-verify`、push/PR/sync 獨占、server test emulator/env 坑。
+- **新增 task 範圍**：
+  - T49 fresh preflight / scope audit（read-only）
+  - T50 repo-wide ESLint 0
+  - T51 full browser Vitest
+  - T52 server Vitest
+  - T53 type-check + depcruise + spellcheck
+  - T54 pre-commit gate + commit
+  - T55 push + PR
+  - T56 post-merge worktree sync SOP
+  - T57 closeout + handoff update
+- **待執行**：T49–T57 全部尚未跑。若任何 verification fail，Reviewer 回報 failing command/log/檔案；主 agent 只重派 Engineer，不自行修。涉及 code/test behavior 的 fix 要先取得用戶確認。
+- **commit 狀態**：本規劃 session 只修改 `specs/024-eslint-testing-lib-cleanup/tasks.md` 與 `specs/024-eslint-testing-lib-cleanup/handoff.md`；不 `git add` / commit / push。
+
 ## 5. 下個 Session 開工 checklist — Phase 5 repo-wide verification + PR
 
-進 Phase 5 前，先確認本檔 §0 / §4 Session 8 完成段；Phase 4 實作已結束，下一 session 不再做 S8 修法。
+進 Phase 5 前，先讀本檔 §0、§2.63–§2.67、§4 Session 9 規劃段，然後照 `tasks.md` Session 9 T49–T57 派 subagents。Phase 4 實作已結束，下一 session 不再做 S8 修法。
 
-- [ ] **Task 5.1 — ESLint 0 violation re-run**：重跑 `npx eslint src specs tests`，確認 exit 0。T48 已首次達成，但 Phase 5 必須 fresh re-run；若 wrapper 在 zsh 內需要保存 exit code，不要用 `status` 變數（§2.61）。
-- [ ] **Task 5.1 count check**：確認 `testing-library/no-node-access` 仍為 0。0 match 時 `rg -c` 可能不印 0；用顯式 fallback 或 `grep -c ... || true`（§2.62）。
-- [ ] **Task 5.2 — full browser Vitest**：跑完整 browser/jsdom suite（例：`npm run test:browser`），記錄 files/tests pass count。不要只用 T48 targeted 6 files 取代 full run。
-- [ ] **Task 5.3 — type-check**：跑 `npm run type-check`，記錄 exit code。這是 Phase 5 gate，不是 T48 已跑項目。
-- [ ] **Task 5.4 — pre-commit gate full run**：跑 repo pre-commit / full gate（依 `.codex/rules/sensors.md` 與當前 Husky 設定），記錄實際命令、exit code、必要的 server/emulator 狀態。
-- [ ] **Task 5.5 — push & PR**：在確認 dirty scope 後再 `git add` / commit / push。PR description 明列：baseline 89 → 0、Phase 1–4 cleanup scope、repo-wide ESLint exit 0、browser Vitest / type-check / pre-commit evidence、已知取捨（例如 PostCard `aria-label="按讚"`、ToastContainer region）。
-- [ ] **Task 5.6 — post-merge worktree sync SOP**：merge 後回 main pull 最新，逐一 `git worktree list`，對每個非 main worktree 執行 rebase main；若有衝突，先停下回報，不自動覆蓋其他 worktree 的工作。
-- [ ] Phase 5 不應修改 S8 production/test 行為，除非 fresh gate 找到 blocker 並先回報。不得 revert T43–T47 已 PASS 修改。
+- [ ] **T49 — fresh preflight / scope audit**：Engineer + Reviewer 確認 branch、latest commit、clean tree、rule level、pre-commit 實際命令。若 dirty 或 commit drift，停止回報。
+- [ ] **T50 — repo-wide ESLint 0**：Engineer 跑 `npx eslint src specs tests`；Reviewer 重跑並確認 `testing-library/` count 0。0 match count 用 `grep -c ... || true` 或顯式 fallback。
+- [ ] **T51 — full browser Vitest**：Engineer 跑 `npm run test:browser`；Reviewer 重跑並記錄 files/tests pass count。
+- [ ] **T52 — server Vitest**：Engineer 跑 `npm run test:server`；Reviewer 區分 test failure vs emulator/environment blocker。
+- [ ] **T53 — static gates**：Engineer 跑 `npm run type-check`、`npm run depcruise`、`npm run spellcheck`；Reviewer 分別驗 exit code。
+- [ ] **T54 — pre-commit gate + commit（獨占）**：T50–T53 全 PASS 後才派。確認 scope → commit；pre-commit fail 不准 `--no-verify`，回到對應 task/fix Engineer。
+- [ ] **T55 — push + PR（獨占）**：PR description 必含 baseline/cleanup summary、ESLint/browser/server/type-check/depcruise/spellcheck/pre-commit evidence、post-merge npm install/worktree sync SOP。
+- [ ] **T56 — post-merge sync SOP（獨占，PR merge 後才做）**：main pull + `npm install`，逐一檢查/rebase worktrees；dirty/conflict 停止回報，不自動覆蓋。
+- [ ] **T57 — closeout + handoff update（獨占 docs）**：更新 §0 / §2 / §4 / §5；若 T56 未執行，標示 post-merge sync pending。
+- [ ] 全程保持：主 agent 不跑指令、不改檔、不修 failure；每個 Engineer 完成後都配 Reviewer，不通過就重派直到 PASS。涉及 code/test behavior 的 fix 先問用戶。
 - [ ] 保持 `testing-library/prefer-user-event` / `testing-library/no-node-access` 皆為 `error`；不得為了 commit 或 PR 關 rule、加 broad ignore、或加 eslint-disable。
 
 ---
