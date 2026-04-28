@@ -11,18 +11,18 @@
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Branch          | `024-eslint-testing-lib-cleanup`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Worktree path   | `/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| 目前 Session    | **Session 9 規劃完成；下一步是執行 Phase 5 repo-wide verification / commit / push / PR（tasks.md T49–T57）。Session 9 從頭到尾不准主 agent 做，只能派 Engineer + Reviewer。**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Working tree    | 本規劃時 fresh `git status --short` 為乾淨，最近 commit 是 `3e987f9 Finish testing-library DOM cleanup`，代表 S8 實作似乎已 commit。舊的 T48「dirty 11 檔」是過時交接狀態；Session 9 T49 必須重新確認 branch / commit / clean tree 後才能進 verification wave。                                                                                                                                                                                                                                                                                                                                 |
+| 目前 Session    | **Session 9 T49–T54 已完成；T55 已 push branch 但 PR 尚未建立；T56 因 PR 尚未 merge 被 blocked；T57 closeout 本地文件 commit 由本次更新完成。下一步：之後把新的 closeout commit push 上去，再開 PR；PR merge 後才跑 T56 post-merge sync。**                                                                                                                                                                                                                                                                                                                                                          |
+| Working tree    | T49 初跑曾因 Session 9 planning docs (`handoff.md` / `tasks.md`) dirty 被擋；使用者選 option A 先 commit planning docs。planning docs commit `7192fb8 Document Session 9 workflow` 成功，pre-commit passed；之後 T49 rerun 在 branch `024-eslint-testing-lib-cleanup`、HEAD `7192fb8`、clean tree、兩條 testing-library rules 都是 `error` 的狀態 PASS。T57 只允許更新本檔並做 local commit；不得 push / PR。                                                                                                                                                             |
 | ESLint plugin   | 已裝 (eslint-plugin-testing-library@^7.16.2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Sensors         | `testing-library/prefer-user-event` 維持 `error`（line 399）；`testing-library/no-node-access` 維持 `error`（line 400）。S6 T34 在 §17.5 `ignores` array 加了 `tests/_helpers/notifications/scroll-to-comment-mock.jsx` 一個精確路徑。**注意：用戶 prompt 寫 `eslint.config.mjs:395` 是 line drift（§2.37 + §2.49），實際 `no-node-access` 在 line 400。Commit bridge 改 line 400，不是 line 395。**                                                                                                                                                                                                                                                                                                                          |
-| Repo lint state | **0 violation**。T48 fresh `npx eslint src specs tests` exit 0；`testing-library/no-node-access` match count 0。S8 target domains (`tests/integration/posts/` + `tests/integration/toast/` + `tests/integration/strava/`) exit 0；S5/S6/S7 boundary (`tests/integration/notifications/` + `tests/integration/navbar/` + `tests/integration/profile/` + `tests/integration/weather/`) exit 0。                                                                                                                                                                                                                                                                                                            |
-| Commit 計畫     | Phase 5 按 tasks.md T49–T57 執行：fresh preflight → ESLint 0 → full browser Vitest → server Vitest → type-check/depcruise/spellcheck → pre-commit gate + commit → push + PR → post-merge worktree sync SOP → closeout。T54–T56 必須獨占；pre-commit 失敗不得 `--no-verify`。                                                                                                                                                                                                                                                                                                      |
+| Repo lint state | **0 violation**。T50 `npx eslint src specs tests` exit 0；`testing-library/no-node-access` count 0；`testing-library/` count 0；只有既有 React version warning。T51 browser Vitest exit 0（121 files / 1108 tests），只出現非失敗 jsdom `window.scrollTo` not implemented 訊息。T52 server Vitest exit 0（2 files / 26 tests），Firebase Auth/Firestore emulator clean startup/shutdown。T53 `npm run type-check` exit 0、`npm run depcruise` exit 0（0 dependency violations，既有 `MODULE_TYPELESS_PACKAGE_JSON` warning）、`npm run spellcheck` exit 0（353 files / 0 issues）。 |
+| Commit 計畫     | T54 PASS/NOOP：沒有 unstaged/staged diff，因此沒有 empty commit；相關 commit 已存在：`3e987f9 Finish testing-library DOM cleanup`、`7192fb8 Document Session 9 workflow`。T55 PARTIAL：branch push 到 `origin/024-eslint-testing-lib-cleanup` 成功，但 PR 未建立；`gh pr status` 已確認 current branch 沒有 associated PR，使用者也沒有 open PR。T57 本次只做本地 closeout commit；後續需 push 這個新 commit、create PR、merge 後才跑 T56。                                                                                                          |
 
 接手前必讀：
 
-1. 本檔 §2 **坑清單**（特別是 §2.61–§2.67：zsh/rg、pre-commit、push/PR/sync、server emulator）
-2. 本檔 §4 「Session 8（posts + toast + strava）— 完成」與「Session 9 規劃（repo-wide verification + PR）— 完成」
-3. 本檔 §5 Session 9 checklist；下一步不是再做 S8 實作，而是照 T49–T57 派 Engineer/Reviewer
+1. 本檔 §2 **坑清單**（特別是 §2.61–§2.71：zsh/rg、pre-commit、push/PR/sync、server emulator、closeout/PR sequencing）
+2. 本檔 §4 「Session 8（posts + toast + strava）— 完成」、「Session 9 規劃（repo-wide verification + PR）— 完成」與「Session 9 執行 closeout」
+3. 本檔 §5 Session 9 checklist；下一步不是再做 T49–T54，而是 push T57 closeout commit、create PR、merge 後跑 T56
 4. `tasks.md` Session 9 T49–T57（每個 task 含 Engineer prompt / Acceptance Criteria / Reviewer 驗收指令 / Failure recovery）
 
 ---
@@ -623,6 +623,32 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 - **背景**：Phase 5 Task 5.2 要跑 `npm run test:server`；server project 依賴 Firebase Auth/Firestore emulator 與本地環境。失敗不一定是 S8 cleanup regression，也可能是 emulator/port/credential 問題。
 - **對策**：T52 Reviewer 必須回報完整 command、exit code、emulator 啟動狀態與錯誤摘要。若是環境 blocker，不改 package/firebase 設定；PR evidence 要如實標示 blocker 或在修復後補跑。
 
+### 2.68 ⚠️ 坑 68：T49 clean-tree 可能被 docs planning commit 擋住
+
+- **發生在**：Session 9 T49 初跑。
+- **背景**：T49 initial run 需要 clean tree 才能進 verification wave，但當時 `handoff.md` / `tasks.md` 仍有 Session 9 planning dirty diff。這不是 cleanup code dirty，也不是 S8 regression；是 planning docs 尚未 commit。
+- **已處理**：使用者選 option A：先 commit planning docs。commit `7192fb8 Document Session 9 workflow` 成功，pre-commit passed；之後 T49 rerun 在 clean tree PASS。
+- **對策**：若 future closeout 或 preflight 又被 docs dirty 擋住，先分清是 planning/handoff doc 還是 code/test diff。只在使用者確認 scope 後做 docs-only commit；不可順手 stage `src` / `tests` / config。
+
+### 2.69 ⚠️ 坑 69：T54 可以是 no-op，不能硬做 empty commit
+
+- **發生在**：Session 9 T54。
+- **背景**：T54 原本是 pre-commit gate + commit，但 cleanup commit `3e987f9 Finish testing-library DOM cleanup` 和 planning docs commit `7192fb8 Document Session 9 workflow` 已存在；T54 fresh check 顯示沒有 unstaged/staged diff。
+- **結果**：T54 PASS/NOOP；不建立 empty commit。
+- **對策**：commit task 的成功條件不是「一定產生新 commit」，而是「scope 已提交且沒有漏掉的 staged/unstaged diff」。若 clean tree 且 relevant commits 已存在，標示 no-op 比空 commit 正確。
+
+### 2.70 ⚠️ 坑 70：PR 開在 T57 前會漏掉 closeout docs
+
+- **發生在**：Session 9 sequencing。
+- **背景**：T57 會修改 `handoff.md` 記錄 T49–T56/T57 狀態。若在 T57 前開 PR，PR 只會包含已 push 的 cleanup/planning commits，不會包含 closeout doc；除非後續再 commit + push。
+- **對策**：本次 T57 只做 local closeout commit，不 push、不開 PR。下一步必須先 push 新 closeout commit，再 create PR；否則 PR description 和 branch diff 會缺最新 handoff。
+
+### 2.71 ⚠️ 坑 71：T55 partial push without PR 是可恢復狀態
+
+- **發生在**：Session 9 T55 interrupted subagent。
+- **背景**：T55 已成功 push branch 到 `origin/024-eslint-testing-lib-cleanup`，但 PR 沒有建立。`gh pr status` 經 network permission 確認 current branch 沒 associated PR，使用者也沒有 open PR。
+- **對策**：不要重做 T49–T54，也不要 merge/push main。從 current branch 繼續：T57 closeout commit → push closeout commit → create PR → PR merge 後才跑 T56 post-merge sync。
+
 ---
 
 ## 3. Baseline Audit (Phase 1 Task 1.4)
@@ -1073,7 +1099,7 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 ### Session 9 規劃（repo-wide verification + PR）— 完成
 
 - **Started / Closed**: 2026-04-29
-- **狀態**：✅ 規劃完成；⏳ T49–T57 尚未執行。下一 session 直接照 `tasks.md` Session 9 派 Engineer/Reviewer。
+- **狀態**：✅ 規劃完成。後續執行狀態見下一段「Session 9 執行 closeout」；不要再把 T49–T57 視為全部未執行。
 - **前置事實（本規劃 fresh check）**：
   - `git status --short`: 乾淨。
   - `git log -1 --oneline`: `3e987f9 Finish testing-library DOM cleanup`。
@@ -1095,24 +1121,41 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
   - T55 push + PR
   - T56 post-merge worktree sync SOP
   - T57 closeout + handoff update
-- **待執行**：T49–T57 全部尚未跑。若任何 verification fail，Reviewer 回報 failing command/log/檔案；主 agent 只重派 Engineer，不自行修。涉及 code/test behavior 的 fix 要先取得用戶確認。
+- **待執行口徑更新**：本規劃段保留原 task 設計；current status 以「Session 9 執行 closeout」段與 §0/§5 為準。
 - **commit 狀態**：本規劃 session 只修改 `specs/024-eslint-testing-lib-cleanup/tasks.md` 與 `specs/024-eslint-testing-lib-cleanup/handoff.md`；不 `git add` / commit / push。
 
-## 5. 下個 Session 開工 checklist — Phase 5 repo-wide verification + PR
+### Session 9 執行 closeout（T49-T57 狀態）— local closeout pending push
 
-進 Phase 5 前，先讀本檔 §0、§2.63–§2.67、§4 Session 9 規劃段，然後照 `tasks.md` Session 9 T49–T57 派 subagents。Phase 4 實作已結束，下一 session 不再做 S8 修法。
+- **Started / Closed**: 2026-04-29
+- **狀態**：T49–T54 ✅ PASS/NOOP；T55 🟡 PARTIAL（branch pushed, PR not created）；T56 ⏸️ blocked until PR merge；T57 ✅ closeout local commit by this update. Do not push from T57.
+- **T49 初跑 blocker**：initial run blocked because docs were dirty (`handoff.md` / `tasks.md`) from Session 9 planning. 使用者選 option A：先 commit planning docs。
+- **Planning docs commit**：`7192fb8 Document Session 9 workflow` succeeded；pre-commit passed；branch later pushed to origin by interrupted T55 subagent.
+- **T49 rerun PASS**：
+  - branch `024-eslint-testing-lib-cleanup`
+  - HEAD `7192fb8`
+  - clean tree
+  - `testing-library/prefer-user-event` = `error`
+  - `testing-library/no-node-access` = `error`
+- **T50 PASS**：`npx eslint src specs tests` exit 0；`testing-library/no-node-access` count 0；`testing-library/` count 0；only existing React version warning.
+- **T51 PASS**：`npm run test:browser` exit 0；121 files passed；1108 tests passed；non-failing jsdom `window.scrollTo` not implemented message observed.
+- **T52 PASS**：`npm run test:server` exit 0；2 files passed；26 tests passed；Firebase Auth/Firestore emulators clean startup/shutdown.
+- **T53 PASS**：`npm run type-check` exit 0；`npm run depcruise` exit 0 with 0 dependency violations and existing `MODULE_TYPELESS_PACKAGE_JSON` warning；`npm run spellcheck` exit 0 with 353 files / 0 issues.
+- **T54 PASS/NOOP**：no unstaged/staged diff；no empty commit；relevant commits already existed: `3e987f9 Finish testing-library DOM cleanup` and `7192fb8 Document Session 9 workflow`.
+- **T55 PARTIAL**：branch push to `origin/024-eslint-testing-lib-cleanup` succeeded；PR was not created. `gh pr status` with network permission confirmed no PR associated with current branch and no open PRs by user.
+- **T56 NOT RUN/BLOCKED**：no PR merge yet, so post-merge sync not run.
+- **T57 current action**：update `handoff.md` closeout locally and commit with `Document Session 9 closeout`. This commit must not be pushed in T57; PR remains pending until a later step pushes this closeout commit and creates the PR.
 
-- [ ] **T49 — fresh preflight / scope audit**：Engineer + Reviewer 確認 branch、latest commit、clean tree、rule level、pre-commit 實際命令。若 dirty 或 commit drift，停止回報。
-- [ ] **T50 — repo-wide ESLint 0**：Engineer 跑 `npx eslint src specs tests`；Reviewer 重跑並確認 `testing-library/` count 0。0 match count 用 `grep -c ... || true` 或顯式 fallback。
-- [ ] **T51 — full browser Vitest**：Engineer 跑 `npm run test:browser`；Reviewer 重跑並記錄 files/tests pass count。
-- [ ] **T52 — server Vitest**：Engineer 跑 `npm run test:server`；Reviewer 區分 test failure vs emulator/environment blocker。
-- [ ] **T53 — static gates**：Engineer 跑 `npm run type-check`、`npm run depcruise`、`npm run spellcheck`；Reviewer 分別驗 exit code。
-- [ ] **T54 — pre-commit gate + commit（獨占）**：T50–T53 全 PASS 後才派。確認 scope → commit；pre-commit fail 不准 `--no-verify`，回到對應 task/fix Engineer。
-- [ ] **T55 — push + PR（獨占）**：PR description 必含 baseline/cleanup summary、ESLint/browser/server/type-check/depcruise/spellcheck/pre-commit evidence、post-merge npm install/worktree sync SOP。
-- [ ] **T56 — post-merge sync SOP（獨占，PR merge 後才做）**：main pull + `npm install`，逐一檢查/rebase worktrees；dirty/conflict 停止回報，不自動覆蓋。
-- [ ] **T57 — closeout + handoff update（獨占 docs）**：更新 §0 / §2 / §4 / §5；若 T56 未執行，標示 post-merge sync pending。
-- [ ] 全程保持：主 agent 不跑指令、不改檔、不修 failure；每個 Engineer 完成後都配 Reviewer，不通過就重派直到 PASS。涉及 code/test behavior 的 fix 先問用戶。
-- [ ] 保持 `testing-library/prefer-user-event` / `testing-library/no-node-access` 皆為 `error`；不得為了 commit 或 PR 關 rule、加 broad ignore、或加 eslint-disable。
+## 5. 下個 Session 開工 checklist — push closeout commit + PR + post-merge sync
+
+先讀本檔 §0、§2.68–§2.71、§4「Session 9 執行 closeout」。T49–T54 已完成；不要重跑 verification wave，除非 branch drift 或 PR reviewer/CI 要求 fresh evidence。
+
+- [ ] **確認 local state**：`git log -1 --oneline` 應是 `Document Session 9 closeout`；`git status --short` 應乾淨；branch 應是 `024-eslint-testing-lib-cleanup`。
+- [ ] **Push closeout commit**：把 T57 local closeout commit push 到 `origin/024-eslint-testing-lib-cleanup`。不可 push main，不可 merge，不可 `--no-verify`。
+- [ ] **Create PR**：PR description 必含 baseline/cleanup summary、T49–T54 evidence、T55 partial recovery note、T56 post-merge sync pending note。
+- [ ] **Wait for PR merge**：PR merge 前不要跑 T56 post-merge sync。若 CI 或 review 要求修正，修正 scope 需先確認，不可順手改 `src` / `tests` / config。
+- [ ] **T56 — post-merge sync SOP（PR merge 後才做）**：main pull + `npm install`，逐一檢查/rebase worktrees；dirty/conflict 停止回報，不自動覆蓋。
+- [ ] **Close final loop**：T56 完成後再更新 handoff，明確標示 post-merge sync done；若 T56 被 blocker 擋住，記錄 blocker 與未完成 worktree。
+- [ ] 保持 `testing-library/prefer-user-event` / `testing-library/no-node-access` 皆為 `error`；不得為了 push、PR 或 follow-up commit 關 rule、加 broad ignore、或加 eslint-disable。
 
 ---
 
