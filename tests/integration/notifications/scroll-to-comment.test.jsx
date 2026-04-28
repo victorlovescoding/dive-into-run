@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, act } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { useEffect } from 'react';
 
 // ---------------------------------------------------------------------------
@@ -79,13 +79,13 @@ describe('scroll-to-comment', () => {
     /** @type {import('vitest').Mock} */ (useSearchParams).mockReturnValue(mockSearchParams);
 
     // Act
-    const { container } = render(<ScrollTestComponent />);
+    render(<ScrollTestComponent />);
     act(() => {
       vi.advanceTimersByTime(300);
     });
 
     // Assert
-    const target = container.querySelector('#cmt-123');
+    const target = screen.getByText('Target Comment');
     expect(mockScrollIntoView).toHaveBeenCalledWith({
       behavior: 'smooth',
       block: 'center',
@@ -99,11 +99,11 @@ describe('scroll-to-comment', () => {
     /** @type {import('vitest').Mock} */ (useSearchParams).mockReturnValue(mockSearchParams);
 
     // Act
-    const { container } = render(<ScrollTestComponent />);
+    render(<ScrollTestComponent />);
     act(() => {
       vi.advanceTimersByTime(300);
     });
-    const target = container.querySelector('#cmt-123');
+    const target = screen.getByText('Target Comment');
 
     // Simulate animation end
     act(() => {

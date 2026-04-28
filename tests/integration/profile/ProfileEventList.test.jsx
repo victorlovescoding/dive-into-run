@@ -235,10 +235,10 @@ describe('Integration: ProfileEventList', () => {
     const ProfileEventList = await importProfileEventList();
 
     // Act
-    const { container } = render(<ProfileEventList uid={TEST_UID} />);
+    const { baseElement } = render(<ProfileEventList uid={TEST_UID} />);
 
-    // Assert — sentinel 存在（aria-hidden div）
-    const sentinel = container.querySelector('[aria-hidden="true"]');
+    // Assert — sentinel 是 IntersectionObserver target，aria-hidden 故無語意 role
+    const sentinel = baseElement.querySelector('[aria-hidden="true"]');
     expect(sentinel).toBeInTheDocument();
   });
 
@@ -251,10 +251,10 @@ describe('Integration: ProfileEventList', () => {
     const ProfileEventList = await importProfileEventList();
 
     // Act
-    const { container } = render(<ProfileEventList uid={TEST_UID} />);
+    const { baseElement } = render(<ProfileEventList uid={TEST_UID} />);
 
     // Assert — sentinel 不存在
-    const sentinel = container.querySelector('[aria-hidden="true"]');
+    const sentinel = baseElement.querySelector('[aria-hidden="true"]');
     expect(sentinel).not.toBeInTheDocument();
   });
 

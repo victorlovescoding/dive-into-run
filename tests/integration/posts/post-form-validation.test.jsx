@@ -139,7 +139,11 @@ function AuthWrapper({ children, user = TEST_USER }) {
 
 /**
  * 渲染 PostPage 並等待初始載入完成。
- * @returns {Promise<import('@testing-library/user-event').UserEvent>} userEvent 實例。
+ *
+ * 回傳物件解構（非單值）以滿足 testing-library/render-result-naming-convention：
+ * 規則將呼叫 `render()` 的 wrapper 視為 render-returning function，僅允許
+ * `view` / `utils` 或解構命名；用解構保留語意正確的 `user` 名稱。
+ * @returns {Promise<{ user: import('@testing-library/user-event').UserEvent }>} userEvent 實例。
  */
 async function renderPostPage() {
   const user = userEvent.setup();
@@ -151,7 +155,7 @@ async function renderPostPage() {
   await waitFor(() => {
     expect(mockedGetLatestPosts).toHaveBeenCalled();
   });
-  return user;
+  return { user };
 }
 
 /**
@@ -224,7 +228,7 @@ describe('PostPage form validation', () => {
   describe('create mode validation (US1+US2)', () => {
     it('shows merged error toast when both title and content are empty', async () => {
       // Arrange
-      const user = await renderPostPage();
+      const { user } = await renderPostPage();
       await openComposeForm(user);
 
       // Act — leave both fields empty, submit
@@ -239,7 +243,7 @@ describe('PostPage form validation', () => {
 
     it('shows title error toast when title is empty but content is filled', async () => {
       // Arrange
-      const user = await renderPostPage();
+      const { user } = await renderPostPage();
       await openComposeForm(user);
 
       // Act — fill content only
@@ -256,7 +260,7 @@ describe('PostPage form validation', () => {
 
     it('shows content error toast when content is empty but title is filled', async () => {
       // Arrange
-      const user = await renderPostPage();
+      const { user } = await renderPostPage();
       await openComposeForm(user);
 
       // Act — fill title only
@@ -273,7 +277,7 @@ describe('PostPage form validation', () => {
 
     it('shows length error toast when title exceeds 50 characters', async () => {
       // Arrange
-      const user = await renderPostPage();
+      const { user } = await renderPostPage();
       await openComposeForm(user);
 
       // Act — fill title with 51 characters
@@ -351,7 +355,7 @@ describe('PostPage form validation', () => {
     it('calls createPost with correct args when input is valid', async () => {
       // Arrange
       const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
-      const user = await renderPostPage();
+      const { user } = await renderPostPage();
       await openComposeForm(user);
 
       // Act — fill valid title and content

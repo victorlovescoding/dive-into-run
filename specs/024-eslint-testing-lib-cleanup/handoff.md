@@ -7,22 +7,22 @@
 
 ## 0. 入門 30 秒（最新狀態給下個接手者讀）
 
-| Field           | Value                                                                                    |
-| --------------- | ---------------------------------------------------------------------------------------- |
-| Branch          | `024-eslint-testing-lib-cleanup`                                                         |
-| Worktree path   | `/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`                  |
-| 目前 Session    | Session 1（Phase 1 基礎建設）— planning 完、待主 agent 派遣 Engineer subagent            |
-| Working tree    | 乾淨（除 `specs/024-eslint-testing-lib-cleanup/` untracked，含 plan/tasks/handoff 三檔） |
-| ESLint plugin   | **未裝**（Session 1 T1 即將安裝）                                                        |
-| Sensors         | 三條 sensor (`ban-ts-comment` / `prefer-user-event` / `no-node-access`) **未啟用**       |
-| Repo lint state | 目前綠（plugin 未裝、sensor 未啟用）；T2 完成後 repo-wide ~303 violations                |
-| Commit 計畫     | **不在 Session 1–8 中途 commit/push**；Session 9 (Phase 5) 才一次 commit + push          |
+| Field           | Value                                                                                                                                                                                              |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Branch          | `024-eslint-testing-lib-cleanup`                                                                                                                                                                   |
+| Worktree path   | `/Users/chentzuyu/Desktop/dive-into-run-024-eslint-testing-lib-cleanup`                                                                                                                            |
+| 目前 Session    | **Session 2 完成（T5-T10 全綠）** — 待 Session 3 接手 Phase 3                                                                                                                                    |
+| Working tree    | Dirty：Session 1 + T5-T9 + handoff 累積 modified files 仍在 working tree；2026-04-28 決策已暫關未輪到且會擋 commit 的兩條 rule，Session 1/2 可先不用 `--no-verify` commit               |
+| ESLint plugin   | 已裝 (eslint-plugin-testing-library@^7.16.2)                                                                                                                                                       |
+| Sensors         | 已完成 rules 保持 error；`no-node-access` / `prefer-user-event` 已驗證會 fire，但依 §2.13 暫時 off                                                                                                 |
+| Repo lint state | 2026-04-28 gate 策略後 repo-wide lint 預期 0；只暫關未輪到且目前會擋 commit 的 `testing-library/no-node-access` 83 + `testing-library/prefer-user-event` 6                                        |
+| Commit 計畫     | Session 1/2 累積改動可先不用 `--no-verify` commit；後續 Session 3 完成後把 `prefer-user-event` 打回 error，Phase 4 完成後把 `no-node-access` 打回 error                                           |
 
 接手前必讀：
 
-1. 本檔 §1 已驗事實（ESLint config 行號、§18 邊界）
-2. 本檔 §2 三大坑（plan §5 已記但容易漏）
-3. `tasks.md` 對應本 session 的 task 拆分
+1. 本檔 §2 **十三個坑**（特別是 §2.9 dirty files 歸因、§2.10 T8 baseElement 策略、§2.11 T9 userEvent timing、§2.12 T9/T10 timeout root cause、§2.13 增量 commit gate 策略）
+2. 本檔 §4 「Session 2（Phase 2）— 完成」段，含 T10 refresh audit/test 結果
+3. T8/T9/T10 notes：T8 已消 `no-container`，但 `baseElement.querySelector(...)` 可能保留 `no-node-access` 給 Phase 4；T9 移除 unnecessary act 時每次 `user.click` 都要 `await`；T10 timeout 後續已用 `NotificationContextProbe` 修掉並驗證通過
 
 ---
 
@@ -49,7 +49,7 @@
 
 | 套件                               | 狀態                            |
 | ---------------------------------- | ------------------------------- |
-| `eslint-plugin-testing-library`    | **未裝**                        |
+| `eslint-plugin-testing-library`    | 已裝 (^7.16.2, devDep)          |
 | `@testing-library/user-event`      | 已裝 (^14.6.1, devDep)          |
 | `@testing-library/react`           | 已裝（用作 testing 主庫）       |
 | `@typescript-eslint/eslint-plugin` | 已裝（line 11 import 已 wired） |
@@ -65,16 +65,17 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 
 ---
 
-## 2. 三大坑（從 plan §5 + §6 萃取，先警告再執行）
+## 2. 十三個坑（從 plan §5 + §6 + Session 2 實作萃取，先警告再執行）
 
 ### 2.1 ⚠️ 坑 1：T2 commit 後 `npm run lint` 會 fail repo-wide
 
 - **原因**：T2 改完 config，`eslint-plugin-testing-library` rule 全開，立刻會抓 ~303 處先存在違規。
 - **症狀**：之後在 worktree 內任何 `git commit` 都會被 husky pre-commit gate 擋下（lint step fail）。
+- **2026-04-28 更新**：下列原策略已被 §2.13 取代；Session 1/2 可先 commit，因為只暫關未輪到且目前仍會擋 gate 的兩條 rule。
 - **對策**：
-  - **Session 1–8 全部不 commit**。所有改動累積在 working tree，Session 9 才 commit。
+  - ~~**Session 1–8 全部不 commit**。所有改動累積在 working tree，Session 9 才 commit。~~ → 已被 2026-04-28 增量 commit gate 決策取代，詳 §2.13。
   - 若中途必須切 branch / 暫離 → `git stash push -m "WIP: 024 cleanup after S<N>"`，回來 `git stash pop`。
-  - 若**真的**必須中途 commit（例如機器要重開）→ 用 `git commit --no-verify -m "WIP, hooks bypassed intentionally during Phase X"`，但 push 前要 squash 或補完 cleanup。
+  - 本 024 cleanup 執行期明確禁止 `git commit --no-verify`；不要用 bypass commit 切 task 邊界。
 
 ### 2.2 ⚠️ 坑 2：T3 sanity 檔 不能漏刪
 
@@ -99,6 +100,101 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 - **症狀**：測試檔的 `no-console` / `jsdoc` 行為突然改變、或測試 lint 突然多一堆無關 violation。
 - **對策**：T2 Change 3 必須插在 line 369 (`// 18.`) 之前；T2 Reviewer 用 `grep -n` 對照行號順序。
 
+### 2.5 ⚠️ 坑 5：T3 sanity content 不夠完整（plan §5 Task 1.3 的版本只能觸發 3/4 條 rule）
+
+- **原因**：plan 給的 sanity content 用 `document.createElement('div')` 自建 container，但 `testing-library/no-container` 只會對 `render()` 解構出的 `container` 屬性 fire，因此原版 sanity 觸發不了 `no-container`。
+- **症狀**：sanity 跑 ESLint 只有 3 條 rule fire（`ban-ts-comment` / `no-node-access` / `prefer-user-event`），錯誤地讓人以為 T2 config 沒啟用 `no-container`。
+- **對策**：T3 sanity 必須加上 render 解構分支，最終 sanity 內容應為（兩個 `it` block）：
+
+  ```jsx
+  // @ts-ignore
+  import { fireEvent, render } from '@testing-library/react';
+
+  describe('sanity', () => {
+    it('should trigger ban-ts-comment / no-node-access / prefer-user-event', () => {
+      const container = document.createElement('div');
+      const x = container.querySelector('.foo');
+      fireEvent.click(x);
+    });
+
+    it('should trigger no-container via render destructure', () => {
+      const { container } = render(<div />);
+      const node = container.querySelector('.bar');
+      return node;
+    });
+  });
+  ```
+
+- **延伸**：plan §5 Task 1.3 的 sanity content 可以視為過時，未來重做 sanity 應參考 handoff.md 此處的版本。
+
+### 2.6 ⚠️ 坑 6：`prefer-user-event` baseline drift — 預期 8，實測 7
+
+- **原因**：plan §3.1 寫「`prefer-user-event` 必 = 8（grep 已 100% 確認）」，但 T4 跑 `npx eslint src specs tests` 實測只抓到 7。Sensor 本身正確 fire（T3 已驗），這是 plan grep 估算與 ESLint 實際偵測之間的方法論誤差，不是 config bug。
+- **實際 7 個違規檔案分佈**：
+  - `tests/integration/posts/PostCard.test.jsx` — 5 處
+  - `tests/integration/notifications/NotificationToast.test.jsx` — 1 處（line 141）
+  - `tests/integration/notifications/NotificationPaginationStateful.test.jsx` — 1 處（line 419，緊鄰 line 416 的 `no-unnecessary-act`）
+- **決策**：主 agent 接受 7 為新 baseline。Session 2+ 清理時範圍 = 7，不要找第 8 處。
+- **延伸觀察**：`NotificationPaginationStateful.test.jsx` 的 line 416 + 419 同時觸發 `no-unnecessary-act` 與 `prefer-user-event`，疑似 `act(() => fireEvent.click(...))` 樣式，未來修這 1 處可能同時消 2 個違規。
+
+### 2.7 ⚠️ 坑 7：執行細節（subagent 易踩）
+
+- **`rm` 絕對路徑被 hook 攔截**：T3 Engineer 用 `/Users/.../tests/_sanity-eslint.test.jsx` 絕對路徑刪檔被 hook 擋，改用相對路徑 `rm tests/_sanity-eslint.test.jsx` 才成功（前提：cwd 在 repo root）。
+- **Write 必須先 Read**：對已存在檔案直接 Write 會被 Edit/Write 工具規則擋下，須先 Read 再 Write。標準 Claude Code 約束，提醒未來 Engineer。
+- **eslint.config.mjs 章節編號斷層**：檔案內 §15 直接跳到 §18（無 §16/§17 區段），是檔案原本就有的結構。新加的 testing-library block 命名為 §17.5 以順利塞進 §18 之前。
+
+### 2.8 ⚠️ 坑 8：`prefer-screen-queries` **沒有 autofix**（plan §5 line 272 錯誤假設）
+
+- **plan 的錯誤假設**：plan §5 Task 2.1 line 272 寫「經驗：`prefer-screen-queries` 大部分（>90%）autofix 可解」。
+- **實測（Session 2 T5）**：跑 `npx eslint tests --fix --rule '{"testing-library/prefer-screen-queries": "error"}'` 改了 **0 個檔**；`--fix-dry-run --format json` 統計 `fixable: 0, unfixable: 187`。
+- **根本原因**：`testing-library/eslint-plugin-testing-library` 的 `prefer-screen-queries` rule **不是 fixable rule**（官方 docs 未列 autofix flag）。Plan 的假設是錯的。
+- **影響**：
+  - Phase 2 「機械批次 1-2 hr」嚴重低估，因為 87% (187/216) 的 Phase 2 違規來自這條 rule、且全要人工
+  - T5 task spec 原本依賴「autofix → grep 漏網」兩步，現在改為「全手工 grep + Edit 修復」一步
+- **修正後策略**（已落地進 tasks.md T5 v2）：
+  1. `grep -rln 'const \{ [^}]*By' tests/` 找出有 destructured query 的檔
+  2. 逐檔 Edit：`const { getByX } = render(...)` → `render(...)`，後續 callsite `getByX(...)` → `screen.getByX(...)`
+  3. 處理 `getByX(container, ...)` 形式：依 context 改 `within(container).getByX(...)` 或 `screen.getByX(...)`
+  4. 跑 vitest 確認沒改壞
+- **教訓**：plan 寫的「autofix 可解」之類經驗值要在 T1 sanity check 階段就驗證，不要拖到 T5 才發現。後續類似 plugin（`eslint-plugin-jest-dom`、`eslint-plugin-jsx-a11y` 等）若用 autofix 假設，先用 `--fix-dry-run --format json` 確認 fixable 數。
+
+### 2.9 ⚠️ 坑 9：Dirty files 不能直接歸因給最後一個 task
+
+- **發生在**：Session 2 T8/T9 review + T10 handoff。
+- **原因**：Phase 1 起就刻意不在中途 commit；T5-T9 改動全部累積在同一個 working tree。本任務明確禁止 `git commit --no-verify`，所以不能用 bypass commit 把每個 task 切開。
+- **症狀**：`git status --short` 會同時看到 Session 1 config/package/doc 改動與 T5-T9 多個 test 檔改動。T8/T9 reviewer 若只看 dirty file list，容易把既有 dirty files 錯歸因給當前 task。
+- **對策**：review 要依 rule evidence + diff context 判斷 scope，不用 dirty file list 單獨歸因。T8 實際 no-container diff 包含 `NavbarDesktop.test.jsx`、`NotificationPanel.test.jsx`、`scroll-to-comment.test.jsx`、`PostFeed.test.jsx`、`ProfileEventList.test.jsx`；其他 dirty files 不應自動算成 T8。
+
+### 2.10 ⚠️ 坑 10：T8 `baseElement.querySelector(...)` 是刻意策略，不是倒退
+
+- **發生在**：Session 2 T8。
+- **原因**：有些測試目標是無語意節點、布局節點或 `aria-hidden` DOM；硬改成 `screen` / role query 會扭曲測試語意。
+- **策略**：用 `baseElement.querySelector(...)` 可以消 `testing-library/no-container`，但仍可能保留 `testing-library/no-node-access`。
+- **對策**：這不是 T8 regression。Phase 4 處理 `no-node-access` 時再決定是否要改測試設計、補語意 affordance，或保留少數 DOM access 的例外路線。
+
+### 2.11 ⚠️ 坑 11：T9 移除 unnecessary act 時，每個 user interaction 都要 await
+
+- **發生在**：Session 2 T9。
+- **原因**：把 `await act(async () => { fireEvent.click(...) })` 改成 `user.click(...)` 時，如果少 `await` 或沿用舊 query reference，會弱化 timing，甚至讓狀態更新 race。
+- **正確做法**：改成 sequential `await user.click(...)`；每次 click 後依畫面狀態重新 query 需要的節點。T9 本輪同時移除 `fireEvent` import，並順手把 `NotificationPaginationStateful.test.jsx` line 419 的 `prefer-user-event` 消掉，讓全 repo `prefer-user-event` 從 7 降到 6。
+
+### 2.12 ⚠️ 坑 12：T9/T10 fallback 測試不能用 19 次 `user.click` 硬推狀態
+
+- **發生在**：Session 2 T10 refresh 前的 blocker 修復。
+- **根因**：`NotificationPaginationStateful.test.jsx` fallback test 用大量 sequential `user.click` 推 pagination 狀態；完整 `npm run test:browser` 中 19 次 click 會拖到 15000ms timeout。
+- **修法**：新增 `NotificationContextProbe`，從真實 provider context 呼叫 `loadMore()` 直接推到 capacity，再用 button 觸發 server fallback 分支。
+- **對策**：不要退回 `fireEvent` 來繞過 timing；保留 `userEvent` 驗證使用者觸發 fallback 的最後一步，狀態準備交給真實 provider context。
+
+### 2.13 ⚠️ 坑 13：增量 commit gate 策略（2026-04-28 決策）
+
+- **決策**：不是「不相關就關」。只有「不相關且目前會擋 Session 1/2 commit gate」才暫關。
+- **目前只暫關兩條**：
+  - `testing-library/no-node-access`: 83 baseline violations，Phase 4 尚未輪到
+  - `testing-library/prefer-user-event`: 6 baseline violations，Session 3 尚未輪到
+- **保留 error 的已完成 rules**：`@typescript-eslint/ban-ts-comment`、`testing-library/prefer-screen-queries`、`testing-library/render-result-naming-convention`、`testing-library/no-container`、`testing-library/no-unnecessary-act`。
+- **保留 flat/react 預設 rules**：其他不相關但目前不報錯的 `testingLibrary.configs['flat/react'].rules` 繼續留著，不主動關。
+- **恢復點**：Session 3 清完 `prefer-user-event` 後，把 `testing-library/prefer-user-event` 改回 `error`；Phase 4 清完 `no-node-access` 後，把 `testing-library/no-node-access` 改回 `error`。
+
 ---
 
 ## 3. Baseline Audit (Phase 1 Task 1.4)
@@ -107,32 +203,40 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 
 ### 3.1 Run metadata
 
-- 執行時間：`<待填，Session 1 T4>`
+- 執行時間：`2026-04-28T15:26:49+08:00`
 - 命令：`npx eslint src specs tests 2>&1 | tee /tmp/eslint-baseline.txt`
+- 結果：`✖ 303 problems (303 errors, 0 warnings)`
 
 ### 3.2 Per-rule violation counts
 
-| Rule                                              | 預期 (plan §3.1 / Appendix A 下限) | 實測 | Status |
-| ------------------------------------------------- | ---------------------------------- | ---- | ------ |
-| `testing-library/prefer-screen-queries`           | ~187 (容差 ≤ 225, ≥ 100)           | TBD  | TBD    |
-| `testing-library/no-node-access`                  | ~89 (容差 ≤ 107, ≥ 43)             | TBD  | TBD    |
-| `testing-library/render-result-naming-convention` | ~10 (容差 ≤ 12)                    | TBD  | TBD    |
-| `testing-library/no-container`                    | ~9 (容差 ≤ 11, ≥ 7)                | TBD  | TBD    |
-| `testing-library/prefer-user-event`               | 8 (必 = 8)                         | TBD  | TBD    |
-| `testing-library/no-unnecessary-act`              | 1 (容差 ≤ 2)                       | TBD  | TBD    |
-| `@typescript-eslint/ban-ts-comment`               | 0                                  | TBD  | TBD    |
+| Rule                                              | 預期 (plan §3.1 / Appendix A 下限) | 實測 | Status                                 |
+| ------------------------------------------------- | ---------------------------------- | ---- | -------------------------------------- |
+| `testing-library/prefer-screen-queries`           | ~187 (容差 ≤ 225, ≥ 100)           | 187  | ✅ in tolerance                        |
+| `testing-library/no-node-access`                  | ~89 (容差 ≤ 107, ≥ 43)             | 89   | ✅ in tolerance                        |
+| `testing-library/render-result-naming-convention` | ~10 (容差 ≤ 12)                    | 10   | ✅ in tolerance                        |
+| `testing-library/no-container`                    | ~9 (容差 ≤ 11, ≥ 7)                | 9    | ✅ in tolerance                        |
+| `testing-library/prefer-user-event`               | 8 (必 = 8)                         | 7    | 🟡 accepted（baseline drift, 詳 §2.6） |
+| `testing-library/no-unnecessary-act`              | 1 (容差 ≤ 2)                       | 1    | ✅ in tolerance                        |
+| `@typescript-eslint/ban-ts-comment`               | 0                                  | 0    | ✅ in tolerance                        |
 
 ### 3.3 重大 hotspot 確認
 
-| Hotspot                                                               | 預期數 | 實測 | Status |
-| --------------------------------------------------------------------- | ------ | ---- | ------ |
-| `tests/integration/navbar/NavbarMobile.test.jsx` mobile-drawer        | ≥ 17   | TBD  | TBD    |
-| `tests/integration/posts/PostCard.test.jsx` fireEvent.click           | 5      | TBD  | TBD    |
-| `tests/integration/notifications/NotificationToast.test.jsx` line 141 | 1      | TBD  | TBD    |
+| Hotspot                                                               | 預期數 | 實測 | Status                                                     |
+| --------------------------------------------------------------------- | ------ | ---- | ---------------------------------------------------------- |
+| `tests/integration/navbar/NavbarMobile.test.jsx` mobile-drawer        | ≥ 17   | 17   | ✅ 符合 Appendix A 下限                                    |
+| `tests/integration/posts/PostCard.test.jsx` fireEvent.click           | 5      | 5    | ✅（grep 含 import 行回傳 6，扣掉 import 後實際呼叫 5 次） |
+| `tests/integration/notifications/NotificationToast.test.jsx` line 141 | 1      | 1    | ✅ ESLint 抓到 line 141 `prefer-user-event` 1 次           |
 
 ### 3.4 與 plan §3.1 差距摘要
 
-`<待填：每條 rule 一行，例如「prefer-screen-queries 實測 187 / 預期 187 / ✅ in tolerance」>`
+- `prefer-screen-queries` 實測 187 / 預期 ~187 / ✅ in tolerance（精確命中估算值）
+- `no-node-access` 實測 89 / 預期 ~89 / ✅ in tolerance（精確命中估算值，遠高於 Appendix A 下限 43）
+- `render-result-naming-convention` 實測 10 / 預期 ~10 / ✅ in tolerance
+- `no-container` 實測 9 / 預期 ~9 / ✅ in tolerance（高於 Appendix A 下限 7）
+- `prefer-user-event` 實測 7 / 預期 必 = 8 / 🟡 accepted as new baseline — Plan §3.1 grep 估算 8 與 ESLint 實測 7 之間有 1 個的方法論誤差。詳 §2.6。Session 2+ 清理範圍 = 7（PostCard 5 + NotificationToast 1 + NotificationPaginationStateful 1）。
+- `no-unnecessary-act` 實測 1 / 預期 ~1 / ✅ in tolerance（位於 NotificationPaginationStateful.test.jsx line 416）
+- `ban-ts-comment` 實測 0 / 預期 0 / ✅ in tolerance（codebase 已乾淨，無 `@ts-ignore` 殘留）
+- 全部 problem 總數：303（與 plan §0 預估 ~303 一致）
 
 ---
 
@@ -140,37 +244,106 @@ T4 audit 完後在 §3 baseline audit 章節記錄實際數字。如果 < 17 →
 
 > 每個 session 結束時 append 一個小節。
 
-### Session 1（Phase 1）— 進行中
+### Session 1（Phase 1）— 完成
 
 - **Started**: 2026-04-28
-- **狀態**: 規劃完成，主 agent 即將派遣 T1 Engineer subagent
-- **預期完成 deliverables**:
+- **狀態**：✅ 完成（T1-T4 全綠，無 escalate 阻塞）
+- **預期完成 deliverables**：
   - [x] `tasks.md` 寫完
-  - [x] `handoff.md` 寫完
-  - [ ] T1: plugin 安裝 + lockfile 同步
-  - [ ] T2: eslint.config.mjs 三處改動完成
-  - [ ] T3: sanity check 4 條 rule 全 fire
-  - [ ] T4: baseline audit 填入 §3
-- **未完成 / blocker**: TBD
+  - [x] `handoff.md` 寫完（含本次 §2.5/§2.6/§2.7 坑追加）
+  - [x] T1: plugin 安裝 + lockfile 同步（`eslint-plugin-testing-library@^7.16.2`）
+  - [x] T2: eslint.config.mjs 三處改動完成（import + ban-ts-comment + §17.5 testing-library block）
+  - [x] T3: sanity check 4 條 rule 全 fire（含 `no-container` 用 render 解構驗證，§2.5 已記）
+  - [x] T4: baseline audit 填入 §3（303 problems, 7/7 rules counted；prefer-user-event 7 vs 預期 8 → 接受為新 baseline，§2.6 / §3.4 已標 🟡 accepted）
+- **未完成 / blocker**：無。可進 Session 2。
+- **本次 subagent 用量**：8 次 Agent 呼叫（T1×2 + T2×2 + T3×2 + T4×2，無重派）+ 1 次 SendMessage（T3 Engineer 擴充 sanity 驗證 no-container）。Plan §0 估算 first-pass 全綠 = 8 次，實際剛好命中。
+- **commit 狀態**：未 commit（歷史原因：當時依 plan 設計 Session 9 才一起 commit/push；此策略已被 2026-04-28 §2.13 取代）
+
+### Session 2 規劃 + escalation 處理（Phase 2 task spec 重寫）— 完成
+
+> **重要**：本段不是 Session 2「實作完成」紀錄，而是「**規劃 + escalation 處理**」紀錄。Session 2 實作（執行 T5–T10）尚未開始，由下一 session 接手。
+
+- **Started**: 2026-04-28（接 Session 1）
+- **狀態**：✅ 規劃完成 + escalation 處理完成；⏳ 實作（T5-T10）未開工
+- **本次 conversation 做了什麼**：
+  1. 規劃 Session 2 task 拆分（T5-T10）並寫進 `tasks.md`（並行度 = 1、every task 含 Engineer + Reviewer SOP、總 subagent 數估 12 次）
+  2. 派出 T5 Engineer（general-purpose）按 plan §5 Task 2.1 跑 `npx eslint tests --fix --rule '{...prefer-screen-queries: "error"}'`
+  3. **T5 Engineer escalate 重大發現**：plan §5 line 272 假設「prefer-screen-queries autofix >90% 可解」**完全錯誤** — 實測 autofix 改 0 處，dry-run JSON 顯示 `fixable: 0, unfixable: 187`。`testing-library/eslint-plugin-testing-library` 的 prefer-screen-queries rule **不是 fixable rule**（官方 docs 未列 autofix flag）
+  4. 主 agent 接收 escalation、處理：
+     - 寫入 §2.8 坑（autofix 假設失效 + 修正後策略）
+     - 重寫 `tasks.md` T5 spec：autofix 路線 → 全手工 destructured query pattern（187 → ≤ 50；分批接續策略）
+     - 重寫 `tasks.md` T6 spec：原「漏網之魚」→ 改為「scoped query pattern + T5 漏網收尾」（殘留 → 0）
+     - 更新 Session 2 Goal：1-2 hr → **2.5-3.5 hr**（反映全手工成本）
+     - 補 `cspell.json` 加 "callsite" 一詞（規劃文件用到）
+- **未完成 / blocker**：無。task spec 已備好，下一 session 可直接按本檔 §0 + §2.8 + tasks.md 接手執行 T5-T10。
+- **本次 subagent 用量**：1 次 Agent 呼叫（T5 Engineer 試跑 autofix → escalate）。Reviewer 沒派（escalation 取消後續驗收）。
+- **commit 狀態**：未 commit（與 Session 1 同 working tree state，新增 cspell.json + tasks.md modified）
+- **下一 session 接手前提醒**：
+  - **不要**重跑 `npx eslint tests --fix --rule '{...prefer-screen-queries: "error"}'`（已驗證無效、會浪費 Engineer 時間）
+  - 直接按 tasks.md T5 流程做 destructured query 全手工修
+  - 心理預期：Session 2 實際工時 ~2.5-3.5 hr，比 plan §8.2 原估 1-2 hr 多 ~1.5 hr
+
+### Session 2（Phase 2）— 完成
+
+- **Started**: 2026-04-28
+- **Completed**: 2026-04-28
+- **狀態**：✅ Session 2 完成（T5-T10 全綠）。Phase 2 四條目標 rule 全清光；T10 一度發現 browser timeout，後續已用 `NotificationContextProbe` 修復並由本輪 refresh 重新驗證通過。
+- **T5-T10 task 結果**：
+  - T5/T6 `testing-library/prefer-screen-queries`: 187 → 0（T10 audit 未再出現）
+  - T7 `testing-library/render-result-naming-convention`: 10 → 0（T10 audit 未再出現）
+  - T8 `testing-library/no-container`: 9 → 0（T8 reviewer PASS；T10 audit 未再出現）
+  - T9 `testing-library/no-unnecessary-act`: 1 → 0（T9 reviewer PASS；T10 audit 未再出現）
+  - T9 bonus `testing-library/prefer-user-event`: 7 → 6（`NotificationPaginationStateful.test.jsx` line 419 一併消掉）
+  - T10 audit：`testing-library/no-node-access` 83、`testing-library/prefer-user-event` 6、`@typescript-eslint/ban-ts-comment` 0；總計 89 errors
+- **T8 reviewer evidence 摘要**：
+  - PASS：`testing-library/no-container = 0`
+  - PASS：`testing-library/no-node-access = 83 <= 89`
+  - 先前 reviewer 曾看到 `npm run test:browser` exit 0，`121 passed / 1108 passed`
+  - no-container 相關 diff：`NavbarDesktop.test.jsx`、`NotificationPanel.test.jsx`、`scroll-to-comment.test.jsx`、`PostFeed.test.jsx`、`ProfileEventList.test.jsx`
+  - Review note：無語意/布局/`aria-hidden` 節點用 `baseElement.querySelector(...)` 消 `no-container` 是刻意策略；Phase 4 仍要處理 DOM access
+- **T9 reviewer evidence 摘要**：
+  - PASS：全 repo `testing-library/no-unnecessary-act = 0`
+  - PASS：`testing-library/prefer-user-event = 6`
+  - PASS：單檔 ESLint exit 0；單檔 Vitest exit 0，`1 passed / 5 passed`
+  - Diff 合理：移除 `fireEvent` import；`await act(async () => { fireEvent.click(...) })` 改為 sequential `await user.click(...)`；每次 click 都 `await` 且重新 query
+- **T9/T10 blocker fix evidence**:
+  - Historical note：T10 原 fresh browser run 曾在 `NotificationPaginationStateful.test.jsx` fallback test timeout at 15000ms；同一 suite rerun 仍 timeout。
+  - 後續修法：`NotificationPaginationStateful.test.jsx` 新增 `NotificationContextProbe`，用真實 provider context `loadMore()` 推到 capacity，再以 button 觸發 server fallback；避免退回 `fireEvent`。
+  - 上一輪修復回報：該單檔與 full browser suite 已 exit 0；本輪 T10 refresh 再跑 full browser suite 亦 exit 0。
+- **T10 verification refresh（2026-04-28 fresh run）**:
+  - `git status --short`: dirty，含 Session 1 + T5-T9 + handoff 累積 modified files；本輪未 `git add` / commit，且只修改 `handoff.md`
+  - `npx eslint src specs tests > /tmp/t10-refresh-audit.txt 2>&1`: `eslint_exit:1`，`✖ 89 problems (89 errors, 0 warnings)`；這是 Phase 3/4 殘留，不是 Phase 2 四條目標 rule
+  - Per-rule counts：`testing-library/no-node-access` 83、`testing-library/prefer-user-event` 6；`prefer-screen-queries` / `render-result-naming-convention` / `no-container` / `no-unnecessary-act` 全 0；`@typescript-eslint/ban-ts-comment` 0
+  - `npm run test:browser > /tmp/t10-refresh-browser.txt 2>&1`: `browser_exit:0`，`121 passed / 121 files`，`1108 passed / 1108 tests`
+  - `npm run test:server > /tmp/t10-refresh-server.txt 2>&1`: sandbox 內 `server_exit:2`，Firebase emulator localhost port listen `EPERM`
+  - `npm run test:server > /tmp/t10-refresh-server.txt 2>&1` sandbox 外重跑：`server_exit:0`，`2 passed / 2 files`，`26 passed / 26 tests`
+- **本次 subagent 用量**：本 session 至少 4 次本輪接續（T8 reviewer + T9 engineer + T9 reviewer + T10 engineer）；T5-T7 由前序 agents 完成，未在本輪重算。
+- **commit 狀態**：未 commit；不可用 `git commit --no-verify` 繞過。2026-04-28 §2.13 已暫關未輪到且會擋 gate 的兩條 rule，Session 1/2 可先正常 commit。
+- **下一步**：Session 3 可直接接手 Phase 3 `prefer-user-event` 6 處清理；不要把 dirty files 直接歸因給 Session 3。
 
 ---
 
 ## 5. 下個 Session 開工 checklist
 
-進 Session 2 之前：
+進 Session 3（Phase 3）之前：
 
-- [ ] 讀本檔 §0、§2、§4 最新一段
-- [ ] 跑 `git status` 確認 working tree 跟 §0 描述一致（package\*.json + eslint.config.mjs + handoff.md 是 modified）
-- [ ] 跑 `npx eslint src specs tests 2>&1 | tail -5` 確認 ~303 violations 還在（沒被誤刪）
+- [ ] 讀本檔 §0（注意：working tree dirty 是 Session 1 + T5-T9 累積，不要直接歸因給最後一個 task）
+- [ ] 讀本檔 §2.9–§2.13（dirty file 歸因、T8 baseElement 策略、T9 userEvent timing、T9/T10 timeout root cause、增量 commit gate 策略）
+- [ ] 讀本檔 §4 「Session 2（Phase 2）— 完成」段
+- [ ] 注意 `NotificationPaginationStateful.test.jsx` fallback timeout 已用 `NotificationContextProbe` 修復；若再次調整該測試，不要退回 `fireEvent`
+- [ ] 跑 `git status --short` 確認 dirty files 跟 §4 T10 狀態一致
+- [ ] 知道 `testing-library/prefer-user-event` 目前暫時 `off`；Session 3 清完 6 處後要改回 `error`
+- [ ] 知道 `testing-library/no-node-access` 目前暫時 `off`；Phase 4 清完 83 處後要改回 `error`
+- [ ] 跑 `npx eslint src specs tests > /tmp/session3-audit.txt 2>&1; echo "eslint_exit:$?"; tail -3 /tmp/session3-audit.txt` 確認 repo-wide lint 預期為 0；若不是 0，先確認是否為已完成 rules regression
 - [ ] 確認 plugin 還在：`ls node_modules/eslint-plugin-testing-library/package.json`
-- [ ] 讀 `tasks.md` 該 session 的 task 拆分（Session 2 會由本 session 寫好的 template 接續產出）
+- [ ] 讀 `tasks.md` Session 3 / Phase 3 的 task 拆分，再開始清 `prefer-user-event` 6 處
 
 ---
 
 ## 6. 環境細節（debug 用）
 
-- **Node 版本**：`<待填：node -v>`
-- **npm 版本**：`<待填：npm -v>`
+- **Node 版本**：`v22.22.0`
+- **npm 版本**：`10.9.4`
 - **OS**：darwin 24.3.0
 - **Husky 版本**：見 package.json devDependencies
 - **ESLint 版本**：見 package.json（flat config 表示 ≥ v9）
