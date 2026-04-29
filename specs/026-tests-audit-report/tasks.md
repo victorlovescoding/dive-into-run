@@ -1116,6 +1116,724 @@ Wave 6 (序列):    T15-eng → T15-rev   (整合驗證 + commit + handoff sync)
 
 ---
 
+# S4 — pre-commit grep gate (warn-only)
+
+> S1（T01-T05）已 commit `97e78d2`、S2（T06-T09）已 commit `818e249`、S3（T10-T15）已 commit `5f09820`。S4 從 T16 開始追加，沿用本檔同一份 Reviewer 認證標準 / Retry & Escalation / Subagent 配對表（下方擴充）/ 通用須知。
+> **主 agent 完全不下手**——所有 task（含後續修改、retry、commit）都由 subagent 完成。
+
+## S4 Goal
+
+把 audit P0-1 / P1-4 / P1-5 的「防新增」訊號補上，但**不擋 commit**：
+
+1. **`scripts/audit-mock-boundary.sh`**（新檔）— grep `tests/integration/**` 中違反 mock-boundary 的 `vi.mock('@/{repo,service,runtime}/...')`，列出 file:line + 計數
+2. **`scripts/audit-flaky-patterns.sh`**（新檔）— grep `tests/**/*.test.*` 中 `toHaveBeenCalledTimes` 與 `setTimeout+Promise` 兩 anti-pattern
+3. **`.husky/pre-commit`** — 末尾 append 兩個 script（`exit 0` 不擋 commit、只警示）
+4. **凍結 baseline 起始數字**（commit message 紀錄）— 為 S6 ESLint `ignores` baseline 與 S8 觸發型升級提供起點
+
+S4 是 audit report §12 的第 4 個 commit，**規模 ~100 行**（兩 script ~30-50 行各 + husky 4 行 diff + handoff/tasks.md sync）。
+
+## S4 References
+
+- Audit report：[`project-health/2026-04-29-tests-audit-report.md`](../../project-health/2026-04-29-tests-audit-report.md)
+  - **L77-111** — P0-1 完整描述（233 處 mock 樣本 + 修補步驟，第 1 條短期防新增即 S4）
+  - **L293-318** — P1-4 / P1-5（`toHaveBeenCalledTimes` 109 處 + setTimeout+Promise）
+  - **L607-612** — S4 章節（執行序列第 4 個 commit）
+  - **L538-544** — Husky 強制機制 R8 規則
+  - **L626-633** — S6 baseline 生成命令範本（**S4 與 S6 grep pattern 必須一致**）
+  - **L658-664** — S8 觸發型升級規格（warn → error / exit 0 → exit 1，不在本 S4 scope）
+- Audit IDs：P0-1 / P1-4 / P1-5
+- Rules：R8（pre-commit grep gate，warn-only）
+
+## S4 核心設計決策（必讀）
+
+| 決策                                                  | 內容                                                                                                                                                                                                                                                                                      |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Warn-only：兩 script 必須 `exit 0`**                | 即使有違規也 exit 0，pre-commit chain 不被打斷。**例外**：script 自己有 syntax/IO error（grep 命令 typo、檔案讀不到）時容許 exit ≠ 0；違規 finding 一律 0。S8 觸發型升級時改 exit 1（**不在本 S4 scope**）                                                                                |
+| **不擋既有 baseline**                                 | 跑 audit 應列出 ~233 mock + ~109 flaky 違規（這些在 P0-1 / P1-4 中清算過），但不能讓任何 PR 因此擋下；測試方式：T21 在 dummy stage 上跑 hook 必須 exit 0                                                                                                                                  |
+| **Grep pattern 與 S6 完全對齊**                       | audit L626-633 已給出 S6 baseline 生成命令；S4 script 必須用**相同** grep pattern（不可微調），這樣 S4 列出的數字 = S6 baseline list 數字。Mock-boundary：`vi\.mock\(['"]@/(repo\|service\|runtime)/`；Flaky：`toHaveBeenCalledTimes` + `new Promise.*setTimeout` / `setTimeout.*Promise` |
+| **全 codebase grep（不做 staged-only）**              | S4 是 baseline 訊號版（warn-only），用全 codebase grep 簡單、與 S6 baseline 對得上；staged-only 邏輯留給 S8 升級時設計（exit 1 才需要避免擋既有 baseline 違規）                                                                                                                           |
+| **Husky 順序：lint/type/spell/vitest 之後 append**    | 兩 audit script 在現有五項之後 append，不打斷主品質防線；理由：（a）現有五項是 `--max-warnings 0` / exit ≠ 0 fail-fast 風格，append 在最後不影響它們；（b）若未來改 staged-only，append 在最後拿到的是現有 hook 跑完後的 staged 狀態，不會誤抓 hook 中 auto-fix 的暫態                    |
+| **Output 格式**：人讀友善 + grep-able                 | stdout 結構固定：`AUDIT <CATEGORY>: <N> findings`（首行）+ `<file>:<line>:<匹配行 trim>` 列表（每筆一行）+ `(warn-only; exit 0)` 結尾。N 可被 `head -1 \| awk '{print $3}'` 抽出，方便 commit message 自動填數字                                                                          |
+| **Script 必須 portable（macOS bash 3.2 + BSD grep）** | 不用 `mapfile` / `declare -A` / `read -ra` / `[[ =~ ]]`；不用 `grep -P` PCRE；用 `grep -rEn` (ERE) 或 `grep -rn` (BRE)；script header `#!/usr/bin/env bash`；`set -e` 不開（保 exit 0 紀律）                                                                                              |
+| **Chmod +x 紀律**                                     | 兩 script 必須 `chmod +x`，commit 後 `git ls-files --stage scripts/audit-*.sh` mode 必為 `100755`（git index 看權限）                                                                                                                                                                     |
+| **不 touch 現有 husky 五行**                          | T20 對 `.husky/pre-commit` **只 append 不刪改**：`git diff .husky/pre-commit` 必須 `^-[^-]` count = 0；reviewer 重驗                                                                                                                                                                      |
+| **不動 §3 T01-T15 evidence**                          | S1/S2/S3 紀錄已凍結；S4 任何 subagent 不可改 §3 既有 row、Evidence Detail、§2 既有 risk 表                                                                                                                                                                                                |
+| **Baseline 數字寫進 commit message**                  | T22 commit message 必含 `Baseline (S4 grep): mock-boundary: <N>, flaky-pattern: <M>`，N/M 從 T21 smoke test 取得；S6 將以此作為 ESLint baseline list 起點。**T22 engineer 直接 copy T21 evidence**，不口算                                                                                |
+| **主 agent 不下手**                                   | S4 任何 Edit/Write/Bash 修改/驗證/commit 都派 subagent；主 agent 只 spawn + retry orchestration；主 agent 可 commit `docs(spec): ...` 類型的 tasks.md 變動（本次產出），**不可** commit `chore(precommit): ...` 類型的 S4 實作                                                            |
+
+## S4 Concurrency
+
+```
+Wave 1 (2 並行):  T16-eng (mock-boundary spike)  |  T17-eng (flaky + husky 整合 spike)
+                       ↓ 各自完成 → reviewer ↓
+Wave 2 (≤2 並行): T16-rev | T17-rev
+                       ↓ 全部 verified-pass ↓
+Wave 3 (2 並行):  T18-eng (寫 audit-mock-boundary.sh)  |  T19-eng (寫 audit-flaky-patterns.sh)
+                       ↓ 各自完成 → reviewer ↓
+Wave 4 (≤2 並行): T18-rev | T19-rev
+                       ↓ 全部 verified-pass ↓
+Wave 5 (序列):    T20-eng → T20-rev   (改 .husky/pre-commit append 兩行)
+Wave 6 (序列):    T21-eng → T21-rev   (整合 smoke test + 取 baseline N/M)
+Wave 7 (序列):    T22-eng → T22-rev   (commit + handoff sync)
+```
+
+| 項目                            | 值                                              |
+| ------------------------------- | ----------------------------------------------- |
+| Max concurrent subagent (S4)    | **2**（Wave 1/2/3/4 各 2 並行；T20-T22 純序列） |
+| Total subagent invocations (S4) | **14**（7 task × 2，no retry case）             |
+
+> 為什麼 T18/T19 可平行：兩 script 完全獨立檔（無 import/source 關係），grep pattern 在 spike 階段已凍結；engineer 各自寫各自的 script，0 衝突。為什麼 T20 之後不平行：T20 改 husky 後須驗 chain 仍綠；T21 要拿 husky 改完後跑 smoke + 抽 baseline；T22 要 T21 數字寫 commit message — 每步輸入都是上步輸出。
+
+## S4 Risks（subagent 必讀，補充進 handoff.md §2 S4 子表）
+
+| Risk                                                       | Why it matters                                                                                                        | Action                                                                                                                                                                                                                             |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Husky chain 被 `set -e` / 子 shell 干擾                    | 若 `.husky/pre-commit` 開頭有 `set -e` 或某行 fail 後 short-circuit，append 的 audit script 不會跑或被當失敗          | T17 spike 必須先 `cat .husky/pre-commit` 確認沒 set -e；append 行必加 `\|\| true` 雙保險（即使 script 自己 exit 1 也不擋 chain）；evidence 附 cat 結果                                                                             |
+| macOS bash 3.2 不支援 bash 4 syntax                        | engineer 用 `mapfile` / `declare -A` / `[[ =~ ]]` → reviewer macOS 機跑會 syntax error                                | T18/T19 engineer 寫完用 `bash --version` 紀錄環境；所有迴圈用 `while read` / `for ... in`；不用關聯陣列；`shellcheck` 若安裝先跑                                                                                                   |
+| `grep -P` PCRE 在 macOS 預設 BSD grep 不支援               | engineer 用 `-P` → reviewer 跑會 unrecognized option                                                                  | T18/T19 一律用 `grep -rEn` (ERE) 或 `grep -rn` (BRE)；S6 baseline 命令 (audit L629-630) 用 ERE — pattern 必須能在 BSD grep 跑；AC-T18.10/T19.10 自查                                                                               |
+| audit pattern 與 S6 baseline 命令對不上                    | S4 列 220 處、S6 baseline 列 233 處 → 不一致，下游 ESLint baseline 起點數字錯                                         | T16/T17 spike 必須**逐字**比對 audit L629-630 的 grep 命令；T21 smoke 跑 S4 script 後再獨立跑 audit L629-630 命令，N/M 差距須 ≤ ±2 / ±5；任何差距須在 evidence 解釋（grep -rln file count vs grep -rEn line count 不同屬合理差距） |
+| Pattern false positive：`vi.mock('@/config/...')` 應排除   | audit L94-95 註明「`@/config/client/firebase-client` 是邊界外可保留」；script 若不排除 config，會把合理 mock 算成違規 | T16 spike 確認 mock-boundary script 只抓 `@/(repo\|service\|runtime)/`（明確 3 層），**不**抓 `@/config/` / `@/lib/` / `@/types/`；AC-T18.9 grep 自查；reviewer 必驗                                                               |
+| Pattern false negative：括號內換行 / 雙引號變體            | `vi.mock(\n  '@/repo/foo'\n, ...)` 多行寫法 grep 抓不到；單雙引號要同時抓                                             | T16 spike 接受此局限（grep 是行式工具，多行 import 抓不到屬已知缺口；S6 ESLint AST 規則會補完）；evidence 寫進 §2 S4 risk row                                                                                                      |
+| Pre-commit hook 失敗 → S4 自身 commit 被擋                 | T22 engineer 跑 hook commit 時，若 audit script 因 syntax error exit ≠ 0，整 chain 失敗 → S4 commit 被擋              | T18/T19 engineer 寫完先 `bash scripts/audit-X.sh; echo "exit: $?"` 必為 0；T20 改 husky 後 T21 用 dummy stage 跑 `bash .husky/pre-commit` 驗整 chain exit 0；hook 失敗時 fix issue → re-stage → 新 commit（**不要** `--amend`）    |
+| `chmod +x` 沒設 → script 不可執行                          | git `core.fileMode` 預設 true，新增 .sh 檔須 chmod +x 才會被 git 紀錄為 100755                                        | T18/T19 engineer 寫完跑 `chmod +x scripts/audit-*.sh`；T22 commit 後 `git ls-files --stage` 必為 100755（AC-T22.7）                                                                                                                |
+| Husky chain 順序變動造成既有測試 race                      | T20 engineer 誤把 audit 行插在 vitest 之前 → audit 大量 grep 用了 ≥ 1s 拖慢；或順序改變 hook 行為                     | T17 spike 凍結「audit 兩行追加在 vitest 之後」；T20 嚴格 append（diff 只有 + 行）；AC-T20.1 / T20.4 自查；reviewer `git diff .husky/pre-commit` 確認                                                                               |
+| S4 commit message Baseline 數字錯抄                        | T21 smoke 跑出 N=233、M=109，T22 抄成 N=234 等 → S6 baseline 起點錯                                                   | T22 engineer 從 T21 evidence 直接 copy（**禁口算**）；reviewer 重跑 audit script 驗證 commit message 中 N/M 數字 ±0（AC-T22.8）                                                                                                    |
+| Smoke test temp 檔殘留                                     | T21 故意建 temp test 檔驗 audit 抓得到，若忘了刪 → commit 會誤帶；最壞情況：temp 檔 vitest 跑時 fail 整個 hook        | T21 必跑 `rm tests/integration/_s4-smoke.test.jsx` + `git status --short \| grep "_s4-smoke"` 必 0 hit；T22 commit 前 `git status` 再驗一次（AC-T22.5 file count = 5）                                                             |
+| `chore(precommit): ...` commit message 不加 Co-Authored-By | user memory `feedback_no_coauthor`                                                                                    | T22 engineer commit 後 `git log -1 --format=%B \| grep -ic "Co-Authored-By"` 必為 0（AC-T22.6）；reviewer 重跑驗                                                                                                                   |
+| 主 agent 不下手                                            | S4 task 任何 Edit/Write/Bash 修改/驗證/commit 都派 subagent；主 agent 違規 = 繞過 user 規則                           | 主 agent 只 spawn subagent + 收 result + retry orchestration；主 agent 可 commit `docs(spec): ...` 類型的 tasks.md 變動（本次產出），**不可** commit `chore(precommit): ...` 類型的 S4 實作                                        |
+
+## S4 Tasks
+
+### T16 — Spike: audit-mock-boundary.sh design
+
+- **Status**: `[ ]`
+- **Files Read**: `.husky/pre-commit`、audit L77-111 / L607-612 / L626-633、`tests/integration/` 抽樣 5 檔（含 audit L83 列的 `notification-error.test.jsx`）
+- **Files Written**: 只動 `specs/026-tests-audit-report/handoff.md` §3 T16 row + §2 S4 子表（補風險），**不**寫 script 本身
+- **Audit**: P0-1 / Rule R8
+- **Dependencies**: 無
+
+**Engineer Action**：在 `handoff.md` §3 T16 evidence 寫五節：
+
+1. **Pattern 凍結**：明確寫出 grep pattern（必須抓什麼、必須排除什麼）
+   - 抓：`vi\.mock\(['"]@/(repo|service|runtime)/`（ERE，BSD grep 兼容）
+   - 不抓：`@/config/...`（邊界外，audit L94-95 列為合理 mock）
+   - 不抓：`@/lib/...`（compatibility facade，邊界依個案；不在 S4 scope）
+   - 不抓：`@/types/...`（純型別）
+2. **搜尋路徑 + include**：`tests/integration` 全層 + `--include='*.test.*'`
+3. **與 S6 命令對齊驗證**：跑 audit L629 命令
+   ```bash
+   grep -rln "vi.mock(['\"]@/\(repo\|service\|runtime\)/" tests/integration/ --include="*.test.*" | sort | wc -l
+   ```
+   取得 baseline N（純整數），記錄在 evidence
+4. **輸出格式設計**（與 T17 對齊）：
+   ```
+   AUDIT MOCK-BOUNDARY: <N> findings
+   <file>:<line>:<匹配行 trim 至 ≤ 80 字>
+   ...
+   (warn-only; exit 0)
+   ```
+   首行 `<N>` 是純數字，可用 `head -1 | awk '{print $3}'` 抽出
+5. **已知 false negative 清單**：多行 `vi.mock(\n '@/repo/foo'\n, ...)`（grep 行式工具的局限）。Evidence 註明 S6 ESLint AST 規則會補完
+
+**Acceptance Criteria**：
+
+- **AC-T16.1**: §3 T16 evidence 五節齊全；pattern 字串完整列出（含轉義）
+- **AC-T16.2**: 跑 audit L629 命令取得 mock-boundary baseline N（純數字），evidence 列出實測結果 + 命令完整字串
+- **AC-T16.3**: Pattern 排除清單明確列 `@/config`、`@/lib`、`@/types` 三層（理由各 1 句）
+- **AC-T16.4**: 輸出格式範本完整（首行 + finding 行 + 結尾），首行可用 `head -1 | awk '{print $3}'` 抽出純數字
+- **AC-T16.5**: §2 S4 子表至少補 1 條 mock-boundary 相關 risk（若無新增則明確聲明「無新增 risk」）
+
+**Engineer Evidence**（貼到 `handoff.md` §3 T16 row）：
+
+- Pattern 字串完整版（含轉義）
+- audit L629 命令完整字串 + 實測輸出（含 N 數字）
+- 輸出格式範本（5-10 行示例）
+- false negative / false positive 清單
+
+**Reviewer 驗證**：
+
+- 獨立重跑 audit L629 命令，比對 engineer N（容忍 ±0；不一致即 reject）
+- Read 抽樣 3 個 `tests/integration/**/*.test.*` 檔（建議含 audit L83 範例 `notification-error.test.jsx`、L84 範例 `PostFeed.test.jsx`），確認 engineer pattern 能抓到典型違規
+- 確認排除清單合理（@/config / @/lib / @/types 不被誤抓）
+- 在 §3 T16 reviewer 欄填名稱 + 時間戳 + ≥ 4 行驗證結論
+- Reviewer **不能** Edit script / handoff engineer 區
+
+---
+
+### T17 — Spike: audit-flaky-patterns.sh + .husky/pre-commit 整合 design
+
+- **Status**: `[ ]`
+- **Files Read**: `.husky/pre-commit`、audit L293-318 / L607-612 / L630、`tests/unit/runtime/useStravaConnection.test.jsx`（audit L311 範例）
+- **Files Written**: 只動 `specs/026-tests-audit-report/handoff.md` §3 T17 row + §2 S4 子表，**不**寫 script / 不改 husky
+- **Audit**: P1-4 / P1-5 / Rule R8
+- **Dependencies**: 無（與 T16 平行）
+
+**Engineer Action**：在 `handoff.md` §3 T17 evidence 寫六節：
+
+1. **Flaky pattern 凍結**：合一 ERE，三選一（`|` 交替）
+   - 子 pattern A：`toHaveBeenCalledTimes`（audit P1-4 109 處）
+   - 子 pattern B：`new Promise.*setTimeout`（audit L630 字串）
+   - 子 pattern C：`setTimeout.*Promise`（audit L315 順序變體）
+   - 合併：`toHaveBeenCalledTimes|new Promise.*setTimeout|setTimeout.*Promise`（ERE）
+2. **搜尋路徑 + include**：`tests` 全層 + `--include='*.test.*'`
+3. **與 S6 命令對齊驗證**：跑 audit L630 命令
+   ```bash
+   grep -rln "toHaveBeenCalledTimes\|new Promise.*setTimeout" tests --include="*.test.*" | sort | wc -l
+   ```
+   取得 baseline M（純整數）。注意：S4 多包了 `setTimeout.*Promise` 順序變體 → S4 跑 script 抽出的 M 可能略 ≥ audit L630 結果（容忍 ±5；evidence 解釋）
+4. **輸出格式**（與 T16 對齊）：
+   ```
+   AUDIT FLAKY-PATTERN: <M> findings
+   <file>:<line>:<匹配行 trim 至 ≤ 80 字>
+   ...
+   (warn-only; exit 0)
+   ```
+5. **`.husky/pre-commit` 整合設計**：
+   - `cat .husky/pre-commit` 結果（evidence 必貼，含 line count）
+   - 確認**沒有** `set -e`（grep `^set -e` count 必 0）
+   - Append 區塊位置：vitest 後（最末）
+   - Append 內容（草稿，T20 直接套用）：
+     ```bash
+     # S4 (warn-only): audit gates for mock-boundary + flaky patterns
+     # Refs: specs/026-tests-audit-report/tasks.md S4 / audit L607-612
+     bash scripts/audit-mock-boundary.sh || true
+     bash scripts/audit-flaky-patterns.sh || true
+     ```
+     `|| true` 雙保險：即使 script 自己 exit ≠ 0（理論上不會發生）也不擋 chain
+6. **Husky chain exit 0 風險評估**：列出至少 2 種失敗模式（script syntax error、script 不存在、chmod 沒設）+ 對應 mitigation（`|| true` + script 自己 exit 0 雙保險）
+
+**Acceptance Criteria**：
+
+- **AC-T17.1**: §3 T17 evidence 六節齊全
+- **AC-T17.2**: 跑 audit L630 命令取得 flaky baseline M（純數字），evidence 列出實測 + 命令完整字串
+- **AC-T17.3**: `.husky/pre-commit` 完整 cat 結果貼 evidence（含 wc -l），明確判斷有無 `set -e`
+- **AC-T17.4**: Append 區塊草稿用 `|| true` 雙保險（即使 script 自己 exit ≠ 0 也不擋）
+- **AC-T17.5**: 輸出格式範本（首行 + finding 行 + 結尾）— 與 T16 樣板對齊（同樣的 `AUDIT <CATEGORY>: <N> findings` 結構）
+- **AC-T17.6**: §2 S4 子表至少補 1 條 flaky-pattern 或 husky 整合相關 risk
+
+**Engineer Evidence**：
+
+- 合一 pattern 字串（ERE）+ 三子 pattern 各別說明
+- audit L630 命令完整字串 + 實測輸出（含 M 數字）
+- `.husky/pre-commit` 完整 cat 結果 + `wc -l`
+- Append 區塊草稿（含 `|| true`）
+- 輸出格式範本
+
+**Reviewer 驗證**：
+
+- 獨立重跑 audit L630 命令，比對 engineer M（容忍 ±0 — 因為跑的是 audit 原命令，不是 S4 擴充版）
+- Read `.husky/pre-commit` 確認 engineer cat 結果屬實
+- 確認 append 設計有雙保險（`|| true`）
+- 在 §3 T17 reviewer 欄填名稱 + 時間戳 + ≥ 4 行驗證結論
+- Reviewer **不能** Edit script / husky / handoff engineer 區（spike 階段不寫稿）
+
+---
+
+### T18 — Implement: scripts/audit-mock-boundary.sh
+
+- **Status**: `[ ]`
+- **Files Written**: `scripts/audit-mock-boundary.sh`（新檔）
+- **Files Read**: T16 evidence（pattern + 輸出格式）
+- **Audit**: P0-1 / Rule R8
+- **Dependencies**: T16 `[x]`
+
+**Engineer Action**：
+
+1. **Write 新檔** `scripts/audit-mock-boundary.sh`（建議內容）：
+
+   ```bash
+   #!/usr/bin/env bash
+   # S4 audit gate: warn (don't block) on integration tests that mock @/{repo,service,runtime}/.
+   # Refs: project-health/2026-04-29-tests-audit-report.md L77-111 (P0-1), L607-612 (S4)
+   # exit 0 (warn-only). S8 trigger: change to exit 1 after Wave 3 mock cleanup.
+
+   set +e
+
+   PATTERN='vi\.mock\(['\''"]@/(repo|service|runtime)/'
+   SEARCH_PATH='tests/integration'
+
+   if [ ! -d "$SEARCH_PATH" ]; then
+     echo "AUDIT MOCK-BOUNDARY: 0 findings (skipped: no $SEARCH_PATH)"
+     echo "(warn-only; exit 0)"
+     exit 0
+   fi
+
+   findings=$(grep -rEn "$PATTERN" "$SEARCH_PATH" --include='*.test.*' 2>/dev/null || true)
+   if [ -z "$findings" ]; then
+     count=0
+   else
+     count=$(printf '%s\n' "$findings" | grep -c .)
+   fi
+
+   echo "AUDIT MOCK-BOUNDARY: $count findings"
+   if [ "$count" -gt 0 ]; then
+     printf '%s\n' "$findings" | head -50
+     if [ "$count" -gt 50 ]; then
+       echo "... ($((count - 50)) more; run \`grep -rEn \"$PATTERN\" $SEARCH_PATH --include='*.test.*'\` for full list)"
+     fi
+   fi
+   echo "(warn-only; exit 0)"
+   exit 0
+   ```
+
+2. **Chmod**：`chmod +x scripts/audit-mock-boundary.sh`
+3. **本機 sanity**：
+   ```bash
+   bash --version | head -1   # 紀錄 bash 版本
+   bash scripts/audit-mock-boundary.sh > /tmp/s4-t18-sanity.log 2>&1
+   echo "exit: $?"            # 期望 exit: 0
+   head -1 /tmp/s4-t18-sanity.log   # 期望 AUDIT MOCK-BOUNDARY: <N> findings
+   ```
+4. **與 audit L629 對齊**：取 script `head -1` 的 N vs `grep -rln "vi.mock(['\"]@/\(repo\|service\|runtime\)/" tests/integration/ --include="*.test.*" | sort | wc -l`，差距 ≤ ±2（容忍：grep -rln 是 file count，script grep -rEn 是 line count；理論可能多 line 來自同檔多 mock）
+
+**Acceptance Criteria**：
+
+- **AC-T18.1**: 檔存在 `scripts/audit-mock-boundary.sh`，第一行為 shebang `#!/usr/bin/env bash`
+  ```bash
+  head -1 scripts/audit-mock-boundary.sh   # 期望 #!/usr/bin/env bash
+  ```
+- **AC-T18.2**: chmod +x 已設
+  ```bash
+  ls -l scripts/audit-mock-boundary.sh | awk '{print $1}'   # 期望 -rwxr-xr-x 或含 x
+  ```
+- **AC-T18.3**: 不開 `set -e`（不能因任何 grep 0-match 而 exit ≠ 0）
+  ```bash
+  grep -c "^set -e" scripts/audit-mock-boundary.sh   # 期望 0
+  ```
+- **AC-T18.4**: 末行 `exit 0`
+  ```bash
+  tail -1 scripts/audit-mock-boundary.sh | grep -c "^exit 0"   # 期望 1
+  ```
+- **AC-T18.5**: 跑 script 不爆 + exit 0
+  ```bash
+  bash scripts/audit-mock-boundary.sh > /tmp/s4-mock.log; echo "exit: $?"   # 期望 exit: 0
+  ```
+- **AC-T18.6**: stdout 首行符合 `AUDIT MOCK-BOUNDARY: <N> findings` 樣板（N 為純整數）
+  ```bash
+  head -1 /tmp/s4-mock.log | grep -E "^AUDIT MOCK-BOUNDARY: [0-9]+ findings"   # 期望 1 hit
+  ```
+- **AC-T18.7**: stdout 末行為 `(warn-only; exit 0)`
+  ```bash
+  tail -1 /tmp/s4-mock.log | grep -c "^(warn-only; exit 0)$"   # 期望 1
+  ```
+- **AC-T18.8**: N 數字與 audit L629 命令結果差距 ≤ ±2（記錄差距 + 理由）
+- **AC-T18.9**: pattern 不抓 `@/config` / `@/lib` / `@/types`
+  ```bash
+  bash scripts/audit-mock-boundary.sh | grep -E "@/config|@/lib|@/types" | wc -l   # 期望 0
+  ```
+- **AC-T18.10**: macOS BSD grep 兼容（不可用 `-P` PCRE）
+  ```bash
+  grep -cE "grep .*-P[ \"]|grep .*--perl-regexp" scripts/audit-mock-boundary.sh   # 期望 0
+  ```
+
+**Engineer Evidence**（貼到 `handoff.md` §3 T18 row）：
+
+- `cat scripts/audit-mock-boundary.sh`（完整內容）
+- `bash --version` 第一行
+- AC-T18.5 / T18.6 / T18.7 命令輸出
+- AC-T18.8 對齊驗證（兩個數字 + 差距理由）
+- AC-T18.9 / T18.10 grep 結果
+
+**Reviewer 驗證**：
+
+- Read `scripts/audit-mock-boundary.sh` 全檔
+- 重跑 AC-T18.2 ~ T18.10 全部命令
+- 抽樣 3 個被抓的 finding（如 audit L83 範例 `tests/integration/notifications/notification-error.test.jsx`），確認真的是違規（不是 false positive）
+- 在 §3 T18 reviewer 欄簽名 + 命令輸出 + ≥ 5 行驗證結論
+- Reviewer **不能** Edit script
+
+---
+
+### T19 — Implement: scripts/audit-flaky-patterns.sh
+
+- **Status**: `[ ]`
+- **Files Written**: `scripts/audit-flaky-patterns.sh`（新檔）
+- **Files Read**: T17 evidence（pattern + 輸出格式 + husky 設計）
+- **Audit**: P1-4 / P1-5 / Rule R8
+- **Dependencies**: T17 `[x]`（與 T18 平行）
+
+**Engineer Action**：
+
+1. **Write 新檔** `scripts/audit-flaky-patterns.sh`（建議內容）：
+
+   ```bash
+   #!/usr/bin/env bash
+   # S4 audit gate: warn (don't block) on flaky patterns.
+   # Refs: project-health/2026-04-29-tests-audit-report.md L293-318 (P1-4/P1-5), L607-612 (S4)
+   # P1-4: toHaveBeenCalledTimes(N) — non-deterministic call-count assertion
+   # P1-5: hard-coded setTimeout-based wait (any of: `new Promise...setTimeout`, `setTimeout...Promise`)
+   # exit 0 (warn-only). S8 trigger: change to exit 1 after Wave 3 flaky cleanup.
+
+   set +e
+
+   PATTERN='toHaveBeenCalledTimes|new Promise.*setTimeout|setTimeout.*Promise'
+   SEARCH_PATH='tests'
+
+   if [ ! -d "$SEARCH_PATH" ]; then
+     echo "AUDIT FLAKY-PATTERN: 0 findings (skipped: no $SEARCH_PATH)"
+     echo "(warn-only; exit 0)"
+     exit 0
+   fi
+
+   findings=$(grep -rEn "$PATTERN" "$SEARCH_PATH" --include='*.test.*' 2>/dev/null || true)
+   if [ -z "$findings" ]; then
+     count=0
+   else
+     count=$(printf '%s\n' "$findings" | grep -c .)
+   fi
+
+   echo "AUDIT FLAKY-PATTERN: $count findings"
+   if [ "$count" -gt 0 ]; then
+     printf '%s\n' "$findings" | head -50
+     if [ "$count" -gt 50 ]; then
+       echo "... ($((count - 50)) more; run \`grep -rEn \"$PATTERN\" $SEARCH_PATH --include='*.test.*'\` for full list)"
+     fi
+   fi
+   echo "(warn-only; exit 0)"
+   exit 0
+   ```
+
+2. **Chmod**：`chmod +x scripts/audit-flaky-patterns.sh`
+3. **本機 sanity**：同 T18 結構，但 log 寫到 `/tmp/s4-t19-sanity.log`
+4. **與 audit L630 對齊**：取 script `head -1` 的 M vs `grep -rln "toHaveBeenCalledTimes\|new Promise.*setTimeout" tests --include="*.test.*" | sort | wc -l`，差距 ≤ ±5（容忍：S4 多包了 `setTimeout.*Promise` 順序變體 + line count vs file count）
+
+**Acceptance Criteria**：
+
+- **AC-T19.1**: shebang 為 `#!/usr/bin/env bash`（同 AC-T18.1）
+- **AC-T19.2**: chmod +x 已設（同 AC-T18.2）
+- **AC-T19.3**: 不開 `set -e`（同 AC-T18.3）
+- **AC-T19.4**: 末行 `exit 0`（同 AC-T18.4）
+- **AC-T19.5**: 跑 script 不爆 + exit 0
+  ```bash
+  bash scripts/audit-flaky-patterns.sh > /tmp/s4-flaky.log; echo "exit: $?"   # exit: 0
+  ```
+- **AC-T19.6**: stdout 首行符合 `AUDIT FLAKY-PATTERN: <M> findings`
+  ```bash
+  head -1 /tmp/s4-flaky.log | grep -E "^AUDIT FLAKY-PATTERN: [0-9]+ findings"   # 1 hit
+  ```
+- **AC-T19.7**: stdout 末行為 `(warn-only; exit 0)`（同 AC-T18.7）
+- **AC-T19.8**: M 數字與 audit L630 命令結果差距 ≤ ±5（記錄差距 + 理由）
+- **AC-T19.9**: pattern 涵蓋兩個 anti-pattern：`toHaveBeenCalledTimes` 與 `setTimeout`
+  ```bash
+  grep -c "toHaveBeenCalledTimes" scripts/audit-flaky-patterns.sh   # ≥ 1
+  grep -c "setTimeout" scripts/audit-flaky-patterns.sh   # ≥ 1
+  ```
+- **AC-T19.10**: macOS BSD grep 兼容（同 AC-T18.10）
+
+**Engineer Evidence**：
+
+- `cat scripts/audit-flaky-patterns.sh`（完整內容）
+- AC-T19.5 / T19.6 / T19.7 命令輸出
+- AC-T19.8 對齊驗證（兩個數字 + 差距理由）
+- AC-T19.9 / T19.10 grep 結果
+- 抽樣 1 個 finding（建議 audit L311 範例 `useStravaConnection.test.jsx`），確認 script 抓到的 line 是真的 anti-pattern
+
+**Reviewer 驗證**：
+
+- Read `scripts/audit-flaky-patterns.sh` 全檔
+- 重跑 AC-T19.2 ~ T19.10
+- 抽樣 3 個 finding（建議含 audit L295 範例 `useStravaActivities.test.jsx:268`、L311 `useStravaConnection.test.jsx:75-96`），確認真的是 anti-pattern
+- 在 §3 T19 reviewer 欄簽名 + 命令輸出 + ≥ 5 行驗證結論
+- Reviewer **不能** Edit script
+
+---
+
+### T20 — Implement: .husky/pre-commit append two audit gates
+
+- **Status**: `[ ]`
+- **Files Written**: `.husky/pre-commit`（修改，**只 append，不改既有 5 行**）
+- **Files Read**: T17 evidence（append 區塊草稿）、T18/T19 evidence（確認兩 script 已存在 + 可執行）
+- **Audit**: P0-1 / P1-4 / P1-5 / Rule R8
+- **Dependencies**: T18 `[x]` + T19 `[x]`
+
+**Engineer Action**：
+
+1. **Edit** `.husky/pre-commit`，末尾追加（保留所有既有行）：
+   ```bash
+   # S4 (warn-only): audit gates for mock-boundary + flaky patterns
+   # Refs: specs/026-tests-audit-report/tasks.md S4 / audit L607-612
+   bash scripts/audit-mock-boundary.sh || true
+   bash scripts/audit-flaky-patterns.sh || true
+   ```
+2. **驗證 append-only**：
+   ```bash
+   git diff .husky/pre-commit | grep -c "^-[^-]"   # 期望 0（- 開頭但不是 ---）
+   git diff .husky/pre-commit | grep -c "^+[^+]"   # 期望 ≥ 4
+   ```
+3. **Manual chain dry-run**（直接跑 hook 腳本驗證 chain 仍綠 — **注意：dry-run 會跑 lint/type-check/depcruise/spellcheck/vitest，需數分鐘**）：
+   ```bash
+   bash .husky/pre-commit > /tmp/s4-hook-dryrun.log 2>&1; echo "exit: $?"
+   ```
+   exit 0；stdout 末段必含兩 `AUDIT *: <N> findings` 行
+4. **不**動其他 husky 檔（`.husky/pre-push` 不變）
+
+**Acceptance Criteria**：
+
+- **AC-T20.1**: `.husky/pre-commit` 只 append，0 刪改
+  ```bash
+  git diff .husky/pre-commit | grep -c "^-[^-]"   # 期望 0
+  ```
+- **AC-T20.2**: append 區塊含兩個 `bash scripts/audit-*.sh || true`
+  ```bash
+  grep -c "audit-mock-boundary.sh" .husky/pre-commit   # 期望 1
+  grep -c "audit-flaky-patterns.sh" .husky/pre-commit   # 期望 1
+  grep -cE "\|\| true" .husky/pre-commit   # 期望 ≥ 2
+  ```
+- **AC-T20.3**: 既有 5 行（lint / type-check / depcruise / spellcheck / vitest）0 改動
+  ```bash
+  for cmd in "lint -- --max-warnings 0" "type-check" "depcruise" "spellcheck" "vitest run --project=browser"; do
+    grep -qF "$cmd" .husky/pre-commit && echo "$cmd OK" || echo "$cmd MISSING"
+  done
+  ```
+  五行皆 OK
+- **AC-T20.4**: 順序：兩 audit 行在 vitest 之後
+  ```bash
+  awk '/vitest/{found=1} found && /audit-mock-boundary/{print "OK"; exit}' .husky/pre-commit   # 期望 OK
+  ```
+- **AC-T20.5**: Manual chain dry-run exit 0
+  ```bash
+  bash .husky/pre-commit > /tmp/s4-hook-dryrun.log 2>&1; echo "exit: $?"   # exit: 0
+  ```
+- **AC-T20.6**: dry-run stdout 含兩個 audit 結尾標記
+  ```bash
+  grep -c "^AUDIT MOCK-BOUNDARY:" /tmp/s4-hook-dryrun.log   # 期望 1
+  grep -c "^AUDIT FLAKY-PATTERN:" /tmp/s4-hook-dryrun.log   # 期望 1
+  ```
+- **AC-T20.7**: 沒誤動 `.husky/pre-push`
+  ```bash
+  git diff .husky/pre-push | wc -l   # 期望 0
+  ```
+
+**Engineer Evidence**：
+
+- 完整 `git diff .husky/pre-commit`（必須只有 + 行）
+- AC-T20.3 五行自查迴圈輸出
+- AC-T20.5 dry-run exit code + log 末 30 行
+- AC-T20.6 兩個 audit 標記行（從 dry-run log 抽出）
+
+**Reviewer 驗證**：
+
+- Read `.husky/pre-commit` 全檔
+- 重跑 AC-T20.1 ~ T20.7
+- 親自跑一次 `bash .husky/pre-commit`（reviewer 環境也須跑通；接受跑 5-10 分鐘）
+- 確認 dry-run 輸出順序：lint → type-check → depcruise → spellcheck → vitest → audit-mock-boundary → audit-flaky-patterns
+- 在 §3 T20 reviewer 欄簽名 + 命令輸出 + ≥ 5 行驗證結論
+
+---
+
+### T21 — Integration smoke test: stage dummy + run hook + capture baseline
+
+- **Status**: `[ ]`
+- **Files Written**: 0（純跑 + 紀錄 evidence；任何 stash/temp 檔必須 cleanup）
+- **Files Read**: T18/T19/T20 改動成果
+- **Audit**: P0-1 / P1-4 / P1-5 / Rule R8
+- **Dependencies**: T20 `[x]`
+
+**Engineer Action**：
+
+1. **環境清理 + 自查**：
+   ```bash
+   git status --short      # 必須 clean 或只有 handoff/tasks.md modified
+   git stash list | wc -l  # 紀錄當前 stash 數，T21 結束須相同
+   ```
+2. **跑兩 audit script 取 baseline 數字**（warn-only mode）：
+   ```bash
+   bash scripts/audit-mock-boundary.sh > /tmp/s4-mock-baseline.log 2>&1
+   bash scripts/audit-flaky-patterns.sh > /tmp/s4-flaky-baseline.log 2>&1
+   N=$(head -1 /tmp/s4-mock-baseline.log | awk '{print $3}')
+   M=$(head -1 /tmp/s4-flaky-baseline.log | awk '{print $3}')
+   echo "mock-boundary baseline: N=$N"
+   echo "flaky-pattern baseline: M=$M"
+   ```
+3. **跑完整 husky chain dry-run**（不 commit）：
+   ```bash
+   bash .husky/pre-commit > /tmp/s4-hook-full.log 2>&1
+   echo "hook exit: $?"   # 期望 0
+   tail -20 /tmp/s4-hook-full.log
+   ```
+4. **Smoke test：故意製造違規**（驗證 audit 抓得到新增 + 仍不擋 commit）：
+   - 建立 temp test 檔 `tests/integration/_s4-smoke.test.jsx`：
+     ```jsx
+     import { vi, test, expect } from 'vitest';
+     vi.mock('@/repo/event-repo', () => ({}));
+     test('s4 smoke', () => {
+       const fn = vi.fn();
+       expect(fn).toHaveBeenCalledTimes(0);
+     });
+     ```
+   - 跑 audit：
+     ```bash
+     bash scripts/audit-mock-boundary.sh | head -1   # N 應 = baseline + 1
+     bash scripts/audit-flaky-patterns.sh | head -1  # M 應 = baseline + 1
+     bash scripts/audit-mock-boundary.sh; echo "exit: $?"   # 期望 exit: 0（仍 warn-only）
+     ```
+   - **必刪 temp 檔**：
+     ```bash
+     rm tests/integration/_s4-smoke.test.jsx
+     git status --short | grep "_s4-smoke" | wc -l   # 期望 0
+     ```
+5. **同步 baseline 數字到 handoff §3 T21 evidence + §0 / §1**（T22 commit message 從 T21 evidence copy）
+
+**Acceptance Criteria**：
+
+- **AC-T21.1**: baseline N（mock-boundary）抽出，純整數 ≥ 0
+- **AC-T21.2**: baseline M（flaky-pattern）抽出，純整數 ≥ 0
+- **AC-T21.3**: husky chain full dry-run exit 0；末段含兩個 `AUDIT *: <N> findings` 標記
+- **AC-T21.4**: smoke test：加 temp 檔後 N+1 / M+1（兩 audit 都偵測到新增違規）
+- **AC-T21.5**: 即使 temp 檔在場，audit script 仍 exit 0（warn-only 紀律驗證）
+- **AC-T21.6**: temp 檔已刪除；`git status --short | grep "_s4-smoke" | wc -l` = 0；`git stash list | wc -l` 數量 vs T21 開始時相同
+- **AC-T21.7**: Baseline N/M 數字與 audit L629/L630 命令結果差距 ≤ ±2 / ±5（與 T18/T19 已驗的差距一致；若 T21 重抽不一致 → reject）
+
+**Engineer Evidence**（貼到 `handoff.md` §3 T21 row）：
+
+- 環境自查（git status / stash list 起點）
+- baseline N、M（純數字 + log 後 5 行佐證）
+- husky chain full dry-run log 末 20 行
+- smoke test：temp 檔內容 + 加溫前後 N/M 差距、cleanup 後 git status
+- 結束時 git status / stash list（vs 起點完全相同）
+
+**Reviewer 驗證**：
+
+- 獨立跑 baseline 兩 script，比對 engineer N/M（容忍 ±0；不一致即 reject）
+- 親跑 `bash .husky/pre-commit` 驗 dry-run exit 0（接受 5-10 分鐘）
+- Read engineer smoke test 步驟 → 評估 temp 檔是否合理（不能誤建在 src/ 或實際 spec 路徑；檔名 `_` 開頭表示暫用）
+- 確認 cleanup：`git status --short`、`tests/integration/` 無 `_s4-smoke` 殘檔
+- 在 §3 T21 reviewer 欄簽名 + 命令輸出 + ≥ 5 行驗證結論
+
+---
+
+### T22 — Commit + handoff sync (S4)
+
+- **Status**: `[ ]`
+- **Files Written**:
+  - `specs/026-tests-audit-report/handoff.md` §0 / §1 / §3（T22 self-evidence）/ §5 完整更新
+  - `specs/026-tests-audit-report/tasks.md`（T16-T22 status `[ ]` → `[x]`）
+- **Files committed**: `scripts/audit-mock-boundary.sh` + `scripts/audit-flaky-patterns.sh` + `.husky/pre-commit` + `specs/026-tests-audit-report/handoff.md` + `specs/026-tests-audit-report/tasks.md`
+- **Dependencies**: T16-T21 全部 `[x]`
+
+**Engineer Action**：
+
+1. 確認 §3 T16-T21 evidence + reviewer signature 完整
+2. 一次性重跑全 acceptance（見 AC-T22.2）
+3. 更新 `handoff.md`：
+   - §0：T16-T22 全填 `done`、Last commit (S4) 留待 commit 後填
+   - §1：指向 S5（`firestore rules infra + 5 critical paths`，audit L614-620）
+   - §2：S4 子表所有 risk row 留存（不刪），補 T18-T21 實際遭遇紀錄（若有）
+   - §3 T22 row engineer evidence 填寫
+   - §5：補 bash 版本（T18/T19 已記錄）
+4. 更新 `tasks.md`：T16-T22 Status `[ ]` → `[x]`
+5. **Commit 前 mandatory**：手動跑完整 pre-commit gate：
+   ```bash
+   npm run lint -- --max-warnings 0 \
+     && npm run type-check \
+     && npm run depcruise \
+     && npm run spellcheck \
+     && npx vitest run --project=browser \
+     && bash scripts/audit-mock-boundary.sh \
+     && bash scripts/audit-flaky-patterns.sh
+   ```
+   全綠才繼續（注意：兩 audit script 是 warn-only exit 0，永遠不會擋；只是順便驗 stdout 格式）
+6. **明確列檔** stage（**禁** `git add -A`）：
+   ```bash
+   git add scripts/audit-mock-boundary.sh \
+           scripts/audit-flaky-patterns.sh \
+           .husky/pre-commit \
+           specs/026-tests-audit-report/handoff.md \
+           specs/026-tests-audit-report/tasks.md
+   ```
+7. **`git status` 確認沒誤 stage temp 檔**（T21 smoke 已 cleanup，但仍須驗）：
+   ```bash
+   git status --short | grep -iE "_s4-smoke|/tmp/s4-" | wc -l   # 期望 0
+   ```
+8. `git commit`（不 push）；hook 會跑既有 5 項 + 兩個 audit warn
+
+**Acceptance Criteria**：
+
+- **AC-T22.1**: §3 T16-T21 六 row 都 `rev-pass` + 雙簽名；`tasks.md` T16-T22 全 `[x]`
+- **AC-T22.2**: 一次性重跑：
+  ```bash
+  # 兩 script 存在 + 可執行
+  ls -l scripts/audit-mock-boundary.sh scripts/audit-flaky-patterns.sh
+  # husky 已含兩行 audit
+  grep -cE "audit-mock-boundary|audit-flaky-patterns" .husky/pre-commit   # ≥ 2
+  # Quality gate
+  npm run lint -- --max-warnings 0 2>&1 | tail -5
+  npm run type-check 2>&1 | tail -5
+  npm run depcruise 2>&1 | tail -3
+  npm run spellcheck 2>&1 | tail -5
+  npx vitest run --project=browser 2>&1 | tail -5
+  # Audit warn-only sanity
+  bash scripts/audit-mock-boundary.sh; echo "exit: $?"   # exit: 0
+  bash scripts/audit-flaky-patterns.sh; echo "exit: $?"   # exit: 0
+  ```
+  全部 exit 0 + grep 全有 hit
+- **AC-T22.3**: commit message 格式：
+
+  ```
+  chore(precommit): mock-boundary + flaky grep gates (warn-only)
+
+  - scripts/audit-mock-boundary.sh: warn on tests/integration/** that vi.mock('@/{repo,service,runtime}/...')
+  - scripts/audit-flaky-patterns.sh: warn on toHaveBeenCalledTimes / setTimeout+Promise patterns
+  - .husky/pre-commit: append both scripts (exit 0; warn-only — does not block commit)
+  - 對應 audit P0-1 / P1-4 / P1-5（防新增訊號，不擋 baseline）
+
+  Baseline (S4 grep): mock-boundary: <N>, flaky-pattern: <M>
+  → S6 ESLint ignores baseline 將以此為起點；S8 觸發型升級時改 exit 1 真擋
+
+  Refs: project-health/2026-04-29-tests-audit-report.md L77-111, L293-318, L607-612
+  ```
+
+  - Conventional commits `chore(precommit):`
+  - **N / M 數字必須與 T21 evidence 一致**（直接 copy；不口算）
+  - **不加 `Co-Authored-By`**
+
+- **AC-T22.4**:
+  - branch = `026-tests-audit-report`
+  - **不 push** 到遠端
+  - pre-commit hook 全綠（含兩個 audit warn 行 exit 0）
+- **AC-T22.5**: `git show <hash> --stat` 顯示 **5 個檔**：
+  - `scripts/audit-mock-boundary.sh`（new file mode 100755）
+  - `scripts/audit-flaky-patterns.sh`（new file mode 100755）
+  - `.husky/pre-commit`
+  - `specs/026-tests-audit-report/handoff.md`
+  - `specs/026-tests-audit-report/tasks.md`
+  - **不**含 `tests/integration/_s4-smoke*` / `/tmp/*` / log 檔
+- **AC-T22.6**: `git log -1 --format=%B | grep -ic "Co-Authored-By"` = 0
+- **AC-T22.7**: 兩 script 在 git index 為 100755（chmod +x 已紀錄）
+  ```bash
+  git ls-files --stage scripts/audit-mock-boundary.sh scripts/audit-flaky-patterns.sh | awk '{print $1}'
+  # 期望兩行皆為 100755
+  ```
+- **AC-T22.8**: commit message 中 N/M 數字與 T21 evidence 完全一致
+  ```bash
+  N_in_msg=$(git log -1 --format=%B | grep -oE "mock-boundary: [0-9]+" | head -1 | awk '{print $2}')
+  M_in_msg=$(git log -1 --format=%B | grep -oE "flaky-pattern: [0-9]+" | head -1 | awk '{print $2}')
+  echo "msg N=$N_in_msg, msg M=$M_in_msg"
+  # 須與 handoff §3 T21 evidence 中 N、M 完全相等
+  ```
+
+**Engineer Evidence**：
+
+- AC-T22.2 全部命令輸出
+- `git log -1 --format=fuller`
+- `git show <hash> --stat`
+- AC-T22.6 / T22.7 / T22.8 命令結果
+- 自評 T16-T21 全部 AC 逐條對應 commit 內容
+
+**Reviewer 驗證**：
+
+- 重跑 AC-T22.2 全部命令
+- `git show <hash> --stat` 確認 5 檔 + 模式（含兩個 100755）
+- `git show <hash>` 看完整 commit message + diff
+- AC-T22.6 / T22.7 / T22.8 grep 與 N/M 對齊
+- `git log origin/026-tests-audit-report..HEAD 2>&1` 應顯示 ≥ 1 commit ahead（**未** push）
+- Read `handoff.md` 確認 §0 / §1 / §2 S4 子表 / §3 T16-T22 / §5 完整
+- Read `tasks.md` 確認 T16-T22 全 `[x]`
+- 親跑 `bash .husky/pre-commit` 驗 hook 仍綠（接受 5-10 分鐘）
+- 在 §3 T22 reviewer 欄簽名 + 命令輸出 + ≥ 5 行驗證結論
+
+---
+
 ## Reviewer 認證標準（適用所有 task）
 
 | 必做                                                                 | 不能只做                         |
@@ -1152,35 +1870,49 @@ Wave 6 (序列):    T15-eng → T15-rev   (整合驗證 + commit + handoff sync)
 | T13  | S3    | general-purpose        | general-purpose        | S3-3 | (none, 序列)     |
 | T14  | S3    | general-purpose        | general-purpose        | S3-4 | (none, 序列)     |
 | T15  | S3    | general-purpose        | general-purpose        | S3-5 | (none, 序列)     |
+| T16  | S4    | general-purpose        | general-purpose        | S4-1 | T17              |
+| T17  | S4    | general-purpose        | general-purpose        | S4-1 | T16              |
+| T18  | S4    | general-purpose        | general-purpose        | S4-2 | T19              |
+| T19  | S4    | general-purpose        | general-purpose        | S4-2 | T18              |
+| T20  | S4    | general-purpose        | general-purpose        | S4-3 | (none, 序列)     |
+| T21  | S4    | general-purpose        | general-purpose        | S4-4 | (none, 序列)     |
+| T22  | S4    | general-purpose        | general-purpose        | S4-5 | (none, 序列)     |
 
 ## Subagent 通用須知
 
 - **必看檔案**（spawn 時 attach 路徑）：
   - 本檔 `specs/026-tests-audit-report/tasks.md`
-  - `specs/026-tests-audit-report/handoff.md`（特別是 §2 Must-Read Risks，含 S1 / S2 / S3 子表）
+  - `specs/026-tests-audit-report/handoff.md`（特別是 §2 Must-Read Risks，含 S1 / S2 / S3 / S4 子表）
   - `project-health/2026-04-29-tests-audit-report.md`：
     - **S1 (T01-T05)**：L324-360 + L586-592
     - **S2 (T06-T09)**：L77-95 / L113-141 / L168-208 / L294-318 / L545-551 / L594-598 / L641-657
     - **S3 (T10-T15)**：L170-208 + L437-443 + L600-606 + L665-668
+    - **S4 (T16-T22)**：L77-111 + L293-318 + L538-544 + L607-612 + L626-633 + L658-664
   - 對應的目標檔本身：
     - S1: 4 個 config 檔
     - S2: `.github/pull_request_template.md` + 必要時 `cspell.json`
     - S3: `vitest.config.mjs` + `docs/QUALITY_SCORE.md` + 必要時 `cspell.json`
+    - S4: `scripts/audit-mock-boundary.sh`（新）+ `scripts/audit-flaky-patterns.sh`（新）+ `.husky/pre-commit`
 
 - **必要工具**：Read、Edit、Bash（跑驗證）、Write（engineer 建新檔用，reviewer 不該 Write 任何受審檔）
 
 - **禁區**：
-  - Reviewer 不能 Edit/Write 受審檔（S1: config 檔；S2: `.github/`、`cspell.json`；S3: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`cspell.json`、`handoff.md` engineer evidence 區）
-  - Engineer 不能改 task scope 外的檔案（例：T01 不能動 playwright config；T07 不能動 cspell.json，加詞屬於 T08 範圍；T12 不能動 threshold；T14 不能改 service/repo/runtime/lib/config 既有 V8 Cov 數字）
+  - Reviewer 不能 Edit/Write 受審檔（S1: config 檔；S2: `.github/`、`cspell.json`；S3: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`cspell.json`、`handoff.md` engineer evidence 區；S4: `scripts/audit-*.sh`、`.husky/pre-commit`、`handoff.md` engineer evidence 區）
+  - Engineer 不能改 task scope 外的檔案（例：T01 不能動 playwright config；T07 不能動 cspell.json，加詞屬於 T08 範圍；T12 不能動 threshold；T14 不能改 service/repo/runtime/lib/config 既有 V8 Cov 數字；T16/T17 spike 不能寫 script 或改 husky；T18/T19 不能動 husky；T20 不能改 script；T20 對 husky 必須只 append、不刪改既有 5 行）
   - 任何 subagent 不能 push remote、不能開 PR、不能改 git config
-  - **Commit-only task**：S1 只有 T05 engineer 可 commit；S2 只有 T09 engineer 可 commit；S3 只有 T15 engineer 可 commit；其他 task engineer 只改檔不 commit
+  - **Commit-only task**：S1 只有 T05 engineer 可 commit；S2 只有 T09 engineer 可 commit；S3 只有 T15 engineer 可 commit；S4 只有 T22 engineer 可 commit；其他 task engineer 只改檔不 commit
   - **Threshold 紀律（S3 專屬）**：T13 發現 70 threshold 跌破時**禁止**自行降 threshold，必須 escalate（標 `[!]`）；T12-T14 任何 task **禁止**設 per-directory threshold（屬 S9 觸發型）
   - **Coverage artifact 紀律（S3 專屬）**：`coverage/` 為 gitignored，T15 commit 必須 `git status` 確認該目錄為 untracked，**禁** `git add -A` / `git add coverage`
+  - **Warn-only 紀律（S4 專屬）**：T18/T19 script 末行必須 `exit 0`，**禁止**設 `exit 1` / `exit ${count}` 等真擋邏輯；T20 husky append 行必加 `|| true` 雙保險；T21 smoke test 即使 temp 檔在場 audit script 仍須 exit 0；S8 升級到 exit 1 屬觸發型，不在本 S4 scope
+  - **Pattern 對齊紀律（S4 專屬）**：S4 兩 script 的 grep pattern 必須與 audit L626-633 / L629-630 給定的 S6 baseline 命令對齊，**禁止**「優化」pattern（含改 ERE/BRE、加排除、調語意）；對齊驗證在 T16/T17 spike 階段凍結，T18-T22 不可重新設計
+  - **Smoke temp 檔紀律（S4 專屬）**：T21 故意建的 `tests/integration/_s4-smoke.test.jsx`（或同等 temp 檔）**必須在 T21 內 cleanup**；T22 commit 前再次驗 `git status --short | grep "_s4-smoke" | wc -l = 0`；commit 含 5 檔（不含任何 temp / log）
 
 - **Pre-commit hook 注意**：
   - `.husky/pre-commit` 會跑：lint --max-warnings 0、type-check、depcruise、spellcheck、vitest browser（**不**跑 coverage）
-  - T05（S1）/ T09（S2）/ T15（S3）engineer 在 `git commit` 前先手動跑一次完整 gate，避免 hook 失敗
+  - **S4 後**（T20 commit 起）：append 兩 audit warn 行（mock-boundary + flaky-pattern），warn-only `|| true`，不擋 chain
+  - T05（S1）/ T09（S2）/ T15（S3）/ T22（S4）engineer 在 `git commit` 前先手動跑一次完整 gate，避免 hook 失敗
   - **S3 額外**：T15 commit 前還要手動跑 `npm run test:coverage`（hook 不跑，但 CI 會跑；先確認本地通過）
+  - **S4 額外**：T22 commit 前手動跑兩 audit script + 確認 stdout 首行符合 `AUDIT <CATEGORY>: <N> findings` 樣板
   - hook 失敗時：fix issue → re-stage → 新 commit（**不要** `--amend`）
 
 - **回報格式**（spawn 結束時的 result）：
@@ -1191,14 +1923,14 @@ Wave 6 (序列):    T15-eng → T15-rev   (整合驗證 + commit + handoff sync)
 
 ## 後續 commit（不在本檔 scope）
 
-本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，pending）。後續：
+本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，已 commit `5f09820`）、S4（T16-T22，pending）。後續：
 
 | Commit | Goal                                     | Spec            |
 | ------ | ---------------------------------------- | --------------- |
 | S1     | align test config defaults               | ✅ 本檔 T01-T05 |
 | S2     | PR template + audit checkbox             | ✅ 本檔 T06-T09 |
 | S3     | coverage include + baseline              | ✅ 本檔 T10-T15 |
-| S4     | pre-commit grep gate (warn-only)         | (TBD)           |
+| S4     | pre-commit grep gate (warn-only)         | ✅ 本檔 T16-T22 |
 | S5     | firestore rules infra + 5 critical specs | (TBD)           |
 | S6     | ESLint mock-boundary + flaky rules       | (TBD)           |
 | S7-S10 | (見 audit report §12)                    | (TBD)           |
