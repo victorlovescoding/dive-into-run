@@ -1913,7 +1913,7 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 
 ### T23 — Spike: Firestore rules semantics + test matrix
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `specs/026-tests-audit-report/handoff.md` §2 S5 risk 子表 + §3 T23 row，**不**改 code/test/workflow
 - **Files Read**: `firestore.rules`、audit L113-141 / L538-544 / L614-620、`vitest.config.mjs`、`vitest.setup.server.js`、`package.json`
 - **Audit**: P0-2 / R9
@@ -1947,7 +1947,7 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 
 ### T24 — Install: @firebase/rules-unit-testing dev dependency
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `package.json`、`package-lock.json`、`specs/026-tests-audit-report/handoff.md` §3 T24 row
 - **Files Read**: `package.json`、`package-lock.json`
 - **Audit**: P0-2 / R9
@@ -1990,7 +1990,7 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 
 ### T25 — Infra proof: shared rules helper + users.rules.test.js
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**:
   - `tests/server/rules/_helpers/rules-test-env.js`
   - `tests/server/rules/users.rules.test.js`
@@ -2046,7 +2046,7 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 
 ### T26 — Critical path: posts likes collectionGroup rules
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `tests/server/rules/posts.rules.test.js`、`handoff.md` §3 T26 row
 - **Audit**: P0-2 critical path 1 / rules L80-L84
 - **Dependencies**: T25 `[x]`
@@ -2089,7 +2089,7 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 
 ### T27 — Critical path: Strava tokens / connections / activities read-only
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `tests/server/rules/strava.rules.test.js`、`handoff.md` §3 T27 row
 - **Audit**: P0-2 critical path 2 / rules L108-L123
 - **Dependencies**: T25 `[x]`
@@ -2129,7 +2129,7 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 
 ### T28 — Critical paths: events seat consistency + participants cascade
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `tests/server/rules/events.rules.test.js`、`handoff.md` §3 T28 row
 - **Audit**: P0-2 critical paths 3-4 / rules L150-L185
 - **Dependencies**: T25 `[x]`
@@ -2179,7 +2179,7 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 
 ### T29 — Critical path: notification recipient / read / update rules
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `tests/server/rules/notifications.rules.test.js`、`handoff.md` §3 T29 row
 - **Audit**: P0-2 critical path 5 / rules L233-L257
 - **Dependencies**: T25 `[x]`
@@ -2226,7 +2226,7 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 
 ### T30 — Workflow: firestore-rules-gate.yml paths-filter
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `.github/workflows/firestore-rules-gate.yml`、`handoff.md` §3 T30 row
 - **Audit**: R9 / audit L538-L544 / L614-L620
 - **Dependencies**: T24 `[x]`
@@ -2277,7 +2277,7 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 
 ### T31 — S5 integration verification + commit
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**:
   - `specs/026-tests-audit-report/handoff.md` §0 / §1 / §2 S5 risk / §3 T31 evidence / §5
   - `specs/026-tests-audit-report/tasks.md`（T23-T31 status `[ ]` → `[x]`）
