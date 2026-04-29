@@ -145,6 +145,10 @@
 
 ### CI Fix / T38 prerequisite（2026-04-30）
 
+- PR #25 Firestore Rules Gate run `25122000684` failed at `Run Firestore rules tests` with `Cannot find module @rollup/rollup-linux-x64-gnu`.
+- Root cause: `.github/workflows/firestore-rules-gate.yml` already runs `npm ci`, but `package-lock.json` only had `node_modules/@rollup/rollup-darwin-arm64`; the Linux x64 glibc Rollup optional package was referenced under `rollup.optionalDependencies` but missing as a concrete lockfile package entry, so Linux CI could not install the native Rollup package reliably.
+- Fix: add the missing `node_modules/@rollup/rollup-linux-x64-gnu` optional package entry to `package-lock.json`; do not change E2E tests, `firestore.rules`, or workflow semantics.
+- Verification: `npm run test:server -- tests/server/rules/users.rules.test.js` -> 1 file / 8 tests passed; `/usr/bin/env npm_config_platform=linux npm_config_arch=x64 npm_config_libc=glibc npm ci --dry-run --ignore-scripts` -> includes `add @rollup/rollup-linux-x64-gnu 4.57.0`; `npm run test:server -- tests/server/rules` -> 5 files / 58 tests passed.
 - PR #25 CI `e2e` job `73625784425` failed in vanilla phase on `comment-notifications.spec.js` Scenario 2/3/4 beforeAll with `EMAIL_EXISTS` from `createTestUser()` for fixed `cnotif-user-a/b@example.com`.
 - Root cause: the spec reused the same fixed Auth Emulator emails across four scenario-level `beforeAll` blocks; retry or prior scenario residue could make later scenario user creation collide even when each block attempted cleanup.
 - Fix: isolate the comment-notification Auth users per scenario with the existing E2E `Date.now()` uniqueness pattern; no shared helper abstraction added, and no workflow / Firestore rules changes.
