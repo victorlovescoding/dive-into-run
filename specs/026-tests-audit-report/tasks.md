@@ -52,7 +52,7 @@ Wave 3 (序列):    T05-eng → T05-rev
 
 ### T01 — vitest 預設 project（package.json script 路線）
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **File**: `package.json`
 - **Audit**: P2-1 / Rule R3
 - **Change**: `L13: "test": "vitest" → "test": "vitest --project=browser"`
@@ -87,7 +87,7 @@ Wave 3 (序列):    T05-eng → T05-rev
 
 ### T02 — run-all-e2e.sh project ID
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **File**: `scripts/run-all-e2e.sh`
 - **Audit**: P2-3 / Rule R4
 - **Change**:
@@ -128,7 +128,7 @@ Wave 3 (序列):    T05-eng → T05-rev
 
 ### T03 — playwright.config.mjs timeout + expect.timeout
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **File**: `playwright.config.mjs`
 - **Audit**: P2-5 / Rule R5
 - **Change**: 加兩個欄位
@@ -172,7 +172,7 @@ Wave 3 (序列):    T05-eng → T05-rev
 
 ### T04 — playwright.emulator.config.mjs expect.timeout
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **File**: `playwright.emulator.config.mjs`
 - **Audit**: P2-5 / Rule R5
 - **Change**: 補 `expect: { timeout: 10_000 }`
@@ -213,7 +213,7 @@ Wave 3 (序列):    T05-eng → T05-rev
 
 ### T05 — Integration verification + commit
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files**: 不改 config；只跑驗證 + commit + 更新 handoff.md
 - **Dependencies**: T01-T04 全部 `[x]`
 
@@ -1206,7 +1206,7 @@ Wave 7 (序列):    T22-eng → T22-rev   (commit + handoff sync)
 
 ### T16 — Spike: audit-mock-boundary.sh design
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Read**: `.husky/pre-commit`、audit L77-111 / L607-612 / L626-633、`tests/integration/` 抽樣 5 檔（含 audit L83 列的 `notification-error.test.jsx`）
 - **Files Written**: 只動 `specs/026-tests-audit-report/handoff.md` §3 T16 row + §2 S4 子表（補風險），**不**寫 script 本身
 - **Audit**: P0-1 / Rule R8
@@ -1262,7 +1262,7 @@ Wave 7 (序列):    T22-eng → T22-rev   (commit + handoff sync)
 
 ### T17 — Spike: audit-flaky-patterns.sh + .husky/pre-commit 整合 design
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Read**: `.husky/pre-commit`、audit L293-318 / L607-612 / L630、`tests/unit/runtime/useStravaConnection.test.jsx`（audit L311 範例）
 - **Files Written**: 只動 `specs/026-tests-audit-report/handoff.md` §3 T17 row + §2 S4 子表，**不**寫 script / 不改 husky
 - **Audit**: P1-4 / P1-5 / Rule R8
@@ -1331,7 +1331,7 @@ Wave 7 (序列):    T22-eng → T22-rev   (commit + handoff sync)
 
 ### T18 — Implement: scripts/audit-mock-boundary.sh
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `scripts/audit-mock-boundary.sh`（新檔）
 - **Files Read**: T16 evidence（pattern + 輸出格式）
 - **Audit**: P0-1 / Rule R8
@@ -1446,7 +1446,7 @@ Wave 7 (序列):    T22-eng → T22-rev   (commit + handoff sync)
 
 ### T19 — Implement: scripts/audit-flaky-patterns.sh
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `scripts/audit-flaky-patterns.sh`（新檔）
 - **Files Read**: T17 evidence（pattern + 輸出格式 + husky 設計）
 - **Audit**: P1-4 / P1-5 / Rule R8
@@ -1540,7 +1540,7 @@ Wave 7 (序列):    T22-eng → T22-rev   (commit + handoff sync)
 
 ### T20 — Implement: .husky/pre-commit append two audit gates
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `.husky/pre-commit`（修改，**只 append，不改既有 5 行**）
 - **Files Read**: T17 evidence（append 區塊草稿）、T18/T19 evidence（確認兩 script 已存在 + 可執行）
 - **Audit**: P0-1 / P1-4 / P1-5 / Rule R8
@@ -1623,7 +1623,7 @@ Wave 7 (序列):    T22-eng → T22-rev   (commit + handoff sync)
 
 ### T21 — Integration smoke test: stage dummy + run hook + capture baseline
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: 0（純跑 + 紀錄 evidence；任何 stash/temp 檔必須 cleanup）
 - **Files Read**: T18/T19/T20 改動成果
 - **Audit**: P0-1 / P1-4 / P1-5 / Rule R8
@@ -1704,7 +1704,7 @@ Wave 7 (序列):    T22-eng → T22-rev   (commit + handoff sync)
 
 ### T22 — Commit + handoff sync (S4)
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**:
   - `specs/026-tests-audit-report/handoff.md` §0 / §1 / §3（T22 self-evidence）/ §5 完整更新
   - `specs/026-tests-audit-report/tasks.md`（T16-T22 status `[ ]` → `[x]`）
