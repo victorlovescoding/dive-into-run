@@ -2790,6 +2790,375 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
 
 ---
 
+## S7 — GitHub branch protection required checks (UI, post-merge)
+
+> **Source**: `project-health/2026-04-29-tests-audit-report.md` L545-L550, L568-L579, L635-L639, L685-L689.
+> **Standard**: R10 — `main` branch protection must require the real successful GitHub check contexts for CI, E2E, and Firestore rules gate, without creating a path-filtered required-check deadlock.
+
+S7 is deliberately **UI/process only**. It does not change production code, tests, workflows, or package files. The only repo writes allowed during S7 execution are evidence/status updates in `specs/026-tests-audit-report/handoff.md` and `specs/026-tests-audit-report/tasks.md`.
+
+**Critical safety note**:
+
+- Local workflow evidence at task-authoring time:
+  - `.github/workflows/ci.yml` has jobs `ci` and `e2e`.
+  - `.github/workflows/firestore-rules-gate.yml` has job `firestore-rules-gate`.
+  - `.github/workflows/firestore-rules-gate.yml` currently uses `on.pull_request.paths`.
+- GitHub official docs warn that if a required workflow is skipped by path filtering, the associated required check can remain pending and block merge: <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks>
+- Therefore T39 is a **hard gate**. If the final merged `main` still has workflow-level `paths` filtering on `Firestore Rules Gate`, the engineer must **not** configure that path-filtered check as required. Mark S7 blocked/escalated and document the contradiction with the audit report. A separate follow-up PR must first make the rules gate required-check-safe (for example, always run the workflow and skip only inside a job that reports success).
+
+## S7 Execution Rule
+
+**主 agent 不下手任何 S7 實作**。S7 的 GitHub UI 操作、GitHub API 查證、handoff evidence、status update、doc-only closeout commit 都由 subagent 完成。
+
+每個 S7 task 配對 1 engineer subagent + 1 reviewer subagent：
+
+1. Engineer 完成該 task 的 GitHub UI/API/read/write 動作，並在 `handoff.md` §3 填 evidence。
+2. Reviewer 讀 engineer evidence，自己重跑至少 1 個 read-only API/CLI/UI 驗證，並在 `handoff.md` §3 填 PASS/REJECT。
+3. Reviewer reject 時，主 agent 只能把 feedback 交回同 task engineer；主 agent 不得自行修 UI、改檔、或補 evidence。
+4. 第 3 次仍 reject，主 agent 將 task 標 `[!]`，在 `handoff.md` 記錄 escalation reason，回報用戶。
+
+## S7 Concurrency
+
+```
+Wave S7-0: T38-eng -> T38-rev
+Wave S7-1: T39-eng -> T39-rev   # hard gate; fail here means stop S7 UI
+Wave S7-2: T40-eng -> T40-rev   # only if T39 verified safe
+Wave S7-3: T41-eng -> T41-rev
+Wave S7-4: T42-eng -> T42-rev
+Wave S7-5: T43-eng -> T43-rev
+Wave S7-6: T44-eng -> T44-rev
+```
+
+- Max active subagent at any instant: **1**.
+- Reason: S7 mutates one shared GitHub branch-protection object; parallel engineers/reviewers can race, verify stale UI, or overwrite evidence.
+- Total subagent invocations (no retry case): **14**（T38-T44 各 1 engineer + 1 reviewer）。
+
+---
+
+### T38 — Confirm merged baseline and exact GitHub check contexts
+
+- **Status**: `[ ]`
+- **Scope**: Read-only GitHub + local workflow inspection
+- **Standard**: R10 / no speculation about check names
+- **Dependencies**: S1-S6 PR merged into `main`
+
+**Engineer Action**：
+
+1. Confirm the S1-S6 PR is merged into `main`, and capture merged commit SHA.
+2. Inspect final `main` workflow files, not this stale worktree if `main` moved.
+3. Collect actual GitHub check-run names from the merged commit or latest `main` commit:
+   ```bash
+   gh api repos/victorlovescoding/dive-into-run/commits/main/check-runs \
+     --jq '.check_runs[] | {name, status, conclusion, app: .app.slug}'
+   ```
+4. Build a table in `handoff.md` §3 T38:
+   - intended coverage (`CI`, `E2E`, `Firestore rules`)
+   - workflow file
+   - job id from YAML
+   - actual GitHub check-run name shown by API/UI
+   - conclusion on latest `main`
+5. Do **not** configure branch protection in this task.
+
+**Acceptance Criteria**：
+
+- **AC-T38.1**: Evidence includes merged PR number or URL, merged commit SHA, and latest `main` SHA.
+- **AC-T38.2**: Evidence maps local workflow jobs to actual observed check-run names. Candidate local job IDs are `ci`, `e2e`, and `firestore-rules-gate`; if GitHub UI/API shows `CI / ci` or another display name, use the observed name.
+- **AC-T38.3**: Evidence includes the `app.slug` for each selected check and confirms it is GitHub Actions (`github-actions`) unless GitHub reports a different source.
+- **AC-T38.4**: No GitHub settings changed; `git diff --name-only` is empty or only `specs/026-tests-audit-report/handoff.md` if evidence was recorded.
+
+**Engineer Evidence**：
+
+- `gh api .../check-runs` output or UI screenshot transcription.
+- Workflow/job/check mapping table.
+- `git diff --name-only`.
+
+**Reviewer 驗證**：
+
+- Independently rerun the check-runs query or inspect GitHub UI Checks tab.
+- Read final `main` `.github/workflows/ci.yml` and `.github/workflows/firestore-rules-gate.yml`.
+- Reject if engineer hardcodes `firestore-rules-gate / rules` without API/UI evidence.
+
+---
+
+### T39 — Required-check safety gate for Firestore Rules Gate
+
+- **Status**: `[ ]`
+- **Scope**: Read-only GitHub + workflow safety decision
+- **Standard**: R10 must not break unrelated PR merges
+- **Dependencies**: T38 `[x]`
+
+**Engineer Action**：
+
+1. Inspect final `main:.github/workflows/firestore-rules-gate.yml`.
+2. Determine whether the workflow is safe to make required:
+   - **SAFE** only if the workflow runs for all PRs to `main`, or if a job-level conditional/no-op job reports success when rules paths are unchanged.
+   - **UNSAFE** if the workflow is skipped by workflow-level `paths`, `branches-ignore`, or commit-message skip when the check is required.
+3. Write the decision in `handoff.md` §3 T39 with exact YAML evidence and the GitHub docs link above.
+4. If UNSAFE, stop S7 before UI mutation:
+   - T40-T42 remain `[ ]`.
+   - Add escalation note: "Do not require `firestore-rules-gate` until workflow trigger is required-check-safe."
+   - Do not "temporarily" configure the unsafe check.
+
+**Acceptance Criteria**：
+
+- **AC-T39.1**: Evidence shows whether `firestore-rules-gate.yml` still contains workflow-level `pull_request.paths`.
+- **AC-T39.2**: If workflow-level `paths` exists, S7 branch-protection UI change is marked blocked/escalated; no required status check is added for `firestore-rules-gate`.
+- **AC-T39.3**: If the workflow is safe, evidence explains why unrelated PRs still receive a success/skipped-success check.
+- **AC-T39.4**: Reviewer can reproduce the decision from YAML + GitHub docs without trusting engineer wording.
+
+**Engineer Evidence**：
+
+- Relevant YAML excerpt from final `main`.
+- SAFE/UNSAFE decision.
+- If UNSAFE: escalation text for `handoff.md` §2 Must-Read Risks.
+
+**Reviewer 驗證**：
+
+- Read final `main` workflow YAML.
+- Check GitHub docs behavior for skipped required checks.
+- Reject if engineer proceeds to T40 while T39 is UNSAFE.
+
+---
+
+### T40 — Configure main branch protection required checks
+
+- **Status**: `[ ]`
+- **Scope**: GitHub UI only
+- **Standard**: R10 branch protection / exact observed check contexts
+- **Dependencies**: T38 `[x]`, T39 `[x]` and SAFE
+
+**Engineer Action**：
+
+1. Open GitHub UI: `Settings` -> `Branches` -> `main` branch protection rule.
+2. Enable or keep enabled "Require status checks to pass before merging".
+3. Select only the exact check contexts verified in T38 and allowed by T39:
+   - CI job context (`ci` or observed equivalent)
+   - E2E job context (`e2e` or observed equivalent)
+   - Firestore rules context only if T39 is SAFE
+4. Do not toggle unrelated branch-protection settings:
+   - required review count
+   - dismiss stale reviews
+   - signed commits
+   - linear history
+   - admin enforcement
+   - force-push/deletion settings
+5. Save changes and record a concise before/after summary in `handoff.md` §3 T40.
+
+**Acceptance Criteria**：
+
+- **AC-T40.1**: Required checks after save exactly match T38/T39 allowed contexts.
+- **AC-T40.2**: No unsafe path-filtered Firestore Rules Gate check is required.
+- **AC-T40.3**: No unrelated branch-protection settings are changed.
+- **AC-T40.4**: Evidence includes screenshot transcription or API output showing selected required checks.
+
+**Engineer Evidence**：
+
+- Before/after required-check list.
+- Branch protection UI screenshot transcription or API output.
+- Note that no unrelated settings were changed.
+
+**Reviewer 驗證**：
+
+- Inspect GitHub branch protection UI or API after save.
+- Compare required-check list against T38/T39.
+- Reject if extra settings changed or missing required contexts.
+
+---
+
+### T41 — API verification of branch protection state
+
+- **Status**: `[ ]`
+- **Scope**: Read-only GitHub API
+- **Standard**: saved UI state must be machine-verifiable
+- **Dependencies**: T40 `[x]`
+
+**Engineer Action**：
+
+1. Query branch protection:
+   ```bash
+   gh api repos/victorlovescoding/dive-into-run/branches/main/protection/required_status_checks
+   ```
+2. If the repository uses rulesets instead of classic branch protection, query rulesets and branch rules:
+   ```bash
+   gh api repos/victorlovescoding/dive-into-run/rulesets
+   gh api repos/victorlovescoding/dive-into-run/rules/branches/main
+   ```
+3. Save the relevant JSON fields in `handoff.md` §3 T41:
+   - required contexts/checks
+   - strict/up-to-date setting if present
+   - source/app if present
+4. Do not change GitHub settings in this task.
+
+**Acceptance Criteria**：
+
+- **AC-T41.1**: API output contains every required check configured in T40.
+- **AC-T41.2**: API output contains no extra required check outside T40.
+- **AC-T41.3**: If classic branch protection endpoint is unavailable because rulesets are used, evidence includes rulesets/branch-rules output instead.
+- **AC-T41.4**: Evidence is copied into `handoff.md` with enough JSON to audit later.
+
+**Engineer Evidence**：
+
+- `gh api` output, trimmed to relevant fields.
+- Explanation of whether classic branch protection or rulesets are authoritative.
+
+**Reviewer 驗證**：
+
+- Rerun the same read-only API query.
+- Compare API output with T40 UI evidence.
+- Reject if UI and API disagree.
+
+---
+
+### T42 — PR compatibility smoke for skipped-check deadlock
+
+- **Status**: `[ ]`
+- **Scope**: Read-only PR observation; no new PR unless user explicitly approves
+- **Standard**: Required checks must not leave unrelated PRs waiting forever
+- **Dependencies**: T41 `[x]`
+
+**Engineer Action**：
+
+1. Find an existing open PR targeting `main` that does **not** touch:
+   - `firestore.rules`
+   - `tests/server/rules/**`
+   - `package.json`
+   - `package-lock.json`
+   - `.github/workflows/firestore-rules-gate.yml`
+2. Inspect that PR's merge/status box or API checks.
+3. Record whether it is waiting for a missing `firestore-rules-gate` check.
+4. If no suitable PR exists, record `not observed` and do not claim deadlock-free behavior.
+5. If a deadlock is observed, do not silently leave the repo broken:
+   - mark T42 `[!]`
+   - tell T40 engineer to remove only the unsafe required context
+   - document rollback evidence in `handoff.md`
+   - escalate that S7 requires a workflow follow-up PR before Firestore Rules Gate can be required
+
+**Acceptance Criteria**：
+
+- **AC-T42.1**: Evidence lists the PR inspected, changed files, and whether it touches rules-gate paths.
+- **AC-T42.2**: If a non-rules PR exists, evidence confirms the PR is not blocked by a missing/skipped Firestore Rules Gate check.
+- **AC-T42.3**: If no non-rules PR exists, evidence clearly says `not observed`; reviewer must not upgrade this to "verified deadlock-free".
+- **AC-T42.4**: Any observed deadlock is escalated and unsafe required context is removed by the engineer, then re-verified by reviewer.
+
+**Engineer Evidence**：
+
+- PR URL/number and changed-file summary.
+- Check/status box summary or API output.
+- If rollback happened: before/after required-check API output.
+
+**Reviewer 驗證**：
+
+- Independently inspect the same PR.
+- Verify changed-file scope.
+- Reject if engineer claims deadlock-free without a non-rules PR observation.
+
+---
+
+### T43 — Update handoff with S7 evidence and pitfalls
+
+- **Status**: `[ ]`
+- **Files Written**:
+  - `specs/026-tests-audit-report/handoff.md`
+- **Standard**: future sessions must see the GitHub UI state and pitfalls without re-discovering them
+- **Dependencies**: T38-T42 done or T39/T42 escalated
+
+**Engineer Action**：
+
+1. Update `handoff.md`:
+   - §0 Current State: S7 status (`done`, `blocked`, or `escalated`)
+   - §1 Next Session Checklist: S8/S9/Wave 3 next step, depending on S7 outcome
+   - §2 Must-Read Risks: append any real S7 pitfall, especially path-filtered required-check risk
+   - §3: T38-T42 evidence rows with engineer/reviewer signatures
+2. Do not rewrite historical S1-S6 evidence.
+3. Do not change `project-health/2026-04-29-tests-audit-report.md` unless user explicitly asks.
+
+**Acceptance Criteria**：
+
+- **AC-T43.1**: `handoff.md` §0 accurately says whether S7 configured required checks, blocked before UI, or rolled back after deadlock.
+- **AC-T43.2**: `handoff.md` §2 includes any new pitfall discovered during S7; if none, states "no new S7 pitfall beyond T39 path-filter safety gate".
+- **AC-T43.3**: `handoff.md` §3 includes T38-T42 evidence and reviewer PASS/REJECT signatures.
+- **AC-T43.4**: `git diff --name-only` contains only `specs/026-tests-audit-report/handoff.md` before T44 status updates.
+
+**Engineer Evidence**：
+
+- `git diff -- specs/026-tests-audit-report/handoff.md`.
+- List of sections updated.
+
+**Reviewer 驗證**：
+
+- Read `handoff.md` §0 / §1 / §2 / §3.
+- Confirm S7 outcome matches T38-T42 evidence.
+- Reject if handoff says "done" while T39/T42 is escalated.
+
+---
+
+### T44 — S7 docs closeout commit
+
+- **Status**: `[ ]`
+- **Files Written**:
+  - `specs/026-tests-audit-report/handoff.md`
+  - `specs/026-tests-audit-report/tasks.md`
+- **Files committed**:
+  - `specs/026-tests-audit-report/handoff.md`
+  - `specs/026-tests-audit-report/tasks.md`
+- **Standard**: doc-only evidence commit; GitHub UI change itself is not represented by git diff
+- **Dependencies**: T43 `[x]`
+
+**Engineer Action**：
+
+1. Update `tasks.md` T38-T44 statuses:
+   - `[x]` for completed reviewer-pass tasks
+   - `[!]` for escalated tasks
+   - leave downstream tasks `[ ]` if T39 blocked before UI
+2. Confirm no code/config/workflow/test files are dirty:
+   ```bash
+   git diff --name-only
+   ```
+3. Run lightweight doc checks:
+   ```bash
+   npm run spellcheck -- specs/026-tests-audit-report/tasks.md specs/026-tests-audit-report/handoff.md
+   ```
+   If this script does not accept file args, run `npm run spellcheck` and record full result.
+4. Stage only S7 docs:
+   ```bash
+   git add specs/026-tests-audit-report/handoff.md specs/026-tests-audit-report/tasks.md
+   ```
+5. Commit, no push:
+   ```text
+   docs(026): record S7 branch protection evidence
+
+   - capture observed GitHub required-check contexts
+   - record branch protection UI/API evidence and safety outcome
+   - document any path-filter required-check blocker before S8/S9
+
+   Refs: project-health/2026-04-29-tests-audit-report.md L545-L550, L635-L639
+   ```
+   No `Co-Authored-By`.
+
+**Acceptance Criteria**：
+
+- **AC-T44.1**: `git diff --name-only --cached` contains only `handoff.md` and `tasks.md`.
+- **AC-T44.2**: `git show HEAD --name-only` after commit contains only S7 docs.
+- **AC-T44.3**: Commit message has no `Co-Authored-By`.
+- **AC-T44.4**: Branch is not `main`; no push performed.
+- **AC-T44.5**: `handoff.md` and `tasks.md` statuses agree on S7 outcome.
+
+**Engineer Evidence**：
+
+- Spellcheck output.
+- `git diff --name-only --cached`.
+- `git show HEAD --stat` + `git show HEAD --name-only`.
+- `git log -1 --format=%B | grep -ic "Co-Authored-By"`.
+
+**Reviewer 驗證**：
+
+- Read `git show HEAD --name-only`.
+- Read commit message.
+- Read `handoff.md` + `tasks.md` S7 status.
+- Verify no push occurred.
+
+---
+
 ## Reviewer 認證標準（適用所有 task）
 
 | 必做                                                                 | 不能只做                         |
@@ -2848,12 +3217,19 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
 | T35  | S6    | general-purpose        | general-purpose        | S6-3 | (none, 序列)       |
 | T36  | S6    | general-purpose        | general-purpose        | S6-4 | (none, 序列)       |
 | T37  | S6    | general-purpose        | general-purpose        | S6-5 | (none, 序列)       |
+| T38  | S7    | general-purpose        | general-purpose        | S7-0 | (none, 序列)       |
+| T39  | S7    | general-purpose        | general-purpose        | S7-1 | (none, 序列)       |
+| T40  | S7    | general-purpose        | general-purpose        | S7-2 | (none, 序列)       |
+| T41  | S7    | general-purpose        | general-purpose        | S7-3 | (none, 序列)       |
+| T42  | S7    | general-purpose        | general-purpose        | S7-4 | (none, 序列)       |
+| T43  | S7    | general-purpose        | general-purpose        | S7-5 | (none, 序列)       |
+| T44  | S7    | general-purpose        | general-purpose        | S7-6 | (none, 序列)       |
 
 ## Subagent 通用須知
 
 - **必看檔案**（spawn 時 attach 路徑）：
   - 本檔 `specs/026-tests-audit-report/tasks.md`
-  - `specs/026-tests-audit-report/handoff.md`（特別是 §2 Must-Read Risks，含 S1 / S2 / S3 / S4 / S5 / S6 子表）
+  - `specs/026-tests-audit-report/handoff.md`（特別是 §2 Must-Read Risks，含 S1 / S2 / S3 / S4 / S5 / S6 / S7 子表）
   - `project-health/2026-04-29-tests-audit-report.md`：
     - **S1 (T01-T05)**：L324-360 + L586-592
     - **S2 (T06-T09)**：L77-95 / L113-141 / L168-208 / L294-318 / L545-551 / L594-598 / L641-657
@@ -2861,6 +3237,7 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
     - **S4 (T16-T22)**：L77-111 + L293-318 + L538-544 + L607-612 + L626-633 + L658-664
     - **S5 (T23-T31)**：L113-141 + L538-544 + L614-620
     - **S6 (T32-T37)**：L77-111 + L293-318 + L373-379 + L552-556 + L622-633 + L641-657 + L660-664
+    - **S7 (T38-T44)**：L545-550 + L568-579 + L635-639 + L685-689；另讀 GitHub docs required-check skip behavior（連結在 S7 章節）
   - 對應的目標檔本身：
     - S1: 4 個 config 檔
     - S2: `.github/pull_request_template.md` + 必要時 `cspell.json`
@@ -2868,14 +3245,15 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
     - S4: `scripts/audit-mock-boundary.sh`（新）+ `scripts/audit-flaky-patterns.sh`（新）+ `.husky/pre-commit`
     - S5: `firestore.rules`（Read-only）、`package.json`、`package-lock.json`、`tests/server/rules/**`、`.github/workflows/firestore-rules-gate.yml`
     - S6: `eslint.config.mjs`（**唯一** code 改動點）；read-only：`scripts/audit-mock-boundary.sh` / `scripts/audit-flaky-patterns.sh`（pattern 對齊參考）、S4 baseline 凍結數字（`handoff.md` §3 T21）
+    - S7: GitHub branch protection UI/API；read-only：final `main` `.github/workflows/ci.yml` + `.github/workflows/firestore-rules-gate.yml`；write-only evidence：`handoff.md` / `tasks.md`
 
 - **必要工具**：Read、Edit、Bash（跑驗證）、Write（engineer 建新檔用，reviewer 不該 Write 任何受審檔）
 
 - **禁區**：
-  - Reviewer 不能 Edit/Write 受審檔（S1: config 檔；S2: `.github/`、`cspell.json`；S3: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`cspell.json`、`handoff.md` engineer evidence 區；S4: `scripts/audit-*.sh`、`.husky/pre-commit`、`handoff.md` engineer evidence 區；S5: `package*.json`、`tests/server/rules/**`、`.github/workflows/firestore-rules-gate.yml`、`handoff.md` engineer evidence 區；S6: `eslint.config.mjs`、`handoff.md` engineer evidence 區）
-  - Engineer 不能改 task scope 外的檔案（例：T01 不能動 playwright config；T07 不能動 cspell.json，加詞屬於 T08 範圍；T12 不能動 threshold；T14 不能改 service/repo/runtime/lib/config 既有 V8 Cov 數字；T16/T17 spike 不能寫 script 或改 husky；T18/T19 不能動 husky；T20 不能改 script；T20 對 husky 必須只 append、不刪改既有 5 行；T23 不能改 code/test/package；T26-T30 不能改 helper API；S5 全程不能改 `firestore.rules` / `vitest.config.mjs` / `.github/workflows/ci.yml`；T32/T33 spike 不能改 `eslint.config.mjs`；T34 不能改 code/config，只 capture baseline 寫 handoff；T35 全程不能動 `package.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` / `.github/**` / `tests/**` / `src/**`；T36 必須 cleanup smoke temp 檔，不留殘留）
-  - 任何 subagent 不能 push remote、不能開 PR、不能改 git config
-  - **Commit-only task**：S1 只有 T05 engineer 可 commit；S2 只有 T09 engineer 可 commit；S3 只有 T15 engineer 可 commit；S4 只有 T22 engineer 可 commit；S5 只有 T31 engineer 可 commit；S6 只有 T37 engineer 可 commit；其他 task engineer 只改檔不 commit
+  - Reviewer 不能 Edit/Write 受審檔（S1: config 檔；S2: `.github/`、`cspell.json`；S3: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`cspell.json`、`handoff.md` engineer evidence 區；S4: `scripts/audit-*.sh`、`.husky/pre-commit`、`handoff.md` engineer evidence 區；S5: `package*.json`、`tests/server/rules/**`、`.github/workflows/firestore-rules-gate.yml`、`handoff.md` engineer evidence 區；S6: `eslint.config.mjs`、`handoff.md` engineer evidence 區；S7: GitHub branch protection settings、`handoff.md` engineer evidence 區）
+  - Engineer 不能改 task scope 外的檔案（例：T01 不能動 playwright config；T07 不能動 cspell.json，加詞屬於 T08 範圍；T12 不能動 threshold；T14 不能改 service/repo/runtime/lib/config 既有 V8 Cov 數字；T16/T17 spike 不能寫 script 或改 husky；T18/T19 不能動 husky；T20 不能改 script；T20 對 husky 必須只 append、不刪改既有 5 行；T23 不能改 code/test/package；T26-T30 不能改 helper API；S5 全程不能改 `firestore.rules` / `vitest.config.mjs` / `.github/workflows/ci.yml`；T32/T33 spike 不能改 `eslint.config.mjs`；T34 不能改 code/config，只 capture baseline 寫 handoff；T35 全程不能動 `package.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` / `.github/**` / `tests/**` / `src/**`；T36 必須 cleanup smoke temp 檔，不留殘留；S7 全程不能改 code/config/test/workflow，T40 前必須先通過 T39）
+  - 任何 subagent 不能 push remote、不能開 PR、不能改 git config；S7 T40 只允許改 GitHub branch protection required-check 設定，不允許順手改其他 repository settings
+  - **Commit-only task**：S1 只有 T05 engineer 可 commit；S2 只有 T09 engineer 可 commit；S3 只有 T15 engineer 可 commit；S4 只有 T22 engineer 可 commit；S5 只有 T31 engineer 可 commit；S6 只有 T37 engineer 可 commit；S7 只有 T44 engineer 可 commit；其他 task engineer 只改檔不 commit
   - **Threshold 紀律（S3 專屬）**：T13 發現 70 threshold 跌破時**禁止**自行降 threshold，必須 escalate（標 `[!]`）；T12-T14 任何 task **禁止**設 per-directory threshold（屬 S9 觸發型）
   - **Coverage artifact 紀律（S3 專屬）**：`coverage/` 為 gitignored，T15 commit 必須 `git status` 確認該目錄為 untracked，**禁** `git add -A` / `git add coverage`
   - **Warn-only 紀律（S4 專屬）**：T18/T19 script 末行必須 `exit 0`，**禁止**設 `exit 1` / `exit ${count}` 等真擋邏輯；T20 husky append 行必加 `|| true` 雙保險；T21 smoke test 即使 temp 檔在場 audit script 仍須 exit 0；S8 升級到 exit 1 屬觸發型，不在本 S4 scope
@@ -2887,6 +3265,9 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
   - **Baseline 不增不減紀律（S6 專屬）**：T35 `ignores` list 成員資格 = T34 capture 結果，**禁止** 為了壓 false positive 把非 baseline 檔加進 ignores（必須回 T32/T33 改 selector）；**禁止** 為了「順手清乾淨」把 baseline 內檔抽掉（屬 Wave 3，不在 S6 scope）。
   - **Smoke temp 檔紀律（S6 專屬）**：T36 兩支 smoke temp 檔（`tests/integration/_s6-smoke-mock.test.jsx` + `tests/unit/_s6-smoke-flaky.test.js` 或同等檔名）**必須在 T36 內 cleanup**；T37 commit 前驗 `git status --short | grep "_s6-smoke" | wc -l = 0`；commit 含 3 檔（不含任何 temp / log）。
   - **S4 共存紀律（S6 專屬）**：S6 不動 `scripts/audit-*.sh` / `.husky/pre-commit`；S4 grep gate 與 S6 ESLint rule **共存** 兩 sprint（不互相取代）；S8 觸發型才會把 S4 改 `exit 1` + S6 baseline 清空。
+  - **Required-check safety gate（S7 專屬）**：T39 若判定 `firestore-rules-gate` 仍是 workflow-level path-filtered，T40 不得把該 check 設為 required；必須 escalated。這不是 reviewer 偏好，是 GitHub required-check 行為限制。
+  - **GitHub UI scope（S7 專屬）**：T40 只改 required status checks；禁止改 review count、admin enforcement、signed commits、linear history、force-push/deletion 等 unrelated branch-protection 設定。
+  - **UI evidence 紀律（S7 專屬）**：GitHub UI 變更沒有 git diff；T40-T42 必須用 screenshot transcription 或 `gh api` JSON 補足 evidence，不能只寫「我已勾選」。
 
 - **Pre-commit hook 注意**：
   - `.husky/pre-commit` 會跑：lint --max-warnings 0、type-check、depcruise、spellcheck、vitest browser（**不**跑 coverage）
@@ -2896,6 +3277,7 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
   - **S4 額外**：T22 commit 前手動跑兩 audit script + 確認 stdout 首行符合 `AUDIT <CATEGORY>: <N> findings` 樣板
   - **S5 額外**：T31 commit 前必跑 `npm run test:server -- tests/server/rules` + `npm run test:server`；這兩條不是 pre-commit hook 內容，但 rules gate/CI 會依賴。
   - **S6 額外**：T37 commit 前必跑 `npm run lint -- --max-warnings 0`（含 S6 新 rule，必須綠）+ `npx eslint --print-config <baseline 內檔>` 證 ignores 生效；不需跑 server / coverage。
+  - **S7 額外**：T44 是 doc-only closeout；先跑 spellcheck 或記錄 spellcheck script 不支援 file args 的 fallback，再由 hook 跑完整 repo gate。
   - hook 失敗時：fix issue → re-stage → 新 commit（**不要** `--amend`）
 
 - **回報格式**（spawn 結束時的 result）：
@@ -2904,9 +3286,9 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
 
 ---
 
-## 後續 commit（不在本檔 scope）
+## Scope summary
 
-本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，已 commit `5f09820`）、S4（T16-T22，已 commit `a55fa76`）、S5（T23-T31，已 commit `28c5cb8`）、S6（T32-T37，planned）。後續：
+本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，已 commit `5f09820`）、S4（T16-T22，已 commit `a55fa76`）、S5（T23-T31，已 commit `28c5cb8`）、S6（T32-T37，已 commit `d89887c` + reviewer signoff `5606155`）、S7（T38-T44，planned）。後續：
 
 | Commit | Goal                                          | Spec            |
 | ------ | --------------------------------------------- | --------------- |
@@ -2916,6 +3298,6 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
 | S4     | pre-commit grep gate (warn-only)              | ✅ 本檔 T16-T22 |
 | S5     | firestore rules infra + 5 critical specs      | ✅ 本檔 T23-T31 |
 | S6     | ESLint mock-boundary + flaky rules (baseline) | ✅ 本檔 T32-T37 |
-| S7     | GitHub branch protection required checks (UI) | (post-merge)    |
+| S7     | GitHub branch protection required checks (UI) | ✅ 本檔 T38-T44 |
 | S8     | ESLint warn → error 升級（觸發型）            | (Wave 3 後)     |
 | S9     | Per-directory coverage threshold（觸發型）    | (Wave 3 後)     |
