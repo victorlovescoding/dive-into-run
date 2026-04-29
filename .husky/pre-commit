@@ -3,3 +3,7 @@ npm run type-check
 npm run depcruise
 npm run spellcheck
 npx vitest run --project=browser
+# S4 (warn-only): audit gates for mock-boundary + flaky patterns
+# Refs: specs/026-tests-audit-report/tasks.md S4 / audit L607-612
+bash scripts/audit-mock-boundary.sh || true
+bash scripts/audit-flaky-patterns.sh || true

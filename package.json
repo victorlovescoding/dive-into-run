@@ -10,7 +10,7 @@
     "lint:changed": "bash scripts/lint-changed.sh",
     "depcruise": "depcruise --config .dependency-cruiser.mjs --output-type err-long src specs tests",
     "depcruise:json": "depcruise --config .dependency-cruiser.mjs --output-type json src specs tests",
-    "test": "vitest",
+    "test": "vitest --project=browser",
     "test:browser": "vitest --project=browser",
     "test:server": "bash -c 'firebase emulators:exec --only auth,firestore --project=demo-test \"vitest run --project=server $*\"' --",
     "test:coverage": "firebase emulators:exec --only auth,firestore --project=demo-test \"vitest run --coverage\"",
@@ -44,6 +44,7 @@
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.7.1",
     "@eslint/js": "^9.39.2",
+    "@firebase/rules-unit-testing": "^5.0.0",
     "@playwright/test": "^1.58.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",

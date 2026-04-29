@@ -34,9 +34,18 @@ import {
 const TEST_POST_ID = 'test-post-cnotif';
 const TEST_EVENT_ID = 'test-event-cnotif';
 
-const USER_A_EMAIL = 'cnotif-user-a@example.com';
-const USER_B_EMAIL = 'cnotif-user-b@example.com';
-const USER_C_EMAIL = 'cnotif-user-c@example.com';
+const EMAIL_RUN_ID = Date.now();
+
+const S1_USER_A_EMAIL = `cnotif-s1-a-${EMAIL_RUN_ID}@example.com`;
+const S1_USER_B_EMAIL = `cnotif-s1-b-${EMAIL_RUN_ID}@example.com`;
+const S1_USER_C_EMAIL = `cnotif-s1-c-${EMAIL_RUN_ID}@example.com`;
+const S2_USER_A_EMAIL = `cnotif-s2-a-${EMAIL_RUN_ID}@example.com`;
+const S2_USER_B_EMAIL = `cnotif-s2-b-${EMAIL_RUN_ID}@example.com`;
+const S2_USER_C_EMAIL = `cnotif-s2-c-${EMAIL_RUN_ID}@example.com`;
+const S3_USER_A_EMAIL = `cnotif-s3-a-${EMAIL_RUN_ID}@example.com`;
+const S3_USER_B_EMAIL = `cnotif-s3-b-${EMAIL_RUN_ID}@example.com`;
+const S4_USER_B_EMAIL = `cnotif-s4-b-${EMAIL_RUN_ID}@example.com`;
+const S4_USER_C_EMAIL = `cnotif-s4-c-${EMAIL_RUN_ID}@example.com`;
 const TEST_PASSWORD = 'test-password';
 
 // ---------------------------------------------------------------------------
@@ -58,17 +67,17 @@ test.describe('Scenario 1: 文章留言跟帖通知', () => {
   test.beforeAll(async () => {
     await cleanupEmulator();
 
-    const userA = await createTestUser(USER_A_EMAIL, TEST_PASSWORD, 'User A');
-    const userB = await createTestUser(USER_B_EMAIL, TEST_PASSWORD, 'User B');
-    const userC = await createTestUser(USER_C_EMAIL, TEST_PASSWORD, 'User C');
+    const userA = await createTestUser(S1_USER_A_EMAIL, TEST_PASSWORD, 'User A');
+    const userB = await createTestUser(S1_USER_B_EMAIL, TEST_PASSWORD, 'User B');
+    const userC = await createTestUser(S1_USER_C_EMAIL, TEST_PASSWORD, 'User C');
     userAUid = userA.localId;
     userBUid = userB.localId;
     userCUid = userC.localId;
 
     // Seed user docs
-    await seedDoc('users', userAUid, { name: 'User A', email: USER_A_EMAIL, photoURL: '' });
-    await seedDoc('users', userBUid, { name: 'User B', email: USER_B_EMAIL, photoURL: '' });
-    await seedDoc('users', userCUid, { name: 'User C', email: USER_C_EMAIL, photoURL: '' });
+    await seedDoc('users', userAUid, { name: 'User A', email: S1_USER_A_EMAIL, photoURL: '' });
+    await seedDoc('users', userBUid, { name: 'User B', email: S1_USER_B_EMAIL, photoURL: '' });
+    await seedDoc('users', userCUid, { name: 'User C', email: S1_USER_C_EMAIL, photoURL: '' });
 
     // Seed 文章（User A 為作者）
     await seedDoc('posts', TEST_POST_ID, {
@@ -119,7 +128,7 @@ test.describe('Scenario 1: 文章留言跟帖通知', () => {
   test('User B 收到跟帖通知 → bell badge 顯示 → 點擊通知 → scroll + highlight', async ({
     page,
   }) => {
-    await loginAsUser(page, USER_B_EMAIL, TEST_PASSWORD, {
+    await loginAsUser(page, S1_USER_B_EMAIL, TEST_PASSWORD, {
       startPage: '/posts',
       waitForSelector: '[aria-controls="notification-panel"]',
     });
@@ -168,16 +177,16 @@ test.describe('Scenario 2: 活動留言通知（主揪人與參加者）', () =>
   test.beforeAll(async () => {
     await cleanupEmulator();
 
-    const userA = await createTestUser(USER_A_EMAIL, TEST_PASSWORD, 'User A');
-    const userB = await createTestUser(USER_B_EMAIL, TEST_PASSWORD, 'User B');
-    const userC = await createTestUser(USER_C_EMAIL, TEST_PASSWORD, 'User C');
+    const userA = await createTestUser(S2_USER_A_EMAIL, TEST_PASSWORD, 'User A');
+    const userB = await createTestUser(S2_USER_B_EMAIL, TEST_PASSWORD, 'User B');
+    const userC = await createTestUser(S2_USER_C_EMAIL, TEST_PASSWORD, 'User C');
     userAUid = userA.localId;
     userBUid = userB.localId;
     userCUid = userC.localId;
 
-    await seedDoc('users', userAUid, { name: 'User A', email: USER_A_EMAIL, photoURL: '' });
-    await seedDoc('users', userBUid, { name: 'User B', email: USER_B_EMAIL, photoURL: '' });
-    await seedDoc('users', userCUid, { name: 'User C', email: USER_C_EMAIL, photoURL: '' });
+    await seedDoc('users', userAUid, { name: 'User A', email: S2_USER_A_EMAIL, photoURL: '' });
+    await seedDoc('users', userBUid, { name: 'User B', email: S2_USER_B_EMAIL, photoURL: '' });
+    await seedDoc('users', userCUid, { name: 'User C', email: S2_USER_C_EMAIL, photoURL: '' });
 
     // Seed 活動（User A 為主揪人）
     await seedDoc('events', TEST_EVENT_ID, {
@@ -254,7 +263,7 @@ test.describe('Scenario 2: 活動留言通知（主揪人與參加者）', () =>
   test('主揪人 (User A) 收到 event_host_comment → 點擊通知 → scroll + highlight', async ({
     page,
   }) => {
-    await loginAsUser(page, USER_A_EMAIL, TEST_PASSWORD, {
+    await loginAsUser(page, S2_USER_A_EMAIL, TEST_PASSWORD, {
       startPage: '/posts',
       waitForSelector: '[aria-controls="notification-panel"]',
     });
@@ -286,7 +295,7 @@ test.describe('Scenario 2: 活動留言通知（主揪人與參加者）', () =>
   test('參加者 (User B) 收到 event_participant_comment → 點擊通知 → scroll + highlight', async ({
     page,
   }) => {
-    await loginAsUser(page, USER_B_EMAIL, TEST_PASSWORD, {
+    await loginAsUser(page, S2_USER_B_EMAIL, TEST_PASSWORD, {
       startPage: '/posts',
       waitForSelector: '[aria-controls="notification-panel"]',
     });
@@ -331,13 +340,13 @@ test.describe('Scenario 3: 去重驗證 — 主揪人兼留言者只收一則通
   test.beforeAll(async () => {
     await cleanupEmulator();
 
-    const userA = await createTestUser(USER_A_EMAIL, TEST_PASSWORD, 'User A');
-    const userB = await createTestUser(USER_B_EMAIL, TEST_PASSWORD, 'User B');
+    const userA = await createTestUser(S3_USER_A_EMAIL, TEST_PASSWORD, 'User A');
+    const userB = await createTestUser(S3_USER_B_EMAIL, TEST_PASSWORD, 'User B');
     userAUid = userA.localId;
     userBUid = userB.localId;
 
-    await seedDoc('users', userAUid, { name: 'User A', email: USER_A_EMAIL, photoURL: '' });
-    await seedDoc('users', userBUid, { name: 'User B', email: USER_B_EMAIL, photoURL: '' });
+    await seedDoc('users', userAUid, { name: 'User A', email: S3_USER_A_EMAIL, photoURL: '' });
+    await seedDoc('users', userBUid, { name: 'User B', email: S3_USER_B_EMAIL, photoURL: '' });
 
     // Seed 活動（User A 為主揪人）
     await seedDoc('events', eventId, {
@@ -396,7 +405,7 @@ test.describe('Scenario 3: 去重驗證 — 主揪人兼留言者只收一則通
   });
 
   test('User A (host + commenter) 只看到一則 event_host_comment 通知', async ({ page }) => {
-    await loginAsUser(page, USER_A_EMAIL, TEST_PASSWORD, {
+    await loginAsUser(page, S3_USER_A_EMAIL, TEST_PASSWORD, {
       startPage: '/posts',
       waitForSelector: '[aria-controls="notification-panel"]',
     });
@@ -437,13 +446,13 @@ test.describe('Scenario 4: Toast 即時提示', () => {
   test.beforeAll(async () => {
     await cleanupEmulator();
 
-    const userB = await createTestUser(USER_B_EMAIL, TEST_PASSWORD, 'User B');
-    const userC = await createTestUser(USER_C_EMAIL, TEST_PASSWORD, 'User C');
+    const userB = await createTestUser(S4_USER_B_EMAIL, TEST_PASSWORD, 'User B');
+    const userC = await createTestUser(S4_USER_C_EMAIL, TEST_PASSWORD, 'User C');
     userBUid = userB.localId;
     userCUid = userC.localId;
 
-    await seedDoc('users', userBUid, { name: 'User B', email: USER_B_EMAIL, photoURL: '' });
-    await seedDoc('users', userCUid, { name: 'User C', email: USER_C_EMAIL, photoURL: '' });
+    await seedDoc('users', userBUid, { name: 'User B', email: S4_USER_B_EMAIL, photoURL: '' });
+    await seedDoc('users', userCUid, { name: 'User C', email: S4_USER_C_EMAIL, photoURL: '' });
 
     // Seed 文章（User B 為作者）
     await seedDoc('posts', TEST_POST_ID, {
@@ -476,7 +485,7 @@ test.describe('Scenario 4: Toast 即時提示', () => {
   });
 
   test('登入後新通知產生 → toast 即時出現', async ({ page }) => {
-    await loginAsUser(page, USER_B_EMAIL, TEST_PASSWORD, {
+    await loginAsUser(page, S4_USER_B_EMAIL, TEST_PASSWORD, {
       startPage: '/posts',
       waitForSelector: '[aria-controls="notification-panel"]',
     });

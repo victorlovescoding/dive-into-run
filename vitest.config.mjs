@@ -19,7 +19,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text-summary', 'html', 'json-summary', 'lcov'],
       reportsDirectory: './coverage',
-      include: ['src/{service,repo,runtime,lib,config}/**'],
+      include: ['src/{service,repo,runtime,lib,config,ui,components,app}/**'],
       exclude: [
         'src/lib/taiwan-locations.js',
         'src/lib/weather-types.js',
