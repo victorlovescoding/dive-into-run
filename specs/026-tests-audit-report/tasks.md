@@ -1834,6 +1834,528 @@ Wave 7 (序列):    T22-eng → T22-rev   (commit + handoff sync)
 
 ---
 
+> S5 從 T23 開始追加。**主 agent 不准做 T23-T31 任務的任何實作、驗證、修復或 commit**；主 agent 只負責派 subagent、收斂 reviewer feedback、必要時回報 escalation。本段是任務規格，不是 S5 開工。
+
+## S5 Goal
+
+補上 Firestore Rules unit test infra、5 條 audit 標記的 critical paths，並新增 GitHub Actions paths-filter gate。
+
+S5 是 audit report §12 的第 5 個 commit，對應 P0-2 / R9。S5 **只補測試與 CI gate**；除非使用者另行批准，**不修改 `firestore.rules` 行為**。如果 emulator 測試證明 audit 期待與現行規則衝突，subagent 必須在 `handoff.md` 記錄衝突並 escalate，不可自行改 rules 讓測試過。
+
+## S5 References
+
+- Audit report：[`project-health/2026-04-29-tests-audit-report.md`](../../project-health/2026-04-29-tests-audit-report.md)
+  - **L113-141** — P0-2 Firestore Rules 沒有 unit test + 5 條高風險規則
+  - **L121-129** — 5 條 critical path 清單
+  - **L131-139** — 修補步驟（安裝 `@firebase/rules-unit-testing`、新增 `tests/server/rules/`）
+  - **L538-544** — R9：Firestore Rules paths-filter workflow
+  - **L614-620** — S5 章節
+- 真實 rules 行號（以目前 worktree `firestore.rules` 為準）：
+  - `posts/{postId}/likes/{uid}` collectionGroup：L80-L84
+  - Strava tokens / connections / activities：L108-L123
+  - Event seat consistency：L150-L166
+  - Event participants cascade delete：L168-L185
+  - Notification create/read/update/delete：L233-L257
+- 現有 server test infra：
+  - `vitest.config.mjs` server project include 已是 `tests/server/**/*.test.js`（P0-3 已不再是 S5 blocker）
+  - `vitest.setup.server.js` 會要求 Auth + Firestore emulator，並固定 `demo-test`
+  - `npm run test:server -- <path>` 可跑單一 server/rules spec
+
+## S5 核心設計決策（必讀）
+
+| 決策 | 內容 |
+| ---- | ---- |
+| **只測現行 rules，不改 rules** | S5 目標是補 emulator-driven unit tests 與 CI gate。若發現現行 rules 太寬（例：notification 可送任意非自己的 `recipientUid`），先寫入 `handoff.md` 並 escalate，不准在 S5 偷改 `firestore.rules`。 |
+| **每個 spec 都載入真實 `firestore.rules`** | 禁止在 test 中複製 rules 字串或寫 simplified rules；helper 必須從 repo root 讀 `firestore.rules`。 |
+| **Rules tests 用 client SDK + `@firebase/rules-unit-testing`** | 測 allow/deny 必須走 Firestore Rules emulator：`initializeTestEnvironment`、`authenticatedContext` / `unauthenticatedContext`、`withSecurityRulesDisabled` seed、`assertSucceeds` / `assertFails`。 |
+| **一個 domain 一個 spec** | S5 產出 5 個 spec：`users.rules.test.js`、`posts.rules.test.js`、`strava.rules.test.js`、`events.rules.test.js`、`notifications.rules.test.js`。Events spec 同時負責 seat consistency + participants cascade 兩條 critical path。 |
+| **Users spec 是 infra proof** | `users.rules.test.js` 不在 5 條 critical path 內，但用來證明 helper、public read、owner write、bio length、weatherFavorites owner gate 都能在 emulator 跑。 |
+| **Posts likes 依真實規則，不照 audit 猜測** | 目前 L81-L83 允許任何 signed-in user 讀 collectionGroup likes；S5 測試應鎖定「未登入 denied、登入 allowed、create/delete 只能 doc id 本人、post author 可 cascade delete」。若產品期待更嚴，另案改 rules。 |
+| **Notification `recipientUid` 有語意衝突** | 目前 L235-L245 允許 actor 建立通知給任意非自己的 recipient；S5 測 actorUid/type/read/createdAt/self-recipient/read/update/delete deny。若要「偽造 recipientUid 一律 deny」，必須先拿使用者決策。 |
+| **CI gate 用原生 `paths` filter** | `.github/workflows/firestore-rules-gate.yml` 用 GitHub Actions `on.<event>.paths` 觸發，範圍限 `firestore.rules`、`tests/server/rules/**`、package lock、workflow 本身。 |
+| **Reviewer 逐條 AC 驗證** | 每個 engineer 完成後，paired reviewer 必須重跑該 task 指定 command。Reviewer reject 時，主 agent 重派 engineer，直到 pass 或第 3 次 escalated。 |
+| **所有坑寫進 handoff** | Engineer 必須把重要發現 / 規則語意衝突 / emulator 坑寫到 `handoff.md` §2 S5 risk 子表或 §3 task evidence；Reviewer 必須確認 engineer 記錄是否正確。 |
+
+## S5 Concurrency
+
+```
+Wave 1 (序列):    T23-eng → T23-rev   (rules semantics spike，不寫 code)
+Wave 2 (序列):    T24-eng → T24-rev   (install rules-unit-testing)
+Wave 3 (序列):    T25-eng → T25-rev   (shared helper + users infra proof)
+Wave 4 (5 並行):  T26-eng | T27-eng | T28-eng | T29-eng | T30-eng
+                       ↓ each 完成後立即觸發 paired reviewer ↓
+Wave 5 (≤5 並行): T26-rev | T27-rev | T28-rev | T29-rev | T30-rev
+                       ↓ 全部 verified-pass ↓
+Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
+```
+
+| 項目                            | 值 |
+| ------------------------------- | -- |
+| Max concurrent subagent (S5)    | **5**（Wave 4/5；T23-T25、T31 序列） |
+| Total subagent invocations (S5) | **18**（9 task × 2，no retry case） |
+
+> 為什麼最多 5：T26-T30 寫入範圍互斥（posts / strava / events / notifications / workflow）。T25 先建立 helper 與 users proof，後面 5 個 task 才能平行。T31 必須等全部 reviewer-pass，因為 commit message 與 handoff sync 要整合所有 evidence。
+
+## S5 Risks（subagent 必讀，補充進 handoff.md §2 S5 子表）
+
+| Risk | Why it matters | Action |
+| ---- | -------------- | ------ |
+| `@firebase/rules-unit-testing` 需要 emulator | 直接 `npx vitest run --project=server tests/server/rules/...` 會被 `vitest.setup.server.js` 擋，或連不到 emulator | 一律用 `npm run test:server -- tests/server/rules/<file>`；CI workflow 也用同一條路徑。 |
+| Server include 已修好，不要重改 config | `vitest.config.mjs` 已 include `tests/server/**/*.test.js`；S5 再改 include 會製造無關 diff | T23 reviewer 驗證 config 現況；S5 禁改 `vitest.config.mjs`，除非 emulator test 被實證漏抓且使用者批准。 |
+| Rules 語意與 audit wording 衝突 | audit 修補範例提到「未登入 read 應拒」「偽造 recipientUid 應拒」，但現行 rules 對 posts read / notification create 不完全如此 | 先 test 現行 rules；衝突寫 handoff + escalate，不准自行改 rules。 |
+| 多個 parallel task 都寫 `handoff.md` | T26-T30 平行時容易覆蓋彼此 evidence | 每個 engineer 只改自己 task row / S5 risk row；寫前重讀最新檔，若衝突只 merge 自己區塊。Reviewer 只能補 reviewer 欄。 |
+| `createdAt == request.time` 很容易寫錯 | Notification create 若用固定 `Timestamp.now()` 會 fail；client 需用 server timestamp transform | T29 必須包含 valid create success + fixed timestamp fail，並在 evidence 寫清楚用法。 |
+| `withSecurityRulesDisabled` seed 不等於 pass | seed 是準備測試資料，不代表 client rules allow | 所有 allow/deny 都要用 authenticated/unauthenticated client context + `assertSucceeds` / `assertFails` 驗證。 |
+| CollectionGroup query path 容易只測 doc get | P0-2 指的是 `collectionGroup('likes')` 風險；只 `getDoc(posts/p1/likes/u1)` 不夠 | T26 必須至少有一個 `collectionGroup(db, 'likes')` query 的 unauth denied + signed-in allowed。 |
+| Workflow paths 太寬或太窄 | 太寬會浪費 CI，太窄會讓 rules 改動漏跑 | T30 AC 明列 paths；reviewer 逐項 grep。 |
+
+## S5 Tasks
+
+### T23 — Spike: Firestore rules semantics + test matrix
+
+- **Status**: `[ ]`
+- **Files Written**: `specs/026-tests-audit-report/handoff.md` §2 S5 risk 子表 + §3 T23 row，**不**改 code/test/workflow
+- **Files Read**: `firestore.rules`、audit L113-141 / L538-544 / L614-620、`vitest.config.mjs`、`vitest.setup.server.js`、`package.json`
+- **Audit**: P0-2 / R9
+- **Dependencies**: 無
+
+**Engineer Action**：
+
+1. 在 `handoff.md` §3 T23 evidence 寫出 5 條 critical path 的「現行 rules 行號 + expected allow/deny matrix」。
+2. 明確記錄兩個 audit wording 衝突：
+   - `posts` 本體 read 是 public；S5 不寫「未登入 post read deny」測試。
+   - notification create 目前允許 actor 寫給任意非自己的 recipient；S5 不把「任意 recipientUid」當 deny，除非使用者批准改 rules。
+3. 驗證 server include 現況：`vitest.config.mjs` server project include 已涵蓋 `tests/server/**/*.test.js`。
+4. 在 §2 S5 risk 子表補實際發現（至少 3 條；若與上方已重複，仍要寫本輪確認結果）。
+
+**Acceptance Criteria**：
+
+- **AC-T23.1**: §3 T23 evidence 有 5 條 critical path matrix，每條都含 rules 行號、allow cases、deny cases。
+- **AC-T23.2**: Evidence 明確寫出「S5 不修改 `firestore.rules`」與「若 expected security 與現行 rules 衝突則 escalate」。
+- **AC-T23.3**: Evidence 附 `vitest.config.mjs` server include 現況，確認 `tests/server/**/*.test.js` 會抓到 `tests/server/rules/*.rules.test.js`。
+- **AC-T23.4**: §2 S5 risk 子表至少 3 條實際風險 / 踩坑。
+- **AC-T23.5**: `git diff --name-only` 只包含 `specs/026-tests-audit-report/handoff.md`。
+
+**Reviewer 驗證**：
+
+- Read `firestore.rules:80-257`，逐條比對 engineer matrix。
+- Read `vitest.config.mjs` server project include，確認 AC-T23.3 屬實。
+- `git diff --name-only` 確認沒有 code/test/workflow/package 改動。
+- 在 §3 T23 reviewer 欄填 PASS/REJECT + 至少 5 行驗證結論。
+
+---
+
+### T24 — Install: @firebase/rules-unit-testing dev dependency
+
+- **Status**: `[ ]`
+- **Files Written**: `package.json`、`package-lock.json`、`specs/026-tests-audit-report/handoff.md` §3 T24 row
+- **Files Read**: `package.json`、`package-lock.json`
+- **Audit**: P0-2 / R9
+- **Dependencies**: T23 `[x]`
+
+**Engineer Action**：
+
+1. 安裝 dev dependency：
+   ```bash
+   npm install -D @firebase/rules-unit-testing
+   ```
+2. 禁止順手跑 `npm audit fix`、禁止升級其他套件。
+3. 驗證 package 可 import：
+   ```bash
+   npm ls @firebase/rules-unit-testing
+   node -e "import('@firebase/rules-unit-testing').then(m=>console.log(['initializeTestEnvironment','assertSucceeds','assertFails'].every(k=>k in m)))"
+   ```
+
+**Acceptance Criteria**：
+
+- **AC-T24.1**: `package.json` devDependencies 含 `@firebase/rules-unit-testing`。
+- **AC-T24.2**: `package-lock.json` 有對應 lock entry；沒有無關 dependency upgrade。
+- **AC-T24.3**: `npm ls @firebase/rules-unit-testing` exit 0。
+- **AC-T24.4**: node import command 輸出 `true`。
+- **AC-T24.5**: `git diff --name-only` 只新增/修改 `package.json`、`package-lock.json`、`handoff.md`。
+
+**Engineer Evidence**：
+
+- `git diff package.json package-lock.json --stat`
+- `npm ls @firebase/rules-unit-testing` 輸出
+- node import command 輸出
+
+**Reviewer 驗證**：
+
+- 重跑 AC-T24.3 / AC-T24.4。
+- Read `git diff package.json package-lock.json`，確認沒有 `npm audit fix` 式大範圍升級。
+- 在 §3 T24 reviewer 欄簽名 + 命令輸出。
+
+---
+
+### T25 — Infra proof: shared rules helper + users.rules.test.js
+
+- **Status**: `[ ]`
+- **Files Written**:
+  - `tests/server/rules/_helpers/rules-test-env.js`
+  - `tests/server/rules/users.rules.test.js`
+  - `specs/026-tests-audit-report/handoff.md` §3 T25 row
+- **Audit**: P0-2 infra proof（users 不是 5 critical path，但證明 rules emulator chain）
+- **Dependencies**: T24 `[x]`
+
+**Engineer Action**：
+
+1. 建 shared helper，至少提供：
+   - 從 repo root 讀取真實 `firestore.rules`
+   - `initializeTestEnvironment({ projectId: 'demo-test', firestore: { rules } })`
+   - `withSecurityRulesDisabled` seed helper
+   - authenticated / unauthenticated Firestore client helper
+   - `clearFirestore()` / `cleanup()` lifecycle
+2. 寫 `users.rules.test.js`，覆蓋：
+   - public user profile read：unauthenticated `getDoc(users/u1)` succeeds
+   - create only self：`auth.uid === userId` succeeds；cross-user fails
+   - update only self：owner non-bio update succeeds；cross-user fails
+   - bio validation：150 chars succeeds；151 chars fails
+   - delete denied
+   - `users/{userId}/weatherFavorites/{docId}` owner read/write succeeds；non-owner fails
+
+**Acceptance Criteria**：
+
+- **AC-T25.1**: Helper 讀的是 repo `firestore.rules`，test 內沒有複製 rules string。
+- **AC-T25.2**: Helper 用 `demo-test` project id，並支援 disabled seed + authed/anon clients。
+- **AC-T25.3**: `users.rules.test.js` 至少 7 個 `it(...)`，且每組 allow/deny 用 `assertSucceeds` / `assertFails`。
+- **AC-T25.4**: Targeted server test pass：
+  ```bash
+  npm run test:server -- tests/server/rules/users.rules.test.js
+  ```
+- **AC-T25.5**: Targeted lint pass：
+  ```bash
+  npx eslint tests/server/rules/_helpers/rules-test-env.js tests/server/rules/users.rules.test.js
+  ```
+- **AC-T25.6**: `git diff --name-only` 不含 `firestore.rules` / `vitest.config.mjs`。
+
+**Engineer Evidence**：
+
+- `git diff -- tests/server/rules/_helpers/rules-test-env.js tests/server/rules/users.rules.test.js`
+- AC-T25.4 / AC-T25.5 輸出
+- lifecycle 設計摘要：何時 clear、何時 cleanup、如何 seed
+
+**Reviewer 驗證**：
+
+- Read helper + users spec 全檔。
+- 重跑 AC-T25.4 / AC-T25.5。
+- 確認 helper 沒 mock / 沒複製 rules / 沒碰 `firestore.rules`。
+- 在 §3 T25 reviewer 欄簽名 + 命令輸出 + ≥ 5 行驗證結論。
+
+---
+
+### T26 — Critical path: posts likes collectionGroup rules
+
+- **Status**: `[ ]`
+- **Files Written**: `tests/server/rules/posts.rules.test.js`、`handoff.md` §3 T26 row
+- **Audit**: P0-2 critical path 1 / rules L80-L84
+- **Dependencies**: T25 `[x]`
+- **Parallel**: 可與 T27 / T28 / T29 / T30 平行
+
+**Engineer Action**：
+
+覆蓋 `posts/{postId}/likes/{uid}` 與 collectionGroup likes：
+
+- unauthenticated `collectionGroup(db, 'likes')` read fails
+- signed-in `collectionGroup(db, 'likes')` read succeeds（依現行 L82）
+- authenticated user can create own like doc id
+- authenticated user cannot create/delete another uid's like doc
+- like owner can delete own like
+- post author can cascade delete another user's like under own post
+- unrelated signed-in user cannot delete another user's like
+
+**Acceptance Criteria**：
+
+- **AC-T26.1**: Spec 至少包含 7 個 cases，且有 `collectionGroup(db, 'likes')` query。
+- **AC-T26.2**: 測試 expectation 對齊現行 rules：signed-in collectionGroup read 是 allowed，不是 denied。
+- **AC-T26.3**: Targeted test pass：
+  ```bash
+  npm run test:server -- tests/server/rules/posts.rules.test.js
+  ```
+- **AC-T26.4**: Targeted lint pass：
+  ```bash
+  npx eslint tests/server/rules/posts.rules.test.js
+  ```
+- **AC-T26.5**: 不改 `firestore.rules`、不改 helper API（若需要 helper 改動，先回 T25/T23 escalate）。
+
+**Reviewer 驗證**：
+
+- Read posts spec，確認真的測 collectionGroup，不只是 `getDoc(posts/.../likes/...)`。
+- 重跑 AC-T26.3 / AC-T26.4。
+- 對照 `firestore.rules:80-84` + nested likes rule，確認 expectations 正確。
+- 在 §3 T26 reviewer 欄簽名 + 命令輸出。
+
+---
+
+### T27 — Critical path: Strava tokens / connections / activities read-only
+
+- **Status**: `[ ]`
+- **Files Written**: `tests/server/rules/strava.rules.test.js`、`handoff.md` §3 T27 row
+- **Audit**: P0-2 critical path 2 / rules L108-L123
+- **Dependencies**: T25 `[x]`
+- **Parallel**: 可與 T26 / T28 / T29 / T30 平行
+
+**Engineer Action**：
+
+覆蓋 Strava 三組 collection：
+
+- `stravaTokens/{uid}`：owner / other / unauth read all fail；client create/update/delete all fail
+- `stravaConnections/{uid}`：owner read succeeds；other / unauth read fails；client write fails
+- `stravaActivities/{id}`：owner read succeeds when `resource.data.uid === auth.uid`；other / unauth read fails；client write fails
+
+**Acceptance Criteria**：
+
+- **AC-T27.1**: Spec 至少 9 個 cases，三個 collection 都有 allow/deny coverage。
+- **AC-T27.2**: `stravaTokens` 沒有任何 client allow path。
+- **AC-T27.3**: `stravaConnections` 與 `stravaActivities` 都驗 owner vs non-owner read。
+- **AC-T27.4**: Targeted test pass：
+  ```bash
+  npm run test:server -- tests/server/rules/strava.rules.test.js
+  ```
+- **AC-T27.5**: Targeted lint pass：
+  ```bash
+  npx eslint tests/server/rules/strava.rules.test.js
+  ```
+- **AC-T27.6**: 不改 `firestore.rules`。
+
+**Reviewer 驗證**：
+
+- Read strava spec，確認 `stravaTokens` client read/write 都是 deny。
+- 重跑 AC-T27.4 / AC-T27.5。
+- 對照 `firestore.rules:108-123`，確認 expectations 正確。
+- 在 §3 T27 reviewer 欄簽名 + 命令輸出。
+
+---
+
+### T28 — Critical paths: events seat consistency + participants cascade
+
+- **Status**: `[ ]`
+- **Files Written**: `tests/server/rules/events.rules.test.js`、`handoff.md` §3 T28 row
+- **Audit**: P0-2 critical paths 3-4 / rules L150-L185
+- **Dependencies**: T25 `[x]`
+- **Parallel**: 可與 T26 / T27 / T29 / T30 平行
+
+**Engineer Action**：
+
+覆蓋 events 兩條 critical path：
+
+- seat consistency：
+  - non-host update only `remainingSeats` + `participantsCount` with non-negative numbers and sum == `maxParticipants` succeeds
+  - oversell / negative count / sum mismatch fails
+  - non-host updating title or unrelated fields fails
+  - host lowering `maxParticipants` below current `participantsCount` fails
+  - host setting `maxParticipants >= participantsCount` succeeds
+- participants cascade：
+  - participant can create own participant doc with matching uid/eventId/name/photoURL
+  - forged participant uid fails
+  - participant can delete self
+  - host can delete any participant under own event
+  - unrelated user cannot delete participant
+  - participant update always fails
+
+**Acceptance Criteria**：
+
+- **AC-T28.1**: Spec 至少 12 個 cases，seat consistency 與 participants cascade 都有 allow + deny。
+- **AC-T28.2**: Seat update tests 明確驗 `remainingSeats + participantsCount == maxParticipants`。
+- **AC-T28.3**: Participants delete tests 同時覆蓋 self delete、host cascade delete、unrelated deny。
+- **AC-T28.4**: Targeted test pass：
+  ```bash
+  npm run test:server -- tests/server/rules/events.rules.test.js
+  ```
+- **AC-T28.5**: Targeted lint pass：
+  ```bash
+  npx eslint tests/server/rules/events.rules.test.js
+  ```
+- **AC-T28.6**: 不改 `firestore.rules`。
+
+**Reviewer 驗證**：
+
+- Read events spec，確認兩條 critical path 都不是只測 happy path。
+- 重跑 AC-T28.4 / AC-T28.5。
+- 對照 `firestore.rules:150-185`，確認 expectations 正確。
+- 在 §3 T28 reviewer 欄簽名 + 命令輸出。
+
+---
+
+### T29 — Critical path: notification recipient / read / update rules
+
+- **Status**: `[ ]`
+- **Files Written**: `tests/server/rules/notifications.rules.test.js`、`handoff.md` §3 T29 row
+- **Audit**: P0-2 critical path 5 / rules L233-L257
+- **Dependencies**: T25 `[x]`
+- **Parallel**: 可與 T26 / T27 / T28 / T30 平行
+
+**Engineer Action**：
+
+覆蓋 notifications：
+
+- create succeeds when signed-in actor sets `actorUid === auth.uid`, `recipientUid` is another user, allowed `type`, `read: false`, `createdAt: serverTimestamp()`
+- create fails when unauthenticated
+- create fails when `recipientUid === auth.uid`
+- create fails when `actorUid !== auth.uid`
+- create fails when `type` is not allowlisted
+- create fails when `read !== false`
+- create fails when `createdAt` is a fixed timestamp instead of request time
+- recipient can read own notification; actor / unrelated / unauth cannot read
+- recipient can update only `read`; recipient cannot mutate `recipientUid` / `type` / `actorUid`
+- actor / unrelated cannot update; delete always fails
+
+**Acceptance Criteria**：
+
+- **AC-T29.1**: Spec 至少 12 個 cases，create/read/update/delete 都有 coverage。
+- **AC-T29.2**: Valid create 使用 Firestore client `serverTimestamp()` 或等效 request-time transform；fixed timestamp 必須有 deny case。
+- **AC-T29.3**: Evidence 明確記錄：現行 rules 允許 actor 對任意非自己的 recipient 建通知；若 reviewer/engineer 認為這是安全問題，標為 follow-up，不在 S5 改 rules。
+- **AC-T29.4**: Targeted test pass：
+  ```bash
+  npm run test:server -- tests/server/rules/notifications.rules.test.js
+  ```
+- **AC-T29.5**: Targeted lint pass：
+  ```bash
+  npx eslint tests/server/rules/notifications.rules.test.js
+  ```
+- **AC-T29.6**: 不改 `firestore.rules`。
+
+**Reviewer 驗證**：
+
+- Read notifications spec，確認 actorUid / recipientUid / type / read / createdAt 都有 deny path。
+- 重跑 AC-T29.4 / AC-T29.5。
+- 對照 `firestore.rules:233-257`，確認沒有把 audit wording 當成未經確認的 expected behavior。
+- 在 §3 T29 reviewer 欄簽名 + 命令輸出。
+
+---
+
+### T30 — Workflow: firestore-rules-gate.yml paths-filter
+
+- **Status**: `[ ]`
+- **Files Written**: `.github/workflows/firestore-rules-gate.yml`、`handoff.md` §3 T30 row
+- **Audit**: R9 / audit L538-L544 / L614-L620
+- **Dependencies**: T24 `[x]`
+- **Parallel**: 可與 T26 / T27 / T28 / T29 平行
+
+**Engineer Action**：
+
+新增 workflow：
+
+- name：`Firestore Rules Gate`
+- events：`pull_request` to `main` + `push` to `main`
+- paths：
+  - `firestore.rules`
+  - `tests/server/rules/**`
+  - `package.json`
+  - `package-lock.json`
+  - `.github/workflows/firestore-rules-gate.yml`
+- job id：`firestore-rules-gate`
+- steps：checkout、setup-java 21、setup-node `.nvmrc` + npm cache、`npm ci`、install firebase-tools、run rules tests
+- test command：
+  ```bash
+  npm run test:server -- tests/server/rules
+  ```
+- 不需要 secrets；使用 `demo-test` emulator project。
+
+**Acceptance Criteria**：
+
+- **AC-T30.1**: Workflow file exists at `.github/workflows/firestore-rules-gate.yml`。
+- **AC-T30.2**: `on.pull_request.paths` 與 `on.push.paths` 都包含 5 個指定 path pattern。
+- **AC-T30.3**: Job 使用 Java 21 + Node `.nvmrc` + `npm ci` + firebase-tools。
+- **AC-T30.4**: Job command 是 `npm run test:server -- tests/server/rules`，不是 full browser test。
+- **AC-T30.5**: Workflow 不引用 repo secrets / production Firebase project。
+- **AC-T30.6**: YAML 無 tab、無明顯 syntax typo；若 local 有 `actionlint`，必跑：
+  ```bash
+  if command -v actionlint >/dev/null; then actionlint .github/workflows/firestore-rules-gate.yml; else echo "actionlint unavailable"; fi
+  ```
+- **AC-T30.7**: 不改 `.github/workflows/ci.yml`（S5 新增獨立 gate，不重寫既有 CI）。
+
+**Reviewer 驗證**：
+
+- Read workflow 全檔。
+- `grep -n` 逐項確認 paths、job id、setup-java、setup-node、firebase-tools、test command。
+- 若有 `actionlint`，重跑 AC-T30.6；沒有則在 reviewer evidence 寫明 unavailable。
+- 確認 `git diff .github/workflows/ci.yml` 為空。
+- 在 §3 T30 reviewer 欄簽名 + 命令輸出。
+
+---
+
+### T31 — S5 integration verification + commit
+
+- **Status**: `[ ]`
+- **Files Written**:
+  - `specs/026-tests-audit-report/handoff.md` §0 / §1 / §2 S5 risk / §3 T31 evidence / §5
+  - `specs/026-tests-audit-report/tasks.md`（T23-T31 status `[ ]` → `[x]`）
+- **Files committed**:
+  - `package.json`
+  - `package-lock.json`
+  - `tests/server/rules/_helpers/rules-test-env.js`
+  - `tests/server/rules/users.rules.test.js`
+  - `tests/server/rules/posts.rules.test.js`
+  - `tests/server/rules/strava.rules.test.js`
+  - `tests/server/rules/events.rules.test.js`
+  - `tests/server/rules/notifications.rules.test.js`
+  - `.github/workflows/firestore-rules-gate.yml`
+  - `specs/026-tests-audit-report/handoff.md`
+  - `specs/026-tests-audit-report/tasks.md`
+- **Dependencies**: T23-T30 全部 `[x]`
+
+**Engineer Action**：
+
+1. 確認 §3 T23-T30 全部 `rev-pass` + engineer/reviewer 雙簽。
+2. 更新 `handoff.md`：
+   - §0：S5 scope / T23-T31 狀態 / Last commit (S5) 留待 commit 後填
+   - §1：S5 已完成工作 + 下一步指向 S6
+   - §2：S5 risk 子表保留實際踩坑
+   - §3：T31 evidence
+   - §5：補 node/npm/firebase-tools/rules-unit-testing 版本
+3. 更新 `tasks.md`：T23-T31 status `[ ]` → `[x]`。
+4. 一次性重跑 S5 + repo gate（見 AC-T31.2）。
+5. 明確列檔 stage（禁 `git add -A`）。
+6. Commit（不 push）。
+
+**Acceptance Criteria**：
+
+- **AC-T31.1**: §3 T23-T30 全 `rev-pass`，`tasks.md` T23-T31 全 `[x]`。
+- **AC-T31.2**: 一次性重跑：
+  ```bash
+  npm run test:server -- tests/server/rules
+  npm run test:server
+  npm run lint -- --max-warnings 0
+  npm run type-check
+  npm run depcruise
+  npm run spellcheck
+  npx vitest run --project=browser
+  ```
+  全部 exit 0；若 `npm run test:server` 因 emulator/tooling 失敗，必須根因修完，不可跳過。
+- **AC-T31.3**: Workflow command dry-check：
+  ```bash
+  grep -n "npm run test:server -- tests/server/rules" .github/workflows/firestore-rules-gate.yml
+  ```
+- **AC-T31.4**: `git diff --name-only --cached` 僅包含 S5 files + `handoff.md` + `tasks.md`，不含 `firestore.rules`、`vitest.config.mjs`、`.github/workflows/ci.yml`。
+- **AC-T31.5**: commit message 格式：
+  ```text
+  test(rules): add firestore rules gate and critical specs
+
+  - install @firebase/rules-unit-testing
+  - add rules emulator specs for users/posts/strava/events/notifications
+  - cover five P0-2 critical paths with allow + deny cases
+  - add firestore-rules-gate workflow with paths filter
+
+  Refs: project-health/2026-04-29-tests-audit-report.md L113-141, L538-544, L614-620
+  ```
+  不加 `Co-Authored-By`。
+- **AC-T31.6**: `git show HEAD --stat` 顯示 S5 預期檔案；`git show HEAD --name-only` 不含禁區檔。
+- **AC-T31.7**: `git log -1 --format=%B | grep -ic "Co-Authored-By"` = 0。
+- **AC-T31.8**: branch = `026-tests-audit-report`；不 push。
+
+**Reviewer 驗證**：
+
+- 重跑 AC-T31.2（接受耗時；這是 S5 final gate）。
+- `git show HEAD --stat` + `git show HEAD --name-only` 確認檔案範圍。
+- Read commit message，確認 refs + no co-author。
+- Read `handoff.md` §0 / §1 / §2 S5 / §3 T23-T31 / §5。
+- Read `tasks.md` 確認 T23-T31 全 `[x]`。
+- `git log origin/026-tests-audit-report..HEAD 2>&1` 應顯示 ≥ 1 commit ahead（未 push）。
+- 在 §3 T31 reviewer 欄簽名 + 命令輸出 + ≥ 5 行驗證結論。
+
+---
+
 ## Reviewer 認證標準（適用所有 task）
 
 | 必做                                                                 | 不能只做                         |
@@ -1877,35 +2399,48 @@ Wave 7 (序列):    T22-eng → T22-rev   (commit + handoff sync)
 | T20  | S4    | general-purpose        | general-purpose        | S4-3 | (none, 序列)     |
 | T21  | S4    | general-purpose        | general-purpose        | S4-4 | (none, 序列)     |
 | T22  | S4    | general-purpose        | general-purpose        | S4-5 | (none, 序列)     |
+| T23  | S5    | general-purpose        | general-purpose        | S5-1 | (none, 序列)     |
+| T24  | S5    | general-purpose        | general-purpose        | S5-2 | (none, 序列)     |
+| T25  | S5    | general-purpose        | general-purpose        | S5-3 | (none, 序列)     |
+| T26  | S5    | general-purpose        | general-purpose        | S5-4 | T27, T28, T29, T30 |
+| T27  | S5    | general-purpose        | general-purpose        | S5-4 | T26, T28, T29, T30 |
+| T28  | S5    | general-purpose        | general-purpose        | S5-4 | T26, T27, T29, T30 |
+| T29  | S5    | general-purpose        | general-purpose        | S5-4 | T26, T27, T28, T30 |
+| T30  | S5    | general-purpose        | general-purpose        | S5-4 | T26, T27, T28, T29 |
+| T31  | S5    | general-purpose        | general-purpose        | S5-5 | (none, 序列)     |
 
 ## Subagent 通用須知
 
 - **必看檔案**（spawn 時 attach 路徑）：
   - 本檔 `specs/026-tests-audit-report/tasks.md`
-  - `specs/026-tests-audit-report/handoff.md`（特別是 §2 Must-Read Risks，含 S1 / S2 / S3 / S4 子表）
+  - `specs/026-tests-audit-report/handoff.md`（特別是 §2 Must-Read Risks，含 S1 / S2 / S3 / S4 / S5 子表）
   - `project-health/2026-04-29-tests-audit-report.md`：
     - **S1 (T01-T05)**：L324-360 + L586-592
     - **S2 (T06-T09)**：L77-95 / L113-141 / L168-208 / L294-318 / L545-551 / L594-598 / L641-657
     - **S3 (T10-T15)**：L170-208 + L437-443 + L600-606 + L665-668
     - **S4 (T16-T22)**：L77-111 + L293-318 + L538-544 + L607-612 + L626-633 + L658-664
+    - **S5 (T23-T31)**：L113-141 + L538-544 + L614-620
   - 對應的目標檔本身：
     - S1: 4 個 config 檔
     - S2: `.github/pull_request_template.md` + 必要時 `cspell.json`
     - S3: `vitest.config.mjs` + `docs/QUALITY_SCORE.md` + 必要時 `cspell.json`
     - S4: `scripts/audit-mock-boundary.sh`（新）+ `scripts/audit-flaky-patterns.sh`（新）+ `.husky/pre-commit`
+    - S5: `firestore.rules`（Read-only）、`package.json`、`package-lock.json`、`tests/server/rules/**`、`.github/workflows/firestore-rules-gate.yml`
 
 - **必要工具**：Read、Edit、Bash（跑驗證）、Write（engineer 建新檔用，reviewer 不該 Write 任何受審檔）
 
 - **禁區**：
-  - Reviewer 不能 Edit/Write 受審檔（S1: config 檔；S2: `.github/`、`cspell.json`；S3: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`cspell.json`、`handoff.md` engineer evidence 區；S4: `scripts/audit-*.sh`、`.husky/pre-commit`、`handoff.md` engineer evidence 區）
-  - Engineer 不能改 task scope 外的檔案（例：T01 不能動 playwright config；T07 不能動 cspell.json，加詞屬於 T08 範圍；T12 不能動 threshold；T14 不能改 service/repo/runtime/lib/config 既有 V8 Cov 數字；T16/T17 spike 不能寫 script 或改 husky；T18/T19 不能動 husky；T20 不能改 script；T20 對 husky 必須只 append、不刪改既有 5 行）
+  - Reviewer 不能 Edit/Write 受審檔（S1: config 檔；S2: `.github/`、`cspell.json`；S3: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`cspell.json`、`handoff.md` engineer evidence 區；S4: `scripts/audit-*.sh`、`.husky/pre-commit`、`handoff.md` engineer evidence 區；S5: `package*.json`、`tests/server/rules/**`、`.github/workflows/firestore-rules-gate.yml`、`handoff.md` engineer evidence 區）
+  - Engineer 不能改 task scope 外的檔案（例：T01 不能動 playwright config；T07 不能動 cspell.json，加詞屬於 T08 範圍；T12 不能動 threshold；T14 不能改 service/repo/runtime/lib/config 既有 V8 Cov 數字；T16/T17 spike 不能寫 script 或改 husky；T18/T19 不能動 husky；T20 不能改 script；T20 對 husky 必須只 append、不刪改既有 5 行；T23 不能改 code/test/package；T26-T30 不能改 helper API；S5 全程不能改 `firestore.rules` / `vitest.config.mjs` / `.github/workflows/ci.yml`）
   - 任何 subagent 不能 push remote、不能開 PR、不能改 git config
-  - **Commit-only task**：S1 只有 T05 engineer 可 commit；S2 只有 T09 engineer 可 commit；S3 只有 T15 engineer 可 commit；S4 只有 T22 engineer 可 commit；其他 task engineer 只改檔不 commit
+  - **Commit-only task**：S1 只有 T05 engineer 可 commit；S2 只有 T09 engineer 可 commit；S3 只有 T15 engineer 可 commit；S4 只有 T22 engineer 可 commit；S5 只有 T31 engineer 可 commit；其他 task engineer 只改檔不 commit
   - **Threshold 紀律（S3 專屬）**：T13 發現 70 threshold 跌破時**禁止**自行降 threshold，必須 escalate（標 `[!]`）；T12-T14 任何 task **禁止**設 per-directory threshold（屬 S9 觸發型）
   - **Coverage artifact 紀律（S3 專屬）**：`coverage/` 為 gitignored，T15 commit 必須 `git status` 確認該目錄為 untracked，**禁** `git add -A` / `git add coverage`
   - **Warn-only 紀律（S4 專屬）**：T18/T19 script 末行必須 `exit 0`，**禁止**設 `exit 1` / `exit ${count}` 等真擋邏輯；T20 husky append 行必加 `|| true` 雙保險；T21 smoke test 即使 temp 檔在場 audit script 仍須 exit 0；S8 升級到 exit 1 屬觸發型，不在本 S4 scope
   - **Pattern 對齊紀律（S4 專屬）**：S4 兩 script 的 grep pattern 必須與 audit L626-633 / L629-630 給定的 S6 baseline 命令對齊，**禁止**「優化」pattern（含改 ERE/BRE、加排除、調語意）；對齊驗證在 T16/T17 spike 階段凍結，T18-T22 不可重新設計
   - **Smoke temp 檔紀律（S4 專屬）**：T21 故意建的 `tests/integration/_s4-smoke.test.jsx`（或同等 temp 檔）**必須在 T21 內 cleanup**；T22 commit 前再次驗 `git status --short | grep "_s4-smoke" | wc -l = 0`；commit 含 5 檔（不含任何 temp / log）
+  - **Rules 行為紀律（S5 專屬）**：S5 是「測現行 rules + 補 CI gate」，不是修安全邏輯；遇到現行 rules 與 audit 期待衝突時，先在 `handoff.md` 記錄並 escalate，不准偷改 `firestore.rules`。
+  - **Rules emulator 紀律（S5 專屬）**：rules tests 必須透過 `npm run test:server -- tests/server/rules/...` 跑 emulator；禁止用 mock 取代 emulator，禁止把 rules string 複製到 test。
 
 - **Pre-commit hook 注意**：
   - `.husky/pre-commit` 會跑：lint --max-warnings 0、type-check、depcruise、spellcheck、vitest browser（**不**跑 coverage）
@@ -1913,6 +2448,7 @@ Wave 7 (序列):    T22-eng → T22-rev   (commit + handoff sync)
   - T05（S1）/ T09（S2）/ T15（S3）/ T22（S4）engineer 在 `git commit` 前先手動跑一次完整 gate，避免 hook 失敗
   - **S3 額外**：T15 commit 前還要手動跑 `npm run test:coverage`（hook 不跑，但 CI 會跑；先確認本地通過）
   - **S4 額外**：T22 commit 前手動跑兩 audit script + 確認 stdout 首行符合 `AUDIT <CATEGORY>: <N> findings` 樣板
+  - **S5 額外**：T31 commit 前必跑 `npm run test:server -- tests/server/rules` + `npm run test:server`；這兩條不是 pre-commit hook 內容，但 rules gate/CI 會依賴。
   - hook 失敗時：fix issue → re-stage → 新 commit（**不要** `--amend`）
 
 - **回報格式**（spawn 結束時的 result）：
@@ -1923,7 +2459,7 @@ Wave 7 (序列):    T22-eng → T22-rev   (commit + handoff sync)
 
 ## 後續 commit（不在本檔 scope）
 
-本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，已 commit `5f09820`）、S4（T16-T22，pending）。後續：
+本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，已 commit `5f09820`）、S4（T16-T22，已 commit `a55fa76`）、S5（T23-T31，planned）。後續：
 
 | Commit | Goal                                     | Spec            |
 | ------ | ---------------------------------------- | --------------- |
@@ -1931,6 +2467,6 @@ Wave 7 (序列):    T22-eng → T22-rev   (commit + handoff sync)
 | S2     | PR template + audit checkbox             | ✅ 本檔 T06-T09 |
 | S3     | coverage include + baseline              | ✅ 本檔 T10-T15 |
 | S4     | pre-commit grep gate (warn-only)         | ✅ 本檔 T16-T22 |
-| S5     | firestore rules infra + 5 critical specs | (TBD)           |
+| S5     | firestore rules infra + 5 critical specs | ✅ 本檔 T23-T31 |
 | S6     | ESLint mock-boundary + flaky rules       | (TBD)           |
 | S7-S10 | (見 audit report §12)                    | (TBD)           |
