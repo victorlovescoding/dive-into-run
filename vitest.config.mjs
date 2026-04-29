@@ -60,7 +60,7 @@ export default defineConfig({
           name: 'server',
           environment: 'node',
           setupFiles: './vitest.setup.server.js',
-          include: ['tests/server/g8-server-coverage/**/*.test.js'],
+          include: ['tests/server/**/*.test.js'],
           fileParallelism: false,
         },
       },
