@@ -2837,7 +2837,7 @@ Wave S7-6: T44-eng -> T44-rev
 
 ### T38 — Confirm merged baseline and exact GitHub check contexts
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Scope**: Read-only GitHub + local workflow inspection
 - **Standard**: R10 / no speculation about check names
 - **Dependencies**: S1-S6 PR merged into `main`
@@ -2882,7 +2882,7 @@ Wave S7-6: T44-eng -> T44-rev
 
 ### T39 — Required-check safety gate for Firestore Rules Gate
 
-- **Status**: `[ ]`
+- **Status**: `[!]` escalated — reviewer-pass decision was **UNSAFE**; stopped S7 before UI mutation
 - **Scope**: Read-only GitHub + workflow safety decision
 - **Standard**: R10 must not break unrelated PR merges
 - **Dependencies**: T38 `[x]`
@@ -3056,7 +3056,7 @@ Wave S7-6: T44-eng -> T44-rev
 
 ### T43 — Update handoff with S7 evidence and pitfalls
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**:
   - `specs/026-tests-audit-report/handoff.md`
 - **Standard**: future sessions must see the GitHub UI state and pitfalls without re-discovering them
@@ -3094,7 +3094,7 @@ Wave S7-6: T44-eng -> T44-rev
 
 ### T44 — S7 docs closeout commit
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**:
   - `specs/026-tests-audit-report/handoff.md`
   - `specs/026-tests-audit-report/tasks.md`
