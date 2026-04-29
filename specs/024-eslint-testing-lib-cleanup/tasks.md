@@ -3258,15 +3258,15 @@ git diff --name-only
 
 ## Parallelism — 同時最多 4 個 subagents（2 Engineer + 2 Reviewer）
 
-| 階段                          | 並行度      | 原因                                                                                 |
-| ----------------------------- | ----------- | ------------------------------------------------------------------------------------ |
-| T49 preflight                 | **1**       | Read-only scope audit；先確認 branch / commit / clean tree / Phase 5 是否可開工      |
-| T50–T53 verification Engineer | **最多 2**  | 只適用於互不寫檔的驗證 wave；ESLint / browser / server / static gates 可分批並行     |
-| T50–T53 Reviewer              | **最多 2**  | Reviewer 必須在同任務 Engineer 完成後跑；不和同任務 Engineer 同時跑                 |
-| T54 commit                    | **1**       | git add/commit/pre-commit gate 會改 index/history，必須獨占                           |
-| T55 push + PR                 | **1**       | push / PR 建立有外部副作用，必須獨占                                                  |
-| T56 post-merge sync SOP       | **1**       | merge 後 worktree sync / rebase / npm install 必須逐一處理，不能跟其他任務並行        |
-| T57 closeout                  | **1**       | 只更新交接文件；要彙整 T49–T56 evidence，避免和 verification/git 操作交錯             |
+| 階段                          | 並行度     | 原因                                                                             |
+| ----------------------------- | ---------- | -------------------------------------------------------------------------------- |
+| T49 preflight                 | **1**      | Read-only scope audit；先確認 branch / commit / clean tree / Phase 5 是否可開工  |
+| T50–T53 verification Engineer | **最多 2** | 只適用於互不寫檔的驗證 wave；ESLint / browser / server / static gates 可分批並行 |
+| T50–T53 Reviewer              | **最多 2** | Reviewer 必須在同任務 Engineer 完成後跑；不和同任務 Engineer 同時跑              |
+| T54 commit                    | **1**      | git add/commit/pre-commit gate 會改 index/history，必須獨占                      |
+| T55 push + PR                 | **1**      | push / PR 建立有外部副作用，必須獨占                                             |
+| T56 post-merge sync SOP       | **1**      | merge 後 worktree sync / rebase / npm install 必須逐一處理，不能跟其他任務並行   |
+| T57 closeout                  | **1**      | 只更新交接文件；要彙整 T49–T56 evidence，避免和 verification/git 操作交錯        |
 
 **硬規則**：
 
