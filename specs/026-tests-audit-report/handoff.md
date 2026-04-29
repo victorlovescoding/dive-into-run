@@ -143,6 +143,13 @@
 
 ## §2 Must-Read Risks（已知踩坑 + subagent 增補）
 
+### CI Fix / T38 prerequisite（2026-04-30）
+
+- PR #25 CI `e2e` job `73625784425` failed in vanilla phase on `comment-notifications.spec.js` Scenario 2/3/4 beforeAll with `EMAIL_EXISTS` from `createTestUser()` for fixed `cnotif-user-a/b@example.com`.
+- Root cause: the spec reused the same fixed Auth Emulator emails across four scenario-level `beforeAll` blocks; retry or prior scenario residue could make later scenario user creation collide even when each block attempted cleanup.
+- Fix: isolate the comment-notification Auth users per scenario with the existing E2E `Date.now()` uniqueness pattern; no shared helper abstraction added, and no workflow / Firestore rules changes.
+- Verification: `npx eslint tests/e2e/comment-notifications.spec.js` exit 0 (existing React settings warning only); targeted emulator run `CI=true npx playwright test --config playwright.config.mjs tests/e2e/comment-notifications.spec.js --workers=1` inside `firebase emulators:exec --only auth,firestore,storage --project=demo-test` passed 5/5 in 23.6s.
+
 ### S1 Risks（保留 — 凍結為歷史）
 
 | Risk                                                                    | Why it matters                                                                                                                                                                                                                                                                 | Action                                                                                                                                                                                                                              |
