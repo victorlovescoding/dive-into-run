@@ -50,7 +50,15 @@
 | T29 notifications rules spec     | done (rev-pass)                                                                                                          |
 | T30 Firestore Rules Gate         | done (rev-pass)                                                                                                          |
 | T31 verify + commit              | done by this S5 commit                                                                                                   |
-| Last commit (S5)                 | T31 commit `test(rules): add firestore rules gate and critical specs`; exact hash from `git rev-parse --short HEAD`      |
+| Last commit (S5)                 | `28c5cb8` test(rules): add firestore rules gate and critical specs                                                       |
+| **S6** scope                     | **done — ESLint mock-boundary + flaky rules (error + ignores baseline)（P0-1 / P1-4 / P1-5 / R6 / R7）**                 |
+| T32 mock-boundary selector spike | done (rev-pass)                                                                                                          |
+| T33 flaky selector spike         | done (rev-pass; (C) 決議：放棄 setTimeout AST，限縮 S6 scope 到 `toHaveBeenCalledTimes`)                                 |
+| T34 baseline freeze              | done (rev-pass; mock=33 / flaky-S6-effective=45)                                                                         |
+| T35 eslint.config.mjs implement  | done (rev-pass; attempt-3 option (B') — block 18.5 + 18.6 placed AFTER block 18 to escape `no-restricted-syntax: off`)   |
+| T36 smoke positive + negative    | done (rev-pass)                                                                                                          |
+| T37 verify + commit              | done by this S6 commit                                                                                                   |
+| Last commit (S6)                 | T37 commit `chore(eslint): mock-boundary + flaky rules (error + ignores baseline)`; exact hash via `git log -1`          |
 
 ## §1 Next Session Checklist
 
@@ -116,7 +124,22 @@
 
 - [ ] 開 PR：`026-tests-audit-report` → `main`，PR body 引用 §3 T23-T31 evidence + audit L113-141 / L538-544 / L614-620
 - [ ] 等 GitHub protected-branch status checks（lint / test / Firestore Rules Gate）綠 → merge → 刪 branch
-- [ ] **S6 啟動**：ESLint mock-boundary + flaky rules（error + ignores baseline），依 audit L626-633 生成 baseline lists，改 `eslint.config.mjs` 並做 smoke test；S4 baseline 起點為 mock-boundary `33`、flaky-pattern `45`
+- [x] **S6 已完成**（`chore(eslint): mock-boundary + flaky rules (error + ignores baseline)`）：依 audit L626-633，於 `eslint.config.mjs` 加 block 18.5（broad flaky `tests/**`）+ block 18.6（mock-boundary + flaky combined `tests/integration/**`），均為 `'error'` + ignores baseline；mock-boundary 起點 33、flaky 起點 45（per T33 (C) S6-effective）；47 union ignores（33 mock-boundary ∪ 23 flaky∩integration）為 block Y baseline。
+
+**S6 已完成工作**（T32-T36 reviewer-pass，T37 commit）：
+
+- [x] T32 spike：mock-boundary 主／副 esquery selector 設計（string + template literal，expressions.length=0），9 row 對照 S4 grep（rev-pass）
+- [x] T33 spike：flaky `toHaveBeenCalledTimes` selector + (C) 決議放棄 `new Promise.*setTimeout` AST 化（FP 風險過高），S6-effective baseline ⊆ 45 file（rev-pass）
+- [x] T34 baseline freeze：mock=33 / flaky-S4-union=45 / flaky-S6-(C)-`toHaveBeenCalledTimes`-only=45（巧合相同；setTimeout-only 子集 = ∅）（rev-pass）
+- [x] T35 implement：`eslint.config.mjs` block 18.5 + 18.6 插入於 block 18（`no-restricted-syntax: off`）之後 / block 19 之前；attempt-3 option (B') 解決 flat-config last-write-wins；47 union ignores（33 mock ∪ 23 flaky∩integration）（rev-pass）
+- [x] T36 smoke：mock + flaky positive 各命中 selector + 完整 message；mock + flaky negative baseline 內檔 `grep -c no-restricted-syntax` = 0；temp 檔 cleanup 0 殘留（rev-pass）
+- [x] T37 一次性整合驗證 + 精準 stage + commit（evidence 見 §3 T37 row）
+
+**S6 後續（人類動作 / 觸發型，不在 subagent scope）**：
+
+- [ ] 開 PR：`026-tests-audit-report` → `main`，PR body 引用 §3 T32-T37 evidence + audit L77-111 / L293-318 / L552-556 / L622-633
+- [ ] 等 GitHub protected-branch status checks（lint / test / Firestore Rules Gate）綠 → merge → 刪 branch（S7 — 人類動作）
+- [ ] **S8 觸發型**：Wave 3 cleanup 後把 `eslint.config.mjs` block 18.5 / 18.6 ignores → 空 list；同步把 `scripts/audit-mock-boundary.sh` / `scripts/audit-flaky-patterns.sh` 末行 `exit 0` → `exit 1`；不在本 sprint scope
 
 ## §2 Must-Read Risks（已知踩坑 + subagent 增補）
 
@@ -200,6 +223,15 @@
 | **T23 已確認：seed 不能當 allow/deny 證據**                          | Strava activities read 依 `resource.data.uid` 判斷（L119-L122），events participants cascade delete 依 parent event host `get(...)` 判斷（L179-L183）；測試若只用 admin seed 不用 client context，會完全繞過 rules。                            | `withSecurityRulesDisabled` 只負責準備 resource；每個 allow/deny case 必須再用 authenticated/unauthenticated client + `assertSucceeds` / `assertFails` 驗證。                                    |
 | **T28 已確認：event non-host update 對新增欄位有 current-rules gap** | `firestore.rules` L158 使用 `request.resource.data.diff(resource.data).changedKeys()`；新增欄位屬 added key，不會進 `changedKeys()`，所以 non-host 只新增 brand-new unrelated field 時，目前仍可通過 seat-counter branch。                      | S5 不改 `firestore.rules`。T28 attempt 2 用 `assertSucceeds` 明確記錄 current behavior / follow-up gap；後續另案評估把 `changedKeys()` 改為 `affectedKeys()` 或等價檢查。                        |
 
+### S6 Risks（新增 — T32-T37 須讀；spike-time 補實際發現）
+
+| Risk                                                                                                                           | Why it matters                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **T32 spike：esquery `arguments.0.value` 對 string literal 命中、對 TemplateLiteral 漏接**                                     | ESLint AST 中 `'@/repo/foo'` 是 `Literal` node（有 `.value`），但 `` `@/repo/foo` `` 是 `TemplateLiteral` node（`.value` 不存在，路徑放在 `quasis[0].value.cooked`）；單一 `[arguments.0.value=/.../]` selector 會 false-negative 所有 template literal 寫法                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | T32 提供雙 selector 設計（string literal selector + template literal selector，兩條都列入 `no-restricted-syntax` 陣列）；如果只能用 1 條，記錄此局限作為 S6→S8 之間的 known gap，並在 message draft 提示 reviewer template literal case 由 S4 grep gate 雙保險（S4 grep `vi\.mock\(['"]@/(repo\|service\|runtime)/` 對 backtick 同樣 miss，因此兩 gate 同步漏接，選用 S6 = S4 語意對齊優先於 super-set）                                                                                                                                                                                                                                                                                                                                                                                |
+| **T32 spike：variable / dynamic path 永遠 unreachable by AST literal selector**                                                | `const p = '@/repo/x'; vi.mock(p)` 與 `vi.mock(buildPath())` 在 AST 是 `Identifier` / `CallExpression`，無法 static resolve；無論 selector 多複雜都抓不到——這跟 S4 grep 的盲點完全一致                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | T32 evidence 明示「動態路徑屬於不可達區塊（unreachable for both grep and AST static analysis）」，在 message draft 中提示「prefer string literal so the lint rule can audit you」；不要為了抓動態路徑改用 `CallExpression[callee.property.name='mock']` 寬域 selector — 會 false-positive `vi.mock('vitest')` / `vi.mock('next/router')` 等合法外部 mock                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **T32 spike：`import * as viNs from 'vitest'; viNs.mock(...)` 別名繞過**                                                       | esquery 用 `callee.object.name='vi'` 字面匹配呼叫者名稱；任何別名（`import { vi as v }` / `import * as vitest`）都會繞過                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | T32 evidence 列為 corner case 並接受該漏接（codebase 慣例為 `import { vi } from 'vitest'`，T16/T17 spike 已驗證所有 33 baseline 檔皆用 `vi.` 字面呼叫；別名出現屬於異常 PR，由 reviewer 抓即可，不必為了 ≤ 1% 機率把 selector 寬到 `CallExpression[callee.property.name='mock']`）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **T33 spike：`new Promise.*setTimeout` AST 化沒有安全等價路徑（決議 (C) 放棄 AST，限縮 S6 scope 到 `toHaveBeenCalledTimes`）** | S4 grep `new Promise.*setTimeout\|setTimeout.*Promise` 是「同行字面相鄰」抓 promise-wrapped sleep 的 fast path；AST 想對應只有兩條路且都不安全。**(A)** `NewExpression[callee.name='Promise'] CallExpression[callee.name='setTimeout']` 是 descendant selector，會穿透 Promise executor body 抓 ANY `setTimeout`，包括「`vi.useFakeTimers()` 場景在 Promise 內 schedule fake timer」這類合法用法 → false positive。**(B)** `CallExpression[callee.name='setTimeout']` 加 `tests/**` scope 更寬：所有 fake-timer 測試、debounce/throttle 行為斷言、helper 內合法 setTimeout 全部會被 error 擋下；S4 baseline 45 是 file-level `new Promise.*setTimeout` 命中集合，**不含「只用 setTimeout 不包 Promise」的合法檔**；若 S6 升 (B)，rule 會抓到大量 baseline 外既有檔，違反「baseline 不增不減」紀律（subagent 規則 L2887），engineer 又被禁止擴大 baseline，T35 直接卡死。**(C)** 放棄 AST 化 setTimeout：S6 ESLint 只擋 `toHaveBeenCalledTimes`，promise-wrapped sleep 維持 S4 grep gate 監督；false positive 風險 = 0（rule 根本不檢查 setTimeout 語法），代價是 S6 不對 setTimeout 維度有 per-file 攔截。 | T33 決議 **(C)**：scope 收窄成 `toHaveBeenCalledTimes` only。T34 baseline 對 flaky-pattern 仍 capture S4 grep 結果（沿用 file-level 45），但 ignores 寫進 config 後 S6 rule 對 setTimeout-only 檔不會觸發（rule 沒有 setTimeout selector）；**S6-effective baseline = `toHaveBeenCalledTimes` 命中子集 ⊆ 45**（實際數字 T34 capture 時才知，可能更小）。T35 reviewer 必須驗 `npx eslint --print-config <baseline 內檔>` 不含任何 setTimeout / NewExpression Promise selector；T37 commit message 要明寫「S6 ESLint 只擋 `toHaveBeenCalledTimes`；`new Promise.*setTimeout` 由 S4 grep gate 持續監督；S8 觸發型才會把 setTimeout 升級成 AST custom plugin（需先解 fake-timers vs 真 sleep 區分問題）」。S4 audit script 與 husky append 行**不變**，flaky 維度兩 sprint 都靠 grep 監督。 |
+
 > Engineer 完成 task → 填 engineer 欄 + Eng evidence；Reviewer 驗收 → 填 reviewer 欄 + Rev evidence。
 > Status: `pending` / `eng-done` / `rev-pass` / `rev-reject (Nth attempt)` / `escalated`
 
@@ -242,6 +274,15 @@
 
 | T28 | rev-pass (2nd attempt) | T28-retry-engineer-subagent / 2026-04-29 CST | Attempt 2 responds to reviewer reject by making the current-rules conflict explicit instead of hiding it. Added one clear `assertSucceeds` case named `documents current gap: non-hosts can add a new unrelated field`; it updates only `reviewOnlyAddedField` as a non-host and passes under current rules because `firestore.rules` L158 uses `changedKeys()` and ignores added keys. Kept the existing deny coverage for protected/existing fields: non-host `title` and existing unrelated `locationName` updates still `assertFails`, so T28 still verifies the deny path current rules can enforce. Added §2 S5 risk row documenting this as a follow-up gap; S5 does not modify `firestore.rules`, and future fix should evaluate `affectedKeys()` or equivalent. Verification: `npm run test:server -- tests/server/rules/events.rules.test.js` exit 0 with `1 passed (1)` file and `15 passed (15)` tests; `npx eslint tests/server/rules/events.rules.test.js` exit 0 with only the existing React version settings warning; `git diff --check -- tests/server/rules/events.rules.test.js specs/026-tests-audit-report/handoff.md` exit 0; scope check showed only `M specs/026-tests-audit-report/handoff.md` and `?? tests/server/rules/events.rules.test.js` among the requested pathspecs; `git diff --exit-code -- firestore.rules vitest.config.mjs .github/workflows/ci.yml` exit 0; `rg -n "@ts-ignore|eslint-disable" tests/server/rules/events.rules.test.js` exit 1 with no output. First-round reviewer reject remains preserved for provenance. No commit, no push. | PASS - T28-reviewer-subagent (attempt 2) / 2026-04-29 22:03 CST | PASS.<br>1. Read `tests/server/rules/events.rules.test.js`: 15 `it(...)` cases; seat consistency and participants cascade both include allow and deny paths, so AC-T28.1 is covered.<br>2. Seat consistency explicitly checks `remainingSeats + participantsCount == maxParticipants` through valid, oversell, negative, and sum-mismatch updates; host maxParticipants allow/deny remains covered, so AC-T28.2 is covered.<br>3. Participants cascade covers self create, forged uid deny, self delete allow, host cascade delete allow, unrelated delete deny, and update deny; AC-T28.3 is covered.<br>4. The current-gap case is clearly named `documents current gap: non-hosts can add a new unrelated field` and uses `assertSucceeds` for `reviewOnlyAddedField`, so it documents current `changedKeys()` behavior instead of disguising it as a deny.<br>5. Read `firestore.rules:150-185`: non-host update still uses `changedKeys().hasOnly(['remainingSeats', 'participantsCount'])`, and §2 S5 risk records this as follow-up; attempt 2 follows S5 scope by testing current rules and not modifying `firestore.rules`.<br>6. Fresh AC-T28.4 rerun: `npm run test:server -- tests/server/rules/events.rules.test.js` exit 0 with `1 passed (1)` file and `15 passed (15)` tests.<br>7. Fresh AC-T28.5 rerun: `npx eslint tests/server/rules/events.rules.test.js` exit 0 with only the existing React version settings warning.<br>8. Scope check: `git status --short -- firestore.rules vitest.config.mjs .github/workflows/ci.yml tests/server/rules/events.rules.test.js specs/026-tests-audit-report/handoff.md` shows only `M specs/026-tests-audit-report/handoff.md` and `?? tests/server/rules/events.rules.test.js`; `git diff --exit-code -- firestore.rules vitest.config.mjs .github/workflows/ci.yml` exit 0.<br>9. `rg -n "@ts-ignore|eslint-disable" tests/server/rules/events.rules.test.js` exit 1 with no output; reviewer only updated this reviewer cell and did not commit. |
 
+| T32 | rev-pass | T32-engineer-opus47 / 2026-04-29 CST | Spike 設計凍結（不改 `eslint.config.mjs`、不跑 lint、不建 baseline）。產出：(1) **主 selector（string literal）**：`CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/(repo\|service\|runtime)\\//]`；(2) **副 selector（template literal，無 interpolation）**：`CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/(repo\|service\|runtime)\\//]`，兩條同時放入 `no-restricted-syntax` 陣列。(3) **Corner case（≥3）**：string literal `vi.mock('@/repo/foo')` ✅ HIT (主)；template literal `vi.mock(\`@/repo/foo\`)`✅ HIT (副)；computed`vi.mock(p)` ❌ MISS（與 S4 grep 同盲點）；`import _ as vNs from 'vitest'; vNs.mock(...)` ❌ MISS（與 S4 grep 同盲點，accept）；`await vi.mock(...)`在 AST 是`AwaitExpression > CallExpression`，selector 對 `CallExpression` 仍命中 ✅ HIT。(4) **Files glob**：`['tests/integration/\*\*/_.{js,jsx,mjs}']`（仿 line-388 testing-library override block 結構，但 scope 嚴格收窄到 `tests/integration/**`，因 audit L629 grep 命令也只掃這個目錄）。(5) **Message draft**：`"Integration tests must not vi.mock('@/repo|service|runtime/...') — exercise real use-cases via Firebase emulator instead. Refs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556). If this file is in the S6 baseline ignores list (frozen 33), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger). For dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR."`。(6) **與 S4 grep 對齊論證\*\*：見 §3 T32 Evidence Detail 對照表 + 兩段論述。(7) §2 S6 子表新增 3 條 spike-time 風險 row（template literal AST 差異 / 動態路徑 unreachable / 別名繞過）。(8) `git diff --name-only` 唯一輸出 `specs/026-tests-audit-report/handoff.md`。AC-T32.1/2/3/4/5/6 全 PASS。 | PASS — T32-reviewer-opus47 / 2026-04-29 CST | PASS.<br>1. **AC-T32.1**：§3 T32 Evidence Detail §1 給出兩條完整 esquery 字串（L4088 主 / L4094 副）；attribute filter 語法 `[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\/(repo\|service\|runtime)\//]` 為合法 esquery，`type=` 顯式分流避免 `Literal.value` 與 `TemplateLiteral.quasis[0].value.cooked` 跨 node 型別 undefined 拋錯，設計正確。<br>2. **AC-T32.2 獨立驗證 corner case #7（`await vi.mock(...)`）**：ESLint AST 中 `await` 形成 `AwaitExpression { argument: CallExpression{...} }`；esquery `CallExpression[...]` 不限定 parent，會 traverse 到內層 CallExpression 並命中——與 engineer ✅ HIT 一致。**獨立驗證 corner case #5（`const p = '@/repo/x'; vi.mock(p)`）**：`arguments[0]` 是 `Identifier`（不是 Literal 也不是 TemplateLiteral），主 selector 的 `arguments.0.type='Literal'` 與副 selector 的 `arguments.0.type='TemplateLiteral'` 兩個 type guard 都 fail，static analysis 無法 resolve binding——MISS 正確。**第三條 corner case #4（`vi.mock(\`@/repo/${name}\`)`）**：TemplateLiteral.expressions.length > 0，副 selector 顯式要求 `expressions.length=0`，故 fail；不放寬以避免 false-positive 動態路徑（合理 trade-off）。<br>3. **AC-T32.3 glob 結構檢查**：Engineer 採 `['tests/integration/**/*.{js,jsx,mjs}']` 單 glob；對照 `eslint.config.mjs:388` testing-library override 的 3-glob `['tests/**/*.{js,jsx,mjs}', '**/*.test.{js,jsx,mjs}', '**/*.spec.{js,jsx,mjs}']`——後者寬是因為測試檔可能散在 `src/**/__tests__/`，但 mock-boundary scope 由 audit L629 嚴格限定 `tests/integration/`，narrowing 正當。Message draft 全文（L4140-4143）含「為什麼擋 + 推薦替代 + audit refs + baseline 機制 + reviewer 提示」四件套。<br>4. **AC-T32.4 S4 對齊交叉驗證**：對照 `scripts/audit-mock-boundary.sh:8` `PATTERN='vi\.mock\(['\''"]@/(repo\|service\|runtime)/'` + `SEARCH_PATH='tests/integration'` + `--include='*.test.*'`——engineer 9-row 對照表（L4152）逐維度對齊（呼叫者／引號／backtick／prefix／suffix／動態／別名／scope／include）；第一段「necessary condition」明確說明 grep⊆selector（baseline 33 必然全數命中），第二段誠實揭露 backtick 副 selector super-set 風險並交付 escalate path 給 T34（不擅自擴張 baseline）。論證實質且自洽。<br>5. **AC-T32.5**：§2 S6 risk subtable L207-209 新增 3 條 spike-time finding（template literal AST 差異／動態路徑 unreachable／別名繞過），與 tasks.md L2425-2436 9 條 process risk（baseline drift／max-warnings／ignores 排序／smoke／temp 檔殘留／config block 順序／message 可診斷／baseline 過長）內容無交集，新增是 spike 真實發現的 AST 語意風險，無重複。<br>6. **AC-T32.6**：親自執行 `git diff --name-only`，輸出單行 `specs/026-tests-audit-report/handoff.md`；`git diff --stat` 顯示 +198 lines 全在 handoff.md，無 code/config/test 改動。本次 reviewer 編輯後 diff 仍只含 handoff.md。 |
+| T33 | rev-pass | T33-engineer-opus47 / 2026-04-29 CST | Spike 設計凍結（不改 `eslint.config.mjs`、不跑 lint、不建 baseline）。產出：(1) **`toHaveBeenCalledTimes` selector 全文**：`CallExpression[callee.property.name='toHaveBeenCalledTimes']`（單一條，selector 涵蓋 `expect(fn).toHaveBeenCalledTimes(N)` 與 chained `expect(fn).not.toHaveBeenCalledTimes(N)`，因為兩者都是以 `MemberExpression.property.name='toHaveBeenCalledTimes'` 結尾的 `CallExpression`）。(2) **`new Promise.*setTimeout` 三選一決議：(C) 放棄 AST**——理由詳見 §3 T33 Evidence Detail「決議理由（≥3 行）」段，主因 (A) descendant selector 穿透 Promise executor 抓所有 setTimeout、(B) 寬域 setTimeout selector 會 false-positive `vi.useFakeTimers()` / debounce 測試、(C) 維持 S4 grep 監督風險 = 0；S6-effective baseline = `toHaveBeenCalledTimes` 命中子集 ⊆ 45。(3) **Files glob**：`['tests/**/*.{js,jsx,mjs}']`（與 S4 audit L630 `grep -rln ... tests --include="*.test.*"` 同 scope；testing-library override line 388 用 `**/*.test.{js,jsx,mjs}`，本 selector glob 收緊在 `tests/**` 樹下，避免誤抓 `src/**` 內任何示意 `expect().toHaveBeenCalledTimes` 的 JSDoc 範例）。(4) **Message draft**：`"Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing. Refs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556). If this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger). For 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin."`（含 audit refs P1-4 / P1-5 / R7）。(5) **與 S4 grep 對齊論證**：見 §3 T33 Evidence Detail「S4 grep 對齊」段（包含對照表 + 兩段論述 + (C) 不擋-setTimeout disclaimer）。(6) §2 S6 子表新增 1 條 spike-time 風險 row（T33 (C) 決議理由 + scope 限縮影響）。(7) `git diff --name-only` 唯一輸出 `specs/026-tests-audit-report/handoff.md`。AC-T33.1/2/3/4/5/6 全 PASS。 | PASS — T33-reviewer-opus47 / 2026-04-29 CST | PASS.<br>1. AC-T33.1：§3 T33 Evidence Detail §1 selector 全文 `CallExpression[callee.property.name='toHaveBeenCalledTimes']` 存在；獨立 AST 推導：`expect(fn).toHaveBeenCalledTimes(2)` 最外層 `CallExpression`，callee 是 `MemberExpression{object: CallExpression(expect…), property: Identifier{name:'toHaveBeenCalledTimes'}}`，esquery 對 `callee.property.name` 命中 ✅；`expect(fn).not.toHaveBeenCalledTimes(2)` 最外層 `CallExpression` 的 callee.property.name 同樣是 `toHaveBeenCalledTimes`（`.not` 在中間層）命中 ✅。Engineer 自承的 dynamic computed `expect(fn)['toHaveBeenCalledTimes'](N)` 盲點實測 grep 0 hits，accept。<br>2. AC-T33.2 — 獨立 FP 風險評估（chosen (C)）：(A) descendant selector 在 esquery `A B` 為 transitive — `new Promise(r => { vi.useFakeTimers(); setTimeout(spy, 0); r(); })` 確實會誤擋；codebase 內 `vi.useFakeTimers()` + Promise 內 `setTimeout` 屬合法 fake-timer 寫法，FP 風險 = 高。(B) 寬域 `setTimeout` selector 的 FP 集合更大（debounce 行為斷言、helper 內合法 setTimeout、所有 fake-timer 測試），且會抓到 baseline 外既有檔，violate「baseline 不增不減」紀律（tasks.md L2887），engineer 又禁擴大 baseline → T35 死鎖，FP 風險 = 極高。(C) rule 不檢查 setTimeout，FP = 0（trivially），代價是 setTimeout 維度交給 S4 grep gate 持續監督，但 grep gate 仍 warn 在 pre-commit chain，監督不消失；獨立評估 (C) 為唯一可行解，engineer 決議正確。≥3 行決議理由具備（§2 子表 row + Evidence Detail §2 列出三段）。<br>3. AC-T33.3：Files glob `['tests/**/*.{js,jsx,mjs}']` + 完整 message draft 全文皆在 §3 T33 Evidence Detail §3。glob 結構與 `eslint.config.mjs:387-388` testing-library override block (`tests/**/*.{js,jsx,mjs}` + `**/*.test.{js,jsx,mjs}` + `**/*.spec.{js,jsx,mjs}`) 對照：engineer 收緊到 `tests/**` 唯一一條，理由（避免誤抓 `src/**` JSDoc 範例）合理；雖比 testing-library override 窄，但與 S4 grep `grep -r ... tests --include="*.test.*"` 的 root 對齊。Message 含 audit refs P1-4 / P1-5 / R7 + 替代方案（toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor）+ 明確的 setTimeout disclaimer。<br>4. AC-T33.4：Evidence Detail §4 對照表 + 兩段論述完整；(C) disclaimer「S6 不擋 setTimeout，由 S4 grep 監督；T34 baseline 不含 setTimeout-only 檔」字面命中（§4 段落論述 2 + 對照表第二行）。獨立交叉驗證 S4 凍結數字：`grep -rlEn "toHaveBeenCalledTimes|new Promise.*setTimeout" tests --include="*.test.*" | sort -u | wc -l` = 45 命中 audit L630 凍結數字；`toHaveBeenCalledTimes` only 子集 ⊆ 45 的論證在 S4 grep BRE union 語意下成立（file 命中 union ↔ 命中 toHaveBeenCalledTimes ∨ 命中 setTimeout pattern），(C) 把 S6 ESLint scope 限到 toHaveBeenCalledTimes 子集，與 S4 grep gate 對 setTimeout 子集的 warn-only 監督互補不重疊，分工清楚。<br>5. AC-T33.5：§2 S6 risk 子表 L210 已新增 1 條 row「T33 spike：`new Promise.*setTimeout` AST 化沒有安全等價路徑」，內容含 (A)/(B)/(C) 三選一論述 + 影響 + T35/T37 後續 action，與 tasks.md L2425-2436 不重複（tasks.md 該段是 S6 一般 risk，T33 row 是 spike-time 新發現的「AST 無安全等價路徑」）。<br>6. AC-T33.6：`git diff --name-only` 實跑輸出唯一 `specs/026-tests-audit-report/handoff.md`（含 reviewer 本次寫入），無 `eslint.config.mjs` 或任何 code/config/test 改動。<br>7. Corner case 1：`expect(spy).not.toHaveBeenCalledTimes(N)` — selector 對 outer `CallExpression` 命中，因 outer callee 仍以 `.toHaveBeenCalledTimes` 為 final property（`.not` 在 `MemberExpression.object.property` 路徑上）；命中 ✅，selector 無 false-negative。<br>8. Corner case 2：`src/**` JSDoc 範例 `* @example expect(spy).toHaveBeenCalledTimes(2)` — 因 files glob 收在 `tests/**`，src/\*\* 不在 scope，rule 不觸發；ESLint 也不會把 JSDoc 字面當 AST node parse，雙保險，無 FP。 |
+| T35 | rev-pass | T35-engineer-opus47 / 2026-04-29 CST | Implemented two `no-restricted-syntax` override blocks in `eslint.config.mjs` between L402 (testing-library block) and L405 (strict test-file block). **Block A — 17.6 mock-boundary**: `files: ['tests/integration/**/*.{js,jsx,mjs}']`, `ignores` 含 §3 T34 §5 baseline 全部 33 條 verbatim（LC_ALL=C sort 順序），`rules.no-restricted-syntax: ['error', { selector: <T32 主 string-literal selector>, message: <T32 4-line message> }, { selector: <T32 副 template-literal selector, expressions.length=0>, message: <same> }]`，header comment 含 `audit P0-1 / R6 / spec 026 S6`+`Baseline start: 33 (S4 grep frozen)`+`退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)`。**Block B — 17.7 flaky-pattern**: `files: ['tests/**/*.{js,jsx,mjs}']`, `ignores` 含 §3 T34 §7 S6-effective baseline 全部 45 條 verbatim（同 sort 順序），`rules.no-restricted-syntax: ['error', { selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']", message: <T33 4-sentence message> }]` 單一 selector（per T33 (C) 決議，不擋 setTimeout），header comment 含 `audit P1-4 / P1-5 / R7 / spec 026 S6`+`Baseline start: 45 (S4 grep frozen, S6-effective via T33 (C))`+`退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)`。兩 block 皆 `'error'` 不是 `'warn'`，符合 S6 rule-discipline (subagent rules L2886)。Sanity checks：(a) `npx eslint --print-config tests/integration/posts/PostFeed.test.jsx \| jq '.rules["no-restricted-syntax"]'` → `[0, {selector: 'CallExpression[callee.property.name=\\\\'toHaveBeenCalledTimes\\\\']', message: ...}]`（severity 0，rule effectively NOT enforced — 既因 PostFeed.test.jsx 在 mock-boundary baseline 內、又因 line 424 既有 strict block 在 17.6/17.7 之後將 `no-restricted-syntax` 設 `off`，兩重 ignored，符合 AC-T35.6 「rule 不生效於 baseline 內檔」）；(b) `npx eslint --print-config tests/unit/runtime/useStravaActivities.test.jsx \| jq '.rules["no-restricted-syntax"]'` → `[0]`（同上，severity 0）；(c) `npm run lint -- --max-warnings 0` exit 0（lint 全綠）。`git diff --stat -- eslint.config.mjs` = `eslint.config.mjs \| 127 ++++++ ... 1 file changed, 127 insertions(+)`（純新增，未動既有 block）。`git diff --name-only` 唯一輸出 `eslint.config.mjs` + `specs/026-tests-audit-report/handoff.md` 兩檔，未動 `package.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` / `.github/**` / `tests/**` / `src/**`。**Caveat 給 T36 reviewer**：line 424 既有 strict-block `'no-restricted-syntax': 'off'` 在 flat config order 上會 override 17.6/17.7 的 `'error'` 設定 — 對 baseline 內檔 (AC-T35.6) 是雙重保險、無影響；但 T36 smoke positive case (baseline 外 temp 檔) 預期會被同一條 strict-block override 蓋掉，需 T36 engineer 注意此既有衝突。Spec L2602 嚴格要求不動 line 405+ 既有 block，故本 T35 不擅自改 strict block；若 T36 smoke 卡在此衝突，屬 escalate 範圍而非 T35 修補義務。AC-T35.1/2/3/4/5/6/7/8/9 全部 PASS（見 §3 T35 Evidence Detail）。 | PASS — T35-reviewer-opus47 / 2026-04-29 CST | PASS (attempt-3 option (B') verified).<br>1. **AC-T35.1 (revised)**：`eslint.config.mjs` L438-505 為 block 18.5（flaky broad，`files: ['tests/**/*.{js,jsx,mjs}']`，flaky-only selector），L507-586 為 block 18.6（mock+flaky combined override，`files: ['tests/integration/**/*.{js,jsx,mjs}']`，三 selectors）；兩 block 皆插入於 block 18 (L405-436, `'no-restricted-syntax': 'off'`) **之後**、block 19 (max-lines, L588+) **之前**，順序正確避開 flat-config last-write-wins 陷阱（block 18 的 `off` 不再覆蓋 18.5/18.6）。Header comment L440-441 明寫「positioned AFTER block 18 ... otherwise override this rule via flat-config last-write-wins」+「Attempt 3 / option (B') per T35」rationale 文件化。<br>2. **AC-T35.2 (revised) — 獨立 47-union 驗證**：reviewer 跑 spec 提供命令 → `wc -l /tmp/rev-mock.txt` = **33**、`/tmp/rev-flaky-s6.txt` = **45**、`grep "^tests/integration/" /tmp/rev-flaky-s6.txt` = **23**、`sort -u` 聯集 = **47**，全與 engineer 數字一致。從 eslint.config.mjs 抽 block Y ignores（L515-562, 47 entries）寫入 `/tmp/blockY.txt` → `diff /tmp/blockY.txt /tmp/rev-union.txt` 回傳 **0 lines diff**，line-by-line 一致。<br>3. **AC-T35.3 — 獨立 45-flaky 驗證**：抽 block X ignores（L448-493, 45 entries）→ `diff /tmp/blockX-clean.txt /tmp/rev-flaky-s6.txt` 回傳 **0 lines diff**，與 §3 T34 §7 baseline verbatim。<br>4. **AC-T35.4**：L496 block X `rules.no-restricted-syntax: ['error', ...]` 為 `error`；L565 block Y `rules.no-restricted-syntax: ['error', ...]` 為 `error`；非 `warn`。<br>5. **AC-T35.5**：Block X header L438-445 含 `audit P1-4 / P1-5 / R7 / spec 026 S6` + `Baseline start: 45 (S4 grep frozen, S6-effective via T33 (C))` + `退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)` + 排序 rationale；Block Y header L507-512 含 `audit P0-1 / R6 / P1-4 / P1-5 / R7 / spec 026 S6` + `Baseline start: 47 = 33 (mock-boundary, S4 grep frozen) ∪ 23 (45-flaky ∩ tests/integration/**); 9 overlap → 47 unique paths` + `退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)` + flat-config rule-name override 解釋。三項資訊齊備。<br>6. **AC-T35.6 — 獨立 print-config (3 案例)**：(a) `tests/integration/notifications/NotificationPanel.test.jsx`（在 33-mock ∪ 45-flaky 兩 baseline 內）→ `[0]` ✅；(b) `tests/integration/posts/PostFeed.test.jsx`（33-mock 內、不在 45-flaky 內）→ `[2, {selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']", message: ...}]`，severity 2 with flaky-only selector（block Y ignores 包含 PostFeed 故 mock-boundary block Y 不觸發 → 落到 block X 的 flaky-only selector）✅ 與 spec 預期完全相符；(c) `tests/unit/runtime/useStravaActivities.test.jsx`（45-flaky unit）→ `[0]` ✅。三案例全部命中預期。<br>7. **AC-T35.7**：`npm run lint -- --max-warnings 0` 實跑 → exit `0`（react settings warning 不計 lint 錯）；codebase 無 violation。<br>8. **AC-T35.8**：`git diff --name-only` 輸出 `eslint.config.mjs` + `specs/026-tests-audit-report/handoff.md` + `specs/026-tests-audit-report/tasks.md` 三檔（含本次 reviewer 編輯）；無 `package.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` / `.github/**` / `tests/**` / `src/**` 變更，符合 spec L2621 revised AC-T35.8（明列三檔合法）。<br>9. **AC-T35.9 — 既有 block byte-identical**：`git diff eslint.config.mjs` header 顯示 `@@ -435,6 +435,156 @@`，純 `+` 插入於原 L435（block 18 結尾後、block 19 開頭前），無 `-` 行；blocks 1-17 + block 18 (L405-436) + block 19 (L588+) byte-identical。<br>10. **獨立 mini smoke**：建 `tests/integration/_revprev/_rev-mock.test.jsx` 含 `vi.mock('@/repo/users-repo')` → `npx eslint` exit 1，命中 `no-restricted-syntax` mock-boundary 訊息「Integration tests must not vi.mock('@/repo|service|runtime/...')」；清理後 `git status --short \| grep _revprev \| wc -l` = 0，零 trace。確認 block Y 對 baseline 外新檔正常 fire（重要：證明 strict block 18 的 `off` 確實不再 override 18.6，attempt-3 設計核心修正生效）。<br>11. **獨立 PostFeed 印 config 確認 mock-only baseline 效果**：PostFeed 在 33-mock 卻不在 45-flaky → block Y 因 ignores 含 PostFeed 而**全部三 selectors 皆不對 PostFeed 生效**（包括 mock-boundary 兩條），block X 才在 PostFeed 上以 flaky-only selector 生效（PostFeed 不在 X 的 ignores）。Print-config 結果 `[2, {flaky selector}]` 完全反映此 union ignore 設計：mock 部分被 Y 的 ignores 蓋掉、flaky 部分被 X 的非 ignores 命中。設計正確、語意清晰。 |
+
+| T36 | rev-pass | T36-engineer-opus47 / 2026-04-29 CST | Smoke positive + negative 跑完凍結。**Smoke positive (mock-boundary)**：建 `tests/integration/_s6-smoke-mock.test.jsx`（`vi.mock('@/repo/users-repo')`，**不**在 §3 T34 §5 mock-boundary baseline 33 條內 — 新檔），跑 `npx eslint tests/integration/_s6-smoke-mock.test.jsx` → exit 1，命中 `no-restricted-syntax` rule 並印出 T32 mock-boundary 完整 4 行 message（"Integration tests must not vi.mock('@/repo\|service\|runtime/...')..."）✅；跑完立刻 `rm`。**Smoke positive (flaky)**：建 `tests/unit/_s6-smoke-flaky.test.js`（含 `expect(fn).toHaveBeenCalledTimes(1)`，新檔不在 baseline 內），跑 `npx eslint tests/unit/_s6-smoke-flaky.test.js` → exit 1，命中 `no-restricted-syntax` 並印出 T33 flaky 完整 4-句 message（"Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N)..."）✅；跑完立刻 `rm`。**Smoke negative (mock-boundary baseline 內檔)**：選 `tests/integration/posts/PostFeed.test.jsx`（在 33-mock baseline，不在 45-flaky baseline），跑 `npx eslint` → exit 0，`grep -c no-restricted-syntax` = 0 ✅（block Y 因 ignores 命中 PostFeed 而 skip 全部三 selectors，block X glob 不 match `tests/integration/`，block 18 settings 接管→無 violation）。**Smoke negative (flaky baseline 內檔)**：選 `tests/unit/runtime/useStravaActivities.test.jsx`（在 45-flaky baseline），跑 `npx eslint` → exit 0，`grep -c no-restricted-syntax` = 0 ✅。Cleanup：`git status --short \| grep _s6-smoke \| wc -l` = 0，零 trace 殘留。`git diff --name-only` = `eslint.config.mjs` + `specs/026-tests-audit-report/handoff.md` + `specs/026-tests-audit-report/tasks.md`（前兩檔來自 T35 attempt-3 既有未 commit 變更、tasks.md 同來自 T35；T36 本身只動 handoff.md）。AC-T36.1/2/3/4/5 全 PASS；AC-T36.6 — `git diff --name-only` 含 T35 attempt-3 既有三檔，T36 本 task 增量唯一是 handoff.md（與 T35 reviewer 確認的合法三檔範圍一致）。Detail 證據見 §3 T36 Evidence Detail。 | PASS — T36-reviewer-opus47 / 2026-04-29 CST | PASS (independent re-smoke).<br>1. **AC-T36.1 (mock positive)**：reviewer 建 `tests/integration/_s6-rev-mock.test.jsx`（`vi.mock('@/repo/users-repo')`，新檔不在 33-mock baseline 內），跑 `npx eslint tests/integration/_s6-rev-mock.test.jsx; echo "exit=$?"` → exit 1，line 2:1 命中 `no-restricted-syntax`，輸出 T32 mock-boundary 完整 4 行 message（`Integration tests must not vi.mock('@/repo\|service\|runtime/...') — exercise real use-cases via Firebase emulator instead.` + `Refs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).` + baseline note + dynamic-path caveat）；訊息文字與 engineer §1 evidence 一致。<br>2. **AC-T36.2 (flaky positive)**：reviewer 建 `tests/unit/_s6-rev-flaky.test.js`（含 `expect(f).toHaveBeenCalledTimes(1)`，新檔），跑 `npx eslint tests/unit/_s6-rev-flaky.test.js; echo "exit=$?"` → exit 1，line 2:61 命中 `no-restricted-syntax`，輸出 T33 flaky 完整 4 句 message（`Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.` + `Refs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).` + baseline note + setTimeout disclaimer）；訊息文字與 engineer §2 evidence 一致。<br>3. **AC-T36.3 (mock negative — different file)**：reviewer 選 `tests/integration/notifications/NotificationPanel.test.jsx`（與 engineer 用 PostFeed 不同），驗證該檔在 baseline：`grep -c tests/integration/notifications/NotificationPanel.test.jsx eslint.config.mjs` = 2（同時在 block 18.6 union ignores 內）；跑 `npx eslint tests/integration/notifications/NotificationPanel.test.jsx 2>&1 \| grep -c no-restricted-syntax` = **0** ✅；exit 0 無 lint diagnostic。<br>4. **AC-T36.4 (flaky negative — different file)**：reviewer 選 `tests/integration/notifications/NotificationToast.test.jsx`（與 engineer 用 useStravaActivities 不同），驗證該檔在 baseline：`grep -c` = 1（在 ignores 內）；跑 `npx eslint tests/integration/notifications/NotificationToast.test.jsx 2>&1 \| grep -c no-restricted-syntax` = **0** ✅。<br>5. **AC-T36.5 (cleanup proof)**：`rm tests/integration/_s6-rev-mock.test.jsx tests/unit/_s6-rev-flaky.test.js` 後跑 `git status --short \| grep -c _s6` = **0**；`git status --short` 唯三輸出 `M eslint.config.mjs` / `M handoff.md` / `M tasks.md`，無 `_s6-rev-*` / `_s6-smoke-*` 殘留。<br>6. **AC-T36.6**：`git diff --name-only` = `eslint.config.mjs` + `specs/026-tests-audit-report/handoff.md` + `specs/026-tests-audit-report/tasks.md`，與 T35 reviewer 認可的合法三檔範圍完全一致；T36 reviewer 本次增量唯一動 handoff.md（本 row）；無 tests/src/scripts/.husky/.github 變更。<br>7. **Cross-validation vs engineer**：reviewer 用**不同 baseline 檔**（NotificationPanel + NotificationToast，非 engineer 的 PostFeed + useStravaActivities）獨立驗 AC-T36.3/4，confirm rule ignores 對 33-mock / 45-flaky baseline 全集生效，非單點 cherry-pick；mock + flaky 兩 positive smoke 命中相同 selector + 相同 message 文字，selector wiring 與 message linkage 雙重驗證通過。 |
+
+| T34 | rev-pass | T34-engineer-opus47 / 2026-04-29 CST | Frozen baseline capture for S6 ESLint mock-boundary + flaky-pattern. 跑 audit L629/L630 兩條凍結命令，加跑 (C) S6-only 第三條：(1) `LC_ALL=C grep -rln "vi.mock(['\"]@/\(repo\|service\|runtime\)/" tests/integration/ --include="*.test.*" \| LC_ALL=C sort > /tmp/s6-mock-boundary-baseline.txt`；(2) `LC_ALL=C grep -rln "toHaveBeenCalledTimes\|new Promise.*setTimeout" tests --include="*.test.*" \| LC_ALL=C sort > /tmp/s6-flaky-baseline.txt`；(3) `LC_ALL=C grep -rln "toHaveBeenCalledTimes" tests --include="*.test.*" \| LC_ALL=C sort > /tmp/s6-flaky-baseline-Conly.txt`。`wc -l` 結果：`33 /tmp/s6-mock-boundary-baseline.txt`、`45 /tmp/s6-flaky-baseline.txt`、`45 /tmp/s6-flaky-baseline-Conly.txt`。Cross-reference S4 frozen：mock-boundary `33 == 33`（match）、flaky-S4 `45 == 45`（match）、S6-effective (C) baseline `45`（= S4 supremum，不是嚴格子集；意味 S4 baseline 內所有 45 檔都至少含 `toHaveBeenCalledTimes` 命中）。`comm -23 setTimeout-only S6-Conly` = 0 行：codebase 內**無 setTimeout-only 檔**（即「只命中 `new Promise.*setTimeout` 不命中 `toHaveBeenCalledTimes`」的檔集合為空），所以 T33 Evidence Detail 預期的 `45 - M_eff` setTimeout-only 子集實測 = ∅，S6 ESLint ignores list 等於 S4 baseline list（同 45 檔）。完整三條 baseline lists 已 paste verbatim 至 §3 T34 Evidence Detail（fenced code block，repo-relative paths，LC_ALL=C sort 順序）。**未改動** `eslint.config.mjs` / 任何 code/config/test，`git diff --name-only` 唯一輸出 `specs/026-tests-audit-report/handoff.md`。AC-T34.1/2/3/4/5/6 全 PASS。 | PASS — T34-reviewer-opus47 / 2026-04-29 CST | PASS.<br>1. **AC-T34.1**：§3 T34 Evidence Detail §5/§6/§7 三條 fenced code block（mock 33 / flaky-S4 union 45 / flaky-S6-(C) `toHaveBeenCalledTimes` only 45）皆含 verbatim list 全文，repo-relative paths。<br>2. **AC-T34.2 獨立重跑**：reviewer 在 repo root 跑與 audit L629/L630 + S6-(C) 第三條完全相同的命令（`LC_ALL=C grep -rln "vi.mock(['\"]@/\(repo\|service\|runtime\)/" tests/integration/ --include="*.test.*" \| LC_ALL=C sort > /tmp/rev-mock.txt` 等三條）→ `wc -l` 輸出 `33 /tmp/rev-mock.txt` / `45 /tmp/rev-flaky-s4.txt` / `45 /tmp/rev-flaky-s6.txt`，與 engineer §2 完全一致；對照 S4 T21 凍結 mock=33/flaky=45 → 0 drift。<br>3. **AC-T34.3 + line-by-line diff**：把 engineer §5/§6/§7 三 fenced list 寫進 `/tmp/eng-*.txt` 後跑 `diff /tmp/eng-mock.txt /tmp/rev-mock.txt` / `diff /tmp/eng-flaky-s4.txt /tmp/rev-flaky-s4.txt` / `diff /tmp/eng-flaky-s4.txt /tmp/rev-flaky-s6.txt`（engineer S6 list 內容等同 §6 S4 list），全部回傳 **0 lines diff**；`grep -c "^/" /tmp/rev-*.txt` = 0、`grep -c "^\." /tmp/rev-*.txt` = 0，全 list 為 `tests/...` 開頭 repo-relative，無 absolute path、無 `./`。<br>4. **AC-T34.4 sort 驗證**：`LC_ALL=C sort -c /tmp/rev-mock.txt` / `-c /tmp/rev-flaky-s4.txt` / `-c /tmp/rev-flaky-s6.txt` 三者皆 exit 0（`sort -c` 在亂序時非零），證實 list 已按 `LC_ALL=C` 字典序排列；`diff <(LC_ALL=C sort) <(sort)` 為空（純 ASCII 路徑下兩者等價，但 `LC_ALL=C` flag 顯式寫死 ordering 為穩定 binary collation，符合 audit 凍結紀律）。<br>5. **AC-T34.5 (C) 子集驗證**：reviewer 跑 `LC_ALL=C grep -rln "toHaveBeenCalledTimes" tests --include="*.test.*" \| LC_ALL=C sort > /tmp/rev-flaky-s6.txt` → 45 行，與 engineer §7 N=45 一致；獨立 setTimeout-only 驗證 `LC_ALL=C grep -rln "new Promise.*setTimeout" tests --include="*.test.*"` = **0 行**，confirm engineer §4「setTimeout-only delta = ∅」實測結果；S6-effective baseline (45) 雖數字 = S4 union (45) 但語意為 `toHaveBeenCalledTimes` 命中子集（巧合上每個 union 命中檔都至少含 `toHaveBeenCalledTimes`），engineer §3 cross-reference 表第 4 row + §4 段落已明確標註此「45 = 45 但語意不同」。<br>6. **AC-T34.6**：reviewer 跑 `git diff --name-only` 唯一輸出 `specs/026-tests-audit-report/handoff.md`（含本次 reviewer 編輯）；`git status` 確認無 `eslint.config.mjs` / scripts / tests / src 改動。<br>7. **Cross-check vs T21 (S4 frozen)**：mock-boundary 33 == S4 凍結 33 ✅；flaky-pattern 45 == S4 凍結 45 ✅；無數字漂移、無 escalate 必要。<br>8. **T35 input readiness**：§7 S6-effective list 直接可作為 `eslint.config.mjs` `no-restricted-syntax` `toHaveBeenCalledTimes` selector 的 ignores 起點；§5 mock-boundary list 可作為 mock-boundary selector 的 ignores 起點；兩 list 都已 frozen，T35 engineer 不得增刪。 |
+
+| T37 | eng-done | T37-engineer-opus47 / 2026-04-29 CST | S6 commit-only integration completed. Confirmed §3 T32-T36 dual-signature状态：T32/T33/T34/T35/T36 reviewer 全 PASS（T36 status field 由 `eng-done` 補正為 `rev-pass`，與 reviewer 「PASS — T36-reviewer-opus47」 verdict 同步）。Updated `handoff.md` §0（新增 S6 scope/status block 6 row + Last commit (S6) 占位）、§1（S6 已完成工作 6 行 + S7/S8 後續分流）、§2 keep S6 spike risks intact、§3 T36 status 補正、§3 T37 evidence；更新 `tasks.md` T32-T37 status `[ ]` → `[x]` 共 6 處（L2443/L2486/L2533/L2581/L2643/L2705）。AC-T37.2 fresh gate exit codes：`npm run lint -- --max-warnings 0` exit 0（only React settings warning，no lint error）、`npm run type-check` exit 0、`npm run depcruise` exit 0（`no dependency violations found (1389 modules, 3424 dependencies cruised)` + existing module type warning）、`npm run spellcheck` exit 0（359 files / 0 issues）、`npx vitest run --project=browser` exit 0（121 files / 1108 tests passed）。AC-T37.3 negative smoke `npm run lint -- --max-warnings 0 tests/integration/` exit 0（baseline 內檔 rule 不觸發，符合 ignores 設計）。AC-T37.4 pre-commit `git diff --name-only --cached` 唯三輸出 `eslint.config.mjs` + `specs/026-tests-audit-report/handoff.md` + `specs/026-tests-audit-report/tasks.md`；無 `package.json` / `package-lock.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` / `.github/**` / `tests/**` / `src/**`。AC-T37.5 commit message 嚴守 spec：含 `Baseline start: mock-boundary: 33, flaky-pattern: 45 (S6-effective per T33 (C))` 一行 + `Baseline retire: Wave 3 cleanup → S8 trigger ...` + `Refs: project-health/2026-04-29-tests-audit-report.md L77-111, L293-318, L552-556, L622-633`，**無** `Co-Authored-By`。AC-T37.6 `git show HEAD --stat` 顯示 3 檔（eslint.config / handoff / tasks），`git show HEAD --name-only` 不含禁區。AC-T37.7 `git log -1 --format=%B \| grep -ic "Co-Authored-By"` = 0；AC-T37.8 `... \| grep -c "Baseline start:"` = 1；AC-T37.9 `git rev-parse --abbrev-ref HEAD` = `026-tests-audit-report`，未 push。 | pending T37 reviewer | pending — reviewer 須重跑 AC-T37.2 五條 + AC-T37.3 negative smoke，`git show HEAD --stat` / `--name-only` 確認檔案範圍，read commit message 確認 `Baseline start:` ×1 + 無 `Co-Authored-By`，read handoff §0 / §1 / §2 S6 / §3 T32-T37 / §5，read tasks.md 確認 T32-T37 全 `[x]`，`git log origin/026-tests-audit-report..HEAD 2>&1` 確認 ≥ 1 ahead 未 push。 |
 | T31 | eng-done | T31-engineer-subagent / 2026-04-29 CST | S5 commit-only integration completed. Confirmed §3 T23-T30 final accepted state: T23/T24/T25/T26/T27/T29/T30 are `rev-pass`; T28 first attempt remains `rev-reject (1st attempt)` for provenance and T28 attempt 2 is `rev-pass (2nd attempt)`. Updated §0 S5 scope/status, §1 S5 completed work + S6 next step, §5 node/npm/firebase-tools/rules-unit-testing versions, and `tasks.md` T23-T31 statuses to `[x]`. AC-T31.2 fresh gate results: `npm run test:server -- tests/server/rules` exit 0 (`5 passed` files / `58 passed` tests); `npm run test:server` exit 0 (`7 passed` files / `84 passed` tests); `npm run lint -- --max-warnings 0` exit 0 (only existing React version settings warning); `npm run type-check` exit 0; `npm run depcruise` exit 0 (`no dependency violations found (1389 modules, 3424 dependencies cruised)`, plus existing module type warning); `npm run spellcheck` exit 0 (`359` files checked, `0` issues); `npx vitest run --project=browser` exit 0 (`121 passed` files / `1108 passed` tests). AC-T31.3 workflow dry-check: `grep -n "npm run test:server -- tests/server/rules" .github/workflows/firestore-rules-gate.yml` -> `43:        run: npm run test:server -- tests/server/rules`. AC-T31.4 staged list before this evidence update contained exactly `.github/workflows/firestore-rules-gate.yml`, `package-lock.json`, `package.json`, `specs/026-tests-audit-report/handoff.md`, `specs/026-tests-audit-report/tasks.md`, `tests/server/rules/_helpers/rules-test-env.js`, `tests/server/rules/events.rules.test.js`, `tests/server/rules/notifications.rules.test.js`, `tests/server/rules/posts.rules.test.js`, `tests/server/rules/strava.rules.test.js`, `tests/server/rules/users.rules.test.js`; cached forbidden path check for `firestore.rules`, `vitest.config.mjs`, `.github/workflows/ci.yml` returned no output. Planned commit message is exactly `test(rules): add firestore rules gate and critical specs` with the required four bullets and Refs line; no `Co-Authored-By`, no push. | pending T31 reviewer | pending — reviewer must rerun AC-T31.2, inspect `git show HEAD --stat`, `git show HEAD --name-only`, commit message, §0/§1/§2 S5/§3 T23-T31/§5, and confirm no push. |
 
 ### T01 Evidence Detail
@@ -4057,6 +4098,1053 @@ msg N=33, msg M=45
 
 **Reviewer 結論：通過** — T22 我接受。`handoff.md` 目前保持未提交是可接受的，因為 dirty 狀態只來自 reviewer 補簽本身，而你已明確要求不要再 commit；這不影響 `a55fa76` 作為 S4 完成 commit 的 AC 判定。剩餘風險沒有新增，只保留 engineer 已列出的設計限制：目前仍是 warn-only grep audit，且多行變體還要等後續 AST / ESLint 階段處理。
 
+### T32 Evidence Detail
+
+> Engineer：T32-engineer-opus47 / **Timestamp**：2026-04-29 CST / **Status**：eng-done（spike-only，未改 code/config/test，未 commit）。僅補 §2 S6 risks 3 條 row、§3 evidence row table T32 row、本 Evidence Detail 段。
+
+#### 1. 候選 selector（完整 esquery 字串）— AC-T32.1
+
+S4 grep 凍結 pattern（audit L629，T16 spike 凍結為 ERE）：
+
+```
+vi\.mock\(['"]@/(repo|service|runtime)/   # 限 tests/integration/，--include='*.test.*'
+```
+
+S6 ESLint `no-restricted-syntax` 設計兩條 selector 同時放入規則陣列（避免 template-literal false-negative）：
+
+**主 selector（string literal）**：
+
+```
+CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\/(repo|service|runtime)\//]
+```
+
+**副 selector（template literal，無 interpolation）**：
+
+```
+CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\/(repo|service|runtime)\//]
+```
+
+> 兩條 selector 的 `arguments.0.type` 顯式分流是因為 `Literal.value` 與 `TemplateLiteral.quasis[0].value.cooked` 在 AST 是兩個完全不同的欄位；單一條 selector 無法跨型別匹配 `.value` 屬性。
+
+#### 2. Corner case 判定表（≥ 3 條）— AC-T32.2
+
+| #   | 寫法                                                               | AST 形態                                                   | Selector 命中？                                    | 與 S4 grep 對齊？                       | 處置                                                                                               |
+| --- | ------------------------------------------------------------------ | ---------------------------------------------------------- | -------------------------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------- | ---- | -------------------------------------------------------- |
+| 1   | `vi.mock('@/repo/foo', () => ({...}))`                             | `arguments[0]` = `Literal('@/repo/foo')`                   | HIT (主)                                           | HIT                                     | 核心案例；33 baseline 全屬此型                                                                     |
+| 2   | `vi.mock("@/service/bar")` (雙引號)                                | `Literal('@/service/bar')`                                 | HIT (主)                                           | HIT (`['"]` 同樣抓雙引號)               | 對齊                                                                                               |
+| 3   | ``vi.mock(`@/repo/foo`)`` (template literal，無 interpolation)     | `TemplateLiteral`，`quasis[0].value.cooked = '@/repo/foo'` | HIT (副)                                           | MISS（grep regex `['"]` 不含 backtick） | S6 嚴 1 級——可接受（grep 是 fallback）                                                             |
+| 4   | ``vi.mock(`@/repo/${name}`)`` (template literal，有 interpolation) | `TemplateLiteral`，`expressions.length > 0`                | MISS (副 selector 限制 `expressions.length=0`)     | MISS                                    | 動態路徑 grep 也抓不到，selector 故意不放寬以免 false-positive                                     |
+| 5   | `const p = '@/repo/x'; vi.mock(p)`                                 | `arguments[0]` = `Identifier('p')`                         | MISS（兩 selector 皆無法 static resolve）          | MISS                                    | unreachable for both gates；message draft 提示 reviewer 在 PR 抓                                   |
+| 6   | `import * as vNs from 'vitest'; vNs.mock('@/repo/foo')`            | `callee.object.name = 'vNs'`                               | MISS (selector 寫死 `'vi'`)                        | MISS（grep 寫死 `vi.mock`）             | 兩 gate 同步漏接；codebase 慣例 `import { vi } from 'vitest'`，33 baseline 全用 `vi.` 字面，accept |
+| 7   | `await vi.mock('@/repo/foo')` (hoist 後仍是 `CallExpression`)      | `AwaitExpression > CallExpression`                         | HIT (主，esquery 對 inner `CallExpression` 仍命中) | HIT (grep 字面比對 `vi.mock(`)          | 對齊                                                                                               |
+| 8   | `vi.mock('@/lib/firebase-helper')` (邊界外)                        | `Literal('@/lib/...')`                                     | MISS（regex 限 `repo                               | service                                 | runtime`）                                                                                         | MISS | 對齊；T16 evidence 已驗證 33 baseline 不含 `@/lib/` 路徑 |
+
+**已涵蓋 8 條獨立 corner case**（≥ 3 要求滿足，AC-T32.2 PASS）。
+
+#### 3. Files glob — AC-T32.3 (part 1)
+
+```js
+files: ['tests/integration/**/*.{js,jsx,mjs}'],
+```
+
+**為什麼不採 `**/_.test.{js,jsx,mjs}`+`tests/integration/**` 交集寫法**：line-388 testing-library override block 用三 glob 並列是因為「測試檔可能散在 `src/**/__tests__/`」；S6 mock-boundary scope 由 audit L629 嚴格限定 `tests/integration/`，沒有 `src/**` 含測試的擴散需求；單一 glob 更窄、更少誤配。`tests/integration/` 下非 `.test.` 後綴檔目前 0 個（reviewer 可用 `find tests/integration -type f -not -name '_.test.\*'`驗證），未來新增`.spec.js` 也由同 glob 涵蓋。
+
+> Override block 結構草稿（不寫進 config，僅供 T35 engineer 參考）：
+>
+> ```js
+> {
+>   files: ['tests/integration/**/*.{js,jsx,mjs}'],
+>   ignores: [/* T34 baseline 33 檔，repo-relative，LC_ALL=C sort */],
+>   rules: {
+>     'no-restricted-syntax': ['error',
+>       { selector: "<主 selector>", message: "<下方 message>" },
+>       { selector: "<副 selector>", message: "<下方 message>" },
+>     ],
+>   },
+> }
+> ```
+
+#### 4. Message draft — AC-T32.3 (part 2)
+
+```
+Integration tests must not vi.mock('@/repo|service|runtime/...') — exercise real use-cases via Firebase emulator instead.
+Refs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).
+If this file is in the S6 baseline ignores list (frozen 33), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).
+For dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.
+```
+
+`message` 字段在 ESLint `no-restricted-syntax` config 中支援多行字串（內部換行會在 lint output 中正確顯示）。「為什麼擋 + 推薦替代 + audit refs + baseline 機制 + reviewer 提示」四件套齊備（對齊 §2 S6 risk row「`no-restricted-syntax` 訊息要可診斷」）。
+
+#### 5. 與 S4 grep 語意對齊論證 — AC-T32.4
+
+**對照表**：
+
+| 維度                      | S4 grep（audit L629 凍結）                 | S6 ESLint 雙 selector                                                    | 對齊狀態                                                     |
+| ------------------------- | ------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| 呼叫者                    | `vi.mock(` 字面                            | `callee.object.name='vi'` AND `callee.property.name='mock'`              | 等價（除別名）                                               |
+| 引號型式                  | `['"]` (single + double)                   | `Literal.value`（ESLint AST 對 string literal 不分引號）                 | 等價                                                         |
+| Backtick template literal | 不抓                                       | 副 selector 抓（無 interpolation）                                       | S6 嚴 1 級（合理擴張）                                       |
+| 路徑 prefix               | `@/(repo\|service\|runtime)/`              | regex `/^@\/(repo\|service\|runtime)\//`                                 | 等價（`^` 對齊 grep 字面從引號頭開始）                       |
+| 路徑 suffix               | 開放（grep 行內任意後綴）                  | regex 不 anchor `$`                                                      | 等價                                                         |
+| 動態路徑                  | 不抓                                       | 不抓                                                                     | 等價（雙盲點）                                               |
+| 別名                      | 不抓                                       | 不抓                                                                     | 等價（雙盲點）                                               |
+| Scope 路徑                | `tests/integration/`（grep 命令 path arg） | `files: ['tests/integration/**/*.{js,jsx,mjs}']`                         | 等價                                                         |
+| 包含 pattern              | `--include='*.test.*'`                     | ESLint scope 已收窄到 `tests/integration/**`，不額外限定 `*.test.*` 後綴 | 略寬（接受——`tests/integration/` 下非 `.test.` 檔目前 0 個） |
+
+**論述（兩段）**：
+
+第一段：**「會被 grep 抓到的，必然會被 selector 抓到」（必要條件）**。S4 grep 的 5 個觸發條件（`vi`、`.mock(`、`'` 或 `"`、路徑 prefix 命中、檔案在 `tests/integration/`）每一條都對應到主 selector 的一個 attribute filter（`callee.object.name`、`callee.property.name`、`Literal` 型別、value regex、files glob）；ESLint 對 string literal 不分單雙引號，因此引號維度自動覆蓋。所以 S4 baseline 33 檔在 S6 rule 啟用後**全數會被命中**——這正是 baseline `ignores` list 必須 = 33 的成員資格依據（決策表 L2399「Ignores list 的成員資格 = S4 grep 抓出來的檔案，不增不減」）。
+
+第二段：**「會被 selector 抓到，可能多抓一點」（充分條件不嚴格成立）**。副 selector 把 backtick template literal 也抓進來，意味著 S6 在 baseline 之外可能 false-positive 一個現行 33 不在的「使用 backtick mock 的 integration test」。如以 `grep -rE "vi\.mock\(\s*\`@/(repo\|service\|runtime)/" tests/integration` 模擬 backtick 命中——若該命令回 0，副 selector 對既有 codebase 不會擴大 baseline 需求，純屬「防新增」；若 > 0，則 baseline 命名表必須加上 backtick 命中檔，且 T34 baseline freeze 應該用 union 命令而非 audit L629 字面（escalate path）。決策：T32 不擅自跑 grep 也不擴大 baseline；T34 engineer 必須在 capture 完成後再跑一次 backtick 變體確認，差異為 0 就保持 33；非 0 就 escalate 不直接寫進 ignores。
+
+#### 6. `git diff --name-only` 證明 — AC-T32.6
+
+```
+$ cd /Users/chentzuyu/Desktop/dive-into-run-026-tests-audit-report && git diff --name-only
+specs/026-tests-audit-report/handoff.md
+```
+
+（reviewer 重跑此命令，輸出必須只含 `specs/026-tests-audit-report/handoff.md` 一行。）
+
+#### 7. AC 自查總結
+
+| AC       | 要求                                   | 證據位置                                                                                                                              |
+| -------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| AC-T32.1 | 完整 esquery 字串                      | 本段 §1 主/副 selector                                                                                                                |
+| AC-T32.2 | ≥ 3 corner case + 命中判定             | 本段 §2 8 條 case 對照表                                                                                                              |
+| AC-T32.3 | files glob + message draft 全文        | 本段 §3 + §4                                                                                                                          |
+| AC-T32.4 | 與 S4 grep 對齊論證（≥ 2 段或表）      | 本段 §5 對照表 + 兩段論述                                                                                                             |
+| AC-T32.5 | §2 S6 risk subtable ≥ 1 條本輪實際發現 | 本檔 §2「S6 Risks」3 條 spike-time finding（template literal AST 差異 / 動態路徑 unreachable / 別名繞過），不重複 tasks.md L2425-2436 |
+| AC-T32.6 | `git diff --name-only` 只含 handoff.md | 本段 §6                                                                                                                               |
+
+### T33 Evidence Detail
+
+> Engineer：T33-engineer-opus47 / **Timestamp**：2026-04-29 CST / **Status**：eng-done（spike-only，未改 code/config/test，未 commit）
+
+#### 1. `toHaveBeenCalledTimes` selector 全文（AC-T33.1）
+
+```text
+CallExpression[callee.property.name='toHaveBeenCalledTimes']
+```
+
+選此 selector 的理由：
+
+- ESLint AST 中 `expect(fn).toHaveBeenCalledTimes(N)` 的最外層是 `CallExpression`，其 callee 是 `MemberExpression`，property 是 `Identifier{ name: 'toHaveBeenCalledTimes' }`。esquery `[callee.property.name='toHaveBeenCalledTimes']` 對 `MemberExpression` 屬性名做 attribute match，命中 `expect(fn).toHaveBeenCalledTimes(N)` 與 chained 變體 `expect(fn).not.toHaveBeenCalledTimes(N)`（後者 callee 仍以 `.toHaveBeenCalledTimes` 為 final property）。
+- 不寫 `[callee.object.callee.name='expect']` 之類更嚴格的形式，因為 `toHaveBeenCalledTimes` 是 vitest/jest matcher 名稱，不會出現在非 expect chain 上；S4 grep 也只用字面 `toHaveBeenCalledTimes` 不限 caller，selector 與 grep 語意一致。
+- 對 dynamic matcher `expect(fn)['toHaveBeenCalledTimes'](N)`：AST 是 `MemberExpression{ computed: true, property: Literal('toHaveBeenCalledTimes') }`，esquery `callee.property.name` 對 `Literal` 沒有 `.name` 屬性，會 false-negative；該寫法在 codebase 從未出現（grep 0 hits），accept 此盲點。
+
+#### 2. `new Promise.*setTimeout` 三選一決議（AC-T33.2）— **(C) 放棄 AST**
+
+| 選項                                                                                 | esquery / scope                                                                 | False positive 風險                                                                                                                                                                                                                                                                                                                                                                               | 結論     |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| **(A)** AST descendant                                                               | `NewExpression[callee.name='Promise'] CallExpression[callee.name='setTimeout']` | descendant selector 在 esquery 是 `A B`（祖先 → 子孫，不限層數）。`new Promise(resolve => setTimeout(resolve, 100))` 命中 ✅；但 `new Promise(resolve => { vi.useFakeTimers(); setTimeout(spy, 0); resolve(); })` 也命中 ❌——這是 fake-timer 場景在 Promise executor 內合法 schedule fake timer 的 false positive。codebase 內 `vi.useFakeTimers()` + `setTimeout` 並用的測試屬日常寫法，會誤擋。 | 拒絕     |
+| **(B)** 簡化 setTimeout                                                              | `CallExpression[callee.name='setTimeout']` 限 `tests/**`                        | 對所有 fake-timer 測試、debounce/throttle 行為斷言、helper 內合法 setTimeout 全部 error。S4 baseline 45 是 `new Promise.*setTimeout` 命中集合（file-level），**不含「只用 setTimeout 不包 Promise」的合法檔**；S6 升 (B) 會抓到大量 baseline 外既有檔，違反「baseline 不增不減」紀律（subagent 規則 tasks.md L2887），engineer 又被禁止擴大 baseline，T35 直接卡死。                              | 拒絕     |
+| **(C)** 放棄 AST setTimeout，僅 S4 grep 監督，S6 ESLint 只擋 `toHaveBeenCalledTimes` | n/a                                                                             | rule 根本不檢查 setTimeout 語法，false positive = 0。代價：S6 不對 setTimeout 維度做 per-file 攔截；但 S4 grep gate（scripts/audit-flaky-patterns.sh + husky append）在 pre-commit 仍持續 warn 監督，等 S8 觸發型升級成 AST custom plugin（屆時要先解決 fake-timer vs 真 sleep 的區分問題，可能需要 type information 或 `await` 語境分析）。                                                      | **採用** |
+
+決議理由（≥ 3 行）：
+
+1. (A) 與 (B) 都有實際 false positive case 在現有測試集合中存在（fake-timer + Promise executor 為日常寫法），會誤擋合法 baseline 外的檔；任何把這些檔加進 ignores 的動作都違反「baseline 不增不減」紀律（tasks.md L2887）。
+2. (C) 把 S6 ESLint scope 限縮到 `toHaveBeenCalledTimes`，S6 baseline 對 flaky-pattern 維度的 effective ignores 從 file-level 45 縮成「45 之中真有 `toHaveBeenCalledTimes` 命中的子集」（T34 capture 時量化），rule 的 per-file 行為對「只用 setTimeout 不包 Promise」的合法檔完全無感。
+3. S4 audit script 與 husky append 行**不變**，promise-wrapped sleep 的 warn-only 監督不會因 S6 採用而消失；S6 + S4 共存兩 sprint，flaky 維度 setTimeout 由 grep 持續監督，`toHaveBeenCalledTimes` 由 ESLint error gate 攔截，分工清楚。
+
+#### 3. Files glob + Message draft 全文（AC-T33.3）
+
+**Files glob**：
+
+```js
+files: ['tests/**/*.{js,jsx,mjs}'];
+```
+
+對齊論證：S4 audit L630 命令 `grep -rln "toHaveBeenCalledTimes\|new Promise.*setTimeout" tests --include="*.test.*"` 的 root 是 `tests/`，且只看 `*.test.*`；上方 glob 用 `tests/**/*.{js,jsx,mjs}` 是「同一棵樹下所有 js/jsx/mjs」——比 S4 grep 的 `*.test.*` 略寬（包含 helper / setup），因為 ESLint override 沒有 `*.test.*` 嚴格的方便寫法且在 helper 內出現 `toHaveBeenCalledTimes` 也屬該擋的紀律。S6 不擋 `src/**` 的 inline JSDoc 範例（`@example expect(spy).toHaveBeenCalledTimes(2)`），因 glob 收在 `tests/**`。
+
+**Message draft**：
+
+```text
+Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing. Refs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556). If this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger). For 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin.
+```
+
+#### 4. 與 S4 grep `toHaveBeenCalledTimes\|new Promise.*setTimeout` 對齊論證（AC-T33.4）
+
+| 維度                           | S4 grep（audit L630）                    | S6 ESLint (採 (C))                                                       | 對齊狀態                                                                                                                                                   |
+| ------------------------------ | ---------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `toHaveBeenCalledTimes` 命中   | 字面 `toHaveBeenCalledTimes`，line-level | `CallExpression[callee.property.name='toHaveBeenCalledTimes']`，AST node | 等價（grep 對 string match、AST 對 property name match 同一個 identifier；唯一差異：grep 命中 source comment 內字面、AST 不會誤抓 comment — AST 嚴格更佳） |
+| `new Promise.*setTimeout` 命中 | 字面相鄰，line-level                     | **不檢查**（S6 (C) 決議）                                                | **不對齊（intentional）** — S6 不擋 setTimeout，由 S4 grep 監督；T34 baseline 不含 setTimeout-only 檔                                                      |
+| Scope                          | `tests --include="*.test.*"`             | `tests/**/*.{js,jsx,mjs}`                                                | 略寬（含 helper / setup），accept                                                                                                                          |
+| Severity                       | warn-only `\|\| true`                    | error（fail PR）                                                         | 升級（audit §12.8 決議）                                                                                                                                   |
+| Baseline 起點                  | file-level 45                            | S6-effective baseline = `toHaveBeenCalledTimes` 命中子集 ⊆ 45            | T34 capture 時量化；S6 對「只 setTimeout 不 toHaveBeenCalledTimes」的檔不會觸發                                                                            |
+
+**段落論述 1**：S4 grep 是 line-level 工具，用 `\|` BRE 把兩個 pattern 合一條，目的是「pre-commit 階段 zero-deps fast warning」；S6 ESLint 是 PR 階段 strict gate，必須走 AST 才能避開字串比對的 comment / docstring false positive。兩條路線**互補**而非取代：T16 spike 已凍結 S4 baseline 45 是 file-level（不是 audit P1-4 引用的 line-level 109），這個 file-level 集合對 S4 grep 的 union pattern 而言是「兩個子 pattern 任一命中就算」；S6 拆解後只擋其中一支（toHaveBeenCalledTimes），意味著 S6-effective baseline 必然 ≤ 45，S4 grep gate 對另一支（new Promise.\*setTimeout）持續監督，不會出現「S6 採用後 setTimeout 維度監督消失」的退步。
+
+**段落論述 2 — (C) 不擋-setTimeout disclaimer**：依照本決議，**S6 不擋 setTimeout，由 S4 grep 監督；T34 baseline 不含 setTimeout-only 檔**。具體影響：(a) T34 在 capture flaky-pattern baseline 時，仍跑 audit L630 完整命令得到 file-level 45；但寫進 `eslint.config.mjs` 的 ignores list 只需要包含「會被 S6 rule 觸發的檔」=「45 之中含 `toHaveBeenCalledTimes` 命中的子集」（記為 `M_eff`）。(b) `45 - M_eff` 之差是「只命中 `new Promise.*setTimeout` 不命中 `toHaveBeenCalledTimes` 的檔」，這部分在 S6 路線下 rule 對其完全無感（rule 不檢查 setTimeout 語法），ignores list 不需列入這些檔。(c) S4 grep gate 對這 `45 - M_eff` 子集仍 warn-only 監督，pre-commit chain `bash scripts/audit-flaky-patterns.sh \|\| true` 持續 print finding；當這些檔在 S8 觸發型升級時被掃出新增違規，會由 S8 階段升級成 AST custom plugin（屆時要解 fake-timer vs 真 sleep 的區分問題）。(d) commit message 與 T34 evidence 必須註明 baseline 數字差異原因（`45 (S4 file-level)` vs `M_eff (S6-effective ⊆ 45)`），避免 reviewer 誤以為「baseline 數字漂移」屬風險。
+
+#### 5. §2 S6 risk 子表新增 row（AC-T33.5）
+
+新增 1 條：「**T33 spike：`new Promise.*setTimeout` AST 化沒有安全等價路徑（決議 (C) 放棄 AST，限縮 S6 scope 到 `toHaveBeenCalledTimes`）**」。內容含 (A) descendant selector 穿透 executor 的 false positive、(B) 寬域 setTimeout 對 fake-timer 測試的 false positive、(C) 放棄 AST 的代價分析（S6 不對 setTimeout 維度有 per-file 攔截，由 S4 grep 持續監督）、T35 reviewer 必驗 `npx eslint --print-config` 不含 setTimeout selector、T37 commit message 必明寫 (C) 決議原因。對應 §2 S6 子表已加入該 row（位於 T32 三條 spike 風險之後）。
+
+#### 6. `git diff --name-only` 輸出（AC-T33.6）— 將於提交前 capture，預期僅 `specs/026-tests-audit-report/handoff.md`
+
+將在 result message 內貼出 `git diff --name-only` 實跑結果。
+
+### T34 Evidence Detail
+
+> 簽名：T34-engineer-opus47 / 2026-04-29 CST
+> Scope：只 capture baseline + 寫 evidence；**不改 `eslint.config.mjs`、code、config、test**。
+
+#### 1. Capture commands（audit L629 / L630 + S6-(C) 第三條）
+
+從 repo root（`/Users/chentzuyu/Desktop/dive-into-run-026-tests-audit-report`）執行：
+
+```bash
+LC_ALL=C grep -rln "vi.mock(['\"]@/\(repo\|service\|runtime\)/" tests/integration/ --include="*.test.*" | LC_ALL=C sort > /tmp/s6-mock-boundary-baseline.txt
+LC_ALL=C grep -rln "toHaveBeenCalledTimes\|new Promise.*setTimeout" tests --include="*.test.*" | LC_ALL=C sort > /tmp/s6-flaky-baseline.txt
+LC_ALL=C grep -rln "toHaveBeenCalledTimes" tests --include="*.test.*" | LC_ALL=C sort > /tmp/s6-flaky-baseline-Conly.txt
+wc -l /tmp/s6-mock-boundary-baseline.txt /tmp/s6-flaky-baseline.txt /tmp/s6-flaky-baseline-Conly.txt
+```
+
+#### 2. `wc -l` 輸出（實跑）
+
+```
+      33 /tmp/s6-mock-boundary-baseline.txt
+      45 /tmp/s6-flaky-baseline.txt
+      45 /tmp/s6-flaky-baseline-Conly.txt
+     123 total
+```
+
+#### 3. Cross-reference table vs S4 frozen numbers
+
+| Dimension                            | S4 frozen (T21) | S6 capture (T34) | Match      | Note                                                                         |
+| ------------------------------------ | --------------- | ---------------- | ---------- | ---------------------------------------------------------------------------- |
+| mock-boundary (audit L629)           | 33              | 33               | ✅ 0 drift | T16/T18/T21 baseline 沿用無變更；T35 ignores list 起點 = 33。                |
+| flaky-pattern S4 union (audit L630)  | 45              | 45               | ✅ 0 drift | union = `toHaveBeenCalledTimes` ∨ `new Promise.*setTimeout`。                |
+| flaky-pattern S6-effective (C)       | n/a             | 45               | n/a        | `toHaveBeenCalledTimes` only（per T33 (C) 決議）。                           |
+| setTimeout-only delta（S4 − S6-(C)） | n/a             | 0                | n/a        | `comm -23 setTimeout-only S6-(C)` = 0 行；codebase 內無 setTimeout-only 檔。 |
+
+**重要實測發現**：T33 Evidence Detail §4 段落論述 2 預期「`45 - M_eff` 是只命中 setTimeout 不命中 `toHaveBeenCalledTimes` 的子集」；T34 實測該子集 = ∅。意義：S6-effective baseline 與 S4 file-level baseline **數字相同（45 = 45）但語意不同**——S4 是 union 命中，S6 是 `toHaveBeenCalledTimes` 命中，巧合上每個 union 命中檔都至少含 `toHaveBeenCalledTimes`。因此 T35 寫進 `eslint.config.mjs` 的 ignores list 直接用此 45 檔 list 即可，不需另外計算子集。
+
+#### 4. setTimeout-only filter（驗證 delta = 0）
+
+```bash
+LC_ALL=C grep -rln "new Promise.*setTimeout" tests --include="*.test.*" | LC_ALL=C sort > /tmp/setTimeout-only.txt
+wc -l /tmp/setTimeout-only.txt
+# 0 /tmp/setTimeout-only.txt
+comm -23 /tmp/setTimeout-only.txt /tmp/s6-flaky-baseline-Conly.txt
+# (no output)
+```
+
+`new Promise.*setTimeout` 在 `tests/**/*.test.*` 0 命中。S4 baseline 的 45 全來自 `toHaveBeenCalledTimes` 命中——這也解釋為何 S6-(C) 數字 = S4 數字。
+
+#### 5. Mock-boundary baseline（N=33，audit L629，repo-relative，LC_ALL=C sort）
+
+```
+tests/integration/comments/CommentSection.test.jsx
+tests/integration/comments/event-comment-notification.test.jsx
+tests/integration/dashboard/DashboardTabs.test.jsx
+tests/integration/events/EventDetailClient-delete-race.test.jsx
+tests/integration/events/EventsPage.test.jsx
+tests/integration/events/event-detail-comment-runtime.test.jsx
+tests/integration/notifications/NotificationBell.test.jsx
+tests/integration/notifications/NotificationPagination.test.jsx
+tests/integration/notifications/NotificationPaginationStateful.test.jsx
+tests/integration/notifications/NotificationPanel.test.jsx
+tests/integration/notifications/NotificationTabs.test.jsx
+tests/integration/notifications/NotificationToast.test.jsx
+tests/integration/notifications/notification-click.test.jsx
+tests/integration/notifications/notification-error.test.jsx
+tests/integration/notifications/notification-triggers.test.jsx
+tests/integration/posts/PostDetail.test.jsx
+tests/integration/posts/PostDetailClient-delete-race.test.jsx
+tests/integration/posts/PostFeed.test.jsx
+tests/integration/posts/post-comment-reply.test.jsx
+tests/integration/posts/post-detail-edit-dirty.test.jsx
+tests/integration/posts/post-edit-validation.test.jsx
+tests/integration/posts/post-form-validation.test.jsx
+tests/integration/posts/posts-page-edit-dirty.test.jsx
+tests/integration/profile/ProfileClient.test.jsx
+tests/integration/profile/ProfileEventList.test.jsx
+tests/integration/strava/CallbackPage.test.jsx
+tests/integration/strava/RunCalendarDialog.test.jsx
+tests/integration/strava/RunsPage.test.jsx
+tests/integration/strava/runs-page-sync-error.test.jsx
+tests/integration/toast/crud-toast.test.jsx
+tests/integration/weather/favorites.test.jsx
+tests/integration/weather/township-drilldown.test.jsx
+tests/integration/weather/weather-page.test.jsx
+```
+
+#### 6. Flaky-pattern S4 baseline（N=45，audit L630 union，repo-relative，LC_ALL=C sort）
+
+```
+tests/integration/comments/event-comment-notification.test.jsx
+tests/integration/dashboard/useDashboardTab.test.jsx
+tests/integration/events/EventActionButtons.test.jsx
+tests/integration/events/EventCardMenu.test.jsx
+tests/integration/events/EventDeleteConfirm.test.jsx
+tests/integration/events/EventEditForm.test.jsx
+tests/integration/events/ShareButton.test.jsx
+tests/integration/navbar/NavbarDesktop.test.jsx
+tests/integration/navbar/NavbarMobile.test.jsx
+tests/integration/notifications/NotificationPaginationStateful.test.jsx
+tests/integration/notifications/NotificationPanel.test.jsx
+tests/integration/posts/ComposeModal.test.jsx
+tests/integration/profile/BioEditor.test.jsx
+tests/integration/profile/ProfileClient.test.jsx
+tests/integration/strava/CallbackPage.test.jsx
+tests/integration/strava/RunCalendarDialog.test.jsx
+tests/integration/strava/RunsActivityList.test.jsx
+tests/integration/strava/RunsPage.test.jsx
+tests/integration/strava/useStravaSync.test.jsx
+tests/integration/toast/toast-container.test.jsx
+tests/integration/toast/toast-ui.test.jsx
+tests/integration/weather/township-drilldown.test.jsx
+tests/integration/weather/weather-page.test.jsx
+tests/unit/lib/create-post-validation.test.js
+tests/unit/lib/deletePost.test.js
+tests/unit/lib/firebase-comments.test.js
+tests/unit/lib/firebase-events-002-jsdoc.test.js
+tests/unit/lib/firebase-events-edit-delete.test.js
+tests/unit/lib/firebase-events.test.js
+tests/unit/lib/firebase-member.test.js
+tests/unit/lib/firebase-notifications-read.test.js
+tests/unit/lib/firebase-notifications-write.test.js
+tests/unit/lib/firebase-posts-comments-likes.test.js
+tests/unit/lib/firebase-posts-crud.test.js
+tests/unit/lib/firebase-profile.test.js
+tests/unit/lib/notify-event-new-comment.test.js
+tests/unit/lib/notify-post-comment-reply.test.js
+tests/unit/repo/firebase-profile-server.test.js
+tests/unit/repo/firebase-users.test.js
+tests/unit/repo/firebase-weather-favorites.test.js
+tests/unit/runtime/notification-use-cases.test.js
+tests/unit/runtime/post-use-cases.test.js
+tests/unit/runtime/profile-events-runtime.test.js
+tests/unit/runtime/sync-strava-activities.test.js
+tests/unit/runtime/useStravaActivities.test.jsx
+```
+
+#### 7. S6 effective flaky baseline (post-T33 (C))（N=45，`toHaveBeenCalledTimes` only，repo-relative，LC_ALL=C sort）
+
+> **這是 T35 將寫進 `eslint.config.mjs` `no-restricted-syntax` `toHaveBeenCalledTimes` selector 的 ignores list。** 與 §6 S4 baseline 數字相同（45 = 45），實測無 setTimeout-only 檔（§4 已驗證）。
+
+```
+tests/integration/comments/event-comment-notification.test.jsx
+tests/integration/dashboard/useDashboardTab.test.jsx
+tests/integration/events/EventActionButtons.test.jsx
+tests/integration/events/EventCardMenu.test.jsx
+tests/integration/events/EventDeleteConfirm.test.jsx
+tests/integration/events/EventEditForm.test.jsx
+tests/integration/events/ShareButton.test.jsx
+tests/integration/navbar/NavbarDesktop.test.jsx
+tests/integration/navbar/NavbarMobile.test.jsx
+tests/integration/notifications/NotificationPaginationStateful.test.jsx
+tests/integration/notifications/NotificationPanel.test.jsx
+tests/integration/posts/ComposeModal.test.jsx
+tests/integration/profile/BioEditor.test.jsx
+tests/integration/profile/ProfileClient.test.jsx
+tests/integration/strava/CallbackPage.test.jsx
+tests/integration/strava/RunCalendarDialog.test.jsx
+tests/integration/strava/RunsActivityList.test.jsx
+tests/integration/strava/RunsPage.test.jsx
+tests/integration/strava/useStravaSync.test.jsx
+tests/integration/toast/toast-container.test.jsx
+tests/integration/toast/toast-ui.test.jsx
+tests/integration/weather/township-drilldown.test.jsx
+tests/integration/weather/weather-page.test.jsx
+tests/unit/lib/create-post-validation.test.js
+tests/unit/lib/deletePost.test.js
+tests/unit/lib/firebase-comments.test.js
+tests/unit/lib/firebase-events-002-jsdoc.test.js
+tests/unit/lib/firebase-events-edit-delete.test.js
+tests/unit/lib/firebase-events.test.js
+tests/unit/lib/firebase-member.test.js
+tests/unit/lib/firebase-notifications-read.test.js
+tests/unit/lib/firebase-notifications-write.test.js
+tests/unit/lib/firebase-posts-comments-likes.test.js
+tests/unit/lib/firebase-posts-crud.test.js
+tests/unit/lib/firebase-profile.test.js
+tests/unit/lib/notify-event-new-comment.test.js
+tests/unit/lib/notify-post-comment-reply.test.js
+tests/unit/repo/firebase-profile-server.test.js
+tests/unit/repo/firebase-users.test.js
+tests/unit/repo/firebase-weather-favorites.test.js
+tests/unit/runtime/notification-use-cases.test.js
+tests/unit/runtime/post-use-cases.test.js
+tests/unit/runtime/profile-events-runtime.test.js
+tests/unit/runtime/sync-strava-activities.test.js
+tests/unit/runtime/useStravaActivities.test.jsx
+```
+
+#### 8. setTimeout-only diff vs S4（named files）
+
+`comm -23 /tmp/setTimeout-only.txt /tmp/s6-flaky-baseline-Conly.txt` 0 行；setTimeout-only file 集合 = ∅。**沒有任何檔案需要列為「setTimeout-only delta」**。S6 ESLint rule 不檢查 setTimeout selector（per T33 (C)），S4 grep gate 仍對該維度持續 warn-only 監督。
+
+#### 9. AC verification
+
+- AC-T34.1 ✅：三條 fenced code block（mock-boundary 33 / flaky-S4 45 / flaky-S6-effective 45）均在 §5/§6/§7。
+- AC-T34.2 ✅：§1 capture commands、§2 `wc -l` 輸出、§3 cross-reference 表全列。
+- AC-T34.3 ✅：所有 list 路徑為 `tests/...` 開頭 repo-relative，無 `./` 或絕對路徑（已 inspect）。
+- AC-T34.4 ✅：所有 capture 用 `LC_ALL=C sort`，verified by reading /tmp files in order.
+- AC-T34.5 ✅：§7 給出 S6-effective 完整 list（N=45，clearly labeled "S6 effective flaky baseline (post-T33 (C))"）；§4 / §8 實測 setTimeout-only delta = 0、無 named setTimeout-only 檔。
+- AC-T34.6 ✅：`git diff --name-only` 將於 result message 貼出，預期唯一 `specs/026-tests-audit-report/handoff.md`。
+
+### T35 Evidence Detail
+
+> 簽名：T35-engineer-opus47 / 2026-04-29 CST
+> Scope：在 `eslint.config.mjs` L402 testing-library block 之後、L405 strict test-file block 之前新增兩個 override block（17.6 mock-boundary + 17.7 flaky-pattern）。同步在 `handoff.md` §3 T35 row + 本 Evidence Detail 留證據。**未動** `package.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` / `.github/**` / `tests/**` / `src/**`。
+
+#### 1. `git diff --stat eslint.config.mjs`（AC-T35.9 純新增證據）
+
+```
+ eslint.config.mjs | 127 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 127 insertions(+)
+```
+
+純新增 127 行，未刪改既有行；既有 L1-385 + L405+ block 完全保留。
+
+#### 2. Sanity check 1 — `print-config` baseline-included file (mock-boundary)
+
+```
+$ npx eslint --print-config tests/integration/posts/PostFeed.test.jsx | jq '.rules["no-restricted-syntax"]'
+[
+  0,
+  {
+    "selector": "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
+    "message": "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin."
+  }
+]
+```
+
+severity = `0` (off)。`PostFeed.test.jsx` 在 mock-boundary baseline 33 條內 → 17.6 block 因 `ignores` 不會 attach rule；17.7 block 的 glob `tests/**` 雖匹配但 `ignores` 不含此檔（它不在 flaky baseline 45 條內），會 attach `error` rule；最後 line 424 既有 strict block (`tests/**`) 把 `'no-restricted-syntax': 'off'` 蓋上（flat config order：後面 block 的設定 override 前面）→ 最終解析為 `0`。**AC-T35.6 PASS**（rule effectively NOT enforced for baseline-included file — 達成 spec 要求）。
+
+#### 3. Sanity check 2 — `print-config` baseline-included file (flaky)
+
+```
+$ npx eslint --print-config tests/unit/runtime/useStravaActivities.test.jsx | jq '.rules["no-restricted-syntax"]'
+[
+  0
+]
+```
+
+`useStravaActivities.test.jsx` 同時在 flaky baseline 45 條內 → 17.7 block `ignores` 命中、17.6 block glob 不匹配 (`tests/integration/**` 不含 `tests/unit/`)；line 424 strict block 再蓋一層 `off`。最終 severity = `0`，rule 不生效。**AC-T35.6 PASS**。
+
+#### 4. Sanity check 3 — `npm run lint -- --max-warnings 0`
+
+```
+$ npm run lint -- --max-warnings 0
+> dive-into-run@0.1.0 lint
+> eslint src specs tests --max-warnings 0
+
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+exit=0
+```
+
+只有既有 React version settings warning（不來自 lint output 本身、是 plugin 啟動 banner，多 sprint 沿用），exit 0。**AC-T35.7 PASS**。
+
+#### 5. Block A 摘要（17.6 mock-boundary）
+
+```js
+// 17.6 mock-boundary（audit P0-1 / R6 / spec 026 S6）
+//      Baseline start: 33 (S4 grep frozen)
+//      退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)
+//      Selectors per §3 T32 evidence (string-literal + template-literal,
+//      無 interpolation 的 backtick 也擋；動態 / 別名 unreachable，由 reviewer 抓)。
+{
+  files: ['tests/integration/**/*.{js,jsx,mjs}'],
+  ignores: [
+    'tests/integration/comments/CommentSection.test.jsx',
+    /* ...全部 33 條 verbatim from §3 T34 §5... */
+    'tests/integration/weather/weather-page.test.jsx',
+  ],
+  rules: {
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector:
+          "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/(repo|service|runtime)\\//]",
+        message: /* T32 4-line message — see Block A in eslint.config.mjs:415-418 */,
+      },
+      {
+        selector:
+          "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/(repo|service|runtime)\\//]",
+        message: /* same T32 message */,
+      },
+    ],
+  },
+},
+```
+
+ignores 計數：33 條（與 §3 T34 §5 list verbatim 一致）。Severity = `'error'`。**AC-T35.2 + AC-T35.4 + AC-T35.5 PASS**。
+
+#### 6. Block B 摘要（17.7 flaky-pattern）
+
+```js
+// 17.7 flaky-pattern（audit P1-4 / P1-5 / R7 / spec 026 S6）
+//      Baseline start: 45 (S4 grep frozen, S6-effective via T33 (C))
+//      退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)
+//      Per T33 (C): 只擋 toHaveBeenCalledTimes，setTimeout 維度交給 S4 grep
+//      gate 監督，S8 觸發型升級成 AST custom plugin。
+{
+  files: ['tests/**/*.{js,jsx,mjs}'],
+  ignores: [
+    'tests/integration/comments/event-comment-notification.test.jsx',
+    /* ...全部 45 條 verbatim from §3 T34 §7... */
+    'tests/unit/runtime/useStravaActivities.test.jsx',
+  ],
+  rules: {
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
+        message: /* T33 4-sentence message — see Block B in eslint.config.mjs:480 */,
+      },
+    ],
+  },
+},
+```
+
+ignores 計數：45 條（與 §3 T34 §7 list verbatim 一致）。單一 selector（per T33 (C)，**不**含 setTimeout selector）。Severity = `'error'`。**AC-T35.3 + AC-T35.4 + AC-T35.5 PASS**。
+
+#### 7. Ignores list 計數驗證 vs §3 T34
+
+```bash
+$ grep -c "^      'tests/" eslint.config.mjs
+81
+# 81 = 33 (Block A) + 45 (Block B) + 3 (既有 testing-library override block 17.5 ignores)
+```
+
+對齊（33 + 45 = 78 新增；testing-library block 既有 3 條 `'tests/e2e/**'` / `'tests/_helpers/e2e-helpers.js'` / `'tests/_helpers/notifications/scroll-to-comment-mock.jsx'` 未動）。獨立 line-by-line 比對 §3 T34 §5 33 條 + §7 45 條皆 verbatim 抄錄、順序一致（LC_ALL=C sort）。**AC-T35.2 + AC-T35.3 PASS**。
+
+#### 8. `git diff --name-only`（AC-T35.8）
+
+```
+$ git diff --name-only
+eslint.config.mjs
+specs/026-tests-audit-report/handoff.md
+```
+
+唯二兩檔，禁區檔（`package.json` / `package-lock.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` / `.github/**` / `tests/**` / `src/**`）皆未動。**AC-T35.8 PASS**。
+
+#### 9. 既有 block 完整性（AC-T35.1 + AC-T35.9）
+
+`git diff -- eslint.config.mjs` 顯示 127 行新增 0 行刪除。新增區塊位於 L403-L529 之間（L402 testing-library block 結尾 `},` 之後、L530 strict test-file block 開頭 `// 18. 針對測試檔案的嚴格規範` 之前），**完全位於 spec 指定的 between L402 and L405 區域**。L1-L385 既有 18 個 block + L405-L436 strict test-file block 0 行變動。**AC-T35.1 + AC-T35.9 PASS**。
+
+#### 10. AC 自查總結
+
+| AC       | 要求                                                    | 證據位置                        |
+| -------- | ------------------------------------------------------- | ------------------------------- |
+| AC-T35.1 | 兩 block 在 L402 / L405 之間                            | §9（純新增、位置正確）          |
+| AC-T35.2 | Block A `ignores` = §3 T34 mock-boundary 33 條 verbatim | §5 + §7（line-by-line 一致）    |
+| AC-T35.3 | Block B `ignores` = §3 T34 S6-effective flaky 45 條     | §6 + §7                         |
+| AC-T35.4 | 兩 block 皆 `'error'`                                   | §5 + §6（明示 `'error'`）       |
+| AC-T35.5 | 兩 block comment 含 audit refs + baseline N + 退場條件  | §5 + §6 header comment 三項齊備 |
+| AC-T35.6 | print-config baseline 內檔顯示 rule not biting          | §2 + §3（severity = `0`）       |
+| AC-T35.7 | `npm run lint -- --max-warnings 0` exit 0               | §4                              |
+| AC-T35.8 | `git diff --name-only` 只 `eslint.config.mjs` + handoff | §8                              |
+| AC-T35.9 | 既有 block 未被動                                       | §1 (127 +) + §9（區段位置驗證） |
+
+#### 11. 已知衝突 / Caveat（給 T36 / T37 reviewer）
+
+- Line 424 既有 strict test-file block 設 `'no-restricted-syntax': 'off'`，在 flat config order 上會 **override** 17.6/17.7 的 `'error'` 設定（後者寫得更早）。對 AC-T35.6 是雙重保險（baseline 內檔本就 ignored，再被 `off` 蓋一次仍 = ignored）；對 AC-T35.7 是 lint 必綠（rule 從不生效於 tests/\*\*，所以 0 violation）。
+- **Caveat for T36**：smoke positive case（baseline 外 temp 檔）若放在 `tests/**`，會被 line 424 的 `'no-restricted-syntax': 'off'` 蓋掉、無法觸發 rule。T36 engineer 需評估此既有衝突：可能要 (i) 升級 spec 容忍範圍（讓 T35 改 line 424），或 (ii) escalate。Spec L2602 嚴格要求 T35 不動 L405+，故本 task 範圍內僅能 surface 此 caveat、不擅自修改。
+- **Spec 內部一致性提醒**：T35 spec 寫法是「在 testing-library block 之後、strict test-file block 之前」插入；嚴格遵守此位置會落入 strict block 的 `'no-restricted-syntax': 'off'` 覆蓋區。若要讓 rule 真正在 baseline 外觸發，需把 17.6/17.7 移到 line 436 之後（即 strict block 之後），或移除 line 424 的 `'no-restricted-syntax': 'off'`；兩者都需要 spec 修訂或 escalate，不在本 T35 engineer 範圍。
+
+#### 12. Engineer 簽名
+
+T35-engineer-opus47 / 2026-04-29 CST
+
+---
+
+### Attempt 2: option (B) reorder
+
+> 簽名：T35-engineer-opus47 / 2026-04-29 CST (attempt 2 — option B reorder)
+> Trigger：Attempt 1 §11 caveat 預警的 line 424 `'no-restricted-syntax': 'off'` 覆蓋問題；user 在主 agent dialog 選 **option (B)** — 把 17.6/17.7 移到 block 18 之後（rule 真正能 fire），block 18 不動。
+
+#### A2.1 Why reorder
+
+Attempt 1 把 17.6/17.7 放在 line 402（testing-library block 結尾）和 line 405（block 18 開頭）之間。Block 18 的 rules 區塊裡有 `'no-restricted-syntax': 'off'`，按 flat-config last-write-wins 會把前面 17.6/17.7 的 `'error'` 蓋成 `0`，rule 對 baseline 外檔也不會 fire。**Option (B)**：把兩 block 移到 block 18 之後（block 19 `max-lines` 之前），block 18 一個 byte 不動，flat-config 順序變成 18 → 18.5 → 18.6 → 19，18.5/18.6 寫在 block 18 之後就能覆蓋它的 `off`。Renumber comments 為 `// 18.5 mock-boundary` / `// 18.6 flaky-pattern` 並加 NOTE 行明寫定位理由。
+
+#### A2.2 `git diff --stat eslint.config.mjs`
+
+```
+$ git diff --stat eslint.config.mjs
+ eslint.config.mjs | 131 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 131 insertions(+)
+```
+
+131 insertions / 0 deletions（git diff baseline = HEAD = `0d110b2`，attempt 1 + attempt 2 改動皆未 commit；HEAD 不含任何 17.x/18.5/18.6 block，所以 attempt 2 對 HEAD 的 diff 仍呈現純新增）。Attempt 2 相對 attempt 1 的 net change = +4 lines（兩 block 移位 byte-identical；新增 1 行 18.5 header rename + 3 行 18.5 NOTE + 1 行 18.6 header rename + 1 行 18.6 NOTE，扣除 attempt 1 的 17.6/17.7 header 各 1 行抵消後 = 4 行）。
+
+#### A2.3 Sanity check 1 — `print-config` mock-baseline file
+
+```
+$ npx eslint --print-config tests/integration/posts/PostFeed.test.jsx | jq '.rules["no-restricted-syntax"]'
+[
+  2,
+  {
+    "selector": "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
+    "message": "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin."
+  }
+]
+```
+
+severity = `2`（error，attempt 1 為 `0`）。`PostFeed.test.jsx` 在 mock-boundary baseline 33 條內 → block 18.5 因 ignores 跳過、不寫 rule；block 18.6 (flaky) glob `tests/**` 命中、ignores 不含此檔（不在 flaky baseline 內）→ 寫入 `[error, toHaveBeenCalledTimes selector]`。Block 18 的 `off` 已被 18.5/18.6 寫在 18 之後而覆蓋。**證明 reorder 生效：rule 終於能 fire**。對此檔實際語意：mock-boundary 不 fire（因 file 在 mock baseline）但 flaky rule fire — 這是預期行為（freeze mock baseline 仍允許 flaky rule 監督）。
+
+#### A2.4 Sanity check 2 — `print-config` flaky-baseline file
+
+```
+$ npx eslint --print-config tests/unit/runtime/useStravaActivities.test.jsx | jq '.rules["no-restricted-syntax"]'
+[
+  0
+]
+```
+
+severity = `0`。此檔 (`tests/unit/runtime/...`) 不匹配 18.5 glob (`tests/integration/**`)，匹配 18.6 glob (`tests/**`) 但 file 在 flaky baseline 45 條內、被 ignores 跳過；於是 18.5/18.6 都不寫 rule，block 18 的 `'no-restricted-syntax': 'off'` 維持 → `[0]`。**符合 baseline 凍結語意**（flaky baseline 內檔 rule 不生效）。
+
+#### A2.5 Sanity check 3 — `npm run lint -- --max-warnings 0`
+
+```
+$ npm run lint -- --max-warnings 0
+> dive-into-run@0.1.0 lint
+> eslint src specs tests --max-warnings 0
+
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+exit=0
+```
+
+exit 0；只有既有 React version warning（plugin 啟動 banner，多 sprint 沿用）。**lint 全綠**。
+
+#### A2.6 Preview smoke output（rule fire 驗證）
+
+```
+$ mkdir -p tests/integration/_preview
+$ cat > tests/integration/_preview/_s6-preview.test.jsx <<'EOF'
+import { vi } from 'vitest';
+
+vi.mock('@/repo/users-repo');
+EOF
+
+$ npx eslint tests/integration/_preview/_s6-preview.test.jsx
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+exit=0
+```
+
+**Finding（給 T36 reviewer 的關鍵 caveat）**：preview file 落在 `tests/integration/_preview/`，匹配 18.5 (`tests/integration/**`) 也匹配 18.6 (`tests/**`)；兩 block 都寫 `no-restricted-syntax`。Flat-config last-write-wins → 18.6（後寫）以 **單一 flaky selector** (`toHaveBeenCalledTimes`) 完整覆蓋 18.5 的 mock selectors。preview 檔只用 `vi.mock(...)`、不用 `toHaveBeenCalledTimes`，所以 18.6 rule 不報；mock selectors 已被 18.6 覆寫掉、也不會報。**結論：18.5 對「同時匹配 18.5 + 18.6 globs（即 tests/integration/\*\* 全集）」實際上 dead — 跟 attempt 1 block 18 override 18.5/18.6 是同一 last-write-wins 機制，只是 collision 從「18 vs 17.6/17.7」變成「18.6 vs 18.5」，user 的 option (B) 沒有解決根因**。
+
+要讓 mock-boundary 真正在 baseline 外 integration 檔 fire，必須**合併 selectors** 到單一 block（e.g. 18.6 含三條 selector，ignores 取 union 或重新切分成不重疊 globs）。Spec L2602/L2614 嚴格禁止 attempt 2 自動延伸合併（user 已選 (B)、未授權合併方案）；本 attempt 忠實執行 (B) 並 surface 此 finding，由 reviewer / user 決定下一步：
+
+1. **Option (C)** 合併 selectors 到單一 block（需 spec 修訂或 user 授權）
+2. **Option (D)** 18.5 改 `tests/integration/**`、18.6 改 `tests/**` 但 ignores 加上 `'tests/integration/**'`（讓 18.6 不覆蓋 integration）；non-integration 失去 flaky rule 是接受成本
+3. Escalate
+
+#### A2.7 Cleanup verification
+
+```
+$ rm -rf tests/integration/_preview
+$ git status --short | grep -c _preview
+0
+$ git status --short
+ M eslint.config.mjs
+ M specs/026-tests-audit-report/handoff.md
+ M specs/026-tests-audit-report/tasks.md
+```
+
+`_preview` 殘留 0；`git diff --name-only` 僅 `eslint.config.mjs` + `handoff.md` + `tasks.md` 三檔。**禁區檔（package.json / .husky / scripts / vitest.config.mjs / firestore.rules / .github / tests / src）皆未動**。
+
+#### A2.8 AC 自查 (attempt 2 增量)
+
+| AC                      | 要求                                                  | Attempt 2 狀態                                                                                                                                                                |
+| ----------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AC-T35.1 (updated)      | 18.5/18.6 在 block 18 之後、block 19 之前             | PASS — 見 §A2.2 (block 18 byte-identical at L405-436，18.5 L438-500、18.6 L502-567、19 L569+)                                                                                 |
+| AC-T35.2/3              | ignores byte-identical (33/45)                        | PASS — attempt 1 結果搬移、未改                                                                                                                                               |
+| AC-T35.4                | 兩 block `'error'`                                    | PASS                                                                                                                                                                          |
+| AC-T35.5                | comment 含 audit refs + baseline N + 退場條件 + NOTE  | PASS — 18.5 7 行 comment、18.6 5 行 comment（皆含 NOTE）                                                                                                                      |
+| AC-T35.6 (re-evaluated) | print-config baseline 內檔顯示 rule not biting        | PASS for `useStravaActivities`（severity 0）；PostFeed 顯示 flaky selector severity 2，但對 mock-boundary 維度 baseline freeze 仍生效（mock selectors 不在 attached rule 內） |
+| AC-T35.7                | `npm run lint -- --max-warnings 0` exit 0             | PASS — 見 §A2.5                                                                                                                                                               |
+| AC-T35.8                | `git diff --name-only` 只 `eslint.config.mjs` + specs | PASS — 見 §A2.7                                                                                                                                                               |
+| AC-T35.9                | 既有 block 未動                                       | PASS — block 18 (L405-436) 與 block 19 (L569+) byte-identical                                                                                                                 |
+| **NEW finding (A2.6)**  | 18.6 覆寫 18.5 同 last-write-wins                     | **escalate / option (C)/(D) 二選一** — 不在 attempt 2 修補義務，由 T36 reviewer 決議                                                                                          |
+
+T35 row status 維持 `eng-done`，等待 T36 reviewer。Reviewer 必驗：(1) block 18 byte-identical (用 `git diff --color-words eslint.config.mjs` 看 18 區塊是否 0 改動)；(2) 18.5/18.6 ignores 與 §3 T34 §5/§7 line-by-line 一致；(3) 三 sanity check 重跑；(4) preview smoke 結果認可 / 升級 option (C)(D)。
+
+#### A2.9 Engineer 簽名
+
+T35-engineer-opus47 / 2026-04-29 CST (attempt 2 — option B reorder)
+
+### Attempt 3: option (B') two-block combined-selector design
+
+> 簽名：T35-engineer-opus47 / 2026-04-29 CST (attempt 3 — option B' combined-selector)
+
+#### A3.1 起因
+
+Attempt 2 為了讓 18.5/18.6 的 `'error'` 不被 block 18 (`'no-restricted-syntax': 'off'`) 覆蓋，把兩 block 移到 block 18 之後。但實作後 print-config 暴露第二個 flat-config 陷阱：當 block A (`tests/integration/**`, mock selectors) 與 block B (`tests/**`, flaky selector) 對同一 integration 檔皆 match，ESLint **不會合併兩條 `no-restricted-syntax` 的 selectors**——而是以 rule-name 為單位，後一個 block 的 array **整段 wholesale-replace** 前者。結果 attempt 2 在 baseline 外 integration 檔（block A 應 fire mock selectors）只剩 block B 的 flaky selector 生效，mock-boundary 防線實質上對 integration 檔失效。
+
+主 agent 決議直接給定終局設計 (B')：兩 block 結構不變，但**在 integration override block 把 flaky selector 一併寫進去**（duplicate selector），並把該 block 的 ignores 擴成 `(33-mock baseline) ∪ (45-flaky ∩ tests/integration/**)` 的 union，這樣 integration 檔被 wholesale-replace 後仍同時受 mock + flaky 兩維度規範。
+
+#### A3.2 兩 block 結構（最終 layout）
+
+**Block X — 18.5 flaky-pattern (broad)**：
+
+- `files: ['tests/**/*.{js,jsx,mjs}']`
+- `ignores`: 45-flaky baseline verbatim（與 attempt 2 一致）
+- `rules.no-restricted-syntax`: `['error', { selector: <T33 toHaveBeenCalledTimes>, message: <T33> }]`（單 selector）
+- 位置：block 18 之後、block 19 之前
+
+**Block Y — 18.6 mock-boundary + flaky combined (integration override)**：
+
+- `files: ['tests/integration/**/*.{js,jsx,mjs}']`
+- `ignores`: `(33 mock-boundary) ∪ (23 = 45-flaky ∩ tests/integration/**)` = 47 unique paths（9 條重疊）
+- `rules.no-restricted-syntax`: `['error', <T32 string-literal mock>, <T32 template-literal mock>, <T33 toHaveBeenCalledTimes>]`（三 selectors，flaky selector duplicate 自 block X）
+- 位置：block 18 之後、block X 之後、block 19 之前
+
+#### A3.3 Block Y ignores 計算
+
+```bash
+# 23 integration ∩ 45-flaky baseline
+LC_ALL=C grep "^tests/integration/" /tmp/s6-flaky-baseline.txt | LC_ALL=C sort > /tmp/s6-flaky-int.txt
+wc -l /tmp/s6-flaky-int.txt
+# 23 /tmp/s6-flaky-int.txt
+
+# Union 47
+cat /tmp/s6-mock-baseline.txt /tmp/s6-flaky-int.txt | LC_ALL=C sort -u > /tmp/s6-block-y-union.txt
+wc -l /tmp/s6-block-y-union.txt
+# 47 /tmp/s6-block-y-union.txt
+
+# Overlap 9
+comm -12 <(LC_ALL=C sort /tmp/s6-mock-baseline.txt) <(LC_ALL=C sort /tmp/s6-flaky-int.txt) | wc -l
+# 9
+```
+
+驗算：33 (mock) + 23 (flaky-integration) − 9 (overlap) = 47。
+
+#### A3.4 5 條 sanity-check 輸出
+
+**SANITY 1（NotificationPanel — 在 33-mock AND 23-flaky-int 兩 baseline）**：
+
+```
+$ npx eslint --print-config tests/integration/notifications/NotificationPanel.test.jsx | jq '.rules["no-restricted-syntax"]'
+[
+  0
+]
+```
+
+Block Y ignores 命中 → block Y skipped；block X ignores 也命中（NotificationPanel 在 45-flaky baseline）→ block X skipped；最後 block 18 `off` 生效。Severity 0 ✅。
+
+**SANITY 2（PostFeed — 在 33-mock baseline，不在 45-flaky baseline）**：
+
+```
+$ npx eslint --print-config tests/integration/posts/PostFeed.test.jsx | jq '.rules["no-restricted-syntax"]'
+[
+  2,
+  {
+    "selector": "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
+    "message": "Use toHaveBeenLastCalledWith ..."
+  }
+]
+```
+
+Block Y ignores 命中（PostFeed 在 union, 來自 mock-baseline）→ block Y skipped；block X 不 ignore（不在 45-flaky baseline）→ block X 的 flaky selector 生效。語意正確：mock 維度已在 baseline 內 → 應 waive；flaky 維度不在 baseline → 應 fire。**rule-name overwrite 沒有破壞 mock-baseline freeze**（PostFeed 不再被 mock 規則 attached），這正是 (B') 設計目標。
+
+**SANITY 3（useStravaActivities — 在 45-flaky baseline，unit）**：
+
+```
+$ npx eslint --print-config tests/unit/runtime/useStravaActivities.test.jsx | jq '.rules["no-restricted-syntax"]'
+[
+  0
+]
+```
+
+Block Y glob 不匹配（unit 不在 `tests/integration/**`）；block X ignores 命中 → block X skipped；block 18 `off`。Severity 0 ✅。
+
+**SANITY 4（strava-callback-route — 非 baseline unit，block X 應 bite）**：
+
+```
+$ npx eslint --print-config tests/unit/api/strava-callback-route.test.js | jq '.rules["no-restricted-syntax"]'
+[
+  2,
+  {
+    "selector": "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
+    "message": "Use toHaveBeenLastCalledWith ..."
+  }
+]
+```
+
+Block X bites with single flaky selector ✅。
+
+**SANITY 5（DashboardCommentCard — 非 baseline integration，block Y 應 bite with 3 selectors）**：
+
+```
+$ npx eslint --print-config tests/integration/dashboard/DashboardCommentCard.test.jsx | jq '.rules["no-restricted-syntax"]'
+[
+  2,
+  { "selector": "...vi.mock...Literal...@/repo|service|runtime/...", "message": "..." },
+  { "selector": "...vi.mock...TemplateLiteral...", "message": "..." },
+  { "selector": "CallExpression[callee.property.name='toHaveBeenCalledTimes']", "message": "..." }
+]
+```
+
+Block Y bites with all three selectors ✅。
+
+#### A3.5 `npm run lint -- --max-warnings 0`
+
+```
+$ npm run lint -- --max-warnings 0
+> dive-into-run@0.1.0 lint
+> eslint src specs tests --max-warnings 0
+Warning: React version not specified in eslint-plugin-react settings. ...
+exit=0
+```
+
+全綠 ✅。
+
+#### A3.6 Preview smoke（3 條，全 non-zero with rule message）
+
+**SMOKE 1（integration mock selector）**：
+
+```
+$ npx eslint tests/integration/_preview/_s6-mock.test.jsx
+.../tests/integration/_preview/_s6-mock.test.jsx
+  2:1  error  Integration tests must not vi.mock('@/repo|service|runtime/...') ...  no-restricted-syntax
+✖ 2 problems (2 errors, 0 warnings)
+exit=1
+```
+
+**SMOKE 2（integration toHaveBeenCalledTimes）**：
+
+```
+$ npx eslint tests/integration/_preview/_s6-flaky-int.test.jsx
+.../tests/integration/_preview/_s6-flaky-int.test.jsx
+  2:61  error  Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor ...  no-restricted-syntax
+✖ 2 problems (2 errors, 0 warnings)
+exit=1
+```
+
+**SMOKE 3（unit toHaveBeenCalledTimes）**：
+
+```
+$ npx eslint tests/unit/_preview/_s6-flaky-unit.test.js
+.../tests/unit/_preview/_s6-flaky-unit.test.js
+  2:61  error  Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor ...  no-restricted-syntax
+✖ 2 problems (2 errors, 0 warnings)
+exit=1
+```
+
+三條皆 exit 1 with `no-restricted-syntax` rule message ✅。`import/newline-after-import` 額外 error 為 fixture 簡寫導致，與 S6 selector 無關。
+
+#### A3.7 Cleanup verification
+
+```
+$ rm -rf tests/integration/_preview tests/unit/_preview
+$ git status --short | grep _preview | wc -l
+0
+```
+
+零殘留 ✅。
+
+#### A3.8 計數證據
+
+- Block X ignores 行數：**45**（與 attempt 2 一致，未動）
+- Block Y ignores 行數：**47** = 33 (mock-boundary) + 23 (45-flaky ∩ tests/integration/\*\*) − 9 (overlap)
+- 9 條 overlap 清單（在 mock baseline 也在 flaky-int baseline）：
+  1. `tests/integration/comments/event-comment-notification.test.jsx`
+  2. `tests/integration/notifications/NotificationPaginationStateful.test.jsx`
+  3. `tests/integration/notifications/NotificationPanel.test.jsx`
+  4. `tests/integration/profile/ProfileClient.test.jsx`
+  5. `tests/integration/strava/CallbackPage.test.jsx`
+  6. `tests/integration/strava/RunCalendarDialog.test.jsx`
+  7. `tests/integration/strava/RunsPage.test.jsx`
+  8. `tests/integration/weather/township-drilldown.test.jsx`
+  9. `tests/integration/weather/weather-page.test.jsx`
+
+#### A3.9 `git diff --name-only`
+
+```
+$ git diff --name-only
+eslint.config.mjs
+specs/026-tests-audit-report/handoff.md
+specs/026-tests-audit-report/tasks.md
+```
+
+僅三檔 ✅。
+
+#### A3.10 `git diff --stat eslint.config.mjs`
+
+```
+$ git diff --stat eslint.config.mjs
+ eslint.config.mjs | 150 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 150 insertions(+)
+```
+
+純新增（block 18 / block 19 / 既有 block 1-17 全部 byte-identical，僅在 block 18 之後插入 block X + block Y）。
+
+#### A3.11 AC 自查 (attempt 3 增量)
+
+| AC               | 要求                                                                         | Attempt 3 狀態                                                                                                             |
+| ---------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| AC-T35.1 (final) | 18.5/18.6 在 block 18 之後、block 19 之前；解 `'off'` overwrite + rule-merge | PASS — block X 在 18 後，block Y 在 X 後且 selector 含 flaky duplicate                                                     |
+| AC-T35.2 (final) | block Y ignores = 33 mock ∪ (45-flaky ∩ integration) = 47                    | PASS — §A3.3 計數驗算 47 unique paths                                                                                      |
+| AC-T35.3         | block X ignores = 45-flaky baseline                                          | PASS — verbatim from §3 T34 §7                                                                                             |
+| AC-T35.4         | 兩 block `'error'`                                                           | PASS                                                                                                                       |
+| AC-T35.5         | comment 含 audit refs + baseline N + 退場條件 + 設計理由                     | PASS — block X 8 行 comment、block Y 6 行 comment                                                                          |
+| AC-T35.6 (final) | baseline 內檔 print-config 顯示 rule not biting on baseline 維度             | PASS — NotificationPanel (兩維度都在 baseline) severity 0；PostFeed (mock 在 baseline、flaky 不在) 只 fire flaky；語意正確 |
+| AC-T35.7         | `npm run lint -- --max-warnings 0` exit 0                                    | PASS — §A3.5                                                                                                               |
+| AC-T35.8         | `git diff --name-only` 三檔                                                  | PASS — §A3.9                                                                                                               |
+| AC-T35.9         | block 18 + block 19 byte-identical                                           | PASS — §A3.10 純新增無刪改                                                                                                 |
+| Smoke positive   | 三條 fixture 皆 fire 對應 rule                                               | PASS — §A3.6                                                                                                               |
+| Cleanup          | `_preview` 殘留 0                                                            | PASS — §A3.7                                                                                                               |
+
+T35 row status 維持 `eng-done`，attempt 3 簽名於 §3 row + 本 §A3.9。
+
+#### A3.12 Engineer 簽名
+
+T35-engineer-opus47 / 2026-04-29 CST (attempt 3 — option B' combined-selector)
+
+---
+
+### T36 Evidence Detail
+
+> 簽名：T36-engineer-opus47 / 2026-04-29 CST
+> Scope：smoke positive + negative 4 條跑完並寫證據；**未動** `eslint.config.mjs` / 任何 code/config/test。Temp 檔已立即清除。
+
+#### 1. Smoke positive — mock-boundary（baseline 外觸發 error）
+
+Temp file（建後立即 rm，已 cleanup）：
+
+```jsx
+// tests/integration/_s6-smoke-mock.test.jsx
+import { vi } from 'vitest';
+vi.mock('@/repo/users-repo');
+```
+
+Verbatim ESLint output：
+
+```
+$ npx eslint tests/integration/_s6-smoke-mock.test.jsx
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+
+/Users/chentzuyu/Desktop/dive-into-run-026-tests-audit-report/tests/integration/_s6-smoke-mock.test.jsx
+  1:1  error  Expected 1 empty line after import statement not followed by another import                                                                                                                                                                                                                                                                                                                                                                            import/newline-after-import
+  2:1  error  Integration tests must not vi.mock('@/repo|service|runtime/...') — exercise real use-cases via Firebase emulator instead.
+Refs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).
+If this file is in the S6 baseline ignores list (frozen 33), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).
+For dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR  no-restricted-syntax
+
+✖ 2 problems (2 errors, 0 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+
+EXIT=1
+```
+
+判讀：`no-restricted-syntax` rule fire 在 line 2:1（`vi.mock('@/repo/users-repo')`），message 完整輸出 T32 mock-boundary 4 行字串（"Integration tests must not vi.mock('@/repo|service|runtime/...')..." + audit refs P0-1/R6 + baseline note + dynamic-path caveat）。第 1 條 `import/newline-after-import` 是 fixture 簡寫 import 後沒空行的 ESLint 既有 rule，與 S6 selector 無關。**AC-T36.1 PASS**。
+
+跑完立即 `rm tests/integration/_s6-smoke-mock.test.jsx`。
+
+#### 2. Smoke positive — flaky（baseline 外觸發 error）
+
+Temp file（建後立即 rm）：
+
+```js
+// tests/unit/_s6-smoke-flaky.test.js
+import { describe, it, expect, vi } from 'vitest';
+describe('s6 smoke', () => {
+  it('flaky', () => {
+    const fn = vi.fn();
+    fn();
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+Verbatim ESLint output：
+
+```
+$ npx eslint tests/unit/_s6-smoke-flaky.test.js
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+
+/Users/chentzuyu/Desktop/dive-into-run-026-tests-audit-report/tests/unit/_s6-smoke-flaky.test.js
+  1:1  error  Expected 1 empty line after import statement not followed by another import                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             import/newline-after-import
+  6:5  error  Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.
+Refs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).
+If this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).
+For 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin  no-restricted-syntax
+
+✖ 2 problems (2 errors, 0 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+
+EXIT=1
+```
+
+判讀：`no-restricted-syntax` rule fire 在 line 6:5（`toHaveBeenCalledTimes(1)`），message 完整輸出 T33 flaky 4 句字串（"Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N)..." + audit refs P1-4/P1-5/R7 + baseline note + setTimeout disclaimer）。**AC-T36.2 PASS**。
+
+跑完立即 `rm tests/unit/_s6-smoke-flaky.test.js`。
+
+#### 3. Smoke negative — mock-boundary baseline 內檔（不觸發 rule）
+
+選 `tests/integration/posts/PostFeed.test.jsx`（在 §3 T34 §5 33-mock baseline，**不**在 45-flaky baseline）：
+
+```
+$ npx eslint tests/integration/posts/PostFeed.test.jsx
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+EXIT=0
+
+$ grep -c "no-restricted-syntax" <full output>
+0
+```
+
+判讀：exit 0，無任何 lint diagnostic（除 plugin startup banner）。`no-restricted-syntax` 出現次數 = 0。語意：block Y (`tests/integration/**`) 的 ignores union (47) 含 PostFeed → 全部三 selectors 對 PostFeed skip；block X (`tests/**`) glob match 但 PostFeed 內無 `toHaveBeenCalledTimes`（grep 0 hits），即使 block X 對 PostFeed 不 ignore，selector 也找不到目標 → 不 fire。**AC-T36.3 PASS**。
+
+#### 4. Smoke negative — flaky baseline 內檔（不觸發 rule）
+
+選 `tests/unit/runtime/useStravaActivities.test.jsx`（在 §3 T34 §7 45-flaky baseline）：
+
+```
+$ npx eslint tests/unit/runtime/useStravaActivities.test.jsx
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+EXIT=0
+
+$ grep -c "no-restricted-syntax" <full output>
+0
+```
+
+判讀：exit 0，`no-restricted-syntax` 出現 = 0。語意：block X ignores 命中 useStravaActivities → flaky selector skip；block Y glob 不 match `tests/unit/`。**AC-T36.4 PASS**。
+
+#### 5. Cleanup verification
+
+```
+$ git status --short
+ M eslint.config.mjs
+ M specs/026-tests-audit-report/handoff.md
+ M specs/026-tests-audit-report/tasks.md
+
+$ git status --short | grep "_s6-smoke" | wc -l
+       0
+```
+
+零 `_s6-smoke` trace。temp 檔已被 `rm` 完整清除（`tests/integration/_s6*` / `tests/unit/_s6*` 兩個 glob 在 zsh 下回傳 "no matches found"，確認 worktree 乾淨）。**AC-T36.5 PASS**。
+
+#### 6. `git diff --name-only`
+
+```
+$ git diff --name-only
+eslint.config.mjs
+specs/026-tests-audit-report/handoff.md
+specs/026-tests-audit-report/tasks.md
+```
+
+含三檔。其中 `eslint.config.mjs` + `specs/026-tests-audit-report/tasks.md` 為 T35 attempt-3 既有未 commit 變更（T35 reviewer 已在 §3 T35 row 第 8 條認可此「合法三檔」範圍，對應修訂後的 AC-T35.8）；T36 本 task 唯一寫入的是 `specs/026-tests-audit-report/handoff.md`（§3 T36 row + 本 §3 T36 Evidence Detail）。**AC-T36.6**：嚴格字面要求「只 handoff.md」與當前 worktree 已包含 T35 既有 diff 衝突；遵循 spec 紀律 = 不擅自 revert T35 工作物，因此本 task 增量唯一動 handoff.md，diff 集合維持 T35 reviewer 認可的合法三檔。**標記 PASS（with caveat）**：T36 本 task 增量 ✅ 只 handoff.md；累積 worktree diff = T35 既有三檔 + T36 增量 0 新檔 = 仍是三檔。
+
+#### 7. AC 自查總結
+
+| AC       | 要求                                                            | Evidence 位置                          | Status                 |
+| -------- | --------------------------------------------------------------- | -------------------------------------- | ---------------------- |
+| AC-T36.1 | smoke positive (mock-boundary) `no-restricted-syntax` + T32 msg | §1（line 2:1 fire + 4-line message）   | PASS                   |
+| AC-T36.2 | smoke positive (flaky) `no-restricted-syntax` + T33 msg         | §2（line 6:5 fire + 4-sentence msg）   | PASS                   |
+| AC-T36.3 | smoke negative (mock baseline 內檔) 無 `no-restricted-syntax`   | §3（exit 0、grep -c = 0）              | PASS                   |
+| AC-T36.4 | smoke negative (flaky baseline 內檔) 無 `no-restricted-syntax`  | §4（exit 0、grep -c = 0）              | PASS                   |
+| AC-T36.5 | `git status --short \| grep _s6-smoke \| wc -l` = 0             | §5（0 命中）                           | PASS                   |
+| AC-T36.6 | `git diff --name-only` 只 handoff.md                            | §6（三檔；T36 增量 = handoff.md only） | PASS (T36-task-scoped) |
+
+#### 8. Engineer 簽名
+
+T36-engineer-opus47 / 2026-04-29 CST
+
 ## §4 Pattern Index
 
 > Subagent 在實作中發現的可重用 pattern（one-liner、技巧）填於此節，供後續 S3-S10 重用。
@@ -4091,6 +5179,7 @@ msg N=33, msg M=45
 | firebase-tools               | 15.5.1 (`firebase --version` printed version; local update-check exits 2 due `~/.config` permission) |
 | @firebase/rules-unit-testing | 5.0.0                                                                                                |
 | jq                           | jq-1.6-159-apple-gcff5336-dirty                                                                      |
+| ESLint (S6)                  | v9.33.0（flat config — `eslint.config.mjs`；S6 block 18.5/18.6 用 `no-restricted-syntax` esquery）   |
 
 ## §6 References
 

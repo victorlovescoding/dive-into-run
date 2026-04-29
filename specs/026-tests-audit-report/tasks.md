@@ -2440,7 +2440,7 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
 
 ### T32 — Spike: mock-boundary `no-restricted-syntax` selector 設計
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `specs/026-tests-audit-report/handoff.md` §2 S6 risk 子表 + §3 T32 evidence row。**不**改 code/config/test。
 - **Files Read**: `eslint.config.mjs:387-402`（testing-library override pattern）、`scripts/audit-mock-boundary.sh`（S4 凍結 pattern）、audit L77-111 / L552-556 / L622-633、`handoff.md` §3 T16 / T18 / T21 evidence
 - **Audit**: P0-1 / R6 / `§12 S6`
@@ -2483,7 +2483,7 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
 
 ### T33 — Spike: flaky-pattern `no-restricted-syntax` selector 設計
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `specs/026-tests-audit-report/handoff.md` §2 S6 risk 子表 + §3 T33 evidence row。**不**改 code/config/test。
 - **Files Read**: `eslint.config.mjs:387-402`、`scripts/audit-flaky-patterns.sh`（S4 凍結 pattern）、audit L293-318 / L552-556 / L622-633、`handoff.md` §3 T17 / T19 / T21 evidence
 - **Audit**: P1-4 / P1-5 / R7 / `§12 S6`
@@ -2530,7 +2530,7 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
 
 ### T34 — Generate + freeze baselines（mock-boundary + flaky）
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `specs/026-tests-audit-report/handoff.md` §3 T34 evidence row（內嵌兩份 baseline list 全文）。**不**改 code/config/test。
 - **Files Read**: `scripts/audit-mock-boundary.sh`、`scripts/audit-flaky-patterns.sh`、`handoff.md` §3 T21（S4 凍結數字 33/45）
 - **Audit**: `§12 S6` / audit L626-633
@@ -2578,7 +2578,7 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
 
 ### T35 — Implement: `eslint.config.mjs` 加 mock-boundary + flaky 兩 override block
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**:
   - `eslint.config.mjs`（新增兩個 override block，仿 line 387-402 testing-library 模式）
   - `specs/026-tests-audit-report/handoff.md` §3 T35 evidence row
@@ -2611,8 +2611,8 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
 
 **Acceptance Criteria**：
 
-- **AC-T35.1**: `eslint.config.mjs` 新增兩個 override block，位置在 testing-library block（line 387-402）之後、測試檔嚴格規範 block（line 405+）之前。
-- **AC-T35.2**: Block A `ignores` 含 T34 mock-boundary baseline 全部 33 條（與 §3 T34 list 完全一致，逐行 diff = 0）。
+- **AC-T35.1**: `eslint.config.mjs` 新增兩個 override block：block X（18.5 flaky-pattern broad，`tests/**`）與 block Y（18.6 mock-boundary + flaky combined，`tests/integration/**` override）；兩 block 都放在 block 18（含 `'no-restricted-syntax': 'off'`）之後，且 block Y 緊接在 block X 之後並重複 flaky selector。此排序同時避開兩個 flat-config 陷阱：(a) block 18 的 `'no-restricted-syntax': 'off'` 後序覆蓋；(b) flat-config 對 `no-restricted-syntax` 的 rule-name 級 wholesale-replace（block A 的 selectors 會被同 rule-name 的 block B 整段取代，而非合併），block Y 必須含 mock+flaky 三 selectors 才不會在 integration 檔被 block X 的 flaky-only selector 蓋掉 mock 防線。(原 spec L2591/AC-T35.1 設計同時遺漏 block 18 override 與 rule-level replace；T35 attempt 3 修正)
+- **AC-T35.2**: Block X `ignores` 含 T34 flaky baseline 45 條 verbatim；Block Y `ignores` 為 `(33 mock-boundary baseline) ∪ (45-flaky ∩ tests/integration/**)` = **47 unique paths**（33 + 23 − 9 overlap），LC_ALL=C sort -u 順序，與 §3 T34 §5 + §3 T35 Evidence Detail §A3.3 line-by-line 一致。
 - **AC-T35.3**: Block B `ignores` 含 T34 flaky baseline 全部條目（依 T33 決議）。
 - **AC-T35.4**: 兩 block 各自 `rules.no-restricted-syntax` 為 `error`（不是 warn）。
 - **AC-T35.5**: 兩 block 上方註解含「audit refs」「baseline start: N」「退場條件: Wave 3 / S8」三項資訊。
@@ -2640,7 +2640,7 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
 
 ### T36 — Smoke：positive（baseline 外觸發 error）+ negative（baseline 內保持 pass）
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `specs/026-tests-audit-report/handoff.md` §3 T36 evidence row。**不**留下任何 temp 檔（必須 cleanup）。
 - **Files Read**: `eslint.config.mjs` 改動後版本、§3 T34 baseline list、§3 T35 evidence
 - **Audit**: audit L632 「Smoke test 規則生效」
@@ -2702,7 +2702,7 @@ Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit
 
 ### T37 — S6 integration verification + commit
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**:
   - `specs/026-tests-audit-report/handoff.md` §0 / §1 / §2 S6 risk / §3 T37 evidence / §5
   - `specs/026-tests-audit-report/tasks.md`（T32-T37 status `[ ]` → `[x]`）

@@ -435,6 +435,156 @@ export default [
     },
   },
 
+  // 18.5 flaky-pattern (audit P1-4 / P1-5 / R7 / spec 026 S6) — fires on tests/**
+  //      NOTE: positioned AFTER block 18 (the strict-test block whose
+  //      'no-restricted-syntax': 'off' would otherwise override this rule
+  //      via flat-config last-write-wins). Attempt 3 / option (B') per T35.
+  //      Baseline start: 45 (S4 grep frozen, S6-effective via T33 (C))
+  //      退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)
+  //      Per T33 (C): 只擋 toHaveBeenCalledTimes，setTimeout 維度交給 S4 grep
+  //      gate 監督，S8 觸發型升級成 AST custom plugin。
+  {
+    files: ['tests/**/*.{js,jsx,mjs}'],
+    ignores: [
+      'tests/integration/comments/event-comment-notification.test.jsx',
+      'tests/integration/dashboard/useDashboardTab.test.jsx',
+      'tests/integration/events/EventActionButtons.test.jsx',
+      'tests/integration/events/EventCardMenu.test.jsx',
+      'tests/integration/events/EventDeleteConfirm.test.jsx',
+      'tests/integration/events/EventEditForm.test.jsx',
+      'tests/integration/events/ShareButton.test.jsx',
+      'tests/integration/navbar/NavbarDesktop.test.jsx',
+      'tests/integration/navbar/NavbarMobile.test.jsx',
+      'tests/integration/notifications/NotificationPaginationStateful.test.jsx',
+      'tests/integration/notifications/NotificationPanel.test.jsx',
+      'tests/integration/posts/ComposeModal.test.jsx',
+      'tests/integration/profile/BioEditor.test.jsx',
+      'tests/integration/profile/ProfileClient.test.jsx',
+      'tests/integration/strava/CallbackPage.test.jsx',
+      'tests/integration/strava/RunCalendarDialog.test.jsx',
+      'tests/integration/strava/RunsActivityList.test.jsx',
+      'tests/integration/strava/RunsPage.test.jsx',
+      'tests/integration/strava/useStravaSync.test.jsx',
+      'tests/integration/toast/toast-container.test.jsx',
+      'tests/integration/toast/toast-ui.test.jsx',
+      'tests/integration/weather/township-drilldown.test.jsx',
+      'tests/integration/weather/weather-page.test.jsx',
+      'tests/unit/lib/create-post-validation.test.js',
+      'tests/unit/lib/deletePost.test.js',
+      'tests/unit/lib/firebase-comments.test.js',
+      'tests/unit/lib/firebase-events-002-jsdoc.test.js',
+      'tests/unit/lib/firebase-events-edit-delete.test.js',
+      'tests/unit/lib/firebase-events.test.js',
+      'tests/unit/lib/firebase-member.test.js',
+      'tests/unit/lib/firebase-notifications-read.test.js',
+      'tests/unit/lib/firebase-notifications-write.test.js',
+      'tests/unit/lib/firebase-posts-comments-likes.test.js',
+      'tests/unit/lib/firebase-posts-crud.test.js',
+      'tests/unit/lib/firebase-profile.test.js',
+      'tests/unit/lib/notify-event-new-comment.test.js',
+      'tests/unit/lib/notify-post-comment-reply.test.js',
+      'tests/unit/repo/firebase-profile-server.test.js',
+      'tests/unit/repo/firebase-users.test.js',
+      'tests/unit/repo/firebase-weather-favorites.test.js',
+      'tests/unit/runtime/notification-use-cases.test.js',
+      'tests/unit/runtime/post-use-cases.test.js',
+      'tests/unit/runtime/profile-events-runtime.test.js',
+      'tests/unit/runtime/sync-strava-activities.test.js',
+      'tests/unit/runtime/useStravaActivities.test.jsx',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
+          message:
+            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin.",
+        },
+      ],
+    },
+  },
+
+  // 18.6 mock-boundary + flaky combined (audit P0-1 / R6 / P1-4 / P1-5 / R7 / spec 026 S6) — integration override; replaces 18.5 for tests/integration/** so mock selectors are not nuked by rule-level overwrite.
+  //      Baseline start: 47 = 33 (mock-boundary, S4 grep frozen) ∪ 23 (45-flaky ∩ tests/integration/**); 9 overlap → 47 unique paths.
+  //      退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)
+  //      Selectors per §3 T32 (string-literal + template-literal mock) + §3 T33 (toHaveBeenCalledTimes flaky).
+  //      Flaky selector duplicated here because flat-config rule overrides at rule-name level
+  //      (block X's `no-restricted-syntax` is wholesale-replaced by block Y's array for integration files).
+  {
+    files: ['tests/integration/**/*.{js,jsx,mjs}'],
+    ignores: [
+      'tests/integration/comments/CommentSection.test.jsx',
+      'tests/integration/comments/event-comment-notification.test.jsx',
+      'tests/integration/dashboard/DashboardTabs.test.jsx',
+      'tests/integration/dashboard/useDashboardTab.test.jsx',
+      'tests/integration/events/EventActionButtons.test.jsx',
+      'tests/integration/events/EventCardMenu.test.jsx',
+      'tests/integration/events/EventDeleteConfirm.test.jsx',
+      'tests/integration/events/EventDetailClient-delete-race.test.jsx',
+      'tests/integration/events/EventEditForm.test.jsx',
+      'tests/integration/events/EventsPage.test.jsx',
+      'tests/integration/events/ShareButton.test.jsx',
+      'tests/integration/events/event-detail-comment-runtime.test.jsx',
+      'tests/integration/navbar/NavbarDesktop.test.jsx',
+      'tests/integration/navbar/NavbarMobile.test.jsx',
+      'tests/integration/notifications/NotificationBell.test.jsx',
+      'tests/integration/notifications/NotificationPagination.test.jsx',
+      'tests/integration/notifications/NotificationPaginationStateful.test.jsx',
+      'tests/integration/notifications/NotificationPanel.test.jsx',
+      'tests/integration/notifications/NotificationTabs.test.jsx',
+      'tests/integration/notifications/NotificationToast.test.jsx',
+      'tests/integration/notifications/notification-click.test.jsx',
+      'tests/integration/notifications/notification-error.test.jsx',
+      'tests/integration/notifications/notification-triggers.test.jsx',
+      'tests/integration/posts/ComposeModal.test.jsx',
+      'tests/integration/posts/PostDetail.test.jsx',
+      'tests/integration/posts/PostDetailClient-delete-race.test.jsx',
+      'tests/integration/posts/PostFeed.test.jsx',
+      'tests/integration/posts/post-comment-reply.test.jsx',
+      'tests/integration/posts/post-detail-edit-dirty.test.jsx',
+      'tests/integration/posts/post-edit-validation.test.jsx',
+      'tests/integration/posts/post-form-validation.test.jsx',
+      'tests/integration/posts/posts-page-edit-dirty.test.jsx',
+      'tests/integration/profile/BioEditor.test.jsx',
+      'tests/integration/profile/ProfileClient.test.jsx',
+      'tests/integration/profile/ProfileEventList.test.jsx',
+      'tests/integration/strava/CallbackPage.test.jsx',
+      'tests/integration/strava/RunCalendarDialog.test.jsx',
+      'tests/integration/strava/RunsActivityList.test.jsx',
+      'tests/integration/strava/RunsPage.test.jsx',
+      'tests/integration/strava/runs-page-sync-error.test.jsx',
+      'tests/integration/strava/useStravaSync.test.jsx',
+      'tests/integration/toast/crud-toast.test.jsx',
+      'tests/integration/toast/toast-container.test.jsx',
+      'tests/integration/toast/toast-ui.test.jsx',
+      'tests/integration/weather/favorites.test.jsx',
+      'tests/integration/weather/township-drilldown.test.jsx',
+      'tests/integration/weather/weather-page.test.jsx',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/(repo|service|runtime)\\//]",
+          message:
+            "Integration tests must not vi.mock('@/repo|service|runtime/...') — exercise real use-cases via Firebase emulator instead.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S6 baseline ignores list (frozen 33), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/(repo|service|runtime)\\//]",
+          message:
+            "Integration tests must not vi.mock('@/repo|service|runtime/...') — exercise real use-cases via Firebase emulator instead.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S6 baseline ignores list (frozen 33), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+        },
+        {
+          selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
+          message:
+            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin.",
+        },
+      ],
+    },
+  },
+
   // 19. File size limits (D2: mechanical enforcement)
   {
     files: ['src/**/*.{js,jsx}'],
