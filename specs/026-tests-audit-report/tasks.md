@@ -326,7 +326,7 @@ Wave 4 (序列): T09-eng → T09-rev   (整合 + commit + handoff sync，依賴 
 
 ### T06 — Spike: PR template 設計與規格確認
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Read**:
   - `.github/`（確認目錄結構、檢查現有 template / workflows）
   - `project-health/2026-04-29-tests-audit-report.md` L77-95 / L113-141 / L168-208 / L294-318 / L545-551 / L594-598 / L641-657
@@ -365,7 +365,7 @@ Wave 4 (序列): T09-eng → T09-rev   (整合 + commit + handoff sync，依賴 
 
 ### T07 — PR template 草稿撰寫
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `.github/pull_request_template.md`（新檔）
 - **Files Read**: T06 在 handoff §3 留下的 design draft、audit report 對應行號
 - **Audit**: R11
@@ -443,7 +443,7 @@ Wave 4 (序列): T09-eng → T09-rev   (整合 + commit + handoff sync，依賴 
 
 ### T08 — Spellcheck / Pre-commit gate 預跑驗證
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: 可能更動 `cspell.json`（若 PR template 含未收錄詞）
 - **Files Read**: T07 寫的 `.github/pull_request_template.md`、`cspell.json`
 - **Audit**: 對應 sensors.md cSpell 防線
@@ -519,7 +519,7 @@ Wave 4 (序列): T09-eng → T09-rev   (整合 + commit + handoff sync，依賴 
 
 ### T09 — Commit + handoff sync (S2)
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**:
   - `specs/026-tests-audit-report/handoff.md` §0 / §1 / §3（T09 self-evidence）/ §5 完整更新
   - `specs/026-tests-audit-report/tasks.md`（T06-T09 status `[ ]` → `[x]`）
