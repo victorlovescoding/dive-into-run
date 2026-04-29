@@ -74,7 +74,9 @@ describe('notifications Firestore rules', () => {
     const db = authenticatedDb(testEnv, ACTOR_UID);
 
     await assertSucceeds(
-      db.doc('notifications/valid-create').set(notificationData({ recipientUid: 'arbitrary-recipient' })),
+      db
+        .doc('notifications/valid-create')
+        .set(notificationData({ recipientUid: 'arbitrary-recipient' })),
     );
   });
 
@@ -118,7 +120,9 @@ describe('notifications Firestore rules', () => {
     const db = authenticatedDb(testEnv, ACTOR_UID);
 
     await assertFails(
-      db.doc('notifications/fixed-created-at').set(notificationData({ createdAt: FIXED_TIMESTAMP })),
+      db
+        .doc('notifications/fixed-created-at')
+        .set(notificationData({ createdAt: FIXED_TIMESTAMP })),
     );
   });
 
@@ -151,7 +155,9 @@ describe('notifications Firestore rules', () => {
     await seedNotification('mutate-recipient');
     const db = authenticatedDb(testEnv, RECIPIENT_UID);
 
-    await assertFails(db.doc('notifications/mutate-recipient').update({ recipientUid: UNRELATED_UID }));
+    await assertFails(
+      db.doc('notifications/mutate-recipient').update({ recipientUid: UNRELATED_UID }),
+    );
   });
 
   it('denies recipients mutating type', async () => {

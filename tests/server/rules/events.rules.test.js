@@ -79,50 +79,60 @@ describe('events Firestore rules', () => {
       await seedEvent('event-1');
       const db = authenticatedDb(testEnv, 'runner-1');
 
-      await assertSucceeds(db.doc('events/event-1').update({
-        participantsCount: 3,
-        remainingSeats: 2,
-      }));
+      await assertSucceeds(
+        db.doc('events/event-1').update({
+          participantsCount: 3,
+          remainingSeats: 2,
+        }),
+      );
     });
 
     it('denies non-host seat updates that oversell maxParticipants', async () => {
       await seedEvent('event-1');
       const db = authenticatedDb(testEnv, 'runner-1');
 
-      await assertFails(db.doc('events/event-1').update({
-        participantsCount: 6,
-        remainingSeats: 0,
-      }));
+      await assertFails(
+        db.doc('events/event-1').update({
+          participantsCount: 6,
+          remainingSeats: 0,
+        }),
+      );
     });
 
     it('denies non-host seat updates with negative participantsCount', async () => {
       await seedEvent('event-1');
       const db = authenticatedDb(testEnv, 'runner-1');
 
-      await assertFails(db.doc('events/event-1').update({
-        participantsCount: -1,
-        remainingSeats: 6,
-      }));
+      await assertFails(
+        db.doc('events/event-1').update({
+          participantsCount: -1,
+          remainingSeats: 6,
+        }),
+      );
     });
 
     it('denies non-host seat updates with negative remainingSeats', async () => {
       await seedEvent('event-1');
       const db = authenticatedDb(testEnv, 'runner-1');
 
-      await assertFails(db.doc('events/event-1').update({
-        participantsCount: 6,
-        remainingSeats: -1,
-      }));
+      await assertFails(
+        db.doc('events/event-1').update({
+          participantsCount: 6,
+          remainingSeats: -1,
+        }),
+      );
     });
 
     it('denies non-host seat updates when counters do not sum to maxParticipants', async () => {
       await seedEvent('event-1');
       const db = authenticatedDb(testEnv, 'runner-1');
 
-      await assertFails(db.doc('events/event-1').update({
-        participantsCount: 3,
-        remainingSeats: 3,
-      }));
+      await assertFails(
+        db.doc('events/event-1').update({
+          participantsCount: 3,
+          remainingSeats: 3,
+        }),
+      );
     });
 
     it('denies non-host updates to title or unrelated fields', async () => {
@@ -137,9 +147,11 @@ describe('events Firestore rules', () => {
       await seedEvent('event-1');
       const db = authenticatedDb(testEnv, 'runner-1');
 
-      await assertSucceeds(db.doc('events/event-1').update({
-        reviewOnlyAddedField: 'allowed-by-changedKeys-gap',
-      }));
+      await assertSucceeds(
+        db.doc('events/event-1').update({
+          reviewOnlyAddedField: 'allowed-by-changedKeys-gap',
+        }),
+      );
     });
 
     it('denies hosts lowering maxParticipants below current participantsCount', async () => {
@@ -162,24 +174,28 @@ describe('events Firestore rules', () => {
       await seedEvent('event-1');
       const db = authenticatedDb(testEnv, 'runner-1');
 
-      await assertSucceeds(db.doc('events/event-1/participants/runner-1').set({
-        uid: 'runner-1',
-        eventId: 'event-1',
-        name: 'Runner One',
-        photoURL: 'https://example.test/runner-1.png',
-      }));
+      await assertSucceeds(
+        db.doc('events/event-1/participants/runner-1').set({
+          uid: 'runner-1',
+          eventId: 'event-1',
+          name: 'Runner One',
+          photoURL: 'https://example.test/runner-1.png',
+        }),
+      );
     });
 
     it('denies creating participant documents with a forged uid', async () => {
       await seedEvent('event-1');
       const db = authenticatedDb(testEnv, 'runner-1');
 
-      await assertFails(db.doc('events/event-1/participants/runner-2').set({
-        uid: 'runner-2',
-        eventId: 'event-1',
-        name: 'Runner Two',
-        photoURL: 'https://example.test/runner-2.png',
-      }));
+      await assertFails(
+        db.doc('events/event-1/participants/runner-2').set({
+          uid: 'runner-2',
+          eventId: 'event-1',
+          name: 'Runner Two',
+          photoURL: 'https://example.test/runner-2.png',
+        }),
+      );
     });
 
     it('allows participants to delete their own participant document', async () => {
@@ -211,9 +227,11 @@ describe('events Firestore rules', () => {
       await seedParticipant('event-1', 'runner-1');
       const db = authenticatedDb(testEnv, 'runner-1');
 
-      await assertFails(db.doc('events/event-1/participants/runner-1').update({
-        name: 'Updated Runner',
-      }));
+      await assertFails(
+        db.doc('events/event-1/participants/runner-1').update({
+          name: 'Updated Runner',
+        }),
+      );
     });
   });
 });
