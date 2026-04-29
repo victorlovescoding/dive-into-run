@@ -164,7 +164,7 @@ validate_plan
 # ---------------------------------------------------------------------------
 # 1. Start Firebase Emulator
 # ---------------------------------------------------------------------------
-firebase emulators:start --only auth,firestore,storage --project dive-into-run &
+firebase emulators:start --only auth,firestore,storage --project=demo-test &
 EMULATOR_PID=$!
 
 echo "Waiting for Firebase Emulator..."
@@ -232,8 +232,8 @@ EOF
 
   # Reset emulator state before each feature (wait for completion)
   echo "Resetting emulator state..."
-  auth_status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "http://localhost:9099/emulator/v1/projects/dive-into-run/accounts")
-  fs_status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "http://localhost:8080/emulator/v1/projects/dive-into-run/databases/(default)/documents")
+  auth_status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "http://localhost:9099/emulator/v1/projects/demo-test/accounts")
+  fs_status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "http://localhost:8080/emulator/v1/projects/demo-test/databases/(default)/documents")
   if [ "$auth_status" != "200" ]; then echo "  Warning: Auth cleanup returned $auth_status"; fi
   if [ "$fs_status" != "200" ]; then echo "  Warning: Firestore cleanup returned $fs_status"; fi
   sleep 1  # Let emulator finish internal cleanup

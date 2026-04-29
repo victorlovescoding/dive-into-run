@@ -50,17 +50,19 @@ Wave 3 (序列):    T05-eng → T05-rev
 
 ## Tasks
 
-### T01 — vitest defaultProject
+### T01 — vitest 預設 project（package.json script 路線）
 
 - **Status**: `[ ]`
-- **File**: `vitest.config.mjs`
+- **File**: `package.json`
 - **Audit**: P2-1 / Rule R3
-- **Change**: 在 config object 頂層加 `defaultProject: 'browser'`
-- **不可動**: `package.json:13` 的 `"test": "vitest"`（S1 章節指定走 vitest config 路線，不是 script 路線）
+- **Change**: `L13: "test": "vitest" → "test": "vitest --project=browser"`
+- **不可動**: `vitest.config.mjs`（不加 `defaultProject` — vitest 4.1.4 不存在此 key）
+
+> **Scope change 2026-04-29**: 1st attempt 發現 vitest 4.1.4 無 defaultProject，用戶批准改走 package.json 路線。
 
 **Acceptance Criteria**：
 
-- **AC-T01.1**: `git diff vitest.config.mjs` 只新增 `defaultProject: 'browser'` 一行（或同等最小 diff）；ESLint pass
+- **AC-T01.1**: `git diff package.json` 只新增 `--project=browser`（最小 diff）；ESLint pass
 - **AC-T01.2**: `npm test`（不帶 args）只跑 browser project，stdout 無 server project 啟動跡象、無 emulator missing error。執行命令：
 
   ```bash
@@ -72,13 +74,13 @@ Wave 3 (序列):    T05-eng → T05-rev
 
 **Engineer Evidence**（貼到 `handoff.md` §3）：
 
-- `git diff vitest.config.mjs` 完整輸出
+- `git diff package.json` 完整輸出
 - AC-T01.2 stdout 前 30 行
 
 **Reviewer 驗證**：
 
 - 重跑 AC-T01.2、貼新 stdout
-- Read `vitest.config.mjs` 確認 `defaultProject: 'browser'` 在正確位置（config object 頂層，不在 projects 陣列裡）
+- Read `package.json` 確認 L13 為 `"test": "vitest --project=browser"`
 - 在 §3 reviewer 欄填名稱 + 時間戳 + 命令輸出摘要
 
 ---
