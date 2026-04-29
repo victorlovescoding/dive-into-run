@@ -1863,18 +1863,18 @@ S5 是 audit report §12 的第 5 個 commit，對應 P0-2 / R9。S5 **只補測
 
 ## S5 核心設計決策（必讀）
 
-| 決策 | 內容 |
-| ---- | ---- |
-| **只測現行 rules，不改 rules** | S5 目標是補 emulator-driven unit tests 與 CI gate。若發現現行 rules 太寬（例：notification 可送任意非自己的 `recipientUid`），先寫入 `handoff.md` 並 escalate，不准在 S5 偷改 `firestore.rules`。 |
-| **每個 spec 都載入真實 `firestore.rules`** | 禁止在 test 中複製 rules 字串或寫 simplified rules；helper 必須從 repo root 讀 `firestore.rules`。 |
-| **Rules tests 用 client SDK + `@firebase/rules-unit-testing`** | 測 allow/deny 必須走 Firestore Rules emulator：`initializeTestEnvironment`、`authenticatedContext` / `unauthenticatedContext`、`withSecurityRulesDisabled` seed、`assertSucceeds` / `assertFails`。 |
-| **一個 domain 一個 spec** | S5 產出 5 個 spec：`users.rules.test.js`、`posts.rules.test.js`、`strava.rules.test.js`、`events.rules.test.js`、`notifications.rules.test.js`。Events spec 同時負責 seat consistency + participants cascade 兩條 critical path。 |
-| **Users spec 是 infra proof** | `users.rules.test.js` 不在 5 條 critical path 內，但用來證明 helper、public read、owner write、bio length、weatherFavorites owner gate 都能在 emulator 跑。 |
-| **Posts likes 依真實規則，不照 audit 猜測** | 目前 L81-L83 允許任何 signed-in user 讀 collectionGroup likes；S5 測試應鎖定「未登入 denied、登入 allowed、create/delete 只能 doc id 本人、post author 可 cascade delete」。若產品期待更嚴，另案改 rules。 |
-| **Notification `recipientUid` 有語意衝突** | 目前 L235-L245 允許 actor 建立通知給任意非自己的 recipient；S5 測 actorUid/type/read/createdAt/self-recipient/read/update/delete deny。若要「偽造 recipientUid 一律 deny」，必須先拿使用者決策。 |
-| **CI gate 用原生 `paths` filter** | `.github/workflows/firestore-rules-gate.yml` 用 GitHub Actions `on.<event>.paths` 觸發，範圍限 `firestore.rules`、`tests/server/rules/**`、package lock、workflow 本身。 |
-| **Reviewer 逐條 AC 驗證** | 每個 engineer 完成後，paired reviewer 必須重跑該 task 指定 command。Reviewer reject 時，主 agent 重派 engineer，直到 pass 或第 3 次 escalated。 |
-| **所有坑寫進 handoff** | Engineer 必須把重要發現 / 規則語意衝突 / emulator 坑寫到 `handoff.md` §2 S5 risk 子表或 §3 task evidence；Reviewer 必須確認 engineer 記錄是否正確。 |
+| 決策                                                           | 內容                                                                                                                                                                                                                              |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **只測現行 rules，不改 rules**                                 | S5 目標是補 emulator-driven unit tests 與 CI gate。若發現現行 rules 太寬（例：notification 可送任意非自己的 `recipientUid`），先寫入 `handoff.md` 並 escalate，不准在 S5 偷改 `firestore.rules`。                                 |
+| **每個 spec 都載入真實 `firestore.rules`**                     | 禁止在 test 中複製 rules 字串或寫 simplified rules；helper 必須從 repo root 讀 `firestore.rules`。                                                                                                                                |
+| **Rules tests 用 client SDK + `@firebase/rules-unit-testing`** | 測 allow/deny 必須走 Firestore Rules emulator：`initializeTestEnvironment`、`authenticatedContext` / `unauthenticatedContext`、`withSecurityRulesDisabled` seed、`assertSucceeds` / `assertFails`。                               |
+| **一個 domain 一個 spec**                                      | S5 產出 5 個 spec：`users.rules.test.js`、`posts.rules.test.js`、`strava.rules.test.js`、`events.rules.test.js`、`notifications.rules.test.js`。Events spec 同時負責 seat consistency + participants cascade 兩條 critical path。 |
+| **Users spec 是 infra proof**                                  | `users.rules.test.js` 不在 5 條 critical path 內，但用來證明 helper、public read、owner write、bio length、weatherFavorites owner gate 都能在 emulator 跑。                                                                       |
+| **Posts likes 依真實規則，不照 audit 猜測**                    | 目前 L81-L83 允許任何 signed-in user 讀 collectionGroup likes；S5 測試應鎖定「未登入 denied、登入 allowed、create/delete 只能 doc id 本人、post author 可 cascade delete」。若產品期待更嚴，另案改 rules。                        |
+| **Notification `recipientUid` 有語意衝突**                     | 目前 L235-L245 允許 actor 建立通知給任意非自己的 recipient；S5 測 actorUid/type/read/createdAt/self-recipient/read/update/delete deny。若要「偽造 recipientUid 一律 deny」，必須先拿使用者決策。                                  |
+| **CI gate 用原生 `paths` filter**                              | `.github/workflows/firestore-rules-gate.yml` 用 GitHub Actions `on.<event>.paths` 觸發，範圍限 `firestore.rules`、`tests/server/rules/**`、package lock、workflow 本身。                                                          |
+| **Reviewer 逐條 AC 驗證**                                      | 每個 engineer 完成後，paired reviewer 必須重跑該 task 指定 command。Reviewer reject 時，主 agent 重派 engineer，直到 pass 或第 3 次 escalated。                                                                                   |
+| **所有坑寫進 handoff**                                         | Engineer 必須把重要發現 / 規則語意衝突 / emulator 坑寫到 `handoff.md` §2 S5 risk 子表或 §3 task evidence；Reviewer 必須確認 engineer 記錄是否正確。                                                                               |
 
 ## S5 Concurrency
 
@@ -1889,25 +1889,25 @@ Wave 5 (≤5 並行): T26-rev | T27-rev | T28-rev | T29-rev | T30-rev
 Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 ```
 
-| 項目                            | 值 |
-| ------------------------------- | -- |
+| 項目                            | 值                                   |
+| ------------------------------- | ------------------------------------ |
 | Max concurrent subagent (S5)    | **5**（Wave 4/5；T23-T25、T31 序列） |
-| Total subagent invocations (S5) | **18**（9 task × 2，no retry case） |
+| Total subagent invocations (S5) | **18**（9 task × 2，no retry case）  |
 
 > 為什麼最多 5：T26-T30 寫入範圍互斥（posts / strava / events / notifications / workflow）。T25 先建立 helper 與 users proof，後面 5 個 task 才能平行。T31 必須等全部 reviewer-pass，因為 commit message 與 handoff sync 要整合所有 evidence。
 
 ## S5 Risks（subagent 必讀，補充進 handoff.md §2 S5 子表）
 
-| Risk | Why it matters | Action |
-| ---- | -------------- | ------ |
-| `@firebase/rules-unit-testing` 需要 emulator | 直接 `npx vitest run --project=server tests/server/rules/...` 會被 `vitest.setup.server.js` 擋，或連不到 emulator | 一律用 `npm run test:server -- tests/server/rules/<file>`；CI workflow 也用同一條路徑。 |
-| Server include 已修好，不要重改 config | `vitest.config.mjs` 已 include `tests/server/**/*.test.js`；S5 再改 include 會製造無關 diff | T23 reviewer 驗證 config 現況；S5 禁改 `vitest.config.mjs`，除非 emulator test 被實證漏抓且使用者批准。 |
-| Rules 語意與 audit wording 衝突 | audit 修補範例提到「未登入 read 應拒」「偽造 recipientUid 應拒」，但現行 rules 對 posts read / notification create 不完全如此 | 先 test 現行 rules；衝突寫 handoff + escalate，不准自行改 rules。 |
-| 多個 parallel task 都寫 `handoff.md` | T26-T30 平行時容易覆蓋彼此 evidence | 每個 engineer 只改自己 task row / S5 risk row；寫前重讀最新檔，若衝突只 merge 自己區塊。Reviewer 只能補 reviewer 欄。 |
-| `createdAt == request.time` 很容易寫錯 | Notification create 若用固定 `Timestamp.now()` 會 fail；client 需用 server timestamp transform | T29 必須包含 valid create success + fixed timestamp fail，並在 evidence 寫清楚用法。 |
-| `withSecurityRulesDisabled` seed 不等於 pass | seed 是準備測試資料，不代表 client rules allow | 所有 allow/deny 都要用 authenticated/unauthenticated client context + `assertSucceeds` / `assertFails` 驗證。 |
-| CollectionGroup query path 容易只測 doc get | P0-2 指的是 `collectionGroup('likes')` 風險；只 `getDoc(posts/p1/likes/u1)` 不夠 | T26 必須至少有一個 `collectionGroup(db, 'likes')` query 的 unauth denied + signed-in allowed。 |
-| Workflow paths 太寬或太窄 | 太寬會浪費 CI，太窄會讓 rules 改動漏跑 | T30 AC 明列 paths；reviewer 逐項 grep。 |
+| Risk                                         | Why it matters                                                                                                                | Action                                                                                                                |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `@firebase/rules-unit-testing` 需要 emulator | 直接 `npx vitest run --project=server tests/server/rules/...` 會被 `vitest.setup.server.js` 擋，或連不到 emulator             | 一律用 `npm run test:server -- tests/server/rules/<file>`；CI workflow 也用同一條路徑。                               |
+| Server include 已修好，不要重改 config       | `vitest.config.mjs` 已 include `tests/server/**/*.test.js`；S5 再改 include 會製造無關 diff                                   | T23 reviewer 驗證 config 現況；S5 禁改 `vitest.config.mjs`，除非 emulator test 被實證漏抓且使用者批准。               |
+| Rules 語意與 audit wording 衝突              | audit 修補範例提到「未登入 read 應拒」「偽造 recipientUid 應拒」，但現行 rules 對 posts read / notification create 不完全如此 | 先 test 現行 rules；衝突寫 handoff + escalate，不准自行改 rules。                                                     |
+| 多個 parallel task 都寫 `handoff.md`         | T26-T30 平行時容易覆蓋彼此 evidence                                                                                           | 每個 engineer 只改自己 task row / S5 risk row；寫前重讀最新檔，若衝突只 merge 自己區塊。Reviewer 只能補 reviewer 欄。 |
+| `createdAt == request.time` 很容易寫錯       | Notification create 若用固定 `Timestamp.now()` 會 fail；client 需用 server timestamp transform                                | T29 必須包含 valid create success + fixed timestamp fail，並在 evidence 寫清楚用法。                                  |
+| `withSecurityRulesDisabled` seed 不等於 pass | seed 是準備測試資料，不代表 client rules allow                                                                                | 所有 allow/deny 都要用 authenticated/unauthenticated client context + `assertSucceeds` / `assertFails` 驗證。         |
+| CollectionGroup query path 容易只測 doc get  | P0-2 指的是 `collectionGroup('likes')` 風險；只 `getDoc(posts/p1/likes/u1)` 不夠                                              | T26 必須至少有一個 `collectionGroup(db, 'likes')` query 的 unauth denied + signed-in allowed。                        |
+| Workflow paths 太寬或太窄                    | 太寬會浪費 CI，太窄會讓 rules 改動漏跑                                                                                        | T30 AC 明列 paths；reviewer 逐項 grep。                                                                               |
 
 ## S5 Tasks
 
@@ -2329,6 +2329,7 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
   ```
 - **AC-T31.4**: `git diff --name-only --cached` 僅包含 S5 files + `handoff.md` + `tasks.md`，不含 `firestore.rules`、`vitest.config.mjs`、`.github/workflows/ci.yml`。
 - **AC-T31.5**: commit message 格式：
+
   ```text
   test(rules): add firestore rules gate and critical specs
 
@@ -2339,7 +2340,9 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 
   Refs: project-health/2026-04-29-tests-audit-report.md L113-141, L538-544, L614-620
   ```
+
   不加 `Co-Authored-By`。
+
 - **AC-T31.6**: `git show HEAD --stat` 顯示 S5 預期檔案；`git show HEAD --name-only` 不含禁區檔。
 - **AC-T31.7**: `git log -1 --format=%B | grep -ic "Co-Authored-By"` = 0。
 - **AC-T31.8**: branch = `026-tests-audit-report`；不 push。
@@ -2353,6 +2356,437 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 - Read `tasks.md` 確認 T23-T31 全 `[x]`。
 - `git log origin/026-tests-audit-report..HEAD 2>&1` 應顯示 ≥ 1 commit ahead（未 push）。
 - 在 §3 T31 reviewer 欄簽名 + 命令輸出 + ≥ 5 行驗證結論。
+
+---
+
+## S6 Goal
+
+把 S4 的 grep warn-only gate 升級成 ESLint `no-restricted-syntax: error` + `ignores` baseline，對應 audit `§12 S6` / R6 / R7。S6 **不清理舊有違規**——baseline ignores 對 S4 已凍結的 mock-boundary `33` 檔 / flaky-pattern `45` 檔豁免；rule 只擋「新增違規」與「baseline 外既有違規」。後續清理（baseline 退場）屬 Wave 3 + S8 觸發型，不在 S6 scope。
+
+S6 是 audit `§12` 第 6 個 commit。S6 **只動 `eslint.config.mjs`**；不修改 `firestore.rules` / `vitest.config.mjs` / S4 audit scripts / `.husky/pre-commit`。如果 smoke test 證明 selector 對既有 baseline 檔誤報（false positive），engineer 必須在 `handoff.md` 記錄並 escalate，**不可** 自行擴大 baseline 蓋掉誤報。
+
+## S6 References
+
+- Audit report：[`project-health/2026-04-29-tests-audit-report.md`](../../project-health/2026-04-29-tests-audit-report.md)
+  - **L77-111** — P0-1 Mock 紀律失守 + 233 處內部 mock 樣本
+  - **L293-318** — P1-4 `toHaveBeenCalledTimes` 109 處 + P1-5 硬置 `setTimeout`
+  - **L373-379** — 「不要把 mock-boundary ESLint rule 設為 error 直接擋 main」（被 ignores baseline 設計覆蓋）
+  - **L552-556** — R6 / R7 規則描述
+  - **L622-633** — S6 章節 + baseline 生成命令 + smoke test 步驟
+  - **L641-657** — Baseline 追蹤機制（commit message 強制紀錄 / PR template checkbox / CI 自動偵測）
+  - **L660-664** — S8 觸發型升級（baseline 全空 + audit script `exit 1`）
+- 既有 testing-library override pattern：`eslint.config.mjs:387-402`（仿此模式新增 mock-boundary + flaky 區塊）
+- S4 baseline 起點：mock-boundary `33` / flaky-pattern `45`（見 `handoff.md` §3 T16/T17/T21 evidence）
+- S4 grep pattern（凍結，S6 selector 必須對齊語意）：
+  ```bash
+  # mock-boundary（audit L629）
+  grep -rln "vi.mock(['\"]@/\(repo\|service\|runtime\)/" tests/integration/ --include="*.test.*" | sort
+  # flaky-pattern（audit L630）
+  grep -rln "toHaveBeenCalledTimes\|new Promise.*setTimeout" tests --include="*.test.*" | sort
+  ```
+
+## S6 核心設計決策（必讀）
+
+| 決策                                                    | 內容                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **規則 = error，不是 warn**                             | audit §12.8 已決議「規則先 + ignores baseline 等同分階段」；warn 路線在 spec 024 已用過，本 S6 直接 error。`--max-warnings 0` pre-commit 不會被 warn 擋，但會被 error 擋，這正是要的。                                                                                                                                                                                           |
+| **Baseline 用 `ignores` 不用 `overrides off`**          | `ignores` 是 ESLint flat config 內建語意；list 裡的檔案完全跳過該 override block 的 rule 評估。`overrides`-style 「對某些檔案把 rule 關掉」會讓 `--no-eslintrc` 等場景失準，且 list 過長不易讀。                                                                                                                                                                                 |
+| **baseline 凍結來自 S4 grep 命令的真實輸出**            | 不是 estimate 不是 audit 樣本——T34 必須當場跑 audit L629/L630 命令 capture，與 S4 baseline 數字交叉驗證（mock-boundary `33` / flaky `45`）。如果跑出來數字漂移，先 escalate，不要直接寫進 ignores。                                                                                                                                                                              |
+| **Selector 對齊 S4 grep 語意，不是更嚴或更寬**          | S6 selector 必須跟 S4 audit script 抓的同一群檔案語意一致。AST selector 跟 string grep 不可能 1:1 完全等價，但「會被 grep 抓到的會被 selector 抓到」必須成立（否則 baseline list 與 rule 不對位）。Spike T32/T33 階段確認等價性與 corner case。                                                                                                                                  |
+| **Mock-boundary scope = `tests/integration/**` only\*\* | S4 audit pattern 限定 `tests/integration/`（audit L629），原因：unit/runtime 測試 mock service/repo 是合理 boundary；integration 測 mock use-case 才是違反 mock 紀律的核心問題。S6 override block `files` 要對齊這個 scope。                                                                                                                                                     |
+| **Flaky-pattern scope = `tests/**`（與 S4 一致）\*\*    | S4 audit pattern 不限 integration（audit L630）。所有測試都不該用 `toHaveBeenCalledTimes(N)` + 硬置 setTimeout。                                                                                                                                                                                                                                                                 |
+| **`new Promise.*setTimeout` AST 化的處理**              | string-grep 易抓，AST 不易精準匹配（任何 `setTimeout` 在 `Promise` executor 都算？太寬）。Spike T33 必須給出三選一決議：（A）用 `selector: "NewExpression[callee.name='Promise'] CallExpression[callee.name='setTimeout']"`、（B）用 simpler `CallExpression[callee.name='setTimeout']` 但只限 test files、（C）放棄 AST 化僅靠 S4 grep gate 監督。決議寫進 handoff §2 S6 子表。 |
+| **不擴大 baseline 解 false positive**                   | 如果 selector 對既有 baseline 檔產生誤判（例：rule 抓到 baseline 之外的合法用法），engineer 必須回 spike 修 selector，不可把誤判檔加進 ignores。Ignores list 的成員資格 = S4 grep 抓出來的檔案，不增不減。                                                                                                                                                                       |
+| **commit message 紀錄 baseline 起始**                   | T38 commit message 必須含 `Baseline start: mock-boundary: 33, flaky-pattern: 45` 行，作為「Baseline 追蹤機制」起點（audit L647-649）。                                                                                                                                                                                                                                           |
+| **不動 S4 audit script**                                | S4 grep gate 與 S6 ESLint rule **共存** 兩 sprint，不互相取代：S4 看「整 repo 統計數字漂移」、S6 看「per-file 違規攔截」。S8 觸發型才會把 S4 改 `exit 1` + S6 baseline 清空。                                                                                                                                                                                                    |
+| **Reviewer 逐條 AC 驗證**                               | 每個 engineer 完成後，paired reviewer 必須重跑該 task 指定 command。Reviewer reject 時主 agent 重派 engineer 直到 pass 或第 3 次 escalated（同 S5 規則）。                                                                                                                                                                                                                       |
+| **所有坑寫進 handoff**                                  | Engineer 必須把重要發現 / selector edge case / baseline drift / pre-commit 互動寫到 `handoff.md` §2 S6 risk 子表或 §3 task evidence；Reviewer 必須確認 engineer 記錄是否正確。                                                                                                                                                                                                   |
+
+## S6 Concurrency
+
+```
+Wave 1 (2 並行): T32-eng | T33-eng                     (selector spike，獨立 AST 設計)
+                     ↓ each 完成後立即觸發 paired reviewer ↓
+Wave 2 (≤2 並行): T32-rev | T33-rev
+                     ↓ 全部 verified-pass ↓
+Wave 3 (序列):    T34-eng → T34-rev                   (baseline freeze；改 handoff)
+Wave 4 (序列):    T35-eng → T35-rev                   (eslint.config.mjs 加兩 block；同檔不可並行)
+Wave 5 (序列):    T36-eng → T36-rev                   (positive + negative smoke)
+Wave 6 (序列):    T37-eng → T37-rev                   (整合驗證 + commit)
+```
+
+| 項目                            | 值                                  |
+| ------------------------------- | ----------------------------------- |
+| Max concurrent subagent (S6)    | **2**（Wave 1/2；T34-T37 全序列）   |
+| Total subagent invocations (S6) | **12**（6 task × 2，no retry case） |
+
+> 為什麼最多 2：T35 動 `eslint.config.mjs` 同一檔，不能並行；T34/T36/T37 各依賴前一波 evidence。只有 spike T32/T33 是獨立 AST 設計題（mock-boundary vs flaky 完全不同 selector），可平行。
+
+## S6 Risks（subagent 必讀，補充進 handoff.md §2 S6 子表）
+
+| Risk                                         | Why it matters                                                                                                                                            | Action                                                                                                                                                                     |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AST selector 與 grep 語意不等價              | grep 是字面比對 / AST 是結構比對；`vi.mock(\`@/repo/...\`)` template literal、`vi.mock(path)`變數版、別名`import \* as vi from 'vitest'` 都是 corner case | T32/T33 spike 必須列舉 ≥ 3 個 corner case 並給出 selector 決議。                                                                                                           |
+| Baseline 數字漂移                            | S4 凍結時 T21 capture `33 / 45`；S6 T34 重跑可能因 main rebase / new test files 而漂移                                                                    | T34 必須在 capture 後與 S4 凍結數字比較；如果不一致，先 escalate 不要繼續。                                                                                                |
+| `--max-warnings 0` 與 error 互動             | pre-commit `npm run lint -- --max-warnings 0` 對 error 直接 fail；對 warn 也 fail（因為 max-warnings 0）                                                  | S6 用 error 是對的；但 S4 後 pre-commit 已 append 兩 audit script `\|\| true`——S6 不能改 husky，rule error 走 lint chain 攔截。                                            |
+| `ignores` list 路徑必須 repo-relative + 排序 | flat config `ignores` glob 必須 repo-relative（不是 absolute）；list 排序若不穩定，下次 baseline diff 噪音爆炸                                            | T34 baseline list 用 `LC_ALL=C sort` 確保穩定；T35 寫進 config 時保持同序。                                                                                                |
+| Smoke positive 必須在 baseline 外            | 在 baseline 內加違規 = ignores 蓋掉，rule 不會 error                                                                                                      | T36 必須選一個確定不在 baseline list 的 integration 檔（或建一個 temp 檔在 baseline 外目錄）；smoke 完立刻撤銷。                                                           |
+| Smoke temp 檔殘留                            | T36 若建 temp 檔忘了 cleanup，T37 commit 會把 temp 檔帶進去                                                                                               | T36 內 cleanup + T37 開頭 `git status --short` 驗證 worktree 乾淨。                                                                                                        |
+| ESLint config 同檔多 block 順序              | flat config 後寫的 block 對相同 files glob 會疊加；mock-boundary block 與 flaky block 都針對 `tests/**` 但 ignores 不同——順序不對可能語意異常             | T35 寫兩個獨立 block，files glob 各自最小範圍（mock-boundary 只 `tests/integration/**`、flaky `tests/**`）；reviewer 用 `npx eslint --print-config` 驗證 effective rules。 |
+| `no-restricted-syntax` 訊息要可診斷          | 若 message 寫「mock 不能用」，工程師看到不知該怎麼修                                                                                                      | message 必須含「為什麼擋 + 推薦替代」（例：mock-boundary 推薦「用真實 use-case + Firebase emulator」、flaky 推薦「toHaveBeenLastCalledWith / waitFor」）。                 |
+| baseline list 過長造成 config 難讀           | 33+45=78 條 path 寫在 config 裡很長                                                                                                                       | 接受——audit L625 明確要求「ignores baseline list」。可加 comment 註明 baseline 起點 + 退場條件（Wave 3 / S8）。                                                            |
+
+## S6 Tasks
+
+### T32 — Spike: mock-boundary `no-restricted-syntax` selector 設計
+
+- **Status**: `[ ]`
+- **Files Written**: `specs/026-tests-audit-report/handoff.md` §2 S6 risk 子表 + §3 T32 evidence row。**不**改 code/config/test。
+- **Files Read**: `eslint.config.mjs:387-402`（testing-library override pattern）、`scripts/audit-mock-boundary.sh`（S4 凍結 pattern）、audit L77-111 / L552-556 / L622-633、`handoff.md` §3 T16 / T18 / T21 evidence
+- **Audit**: P0-1 / R6 / `§12 S6`
+- **Dependencies**: S5 已 commit（T31 `[x]`）
+- **Parallel**: 可與 T33 平行
+
+**Engineer Action**：
+
+1. 設計 ESLint `no-restricted-syntax` selector，目標等價於 S4 grep `vi.mock(['"]@/(repo|service|runtime)/`，限 `tests/integration/**`：
+   - 主 selector 候選（必列舉至少 1 條）：`CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.value=/^@\/(repo|service|runtime)\//]`
+   - 測 corner case：template literal `\`@/repo/foo\``、computed path 變數、`import \* as vi`、`await vi.mock(...)` async hoist
+2. 設計 `files` glob：`tests/integration/**/*.{js,jsx,mjs}` + `**/*.test.{js,jsx,mjs}` 的交集寫法（仿 testing-library override line 388）。
+3. 設計 `message`：含「為什麼擋」+「推薦替代」（例：「Integration tests must not mock @/repo|service|runtime — exercise real use-cases via Firebase emulator instead」）。
+4. 在 `handoff.md` §3 T32 evidence row 寫：候選 selector ≥ 1、corner case ≥ 3、files glob、message draft、與 S4 grep 語意對齊論證。
+5. 在 §2 S6 risk 子表補實際發現（至少 1 條 spike-time risk）。
+6. **禁止** 改 `eslint.config.mjs`、跑 lint、或建 baseline list。
+
+**Acceptance Criteria**：
+
+- **AC-T32.1**: §3 T32 evidence 含候選 selector（完整 esquery 字串）。
+- **AC-T32.2**: Evidence 列舉 ≥ 3 個 corner case 與該 case 是否被 selector 抓到的判定。
+- **AC-T32.3**: Evidence 含 `files` glob + `message` draft 全文。
+- **AC-T32.4**: Evidence 含「與 S4 grep `vi.mock(['"]@/(repo|service|runtime)/` 在 `tests/integration/` 範圍的語意對齊」論證（兩段以上文字 / 對照表均可）。
+- **AC-T32.5**: §2 S6 risk 子表至少 1 條本輪實際發現（不重複本檔上方表格）。
+- **AC-T32.6**: `git diff --name-only` 只包含 `specs/026-tests-audit-report/handoff.md`。
+
+**Engineer Evidence**：
+
+- §3 T32 row（selector / corner case / glob / message）。
+- `git diff --name-only` 輸出。
+
+**Reviewer 驗證**：
+
+- Read `eslint.config.mjs:387-402` 比對 engineer 提的 glob 結構。
+- 對照 audit L629 grep 命令與 selector 判定，至少挑 2 個 corner case 自行驗證。
+- `git diff --name-only` 確認沒有 code/config/test 改動。
+- 在 §3 T32 reviewer 欄填 PASS/REJECT + 至少 5 行驗證結論。
+
+---
+
+### T33 — Spike: flaky-pattern `no-restricted-syntax` selector 設計
+
+- **Status**: `[ ]`
+- **Files Written**: `specs/026-tests-audit-report/handoff.md` §2 S6 risk 子表 + §3 T33 evidence row。**不**改 code/config/test。
+- **Files Read**: `eslint.config.mjs:387-402`、`scripts/audit-flaky-patterns.sh`（S4 凍結 pattern）、audit L293-318 / L552-556 / L622-633、`handoff.md` §3 T17 / T19 / T21 evidence
+- **Audit**: P1-4 / P1-5 / R7 / `§12 S6`
+- **Dependencies**: S5 已 commit（T31 `[x]`）
+- **Parallel**: 可與 T32 平行
+
+**Engineer Action**：
+
+1. 設計 ESLint `no-restricted-syntax` selector，目標等價於 S4 grep `toHaveBeenCalledTimes\|new Promise.*setTimeout`，scope `tests/**`：
+   - `toHaveBeenCalledTimes` 主 selector：`CallExpression[callee.property.name='toHaveBeenCalledTimes']`
+   - `new Promise.*setTimeout` 三選一決議（必選一條，寫明理由）：
+     - **(A)** AST 化：`NewExpression[callee.name='Promise'] CallExpression[callee.name='setTimeout']`
+     - **(B)** 簡化：`CallExpression[callee.name='setTimeout']` + 限定 test files
+     - **(C)** 放棄 AST：僅 S4 grep gate 監督 setTimeout，S6 只擋 `toHaveBeenCalledTimes`
+2. 設計 `files` glob：`tests/**/*.{js,jsx,mjs}` + `**/*.test.{js,jsx,mjs}`、`**/*.spec.{js,jsx,mjs}`。
+3. 設計 `message`：含推薦替代（例：「Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing」）。
+4. 在 `handoff.md` §3 T33 evidence row 寫：兩 selector 全文（或三選一決議結果）、scope glob、message draft、與 S4 grep 對齊論證。
+5. 在 §2 S6 risk 子表補實際發現（至少 1 條）。
+6. **禁止** 改 `eslint.config.mjs`、跑 lint、或建 baseline list。
+
+**Acceptance Criteria**：
+
+- **AC-T33.1**: §3 T33 evidence 含 `toHaveBeenCalledTimes` selector 全文。
+- **AC-T33.2**: Evidence 含 `setTimeout` 三選一決議：標明 A/B/C，附 ≥ 3 行決議理由（含 false positive 風險評估）。
+- **AC-T33.3**: Evidence 含 `files` glob + `message` draft 全文。
+- **AC-T33.4**: Evidence 含「與 S4 grep `toHaveBeenCalledTimes\|new Promise.*setTimeout` 的語意對齊」論證；如選 (C)，必須寫「S6 不擋 setTimeout，由 S4 grep 監督；T34 baseline 不含 setTimeout-only 檔」。
+- **AC-T33.5**: §2 S6 risk 子表至少 1 條本輪實際發現。
+- **AC-T33.6**: `git diff --name-only` 只包含 `specs/026-tests-audit-report/handoff.md`。
+
+**Engineer Evidence**：
+
+- §3 T33 row。
+- `git diff --name-only` 輸出。
+
+**Reviewer 驗證**：
+
+- Read `eslint.config.mjs:387-402` 確認 glob 結構合理。
+- 對照 audit L630 grep + S4 audit script 計數方法，挑 2 個 case 驗證 selector 對位。
+- 對 `setTimeout` 三選一決議，獨立評估 false positive 風險，寫進 reviewer 欄。
+- `git diff --name-only` 確認沒有 code/config/test 改動。
+- 在 §3 T33 reviewer 欄填 PASS/REJECT + 至少 5 行驗證結論。
+
+---
+
+### T34 — Generate + freeze baselines（mock-boundary + flaky）
+
+- **Status**: `[ ]`
+- **Files Written**: `specs/026-tests-audit-report/handoff.md` §3 T34 evidence row（內嵌兩份 baseline list 全文）。**不**改 code/config/test。
+- **Files Read**: `scripts/audit-mock-boundary.sh`、`scripts/audit-flaky-patterns.sh`、`handoff.md` §3 T21（S4 凍結數字 33/45）
+- **Audit**: `§12 S6` / audit L626-633
+- **Dependencies**: T32 `[x]` + T33 `[x]`
+
+**Engineer Action**：
+
+1. 在 repo root 跑 audit L629 / L630 兩條凍結命令 capture 真實 baseline：
+   ```bash
+   LC_ALL=C grep -rln "vi.mock(['\"]@/\(repo\|service\|runtime\)/" tests/integration/ --include="*.test.*" | LC_ALL=C sort > /tmp/s6-mock-boundary-baseline.txt
+   LC_ALL=C grep -rln "toHaveBeenCalledTimes\|new Promise.*setTimeout" tests --include="*.test.*" | LC_ALL=C sort > /tmp/s6-flaky-baseline.txt
+   wc -l /tmp/s6-mock-boundary-baseline.txt /tmp/s6-flaky-baseline.txt
+   ```
+2. 與 S4 凍結數字交叉驗證：
+   - mock-boundary 應 = `33`（S4 T21 凍結）
+   - flaky-pattern 應 = `45`（S4 T21 凍結）
+   - 如果 T33 spike 選 (C)（不擋 setTimeout）：必須額外跑 `LC_ALL=C grep -rln "toHaveBeenCalledTimes" tests --include="*.test.*" | LC_ALL=C sort` 取得 S6-only flaky baseline，並在 evidence 寫明「S6 baseline ≠ S4 baseline，差距為 setTimeout-only 檔 N 個」
+   - 數字漂移（不同於 S4 T21）→ 立即 escalate，不要繼續
+3. 把兩份 list 完整貼進 §3 T34 evidence（一字不漏，含路徑 prefix `tests/...`）。
+4. Evidence 必須附 capture 命令、wc 輸出、與 S4 凍結數字對照表。
+5. **禁止** 把 baseline list 寫進其他檔案（`eslint.config.mjs` 等 T35 才動）。
+
+**Acceptance Criteria**：
+
+- **AC-T34.1**: Evidence 含兩份 baseline list 全文（用 fenced code block）。
+- **AC-T34.2**: Evidence 含 capture 命令 + wc 輸出 + 與 S4 凍結數字對照（mock-boundary 33 / flaky 45 或合理偏差說明）。
+- **AC-T34.3**: List 路徑全為 repo-relative（無 absolute path、無 `./`）。
+- **AC-T34.4**: List 用 `LC_ALL=C sort` 排序（穩定 ordering）。
+- **AC-T34.5**: 如 T33 選 (C)：evidence 含 S6-only flaky baseline + 與 S4 baseline 差距說明。
+- **AC-T34.6**: `git diff --name-only` 只包含 `specs/026-tests-audit-report/handoff.md`。
+
+**Engineer Evidence**：
+
+- §3 T34 row（兩 list + 命令 + wc + 對照）。
+- `git diff --name-only` 輸出。
+
+**Reviewer 驗證**：
+
+- Reviewer 自己重跑 capture 命令，逐行 diff engineer evidence list（`diff <(engineer-list) <(reviewer-list)`）。
+- 確認排序是 `LC_ALL=C`（不是 default locale）。
+- 確認數字與 S4 T21 凍結對齊（或合理偏差有 escalate 紀錄）。
+- 在 §3 T34 reviewer 欄填 PASS/REJECT + 命令輸出 + 5 行驗證。
+
+---
+
+### T35 — Implement: `eslint.config.mjs` 加 mock-boundary + flaky 兩 override block
+
+- **Status**: `[ ]`
+- **Files Written**:
+  - `eslint.config.mjs`（新增兩個 override block，仿 line 387-402 testing-library 模式）
+  - `specs/026-tests-audit-report/handoff.md` §3 T35 evidence row
+- **Files Read**: `eslint.config.mjs` 全檔、§3 T32 / T33 / T34 evidence
+- **Audit**: `§12 S6` / R6 / R7
+- **Dependencies**: T34 `[x]`
+
+**Engineer Action**：
+
+1. 在 `eslint.config.mjs` 第 17.5 testing-library override block（line 387-402）之後、line 18 測試檔嚴格規範（line 405-436）之前，新增兩個 block：
+   - **Block A — mock-boundary**：
+     - `files`: `['tests/integration/**/*.{js,jsx,mjs}']`
+     - `ignores`: T34 mock-boundary baseline list 全部 33 條 path（穩定排序）
+     - `rules.no-restricted-syntax`: `['error', { selector: <T32 selector>, message: <T32 message> }]`
+     - 區塊上方加 comment：`// 17.6 mock-boundary（audit P0-1 / R6 / spec 026 S6）`+ baseline 起點 + 退場條件（Wave 3 / S8）
+   - **Block B — flaky-pattern**：
+     - `files`: `['tests/**/*.{js,jsx,mjs}']`（依 T33 決議 scope）
+     - `ignores`: T34 flaky baseline list（依 T33 (A)/(B)/(C) 決議，list 內容對應）
+     - `rules.no-restricted-syntax`: `['error', { selector: <T33 selectors>, message: <T33 message> }]`（多個 selector 用 array 形式）
+     - 區塊上方加 comment：`// 17.7 flaky-pattern（audit P1-4 / P1-5 / R7 / spec 026 S6）`+ baseline 起點 + 退場條件
+2. **不可** 動 line 1-385 既有 block；**不可** 動 line 405+ 既有 block。
+3. **不可** 動 `package.json` / `.husky/pre-commit` / `scripts/audit-*.sh`。
+4. 跑 sanity check（不應 error，應展現 rule 已載入）：
+   ```bash
+   npx eslint --print-config tests/integration/posts/PostFeed.test.jsx | jq '.rules["no-restricted-syntax"]'
+   npx eslint --print-config tests/unit/runtime/useStravaActivities.test.jsx | jq '.rules["no-restricted-syntax"]'
+   npm run lint -- --max-warnings 0
+   ```
+5. 在 `handoff.md` §3 T35 evidence row 寫：diff 摘要 + sanity check 三條輸出 + lint 結果（必須綠）。
+
+**Acceptance Criteria**：
+
+- **AC-T35.1**: `eslint.config.mjs` 新增兩個 override block，位置在 testing-library block（line 387-402）之後、測試檔嚴格規範 block（line 405+）之前。
+- **AC-T35.2**: Block A `ignores` 含 T34 mock-boundary baseline 全部 33 條（與 §3 T34 list 完全一致，逐行 diff = 0）。
+- **AC-T35.3**: Block B `ignores` 含 T34 flaky baseline 全部條目（依 T33 決議）。
+- **AC-T35.4**: 兩 block 各自 `rules.no-restricted-syntax` 為 `error`（不是 warn）。
+- **AC-T35.5**: 兩 block 上方註解含「audit refs」「baseline start: N」「退場條件: Wave 3 / S8」三項資訊。
+- **AC-T35.6**: `npx eslint --print-config tests/integration/<某 baseline 內檔>.test.jsx` 顯示 `no-restricted-syntax` rule **不**生效（被 ignores）。
+- **AC-T35.7**: `npm run lint -- --max-warnings 0` exit 0（既有 codebase 無 violation）。
+- **AC-T35.8**: `git diff --name-only` 只含 `eslint.config.mjs` + `handoff.md`。**禁** `package.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` 變更。
+- **AC-T35.9**: `git diff eslint.config.mjs` 只新增 block，不刪除/改動既有 block。
+
+**Engineer Evidence**：
+
+- `git diff eslint.config.mjs --stat` 輸出。
+- AC-T35.6 + AC-T35.7 命令輸出。
+- 兩 block code 摘要（前後幾行 + ignores list 計數）。
+
+**Reviewer 驗證**：
+
+- Read 整個 `eslint.config.mjs` diff，逐行確認既有 block 沒被動。
+- Diff Block A `ignores` 與 §3 T34 mock-boundary list（必須 = 0 行差）。
+- Diff Block B `ignores` 與 §3 T34 flaky list（依 T33 決議）。
+- 重跑 AC-T35.6 / AC-T35.7 命令。
+- `git diff --name-only` 確認 scope。
+- 在 §3 T35 reviewer 欄填 PASS/REJECT + 命令輸出 + 5 行驗證。
+
+---
+
+### T36 — Smoke：positive（baseline 外觸發 error）+ negative（baseline 內保持 pass）
+
+- **Status**: `[ ]`
+- **Files Written**: `specs/026-tests-audit-report/handoff.md` §3 T36 evidence row。**不**留下任何 temp 檔（必須 cleanup）。
+- **Files Read**: `eslint.config.mjs` 改動後版本、§3 T34 baseline list、§3 T35 evidence
+- **Audit**: audit L632 「Smoke test 規則生效」
+- **Dependencies**: T35 `[x]`
+
+**Engineer Action**：
+
+1. **Smoke positive (mock-boundary)**：
+   - 選一個 **不在** §3 T34 mock-boundary baseline list 的 `tests/integration/**` 目錄（或 baseline 為空的子目錄），新建 temp 檔 `tests/integration/_s6-smoke-mock.test.jsx`：
+     ```jsx
+     import { vi } from 'vitest';
+     vi.mock('@/repo/users-repo');
+     ```
+   - 跑 `npx eslint tests/integration/_s6-smoke-mock.test.jsx`，必須 **error**（含 `no-restricted-syntax` 訊息）。
+   - 立刻 `rm tests/integration/_s6-smoke-mock.test.jsx`。
+2. **Smoke positive (flaky)**：
+   - 新建 temp 檔 `tests/unit/_s6-smoke-flaky.test.js`：
+     ```js
+     import { describe, it, expect, vi } from 'vitest';
+     describe('s6 smoke', () => {
+       it('flaky', () => {
+         const fn = vi.fn();
+         fn();
+         expect(fn).toHaveBeenCalledTimes(1);
+       });
+     });
+     ```
+   - 跑 `npx eslint tests/unit/_s6-smoke-flaky.test.js`，必須 **error**。
+   - 立刻 `rm tests/unit/_s6-smoke-flaky.test.js`。
+3. **Smoke negative**：
+   - 從 §3 T34 mock-boundary baseline 挑一個檔，跑 `npx eslint <該檔>`，必須 **不** 因 `no-restricted-syntax` error（rule 被 ignores 蓋住）。允許其他既有 lint warning，但不能有 mock-boundary error。
+   - 從 §3 T34 flaky baseline 挑一個檔，跑 `npx eslint <該檔>`，必須 **不** 因 `no-restricted-syntax` error。
+4. 跑 `git status --short` 確認 worktree 沒有 `_s6-smoke-*` 殘留。
+5. Evidence 寫進 §3 T36：4 條 smoke 命令 + 輸出 + cleanup 驗證。
+
+**Acceptance Criteria**：
+
+- **AC-T36.1**: Smoke positive (mock-boundary) ESLint 輸出含 `no-restricted-syntax` error，引用 T32 message 文字。
+- **AC-T36.2**: Smoke positive (flaky) ESLint 輸出含 `no-restricted-syntax` error，引用 T33 message 文字。
+- **AC-T36.3**: Smoke negative (mock-boundary baseline 內檔) ESLint 不含 `no-restricted-syntax` error。
+- **AC-T36.4**: Smoke negative (flaky baseline 內檔) ESLint 不含 `no-restricted-syntax` error。
+- **AC-T36.5**: `git status --short | grep "_s6-smoke" | wc -l` = 0。
+- **AC-T36.6**: `git diff --name-only` 只包含 `handoff.md`（temp 檔已刪、`eslint.config.mjs` 屬 T35 不在本 task diff 內）。
+
+**Engineer Evidence**：
+
+- 4 條 smoke 命令輸出（含 ESLint 完整訊息）。
+- AC-T36.5 命令輸出 = 0。
+- AC-T36.6 `git diff --name-only`。
+
+**Reviewer 驗證**：
+
+- Reviewer 自己建一份 temp 檔重跑 AC-T36.1 / AC-T36.2，輸出與 engineer evidence 對照（訊息文字應一致）。
+- Reviewer 自己挑一個 baseline 內檔重跑 AC-T36.3 / AC-T36.4。
+- `git status` 確認 worktree 乾淨。
+- 在 §3 T36 reviewer 欄填 PASS/REJECT + 命令輸出 + 5 行驗證。
+
+---
+
+### T37 — S6 integration verification + commit
+
+- **Status**: `[ ]`
+- **Files Written**:
+  - `specs/026-tests-audit-report/handoff.md` §0 / §1 / §2 S6 risk / §3 T37 evidence / §5
+  - `specs/026-tests-audit-report/tasks.md`（T32-T37 status `[ ]` → `[x]`）
+- **Files committed**:
+  - `eslint.config.mjs`
+  - `specs/026-tests-audit-report/handoff.md`
+  - `specs/026-tests-audit-report/tasks.md`
+- **Dependencies**: T32-T36 全部 `[x]`
+
+**Engineer Action**：
+
+1. 確認 §3 T32-T36 全部 `rev-pass` + engineer/reviewer 雙簽名。
+2. 更新 `handoff.md`：
+   - §0：S6 scope `done`、T32-T37 狀態 `done (rev-pass)`、Last commit (S6) 留待 commit 後填
+   - §1：S6 已完成工作 + 後續（S7 GitHub UI 屬人類動作 / S8 觸發型升級）
+   - §2：S6 risk 子表保留實際踩坑
+   - §3：T37 evidence
+   - §5：補 ESLint version + flat config 細節（如有）
+3. 更新 `tasks.md`：T32-T37 status `[ ]` → `[x]`。
+4. 一次性重跑 S6 + repo gate（見 AC-T37.2）。
+5. 明確列檔 stage（禁 `git add -A`）：
+   ```bash
+   git add eslint.config.mjs specs/026-tests-audit-report/handoff.md specs/026-tests-audit-report/tasks.md
+   ```
+6. Commit（不 push），message 必含 `Baseline start:` 行紀錄起點。
+
+**Acceptance Criteria**：
+
+- **AC-T37.1**: §3 T32-T36 全 `rev-pass`，`tasks.md` T32-T37 全 `[x]`。
+- **AC-T37.2**: 一次性重跑：
+  ```bash
+  npm run lint -- --max-warnings 0
+  npm run type-check
+  npm run depcruise
+  npm run spellcheck
+  npx vitest run --project=browser
+  ```
+  全部 exit 0。**不需** 跑 server / coverage（S6 不動 server 邏輯）。如 lint fail，必須根因修完，不可放寬 rule。
+- **AC-T37.3**: Smoke 復現（reviewer 也會跑）：
+  ```bash
+  # positive 略——已在 T36 驗過；T37 只驗 negative + lint chain
+  npm run lint -- --max-warnings 0 tests/integration/  # 應 exit 0
+  ```
+- **AC-T37.4**: `git diff --name-only --cached` 僅含 `eslint.config.mjs` + `handoff.md` + `tasks.md`。**禁** `package.json` / `package-lock.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` / `.github/**` / `tests/**`（rule 不該動 test fixture）/ `src/**`。
+- **AC-T37.5**: commit message 格式：
+
+  ```text
+  chore(eslint): mock-boundary + flaky rules (error + ignores baseline)
+
+  - add no-restricted-syntax rules for vi.mock('@/repo|service|runtime/...')
+    in tests/integration/** (mock-boundary, audit P0-1 / R6)
+  - add no-restricted-syntax rule for toHaveBeenCalledTimes (and setTimeout
+    per T33 decision) in tests/** (flaky-pattern, audit P1-4 / P1-5 / R7)
+  - both blocks use ignores baseline frozen from S4 grep capture
+  - rules are error; --max-warnings 0 stays green at baseline
+
+  Baseline start: mock-boundary: 33, flaky-pattern: 45
+  Baseline retire: Wave 3 cleanup → S8 trigger (ignores → empty + audit script exit 1)
+
+  Refs: project-health/2026-04-29-tests-audit-report.md L77-111, L293-318, L552-556, L622-633
+  ```
+
+  不加 `Co-Authored-By`。`Baseline start:` 數字依 T34 capture（如 T33 選 (C) 影響 flaky 數字，依實際）。
+
+- **AC-T37.6**: `git show HEAD --stat` 顯示 3 檔（eslint.config / handoff / tasks）；`git show HEAD --name-only` 不含禁區檔。
+- **AC-T37.7**: `git log -1 --format=%B | grep -ic "Co-Authored-By"` = 0。
+- **AC-T37.8**: `git log -1 --format=%B | grep -c "Baseline start:"` = 1。
+- **AC-T37.9**: branch = `026-tests-audit-report`；不 push。
+
+**Engineer Evidence**：
+
+- AC-T37.2 / AC-T37.3 / AC-T37.4 / AC-T37.6 / AC-T37.7 / AC-T37.8 命令輸出。
+- `git show HEAD --stat` 輸出。
+- handoff §0 / §1 / §3 T37 摘要。
+
+**Reviewer 驗證**：
+
+- 重跑 AC-T37.2（接受耗時；這是 S6 final gate）。
+- `git show HEAD --stat` + `git show HEAD --name-only` 確認檔案範圍。
+- Read commit message 確認 `Baseline start:` 行 + refs + 無 Co-Authored-By。
+- Read `handoff.md` §0 / §1 / §2 S6 / §3 T32-T37 / §5。
+- Read `tasks.md` 確認 T32-T37 全 `[x]`。
+- `git log origin/026-tests-audit-report..HEAD 2>&1` 應顯示 ≥ 1 commit ahead（未 push）。
+- 在 §3 T37 reviewer 欄簽名 + 命令輸出 + ≥ 5 行驗證結論。
 
 ---
 
@@ -2375,65 +2809,73 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 
 ## Subagent 配對表
 
-| Task | Scope | Engineer subagent_type | Reviewer subagent_type | Wave | Concurrent peers |
-| ---- | ----- | ---------------------- | ---------------------- | ---- | ---------------- |
-| T01  | S1    | general-purpose        | general-purpose        | S1-1 | T02, T03, T04    |
-| T02  | S1    | general-purpose        | general-purpose        | S1-1 | T01, T03, T04    |
-| T03  | S1    | general-purpose        | general-purpose        | S1-1 | T01, T02, T04    |
-| T04  | S1    | general-purpose        | general-purpose        | S1-1 | T01, T02, T03    |
-| T05  | S1    | general-purpose        | general-purpose        | S1-2 | (none)           |
-| T06  | S2    | general-purpose        | general-purpose        | S2-1 | (none, 序列)     |
-| T07  | S2    | general-purpose        | general-purpose        | S2-2 | (none, 序列)     |
-| T08  | S2    | general-purpose        | general-purpose        | S2-3 | (none, 序列)     |
-| T09  | S2    | general-purpose        | general-purpose        | S2-4 | (none, 序列)     |
-| T10  | S3    | general-purpose        | general-purpose        | S3-1 | T11              |
-| T11  | S3    | general-purpose        | general-purpose        | S3-1 | T10              |
-| T12  | S3    | general-purpose        | general-purpose        | S3-2 | (none, 序列)     |
-| T13  | S3    | general-purpose        | general-purpose        | S3-3 | (none, 序列)     |
-| T14  | S3    | general-purpose        | general-purpose        | S3-4 | (none, 序列)     |
-| T15  | S3    | general-purpose        | general-purpose        | S3-5 | (none, 序列)     |
-| T16  | S4    | general-purpose        | general-purpose        | S4-1 | T17              |
-| T17  | S4    | general-purpose        | general-purpose        | S4-1 | T16              |
-| T18  | S4    | general-purpose        | general-purpose        | S4-2 | T19              |
-| T19  | S4    | general-purpose        | general-purpose        | S4-2 | T18              |
-| T20  | S4    | general-purpose        | general-purpose        | S4-3 | (none, 序列)     |
-| T21  | S4    | general-purpose        | general-purpose        | S4-4 | (none, 序列)     |
-| T22  | S4    | general-purpose        | general-purpose        | S4-5 | (none, 序列)     |
-| T23  | S5    | general-purpose        | general-purpose        | S5-1 | (none, 序列)     |
-| T24  | S5    | general-purpose        | general-purpose        | S5-2 | (none, 序列)     |
-| T25  | S5    | general-purpose        | general-purpose        | S5-3 | (none, 序列)     |
+| Task | Scope | Engineer subagent_type | Reviewer subagent_type | Wave | Concurrent peers   |
+| ---- | ----- | ---------------------- | ---------------------- | ---- | ------------------ |
+| T01  | S1    | general-purpose        | general-purpose        | S1-1 | T02, T03, T04      |
+| T02  | S1    | general-purpose        | general-purpose        | S1-1 | T01, T03, T04      |
+| T03  | S1    | general-purpose        | general-purpose        | S1-1 | T01, T02, T04      |
+| T04  | S1    | general-purpose        | general-purpose        | S1-1 | T01, T02, T03      |
+| T05  | S1    | general-purpose        | general-purpose        | S1-2 | (none)             |
+| T06  | S2    | general-purpose        | general-purpose        | S2-1 | (none, 序列)       |
+| T07  | S2    | general-purpose        | general-purpose        | S2-2 | (none, 序列)       |
+| T08  | S2    | general-purpose        | general-purpose        | S2-3 | (none, 序列)       |
+| T09  | S2    | general-purpose        | general-purpose        | S2-4 | (none, 序列)       |
+| T10  | S3    | general-purpose        | general-purpose        | S3-1 | T11                |
+| T11  | S3    | general-purpose        | general-purpose        | S3-1 | T10                |
+| T12  | S3    | general-purpose        | general-purpose        | S3-2 | (none, 序列)       |
+| T13  | S3    | general-purpose        | general-purpose        | S3-3 | (none, 序列)       |
+| T14  | S3    | general-purpose        | general-purpose        | S3-4 | (none, 序列)       |
+| T15  | S3    | general-purpose        | general-purpose        | S3-5 | (none, 序列)       |
+| T16  | S4    | general-purpose        | general-purpose        | S4-1 | T17                |
+| T17  | S4    | general-purpose        | general-purpose        | S4-1 | T16                |
+| T18  | S4    | general-purpose        | general-purpose        | S4-2 | T19                |
+| T19  | S4    | general-purpose        | general-purpose        | S4-2 | T18                |
+| T20  | S4    | general-purpose        | general-purpose        | S4-3 | (none, 序列)       |
+| T21  | S4    | general-purpose        | general-purpose        | S4-4 | (none, 序列)       |
+| T22  | S4    | general-purpose        | general-purpose        | S4-5 | (none, 序列)       |
+| T23  | S5    | general-purpose        | general-purpose        | S5-1 | (none, 序列)       |
+| T24  | S5    | general-purpose        | general-purpose        | S5-2 | (none, 序列)       |
+| T25  | S5    | general-purpose        | general-purpose        | S5-3 | (none, 序列)       |
 | T26  | S5    | general-purpose        | general-purpose        | S5-4 | T27, T28, T29, T30 |
 | T27  | S5    | general-purpose        | general-purpose        | S5-4 | T26, T28, T29, T30 |
 | T28  | S5    | general-purpose        | general-purpose        | S5-4 | T26, T27, T29, T30 |
 | T29  | S5    | general-purpose        | general-purpose        | S5-4 | T26, T27, T28, T30 |
 | T30  | S5    | general-purpose        | general-purpose        | S5-4 | T26, T27, T28, T29 |
-| T31  | S5    | general-purpose        | general-purpose        | S5-5 | (none, 序列)     |
+| T31  | S5    | general-purpose        | general-purpose        | S5-5 | (none, 序列)       |
+| T32  | S6    | general-purpose        | general-purpose        | S6-1 | T33                |
+| T33  | S6    | general-purpose        | general-purpose        | S6-1 | T32                |
+| T34  | S6    | general-purpose        | general-purpose        | S6-2 | (none, 序列)       |
+| T35  | S6    | general-purpose        | general-purpose        | S6-3 | (none, 序列)       |
+| T36  | S6    | general-purpose        | general-purpose        | S6-4 | (none, 序列)       |
+| T37  | S6    | general-purpose        | general-purpose        | S6-5 | (none, 序列)       |
 
 ## Subagent 通用須知
 
 - **必看檔案**（spawn 時 attach 路徑）：
   - 本檔 `specs/026-tests-audit-report/tasks.md`
-  - `specs/026-tests-audit-report/handoff.md`（特別是 §2 Must-Read Risks，含 S1 / S2 / S3 / S4 / S5 子表）
+  - `specs/026-tests-audit-report/handoff.md`（特別是 §2 Must-Read Risks，含 S1 / S2 / S3 / S4 / S5 / S6 子表）
   - `project-health/2026-04-29-tests-audit-report.md`：
     - **S1 (T01-T05)**：L324-360 + L586-592
     - **S2 (T06-T09)**：L77-95 / L113-141 / L168-208 / L294-318 / L545-551 / L594-598 / L641-657
     - **S3 (T10-T15)**：L170-208 + L437-443 + L600-606 + L665-668
     - **S4 (T16-T22)**：L77-111 + L293-318 + L538-544 + L607-612 + L626-633 + L658-664
     - **S5 (T23-T31)**：L113-141 + L538-544 + L614-620
+    - **S6 (T32-T37)**：L77-111 + L293-318 + L373-379 + L552-556 + L622-633 + L641-657 + L660-664
   - 對應的目標檔本身：
     - S1: 4 個 config 檔
     - S2: `.github/pull_request_template.md` + 必要時 `cspell.json`
     - S3: `vitest.config.mjs` + `docs/QUALITY_SCORE.md` + 必要時 `cspell.json`
     - S4: `scripts/audit-mock-boundary.sh`（新）+ `scripts/audit-flaky-patterns.sh`（新）+ `.husky/pre-commit`
     - S5: `firestore.rules`（Read-only）、`package.json`、`package-lock.json`、`tests/server/rules/**`、`.github/workflows/firestore-rules-gate.yml`
+    - S6: `eslint.config.mjs`（**唯一** code 改動點）；read-only：`scripts/audit-mock-boundary.sh` / `scripts/audit-flaky-patterns.sh`（pattern 對齊參考）、S4 baseline 凍結數字（`handoff.md` §3 T21）
 
 - **必要工具**：Read、Edit、Bash（跑驗證）、Write（engineer 建新檔用，reviewer 不該 Write 任何受審檔）
 
 - **禁區**：
-  - Reviewer 不能 Edit/Write 受審檔（S1: config 檔；S2: `.github/`、`cspell.json`；S3: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`cspell.json`、`handoff.md` engineer evidence 區；S4: `scripts/audit-*.sh`、`.husky/pre-commit`、`handoff.md` engineer evidence 區；S5: `package*.json`、`tests/server/rules/**`、`.github/workflows/firestore-rules-gate.yml`、`handoff.md` engineer evidence 區）
-  - Engineer 不能改 task scope 外的檔案（例：T01 不能動 playwright config；T07 不能動 cspell.json，加詞屬於 T08 範圍；T12 不能動 threshold；T14 不能改 service/repo/runtime/lib/config 既有 V8 Cov 數字；T16/T17 spike 不能寫 script 或改 husky；T18/T19 不能動 husky；T20 不能改 script；T20 對 husky 必須只 append、不刪改既有 5 行；T23 不能改 code/test/package；T26-T30 不能改 helper API；S5 全程不能改 `firestore.rules` / `vitest.config.mjs` / `.github/workflows/ci.yml`）
+  - Reviewer 不能 Edit/Write 受審檔（S1: config 檔；S2: `.github/`、`cspell.json`；S3: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`cspell.json`、`handoff.md` engineer evidence 區；S4: `scripts/audit-*.sh`、`.husky/pre-commit`、`handoff.md` engineer evidence 區；S5: `package*.json`、`tests/server/rules/**`、`.github/workflows/firestore-rules-gate.yml`、`handoff.md` engineer evidence 區；S6: `eslint.config.mjs`、`handoff.md` engineer evidence 區）
+  - Engineer 不能改 task scope 外的檔案（例：T01 不能動 playwright config；T07 不能動 cspell.json，加詞屬於 T08 範圍；T12 不能動 threshold；T14 不能改 service/repo/runtime/lib/config 既有 V8 Cov 數字；T16/T17 spike 不能寫 script 或改 husky；T18/T19 不能動 husky；T20 不能改 script；T20 對 husky 必須只 append、不刪改既有 5 行；T23 不能改 code/test/package；T26-T30 不能改 helper API；S5 全程不能改 `firestore.rules` / `vitest.config.mjs` / `.github/workflows/ci.yml`；T32/T33 spike 不能改 `eslint.config.mjs`；T34 不能改 code/config，只 capture baseline 寫 handoff；T35 全程不能動 `package.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` / `.github/**` / `tests/**` / `src/**`；T36 必須 cleanup smoke temp 檔，不留殘留）
   - 任何 subagent 不能 push remote、不能開 PR、不能改 git config
-  - **Commit-only task**：S1 只有 T05 engineer 可 commit；S2 只有 T09 engineer 可 commit；S3 只有 T15 engineer 可 commit；S4 只有 T22 engineer 可 commit；S5 只有 T31 engineer 可 commit；其他 task engineer 只改檔不 commit
+  - **Commit-only task**：S1 只有 T05 engineer 可 commit；S2 只有 T09 engineer 可 commit；S3 只有 T15 engineer 可 commit；S4 只有 T22 engineer 可 commit；S5 只有 T31 engineer 可 commit；S6 只有 T37 engineer 可 commit；其他 task engineer 只改檔不 commit
   - **Threshold 紀律（S3 專屬）**：T13 發現 70 threshold 跌破時**禁止**自行降 threshold，必須 escalate（標 `[!]`）；T12-T14 任何 task **禁止**設 per-directory threshold（屬 S9 觸發型）
   - **Coverage artifact 紀律（S3 專屬）**：`coverage/` 為 gitignored，T15 commit 必須 `git status` 確認該目錄為 untracked，**禁** `git add -A` / `git add coverage`
   - **Warn-only 紀律（S4 專屬）**：T18/T19 script 末行必須 `exit 0`，**禁止**設 `exit 1` / `exit ${count}` 等真擋邏輯；T20 husky append 行必加 `|| true` 雙保險；T21 smoke test 即使 temp 檔在場 audit script 仍須 exit 0；S8 升級到 exit 1 屬觸發型，不在本 S4 scope
@@ -2441,14 +2883,19 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
   - **Smoke temp 檔紀律（S4 專屬）**：T21 故意建的 `tests/integration/_s4-smoke.test.jsx`（或同等 temp 檔）**必須在 T21 內 cleanup**；T22 commit 前再次驗 `git status --short | grep "_s4-smoke" | wc -l = 0`；commit 含 5 檔（不含任何 temp / log）
   - **Rules 行為紀律（S5 專屬）**：S5 是「測現行 rules + 補 CI gate」，不是修安全邏輯；遇到現行 rules 與 audit 期待衝突時，先在 `handoff.md` 記錄並 escalate，不准偷改 `firestore.rules`。
   - **Rules emulator 紀律（S5 專屬）**：rules tests 必須透過 `npm run test:server -- tests/server/rules/...` 跑 emulator；禁止用 mock 取代 emulator，禁止把 rules string 複製到 test。
+  - **Rule = error 紀律（S6 專屬）**：T35 兩 override block 的 `no-restricted-syntax` 必須 `'error'`，**禁止** 寫 `'warn'`；audit §12.8 已決議 error + ignores baseline，warn 路線不在本 S6 scope（S8 觸發型則是 ignores 清空、不是改 severity）。
+  - **Baseline 不增不減紀律（S6 專屬）**：T35 `ignores` list 成員資格 = T34 capture 結果，**禁止** 為了壓 false positive 把非 baseline 檔加進 ignores（必須回 T32/T33 改 selector）；**禁止** 為了「順手清乾淨」把 baseline 內檔抽掉（屬 Wave 3，不在 S6 scope）。
+  - **Smoke temp 檔紀律（S6 專屬）**：T36 兩支 smoke temp 檔（`tests/integration/_s6-smoke-mock.test.jsx` + `tests/unit/_s6-smoke-flaky.test.js` 或同等檔名）**必須在 T36 內 cleanup**；T37 commit 前驗 `git status --short | grep "_s6-smoke" | wc -l = 0`；commit 含 3 檔（不含任何 temp / log）。
+  - **S4 共存紀律（S6 專屬）**：S6 不動 `scripts/audit-*.sh` / `.husky/pre-commit`；S4 grep gate 與 S6 ESLint rule **共存** 兩 sprint（不互相取代）；S8 觸發型才會把 S4 改 `exit 1` + S6 baseline 清空。
 
 - **Pre-commit hook 注意**：
   - `.husky/pre-commit` 會跑：lint --max-warnings 0、type-check、depcruise、spellcheck、vitest browser（**不**跑 coverage）
   - **S4 後**（T20 commit 起）：append 兩 audit warn 行（mock-boundary + flaky-pattern），warn-only `|| true`，不擋 chain
-  - T05（S1）/ T09（S2）/ T15（S3）/ T22（S4）engineer 在 `git commit` 前先手動跑一次完整 gate，避免 hook 失敗
+  - T05（S1）/ T09（S2）/ T15（S3）/ T22（S4）/ T31（S5）/ T37（S6）engineer 在 `git commit` 前先手動跑一次完整 gate，避免 hook 失敗
   - **S3 額外**：T15 commit 前還要手動跑 `npm run test:coverage`（hook 不跑，但 CI 會跑；先確認本地通過）
   - **S4 額外**：T22 commit 前手動跑兩 audit script + 確認 stdout 首行符合 `AUDIT <CATEGORY>: <N> findings` 樣板
   - **S5 額外**：T31 commit 前必跑 `npm run test:server -- tests/server/rules` + `npm run test:server`；這兩條不是 pre-commit hook 內容，但 rules gate/CI 會依賴。
+  - **S6 額外**：T37 commit 前必跑 `npm run lint -- --max-warnings 0`（含 S6 新 rule，必須綠）+ `npx eslint --print-config <baseline 內檔>` 證 ignores 生效；不需跑 server / coverage。
   - hook 失敗時：fix issue → re-stage → 新 commit（**不要** `--amend`）
 
 - **回報格式**（spawn 結束時的 result）：
@@ -2459,14 +2906,16 @@ Wave 6 (序列):    T31-eng → T31-rev   (整合驗證 + commit)
 
 ## 後續 commit（不在本檔 scope）
 
-本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，已 commit `5f09820`）、S4（T16-T22，已 commit `a55fa76`）、S5（T23-T31，planned）。後續：
+本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，已 commit `5f09820`）、S4（T16-T22，已 commit `a55fa76`）、S5（T23-T31，已 commit `28c5cb8`）、S6（T32-T37，planned）。後續：
 
-| Commit | Goal                                     | Spec            |
-| ------ | ---------------------------------------- | --------------- |
-| S1     | align test config defaults               | ✅ 本檔 T01-T05 |
-| S2     | PR template + audit checkbox             | ✅ 本檔 T06-T09 |
-| S3     | coverage include + baseline              | ✅ 本檔 T10-T15 |
-| S4     | pre-commit grep gate (warn-only)         | ✅ 本檔 T16-T22 |
-| S5     | firestore rules infra + 5 critical specs | ✅ 本檔 T23-T31 |
-| S6     | ESLint mock-boundary + flaky rules       | (TBD)           |
-| S7-S10 | (見 audit report §12)                    | (TBD)           |
+| Commit | Goal                                          | Spec            |
+| ------ | --------------------------------------------- | --------------- |
+| S1     | align test config defaults                    | ✅ 本檔 T01-T05 |
+| S2     | PR template + audit checkbox                  | ✅ 本檔 T06-T09 |
+| S3     | coverage include + baseline                   | ✅ 本檔 T10-T15 |
+| S4     | pre-commit grep gate (warn-only)              | ✅ 本檔 T16-T22 |
+| S5     | firestore rules infra + 5 critical specs      | ✅ 本檔 T23-T31 |
+| S6     | ESLint mock-boundary + flaky rules (baseline) | ✅ 本檔 T32-T37 |
+| S7     | GitHub branch protection required checks (UI) | (post-merge)    |
+| S8     | ESLint warn → error 升級（觸發型）            | (Wave 3 後)     |
+| S9     | Per-directory coverage threshold（觸發型）    | (Wave 3 後)     |
