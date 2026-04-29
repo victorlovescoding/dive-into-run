@@ -22,7 +22,7 @@
 | T07 PR template 草稿撰寫         | done                                                                                                                     |
 | T08 spellcheck / pre-commit gate | done                                                                                                                     |
 | T09 commit + handoff sync        | done                                                                                                                     |
-| Last commit (S2)                 | (待本 task commit 後填)                                                                                                  |
+| Last commit (S2)                 | `818e249` chore(github): add PR template with audit checklist (R11)                                                      |
 
 ## §1 Next Session Checklist
 
@@ -74,17 +74,17 @@
 > Engineer 完成 task → 填 engineer 欄 + Eng evidence；Reviewer 驗收 → 填 reviewer 欄 + Rev evidence。
 > Status: `pending` / `eng-done` / `rev-pass` / `rev-reject (Nth attempt)` / `escalated`
 
-| Task | Status                 | Engineer            | Eng evidence (excerpt)                                                                                                                                                                                                                                                                                                                  | Reviewer                                   | Rev evidence (excerpt)                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ---- | ---------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T01  | rev-pass (2nd attempt) | T01-engineer-opus47 | 2nd attempt: package.json L13 `vitest` → `vitest --project=browser`；vitest.config.mjs reverted；AC-T01.1/2/3 全 PASS（121 files / 1108 tests browser-only；server explicit 仍可啟動）                                                                                                                                                  | T01-reviewer-opus47 / 2026-04-29T16:03 CST | git diff vitest.config.mjs 空；package.json diff 僅 L13；npm test → 121 files / 1108 tests browser-only（無 \|server\| 標籤、無 emulator missing）；npm test -- --project=server 把 server project 加入並命中 emulator guard（預期），AC-T01.1/2/3 全 PASS                                                                                                                                                                                                                                           |
-| T02  | rev-pass               | T02-engineer        | L167 `--project=demo-test` + L235-236 URL `demo-test`; grep 0 hits; `bash -n` syntax OK                                                                                                                                                                                                                                                 | T02-reviewer / 2026-04-29T00:00:00Z        | grep 0 hits; `bash -n` syntax OK; git diff 僅 3 行 (L167/L235/L236)；L167 採等號形式                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| T03  | rev-pass               | T03-engineer        | timeout:30000 / expect.timeout:10000 確認；playwright list 56 tests OK                                                                                                                                                                                                                                                                  | T03-reviewer-opus47 / 2026-04-29           | AC-T03.1/2 重跑均 PASS；config 頂層含 `timeout: 30_000` + `expect: { timeout: 10_000 }`（不在 projects 陣列內）；diff 僅 +2 行                                                                                                                                                                                                                                                                                                                                                                       |
-| T04  | rev-pass               | T04-engineer        | 加 `expect: { timeout: 10_000 }` L64；timeout: 60000 保留；node import → `{"t":60000,"e":{"timeout":10000}}`；playwright --list 56 tests                                                                                                                                                                                                | T04-reviewer / 2026-04-29                  | git diff 僅 +1 行 (L64 `expect: { timeout: 10_000 }`)；timeout: 60000 完整保留；AC-T04.1 `{"t":60000,"e":{"timeout":10000}}`；AC-T04.2 `Total: 56 tests in 11 files`                                                                                                                                                                                                                                                                                                                                 |
-| T05  | rev-pass               | T05-engineer-opus47 | AC-T05.2 全 PASS (npm test 121f/1108t；grep 0 hits；playwright `{t:30000,e:{timeout:10000}}`；emulator `{t:60000,e:{timeout:10000}}`)；pre-commit gate 預跑全綠（lint / type-check / depcruise / spellcheck / vitest browser）                                                                                                          | T05-reviewer / 2026-04-29T16:14 CST        | Re-ran AC-T05.2 全部命令獨立驗證：npm test 121 files / 1108 tests browser-only；`grep -rn "dive-into-run" scripts/` → 0 hits；playwright.config → `{"t":30000,"e":{"timeout":10000}}`；playwright.emulator → `{"t":60000,"e":{"timeout":10000}}`。`git show a7b10f5 --stat` 6 檔；commit message body `grep -ic Co-Authored-By` → 0；`origin/026-tests-audit-report` 不存在（未 push，符合 AC-T05.4）。§0/§1/§3/§5 完整。                                                                            |
-| T06  | rev-pass               | T06-engineer-opus47 | `.github/` 現況：1 檔（workflows/ci.yml）僅 ci，無 PR template；5 類 ≥ 2 checkbox + audit ID + file:line 完成；檔名決議 `.github/pull_request_template.md`（lowercase）；skeleton 4 節（Summary / Test Plan / Audit Checklist / Related）                                                                                               | T06-reviewer-opus47 / 2026-04-29 CST       | 獨立 `ls -la .github/` → 1 dir (`workflows`)；`find .github -type f` → 僅 `.github/workflows/ci.yml`；`git status --short` 僅 ` M handoff.md`，無 `.github/`/`cspell.json` 改動。抽查 B1/B2/B5 三條 audit mapping：B1 第 2 條 P0-1 對到 audit L85；B2 第 1 條 P1-4 對到 audit L295；B5 第 1 條 baseline 對到 audit L649 同字串 match。Checkbox 共 10 條（5 類 × 2 條），含 file:line 引用。AC-T06.1/2/3/4 全 PASS。                                                                                  |
-| T07  | rev-pass               | T07-engineer-opus47 | 新增 `.github/pull_request_template.md`（74 行 / 5 H3 / 14 `- [ ]` checkbox / `Baseline change:` 範例 1 行 / UTF-8 no BOM / 0 trailing whitespace hits）；AC-T07.1/2/3/4/5 全 PASS                                                                                                                                                      | T07-reviewer-opus47 / 2026-04-29 CST       | 獨立重跑：wc -l=74、`grep -c "^### "`=5、`grep -c "^- \[ \]"`=14、`grep -c "Baseline change:"`=1、`file` → `UTF-8 text`（無 BOM）、trailing ws 0 hits、`git status` 僅 ` M handoff.md` + `?? .github/pull_request_template.md`。H3 順序對齊 task L378：Mock boundary → Flaky pattern → Firestore rules → Coverage → Baseline tracking；前 4 bytes `3c21 2d2d` (`<!--`) 無 BOM；T06 (b) B1-B5 5 類 1:1 對齊 10 條 audit checkbox + audit ID。AC-T07.1/2/3/4/5 全 PASS。                               |
-| T08  | rev-pass               | T08-engineer-opus47 | spellcheck `Issues found: 0 in 0 files (353 files checked)`；lint exit=0；type-check exit=0；depcruise `no dependency violations found (1379 modules, 3403 dependencies cruised)`；vitest browser `121 passed (121) / 1108 passed (1108)`；cspell.json 無改動；`.github/pull_request_template.md` 0 hits `cspell:?disable`              | T08-reviewer-opus47 / 2026-04-29 CST       | 重跑 AC-T08.1/2/5/6：spellcheck `Files checked: 353, Issues found: 0`；vitest browser `121 passed (121) / 1108 passed (1108)`；lint exit=0；`grep -nE "cspell:?disable\|cspell-disable\|cspell-enable\|cspell:enable\|cspell:ignore" .github/pull_request_template.md` 0 hits（exit=1）；`git diff cspell.json` 空（0 行）；`git status --short` 僅 `M handoff.md` + `?? .github/pull_request_template.md`，未誤動 cspell.json/tasks.md/package.json/vitest.config.mjs。AC-T08.1/2/3/4/5/6 全 PASS。 |
-| T09  | eng-done               | T09-engineer-opus47 | AC-T09.2 全 8 命令重跑 PASS（wc=74、grep `^### `=5、grep `^- \[ \]`=14、grep `Baseline change:`=1、spellcheck `Issues found: 0` 353 檔、lint exit=0、type-check exit=0、depcruise `no dependency violations found (1379 modules, 3403 deps)`）；commit hash 見 §0 Last commit (S2) + §3 T09 Evidence Detail；無 Co-Authored-By；未 push | (待填)                                     | (待填)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Task | Status                 | Engineer            | Eng evidence (excerpt)                                                                                                                                                                                                                                                                                                                                                                                                                 | Reviewer                                   | Rev evidence (excerpt)                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---- | ---------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T01  | rev-pass (2nd attempt) | T01-engineer-opus47 | 2nd attempt: package.json L13 `vitest` → `vitest --project=browser`；vitest.config.mjs reverted；AC-T01.1/2/3 全 PASS（121 files / 1108 tests browser-only；server explicit 仍可啟動）                                                                                                                                                                                                                                                 | T01-reviewer-opus47 / 2026-04-29T16:03 CST | git diff vitest.config.mjs 空；package.json diff 僅 L13；npm test → 121 files / 1108 tests browser-only（無 \|server\| 標籤、無 emulator missing）；npm test -- --project=server 把 server project 加入並命中 emulator guard（預期），AC-T01.1/2/3 全 PASS                                                                                                                                                                                                                                           |
+| T02  | rev-pass               | T02-engineer        | L167 `--project=demo-test` + L235-236 URL `demo-test`; grep 0 hits; `bash -n` syntax OK                                                                                                                                                                                                                                                                                                                                                | T02-reviewer / 2026-04-29T00:00:00Z        | grep 0 hits; `bash -n` syntax OK; git diff 僅 3 行 (L167/L235/L236)；L167 採等號形式                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| T03  | rev-pass               | T03-engineer        | timeout:30000 / expect.timeout:10000 確認；playwright list 56 tests OK                                                                                                                                                                                                                                                                                                                                                                 | T03-reviewer-opus47 / 2026-04-29           | AC-T03.1/2 重跑均 PASS；config 頂層含 `timeout: 30_000` + `expect: { timeout: 10_000 }`（不在 projects 陣列內）；diff 僅 +2 行                                                                                                                                                                                                                                                                                                                                                                       |
+| T04  | rev-pass               | T04-engineer        | 加 `expect: { timeout: 10_000 }` L64；timeout: 60000 保留；node import → `{"t":60000,"e":{"timeout":10000}}`；playwright --list 56 tests                                                                                                                                                                                                                                                                                               | T04-reviewer / 2026-04-29                  | git diff 僅 +1 行 (L64 `expect: { timeout: 10_000 }`)；timeout: 60000 完整保留；AC-T04.1 `{"t":60000,"e":{"timeout":10000}}`；AC-T04.2 `Total: 56 tests in 11 files`                                                                                                                                                                                                                                                                                                                                 |
+| T05  | rev-pass               | T05-engineer-opus47 | AC-T05.2 全 PASS (npm test 121f/1108t；grep 0 hits；playwright `{t:30000,e:{timeout:10000}}`；emulator `{t:60000,e:{timeout:10000}}`)；pre-commit gate 預跑全綠（lint / type-check / depcruise / spellcheck / vitest browser）                                                                                                                                                                                                         | T05-reviewer / 2026-04-29T16:14 CST        | Re-ran AC-T05.2 全部命令獨立驗證：npm test 121 files / 1108 tests browser-only；`grep -rn "dive-into-run" scripts/` → 0 hits；playwright.config → `{"t":30000,"e":{"timeout":10000}}`；playwright.emulator → `{"t":60000,"e":{"timeout":10000}}`。`git show a7b10f5 --stat` 6 檔；commit message body `grep -ic Co-Authored-By` → 0；`origin/026-tests-audit-report` 不存在（未 push，符合 AC-T05.4）。§0/§1/§3/§5 完整。                                                                            |
+| T06  | rev-pass               | T06-engineer-opus47 | `.github/` 現況：1 檔（workflows/ci.yml）僅 ci，無 PR template；5 類 ≥ 2 checkbox + audit ID + file:line 完成；檔名決議 `.github/pull_request_template.md`（lowercase）；skeleton 4 節（Summary / Test Plan / Audit Checklist / Related）                                                                                                                                                                                              | T06-reviewer-opus47 / 2026-04-29 CST       | 獨立 `ls -la .github/` → 1 dir (`workflows`)；`find .github -type f` → 僅 `.github/workflows/ci.yml`；`git status --short` 僅 ` M handoff.md`，無 `.github/`/`cspell.json` 改動。抽查 B1/B2/B5 三條 audit mapping：B1 第 2 條 P0-1 對到 audit L85；B2 第 1 條 P1-4 對到 audit L295；B5 第 1 條 baseline 對到 audit L649 同字串 match。Checkbox 共 10 條（5 類 × 2 條），含 file:line 引用。AC-T06.1/2/3/4 全 PASS。                                                                                  |
+| T07  | rev-pass               | T07-engineer-opus47 | 新增 `.github/pull_request_template.md`（74 行 / 5 H3 / 14 `- [ ]` checkbox / `Baseline change:` 範例 1 行 / UTF-8 no BOM / 0 trailing whitespace hits）；AC-T07.1/2/3/4/5 全 PASS                                                                                                                                                                                                                                                     | T07-reviewer-opus47 / 2026-04-29 CST       | 獨立重跑：wc -l=74、`grep -c "^### "`=5、`grep -c "^- \[ \]"`=14、`grep -c "Baseline change:"`=1、`file` → `UTF-8 text`（無 BOM）、trailing ws 0 hits、`git status` 僅 ` M handoff.md` + `?? .github/pull_request_template.md`。H3 順序對齊 task L378：Mock boundary → Flaky pattern → Firestore rules → Coverage → Baseline tracking；前 4 bytes `3c21 2d2d` (`<!--`) 無 BOM；T06 (b) B1-B5 5 類 1:1 對齊 10 條 audit checkbox + audit ID。AC-T07.1/2/3/4/5 全 PASS。                               |
+| T08  | rev-pass               | T08-engineer-opus47 | spellcheck `Issues found: 0 in 0 files (353 files checked)`；lint exit=0；type-check exit=0；depcruise `no dependency violations found (1379 modules, 3403 dependencies cruised)`；vitest browser `121 passed (121) / 1108 passed (1108)`；cspell.json 無改動；`.github/pull_request_template.md` 0 hits `cspell:?disable`                                                                                                             | T08-reviewer-opus47 / 2026-04-29 CST       | 重跑 AC-T08.1/2/5/6：spellcheck `Files checked: 353, Issues found: 0`；vitest browser `121 passed (121) / 1108 passed (1108)`；lint exit=0；`grep -nE "cspell:?disable\|cspell-disable\|cspell-enable\|cspell:enable\|cspell:ignore" .github/pull_request_template.md` 0 hits（exit=1）；`git diff cspell.json` 空（0 行）；`git status --short` 僅 `M handoff.md` + `?? .github/pull_request_template.md`，未誤動 cspell.json/tasks.md/package.json/vitest.config.mjs。AC-T08.1/2/3/4/5/6 全 PASS。 |
+| T09  | rev-pass               | T09-engineer-opus47 | AC-T09.2 全 8 命令重跑 PASS（wc=74、grep `^### `=5、grep `^- \[ \]`=14、grep `Baseline change:`=1、spellcheck `Issues found: 0` 353 檔、lint exit=0、type-check exit=0、depcruise `no dependency violations found (1379 modules, 3403 deps)`）；commit `818e249` 3 檔 staged（`.github/pull_request_template.md` new + handoff.md M + tasks.md M）；`grep -ic co-authored` = 0；`origin/026-tests-audit-report..HEAD` fatal（未 push） | T09-reviewer-opus47 / 2026-04-29 CST       | 獨立重跑 AC-T09.2 8 命令全綠（wc=74、H3=5、checkbox=14、Baseline=1、spellcheck 0 issues、lint exit=0、type-check exit=0、depcruise no violations 1379 modules）；`git show 818e249 --stat` 3 檔（pull_request_template.md +74 / handoff.md +750/-31 / tasks.md +8/-?）；`grep -ic co-authored` = 0；`origin/026-tests-audit-report..HEAD` fatal（未 push）；handoff.md §0/§1/§3/§5 + tasks.md T06-T09 全 `[x]` 完整。AC-T09.1/2/3/4/5/6 全 PASS。                                                    |
 
 ### T01 Evidence Detail
 
@@ -1356,17 +1356,224 @@ vitest exit=0
 
 無 regression、無 failed test，與 T01 / T05 / T07 / T08 evidence 完全一致。
 
-#### Commit + AC-T09.3/4/5/6（待 commit 後回填）
+#### Commit + AC-T09.3/4/5/6（commit 後回填）
 
-**Commit hash**: (待 stage / commit 完成後填)
+**Commit hash**: `818e249923686bacbcefaea775a7d18b0bb02553`（短：`818e249`）
 
-**`git log -1 --format=fuller`**: (待回填)
+**Pre-commit hook 結果**：lint exit=0、type-check exit=0、depcruise `no dependency violations found (1379 modules, 3403 dependencies cruised)`、spellcheck `Files checked: 353, Issues found: 0 in 0 files.`、vitest browser `Test Files 121 passed (121) / Tests 1108 passed (1108)`。完整輸出 hook 自動 stream 到 stdout，全綠通過進到 commit。
 
-**`git show <hash> --stat`** (AC-T09.5 — 應 3 檔；T08 cspell.json 無改動): (待回填)
+**`git log -1 --format=fuller`**:
 
-**`git log -1 --format=%B | grep -ic "Co-Authored-By"`** (AC-T09.6 — 應 0): (待回填)
+```text
+commit 818e249923686bacbcefaea775a7d18b0bb02553
+Author:     victorlovescoding <rifrigerator3204367@gmail.com>
+AuthorDate: Wed Apr 29 17:23:59 2026 +0800
+Commit:     victorlovescoding <rifrigerator3204367@gmail.com>
+CommitDate: Wed Apr 29 17:23:59 2026 +0800
 
-**`git log origin/026-tests-audit-report..HEAD 2>&1`** (AC-T09.4 — 應 fatal/未 push): (待回填)
+    chore(github): add PR template with audit checklist (R11)
+
+    - .github/pull_request_template.md: new file containing Summary / Test Plan
+      / Audit Checklist (mock-boundary [P0-1], flaky pattern [P1-4/P1-5],
+      firestore rules [P0-2], coverage [P0-4], baseline tracking) / Related
+
+    PR template merge 進 main 後對下一個 PR 自動套用，本 PR description 仍須手寫。
+
+    Refs: project-health/2026-04-29-tests-audit-report.md L594-598, L641-657
+```
+
+Conventional commits `chore(github):` ✅、subject ≤ 72 chars ✅、body 含 audit IDs ✅、Refs 行有 audit report 行號 ✅。**AC-T09.3 PASS**
+
+**`git show HEAD --stat`** (AC-T09.5 — 3 檔):
+
+```text
+commit 818e249923686bacbcefaea775a7d18b0bb02553
+Author: victorlovescoding <rifrigerator3204367@gmail.com>
+Date:   Wed Apr 29 17:23:59 2026 +0800
+
+    chore(github): add PR template with audit checklist (R11)
+    ...
+
+ .github/pull_request_template.md        |  74 ++++
+ specs/026-tests-audit-report/handoff.md | 750 ++++++++++++++++++++++++++++++--
+ specs/026-tests-audit-report/tasks.md   |   8 +-
+ 3 files changed, 801 insertions(+), 31 deletions(-)
+```
+
+3 檔（`.github/pull_request_template.md` 新檔 +74 / `handoff.md` +750/-31 / `tasks.md` +8/-? ）、`create mode 100644 .github/pull_request_template.md`。**AC-T09.5 PASS** — 完全符合 task spec 「3-4 檔（T08 cspell.json 無改動所以 3 檔）」。
+
+**`git log -1 --format=%B | grep -ic "co-authored"`** (AC-T09.6):
+
+```text
+0
+```
+
+0 hits（commit message body 與 trailer 區皆無 `Co-Authored-By` / `co-authored-by` 任何形式）。**AC-T09.6 PASS** — 嚴格遵守 user memory `feedback_no_coauthor`。
+
+**`git log origin/026-tests-audit-report..HEAD 2>&1`** (AC-T09.4):
+
+```text
+fatal: ambiguous argument 'origin/026-tests-audit-report..HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git <command> [<revision>...] -- [<file>...]'
+```
+
+`fatal: ambiguous argument` 表示 `origin/026-tests-audit-report` ref 不存在於本機 git remote 索引 → branch 從未 push 到 origin。**AC-T09.4 PASS** — 未 push、本 commit 仍只在本機 branch `026-tests-audit-report` HEAD。Pre-commit hook 全綠（已包含於 hook output 即時驗證），亦符合 AC-T09.4。
+
+#### AC 逐項打勾（最終）
+
+- **AC-T09.1 PASS** — §3 T06-T08 三 row 全 `rev-pass` + 雙簽名（engineer + reviewer 兩欄填妥）；`tasks.md` T06-T09 status 全 `[x]`（grep 4 hits at L329 / L368 / L446 / L522）。
+- **AC-T09.2 PASS** — 8 命令獨立重跑全綠：wc=74 ≤ 200 / grep H3=5 ≥ 5 / grep checkbox=14 ≥ 10 / grep `Baseline change:`=1 ≥ 1 / spellcheck 0 issues / lint exit=0 / type-check exit=0 / depcruise no violations。
+- **AC-T09.3 PASS** — commit message `chore(github): add PR template with audit checklist (R11)` + 3 段 body（檔案 bullet + PR description 手寫提醒 + Refs 行）+ 無 Co-Authored-By。
+- **AC-T09.4 PASS** — branch 仍為 `026-tests-audit-report`、`origin/026-tests-audit-report..HEAD` fatal（未 push）、pre-commit hook 全綠通過（hook output 內含 lint / type-check / depcruise / spellcheck / vitest browser，commit 一次過）。
+- **AC-T09.5 PASS** — `git show HEAD --stat` 顯示 3 檔（T08 cspell.json 確認無改動，故 3 檔），`create mode 100644 .github/pull_request_template.md` 確認新檔。
+- **AC-T09.6 PASS** — `grep -ic "co-authored"` = 0。
+
+#### 禁區遵守確認
+
+- ✅ 未 push（`git log origin/026-tests-audit-report..HEAD` fatal）
+- ✅ 未加 `Co-Authored-By`（grep 0 hits）
+- ✅ 未 `git add -A` / `git add .` — 明確列 3 個檔案路徑
+- ✅ 未 `git commit --amend`（單一新 commit `818e249`）
+- ✅ 未改 §3 T01-T08 evidence 任何字元（diff -w 顯示 T01-T08 row cell 內容完整保留，仅 separator padding 重排為 prettier 自動行為，與 T07 reviewer 段已記錄行為一致）
+- ✅ 未動 `cspell.json`（T08 已確認無改動，本 task git status / git show 皆無此檔）
+- ✅ 未動 `package.json` / `vitest.config.mjs` / `playwright.config.*` / `playwright.emulator.config.mjs` / `scripts/run-all-e2e.sh`（S1 已 commit 檔，本 commit stat 無此清單）
+- ✅ 未動 `.github/workflows/`（git show 無 ci.yml）
+- ✅ 未動 `.github/pull_request_template.md` 內容（T07 已 rev-pass，本 task 直接 add 為 new file，內容 byte-identical）
+
+#### 最終結論
+
+T09 AC-T09.1 / AC-T09.2 / AC-T09.3 / AC-T09.4 / AC-T09.5 / AC-T09.6 全部 PASS。Commit `818e249` 在 branch `026-tests-audit-report` 本機，未 push、無 Co-Authored-By、3 檔 staged 範圍精確、pre-commit hook 全綠（lint / type-check / depcruise / spellcheck / vitest browser 121f / 1108t）。`tasks.md` T06-T09 全 `[x]`、`handoff.md` §0 / §1 / §3（T09 row + Evidence Detail）/ §5 全部更新完成。Status: **eng-done**，等候 reviewer 接手獨立重跑 AC + 簽名 + 結論。
+
+---
+
+**Reviewer**: T09-reviewer-opus47 / **Timestamp**: 2026-04-29 CST / **Status**: **rev-pass — AC-T09.1/2/3/4/5/6 全 PASS**
+
+#### 1. AC-T09.2 — 8 命令獨立重跑（全綠）
+
+```text
+$ test -f .github/pull_request_template.md && wc -l .github/pull_request_template.md
+      74 .github/pull_request_template.md
+
+$ grep -c "^### " .github/pull_request_template.md
+5
+
+$ grep -c "^- \[ \]" .github/pull_request_template.md
+14
+
+$ grep -c "Baseline change:" .github/pull_request_template.md
+1
+
+$ npm run spellcheck 2>&1 | tail -5
+350/353 tests/unit/service/profile-service.test.js 1.93ms
+351/353 tests/unit/service/strava-helpers.test.js 2.37ms
+352/353 tests/unit/service/weather-forecast-service.test.js 6.57ms
+353/353 tests/unit/service/weather-helpers.test.js 4.63ms
+CSpell: Files checked: 353, Issues found: 0 in 0 files.
+
+$ npm run lint -- --max-warnings 0 2>&1; echo "EXIT_CODE=$?"
+> dive-into-run@0.1.0 lint
+> eslint src specs tests --max-warnings 0
+Warning: React version not specified in eslint-plugin-react settings. ...
+EXIT_CODE=0
+
+$ npm run type-check 2>&1; echo "EXIT_CODE=$?"
+> dive-into-run@0.1.0 type-check
+> tsc --noEmit
+EXIT_CODE=0
+
+$ npm run depcruise 2>&1 | tail -10
+✔ no dependency violations found (1379 modules, 3403 dependencies cruised)
+(node:32051) [MODULE_TYPELESS_PACKAGE_JSON] Warning: ... (informational only)
+```
+
+8 條 acceptance 全綠（與 engineer evidence 完全一致，無偏差）。
+
+#### 2. AC-T09.5 — `git show 818e249 --stat`（3 檔）
+
+```text
+commit 818e249923686bacbcefaea775a7d18b0bb02553
+Author: victorlovescoding <rifrigerator3204367@gmail.com>
+Date:   Wed Apr 29 17:23:59 2026 +0800
+
+    chore(github): add PR template with audit checklist (R11)
+    ...
+
+ .github/pull_request_template.md        |  74 ++++
+ specs/026-tests-audit-report/handoff.md | 750 ++++++++++++++++++++++++++++++--
+ specs/026-tests-audit-report/tasks.md   |   8 +-
+ 3 files changed, 801 insertions(+), 31 deletions(-)
+```
+
+3 檔 staged：`.github/pull_request_template.md`（新檔）+ `handoff.md` + `tasks.md`，無誤動 `cspell.json` / `package.json` / `playwright.config.*` / `scripts/run-all-e2e.sh` 等。**AC-T09.5 PASS**
+
+#### 3. AC-T09.6 — Co-Authored-By grep
+
+```text
+$ git log -1 --format=%B | grep -ic "co-authored"
+0
+```
+
+0 hits — commit message body 與 trailer 區皆無 `Co-Authored-By` / `co-authored-by`，遵守 user memory `feedback_no_coauthor`。**AC-T09.6 PASS**
+
+#### 4. AC-T09.4 — Push 狀態 + branch + commit message
+
+```text
+$ git log origin/026-tests-audit-report..HEAD 2>&1
+fatal: ambiguous argument 'origin/026-tests-audit-report..HEAD': unknown revision or path not in the working tree.
+
+$ git branch --show-current
+026-tests-audit-report
+
+$ git log -1 --format=fuller
+commit 818e249923686bacbcefaea775a7d18b0bb02553
+Author:     victorlovescoding <rifrigerator3204367@gmail.com>
+AuthorDate: Wed Apr 29 17:23:59 2026 +0800
+Commit:     victorlovescoding <rifrigerator3204367@gmail.com>
+CommitDate: Wed Apr 29 17:23:59 2026 +0800
+
+    chore(github): add PR template with audit checklist (R11)
+
+    - .github/pull_request_template.md: new file containing Summary / Test Plan
+      / Audit Checklist (mock-boundary [P0-1], flaky pattern [P1-4/P1-5],
+      firestore rules [P0-2], coverage [P0-4], baseline tracking) / Related
+
+    PR template merge 進 main 後對下一個 PR 自動套用，本 PR description 仍須手寫。
+
+    Refs: project-health/2026-04-29-tests-audit-report.md L594-598, L641-657
+```
+
+`fatal: ambiguous argument` 表示 `origin/026-tests-audit-report` 不存在於本機 git remote 索引 → branch 從未 push。Commit message 採 Conventional commits `chore(github):`、subject 含 R11 + audit checklist 指涉、body 三段（檔案 bullet + PR description 提醒 + Refs 行含 audit L594-598 / L641-657）。**AC-T09.3 + AC-T09.4 PASS**
+
+#### 5. handoff.md + tasks.md 完整性 Read
+
+- `handoff.md` §0（L7-25）：T06-T09 全 `done`、Last commit (S2) = `818e249 chore(github): add PR template with audit checklist (R11)` ✓
+- `handoff.md` §1（L27-42）：S2 已完成 4 條（T06-T09 [x]）+ 指向 S2 PR merge → S3 啟動（新 spec dir `specs/027-coverage-baseline/`）✓
+- `handoff.md` §3 T09 row（L87）：本 reviewer 段已寫入 `rev-pass` + 雙簽名 + Rev evidence excerpt ✓
+- `handoff.md` §3 T09 Evidence Detail（L1233-1446 engineer + 本 reviewer 段）：8 命令完整輸出 + git log/show + grep + 禁區清單 ✓
+- `handoff.md` §5（L1461-1476）：Node v22.22.0 / Vitest 4.1.4 / Playwright 1.58.0 完整 ✓
+- `tasks.md` T06-T09 全 `[x]`（L329 / L368 / L446 / L522 — grep 4 hits 對應 T06 / T07 / T08 / T09）✓
+
+#### AC 逐項打勾（reviewer 獨立判定）
+
+- **AC-T09.1 PASS** — §3 T06-T08 三 row 全 `rev-pass` + 雙簽名（L84/85/86 確認 reviewer 欄非空）；tasks.md T06-T09 status 全 `[x]`（grep 4 hits）。
+- **AC-T09.2 PASS** — 8 命令獨立重跑全綠，數字與 engineer evidence 完全一致（wc=74 / H3=5 / checkbox=14 / Baseline=1 / spellcheck 0 / lint exit=0 / type-check exit=0 / depcruise no violations）。
+- **AC-T09.3 PASS** — commit message 採 `chore(github):` + 含 5 個 audit IDs (P0-1/P1-4/P1-5/P0-2/P0-4) + Refs 行 L594-598 / L641-657 + 0 Co-Authored-By。
+- **AC-T09.4 PASS** — branch=`026-tests-audit-report`（current）+ origin ref fatal（未 push）+ commit hash 落地（pre-commit hook 全綠）。
+- **AC-T09.5 PASS** — 3 檔（pull_request_template.md +74 new / handoff.md +750/-31 / tasks.md +8/-?），T08 cspell.json 確認無改動，符合 task spec 「3-4 檔」下界。
+- **AC-T09.6 PASS** — grep -ic "co-authored" = 0。
+
+#### 禁區遵守（reviewer 獨立確認）
+
+- ✅ 未 Edit/Write `.github/pull_request_template.md`、`tasks.md`、`cspell.json`、`package.json`（git status 僅 ` M handoff.md`）
+- ✅ 未 commit / push / git add（reviewer 簽名 uncommitted，沿用 T05 pattern）
+- ✅ 未改 §3 T01-T08 evidence 任何字元（git diff -w 確認 row cell 內容保留，僅 prettier padding 重排）
+- ✅ 未改 §3 T09 engineer 段內容（reviewer 段在 engineer 結論段「§4 Pattern Index」前以 `---` 分隔追加）
+- ✅ 未 amend `818e249`（hash 固定）
+
+#### 最終結論
+
+T09 通過獨立 reviewer 驗證 — AC-T09.1 / 2 / 3 / 4 / 5 / 6 全 PASS。Commit `818e249` 在 branch `026-tests-audit-report` 本機，3 檔 staged 範圍精確（`.github/pull_request_template.md` 新檔 +74 / `handoff.md` +750/-31 / `tasks.md` +8/-?），未 push 到遠端、commit message 採 Conventional commits + 含 audit IDs + Refs 行、無 Co-Authored-By trailer、pre-commit hook 全綠。`handoff.md` §0 / §1 / §3（T06-T09 row + Evidence Detail）/ §5 與 `tasks.md` T06-T09 全 `[x]` 完整凍結為 S2 歷史。**S2 整體完成。** Status: **rev-pass — 等待人類審 PR + merge → S3 啟動（coverage baseline / R1 / P0-4）。**
 
 ## §4 Pattern Index
 
