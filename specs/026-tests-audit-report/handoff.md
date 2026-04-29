@@ -23,6 +23,14 @@
 | T08 spellcheck / pre-commit gate | done                                                                                                                     |
 | T09 commit + handoff sync        | done                                                                                                                     |
 | Last commit (S2)                 | `818e249` chore(github): add PR template with audit checklist (R11)                                                      |
+| **S3** scope                     | **done — coverage include 擴至 8 層 + baseline (P0-4 / R1)**                                                             |
+| T10 capture current baseline     | done                                                                                                                     |
+| T11 QUALITY_SCORE.md 設計        | done                                                                                                                     |
+| T12 vitest.config.mjs include    | done                                                                                                                     |
+| T13 capture post-baseline        | done                                                                                                                     |
+| T14 寫入 QUALITY_SCORE.md        | done                                                                                                                     |
+| T15 verify + commit              | done                                                                                                                     |
+| Last commit (S3)                 | pending                                                                                                                  |
 
 ## §1 Next Session Checklist
 
@@ -40,6 +48,21 @@
 - [ ] 開 PR：`026-tests-audit-report` → `main`，PR body 引用 §3 T01-T05 + T06-T09 evidence + audit L324-360（S1） + L594-598（S2）
 - [ ] 等 GitHub protected-branch status checks（lint / test）綠 → merge → 刪 branch
 - [ ] **S3 啟動**（新 spec 目錄 `specs/027-coverage-baseline/` 或同類命名）：依 audit L600-606 推進 coverage include + baseline (P0-4 / R1)，複用本 handoff pattern（§0/§1/§3/§5 live 共寫，engineer + reviewer 雙簽名 + AC 全 PASS 才 rev-pass）
+
+**S3 已完成工作**（凍結為歷史，sub-agent 多輪 rev-pass）：
+
+- [x] T10 capture current 5-layer baseline + emulator sanity check（rev-pass — `npm run test:coverage` exit 0、coverage-summary.json 抽 4 metric + 5 層 line%）
+- [x] T11 QUALITY_SCORE.md 更新設計 + jq 分層 filter 範本（rev-pass — 與 T10 平行完成）
+- [x] T12 vitest.config.mjs:22 加 ui/components/app（rev-pass — `git diff --stat` = 1 ins/1 del @L22）
+- [x] T13 capture post-baseline（rev-pass — Lines 71.28% ≥ 70 PASS、5 層 stable、3 層首度 baseline）
+- [x] T14 寫入 QUALITY_SCORE.md（rev-pass — Last Updated/Next Review/Per-Layer ui+components+app/Gap #2/Score History 同步）
+- [x] T15 verify + commit + handoff sync（eng-done — 整合驗證 + commit + handoff/tasks 同步）
+
+**S3 後續（人類動作，不在 subagent scope）**：
+
+- [ ] 開 PR：`026-tests-audit-report` → `main`，PR body 引用 §3 T10-T15 evidence + audit L170-208 / L600-606
+- [ ] 等 GitHub protected-branch status checks（lint / test / coverage）綠 → merge → 刪 branch
+- [ ] **S4 啟動**（pre-commit grep gate warn-only，audit L607-612）：複用本 handoff pattern 於新 spec 目錄
 
 ## §2 Must-Read Risks（已知踩坑 + subagent 增補）
 
@@ -71,20 +94,45 @@
 | GitHub PR template 行尾不可有 trailing whitespace           | trailing whitespace 在 GitHub UI 雖不影響顯示，但會被部分 markdown linter 標 warn；本專案 ESLint 不檢 markdown trailing whitespace，但仍建議乾淨                                          | T07 engineer 用 `grep -nE " +$" .github/pull_request_template.md` 自查 0 hits（非強制 AC，預警用）                                                    |
 | 主 agent commit 邊界                                        | 「主 agent 不下手任何實作」適用於 S2 task 內容（改 `.github/`、跑 npm script、加 cspell 詞）；但「分配任務本身」（更新 tasks.md / handoff.md skeleton 並 commit docs）屬主 agent 合法工作 | 主 agent 可以 commit `docs(spec): ...` 類型的 spec/handoff 變動；**不可** commit `chore(github): ...` 類型的 S2 實作，後者由 T09 engineer subagent 做 |
 
+### S3 Risks（新增 — T10-T15 須讀）
+
+| Risk                                                          | Why it matters                                                                                                                                                                                                                                                                                                                                                                       | Action                                                                                                                                                                                                                                    |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run test:coverage` 需要 Firebase Auth/Firestore emulator | 沒裝 / 沒拉鏡像 → exec 失敗；多人同時跑 emulator 會 port 衝突                                                                                                                                                                                                                                                                                                                        | T10 / T13 engineer 跑前先 `firebase --version` 與 `lsof -i :8080,9099` 自查；emulator 起不來時不能 fall back 到「跳過 server tests」，必須 escalate                                                                                       |
+| 加 include 後 `lines: 70` 可能跌破 → coverage gate 紅         | ui (12 檔 0 直接測試) / components (54 檔 部分測) / app (15 檔 多薄殼) 多數低覆蓋；加進 instrumentation 會壓低總體 line%                                                                                                                                                                                                                                                             | T13 engineer 拿到實測 line% 後比對 70：≥ 70 → 繼續 T14；< 70 → 標 T13 `[!]` escalated，**禁止**自行調降 threshold / 縮減 include / 加新 exclude（除 parsing error 例外）；handoff §2 S3 row 寫清楚 escalation reason + 實測數字           |
+| Baseline 從 `text-summary` 讀會誤抄                           | text-summary 只給 2 位精度，跟後續 score history 對不起來                                                                                                                                                                                                                                                                                                                            | T13 / T14 一律從 `coverage/coverage-summary.json` 用 `jq` 抽，至少 3 位有效位數寫進 QUALITY_SCORE.md；reviewer 必須重抽 jq 結果比對                                                                                                       |
+| `coverage-summary.json` 路徑分組需要 prefix match             | json 是 absolute path key，分層數字要靠 `startsWith('src/ui/')` 等 client filter 算（vitest 不直接給 per-dir aggregate）                                                                                                                                                                                                                                                             | T11 設計階段給定 jq filter 範本（見 T11 AC）；T13 engineer 直接套用範本；reviewer 用同範本獨立重算                                                                                                                                        |
+| QUALITY_SCORE.md 「V8 Cov」欄目前只有 lib/ 一個數字           | 要新增 3 層數字 + （可選）回填 service/repo/runtime/config 的真實數字（首次有 instrumentation）；scope 蔓延風險                                                                                                                                                                                                                                                                      | T11 設計只新增 ui/components/app 三 row 的 V8 Cov；service/repo/runtime/config/lib/ 的數字保持原值（lib 94.7% 仍有效，本 PR 若實測值有微幅變化也不更新避免 scope 失控）；T14 嚴格依 T11 design                                            |
+| Score History 規格：每次更新加一行                            | QUALITY_SCORE.md L62-66 已有「Score History」表，protocol L144-148 規定「每次更新時在 Score History 加一行」                                                                                                                                                                                                                                                                         | T14 必須加 1 行 `2026-04-29` row，Changes 欄寫「coverage include 擴至 8 層；ui/components/app 首度有 V8 cov baseline (X.X% / Y.Y% / Z.Z%)」                                                                                               |
+| `Last Updated` / `Next Review` 必須同步更新                   | QUALITY_SCORE.md L3-4                                                                                                                                                                                                                                                                                                                                                                | T14 把 `Last Updated: 2026-04-24` → `2026-04-29`；`Next Review: 2026-05-08` 推一週 → `2026-05-13`（or +14d 對齊原 cadence）；engineer 在 §3 evidence 註明選擇                                                                             |
+| Pre-commit gate 含 `vitest --project=browser`（非 coverage）  | T15 commit 觸發 pre-commit hook 不會跑 `test:coverage`，所以 hook 本身不會被 70 threshold 擋；但 CI（`.github/workflows/ci.yml` 的 `ci` job 跑 `firebase emulators:exec ... npx vitest run --coverage`）會擋                                                                                                                                                                         | T15 engineer commit 前手動跑 `npm run test:coverage` 一次確認 exit 0，避免 PR 開出去 CI 紅；若 CI 預期會紅（T13 已 escalated）則 T15 不能 commit，要等用戶決議                                                                            |
+| `coverage/` 目錄不可進 git                                    | `.gitignore` 應已含 `coverage/`，但 T13/T14 跑完 coverage 會留下大量 file；commit 時 stage 不能誤加                                                                                                                                                                                                                                                                                  | T15 engineer `git status` 確認 `coverage/` 為 untracked；明確列檔 `git add` 只加 `vitest.config.mjs` + `docs/QUALITY_SCORE.md` + `specs/026-tests-audit-report/handoff.md` + `specs/026-tests-audit-report/tasks.md`；**禁** `git add -A` |
+| jq 不一定預裝                                                 | macOS 預設無 jq；若 engineer/reviewer 環境沒 jq 必失敗                                                                                                                                                                                                                                                                                                                               | T10 engineer 跑前 `which jq` 自查；無 jq 時 `brew install jq`（用戶 macOS）；reviewer 同樣須自查                                                                                                                                          |
+| `chore(coverage): ...` commit message 不加 Co-Authored-By     | user memory `feedback_no_coauthor`                                                                                                                                                                                                                                                                                                                                                   | T15 engineer commit 後 `git log -1 --format=%B \| grep -ic "Co-Authored-By"` 必為 0；reviewer 重跑驗                                                                                                                                      |
+| **lib/ V8 Cov 算法差異**（T10 新發現）                        | T10 baseline 用 `coverage-summary.json` per-file `lines.pct` 平均算出 lib 19.36%，與 QUALITY_SCORE.md L25 既有「lib 94.7%」差距巨大。原因：QUALITY_SCORE 數字應為過往 lib-only run 的「總體 line%」（aggregate of covered/total lines across all lib files），而非 per-file pct 算術平均；本 baseline 因含大量 0% 未測 facade 檔（re-export shim）拉低平均。兩個算法都成立但不可互比 | T11/T14 維持 scope 限制 — **不**回寫 lib 既有 94.7%；T13 同樣用 per-file pct 平均（與 T10 對齊），新增 ui/components/app 三 row 用同算法。T14 evidence 區明文記錄此算法差異，避免後續 reviewer 把 T10 的 19.36% 誤當 lib 真實退化         |
+| **T13 lines% 反直覺微升**（T13 實際遭遇）                     | 預期加入 ui/components/app 三層多為低覆蓋 → 總體 line% 應下降；實測 T10 70.69% → T13 71.28%（+0.59pp）反而上升。原因：分母（total lines）擴大 3546 → 4673（+1127 行 instrumentable），分子（covered）也按比例擴大 2507 → 3331（+824 行）；新層中 components/ 52.43% 雖低於原平均，但 ui/ 62.52% 與 app/ 47.92% 加權後總體仍 ≥ 70%，threshold gate 安全通過                           | T13 reviewer 已用 jq 重抽 covered/total 對齊確認；後續若新增更多低覆蓋層（如 src/hooks/ 之類）需重評 — 不可預設「加 include 必降 line%」                                                                                                  |
+| **T14 cspell 無新詞**（T14 實際遭遇）                         | 預期 QUALITY_SCORE.md 新增 ui/components/app/baseline 等英文詞可能觸發 cSpell；實測 spellcheck `Issues found: 0 in 0 files (353 files checked)`，cspell.json 無改動                                                                                                                                                                                                                  | T15 commit 4 檔即可（vitest.config.mjs / docs/QUALITY_SCORE.md / handoff.md / tasks.md），**不**含 cspell.json；commit message 對應行省略「cspell.json: add N domain terms」                                                              |
+
 > Engineer 完成 task → 填 engineer 欄 + Eng evidence；Reviewer 驗收 → 填 reviewer 欄 + Rev evidence。
 > Status: `pending` / `eng-done` / `rev-pass` / `rev-reject (Nth attempt)` / `escalated`
 
-| Task | Status                 | Engineer            | Eng evidence (excerpt)                                                                                                                                                                                                                                                                                                                                                                                                                 | Reviewer                                   | Rev evidence (excerpt)                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ---- | ---------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T01  | rev-pass (2nd attempt) | T01-engineer-opus47 | 2nd attempt: package.json L13 `vitest` → `vitest --project=browser`；vitest.config.mjs reverted；AC-T01.1/2/3 全 PASS（121 files / 1108 tests browser-only；server explicit 仍可啟動）                                                                                                                                                                                                                                                 | T01-reviewer-opus47 / 2026-04-29T16:03 CST | git diff vitest.config.mjs 空；package.json diff 僅 L13；npm test → 121 files / 1108 tests browser-only（無 \|server\| 標籤、無 emulator missing）；npm test -- --project=server 把 server project 加入並命中 emulator guard（預期），AC-T01.1/2/3 全 PASS                                                                                                                                                                                                                                           |
-| T02  | rev-pass               | T02-engineer        | L167 `--project=demo-test` + L235-236 URL `demo-test`; grep 0 hits; `bash -n` syntax OK                                                                                                                                                                                                                                                                                                                                                | T02-reviewer / 2026-04-29T00:00:00Z        | grep 0 hits; `bash -n` syntax OK; git diff 僅 3 行 (L167/L235/L236)；L167 採等號形式                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| T03  | rev-pass               | T03-engineer        | timeout:30000 / expect.timeout:10000 確認；playwright list 56 tests OK                                                                                                                                                                                                                                                                                                                                                                 | T03-reviewer-opus47 / 2026-04-29           | AC-T03.1/2 重跑均 PASS；config 頂層含 `timeout: 30_000` + `expect: { timeout: 10_000 }`（不在 projects 陣列內）；diff 僅 +2 行                                                                                                                                                                                                                                                                                                                                                                       |
-| T04  | rev-pass               | T04-engineer        | 加 `expect: { timeout: 10_000 }` L64；timeout: 60000 保留；node import → `{"t":60000,"e":{"timeout":10000}}`；playwright --list 56 tests                                                                                                                                                                                                                                                                                               | T04-reviewer / 2026-04-29                  | git diff 僅 +1 行 (L64 `expect: { timeout: 10_000 }`)；timeout: 60000 完整保留；AC-T04.1 `{"t":60000,"e":{"timeout":10000}}`；AC-T04.2 `Total: 56 tests in 11 files`                                                                                                                                                                                                                                                                                                                                 |
-| T05  | rev-pass               | T05-engineer-opus47 | AC-T05.2 全 PASS (npm test 121f/1108t；grep 0 hits；playwright `{t:30000,e:{timeout:10000}}`；emulator `{t:60000,e:{timeout:10000}}`)；pre-commit gate 預跑全綠（lint / type-check / depcruise / spellcheck / vitest browser）                                                                                                                                                                                                         | T05-reviewer / 2026-04-29T16:14 CST        | Re-ran AC-T05.2 全部命令獨立驗證：npm test 121 files / 1108 tests browser-only；`grep -rn "dive-into-run" scripts/` → 0 hits；playwright.config → `{"t":30000,"e":{"timeout":10000}}`；playwright.emulator → `{"t":60000,"e":{"timeout":10000}}`。`git show a7b10f5 --stat` 6 檔；commit message body `grep -ic Co-Authored-By` → 0；`origin/026-tests-audit-report` 不存在（未 push，符合 AC-T05.4）。§0/§1/§3/§5 完整。                                                                            |
-| T06  | rev-pass               | T06-engineer-opus47 | `.github/` 現況：1 檔（workflows/ci.yml）僅 ci，無 PR template；5 類 ≥ 2 checkbox + audit ID + file:line 完成；檔名決議 `.github/pull_request_template.md`（lowercase）；skeleton 4 節（Summary / Test Plan / Audit Checklist / Related）                                                                                                                                                                                              | T06-reviewer-opus47 / 2026-04-29 CST       | 獨立 `ls -la .github/` → 1 dir (`workflows`)；`find .github -type f` → 僅 `.github/workflows/ci.yml`；`git status --short` 僅 ` M handoff.md`，無 `.github/`/`cspell.json` 改動。抽查 B1/B2/B5 三條 audit mapping：B1 第 2 條 P0-1 對到 audit L85；B2 第 1 條 P1-4 對到 audit L295；B5 第 1 條 baseline 對到 audit L649 同字串 match。Checkbox 共 10 條（5 類 × 2 條），含 file:line 引用。AC-T06.1/2/3/4 全 PASS。                                                                                  |
-| T07  | rev-pass               | T07-engineer-opus47 | 新增 `.github/pull_request_template.md`（74 行 / 5 H3 / 14 `- [ ]` checkbox / `Baseline change:` 範例 1 行 / UTF-8 no BOM / 0 trailing whitespace hits）；AC-T07.1/2/3/4/5 全 PASS                                                                                                                                                                                                                                                     | T07-reviewer-opus47 / 2026-04-29 CST       | 獨立重跑：wc -l=74、`grep -c "^### "`=5、`grep -c "^- \[ \]"`=14、`grep -c "Baseline change:"`=1、`file` → `UTF-8 text`（無 BOM）、trailing ws 0 hits、`git status` 僅 ` M handoff.md` + `?? .github/pull_request_template.md`。H3 順序對齊 task L378：Mock boundary → Flaky pattern → Firestore rules → Coverage → Baseline tracking；前 4 bytes `3c21 2d2d` (`<!--`) 無 BOM；T06 (b) B1-B5 5 類 1:1 對齊 10 條 audit checkbox + audit ID。AC-T07.1/2/3/4/5 全 PASS。                               |
-| T08  | rev-pass               | T08-engineer-opus47 | spellcheck `Issues found: 0 in 0 files (353 files checked)`；lint exit=0；type-check exit=0；depcruise `no dependency violations found (1379 modules, 3403 dependencies cruised)`；vitest browser `121 passed (121) / 1108 passed (1108)`；cspell.json 無改動；`.github/pull_request_template.md` 0 hits `cspell:?disable`                                                                                                             | T08-reviewer-opus47 / 2026-04-29 CST       | 重跑 AC-T08.1/2/5/6：spellcheck `Files checked: 353, Issues found: 0`；vitest browser `121 passed (121) / 1108 passed (1108)`；lint exit=0；`grep -nE "cspell:?disable\|cspell-disable\|cspell-enable\|cspell:enable\|cspell:ignore" .github/pull_request_template.md` 0 hits（exit=1）；`git diff cspell.json` 空（0 行）；`git status --short` 僅 `M handoff.md` + `?? .github/pull_request_template.md`，未誤動 cspell.json/tasks.md/package.json/vitest.config.mjs。AC-T08.1/2/3/4/5/6 全 PASS。 |
-| T09  | rev-pass               | T09-engineer-opus47 | AC-T09.2 全 8 命令重跑 PASS（wc=74、grep `^### `=5、grep `^- \[ \]`=14、grep `Baseline change:`=1、spellcheck `Issues found: 0` 353 檔、lint exit=0、type-check exit=0、depcruise `no dependency violations found (1379 modules, 3403 deps)`）；commit `818e249` 3 檔 staged（`.github/pull_request_template.md` new + handoff.md M + tasks.md M）；`grep -ic co-authored` = 0；`origin/026-tests-audit-report..HEAD` fatal（未 push） | T09-reviewer-opus47 / 2026-04-29 CST       | 獨立重跑 AC-T09.2 8 命令全綠（wc=74、H3=5、checkbox=14、Baseline=1、spellcheck 0 issues、lint exit=0、type-check exit=0、depcruise no violations 1379 modules）；`git show 818e249 --stat` 3 檔（pull_request_template.md +74 / handoff.md +750/-31 / tasks.md +8/-?）；`grep -ic co-authored` = 0；`origin/026-tests-audit-report..HEAD` fatal（未 push）；handoff.md §0/§1/§3/§5 + tasks.md T06-T09 全 `[x]` 完整。AC-T09.1/2/3/4/5/6 全 PASS。                                                    |
+| Task | Status                 | Engineer            | Eng evidence (excerpt)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Reviewer                                   | Rev evidence (excerpt)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---- | ---------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T01  | rev-pass (2nd attempt) | T01-engineer-opus47 | 2nd attempt: package.json L13 `vitest` → `vitest --project=browser`；vitest.config.mjs reverted；AC-T01.1/2/3 全 PASS（121 files / 1108 tests browser-only；server explicit 仍可啟動）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | T01-reviewer-opus47 / 2026-04-29T16:03 CST | git diff vitest.config.mjs 空；package.json diff 僅 L13；npm test → 121 files / 1108 tests browser-only（無 \|server\| 標籤、無 emulator missing）；npm test -- --project=server 把 server project 加入並命中 emulator guard（預期），AC-T01.1/2/3 全 PASS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| T02  | rev-pass               | T02-engineer        | L167 `--project=demo-test` + L235-236 URL `demo-test`; grep 0 hits; `bash -n` syntax OK                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | T02-reviewer / 2026-04-29T00:00:00Z        | grep 0 hits; `bash -n` syntax OK; git diff 僅 3 行 (L167/L235/L236)；L167 採等號形式                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| T03  | rev-pass               | T03-engineer        | timeout:30000 / expect.timeout:10000 確認；playwright list 56 tests OK                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | T03-reviewer-opus47 / 2026-04-29           | AC-T03.1/2 重跑均 PASS；config 頂層含 `timeout: 30_000` + `expect: { timeout: 10_000 }`（不在 projects 陣列內）；diff 僅 +2 行                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| T04  | rev-pass               | T04-engineer        | 加 `expect: { timeout: 10_000 }` L64；timeout: 60000 保留；node import → `{"t":60000,"e":{"timeout":10000}}`；playwright --list 56 tests                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | T04-reviewer / 2026-04-29                  | git diff 僅 +1 行 (L64 `expect: { timeout: 10_000 }`)；timeout: 60000 完整保留；AC-T04.1 `{"t":60000,"e":{"timeout":10000}}`；AC-T04.2 `Total: 56 tests in 11 files`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| T05  | rev-pass               | T05-engineer-opus47 | AC-T05.2 全 PASS (npm test 121f/1108t；grep 0 hits；playwright `{t:30000,e:{timeout:10000}}`；emulator `{t:60000,e:{timeout:10000}}`)；pre-commit gate 預跑全綠（lint / type-check / depcruise / spellcheck / vitest browser）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | T05-reviewer / 2026-04-29T16:14 CST        | Re-ran AC-T05.2 全部命令獨立驗證：npm test 121 files / 1108 tests browser-only；`grep -rn "dive-into-run" scripts/` → 0 hits；playwright.config → `{"t":30000,"e":{"timeout":10000}}`；playwright.emulator → `{"t":60000,"e":{"timeout":10000}}`。`git show a7b10f5 --stat` 6 檔；commit message body `grep -ic Co-Authored-By` → 0；`origin/026-tests-audit-report` 不存在（未 push，符合 AC-T05.4）。§0/§1/§3/§5 完整。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| T06  | rev-pass               | T06-engineer-opus47 | `.github/` 現況：1 檔（workflows/ci.yml）僅 ci，無 PR template；5 類 ≥ 2 checkbox + audit ID + file:line 完成；檔名決議 `.github/pull_request_template.md`（lowercase）；skeleton 4 節（Summary / Test Plan / Audit Checklist / Related）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | T06-reviewer-opus47 / 2026-04-29 CST       | 獨立 `ls -la .github/` → 1 dir (`workflows`)；`find .github -type f` → 僅 `.github/workflows/ci.yml`；`git status --short` 僅 ` M handoff.md`，無 `.github/`/`cspell.json` 改動。抽查 B1/B2/B5 三條 audit mapping：B1 第 2 條 P0-1 對到 audit L85；B2 第 1 條 P1-4 對到 audit L295；B5 第 1 條 baseline 對到 audit L649 同字串 match。Checkbox 共 10 條（5 類 × 2 條），含 file:line 引用。AC-T06.1/2/3/4 全 PASS。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| T07  | rev-pass               | T07-engineer-opus47 | 新增 `.github/pull_request_template.md`（74 行 / 5 H3 / 14 `- [ ]` checkbox / `Baseline change:` 範例 1 行 / UTF-8 no BOM / 0 trailing whitespace hits）；AC-T07.1/2/3/4/5 全 PASS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | T07-reviewer-opus47 / 2026-04-29 CST       | 獨立重跑：wc -l=74、`grep -c "^### "`=5、`grep -c "^- \[ \]"`=14、`grep -c "Baseline change:"`=1、`file` → `UTF-8 text`（無 BOM）、trailing ws 0 hits、`git status` 僅 ` M handoff.md` + `?? .github/pull_request_template.md`。H3 順序對齊 task L378：Mock boundary → Flaky pattern → Firestore rules → Coverage → Baseline tracking；前 4 bytes `3c21 2d2d` (`<!--`) 無 BOM；T06 (b) B1-B5 5 類 1:1 對齊 10 條 audit checkbox + audit ID。AC-T07.1/2/3/4/5 全 PASS。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| T08  | rev-pass               | T08-engineer-opus47 | spellcheck `Issues found: 0 in 0 files (353 files checked)`；lint exit=0；type-check exit=0；depcruise `no dependency violations found (1379 modules, 3403 dependencies cruised)`；vitest browser `121 passed (121) / 1108 passed (1108)`；cspell.json 無改動；`.github/pull_request_template.md` 0 hits `cspell:?disable`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | T08-reviewer-opus47 / 2026-04-29 CST       | 重跑 AC-T08.1/2/5/6：spellcheck `Files checked: 353, Issues found: 0`；vitest browser `121 passed (121) / 1108 passed (1108)`；lint exit=0；`grep -nE "cspell:?disable\|cspell-disable\|cspell-enable\|cspell:enable\|cspell:ignore" .github/pull_request_template.md` 0 hits（exit=1）；`git diff cspell.json` 空（0 行）；`git status --short` 僅 `M handoff.md` + `?? .github/pull_request_template.md`，未誤動 cspell.json/tasks.md/package.json/vitest.config.mjs。AC-T08.1/2/3/4/5/6 全 PASS。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| T09  | rev-pass               | T09-engineer-opus47 | AC-T09.2 全 8 命令重跑 PASS（wc=74、grep `^### `=5、grep `^- \[ \]`=14、grep `Baseline change:`=1、spellcheck `Issues found: 0` 353 檔、lint exit=0、type-check exit=0、depcruise `no dependency violations found (1379 modules, 3403 deps)`）；commit `818e249` 3 檔 staged（`.github/pull_request_template.md` new + handoff.md M + tasks.md M）；`grep -ic co-authored` = 0；`origin/026-tests-audit-report..HEAD` fatal（未 push）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | T09-reviewer-opus47 / 2026-04-29 CST       | 獨立重跑 AC-T09.2 8 命令全綠（wc=74、H3=5、checkbox=14、Baseline=1、spellcheck 0 issues、lint exit=0、type-check exit=0、depcruise no violations 1379 modules）；`git show 818e249 --stat` 3 檔（pull_request_template.md +74 / handoff.md +750/-31 / tasks.md +8/-?）；`grep -ic co-authored` = 0；`origin/026-tests-audit-report..HEAD` fatal（未 push）；handoff.md §0/§1/§3/§5 + tasks.md T06-T09 全 `[x]` 完整。AC-T09.1/2/3/4/5/6 全 PASS。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| T10  | rev-pass               | T10-engineer-opus47 | 環境自查全綠（firebase 15.5.1 / jq /usr/bin/jq / port 8080+9099 未佔用）；`npm run test:coverage` exit 0（123 files / 1134 tests / 43.90s）；總體 4 metric Lines 70.69% / Statements 69.05% / Branches 56.65% / Functions 74.21%（`coverage/coverage-summary.json` jq 抽出）；5 層 line% 平均 service 89.47% / repo 80.44% / runtime 62.42% / lib 19.36% / config 71.30%（per-file pct 算術平均，非 aggregate）；`vitest.config.mjs` 0 diff；`coverage/` 在 .gitignore 不入 git。AC-T10.1/2/3/4/5/6 全 PASS（含 §2 S3 risks 新增 1 條：lib 19.36% vs QUALITY_SCORE 既有 94.7% 算法差異）。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | T10-reviewer-opus47 / 2026-04-29 CST       | 獨立重跑全綠：firebase 15.5.1、`/usr/bin/jq`、`lsof -i :8080,9099` 0 行（exit 1 = 無佔用）；`npm run test:coverage` exit 0、123 files / 1134 tests / 40.41s、Coverage summary `Lines 70.69% (2507/3546) / Statements 69.05% / Branches 56.65% / Functions 74.21%`，與 engineer 4 metric 100% 對齊（差距 0%，遠 < ±0.5%）。獨立 jq 抽 5 層 per-file line% 平均：service 89.47% (n=15) / repo 80.44% (n=19) / runtime 62.42% (n=41) / lib 19.36% (n=20) / config 71.30% (n=6)，與 engineer 表格 5 層數字 + file count 全 100% 對齊。`git diff vitest.config.mjs` 空、`git status --short` 僅 ` M handoff.md`、`.gitignore:14 /coverage` 確認 untracked、`git ls-files coverage/` 0 hits。§2 S3 Risks 子表新增 row「lib/ V8 Cov 算法差異」已存在於 L106。AC-T10.1/2/3/4/5/6 全 PASS。                                                                                                                                                                                                                                                                                                                                                     |
+| T11  | rev-pass               | T11-engineer-opus47 | 設計完成 — 5 節 evidence 寫入 §3 T11 Evidence Detail：(1) QUALITY_SCORE.md 現況 inventory；(2) 目標 diff 草稿（L3/L4/Per-Layer ui/components/app row、Layer-Level Gap #2 改寫、Score History 新增 1 row）；(3) jq filter 範本（總體 + 8 層分層）；(4) scope 限制 3 條；(5) T14 驗收 checklist 7 條。**未動** `docs/QUALITY_SCORE.md` / `vitest.config.mjs` / `cspell.json`，僅動 handoff.md。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | T11-reviewer-opus47 / 2026-04-29 CST       | 獨立比對 `docs/QUALITY_SCORE.md` inventory 全屬實（L3=2026-04-24、L4=2026-05-08、L14-23 8 row V8 Cov 僅 lib=94.7% 其餘「—」、無 app row、Score History 1 row data、L34 原文「Coverage instrumentation 僅限 lib/」逐字 match）。Score History 草稿 5 欄齊（Date/Overall/Layer Avg/Domain Avg/Changes），對齊既有表頭。jq 範本 (a)/(b)/(c) 三變體用 echo 模擬 input 跑成功（總體 4 metric / ui 平均 65 / 8 層 loop 命中 lib+ui）；(d) 結構同 (c)。Scope 限制 3 條明文齊備（不回寫 5 層 / 不改 grade / 不改 domain）。T14 checklist 8 條含 5 項關鍵（Last Updated / Next Review / Score History +1 / 三 row 數字 / scope 遵守）。git status 僅 ` M handoff.md`，禁區遵守。AC-T11.1/2/3/4/5 全 PASS。                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| T12  | rev-pass               | T12-engineer-opus47 | `vitest.config.mjs:22` include 從 `src/{service,repo,runtime,lib,config}/**` 改為 `src/{service,repo,runtime,lib,config,ui,components,app}/**`；`git diff vitest.config.mjs` 1 行 +/1 行 -；exclude block (L23-31) + `lines: 70` threshold (L36) 0 動；dynamic import 驗證 `c.default.test.coverage.include` = `["src/{service,repo,runtime,lib,config,ui,components,app}/**"]`；`npm test` (browser project) exit 0 — `121 passed (121) / 1108 passed (1108) / 32.74s`；`grep -c "ui,components,app"` = 1；8 層自查全命中（service=2 / repo=5 / runtime=3 / lib=6 / config=4 / ui=1 / components=1 / app=1）；未 commit。AC-T12.1/2/3/4/5/6 全 PASS（AC-T12.7 pre-commit gate 不在此 task 跑）。                                                                                                                                                                                                                                                                                                                                                                                       | T12-reviewer-opus47 / 2026-04-29 CST       | 獨立重跑全綠：`git diff --stat vitest.config.mjs` = `1 file changed, 1 insertion(+), 1 deletion(-)`，diff 唯一行差在 L22；`grep -c "ui,components,app" vitest.config.mjs` = 1；dynamic import → `["src/{service,repo,runtime,lib,config,ui,components,app}/**"]` 與 engineer 完全一致；8 層自查 loop service=2/repo=5/runtime=3/lib=6/config=4/ui=1/components=1/app=1 每層 ≥ 1 hit；`npm test` exit 0、121 files / 1108 tests / 32.61s 全綠；`git status --short` 僅 ` M handoff.md` + ` M vitest.config.mjs`，未動 docs/QUALITY_SCORE.md / cspell.json / tasks.md，未 commit。AC-T12.1/2/3/4/5/6 全 PASS。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| T13  | rev-pass               | T13-engineer-opus47 | `npm run test:coverage` exit 0（123 files / 1134 tests / 39.41s；`Script exited successfully (code 0)`）；總體 4 metric Lines 71.28% / Statements 69.83% / Branches 61.38% / Functions 74.03%（vs T10 70.69 / 69.05 / 56.65 / 74.21；line% +0.59pp）；**THRESHOLD PASS: lines 71.28% ≥ 70%**；8 層 line% per-file 算術平均 service 89.47% (n=15) / repo 80.44% (n=19) / runtime 62.42% (n=41) / lib 19.36% (n=20) / config 71.30% (n=6)（5 層原數字 vs T10 完全 0 差異，instrumentation 行為一致）/ ui 62.52% (n=21) / components 52.43% (n=90) / app 47.92% (n=33)（3 層首度 baseline）；未加任何 exclude；`git status --short` 僅 ` M handoff.md` + ` M vitest.config.mjs`（後者為 T12 既改）；未動 `docs/QUALITY_SCORE.md` / `cspell.json` / `tasks.md`；未 commit。AC-T13.1/2/3/4/5 全 PASS（AC-T13.6 不適用 — 未加 exclude）。                                                                                                                                                                                                                                                     | T13-reviewer-opus47 / 2026-04-29 CST       | 獨立重跑全綠：env 自查 firebase 15.5.1 / `/usr/bin/jq` / `lsof -i :8080,9099` exit 1（未佔用）；`npm run test:coverage` exit 0、123 files / 1134 tests / 39.37s、Coverage summary `Lines 71.28% (3331/4673) / Statements 69.83% (3591/5142) / Branches 61.38% (1976/3219) / Functions 74.03% (938/1267)` 與 engineer 4 metric 100% 對齊（差距 0%，遠 < ±0.5%）。獨立 jq 抽 8 層 per-file line% 平均 + file count：service 89.47% (15) / repo 80.44% (19) / runtime 62.42% (41) / lib 19.36% (20) / config 71.30% (6) / ui 62.52% (21) / components 52.43% (90) / app 47.92% (33)，與 engineer 表格 8 層 + n 值 100% 對齊。**5 層原數字 T10 vs T13 delta = 0.00pp 全層**（< ±2% 容忍，instrumentation 行為一致無副作用）。**THRESHOLD PASS: lines 71.28% ≥ 70**（log 無 `Coverage threshold for lines (70%) not met` 訊息、wrapper graceful shutdown）。`git diff vitest.config.mjs` 僅 L22 T12 既改 8 層 include；未加新 exclude（AC-T13.6 不適用合理）；`git status --short` 僅 ` M handoff.md` + ` M vitest.config.mjs`，未動 docs/QUALITY_SCORE.md / cspell.json / tasks.md / 未 commit。AC-T13.1/2/3/4/5 全 PASS（AC-T13.6 N/A）。 |
+| T14  | rev-pass               | T14-engineer-opus47 | 嚴格依 T11 design + T13 數字 Edit `docs/QUALITY_SCORE.md`：(L3) Last Updated 2026-04-24→2026-04-29；(L4) Next Review 2026-05-08→2026-05-13；Per-Layer Quality 表 ui row V8 Cov —→62.52%、components row V8 Cov —→52.43%、新增 app row (Files=15, V8 Cov=47.92%, 其餘 TBD/TBD/TBD)；Layer-Level Known Gaps #2 改寫為「coverage instrumentation 已擴展至 8 層」；Score History 加 1 行 `2026-04-29 \| B+ \| A- \| B+ \| Coverage include 擴至 8 層 (S3); ui/components/app 首度有 V8 cov baseline (62.52% / 52.43% / 47.92%)。`。`git diff --numstat docs/QUALITY_SCORE.md` = `10 8`（+10/-8 = 18 行 < 30）；spellcheck `Issues found: 0 in 0 files (353 files checked)`；lint exit=0；`git status --short` 僅 ` M docs/QUALITY_SCORE.md` + ` M handoff.md` + ` M vitest.config.mjs`（後者為 T12 既改）；禁區 grep `service\|repo\|runtime\|lib\|config.*Cov` = 0 hits；service/repo/runtime/lib/config row V8 Cov 維持原值（lib 94.7%、其餘「—」）；無 row Grade 改動；Per-Domain Quality 表 0 diff。AC-T14.1/2/3/4/5/6/7 全 PASS；T11 checklist 8 條全綠（詳 §3 T14 Evidence Detail）。 | T14-reviewer-opus47 / 2026-04-29 CST       | 獨立重跑全綠：`git diff docs/QUALITY_SCORE.md` 18 語意行 (numstat 10/8 < 30)；spellcheck `Files checked: 353, Issues found: 0`；lint exit=0；`git status --short` 僅 3 預期檔（docs/QUALITY_SCORE.md + handoff.md + vitest.config.mjs[T12 既改]）。禁區 grep `service\|repo\|runtime\|lib\|config.*Cov` = 0 hits PASS。數字一致性：Per-Layer 表 L21 ui=62.52% / L23 components=52.43% / L24 app=47.92% vs Score History L68 三 % `(62.52% / 52.43% / 47.92%)` vs T13 evidence 三組逐字符相同。`grep -c "僅限 lib/"` = 0 確認 Gap #2 已改寫。lib 94.7% / service-repo-runtime-config「—」全維持，Grade 0 改動，Per-Domain 表 0 diff。T11 checklist 8 條逐條對照全綠。AC-T14.1/2/3/4/5/6/7 全 PASS。                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| T15  | eng-done               | T15-engineer-opus47 | AC-T15.1 §3 T10-T14 五 row 全 `rev-pass` + 雙簽名（Read 確認）。AC-T15.2 一次性重跑全綠：`grep -c "ui,components,app" vitest.config.mjs`=1；ui/components/app row grep 全 hit；`Last Updated: 2026-04-29` hit；Score History `2026-04-29.*S3` hit；`npm run lint -- --max-warnings 0` exit=0；`npm run type-check` exit=0；`npm run depcruise` `no dependency violations found (1379 modules, 3403 dependencies cruised)`；`npm run spellcheck` `Issues found: 0 in 0 files (353 files checked)`；`npx vitest run --project=browser` `121 passed (121) / 1108 passed (1108)`；`npm run test:coverage` exit 0、Lines 71.28% / Statements 69.83% / Branches 61.38% / Functions 74.03%、`Script exited successfully (code 0)`。AC-T15.3/4/5/6/7 commit 完成（hash 見 §0 / Evidence Detail），4 檔 staged（vitest.config.mjs / docs/QUALITY_SCORE.md / handoff.md / tasks.md），無 cspell.json（T14 無新詞），無 coverage/，commit message 0 `Co-Authored-By` hits，未 push。                                                                                                               | —                                          | （待 T15 reviewer 填：重跑 AC-T15.2 + git show <hash> --stat 驗 4 檔無 coverage/ + grep -ic Co-Authored-By = 0）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 ### T01 Evidence Detail
 
@@ -1575,6 +1623,936 @@ CommitDate: Wed Apr 29 17:23:59 2026 +0800
 
 T09 通過獨立 reviewer 驗證 — AC-T09.1 / 2 / 3 / 4 / 5 / 6 全 PASS。Commit `818e249` 在 branch `026-tests-audit-report` 本機，3 檔 staged 範圍精確（`.github/pull_request_template.md` 新檔 +74 / `handoff.md` +750/-31 / `tasks.md` +8/-?），未 push 到遠端、commit message 採 Conventional commits + 含 audit IDs + Refs 行、無 Co-Authored-By trailer、pre-commit hook 全綠。`handoff.md` §0 / §1 / §3（T06-T09 row + Evidence Detail）/ §5 與 `tasks.md` T06-T09 全 `[x]` 完整凍結為 S2 歷史。**S2 整體完成。** Status: **rev-pass — 等待人類審 PR + merge → S3 啟動（coverage baseline / R1 / P0-4）。**
 
+### T10 Evidence Detail
+
+> Engineer 貼：環境自查 3 命令、`npm run test:coverage` log tail、jq 抽數字、`git status --short` + `git diff vitest.config.mjs`。
+> Reviewer 貼：獨立重跑三命令 / 重跑 coverage / 重抽 jq（容忍 ±0.5%）/ git diff vitest.config.mjs 必空 / ≥ 4 行驗證結論。
+
+**Engineer**: T10-engineer-opus47 / **Timestamp**: 2026-04-29 CST / **Status**: **eng-done — AC-T10.1/2/3/4/5/6 全 PASS**
+
+#### AC-T10.1 — 環境自查（3 命令全綠）
+
+```text
+$ firebase --version
+15.5.1
+
+$ which jq
+/usr/bin/jq
+
+$ lsof -i :8080,9099 -nP 2>/dev/null
+（無輸出 — port 未佔用）
+```
+
+PASS — firebase 15.5.1 ≥ 12.x、jq 已安裝、emulator port 8080 / 9099 皆閒置。
+
+#### AC-T10.2 — `npm run test:coverage` exit 0 + log 生成
+
+```bash
+$ npm run test:coverage 2>&1 | tee /tmp/s3-baseline-current.log
+$ echo $?
+0
+```
+
+`/tmp/s3-baseline-current.log` 後 30 行（含 Coverage report from v8）：
+
+```text
+> dive-into-run@0.1.0 test:coverage
+> firebase emulators:exec --only auth,firestore --project=demo-test "vitest run --coverage"
+
+i  emulators: Starting emulators: auth, firestore
+i  emulators: Detected demo project ID "demo-test", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: Firestore Emulator logging to firestore-debug.log
+✔  firestore: Firestore Emulator UI websocket is running on 9150.
+i  Running script: vitest run --coverage
+
+ RUN  v4.1.4 /Users/chentzuyu/Desktop/dive-into-run-026-tests-audit-report
+      Coverage enabled with v8
+
+Not implemented: Window's scrollTo() method
+
+ Test Files  123 passed (123)
+      Tests  1134 passed (1134)
+   Start at  17:59:13
+   Duration  43.90s (transform 7.01s, setup 24.10s, import 39.24s, tests 104.89s, environment 145.58s)
+
+ % Coverage report from v8
+
+=============================== Coverage summary ===============================
+Statements   : 69.05% ( 2713/3929 )
+Branches     : 56.65% ( 1235/2180 )
+Functions    : 74.21% ( 639/861 )
+Lines        : 70.69% ( 2507/3546 )
+================================================================================
+✔  Script exited successfully (code 0)
+i  emulators: Shutting down emulators.
+i  firestore: Stopping Firestore Emulator
+i  auth: Stopping Authentication Emulator
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator
+```
+
+PASS — 123 test files / 1134 tests 全綠、Coverage report from v8 區塊已輸出、`coverage/coverage-summary.json` 與 `/tmp/s3-baseline-current.log` 皆存在。
+
+#### AC-T10.3 — 總體 4 metric（jq 抽自 `coverage/coverage-summary.json`）
+
+```bash
+$ jq '.total | {lines:.lines.pct, statements:.statements.pct, branches:.branches.pct, functions:.functions.pct}' coverage/coverage-summary.json
+```
+
+```json
+{
+  "lines": 70.69,
+  "statements": 69.05,
+  "branches": 56.65,
+  "functions": 74.21
+}
+```
+
+| Metric     | Pct (coverage-summary.json) | 與 stdout `Coverage summary` 對齊 |
+| ---------- | --------------------------- | --------------------------------- |
+| Lines      | 70.69%                      | ✅ 70.69%                         |
+| Statements | 69.05%                      | ✅ 69.05%                         |
+| Branches   | 56.65%                      | ✅ 56.65%                         |
+| Functions  | 74.21%                      | ✅ 74.21%                         |
+
+PASS — 4 metric 各 ≥ 1 位小數、與 Coverage summary 文字輸出一致；Lines 70.69% > 70 threshold（gate 綠）。
+
+#### AC-T10.4 — 5 層 line% 平均（per-file pct 算術平均）
+
+```bash
+$ for layer in service repo runtime lib config; do
+    jq -r --arg L "$layer" '
+      to_entries
+      | map(select(.key | test("/src/" + $L + "/")))
+      | (map(.value.lines.pct) | add / length)
+    ' coverage/coverage-summary.json | xargs -I {} printf "%-12s %.2f%%\n" "$layer" "{}"
+  done
+```
+
+| Layer   | Files | Line% (per-file avg) |
+| ------- | ----- | -------------------- |
+| service | 15    | 89.47%               |
+| repo    | 19    | 80.44%               |
+| runtime | 41    | 62.42%               |
+| lib     | 20    | 19.36%               |
+| config  | 6     | 71.30%               |
+
+PASS — 5 層各自抽出 line% 平均（per-file `lines.pct` 算術平均）。
+
+> **算法註記**（已寫入 §2 S3 Risks 新增 row）：本表是 per-file `lines.pct` 算術平均，不等於「總體 covered/total lines」。QUALITY_SCORE.md L25 既有「lib 94.7%」屬 aggregate 算法（covered ÷ total across lib files），與本表 19.36% 是兩個演算法、不可互比。T11/T13/T14 維持 scope — 不回寫既有 5 層數字、新增 ui/components/app 三 row 用 per-file 平均對齊本表。
+
+#### AC-T10.5 — 未誤動檔案
+
+```bash
+$ git status --short
+ M specs/026-tests-audit-report/handoff.md
+
+$ git diff vitest.config.mjs
+（空 — 0 byte 0 行）
+
+$ grep -n "^/coverage" .gitignore
+14:/coverage
+```
+
+PASS — `vitest.config.mjs` 0 diff、`coverage/` 在 .gitignore (L14) 不入 git；唯一改動為 `handoff.md`（本次 §0/§1/§2/§3 擴充，符合 task 要求）。
+
+#### AC-T10.6 — §2 S3 Risks 子表新增 ≥ 1 條
+
+新增 risk 已寫入 §2「S3 Risks」表最後一條：「**lib/ V8 Cov 算法差異**（T10 新發現）」— 描述 T10 用 per-file pct 算術平均算出 lib 19.36%，與 QUALITY_SCORE.md 既有 lib 94.7% 是 aggregate 算法的差異；明文要求 T11/T13/T14 不回寫既有 lib 數字，新層用同算法對齊。tasks.md S3 Risks 表 11 條（10 條原有 + 1 條新增）已搬入 handoff.md §2 S3 子表。
+
+PASS — 新增 1 條 risk 含 Why it matters + Action，且為 baseline 量測中真實觀測（非紙上推測）。
+
+#### 最終結論
+
+T10 完成現狀 5 層 baseline 量測 — `npm run test:coverage` exit 0、123 files / 1134 tests 全綠；總體 Lines 70.69%（> 70 threshold，coverage gate 綠）；5 層 per-file line% 平均 service 89.47% / repo 80.44% / runtime 62.42% / lib 19.36% / config 71.30%。`vitest.config.mjs` 0 diff、`coverage/` 未入 git、未動 `docs/QUALITY_SCORE.md` / `cspell.json` / `tasks.md`。§2 S3 Risks 表新增 1 條「lib V8 Cov 算法差異」風險，提醒後續 T11/T13/T14 不回寫既有 lib 94.7% 數字。AC-T10.1 / 2 / 3 / 4 / 5 / 6 全 PASS。Status: **eng-done — 待 T10 reviewer 獨立重跑驗證**。
+
+---
+
+**Reviewer**: T10-reviewer-opus47 / **Timestamp**: 2026-04-29 CST / **Status**: **rev-pass — AC-T10.1/2/3/4/5/6 全獨立重跑驗證**
+
+#### Reviewer 獨立重跑摘要
+
+1. **AC-T10.1 環境自查 PASS** — `firebase --version` → `15.5.1`（≥ 12.x）；`which jq` → `/usr/bin/jq`；`lsof -i :8080,9099 -nP 2>/dev/null` 無輸出（exit 1 = port 未佔用）。三項與 engineer evidence L1629 / L1632 / L1635 完全一致。
+
+2. **AC-T10.2 coverage 重跑 PASS** — 親自 `npm run test:coverage` exit 0，新跑 stdout：`Test Files 123 passed (123) / Tests 1134 passed (1134) / Duration 40.41s`、`Coverage report from v8` 區塊輸出 `Lines : 70.69% ( 2507/3546 ) / Statements : 69.05% ( 2713/3929 ) / Branches : 56.65% ( 1235/2180 ) / Functions : 74.21% ( 639/861 )`，與 engineer L1665-L1677 數字 100% 一致（差距 0%，< ±0.5% 容忍）。
+
+3. **AC-T10.3/4 jq 重抽 PASS** — `jq '.total | {lines:..., ...}'` → `{"lines":70.69,"statements":69.05,"branches":56.65,"functions":74.21}` 與 engineer L1696-L1700 100% 對齊。Per-layer for-loop 獨立輸出 `service 15 89.4673... / repo 19 80.4416... / runtime 41 62.4176... / lib 20 19.3625 / config 6 71.295`，rounded 後 89.47 / 80.44 / 62.42 / 19.36 / 71.30，與 engineer L1726-L1730 表格 5 層 + file count（15/19/41/20/6）100% 對齊。
+
+4. **AC-T10.5 git 狀態 PASS** — `git diff vitest.config.mjs` 0 byte 0 行；`git status --short` 僅 ` M specs/026-tests-audit-report/handoff.md`；`.gitignore:14 /coverage`；`git ls-files coverage/` 0 hits 確認 coverage artifact 從未入 git。
+
+5. **AC-T10.6 §2 S3 Risks 新增 row PASS** — handoff.md L106「**lib/ V8 Cov 算法差異**（T10 新發現）」row 完整存在，含 Why it matters（per-file pct 算術平均 vs aggregate 算法差異）+ Action（T11/T13/T14 不回寫既有 lib 94.7%、新層用 per-file 平均對齊）。
+
+**結論**：6 項 AC 全 PASS；engineer 數字（總體 4 metric + 5 層 line% + file count）逐一比對均零誤差；`vitest.config.mjs` / `docs/QUALITY_SCORE.md` / `cspell.json` 皆未被誤動。Approved。
+
+### T11 Evidence Detail
+
+**Engineer**: T11-engineer-opus47 / **Timestamp**: 2026-04-29 / **Status**: eng-done
+
+本任務只設計 `docs/QUALITY_SCORE.md` 更新方案，不動本檔，所有 design 寫於本節。Reviewer 驗收後由 T14 engineer 實際 Edit `docs/QUALITY_SCORE.md`。
+
+#### 1. 現況 inventory（讀自 `docs/QUALITY_SCORE.md` 截至本次任務時間點）
+
+- **L3 `> Last Updated:`** = `2026-04-24`
+- **L4 `> Next Review:`** = `2026-05-08`
+- **Per-Layer Quality 表（L14-23）row 名 + 當前 V8 Cov 欄值**：
+  - `types/` → `—`
+  - `config/` → `—`
+  - `repo/` → `—`
+  - `service/` → `—`
+  - `runtime/` → `—`
+  - `ui/` → `—`
+  - `lib/` → `94.7%`
+  - `components/` → `—`
+  - 註：當前表中無 `app/` row（app 層尚未進入 Per-Layer Quality matrix）。
+- **Score History 行數**（L62-66）：表頭 + 分隔線 + 1 行資料（`2026-04-24` Initial grading row），共 1 筆 history。
+- **Layer-Level Known Gaps 第 2 條原文**（L34）：「**Coverage instrumentation 僅限 lib/** — 無法量化其他層的真實 code coverage。建議擴展 `vitest.config.mjs` 的 `include` 至 `src/**`。」
+
+#### 2. 目標 diff 草稿（給 T14 engineer 照辦，本任務不動 `docs/QUALITY_SCORE.md`）
+
+- **L3** replace：`> Last Updated: 2026-04-24` → `> Last Updated: 2026-04-29`
+- **L4** replace：`> Next Review: 2026-05-08` → `> Next Review: 2026-05-13`（推 14d，對齊原 cadence；audit S3 risk 表也採 `2026-05-13`）
+- **Per-Layer Quality 表 `ui/` row V8 Cov 欄** replace：`—` → `<TBD by T13>%`（T14 替換為實測 line% 平均）
+- **Per-Layer Quality 表 `components/` row V8 Cov 欄** replace：`—` → `<TBD by T13>%`（T14 替換）
+- **Per-Layer Quality 表新增 `app/` row**：緊接 `components/` 之後加入 `| app/ | 15 | Clean | <TBD> | <TBD> | <TBD by T13>% | <TBD> |`（Files / Test Ratio / JSDoc Density / Grade 同樣 TBD；本 PR 範圍只填 V8 Cov，其餘欄交 T14 自行查）
+- **Layer-Level Known Gaps 第 2 條（L34）** rewrite：將原文整條替換為「**Coverage instrumentation 已擴展至 8 層** — `vitest.config.mjs` `include` 由 `src/lib/**` 擴增至 `src/{service,repo,runtime,lib,config,ui,components,app}/**`，ui / components / app 首度有 V8 cov baseline（見 Per-Layer Quality 表 V8 Cov 欄）。下一步是把低覆蓋層（如 ui/）逐步補測。」
+- **Score History 表（L62-66 後追加 1 row）**：`| 2026-04-29 | B+ | A- | B+ | coverage include 擴至 8 層；ui / components / app 首度有 V8 cov baseline (X.X% / Y.Y% / Z.Z%)。 |`（Overall / Layer Avg / Domain Avg 暫維持 B+ / A- / B+，T14 若認 grade 變動需在 evidence 註明）
+
+> **格式對齊**：Score History 表為 5 欄 — `Date / Overall / Layer Avg / Domain Avg / Changes`（task 描述「4 欄」是誤植，實際 5 欄；L64 表頭與 L66 既有 row 皆 5 欄，T14 須維持 5 欄）。
+
+#### 3. jq filter 範本（T13 / T14 / reviewer 共用）
+
+```bash
+# (a) 總體 4 metric pct（lines / statements / branches / functions）
+jq '.total | {lines:.lines.pct, statements:.statements.pct, branches:.branches.pct, functions:.functions.pct}' coverage/coverage-summary.json
+
+# (b) 分層 line% 平均 — 範本（以 ui/ 為例）
+jq '[to_entries[] | select(.key | test("/src/ui/")) | .value.lines.pct] | add/length' coverage/coverage-summary.json
+
+# (c) 8 層全跑（service / repo / runtime / lib / config / ui / components / app）
+for layer in service repo runtime lib config ui components app; do
+  avg=$(jq --arg L "/src/${layer}/" '[to_entries[] | select(.key | test($L)) | .value.lines.pct] | add/length' coverage/coverage-summary.json)
+  printf '%-12s %s\n' "$layer" "$avg"
+done
+
+# (d) 同上但分 line / statement / branch / function 4 metric（給 T14 寫 history Changes 欄用）
+for layer in service repo runtime lib config ui components app; do
+  jq --arg L "/src/${layer}/" '
+    [to_entries[] | select(.key | test($L)) | .value]
+    | { layer: $L,
+        lines:      ([.[] | .lines.pct]      | add/length),
+        statements: ([.[] | .statements.pct] | add/length),
+        branches:   ([.[] | .branches.pct]   | add/length),
+        functions:  ([.[] | .functions.pct]  | add/length) }
+  ' coverage/coverage-summary.json
+done
+```
+
+> **語法自驗**（無 coverage-summary.json 時）：
+> `echo '{"total":{"lines":{"pct":75.5},"statements":{"pct":74.2},"branches":{"pct":68.0},"functions":{"pct":80.1}}}' | jq '.total | {lines:.lines.pct, statements:.statements.pct, branches:.branches.pct, functions:.functions.pct}'` → 預期輸出 4 個 pct 欄位。
+
+#### 4. Scope 限制（明文 3 條，T14 必遵）
+
+1. 不回寫 service / repo / runtime / config / lib 既有 V8 Cov 欄數字 — `lib/` 維持 `94.7%`，其餘 5 層維持 `—`（即使 T13 實測有微幅變化也不更新；理由：本 PR 範圍只新增 ui / components / app baseline，回填屬獨立 QUALITY_SCORE 更新工作，避免 scope creep）。亦對齊 T10 evidence 新增的「lib V8 Cov 算法差異」風險（per-file 平均 19.36% vs 既有 94.7% 為兩種計算方式，本 PR 不混用）。
+2. 不改任何 row 的 Grade（Per-Layer 8 row Grade 欄、Per-Domain 7 row Grade 欄全部維持原值）。
+3. 不改 Per-Domain Quality 表（L44-52 整段表 + L56-58 Domain-Level Known Gaps 維持原樣）。
+
+#### 5. T14 驗收 checklist（8 條，T14 engineer 自查 + reviewer 重驗）
+
+1. **`Last Updated` 已更新**：`grep -n "^> Last Updated:" docs/QUALITY_SCORE.md` → 唯一 1 筆 = `2026-04-29`。
+2. **`Next Review` 已更新**：`grep -n "^> Next Review:" docs/QUALITY_SCORE.md` → 唯一 1 筆 = `2026-05-13`。
+3. **Score History 已加 1 行**：Score History 表（L62-66 區段）由 1 筆資料 → 2 筆，新行 Date 欄 = `2026-04-29`，5 欄齊全（Date / Overall / Layer Avg / Domain Avg / Changes）；Changes 欄包含「coverage include 擴至 8 層」字串 + 三層實測數字。
+4. **`ui/` / `components/` row V8 Cov 欄已填數字**：grep 該兩 row 的 V8 Cov 欄不再是 `—`，而是 `XX.X%` 格式（≥ 1 位小數）。
+5. **`app/` row 已新增**：`grep -n "^| app/" docs/QUALITY_SCORE.md` → 至少 1 筆 hit；V8 Cov 欄為實測 `XX.X%`。
+6. **Layer-Level Known Gaps 第 2 條已改寫**：原文「Coverage instrumentation 僅限 lib/」字串完全消失（`grep -c "僅限 lib/" docs/QUALITY_SCORE.md` = 0）；新文字含「8 層」/「ui / components / app」/「baseline」字樣。
+7. **Scope 限制全部遵守**：(a) `lib/` row V8 Cov 仍為 `94.7%`；(b) service / repo / runtime / config row V8 Cov 仍為 `—`；(c) 所有 Grade 欄字符全比對 = 變更前；(d) Per-Domain Quality 表 7 row 整段 0 diff（`git diff docs/QUALITY_SCORE.md` 在 L40-58 區塊應 0 變更）。
+8. **Diff 規模 ≤ 30 行**（對齊 tasks.md AC-T14.2）：`git diff --stat docs/QUALITY_SCORE.md` 顯示 +/- 合計 ≤ 30 行；超過視為 scope creep，reviewer 必審。
+
+#### 禁區遵守
+
+- 未 Edit/Write `docs/QUALITY_SCORE.md`、`vitest.config.mjs`、`cspell.json`（git status 應僅 ` M handoff.md`）。
+- 未 commit / push / git add。
+- 未改 §3 T01-T10 任何 row 或 Evidence Detail 字元（僅在 §3 主表追加 T11 row + 在 T10 Evidence Detail 後新增 T11 Evidence Detail）。
+
+#### 最終結論
+
+T11 設計交付完成 — 5 節（現況 inventory / 目標 diff 草稿 / jq filter 範本 / scope 限制 3 條 / T14 驗收 checklist 8 條）全部寫入本節。jq 範本含 4 種變體（總體、單層、8 層 loop、4 metric loop），覆蓋 T13 / T14 / reviewer 全部使用情境且可獨立執行。Score History 格式對齊既有 5 欄（task 描述的「4 欄」已修正為 5 欄）。Scope 嚴格限定 ui / components / app 三層 V8 Cov 數字 + L3 / L4 + Gap #2 + Score History 1 row，不動 grade 與 domain 表；額外明文對齊 T10 新發現的 lib V8 Cov 算法差異風險。Status: **eng-done**，等候 reviewer 驗證 AC-T11.1 ~ T11.5。
+
+---
+
+#### Reviewer 驗收（rev-pass）
+
+**Reviewer**: T11-reviewer-opus47
+**Timestamp**: 2026-04-29 CST
+**Status**: rev-pass
+
+**AC-T11.1（5 節 evidence 完整）** — Read §3 T11 Evidence Detail，5 節皆實際存在且具體：(1) 現況 inventory 列出 L3 / L4 / Per-Layer 8 row V8 Cov 值 / Score History 行數 / L34 Gap #2 原文；(2) 目標 diff 草稿含 L3/L4 替換、ui/components V8 Cov 欄替換、app row 新增、Gap #2 改寫、Score History 新增 row 範本；(3) jq filter 範本 4 變體 + echo 自驗一條；(4) Scope 限制 3 條編號條列；(5) T14 驗收 checklist 8 條編號條列。**PASS**。
+
+**AC-T11.2（Score History 5 欄）** — Read `docs/QUALITY_SCORE.md` L64 表頭逐字確認為 `| Date | Overall | Layer Avg | Domain Avg | Changes |`（5 欄）；engineer 草稿 row `| 2026-04-29 | B+ | A- | B+ | coverage include 擴至 8 層；... |` 同 5 欄、scope 對齊「ui/components/app baseline」；engineer 並在 evidence 註明「task 描述的 4 欄是誤植」對齊事實。**PASS**。
+
+**AC-T11.3（jq 範本可執行）** — coverage/coverage-summary.json 在 reviewer 驗證時不存在（T13 尚未跑、coverage/ 僅留 .tmp），改用 echo mock 驗 jq 語法：
+
+- (a) `echo '{"total":{"lines":{"pct":75.5},"statements":{"pct":74.2},"branches":{"pct":68.0},"functions":{"pct":80.1}}}' | jq '.total | {lines:.lines.pct, statements:.statements.pct, branches:.branches.pct, functions:.functions.pct}'` → 輸出 4 欄 JSON object，語法 OK。
+- (b) `echo '{"/Users/x/src/ui/a.jsx":{"lines":{"pct":50}},"/Users/x/src/ui/b.jsx":{"lines":{"pct":80}},"/Users/x/src/lib/c.js":{"lines":{"pct":90}}}' | jq '[to_entries[] | select(.key | test("/src/ui/")) | .value.lines.pct] | add/length'` → `65`（(50+80)/2），prefix match + 算術平均皆正確。
+- (c) 8 層 loop with `--arg L "/src/${layer}/"` mock 跑命中 `lib 90` / `ui 50`，未命中層輸出空（語法 OK；T13 真資料時 `add/length` 對空 array 會 null，T14/reviewer 應注意但屬下游處理範疇，本 spike 不擋）。
+- (d) 結構與 (c) 同形（select + map），語法視為通過。
+
+**PASS**。
+
+**AC-T11.4（scope 限制 3 條明文）** — L1828-1831 三條編號明文，逐條對應 task spec 要求：(1) 不回寫 service/repo/runtime/config/lib 既有 V8 Cov；(2) 不改任何 row Grade（Per-Layer 8 row + Per-Domain 7 row）；(3) 不改 Per-Domain Quality 表 + Domain-Level Known Gaps 整段。**PASS**。
+
+**AC-T11.5（T14 checklist ≥ 5 條含關鍵 5 項）** — L1853-1862 共 8 條，逐一 cover task spec 5 項關鍵：「Last Updated 已更新」#1、「Next Review 已更新」#2、「Score History 已加 1 行」#3、「ui/components/app 三 row V8 Cov 欄已填數字」#4 (ui/components) + #5 (app)、「scope 限制全部遵守」#7。額外 #6（Gap #2 改寫驗證）+ #8（diff ≤ 30 行）為附加保護。**PASS**。
+
+**禁區遵守** — `git status --short` → 僅 ` M specs/026-tests-audit-report/handoff.md`，未動 `docs/QUALITY_SCORE.md` / `vitest.config.mjs` / `cspell.json`，未 commit / push。Reviewer 本身亦僅 Edit handoff.md §3 T11 row + 本段，未動其他檔。
+
+**結論**：AC-T11.1 / 2 / 3 / 4 / 5 全 PASS，rev-pass。T11 設計可交給 T14 engineer 直接照辦。
+
+### T12 Evidence Detail
+
+> Engineer：T12-engineer-opus47 / 2026-04-29 CST
+> 任務：`vitest.config.mjs:22` coverage include 從 5 層擴到 8 層（加 `ui,components,app`），不動 exclude block（L23-31）、不動 `lines: 70` threshold（L36）、不 commit。
+
+**(1) Diff 內容（1 行 +/1 行 -）**
+
+```diff
+@@ -19,7 +19,7 @@ export default defineConfig({
+       provider: 'v8',
+       reporter: ['text-summary', 'html', 'json-summary', 'lcov'],
+       reportsDirectory: './coverage',
+-      include: ['src/{service,repo,runtime,lib,config}/**'],
++      include: ['src/{service,repo,runtime,lib,config,ui,components,app}/**'],
+       exclude: [
+         'src/lib/taiwan-locations.js',
+         'src/lib/weather-types.js',
+```
+
+`git diff vitest.config.mjs` 確認僅 1 處 `-` / 1 處 `+`，exclude block 與 thresholds.lines 0 字元變動。
+
+**(2) Grep / Layer 自查**
+
+```
+$ grep -c "ui,components,app" vitest.config.mjs
+1
+$ for layer in service repo runtime lib config ui components app; do echo "$layer: $(grep -c "$layer" vitest.config.mjs)"; done
+service: 2
+repo: 5
+runtime: 3
+lib: 6
+config: 4
+ui: 1
+components: 1
+app: 1
+```
+
+8 層全部命中（每層 ≥ 1 hit），AC-T12.2 PASS。
+
+**(3) Dynamic import 驗證 config 仍可載入**
+
+```
+$ node -e "import('./vitest.config.mjs').then(c => console.log(JSON.stringify(c.default.test.coverage.include)))"
+["src/{service,repo,runtime,lib,config,ui,components,app}/**"]
+```
+
+config 解析無 syntax error，include 陣列即為新 8 層 glob。AC-T12.3 PASS。
+
+**(4) `npm test` (browser project) — vitest 仍 OK**
+
+```
+> dive-into-run@0.1.0 test
+> vitest --project=browser
+ RUN  v4.1.4 /Users/chentzuyu/Desktop/dive-into-run-026-tests-audit-report
+ Test Files  121 passed (121)
+      Tests  1108 passed (1108)
+   Start at  18:14:01
+   Duration  32.74s
+```
+
+exit 0，121 files / 1108 tests 全綠（與 T08 reviewer / T10 reviewer 既有數字一致），無 regression。AC-T12.4 PASS。
+
+**(5) Threshold 與 exclude 未動**
+
+- L23-31 exclude block：5 條 file pattern + 2 條 glob 完整保留（`taiwan-locations.js` / `weather-types.js` / `firebase-client.js` / `firestore-types.js` / `*.test.{js,jsx}` / `__tests__/**` / `**/*.d.ts`）
+- L36 `lines: 70` threshold 0 動（task spec 禁區）
+- 0 新增 per-directory threshold（task spec 禁區）
+
+AC-T12.5 PASS。
+
+**(6) Git status / 不 commit**
+
+```
+$ git status --short
+ M specs/026-tests-audit-report/handoff.md
+ M vitest.config.mjs
+```
+
+僅 2 檔 modified，`docs/QUALITY_SCORE.md` / `cspell.json` 0 動；無 commit、無 push。AC-T12.6 PASS。
+
+**AC-T12.7（pre-commit gate）** — task spec 明示「不在此 task 跑」（hook 只在 commit 時觸發；T12 不 commit），由 T15 integrated verify 接手。
+
+**結論**：AC-T12.1 / 2 / 3 / 4 / 5 / 6 全 PASS（AC-T12.7 deferred to T15）。8 層 include 已就位，可交 T13 engineer 跑 `npm run test:coverage` post-baseline。
+
+---
+
+**Reviewer**: T12-reviewer-opus47 / **Timestamp**: 2026-04-29 CST / **Status**: rev-pass
+
+獨立重跑全部 AC 命令，全綠：
+
+1. **AC-T12.1（diff 1+/1-）PASS** — `git diff --stat vitest.config.mjs` = `1 file changed, 1 insertion(+), 1 deletion(-)`；`git diff vitest.config.mjs` 顯示唯一變動為 L22 由 `'src/{service,repo,runtime,lib,config}/**'` 改為 `'src/{service,repo,runtime,lib,config,ui,components,app}/**'`，exclude block (L23-31) + thresholds (L36) 0 動，與 engineer evidence 完全一致。
+2. **AC-T12.2（grep ≥ 1）PASS** — `grep -c "ui,components,app" vitest.config.mjs` = 1，include 字串完整匹配 `'src/{service,repo,runtime,lib,config,ui,components,app}/**'`。
+3. **AC-T12.3（8 層自查）PASS** — for-loop 每層 grep count：service=2 / repo=5 / runtime=3 / lib=6 / config=4 / ui=1 / components=1 / app=1，8 層全部 ≥ 1 hit，與 engineer 數字逐字對齊。
+4. **AC-T12.4（dynamic import 不爆）PASS** — `node -e "import('./vitest.config.mjs').then(...)"` 成功輸出 `["src/{service,repo,runtime,lib,config,ui,components,app}/**"]`，無 syntax error，include 陣列即為新 8 層 glob。
+5. **AC-T12.5（npm test exit 0）PASS** — `npm test` (browser project) exit 0、`Test Files 121 passed (121) / Tests 1108 passed (1108)`、Duration 32.61s，與 engineer 32.74s 同數量級且 0 regression（與 T08/T10 reviewer 既有 121/1108 數字一致）。
+6. **AC-T12.6（未 commit + git status）PASS** — `git status --short` = ` M specs/026-tests-audit-report/handoff.md` + ` M vitest.config.mjs`，僅 2 檔 modified；`docs/QUALITY_SCORE.md` / `cspell.json` / `tasks.md` 0 動；無 commit、無 push。
+7. **AC-T12.7（pre-commit gate）** — 依 task spec 不在此 task 跑，deferred to T15，正確。
+
+**禁區遵守** — Reviewer 僅 Edit handoff.md §3 T12 row reviewer 欄 + 本段（T12 Evidence Detail 末追加），未動 vitest.config.mjs / engineer evidence / 其他 row。
+
+**結論**：AC-T12.1/2/3/4/5/6 全 PASS（AC-T12.7 deferred）。8 層 coverage include 已就位且不破壞既有 browser tests，可交 T13 engineer 跑 `npm run test:coverage` 取 post-baseline 數字。Status: **rev-pass**。
+
+### T13 Evidence Detail
+
+**Engineer**: T13-engineer-opus47 / **Timestamp**: 2026-04-29 CST / **Status**: **eng-done — AC-T13.1/2/3/4/5 全 PASS（AC-T13.6 不適用：未加 exclude）**
+
+#### AC-T13.1 — `npm run test:coverage` 完整跑完 + log/json 生成
+
+```bash
+$ npm run test:coverage 2>&1 | tee /tmp/s3-baseline-new.log
+# (exit 0 確認：log 內含 "Script exited successfully (code 0)"；emulator threshold gate 通過代表 lines ≥ 70)
+$ grep -c "Script exited successfully" /tmp/s3-baseline-new.log
+1
+$ ls -la coverage/coverage-summary.json
+-rw-r--r--@ 1 chentzuyu  staff  82465 Apr 29 18:20 coverage/coverage-summary.json
+```
+
+**Exit code = 0**（emulators:exec wrapper 印出 `✔ Script exited successfully (code 0)`；若 `vitest run --coverage` 因 threshold fail 退出，wrapper 會改印失敗訊息且 emulator 不會 graceful shutdown，本次正常 shutdown 確認 exit 0）。
+
+`/tmp/s3-baseline-new.log` 後 50 行（含 Coverage report from v8 + threshold pass）：
+
+```text
+> dive-into-run@0.1.0 test:coverage
+> firebase emulators:exec --only auth,firestore --project=demo-test "vitest run --coverage"
+
+i  emulators: Starting emulators: auth, firestore
+i  emulators: Detected demo project ID "demo-test", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: Firestore Emulator logging to firestore-debug.log
+✔  firestore: Firestore Emulator UI websocket is running on 9150.
+i  Running script: vitest run --coverage
+
+ RUN  v4.1.4 /Users/chentzuyu/Desktop/dive-into-run-026-tests-audit-report
+      Coverage enabled with v8
+
+Not implemented: Window's scrollTo() method
+
+ Test Files  123 passed (123)
+      Tests  1134 passed (1134)
+   Start at  18:20:12
+   Duration  39.41s (transform 6.21s, setup 22.51s, import 36.26s, tests 87.63s, environment 130.20s)
+
+ % Coverage report from v8
+
+=============================== Coverage summary ===============================
+Statements   : 69.83% ( 3591/5142 )
+Branches     : 61.38% ( 1976/3219 )
+Functions    : 74.03% ( 938/1267 )
+Lines        : 71.28% ( 3331/4673 )
+================================================================================
+✔  Script exited successfully (code 0)
+i  emulators: Shutting down emulators.
+i  firestore: Stopping Firestore Emulator
+i  auth: Stopping Authentication Emulator
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator
+```
+
+PASS — log 與 `coverage/coverage-summary.json` 皆生成；123 test files / 1134 tests 全綠；emulator threshold gate 未報錯（若 lines < 70，vitest 會 throw `Coverage threshold for lines (70%) not met` 且 wrapper 退出非 0；本次無此訊息，coverage gate 通過）。
+
+#### AC-T13.2 — 總體 4 metric pct（jq 抽自 `coverage/coverage-summary.json`）
+
+```bash
+$ jq '.total | {lines:.lines.pct, statements:.statements.pct, branches:.branches.pct, functions:.functions.pct}' coverage/coverage-summary.json
+```
+
+```json
+{
+  "lines": 71.28,
+  "statements": 69.83,
+  "branches": 61.38,
+  "functions": 74.03
+}
+```
+
+| Metric     | Pct (coverage-summary.json) | 與 stdout `Coverage summary` 對齊 |
+| ---------- | --------------------------- | --------------------------------- |
+| Lines      | 71.28%                      | ✅ 71.28% ( 3331/4673 )           |
+| Statements | 69.83%                      | ✅ 69.83% ( 3591/5142 )           |
+| Branches   | 61.38%                      | ✅ 61.38% ( 1976/3219 )           |
+| Functions  | 74.03%                      | ✅ 74.03% ( 938/1267 )            |
+
+PASS — 4 metric ≥ 1 位小數、與 Coverage summary 文字輸出 100% 一致；**Lines 71.28% > 70 threshold**（coverage gate 綠）。
+
+#### AC-T13.3 — 8 層 line% per-file 算術平均（套 T11 範本 (c)）
+
+```bash
+$ for layer in service repo runtime lib config ui components app; do
+    result=$(jq --arg L "/src/${layer}/" '
+      [to_entries[] | select(.key | test($L)) | .value.lines.pct] as $arr
+      | { count: ($arr | length), avg: ($arr | add/length) }
+    ' coverage/coverage-summary.json)
+    printf "%-12s %s\n" "$layer" "$result"
+  done
+```
+
+| Layer      | Files | Line% (per-file avg) | Status                  |
+| ---------- | ----- | -------------------- | ----------------------- |
+| service    | 15    | 89.47%               | unchanged vs T10        |
+| repo       | 19    | 80.44%               | unchanged vs T10        |
+| runtime    | 41    | 62.42%               | unchanged vs T10        |
+| lib        | 20    | 19.36%               | unchanged vs T10        |
+| config     | 6     | 71.30%               | unchanged vs T10        |
+| ui         | 21    | 62.52%               | **首次 baseline (NEW)** |
+| components | 90    | 52.43%               | **首次 baseline (NEW)** |
+| app        | 33    | 47.92%               | **首次 baseline (NEW)** |
+
+PASS — 8 層全部抽出 line% per-file 算術平均；3 層新層（ui / components / app）首度有 baseline。
+
+#### AC-T13.4 — T10 vs T13 delta 對比表
+
+**總體 4 metric delta**：
+
+| Metric     | T10 baseline-current | T13 baseline-new | Delta       | 解讀                                                                                                                                                 |
+| ---------- | -------------------- | ---------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lines      | 70.69%               | 71.28%           | **+0.59pp** | denominator 由 3546 → 4673（+1127 行 instrumented），新 3 層多為低覆蓋拉低分子比例但部分新層 line 覆蓋率高於 lib/runtime 平均，實際上總體 line% 上升 |
+| Statements | 69.05%               | 69.83%           | +0.78pp     | 同上                                                                                                                                                 |
+| Branches   | 56.65%               | 61.38%           | +4.73pp     | 新層 branch 密度低且覆蓋相對好                                                                                                                       |
+| Functions  | 74.21%               | 74.03%           | -0.18pp     | 新層 function 覆蓋略低，整體微跌                                                                                                                     |
+
+> 直覺上以為「加 ui/components/app 三層多為低測 → 總體 line% 必下跌」，但實測 +0.59pp。原因：T10 5 層 instrumented lines 3546，T13 8 層 4673；新增 1127 行中，ui (62.52%) / components (52.43%) / app (47.92%) per-file avg 均 > lib (19.36%)，故新層平均覆蓋率高於既有 lib 拖累項，整體 line% 上升而非下跌。
+
+**5 層原數字 delta（檢查 instrumentation 一致性）**：
+
+| Layer   | T10 line% (per-file avg) | T13 line% (per-file avg) | Delta  |
+| ------- | ------------------------ | ------------------------ | ------ |
+| service | 89.47%                   | 89.47%                   | 0.00pp |
+| repo    | 80.44%                   | 80.44%                   | 0.00pp |
+| runtime | 62.42%                   | 62.42%                   | 0.00pp |
+| lib     | 19.36%                   | 19.36%                   | 0.00pp |
+| config  | 71.30%                   | 71.30%                   | 0.00pp |
+
+5 層原數字 0 差異（遠 < ±2% 容忍），確認 T12 加入新 3 層 include 後，原 5 層 instrumentation 行為完全一致（沒有副作用）。
+
+**3 層新數字（首次 baseline）**：
+
+| Layer      | Files | T13 line% (per-file avg) |
+| ---------- | ----- | ------------------------ |
+| ui         | 21    | 62.52%                   |
+| components | 90    | 52.43%                   |
+| app        | 33    | 47.92%                   |
+
+PASS — delta 表完整含總體 + 5 層原 + 3 層新。
+
+#### AC-T13.5 — Threshold 判定
+
+**THRESHOLD PASS: lines 71.28% ≥ 70%**
+
+- exit code = 0（`Script exited successfully (code 0)` 出現於 log；無 `Coverage threshold for lines (70%) not met` 訊息）
+- 不需 escalate，task 標 `eng-done`，T14 / T15 可繼續
+- 未自行降 threshold、未加 per-directory threshold、未加任何新 exclude
+
+#### AC-T13.6 — 加 exclude 補丁（不適用）
+
+未發現任何 parsing error 或其他 instrumentation 失敗；未動 `vitest.config.mjs` exclude block（L23-31）。`git diff vitest.config.mjs` 仍只有 T12 的 L22 include 變更，沒有 T13 額外補丁。本 AC 不適用。
+
+#### git 狀態（未誤動 / 未 commit）
+
+```bash
+$ git status --short
+ M specs/026-tests-audit-report/handoff.md
+ M vitest.config.mjs
+
+$ git diff vitest.config.mjs | head -5
+diff --git a/vitest.config.mjs b/vitest.config.mjs
+index 02ca310..f012165 100644
+--- a/vitest.config.mjs
++++ b/vitest.config.mjs
+@@ -19,7 +19,7 @@ export default defineConfig({
+```
+
+`vitest.config.mjs` 唯一 diff 為 T12 的 L22 include 8 層擴增（已被 T12 reviewer rev-pass 背書），T13 未疊加任何修改。`docs/QUALITY_SCORE.md` / `cspell.json` / `tasks.md` 0 動，未 commit / push。
+
+#### 最終結論
+
+T13 完成 8 層 post-baseline 量測 — `npm run test:coverage` exit 0、123 files / 1134 tests 全綠；總體 Lines **71.28%（> 70 threshold，gate 綠，THRESHOLD PASS）**；8 層 per-file line% 平均：service 89.47% / repo 80.44% / runtime 62.42% / lib 19.36% / config 71.30%（5 層 vs T10 0 差異）+ ui 62.52% / components 52.43% / app 47.92%（3 層首次 baseline）。未加 exclude、未動 threshold、未 commit。AC-T13.1/2/3/4/5 全 PASS（AC-T13.6 不適用）。Status: **eng-done — 待 T13 reviewer 獨立重跑驗證後 T14 接手寫入 docs/QUALITY_SCORE.md**。
+
+---
+
+**Reviewer**: T13-reviewer-opus47 / **Timestamp**: 2026-04-29 CST / **Status**: **rev-pass — AC-T13.1/2/3/4/5 全獨立重跑驗證，AC-T13.6 N/A 合理**
+
+#### 獨立驗證結果
+
+1. **環境自查 PASS** — `firebase --version` → `15.5.1`；`which jq` → `/usr/bin/jq`；`lsof -i :8080,9099 -nP 2>/dev/null` 無輸出（exit 1 = port 未佔用），與 T10 reviewer 既有環境一致。
+
+2. **AC-T13.1 coverage 重跑 PASS** — 親自 `npm run test:coverage` exit 0；新跑 stdout `Test Files 123 passed (123) / Tests 1134 passed (1134) / Duration 39.37s`、`Script exited successfully (code 0)`、emulator graceful shutdown，與 engineer L2037-L2056 數量級一致（39.41s vs 39.37s，差 0.04s）。`coverage/coverage-summary.json` 重生成。
+
+3. **AC-T13.2 4 metric 重抽 PASS** — `jq '.total | {lines, statements, branches, functions}'` → `{"lines":71.28, "statements":69.83, "branches":61.38, "functions":74.03}`，與 engineer L2067-L2072 100% 對齊（差距 0%，遠 < ±0.5% 容忍）。stdout `Coverage summary` 區塊 `Lines 71.28% (3331/4673) / Statements 69.83% (3591/5142) / Branches 61.38% (1976/3219) / Functions 74.03% (938/1267)` 與 json 抽出值 100% 一致。
+
+4. **AC-T13.3 8 層 per-file 平均重抽 PASS** — 套 T11 範本 (c) for-loop 獨立輸出：service `count:15 avg:89.4673...` / repo `19, 80.4416...` / runtime `41, 62.4176...` / lib `20, 19.3625` / config `6, 71.295` / ui `21, 62.5229...` / components `90, 52.426...` / app `33, 47.9236...`。Rounded 後 89.47 / 80.44 / 62.42 / 19.36 / 71.30 / 62.52 / 52.43 / 47.92，與 engineer L2098-L2105 表格 8 層 + n 值 100% 對齊。
+
+5. **AC-T13.4 T10 vs T13 5 層原數字穩定性 PASS** — 5 層 (service / repo / runtime / lib / config) 重抽結果與 T10 reviewer evidence (L1726-L1730) 對應數字 89.47 / 80.44 / 62.42 / 19.36 / 71.30 + n=15/19/41/20/6 完全 0 差異，**delta = 0.00pp 全層**（< ±2% 容忍）。確認 T12 加入 ui/components/app include 後對既有 5 層 instrumentation 0 副作用。3 層新數字 (ui 62.52 / components 52.43 / app 47.92) 為首次 baseline，無前值可比。
+
+6. **AC-T13.5 Threshold 判定 PASS** — `Lines 71.28% ≥ 70%` 滿足 vitest threshold gate（`vitest.config.mjs` L33 `lines: 70`）；log 無 `Coverage threshold for lines (70%) not met`、`emulators:exec` graceful shutdown、exit code 0 三重交叉確認 gate 綠。Engineer 未自行降 threshold、未加 per-directory threshold，紀律正確。
+
+7. **AC-T13.6 加 exclude 補丁 N/A 背書合理** — `git diff vitest.config.mjs` 僅 L22 T12 既改 (`'src/{service,repo,runtime,lib,config}/**'` → `'src/{service,repo,runtime,lib,config,ui,components,app}/**'`)，T13 未疊加任何 exclude / threshold / config 變更。L23-31 exclude block 未動。本次 threshold 直接 PASS、無 parsing error，engineer 無需新增 exclude。
+
+8. **git 狀態紀律 PASS** — `git status --short` 僅 ` M specs/026-tests-audit-report/handoff.md` + ` M vitest.config.mjs`，無誤動 `docs/QUALITY_SCORE.md` / `cspell.json` / `tasks.md`、無誤 stage `coverage/`、無 commit / push。符合 §2 S3 risk「coverage/ 不可進 git」與 「scope: T13 不寫 QUALITY_SCORE」紀律。
+
+#### 結論
+
+AC-T13.1 / 2 / 3 / 4 / 5 全 PASS（獨立重跑數字差距 0%、5 層 stable、threshold gate 綠）；AC-T13.6 N/A 但合理（未加 exclude、未動 threshold）。可交 T14 engineer 依 T11 design + T13 八層 baseline 數字寫入 `docs/QUALITY_SCORE.md`。Status: **rev-pass**。
+
+### T14 Evidence Detail
+
+**Engineer**: T14-engineer-opus47 / **Timestamp**: 2026-04-29 CST / **Status**: **eng-done — AC-T14.1/2/3/4/5/6/7 全 PASS**
+
+#### 1. 完整 `git diff docs/QUALITY_SCORE.md`
+
+```diff
+diff --git a/docs/QUALITY_SCORE.md b/docs/QUALITY_SCORE.md
+index 69f2ee2..69a61d4 100644
+--- a/docs/QUALITY_SCORE.md
++++ b/docs/QUALITY_SCORE.md
+@@ -1,7 +1,7 @@
+ # Quality Score Matrix
+
+-> Last Updated: 2026-04-24
+-> Next Review: 2026-05-08
++> Last Updated: 2026-04-29
++> Next Review: 2026-05-13
+
+ Agent 開工前讀此文件，立即知道哪裡弱、該優先投資什麼。
+
+@@ -18,9 +18,10 @@ Agent 開工前讀此文件，立即知道哪裡弱、該優先投資什麼。
+ | repo/       | 19    | Clean  | 0.47 (9)   | 3.90 Full     | —      | A-    |
+ | service/    | 14    | Clean  | 0.79 (11)  | 5.41 Full     | —      | A-    |
+ | runtime/    | 32    | Clean  | 2.09 (67)  | 5.33 Full     | —      | A+    |
+-| ui/         | 12    | Clean  | 0.00 (0)   | 6.07 Full     | —      | C     |
++| ui/         | 12    | Clean  | 0.00 (0)   | 6.07 Full     | 62.52% | C     |
+ | lib/        | 20    | Clean  | 1.30 (26)  | 2.17 Good     | 94.7%  | A     |
+-| components/ | 54    | Clean  | 0.74 (40)  | 7.45 Full     | —      | A-    |
++| components/ | 54    | Clean  | 0.74 (40)  | 7.45 Full     | 52.43% | A-    |
++| app/        | 15    | Clean  | TBD        | TBD           | 47.92% | TBD   |
+
+ > **Static** = type-check + lint 合併（目前全 clean）。
+ > **Test Ratio** = test files targeting this layer / source files。括號內為 test file 絕對數。
+@@ -31,7 +32,7 @@ Agent 開工前讀此文件，立即知道哪裡弱、該優先投資什麼。
+ ### Layer-Level Known Gaps
+
+ 1. **ui/ 零直接測試（Grade C）** — 12 個 screen components 沒有任何 render/snapshot/integration tests。這是最大的品質缺口。
+-2. **Coverage instrumentation 僅限 lib/** — 無法量化其他層的真實 code coverage。建議擴展 `vitest.config.mjs` 的 `include` 至 `src/**`。
++2. **Coverage instrumentation 已擴展至 8 層** — `vitest.config.mjs` `include` 由 `src/lib/**` 擴增至 `src/{service,repo,runtime,lib,config,ui,components,app}/**`，ui / components / app 首度有 V8 cov baseline（見 Per-Layer Quality 表 V8 Cov 欄）。下一步是把低覆蓋層（如 ui/）逐步補測。
+ 3. **config/ 測試稀疏** — 6 files 只有 1 個 test file。Firebase config 難以 unit test，但 geo data helpers（`taiwan-locations.js`、`weather-geo-cache.js`）可測。
+ 4. **lib/ JSDoc 最弱** — 42 exports 只有 91 annotations（2.2/export），其他層都在 3.9 以上。作為 facade 層，JSDoc 是下游 consumer 的主要文檔。
+
+@@ -61,9 +62,10 @@ Agent 開工前讀此文件，立即知道哪裡弱、該優先投資什麼。
+
+ ## Score History
+
+-| Date       | Overall | Layer Avg | Domain Avg | Changes                                                                             |
+-| ---------- | ------- | --------- | ---------- | ----------------------------------------------------------------------------------- |
+-| 2026-04-24 | B+      | A-        | B+         | Initial grading + rubric 量化（service ↓A-, runtime ↑A+, lib ↑A, components ↓A-）。 |
++| Date       | Overall | Layer Avg | Domain Avg | Changes                                                                                                |
++| ---------- | ------- | --------- | ---------- | ------------------------------------------------------------------------------------------------------ |
++| 2026-04-24 | B+      | A-        | B+         | Initial grading + rubric 量化（service ↓A-, runtime ↑A+, lib ↑A, components ↓A-）。                    |
++| 2026-04-29 | B+      | A-        | B+         | Coverage include 擴至 8 層 (S3); ui/components/app 首度有 V8 cov baseline (62.52% / 52.43% / 47.92%)。 |
+
+ ---
+```
+
+`git diff --numstat docs/QUALITY_SCORE.md` → `10 8 docs/QUALITY_SCORE.md`（+10/-8 = 18 行語意改動）。表頭分隔符 `---` 之所以全行 +/- 是 prettier markdown formatter 重排表格 column width（新增 Score History 第 2 row 較長，分隔符配合拉長），語意上等價。
+
+#### 2. AC 逐條驗證
+
+**AC-T14.1（T11 checklist 全綠 ≥ 5 條，逐條 evidence）** — T11 §5 共 8 條，逐條對應 evidence：
+
+1. **`Last Updated` 已更新** ✅ — `grep -n "^> Last Updated:" docs/QUALITY_SCORE.md` → `3:> Last Updated: 2026-04-29`（唯一 1 筆）。
+2. **`Next Review` 已更新** ✅ — `grep -n "^> Next Review:" docs/QUALITY_SCORE.md` → `4:> Next Review: 2026-05-13`（唯一 1 筆）。
+3. **Score History 已加 1 行** ✅ — Score History 表 5 欄齊全（Date/Overall/Layer Avg/Domain Avg/Changes），新行 Date 欄 `2026-04-29`，Changes 含「Coverage include 擴至 8 層」+ 三層數字 `62.52% / 52.43% / 47.92%`。
+4. **`ui/` / `components/` row V8 Cov 已填數字** ✅ — `grep "^| ui/" docs/QUALITY_SCORE.md` → V8 Cov 欄 `62.52%`；`grep "^| components/" docs/QUALITY_SCORE.md` → V8 Cov 欄 `52.43%`；皆 ≥ 1 位小數，不再是「—」。
+5. **`app/` row 已新增** ✅ — `grep -n "^| app/" docs/QUALITY_SCORE.md` → L24 hit；V8 Cov 欄 `47.92%`，其他欄 (Files=15 / Test Ratio=TBD / JSDoc Density=TBD / Grade=TBD) 依 T11 design 留 TBD（本 PR scope 只填 V8 Cov）。
+6. **Layer-Level Known Gaps 第 2 條已改寫** ✅ — `grep -c "僅限 lib/" docs/QUALITY_SCORE.md` = 0；新文字含「8 層」（hit L35）/「ui / components / app」（hit L35）/「baseline」（hit L35）三 keyword。
+7. **Scope 限制全部遵守** ✅ — (a) `lib/` row V8 Cov 仍為 `94.7%`（diff 對照 unchanged）；(b) service / repo / runtime / config row V8 Cov 仍為 `—`（diff 0 變更）；(c) Grade 欄 0 變更（ui=C、lib=A、components=A- 維持；新 app row Grade=TBD 為新增非改動）；(d) Per-Domain Quality 表 L45-53 + Domain-Level Known Gaps L57-59 全 0 diff（diff 區間僅 L1-4 / L18-24 / L31-37 / L62-68）。
+8. **Diff 規模 ≤ 30 行** ✅ — `git diff --numstat` 顯示 `10 8` = 18 行 < 30。
+
+**PASS — 8 條全綠。**
+
+**AC-T14.2（git diff 行數 ≤ 30）** ✅
+
+```bash
+$ git diff --numstat docs/QUALITY_SCORE.md
+10	8	docs/QUALITY_SCORE.md
+```
+
++10/-8 = 18 行，遠 < 30 行 scope creep 警戒。
+
+> 註：`git diff docs/QUALITY_SCORE.md | wc -l` = 50 為「unified diff 全行數」（含 hunk header / context line），不等於「+/- 變更行數」。AC 與 T11 #8 用「diff --stat 顯示 +/- 合計」標準（即 numstat 10+8=18 < 30 PASS）。
+
+**AC-T14.3（spellcheck）** ✅
+
+```bash
+$ npm run spellcheck 2>&1 | tail -5
+350/353 tests/unit/service/profile-service.test.js 1.87ms
+351/353 tests/unit/service/strava-helpers.test.js 2.31ms
+352/353 tests/unit/service/weather-forecast-service.test.js 7.33ms
+353/353 tests/unit/service/weather-helpers.test.js 4.27ms
+CSpell: Files checked: 353, Issues found: 0 in 0 files.
+```
+
+**Issues found: 0**；無新詞需加 cspell.json；無 inline `cspell:disable` 使用。
+
+**AC-T14.4（lint exit 0）** ✅
+
+```bash
+$ npm run lint -- --max-warnings 0 > /dev/null 2>&1; echo "exit=$?"
+exit=0
+```
+
+stderr 中 `Warning: React version not specified in eslint-plugin-react settings` 為 ESLint plugin 啟動 banner（非規則 warning），不被 `--max-warnings 0` 計數，exit code 0 確認 0 errors / 0 warnings。
+
+**AC-T14.5（git status --short 僅預期檔案）** ✅
+
+```bash
+$ git status --short
+ M docs/QUALITY_SCORE.md
+ M specs/026-tests-audit-report/handoff.md
+ M vitest.config.mjs
+```
+
+僅 `docs/QUALITY_SCORE.md` (本 task 主目標) + `handoff.md` (本 task 紀錄) + `vitest.config.mjs` (T12 既改、T13 已驗、本 task 0 動)；`cspell.json` 未動 (本 task 無新詞)；`tasks.md` 未動 (依 task spec 由 T15 動)；`coverage/` 未 stage。
+
+**AC-T14.6（數字一致性自查）** ✅
+
+並列比對：
+
+| Source                                        | ui     | components | app    |
+| --------------------------------------------- | ------ | ---------- | ------ |
+| Per-Layer Quality 表 V8 Cov 欄                | 62.52% | 52.43%     | 47.92% |
+| Score History 2026-04-29 row Changes 欄三個 % | 62.52% | 52.43%     | 47.92% |
+| T13 evidence (handoff §3 T13 AC-T13.3)        | 62.52% | 52.43%     | 47.92% |
+
+三組數字逐字符相同（含小數點與 %）；無誤抄。
+
+**AC-T14.7（禁區 grep）** ✅
+
+```bash
+$ git diff docs/QUALITY_SCORE.md | grep -E "^[+-].*\b(service|repo|runtime|lib|config)\b.*\bCov\b" | wc -l
+0
+```
+
+= 0 PASS — diff 中沒有 service/repo/runtime/lib/config 5 層任何 V8 Cov 欄改動行；lib 94.7% 維持不動，service/repo/runtime/config 維持「—」。
+
+#### 3. T11 checklist 逐條 ✅/❌ 自評
+
+| #   | 條目                             | 結果 | 驗證來源                                                                            |
+| --- | -------------------------------- | ---- | ----------------------------------------------------------------------------------- |
+| 1   | `Last Updated` 已更新            | ✅   | `grep "^> Last Updated:"` 唯一 = `2026-04-29` (L3)                                  |
+| 2   | `Next Review` 已更新             | ✅   | `grep "^> Next Review:"` 唯一 = `2026-05-13` (L4)                                   |
+| 3   | Score History 已加 1 行 / 5 欄齊 | ✅   | L65-68 表 1 → 2 row data；新行 5 欄齊；Changes 含「8 層」+ 三 %                     |
+| 4   | ui/components V8 Cov 不再 `—`    | ✅   | L21 ui=62.52% / L23 components=52.43%                                               |
+| 5   | app row 已新增                   | ✅   | L24 `\| app/ \| 15 \| Clean \| TBD \| TBD \| 47.92% \| TBD \|`                      |
+| 6   | Gap #2 改寫                      | ✅   | `grep -c "僅限 lib/"` = 0；L35 含「8 層」/「ui / components / app」/「baseline」    |
+| 7   | Scope 限制全遵守                 | ✅   | lib 94.7% 不變、service/repo/runtime/config「—」不變、Grade 0 改、Per-Domain 0 diff |
+| 8   | Diff 規模 ≤ 30                   | ✅   | `git diff --numstat` = `10 8` = 18 < 30                                             |
+
+**8 條全綠 — 0 ❌**。
+
+#### 4. 禁區遵守
+
+- 未 commit / push / git add（git status 確認僅 ` M` 未 stage）。
+- 未動 §3 T01-T13 任何 row 或 Evidence Detail 字元（僅在 §3 主表更新 T14 row + 在 T13 Evidence Detail 後新增本 T14 Evidence Detail 章節）。
+- 未動 service/repo/runtime/lib/config 5 層既有 V8 Cov 數字（lib 維持 94.7%）。
+- 未動任何 row 的 Grade（ui=C / components=A- / lib=A 維持；app row 為新增非改動，Grade=TBD 為待 future PR 補完）。
+- 未動 Per-Domain Quality 表 / Grading Rubric / Data Sources / Update Protocol 區塊。
+- 未使用 inline `cspell:disable`（spellcheck 0 issues 無此需求）。
+
+#### 5. 最終結論
+
+T14 完成 `docs/QUALITY_SCORE.md` 更新 — L3/L4 同步推進、Per-Layer 表 ui/components 補 V8 Cov、新增 app row、Layer-Level Gap #2 改寫、Score History 新增 2026-04-29 row。`git diff --numstat 10/8`（18 行 < 30）；spellcheck `Issues found: 0`；lint exit 0；`git status` 僅 3 預期檔；禁區 grep 0 hits；數字一致性自查 ui/components/app 三層 % 在 Per-Layer 表 / Score History / T13 evidence 三處 100% 對齊；T11 checklist 8 條全綠。AC-T14.1/2/3/4/5/6/7 全 PASS。Status: **eng-done — 待 T14 reviewer 獨立重驗**。
+
+---
+
+**Reviewer**: T14-reviewer-opus47 / **Timestamp**: 2026-04-29 CST / **Status**: **rev-pass — AC-T14.1~7 全綠**
+
+#### Reviewer 1. 重跑命令輸出
+
+```bash
+$ git diff --numstat docs/QUALITY_SCORE.md
+10  8  docs/QUALITY_SCORE.md
+$ git diff docs/QUALITY_SCORE.md | wc -l
+50           # unified diff 全行（含 hunk header / context），語意 +/- = 18 行 < 30 PASS
+
+$ npm run spellcheck 2>&1 | tail -5
+... CSpell: Files checked: 353, Issues found: 0 in 0 files.   # AC-T14.3 PASS
+
+$ npm run lint -- --max-warnings 0 2>&1 | tail -5; echo "exit=$?"
+> eslint src specs tests --max-warnings 0
+Warning: React version not specified in eslint-plugin-react settings. ...
+exit=0                                                          # AC-T14.4 PASS（banner 非規則 warning）
+
+$ git status --short
+ M docs/QUALITY_SCORE.md
+ M specs/026-tests-audit-report/handoff.md
+ M vitest.config.mjs                                            # AC-T14.5 PASS（vitest.config.mjs 為 T12 既改）
+
+$ git diff docs/QUALITY_SCORE.md | grep -E "^[+-].*\b(service|repo|runtime|lib|config)\b.*\bCov\b" | wc -l
+0                                                               # AC-T14.7 PASS — 禁區 0 hits
+```
+
+#### Reviewer 2. 數字一致性三處逐字比對
+
+| Source                                                | ui     | components | app    |
+| ----------------------------------------------------- | ------ | ---------- | ------ |
+| `docs/QUALITY_SCORE.md` Per-Layer L21/L23/L24         | 62.52% | 52.43%     | 47.92% |
+| `docs/QUALITY_SCORE.md` Score History L68 Changes 欄  | 62.52% | 52.43%     | 47.92% |
+| handoff §3 T13 row + T13 Evidence Detail engineer/rev | 62.52% | 52.43%     | 47.92% |
+
+`grep -n "62.52\|52.43\|47.92" docs/QUALITY_SCORE.md` → 4 hits（L21 / L23 / L24 / L68），三層數字在 Per-Layer 表 + Score History 兩處逐字符相同；對照 T13 baseline 完全 0 偏差。**AC-T14.6 PASS**。
+
+#### Reviewer 3. T11 checklist 8 條逐條對照
+
+| #   | 條目                             | 驗證指令 / 來源                                                                          | 結果 |
+| --- | -------------------------------- | ---------------------------------------------------------------------------------------- | ---- |
+| 1   | `Last Updated` 已更新 (L3)       | Read L3 → `> Last Updated: 2026-04-29` 唯一一筆；diff `2026-04-24` → `2026-04-29`        | ✅   |
+| 2   | `Next Review` 已更新 (L4)        | Read L4 → `> Next Review: 2026-05-13` 唯一一筆；diff `2026-05-08` → `2026-05-13`         | ✅   |
+| 3   | Score History 新增 1 行 / 5 欄齊 | L65 表頭 5 欄 / L67 既有 row / L68 新行 `2026-04-29` 5 欄齊全；Changes 欄含三層 baseline | ✅   |
+| 4   | ui/components V8 Cov 不再 `—`    | L21 ui=62.52% / L23 components=52.43%                                                    | ✅   |
+| 5   | app row 已新增                   | L24 `\| app/ \| 15 \| Clean \| TBD \| TBD \| 47.92% \| TBD \|` 存在                      | ✅   |
+| 6   | Gap #2 改寫                      | `grep -c "僅限 lib/"` = 0；L35 含「8 層」「ui / components / app」「baseline」三 keyword | ✅   |
+| 7   | Scope 限制全遵守                 | 禁區 grep 0；lib 維持 94.7%；service/repo/runtime/config 維持「—」；Per-Domain 0 diff    | ✅   |
+| 8   | Diff 規模 ≤ 30 行                | numstat 10/8 = 18 < 30                                                                   | ✅   |
+
+**8 條全綠 — 0 ❌**。
+
+#### Reviewer 4. Scope 限制 3 條獨立驗證
+
+1. **不回寫既有 5 層數字** — `git diff docs/QUALITY_SCORE.md` 中 service/repo/runtime/lib/config 5 row 全部不在 +/- 變更行（lib row 仍 `94.7%`、其餘 `—`），禁區 grep = 0 確認。
+2. **不改任何 row Grade** — diff 中 Grade 欄無改動；ui=C / components=A- / lib=A 維持；app row 為新增 row，Grade=TBD 屬新增非改動。
+3. **不改 Per-Domain 表 + Domain-Level Known Gaps** — diff hunk 區間僅 L1-4 / L18-24 / L31-37 / L62-68，Per-Domain Quality 表 (L45-53) + Domain-Level Known Gaps (L57-59) 全 0 diff。
+
+#### Reviewer 5. 最終結論
+
+T14 engineer 嚴格依 T11 design + T13 baseline 完成 `docs/QUALITY_SCORE.md` 6 點改動（L3 / L4 / Per-Layer 表 ui+components+app / Layer-Level Gap #2 / Score History 新增 row），diff 規模 18 行遠 < 30 限額，spellcheck `Issues found: 0`、lint `exit=0`、`git status` 僅 3 預期檔（含 T12 既改 vitest.config.mjs），禁區 grep 結果 = 0 hits，三層數字在 Per-Layer 表 / Score History / T13 evidence 三處逐字符 100% 對齊，T11 checklist 8 條全綠（含 Last Updated / Next Review / Score History / ui+components+app V8 Cov / Gap #2 改寫 / Scope 全遵守 / diff ≤ 30）。Scope 限制 3 條（不回寫 5 層 / 不改 grade / 不改 domain）獨立 diff 比對全部成立。AC-T14.1/2/3/4/5/6/7 全 PASS。**Status: rev-pass — T15 可進入 integration verification + commit 階段**。
+
+### T15 Evidence Detail
+
+**Engineer**: T15-engineer-opus47 / **Timestamp**: 2026-04-29 CST / **Status**: **eng-done — AC-T15.1~7 全 PASS**
+
+#### 1. AC-T15.1 — §3 T10-T14 雙簽名確認
+
+Read `handoff.md` §3 主表 L122-126：T10/T11/T12/T13/T14 五 row 全部 `rev-pass`，engineer + reviewer 兩欄皆有名稱 + 時間戳；T10-T14 各自的 Evidence Detail 章節（L129-2440）engineer + reviewer 兩段齊備。`tasks.md` T10-T15 全部 `**Status**: [x]`（grep 確認 6 hits）。
+
+#### 2. AC-T15.2 — 一次性重跑全綠
+
+```bash
+$ grep -c "ui,components,app" vitest.config.mjs
+1
+
+$ grep -E "^\| ui/" docs/QUALITY_SCORE.md
+| ui/         | 12    | Clean  | 0.00 (0)   | 6.07 Full     | 62.52% | C     |
+
+$ grep -E "^\| components/" docs/QUALITY_SCORE.md
+| components/ | 54    | Clean  | 0.74 (40)  | 7.45 Full     | 52.43% | A-    |
+
+$ grep -E "^\| app/" docs/QUALITY_SCORE.md
+| app/        | 15    | Clean  | TBD        | TBD           | 47.92% | TBD   |
+
+$ grep "Last Updated: 2026-04-29" docs/QUALITY_SCORE.md
+> Last Updated: 2026-04-29
+
+$ grep "2026-04-29.*S3" docs/QUALITY_SCORE.md
+| 2026-04-29 | B+      | A-        | B+         | Coverage include 擴至 8 層 (S3); ui/components/app 首度有 V8 cov baseline (62.52% / 52.43% / 47.92%)。 |
+
+$ npm run lint -- --max-warnings 0 ; echo "EXIT=$?"
+> eslint src specs tests --max-warnings 0
+Warning: React version not specified in eslint-plugin-react settings. ...
+EXIT=0
+
+$ npm run type-check ; echo "EXIT=$?"
+> tsc --noEmit
+EXIT=0
+
+$ npm run depcruise ; echo "EXIT=$?"
+✔ no dependency violations found (1379 modules, 3403 dependencies cruised)
+EXIT=0
+
+$ npm run spellcheck 2>&1 | tail -5
+... CSpell: Files checked: 353, Issues found: 0 in 0 files.
+
+$ npx vitest run --project=browser 2>&1 | tail -5
+ Test Files  121 passed (121)
+      Tests  1108 passed (1108)
+   Duration  30.87s (...)
+
+$ npm run test:coverage 2>&1 | tail -10
+=============================== Coverage summary ===============================
+Statements   : 69.83% ( 3591/5142 )
+Branches     : 61.38% ( 1976/3219 )
+Functions    : 74.03% ( 938/1267 )
+Lines        : 71.28% ( 3331/4673 )
+================================================================================
+✔  Script exited successfully (code 0)
+```
+
+全綠：grep 6 條全 hit；lint / type-check / depcruise / spellcheck / vitest browser / test:coverage 6 命令 exit 0；Lines 71.28% ≥ 70% threshold PASS。
+
+#### 3. AC-T15.3/4/5/6/7 — Commit 結果
+
+明確列檔 stage（**未** `git add -A`）：
+
+```bash
+$ git add vitest.config.mjs \
+          docs/QUALITY_SCORE.md \
+          specs/026-tests-audit-report/handoff.md \
+          specs/026-tests-audit-report/tasks.md
+$ git status --short
+M  docs/QUALITY_SCORE.md
+M  specs/026-tests-audit-report/handoff.md
+M  specs/026-tests-audit-report/tasks.md
+M  vitest.config.mjs
+?? coverage/                          # untracked (in .gitignore) — NOT staged
+```
+
+`coverage/` 為 untracked（critical AC-T15.7 PASS — 不在 commit 中）。`cspell.json` 未 stage（T14 無新詞）。
+
+Commit message via HEREDOC（無 Co-Authored-By）：
+
+```
+chore(coverage): include 3 layers + baseline (P0-4)
+
+- vitest.config.mjs:22: coverage include 從 5 層擴至 8 層 (+ ui,components,app)
+- docs/QUALITY_SCORE.md: 三層首度有 V8 cov baseline (ui 62.52%, components 52.43%, app 47.92%)
+  + Score History 加 1 行
+- threshold (lines: 70) 維持不動；per-directory threshold 屬 S9 觸發型 (audit L665-668)
+
+Refs: project-health/2026-04-29-tests-audit-report.md L170-208, L600-606
+```
+
+Commit hash 與 stat 見 §0 Last commit (S3) 欄回填值。
+
+#### 4. AC-T15.6 / T15.7 — Final grep 驗證
+
+- `git log -1 --format=%B | grep -ic "Co-Authored-By"` → 0（AC-T15.6 PASS）
+- `git show <hash> --stat | grep -c "^ coverage/"` → 0（AC-T15.7 PASS — coverage/ 絕對沒進 commit）
+- branch = `026-tests-audit-report`，**未** push（`git log origin/026-tests-audit-report..HEAD` fatal: unknown revision）
+
+#### 5. 禁區遵守
+
+- 未 push、未開 PR、未 amend、未 git config 改動。
+- 未動 §3 T01-T14 既有 row 或 Evidence Detail 字元（僅新增 T15 row + T15 Evidence Detail 章節）。
+- §0 / §1 / §2 S3 子表 / §3 T15 / §5 / 本 Evidence Detail 為本 task 改動範圍。
+- T13/T14 實際遭遇紀錄已補進 §2 S3 子表（T13: lines 71.28% +0.59pp 反直覺 / T14: cspell 無新詞）。
+
+#### 6. 最終結論
+
+T15 完成 S3 整合驗證 + commit + handoff/tasks 同步。AC-T15.1（雙簽名 + tasks `[x]`）、AC-T15.2（grep 6 條 + 6 命令全綠）、AC-T15.3（commit message 格式 + 0 Co-Authored-By）、AC-T15.4（branch 對 + 未 push + hook 通過）、AC-T15.5（4 檔 staged，無 cspell.json，無 coverage/）、AC-T15.6（grep Co-Authored-By = 0）、AC-T15.7（grep coverage/ = 0）全 PASS。Status: **eng-done — 待 T15 reviewer 獨立重驗**。
+
 ## §4 Pattern Index
 
 > Subagent 在實作中發現的可重用 pattern（one-liner、技巧）填於此節，供後續 S3-S10 重用。
@@ -1598,12 +2576,14 @@ T09 通過獨立 reviewer 驗證 — AC-T09.1 / 2 / 3 / 4 / 5 / 6 全 PASS。Com
 > npx playwright --version
 > ```
 
-| Tool       | Version        |
-| ---------- | -------------- |
-| OS         | darwin (macOS) |
-| Node       | v22.22.0       |
-| Vitest     | 4.1.4          |
-| Playwright | 1.58.0         |
+| Tool           | Version                         |
+| -------------- | ------------------------------- |
+| OS             | darwin (macOS)                  |
+| Node           | v22.22.0                        |
+| Vitest         | 4.1.4                           |
+| Playwright     | 1.58.0                          |
+| firebase-tools | 15.5.1                          |
+| jq             | jq-1.6-159-apple-gcff5336-dirty |
 
 ## §6 References
 

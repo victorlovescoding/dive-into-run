@@ -1,7 +1,7 @@
 # Quality Score Matrix
 
-> Last Updated: 2026-04-24
-> Next Review: 2026-05-08
+> Last Updated: 2026-04-29
+> Next Review: 2026-05-13
 
 Agent 開工前讀此文件，立即知道哪裡弱、該優先投資什麼。
 
@@ -18,9 +18,10 @@ Agent 開工前讀此文件，立即知道哪裡弱、該優先投資什麼。
 | repo/       | 19    | Clean  | 0.47 (9)   | 3.90 Full     | —      | A-    |
 | service/    | 14    | Clean  | 0.79 (11)  | 5.41 Full     | —      | A-    |
 | runtime/    | 32    | Clean  | 2.09 (67)  | 5.33 Full     | —      | A+    |
-| ui/         | 12    | Clean  | 0.00 (0)   | 6.07 Full     | —      | C     |
+| ui/         | 12    | Clean  | 0.00 (0)   | 6.07 Full     | 62.52% | C     |
 | lib/        | 20    | Clean  | 1.30 (26)  | 2.17 Good     | 94.7%  | A     |
-| components/ | 54    | Clean  | 0.74 (40)  | 7.45 Full     | —      | A-    |
+| components/ | 54    | Clean  | 0.74 (40)  | 7.45 Full     | 52.43% | A-    |
+| app/        | 15    | Clean  | TBD        | TBD           | 47.92% | TBD   |
 
 > **Static** = type-check + lint 合併（目前全 clean）。
 > **Test Ratio** = test files targeting this layer / source files。括號內為 test file 絕對數。
@@ -31,7 +32,7 @@ Agent 開工前讀此文件，立即知道哪裡弱、該優先投資什麼。
 ### Layer-Level Known Gaps
 
 1. **ui/ 零直接測試（Grade C）** — 12 個 screen components 沒有任何 render/snapshot/integration tests。這是最大的品質缺口。
-2. **Coverage instrumentation 僅限 lib/** — 無法量化其他層的真實 code coverage。建議擴展 `vitest.config.mjs` 的 `include` 至 `src/**`。
+2. **Coverage instrumentation 已擴展至 8 層** — `vitest.config.mjs` `include` 由 `src/lib/**` 擴增至 `src/{service,repo,runtime,lib,config,ui,components,app}/**`，ui / components / app 首度有 V8 cov baseline（見 Per-Layer Quality 表 V8 Cov 欄）。下一步是把低覆蓋層（如 ui/）逐步補測。
 3. **config/ 測試稀疏** — 6 files 只有 1 個 test file。Firebase config 難以 unit test，但 geo data helpers（`taiwan-locations.js`、`weather-geo-cache.js`）可測。
 4. **lib/ JSDoc 最弱** — 42 exports 只有 91 annotations（2.2/export），其他層都在 3.9 以上。作為 facade 層，JSDoc 是下游 consumer 的主要文檔。
 
@@ -61,9 +62,10 @@ Agent 開工前讀此文件，立即知道哪裡弱、該優先投資什麼。
 
 ## Score History
 
-| Date       | Overall | Layer Avg | Domain Avg | Changes                                                                             |
-| ---------- | ------- | --------- | ---------- | ----------------------------------------------------------------------------------- |
-| 2026-04-24 | B+      | A-        | B+         | Initial grading + rubric 量化（service ↓A-, runtime ↑A+, lib ↑A, components ↓A-）。 |
+| Date       | Overall | Layer Avg | Domain Avg | Changes                                                                                                |
+| ---------- | ------- | --------- | ---------- | ------------------------------------------------------------------------------------------------------ |
+| 2026-04-24 | B+      | A-        | B+         | Initial grading + rubric 量化（service ↓A-, runtime ↑A+, lib ↑A, components ↓A-）。                    |
+| 2026-04-29 | B+      | A-        | B+         | Coverage include 擴至 8 層 (S3); ui/components/app 首度有 V8 cov baseline (62.52% / 52.43% / 47.92%)。 |
 
 ---
 

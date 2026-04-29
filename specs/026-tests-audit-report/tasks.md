@@ -695,7 +695,7 @@ Wave 6 (序列):    T15-eng → T15-rev   (整合驗證 + commit + handoff sync)
 
 ### T10 — Spike: capture current 5-layer baseline + emulator sanity check
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Read**: `vitest.config.mjs`、`package.json`、`docs/QUALITY_SCORE.md`、`coverage/coverage-summary.json`（產出後）
 - **Files Written**: 只動 `specs/026-tests-audit-report/handoff.md` §3 T10 row + §2 S3 子表（補風險），**不**動 `vitest.config.mjs` / `docs/`
 - **Audit**: P0-4 / Rule R1
@@ -748,7 +748,7 @@ Wave 6 (序列):    T15-eng → T15-rev   (整合驗證 + commit + handoff sync)
 
 ### T11 — Spike: QUALITY_SCORE.md 更新設計 + jq 分層 filter 範本
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Read**: `docs/QUALITY_SCORE.md`（全檔）、audit L170-208
 - **Files Written**: 只動 `specs/026-tests-audit-report/handoff.md` §3 T11 row（design 全寫 evidence 區），**不**動 `docs/QUALITY_SCORE.md` 本身
 - **Audit**: P0-4 / Rule R1
@@ -804,7 +804,7 @@ Wave 6 (序列):    T15-eng → T15-rev   (整合驗證 + commit + handoff sync)
 
 ### T12 — Implement: vitest.config.mjs:22 加 ui/components/app
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `vitest.config.mjs`
 - **Files Read**: T10 / T11 evidence
 - **Audit**: P0-4 / Rule R1
@@ -869,7 +869,7 @@ Wave 6 (序列):    T15-eng → T15-rev   (整合驗證 + commit + handoff sync)
 
 ### T13 — Capture post-baseline (8 層 coverage)
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: 0（純跑 + 記錄 evidence；coverage/ 為 gitignored artifact）
 - **Files Read**: `coverage/coverage-summary.json`（T13 跑後生成）
 - **Audit**: P0-4 / Rule R1
@@ -927,7 +927,7 @@ Wave 6 (序列):    T15-eng → T15-rev   (整合驗證 + commit + handoff sync)
 
 ### T14 — Update docs/QUALITY_SCORE.md per T11 design + T13 數字
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `docs/QUALITY_SCORE.md`
 - **Files Read**: T11 evidence（design + checklist）、T13 evidence（baseline 數字）
 - **Audit**: P0-4 / Rule R1
@@ -1000,7 +1000,7 @@ Wave 6 (序列):    T15-eng → T15-rev   (整合驗證 + commit + handoff sync)
 
 ### T15 — Integration verification + commit (S3)
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**:
   - `specs/026-tests-audit-report/handoff.md` §0 / §1 / §3（T15 self-evidence）/ §5 完整更新
   - `specs/026-tests-audit-report/tasks.md`（T10-T15 status `[ ]` → `[x]`）
