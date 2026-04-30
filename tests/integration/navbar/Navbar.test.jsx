@@ -39,9 +39,16 @@ vi.mock('@/components/Notifications/NotificationPanel', () => ({
   default: () => null,
 }));
 
-vi.mock('@/lib/firebase-auth-helpers', () => ({
-  signInWithGoogle: vi.fn(),
-  signOutUser: vi.fn(),
+vi.mock('firebase/auth', () => ({
+  onAuthStateChanged: vi.fn(),
+  signInWithPopup: vi.fn(),
+  signOut: vi.fn(),
+}));
+
+vi.mock('@/config/client/firebase-client', () => ({
+  auth: { name: 'mock-auth' },
+  db: { name: 'mock-db' },
+  provider: { name: 'mock-provider' },
 }));
 
 describe('Navbar base', () => {

@@ -43,11 +43,28 @@ vi.mock('@/components/Notifications/NotificationPanel', () => ({
   default: () => null,
 }));
 
-const mockSignIn = vi.fn();
-const mockSignOut = vi.fn();
-vi.mock('@/lib/firebase-auth-helpers', () => ({
-  signInWithGoogle: (...args) => mockSignIn(...args),
-  signOutUser: (...args) => mockSignOut(...args),
+const {
+  mockAuth,
+  mockProvider,
+  mockSignInWithPopup,
+  mockSignOut,
+} = vi.hoisted(() => ({
+  mockAuth: { name: 'mock-auth' },
+  mockProvider: { name: 'mock-provider' },
+  mockSignInWithPopup: vi.fn(),
+  mockSignOut: vi.fn(),
+}));
+
+vi.mock('firebase/auth', () => ({
+  onAuthStateChanged: vi.fn(),
+  signInWithPopup: mockSignInWithPopup,
+  signOut: mockSignOut,
+}));
+
+vi.mock('@/config/client/firebase-client', () => ({
+  auth: mockAuth,
+  db: { name: 'mock-db' },
+  provider: mockProvider,
 }));
 
 // -- Helpers --
@@ -174,10 +191,11 @@ describe('Navbar Desktop (T009-T012)', () => {
       expect(loginBtn).toBeInTheDocument();
     });
 
-    it('login button calls signInWithGoogle on click', async () => {
+    it('login button signs in with Firebase popup on click', async () => {
       // Arrange
       const user = userEvent.setup();
       await renderNavbar({ user: null, loading: false });
+      mockSignInWithPopup.mockResolvedValueOnce({});
 
       // Act
       const nav = screen.getByRole('navigation', { name: '主要導覽' });
@@ -185,7 +203,9 @@ describe('Navbar Desktop (T009-T012)', () => {
       await user.click(loginBtn);
 
       // Assert
-      expect(mockSignIn).toHaveBeenCalledTimes(1);
+      expect(mockSignInWithPopup).toHaveBeenCalledWith(mockAuth, mockProvider);
+      expect(loginBtn).toBeInTheDocument();
+      expect(within(nav).queryByRole('button', { name: '使用者選單' })).not.toBeInTheDocument();
     });
 
     it('shows avatar image when logged in with photoURL', async () => {
@@ -229,10 +249,11 @@ describe('Navbar Desktop (T009-T012)', () => {
       expect(menu.className).toMatch(/dropdownOpen/);
     });
 
-    it('sign-out button in dropdown calls signOutUser', async () => {
+    it('sign-out button in dropdown signs out with Firebase auth and closes dropdown', async () => {
       // Arrange
       const user = userEvent.setup();
       await renderNavbar({ user: mockUser });
+      mockSignOut.mockResolvedValueOnce();
       const nav = screen.getByRole('navigation', { name: '主要導覽' });
       const avatarBtn = within(nav).getByRole('button', { name: '使用者選單' });
       await user.click(avatarBtn);
@@ -242,7 +263,10 @@ describe('Navbar Desktop (T009-T012)', () => {
       await user.click(signOutBtn);
 
       // Assert
-      expect(mockSignOut).toHaveBeenCalledTimes(1);
+      expect(mockSignOut).toHaveBeenCalledWith(mockAuth);
+      const menu = within(nav).getByRole('menu');
+      expect(menu.className).not.toMatch(/dropdownOpen/);
+      expect(avatarBtn).toHaveAttribute('aria-expanded', 'false');
     });
 
     it('click outside closes dropdown', async () => {

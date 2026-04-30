@@ -13,7 +13,7 @@
 | —       | —              | —      | —   | —      | **18.6=47（spec 026 既有）/ 18.7=0 / 18.8=0（spec 027 開始前）**                               |
 | S0      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 修 selector bug + 擴規則 → 18.6: 47→55（+8 新加）/ 18.7: 0→14（new）/ 18.8: 0→5（new）         |
 | S1      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 55 → 50（posts heavy / pilot — 5 檔/10 violations；Option B 全留在本 spec）              |
-| S2      | ⏳ Not started | —      | —   | —      | 18.6: 50 → 36（posts rest + comments + dashboard + navbar — 14 檔/15 violations）              |
+| S2      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 50 → 36（posts rest + comments + dashboard + navbar — 14 檔/15 violations；Navbar flaky count 已清） |
 | S3      | ⏳ Not started | —      | —   | —      | 18.6: 36 → 27（notifications — 9 檔/32 violations）                                            |
 | S4      | ⏳ Not started | —      | —   | —      | 18.6: 27 → 21（events + profile — 6 檔/8 violations）                                          |
 | S5      | ⏳ Not started | —      | —   | —      | 18.6: 21 → 11（strava + weather + toast — 10 檔/13 violations；第一批 mock-boundary 部分清空） |
@@ -218,6 +218,20 @@ writeBatch.mockReturnValue(batch);
 - notification payload 是 flattened actor fields：`actorUid`, `actorName`, `actorPhotoURL`，不是 nested `actor` object。
 - `@/components/*` mock 在本 spec 是灰區 out-of-scope 保留，不是正式 allowed boundary；不要把 S1 的保留解讀成可擴張規則。
 
+### 2.6 S2 posts/comment reusable patterns
+
+- posts form/edit/feed/card 測試延續 S1 Option B：只 mock `firebase/firestore`、`@/config/client/firebase-client` 與 `@/runtime/providers/*`；不要 mock `@/runtime/client/use-cases/*` 或 `@/service/*`。
+- form validation / dirty edit 斷言要對齊真實 payload normalization：送進 `addDoc` / `updateDoc` 的文字可能已 trim，不要沿用 internal mock 時的 raw input expectation。
+- comments notification path 要 assert SDK boundary 寫入結果，不 assert internal notification helper call count；payload 仍是 flattened actor fields。
+- comments path 的 `query(collection(...))` stub 需要保留 collection path；dashboard/comment 聚合測試也靠 path 分辨 query result。
+
+### 2.7 S2 dashboard/navbar reusable patterns
+
+- dashboard card/tabs 測試可共用 Firestore query fixture map：用 collection/query path 決定回傳 post/event/comment docs，讓 dashboard runtime 真實組合資料。
+- dashboard card 類檔案只保留外部或 UI 邊界 mock；清掉 `@/lib|repo|service|runtime` internal mock 後，改 assert rendered state 與 SDK call payload。
+- navbar desktop/mobile 測試用 AuthProvider provider mock 作 React 邊界；路由狀態與 active path helper 走真實 implementation。
+- Navbar flaky count 已清：S2 從 18.6 移除 navbar 四檔時沒有新增 18.5 ignore，`toHaveBeenCalledTimes` baseline debt 不留在 navbar batch。
+
 ---
 
 ## 3. Per-session 操作 SOP（plan §4.3 再強化）
@@ -308,6 +322,12 @@ writeBatch.mockReturnValue(batch);
 - **S1 verification**：五檔各自 `npx vitest run <file>` + `npx eslint <file>` 通過；18.6 baseline 已從 55 降到 50。
 
 ### S2 坑紀錄
+
+- **S2 全 14 檔已從 18.6 baseline 移除**：posts rest + comments + dashboard + navbar consolidation 後，18.6 count 50 -> 36。
+- **Navbar flaky count 已清**：`Navbar.test.jsx` / `NavbarMobile.test.jsx` / `NavbarDesktop.test.jsx` / `isActivePath.test.js` 從 18.6 退場時未留下 `toHaveBeenCalledTimes` debt，也沒有搬進 18.5 baseline。
+- **providers mock 仍是允許邊界**：S2 posts/navbar 檔仍可 mock `@/runtime/providers/AuthProvider` / `ToastProvider`；18.6 selector 排除 providers，這不是 violation。
+- **comments/dashboard 共用 path-aware Firestore stubs**：`query()` / `collection()` / `doc()` 回傳 shape 要帶 path，否則 comments 與 dashboard fixture 會互相吃錯資料。
+- **不重寫 worker 檔案**：S2 consolidation 只更新 baseline + handoff；若後續 branch verification 暴露問題，先回報再改對應 worker file。
 
 ### S3 坑紀錄
 

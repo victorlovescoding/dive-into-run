@@ -26,34 +26,74 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthContext } from '@/contexts/AuthContext';
 import CommentSection from '@/components/CommentSection';
-import { addComment } from '@/runtime/client/use-cases/event-comment-use-cases';
+import { addDoc, getDocs } from 'firebase/firestore';
 
 /* ==========================================================================
    Mocks
    ========================================================================== */
 
-vi.mock('@/runtime/client/use-cases/event-comment-use-cases', () => ({
-  addComment: vi.fn(),
-  updateComment: vi.fn(),
-  deleteComment: vi.fn(),
-  fetchCommentHistory: vi.fn(),
-}));
+const firestoreMock = vi.hoisted(() => {
+  class MockTimestamp {
+    /**
+     * @param {Date} date - Timestamp date value.
+     */
+    constructor(date) {
+      this.date = date;
+    }
+
+    /**
+     * @returns {Date} Date value.
+     */
+    toDate() {
+      return this.date;
+    }
+
+    /**
+     * @returns {MockTimestamp} Current timestamp.
+     */
+    static now() {
+      return new MockTimestamp(new Date(2026, 3, 2, 15, 0));
+    }
+
+    /**
+     * @param {Date} date - Date value.
+     * @returns {MockTimestamp} Timestamp value.
+     */
+    static fromDate(date) {
+      return new MockTimestamp(date);
+    }
+  }
+
+  return {
+    Timestamp: MockTimestamp,
+    serverTimestamp: vi.fn(() => ({ __type: 'serverTimestamp' })),
+    collection: vi.fn((_, ...segments) => ({
+      kind: 'collection',
+      path: segments.join('/'),
+    })),
+    doc: vi.fn((base, ...segments) => {
+      const path =
+        base?.kind === 'collection'
+          ? [base.path, ...segments].filter(Boolean).join('/')
+          : segments.join('/');
+      const id = segments.at(-1) || 'generated-history-id';
+      return { kind: 'doc', id, path };
+    }),
+    query: vi.fn((ref, ...constraints) => ({ kind: 'query', ref, constraints })),
+    getDocs: vi.fn(),
+    getDoc: vi.fn(),
+    addDoc: vi.fn(),
+    orderBy: vi.fn((field, direction) => ({ kind: 'orderBy', field, direction })),
+    limit: vi.fn((count) => ({ kind: 'limit', count })),
+    startAfter: vi.fn((snapshot) => ({ kind: 'startAfter', snapshot })),
+    runTransaction: vi.fn(),
+    writeBatch: vi.fn(),
+  };
+});
+
+vi.mock('firebase/firestore', () => firestoreMock);
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
-
-vi.mock('@/runtime/hooks/useComments', () => ({
-  default: vi.fn(() => ({
-    comments: [],
-    setComments: vi.fn(),
-    isLoading: false,
-    hasMore: false,
-    loadError: null,
-    retryLoad: vi.fn(),
-    loadMoreError: null,
-    retryLoadMore: vi.fn(),
-    sentinelRef: { current: null },
-  })),
-}));
 
 vi.mock('@/contexts/AuthContext', async () => {
   const { createContext } = await import('react');
@@ -89,7 +129,8 @@ vi.mock('@/components/CommentInput', () => ({
 }));
 
 /* Cast mock for .mockResolvedValue */
-const mockedAddComment = /** @type {import('vitest').Mock} */ (addComment);
+const mockedAddDoc = /** @type {import('vitest').Mock} */ (addDoc);
+const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
 
 /* ==========================================================================
    Type Definitions
@@ -122,23 +163,6 @@ const MOCK_USER = {
 const MOCK_EVENT_ID = 'event1';
 const MOCK_COMMENT_ID = 'new-comment-123';
 
-/**
- * 建立 addComment 回傳的假留言資料。
- * @returns {object} mock comment data。
- */
-function createMockCommentResponse() {
-  return {
-    id: MOCK_COMMENT_ID,
-    authorUid: MOCK_USER.uid,
-    authorName: MOCK_USER.name,
-    authorPhotoURL: MOCK_USER.photoURL,
-    content: 'test comment',
-    createdAt: { toDate: () => new Date() },
-    updatedAt: null,
-    isEdited: false,
-  };
-}
-
 /* ==========================================================================
    Tests
    ========================================================================== */
@@ -146,7 +170,8 @@ function createMockCommentResponse() {
 describe('CommentSection — onCommentAdded 回呼', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedAddComment.mockResolvedValue(createMockCommentResponse());
+    mockedGetDocs.mockResolvedValue({ docs: [] });
+    mockedAddDoc.mockResolvedValue({ id: MOCK_COMMENT_ID });
   });
 
   it('送出留言後呼叫 onCommentAdded 回呼', async () => {
@@ -166,7 +191,7 @@ describe('CommentSection — onCommentAdded 回呼', () => {
 
     // Assert
     await vi.waitFor(() => {
-      expect(mockOnCommentAdded).toHaveBeenCalledTimes(1);
+      expect(mockOnCommentAdded).toHaveBeenCalledWith(MOCK_COMMENT_ID);
     });
   });
 

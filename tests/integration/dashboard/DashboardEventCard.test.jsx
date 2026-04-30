@@ -1,23 +1,10 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
 vi.mock('next/link', () => ({
   default: ({ children, href }) => <a href={href}>{children}</a>,
 }));
-
-vi.mock('@/lib/event-helpers', () => ({
-  formatDateTime: vi.fn(),
-}));
-
-/** @type {import('vitest').Mock} */
-const mockFormatDateTime = /** @type {any} */ (
-  (await import('@/lib/event-helpers')).formatDateTime
-);
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
 
 /**
  * 建立一個假的 Firestore Timestamp。
@@ -37,6 +24,8 @@ function fakeTimestamp(ms) {
 const FUTURE_MS = Date.now() + 86400000;
 /** 基礎活動資料 — 過去活動。 */
 const PAST_MS = Date.now() - 86400000;
+/** 固定日期時間 fixture。 */
+const FIXED_EVENT_MS = new Date(2026, 3, 8, 8, 0).getTime();
 
 /**
  * 建立基本測試用活動資料。
@@ -71,7 +60,6 @@ describe('DashboardEventCard', () => {
   it('renders title as a link to /events/{id}', async () => {
     const DashboardEventCard = await importComponent();
     const event = createEvent();
-    mockFormatDateTime.mockReturnValue('2026-04-08 08:00');
 
     render(<DashboardEventCard event={event} isHost={false} />);
 
@@ -82,12 +70,10 @@ describe('DashboardEventCard', () => {
   // --- 2. Renders formatted datetime ---
   it('renders formatted datetime from formatDateTime', async () => {
     const DashboardEventCard = await importComponent();
-    const event = createEvent();
-    mockFormatDateTime.mockReturnValue('2026-04-08 08:00');
+    const event = createEvent({ time: /** @type {any} */ (fakeTimestamp(FIXED_EVENT_MS)) });
 
     render(<DashboardEventCard event={event} isHost={false} />);
 
-    expect(mockFormatDateTime).toHaveBeenCalledWith(event.time);
     expect(screen.getByText('2026-04-08 08:00')).toBeInTheDocument();
   });
 
@@ -95,7 +81,6 @@ describe('DashboardEventCard', () => {
   it('renders city and location', async () => {
     const DashboardEventCard = await importComponent();
     const event = createEvent();
-    mockFormatDateTime.mockReturnValue('2026-04-08 08:00');
 
     render(<DashboardEventCard event={event} isHost={false} />);
 
@@ -107,7 +92,6 @@ describe('DashboardEventCard', () => {
   it('renders participants count as "current / max"', async () => {
     const DashboardEventCard = await importComponent();
     const event = createEvent({ participantsCount: 3, maxParticipants: 10 });
-    mockFormatDateTime.mockReturnValue('2026-04-08 08:00');
 
     render(<DashboardEventCard event={event} isHost={false} />);
 
@@ -118,7 +102,6 @@ describe('DashboardEventCard', () => {
   it('shows host badge when isHost is true', async () => {
     const DashboardEventCard = await importComponent();
     const event = createEvent();
-    mockFormatDateTime.mockReturnValue('2026-04-08 08:00');
 
     render(<DashboardEventCard event={event} isHost />);
 
@@ -129,7 +112,6 @@ describe('DashboardEventCard', () => {
   it('does not show host badge when isHost is false', async () => {
     const DashboardEventCard = await importComponent();
     const event = createEvent();
-    mockFormatDateTime.mockReturnValue('2026-04-08 08:00');
 
     render(<DashboardEventCard event={event} isHost={false} />);
 
@@ -140,7 +122,6 @@ describe('DashboardEventCard', () => {
   it('shows "即將到來" badge for future events', async () => {
     const DashboardEventCard = await importComponent();
     const event = createEvent({ time: /** @type {any} */ (fakeTimestamp(FUTURE_MS)) });
-    mockFormatDateTime.mockReturnValue('2026-04-08 08:00');
 
     render(<DashboardEventCard event={event} isHost={false} />);
 
@@ -152,7 +133,6 @@ describe('DashboardEventCard', () => {
   it('shows "已結束" badge for past events', async () => {
     const DashboardEventCard = await importComponent();
     const event = createEvent({ time: /** @type {any} */ (fakeTimestamp(PAST_MS)) });
-    mockFormatDateTime.mockReturnValue('2026-04-06 08:00');
 
     render(<DashboardEventCard event={event} isHost={false} />);
 

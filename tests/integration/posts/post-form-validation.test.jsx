@@ -2,6 +2,26 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { useMemo } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {
+  addDoc,
+  collection,
+  collectionGroup,
+  doc,
+  documentId,
+  getDoc,
+  getDocs,
+  increment,
+  limit,
+  orderBy,
+  query,
+  runTransaction,
+  serverTimestamp,
+  startAfter,
+  Timestamp,
+  updateDoc,
+  where,
+  writeBatch,
+} from 'firebase/firestore';
 
 // ---------------------------------------------------------------------------
 // Hoisted shared state (available inside vi.mock factories)
@@ -42,7 +62,7 @@ vi.mock('firebase/firestore', () => ({
   addDoc: vi.fn(),
   updateDoc: vi.fn(),
   collection: vi.fn(),
-  serverTimestamp: vi.fn(),
+  serverTimestamp: vi.fn(() => ({ __type: 'serverTimestamp' })),
   limit: vi.fn(),
   query: vi.fn(),
   orderBy: vi.fn(),
@@ -50,64 +70,44 @@ vi.mock('firebase/firestore', () => ({
   getDoc: vi.fn(),
   getDocs: vi.fn(),
   runTransaction: vi.fn(),
-  increment: vi.fn(),
+  increment: vi.fn((value) => ({ __type: 'increment', value })),
   collectionGroup: vi.fn(),
   where: vi.fn(),
   writeBatch: vi.fn(),
   startAfter: vi.fn(),
   documentId: vi.fn(),
+  Timestamp: {
+    fromDate: vi.fn((date) => ({ toDate: () => date })),
+    now: vi.fn(() => ({ toDate: () => new Date('2026-04-15T08:00:00Z') })),
+  },
 }));
-
-vi.mock('@/runtime/client/use-cases/post-use-cases', async (importOriginal) => {
-  const actual = /** @type {import('@/runtime/client/use-cases/post-use-cases')} */ (
-    await importOriginal()
-  );
-  return {
-    validatePostInput: actual.validatePostInput,
-    POST_TITLE_MAX_LENGTH: actual.POST_TITLE_MAX_LENGTH,
-    POST_CONTENT_MAX_LENGTH: actual.POST_CONTENT_MAX_LENGTH,
-    createPost: vi.fn().mockResolvedValue({ id: 'new-post-id' }),
-    updatePost: vi.fn().mockResolvedValue(undefined),
-    getLatestPosts: vi.fn().mockResolvedValue([]),
-    getPostDetail: vi.fn().mockResolvedValue({
-      id: 'new-post-id',
-      title: 'Test Title',
-      content: 'Test Content',
-      authorUid: 'test-uid',
-      authorImgURL: '/test.jpg',
-      likesCount: 0,
-      commentsCount: 0,
-    }),
-    toggleLikePost: vi.fn().mockResolvedValue('success'),
-    hasUserLikedPosts: vi.fn().mockResolvedValue(new Set()),
-    deletePost: vi.fn().mockResolvedValue({ ok: true }),
-    getMorePosts: vi.fn().mockResolvedValue([]),
-  };
-});
 
 // ---------------------------------------------------------------------------
 // Imports (after vi.mock — Vitest hoists mocks above these)
 // ---------------------------------------------------------------------------
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import PostPage from '@/app/posts/page';
-import {
-  createPost,
-  updatePost,
-  getLatestPosts,
-  getPostDetail,
-  hasUserLikedPosts,
-} from '@/runtime/client/use-cases/post-use-cases';
 
-/** @type {import('vitest').Mock} */
-const mockedCreatePost = /** @type {import('vitest').Mock} */ (createPost);
-/** @type {import('vitest').Mock} */
-const mockedUpdatePost = /** @type {import('vitest').Mock} */ (updatePost);
-/** @type {import('vitest').Mock} */
-const mockedGetLatestPosts = /** @type {import('vitest').Mock} */ (getLatestPosts);
-/** @type {import('vitest').Mock} */
-const mockedGetPostDetail = /** @type {import('vitest').Mock} */ (getPostDetail);
-/** @type {import('vitest').Mock} */
-const mockedHasUserLikedPosts = /** @type {import('vitest').Mock} */ (hasUserLikedPosts);
+const firestoreMocks = {
+  ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
+  ['collection']: /** @type {import('vitest').Mock} */ (collection),
+  ['collectionGroup']: /** @type {import('vitest').Mock} */ (collectionGroup),
+  ['doc']: /** @type {import('vitest').Mock} */ (doc),
+  ['documentId']: /** @type {import('vitest').Mock} */ (documentId),
+  ['getDoc']: /** @type {import('vitest').Mock} */ (getDoc),
+  ['getDocs']: /** @type {import('vitest').Mock} */ (getDocs),
+  ['increment']: /** @type {import('vitest').Mock} */ (increment),
+  ['limit']: /** @type {import('vitest').Mock} */ (limit),
+  ['orderBy']: /** @type {import('vitest').Mock} */ (orderBy),
+  ['query']: /** @type {import('vitest').Mock} */ (query),
+  ['runTransaction']: /** @type {import('vitest').Mock} */ (runTransaction),
+  ['serverTimestamp']: /** @type {import('vitest').Mock} */ (serverTimestamp),
+  ['startAfter']: /** @type {import('vitest').Mock} */ (startAfter),
+  ['updateDoc']: /** @type {import('vitest').Mock} */ (updateDoc),
+  ['where']: /** @type {import('vitest').Mock} */ (where),
+  ['writeBatch']: /** @type {import('vitest').Mock} */ (writeBatch),
+  ['timestampFromDate']: /** @type {import('vitest').Mock} */ (Timestamp.fromDate),
+};
 
 // ---------------------------------------------------------------------------
 // Test constants
@@ -120,6 +120,104 @@ const TEST_USER = {
   bio: null,
   getIdToken: vi.fn().mockResolvedValue('token'),
 };
+
+/** @type {object[][]} */
+let postPages = [[]];
+/** @type {Map<string, object>} */
+let documentsByPath = new Map();
+
+/**
+ * 建立 Firestore-like document snapshot。
+ * @param {string} id - 文件 ID。
+ * @param {object | null} data - 文件資料。
+ * @returns {object} Firestore-like document snapshot。
+ */
+function createDocSnapshot(id, data) {
+  return {
+    id,
+    ref: { id, path: `mock/${id}` },
+    exists: () => data !== null,
+    data: () => data,
+  };
+}
+
+/**
+ * 建立 Firestore query snapshot stub。
+ * @param {object[]} docs - Firestore-like document snapshots。
+ * @returns {{ docs: object[], size: number }} Firestore-like query snapshot。
+ */
+function createQuerySnapshot(docs) {
+  return { docs, size: docs.length };
+}
+
+/**
+ * 設定 posts query 回傳頁面。
+ * @param {...object[]} pages - 每次 posts query 要回傳的資料頁。
+ */
+function setPostPages(...pages) {
+  postPages = pages.length > 0 ? pages : [[]];
+}
+
+/**
+ * 設定 Firestore path 文件資料。
+ * @param {string} path - 文件 path。
+ * @param {object} data - 文件資料。
+ */
+function setDocument(path, data) {
+  documentsByPath.set(path, data);
+}
+
+/**
+ * 設定本檔 Firestore SDK 邊界 stub。
+ */
+function setupFirestoreMocks() {
+  firestoreMocks.collection.mockImplementation((_dbOrRef, ...segments) => ({
+    type: 'collection',
+    path: segments.join('/'),
+  }));
+  firestoreMocks.collectionGroup.mockImplementation((_db, groupId) => ({
+    type: 'collectionGroup',
+    path: groupId,
+  }));
+  firestoreMocks.doc.mockImplementation((base, ...segments) => {
+    if (base?.type === 'collection' && segments.length === 0) {
+      return { id: 'new-post-id', path: `${base.path}/new-post-id` };
+    }
+    if (base?.type === 'collection') {
+      return { id: String(segments.at(-1)), path: [base.path, ...segments].join('/') };
+    }
+    return { id: String(segments.at(-1)), path: segments.join('/') };
+  });
+  firestoreMocks.query.mockImplementation((...parts) => ({
+    type: 'query',
+    path: parts[0]?.path,
+    parts,
+  }));
+  firestoreMocks.where.mockImplementation((...parts) => ({ type: 'where', parts }));
+  firestoreMocks.orderBy.mockImplementation((...parts) => ({ type: 'orderBy', parts }));
+  firestoreMocks.limit.mockImplementation((count) => ({ type: 'limit', count }));
+  firestoreMocks.startAfter.mockImplementation((...parts) => ({ type: 'startAfter', parts }));
+  firestoreMocks.documentId.mockReturnValue('__name__');
+  firestoreMocks.addDoc.mockResolvedValue({ id: 'new-post-id' });
+  firestoreMocks.updateDoc.mockResolvedValue(undefined);
+  firestoreMocks.runTransaction.mockImplementation(async (_db, callback) =>
+    callback({ get: vi.fn(), set: vi.fn(), update: vi.fn(), delete: vi.fn() }),
+  );
+  firestoreMocks.writeBatch.mockReturnValue({
+    set: vi.fn(),
+    delete: vi.fn(),
+    commit: vi.fn().mockResolvedValue(undefined),
+  });
+  firestoreMocks.getDoc.mockImplementation(async (ref) => {
+    const data = documentsByPath.get(ref.path) ?? null;
+    return createDocSnapshot(ref.id, data);
+  });
+  firestoreMocks.getDocs.mockImplementation(async (ref) => {
+    if (ref.path === 'likes') return createQuerySnapshot([]);
+    const page = postPages.length > 1 ? postPages.shift() : postPages[0];
+    return createQuerySnapshot(page.map((post) => createDocSnapshot(String(post.id), post)));
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -153,7 +251,7 @@ async function renderPostPage() {
     </AuthWrapper>,
   );
   await waitFor(() => {
-    expect(mockedGetLatestPosts).toHaveBeenCalled();
+    expect(firestoreMocks.getDocs).toHaveBeenCalled();
   });
   return { user };
 }
@@ -182,9 +280,10 @@ async function submitForm(user, label = '發布') {
 // ---------------------------------------------------------------------------
 beforeEach(() => {
   vi.clearAllMocks();
-  mockedGetLatestPosts.mockResolvedValue([]);
-  mockedCreatePost.mockResolvedValue({ id: 'new-post-id' });
-  mockedGetPostDetail.mockResolvedValue({
+  setPostPages([]);
+  documentsByPath = new Map();
+  setupFirestoreMocks();
+  setDocument('posts/new-post-id', {
     id: 'new-post-id',
     title: 'Test Title',
     content: 'Test Content',
@@ -193,7 +292,6 @@ beforeEach(() => {
     likesCount: 0,
     commentsCount: 0,
   });
-  mockedHasUserLikedPosts.mockResolvedValue(new Set());
   mockSearchParamsGet.mockReturnValue(null);
 });
 
@@ -238,7 +336,7 @@ describe('PostPage form validation', () => {
       await waitFor(() => {
         expect(mockShowToast).toHaveBeenCalledWith('請輸入標題和內容', 'error');
       });
-      expect(mockedCreatePost).not.toHaveBeenCalled();
+      expect(firestoreMocks.addDoc).not.toHaveBeenCalled();
     });
 
     it('shows title error toast when title is empty but content is filled', async () => {
@@ -255,7 +353,7 @@ describe('PostPage form validation', () => {
       await waitFor(() => {
         expect(mockShowToast).toHaveBeenCalledWith('請輸入標題', 'error');
       });
-      expect(mockedCreatePost).not.toHaveBeenCalled();
+      expect(firestoreMocks.addDoc).not.toHaveBeenCalled();
     });
 
     it('shows content error toast when content is empty but title is filled', async () => {
@@ -272,7 +370,7 @@ describe('PostPage form validation', () => {
       await waitFor(() => {
         expect(mockShowToast).toHaveBeenCalledWith('請輸入內容', 'error');
       });
-      expect(mockedCreatePost).not.toHaveBeenCalled();
+      expect(firestoreMocks.addDoc).not.toHaveBeenCalled();
     });
 
     it('shows length error toast when title exceeds 50 characters', async () => {
@@ -293,7 +391,7 @@ describe('PostPage form validation', () => {
       await waitFor(() => {
         expect(mockShowToast).toHaveBeenCalledWith('標題不可超過 50 字', 'error');
       });
-      expect(mockedCreatePost).not.toHaveBeenCalled();
+      expect(firestoreMocks.addDoc).not.toHaveBeenCalled();
     });
   });
 
@@ -303,7 +401,7 @@ describe('PostPage form validation', () => {
   describe('edit mode validation (US1+US2)', () => {
     it('shows error toast when editing a post and clearing title to empty', async () => {
       // Arrange — load a post owned by test user
-      mockedGetLatestPosts.mockResolvedValueOnce([
+      setPostPages([
         {
           id: 'post-edit-1',
           title: '原始標題',
@@ -314,7 +412,6 @@ describe('PostPage form validation', () => {
           commentsCount: 0,
         },
       ]);
-      mockedHasUserLikedPosts.mockResolvedValueOnce(new Set());
 
       const user = userEvent.setup();
       render(
@@ -344,7 +441,7 @@ describe('PostPage form validation', () => {
       await waitFor(() => {
         expect(mockShowToast).toHaveBeenCalledWith('請輸入標題', 'error');
       });
-      expect(mockedUpdatePost).not.toHaveBeenCalled();
+      expect(firestoreMocks.updateDoc).not.toHaveBeenCalled();
     });
   });
 
@@ -367,10 +464,15 @@ describe('PostPage form validation', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockedCreatePost).toHaveBeenCalledWith({
+        expect(firestoreMocks.addDoc).toHaveBeenCalledWith(expect.anything(), {
+          authorUid: 'test-uid',
           title: '有效標題',
           content: '有效的文章內容',
-          user: expect.objectContaining({ uid: 'test-uid', photoURL: '/test.jpg' }),
+          authorImgURL: '/test.jpg',
+          authorName: 'Test User',
+          postAt: { __type: 'serverTimestamp' },
+          likesCount: 0,
+          commentsCount: 0,
         });
       });
       await waitFor(() => {

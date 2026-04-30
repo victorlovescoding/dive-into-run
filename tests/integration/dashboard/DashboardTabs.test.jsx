@@ -1,17 +1,44 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {
-  fetchMyEvents,
-  fetchMyPosts,
-  fetchMyComments,
-} from '@/runtime/client/use-cases/member-dashboard-use-cases';
+import { getDoc, getDocs } from 'firebase/firestore';
 
-// Mock service layer
-vi.mock('@/runtime/client/use-cases/member-dashboard-use-cases', () => ({
-  fetchMyEvents: vi.fn(),
-  fetchMyPosts: vi.fn(),
-  fetchMyComments: vi.fn(),
+vi.mock('firebase/app', () => ({
+  initializeApp: vi.fn(() => ({})),
+}));
+
+vi.mock('firebase/auth', () => ({
+  getAuth: vi.fn(() => ({})),
+  GoogleAuthProvider: vi.fn(function GoogleAuthProvider() {
+    this.setCustomParameters = vi.fn();
+  }),
+  connectAuthEmulator: vi.fn(),
+  signInWithEmailAndPassword: vi.fn(),
+  signOut: vi.fn(),
+}));
+
+vi.mock('firebase/storage', () => ({
+  getStorage: vi.fn(() => ({})),
+  connectStorageEmulator: vi.fn(),
+}));
+
+vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(() => ({})),
+  connectFirestoreEmulator: vi.fn(),
+  getDocs: vi.fn(),
+  getDoc: vi.fn(),
+  collection: vi.fn((db, ...segments) => ({ type: 'collection', path: segments })),
+  collectionGroup: vi.fn((db, id) => ({ type: 'collectionGroup', id })),
+  query: vi.fn((source, ...constraints) => ({ source, constraints })),
+  where: vi.fn((field, op, value) => ({ type: 'where', field, op, value })),
+  orderBy: vi.fn((field, direction) => ({ type: 'orderBy', field, direction })),
+  limit: vi.fn((count) => ({ type: 'limit', count })),
+  startAfter: vi.fn((document) => ({ type: 'startAfter', document })),
+  doc: vi.fn((db, ...segments) => ({
+    type: 'doc',
+    path: segments,
+    id: segments[segments.length - 1],
+  })),
 }));
 
 // Mock card components
@@ -30,14 +57,13 @@ vi.mock('@/components/DashboardCommentCard', () => ({
   default: ({ comment }) => <div data-testid={`comment-${comment.id}`}>{comment.text}</div>,
 }));
 
-/** @type {import('vitest').Mock} */
-const mockedFetchMyEvents = /** @type {any} */ (fetchMyEvents);
-/** @type {import('vitest').Mock} */
-const mockedFetchMyPosts = /** @type {any} */ (fetchMyPosts);
-/** @type {import('vitest').Mock} */
-const mockedFetchMyComments = /** @type {any} */ (fetchMyComments);
+const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
+const mockedGetDoc = /** @type {import('vitest').Mock} */ (getDoc);
 
 const TEST_UID = 'test-uid-123';
+
+/** @type {{ participants: any[], hostedEvents: any[], eventsById: Map<string, any>, posts: any[], comments: any[], parentTitles: Map<string, string> }} */
+let firestoreData;
 
 /**
  * 建立 mock event items。
@@ -58,6 +84,146 @@ function makeEvents(count, hostUid = 'other') {
   }));
 }
 
+/**
+ * 建立 collectionGroup comments 需要的 ref.parent.parent shape。
+ * @param {'posts' | 'events'} parentCollection - Parent collection id。
+ * @param {string} parentId - Parent document id。
+ * @returns {{ parent: { parent: { id: string, parent: { id: string } } } }} Comment ref。
+ */
+function makeCommentRef(parentCollection, parentId) {
+  return {
+    parent: {
+      parent: {
+        id: parentId,
+        parent: { id: parentCollection },
+      },
+    },
+  };
+}
+
+/**
+ * 建立 query snapshot。
+ * @param {any[]} docs - Firestore document snapshots。
+ * @returns {{ docs: any[] }} Query snapshot。
+ */
+function makeQuerySnapshot(docs) {
+  return { docs };
+}
+
+/**
+ * 建立 query document snapshot。
+ * @param {string} id - Document id。
+ * @param {Record<string, unknown>} data - Document data。
+ * @param {object} [extra] - Extra fields。
+ * @returns {any} Query document snapshot。
+ */
+function makeQueryDoc(id, data, extra = {}) {
+  return {
+    id,
+    data: () => data,
+    ...extra,
+  };
+}
+
+/**
+ * 找出 query descriptor 的 where 條件。
+ * @param {any} descriptor - Mock query descriptor。
+ * @param {string} field - Field name。
+ * @returns {any | undefined} where constraint。
+ */
+function findWhere(descriptor, field) {
+  return descriptor.constraints.find(
+    (constraint) => constraint.type === 'where' && constraint.field === field,
+  );
+}
+
+/**
+ * Mock Firestore getDocs，讓 runtime/use-case/service/repo 真實執行。
+ * @param {any} descriptor - Mock query descriptor。
+ * @returns {Promise<{ docs: any[] }>} Query snapshot。
+ */
+async function resolveGetDocs(descriptor) {
+  const { source } = descriptor;
+
+  if (source.type === 'collectionGroup' && source.id === 'participants') {
+    const uid = findWhere(descriptor, 'uid')?.value;
+    return makeQuerySnapshot(
+      firestoreData.participants
+        .filter((participant) => participant.uid === uid)
+        .map((participant) => makeQueryDoc(participant.eventId, participant)),
+    );
+  }
+
+  if (source.type === 'collection' && source.path[0] === 'events') {
+    const hostUid = findWhere(descriptor, 'hostUid')?.value;
+    return makeQuerySnapshot(
+      firestoreData.hostedEvents
+        .filter((event) => event.hostUid === hostUid)
+        .map((event) => makeQueryDoc(event.id, event)),
+    );
+  }
+
+  if (source.type === 'collection' && source.path[0] === 'posts') {
+    const authorUid = findWhere(descriptor, 'authorUid')?.value;
+    return makeQuerySnapshot(
+      firestoreData.posts
+        .filter((post) => post.authorUid === authorUid)
+        .map((post) => makeQueryDoc(post.id, post)),
+    );
+  }
+
+  if (source.type === 'collectionGroup' && source.id === 'comments') {
+    const authorUid = findWhere(descriptor, 'authorUid')?.value;
+    return makeQuerySnapshot(
+      firestoreData.comments
+        .filter((comment) => comment.authorUid === authorUid)
+        .map((comment) =>
+          makeQueryDoc(comment.id, comment, {
+            ref: makeCommentRef(comment.parentCollection, comment.parentId),
+          }),
+        ),
+    );
+  }
+
+  return makeQuerySnapshot([]);
+}
+
+/**
+ * Mock Firestore getDoc。
+ * @param {any} documentRef - Mock document ref。
+ * @returns {Promise<any>} Document snapshot。
+ */
+async function resolveGetDoc(documentRef) {
+  const [collectionId, documentId] = documentRef.path;
+  const data =
+    collectionId === 'events'
+      ? firestoreData.eventsById.get(documentId)
+      : { title: firestoreData.parentTitles.get(documentId) };
+
+  return {
+    id: documentId,
+    exists: () => Boolean(data),
+    data: () => data,
+  };
+}
+
+/**
+ * 設定 Firestore fixture。
+ * @param {Partial<typeof firestoreData>} overrides - 覆蓋資料。
+ * @returns {void}
+ */
+function setFirestoreData(overrides = {}) {
+  firestoreData = {
+    participants: [],
+    hostedEvents: [],
+    eventsById: new Map(),
+    posts: [],
+    comments: [],
+    parentTitles: new Map(),
+    ...overrides,
+  };
+}
+
 describe('DashboardTabs', () => {
   /** @type {ReturnType<typeof userEvent.setup>} */
   let user;
@@ -65,11 +231,9 @@ describe('DashboardTabs', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     user = userEvent.setup();
-
-    // Default: all fetches hang (never resolve) to avoid unhandled promises
-    mockedFetchMyEvents.mockImplementation(() => new Promise(() => {}));
-    mockedFetchMyPosts.mockImplementation(() => new Promise(() => {}));
-    mockedFetchMyComments.mockImplementation(() => new Promise(() => {}));
+    setFirestoreData();
+    mockedGetDocs.mockImplementation(resolveGetDocs);
+    mockedGetDoc.mockImplementation(resolveGetDoc);
   });
 
   /**
@@ -181,7 +345,8 @@ describe('DashboardTabs', () => {
 
   // --- 6. 載入中顯示 loading ---
   it('shows loading state on initial fetch', async () => {
-    // Arrange — fetchMyEvents never resolves (default)
+    // Arrange
+    mockedGetDocs.mockImplementation(() => new Promise(() => {}));
     const DashboardTabs = await importComponent();
 
     // Act
@@ -197,12 +362,11 @@ describe('DashboardTabs', () => {
   it('renders event items after successful fetch', async () => {
     // Arrange
     const events = makeEvents(2, TEST_UID);
-    mockedFetchMyEvents.mockImplementation(async () => ({
-      items: events,
-      nextCursor: null,
-      hostedIds: new Set(['e1', 'e2']),
-      allEvents: events,
-    }));
+    setFirestoreData({
+      participants: events.map((event) => ({ uid: TEST_UID, eventId: event.id })),
+      hostedEvents: events,
+      eventsById: new Map(events.map((event) => [event.id, event])),
+    });
 
     const DashboardTabs = await importComponent();
 
@@ -221,13 +385,6 @@ describe('DashboardTabs', () => {
   // --- 8. 空資料顯示 empty state ---
   it('shows empty state when no events', async () => {
     // Arrange
-    mockedFetchMyEvents.mockImplementation(async () => ({
-      items: [],
-      nextCursor: null,
-      hostedIds: new Set(),
-      allEvents: [],
-    }));
-
     const DashboardTabs = await importComponent();
 
     // Act
@@ -242,9 +399,7 @@ describe('DashboardTabs', () => {
   // --- 9. 載入失敗顯示 error + retry 按鈕 ---
   it('shows error state and retries on failure', async () => {
     // Arrange
-    mockedFetchMyEvents.mockImplementation(async () => {
-      throw new Error('network error');
-    });
+    mockedGetDocs.mockRejectedValueOnce(new Error('network error'));
 
     const DashboardTabs = await importComponent();
 
@@ -262,12 +417,11 @@ describe('DashboardTabs', () => {
 
     // Arrange — retry succeeds
     const events = makeEvents(1);
-    mockedFetchMyEvents.mockImplementation(async () => ({
-      items: events,
-      nextCursor: null,
-      hostedIds: new Set(),
-      allEvents: events,
-    }));
+    setFirestoreData({
+      participants: events.map((event) => ({ uid: TEST_UID, eventId: event.id })),
+      eventsById: new Map(events.map((event) => [event.id, event])),
+    });
+    mockedGetDocs.mockImplementation(resolveGetDocs);
 
     // Act — click retry
     await user.click(retryButton);
@@ -282,12 +436,10 @@ describe('DashboardTabs', () => {
   it('shows end hint when all data is loaded', async () => {
     // Arrange — items < pageSize(5) → hasMore = false
     const events = makeEvents(2);
-    mockedFetchMyEvents.mockImplementation(async () => ({
-      items: events,
-      nextCursor: null,
-      hostedIds: new Set(),
-      allEvents: events,
-    }));
+    setFirestoreData({
+      participants: events.map((event) => ({ uid: TEST_UID, eventId: event.id })),
+      eventsById: new Map(events.map((event) => [event.id, event])),
+    });
 
     const DashboardTabs = await importComponent();
 
@@ -303,17 +455,6 @@ describe('DashboardTabs', () => {
   // --- 11. Posts tab 的 empty state ---
   it('shows posts empty state', async () => {
     // Arrange
-    mockedFetchMyEvents.mockImplementation(async () => ({
-      items: [],
-      nextCursor: null,
-      hostedIds: new Set(),
-      allEvents: [],
-    }));
-    mockedFetchMyPosts.mockImplementation(async () => ({
-      items: [],
-      lastDoc: null,
-    }));
-
     const DashboardTabs = await importComponent();
     render(<DashboardTabs uid={TEST_UID} />);
 
@@ -329,17 +470,6 @@ describe('DashboardTabs', () => {
   // --- 12. Comments tab 的 empty state ---
   it('shows comments empty state', async () => {
     // Arrange
-    mockedFetchMyEvents.mockImplementation(async () => ({
-      items: [],
-      nextCursor: null,
-      hostedIds: new Set(),
-      allEvents: [],
-    }));
-    mockedFetchMyComments.mockImplementation(async () => ({
-      items: [],
-      lastDoc: null,
-    }));
-
     const DashboardTabs = await importComponent();
     render(<DashboardTabs uid={TEST_UID} />);
 
@@ -368,12 +498,11 @@ describe('DashboardTabs', () => {
         hostUid: 'other-uid',
       },
     ];
-    mockedFetchMyEvents.mockImplementation(async () => ({
-      items: events,
-      nextCursor: null,
-      hostedIds: new Set(['e1']),
-      allEvents: events,
-    }));
+    setFirestoreData({
+      participants: events.map((event) => ({ uid: TEST_UID, eventId: event.id })),
+      hostedEvents: [events[0]],
+      eventsById: new Map(events.map((event) => [event.id, event])),
+    });
 
     const DashboardTabs = await importComponent();
 

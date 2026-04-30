@@ -1,21 +1,26 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+import DashboardCommentCard from '@/components/DashboardCommentCard';
 
 vi.mock('next/link', () => ({
   default: ({ children, href }) => <a href={href}>{children}</a>,
 }));
 
-vi.mock('@/lib/event-helpers', () => ({
-  formatDateTime: vi.fn(() => '2025-06-15 14:30'),
-}));
-
-/** @type {import('vitest').Mock} */
-const mockFormatDateTime = /** @type {import('vitest').Mock} */ (
-  (await import('@/lib/event-helpers')).formatDateTime
-);
-
-import DashboardCommentCard from '@/components/DashboardCommentCard';
+/**
+ * 建立一個假的 Firestore Timestamp。
+ * @param {number} year - 年。
+ * @param {number} monthIndex - 0-based 月份。
+ * @param {number} day - 日。
+ * @param {number} hour - 時。
+ * @param {number} minute - 分。
+ * @returns {{ toDate: () => Date }} 假 Timestamp。
+ */
+function fakeTimestamp(year, monthIndex, day, hour, minute) {
+  return {
+    toDate: () => new Date(year, monthIndex, day, hour, minute),
+  };
+}
 
 /**
  * 建立預設留言資料。
@@ -29,7 +34,7 @@ function createComment(overrides = {}) {
     parentId: 'p1',
     parentTitle: '晨跑心得分享',
     text: '這篇文章寫得很好，讓我學到很多跑步技巧！',
-    createdAt: /** @type {any} */ ({ toDate: () => new Date('2025-06-15T14:30:00') }),
+    createdAt: /** @type {any} */ (fakeTimestamp(2025, 5, 15, 14, 30)),
     ...overrides,
   };
 }
@@ -98,15 +103,13 @@ describe('DashboardCommentCard', () => {
 
   it('渲染 formatted createdAt', () => {
     // Arrange
-    const ts = /** @type {any} */ ({ toDate: () => new Date('2025-06-15T14:30:00') });
+    const ts = /** @type {any} */ (fakeTimestamp(2025, 5, 15, 14, 30));
     const comment = createComment({ createdAt: ts });
-    mockFormatDateTime.mockReturnValue('2025-06-15 14:30');
 
     // Act
     render(<DashboardCommentCard comment={comment} />);
 
     // Assert
-    expect(mockFormatDateTime).toHaveBeenCalledWith(ts);
     expect(screen.getByText('2025-06-15 14:30')).toBeInTheDocument();
   });
 

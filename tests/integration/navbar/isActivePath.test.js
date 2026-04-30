@@ -1,27 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-
-vi.mock('next/navigation', () => ({
-  usePathname: vi.fn(() => '/'),
-}));
-
-vi.mock('@/contexts/AuthContext', () => ({
-  AuthContext: { _currentValue: { user: null, loading: false } },
-}));
-
-vi.mock('@/components/Notifications/NotificationBell', () => ({
-  default: () => null,
-}));
-
-vi.mock('@/components/Notifications/NotificationPanel', () => ({
-  default: () => null,
-}));
-
-vi.mock('@/lib/firebase-auth-helpers', () => ({
-  signInWithGoogle: vi.fn(),
-  signOutUser: vi.fn(),
-}));
-
-import { isActivePath } from '@/components/Navbar/Navbar';
+import { describe, it, expect } from 'vitest';
+import { isActivePath } from '@/components/Navbar/nav-constants';
 
 describe('isActivePath', () => {
   it('returns true when pathname is "/" and href is "/"', () => {
