@@ -5,46 +5,27 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   createPost,
   deletePost,
-  getLatestPosts,
-  getMorePosts,
   getPostDetail,
-  hasUserLikedPosts,
   toggleLikePost,
   updatePost,
   validatePostInput,
 } from '@/runtime/client/use-cases/post-use-cases';
+import {
+  applyPostLikeState,
+  createComposerDraft,
+  hydratePosts,
+  loadInitialPosts,
+  loadMorePostsPage,
+  mergeUniquePosts,
+  prependPost,
+  removePostById,
+  replaceEditedPost,
+} from '@/runtime/hooks/usePostsPageRuntimeHelpers';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 
 const PAGE_SIZE = 10;
 const OBSERVER_MARGIN = '300px 0px';
-
-/**
- * 為 post list 補上當前使用者視角的 UI flags。
- * @param {Array<object>} postItems - 原始文章資料。
- * @param {string | null | undefined} userUid - 當前使用者 UID。
- * @param {Set<string>} [likedPostIds] - 已按讚文章 ID 集合。
- * @returns {Array<object>} 帶 liked / isAuthor 的文章。
- */
-function hydratePosts(postItems, userUid, likedPostIds = new Set()) {
-  return (Array.isArray(postItems) ? postItems : []).map((postItem) => ({
-    ...postItem,
-    liked: likedPostIds.has(postItem.id),
-    isAuthor: postItem.authorUid === userUid,
-  }));
-}
-
-/**
- * 以 id 去重後把新文章接到列表尾端。
- * @param {Array<object>} previousPosts - 既有文章。
- * @param {Array<object>} nextPosts - 待追加文章。
- * @returns {Array<object>} 合併後文章。
- */
-function mergeUniquePosts(previousPosts, nextPosts) {
-  const seenIds = new Set(previousPosts.map((postItem) => postItem.id));
-  const freshPosts = nextPosts.filter((postItem) => !seenIds.has(postItem.id));
-  return [...previousPosts, ...freshPosts];
-}
 
 /**
  * posts list 頁 runtime orchestration。
@@ -74,31 +55,29 @@ export default function usePostsPageRuntime() {
 
   const userUid = user?.uid ?? null;
 
+  /**
+   * 套用新增/編輯表單 draft。
+   * @param {{ title: string, content: string, originalTitle: string, originalContent: string, editingPostId: string | null }} draft - 表單 draft。
+   */
+  const applyComposerDraft = useCallback((draft) => {
+    setTitle(draft.title);
+    setContent(draft.content);
+    setOriginalTitle(draft.originalTitle);
+    setOriginalContent(draft.originalContent);
+    setEditingPostId(draft.editingPostId);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
     /** 載入第一頁文章與按讚狀態。 */
     async function loadPosts() {
-      if (!cancelled) {
-        setIsLoading(true);
-      }
-
+      if (!cancelled) setIsLoading(true);
       try {
-        const latestPosts = await getLatestPosts();
+        const { posts: hydratedPosts, nextCursor: initialCursor } = await loadInitialPosts(userUid);
         if (cancelled) return;
-
-        const likedPostIds =
-          userUid && latestPosts.length > 0
-            ? await hasUserLikedPosts(
-                userUid,
-                latestPosts.map((postItem) => postItem.id),
-              )
-            : new Set();
-
-        if (cancelled) return;
-
-        setPosts(hydratePosts(latestPosts, userUid, likedPostIds));
-        setNextCursor(latestPosts[latestPosts.length - 1] ?? null);
+        setPosts(hydratedPosts);
+        setNextCursor(initialCursor);
       } catch (error) {
         console.error('取得文章失敗:', error);
         if (!cancelled) {
@@ -106,14 +85,11 @@ export default function usePostsPageRuntime() {
           setNextCursor(null);
         }
       } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        if (!cancelled) setIsLoading(false);
       }
     }
 
     loadPosts();
-
     return () => {
       cancelled = true;
     };
@@ -122,7 +98,6 @@ export default function usePostsPageRuntime() {
   useEffect(() => {
     const toastMessage = searchParams.get('toast');
     if (!toastMessage) return;
-
     showToast(toastMessage);
     router.replace('/posts', { scroll: false });
   }, [router, searchParams, showToast]);
@@ -148,20 +123,9 @@ export default function usePostsPageRuntime() {
         setIsLoadingNext(true);
 
         try {
-          const morePosts = await getMorePosts(nextCursor);
-          const likedPostIds =
-            userUid && morePosts.length > 0
-              ? await hasUserLikedPosts(
-                  userUid,
-                  morePosts.map((postItem) => postItem.id),
-                )
-              : new Set();
-          const hydratedPosts = hydratePosts(morePosts, userUid, likedPostIds);
-
-          setPosts((previousPosts) => mergeUniquePosts(previousPosts, hydratedPosts));
-          setNextCursor(
-            morePosts.length < PAGE_SIZE ? null : (morePosts[morePosts.length - 1] ?? null),
-          );
+          const nextPage = await loadMorePostsPage({ nextCursor, userUid, pageSize: PAGE_SIZE });
+          setPosts((previousPosts) => mergeUniquePosts(previousPosts, nextPage.posts));
+          setNextCursor(nextPage.nextCursor);
         } catch (error) {
           console.error(error);
         } finally {
@@ -186,30 +150,16 @@ export default function usePostsPageRuntime() {
    */
   const handleComposeButton = useCallback(
     (postId) => {
-      if (postId) {
-        const targetPost = posts.find((postItem) => postItem.id === postId);
-        if (!targetPost) {
-          showToast('文章不存在，無法編輯', 'error');
-          return;
-        }
-
-        setTitle(targetPost.title);
-        setContent(targetPost.content);
-        setOriginalTitle(targetPost.title);
-        setOriginalContent(targetPost.content);
-        setEditingPostId(postId);
-      } else {
-        setTitle('');
-        setContent('');
-        setOriginalTitle('');
-        setOriginalContent('');
-        setEditingPostId(null);
+      const targetPost = postId ? posts.find((postItem) => postItem.id === postId) : null;
+      if (postId && !targetPost) {
+        showToast('文章不存在，無法編輯', 'error');
+        return;
       }
-
+      applyComposerDraft(createComposerDraft(targetPost));
       setOpenMenuPostId('');
       dialogRef.current?.showModal();
     },
-    [posts, showToast],
+    [applyComposerDraft, posts, showToast],
   );
 
   /**
@@ -225,29 +175,14 @@ export default function usePostsPageRuntime() {
 
       const previousLiked = !!targetPost.liked;
       const previousCount = Number(targetPost.likesCount ?? 0);
+      const nextCount = Math.max(0, previousCount + (previousLiked ? -1 : 1));
 
-      setPosts((previousPosts) =>
-        previousPosts.map((postItem) =>
-          postItem.id === postId
-            ? {
-                ...postItem,
-                liked: !previousLiked,
-                likesCount: Math.max(0, previousCount + (previousLiked ? -1 : 1)),
-              }
-            : postItem,
-        ),
-      );
+      setPosts((previousPosts) => applyPostLikeState(previousPosts, postId, !previousLiked, nextCount));
 
       const result = await toggleLikePost(postId, userUid);
       if (result !== 'fail') return;
 
-      setPosts((previousPosts) =>
-        previousPosts.map((postItem) =>
-          postItem.id === postId
-            ? { ...postItem, liked: previousLiked, likesCount: previousCount }
-            : postItem,
-        ),
-      );
+      setPosts((previousPosts) => applyPostLikeState(previousPosts, postId, previousLiked, previousCount));
     },
     [posts, userUid],
   );
@@ -273,7 +208,7 @@ export default function usePostsPageRuntime() {
 
       try {
         await deletePost(postId);
-        setPosts((previousPosts) => previousPosts.filter((postItem) => postItem.id !== postId));
+        setPosts((previousPosts) => removePostById(previousPosts, postId));
         if (openMenuPostId === postId) {
           setOpenMenuPostId('');
         }
@@ -305,13 +240,7 @@ export default function usePostsPageRuntime() {
 
         if (editingPostId) {
           await updatePost(editingPostId, { title, content });
-          setPosts((previousPosts) =>
-            previousPosts.map((postItem) =>
-              postItem.id === editingPostId
-                ? { ...postItem, title: title.trim(), content: content.trim() }
-                : postItem,
-            ),
-          );
+          setPosts((previousPosts) => replaceEditedPost(previousPosts, editingPostId, title, content));
           showToast('更新文章成功');
         } else {
           if (!user) return;
@@ -323,7 +252,7 @@ export default function usePostsPageRuntime() {
           }
 
           const [hydratedPost] = hydratePosts([createdPost], user.uid ?? null);
-          setPosts((previousPosts) => [hydratedPost, ...previousPosts]);
+          setPosts((previousPosts) => prependPost(previousPosts, hydratedPost));
           window.scrollTo({ top: 0, behavior: 'smooth' });
           showToast('發佈文章成功');
         }
@@ -334,14 +263,10 @@ export default function usePostsPageRuntime() {
         setIsSubmitting(false);
       }
 
-      setTitle('');
-      setContent('');
-      setOriginalTitle('');
-      setOriginalContent('');
-      setEditingPostId(null);
+      applyComposerDraft(createComposerDraft(null));
       dialogRef.current?.close();
     },
-    [content, editingPostId, showToast, title, user],
+    [applyComposerDraft, content, editingPostId, showToast, title, user],
   );
 
   return {
