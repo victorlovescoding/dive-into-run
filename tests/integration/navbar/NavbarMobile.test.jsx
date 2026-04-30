@@ -43,11 +43,28 @@ vi.mock('@/components/Notifications/NotificationPanel', () => ({
   default: () => null,
 }));
 
-const mockSignIn = vi.fn();
-const mockSignOut = vi.fn();
-vi.mock('@/lib/firebase-auth-helpers', () => ({
-  signInWithGoogle: (...args) => mockSignIn(...args),
-  signOutUser: (...args) => mockSignOut(...args),
+const {
+  mockAuth,
+  mockProvider,
+  mockSignInWithPopup,
+  mockSignOut,
+} = vi.hoisted(() => ({
+  mockAuth: { name: 'mock-auth' },
+  mockProvider: { name: 'mock-provider' },
+  mockSignInWithPopup: vi.fn(),
+  mockSignOut: vi.fn(),
+}));
+
+vi.mock('firebase/auth', () => ({
+  onAuthStateChanged: vi.fn(),
+  signInWithPopup: mockSignInWithPopup,
+  signOut: mockSignOut,
+}));
+
+vi.mock('@/config/client/firebase-client', () => ({
+  auth: mockAuth,
+  db: { name: 'mock-db' },
+  provider: mockProvider,
 }));
 
 // -- Helpers --
@@ -237,9 +254,10 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       expect(loginBtn).toBeInTheDocument();
     });
 
-    it('clicking login button calls signInWithGoogle', async () => {
+    it('clicking login button signs in with Firebase popup', async () => {
       // Arrange
       const { user } = await renderAndOpenDrawer({ user: null });
+      mockSignInWithPopup.mockResolvedValueOnce({});
 
       // Act
       const drawer = screen.getByRole('dialog', { name: '導覽選單' });
@@ -248,7 +266,9 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       await user.click(loginBtn);
 
       // Assert
-      expect(mockSignIn).toHaveBeenCalledTimes(1);
+      expect(mockSignInWithPopup).toHaveBeenCalledWith(mockAuth, mockProvider);
+      expect(loginBtn).toBeInTheDocument();
+      expect(drawer).toHaveClass(/drawerOpen/);
     });
 
     it('shows user name and sign-out button when logged in', async () => {
@@ -262,9 +282,10 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       expect(drawerScope.getByRole('button', { name: /登出/i })).toBeInTheDocument();
     });
 
-    it('clicking sign-out calls signOutUser', async () => {
+    it('clicking sign-out signs out with Firebase auth and closes drawer', async () => {
       // Arrange
       const { user } = await renderAndOpenDrawer({ user: mockUser });
+      mockSignOut.mockResolvedValueOnce();
 
       // Act
       const drawer = screen.getByRole('dialog', { name: '導覽選單' });
@@ -273,7 +294,8 @@ describe('Navbar Mobile Drawer (T005-T008)', () => {
       await user.click(signOutBtn);
 
       // Assert
-      expect(mockSignOut).toHaveBeenCalledTimes(1);
+      expect(mockSignOut).toHaveBeenCalledWith(mockAuth);
+      expect(drawer).not.toHaveClass(/drawerOpen/);
     });
   });
 

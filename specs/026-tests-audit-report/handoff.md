@@ -183,6 +183,13 @@
 - **Rerun outcome**: T39 redo on `01a78b5` returned **SAFE**; T40 added `firestore-rules-gate` to `main`'s required checks; T41 API verify confirmed 3 contexts (`ci`, `e2e`, `firestore-rules-gate`); T42 open-PR list empty so deadlock smoke is `not observed` per AC-T42.3.
 - **Future-proof reminder**: If you ever add another required status check, verify the workflow has no top-level path/branch/commit-message filter that could cause a skip on unrelated PRs. Use job-level `if:` with a no-op fallback step instead.
 
+### Spec 027 linkage（2026-04-30，同期測試 cleanup 的可重用結論）
+
+- unit/api server route 若要去掉 internal mock，優先走 **Admin SDK in-memory stub + `global.fetch` stub**，不要先假設需要 Option A / nock。這輪 `strava-callback`、`strava-webhook`、`strava-sync`、`strava-disconnect`、`sync-token-revocation`、`weather-api-route` 都可用這條路收斂。
+- Admin SDK stub 至少要支援兩種形狀：`collection().doc().get/set/update/delete` 與 `collection().where().limit().get()`；Strava route 另外常需要 `batch().set/update/delete/commit()`。少任何一段都很容易把 route orchestration 測成假綠。
+- route / service 測試若有 upstream `fetch`，直接回真 `Response` 物件通常比手刻 `{ json() {} }` 穩，因為 real code 會同時讀 `ok`、`status`、`statusText`、`headers`。
+- runtime / service cleanup 的共同原則已再次被證實：不要 assert internal helper call；改 assert HTTP contract、repo-facing payload、cursor 行為、以及 persisted side effect，這樣才能確保真實執行鏈有被覆蓋。
+
 ### S1 Risks（保留 — 凍結為歷史）
 
 | Risk                                                                    | Why it matters                                                                                                                                                                                                                                                                 | Action                                                                                                                                                                                                                              |

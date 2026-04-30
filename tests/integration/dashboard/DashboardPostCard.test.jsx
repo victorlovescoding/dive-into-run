@@ -1,17 +1,26 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+import DashboardPostCard from '@/components/DashboardPostCard';
 
 vi.mock('next/link', () => ({
   default: ({ children, href }) => <a href={href}>{children}</a>,
 }));
 
-vi.mock('@/lib/event-helpers', () => ({
-  formatDateTime: vi.fn(),
-}));
-
-/** @type {import('vitest').Mock} */
-const mockFormatDateTime = /** @type {any} */ (await import('@/lib/event-helpers')).formatDateTime;
+/**
+ * 建立一個假的 Firestore Timestamp。
+ * @param {number} year - 年。
+ * @param {number} monthIndex - 0-based 月份。
+ * @param {number} day - 日。
+ * @param {number} hour - 時。
+ * @param {number} minute - 分。
+ * @returns {{ toDate: () => Date }} 假 Timestamp。
+ */
+function fakeTimestamp(year, monthIndex, day, hour, minute) {
+  return {
+    toDate: () => new Date(year, monthIndex, day, hour, minute),
+  };
+}
 
 /**
  * @param {Partial<import('@/lib/firebase-posts').Post>} overrides - 覆蓋預設值的欄位。
@@ -23,7 +32,7 @@ function makePost(overrides = {}) {
     authorUid: 'user-1',
     title: '週末河濱跑步心得',
     content: '今天跑了 10K，配速 5:30...',
-    postAt: /** @type {any} */ ({ toDate: () => new Date('2025-06-15T08:30:00') }),
+    postAt: /** @type {any} */ (fakeTimestamp(2025, 5, 15, 8, 30)),
     likesCount: 42,
     commentsCount: 7,
     ...overrides,
@@ -31,15 +40,6 @@ function makePost(overrides = {}) {
 }
 
 describe('DashboardPostCard', () => {
-  /** @type {typeof import('@/components/DashboardPostCard').default} */
-  let DashboardPostCard;
-
-  beforeEach(async () => {
-    vi.clearAllMocks();
-    mockFormatDateTime.mockReturnValue('2025-06-15 08:30');
-    DashboardPostCard = (await import('@/components/DashboardPostCard')).default;
-  });
-
   it('renders title as link pointing to /posts/{id}', () => {
     // Arrange
     const post = makePost();
@@ -60,7 +60,6 @@ describe('DashboardPostCard', () => {
     render(<DashboardPostCard post={post} />);
 
     // Assert
-    expect(mockFormatDateTime).toHaveBeenCalledWith(post.postAt);
     expect(screen.getByText('2025-06-15 08:30')).toBeInTheDocument();
   });
 

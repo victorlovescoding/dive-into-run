@@ -1,12 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-// Mock strava-helpers
-vi.mock('@/lib/strava-helpers', () => ({
-  decodePolyline: vi.fn(),
-}));
-
-// react-leaflet: 覆寫 vitest.setup.jsx 的 mock，加入 Polyline
+// react-leaflet: 覆寫 vitest.setup.jsx 的 mock，加入 Polyline。
+// react-leaflet 是外部 UI 邊界 mock（jsdom 無 DOM 量測 / Leaflet 需真實 DOM），允許保留。
 vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
   TileLayer: () => <div data-testid="tile-layer" />,
@@ -16,31 +12,19 @@ vi.mock('react-leaflet', () => ({
   useMap: () => ({ fitBounds: vi.fn() }),
 }));
 
-import { decodePolyline } from '@/lib/strava-helpers';
 import RunsRouteMapInner from '@/components/RunsRouteMapInner';
 
-const mockedDecode = /** @type {import('vitest').Mock} */ (decodePolyline);
-
-const ENCODED = 'abc123encoded';
+// Google Encoded Polyline 標準範例字串，由 @mapbox/polyline 真實 decode 而來。
+// decode 結果固定為 [[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]]。
+const ENCODED = '_p~iF~ps|U_ulLnnqC_mqNvxq`@';
 const DECODED_COORDS = [
-  [25.033, 121.565],
-  [25.034, 121.566],
-  [25.035, 121.567],
+  [38.5, -120.2],
+  [40.7, -120.95],
+  [43.252, -126.453],
 ];
 
 describe('RunsRouteMap', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockedDecode.mockReturnValue(DECODED_COORDS);
-  });
-
-  it('calls decodePolyline with summaryPolyline prop', () => {
-    render(<RunsRouteMapInner summaryPolyline={ENCODED} />);
-
-    expect(mockedDecode).toHaveBeenCalledWith(ENCODED);
-  });
-
-  it('renders MapContainer with decoded coordinates as Polyline', () => {
+  it('renders MapContainer with decoded coordinates as Polyline using real decoder', () => {
     render(<RunsRouteMapInner summaryPolyline={ENCODED} />);
 
     expect(screen.getByTestId('map-container')).toBeInTheDocument();
@@ -51,18 +35,14 @@ describe('RunsRouteMap', () => {
     expect(JSON.parse(polyline.dataset.positions)).toEqual(DECODED_COORDS);
   });
 
-  it('renders nothing meaningful when summaryPolyline is null', () => {
-    mockedDecode.mockReturnValue([]);
-
+  it('renders nothing when summaryPolyline is null', () => {
     render(<RunsRouteMapInner summaryPolyline={null} />);
 
     expect(screen.queryByTestId('map-container')).not.toBeInTheDocument();
     expect(screen.queryByTestId('polyline')).not.toBeInTheDocument();
   });
 
-  it('renders nothing meaningful when summaryPolyline is empty string', () => {
-    mockedDecode.mockReturnValue([]);
-
+  it('renders nothing when summaryPolyline is empty string', () => {
     render(<RunsRouteMapInner summaryPolyline="" />);
 
     expect(screen.queryByTestId('map-container')).not.toBeInTheDocument();

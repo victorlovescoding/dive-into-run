@@ -13,8 +13,8 @@
  *
  * Design note:
  *   BioEditor 被刻意抽成接收 `uid` + `initialBio` 的受控元件，這樣
- *   integration test 就不需要 mock `AuthContext`，只需要 mock service
- *   layer (`@/lib/firebase-profile`) 即可驗證所有行為。
+ *   integration test 就不需要 mock `AuthContext`，並可讓 real
+ *   `updateUserBio -> updateUserBioDocument -> setDoc` chain 跑完。
  *
  * Rules:
  * 1. Use `@testing-library/react` + `userEvent.setup()` — NEVER low-level event helpers.
@@ -22,26 +22,41 @@
  *    `container.querySelector`.
  * 3. AAA Pattern (Arrange, Act, Assert).
  * 4. Strict JSDoc; no `any`.
- * 5. Mock ONLY `@/lib/firebase-profile` — do not mock `AuthContext`.
+ * 5. Mock only Firebase SDK/config boundary — do not mock `@/lib/firebase-profile`.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { updateUserBio } from '@/lib/firebase-profile';
+import { doc, setDoc } from 'firebase/firestore';
 
 /* ==========================================================================
-   Module mocks — only the service layer.
+   Module mocks — Firebase SDK/config boundary.
    ========================================================================== */
 
-vi.mock('@/lib/firebase-profile', () => ({
-  updateUserBio: vi.fn(),
+const firestoreMock = vi.hoisted(() => ({
+  collection: vi.fn((db, path) => ({ type: 'collection', db, path })),
+  collectionGroup: vi.fn((db, path) => ({ type: 'collectionGroup', db, path })),
+  doc: vi.fn((db, collectionPath, id) => ({ type: 'doc', db, collectionPath, id })),
+  getCountFromServer: vi.fn(),
+  getDoc: vi.fn(),
+  getDocs: vi.fn(),
+  limit: vi.fn((count) => ({ type: 'limit', count })),
+  orderBy: vi.fn((field, direction) => ({ type: 'orderBy', field, direction })),
+  query: vi.fn((source, ...constraints) => ({ source, constraints })),
+  setDoc: vi.fn(),
+  startAfter: vi.fn((cursor) => ({ type: 'startAfter', cursor })),
+  where: vi.fn((field, op, value) => ({ type: 'where', field, op, value })),
 }));
 
-/** @type {import('vitest').Mock} */
-const mockedUpdateUserBio = /** @type {import('vitest').Mock} */ (
-  /** @type {unknown} */ (updateUserBio)
-);
+vi.mock('firebase/firestore', () => firestoreMock);
+
+vi.mock('@/config/client/firebase-client', () => ({
+  db: { app: 'test-firestore' },
+}));
+
+const mockedDoc = /** @type {import('vitest').Mock} */ (/** @type {unknown} */ (doc));
+const mockedSetDoc = /** @type {import('vitest').Mock} */ (/** @type {unknown} */ (setDoc));
 
 /* ==========================================================================
    Helpers
@@ -86,6 +101,7 @@ function getSaveButton() {
 describe('Integration: BioEditor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedSetDoc.mockResolvedValue(undefined);
   });
 
   // --- AS3-1: 初始值渲染 ---
@@ -141,33 +157,37 @@ describe('Integration: BioEditor', () => {
     expect(screen.getByText('5/150')).toBeInTheDocument();
   });
 
-  // --- AS3-2 (service contract): 儲存成功呼叫 service 並顯示成功訊息 ---
-  it('calls updateUserBio and shows a success message when save succeeds', async () => {
+  // --- AS3-2 (service contract): 儲存成功呼叫 real service/repo chain 並顯示成功訊息 ---
+  it('writes trimmed bio through setDoc and shows a success message when save succeeds', async () => {
     // Arrange
     const user = userEvent.setup();
-    mockedUpdateUserBio.mockResolvedValueOnce(undefined);
     const BioEditor = await importBioEditor();
     render(<BioEditor uid="user-1" initialBio="" />);
 
     // Act — 輸入新簡介並按儲存
-    await user.type(getBioTextarea(), '熱愛跑步');
+    await user.type(getBioTextarea(), '  熱愛跑步  ');
     await user.click(getSaveButton());
 
-    // Assert — service 被呼叫
+    // Assert — real updateUserBio -> updateUserBioDocument -> setDoc chain 被執行
     await waitFor(() => {
-      expect(mockedUpdateUserBio).toHaveBeenCalledTimes(1);
+      expect(mockedSetDoc).toHaveBeenCalled();
     });
-    expect(mockedUpdateUserBio).toHaveBeenCalledWith('user-1', '熱愛跑步');
+    expect(mockedDoc).toHaveBeenCalledWith({ app: 'test-firestore' }, 'users', 'user-1');
+    expect(mockedSetDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ collectionPath: 'users', id: 'user-1' }),
+      { bio: '熱愛跑步' },
+      { merge: true },
+    );
 
     // 成功訊息
     expect(await screen.findByText(/已儲存|儲存成功/)).toBeInTheDocument();
   });
 
-  // --- 儲存失敗 → 顯示錯誤訊息 ---
-  it('shows an error message when updateUserBio rejects', async () => {
+  // --- setDoc reject → 顯示錯誤訊息 ---
+  it('shows an error message when setDoc rejects', async () => {
     // Arrange
     const user = userEvent.setup();
-    mockedUpdateUserBio.mockRejectedValueOnce(new Error('network error'));
+    mockedSetDoc.mockRejectedValueOnce(new Error('network error'));
     const BioEditor = await importBioEditor();
     render(<BioEditor uid="user-1" initialBio="" />);
 
@@ -178,8 +198,12 @@ describe('Integration: BioEditor', () => {
     // Assert
     expect(await screen.findByText(/儲存失敗|無法儲存|錯誤/)).toBeInTheDocument();
 
-    // 仍呼叫過 service
-    expect(mockedUpdateUserBio).toHaveBeenCalledTimes(1);
+    // 仍已走到 repo write boundary
+    expect(mockedSetDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ collectionPath: 'users', id: 'user-1' }),
+      { bio: '新的簡介' },
+      { merge: true },
+    );
   });
 
   // --- AS3-4: 超過 150 字禁止儲存 ---
@@ -197,15 +221,14 @@ describe('Integration: BioEditor', () => {
     // 嘗試點擊（可能被 disabled 擋住，也可能透過 UI error 擋住）
     await user.click(saveButton);
 
-    // Assert — service 絕不應被呼叫
-    expect(mockedUpdateUserBio).not.toHaveBeenCalled();
+    // Assert — repo write 絕不應被呼叫
+    expect(mockedSetDoc).not.toHaveBeenCalled();
   });
 
   // --- 剛好 150 字 → 可以儲存 ---
   it('allows saving when bio is exactly 150 characters', async () => {
     // Arrange
     const user = userEvent.setup();
-    mockedUpdateUserBio.mockResolvedValueOnce(undefined);
     const exactly150 = 'A'.repeat(150);
     const BioEditor = await importBioEditor();
     render(<BioEditor uid="user-1" initialBio={exactly150} />);
@@ -218,16 +241,19 @@ describe('Integration: BioEditor', () => {
 
     // Assert
     await waitFor(() => {
-      expect(mockedUpdateUserBio).toHaveBeenCalledTimes(1);
+      expect(mockedSetDoc).toHaveBeenCalled();
     });
-    expect(mockedUpdateUserBio).toHaveBeenCalledWith('user-1', exactly150);
+    expect(mockedSetDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ collectionPath: 'users', id: 'user-1' }),
+      { bio: exactly150 },
+      { merge: true },
+    );
   });
 
   // --- 空字串 bio 可儲存（用來清除既有簡介，對應 service 層 AS） ---
   it('allows saving an empty bio (clear existing bio)', async () => {
     // Arrange
     const user = userEvent.setup();
-    mockedUpdateUserBio.mockResolvedValueOnce(undefined);
     const BioEditor = await importBioEditor();
     render(<BioEditor uid="user-1" initialBio="原本的簡介" />);
 
@@ -240,9 +266,13 @@ describe('Integration: BioEditor', () => {
 
     // Assert
     await waitFor(() => {
-      expect(mockedUpdateUserBio).toHaveBeenCalledTimes(1);
+      expect(mockedSetDoc).toHaveBeenCalled();
     });
-    expect(mockedUpdateUserBio).toHaveBeenCalledWith('user-1', '');
+    expect(mockedSetDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ collectionPath: 'users', id: 'user-1' }),
+      { bio: '' },
+      { merge: true },
+    );
   });
 
   // --- 儲存中 loading 狀態 ---
@@ -251,7 +281,7 @@ describe('Integration: BioEditor', () => {
     const user = userEvent.setup();
     /** @type {(value?: void) => void} */
     let resolveSave = () => {};
-    mockedUpdateUserBio.mockImplementationOnce(
+    mockedSetDoc.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
           resolveSave = resolve;

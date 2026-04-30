@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# S4 audit gate: warn (don't block) on integration tests that mock @/{repo,service,runtime}/.
+# S0 audit gate: warn (don't block) on tests that mock @/{lib,repo,service,runtime}/.
+# Runtime provider mocks are allowed React boundaries and are excluded.
 # Refs: project-health/2026-04-29-tests-audit-report.md L77-111 (P0-1), L607-612 (S4)
 # exit 0 (warn-only). S8 trigger: change to exit 1 after Wave 3 mock cleanup.
 
 set +e
 
-PATTERN='vi\.mock\(['\''"]@/(repo|service|runtime)/'
-SEARCH_PATH='tests/integration'
+PATTERN='vi\.mock\(['\''"]@/(lib|repo|service|runtime)/'
+PROVIDERS_PATTERN='@/runtime/providers/'
+SEARCH_PATH='tests'
 
 if [ ! -d "$SEARCH_PATH" ]; then
   echo "AUDIT MOCK-BOUNDARY: 0 findings (skipped: no $SEARCH_PATH)"
@@ -14,8 +16,8 @@ if [ ! -d "$SEARCH_PATH" ]; then
   exit 0
 fi
 
-findings=$(grep -rEn "$PATTERN" "$SEARCH_PATH" --include='*.test.*' 2>/dev/null || true)
-files=$(grep -rEln "$PATTERN" "$SEARCH_PATH" --include='*.test.*' 2>/dev/null | sort -u || true)
+findings=$(grep -rEn "$PATTERN" "$SEARCH_PATH" --include='*.test.*' 2>/dev/null | grep -v "$PROVIDERS_PATTERN" || true)
+files=$(grep -rEln "$PATTERN" "$SEARCH_PATH" --include='*.test.*' 2>/dev/null | grep -v "$PROVIDERS_PATTERN" | sort -u || true)
 if [ -z "$files" ]; then
   count=0
 else

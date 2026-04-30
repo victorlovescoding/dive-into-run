@@ -6,21 +6,37 @@ import userEvent from '@testing-library/user-event';
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/runtime/client/use-cases/auth-use-cases', () => ({
-  default: vi.fn(() => vi.fn()),
+const firestoreMock = vi.hoisted(() => ({
+  addDoc: vi.fn(),
+  collection: vi.fn((...path) => ({ kind: 'collection', path })),
+  doc: vi.fn((...path) => ({ kind: 'doc', path })),
+  getDocs: vi.fn(),
+  limit: vi.fn((count) => ({ type: 'limit', count })),
+  onSnapshot: vi.fn(),
+  orderBy: vi.fn((field, direction) => ({ type: 'orderBy', field, direction })),
+  query: vi.fn((source, ...constraints) => ({ source, constraints })),
+  serverTimestamp: vi.fn(() => ({ __serverTimestamp: true })),
+  startAfter: vi.fn((cursor) => ({ type: 'startAfter', cursor })),
+  updateDoc: vi.fn(),
+  where: vi.fn((field, op, value) => ({ type: 'where', field, op, value })),
+  writeBatch: vi.fn(() => ({ commit: vi.fn(), set: vi.fn() })),
 }));
 
-vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
-  watchNotifications: vi.fn(),
-  watchUnreadNotifications: vi.fn(),
-  markNotificationAsRead: vi.fn(),
-  fetchMoreNotifications: vi.fn(),
-  fetchMoreUnreadNotifications: vi.fn(),
+const authMock = vi.hoisted(() => ({
+  onAuthStateChanged: vi.fn(),
+  signInWithPopup: vi.fn(),
+  signOut: vi.fn(),
 }));
 
-vi.mock('@/lib/notification-helpers', () => ({
-  formatRelativeTime: vi.fn(() => '5 分鐘前'),
-  getNotificationLink: vi.fn(() => '/events/test'),
+vi.mock('firebase/firestore', () => firestoreMock);
+
+vi.mock('firebase/auth', () => authMock);
+
+vi.mock('@/config/client/firebase-client', () => ({
+  auth: {},
+  db: {},
+  provider: {},
+  storage: {},
 }));
 
 vi.mock('next/navigation', () => ({
@@ -41,10 +57,13 @@ import NotificationProvider from '@/runtime/providers/NotificationProvider';
 import NotificationPanel from '@/components/Notifications/NotificationPanel';
 import NotificationBell from '@/components/Notifications/NotificationBell';
 import {
-  fetchMoreNotifications,
-  watchNotifications,
-  watchUnreadNotifications,
-} from '@/runtime/client/use-cases/notification-use-cases';
+  getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
+  startAfter,
+  where,
+} from 'firebase/firestore';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -95,34 +114,85 @@ function createNotifications(count, startIndex = 1) {
   return Array.from({ length: count }, (_, i) => createNotification(`n${startIndex + i}`));
 }
 
-/** @type {((items: import('@/lib/notification-helpers').NotificationItem[], lastDoc?: unknown) => void) | undefined} */
-let notificationsCallback;
-/** @type {((items: import('@/lib/notification-helpers').NotificationItem[]) => void) | undefined} */
-let unreadCallback;
+/** @type {((snapshot: { docs: QueryNotificationDoc[], docChanges: () => { type: string, doc: QueryNotificationDoc }[] }) => void) | undefined} */
+let notificationsSnapshotCallback;
+/** @type {((snapshot: { docs: QueryNotificationDoc[], docChanges: () => { type: string, doc: QueryNotificationDoc }[] }) => void) | undefined} */
+let unreadSnapshotCallback;
 const mockUnsubscribe = vi.fn();
-
-const mockLastDoc = { id: 'last-doc-cursor' };
-const mockNewLastDoc = { id: 'new-last-doc-cursor' };
 
 /** @type {((entries: IntersectionObserverEntry[]) => void) | undefined} */
 let intersectionCallback;
 
+/**
+ * @typedef {{ id: string, data: () => Omit<import('@/lib/notification-helpers').NotificationItem, 'id'> }} QueryNotificationDoc
+ */
+
+/**
+ * 將 notification item 包成 Firestore QueryDocumentSnapshot 形狀。
+ * @param {import('@/lib/notification-helpers').NotificationItem} notification - 通知資料。
+ * @returns {QueryNotificationDoc} Firestore document snapshot 形狀。
+ */
+function createNotificationDoc(notification) {
+  const { id, ...data } = notification;
+  return { id, data: () => data };
+}
+
+/**
+ * 建立 Firestore QuerySnapshot 形狀。
+ * @param {QueryNotificationDoc[]} docs - snapshot docs。
+ * @param {QueryNotificationDoc[]} [addedDocs] - docChanges added docs。
+ * @returns {{ docs: QueryNotificationDoc[], docChanges: () => { type: string, doc: QueryNotificationDoc }[] }} QuerySnapshot 形狀。
+ */
+function createSnapshot(docs, addedDocs = []) {
+  return {
+    docs,
+    docChanges: () => addedDocs.map((doc) => ({ type: 'added', doc })),
+  };
+}
+
+/**
+ * 找出 query constraints 中指定類型的 constraint。
+ * @param {unknown} queryValue - Firestore query mock 回傳值。
+ * @param {string} type - constraint type。
+ * @returns {any} constraint。
+ */
+function getConstraint(queryValue, type) {
+  return /** @type {{ constraints: any[] }} */ (queryValue).constraints.find((c) => c.type === type);
+}
+
+/**
+ * 用指定 docs 設定 getDocs，依 startAfter cursor 回傳下一頁。
+ * @param {QueryNotificationDoc[]} orderedDocs - 已依 createdAt desc 排序的所有 docs。
+ * @returns {void}
+ */
+function mockPagedGetDocs(orderedDocs) {
+  /** @type {import('vitest').Mock} */ (getDocs).mockImplementation((queryValue) => {
+    const afterDoc = getConstraint(queryValue, 'startAfter')?.cursor;
+    const limitCount = getConstraint(queryValue, 'limit')?.count ?? 5;
+    const startIndex = afterDoc ? orderedDocs.indexOf(afterDoc) + 1 : 0;
+    const page = orderedDocs.slice(startIndex, startIndex + limitCount);
+    return Promise.resolve(createSnapshot(page));
+  });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
-  notificationsCallback = undefined;
-  unreadCallback = undefined;
+  notificationsSnapshotCallback = undefined;
+  unreadSnapshotCallback = undefined;
   intersectionCallback = undefined;
 
-  /** @type {import('vitest').Mock} */ (watchNotifications).mockImplementation((uid, onNext) => {
-    notificationsCallback = onNext;
+  /** @type {import('vitest').Mock} */ (onSnapshot).mockImplementation((queryValue, onNext) => {
+    const hasUnreadConstraint = /** @type {{ constraints: any[] }} */ (queryValue).constraints.some(
+      (constraint) =>
+        constraint.type === 'where' && constraint.field === 'read' && constraint.value === false,
+    );
+    if (hasUnreadConstraint) {
+      unreadSnapshotCallback = onNext;
+    } else {
+      notificationsSnapshotCallback = onNext;
+    }
     return mockUnsubscribe;
   });
-  /** @type {import('vitest').Mock} */ (watchUnreadNotifications).mockImplementation(
-    (uid, onNext) => {
-      unreadCallback = onNext;
-      return mockUnsubscribe;
-    },
-  );
 
   global.IntersectionObserver = /** @type {typeof IntersectionObserver} */ (
     /** @type {unknown} */ (
@@ -135,6 +205,25 @@ beforeEach(() => {
     )
   );
 });
+
+/**
+ * 觸發 all notifications listener。
+ * @param {QueryNotificationDoc[]} docs - listener docs。
+ * @param {QueryNotificationDoc[]} [addedDocs] - 新增 docs。
+ * @returns {void}
+ */
+function emitNotifications(docs, addedDocs = []) {
+  notificationsSnapshotCallback?.(createSnapshot(docs, addedDocs));
+}
+
+/**
+ * 觸發 unread notifications listener。
+ * @param {QueryNotificationDoc[]} docs - listener docs。
+ * @returns {void}
+ */
+function emitUnread(docs) {
+  unreadSnapshotCallback?.(createSnapshot(docs));
+}
 
 /**
  * 渲染完整通知面板（含 Bell + Panel + Provider）。
@@ -164,8 +253,8 @@ describe('NotificationPagination', () => {
 
     // Act — deliver exactly PAGE_SIZE (5) notifications
     act(() => {
-      notificationsCallback?.(createNotifications(5), mockLastDoc);
-      unreadCallback?.([]);
+      emitNotifications(createNotifications(5).map(createNotificationDoc));
+      emitUnread([]);
     });
 
     // Assert
@@ -180,8 +269,8 @@ describe('NotificationPagination', () => {
 
     // Act — deliver only 3 notifications
     act(() => {
-      notificationsCallback?.(createNotifications(3), mockLastDoc);
-      unreadCallback?.([]);
+      emitNotifications(createNotifications(3).map(createNotificationDoc));
+      emitUnread([]);
     });
 
     // Assert
@@ -191,26 +280,34 @@ describe('NotificationPagination', () => {
   it('should load more notifications when clicking "查看先前通知"', async () => {
     // Arrange
     const user = userEvent.setup();
-    const moreNotifications = createNotifications(5, 6);
-
-    /** @type {import('vitest').Mock} */ (fetchMoreNotifications).mockResolvedValueOnce({
-      notifications: moreNotifications,
-      lastDoc: mockNewLastDoc,
-    });
+    const docs = createNotifications(10).map(createNotificationDoc);
+    const initialDocs = docs.slice(0, 5);
+    mockPagedGetDocs(docs);
 
     renderPanel();
     await user.click(screen.getByRole('button', { name: '通知' }));
 
     act(() => {
-      notificationsCallback?.(createNotifications(5), mockLastDoc);
-      unreadCallback?.([]);
+      emitNotifications(initialDocs);
+      emitUnread([]);
     });
 
     // Act — click load more button
     await user.click(screen.getByRole('button', { name: '查看先前通知' }));
 
-    // Assert — fetchMoreNotifications called with correct args
-    expect(fetchMoreNotifications).toHaveBeenCalledWith('user1', mockLastDoc, 5);
+    // Assert — production repo path builds a cursor query with listener lastDoc.
+    expect(where).toHaveBeenCalledWith('recipientUid', '==', 'user1');
+    expect(orderBy).toHaveBeenCalledWith('createdAt', 'desc');
+    expect(startAfter).toHaveBeenCalledWith(initialDocs[4]);
+    expect(limit).toHaveBeenCalledWith(5);
+    expect(getDocs).toHaveBeenCalledWith(
+      expect.objectContaining({
+        constraints: expect.arrayContaining([
+          expect.objectContaining({ type: 'startAfter', cursor: initialDocs[4] }),
+          expect.objectContaining({ type: 'limit', count: 5 }),
+        ]),
+      }),
+    );
 
     // Assert — all 10 notifications visible
     await waitFor(() => {
@@ -223,19 +320,15 @@ describe('NotificationPagination', () => {
   it('should activate infinite scroll sentinel after first loadMore', async () => {
     // Arrange
     const user = userEvent.setup();
-    const moreNotifications = createNotifications(5, 6);
-
-    /** @type {import('vitest').Mock} */ (fetchMoreNotifications).mockResolvedValueOnce({
-      notifications: moreNotifications,
-      lastDoc: mockNewLastDoc,
-    });
+    const docs = createNotifications(10).map(createNotificationDoc);
+    mockPagedGetDocs(docs);
 
     renderPanel();
     await user.click(screen.getByRole('button', { name: '通知' }));
 
     act(() => {
-      notificationsCallback?.(createNotifications(5), mockLastDoc);
-      unreadCallback?.([]);
+      emitNotifications(docs.slice(0, 5));
+      emitUnread([]);
     });
 
     // Act — click load more to transition to infinite scroll
@@ -253,19 +346,15 @@ describe('NotificationPagination', () => {
   it('should stop loading when fetchMoreNotifications returns fewer than 5', async () => {
     // Arrange
     const user = userEvent.setup();
-
-    // First load more returns exactly 5
-    /** @type {import('vitest').Mock} */ (fetchMoreNotifications).mockResolvedValueOnce({
-      notifications: createNotifications(5, 6),
-      lastDoc: mockNewLastDoc,
-    });
+    const docs = createNotifications(12).map(createNotificationDoc);
+    mockPagedGetDocs(docs);
 
     renderPanel();
     await user.click(screen.getByRole('button', { name: '通知' }));
 
     act(() => {
-      notificationsCallback?.(createNotifications(5), mockLastDoc);
-      unreadCallback?.([]);
+      emitNotifications(docs.slice(0, 5));
+      emitUnread([]);
     });
 
     // First load more — returns 5, hasMore still true
@@ -273,12 +362,6 @@ describe('NotificationPagination', () => {
 
     await waitFor(() => {
       expect(screen.getByText('通知 n10')).toBeInTheDocument();
-    });
-
-    // Second load more via IntersectionObserver — returns < 5
-    /** @type {import('vitest').Mock} */ (fetchMoreNotifications).mockResolvedValueOnce({
-      notifications: createNotifications(2, 11),
-      lastDoc: null,
     });
 
     // Trigger intersection
@@ -297,8 +380,7 @@ describe('NotificationPagination', () => {
     expect(screen.queryByRole('button', { name: '查看先前通知' })).not.toBeInTheDocument();
 
     // IntersectionObserver should not trigger further loads
-    const callCountAfter = /** @type {import('vitest').Mock} */ (fetchMoreNotifications).mock.calls
-      .length;
+    const callCountAfter = /** @type {import('vitest').Mock} */ (getDocs).mock.calls.length;
     expect(callCountAfter).toBe(2);
   });
 
@@ -312,17 +394,16 @@ describe('NotificationPagination', () => {
     await user.click(screen.getByRole('button', { name: '通知' }));
 
     // Step 1: Initial listener
+    const initialDocs = createNotifications(5).map(createNotificationDoc);
+    const olderDoc = createNotificationDoc(createNotification('n0'));
+    mockPagedGetDocs([...initialDocs, olderDoc]);
+
     act(() => {
-      notificationsCallback?.(createNotifications(5), mockLastDoc);
-      unreadCallback?.([]);
+      emitNotifications(initialDocs);
+      emitUnread([]);
     });
 
     // Step 2: loadMore fetches older notification
-    /** @type {import('vitest').Mock} */ (fetchMoreNotifications).mockResolvedValueOnce({
-      notifications: [createNotification('n0')],
-      lastDoc: mockNewLastDoc,
-    });
-
     await user.click(screen.getByRole('button', { name: '查看先前通知' }));
     await waitFor(() => {
       expect(screen.getByText('通知 n0')).toBeInTheDocument();
@@ -336,8 +417,8 @@ describe('NotificationPagination', () => {
         createNotification('n4'),
         createNotification('n3'),
         createNotification('n2'),
-      ];
-      notificationsCallback?.(shifted, mockLastDoc);
+      ].map(createNotificationDoc);
+      emitNotifications(shifted, [shifted[0]]);
     });
 
     // Step 4: All 7 unique notifications present — no gaps, no duplicates

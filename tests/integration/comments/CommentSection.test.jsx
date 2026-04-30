@@ -26,20 +26,74 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { AuthContext } from '@/contexts/AuthContext';
 import CommentSection from '@/components/CommentSection';
 import {
-  fetchComments,
-  addComment,
-  updateComment,
-  deleteComment,
-  fetchCommentHistory,
-} from '@/runtime/client/use-cases/event-comment-use-cases';
+  addDoc,
+  collection,
+  getDocs,
+  runTransaction,
+  startAfter,
+  writeBatch,
+} from 'firebase/firestore';
 
-vi.mock('@/runtime/client/use-cases/event-comment-use-cases', () => ({
-  fetchComments: vi.fn(),
-  addComment: vi.fn(),
-  updateComment: vi.fn(),
-  deleteComment: vi.fn(),
-  fetchCommentHistory: vi.fn(),
-}));
+const firestoreMock = vi.hoisted(() => {
+  class MockTimestamp {
+    /**
+     * @param {Date} date - Timestamp date value.
+     */
+    constructor(date) {
+      this.date = date;
+    }
+
+    /**
+     * @returns {Date} Date value.
+     */
+    toDate() {
+      return this.date;
+    }
+
+    /**
+     * @returns {MockTimestamp} Current timestamp.
+     */
+    static now() {
+      return new MockTimestamp(new Date(2026, 3, 2, 15, 0));
+    }
+
+    /**
+     * @param {Date} date - Date value.
+     * @returns {MockTimestamp} Timestamp value.
+     */
+    static fromDate(date) {
+      return new MockTimestamp(date);
+    }
+  }
+
+  return {
+    Timestamp: MockTimestamp,
+    serverTimestamp: vi.fn(() => ({ __type: 'serverTimestamp' })),
+    collection: vi.fn((_, ...segments) => ({
+      kind: 'collection',
+      path: segments.join('/'),
+    })),
+    doc: vi.fn((base, ...segments) => {
+      const path =
+        base?.kind === 'collection'
+          ? [base.path, ...segments].filter(Boolean).join('/')
+          : segments.join('/');
+      const id = segments.at(-1) || 'generated-history-id';
+      return { kind: 'doc', id, path };
+    }),
+    query: vi.fn((ref, ...constraints) => ({ kind: 'query', ref, constraints })),
+    getDocs: vi.fn(),
+    getDoc: vi.fn(),
+    addDoc: vi.fn(),
+    orderBy: vi.fn((field, direction) => ({ kind: 'orderBy', field, direction })),
+    limit: vi.fn((count) => ({ kind: 'limit', count })),
+    startAfter: vi.fn((snapshot) => ({ kind: 'startAfter', snapshot })),
+    runTransaction: vi.fn(),
+    writeBatch: vi.fn(),
+  };
+});
+
+vi.mock('firebase/firestore', () => firestoreMock);
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
 
@@ -47,12 +101,12 @@ vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
-/* Cast mocked imports — vi.mock() 替換為 vi.fn()，TS 需要 Mock 型別才認 .mockXxx() */
-const mockedFetchComments = /** @type {import('vitest').Mock} */ (fetchComments);
-const mockedAddComment = /** @type {import('vitest').Mock} */ (addComment);
-const mockedUpdateComment = /** @type {import('vitest').Mock} */ (updateComment);
-const mockedDeleteComment = /** @type {import('vitest').Mock} */ (deleteComment);
-const mockedFetchCommentHistory = /** @type {import('vitest').Mock} */ (fetchCommentHistory);
+/* Cast mocked imports — vi.mock() 替換為 vi.fn()，JSDoc 需要 Mock 型別才認 .mockXxx() */
+const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
+const mockedAddDoc = /** @type {import('vitest').Mock} */ (addDoc);
+const mockedRunTransaction = /** @type {import('vitest').Mock} */ (runTransaction);
+const mockedWriteBatch = /** @type {import('vitest').Mock} */ (writeBatch);
+const mockedStartAfter = /** @type {import('vitest').Mock} */ (startAfter);
 
 /* ==========================================================================
    Type Definitions
@@ -150,6 +204,76 @@ function createMockComments(count, baseOverrides = {}) {
   );
 }
 
+/**
+ * 建立 Firestore document snapshot mock。
+ * @param {MockComment | object} data - 文件資料。
+ * @returns {{ id: string, data: () => object, exists: () => boolean, ref: object }} Snapshot mock。
+ */
+function createSnapshot(data) {
+  const id = 'id' in data && typeof data.id === 'string' ? data.id : 'history-entry';
+  return {
+    id,
+    data: () => data,
+    exists: () => true,
+    ref: { id },
+  };
+}
+
+/**
+ * Queue 一次 Firestore getDocs 回傳。
+ * @param {Array<MockComment | object>} docs - 要回傳的文件資料。
+ */
+function mockGetDocsOnce(docs) {
+  mockedGetDocs.mockResolvedValueOnce({
+    docs: docs.map((item) => createSnapshot(item)),
+  });
+}
+
+/**
+ * Queue 一次永不 resolve 的 Firestore getDocs，用於 loading state。
+ */
+function mockGetDocsPendingOnce() {
+  mockedGetDocs.mockReturnValueOnce(new Promise(() => {}));
+}
+
+/**
+ * 建立 addDoc 的回傳 doc ref。
+ * @param {string} id - 新文件 ID。
+ */
+function mockAddDocSuccessOnce(id) {
+  mockedAddDoc.mockResolvedValueOnce({ id });
+}
+
+/**
+ * 建立 runTransaction 成功 mock。
+ */
+function mockTransactionSuccessOnce() {
+  mockedRunTransaction.mockImplementationOnce(async (_, callback) => {
+    const tx = {
+      get: vi.fn(async () => ({ exists: () => true })),
+      set: vi.fn(),
+      update: vi.fn(),
+    };
+
+    await callback(tx);
+  });
+}
+
+/**
+ * 建立 writeBatch mock。
+ * @param {Promise<void> | Error} [commitResult] - commit 回傳值或錯誤。
+ */
+function mockWriteBatchOnce(commitResult = Promise.resolve()) {
+  const batch = {
+    delete: vi.fn(),
+    commit: vi.fn(() =>
+      commitResult instanceof Error ? Promise.reject(commitResult) : commitResult,
+    ),
+  };
+
+  mockedWriteBatch.mockReturnValueOnce(batch);
+}
+
 /* ==========================================================================
    IntersectionObserver Override for Infinite Scroll
    ========================================================================== */
@@ -205,10 +329,7 @@ describe('Integration: CommentSection', () => {
     it('should display comment list with newest first when comments exist', async () => {
       // Arrange
       const comments = createMockComments(3);
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: {},
-      });
+      mockGetDocsOnce(comments);
 
       // Act
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
@@ -229,10 +350,7 @@ describe('Integration: CommentSection', () => {
 
     it('should show empty state when no comments exist', async () => {
       // Arrange
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: [],
-        lastDoc: null,
-      });
+      mockGetDocsOnce([]);
 
       // Act
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
@@ -245,7 +363,7 @@ describe('Integration: CommentSection', () => {
 
     it('should show loading state while fetching comments', () => {
       // Arrange
-      mockedFetchComments.mockReturnValueOnce(new Promise(() => {}));
+      mockGetDocsPendingOnce();
 
       // Act
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
@@ -263,17 +381,8 @@ describe('Integration: CommentSection', () => {
         content: `更多留言 #${i + 1}`,
       }));
 
-      /** @type {object} */
-      const mockLastDoc = { id: 'cursor-doc' };
-
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: firstBatch,
-        lastDoc: mockLastDoc,
-      });
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: secondBatch,
-        lastDoc: null,
-      });
+      mockGetDocsOnce(firstBatch);
+      mockGetDocsOnce(secondBatch);
 
       // Act
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
@@ -287,7 +396,7 @@ describe('Integration: CommentSection', () => {
 
       // Assert
       await waitFor(() => {
-        expect(fetchComments).toHaveBeenCalledWith('e1', { afterDoc: mockLastDoc, limitCount: 15 });
+        expect(mockedStartAfter).toHaveBeenCalledWith(expect.objectContaining({ id: 'comment-15' }));
       });
 
       const allItems = await screen.findAllByRole('listitem');
@@ -297,13 +406,16 @@ describe('Integration: CommentSection', () => {
     it('should show end hint when no more comments to load', async () => {
       // Arrange
       const comments = createMockComments(5);
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
+      mockGetDocsOnce(comments);
+      mockGetDocsOnce([]);
 
       // Act
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
+
+      await screen.findAllByRole('listitem');
+      if (intersectionCallback) {
+        intersectionCallback([{ isIntersecting: true }]);
+      }
 
       // Assert
       await waitFor(() => {
@@ -313,10 +425,7 @@ describe('Integration: CommentSection', () => {
 
     it('should hide comment input when user is not logged in', async () => {
       // Arrange
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: createMockComments(2),
-        lastDoc: null,
-      });
+      mockGetDocsOnce(createMockComments(2));
 
       // Act
       renderWithAuth(<CommentSection eventId="e1" />, { user: null });
@@ -328,10 +437,7 @@ describe('Integration: CommentSection', () => {
 
     it('should show comment input when user is logged in', async () => {
       // Arrange
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: createMockComments(2),
-        lastDoc: null,
-      });
+      mockGetDocsOnce(createMockComments(2));
 
       // Act
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
@@ -351,20 +457,8 @@ describe('Integration: CommentSection', () => {
       // Arrange
       const user = userEvent.setup();
       const existingComments = createMockComments(2);
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: existingComments,
-        lastDoc: null,
-      });
-
-      mockedAddComment.mockResolvedValueOnce(
-        createMockComment({
-          id: 'new-1',
-          authorUid: 'user-1',
-          authorName: 'Alice',
-          content: '新留言',
-          createdAt: { toDate: () => new Date(2026, 3, 2, 15, 0) },
-        }),
-      );
+      mockGetDocsOnce(existingComments);
+      mockAddDocSuccessOnce('new-1');
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
 
@@ -379,10 +473,12 @@ describe('Integration: CommentSection', () => {
 
       // Assert
       await waitFor(() => {
-        expect(addComment).toHaveBeenCalledWith(
-          'e1',
-          expect.objectContaining({ uid: 'user-1' }),
-          '新留言',
+        expect(mockedAddDoc).toHaveBeenCalledWith(
+          expect.objectContaining({ path: 'events/e1/comments' }),
+          expect.objectContaining({
+            authorUid: 'user-1',
+            content: '新留言',
+          }),
         );
       });
 
@@ -398,10 +494,7 @@ describe('Integration: CommentSection', () => {
     it('should disable submit button when input is empty or whitespace', async () => {
       // Arrange
       const user = userEvent.setup();
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: [],
-        lastDoc: null,
-      });
+      mockGetDocsOnce([]);
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
 
@@ -432,10 +525,7 @@ describe('Integration: CommentSection', () => {
     it('should show character count warning near 500 and disable at 501', async () => {
       // Arrange
       const user = userEvent.setup();
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: [],
-        lastDoc: null,
-      });
+      mockGetDocsOnce([]);
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
 
@@ -445,17 +535,19 @@ describe('Integration: CommentSection', () => {
 
       const textbox = screen.getByRole('textbox');
 
-      // Act — type 450 chars (no warning)
+      // Act — paste 450 chars (no warning)
       const text450 = 'a'.repeat(450);
-      await user.type(textbox, text450);
+      await user.click(textbox);
+      await user.paste(text450);
 
       // Assert — no character count visible
       expect(screen.queryByText(/450/)).not.toBeInTheDocument();
 
-      // Act — clear and type 499 chars
+      // Act — clear and paste 499 chars
       await user.clear(textbox);
+      expect(textbox).toHaveValue('');
       const text499 = 'a'.repeat(499);
-      await user.type(textbox, text499);
+      await user.paste(text499);
 
       // Assert — character count visible
       await waitFor(() => {
@@ -473,17 +565,23 @@ describe('Integration: CommentSection', () => {
       // Verify submit still works at exactly 500
       const submitButton = screen.getByRole('button', { name: /送出/ });
       expect(submitButton).toBeEnabled();
+
+      // Act — type one more to reach 501
+      await user.type(textbox, 'a');
+
+      // Assert — 501 shown and submit disabled
+      await waitFor(() => {
+        expect(screen.getByText(/501/)).toBeInTheDocument();
+      });
+      expect(submitButton).toBeDisabled();
     });
 
     it('should show error notification and preserve input on submit failure', async () => {
       // Arrange
       const user = userEvent.setup();
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: [],
-        lastDoc: null,
-      });
+      mockGetDocsOnce([]);
 
-      mockedAddComment.mockRejectedValueOnce(new Error('Network error'));
+      mockedAddDoc.mockRejectedValueOnce(new Error('Network error'));
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
 
@@ -493,7 +591,9 @@ describe('Integration: CommentSection', () => {
 
       // Act
       const textbox = screen.getByRole('textbox');
-      await user.type(textbox, '會失敗的留言');
+      expect(textbox).toHaveValue('');
+      await user.click(textbox);
+      await user.paste('會失敗的留言');
 
       const submitButton = screen.getByRole('button', { name: /送出/ });
       await user.click(submitButton);
@@ -510,12 +610,9 @@ describe('Integration: CommentSection', () => {
     it('should show loading state on submit button while submitting', async () => {
       // Arrange
       const user = userEvent.setup();
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: [],
-        lastDoc: null,
-      });
+      mockGetDocsOnce([]);
 
-      mockedAddComment.mockReturnValueOnce(new Promise(() => {}));
+      mockedAddDoc.mockReturnValueOnce(new Promise(() => {}));
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
 
@@ -539,18 +636,8 @@ describe('Integration: CommentSection', () => {
     it('should submit on Ctrl+Enter keyboard shortcut', async () => {
       // Arrange
       const user = userEvent.setup();
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: [],
-        lastDoc: null,
-      });
-
-      mockedAddComment.mockResolvedValueOnce(
-        createMockComment({
-          id: 'new-keyboard',
-          content: '快捷鍵留言',
-          createdAt: { toDate: () => new Date(2026, 3, 2, 15, 0) },
-        }),
-      );
+      mockGetDocsOnce([]);
+      mockAddDocSuccessOnce('new-keyboard');
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
 
@@ -565,7 +652,7 @@ describe('Integration: CommentSection', () => {
 
       // Assert
       await waitFor(() => {
-        expect(addComment).toHaveBeenCalled();
+        expect(mockedAddDoc).toHaveBeenCalled();
       });
     });
   });
@@ -592,10 +679,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
+      mockGetDocsOnce(comments);
 
       // Act
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
@@ -618,10 +702,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
+      mockGetDocsOnce(comments);
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -647,10 +728,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
+      mockGetDocsOnce(comments);
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -682,10 +760,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
+      mockGetDocsOnce(comments);
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -723,10 +798,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
+      mockGetDocsOnce(comments);
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -762,12 +834,8 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
-
-      mockedUpdateComment.mockResolvedValueOnce(undefined);
+      mockGetDocsOnce(comments);
+      mockTransactionSuccessOnce();
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -792,12 +860,7 @@ describe('Integration: CommentSection', () => {
 
       // Assert
       await waitFor(() => {
-        expect(updateComment).toHaveBeenCalledWith(
-          'e1',
-          'comment-own',
-          '編輯後的留言',
-          '原始留言內容',
-        );
+        expect(mockedRunTransaction).toHaveBeenCalled();
       });
 
       await waitFor(() => {
@@ -819,10 +882,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
+      mockGetDocsOnce(comments);
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -851,7 +911,7 @@ describe('Integration: CommentSection', () => {
       });
 
       expect(screen.getByText('不會被修改的留言')).toBeInTheDocument();
-      expect(updateComment).not.toHaveBeenCalled();
+      expect(mockedRunTransaction).not.toHaveBeenCalled();
     });
 
     it('should show edited badge on edited comments', async () => {
@@ -866,10 +926,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
+      mockGetDocsOnce(comments);
 
       // Act
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
@@ -893,17 +950,15 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
-
-      mockedFetchCommentHistory.mockResolvedValueOnce([
+      mockGetDocsOnce(comments);
+      mockGetDocsOnce([
         {
+          id: 'history-1',
           content: '原始版本的留言',
           editedAt: { toDate: () => new Date(2026, 3, 2, 14, 30) },
         },
         {
+          id: 'history-2',
           content: '第二版的留言',
           editedAt: { toDate: () => new Date(2026, 3, 2, 14, 45) },
         },
@@ -921,7 +976,14 @@ describe('Integration: CommentSection', () => {
       const historyDialog = await screen.findByRole('dialog');
       expect(historyDialog).toBeInTheDocument();
 
-      expect(fetchCommentHistory).toHaveBeenCalledWith('e1', 'comment-edited');
+      expect(collection).toHaveBeenCalledWith(
+        expect.anything(),
+        'events',
+        'e1',
+        'comments',
+        'comment-edited',
+        'history',
+      );
 
       await waitFor(() => {
         expect(screen.getByText('原始版本的留言')).toBeInTheDocument();
@@ -946,10 +1008,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
+      mockGetDocsOnce(comments);
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -984,12 +1043,9 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
-
-      mockedDeleteComment.mockResolvedValueOnce(undefined);
+      mockGetDocsOnce(comments);
+      mockGetDocsOnce([]);
+      mockWriteBatchOnce();
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -1010,7 +1066,7 @@ describe('Integration: CommentSection', () => {
 
       // Assert
       await waitFor(() => {
-        expect(deleteComment).toHaveBeenCalledWith('e1', 'comment-to-delete');
+        expect(mockedWriteBatch).toHaveBeenCalled();
       });
 
       await waitFor(() => {
@@ -1032,12 +1088,9 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
-
-      mockedDeleteComment.mockReturnValueOnce(new Promise(() => {}));
+      mockGetDocsOnce(comments);
+      mockGetDocsOnce([]);
+      mockWriteBatchOnce(new Promise(() => {}));
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -1077,12 +1130,9 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
-
-      mockedDeleteComment.mockRejectedValueOnce(new Error('Delete failed'));
+      mockGetDocsOnce(comments);
+      mockGetDocsOnce([]);
+      mockWriteBatchOnce(new Error('Delete failed'));
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -1121,10 +1171,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
+      mockGetDocsOnce(comments);
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -1149,7 +1196,7 @@ describe('Integration: CommentSection', () => {
       });
 
       expect(screen.getByText('我的留言')).toBeInTheDocument();
-      expect(deleteComment).not.toHaveBeenCalled();
+      expect(mockedWriteBatch).not.toHaveBeenCalled();
     });
   });
 
@@ -1160,10 +1207,7 @@ describe('Integration: CommentSection', () => {
   describe('Accessibility', () => {
     it('should have region role with aria-label on comment section', async () => {
       // Arrange
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: createMockComments(1),
-        lastDoc: null,
-      });
+      mockGetDocsOnce(createMockComments(1));
 
       // Act
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
@@ -1175,10 +1219,7 @@ describe('Integration: CommentSection', () => {
 
     it('should render comment list as semantic ul/li', async () => {
       // Arrange
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: createMockComments(3),
-        lastDoc: null,
-      });
+      mockGetDocsOnce(createMockComments(3));
 
       // Act
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
@@ -1202,10 +1243,7 @@ describe('Integration: CommentSection', () => {
         }),
       ];
 
-      mockedFetchComments.mockResolvedValueOnce({
-        comments,
-        lastDoc: null,
-      });
+      mockGetDocsOnce(comments);
 
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser({ uid: 'user-1' }) });
 
@@ -1223,10 +1261,7 @@ describe('Integration: CommentSection', () => {
 
     it('should use time element with dateTime attribute', async () => {
       // Arrange
-      mockedFetchComments.mockResolvedValueOnce({
-        comments: createMockComments(1),
-        lastDoc: null,
-      });
+      mockGetDocsOnce(createMockComments(1));
 
       // Act
       renderWithAuth(<CommentSection eventId="e1" />, {

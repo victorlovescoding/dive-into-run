@@ -1,18 +1,37 @@
 /**
  * @file Integration tests for thin-entry `ProfileClient`.
  * @description
- * S023 後 page-level boundary 改為 `mock runtime hook + render thin entry`。
+ * S027 後 page-level boundary 改為 `mock Firebase SDK/config + render thin entry`。
  * 這個 suite 只驗證：
- * 1. `ProfileClient` 會把 server `user` prop 傳給 `useProfileRuntime`
+ * 1. `ProfileClient` 會把 server `user` prop 交給 real `useProfileRuntime`
  * 2. thin entry 會把 runtime state 接到 `ProfileScreen`
  * 3. page-level tests 不再 mock legacy facade `@/lib/firebase-profile`
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import ProfileClient from '@/app/users/[uid]/ProfileClient';
 
-vi.mock('@/runtime/hooks/useProfileRuntime', () => ({
-  default: vi.fn(),
+const firestoreMock = vi.hoisted(() => ({
+  collection: vi.fn((db, path) => ({ type: 'collection', db, path })),
+  collectionGroup: vi.fn((db, path) => ({ type: 'collectionGroup', db, path })),
+  doc: vi.fn((db, collectionPath, id) => ({ type: 'doc', db, collectionPath, id })),
+  getCountFromServer: vi.fn(),
+  getDoc: vi.fn(),
+  getDocs: vi.fn(),
+  limit: vi.fn((count) => ({ type: 'limit', count })),
+  orderBy: vi.fn((field, direction) => ({ type: 'orderBy', field, direction })),
+  query: vi.fn((source, ...constraints) => ({ source, constraints })),
+  setDoc: vi.fn(),
+  startAfter: vi.fn((cursor) => ({ type: 'startAfter', cursor })),
+  where: vi.fn((field, op, value) => ({ type: 'where', field, op, value })),
+}));
+
+vi.mock('firebase/firestore', () => firestoreMock);
+
+vi.mock('@/config/client/firebase-client', () => ({
+  db: { app: 'test-firestore' },
 }));
 
 vi.mock('next/link', () => ({
@@ -71,11 +90,6 @@ vi.mock('@/app/users/[uid]/ProfileEventList', () => ({
   default: ({ uid }) => <div data-testid="profile-events-mock">{uid}</div>,
 }));
 
-import useProfileRuntime from '@/runtime/hooks/useProfileRuntime';
-import ProfileClient from '@/app/users/[uid]/ProfileClient';
-
-const mockedUseProfileRuntime = /** @type {import('vitest').Mock} */ (useProfileRuntime);
-
 /**
  * @typedef {object} MockPublicProfile
  * @property {string} uid - UID。
@@ -83,16 +97,6 @@ const mockedUseProfileRuntime = /** @type {import('vitest').Mock} */ (useProfile
  * @property {string} photoURL - 頭像 URL。
  * @property {string} [bio] - 簡介。
  * @property {Date} createdAt - 加入日期。
- */
-
-/**
- * @typedef {object} MockRuntime
- * @property {string} profileUid - profile uid。
- * @property {Omit<MockPublicProfile, 'createdAt'> & { createdAt: { toDate: () => Date } }} headerUser - header user。
- * @property {{ hostedCount: number, joinedCount: number, totalDistanceKm: number | null } | null} stats - stats。
- * @property {boolean} isStatsLoading - stats 是否載入中。
- * @property {string | null} statsError - 錯誤訊息。
- * @property {boolean} isSelf - 是否為本人檔案。
  */
 
 /**
@@ -112,109 +116,117 @@ function createProfile(overrides = {}) {
 }
 
 /**
- * 建立 runtime mock。
- * @param {Partial<MockRuntime>} [overrides] - 覆蓋欄位。
- * @returns {MockRuntime} runtime。
+ * 建立 Firebase count aggregate snapshot。
+ * @param {number} count - 回傳數量。
+ * @returns {{ data: () => { count: number } }} count snapshot。
  */
-function createRuntime(overrides = {}) {
-  const profile = createProfile();
-  return {
-    profileUid: profile.uid,
-    headerUser: { ...profile, createdAt: { toDate: () => profile.createdAt } },
-    stats: { hostedCount: 3, joinedCount: 7, totalDistanceKm: 52.5 },
-    isStatsLoading: false,
-    statsError: null,
-    isSelf: false,
-    ...overrides,
-  };
+function makeCountSnap(count) {
+  return { data: () => ({ count }) };
+}
+
+/**
+ * 設定下一次 profile stats 讀取結果。
+ * @param {number} hostedCount - 主辦活動數。
+ * @param {number} joinedCount - 參加活動數。
+ */
+function mockProfileStats(hostedCount, joinedCount) {
+  firestoreMock.getCountFromServer
+    .mockResolvedValueOnce(makeCountSnap(hostedCount))
+    .mockResolvedValueOnce(makeCountSnap(joinedCount));
+}
+
+/**
+ * 用 AuthContext 包住 ProfileClient，讓 real runtime 判斷 isSelf。
+ * @param {object} options - Render options。
+ * @param {MockPublicProfile} options.user - ProfileClient user prop。
+ * @param {{ uid: string } | null} [options.currentUser] - 目前登入使用者。
+ * @returns {import('@testing-library/react').RenderResult} render result。
+ */
+function renderProfileClient({ user, currentUser = null }) {
+  const authUser = currentUser
+    ? {
+        uid: currentUser.uid,
+        name: null,
+        email: null,
+        photoURL: null,
+        bio: null,
+        getIdToken: () => Promise.resolve(''),
+      }
+    : null;
+  return render(
+    <AuthContext.Provider value={{ user: authUser, setUser: () => {}, loading: false }}>
+      <ProfileClient user={user} />
+    </AuthContext.Provider>,
+  );
 }
 
 describe('Integration: ProfileClient thin entry', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedUseProfileRuntime.mockReturnValue(createRuntime());
+    mockProfileStats(3, 7);
   });
 
-  it('passes the server user prop into useProfileRuntime', () => {
+  it('passes the server user uid into the real profile stats query', async () => {
     const user = createProfile({ uid: 'user-xyz' });
 
-    render(<ProfileClient user={user} />);
+    renderProfileClient({ user });
 
-    expect(mockedUseProfileRuntime).toHaveBeenCalledTimes(1);
-    expect(mockedUseProfileRuntime).toHaveBeenCalledWith(user);
+    expect(await screen.findByTestId('profile-stats-mock')).toBeInTheDocument();
+    expect(firestoreMock.where).toHaveBeenCalledWith('hostUid', '==', 'user-xyz');
+    expect(firestoreMock.where).toHaveBeenCalledWith('uid', '==', 'user-xyz');
   });
 
-  it('renders header, stats, and event list from runtime boundary', () => {
-    render(<ProfileClient user={createProfile()} />);
+  it('renders header, stats, and event list from runtime boundary', async () => {
+    renderProfileClient({ user: createProfile() });
 
     expect(screen.getByTestId('profile-header-mock')).toBeInTheDocument();
     expect(screen.getByTestId('header-name')).toHaveTextContent('Alice Runner');
     expect(screen.getByTestId('header-uid')).toHaveTextContent('user-abc');
     expect(screen.getByTestId('header-bio')).toHaveTextContent('每天晨跑 5 公里。');
-    expect(screen.getByTestId('profile-stats-mock')).toBeInTheDocument();
+    expect(await screen.findByTestId('profile-stats-mock')).toBeInTheDocument();
     expect(screen.getByTestId('stats-hosted')).toHaveTextContent('3');
     expect(screen.getByTestId('stats-joined')).toHaveTextContent('7');
-    expect(screen.getByTestId('stats-distance')).toHaveTextContent('52.5');
+    expect(screen.getByTestId('stats-distance')).toHaveTextContent('hidden');
     expect(screen.getByTestId('profile-events-mock')).toHaveTextContent('user-abc');
   });
 
   it('shows loading state when runtime reports stats loading', () => {
-    mockedUseProfileRuntime.mockReturnValue(
-      createRuntime({
-        stats: null,
-        isStatsLoading: true,
-      }),
-    );
+    firestoreMock.getCountFromServer.mockImplementation(() => new Promise(() => {}));
 
-    render(<ProfileClient user={createProfile()} />);
+    renderProfileClient({ user: createProfile() });
 
     expect(screen.getByTestId('profile-header-mock')).toBeInTheDocument();
     expect(screen.getByText(/載入中/)).toBeInTheDocument();
     expect(screen.queryByTestId('profile-stats-mock')).not.toBeInTheDocument();
   });
 
-  it('shows error state when runtime reports stats error', () => {
-    mockedUseProfileRuntime.mockReturnValue(
-      createRuntime({
-        stats: null,
-        isStatsLoading: false,
-        statsError: '無法載入統計',
-      }),
-    );
+  it('shows error state when runtime reports stats error', async () => {
+    firestoreMock.getCountFromServer.mockReset();
+    firestoreMock.getCountFromServer.mockRejectedValueOnce(new Error('count failed'));
 
-    render(<ProfileClient user={createProfile()} />);
+    renderProfileClient({ user: createProfile() });
 
-    expect(screen.getByText('無法載入統計')).toBeInTheDocument();
+    expect(await screen.findByText('無法載入統計')).toBeInTheDocument();
     expect(screen.queryByTestId('profile-stats-mock')).not.toBeInTheDocument();
   });
 
-  it('passes null totalDistanceKm through to ProfileStats', () => {
-    mockedUseProfileRuntime.mockReturnValue(
-      createRuntime({
-        stats: { hostedCount: 3, joinedCount: 7, totalDistanceKm: null },
-      }),
-    );
+  it('passes null totalDistanceKm through to ProfileStats', async () => {
+    renderProfileClient({ user: createProfile() });
 
-    render(<ProfileClient user={createProfile()} />);
-
-    expect(screen.getByTestId('stats-distance')).toHaveTextContent('hidden');
+    expect(await screen.findByTestId('stats-distance')).toHaveTextContent('hidden');
   });
 
   it('shows self-profile banner and edit link when runtime marks own profile', () => {
-    mockedUseProfileRuntime.mockReturnValue(
-      createRuntime({
-        isSelf: true,
-      }),
-    );
+    const user = createProfile({ uid: 'user-self' });
 
-    render(<ProfileClient user={createProfile({ uid: 'user-self' })} />);
+    renderProfileClient({ user, currentUser: { uid: 'user-self' } });
 
     expect(screen.getByRole('complementary', { name: '這是你的公開檔案' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '編輯個人資料' })).toHaveAttribute('href', '/member');
   });
 
   it('does not show self-profile banner when runtime marks another profile', () => {
-    render(<ProfileClient user={createProfile({ uid: 'user-other' })} />);
+    renderProfileClient({ user: createProfile({ uid: 'user-other' }), currentUser: { uid: 'me' } });
 
     expect(
       screen.queryByRole('complementary', { name: '這是你的公開檔案' }),

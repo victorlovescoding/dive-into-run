@@ -1,63 +1,53 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
-// Mocks
+// Mocks (SDK boundary only — no internal lib/repo/service mocks)
 // ---------------------------------------------------------------------------
 const mockBatch = { set: vi.fn(), commit: vi.fn().mockResolvedValue(undefined) };
 
 vi.mock('firebase/firestore', () => ({
-  collection: vi.fn((...args) => args.join('/')),
+  collection: vi.fn((_db, ...segments) => ({ type: 'collection', path: segments.join('/') })),
   addDoc: vi.fn(),
   writeBatch: vi.fn(() => mockBatch),
-  doc: vi.fn(() => 'mock-doc-ref'),
+  doc: vi.fn((base, ...segments) => {
+    if (base?.type === 'collection') {
+      return {
+        type: 'doc',
+        path: [base.path, ...segments].join('/') || `${base.path}/auto-id`,
+      };
+    }
+    return { type: 'doc', path: segments.join('/') };
+  }),
   serverTimestamp: vi.fn(() => 'mock-timestamp'),
   onSnapshot: vi.fn(),
+  getDocs: vi.fn(),
   updateDoc: vi.fn(),
-  query: vi.fn(),
-  where: vi.fn(),
-  orderBy: vi.fn(),
-  limit: vi.fn(),
-  startAfter: vi.fn(),
+  query: vi.fn((collectionRef, ...constraints) => ({
+    type: 'query',
+    path: collectionRef?.path,
+    constraints,
+  })),
+  where: vi.fn((field, op, value) => ({ type: 'where', field, op, value })),
+  orderBy: vi.fn((field, dir) => ({ type: 'orderBy', field, dir })),
+  limit: vi.fn((n) => ({ type: 'limit', n })),
+  startAfter: vi.fn((cursor) => ({ type: 'startAfter', cursor })),
+  collectionGroup: vi.fn(),
+  documentId: vi.fn(),
   getFirestore: vi.fn(),
 }));
 
 vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
-vi.mock('@/repo/client/firebase-events-repo', async (importOriginal) => {
-  const actual = /** @type {Record<string, unknown>} */ (await importOriginal());
-  return {
-    ...actual,
-    fetchParticipantUids: vi.fn(),
-  };
-});
-vi.mock('@/repo/client/firebase-notifications-repo', async (importOriginal) => {
-  const actual = /** @type {Record<string, unknown>} */ (await importOriginal());
-  return {
-    ...actual,
-    fetchDistinctEventCommentAuthors: vi.fn(),
-  };
-});
-vi.mock('@/service/notification-service', async (importOriginal) => {
-  const actual = /** @type {Record<string, unknown>} */ (await importOriginal());
-  return {
-    ...actual,
-    buildNotificationMessage: vi.fn((type) => `mock-message-${type}`),
-  };
-});
 
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
+import { getDocs } from 'firebase/firestore';
 import { notifyEventNewComment } from '@/lib/firebase-notifications';
-import { fetchParticipantUids } from '@/repo/client/firebase-events-repo';
-import { fetchDistinctEventCommentAuthors } from '@/repo/client/firebase-notifications-repo';
 
 // ---------------------------------------------------------------------------
 // Typed aliases
 // ---------------------------------------------------------------------------
-const mockedFetchParticipantUids = /** @type {import('vitest').Mock} */ (fetchParticipantUids);
-const mockedFetchDistinctEventCommentAuthors = /** @type {import('vitest').Mock} */ (
-  fetchDistinctEventCommentAuthors
-);
+const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -93,6 +83,31 @@ function getRecipientUids() {
   );
 }
 
+/**
+ * 安裝 path-aware getDocs：
+ * - participants subcollection (走 query(collection(...), orderBy, limit)) → 回 participants snapshot
+ * - comments subcollection (直接 collection(...)，無 query 包裝) → 回 comment authors snapshot
+ * @param {object} options - 兩條路徑各自的 uid 列表。
+ * @param {string[]} options.participantUids - participants UID 列表。
+ * @param {string[]} options.commentAuthorUids - 過去留言者 UID 列表（可重複，service 層會 dedup）。
+ */
+function installGetDocs({ participantUids, commentAuthorUids }) {
+  mockedGetDocs.mockImplementation(async (arg) => {
+    const path = arg?.path || '';
+    if (path.includes('/participants')) {
+      return {
+        docs: participantUids.map((uid) => ({ id: uid, data: () => ({ uid }) })),
+      };
+    }
+    if (path.includes('/comments')) {
+      return {
+        docs: commentAuthorUids.map((authorUid) => ({ data: () => ({ authorUid }) })),
+      };
+    }
+    throw new Error(`unexpected getDocs path: ${path}`);
+  });
+}
+
 // ---------------------------------------------------------------------------
 // notifyEventNewComment
 // ---------------------------------------------------------------------------
@@ -107,8 +122,7 @@ describe('notifyEventNewComment', () => {
   describe('Core Delivery — 正確發送', () => {
     it('主揪人收到 event_host_comment', async () => {
       // Arrange
-      mockedFetchParticipantUids.mockResolvedValue([]);
-      mockedFetchDistinctEventCommentAuthors.mockResolvedValue([]);
+      installGetDocs({ participantUids: [], commentAuthorUids: [] });
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
@@ -134,7 +148,7 @@ describe('notifyEventNewComment', () => {
         entityId: EVENT_ID,
         entityTitle: EVENT_TITLE,
         commentId: COMMENT_ID,
-        message: 'mock-message-event_host_comment',
+        message: `你主辦的活動『${EVENT_TITLE}』有一則新的留言`,
         read: false,
         createdAt: 'mock-timestamp',
       });
@@ -143,8 +157,7 @@ describe('notifyEventNewComment', () => {
 
     it('參加者收到 event_participant_comment', async () => {
       // Arrange
-      mockedFetchParticipantUids.mockResolvedValue(['p1', 'p2']);
-      mockedFetchDistinctEventCommentAuthors.mockResolvedValue([]);
+      installGetDocs({ participantUids: ['p1', 'p2'], commentAuthorUids: [] });
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
@@ -166,14 +179,17 @@ describe('notifyEventNewComment', () => {
           type: 'event_participant_comment',
           entityType: 'event',
           entityId: EVENT_ID,
+          message: `你參加的活動『${EVENT_TITLE}』有一則新的留言`,
         });
       });
     });
 
     it('跟帖者收到 event_comment_reply', async () => {
       // Arrange — commenter 不是 host、不是 participant
-      mockedFetchParticipantUids.mockResolvedValue([]);
-      mockedFetchDistinctEventCommentAuthors.mockResolvedValue(['commenter1', 'commenter2']);
+      installGetDocs({
+        participantUids: [],
+        commentAuthorUids: ['commenter1', 'commenter2'],
+      });
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
@@ -195,6 +211,7 @@ describe('notifyEventNewComment', () => {
           type: 'event_comment_reply',
           entityType: 'event',
           entityId: EVENT_ID,
+          message: `你留言過的活動『${EVENT_TITLE}』有一則新的留言`,
         });
       });
     });
@@ -206,8 +223,10 @@ describe('notifyEventNewComment', () => {
   describe('Dedup Logic — 去重', () => {
     it('主揪人+跟帖者 → 只收 event_host_comment', async () => {
       // Arrange — host 也是過去的 commenter
-      mockedFetchParticipantUids.mockResolvedValue([]);
-      mockedFetchDistinctEventCommentAuthors.mockResolvedValue([HOST_UID, 'commenter1']);
+      installGetDocs({
+        participantUids: [],
+        commentAuthorUids: [HOST_UID, 'commenter1'],
+      });
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
@@ -231,8 +250,10 @@ describe('notifyEventNewComment', () => {
 
     it('參加者+跟帖者 → 只收 event_participant_comment', async () => {
       // Arrange — p1 同時是 participant 和 past commenter
-      mockedFetchParticipantUids.mockResolvedValue(['p1']);
-      mockedFetchDistinctEventCommentAuthors.mockResolvedValue(['p1', 'commenter1']);
+      installGetDocs({
+        participantUids: ['p1'],
+        commentAuthorUids: ['p1', 'commenter1'],
+      });
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
@@ -256,8 +277,10 @@ describe('notifyEventNewComment', () => {
     it('留言者本人不收通知', async () => {
       // Arrange — actor 出現在 host、participant、commenter 全部
       const actorAsHost = ACTOR.uid;
-      mockedFetchParticipantUids.mockResolvedValue([ACTOR.uid, 'p1']);
-      mockedFetchDistinctEventCommentAuthors.mockResolvedValue([ACTOR.uid, 'commenter1']);
+      installGetDocs({
+        participantUids: [ACTOR.uid, 'p1'],
+        commentAuthorUids: [ACTOR.uid, 'commenter1'],
+      });
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, actorAsHost, COMMENT_ID, ACTOR);
@@ -278,8 +301,7 @@ describe('notifyEventNewComment', () => {
   describe('Edge Cases', () => {
     it('無參加者+無跟帖者 → 只有 host 通知', async () => {
       // Arrange
-      mockedFetchParticipantUids.mockResolvedValue([]);
-      mockedFetchDistinctEventCommentAuthors.mockResolvedValue([]);
+      installGetDocs({ participantUids: [], commentAuthorUids: [] });
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
@@ -295,18 +317,12 @@ describe('notifyEventNewComment', () => {
 
     it('50-participant batch — 驗證 batch.set 呼叫次數正確', async () => {
       // Arrange — 50 participants + host + 3 comment authors (2 new)
-      const participants = Array.from({ length: 50 }, (_, i) => ({
-        uid: `p${i + 1}`,
-      }));
-      mockedFetchParticipantUids.mockResolvedValue(
-        participants.map((participant) => participant.uid),
-      );
-      // commenter-a and commenter-b are new; p1 already covered as participant
-      mockedFetchDistinctEventCommentAuthors.mockResolvedValue([
-        'commenter-a',
-        'commenter-b',
-        'p1',
-      ]);
+      const participants = Array.from({ length: 50 }, (_, i) => `p${i + 1}`);
+      installGetDocs({
+        participantUids: participants,
+        // commenter-a and commenter-b are new; p1 already covered as participant
+        commentAuthorUids: ['commenter-a', 'commenter-b', 'p1'],
+      });
 
       // Act
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);

@@ -39,8 +39,8 @@
 
 ### Mock boundary
 
-- [ ] Any new/changed integration test in this PR does **not** mock `@/runtime/**`, `@/service/**`, or `@/repo/**` (those layers are inside the boundary). Allowed boundary mocks: `@/config/client/firebase-client`, third-party SDKs. [P0-1, audit L77-95; anti-pattern sample audit L83]
-- [ ] If a new unit/runtime test mocks multiple `@/lib/**` or `@/repo/**` modules, the PR description explains the boundary call (do not silently repeat the `useStravaConnection.test.jsx:16,27,32` triple-mock anti-pattern). [P0-1, audit L77-95; sample audit L85]
+- [ ] Any new/changed test in this PR does **not** mock `@/lib/**`, `@/repo/**`, `@/service/**`, or `@/runtime/**` (except `@/runtime/providers/**`). These layers are inside the mock-boundary cleanup scope. [P0-1, audit L77-95; anti-pattern sample audit L83]
+- [ ] Allowed boundary mocks are limited to repo-external or approved edge boundaries: `@/config/**`, `@/runtime/providers/**`, `@/contexts/**`, `@/data/**`, Firebase SDK/Admin SDK, third-party SDKs, browser APIs, and external fetch/network calls. [P0-1, audit L77-95; specs/027-tests-mock-cleanup]
 
 ### Flaky pattern
 
@@ -59,7 +59,7 @@
 
 ### Baseline tracking
 
-- [ ] If this PR removes a file from any ESLint `ignores` baseline (mock-boundary or flaky-pattern), the underlying violation is fixed AND the commit message body records the change in the form `Baseline change: <type>: N -> M (removed: file1, file2, ...)`. Example from audit L649: `Baseline change: mock-boundary: N -> N-3 (removed: file1, file2, file3)`. [audit L641-652]
+- [ ] If this PR removes a file from any ESLint `ignores` baseline (mock-boundary or flaky-pattern), the underlying violation is fixed AND the commit message body records the change in the form `Baseline change: block 18.6/18.7/18.8: N -> M (removed: file1, file2, ...)`. Example from audit L649: `Baseline change: block 18.6: N -> N-3 (removed: file1, file2, file3)`. [audit L641-652]
 - [ ] If this PR adds entries to a baseline `ignores` list (discouraged; only when an immediate fix is impossible), the commit message body states the reason AND links a Wave 3 cleanup follow-up issue (so the baseline does not silently grow). [audit L641-654]
 
 ## Related

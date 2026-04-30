@@ -7,21 +7,37 @@ import userEvent from '@testing-library/user-event';
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/runtime/client/use-cases/auth-use-cases', () => ({
-  default: vi.fn(() => vi.fn()),
+const firestoreMock = vi.hoisted(() => ({
+  addDoc: vi.fn(),
+  collection: vi.fn((...path) => ({ kind: 'collection', path })),
+  doc: vi.fn((...path) => ({ kind: 'doc', path })),
+  getDocs: vi.fn(),
+  limit: vi.fn((count) => ({ type: 'limit', count })),
+  onSnapshot: vi.fn(),
+  orderBy: vi.fn((field, direction) => ({ type: 'orderBy', field, direction })),
+  query: vi.fn((source, ...constraints) => ({ source, constraints })),
+  serverTimestamp: vi.fn(() => ({ __serverTimestamp: true })),
+  startAfter: vi.fn((cursor) => ({ type: 'startAfter', cursor })),
+  updateDoc: vi.fn(),
+  where: vi.fn((field, op, value) => ({ type: 'where', field, op, value })),
+  writeBatch: vi.fn(() => ({ commit: vi.fn(), set: vi.fn() })),
 }));
 
-vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
-  watchNotifications: vi.fn(),
-  watchUnreadNotifications: vi.fn(),
-  markNotificationAsRead: vi.fn(),
-  fetchMoreNotifications: vi.fn(),
-  fetchMoreUnreadNotifications: vi.fn(),
+const authMock = vi.hoisted(() => ({
+  onAuthStateChanged: vi.fn(),
+  signInWithPopup: vi.fn(),
+  signOut: vi.fn(),
 }));
 
-vi.mock('@/lib/notification-helpers', () => ({
-  formatRelativeTime: vi.fn(() => '5 分鐘前'),
-  getNotificationLink: vi.fn(() => '/events/test'),
+vi.mock('firebase/firestore', () => firestoreMock);
+
+vi.mock('firebase/auth', () => authMock);
+
+vi.mock('@/config/client/firebase-client', () => ({
+  auth: {},
+  db: {},
+  provider: {},
+  storage: {},
 }));
 
 vi.mock('next/navigation', () => ({
@@ -44,11 +60,13 @@ import NotificationProvider, {
 import NotificationPanel from '@/components/Notifications/NotificationPanel';
 import NotificationBell from '@/components/Notifications/NotificationBell';
 import {
-  fetchMoreNotifications,
-  fetchMoreUnreadNotifications,
-  watchNotifications,
-  watchUnreadNotifications,
-} from '@/runtime/client/use-cases/notification-use-cases';
+  getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
+  startAfter,
+  where,
+} from 'firebase/firestore';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -89,93 +107,139 @@ function createNotification(id, index, read = false) {
   });
 }
 
+/** @type {((entries: IntersectionObserverEntry[]) => void) | undefined} */
+let intersectionCallback;
+/** @type {import('@/runtime/providers/notification-context').NotificationContextValue | undefined} */
+let latestNotificationContext;
+/** @type {((snapshot: { docs: QueryNotificationDoc[], docChanges: () => { type: string, doc: QueryNotificationDoc }[] }) => void) | undefined} */
+let notificationsSnapshotCallback;
+/** @type {((snapshot: { docs: QueryNotificationDoc[], docChanges: () => { type: string, doc: QueryNotificationDoc }[] }) => void) | undefined} */
+let unreadSnapshotCallback;
+
+/**
+ * @typedef {{ id: string, data: () => Omit<import('@/lib/notification-helpers').NotificationItem, 'id'> }} QueryNotificationDoc
+ */
+
+/**
+ * 將 notification item 包成 Firestore QueryDocumentSnapshot 形狀。
+ * @param {import('@/lib/notification-helpers').NotificationItem} notification - 通知資料。
+ * @returns {QueryNotificationDoc} Firestore document snapshot 形狀。
+ */
+function createNotificationDoc(notification) {
+  const { id, ...data } = notification;
+  return { id, data: () => data };
+}
+
+/**
+ * 建立 Firestore QuerySnapshot 形狀。
+ * @param {QueryNotificationDoc[]} docs - snapshot docs。
+ * @returns {{ docs: QueryNotificationDoc[], docChanges: () => { type: string, doc: QueryNotificationDoc }[] }} QuerySnapshot 形狀。
+ */
+function createSnapshot(docs) {
+  return { docs, docChanges: () => [] };
+}
+
+/**
+ * 觸發 all notifications listener。
+ * @param {QueryNotificationDoc[]} docs - listener docs。
+ * @returns {void}
+ */
+function emitNotifications(docs) {
+  notificationsSnapshotCallback?.(createSnapshot(docs));
+}
+
+/**
+ * 觸發 unread notifications listener。
+ * @param {QueryNotificationDoc[]} docs - listener docs。
+ * @returns {void}
+ */
+function emitUnread(docs) {
+  unreadSnapshotCallback?.(createSnapshot(docs));
+}
+
 /**
  * 建立 stateful pagination mock，模擬 Firestore cursor 行為。
  * @param {import('@/lib/notification-helpers').NotificationItem[]} allNotifications - 完整 dataset，已依 createdAt desc 排序。
  * @param {number} listenerLimit - listener 回傳筆數。
- * @returns {{ fireAllListener: () => void, fireUnreadListener: (items: any[]) => void, fireAllListenerWith: (items: any[]) => void }} mock 控制器。
+ * @returns {{ allDocs: QueryNotificationDoc[], fireAllListener: () => void, fireUnreadListener: (items: import('@/lib/notification-helpers').NotificationItem[]) => void, fireAllListenerWith: (items: import('@/lib/notification-helpers').NotificationItem[]) => void, setUnreadServerDocs: (items: import('@/lib/notification-helpers').NotificationItem[]) => QueryNotificationDoc[] }} mock 控制器。
  */
-function setupStatefulMocks(allNotifications, listenerLimit = 5) {
-  /** @type {((items: import('@/lib/notification-helpers').NotificationItem[], lastDoc?: unknown) => void) | undefined} */
-  let notificationsOnNext;
-  /** @type {((items: import('@/lib/notification-helpers').NotificationItem[], lastDoc?: unknown) => void) | undefined} */
-  let unreadOnNext;
+function setupStatefulFirestore(allNotifications, listenerLimit = 5) {
+  const allDocs = allNotifications.map(createNotificationDoc);
+  /** @type {QueryNotificationDoc[]} */
+  let unreadServerDocs = allDocs.filter((doc) => !doc.data().read);
+  /** @type {QueryNotificationDoc[]} */
+  let unreadListenerDocs = unreadServerDocs;
 
-  /** @type {import('vitest').Mock} */ (watchNotifications).mockImplementation((uid, onNext) => {
-    notificationsOnNext = onNext;
-    return vi.fn();
+  /** @type {import('vitest').Mock} */ (getDocs).mockImplementation((queryValue) => {
+    const { constraints } = /** @type {{ constraints: any[] }} */ (queryValue);
+    const isUnreadQuery = constraints.some(
+      (constraint) =>
+        constraint.type === 'where' && constraint.field === 'read' && constraint.value === false,
+    );
+    const afterDoc = constraints.find((constraint) => constraint.type === 'startAfter')?.cursor;
+    const limitCount = constraints.find((constraint) => constraint.type === 'limit')?.count ?? 5;
+    const docs = isUnreadQuery ? unreadServerDocs : allDocs;
+    const startIdx = afterDoc ? docs.indexOf(afterDoc) + 1 : 0;
+    return Promise.resolve(createSnapshot(docs.slice(startIdx, startIdx + limitCount)));
   });
 
-  /** @type {import('vitest').Mock} */ (watchUnreadNotifications).mockImplementation(
-    (uid, onNext) => {
-      unreadOnNext = onNext;
-      return vi.fn();
-    },
-  );
-
-  /** @type {import('vitest').Mock} */ (fetchMoreNotifications).mockImplementation(
-    (uid, afterDoc, limitCount) => {
-      const startIdx = afterDoc._index + 1;
-      const page = allNotifications.slice(startIdx, startIdx + limitCount);
-      const newLastDoc =
-        page.length > 0
-          ? { _index: startIdx + page.length - 1, id: page[page.length - 1].id }
-          : null;
-      return Promise.resolve({ notifications: page, lastDoc: newLastDoc });
-    },
-  );
-
-  /** @type {import('vitest').Mock} */ (fetchMoreUnreadNotifications).mockImplementation(
-    (uid, afterDoc, limitCount) => {
-      const startIdx = afterDoc._index + 1;
-      const unreadItems = allNotifications.filter((n) => !n.read);
-      const page = unreadItems.slice(startIdx, startIdx + limitCount);
-      const newLastDoc =
-        page.length > 0
-          ? { _index: startIdx + page.length - 1, id: page[page.length - 1].id }
-          : null;
-      return Promise.resolve({ notifications: page, lastDoc: newLastDoc });
-    },
-  );
-
   return {
+    allDocs,
     /** 觸發 listener 回傳前 listenerLimit 筆資料。 */
     fireAllListener: () => {
-      const items = allNotifications.slice(0, listenerLimit);
-      const lastDoc =
-        items.length > 0 ? { _index: items.length - 1, id: items[items.length - 1].id } : null;
-      notificationsOnNext?.(items, lastDoc);
+      emitNotifications(allDocs.slice(0, listenerLimit));
     },
     /**
      * 觸發 unread listener 回傳指定筆數。
      * @param {import('@/lib/notification-helpers').NotificationItem[]} items - 未讀通知。
      */
     fireUnreadListener: (items) => {
-      const lastDoc =
-        items.length > 0 ? { _index: items.length - 1, id: items[items.length - 1].id } : null;
-      unreadOnNext?.(items, lastDoc);
+      const docs = items.map(createNotificationDoc);
+      unreadListenerDocs = docs;
+      unreadServerDocs = docs;
+      emitUnread(docs);
     },
     /**
      * 用自訂資料觸發 all listener（模擬新通知到達）。
      * @param {import('@/lib/notification-helpers').NotificationItem[]} items - 新資料。
      */
     fireAllListenerWith: (items) => {
-      const lastDoc =
-        items.length > 0 ? { _index: items.length - 1, id: items[items.length - 1].id } : null;
-      notificationsOnNext?.(items, lastDoc);
+      emitNotifications(items.map(createNotificationDoc));
+    },
+    /**
+     * 設定 unread server 分頁資料。
+     * @param {import('@/lib/notification-helpers').NotificationItem[]} items - server 分頁完整資料。
+     * @returns {QueryNotificationDoc[]} docs。
+     */
+    setUnreadServerDocs: (items) => {
+      const listenerDocsById = new Map(unreadListenerDocs.map((doc) => [doc.id, doc]));
+      unreadServerDocs = items.map(
+        (item) => listenerDocsById.get(item.id) ?? createNotificationDoc(item),
+      );
+      return unreadServerDocs;
     },
   };
 }
-
-/** @type {((entries: IntersectionObserverEntry[]) => void) | undefined} */
-let intersectionCallback;
-/** @type {import('@/runtime/providers/notification-context').NotificationContextValue | undefined} */
-let latestNotificationContext;
 
 beforeEach(() => {
   vi.clearAllMocks();
   intersectionCallback = undefined;
   latestNotificationContext = undefined;
+  notificationsSnapshotCallback = undefined;
+  unreadSnapshotCallback = undefined;
+
+  /** @type {import('vitest').Mock} */ (onSnapshot).mockImplementation((queryValue, onNext) => {
+    const hasUnreadConstraint = /** @type {{ constraints: any[] }} */ (queryValue).constraints.some(
+      (constraint) =>
+        constraint.type === 'where' && constraint.field === 'read' && constraint.value === false,
+    );
+    if (hasUnreadConstraint) {
+      unreadSnapshotCallback = onNext;
+    } else {
+      notificationsSnapshotCallback = onNext;
+    }
+    return vi.fn();
+  });
 
   global.IntersectionObserver = /** @type {typeof IntersectionObserver} */ (
     /** @type {unknown} */ (
@@ -255,7 +319,7 @@ describe('NotificationPagination — stateful cursor tests', () => {
       return createNotification(`n${idx}`, idx);
     });
 
-    const { fireAllListener, fireUnreadListener } = setupStatefulMocks(all);
+    const { fireAllListener, fireUnreadListener } = setupStatefulFirestore(all);
     const user = userEvent.setup();
     renderPanel();
     await user.click(screen.getByRole('button', { name: '通知' }));
@@ -300,7 +364,7 @@ describe('NotificationPagination — stateful cursor tests', () => {
       return createNotification(`n${idx}`, idx);
     });
 
-    const { fireAllListener, fireUnreadListener } = setupStatefulMocks(all);
+    const { allDocs, fireAllListener, fireUnreadListener } = setupStatefulFirestore(all);
     const user = userEvent.setup();
     renderPanel();
     await user.click(screen.getByRole('button', { name: '通知' }));
@@ -317,9 +381,7 @@ describe('NotificationPagination — stateful cursor tests', () => {
     });
 
     // Verify first fetchMore used listener cursor (n15..n11, lastDoc = n11 at index 4)
-    expect(fetchMoreNotifications).toHaveBeenCalledTimes(1);
-    const firstCall = /** @type {import('vitest').Mock} */ (fetchMoreNotifications).mock.calls[0];
-    expect(firstCall[1]).toEqual({ _index: 4, id: 'n11' });
+    expect(startAfter).toHaveBeenCalledWith(allDocs[4]);
 
     // Second load more via sentinel — should use cursor from first fetchMore result (n6 at index 9)
     await act(async () => {
@@ -329,10 +391,13 @@ describe('NotificationPagination — stateful cursor tests', () => {
     });
 
     await waitFor(() => {
-      expect(fetchMoreNotifications).toHaveBeenCalledTimes(2);
+      expect(startAfter).toHaveBeenCalledWith(allDocs[9]);
     });
-    const secondCall = /** @type {import('vitest').Mock} */ (fetchMoreNotifications).mock.calls[1];
-    expect(secondCall[1]).toEqual({ _index: 9, id: 'n6' });
+    expect(startAfter).toHaveBeenCalledWith(allDocs[4]);
+    expect(startAfter).toHaveBeenCalledWith(allDocs[9]);
+    expect(where).toHaveBeenCalledWith('recipientUid', '==', 'user1');
+    expect(orderBy).toHaveBeenCalledWith('createdAt', 'desc');
+    expect(limit).toHaveBeenCalledWith(5);
   });
 
   it('should merge correctly when listener fires new data after loadMore', async () => {
@@ -342,7 +407,7 @@ describe('NotificationPagination — stateful cursor tests', () => {
     });
 
     const { fireAllListener, fireAllListenerWith, fireUnreadListener } =
-      setupStatefulMocks(initial);
+      setupStatefulFirestore(initial);
     const user = userEvent.setup();
     renderPanel();
     await user.click(screen.getByRole('button', { name: '通知' }));
@@ -388,7 +453,7 @@ describe('NotificationPagination — stateful cursor tests', () => {
     });
     const allItems = unreadItems.map((n) => ({ ...n, read: true }));
 
-    const { fireAllListener, fireUnreadListener } = setupStatefulMocks(allItems);
+    const { fireAllListener, fireUnreadListener } = setupStatefulFirestore(allItems);
     const user = userEvent.setup();
     renderPanel();
     await user.click(screen.getByRole('button', { name: '通知' }));
@@ -414,8 +479,9 @@ describe('NotificationPagination — stateful cursor tests', () => {
     // No more to load (listener has < 100)
     expect(screen.queryByRole('button', { name: '查看先前通知' })).not.toBeInTheDocument();
 
-    // No server call — Phase 1 is purely client-side
-    expect(fetchMoreUnreadNotifications).not.toHaveBeenCalled();
+    // No server query — Phase 1 is purely client-side.
+    expect(startAfter).not.toHaveBeenCalled();
+    expect(getDocs).not.toHaveBeenCalled();
   });
 
   it(
@@ -432,14 +498,9 @@ describe('NotificationPagination — stateful cursor tests', () => {
         return createNotification(`s${idx}`, idx);
       });
 
-      const { fireAllListener, fireUnreadListener } = setupStatefulMocks([]);
+      const { fireAllListener, fireUnreadListener, setUnreadServerDocs } =
+        setupStatefulFirestore([]);
       const user = userEvent.setup();
-
-      // Mock server fetch for unread Phase 2
-      /** @type {import('vitest').Mock} */ (fetchMoreUnreadNotifications).mockResolvedValueOnce({
-        notifications: serverExtra,
-        lastDoc: null,
-      });
 
       renderPanel();
       await user.click(screen.getByRole('button', { name: '通知' }));
@@ -456,20 +517,21 @@ describe('NotificationPagination — stateful cursor tests', () => {
       await expandUnreadSliceToListenerCapacity();
 
       expect(screen.getAllByText(/^通知 u\d+$/)).toHaveLength(100);
-      expect(fetchMoreUnreadNotifications).not.toHaveBeenCalled();
+      expect(startAfter).not.toHaveBeenCalled();
+
+      const unreadServerDocs = setUnreadServerDocs([...unreadItems, ...serverExtra]);
 
       // Phase 2: still hasMore (listener at capacity 100), next loadMore hits server
       expect(screen.getByRole('button', { name: '查看先前通知' })).toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: '查看先前通知' }));
 
       await waitFor(() => {
-        expect(fetchMoreUnreadNotifications).toHaveBeenCalledTimes(1);
+        expect(startAfter).toHaveBeenCalledWith(unreadServerDocs[99]);
       });
-      expect(fetchMoreUnreadNotifications).toHaveBeenCalledWith(
-        'user1',
-        { _index: 99, id: 'u1' },
-        5,
-      );
+      expect(where).toHaveBeenCalledWith('recipientUid', '==', 'user1');
+      expect(where).toHaveBeenCalledWith('read', '==', false);
+      expect(orderBy).toHaveBeenCalledWith('createdAt', 'desc');
+      expect(limit).toHaveBeenCalledWith(5);
 
       // Server returned < 5, hasMore becomes false
       await waitFor(() => {

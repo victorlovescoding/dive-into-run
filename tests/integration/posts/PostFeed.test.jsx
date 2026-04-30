@@ -2,6 +2,26 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { useMemo } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {
+  addDoc,
+  collection,
+  collectionGroup,
+  doc,
+  documentId,
+  getDoc,
+  getDocs,
+  increment,
+  limit,
+  orderBy,
+  query,
+  runTransaction,
+  serverTimestamp,
+  startAfter,
+  Timestamp,
+  updateDoc,
+  where,
+  writeBatch,
+} from 'firebase/firestore';
 
 // ---------------------------------------------------------------------------
 // Hoisted shared state (available inside vi.mock factories)
@@ -38,7 +58,7 @@ vi.mock('firebase/firestore', () => ({
   addDoc: vi.fn(),
   updateDoc: vi.fn(),
   collection: vi.fn(),
-  serverTimestamp: vi.fn(),
+  serverTimestamp: vi.fn(() => ({ __type: 'serverTimestamp' })),
   limit: vi.fn(),
   query: vi.fn(),
   orderBy: vi.fn(),
@@ -46,24 +66,16 @@ vi.mock('firebase/firestore', () => ({
   getDoc: vi.fn(),
   getDocs: vi.fn(),
   runTransaction: vi.fn(),
-  increment: vi.fn(),
+  increment: vi.fn((value) => ({ __type: 'increment', value })),
   collectionGroup: vi.fn(),
   where: vi.fn(),
   writeBatch: vi.fn(),
   startAfter: vi.fn(),
   documentId: vi.fn(),
-}));
-
-vi.mock('@/runtime/client/use-cases/post-use-cases', () => ({
-  getLatestPosts: vi.fn(),
-  hasUserLikedPosts: vi.fn(),
-  createPost: vi.fn(),
-  updatePost: vi.fn(),
-  getPostDetail: vi.fn(),
-  toggleLikePost: vi.fn(),
-  deletePost: vi.fn(),
-  getMorePosts: vi.fn(),
-  validatePostInput: vi.fn(),
+  Timestamp: {
+    fromDate: vi.fn((date) => ({ toDate: () => date })),
+    now: vi.fn(() => ({ toDate: () => new Date('2026-04-15T08:00:00Z') })),
+  },
 }));
 
 vi.mock('next/link', () => ({
@@ -83,18 +95,27 @@ vi.mock('next/image', () => ({
 // ---------------------------------------------------------------------------
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import PostPage from '@/app/posts/page';
-import {
-  getLatestPosts,
-  hasUserLikedPosts,
-  getMorePosts,
-} from '@/runtime/client/use-cases/post-use-cases';
 
-/** @type {import('vitest').Mock} */
-const mockedGetLatestPosts = /** @type {import('vitest').Mock} */ (getLatestPosts);
-/** @type {import('vitest').Mock} */
-const mockedHasUserLikedPosts = /** @type {import('vitest').Mock} */ (hasUserLikedPosts);
-/** @type {import('vitest').Mock} */
-const mockedGetMorePosts = /** @type {import('vitest').Mock} */ (getMorePosts);
+const firestoreMocks = {
+  ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
+  ['collection']: /** @type {import('vitest').Mock} */ (collection),
+  ['collectionGroup']: /** @type {import('vitest').Mock} */ (collectionGroup),
+  ['doc']: /** @type {import('vitest').Mock} */ (doc),
+  ['documentId']: /** @type {import('vitest').Mock} */ (documentId),
+  ['getDoc']: /** @type {import('vitest').Mock} */ (getDoc),
+  ['getDocs']: /** @type {import('vitest').Mock} */ (getDocs),
+  ['increment']: /** @type {import('vitest').Mock} */ (increment),
+  ['limit']: /** @type {import('vitest').Mock} */ (limit),
+  ['orderBy']: /** @type {import('vitest').Mock} */ (orderBy),
+  ['query']: /** @type {import('vitest').Mock} */ (query),
+  ['runTransaction']: /** @type {import('vitest').Mock} */ (runTransaction),
+  ['serverTimestamp']: /** @type {import('vitest').Mock} */ (serverTimestamp),
+  ['startAfter']: /** @type {import('vitest').Mock} */ (startAfter),
+  ['updateDoc']: /** @type {import('vitest').Mock} */ (updateDoc),
+  ['where']: /** @type {import('vitest').Mock} */ (where),
+  ['writeBatch']: /** @type {import('vitest').Mock} */ (writeBatch),
+  ['timestampFromDate']: /** @type {import('vitest').Mock} */ (Timestamp.fromDate),
+};
 
 // ---------------------------------------------------------------------------
 // IntersectionObserver mock
@@ -151,6 +172,97 @@ const mockPosts = [
   },
 ];
 
+/** @type {object[][]} */
+let postPages = [[]];
+/** @type {Set<string>} */
+let likedPostIds = new Set();
+
+/**
+ * 建立 Firestore-like document snapshot。
+ * @param {string} id - 文件 ID。
+ * @param {object | null} data - 文件資料。
+ * @returns {object} Firestore-like document snapshot。
+ */
+function createDocSnapshot(id, data) {
+  return {
+    id,
+    ref: { id, path: `mock/${id}` },
+    exists: () => data !== null,
+    data: () => data,
+  };
+}
+
+/**
+ * 建立 Firestore query snapshot stub。
+ * @param {object[]} docs - Firestore-like document snapshots。
+ * @returns {{ docs: object[], size: number }} Firestore-like query snapshot。
+ */
+function createQuerySnapshot(docs) {
+  return { docs, size: docs.length };
+}
+
+/**
+ * 設定 posts query 回傳頁面。
+ * @param {...object[]} pages - 每次 posts query 要回傳的資料頁。
+ */
+function setPostPages(...pages) {
+  postPages = pages.length > 0 ? pages : [[]];
+}
+
+/**
+ * 設定本檔 Firestore SDK 邊界 stub。
+ */
+function setupFirestoreMocks() {
+  firestoreMocks.collection.mockImplementation((_dbOrRef, ...segments) => ({
+    type: 'collection',
+    path: segments.join('/'),
+  }));
+  firestoreMocks.collectionGroup.mockImplementation((_db, groupId) => ({
+    type: 'collectionGroup',
+    path: groupId,
+  }));
+  firestoreMocks.doc.mockImplementation((base, ...segments) => {
+    if (base?.type === 'collection' && segments.length === 0) {
+      return { id: 'new-post-id', path: `${base.path}/new-post-id` };
+    }
+    if (base?.type === 'collection') {
+      return { id: String(segments.at(-1)), path: [base.path, ...segments].join('/') };
+    }
+    return { id: String(segments.at(-1)), path: segments.join('/') };
+  });
+  firestoreMocks.query.mockImplementation((...parts) => ({
+    type: 'query',
+    path: parts[0]?.path,
+    parts,
+  }));
+  firestoreMocks.where.mockImplementation((...parts) => ({ type: 'where', parts }));
+  firestoreMocks.orderBy.mockImplementation((...parts) => ({ type: 'orderBy', parts }));
+  firestoreMocks.limit.mockImplementation((count) => ({ type: 'limit', count }));
+  firestoreMocks.startAfter.mockImplementation((...parts) => ({ type: 'startAfter', parts }));
+  firestoreMocks.documentId.mockReturnValue('__name__');
+  firestoreMocks.addDoc.mockResolvedValue({ id: 'new-post-id' });
+  firestoreMocks.updateDoc.mockResolvedValue(undefined);
+  firestoreMocks.runTransaction.mockImplementation(async (_db, callback) =>
+    callback({ get: vi.fn(), set: vi.fn(), update: vi.fn(), delete: vi.fn() }),
+  );
+  firestoreMocks.writeBatch.mockReturnValue({
+    set: vi.fn(),
+    delete: vi.fn(),
+    commit: vi.fn().mockResolvedValue(undefined),
+  });
+  firestoreMocks.getDoc.mockResolvedValue(createDocSnapshot('missing', null));
+  firestoreMocks.getDocs.mockImplementation(async (ref) => {
+    if (ref.path === 'likes') {
+      return createQuerySnapshot(
+        [...likedPostIds].map((postId) => createDocSnapshot(`${postId}-like`, { postId })),
+      );
+    }
+
+    const page = postPages.length > 1 ? postPages.shift() : postPages[0];
+    return createQuerySnapshot(page.map((post) => createDocSnapshot(String(post.id), post)));
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -181,7 +293,7 @@ async function renderPostPage({ user = null } = {}) {
     </AuthWrapper>,
   );
   await waitFor(() => {
-    expect(mockedGetLatestPosts).toHaveBeenCalled();
+    expect(firestoreMocks.getDocs).toHaveBeenCalled();
   });
   return ue;
 }
@@ -192,9 +304,9 @@ async function renderPostPage({ user = null } = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   intersectionCallback = null;
-  mockedGetLatestPosts.mockResolvedValue([]);
-  mockedHasUserLikedPosts.mockResolvedValue(new Set());
-  mockedGetMorePosts.mockResolvedValue([]);
+  setPostPages([]);
+  likedPostIds = new Set();
+  setupFirestoreMocks();
   mockSearchParamsGet.mockReturnValue(null);
 });
 
@@ -217,7 +329,7 @@ describe('Feed layout', () => {
       </AuthWrapper>,
     );
     await waitFor(() => {
-      expect(mockedGetLatestPosts).toHaveBeenCalled();
+      expect(firestoreMocks.getDocs).toHaveBeenCalled();
     });
 
     // feed wrapper 是 layout-only div，沒語意 role；加 data-testid 後直接 query；保留 className 驗證原意圖
@@ -232,7 +344,7 @@ describe('Feed layout', () => {
 // ===========================================================================
 describe('PostCard list rendering', () => {
   beforeEach(() => {
-    mockedGetLatestPosts.mockResolvedValue(mockPosts);
+    setPostPages(mockPosts);
   });
 
   it('renders post titles from PostCard components', async () => {
@@ -291,7 +403,7 @@ describe('empty state', () => {
 // ===========================================================================
 describe('infinite scroll', () => {
   it('creates an IntersectionObserver for loading more posts', async () => {
-    mockedGetLatestPosts.mockResolvedValue(mockPosts);
+    setPostPages(mockPosts);
     await renderPostPage();
 
     // 等待 posts 渲染完成後 IntersectionObserver useEffect 才會執行
@@ -304,7 +416,7 @@ describe('infinite scroll', () => {
   });
 
   it('calls getMorePosts when the sentinel enters the viewport', async () => {
-    mockedGetLatestPosts.mockResolvedValue(mockPosts);
+    setPostPages(mockPosts, []);
     await renderPostPage();
 
     // 等待 posts 渲染 + observer 建立
@@ -316,10 +428,11 @@ describe('infinite scroll', () => {
     });
 
     // 模擬 sentinel 進入可視範圍
+    const getDocsCallsBefore = firestoreMocks.getDocs.mock.calls.length;
     intersectionCallback([{ isIntersecting: true, target: document.createElement('div') }]);
 
     await waitFor(() => {
-      expect(mockedGetMorePosts).toHaveBeenCalled();
+      expect(firestoreMocks.getDocs.mock.calls.length).toBeGreaterThan(getDocsCallsBefore);
     });
   });
 });

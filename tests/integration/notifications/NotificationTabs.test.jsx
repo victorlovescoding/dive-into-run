@@ -1,26 +1,41 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/runtime/client/use-cases/auth-use-cases', () => ({
-  default: vi.fn(() => vi.fn()),
+const mockUnsubscribeAll = vi.fn();
+const mockUnsubscribeUnread = vi.fn();
+
+vi.mock('@/config/client/firebase-client', () => ({
+  auth: { app: 'test-auth-app' },
+  db: { app: 'test-firestore-app' },
+  provider: {},
 }));
 
-vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
-  watchNotifications: vi.fn(),
-  watchUnreadNotifications: vi.fn(),
-  markNotificationAsRead: vi.fn(),
-  fetchMoreNotifications: vi.fn(),
-  fetchMoreUnreadNotifications: vi.fn(),
+vi.mock('firebase/auth', () => ({
+  onAuthStateChanged: vi.fn(() => vi.fn()),
+  signInWithPopup: vi.fn(),
+  signOut: vi.fn(),
 }));
 
-vi.mock('@/lib/notification-helpers', () => ({
-  formatRelativeTime: vi.fn(() => '5 分鐘前'),
-  getNotificationLink: vi.fn(() => '/events/test'),
+vi.mock('firebase/firestore', () => ({
+  collection: vi.fn((db, path) => ({ db, path })),
+  doc: vi.fn((db, ...segments) => ({ db, path: segments.join('/') })),
+  getDoc: vi.fn(),
+  getDocs: vi.fn(),
+  limit: vi.fn((count) => ({ type: 'limit', count })),
+  onSnapshot: vi.fn(),
+  orderBy: vi.fn((field, direction) => ({ type: 'orderBy', field, direction })),
+  query: vi.fn((source, ...constraints) => ({ source, constraints })),
+  serverTimestamp: vi.fn(() => new Date()),
+  setDoc: vi.fn(),
+  startAfter: vi.fn((docRef) => ({ type: 'startAfter', docRef })),
+  updateDoc: vi.fn(() => Promise.resolve()),
+  where: vi.fn((field, op, value) => ({ type: 'where', field, op, value })),
+  writeBatch: vi.fn(() => ({ set: vi.fn(), commit: vi.fn() })),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -40,10 +55,9 @@ import { AuthContext } from '@/runtime/providers/AuthProvider';
 import NotificationProvider from '@/runtime/providers/NotificationProvider';
 import NotificationPanel from '@/components/Notifications/NotificationPanel';
 import NotificationBell from '@/components/Notifications/NotificationBell';
-import {
-  watchNotifications,
-  watchUnreadNotifications,
-} from '@/runtime/client/use-cases/notification-use-cases';
+import { onSnapshot } from 'firebase/firestore';
+
+const mockedOnSnapshot = /** @type {import('vitest').Mock} */ (onSnapshot);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -78,31 +92,112 @@ function createNotification(id, read = false) {
     commentId: null,
     message: `通知 ${id}`,
     read,
-    createdAt: { toDate: () => new Date() },
+    createdAt: {
+      toDate: () => new Date(Date.now() - 5 * 60 * 1000),
+      toMillis: () => Date.now() - 5 * 60 * 1000,
+    },
   });
 }
 
-/** @type {((items: import('@/lib/notification-helpers').NotificationItem[]) => void) | undefined} */
-let notificationsCallback;
-/** @type {((items: import('@/lib/notification-helpers').NotificationItem[]) => void) | undefined} */
-let unreadCallback;
-const mockUnsubscribe = vi.fn();
+/** @type {((snapshot: ReturnType<typeof createSnapshot>) => void) | undefined} */
+let allSnapshotCallback;
+/** @type {((snapshot: ReturnType<typeof createSnapshot>) => void) | undefined} */
+let unreadSnapshotCallback;
+/** @type {((error: Error) => void) | undefined} */
+let allErrorCallback;
+/** @type {((error: Error) => void) | undefined} */
+let unreadErrorCallback;
+
+/**
+ * 建立 Firestore 文件 snapshot mock。
+ * @param {string} id - 文件 ID。
+ * @param {object} data - 文件資料。
+ * @returns {{ id: string, data: () => object }} 文件 snapshot。
+ */
+function createDocSnapshot(id, data) {
+  return { id, data: () => data };
+}
+
+/**
+ * 建立 Firestore query snapshot mock。
+ * @param {Array<{ id: string, data: object }>} docs - 文件資料。
+ * @param {Array<{ type: string, id: string, data: object }>} [changes] - docChanges 資料。
+ * @returns {{ docs: Array<{ id: string, data: () => object }>, docChanges: () => Array<{ type: string, doc: { id: string, data: () => object } }> }} snapshot mock。
+ */
+function createSnapshot(docs, changes = []) {
+  return {
+    docs: docs.map((doc) => createDocSnapshot(doc.id, doc.data)),
+    docChanges: () =>
+      changes.map((change) => ({
+        type: change.type,
+        doc: createDocSnapshot(change.id, change.data),
+      })),
+  };
+}
+
+/**
+ * 判斷 query 是否為未讀通知 listener。
+ * @param {{ constraints?: Array<{ field?: string, value?: unknown }> }} queryRef - query mock。
+ * @returns {boolean} 是否含 read=false 條件。
+ */
+function isUnreadNotificationsQuery(queryRef) {
+  return Boolean(
+    queryRef.constraints?.some(
+      (constraint) => constraint.field === 'read' && constraint.value === false,
+    ),
+  );
+}
+
+/**
+ * 推送 all listener snapshot。
+ * @param {import('@/lib/notification-helpers').NotificationItem[]} notifications - 通知資料。
+ * @param {Array<{ type: string, id: string, data: object }>} [changes] - docChanges 資料。
+ * @returns {void}
+ */
+function emitAllSnapshot(notifications, changes = []) {
+  act(() => {
+    allSnapshotCallback?.(
+      createSnapshot(
+        notifications.map((notification) => ({ id: notification.id, data: notification })),
+        changes,
+      ),
+    );
+  });
+}
+
+/**
+ * 推送 unread listener snapshot。
+ * @param {import('@/lib/notification-helpers').NotificationItem[]} notifications - 通知資料。
+ * @returns {void}
+ */
+function emitUnreadSnapshot(notifications) {
+  act(() => {
+    unreadSnapshotCallback?.(
+      createSnapshot(
+        notifications.map((notification) => ({ id: notification.id, data: notification })),
+      ),
+    );
+  });
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
-  notificationsCallback = undefined;
-  unreadCallback = undefined;
+  allSnapshotCallback = undefined;
+  unreadSnapshotCallback = undefined;
+  allErrorCallback = undefined;
+  unreadErrorCallback = undefined;
 
-  /** @type {import('vitest').Mock} */ (watchNotifications).mockImplementation((uid, onNext) => {
-    notificationsCallback = onNext;
-    return mockUnsubscribe;
+  mockedOnSnapshot.mockImplementation((queryRef, onNext, onError) => {
+    if (isUnreadNotificationsQuery(queryRef)) {
+      unreadSnapshotCallback = onNext;
+      unreadErrorCallback = onError;
+      return mockUnsubscribeUnread;
+    }
+
+    allSnapshotCallback = onNext;
+    allErrorCallback = onError;
+    return mockUnsubscribeAll;
   });
-  /** @type {import('vitest').Mock} */ (watchUnreadNotifications).mockImplementation(
-    (uid, onNext) => {
-      unreadCallback = onNext;
-      return mockUnsubscribe;
-    },
-  );
 });
 
 /**
@@ -125,6 +220,25 @@ function renderPanel() {
 // ===========================================================================
 
 describe('NotificationTabs', () => {
+  it('should wire Firestore listeners with unsubscribe and error callbacks', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const { unmount } = renderPanel();
+
+    // Act
+    await user.click(screen.getByRole('button', { name: '通知' }));
+
+    // Assert
+    expect(allSnapshotCallback).toEqual(expect.any(Function));
+    expect(unreadSnapshotCallback).toEqual(expect.any(Function));
+    expect(allErrorCallback).toEqual(expect.any(Function));
+    expect(unreadErrorCallback).toEqual(expect.any(Function));
+
+    unmount();
+    expect(mockUnsubscribeAll.mock.calls.length).toBeGreaterThanOrEqual(1);
+    expect(mockUnsubscribeUnread.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
   it('should have「全部」tab selected by default', async () => {
     // Arrange
     const user = userEvent.setup();
@@ -134,10 +248,8 @@ describe('NotificationTabs', () => {
     await user.click(screen.getByRole('button', { name: '通知' }));
 
     // 送入通知資料
-    act(() => {
-      notificationsCallback?.([createNotification('n1')]);
-      unreadCallback?.([createNotification('n1')]);
-    });
+    emitAllSnapshot([createNotification('n1')]);
+    emitUnreadSnapshot([createNotification('n1')]);
 
     // Assert
     const allTab = screen.getByRole('tab', { name: '全部' });
@@ -154,14 +266,12 @@ describe('NotificationTabs', () => {
     await user.click(screen.getByRole('button', { name: '通知' }));
 
     // 送入混合已讀/未讀通知
-    act(() => {
-      notificationsCallback?.([
-        createNotification('n1', false),
-        createNotification('n2', true),
-        createNotification('n3', false),
-      ]);
-      unreadCallback?.([createNotification('n1', false), createNotification('n3', false)]);
-    });
+    emitAllSnapshot([
+      createNotification('n1', false),
+      createNotification('n2', true),
+      createNotification('n3', false),
+    ]);
+    emitUnreadSnapshot([createNotification('n1', false), createNotification('n3', false)]);
 
     // Act — click「未讀」tab
     await user.click(screen.getByRole('tab', { name: '未讀' }));
@@ -179,10 +289,8 @@ describe('NotificationTabs', () => {
     await user.click(screen.getByRole('button', { name: '通知' }));
 
     // 所有通知都已讀
-    act(() => {
-      notificationsCallback?.([createNotification('n1', true), createNotification('n2', true)]);
-      unreadCallback?.([]);
-    });
+    emitAllSnapshot([createNotification('n1', true), createNotification('n2', true)]);
+    emitUnreadSnapshot([]);
 
     // Act
     await user.click(screen.getByRole('tab', { name: '未讀' }));
@@ -197,19 +305,15 @@ describe('NotificationTabs', () => {
     renderPanel();
     await user.click(screen.getByRole('button', { name: '通知' }));
 
-    act(() => {
-      notificationsCallback?.([createNotification('n1', false), createNotification('n2', false)]);
-      unreadCallback?.([createNotification('n1', false), createNotification('n2', false)]);
-    });
+    emitAllSnapshot([createNotification('n1', false), createNotification('n2', false)]);
+    emitUnreadSnapshot([createNotification('n1', false), createNotification('n2', false)]);
 
     // 切到未讀 tab
     await user.click(screen.getByRole('tab', { name: '未讀' }));
 
     // Act — 點擊第一則通知（觸發 markAsRead → optimistic update）
-    const notificationButtons = screen.getAllByRole('button', { name: /通知/ });
-    // 排除 tab buttons — 只保留通知項目 button
-    const itemButtons = notificationButtons.filter((btn) => btn.getAttribute('role') !== 'tab');
-    await user.click(itemButtons[0]);
+    const unreadPanel = screen.getByRole('tabpanel', { name: '未讀' });
+    await user.click(within(unreadPanel).getByRole('button', { name: /通知 n1/ }));
 
     // Assert — n1 應從列表消失（optimistic update 把它從 unreadNotifications 移除）
     expect(screen.queryByText('通知 n1')).not.toBeInTheDocument();
@@ -221,10 +325,8 @@ describe('NotificationTabs', () => {
     renderPanel();
     await user.click(screen.getByRole('button', { name: '通知' }));
 
-    act(() => {
-      notificationsCallback?.([]);
-      unreadCallback?.([]);
-    });
+    emitAllSnapshot([]);
+    emitUnreadSnapshot([]);
 
     // Assert — tablist container
     const tablist = screen.getByRole('tablist');

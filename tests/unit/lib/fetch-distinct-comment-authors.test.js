@@ -21,14 +21,6 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
-vi.mock('@/lib/firebase-events', () => ({ fetchParticipants: vi.fn() }));
-vi.mock('@/service/notification-service', async (importOriginal) => {
-  const actual = /** @type {Record<string, unknown>} */ (await importOriginal());
-  return {
-    ...actual,
-    buildNotificationMessage: vi.fn(),
-  };
-});
 
 // ---------------------------------------------------------------------------
 // Imports (after mocks)

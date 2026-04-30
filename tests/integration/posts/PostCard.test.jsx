@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -14,9 +14,6 @@ vi.mock('@/components/UserLink', () => ({
       <span>{name}</span>
     </a>
   ),
-}));
-vi.mock('@/lib/notification-helpers', () => ({
-  formatRelativeTime: () => '5 分鐘前',
 }));
 
 const { default: PostCard } = await import('@/components/PostCard');
@@ -38,12 +35,22 @@ const basePost = {
 describe('PostCard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-04-15T10:05:00Z').getTime());
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('作者資訊', () => {
     it('顯示作者名稱', () => {
       render(<PostCard post={basePost} />);
       expect(screen.getByText('小明')).toBeInTheDocument();
+    });
+
+    it('以真實 helper 顯示相對時間', () => {
+      render(<PostCard post={basePost} />);
+      expect(screen.getByText('5 分鐘前')).toBeInTheDocument();
     });
 
     it('無 authorName 時 fallback 到「跑者」', () => {

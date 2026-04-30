@@ -20,6 +20,29 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const unitRuntimeApiServiceRepoFlakyBaselineForCombinedBlocks = [
+  'tests/unit/repo/firebase-users.test.js',
+  'tests/unit/repo/firebase-weather-favorites.test.js',
+  'tests/unit/runtime/sync-strava-activities.test.js',
+];
+
+const unitLibFlakyBaselineForCombinedBlocks = [
+  'tests/unit/lib/create-post-validation.test.js',
+  'tests/unit/lib/deletePost.test.js',
+  'tests/unit/lib/firebase-comments.test.js',
+  'tests/unit/lib/firebase-events-002-jsdoc.test.js',
+  'tests/unit/lib/firebase-events-edit-delete.test.js',
+  'tests/unit/lib/firebase-events.test.js',
+  'tests/unit/lib/firebase-member.test.js',
+  'tests/unit/lib/firebase-notifications-read.test.js',
+  'tests/unit/lib/firebase-notifications-write.test.js',
+  'tests/unit/lib/firebase-posts-comments-likes.test.js',
+  'tests/unit/lib/firebase-posts-crud.test.js',
+  'tests/unit/lib/firebase-profile.test.js',
+  'tests/unit/lib/notify-event-new-comment.test.js',
+  'tests/unit/lib/notify-post-comment-reply.test.js',
+];
+
 export default [
   // 1. ESLint 官方推薦
   js.configs.recommended,
@@ -504,77 +527,138 @@ export default [
     },
   },
 
-  // 18.6 mock-boundary + flaky combined (audit P0-1 / R6 / P1-4 / P1-5 / R7 / spec 026 S6) — integration override; replaces 18.5 for tests/integration/** so mock selectors are not nuked by rule-level overwrite.
-  //      Baseline start: 47 = 33 (mock-boundary, S4 grep frozen) ∪ 23 (45-flaky ∩ tests/integration/**); 9 overlap → 47 unique paths.
+  // 18.6 mock-boundary + flaky combined (audit P0-1 / R6 / P1-4 / P1-5 / R7 / spec 026 S6 / spec 027 S0) — integration override; replaces 18.5 for tests/integration/** so mock selectors are not nuked by rule-level overwrite.
+  //      Baseline start: 55 = 47 (spec 026 baseline) + 8 (spec 027 S0 selector expansion).
   //      退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)
-  //      Selectors per §3 T32 (string-literal + template-literal mock) + §3 T33 (toHaveBeenCalledTimes flaky).
-  //      Flaky selector duplicated here because flat-config rule overrides at rule-name level
-  //      (block X's `no-restricted-syntax` is wholesale-replaced by block Y's array for integration files).
+  //      Selectors: disallow vi.mock('@/lib|repo|service/...') and vi.mock('@/runtime/...') except providers.
+  //      Flaky selector duplicated here because flat-config rule overrides at rule-name level.
   {
     files: ['tests/integration/**/*.{js,jsx,mjs}'],
     ignores: [
-      'tests/integration/comments/CommentSection.test.jsx',
-      'tests/integration/comments/event-comment-notification.test.jsx',
-      'tests/integration/dashboard/DashboardTabs.test.jsx',
       'tests/integration/dashboard/useDashboardTab.test.jsx',
       'tests/integration/events/EventActionButtons.test.jsx',
       'tests/integration/events/EventCardMenu.test.jsx',
       'tests/integration/events/EventDeleteConfirm.test.jsx',
-      'tests/integration/events/EventDetailClient-delete-race.test.jsx',
       'tests/integration/events/EventEditForm.test.jsx',
-      'tests/integration/events/EventsPage.test.jsx',
       'tests/integration/events/ShareButton.test.jsx',
-      'tests/integration/events/event-detail-comment-runtime.test.jsx',
-      'tests/integration/navbar/NavbarDesktop.test.jsx',
-      'tests/integration/navbar/NavbarMobile.test.jsx',
-      'tests/integration/notifications/NotificationBell.test.jsx',
-      'tests/integration/notifications/NotificationPagination.test.jsx',
-      'tests/integration/notifications/NotificationPaginationStateful.test.jsx',
-      'tests/integration/notifications/NotificationPanel.test.jsx',
-      'tests/integration/notifications/NotificationTabs.test.jsx',
-      'tests/integration/notifications/NotificationToast.test.jsx',
-      'tests/integration/notifications/notification-click.test.jsx',
-      'tests/integration/notifications/notification-error.test.jsx',
-      'tests/integration/notifications/notification-triggers.test.jsx',
       'tests/integration/posts/ComposeModal.test.jsx',
-      'tests/integration/posts/PostDetail.test.jsx',
-      'tests/integration/posts/PostDetailClient-delete-race.test.jsx',
-      'tests/integration/posts/PostFeed.test.jsx',
-      'tests/integration/posts/post-comment-reply.test.jsx',
-      'tests/integration/posts/post-detail-edit-dirty.test.jsx',
-      'tests/integration/posts/post-edit-validation.test.jsx',
-      'tests/integration/posts/post-form-validation.test.jsx',
-      'tests/integration/posts/posts-page-edit-dirty.test.jsx',
-      'tests/integration/profile/BioEditor.test.jsx',
-      'tests/integration/profile/ProfileClient.test.jsx',
-      'tests/integration/profile/ProfileEventList.test.jsx',
-      'tests/integration/strava/CallbackPage.test.jsx',
-      'tests/integration/strava/RunCalendarDialog.test.jsx',
       'tests/integration/strava/RunsActivityList.test.jsx',
-      'tests/integration/strava/RunsPage.test.jsx',
-      'tests/integration/strava/runs-page-sync-error.test.jsx',
       'tests/integration/strava/useStravaSync.test.jsx',
-      'tests/integration/toast/crud-toast.test.jsx',
       'tests/integration/toast/toast-container.test.jsx',
       'tests/integration/toast/toast-ui.test.jsx',
-      'tests/integration/weather/favorites.test.jsx',
-      'tests/integration/weather/township-drilldown.test.jsx',
-      'tests/integration/weather/weather-page.test.jsx',
     ],
     rules: {
       'no-restricted-syntax': [
         'error',
         {
           selector:
-            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/(repo|service|runtime)\\//]",
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/(lib|repo|service)\\//]",
           message:
-            "Integration tests must not vi.mock('@/repo|service|runtime/...') — exercise real use-cases via Firebase emulator instead.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S6 baseline ignores list (frozen 33), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+            "Integration tests must not vi.mock('@/lib|repo|service/...') — exercise real repo code and mock only external boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S0 block 18.6 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
         },
         {
           selector:
-            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/(repo|service|runtime)\\//]",
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/runtime\\/(?!providers\\/)/]",
           message:
-            "Integration tests must not vi.mock('@/repo|service|runtime/...') — exercise real use-cases via Firebase emulator instead.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S6 baseline ignores list (frozen 33), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+            "Integration tests must not vi.mock('@/runtime/...') except '@/runtime/providers/*' React provider boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S0 block 18.6 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/(lib|repo|service)\\//]",
+          message:
+            "Integration tests must not vi.mock('@/lib|repo|service/...') — exercise real repo code and mock only external boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S0 block 18.6 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/runtime\\/(?!providers\\/)/]",
+          message:
+            "Integration tests must not vi.mock('@/runtime/...') except '@/runtime/providers/*' React provider boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S0 block 18.6 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+        },
+        {
+          selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
+          message:
+            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin.",
+        },
+      ],
+    },
+  },
+
+  // 18.7 mock-boundary + flaky combined (spec 027 S0 / S7 drained) — unit runtime/api/service/repo.
+  //      Combined block intentionally duplicates 18.5 flaky selector because flat-config
+  //      replaces `no-restricted-syntax` arrays at rule-name level.
+  //      Mock-boundary baseline drained in S7; only 18.5 flaky overlap remains via spread.
+  {
+    files: ['tests/unit/{runtime,api,service,repo}/**/*.{js,jsx,mjs}'],
+    ignores: [...unitRuntimeApiServiceRepoFlakyBaselineForCombinedBlocks],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/(lib|repo|service)\\//]",
+          message:
+            "Unit tests in this cleanup baseline must not vi.mock('@/lib|repo|service/...') — mock SDKs, browser APIs, or external service boundaries instead.\nRefs: specs/027-tests-mock-cleanup/plan.md S0 / project-health/2026-04-29-tests-audit-report.md P0-1.\nIf this file is in the S0 block 18.7 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/runtime\\/(?!providers\\/)/]",
+          message:
+            "Unit tests in this cleanup baseline must not vi.mock('@/runtime/...') except '@/runtime/providers/*' React provider boundaries.\nRefs: specs/027-tests-mock-cleanup/plan.md S0 / project-health/2026-04-29-tests-audit-report.md P0-1.\nIf this file is in the S0 block 18.7 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/(lib|repo|service)\\//]",
+          message:
+            "Unit tests in this cleanup baseline must not vi.mock('@/lib|repo|service/...') — mock SDKs, browser APIs, or external service boundaries instead.\nRefs: specs/027-tests-mock-cleanup/plan.md S0 / project-health/2026-04-29-tests-audit-report.md P0-1.\nIf this file is in the S0 block 18.7 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/runtime\\/(?!providers\\/)/]",
+          message:
+            "Unit tests in this cleanup baseline must not vi.mock('@/runtime/...') except '@/runtime/providers/*' React provider boundaries.\nRefs: specs/027-tests-mock-cleanup/plan.md S0 / project-health/2026-04-29-tests-audit-report.md P0-1.\nIf this file is in the S0 block 18.7 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.",
+        },
+        {
+          selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
+          message:
+            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin.",
+        },
+      ],
+    },
+  },
+
+  // 18.8 mock-boundary + flaky combined (spec 027 S0) — unit lib baseline.
+  //      Combined block intentionally duplicates 18.5 flaky selector because flat-config
+  //      replaces `no-restricted-syntax` arrays at rule-name level.
+  //      Baseline start: 5.
+  {
+    files: ['tests/unit/lib/**/*.{js,jsx,mjs}'],
+    ignores: [...unitLibFlakyBaselineForCombinedBlocks],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/(lib|repo|service)\\//]",
+          message:
+            "Unit lib tests in this cleanup baseline must not vi.mock('@/lib|repo|service/...') — mock SDKs, browser APIs, or external service boundaries instead.\nRefs: specs/027-tests-mock-cleanup/plan.md S0 / project-health/2026-04-29-tests-audit-report.md P0-1.\nIf this file is in the S0 block 18.8 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/runtime\\/(?!providers\\/)/]",
+          message:
+            "Unit lib tests in this cleanup baseline must not vi.mock('@/runtime/...') except '@/runtime/providers/*' React provider boundaries.\nRefs: specs/027-tests-mock-cleanup/plan.md S0 / project-health/2026-04-29-tests-audit-report.md P0-1.\nIf this file is in the S0 block 18.8 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/(lib|repo|service)\\//]",
+          message:
+            "Unit lib tests in this cleanup baseline must not vi.mock('@/lib|repo|service/...') — mock SDKs, browser APIs, or external service boundaries instead.\nRefs: specs/027-tests-mock-cleanup/plan.md S0 / project-health/2026-04-29-tests-audit-report.md P0-1.\nIf this file is in the S0 block 18.8 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/runtime\\/(?!providers\\/)/]",
+          message:
+            "Unit lib tests in this cleanup baseline must not vi.mock('@/runtime/...') except '@/runtime/providers/*' React provider boundaries.\nRefs: specs/027-tests-mock-cleanup/plan.md S0 / project-health/2026-04-29-tests-audit-report.md P0-1.\nIf this file is in the S0 block 18.8 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.",
         },
         {
           selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",

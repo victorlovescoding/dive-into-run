@@ -2,6 +2,41 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+const firestoreMocks = vi.hoisted(() => ({
+  addDoc: vi.fn(),
+  collection: vi.fn(),
+  collectionGroup: vi.fn(),
+  connectFirestoreEmulator: vi.fn(),
+  deleteField: vi.fn(() => ({ __deleteField: true })),
+  doc: vi.fn(),
+  documentId: vi.fn(() => '__name__'),
+  getDoc: vi.fn(),
+  getDocs: vi.fn(),
+  getFirestore: vi.fn(),
+  increment: vi.fn((value) => ({ __increment: value })),
+  limit: vi.fn((value) => ({ type: 'limit', value })),
+  onSnapshot: vi.fn(),
+  orderBy: vi.fn((field, direction) => ({ type: 'orderBy', field, direction })),
+  query: vi.fn(),
+  runTransaction: vi.fn(),
+  serverTimestamp: vi.fn(() => ({ __serverTimestamp: true })),
+  setDoc: vi.fn(),
+  startAfter: vi.fn((...values) => ({ type: 'startAfter', values })),
+  updateDoc: vi.fn(),
+  where: vi.fn((field, operator, value) => ({ type: 'where', field, operator, value })),
+  writeBatch: vi.fn(),
+}));
+
+const authMocks = vi.hoisted(() => ({
+  connectAuthEmulator: vi.fn(),
+  getAuth: vi.fn(),
+  GoogleAuthProvider: vi.fn(() => ({ setCustomParameters: vi.fn() })),
+  onAuthStateChanged: vi.fn(() => vi.fn()),
+  signInWithEmailAndPassword: vi.fn(),
+  signInWithPopup: vi.fn(),
+  signOut: vi.fn(),
+}));
+
 // ---------------------------------------------------------------------------
 // Polyfills
 // ---------------------------------------------------------------------------
@@ -33,108 +68,16 @@ vi.mock('@/config/client/firebase-client', () => ({
 
 vi.mock('firebase/firestore', () => ({
   Timestamp: { fromDate: vi.fn((d) => d) },
-  collection: vi.fn(),
-  doc: vi.fn(),
-  getDoc: vi.fn(),
-  getDocs: vi.fn(),
-  addDoc: vi.fn(),
-  updateDoc: vi.fn(),
-  deleteDoc: vi.fn(),
-  query: vi.fn(),
-  where: vi.fn(),
-  orderBy: vi.fn(),
-  limit: vi.fn(),
-  startAfter: vi.fn(),
-  onSnapshot: vi.fn(),
-  serverTimestamp: vi.fn(),
-  writeBatch: vi.fn(),
-  runTransaction: vi.fn(),
-  increment: vi.fn(),
-  collectionGroup: vi.fn(),
-  documentId: vi.fn(),
-  connectFirestoreEmulator: vi.fn(),
-  getFirestore: vi.fn(),
+  ...firestoreMocks,
 }));
 
 vi.mock('firebase/auth', () => ({
-  getAuth: vi.fn(),
-  GoogleAuthProvider: vi.fn(() => ({ setCustomParameters: vi.fn() })),
-  connectAuthEmulator: vi.fn(),
+  ...authMocks,
 }));
 
 vi.mock('firebase/app', () => ({
   initializeApp: vi.fn(),
 }));
-
-// ---------------------------------------------------------------------------
-// Mocks — firebase-events
-// ---------------------------------------------------------------------------
-
-vi.mock('@/runtime/client/use-cases/event-use-cases', () => ({
-  fetchEventById: vi.fn(),
-  fetchParticipants: vi.fn(),
-  fetchMyJoinedEventsForIds: vi.fn(),
-  joinEvent: vi.fn(),
-  leaveEvent: vi.fn(),
-  updateEvent: vi.fn(),
-  deleteEvent: vi.fn(),
-}));
-
-vi.mock('@/runtime/client/use-cases/auth-use-cases', () => ({
-  default: vi.fn(() => vi.fn()),
-}));
-
-vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
-  notifyEventModified: vi.fn().mockResolvedValue(undefined),
-  notifyEventCancelled: vi.fn().mockResolvedValue(undefined),
-  notifyPostNewComment: vi.fn().mockResolvedValue(undefined),
-  notifyPostCommentReply: vi.fn().mockResolvedValue(undefined),
-  notifyEventNewComment: vi.fn().mockResolvedValue(undefined),
-  fetchDistinctCommentAuthors: vi.fn().mockResolvedValue([]),
-  watchNotifications: vi.fn(() => vi.fn()),
-  watchUnreadNotifications: vi.fn(() => vi.fn()),
-  markNotificationAsRead: vi.fn().mockResolvedValue(undefined),
-  fetchMoreNotifications: vi.fn().mockResolvedValue({ docs: [] }),
-  fetchMoreUnreadNotifications: vi.fn().mockResolvedValue({ docs: [] }),
-}));
-
-// ---------------------------------------------------------------------------
-// Mocks — firebase-notifications
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Mocks — firebase-posts
-// ---------------------------------------------------------------------------
-
-vi.mock('@/runtime/client/use-cases/post-use-cases', () => ({
-  getPostDetail: vi.fn(),
-  addComment: vi.fn(),
-  getLatestComments: vi.fn(),
-  getCommentById: vi.fn(),
-  toggleLikePost: vi.fn(),
-  hasUserLikedPost: vi.fn(),
-  updatePost: vi.fn(),
-  updateComment: vi.fn(),
-  deletePost: vi.fn(),
-  deleteComment: vi.fn(),
-  getMoreComments: vi.fn(),
-}));
-
-// ---------------------------------------------------------------------------
-// Mocks — event-helpers (partial, keep real utils)
-// ---------------------------------------------------------------------------
-
-vi.mock('@/lib/event-helpers', async (importOriginal) => {
-  const actual = /** @type {Record<string, unknown>} */ (await importOriginal());
-  return {
-    ...actual,
-    normalizeRoutePolylines: vi.fn(() => []),
-  };
-});
-
-// ---------------------------------------------------------------------------
-// Mocks — contexts
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Mocks — next
@@ -160,48 +103,19 @@ vi.mock('next/image', () => ({
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
 
-import {
-  fetchEventById,
-  fetchParticipants,
-  fetchMyJoinedEventsForIds,
-  updateEvent,
-  deleteEvent,
-} from '@/runtime/client/use-cases/event-use-cases';
-import {
-  notifyEventModified,
-  notifyEventCancelled,
-  notifyPostNewComment,
-} from '@/runtime/client/use-cases/notification-use-cases';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
-import {
-  getPostDetail,
-  addComment,
-  getLatestComments,
-  getCommentById,
-  hasUserLikedPost,
-} from '@/runtime/client/use-cases/post-use-cases';
 import ToastProvider from '@/runtime/providers/ToastProvider';
 import EventDetailClient from '@/app/events/[id]/eventDetailClient';
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
-
-// cast to vi.Mock for convenience
-const mockedFetchEventById = /** @type {import('vitest').Mock} */ (fetchEventById);
-const mockedFetchParticipants = /** @type {import('vitest').Mock} */ (fetchParticipants);
-const mockedFetchMyJoinedEventsForIds = /** @type {import('vitest').Mock} */ (
-  fetchMyJoinedEventsForIds
-);
-const mockedUpdateEvent = /** @type {import('vitest').Mock} */ (updateEvent);
-const mockedDeleteEvent = /** @type {import('vitest').Mock} */ (deleteEvent);
-
-const mockedNotifyEventModified = /** @type {import('vitest').Mock} */ (notifyEventModified);
-const mockedNotifyEventCancelled = /** @type {import('vitest').Mock} */ (notifyEventCancelled);
-const mockedNotifyPostNewComment = /** @type {import('vitest').Mock} */ (notifyPostNewComment);
-
-const mockedGetPostDetail = /** @type {import('vitest').Mock} */ (getPostDetail);
-const mockedAddComment = /** @type {import('vitest').Mock} */ (addComment);
-const mockedGetLatestComments = /** @type {import('vitest').Mock} */ (getLatestComments);
-const mockedGetCommentById = /** @type {import('vitest').Mock} */ (getCommentById);
-const mockedHasUserLikedPost = /** @type {import('vitest').Mock} */ (hasUserLikedPost);
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  runTransaction,
+  writeBatch,
+} from 'firebase/firestore';
 
 const mockUser = {
   uid: 'host1',
@@ -256,6 +170,146 @@ function buildMockEvent(overrides = {}) {
   };
 }
 
+/** @type {Record<string, object>} */
+const postFixtures = {};
+/** @type {object[]} */
+let notificationPayloads;
+/** @type {object[]} */
+let transactionUpdates;
+let generatedCommentId;
+
+/**
+ * 建立 Firestore document ref mock。
+ * @param {string} path - 文件路徑。
+ * @returns {{ id: string, path: string }} document ref。
+ */
+function createDocRef(path) {
+  const parts = path.split('/');
+  return { id: parts[parts.length - 1], path };
+}
+
+/**
+ * 建立 Firestore collection ref mock。
+ * @param {string} path - collection 路徑。
+ * @returns {{ id: string, path: string }} collection ref。
+ */
+function createCollectionRef(path) {
+  const parts = path.split('/');
+  return { id: parts[parts.length - 1], path };
+}
+
+/**
+ * 建立 Firestore document snapshot mock。
+ * @param {string} id - 文件 ID。
+ * @param {object | null} data - 文件資料。
+ * @returns {{ id: string, ref: { id: string, path: string }, exists: () => boolean, data: () => object }} snapshot。
+ */
+function createSnapshot(id, data) {
+  return {
+    id,
+    ref: createDocRef(id),
+    exists: () => data !== null,
+    data: () => data ?? {},
+  };
+}
+
+/**
+ * 建立 Firestore query snapshot mock。
+ * @param {Array<{ id: string, data: object }>} docs - 文件資料。
+ * @returns {{ docs: Array<{ id: string, ref: { id: string, path: string }, exists: () => boolean, data: () => object }> }} snapshot。
+ */
+function createQuerySnapshot(docs) {
+  return {
+    docs: docs.map((item) => createSnapshot(item.id, item.data)),
+  };
+}
+
+/**
+ * 安裝 Firestore 邊界 mock，讓真實 repo/use-case 路徑可跑。
+ */
+function setupFirestoreBoundary() {
+  notificationPayloads = [];
+  transactionUpdates = [];
+  generatedCommentId = 'cmt1';
+  Object.keys(postFixtures).forEach((key) => delete postFixtures[key]);
+
+  const mockedCollection = /** @type {import('vitest').Mock} */ (collection);
+  const mockedDoc = /** @type {import('vitest').Mock} */ (doc);
+  const mockedGetDoc = /** @type {import('vitest').Mock} */ (getDoc);
+  const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
+  const mockedRunTransaction = /** @type {import('vitest').Mock} */ (runTransaction);
+  const mockedWriteBatch = /** @type {import('vitest').Mock} */ (writeBatch);
+  const mockedAddDoc = /** @type {import('vitest').Mock} */ (addDoc);
+
+  mockedCollection.mockImplementation((first, ...segments) => {
+    const prefix = typeof first?.path === 'string' ? first.path : '';
+    return createCollectionRef([prefix, ...segments].filter(Boolean).join('/'));
+  });
+  mockedDoc.mockImplementation((first, ...segments) => {
+    const prefix = typeof first?.path === 'string' ? first.path : '';
+    const pathParts = [prefix, ...segments].filter(Boolean);
+    if (pathParts.length === 1 && prefix) {
+      pathParts.push(generatedCommentId);
+    }
+    return createDocRef(pathParts.join('/'));
+  });
+  firestoreMocks.query.mockImplementation((base, ...constraints) => ({ base, constraints }));
+  mockedGetDoc.mockImplementation(async (ref) => {
+    if (ref.path === 'events/evt1') return createSnapshot('evt1', buildMockEvent());
+    if (ref.path.startsWith('events/') && ref.path.includes('/participants/')) {
+      return createSnapshot(ref.id, null);
+    }
+    if (ref.path.startsWith('posts/') && ref.path.includes('/likes/')) {
+      return createSnapshot(ref.id, null);
+    }
+    if (ref.path.startsWith('posts/') && ref.path.includes('/comments/')) {
+      return createSnapshot(ref.id, {
+        authorUid: 'host1',
+        authorName: 'Host User',
+        authorImgURL: 'https://photo.url/host.jpg',
+        comment: ref.id === 'cmt1' ? '好文！' : '自己留言',
+        createdAt: new Date(),
+      });
+    }
+    if (ref.path.startsWith('posts/')) {
+      return createSnapshot(ref.id, postFixtures[ref.id] ?? null);
+    }
+    return createSnapshot(ref.id, null);
+  });
+  mockedGetDocs.mockImplementation(async (target) => {
+    const path = target?.base?.path ?? target?.path ?? '';
+    if (path === 'events/evt1/participants') {
+      return createQuerySnapshot([
+        { id: 'p1', data: { uid: 'p1', name: 'P1', photoURL: '' } },
+        { id: 'p2', data: { uid: 'p2', name: 'P2', photoURL: '' } },
+      ]);
+    }
+    return createQuerySnapshot([]);
+  });
+  mockedRunTransaction.mockImplementation(async (_db, callback) => {
+    const tx = {
+      get: vi.fn(async (ref) => mockedGetDoc(ref)),
+      set: vi.fn(),
+      update: vi.fn((_ref, payload) => {
+        transactionUpdates.push(payload);
+      }),
+      delete: vi.fn(),
+    };
+    return callback(tx);
+  });
+  mockedWriteBatch.mockImplementation(() => ({
+    set: vi.fn((_ref, payload) => {
+      notificationPayloads.push(payload);
+    }),
+    delete: vi.fn(),
+    commit: vi.fn().mockResolvedValue(undefined),
+  }));
+  mockedAddDoc.mockImplementation(async (_ref, payload) => {
+    notificationPayloads.push(payload);
+    return { id: 'notification1' };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Event Detail — edit → notifyEventModified
 // ---------------------------------------------------------------------------
@@ -263,18 +317,7 @@ function buildMockEvent(overrides = {}) {
 describe('EventDetailClient notification triggers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // 預設 mock 回傳
-    mockedFetchEventById.mockResolvedValue(buildMockEvent());
-    mockedFetchParticipants.mockResolvedValue([
-      { uid: 'p1', name: 'P1', photoURL: '' },
-      { uid: 'p2', name: 'P2', photoURL: '' },
-    ]);
-    mockedFetchMyJoinedEventsForIds.mockResolvedValue(new Set());
-    mockedUpdateEvent.mockResolvedValue(undefined);
-    mockedDeleteEvent.mockResolvedValue(undefined);
-    mockedNotifyEventModified.mockResolvedValue(undefined);
-    mockedNotifyEventCancelled.mockResolvedValue(undefined);
+    setupFirestoreBoundary();
   });
 
   it('calls notifyEventModified after successful edit', async () => {
@@ -308,23 +351,37 @@ describe('EventDetailClient notification triggers', () => {
     const submitBtn = screen.getByRole('button', { name: '編輯完成' });
     await user.click(submitBtn);
 
-    // 驗證 updateEvent 被呼叫
+    // 驗證真實 updateEvent path 透過 transaction 更新 Firestore
     await waitFor(() => {
-      expect(mockedUpdateEvent).toHaveBeenCalledWith(
-        'evt1',
-        expect.objectContaining({
-          title: '修改後的晨跑',
-        }),
+      expect(transactionUpdates).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            title: '修改後的晨跑',
+          }),
+        ]),
       );
     });
 
-    // 驗證 notifyEventModified 被呼叫，帶正確參數
+    // 驗證真實 notifyEventModified path 建立通知 payload
     await waitFor(() => {
-      expect(mockedNotifyEventModified).toHaveBeenCalledWith('evt1', '週末晨跑', {
-        uid: 'host1',
-        name: 'Host User',
-        photoURL: 'https://photo.url/host.jpg',
-      });
+      expect(notificationPayloads).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            recipientUid: 'p1',
+            type: 'event_modified',
+            entityId: 'evt1',
+            entityTitle: '週末晨跑',
+            actorUid: 'host1',
+          }),
+          expect.objectContaining({
+            recipientUid: 'p2',
+            type: 'event_modified',
+            entityId: 'evt1',
+            entityTitle: '週末晨跑',
+            actorUid: 'host1',
+          }),
+        ]),
+      );
     });
   });
 
@@ -354,26 +411,35 @@ describe('EventDetailClient notification triggers', () => {
     const confirmBtn = screen.getByRole('button', { name: '是，確認刪除' });
     await user.click(confirmBtn);
 
-    // 驗證 notifyEventCancelled 被呼叫（內部會先 fetchParticipants 再通知）
+    // 驗證真實 notifyEventCancelled path 建立通知 payload
     await waitFor(() => {
-      expect(mockedNotifyEventCancelled).toHaveBeenCalledWith(
-        'evt1',
-        '週末晨跑',
+      expect(notificationPayloads).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ uid: 'p1' }),
-          expect.objectContaining({ uid: 'p2' }),
+          expect.objectContaining({
+            recipientUid: 'p1',
+            type: 'event_cancelled',
+            entityId: 'evt1',
+            entityTitle: '週末晨跑',
+            actorUid: 'host1',
+          }),
+          expect.objectContaining({
+            recipientUid: 'p2',
+            type: 'event_cancelled',
+            entityId: 'evt1',
+            entityTitle: '週末晨跑',
+            actorUid: 'host1',
+          }),
         ]),
-        {
-          uid: 'host1',
-          name: 'Host User',
-          photoURL: 'https://photo.url/host.jpg',
-        },
       );
     });
 
-    // 驗證 deleteEvent 被呼叫
+    // 驗證真實 deleteEvent path 讀取 event document
     await waitFor(() => {
-      expect(mockedDeleteEvent).toHaveBeenCalledWith('evt1');
+      expect(getDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: 'events/evt1',
+        }),
+      );
     });
   });
 });
@@ -385,24 +451,12 @@ describe('EventDetailClient notification triggers', () => {
 describe('PostDetailClient notification triggers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mockedGetLatestComments.mockResolvedValue([]);
-    mockedHasUserLikedPost.mockResolvedValue(false);
-    mockedAddComment.mockResolvedValue({ id: 'cmt1' });
-    mockedGetCommentById.mockResolvedValue({
-      id: 'cmt1',
-      authorUid: 'host1',
-      authorName: 'Host User',
-      authorImgURL: 'https://photo.url/host.jpg',
-      comment: '好文！',
-      createdAt: new Date(),
-    });
-    mockedNotifyPostNewComment.mockResolvedValue(undefined);
+    setupFirestoreBoundary();
   });
 
   it('calls notifyPostNewComment when commenter is not the post author', async () => {
     // post 的作者是 author99，登入使用者是 host1 → 不同人 → 應通知
-    mockedGetPostDetail.mockResolvedValue({
+    postFixtures.post1 = {
       id: 'post1',
       title: '跑步心得',
       content: '今天跑了 10K',
@@ -411,7 +465,7 @@ describe('PostDetailClient notification triggers', () => {
       authorImgURL: '',
       likesCount: 0,
       commentsCount: 0,
-    });
+    };
 
     const user = userEvent.setup();
     renderWithProviders(<PostDetailClient postId="post1" />);
@@ -429,35 +483,37 @@ describe('PostDetailClient notification triggers', () => {
     const submitBtn = screen.getByRole('button', { name: '送出' });
     await user.click(submitBtn);
 
-    // 驗證 addComment 被呼叫
+    // 驗證真實 addComment path 透過 transaction 新增留言
     await waitFor(() => {
-      expect(mockedAddComment).toHaveBeenCalledWith(
-        'post1',
-        expect.objectContaining({
-          comment: '好文！',
-        }),
+      expect(transactionUpdates).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            commentsCount: expect.objectContaining({ __increment: 1 }),
+          }),
+        ]),
       );
     });
 
-    // 驗證 notifyPostNewComment 被呼叫
+    // 驗證真實 notifyPostNewComment path 建立通知 payload
     await waitFor(() => {
-      expect(mockedNotifyPostNewComment).toHaveBeenCalledWith(
-        'post1',
-        '跑步心得',
-        'author99',
-        'cmt1',
-        {
-          uid: 'host1',
-          name: 'Host User',
-          photoURL: 'https://photo.url/host.jpg',
-        },
+      expect(notificationPayloads).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            recipientUid: 'author99',
+            type: 'post_new_comment',
+            entityId: 'post1',
+            entityTitle: '跑步心得',
+            commentId: 'cmt1',
+            actorUid: 'host1',
+          }),
+        ]),
       );
     });
   });
 
   it('does NOT call notifyPostNewComment when commenter is the post author', async () => {
     // post 的作者是 host1，登入使用者也是 host1 → 同一人 → 不通知
-    mockedGetPostDetail.mockResolvedValue({
+    postFixtures.post2 = {
       id: 'post2',
       title: '我的文章',
       content: '自己的文章',
@@ -466,7 +522,7 @@ describe('PostDetailClient notification triggers', () => {
       authorImgURL: 'https://photo.url/host.jpg',
       likesCount: 0,
       commentsCount: 0,
-    });
+    };
 
     const user = userEvent.setup();
     renderWithProviders(<PostDetailClient postId="post2" />);
@@ -484,12 +540,25 @@ describe('PostDetailClient notification triggers', () => {
     const submitBtn = screen.getByRole('button', { name: '送出' });
     await user.click(submitBtn);
 
-    // 驗證 addComment 被呼叫
+    // 驗證真實 addComment path 仍有新增留言
     await waitFor(() => {
-      expect(mockedAddComment).toHaveBeenCalled();
+      expect(transactionUpdates).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            commentsCount: expect.objectContaining({ __increment: 1 }),
+          }),
+        ]),
+      );
     });
 
-    // 驗證 notifyPostNewComment「沒有」被呼叫
-    expect(mockedNotifyPostNewComment).not.toHaveBeenCalled();
+    // 驗證 notifyPostNewComment 的真實 self-author guard 沒建立通知
+    expect(notificationPayloads).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'post_new_comment',
+          entityId: 'post2',
+        }),
+      ]),
+    );
   });
 });

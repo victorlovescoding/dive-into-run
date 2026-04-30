@@ -1,18 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-vi.mock('@/lib/strava-helpers', () => ({
-  formatDistance: vi.fn((m) => `${(m / 1000).toFixed(1)} km`),
-  formatPace: vi.fn(() => '5\'30"/km'),
-  formatDuration: vi.fn(() => '28:30'),
-}));
-
+// `@/components/RunsRouteMap` 屬下游 UI 子元件灰區（plan §6 第 8 條），保留 mock；
+// 真實 Leaflet 地圖在 jsdom 無法渲染。
 vi.mock('@/components/RunsRouteMap', () => ({
   default: ({ summaryPolyline }) => <div data-testid="route-map" data-polyline={summaryPolyline} />,
 }));
 
 import RunsActivityCard from '@/components/RunsActivityCard';
-import { formatDistance, formatPace, formatDuration } from '@/lib/strava-helpers';
 
 /**
  * 建立 mock StravaActivity 物件。
@@ -50,16 +45,16 @@ describe('RunsActivityCard', () => {
     expect(screen.getByText('2026-04-01')).toBeInTheDocument();
   });
 
-  it('renders formatted distance, pace, and duration', () => {
+  it('renders formatted distance, pace, and duration via real strava-helpers', () => {
+    // 真實 helpers 對應結果：
+    //   formatDistance(5200) -> '5.2 km'
+    //   formatPace(1710, 5200) -> 1710 / 5.2 = 328.846 sec/km -> "5'28\"/km"
+    //   formatDuration(1710) -> 1710s = 28m30s -> '28:30'
     const activity = createMockActivity();
     render(<RunsActivityCard activity={activity} />);
 
-    expect(formatDistance).toHaveBeenCalledWith(5200);
-    expect(formatPace).toHaveBeenCalledWith(1710, 5200);
-    expect(formatDuration).toHaveBeenCalledWith(1710);
-
     expect(screen.getByText('5.2 km')).toBeInTheDocument();
-    expect(screen.getByText('5\'30"/km')).toBeInTheDocument();
+    expect(screen.getByText('5\'28"/km')).toBeInTheDocument();
     expect(screen.getByText('28:30')).toBeInTheDocument();
   });
 
