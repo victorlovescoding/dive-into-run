@@ -8,17 +8,17 @@
 
 ## 0. 進度看板
 
-| Session | 狀態           | Branch | PR  | Commit | Baseline 變化                                                                                  |
-| ------- | -------------- | ------ | --- | ------ | ---------------------------------------------------------------------------------------------- |
-| —       | —              | —      | —   | —      | **18.6=47（spec 026 既有）/ 18.7=0 / 18.8=0（spec 027 開始前）**                               |
-| S0      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 修 selector bug + 擴規則 → 18.6: 47→55（+8 新加）/ 18.7: 0→14（new）/ 18.8: 0→5（new）         |
-| S1      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 55 → 50（posts heavy / pilot — 5 檔/10 violations；Option B 全留在本 spec）              |
+| Session | 狀態           | Branch                 | PR  | Commit      | Baseline 變化                                                                                              |
+| ------- | -------------- | ---------------------- | --- | ----------- | ---------------------------------------------------------------------------------------------------------- |
+| —       | —              | —                      | —   | —           | **18.6=47（spec 026 既有）/ 18.7=0 / 18.8=0（spec 027 開始前）**                                           |
+| S0      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 修 selector bug + 擴規則 → 18.6: 47→55（+8 新加）/ 18.7: 0→14（new）/ 18.8: 0→5（new）                     |
+| S1      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 55 → 50（posts heavy / pilot — 5 檔/10 violations；Option B 全留在本 spec）                          |
 | S2      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 50 → 36（posts rest + comments + dashboard + navbar — 14 檔/15 violations；Navbar flaky count 已清） |
-| S3      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 36 → 27（notifications — 9 檔/32 violations；S3.A-D reviewers 全 PASS）                  |
-| S4      | ⏳ Not started | —      | —   | —      | 18.6: 27 → 21（events + profile — 6 檔/8 violations）                                          |
-| S5      | ⏳ Not started | —      | —   | —      | 18.6: 21 → 11（strava + weather + toast — 10 檔/13 violations；第一批 mock-boundary 部分清空） |
-| S6      | ⏳ Not started | —      | —   | —      | 18.8: 5 → 0（unit/lib notification — 5 檔/11 violations）                                      |
-| S7      | ⏳ Not started | —      | —   | —      | 18.7: 14 → 0（unit/runtime + api + 散落 — 14 檔/17 violations）                                |
+| S3      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 36 → 27（notifications — 9 檔/32 violations；S3.A-D reviewers 全 PASS）                              |
+| S4      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 27 → 21（events + profile — 6 檔/8 violations；S4.A/B reviewers + type-fix 全 PASS）                 |
+| S5      | ⏳ Not started | —                      | —   | —           | 18.6: 21 → 11（strava + weather + toast — 10 檔/13 violations；第一批 mock-boundary 部分清空）             |
+| S6      | ⏳ Not started | —                      | —   | —           | 18.8: 5 → 0（unit/lib notification — 5 檔/11 violations）                                                  |
+| S7      | ⏳ Not started | —                      | —   | —           | 18.7: 14 → 0（unit/runtime + api + 散落 — 14 檔/17 violations）                                            |
 
 > 每完成一個 session：對應 row 狀態 → ✅ Done、寫入 branch / PR / commit hash、更新 baseline 實際數字。
 > Spec 終態：三個 block 對應 mock-boundary 部分清空（18.6 剩 ~11 檔 flaky-only overlap 不計入）。
@@ -350,6 +350,28 @@ writeBatch.mockReturnValue(batch);
 
 ### S4 坑紀錄
 
+- **S4 全 6 檔已從 18.6 baseline 移除**：events 3 + profile 3 consolidation 後，18.6 count 27 -> 21。
+- **events SDK boundary 重點**：
+  - `event-detail-comment-runtime`：comment runtime 走 `getDoc` + `getDocs(query(collection(...)))`；query path 用來分辨 events doc vs comments subcollection。CommentSection / ShareButton / UserLink 仍走 `@/components/*` UI mock（灰區保留）。
+  - `EventDetailClient-delete-race`：cascade delete race 用 **第二次 `getDoc(eventRef)` 回 `exists()=false`** 觸發 UI catch branch（同 S1 PostDetailClient race pattern）；EventMap / EventEditForm / CommentSection / ShareButton / UserLink 仍走 component mock。
+  - `EventsPage`：list + pagination fan-out 由 `getDocs(query(...))` + `IntersectionObserver` 驅動；type-fix 階段補了 `IntersectionObserver` 全域 stub 修正 type-check error。
+- **profile SDK boundary 重點**：
+  - 3 檔共用 `firestoreMock` helper（與 §2.1 骨架一致，含 `getDoc` / `getDocs` / `updateDoc` / `query` / `collection` / `doc`）；`@/config/client/firebase-client` mock `db: {}`。
+  - `ProfileClient`：ProfileHeader / ProfileStats / ProfileEventList 三個下游 component 仍走 `@/app/users/[uid]/*` mock（灰區保留），核心 user load path 走真實 use-case；type-fix 階段補了 user mock object shape 滿足 strict type-check。
+  - `ProfileEventList`：用 `QueryDocumentSnapshot` shape 配合 `startAfter` cursor pagination；type-fix 補了 cast 滿足 SDK type。
+  - `BioEditor`：edit dirty/save path 走真實 `updateDoc`，斷言 SDK payload 而非 internal mock call count。
+- **type-check pitfall（重要！後續 S5/S6/S7 必讀）**：mock-boundary reviewer **一定要同步 `npm run type-check`**，因為 mock object shape 不滿 SDK type / DOM API type 會 leak 到 type-check 階段（S4 漏跑造成 round 1 stop、round 2 才補完）。建議 reviewer task 強制加 step：
+  ```bash
+  npm run type-check 2>&1 | grep -E "<file basename>"
+  ```
+  S5/S6/S7 啟動前 reviewer prompt 都應補上這條 gate。
+- **PostToolUse Prettier hook pitfall（重要！）**：PostToolUse Edit hook 會 auto-run repo-wide Prettier，每次 Edit **任何檔**會帶出 8 個 unrelated formatter 檔（`tests/integration/comments/CommentSection.test.jsx`, `tests/integration/navbar/Navbar{Desktop,Mobile}.test.jsx`, `tests/integration/notifications/{NotificationPagination,NotificationPaginationStateful,notification-click}.test.jsx`, `tests/integration/posts/PostDetailClient-delete-race.test.jsx`，外加 `specs/027-tests-mock-cleanup/tasks.md`）。
+  - **不要用 `npm run lint`**（會 trigger ESLint --fix repo-wide auto-format，撞 hook 雪崩）；改用 `npx eslint <files>` 或 `npx eslint src specs tests`。
+  - **`git checkout --` / `git restore` 都被 hook 擋**；要還原請用 `git checkout HEAD <file>`。
+  - commit 前最後一次 `git checkout HEAD <8 files>` 收尾、再 `git add` staged 範圍。
+- **18.5 stale entry 觀察（給未來 sweep）**：ProfileClient / BioEditor 兩檔在 18.5 baseline (eslint.config.mjs line 480/481) 也有 entry，但 S4.B 改寫過程把 `toHaveBeenCalledTimes` 一併清掉，現在 18.5 entry 變 stale。S4.C 依 027 scope 不動 18.5，留給未來 18.5 sweep 處理（可能搭配 S5/S6/S7 累積後一併清）。
+- **Reviewer pattern note**：pair reviewer 在驗 mock-boundary 改寫時，**應同步檢查檔內 `toHaveBeenCalledTimes` 是否被 side-effect 移除**，並在報告中明記 → 給後續 consolidation owner 判斷 18.5 是否要動。S5+ reviewer prompt 建議直接補這條。
+
 ### S5 坑紀錄
 
 ### S6 坑紀錄
@@ -388,6 +410,7 @@ writeBatch.mockReturnValue(batch);
 > - Q1: runTransaction stub 用 `mockImplementation(async (db, cb) => cb(...))` 還是用 inline mock？以哪個為標準？
 > - Q2: post-use-cases 的 `getLatestComments` 走 query + onSnapshot，stub 能否準確模擬 unsubscribe lifecycle？
 > - Q3: 是否需要在 vitest.setup.jsx 加 default `firebase/firestore` mock 抽共用？或每檔自抽？
+> - Q4 (S4 提出)：18.5 stale entries 何時統一清？S4 已發現第一筆（ProfileClient / BioEditor）；S5/S6/S7 reviewer 改寫過程移除 `toHaveBeenCalledTimes` 後也可能留下 stale entry。建議方案：S7 結束時 spec consolidation owner 一次 sweep 18.5（grep 每檔是否仍有 `toHaveBeenCalledTimes`，無 → remove from 18.5 ignores），或開獨立 spec 028 處理。
 
 ---
 

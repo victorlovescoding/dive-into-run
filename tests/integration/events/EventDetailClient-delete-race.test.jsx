@@ -3,32 +3,25 @@
  * @description
  * 同一活動詳情頁在多個 tab 打開，其中一個 tab 刪除成功後，另一個 tab 按刪除
  * 應顯示紅色 errorCard（與 load-time not-found 一致），不顯示誤導的 toast。
- *
- * 三個 scenario：
- * - race path：deleteEvent 拋 EVENT_NOT_FOUND_MESSAGE → errorCard + console.warn
- * - genuine error：其他 error → toast「刪除活動失敗」 + console.error
- * - happy path：deleteEvent 成功 → navigate 到 /events?toast=活動已刪除
- *
- * 沿用 `PostDetailClient-delete-race.test.jsx`（commit 8427e15）pattern。
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-// NOTE: Vitest 會自動把 `vi.mock(...)` 提升到所有 imports 之上，因此以下 imports
-// 在執行時拿到的是 mock 後的模組。不要搬到 vi.mock 之後（會觸發 import/first）。
-import EventDetailClient from '@/app/events/[id]/eventDetailClient';
 import {
-  fetchEventById,
-  fetchParticipants,
-  fetchMyJoinedEventsForIds,
-  deleteEvent,
-  EVENT_NOT_FOUND_MESSAGE,
-} from '@/runtime/client/use-cases/event-use-cases';
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  serverTimestamp,
+  where,
+  writeBatch,
+} from 'firebase/firestore';
+import EventDetailClient from '@/app/events/[id]/eventDetailClient';
 
-// ---------------------------------------------------------------------------
-// Hoisted shared state
-// ---------------------------------------------------------------------------
 const { mockShowToast, mockPush, mockReplace, mockAuthContext } = vi.hoisted(() => {
   const { createContext } = require('react');
   return {
@@ -41,9 +34,6 @@ const { mockShowToast, mockPush, mockReplace, mockAuthContext } = vi.hoisted(() 
   };
 });
 
-// ---------------------------------------------------------------------------
-// Module mocks
-// ---------------------------------------------------------------------------
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
@@ -59,33 +49,21 @@ vi.mock('@/runtime/providers/ToastProvider', () => ({
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
 
 vi.mock('firebase/firestore', () => ({
+  collection: vi.fn(),
+  doc: vi.fn(),
+  getDoc: vi.fn(),
+  getDocs: vi.fn(),
+  limit: vi.fn(),
+  orderBy: vi.fn(),
+  query: vi.fn(),
+  serverTimestamp: vi.fn(() => ({ __type: 'serverTimestamp' })),
+  where: vi.fn(),
+  writeBatch: vi.fn(),
   Timestamp: {
-    fromDate: (/** @type {Date} */ d) => ({
-      seconds: Math.floor(d.getTime() / 1000),
-      nanoseconds: 0,
-      toDate: () => d,
-    }),
+    fromDate: vi.fn((date) => ({ toDate: () => date })),
   },
 }));
 
-vi.mock('@/runtime/client/use-cases/event-use-cases', () => ({
-  fetchEventById: vi.fn(),
-  fetchParticipants: vi.fn(),
-  fetchMyJoinedEventsForIds: vi.fn(),
-  joinEvent: vi.fn(),
-  leaveEvent: vi.fn(),
-  updateEvent: vi.fn(),
-  deleteEvent: vi.fn(),
-  EVENT_NOT_FOUND_MESSAGE: '活動不存在',
-}));
-
-vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
-  notifyEventModified: vi.fn().mockResolvedValue(undefined),
-  notifyEventCancelled: vi.fn().mockResolvedValue(undefined),
-  notifyEventNewComment: vi.fn().mockResolvedValue(undefined),
-}));
-
-// Heavy / irrelevant sub-components
 vi.mock('@/components/EventMap', () => ({
   default: () => <div data-testid="event-map-stub" />,
 }));
@@ -133,20 +111,20 @@ vi.mock('next/dynamic', () => ({
   },
 }));
 
-/** @type {import('vitest').Mock} */
-const mockedFetchEventById = /** @type {import('vitest').Mock} */ (fetchEventById);
-/** @type {import('vitest').Mock} */
-const mockedFetchParticipants = /** @type {import('vitest').Mock} */ (fetchParticipants);
-/** @type {import('vitest').Mock} */
-const mockedFetchMyJoined = /** @type {import('vitest').Mock} */ (fetchMyJoinedEventsForIds);
-/** @type {import('vitest').Mock} */
-const mockedDeleteEvent = /** @type {import('vitest').Mock} */ (deleteEvent);
+const firestoreMocks = {
+  ['collection']: /** @type {import('vitest').Mock} */ (collection),
+  ['doc']: /** @type {import('vitest').Mock} */ (doc),
+  ['getDoc']: /** @type {import('vitest').Mock} */ (getDoc),
+  ['getDocs']: /** @type {import('vitest').Mock} */ (getDocs),
+  ['limit']: /** @type {import('vitest').Mock} */ (limit),
+  ['orderBy']: /** @type {import('vitest').Mock} */ (orderBy),
+  ['query']: /** @type {import('vitest').Mock} */ (query),
+  ['serverTimestamp']: /** @type {import('vitest').Mock} */ (serverTimestamp),
+  ['where']: /** @type {import('vitest').Mock} */ (where),
+  ['writeBatch']: /** @type {import('vitest').Mock} */ (writeBatch),
+};
 
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
 const mockEvent = {
-  id: 'event-1',
   title: '週末晨跑',
   time: { toDate: () => new Date('2030-04-20T06:00:00Z') },
   registrationDeadline: { toDate: () => new Date('2030-04-19T23:59:00Z') },
@@ -163,9 +141,80 @@ const mockEvent = {
   hostPhotoURL: '/avatar.jpg',
 };
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+/**
+ * 建立 Firestore document snapshot stub。
+ * @param {string} id - document ID。
+ * @param {object | null} data - document data，null 表示不存在。
+ * @returns {object} Firestore-like document snapshot。
+ */
+function createDocSnapshot(id, data) {
+  return {
+    id,
+    ref: { id, path: `mock/${id}` },
+    exists: () => data !== null,
+    data: () => data,
+  };
+}
+
+/**
+ * 設定刪除流程需要的 Firestore SDK 邊界 stub。
+ * @param {{ deleteEventExists?: boolean, batchError?: Error | null }} [options] - 刪除情境。
+ * @returns {{ batch: { delete: import('vitest').Mock, commit: import('vitest').Mock } }} SDK spies。
+ */
+function setupFirestoreMocks({ deleteEventExists = true, batchError = null } = {}) {
+  let eventReadCount = 0;
+  const batch = {
+    set: vi.fn(),
+    delete: vi.fn(),
+    commit: batchError
+      ? vi.fn().mockRejectedValue(batchError)
+      : vi.fn().mockResolvedValue(undefined),
+  };
+
+  firestoreMocks.collection.mockImplementation((_dbOrRef, ...segments) => ({
+    type: 'collection',
+    path: segments.join('/'),
+  }));
+  firestoreMocks.doc.mockImplementation((base, ...segments) => {
+    if (base?.type === 'collection' && segments.length === 0) {
+      return { id: 'generated-doc', path: `${base.path}/generated-doc` };
+    }
+    if (base?.type === 'collection') {
+      return { id: String(segments.at(-1)), path: [base.path, ...segments].join('/') };
+    }
+    return { id: String(segments.at(-1)), path: segments.join('/') };
+  });
+  firestoreMocks.query.mockImplementation((...parts) => ({
+    type: 'query',
+    path: parts[0]?.path,
+    parts,
+  }));
+  firestoreMocks.where.mockImplementation((...parts) => ({ type: 'where', parts }));
+  firestoreMocks.orderBy.mockImplementation((...parts) => ({ type: 'orderBy', parts }));
+  firestoreMocks.limit.mockImplementation((count) => ({ type: 'limit', count }));
+  firestoreMocks.writeBatch.mockReturnValue(batch);
+  firestoreMocks.getDoc.mockImplementation(async (ref) => {
+    if (ref.path === 'events/event-1') {
+      eventReadCount += 1;
+      return createDocSnapshot(
+        'event-1',
+        eventReadCount === 1 || deleteEventExists ? mockEvent : null,
+      );
+    }
+    if (ref.path === 'events/event-1/participants/host-1') {
+      return createDocSnapshot('host-1', null);
+    }
+    return createDocSnapshot(String(ref.id), null);
+  });
+  firestoreMocks.getDocs.mockImplementation(async (ref) => {
+    if (ref.path === 'events/event-1/participants') return { docs: [], size: 0 };
+    if (ref.path === 'events/event-1/comments') return { docs: [], size: 0 };
+    return { docs: [], size: 0 };
+  });
+
+  return { batch };
+}
+
 describe('EventDetailClient delete race condition', () => {
   /** @type {ReturnType<typeof vi.spyOn>} */
   let consoleErrorSpy;
@@ -174,9 +223,7 @@ describe('EventDetailClient delete race condition', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedFetchEventById.mockResolvedValue(mockEvent);
-    mockedFetchParticipants.mockResolvedValue([]);
-    mockedFetchMyJoined.mockResolvedValue(new Set());
+    setupFirestoreMocks();
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
@@ -200,8 +247,8 @@ describe('EventDetailClient delete race condition', () => {
     await user.click(confirmButton);
   }
 
-  it('race path：deleteEvent 拋「活動不存在」時顯示紅卡片、不 toast、不 navigate', async () => {
-    mockedDeleteEvent.mockRejectedValue(new Error(EVENT_NOT_FOUND_MESSAGE));
+  it('race path：deleteEventTree 讀到活動不存在時顯示紅卡片、不 toast、不 navigate', async () => {
+    setupFirestoreMocks({ deleteEventExists: false });
 
     const user = userEvent.setup();
     render(<EventDetailClient id="event-1" />);
@@ -210,19 +257,20 @@ describe('EventDetailClient delete race condition', () => {
     await waitFor(() => {
       expect(screen.getByText('找不到這個活動（可能已被刪除）')).toBeInTheDocument();
     });
+    expect(firestoreMocks.getDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'events/event-1' }),
+    );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(mockShowToast).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
-    // race 是預期內情境，不該觸發 console.error（否則 Next.js dev overlay 會誤報）
     expect(consoleErrorSpy).not.toHaveBeenCalled();
-    // 應以 warn 級別留 trace 便於 telemetry / debug
     expect(consoleWarnSpy).toHaveBeenCalledWith(
       expect.stringContaining('already deleted by another session'),
     );
   });
 
-  it('genuine error：deleteEvent 拋其他錯誤時 toast「刪除活動失敗」、不顯示紅卡片', async () => {
-    mockedDeleteEvent.mockRejectedValue(new Error('Firestore batch failed'));
+  it('genuine error：batch commit 失敗時 toast「刪除活動失敗」、不顯示紅卡片', async () => {
+    setupFirestoreMocks({ batchError: new Error('Firestore batch failed') });
 
     const user = userEvent.setup();
     render(<EventDetailClient id="event-1" />);
@@ -233,12 +281,11 @@ describe('EventDetailClient delete race condition', () => {
     });
     expect(screen.queryByText('找不到這個活動（可能已被刪除）')).not.toBeInTheDocument();
     expect(mockPush).not.toHaveBeenCalled();
-    // 真正的錯誤仍該觸發 console.error，便於 debug
     expect(consoleErrorSpy).toHaveBeenCalledWith('刪除活動失敗:', expect.any(Error));
   });
 
-  it('happy path：deleteEvent 成功時 navigate 到 /events?toast=活動已刪除', async () => {
-    mockedDeleteEvent.mockResolvedValue({ ok: true });
+  it('happy path：deleteEventTree commit 成功時 navigate 到 /events?toast=活動已刪除', async () => {
+    const { batch } = setupFirestoreMocks();
 
     const user = userEvent.setup();
     render(<EventDetailClient id="event-1" />);
@@ -247,6 +294,8 @@ describe('EventDetailClient delete race condition', () => {
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/events?toast=活動已刪除');
     });
+    expect(batch.delete).toHaveBeenCalledWith(expect.objectContaining({ path: 'events/event-1' }));
+    expect(batch.commit).toHaveBeenCalled();
     expect(mockShowToast).not.toHaveBeenCalledWith(expect.stringContaining('失敗'), 'error');
   });
 });
