@@ -3,20 +3,8 @@ name: Firestore Rules Gate
 on:
   pull_request:
     branches: [main]
-    paths:
-      - 'firestore.rules'
-      - 'tests/server/rules/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/firestore-rules-gate.yml'
   push:
     branches: [main]
-    paths:
-      - 'firestore.rules'
-      - 'tests/server/rules/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/firestore-rules-gate.yml'
 
 jobs:
   firestore-rules-gate:
@@ -24,20 +12,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Detect rules-related path changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            rules:
+              - 'firestore.rules'
+              - 'tests/server/rules/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/firestore-rules-gate.yml'
+
+      - name: Short-circuit when no rules-related paths changed
+        if: steps.changes.outputs.rules != 'true'
+        run: echo "No rules-related paths changed; skipping heavy steps and reporting success."
+
       - uses: actions/setup-java@v4
+        if: steps.changes.outputs.rules == 'true'
         with:
           distribution: 'temurin'
           java-version: '21'
 
       - uses: actions/setup-node@v4
+        if: steps.changes.outputs.rules == 'true'
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
-      - run: npm ci
+      - name: Install dependencies
+        if: steps.changes.outputs.rules == 'true'
+        run: npm ci
 
       - name: Install Firebase Tools
+        if: steps.changes.outputs.rules == 'true'
         run: npm install -g firebase-tools
 
       - name: Run Firestore rules tests
+        if: steps.changes.outputs.rules == 'true'
         run: npm run test:server -- tests/server/rules
