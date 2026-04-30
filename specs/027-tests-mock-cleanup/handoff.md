@@ -11,7 +11,7 @@
 | Session | 狀態           | Branch | PR  | Commit | Baseline 變化                                                                                  |
 | ------- | -------------- | ------ | --- | ------ | ---------------------------------------------------------------------------------------------- |
 | —       | —              | —      | —   | —      | **18.6=47（spec 026 既有）/ 18.7=0 / 18.8=0（spec 027 開始前）**                               |
-| S0      | ⏳ Not started | —      | —   | —      | 修 selector bug + 擴規則 → 18.6: 47→55（+8 新加）/ 18.7: 0→14（new）/ 18.8: 0→5（new）         |
+| S0      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 修 selector bug + 擴規則 → 18.6: 47→55（+8 新加）/ 18.7: 0→14（new）/ 18.8: 0→5（new）         |
 | S1      | ⏳ Not started | —      | —   | —      | 18.6: 55 → 50（posts heavy / pilot — 5 檔/10 violations）                                      |
 | S2      | ⏳ Not started | —      | —   | —      | 18.6: 50 → 36（posts rest + comments + dashboard + navbar — 14 檔/15 violations）              |
 | S3      | ⏳ Not started | —      | —   | —      | 18.6: 36 → 27（notifications — 9 檔/32 violations）                                            |
@@ -185,13 +185,14 @@ echo "散落 unit/service+repo: $(($(violations tests/unit/service) + $(violatio
 
 ### S0 坑紀錄
 
-> S0 是規則擴展前置，預期可能撞：
->
-> - **selector 排除 providers** — esquery 對 negative lookahead `(?!providers)` 支援未驗。若 string-literal selector 失敗，fallback 為「兩條 positive selector」（`@/(lib|repo|service)/` + `@/runtime/(client|server|hooks)/`）；template-literal selector 同理
-> - block 18.6/18.7/18.8 的 `files:` glob overlap → flat-config last-write-wins 規則覆蓋（仿 spec 026 block 18.6 的 combined 規則模式）
-> - 18.7 涵蓋多目錄（runtime + api + service + repo）— 用 single block + `files: ['tests/unit/{runtime,api,service,repo}/**/*.test.{js,jsx,mjs}']`
-> - **8 個新 baseline 檔**（spec 026 selector bug 漏攔的）：PostCard / DashboardCommentCard / DashboardEventCard / DashboardPostCard / Navbar / isActivePath / RunsRouteMap / RunsActivityCard — S0 commit 含這 8 檔加進 18.6 ignores
-> - **3 個檔角色變化**：NavbarMobile / NavbarDesktop / BioEditor 原為 flaky-only overlap，selector 擴大後新增 mock-boundary 違規 → 仍在 18.6 ignores 但角色從 flaky-only 變雙重
+- **selector 排除 providers 已實測**：`^@/runtime/(?!providers/)` 可用；literal + template literal selector 都採同一邏輯。fallback 仍是改成 runtime 子樹 allowlist（`client|server|hooks`），但 S0 未使用 fallback。
+- **18.7 / 18.8 必須是 combined block**：第一次 `npm run lint` 暴露 flat-config 覆蓋問題；新增 unit blocks 若只放 mock-boundary selector，會讓 18.5 flaky baseline 的既有 ignores 失效。實作改成 18.7/18.8 都 duplicate `toHaveBeenCalledTimes` selector，並用 `unitRuntimeApiServiceRepoFlakyBaselineForCombinedBlocks` / `unitLibFlakyBaselineForCombinedBlocks` spread 保留 18.5 既有 flaky ignores。三個 awk count 仍只計 mock-boundary baseline：18.6=55、18.7=14、18.8=5。
+- **18.6 baseline**：47 -> 55，新增 8 檔：`PostCard` / `DashboardCommentCard` / `DashboardEventCard` / `DashboardPostCard` / `Navbar` / `isActivePath` / `RunsRouteMap` / `RunsActivityCard`。
+- **18.7 baseline**：新增 14 檔，涵蓋 `tests/unit/{runtime,api,service,repo}/**`。同 block 另外 spread 3 個 flaky-only baseline 檔以維持 18.5 語意；這 3 檔不算 mock-boundary baseline count。
+- **18.8 baseline**：新增 5 檔，涵蓋 `tests/unit/lib/**` notification batch。同 block 另外 spread 10 個 flaky-only baseline 檔以維持 18.5 語意；這 10 檔不算 mock-boundary baseline count。
+- **audit script**：`SEARCH_PATH` 已從 `tests/integration` 擴到 `tests`，pattern 已加 `lib`，並排除 `@/runtime/providers/`；仍是 warn-only `exit 0`。S0 起始輸出為 63 finding files（warn-only）。
+- **smoke probe A**：暫時在 `tests/unit/service/weather-helpers.test.js` 加 `vi.mock('@/repo/__s0_smoke__', () => ({}));`，`npx eslint tests/unit/service/weather-helpers.test.js` 正確以 18.7 mock-boundary error fail。probe 已 revert，`git diff -- tests/unit/service/weather-helpers.test.js` 與 `git status --short -- tests/unit/service/weather-helpers.test.js` 皆乾淨。
+- **smoke probe B**：暫時在同檔加 `vi.mock('@/runtime/providers/__s0_smoke__', () => ({}));`，`npx eslint tests/unit/service/weather-helpers.test.js` exit 0，證明 providers 不被 mock-boundary 擋。probe 已 revert，該檔 diff/status 皆乾淨。
 
 ### S1 坑紀錄
 
