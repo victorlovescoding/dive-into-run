@@ -14,7 +14,7 @@
 | S0      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 修 selector bug + 擴規則 → 18.6: 47→55（+8 新加）/ 18.7: 0→14（new）/ 18.8: 0→5（new）         |
 | S1      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 55 → 50（posts heavy / pilot — 5 檔/10 violations；Option B 全留在本 spec）              |
 | S2      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 50 → 36（posts rest + comments + dashboard + navbar — 14 檔/15 violations；Navbar flaky count 已清） |
-| S3      | ⏳ Not started | —      | —   | —      | 18.6: 36 → 27（notifications — 9 檔/32 violations）                                            |
+| S3      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 36 → 27（notifications — 9 檔/32 violations；S3.A-D reviewers 全 PASS）                  |
 | S4      | ⏳ Not started | —      | —   | —      | 18.6: 27 → 21（events + profile — 6 檔/8 violations）                                          |
 | S5      | ⏳ Not started | —      | —   | —      | 18.6: 21 → 11（strava + weather + toast — 10 檔/13 violations；第一批 mock-boundary 部分清空） |
 | S6      | ⏳ Not started | —      | —   | —      | 18.8: 5 → 0（unit/lib notification — 5 檔/11 violations）                                      |
@@ -232,6 +232,16 @@ writeBatch.mockReturnValue(batch);
 - navbar desktop/mobile 測試用 AuthProvider provider mock 作 React 邊界；路由狀態與 active path helper 走真實 implementation。
 - Navbar flaky count 已清：S2 從 18.6 移除 navbar 四檔時沒有新增 18.5 ignore，`toHaveBeenCalledTimes` baseline debt 不留在 navbar batch。
 
+### 2.8 S3 notification reusable patterns
+
+- notification integration 檔一律讓 `@/lib/notification-helpers` / notification provider / runtime path 真實執行；測試控制點移到 `firebase/firestore` SDK mock 與 `@/config/client/firebase-client` 的 `db` stub。
+- Firestore SDK mock 至少保留 notification domain 會用到的 export：`collection`, `doc`, `query`, `where`, `orderBy`, `limit`, `startAfter`, `getDocs`, `addDoc`, `updateDoc`, `onSnapshot`, `serverTimestamp`, `writeBatch`。缺 export 會在 import 階段或真實 provider path 爆掉。
+- `onSnapshot` stub 要依 query constraints 分辨 all vs unread listener；測試用 callback 變數手動 emit snapshot。snapshot shape 需提供 `docs`，需要 toast / click optimistic update 時也要提供 `docChanges()`。
+- listener unsubscribe 要回 `vi.fn()`，error-path 測試可從 `onSnapshot.mock.calls[index][2]` 取 error callback 觸發 provider error handling。
+- pagination 測試以真實 `startAfter(lastDoc)` cursor 驅動：`QueryDocumentSnapshot` stub 要保留 stable doc object，`getDocs(queryValue)` 從 `queryValue.constraints` 找 `startAfter` cursor 後切下一頁，不要只用 call count。
+- notification write side effect 不 assert internal helper call；改 assert SDK boundary：`addDoc(collection(db, 'notifications'), payload)` 或 `writeBatch().set(doc(collection(db, 'notifications')), payload)` / `commit()`。
+- `NotificationContext` 直接 provider mock 只適合純 UI leaf（例如 panel item render）；若測 provider lifecycle、bell、pagination、toast、click，應保留 `NotificationProvider` 真實執行並只 mock Auth provider / Firestore SDK。
+
 ---
 
 ## 3. Per-session 操作 SOP（plan §4.3 再強化）
@@ -330,6 +340,13 @@ writeBatch.mockReturnValue(batch);
 - **不重寫 worker 檔案**：S2 consolidation 只更新 baseline + handoff；若後續 branch verification 暴露問題，先回報再改對應 worker file。
 
 ### S3 坑紀錄
+
+- **S3 全 9 檔已從 18.6 baseline 移除**：notifications consolidation 後，18.6 count 36 -> 27。
+- **不要 mock notification internals**：S3.A-D 清掉 `@/lib/notification-helpers` / internal notification path mock 後，error、trigger、click、toast、pagination 都改由 Firestore SDK mock 控制行為；S6 unit/lib notification batch 要延續這個邊界。
+- **`onSnapshot` 不是單一 listener**：notification provider 同時有 all / unread subscription；stub 需要看 `where('read', '==', false)` 或 query constraints 分流，否則 unread badge、tabs、toast 會吃錯 callback。
+- **pagination cursor 必須是 doc object**：`startAfter` 要吃上一頁最後一個 snapshot doc；若 stub 只傳 id 或 index，load more / listener shift 測試會失真。
+- **error path 用 SDK failure 注入**：write failure 用 `addDoc` / `writeBatch().commit` reject；listener failure 用 `onSnapshot` 第三參數 error callback，不要重新 mock internal helper reject。
+- **S6 重用提醒**：unit/lib notification 檔會直接測 facade/helper，仍應 mock `firebase/firestore` SDK boundary；不要把 S3 的 provider mock 當成可 mock lib 自家的理由。
 
 ### S4 坑紀錄
 

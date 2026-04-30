@@ -6,21 +6,33 @@ import userEvent from '@testing-library/user-event';
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/runtime/client/use-cases/auth-use-cases', () => ({
-  default: vi.fn(() => vi.fn()),
+vi.mock('@/config/client/firebase-client', () => ({
+  auth: { app: 'test-auth-app' },
+  db: { app: 'test-firestore-app' },
+  provider: {},
 }));
 
-vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
-  watchNotifications: vi.fn(),
-  watchUnreadNotifications: vi.fn(),
-  markNotificationAsRead: vi.fn(),
-  fetchMoreNotifications: vi.fn(),
-  fetchMoreUnreadNotifications: vi.fn(),
+vi.mock('firebase/auth', () => ({
+  onAuthStateChanged: vi.fn(() => vi.fn()),
+  signInWithPopup: vi.fn(),
+  signOut: vi.fn(),
 }));
 
-vi.mock('@/lib/notification-helpers', () => ({
-  formatRelativeTime: vi.fn(() => '5 分鐘前'),
-  getNotificationLink: vi.fn(() => '/events/test'),
+vi.mock('firebase/firestore', () => ({
+  collection: vi.fn((db, path) => ({ db, path })),
+  doc: vi.fn((db, ...segments) => ({ db, path: segments.join('/') })),
+  getDoc: vi.fn(),
+  getDocs: vi.fn(),
+  limit: vi.fn((count) => ({ type: 'limit', count })),
+  onSnapshot: vi.fn(() => vi.fn()),
+  orderBy: vi.fn((field, direction) => ({ type: 'orderBy', field, direction })),
+  query: vi.fn((source, ...constraints) => ({ source, constraints })),
+  serverTimestamp: vi.fn(() => new Date()),
+  setDoc: vi.fn(),
+  startAfter: vi.fn((docRef) => ({ type: 'startAfter', docRef })),
+  updateDoc: vi.fn(() => Promise.resolve()),
+  where: vi.fn((field, op, value) => ({ type: 'where', field, op, value })),
+  writeBatch: vi.fn(() => ({ set: vi.fn(), commit: vi.fn() })),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -36,12 +48,9 @@ vi.mock('next/image', () => ({
   },
 }));
 
-import { formatRelativeTime } from '@/lib/notification-helpers';
 import { NotificationContext } from '@/runtime/providers/NotificationProvider';
 import NotificationPanel from '@/components/Notifications/NotificationPanel';
 import NotificationItem from '@/components/Notifications/NotificationItem';
-
-const mockedFormatRelativeTime = /** @type {import('vitest').Mock} */ (formatRelativeTime);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -66,7 +75,10 @@ function createMockNotification(overrides = {}) {
     commentId: null,
     message: '你所參加的『週末跑步』活動資訊有更動',
     read: false,
-    createdAt: { toDate: () => new Date() },
+    createdAt: {
+      toDate: () => new Date(Date.now() - 5 * 60 * 1000),
+      toMillis: () => Date.now() - 5 * 60 * 1000,
+    },
     ...overrides,
   });
 }
@@ -123,7 +135,6 @@ function renderPanel({ notifications = [], isPanelOpen = true, closePanel = vi.f
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockedFormatRelativeTime.mockReturnValue('5 分鐘前');
 });
 
 // ===========================================================================
@@ -179,7 +190,7 @@ describe('NotificationPanel', () => {
 
     await user.click(screen.getByText('外面的按鈕'));
 
-    expect(closePanel).toHaveBeenCalledTimes(1);
+    expect(closePanel.mock.calls).toEqual([[]]);
   });
 
   it('should update list when context notifications change', () => {
@@ -248,7 +259,8 @@ describe('NotificationItem', () => {
 
     await user.click(screen.getByRole('button'));
 
-    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(onClick.mock.calls).toHaveLength(1);
+    expect(onClick.mock.calls[0][0]).toEqual(expect.objectContaining({ type: 'click' }));
   });
 
   it('should handle avatar error with fallback', async () => {

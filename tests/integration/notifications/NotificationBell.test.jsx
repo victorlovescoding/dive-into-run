@@ -1,4 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { useContext, useEffect } from 'react';
 import { render, screen, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -21,16 +22,37 @@ Object.defineProperty(window, 'matchMedia', {
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/runtime/client/use-cases/auth-use-cases', () => ({
-  default: vi.fn(() => vi.fn()),
+const firestoreMock = vi.hoisted(() => ({
+  addDoc: vi.fn(),
+  collection: vi.fn((...path) => ({ kind: 'collection', path })),
+  doc: vi.fn((...path) => ({ kind: 'doc', path })),
+  getDocs: vi.fn(),
+  limit: vi.fn((count) => ({ type: 'limit', count })),
+  onSnapshot: vi.fn(),
+  orderBy: vi.fn((field, direction) => ({ type: 'orderBy', field, direction })),
+  query: vi.fn((source, ...constraints) => ({ source, constraints })),
+  serverTimestamp: vi.fn(() => ({ __serverTimestamp: true })),
+  startAfter: vi.fn((cursor) => ({ type: 'startAfter', cursor })),
+  updateDoc: vi.fn(),
+  where: vi.fn((field, op, value) => ({ type: 'where', field, op, value })),
+  writeBatch: vi.fn(() => ({ commit: vi.fn(), set: vi.fn() })),
 }));
 
-vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
-  watchNotifications: vi.fn(),
-  watchUnreadNotifications: vi.fn(),
-  markNotificationAsRead: vi.fn(),
-  fetchMoreNotifications: vi.fn(),
-  fetchMoreUnreadNotifications: vi.fn(),
+const authMock = vi.hoisted(() => ({
+  onAuthStateChanged: vi.fn(),
+  signInWithPopup: vi.fn(),
+  signOut: vi.fn(),
+}));
+
+vi.mock('firebase/firestore', () => firestoreMock);
+
+vi.mock('firebase/auth', () => authMock);
+
+vi.mock('@/config/client/firebase-client', () => ({
+  auth: {},
+  db: {},
+  provider: {},
+  storage: {},
 }));
 
 vi.mock('next/navigation', () => ({
@@ -46,26 +68,14 @@ vi.mock('next/image', () => ({
   },
 }));
 
-vi.mock('@/lib/firebase-auth-helpers', () => ({
-  signInWithGoogle: vi.fn(),
-}));
-
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import {
   NotificationContext,
   default as NotificationProvider,
 } from '@/runtime/providers/NotificationProvider';
-import {
-  watchNotifications,
-  watchUnreadNotifications,
-} from '@/runtime/client/use-cases/notification-use-cases';
+import { onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import NotificationBell from '@/components/Notifications/NotificationBell';
 import Navbar from '@/components/Navbar/Navbar';
-
-const mockedWatchNotifications = /** @type {import('vitest').Mock} */ (watchNotifications);
-const mockedWatchUnreadNotifications = /** @type {import('vitest').Mock} */ (
-  watchUnreadNotifications
-);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -81,10 +91,30 @@ const mockUser = {
 };
 
 /**
+ * @typedef {{ id: string, data: () => Omit<import('@/lib/notification-helpers').NotificationItem, 'id'> }} QueryNotificationDoc
+ */
+
+/** @type {((snapshot: { docs: QueryNotificationDoc[], docChanges: () => { type: string, doc: QueryNotificationDoc }[] }) => void) | undefined} */
+let unreadSnapshotCallback;
+
+/**
+ * 將 notification item 包成 Firestore QueryDocumentSnapshot 形狀。
+ * @param {import('@/lib/notification-helpers').NotificationItem} notification - 通知資料。
+ * @returns {QueryNotificationDoc} Firestore document snapshot 形狀。
+ */
+function createNotificationDoc(notification) {
+  const { id, ...data } = notification;
+  return {
+    id,
+    data: () => data,
+  };
+}
+
+/**
  * 產生假通知清單。
  * @param {number} count - 通知數量。
  * @param {boolean} [read] - 是否已讀，預設 false。
- * @returns {import('@/lib/notification-helpers').NotificationItem[]} 假通知陣列。
+ * @returns {QueryNotificationDoc[]} 假通知文件陣列。
  */
 function fakeNotifications(count, read = false) {
   return Array.from({ length: count }, (_, i) => ({
@@ -101,7 +131,40 @@ function fakeNotifications(count, read = false) {
     message: 'test',
     read,
     createdAt: /** @type {any} */ (new Date()),
-  }));
+  })).map(createNotificationDoc);
+}
+
+/**
+ * 建立 Firestore QuerySnapshot 形狀。
+ * @param {QueryNotificationDoc[]} docs - snapshot docs。
+ * @returns {{ docs: QueryNotificationDoc[], docChanges: () => { type: string, doc: QueryNotificationDoc }[] }} QuerySnapshot 形狀。
+ */
+function createSnapshot(docs) {
+  return {
+    docs,
+    docChanges: () => [],
+  };
+}
+
+/**
+ * 觸發 unread notifications listener。
+ * @param {QueryNotificationDoc[]} docs - listener docs。
+ * @returns {void}
+ */
+function emitUnread(docs) {
+  unreadSnapshotCallback?.(createSnapshot(docs));
+}
+
+/**
+ * 判斷 query 是否為 unread notifications listener。
+ * @param {unknown} queryValue - Firestore query mock 回傳值。
+ * @returns {boolean} 是否包含 read=false constraint。
+ */
+function isUnreadQuery(queryValue) {
+  return /** @type {{ constraints: any[] }} */ (queryValue).constraints.some(
+    (constraint) =>
+      constraint.type === 'where' && constraint.field === 'read' && constraint.value === false,
+  );
 }
 
 /**
@@ -122,20 +185,20 @@ function renderWithProviders(ui, { user = null } = {}) {
 // Mock callback captures
 // ---------------------------------------------------------------------------
 
-/** @type {((notifications: any[]) => void) | undefined} */
-let unreadCallback;
 const mockUnsubscribeUnread = vi.fn();
 const mockUnsubscribeAll = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
-  unreadCallback = undefined;
+  unreadSnapshotCallback = undefined;
 
-  mockedWatchUnreadNotifications.mockImplementation((uid, onNext) => {
-    unreadCallback = onNext;
-    return mockUnsubscribeUnread;
+  /** @type {import('vitest').Mock} */ (onSnapshot).mockImplementation((queryValue, onNext) => {
+    if (isUnreadQuery(queryValue)) {
+      unreadSnapshotCallback = onNext;
+      return mockUnsubscribeUnread;
+    }
+    return mockUnsubscribeAll;
   });
-  mockedWatchNotifications.mockImplementation(() => mockUnsubscribeAll);
 });
 
 // ===========================================================================
@@ -146,16 +209,21 @@ describe('NotificationContext', () => {
   it('should setup listeners on login', () => {
     renderWithProviders(<div />, { user: mockUser });
 
-    expect(mockedWatchUnreadNotifications).toHaveBeenCalledWith(
-      'u1',
-      expect.any(Function),
-      expect.any(Function),
+    expect(where).toHaveBeenCalledWith('recipientUid', '==', 'u1');
+    expect(where).toHaveBeenCalledWith('read', '==', false);
+    expect(orderBy).toHaveBeenCalledWith('createdAt', 'desc');
+    expect(query).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ field: 'recipientUid', op: '==', value: 'u1' }),
+      expect.objectContaining({ field: 'createdAt', type: 'orderBy' }),
+      expect.objectContaining({ count: 5, type: 'limit' }),
     );
-    expect(mockedWatchNotifications).toHaveBeenCalledWith(
-      'u1',
-      expect.any(Function),
-      expect.any(Function),
-      expect.any(Function),
+    expect(query).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ field: 'recipientUid', op: '==', value: 'u1' }),
+      expect.objectContaining({ field: 'read', op: '==', value: false }),
+      expect.objectContaining({ field: 'createdAt', type: 'orderBy' }),
+      expect.objectContaining({ count: 100, type: 'limit' }),
     );
   });
 
@@ -168,7 +236,7 @@ describe('NotificationContext', () => {
       </AuthContext.Provider>,
     );
 
-    expect(mockedWatchUnreadNotifications).toHaveBeenCalled();
+    expect(onSnapshot).toHaveBeenCalled();
 
     // Simulate logout
     rerender(
@@ -192,15 +260,17 @@ describe('NotificationContext', () => {
      * @returns {null} 不渲染任何 UI。
      */
     function CountReader() {
-      const ctx = require('react').useContext(NotificationContext);
-      capturedCount = ctx.unreadCount;
+      const ctx = useContext(NotificationContext);
+      useEffect(() => {
+        capturedCount = ctx.unreadCount;
+      }, [ctx.unreadCount]);
       return null;
     }
 
     renderWithProviders(<CountReader />, { user: mockUser });
 
     act(() => {
-      unreadCallback?.(fakeNotifications(3));
+      emitUnread(fakeNotifications(3));
     });
 
     expect(capturedCount).toBe(3);
@@ -228,7 +298,7 @@ describe('NotificationBell', () => {
     renderWithProviders(<NotificationBell />, { user: mockUser });
 
     act(() => {
-      unreadCallback?.([]);
+      emitUnread([]);
     });
 
     expect(screen.queryByText(/\d/)).not.toBeInTheDocument();
@@ -238,7 +308,7 @@ describe('NotificationBell', () => {
     renderWithProviders(<NotificationBell />, { user: mockUser });
 
     act(() => {
-      unreadCallback?.(fakeNotifications(5));
+      emitUnread(fakeNotifications(5));
     });
 
     expect(screen.getByText('5')).toBeInTheDocument();
@@ -248,7 +318,7 @@ describe('NotificationBell', () => {
     renderWithProviders(<NotificationBell />, { user: mockUser });
 
     act(() => {
-      unreadCallback?.(fakeNotifications(100));
+      emitUnread(fakeNotifications(100));
     });
 
     expect(screen.getByText('99+')).toBeInTheDocument();
