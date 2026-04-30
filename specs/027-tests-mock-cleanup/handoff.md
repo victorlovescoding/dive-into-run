@@ -8,16 +8,21 @@
 
 ## 0. 進度看板
 
-| Session | 狀態           | Branch | PR  | Commit | Baseline (mock-boundary 違規檔)        |
-| ------- | -------------- | ------ | --- | ------ | -------------------------------------- |
-| —       | —              | —      | —   | —      | **33（spec start）**                   |
-| S1      | ⏳ Not started | —      | —   | —      | 33 → 28 (target)                       |
-| S2      | ⏳ Not started | —      | —   | —      | 28 → 22 (target)                       |
-| S3      | ⏳ Not started | —      | —   | —      | 22 → 13 (target)                       |
-| S4      | ⏳ Not started | —      | —   | —      | 13 → 8 (target)                        |
-| S5      | ⏳ Not started | —      | —   | —      | 8 → 0 (target，mock-boundary 部分清空) |
+| Session | 狀態           | Branch | PR  | Commit | Baseline 變化                                                                                  |
+| ------- | -------------- | ------ | --- | ------ | ---------------------------------------------------------------------------------------------- |
+| —       | —              | —      | —   | —      | **18.6=47（spec 026 既有）/ 18.7=0 / 18.8=0（spec 027 開始前）**                               |
+| S0      | ⏳ Not started | —      | —   | —      | 修 selector bug + 擴規則 → 18.6: 47→55（+8 新加）/ 18.7: 0→14（new）/ 18.8: 0→5（new）         |
+| S1      | ⏳ Not started | —      | —   | —      | 18.6: 55 → 50（posts heavy / pilot — 5 檔/10 violations）                                      |
+| S2      | ⏳ Not started | —      | —   | —      | 18.6: 50 → 36（posts rest + comments + dashboard + navbar — 14 檔/15 violations）              |
+| S3      | ⏳ Not started | —      | —   | —      | 18.6: 36 → 27（notifications — 9 檔/32 violations）                                            |
+| S4      | ⏳ Not started | —      | —   | —      | 18.6: 27 → 21（events + profile — 6 檔/8 violations）                                          |
+| S5      | ⏳ Not started | —      | —   | —      | 18.6: 21 → 11（strava + weather + toast — 10 檔/13 violations；第一批 mock-boundary 部分清空） |
+| S6      | ⏳ Not started | —      | —   | —      | 18.8: 5 → 0（unit/lib notification — 5 檔/11 violations）                                      |
+| S7      | ⏳ Not started | —      | —   | —      | 18.7: 14 → 0（unit/runtime + api + 散落 — 14 檔/17 violations）                                |
 
 > 每完成一個 session：對應 row 狀態 → ✅ Done、寫入 branch / PR / commit hash、更新 baseline 實際數字。
+> Spec 終態：三個 block 對應 mock-boundary 部分清空（18.6 剩 ~11 檔 flaky-only overlap 不計入）。
+> 全 spec 範圍：**63 檔 / 106 violations**（不是 233；233 的 81 處為邊界外保留 + 46 處灰色 components/app 不在範圍）。
 
 ---
 
@@ -30,9 +35,12 @@
 
 ### 1.2 上下文預覽（30 秒）
 
-- 我們在做：把 `eslint.config.mjs` line 513-586（block 18.6）的 mock-boundary `ignores` baseline 從 47 → 14
-- 範圍是 `tests/integration/**` 中 `vi.mock('@/(repo|service|runtime)/...')` 共 33 檔 / 77 violations
-- 改寫策略：**Option B**（把「mock 自家 use-case」改為 mock `firebase/firestore` SDK 邊界）— 不重建 emulator integration setup
+- 我們在做：把 audit P0-1 全 4 批 + 散落的「邊界內違規 mock」清乾淨（**63 檔 / 106 violations**）
+- S0 階段做兩件事：
+  1. **修 spec 026 S6 規則的 selector bug**：`@/(repo|service|runtime)/` → `@/(lib|repo|service|runtime)/` 並排除 `@/runtime/providers/`（providers 是 React 邊界，audit L94 認可保留）
+  2. **建 2 個新 baseline block**（18.7 unit/runtime+api+service+repo / 18.8 unit/lib），讓 S1-S7 每批都有 lint 護欄
+- 範圍劃分：邊界外 81 處保留、灰色 components/app 46 處保留、違規 106 處全清
+- 改寫策略：**Option B**（把「mock 自家內部模組」改為 mock `firebase/firestore` 或 `firebase-admin/firestore` SDK 邊界）— 不重建 emulator integration setup
 
 ### 1.3 第一刀檢查清單
 
@@ -40,26 +48,40 @@
 
 ```bash
 # 1. 確認 spec 026 已上線（規則 + scripts + workflow）
-grep -n "18.6" eslint.config.mjs                    # 應看到 block 標頭
+grep -nE "18\.[6-8]" eslint.config.mjs              # S0 後應看到三個 block (18.6/18.7/18.8)
 ls scripts/audit-mock-boundary.sh                   # 應存在
 ls .github/workflows/firestore-rules-gate.yml       # 應存在
 ls .github/pull_request_template.md                 # 應存在
 
-# 2. 看當前 baseline 大小（block 18.6 ignores）
-sed -n '513,563p' eslint.config.mjs | grep -cE "^\s*'tests/integration/"
-# Spec 027 開始前應為 47，每 session 後遞減
+# 2. 三個 baseline 大小（S0 後）
+echo "block 18.6 (integration):"
+awk '/18\.6/,/^  },/' eslint.config.mjs | grep -cE "^\s*'tests/integration/"
+echo "block 18.7 (unit/runtime+api+service+repo):"
+awk '/18\.7/,/^  },/' eslint.config.mjs | grep -cE "^\s*'tests/unit/"
+echo "block 18.8 (unit/lib):"
+awk '/18\.8/,/^  },/' eslint.config.mjs | grep -cE "^\s*'tests/unit/lib/"
+# Spec 027 spec start (S0 後)：18.6=55 / 18.7=14 / 18.8=5；每 session 後對應 block 遞減
 
-# 3. 看當前 mock 違規規模（block 18.6 規則涵蓋的）
-grep -rEn "vi\.mock\(['\"]@/(repo|service|runtime)/" tests/integration --include="*.test.*" | wc -l
-# Spec 027 開始前應為 77，每 session 後遞減
+# 3. 全 4 批 + 散落剩餘違規處數（統一 selector 扣 providers）
+violations() {
+  grep -rEn "vi\.mock\(['\"]@/(lib|repo|service|runtime)/" "$1" --include="*.test.*" 2>/dev/null \
+    | grep -v "@/runtime/providers/" | wc -l
+}
+echo "第一批 integration:    $(violations tests/integration)"
+echo "第二批 unit/runtime:   $(violations tests/unit/runtime)"
+echo "第三批 unit/lib:       $(violations tests/unit/lib)"
+echo "第四批 unit/api:       $(violations tests/unit/api)"
+echo "散落 unit/service+repo: $(($(violations tests/unit/service) + $(violations tests/unit/repo)))"
+# Spec 027 spec start: 78 / 7 / 11 / 6 / 4；終態 0 / 0 / 0 / 0 / 0（合計 106 → 0）
 ```
 
 ---
 
 ## 2. Setup pattern reference（S1 pilot 後填）
 
-> S1 完成後把成功的 Option B 改寫骨架抄進這節，S2-S5 直接套用。
+> S1 完成後把成功的 Option B 改寫骨架抄進這節，S2-S7 直接套用。
 > S1 pilot 結束前**留空**，pilot 是發現 pattern 的過程。
+> S6 / S7 涉及 unit/lib + unit/api 改寫時可能需要 `firebase-admin/firestore` 額外 mock 樣板 — S6 / S7 結束時補進 §2.5 / §2.6。
 
 ### 2.1 標準 mock 骨架（Pending — S1 will fill）
 
@@ -101,14 +123,22 @@ grep -rEn "vi\.mock\(['\"]@/(repo|service|runtime)/" tests/integration --include
 
 ### 3.1 改寫單檔的標準 8 步
 
-1. **盤點**：`grep -nE "vi\.mock\(['\"]@/" <file>` 列出所有 internal mock，標記違規（`@/{repo,service,runtime}/`）vs 合規
+1. **盤點**：`grep -nE "vi\.mock\(['\"]@/" <file>` 列出所有 internal mock，標記違規（依該 session 對應 batch 的 selector）vs 合規
 2. **追溯**：grep 違規 mock 對應的 `vi.fn()` exports 在測試裡如何被 `mockResolvedValue` / `mockReturnValue` — 那是「行為控制點」，改寫後要把控制移到 SDK 層
-3. **改寫**：拿掉違規 `vi.mock`，改 mock `firebase/firestore`（已存在通常已 mock）；用 `getDoc.mockResolvedValueOnce({ exists: () => true, data: () => ({...}) })` 取代 `getPostDetail.mockResolvedValueOnce({...})`
+3. **改寫**：拿掉違規 `vi.mock`，改 mock SDK：
+   - 第一+二批（client integration / unit/runtime）→ mock `firebase/firestore`
+   - 第三批（unit/lib）→ mock `firebase/firestore`（lib facade 大多走 client SDK）
+   - 第四批（unit/api server route）→ mock `firebase-admin/firestore`
+   - 散落（unit/service+repo）→ 看實際 import 決定 client 或 admin SDK
 4. **跑單檔測試**：`npx vitest run <file>`
-5. **跑單檔 lint**：`npx eslint <file>` — 確認 mock-boundary 規則對該檔 fire 但 0 violations
-6. **從 baseline 拿掉**：`eslint.config.mjs` block 18.6 ignores 拿掉該行；該檔同時有 flaky 違規未清 → 加進 18.5 ignores
+5. **跑單檔 lint**：`npx eslint <file>` — 確認規則 fire 但 0 violations
+6. **從 baseline 拿掉**：依該檔所在 batch 找對應 ESLint block：
+   - `tests/integration/**` → block 18.6 ignores
+   - `tests/unit/runtime/**` / `tests/unit/api/**` / `tests/unit/service/**` / `tests/unit/repo/**` → block 18.7 ignores
+   - `tests/unit/lib/**` → block 18.8 ignores
+   - 該檔同時有 flaky 違規未清 → 加進 18.5 ignores
 7. **再跑全 lint**：`npm run lint`
-8. **commit**：commit message 含 `Baseline change: mock-boundary: X → X-1 (removed: <file>)`
+8. **commit**：commit message 含 `Baseline change: <block>: X → X-1 (removed: <file>)`（block 用 `18.6` / `18.7` / `18.8`）
 
 ### 3.2 PR 收尾 checklist
 
@@ -117,7 +147,7 @@ grep -rEn "vi\.mock\(['\"]@/(repo|service|runtime)/" tests/integration --include
 - [ ] `npm run type-check` 全綠
 - [ ] `npm run test:branch` 全綠
 - [ ] `npm run test:coverage` 跑一次，數字記在 PR description（理論不下降）
-- [ ] `eslint.config.mjs` block 18.6 ignores 數字實際下降，PR description 紀錄 `47 → N` 起訖
+- [ ] `eslint.config.mjs` 對應 block ignores 數字實際下降，PR description 紀錄起訖（如 S1 為 `block 18.6: 55 → 50`，S6 為 `block 18.8: 5 → 0`）
 - [ ] PR template 「Mock boundary」「Baseline tracking」checkbox 已勾且 commit message 對齊
 - [ ] 更新本 handoff.md「進度看板」row + 把成功 pattern / 撞坑紀錄補進 §2 / §5
 - [ ] handoff 移交給下個 session：列舉 flag 起來的 Option A 個案、未解 question
@@ -153,6 +183,16 @@ grep -rEn "vi\.mock\(['\"]@/(repo|service|runtime)/" tests/integration --include
 
 ## 5. 撞到的坑紀錄（每 session 補）
 
+### S0 坑紀錄
+
+> S0 是規則擴展前置，預期可能撞：
+>
+> - **selector 排除 providers** — esquery 對 negative lookahead `(?!providers)` 支援未驗。若 string-literal selector 失敗，fallback 為「兩條 positive selector」（`@/(lib|repo|service)/` + `@/runtime/(client|server|hooks)/`）；template-literal selector 同理
+> - block 18.6/18.7/18.8 的 `files:` glob overlap → flat-config last-write-wins 規則覆蓋（仿 spec 026 block 18.6 的 combined 規則模式）
+> - 18.7 涵蓋多目錄（runtime + api + service + repo）— 用 single block + `files: ['tests/unit/{runtime,api,service,repo}/**/*.test.{js,jsx,mjs}']`
+> - **8 個新 baseline 檔**（spec 026 selector bug 漏攔的）：PostCard / DashboardCommentCard / DashboardEventCard / DashboardPostCard / Navbar / isActivePath / RunsRouteMap / RunsActivityCard — S0 commit 含這 8 檔加進 18.6 ignores
+> - **3 個檔角色變化**：NavbarMobile / NavbarDesktop / BioEditor 原為 flaky-only overlap，selector 擴大後新增 mock-boundary 違規 → 仍在 18.6 ignores 但角色從 flaky-only 變雙重
+
 ### S1 坑紀錄
 
 > （S1 完成時填）撞到的、解掉的、留待下個 session 注意的。
@@ -164,6 +204,20 @@ grep -rEn "vi\.mock\(['\"]@/(repo|service|runtime)/" tests/integration --include
 ### S4 坑紀錄
 
 ### S5 坑紀錄
+
+### S6 坑紀錄
+
+> S6 unit/lib notification batch 預期撞：
+>
+> - lib facade 測試 mock 下游 lib（自家 mock 自家），改寫成 mock SDK 後 lib 真實執行可能依賴環境（如 `serverTimestamp` 真實實作的時序）
+> - 5 檔都是 notification domain，與 S3 知識重用
+
+### S7 坑紀錄
+
+> S7 unit/runtime + api + 散落 預期撞：
+>
+> - unit/api 的 server route 走 `firebase-admin/firestore`，與 client `firebase/firestore` 是兩套 mock 樣板（S6 / S7 結束時補進 §2.5 / §2.6）
+> - strava-callback / strava-webhook fetch 邊界 → 高機率 Option A 個案，需 nock
 
 ---
 
@@ -194,7 +248,7 @@ grep -rEn "vi\.mock\(['\"]@/(repo|service|runtime)/" tests/integration --include
 
 本 spec 的工作呼應以下 memory，session 結束時 review 是否要更新或新增：
 
-- `feedback_mock_discipline.md` — **S5 完成後**評估是否更新（baseline drain 完成的證據）
+- `feedback_mock_discipline.md` — **S7 完成後**評估是否更新（全 4 批 baseline drain 完成的證據）
 - `feedback_test_writing_gotchas.md` — 撞到的具體 SDK stub 坑可考慮新增到此 memory
 - `project_harness_mock_audit.md` — D2/E 章節相關，本 spec 完成後可加一句進度
 - `feedback_audit_deliverable_only.md` — 本 spec 即「audit deliverable → 行動 spec」的範例，**不要**在本 spec 又自動延伸做 P1+
@@ -209,7 +263,7 @@ grep -rEn "vi\.mock\(['\"]@/(repo|service|runtime)/" tests/integration --include
 # Session SX 起步
 
 - 上次（S{X-1}）完成：<commit hash> / PR #<n>
-- 上次 baseline：<33 → N>，本 session 目標：<N → M>
+- 上次 baseline：<block: X → N>，本 session 目標：<block: N → M>
 - 上次 setup pattern 已固化在 §2 — **本 session 直接套**
 - 上次撞的坑：<bullet from §5>
 - 待解 Cross-cutting questions（§7）：<list>
