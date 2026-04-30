@@ -8,17 +8,17 @@
 
 ## 0. 進度看板
 
-| Session | 狀態           | Branch                 | PR  | Commit      | Baseline 變化                                                                                                    |
-| ------- | -------------- | ---------------------- | --- | ----------- | ---------------------------------------------------------------------------------------------------------------- |
-| —       | —              | —                      | —   | —           | **18.6=47（spec 026 既有）/ 18.7=0 / 18.8=0（spec 027 開始前）**                                                 |
-| S0      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 修 selector bug + 擴規則 → 18.6: 47→55（+8 新加）/ 18.7: 0→14（new）/ 18.8: 0→5（new）                           |
-| S1      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 55 → 50（posts heavy / pilot — 5 檔/10 violations；Option B 全留在本 spec）                                |
-| S2      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 50 → 36（posts rest + comments + dashboard + navbar — 14 檔/15 violations；Navbar flaky count 已清）       |
-| S3      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 36 → 27（notifications — 9 檔/32 violations；S3.A-D reviewers 全 PASS）                                    |
-| S4      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 27 → 21（events + profile — 6 檔/8 violations；S4.A/B reviewers + type-fix 全 PASS）                       |
-| S5      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 21 → 11（toast 1 + weather 3 + strava 6 = 10 檔/13 violations 全清；S5.A/B/C engineer + reviewer 全 PASS） |
-| S6      | ⏳ Not started | —                      | —   | —           | 18.8: 5 → 0（unit/lib notification — 5 檔/11 violations）                                                        |
-| S7      | ⏳ Not started | —                      | —   | —           | 18.7: 14 → 0（unit/runtime + api + 散落 — 14 檔/17 violations）                                                  |
+| Session | 狀態           | Branch                 | PR  | Commit      | Baseline 變化                                                                                                                                                                        |
+| ------- | -------------- | ---------------------- | --- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| —       | —              | —                      | —   | —           | **18.6=47（spec 026 既有）/ 18.7=0 / 18.8=0（spec 027 開始前）**                                                                                                                     |
+| S0      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 修 selector bug + 擴規則 → 18.6: 47→55（+8 新加）/ 18.7: 0→14（new）/ 18.8: 0→5（new）                                                                                               |
+| S1      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 55 → 50（posts heavy / pilot — 5 檔/10 violations；Option B 全留在本 spec）                                                                                                    |
+| S2      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 50 → 36（posts rest + comments + dashboard + navbar — 14 檔/15 violations；Navbar flaky count 已清）                                                                           |
+| S3      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 36 → 27（notifications — 9 檔/32 violations；S3.A-D reviewers 全 PASS）                                                                                                        |
+| S4      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 27 → 21（events + profile — 6 檔/8 violations；S4.A/B reviewers + type-fix 全 PASS）                                                                                           |
+| S5      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 21 → 11（toast 1 + weather 3 + strava 6 = 10 檔/13 violations 全清；S5.A/B/C engineer + reviewer 全 PASS）                                                                     |
+| S6      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.8: 5 → 0（unit/lib notification 5 檔 / 11 violations 含 4 dead mocks 全清；S6.A/B engineer + reviewer 全 PASS；18.5 baseline 5 檔保留 — 業務正確 toHaveBeenCalledTimes 非 flaky） |
+| S7      | ⏳ Not started | —                      | —   | —           | 18.7: 14 → 0（unit/runtime + api + 散落 — 14 檔/17 violations）                                                                                                                      |
 
 > 每完成一個 session：對應 row 狀態 → ✅ Done、寫入 branch / PR / commit hash、更新 baseline 實際數字。
 > Spec 終態：三個 block 對應 mock-boundary 部分清空（18.6 剩 ~11 檔 flaky-only overlap 不計入）。
@@ -284,6 +284,57 @@ writeBatch.mockReturnValue(batch);
 - **灰區保留**：`@/components/Runs{LoginGuide,ConnectGuide,ActivityList,RouteMap}` / `@/components/RunCalendarDialog` / `react-leaflet`。
 - **18.5 stale 警示**：S5.C 三檔（CallbackPage / RunCalendarDialog / RunsPage）已移除 `toHaveBeenCalledTimes` 但 18.5 仍有 entry → 加入 stale 清單，§7 Q4 累計處理。
 
+### 2.11 S6 unit/lib notification pattern（純 facade，無 React）
+
+- **適用範圍**
+  - `tests/unit/lib/notify-*.test.js` + `firebase-notifications-{read,write}.test.js` + `fetch-distinct-*.test.js`
+  - 純測試 client lib facade re-export 出來的 use-case 行為，不走 jsdom render / provider chain
+- **不走 React 的 mock 簡化**
+  - 無需 AuthContext / ToastProvider / NotificationProvider mock
+  - 無需 `vi.hoisted` createContext pattern（S5.C 雷區不適用）
+  - jsdom 仍是測試環境（沿用 `vitest.setup.jsx`），但無 DOM 操作
+- **SDK firestore 共用 mock 清單（5 檔同一份）**
+  - 寫類：`addDoc`, `writeBatch`, `collection`, `doc`, `serverTimestamp`
+  - 讀類：`onSnapshot`, `getDocs`, `updateDoc`
+  - Query 構造：`query`, `where`, `orderBy`, `limit`, `startAfter`, `collectionGroup`, `documentId`
+  - 工具：`getFirestore`（防 init throw）
+- **Dead mock 必刪（S6 發現）**
+  - `@/lib/firebase-events` 在 read / `fetchDistinctCommentAuthors` / `notifyPostCommentReply` 路徑都不會被 import，原 spec 026 註入是過度防禦，必須一律移除
+  - `@/service/notification-service` 用 `importOriginal + override buildNotificationMessage` 在 read path 也是 dead；write path 雖有 call `buildNotificationMessage` 但真實實作可直接驅動
+  - 改寫前先 grep 違規 mock 對應 export 在測試檔內 `mockResolvedValue` / `mockReturnValue` 使用次數，0 use count = dead = 直刪安全
+- **Listener stub（無 queueMicrotask）**
+  - `mockedOnSnapshot.mockImplementation((q, onNext, onError) => { cb = onNext; errCb = onError; return vi.fn(); })`
+  - 同步呼叫 `cb(snapshot)` 不需 `queueMicrotask`（非 React effect register 時序問題）
+  - error 觸發從 `mock.calls[i][2]` 取
+- **Pagination cursor stub**
+  - `afterDoc` cast 成 `QueryDocumentSnapshot`（`{ id: 'cursor-doc' }` 即可）
+  - 直接傳給 SDK `startAfter(afterDoc)` 不解構
+  - `lastDoc` 取 `mockDocs[mockDocs.length - 1]` 或 `null`（empty docs）
+- **`buildNotificationMessage` 真實字串（中文書名號 U+300E / U+300F，非 ASCII 引號）**
+  - `event_modified`：你所參加的『${title}』活動資訊有更動
+  - `event_cancelled`：你所參加的『${title}』已取消
+  - `post_new_comment`：你的文章『${title}』有一則新的留言
+  - `post_comment_reply`：你留言過的文章『${title}』有一則新的留言
+  - `event_host_comment`：你主辦的活動『${title}』有一則新的留言
+  - `event_participant_comment`：你參加的活動『${title}』有一則新的留言
+  - `event_comment_reply`：你留言過的活動『${title}』有一則新的留言
+  - assertion 必須複製真實字串，不要手寫；建議 `expect.stringContaining(<entityTitle>)`
+- **Driving real `fetchParticipantUids` / `fetchDistinctEventCommentAuthors` 必備**
+  - `fetchParticipantUids`（firebase-events-repo:200-221）：`getDocs(query(collection(db, 'events', eventId, 'participants'), orderBy('joinedAt', 'desc'), limit(N)))`
+  - `fetchDistinctEventCommentAuthors`（firebase-notifications-repo:51-72）：`getDocs(collection(db, 'events', eventId, 'comments'))` — **直接 `collection` 不走 `query()`**
+  - path-aware `getDocs` 分流：用 `collection.mockImplementation` 回 marker 帶 path，再從 `query.path` 或 raw `collection.path` 抓 collection name 分流
+  - **必帶 throw fallback**：unexpected path → `throw \`unexpected getDocs path: ${path}\``，避免 stub 太鬆 false-pass
+- **Payload shape（同 S1/S3）**
+  - actor flattened：`actorUid` / `actorName` / `actorPhotoURL`（**非** nested `actor`）
+  - `createdAt = serverTimestamp()` 回值（mock 為 `'mock-timestamp'` 或 `'mock-server-timestamp'` 字串）
+  - `read: false` 預設
+  - doc ref 從 string 改 object 後 `mockBatch.set` / `mockedAddDoc` 第一個 arg 用 `expect.any(Object)` 而非字面字串
+- **18.5 entry 業務正確不動**
+  - S6 5 檔皆在 18.5 baseline (line 498-504)，內含 `toHaveBeenCalledTimes` 多為業務批次數量斷言
+  - 例：`mockBatch.set.toHaveBeenCalledTimes(53)`（50 participants + host + 2 dedup commenters）
+  - 例：onSnapshot listener `toHaveBeenCalledTimes(2)`（initial + subsequent）
+  - **不應**移除這些 entry；spec 028 sweep 時要逐筆檢視業務 vs flaky
+
 ---
 
 ## 3. Per-session 操作 SOP（plan §4.3 再強化）
@@ -466,10 +517,33 @@ writeBatch.mockReturnValue(batch);
 
 ### S6 坑紀錄
 
-> S6 unit/lib notification batch 預期撞：
->
-> - lib facade 測試 mock 下游 lib（自家 mock 自家），改寫成 mock SDK 後 lib 真實執行可能依賴環境（如 `serverTimestamp` 真實實作的時序）
-> - 5 檔都是 notification domain，與 S3 知識重用
+- **S6 全 5 檔已從 18.8 baseline 移除**：unit/lib notification consolidation 後，18.8 count 5 → 0。S6.A writes (3 檔 / 25 tests) + S6.B reads (2 檔 / 19 tests) + 11 violations (含 4 dead mocks) 全清；reviewer 全 PASS。
+
+#### S6.A writes 坑（`notify-event-new-comment` / `notify-post-comment-reply` / `firebase-notifications-write`）
+
+1. **`fetchDistinctEventCommentAuthors` 不走 `query()`** — 直接 `getDocs(collection(db, 'events', eventId, 'comments'))`，與 `fetchParticipantUids` 走 `getDocs(query(collection(...), orderBy, limit))` 不同；path-aware getDocs 分流必須兼容兩種（用 `arg.path` 而非 `arg.constraints` 判斷）。
+2. **`collection()` 第一個 arg 是 `_db` (unused 但要消費)**，segments 從 `...args[1:]` 開始；mock 寫成 `(_db, ...segs) => ({ path: segs.join('/') })`。
+3. **`addNotificationDocuments` 內部 `doc(collection(db, 'notifications'))` 是「無 segments」的 doc-from-collection 用法** — `doc()` mock 必須處理 `segments.length === 0`，用 `${base.path}/auto-id` fallback 產生 stable id。
+4. **真實 `buildNotificationMessage` 用中文書名號 「『」「』」(U+300E / U+300F)，不是 ASCII 引號** — assertion 必須複製真實字串；建議 `expect.stringContaining(<entityTitle>)`。完整字串對照表見 §2.11。
+5. **`@/lib/firebase-events` 是 dead mock 確實 dead** — `notifyPostCommentReply` 真實 path 是 `runtime/use-cases → fetchDistinctPostCommentAuthors → collection(db, 'posts', postId, 'comments')`，沒走 events；可直接刪。
+6. **doc ref 從 string 改 object 後 `mockBatch.set` / `mockedAddDoc` 第一個 arg 不可再用字串字面比對** — 用 `expect.any(Object)`；payload assertion 走第二個 arg。
+
+#### S6.B reads 坑（`firebase-notifications-read` / `fetch-distinct-comment-authors`）
+
+- **完全沒撞坑**：兩檔 4 dead mocks 直刪即過 4 件套（vitest + eslint + type-check + spellcheck）。
+- **可重用 insight**：unit/lib facade 測試若已用完整 SDK mock 寫，多餘 internal mock 通常是「歷史殘留」 — 改寫前先 grep 違規 mock 對應 export 在測試檔內使用次數，0 use count = dead = 直刪安全。
+- 已刪：`@/lib/firebase-events`（read path 不會 import）+ `@/service/notification-service`（用 `importOriginal + override buildNotificationMessage` 在 read path 也是 dead；write path 雖有 call 但真實實作可直接驅動）。
+
+#### Reviewer pattern note（S5.D + S6 確認）
+
+- pair reviewer 必跑 4 件套（vitest + eslint + type-check filter + **spellcheck**） — S5.D 學到、S6 全 batch 落實，避免 cspell 雷在 commit 階段才爆。
+- pair reviewer 同步檢查 `toHaveBeenCalledTimes` **業務正確 vs flaky 區分**（S6 學到的細節）：S6 5 檔 18.5 entry **業務正確不動**（例：`mockBatch.set.toHaveBeenCalledTimes(53)` = host+50 participants+2 dedup commenters；listener `toHaveBeenCalledTimes(2)` = initial vs subsequent）。
+
+#### 18.5 baseline 5 檔保留（業務正確）
+
+- `firebase-notifications-read` / `firebase-notifications-write` / `notify-event-new-comment` / `notify-post-comment-reply`（line 498-504）皆保留 — 業務批次數量斷言非 flaky。
+- `fetch-distinct-comment-authors` 本身無 `toHaveBeenCalledTimes`，不在 18.5。
+- spec 028 sweep 時要逐筆檢視業務 vs flaky；S6 證據（53, listener Times(2)/Times(1)）保留說明。
 
 ### S7 坑紀錄
 
@@ -500,8 +574,8 @@ writeBatch.mockReturnValue(batch);
 > - Q1: runTransaction stub 用 `mockImplementation(async (db, cb) => cb(...))` 還是用 inline mock？以哪個為標準？
 > - Q2: post-use-cases 的 `getLatestComments` 走 query + onSnapshot，stub 能否準確模擬 unsubscribe lifecycle？
 > - Q3: 是否需要在 vitest.setup.jsx 加 default `firebase/firestore` mock 抽共用？或每檔自抽？
-> - Q4 (S4 提出 / S5 累計)：18.5 stale entries 何時統一清？S4 已發現第一筆（ProfileClient / BioEditor，line 480-481）；S5 又新增 stale entries — `CallbackPage` / `RunCalendarDialog` / `RunsPage`（18.5 line 482-485）+ line 541-547 6 個 strava entries — 累計 ~11 個 stale entries 待 spec 028 sweep。建議方案：S7 結束時 spec consolidation owner 一次 sweep 18.5（grep 每檔是否仍有 `toHaveBeenCalledTimes`，無 → remove from 18.5 ignores），或開獨立 spec 028 處理。
-> - Q5 (S5 提出)：Test helper 抽取候選 — `buildGetDocsImpl`（多 firestore mock 場景重用）+ `installWeatherFetch` URL 分流 helper（S5.B 三檔重複）+ `fillCreateEventForm`（events form 真填，S5.A 撞 11 必填欄位）— 是否抽到 `tests/_helpers/`？S6/S7 結束評估，看是否有跨 batch 重用實證。
+> - Q4 (S4 提出 / S5 / S6 累計)：18.5 stale entries 何時統一清？S4 第一筆（ProfileClient / BioEditor，line 480-481）；S5 新增 — `CallbackPage` / `RunCalendarDialog` / `RunsPage`（18.5 line 482-485）+ line 541-547 6 個 strava entries — 累計 ~11 個 stale entries 待 spec 028 sweep。**S6 補充：spec 028 sweep 時，S6 5 檔 18.5 entry 必須逐筆檢視「業務批次數量 vs flaky pattern」 — S6 證據（`mockBatch.set.toHaveBeenCalledTimes(53)` = host+50 participants+2 dedup commenters；onSnapshot listener Times(2)/Times(1) = initial vs subsequent）保留說明，這 5 檔不是 stale，是業務正確必留**。建議方案：S7 結束時 consolidation owner 一次 sweep（grep 每檔是否仍有 `toHaveBeenCalledTimes`，無 → remove；有 → 逐筆判斷業務 vs flaky），或開獨立 spec 028 處理。
+> - Q5 (S5 提出 / S6 補充)：Test helper 抽取候選 — `buildGetDocsImpl`（多 firestore mock 場景重用）+ `installWeatherFetch` URL 分流 helper（S5.B 三檔重複）+ `fillCreateEventForm`（events form 真填，S5.A 撞 11 必填欄位）— 是否抽到 `tests/_helpers/`？**S6 補充：unit/lib SDK firestore mock 樣板（5 檔同一份，見 §2.11）也是抽 helper 候選，與 weather 三檔的 fetch URL 分流 helper 一起評估**。S6/S7 結束評估，看是否有跨 batch 重用實證。
 
 ---
 

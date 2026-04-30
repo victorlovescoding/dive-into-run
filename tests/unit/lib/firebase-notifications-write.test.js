@@ -1,38 +1,47 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
-// Mocks
+// Mocks (SDK boundary only — no internal lib/repo/service mocks)
 // ---------------------------------------------------------------------------
+const mockBatch = { set: vi.fn(), commit: vi.fn(() => Promise.resolve()) };
+
 vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(),
+  collection: vi.fn((_db, ...segments) => ({ type: 'collection', path: segments.join('/') })),
   addDoc: vi.fn(),
-  writeBatch: vi.fn(),
-  doc: vi.fn(),
+  writeBatch: vi.fn(() => mockBatch),
+  doc: vi.fn((base, ...segments) => {
+    if (base?.type === 'collection') {
+      return {
+        type: 'doc',
+        path: [base.path, ...segments].join('/') || `${base.path}/auto-id`,
+      };
+    }
+    return { type: 'doc', path: segments.join('/') };
+  }),
   serverTimestamp: vi.fn(() => 'mock-server-timestamp'),
+  getDocs: vi.fn(),
+  updateDoc: vi.fn(),
+  onSnapshot: vi.fn(),
+  query: vi.fn((collectionRef, ...constraints) => ({
+    type: 'query',
+    path: collectionRef?.path,
+    constraints,
+  })),
+  where: vi.fn((field, op, value) => ({ type: 'where', field, op, value })),
+  orderBy: vi.fn((field, dir) => ({ type: 'orderBy', field, dir })),
+  limit: vi.fn((n) => ({ type: 'limit', n })),
+  startAfter: vi.fn((cursor) => ({ type: 'startAfter', cursor })),
+  collectionGroup: vi.fn(),
+  documentId: vi.fn(),
   getFirestore: vi.fn(),
 }));
 
-vi.mock('@/config/client/firebase-client', () => ({
-  db: 'mock-db',
-}));
-
-vi.mock('@/repo/client/firebase-events-repo', () => ({
-  fetchParticipantUids: vi.fn(),
-}));
-
-vi.mock('@/service/notification-service', async (importOriginal) => {
-  const actual = /** @type {Record<string, unknown>} */ (await importOriginal());
-  return {
-    ...actual,
-    buildNotificationMessage: vi.fn((type, title) => `mock-message-${type}-${title}`),
-  };
-});
+vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
 
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
-import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
-import { fetchParticipantUids } from '@/repo/client/firebase-events-repo';
+import { collection, addDoc, writeBatch, getDocs } from 'firebase/firestore';
 import {
   notifyEventModified,
   notifyEventCancelled,
@@ -45,8 +54,7 @@ import {
 const mockedWriteBatch = /** @type {import('vitest').Mock} */ (writeBatch);
 const mockedAddDoc = /** @type {import('vitest').Mock} */ (addDoc);
 const mockedCollection = /** @type {import('vitest').Mock} */ (collection);
-const mockedDoc = /** @type {import('vitest').Mock} */ (doc);
-const mockedFetchParticipantUids = /** @type {import('vitest').Mock} */ (fetchParticipantUids);
+const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -59,37 +67,43 @@ const actor = {
 
 const participants = [{ uid: 'user-1' }, { uid: 'user-2' }, { uid: 'actor-uid' }];
 
-/** @returns {{ set: import('vitest').Mock, commit: import('vitest').Mock }} mock WriteBatch。 */
-function createMockBatch() {
-  return { set: vi.fn(), commit: vi.fn(() => Promise.resolve()) };
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * 將 participant uids 包成 fetchParticipantDocuments 期望的 snapshot shape。
+ * 真實 fetchParticipantUids 會 .map(d => d.data().uid || d.id)。
+ * @param {string[]} uids - participant UID 列表。
+ * @returns {{ docs: Array<{ id: string, data: () => { uid: string } }> }} fake snapshot。
+ */
+function buildParticipantsSnapshot(uids) {
+  return {
+    docs: uids.map((uid) => ({ id: uid, data: () => ({ uid }) })),
+  };
 }
 
 // ---------------------------------------------------------------------------
 // notifyEventModified
 // ---------------------------------------------------------------------------
 describe('notifyEventModified', () => {
-  /** @type {ReturnType<typeof createMockBatch>} */
-  let mockBatch;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    mockBatch = createMockBatch();
-    mockedWriteBatch.mockReturnValue(mockBatch);
-    mockedFetchParticipantUids.mockResolvedValue(
-      participants.map((participant) => participant.uid),
+    // Drive real fetchParticipantUids → getDocs(query(collection(...))) → docs
+    mockedGetDocs.mockResolvedValue(
+      buildParticipantsSnapshot(participants.map((participant) => participant.uid)),
     );
-    mockedCollection.mockReturnValue('mock-collection-ref');
-    mockedDoc.mockImplementation(() => `mock-doc-ref-${Math.random()}`);
   });
 
-  it('should call fetchParticipantUids with the eventId', async () => {
+  it('should fetch participants and target the events/<id>/participants subcollection', async () => {
     // Arrange — done in beforeEach
 
     // Act
     await notifyEventModified('evt-1', '週末登山團', actor);
 
-    // Assert
-    expect(mockedFetchParticipantUids).toHaveBeenCalledWith('evt-1');
+    // Assert — fetchParticipantDocuments 走真實 collection(db, 'events', eventId, 'participants')
+    expect(mockedCollection).toHaveBeenCalledWith('mock-db', 'events', 'evt-1', 'participants');
+    expect(mockedGetDocs).toHaveBeenCalled();
   });
 
   it('should create batch.set for each participant excluding actor', async () => {
@@ -103,14 +117,13 @@ describe('notifyEventModified', () => {
   });
 
   it('should set correct notification fields for each recipient', async () => {
-    // Arrange
-    mockedDoc.mockReturnValue('mock-doc-ref');
+    // Arrange — done in beforeEach
 
     // Act
     await notifyEventModified('evt-1', '週末登山團', actor);
 
-    // Assert
-    expect(mockBatch.set).toHaveBeenCalledWith('mock-doc-ref', {
+    // Assert — payload 用真實 buildNotificationDoc + buildNotificationMessage 組出來
+    expect(mockBatch.set).toHaveBeenCalledWith(expect.any(Object), {
       recipientUid: 'user-1',
       type: 'event_modified',
       actorUid: 'actor-uid',
@@ -120,7 +133,7 @@ describe('notifyEventModified', () => {
       entityId: 'evt-1',
       entityTitle: '週末登山團',
       commentId: null,
-      message: 'mock-message-event_modified-週末登山團',
+      message: '你所參加的『週末登山團』活動資訊有更動',
       read: false,
       createdAt: 'mock-server-timestamp',
     });
@@ -149,7 +162,7 @@ describe('notifyEventModified', () => {
 
   it('should skip batch entirely when all participants are the actor', async () => {
     // Arrange
-    mockedFetchParticipantUids.mockResolvedValue(['actor-uid']);
+    mockedGetDocs.mockResolvedValue(buildParticipantsSnapshot(['actor-uid']));
 
     // Act
     await notifyEventModified('evt-1', '週末登山團', actor);
@@ -164,26 +177,19 @@ describe('notifyEventModified', () => {
 // notifyEventCancelled
 // ---------------------------------------------------------------------------
 describe('notifyEventCancelled', () => {
-  /** @type {ReturnType<typeof createMockBatch>} */
-  let mockBatch;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    mockBatch = createMockBatch();
-    mockedWriteBatch.mockReturnValue(mockBatch);
-    mockedCollection.mockReturnValue('mock-collection-ref');
-    mockedDoc.mockReturnValue('mock-doc-ref');
   });
 
-  it('should create batch notifications for participants excluding actor', async () => {
-    // Arrange — participants passed directly
+  it('should create batch notifications for participants excluding actor (legacy path: participants passed in)', async () => {
+    // Arrange — participants passed directly (legacy signature)
 
     // Act
     await notifyEventCancelled('evt-2', '晨跑社練習', participants, actor);
 
-    // Assert — 3 minus actor = 2
+    // Assert — 3 minus actor = 2; 不應觸發 fetchParticipantUids → 不應呼叫 events/.../participants getDocs
     expect(mockBatch.set).toHaveBeenCalledTimes(2);
-    expect(mockedFetchParticipantUids).not.toHaveBeenCalled();
+    expect(mockedGetDocs).not.toHaveBeenCalled();
   });
 
   it('should set correct fields with type event_cancelled', async () => {
@@ -192,8 +198,8 @@ describe('notifyEventCancelled', () => {
     // Act
     await notifyEventCancelled('evt-2', '晨跑社練習', participants, actor);
 
-    // Assert
-    expect(mockBatch.set).toHaveBeenCalledWith('mock-doc-ref', {
+    // Assert — payload 用真實 buildNotificationDoc + buildNotificationMessage 組出來
+    expect(mockBatch.set).toHaveBeenCalledWith(expect.any(Object), {
       recipientUid: 'user-1',
       type: 'event_cancelled',
       actorUid: 'actor-uid',
@@ -203,7 +209,7 @@ describe('notifyEventCancelled', () => {
       entityId: 'evt-2',
       entityTitle: '晨跑社練習',
       commentId: null,
-      message: 'mock-message-event_cancelled-晨跑社練習',
+      message: '你所參加的『晨跑社練習』已取消',
       read: false,
       createdAt: 'mock-server-timestamp',
     });
@@ -227,7 +233,6 @@ describe('notifyPostNewComment', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedAddDoc.mockResolvedValue({ id: 'new-doc-id' });
-    mockedCollection.mockReturnValue('mock-collection-ref');
   });
 
   it('should call addDoc with correct notification fields', async () => {
@@ -237,8 +242,9 @@ describe('notifyPostNewComment', () => {
     // Act
     await notifyPostNewComment('post-1', '台北馬拉松心得', postAuthorUid, 'cmt-1', actor);
 
-    // Assert
-    expect(mockedAddDoc).toHaveBeenCalledWith('mock-collection-ref', {
+    // Assert — addDoc 走真實 collection(db, 'notifications')
+    expect(mockedCollection).toHaveBeenCalledWith('mock-db', 'notifications');
+    expect(mockedAddDoc).toHaveBeenCalledWith(expect.any(Object), {
       recipientUid: 'author-uid',
       type: 'post_new_comment',
       actorUid: 'actor-uid',
@@ -248,7 +254,7 @@ describe('notifyPostNewComment', () => {
       entityId: 'post-1',
       entityTitle: '台北馬拉松心得',
       commentId: 'cmt-1',
-      message: 'mock-message-post_new_comment-台北馬拉松心得',
+      message: '你的文章『台北馬拉松心得』有一則新的留言',
       read: false,
       createdAt: 'mock-server-timestamp',
     });

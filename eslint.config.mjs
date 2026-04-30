@@ -34,9 +34,13 @@ const unitLibFlakyBaselineForCombinedBlocks = [
   'tests/unit/lib/firebase-events-edit-delete.test.js',
   'tests/unit/lib/firebase-events.test.js',
   'tests/unit/lib/firebase-member.test.js',
+  'tests/unit/lib/firebase-notifications-read.test.js',
+  'tests/unit/lib/firebase-notifications-write.test.js',
   'tests/unit/lib/firebase-posts-comments-likes.test.js',
   'tests/unit/lib/firebase-posts-crud.test.js',
   'tests/unit/lib/firebase-profile.test.js',
+  'tests/unit/lib/notify-event-new-comment.test.js',
+  'tests/unit/lib/notify-post-comment-reply.test.js',
 ];
 
 export default [
@@ -644,14 +648,7 @@ export default [
   //      Baseline start: 5.
   {
     files: ['tests/unit/lib/**/*.{js,jsx,mjs}'],
-    ignores: [
-      ...unitLibFlakyBaselineForCombinedBlocks,
-      'tests/unit/lib/fetch-distinct-comment-authors.test.js',
-      'tests/unit/lib/firebase-notifications-read.test.js',
-      'tests/unit/lib/firebase-notifications-write.test.js',
-      'tests/unit/lib/notify-event-new-comment.test.js',
-      'tests/unit/lib/notify-post-comment-reply.test.js',
-    ],
+    ignores: [...unitLibFlakyBaselineForCombinedBlocks],
     rules: {
       'no-restricted-syntax': [
         'error',
