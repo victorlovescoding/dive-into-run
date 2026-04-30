@@ -535,17 +535,19 @@ describe('Integration: CommentSection', () => {
 
       const textbox = screen.getByRole('textbox');
 
-      // Act — type 450 chars (no warning)
+      // Act — paste 450 chars (no warning)
       const text450 = 'a'.repeat(450);
-      await user.type(textbox, text450);
+      await user.click(textbox);
+      await user.paste(text450);
 
       // Assert — no character count visible
       expect(screen.queryByText(/450/)).not.toBeInTheDocument();
 
-      // Act — clear and type 499 chars
+      // Act — clear and paste 499 chars
       await user.clear(textbox);
+      expect(textbox).toHaveValue('');
       const text499 = 'a'.repeat(499);
-      await user.type(textbox, text499);
+      await user.paste(text499);
 
       // Assert — character count visible
       await waitFor(() => {
@@ -563,6 +565,15 @@ describe('Integration: CommentSection', () => {
       // Verify submit still works at exactly 500
       const submitButton = screen.getByRole('button', { name: /送出/ });
       expect(submitButton).toBeEnabled();
+
+      // Act — type one more to reach 501
+      await user.type(textbox, 'a');
+
+      // Assert — 501 shown and submit disabled
+      await waitFor(() => {
+        expect(screen.getByText(/501/)).toBeInTheDocument();
+      });
+      expect(submitButton).toBeDisabled();
     });
 
     it('should show error notification and preserve input on submit failure', async () => {
@@ -580,7 +591,9 @@ describe('Integration: CommentSection', () => {
 
       // Act
       const textbox = screen.getByRole('textbox');
-      await user.type(textbox, '會失敗的留言');
+      expect(textbox).toHaveValue('');
+      await user.click(textbox);
+      await user.paste('會失敗的留言');
 
       const submitButton = screen.getByRole('button', { name: /送出/ });
       await user.click(submitButton);

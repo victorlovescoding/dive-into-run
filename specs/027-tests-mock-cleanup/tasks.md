@@ -338,11 +338,11 @@ Every task below uses this gate. A task is not done until the Reviewer signs off
 **Parallelism**: S7.A-S7.C can run in parallel after preflight; baseline consolidation sequential.
 **Baseline**: block 18.7 `14 -> 0`.
 
-- [ ] **S7.0 Session preflight gate**
+- [x] **S7.0 Session preflight gate**
   - Engineer lead: separate client SDK, Admin SDK, and external fetch boundaries before parallel edits.
   - Reviewer lead: approve split and flag Strava/webhook route files that require Option A / nock instead of fake internal mocks.
 
-- [ ] **S7.A Parallel batch — unit/runtime**
+- [x] **S7.A Parallel batch — unit/runtime**
   - Files:
     - `tests/unit/runtime/notification-use-cases.test.js`
     - `tests/unit/runtime/useStravaConnection.test.jsx`
@@ -352,7 +352,7 @@ Every task below uses this gate. A task is not done until the Reviewer signs off
   - Scope: 5 files / 7 violations.
   - Reviewer focus: `useStravaConnection` has one `@/lib` mock and same-file `setTimeout` cleanup is in scope.
 
-- [ ] **S7.B Parallel batch — unit/api routes**
+- [x] **S7.B Parallel batch — unit/api routes**
   - Files:
     - `tests/unit/api/weather-api-route.test.js`
     - `tests/unit/api/sync-token-revocation.test.js`
@@ -363,7 +363,7 @@ Every task below uses this gate. A task is not done until the Reviewer signs off
   - Scope: 6 files / 6 violations.
   - Reviewer focus: API routes usually need `firebase-admin/firestore` or fetch boundary mocks; `strava-callback-route` and `strava-webhook-route` are high-risk Option A candidates.
 
-- [ ] **S7.C Parallel batch — scattered service/repo**
+- [x] **S7.C Parallel batch — scattered service/repo**
   - Files:
     - `tests/unit/service/weather-forecast-service.test.js`
     - `tests/unit/service/profile-service.test.js`
@@ -371,7 +371,7 @@ Every task below uses this gate. A task is not done until the Reviewer signs off
   - Scope: 3 files / 4 violations.
   - Reviewer focus: service tests mock external data/API boundaries, repo server test mocks Admin SDK boundary, not internal repo/service modules.
 
-- [ ] **S7.D Sequential consolidation**
+- [x] **S7.D Sequential consolidation**
   - Engineer lead: remove all 14 files from block 18.7 and run session verification.
   - Reviewer lead: confirm block 18.7 is empty, all five progress grep counts are zero, Option A migrations are recorded, and S8 trigger criteria are ready.
 
@@ -381,9 +381,9 @@ Every task below uses this gate. A task is not done until the Reviewer signs off
 
 - [ ] S0-S7 are merged in order.
 - [ ] Block 18.6 mock-boundary portion is drained; only planned flaky-only overlap remains.
-- [ ] Block 18.7 is empty.
+- [x] Block 18.7 is empty.
 - [ ] Block 18.8 is empty.
-- [ ] `handoff.md` §2 contains reusable SDK mock patterns from S1/S3/S6/S7.
-- [ ] `handoff.md` §6 lists every Option A file moved out of this spec.
-- [ ] Full progress grep from `plan.md` §7 returns `0 / 0 / 0 / 0 / 0`.
+- [x] `handoff.md` §2 contains reusable SDK mock patterns from S1/S3/S6/S7.
+- [x] `handoff.md` §6 lists every Option A file moved out of this spec.
+- [x] Full progress grep from `plan.md` §7 returns `0 / 0 / 0 / 0 / 0`.
 - [ ] Coverage did not regress against S0 baseline.

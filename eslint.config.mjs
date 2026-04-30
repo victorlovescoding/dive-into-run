@@ -583,29 +583,13 @@ export default [
     },
   },
 
-  // 18.7 mock-boundary + flaky combined (spec 027 S0) — unit runtime/api/service/repo baseline.
+  // 18.7 mock-boundary + flaky combined (spec 027 S0 / S7 drained) — unit runtime/api/service/repo.
   //      Combined block intentionally duplicates 18.5 flaky selector because flat-config
   //      replaces `no-restricted-syntax` arrays at rule-name level.
-  //      Baseline start: 14.
+  //      Mock-boundary baseline drained in S7; only 18.5 flaky overlap remains via spread.
   {
     files: ['tests/unit/{runtime,api,service,repo}/**/*.{js,jsx,mjs}'],
-    ignores: [
-      ...unitRuntimeApiServiceRepoFlakyBaselineForCombinedBlocks,
-      'tests/unit/api/strava-callback-route.test.js',
-      'tests/unit/api/strava-disconnect-route.test.js',
-      'tests/unit/api/strava-sync-route.test.js',
-      'tests/unit/api/strava-webhook-route.test.js',
-      'tests/unit/api/sync-token-revocation.test.js',
-      'tests/unit/api/weather-api-route.test.js',
-      'tests/unit/repo/firebase-profile-server.test.js',
-      'tests/unit/runtime/notification-use-cases.test.js',
-      'tests/unit/runtime/post-use-cases.test.js',
-      'tests/unit/runtime/profile-events-runtime.test.js',
-      'tests/unit/runtime/useStravaActivities.test.jsx',
-      'tests/unit/runtime/useStravaConnection.test.jsx',
-      'tests/unit/service/profile-service.test.js',
-      'tests/unit/service/weather-forecast-service.test.js',
-    ],
+    ignores: [...unitRuntimeApiServiceRepoFlakyBaselineForCombinedBlocks],
     rules: {
       'no-restricted-syntax': [
         'error',

@@ -18,7 +18,7 @@
 | S4      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 27 → 21（events + profile — 6 檔/8 violations；S4.A/B reviewers + type-fix 全 PASS）                                                                                           |
 | S5      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 21 → 11（toast 1 + weather 3 + strava 6 = 10 檔/13 violations 全清；S5.A/B/C engineer + reviewer 全 PASS）                                                                     |
 | S6      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.8: 5 → 0（unit/lib notification 5 檔 / 11 violations 含 4 dead mocks 全清；S6.A/B engineer + reviewer 全 PASS；18.5 baseline 5 檔保留 — 業務正確 toHaveBeenCalledTimes 非 flaky） |
-| S7      | ⏳ Not started | —                      | —   | —           | 18.7: 14 → 0（unit/runtime + api + 散落 — 14 檔/17 violations）                                                                                                                      |
+| S7      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.7: 14 → 0（unit/runtime 5 + api 6 + service/repo 3 = 14 檔/17 violations 全清；無 Option A，18.7 mock-boundary baseline 清空，只剩 18.5 flaky spread）                            |
 
 > 每完成一個 session：對應 row 狀態 → ✅ Done、寫入 branch / PR / commit hash、更新 baseline 實際數字。
 > Spec 終態：三個 block 對應 mock-boundary 部分清空（18.6 剩 ~11 檔 flaky-only overlap 不計入）。
@@ -333,7 +333,39 @@ writeBatch.mockReturnValue(batch);
   - S6 5 檔皆在 18.5 baseline (line 498-504)，內含 `toHaveBeenCalledTimes` 多為業務批次數量斷言
   - 例：`mockBatch.set.toHaveBeenCalledTimes(53)`（50 participants + host + 2 dedup commenters）
   - 例：onSnapshot listener `toHaveBeenCalledTimes(2)`（initial + subsequent）
-  - **不應**移除這些 entry；spec 028 sweep 時要逐筆檢視業務 vs flaky
+- **不應**移除這些 entry；spec 028 sweep 時要逐筆檢視業務 vs flaky
+
+### 2.12 S7 unit/runtime pattern（real runtime/use-case chain）
+
+- **適用範圍**
+  - `tests/unit/runtime/{notification-use-cases,post-use-cases,profile-events-runtime,useStravaActivities,useStravaConnection}.test.*`
+  - 目標是保留 real runtime/use-case/service/repo path，只在 React 邊界與 SDK 邊界控行為
+- **允許的 mock 面**
+  - `firebase/firestore`
+  - `@/config/client/firebase-client`
+  - `@/contexts/AuthContext` 或 `@/runtime/providers/*`（只在 hook 真的吃 context 時）
+- **關鍵做法**
+  - `query()` / `collection()` / `doc()` mock 必須保留 `path` 或 `constraints` metadata，`getDocs` / `onSnapshot` 才能依 collection path、cursor、query shape 分流
+  - hook pagination 直接餵 real `lastDoc` / `startAfter(lastDoc)` cursor；不要退回 call-count mock
+  - `onSnapshot` 測 listener lifecycle 時，unsubscribe 必回 `vi.fn()`；需要 React effect 完成註冊後再 emit 時，用 `queueMicrotask`
+  - runtime 測試不 assert internal helper/mock function；改 assert render state、returned hook state、以及 SDK payload / cursor 行為
+- **S7 實證**
+  - `useStravaActivities` / `profile-events-runtime` 都靠 path-aware Firestore stub 驅動真實 pagination
+  - `notification-use-cases` / `post-use-cases` 直接驗證 repo-facing payload normalization，沒再 mock `@/runtime/**` / `@/service/**`
+
+### 2.13 S7 unit/api + scattered service/repo pattern（Admin SDK / fetch 邊界）
+
+- **unit/api server route**
+  - route 檔一律不再 mock internal server use-case；改 mock `firebase-admin` + `global.fetch`
+  - `firebase-admin` mock 用 in-memory `docStore` 最穩：同時支援 `auth().verifyIdToken()`、`firestore().collection().doc().get/set/update/delete`、`where().limit().get()`、`batch().set/update/delete/commit()`
+  - Strava / weather upstream 一律 stub `global.fetch`；對 route / service 直接使用 `Response` 物件比裸 `{ json() {} }` friction 更少，且可真實覆蓋 `status`, `ok`, `headers`, `statusText`
+  - route 驗證要看 HTTP contract + persisted side effect：`response.status` / `await response.json()` / cache header / `docStore` mutation / fetch URL/body，不看 internal use-case 是否被呼叫
+- **service / repo 散落檔**
+  - `profile-service.test.js` 只 mock `firebase/firestore` + `db`，讓 real service + repo + mapper 執行；count query / `limit(pageSize + 1)` / `setDoc(..., { merge: true })` 都直接驗
+  - `weather-forecast-service.test.js` 不再 mock `weather-location-service` / `weather-api-repo`；直接 stub `fetch` 驅動 county/township、UV/EPA fallback、500 masking
+  - `firebase-profile-server.test.js` 只 mock `firebase-admin`，repo 層 assertion 對齊 raw snapshot contract（存在回 raw data、不存在回 `null`、空 data 回 `{}`）
+- **本輪結論**
+  - 原先預估的 `strava-callback` / `strava-webhook` Option A 沒發生；`global.fetch` + Admin SDK stub 已足夠，**本輪無 Option A**
 
 ---
 
@@ -547,10 +579,11 @@ writeBatch.mockReturnValue(batch);
 
 ### S7 坑紀錄
 
-> S7 unit/runtime + api + 散落 預期撞：
->
-> - unit/api 的 server route 走 `firebase-admin/firestore`，與 client `firebase/firestore` 是兩套 mock 樣板（S6 / S7 結束時補進 §2.5 / §2.6）
-> - strava-callback / strava-webhook fetch 邊界 → 高機率 Option A 個案，需 nock
+1. **server route 用 Admin SDK，不是 client SDK** — `firebase-admin` 需要另一套 in-memory stub，至少要覆蓋 `verifyIdToken`、`collection().where().limit().get()`、`batch().commit()`；沿用 `firebase/firestore` mock 會直接失真。
+2. **Strava / weather route 不需要 Option A / nock** — 只要 `global.fetch` 回真 `Response` 或具 `ok/status/json` 的最小 response，real route + service path 就能完整驅動；這輪 `strava-callback` / `strava-webhook` 都是 Option B 收斂。
+3. **route 測試別再 assert internal use-case call** — 改 assert HTTP contract、fetch request payload、token/connection/activity 寫入結果，才真的測到 route orchestration。
+4. **runtime pagination / listener 要保留 cursor 與 unsubscribe shape** — `startAfter(lastDoc)` 需要 stable doc object；`onSnapshot` 需要回 unsubscribe spy，否則 hook lifecycle 測不到。
+5. **service 層 fail-closed / masking 要走真實 upstream path** — `weather-forecast-service` 若還 mock internal repo/service，`Unknown county`、UV fallback、500 masking 都只是假的；直接 stub `fetch` 才能測到真 contract。
 
 ---
 
@@ -559,9 +592,9 @@ writeBatch.mockReturnValue(batch);
 > session 結束時若有檔被判定為 Option A → 從本 spec 移出，這節記錄。
 > 格式：`<file> | <session> | <flag 原因> | <移交目標 spec>`
 
-| 檔          | Session | Flag 原因 | 移交目標 |
-| ----------- | ------- | --------- | -------- |
-| （pending） | —       | —         | —        |
+| 檔               | Session | Flag 原因     | 移交目標 |
+| ---------------- | ------- | ------------- | -------- |
+| （本輪無 Option A） | S7      | Option B 全數收斂 | —        |
 
 ---
 
