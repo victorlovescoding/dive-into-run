@@ -2808,7 +2808,7 @@ S7 is deliberately **UI/process only**. It does not change production code, test
 
 ## S7 Execution Rule
 
-**主 agent 不下手任何 S7 實作**。S7 的 GitHub UI 操作、GitHub API 查證、handoff evidence、status update、doc-only closeout commit 都由 subagent 完成。
+**主 agent 不下手任何 S7 實作**。S7 的 GitHub UI/API 操作（UI 或 field-scoped API 皆可）、GitHub API 查證、handoff evidence、status update、doc-only closeout commit 都由 subagent 完成。
 
 每個 S7 task 配對 1 engineer subagent + 1 reviewer subagent：
 
@@ -2922,14 +2922,16 @@ Wave S7-6: T44-eng -> T44-rev
 
 ### T40 — Configure main branch protection required checks
 
-- **Status**: `[x]` 2026-04-30 — added `firestore-rules-gate` to required checks via `gh api PATCH .../required_status_checks`; only the checks list mutated
-- **Scope**: GitHub UI only
+- **Status**: `[x]` 2026-04-30 — added `firestore-rules-gate` to required checks via `gh api PATCH .../required_status_checks`; only the checks list mutated (mechanism-deviation from prescribed UI noted; AC-T40.4 + tasks.md §rules already permit API evidence; rule wording reconciled in same edit)
+- **Scope**: GitHub branch-protection mutation (UI or field-scoped API; full-protection PUT forbidden)
 - **Standard**: R10 branch protection / exact observed check contexts
 - **Dependencies**: T38 `[x]`, T39 `[x]` and SAFE
 
 **Engineer Action**：
 
-1. Open GitHub UI: `Settings` -> `Branches` -> `main` branch protection rule.
+1. Mutate branch protection required-status-checks via either:
+   - GitHub UI: `Settings` -> `Branches` -> `main` branch protection rule, or
+   - field-scoped API: `gh api -X PATCH repos/<owner>/<repo>/branches/main/protection/required_status_checks` (read current `contexts`/`checks` first, write back the union — never use the full-protection PUT, which clobbers other fields).
 2. Enable or keep enabled "Require status checks to pass before merging".
 3. Select only the exact check contexts verified in T38 and allowed by T39:
    - CI job context (`ci` or observed equivalent)
