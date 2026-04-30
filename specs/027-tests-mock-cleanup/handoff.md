@@ -8,17 +8,17 @@
 
 ## 0. 進度看板
 
-| Session | 狀態           | Branch                 | PR  | Commit      | Baseline 變化                                                                                              |
-| ------- | -------------- | ---------------------- | --- | ----------- | ---------------------------------------------------------------------------------------------------------- |
-| —       | —              | —                      | —   | —           | **18.6=47（spec 026 既有）/ 18.7=0 / 18.8=0（spec 027 開始前）**                                           |
-| S0      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 修 selector bug + 擴規則 → 18.6: 47→55（+8 新加）/ 18.7: 0→14（new）/ 18.8: 0→5（new）                     |
-| S1      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 55 → 50（posts heavy / pilot — 5 檔/10 violations；Option B 全留在本 spec）                          |
-| S2      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 50 → 36（posts rest + comments + dashboard + navbar — 14 檔/15 violations；Navbar flaky count 已清） |
-| S3      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 36 → 27（notifications — 9 檔/32 violations；S3.A-D reviewers 全 PASS）                              |
-| S4      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 27 → 21（events + profile — 6 檔/8 violations；S4.A/B reviewers + type-fix 全 PASS）                 |
-| S5      | ⏳ Not started | —                      | —   | —           | 18.6: 21 → 11（strava + weather + toast — 10 檔/13 violations；第一批 mock-boundary 部分清空）             |
-| S6      | ⏳ Not started | —                      | —   | —           | 18.8: 5 → 0（unit/lib notification — 5 檔/11 violations）                                                  |
-| S7      | ⏳ Not started | —                      | —   | —           | 18.7: 14 → 0（unit/runtime + api + 散落 — 14 檔/17 violations）                                            |
+| Session | 狀態           | Branch                 | PR  | Commit      | Baseline 變化                                                                                                    |
+| ------- | -------------- | ---------------------- | --- | ----------- | ---------------------------------------------------------------------------------------------------------------- |
+| —       | —              | —                      | —   | —           | **18.6=47（spec 026 既有）/ 18.7=0 / 18.8=0（spec 027 開始前）**                                                 |
+| S0      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 修 selector bug + 擴規則 → 18.6: 47→55（+8 新加）/ 18.7: 0→14（new）/ 18.8: 0→5（new）                           |
+| S1      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 55 → 50（posts heavy / pilot — 5 檔/10 violations；Option B 全留在本 spec）                                |
+| S2      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 50 → 36（posts rest + comments + dashboard + navbar — 14 檔/15 violations；Navbar flaky count 已清）       |
+| S3      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 36 → 27（notifications — 9 檔/32 violations；S3.A-D reviewers 全 PASS）                                    |
+| S4      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 27 → 21（events + profile — 6 檔/8 violations；S4.A/B reviewers + type-fix 全 PASS）                       |
+| S5      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 21 → 11（toast 1 + weather 3 + strava 6 = 10 檔/13 violations 全清；S5.A/B/C engineer + reviewer 全 PASS） |
+| S6      | ⏳ Not started | —                      | —   | —           | 18.8: 5 → 0（unit/lib notification — 5 檔/11 violations）                                                        |
+| S7      | ⏳ Not started | —                      | —   | —           | 18.7: 14 → 0（unit/runtime + api + 散落 — 14 檔/17 violations）                                                  |
 
 > 每完成一個 session：對應 row 狀態 → ✅ Done、寫入 branch / PR / commit hash、更新 baseline 實際數字。
 > Spec 終態：三個 block 對應 mock-boundary 部分清空（18.6 剩 ~11 檔 flaky-only overlap 不計入）。
@@ -242,6 +242,48 @@ writeBatch.mockReturnValue(batch);
 - notification write side effect 不 assert internal helper call；改 assert SDK boundary：`addDoc(collection(db, 'notifications'), payload)` 或 `writeBatch().set(doc(collection(db, 'notifications')), payload)` / `commit()`。
 - `NotificationContext` 直接 provider mock 只適合純 UI leaf（例如 panel item render）；若測 provider lifecycle、bell、pagination、toast、click，應保留 `NotificationProvider` 真實執行並只 mock Auth provider / Firestore SDK。
 
+### 2.9 S5.B weather reusable patterns
+
+- **適用範圍**：weather page integration tests — 真實 `useWeatherPageRuntime` + `useWeatherFavorites` + `weather-api-repo` + `firebase-weather-favorites-repo`；不再 mock runtime hook。
+- **SDK boundary mock 七件套**：
+  1. `global.fetch` 用 URL 分流（`URL().searchParams.get('township')` 等）
+  2. `firebase/firestore` path-aware：`getDocs` / `addDoc` / `deleteDoc` 都需要
+  3. `@/config/client/firebase-client` mock `db: {}`
+  4. `@/runtime/providers/AuthProvider` 只 mock `AuthContext`（不 mock `AuthProvider` 元件）
+  5. `@/runtime/providers/ToastProvider` mock `useToast: () => ({ showToast })`
+  6. `react-leaflet` + `leaflet` + `topojson-client` 全 stub（地圖層）
+  7. `@/data/geo/*` json fixture stub
+- **跨 test 重置**：每個 `beforeEach` 必須跑：
+  - `vi.clearAllMocks()` + `vi.unstubAllGlobals()`
+  - `globalThis.localStorage?.clear?.()`（否則 favorites 殘留）
+  - `window.history.replaceState({}, '', '/')`（runtime 會 `replaceState` URL）
+  - `getDocs.mockImplementation(...)` 重設（避免上輪殘留）
+- **Path-aware Firestore stub**：snapshot shape `{ docs: [{ id, data: () => record }], empty, size }`；`docs[].data()` 必回 callable。
+- **fetch 分流**：用 `URL().searchParams.get('township')` 判斷查詢；回 `Response` 物件而非 `{ json: () => ... }`（`fetchWeather` 走 `res.json()`，原生 `Response` 摩擦最少）；in-flight 用 `mockImplementationOnce(() => new Promise(() => {}))` never-resolve。
+- **AuthContext 切換 SOP**：mock 模組暴露 `mockAuthContext`，登入態切換**必須**走 `<AuthContext.Provider value={...}>` 包 render；`createContext({ user: null, ... })` default 是 frozen，靠 default value 改不了。
+- **WeatherInfo typedef 完整欄位**：cast 必須包含 `locationName` + `locationNameShort` + `today` + `tomorrow`，少 `locationNameShort` 撞 TS2741。
+- **jsdom ResizeObserver stub**：地圖元件需要，beforeEach 裡 stub `globalThis.ResizeObserver`。
+- **18.5 不需動**：S5.B 三檔（favorites / weather-page / township-drilldown）本身無 `toHaveBeenCalledTimes`，不在 18.5 baseline。
+
+### 2.10 S5.C strava reusable patterns
+
+- **AuthContext dual import**：sub-hooks 走 `@/contexts/AuthContext`，主 hook 走 `@/runtime/providers/AuthProvider`；兩條 alias **必須 mock 同一個** `createContext` 實例（後者透過 `await import('@/contexts/AuthContext')` re-export）。
+  - 例外：`CallbackPage` 元件只走 `useAuth`，單邊 mock `AuthProvider` 合理。
+  - `RunCalendarDialog` 兩邊各 `createContext` 是技術債（dual mock 不對齊但 9 tests pass，後續注意）。
+- **ToastProvider mock**：`useToast: () => ({ showToast: ... })` 灰區 React 邊界。
+- **`vi.hoisted` 不能直接 import React**：`import { createContext } from 'react'` 進 hoisted factory 會撞 `Cannot access '__vi_import_X__' before initialization`；改用 `vi.mock(..., async () => { const { createContext } = await import('react'); return {...} })` 模式。
+- **AuthContext shape type-check**：必須補 `setUser: () => {}`（+ user.bio）滿足 `AuthContextValue` type-check（TS2741）。
+- **fetch global 賦值 type cast**：`globalThis.fetch = vi.fn()` 直接撞 TS2322；用 `/** @type {typeof globalThis.fetch} */ (/** @type {unknown} */ (fetchSpy))` 雙 cast。
+- **onSnapshot connection listener pattern**：必用 `queueMicrotask` 排程 `onNext`，否則在 `useEffect` register 前 emit。
+- **getDocs activities pattern**：snapshot shape `{ docs: [{ id, data: () => ({...}) }] }`。
+- **fetch sync/disconnect/callback pattern**：`mockResolvedValue(ok/json)` + never-resolve loading（`new Promise(() => {})`）。
+- **Cooldown 不需 fake timers**：`useStravaSync` useState initializer 直接拿 `calcRemaining(lastSyncAt)`；`setInterval(1000)` 在 1s 內不會 tick；fake timers 反而增加 act warning。改用 `lastSyncAt = { toDate: () => new Date(Date.now() - 255_000) }`。
+- **`groupActivitiesByDay` 用 `startDateLocal` 算 day**：不是 `startDate.toDate().getDate()`；fixture 必須提供完整 `startDateLocal` 字串。
+- **`vi.spyOn(window, 'confirm')` 取代 mock**：比 `globalThis.confirm = vi.fn()` 更穩，afterEach restore 自動處理。
+- **真實 `formatPace(1710, 5200) = 5'28"/km` bug fix**：原 `RunsActivityCard` 斷言 `5'30"/km` 是錯的；改寫後對齊真實實作。
+- **灰區保留**：`@/components/Runs{LoginGuide,ConnectGuide,ActivityList,RouteMap}` / `@/components/RunCalendarDialog` / `react-leaflet`。
+- **18.5 stale 警示**：S5.C 三檔（CallbackPage / RunCalendarDialog / RunsPage）已移除 `toHaveBeenCalledTimes` 但 18.5 仍有 entry → 加入 stale 清單，§7 Q4 累計處理。
+
 ---
 
 ## 3. Per-session 操作 SOP（plan §4.3 再強化）
@@ -374,6 +416,54 @@ writeBatch.mockReturnValue(batch);
 
 ### S5 坑紀錄
 
+- **S5 全 10 檔已從 18.6 baseline 移除**：toast 1 + weather 3 + strava 6 consolidation 後，18.6 count 21 → 11。
+
+#### S5.A toast 坑（`crud-toast.test.jsx`）
+
+1. **「臺北市」(U+81FA) vs「台北市」(U+53F0) 字元坑** — `taiwan-locations` 真實字典用 U+81FA；form 輸入需用 U+81FA，否則 `Value not found in options`；S5.A 內 fixture L449/479/533 仍用 U+53F0（reviewer 判低風險，consolidation 統一建議後續 spec 對齊）。
+2. **PaceSelector option value zero-padded**（`'02'..'20'` / `'00'..'59'`）。
+3. **EventCreateForm 11 必填欄位** — Option B 改寫後得實打實填表跑真實 `normalizeEventPayload` validation；建議抽 `fillCreateEventForm` helper 給 S6/S7 重用。
+4. **EventCreateForm 多個欄位 label 為空 / 共用**：`paceMinutes/Seconds` 用 `getAllByRole('combobox')` + `getAttribute('name')` filter；city/district 共用 label，district 靠 `aria-label="選擇區域"` 區分。
+5. **`useEventParticipation.fetchJoinedParticipantDocuments` 會吃 `getDoc`** — `mockResolvedValueOnce(eventDoc)` 會被 participation `getDoc(events/<id>/participants/<uid>)` 先消耗 → delete fail；**必須用 path-aware `mockImplementation` 依 segments.length 分流**（top-level event = 2，participant subdoc = 4）。
+6. **`testing-library/no-node-access` 對 `document.getElementById` / `querySelector` 都 fire**；`getAttribute` 不在 ban list → `getAllByRole(...).find(el => el.getAttribute('name') === ...)` 模式。
+7. **`@/lib/firebase-users` mock 是死碼** — `AuthContext.Provider` 直接注入時 real `AuthProvider` 走 `auth-use-cases`/`firebase-users` chain 不會執行；S6/S7 可直接刪該 mock。
+
+#### S5.B weather 坑（favorites / weather-page / township-drilldown）
+
+1. **AuthContext default value 不可變** — `createContext({user: null,...})` default 是 frozen，登入態切換必須走 `<AuthContext.Provider value={...}>`，不可只靠 default。
+2. **`syncWeatherLocationToUrl` 跨 test 殘留** — runtime 在 `setSelectedLocation` 後 `replaceState` URL；beforeEach 必加 `window.history.replaceState({}, '', '/')`。
+3. **localStorage 殘留** — beforeEach 加 `globalThis.localStorage?.clear?.()`。
+4. **ToastProvider 必須 mock** — runtime 走真實 `useWeatherFavorites` → `useToast()`；少 mock 會 throw `useToast must be used within ToastProvider`。
+5. **WeatherInfo type 缺 `locationNameShort`** — typedef cast 必須包含此欄位，TS2741。
+6. **`mockImplementation(async (...args) => buildGetDocsImpl(...)(...args))` 觸發 TS2556** — 改成單參數 `(arg) => impl(arg)` 過 type-check。
+7. **fetch mock URL 分流比 `mockResolvedValueOnce` chain 穩** — hook 對 same county 重複 click 不會 refetch；用 `URL().searchParams.get('township')` 判斷。
+8. **回 `Response` 物件而非 `{ json: () => ... }`** — `fetchWeather` 走 `res.json()`，原生 `Response` 最少摩擦。
+9. **`vi.hoisted` 內用 `require('react')`** — ESLint `global-require` 在 `vi.hoisted` callback 裡會誤報；本批未撞 disable，但 S6/S7 注意。
+10. **AuthContext mock 兩種 shape 共存合法**：登入流程需完整 6 欄位 user 物件，訪客 `user: null` 即可。
+
+#### S5.C strava 坑（runs-page-sync-error / RunsPage / RunCalendarDialog / CallbackPage / RunsRouteMap / RunsActivityCard）
+
+1. **`vi.hoisted` 不能直接 import React** — `import { createContext } from 'react'` 進 hoisted factory 會撞 `Cannot access '__vi_import_X__' before initialization`；改用 `vi.mock(..., async () => { const { createContext } = await import('react'); return {...} })` 模式。
+2. **AuthContext 兩條 import 路徑都要 mock** — sub-hooks 用 `@/contexts/AuthContext`，主 hook 用 `@/runtime/providers/AuthProvider`；兩條 alias 必須 mock 同一個 createContext 實例（透過 `await import('@/contexts/AuthContext')` re-export）。**例外**：CallbackPage 元件只走 useAuth，單邊 mock AuthProvider 合理；RunCalendarDialog 兩邊各 createContext 是技術債（dual mock 不對齊但 9 tests pass，後續注意）。
+3. **AuthContext shape type-check** — 必須補 `setUser: () => {}` 滿足 `AuthContextValue`（TS2741），bio 也建議補。
+4. **fetch global 賦值 type cast** — `globalThis.fetch = vi.fn()` 直接撞 TS2322；用 `/** @type {typeof globalThis.fetch} */ (/** @type {unknown} */ (fetchSpy))` 雙 cast。
+5. **`onSnapshot` stub 必須 `queueMicrotask` 排程 onNext** — 直接 sync call 在 `useEffect` register 前觸發。
+6. **Cooldown 不需 fake timers** — `useStravaSync` useState initializer 直接拿 `calcRemaining(lastSyncAt)`；`setInterval(1000)` 在 1s 內不會 tick；fake timers 反而增加 act warning。
+7. **`groupActivitiesByDay` 用 `startDateLocal` 算 day** — 不是 `startDate.toDate().getDate()`；fixture 必須提供完整 `startDateLocal` 字串。
+8. **`vi.spyOn(window, 'confirm')` 取代 mock** — 比 `globalThis.confirm = vi.fn()` 更穩，afterEach restore 自動處理。
+9. **真實 `formatPace(1710, 5200) = 5'28"/km` bug fix** — 原 `RunsActivityCard` 斷言 `5'30"/km` 是錯的；改寫後對齊真實實作。
+
+#### Reviewer pattern note（共通）
+
+- pair reviewer 必跑 `npm run type-check 2>&1 | grep <basename>`（S4 學到、S5 全 batch 落實）。
+- pair reviewer 同步檢查 `toHaveBeenCalledTimes` side-effect 移除，給 consolidation owner 評估 18.5。
+
+#### 18.5 stale entries（S5 累積）
+
+- S5.B 三檔本身無 `toHaveBeenCalledTimes`，不在 18.5。
+- S5.C 三檔（`CallbackPage` / `RunCalendarDialog` / `RunsPage`）在 18.5 line 482-485 仍有 entry，但本 spec scope 不動，留給 spec 028 sweep。
+- 18.5 line 541-547 還有 6 個 strava 檔 entries（含 `RunsRouteMap` / `RunsActivityCard` 等 — 確認位置不動），加上 S4 留的 BioEditor / ProfileClient（line 480-481）共計 ~11 個 stale entries 待 spec 028 sweep。
+
 ### S6 坑紀錄
 
 > S6 unit/lib notification batch 預期撞：
@@ -410,7 +500,8 @@ writeBatch.mockReturnValue(batch);
 > - Q1: runTransaction stub 用 `mockImplementation(async (db, cb) => cb(...))` 還是用 inline mock？以哪個為標準？
 > - Q2: post-use-cases 的 `getLatestComments` 走 query + onSnapshot，stub 能否準確模擬 unsubscribe lifecycle？
 > - Q3: 是否需要在 vitest.setup.jsx 加 default `firebase/firestore` mock 抽共用？或每檔自抽？
-> - Q4 (S4 提出)：18.5 stale entries 何時統一清？S4 已發現第一筆（ProfileClient / BioEditor）；S5/S6/S7 reviewer 改寫過程移除 `toHaveBeenCalledTimes` 後也可能留下 stale entry。建議方案：S7 結束時 spec consolidation owner 一次 sweep 18.5（grep 每檔是否仍有 `toHaveBeenCalledTimes`，無 → remove from 18.5 ignores），或開獨立 spec 028 處理。
+> - Q4 (S4 提出 / S5 累計)：18.5 stale entries 何時統一清？S4 已發現第一筆（ProfileClient / BioEditor，line 480-481）；S5 又新增 stale entries — `CallbackPage` / `RunCalendarDialog` / `RunsPage`（18.5 line 482-485）+ line 541-547 6 個 strava entries — 累計 ~11 個 stale entries 待 spec 028 sweep。建議方案：S7 結束時 spec consolidation owner 一次 sweep 18.5（grep 每檔是否仍有 `toHaveBeenCalledTimes`，無 → remove from 18.5 ignores），或開獨立 spec 028 處理。
+> - Q5 (S5 提出)：Test helper 抽取候選 — `buildGetDocsImpl`（多 firestore mock 場景重用）+ `installWeatherFetch` URL 分流 helper（S5.B 三檔重複）+ `fillCreateEventForm`（events form 真填，S5.A 撞 11 必填欄位）— 是否抽到 `tests/_helpers/`？S6/S7 結束評估，看是否有跨 batch 重用實證。
 
 ---
 

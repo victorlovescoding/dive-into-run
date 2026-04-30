@@ -1,10 +1,61 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
-vi.mock('@/runtime/hooks/useRunsPageRuntime', () => ({
-  default: vi.fn(),
+// ---- Provider / SDK boundary mocks --------------------------------------
+
+const { mockAuthValue, mockShowToast } = vi.hoisted(() => ({
+  mockAuthValue: { user: null, loading: false, setUser: () => {} },
+  mockShowToast: { fn: null },
 }));
 
+vi.mock('@/contexts/AuthContext', async () => {
+  const { createContext } = await import('react');
+  const ctx = createContext(mockAuthValue);
+  return { AuthContext: ctx, default: ctx };
+});
+
+vi.mock('@/runtime/providers/AuthProvider', async () => {
+  const { useContext } = await import('react');
+  const { AuthContext } = await import('@/contexts/AuthContext');
+  return {
+    AuthContext,
+    default: ({ children }) => children,
+    useAuth: () => useContext(AuthContext),
+  };
+});
+
+vi.mock('@/runtime/providers/ToastProvider', () => ({
+  useToast: () => ({ showToast: mockShowToast.fn || (() => {}) }),
+  default: ({ children }) => children,
+}));
+
+vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
+
+vi.mock('firebase/firestore', () => ({
+  collection: vi.fn((_db, ...segments) => ({ type: 'collection', path: segments.join('/') })),
+  doc: vi.fn((base, ...segments) => ({
+    type: 'doc',
+    path: base?.path ? [base.path, ...segments].join('/') : segments.join('/'),
+  })),
+  query: vi.fn((collRef, ...constraints) => ({
+    type: 'query',
+    path: collRef?.path,
+    constraints,
+  })),
+  where: vi.fn((field, op, value) => ({ __type: 'where', field, op, value })),
+  orderBy: vi.fn((field, dir) => ({ __type: 'orderBy', field, dir })),
+  limit: vi.fn((n) => ({ __type: 'limit', n })),
+  startAfter: vi.fn((cursor) => ({ __type: 'startAfter', cursor })),
+  getDocs: vi.fn(),
+  onSnapshot: vi.fn(),
+  Timestamp: {
+    fromDate: vi.fn((date) => ({ toDate: () => date })),
+    now: vi.fn(() => ({ toDate: () => new Date() })),
+  },
+}));
+
+// 灰區 component leaf mocks（Leaflet / dialog 在 jsdom 不可渲染）
 vi.mock('@/components/RunsLoginGuide', () => ({
   default: () => <div data-testid="login-guide">請先登入</div>,
 }));
@@ -15,7 +66,7 @@ vi.mock('@/components/RunsActivityList', () => ({
   default: ({ activities }) => (
     <ul data-testid="activity-list">
       {activities.map((activity) => (
-        <li key={activity.stravaId}>{activity.name}</li>
+        <li key={activity.id}>{activity.name}</li>
       ))}
     </ul>
   ),
@@ -24,95 +75,113 @@ vi.mock('@/components/RunCalendarDialog', () => ({
   default: ({ open }) => (open ? <div data-testid="calendar-dialog">calendar open</div> : null),
 }));
 
-import useRunsPageRuntime from '@/runtime/hooks/useRunsPageRuntime';
+import { onSnapshot, getDocs } from 'firebase/firestore';
 import RunsPage from '@/app/runs/page';
 
-const mockedUseRunsPageRuntime = /** @type {import('vitest').Mock} */ (useRunsPageRuntime);
+const mockedOnSnapshot = /** @type {import('vitest').Mock} */ (onSnapshot);
+const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
 
-/** @type {{ stravaId: string, name: string, distance: number }[]} */
-const mockActivities = [
-  { stravaId: '100', name: '晨跑 5K', distance: 5000 },
-  { stravaId: '101', name: '河濱慢跑', distance: 8000 },
+const mockUser = {
+  uid: 'u1',
+  name: 'Test',
+  email: null,
+  photoURL: null,
+  bio: null,
+  getIdToken: vi.fn().mockResolvedValue('id-token-1'),
+};
+
+const cachedActivities = [
+  { id: 'a1', stravaId: 100, name: '晨跑 5K' },
+  { id: 'a2', stravaId: 101, name: '河濱慢跑' },
 ];
 
-/**
- * @typedef {object} RunsPageRuntimeMock
- * @property {boolean} authLoading - 是否為 auth 載入狀態。
- * @property {object | null} user - 當前登入使用者。
- * @property {object | null} connection - Strava 連線狀態。
- * @property {Array<{ stravaId: string, name: string, distance: number }>} activities - 跑步活動列表。
- * @property {boolean} activitiesLoading - 活動列表是否載入中。
- * @property {string | null} activitiesError - 活動列表錯誤訊息。
- * @property {() => void} loadMore - 載入更多活動的 handler。
- * @property {boolean} hasMore - 是否還有下一頁。
- * @property {boolean} isLoadingMore - 是否正在載入更多活動。
- * @property {boolean} calendarOpen - 月曆 dialog 是否開啟。
- * @property {() => void} openCalendar - 開啟月曆的 handler。
- * @property {() => void} closeCalendar - 關閉月曆的 handler。
- * @property {string} syncButtonLabel - 同步按鈕顯示文字。
- * @property {() => void} handleSync - 觸發同步的 handler。
- * @property {number} cooldownRemaining - 剩餘冷卻秒數。
- * @property {boolean} isSyncing - 是否同步中。
- * @property {boolean} isDisconnecting - 是否取消連結中。
- * @property {() => void} handleDisconnect - 取消連結的 handler。
- * @property {string | null} syncError - 同步錯誤訊息。
- */
-
-/**
- * 建立 runs page runtime mock。
- * @param {Partial<RunsPageRuntimeMock>} [overrides] - 覆蓋欄位。
- * @returns {RunsPageRuntimeMock} runtime mock。
- */
-function createRuntime(overrides = {}) {
-  return {
-    authLoading: false,
-    user: { uid: 'u1', name: 'Test', email: null, photoURL: null },
-    connection: { connected: true, athleteName: 'John Runner', lastSyncAt: null },
-    activities: mockActivities,
-    activitiesLoading: false,
-    activitiesError: null,
-    loadMore: vi.fn(),
-    hasMore: false,
-    isLoadingMore: false,
-    calendarOpen: false,
-    openCalendar: vi.fn(),
-    closeCalendar: vi.fn(),
-    syncButtonLabel: '同步',
-    handleSync: vi.fn(),
-    cooldownRemaining: 0,
-    isSyncing: false,
-    isDisconnecting: false,
-    handleDisconnect: vi.fn(),
-    syncError: null,
-    ...overrides,
-  };
-}
-
 describe('RunsPage sync error handling', () => {
+  /** @type {ReturnType<typeof vi.fn>} */
+  let fetchSpy;
+
   beforeEach(() => {
-    mockedUseRunsPageRuntime.mockReturnValue(createRuntime());
+    vi.clearAllMocks();
+    mockAuthValue.user = mockUser;
+    mockAuthValue.loading = false;
+
+    // connection: connected athlete
+    mockedOnSnapshot.mockImplementation((_docRef, onNext) => {
+      queueMicrotask(() =>
+        onNext({
+          exists: () => true,
+          data: () => ({ connected: true, athleteName: 'John Runner', lastSyncAt: null }),
+        }),
+      );
+      return () => {};
+    });
+
+    // activities: cached list
+    mockedGetDocs.mockResolvedValue({
+      docs: cachedActivities.map((a) => ({ id: a.id, data: () => ({ ...a }) })),
+    });
+
+    fetchSpy = vi.fn();
+    globalThis.fetch = /** @type {typeof globalThis.fetch} */ (/** @type {unknown} */ (fetchSpy));
+    mockShowToast.fn = vi.fn();
   });
 
-  it('should display sync error message when sync fails', () => {
-    mockedUseRunsPageRuntime.mockReturnValue(createRuntime({ syncError: '同步失敗，請稍後再試' }));
+  it('should display sync error message when sync fetch returns ok=false', async () => {
+    // /api/strava/sync returns ok:false with custom error → useStravaSync.error 設為訊息
+    fetchSpy.mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: '同步失敗，請稍後再試' }),
+    });
 
+    const user = userEvent.setup();
     render(<RunsPage />);
 
-    expect(screen.getByText('同步失敗，請稍後再試')).toBeInTheDocument();
+    const syncBtn = await screen.findByRole('button', { name: /同步/i });
+    await user.click(syncBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('同步失敗，請稍後再試')).toBeInTheDocument();
+    });
   });
 
-  it('should still display cached activities when sync fails', () => {
-    mockedUseRunsPageRuntime.mockReturnValue(createRuntime({ syncError: '同步失敗，請稍後再試' }));
+  it('should still display cached activities when sync fails', async () => {
+    fetchSpy.mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: '同步失敗，請稍後再試' }),
+    });
 
+    const user = userEvent.setup();
     render(<RunsPage />);
 
+    // cached activities render once getDocs resolves
+    await waitFor(() => {
+      expect(screen.getByText('晨跑 5K')).toBeInTheDocument();
+    });
+    expect(screen.getByText('河濱慢跑')).toBeInTheDocument();
+
+    const syncBtn = await screen.findByRole('button', { name: /同步/i });
+    await user.click(syncBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('同步失敗，請稍後再試')).toBeInTheDocument();
+    });
+    // 失敗後 cached activities 仍存在
     expect(screen.getByText('晨跑 5K')).toBeInTheDocument();
     expect(screen.getByText('河濱慢跑')).toBeInTheDocument();
-    expect(screen.getByText('同步失敗，請稍後再試')).toBeInTheDocument();
   });
 
-  it('should not display sync error when sync succeeds', () => {
+  it('should not display sync error when sync succeeds', async () => {
+    fetchSpy.mockResolvedValue({ ok: true, json: async () => ({}) });
+
+    const user = userEvent.setup();
     render(<RunsPage />);
+
+    const syncBtn = await screen.findByRole('button', { name: /同步/i });
+    await user.click(syncBtn);
+
+    // 等待 sync 完成（getDocs 會被 refresh 再次呼叫）
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalledWith('/api/strava/sync', expect.any(Object));
+    });
 
     expect(screen.queryByText('同步失敗，請稍後再試')).not.toBeInTheDocument();
     expect(screen.queryByText(/同步失敗/)).not.toBeInTheDocument();
