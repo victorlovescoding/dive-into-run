@@ -1,6 +1,26 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {
+  addDoc,
+  collection,
+  collectionGroup,
+  doc,
+  documentId,
+  getDoc,
+  getDocs,
+  increment,
+  limit,
+  orderBy,
+  query,
+  runTransaction,
+  serverTimestamp,
+  startAfter,
+  Timestamp,
+  updateDoc,
+  where,
+  writeBatch,
+} from 'firebase/firestore';
 
 // ---------------------------------------------------------------------------
 // Polyfills
@@ -31,7 +51,10 @@ vi.mock('@/config/client/firebase-client', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
-  Timestamp: { fromDate: vi.fn((d) => d) },
+  Timestamp: {
+    fromDate: vi.fn((date) => ({ toDate: () => date })),
+    now: vi.fn(() => ({ toDate: () => new Date('2026-04-15T08:00:00Z') })),
+  },
   collection: vi.fn(),
   doc: vi.fn(),
   getDoc: vi.fn(),
@@ -45,10 +68,10 @@ vi.mock('firebase/firestore', () => ({
   limit: vi.fn(),
   startAfter: vi.fn(),
   onSnapshot: vi.fn(),
-  serverTimestamp: vi.fn(),
+  serverTimestamp: vi.fn(() => ({ __type: 'serverTimestamp' })),
   writeBatch: vi.fn(),
   runTransaction: vi.fn(),
-  increment: vi.fn(),
+  increment: vi.fn((value) => ({ __type: 'increment', value })),
   collectionGroup: vi.fn(),
   documentId: vi.fn(),
   connectFirestoreEmulator: vi.fn(),
@@ -63,33 +86,6 @@ vi.mock('firebase/auth', () => ({
 
 vi.mock('firebase/app', () => ({
   initializeApp: vi.fn(),
-}));
-
-// ---------------------------------------------------------------------------
-// Mocks -- firebase-posts
-// ---------------------------------------------------------------------------
-
-vi.mock('@/runtime/client/use-cases/post-use-cases', () => ({
-  getPostDetail: vi.fn(),
-  addComment: vi.fn(),
-  getLatestComments: vi.fn(),
-  getCommentById: vi.fn(),
-  toggleLikePost: vi.fn(),
-  hasUserLikedPost: vi.fn(),
-  updatePost: vi.fn(),
-  updateComment: vi.fn(),
-  deletePost: vi.fn(),
-  deleteComment: vi.fn(),
-  getMoreComments: vi.fn(),
-}));
-
-// ---------------------------------------------------------------------------
-// Mocks -- firebase-notifications
-// ---------------------------------------------------------------------------
-
-vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
-  notifyPostNewComment: vi.fn(() => Promise.resolve()),
-  notifyPostCommentReply: vi.fn(() => Promise.resolve()),
 }));
 
 // ---------------------------------------------------------------------------
@@ -158,27 +154,28 @@ vi.mock('@/components/UserLink', () => ({
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
 
-import {
-  getPostDetail,
-  addComment,
-  getLatestComments,
-  getCommentById,
-  hasUserLikedPost,
-} from '@/runtime/client/use-cases/post-use-cases';
-import {
-  notifyPostNewComment,
-  notifyPostCommentReply,
-} from '@/runtime/client/use-cases/notification-use-cases';
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
 
-// cast to vi.Mock for convenience
-const mockedGetPostDetail = /** @type {import('vitest').Mock} */ (getPostDetail);
-const mockedAddComment = /** @type {import('vitest').Mock} */ (addComment);
-const mockedGetLatestComments = /** @type {import('vitest').Mock} */ (getLatestComments);
-const mockedGetCommentById = /** @type {import('vitest').Mock} */ (getCommentById);
-const mockedHasUserLikedPost = /** @type {import('vitest').Mock} */ (hasUserLikedPost);
-const mockedNotifyPostNewComment = /** @type {import('vitest').Mock} */ (notifyPostNewComment);
-const mockedNotifyPostCommentReply = /** @type {import('vitest').Mock} */ (notifyPostCommentReply);
+const firestoreMocks = {
+  ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
+  ['collection']: /** @type {import('vitest').Mock} */ (collection),
+  ['collectionGroup']: /** @type {import('vitest').Mock} */ (collectionGroup),
+  ['doc']: /** @type {import('vitest').Mock} */ (doc),
+  ['documentId']: /** @type {import('vitest').Mock} */ (documentId),
+  ['getDoc']: /** @type {import('vitest').Mock} */ (getDoc),
+  ['getDocs']: /** @type {import('vitest').Mock} */ (getDocs),
+  ['increment']: /** @type {import('vitest').Mock} */ (increment),
+  ['limit']: /** @type {import('vitest').Mock} */ (limit),
+  ['orderBy']: /** @type {import('vitest').Mock} */ (orderBy),
+  ['query']: /** @type {import('vitest').Mock} */ (query),
+  ['runTransaction']: /** @type {import('vitest').Mock} */ (runTransaction),
+  ['serverTimestamp']: /** @type {import('vitest').Mock} */ (serverTimestamp),
+  ['startAfter']: /** @type {import('vitest').Mock} */ (startAfter),
+  ['updateDoc']: /** @type {import('vitest').Mock} */ (updateDoc),
+  ['where']: /** @type {import('vitest').Mock} */ (where),
+  ['writeBatch']: /** @type {import('vitest').Mock} */ (writeBatch),
+  ['timestampFromDate']: /** @type {import('vitest').Mock} */ (Timestamp.fromDate),
+};
 
 // ---------------------------------------------------------------------------
 // Test data
@@ -195,29 +192,115 @@ const mockPost = {
   commentsCount: 0,
 };
 
+const existingComments = [
+  { id: 'old-comment-1', authorUid: 'user2', comment: '舊留言' },
+  { id: 'old-comment-2', authorUid: 'author1', comment: '作者留言' },
+  { id: 'old-comment-3', authorUid: 'user1', comment: '自己的留言' },
+];
+
+/**
+ * 建立 Firestore document snapshot stub。
+ * @param {string} id - document ID。
+ * @param {object | null} data - document data，null 表示不存在。
+ * @returns {object} Firestore-like document snapshot。
+ */
+function createDocSnapshot(id, data) {
+  return {
+    id,
+    ref: { id, path: `mock/${id}` },
+    exists: () => data !== null,
+    data: () => data,
+  };
+}
+
+/**
+ * 設定留言通知測試需要的 Firestore SDK 邊界 stub。
+ * @returns {{ tx: object, batch: object }} 可供 assertion 使用的 SDK spies。
+ */
+function setupFirestoreMocks() {
+  const tx = {
+    get: vi.fn(async () => createDocSnapshot('post1', mockPost)),
+    set: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  };
+  const batch = {
+    set: vi.fn(),
+    delete: vi.fn(),
+    commit: vi.fn().mockResolvedValue(undefined),
+  };
+
+  firestoreMocks.collection.mockImplementation((_dbOrRef, ...segments) => ({
+    type: 'collection',
+    path: segments.join('/'),
+  }));
+  firestoreMocks.collectionGroup.mockImplementation((_db, groupId) => ({
+    type: 'collectionGroup',
+    path: groupId,
+  }));
+  firestoreMocks.doc.mockImplementation((base, ...segments) => {
+    if (base?.type === 'collection' && segments.length === 0) {
+      return { id: 'comment1', path: `${base.path}/comment1` };
+    }
+    if (base?.type === 'collection') {
+      return { id: String(segments.at(-1)), path: [base.path, ...segments].join('/') };
+    }
+    return { id: String(segments.at(-1)), path: segments.join('/') };
+  });
+  firestoreMocks.query.mockImplementation((...parts) => ({
+    type: 'query',
+    path: parts[0]?.path,
+    parts,
+  }));
+  firestoreMocks.where.mockImplementation((...parts) => ({ type: 'where', parts }));
+  firestoreMocks.orderBy.mockImplementation((...parts) => ({ type: 'orderBy', parts }));
+  firestoreMocks.limit.mockImplementation((count) => ({ type: 'limit', count }));
+  firestoreMocks.startAfter.mockImplementation((...parts) => ({ type: 'startAfter', parts }));
+  firestoreMocks.documentId.mockReturnValue('__name__');
+  firestoreMocks.addDoc.mockResolvedValue({ id: 'notification1' });
+  firestoreMocks.updateDoc.mockResolvedValue(undefined);
+  firestoreMocks.runTransaction.mockImplementation(async (_db, callback) => callback(tx));
+  firestoreMocks.writeBatch.mockReturnValue(batch);
+  firestoreMocks.getDoc.mockImplementation(async (ref) => {
+    if (ref.path === 'posts/post1/likes/user1') return createDocSnapshot('user1', null);
+    if (ref.path === 'posts/post1/comments/comment1') {
+      return createDocSnapshot('comment1', {
+        authorUid: 'user1',
+        authorName: 'Test User',
+        authorImgURL: 'http://photo.jpg',
+        comment: '測試留言',
+        createdAt: new Date(),
+      });
+    }
+    return createDocSnapshot('post1', mockPost);
+  });
+  firestoreMocks.getDocs.mockImplementation(async (ref) => {
+    if (ref.path === 'posts/post1/comments') {
+      return {
+        docs: existingComments.map((comment) => createDocSnapshot(comment.id, comment)),
+        size: existingComments.length,
+      };
+    }
+    return { docs: [], size: 0 };
+  });
+
+  return { tx, batch };
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 describe('PostDetailClient — 留言跟帖通知 (notifyPostCommentReply)', () => {
+  /** @type {{ tx: object, batch: object }} */
+  let sdkSpies;
+
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mockedGetPostDetail.mockResolvedValue(mockPost);
-    mockedGetLatestComments.mockResolvedValue([]);
-    mockedHasUserLikedPost.mockResolvedValue(false);
-    mockedAddComment.mockResolvedValue({ id: 'comment1' });
-    mockedGetCommentById.mockResolvedValue({
-      id: 'comment1',
-      authorUid: 'user1',
-      authorName: 'Test User',
-      authorImgURL: 'http://photo.jpg',
-      comment: '測試留言',
-      createdAt: new Date(),
-    });
+    sdkSpies = setupFirestoreMocks();
   });
 
-  it('送出留言後同時呼叫 notifyPostNewComment 和 notifyPostCommentReply', async () => {
+  it('送出留言後建立新留言通知和跟帖通知', async () => {
     const user = userEvent.setup();
     render(<PostDetailClient postId="post1" />);
 
@@ -232,36 +315,39 @@ describe('PostDetailClient — 留言跟帖通知 (notifyPostCommentReply)', () 
     const submitBtn = screen.getByRole('button', { name: '送出' });
     await user.click(submitBtn);
 
-    // 驗證 addComment 被呼叫
+    // 驗證 addComment 的 transaction 寫入新留言
     await waitFor(() => {
-      expect(mockedAddComment).toHaveBeenCalledWith(
-        'post1',
-        expect.objectContaining({ comment: '測試留言' }),
+      expect(sdkSpies.tx.set).toHaveBeenCalledWith(
+        expect.objectContaining({ path: 'posts/post1/comments/comment1' }),
+        expect.objectContaining({ comment: '測試留言', authorUid: 'user1' }),
       );
     });
 
-    // 驗證 notifyPostNewComment 被呼叫（留言者 user1 !== 文章作者 author1）
+    // 驗證 notifyPostNewComment 的 SDK 邊界效果（留言者 user1 !== 文章作者 author1）
     await waitFor(() => {
-      expect(mockedNotifyPostNewComment).toHaveBeenCalledWith(
-        'post1',
-        '測試文章',
-        'author1',
-        'comment1',
-        {
-          uid: 'user1',
-          name: 'Test User',
-          photoURL: 'http://photo.jpg',
-        },
+      expect(firestoreMocks.addDoc).toHaveBeenCalledWith(
+        expect.objectContaining({ path: 'notifications' }),
+        expect.objectContaining({
+          recipientUid: 'author1',
+          type: 'post_new_comment',
+          entityType: 'post',
+          entityId: 'post1',
+          entityTitle: '測試文章',
+          commentId: 'comment1',
+          actorUid: 'user1',
+          actorName: 'Test User',
+          actorPhotoURL: 'http://photo.jpg',
+        }),
       );
     });
 
-    // 驗證 notifyPostCommentReply 也被呼叫（RED — 目前 PostDetailClient 尚未呼叫此函式）
+    // 驗證 notifyPostCommentReply 的 SDK 邊界效果
     await waitFor(() => {
-      expect(mockedNotifyPostCommentReply).toHaveBeenCalled();
+      expect(sdkSpies.batch.set).toHaveBeenCalled();
     });
   });
 
-  it('notifyPostCommentReply 傳入正確參數 (postId, title, authorUid, commentId, actor)', async () => {
+  it('notifyPostCommentReply 只通知排除作者與留言者後的跟帖者', async () => {
     const user = userEvent.setup();
     render(<PostDetailClient postId="post1" />);
 
@@ -276,24 +362,36 @@ describe('PostDetailClient — 留言跟帖通知 (notifyPostCommentReply)', () 
     const submitBtn = screen.getByRole('button', { name: '送出' });
     await user.click(submitBtn);
 
-    // 等 addComment 完成
+    // 等 addComment transaction 完成
     await waitFor(() => {
-      expect(mockedAddComment).toHaveBeenCalled();
+      expect(sdkSpies.tx.set).toHaveBeenCalled();
     });
 
-    // 驗證 notifyPostCommentReply 帶正確參數（RED — 尚未實作）
+    // 驗證 notifyPostCommentReply 的 batch payload。
     await waitFor(() => {
-      expect(mockedNotifyPostCommentReply).toHaveBeenCalledWith(
-        'post1',
-        '測試文章',
-        'author1',
-        'comment1',
-        {
-          uid: 'user1',
-          name: 'Test User',
-          photoURL: 'http://photo.jpg',
-        },
+      expect(sdkSpies.batch.set).toHaveBeenCalledWith(
+        expect.objectContaining({ path: 'notifications/comment1' }),
+        expect.objectContaining({
+          recipientUid: 'user2',
+          type: 'post_comment_reply',
+          entityType: 'post',
+          entityId: 'post1',
+          entityTitle: '測試文章',
+          commentId: 'comment1',
+          actorUid: 'user1',
+          actorName: 'Test User',
+          actorPhotoURL: 'http://photo.jpg',
+        }),
       );
     });
+    expect(sdkSpies.batch.set).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ recipientUid: 'author1' }),
+    );
+    expect(sdkSpies.batch.set).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ recipientUid: 'user1' }),
+    );
+    expect(sdkSpies.batch.commit).toHaveBeenCalled();
   });
 });

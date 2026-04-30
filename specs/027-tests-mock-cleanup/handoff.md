@@ -12,7 +12,7 @@
 | ------- | -------------- | ------ | --- | ------ | ---------------------------------------------------------------------------------------------- |
 | —       | —              | —      | —   | —      | **18.6=47（spec 026 既有）/ 18.7=0 / 18.8=0（spec 027 開始前）**                               |
 | S0      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 修 selector bug + 擴規則 → 18.6: 47→55（+8 新加）/ 18.7: 0→14（new）/ 18.8: 0→5（new）         |
-| S1      | ⏳ Not started | —      | —   | —      | 18.6: 55 → 50（posts heavy / pilot — 5 檔/10 violations）                                      |
+| S1      | ✅ Done        | 027-tests-mock-cleanup | —   | this commit | 18.6: 55 → 50（posts heavy / pilot — 5 檔/10 violations；Option B 全留在本 spec）              |
 | S2      | ⏳ Not started | —      | —   | —      | 18.6: 50 → 36（posts rest + comments + dashboard + navbar — 14 檔/15 violations）              |
 | S3      | ⏳ Not started | —      | —   | —      | 18.6: 36 → 27（notifications — 9 檔/32 violations）                                            |
 | S4      | ⏳ Not started | —      | —   | —      | 18.6: 27 → 21（events + profile — 6 檔/8 violations）                                          |
@@ -75,6 +75,15 @@ echo "散落 unit/service+repo: $(($(violations tests/unit/service) + $(violatio
 # Spec 027 spec start: 78 / 7 / 11 / 6 / 4；終態 0 / 0 / 0 / 0 / 0（合計 106 → 0）
 ```
 
+### 1.4 Tasks queue planning notes（2026-04-30，Reviewer PASS / executable）
+
+- `tasks.md` 已通過 Reviewer PASS，queue 可執行；後續 session 必須仍從 S0 開始，按 `tasks.md` session order 執行。
+- session merge order 固定為 `S0 -> S1 -> S2 -> S3 -> S4 -> S5 -> S6 -> S7`，因為 baseline 數字與 PR 順序是序列化的。
+- 最大平行度放在 session 內：S2/S3/S4/S5/S6/S7 都拆成多組 Engineer+Reviewer file batch；每個 session 最後再由 lead 做 baseline consolidation，避免多個 worker 同時改 `eslint.config.mjs`。
+- 每個 task 都有 Engineer mini-plan + Reviewer gate；Reviewer 要先擋掉錯誤拆分、錯誤相依性、共享檔衝突、偷改 `src/`、或用 inline disable 假清理。
+- S1 是 pilot gate；S2-S7 開工前要先讀 §2 的實測 setup pattern。S6 雖然是 unit/lib，但應重用 S3 notification pattern；S7 要特別分清 client SDK、Admin SDK、fetch 邊界。
+- 如果為了提早平行開 worktree，只能先做盤點/草稿，不要提前落地 baseline edits；`eslint.config.mjs`、PR template、handoff row 由當前 session consolidation owner 統一更新。
+
 ---
 
 ## 2. Setup pattern reference（S1 pilot 後填）
@@ -83,39 +92,131 @@ echo "散落 unit/service+repo: $(($(violations tests/unit/service) + $(violatio
 > S1 pilot 結束前**留空**，pilot 是發現 pattern 的過程。
 > S6 / S7 涉及 unit/lib + unit/api 改寫時可能需要 `firebase-admin/firestore` 額外 mock 樣板 — S6 / S7 結束時補進 §2.5 / §2.6。
 
-### 2.1 標準 mock 骨架（Pending — S1 will fill）
+### 2.1 標準 mock 骨架（S1 實測）
 
 ```js
-// TODO（S1 pilot 後）：填入經驗證的標準頭部
-// - vi.hoisted({ mockShowToast, mockAuthContext, ... })
-// - vi.mock('next/navigation', ...)
-// - vi.mock('@/runtime/providers/AuthProvider', ...)
-// - vi.mock('@/runtime/providers/ToastProvider', ...)
-// - vi.mock('@/config/client/firebase-client', ...)
-// - vi.mock('firebase/firestore', () => ({ ... 完整 export 列表 ... }))
-// - 不 mock @/runtime/client/use-cases/*（讓 use-case 真實執行）
+const { mockShowToast, mockAuthContext } = vi.hoisted(() => {
+  const { createContext } = require('react');
+  return {
+    mockShowToast: vi.fn(),
+    mockAuthContext: createContext({ user: { uid: 'user-1' }, loading: false }),
+  };
+});
+
+vi.mock('@/runtime/providers/AuthProvider', () => ({ AuthContext: mockAuthContext }));
+vi.mock('@/runtime/providers/ToastProvider', () => ({
+  useToast: () => ({ showToast: mockShowToast }),
+}));
+vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
+vi.mock('firebase/firestore', () => ({
+  addDoc: vi.fn(),
+  updateDoc: vi.fn(),
+  collection: vi.fn(),
+  serverTimestamp: vi.fn(() => ({ __type: 'serverTimestamp' })),
+  limit: vi.fn(),
+  query: vi.fn(),
+  orderBy: vi.fn(),
+  doc: vi.fn(),
+  getDoc: vi.fn(),
+  getDocs: vi.fn(),
+  runTransaction: vi.fn(),
+  increment: vi.fn((value) => ({ __type: 'increment', value })),
+  collectionGroup: vi.fn(),
+  where: vi.fn(),
+  writeBatch: vi.fn(),
+  startAfter: vi.fn(),
+  documentId: vi.fn(),
+  Timestamp: {
+    fromDate: vi.fn((date) => ({ toDate: () => date })),
+    now: vi.fn(() => ({ toDate: () => new Date('2026-04-15T08:00:00Z') })),
+  },
+}));
+
+// 不 mock @/runtime/client/use-cases/*；
+// 讓 UI -> runtime hook -> use-case -> service/repo 真實執行。
 ```
 
-### 2.2 firebase/firestore mock 完整 export 清單（Pending — S1 will fill）
+### 2.2 firebase/firestore mock 完整 export 清單（S1 實測）
 
-> 漏一個 export → use-case 真執行時 ReferenceError。S1 跑通後完整清單抄這。
-> 起點清單（既有測試已用的）：
-> `getDoc, getDocs, addDoc, updateDoc, deleteDoc, runTransaction, query, where, orderBy, limit, startAfter, collection, collectionGroup, doc, serverTimestamp, increment, writeBatch, documentId`
-> S1 pilot 跑時若補了任何 export，更新此清單。
+S1 client posts pilot 實測需要：
 
-### 2.3 Firestore document stub shape（Pending — S1 will fill）
+`getDoc, getDocs, addDoc, updateDoc, runTransaction, query, where, orderBy, limit, startAfter, collection, collectionGroup, doc, serverTimestamp, increment, writeBatch, documentId, Timestamp`
+
+`Timestamp` 不能漏：`usePostComments` fallback path 會經 `createFirestoreTimestamp()` import `Timestamp.fromDate`。
+
+`post-comment-reply.test.jsx` 因既有 Firebase init protection 也保留外部 SDK mock：`deleteDoc, onSnapshot, connectFirestoreEmulator, getFirestore`，但 S1 core path 沒依賴它們。
+
+### 2.3 Firestore document stub shape（S1 實測）
 
 ```js
-// TODO（S1 pilot 後）：填入 getDoc / getDocs 的 mockResolvedValue 標準形狀
-// 例：getDoc.mockResolvedValue({ exists: () => true, data: () => ({...}) })
-// 例：getDocs.mockResolvedValue({ docs: [{ id, data: () => ({...}) }], size: N })
+function createDocSnapshot(id, data) {
+  return {
+    id,
+    ref: { id, path: `mock/${id}` },
+    exists: () => data !== null,
+    data: () => data,
+  };
+}
+
+function createQuerySnapshot(docs) {
+  return { docs, size: docs.length };
+}
+
+collection.mockImplementation((_dbOrRef, ...segments) => ({
+  type: 'collection',
+  path: segments.join('/'),
+}));
+
+doc.mockImplementation((base, ...segments) => {
+  if (base?.type === 'collection' && segments.length === 0) {
+    return { id: 'generated-id', path: `${base.path}/generated-id` };
+  }
+  if (base?.type === 'collection') {
+    return { id: String(segments.at(-1)), path: [base.path, ...segments].join('/') };
+  }
+  return { id: String(segments.at(-1)), path: segments.join('/') };
+});
+
+query.mockImplementation((...parts) => ({
+  type: 'query',
+  path: parts[0]?.path,
+  parts,
+}));
 ```
 
-### 2.4 runTransaction / writeBatch stub 寫法（Pending — S1 will fill）
+關鍵：`query()` 要保留第一個 collection 的 `path`，否則 `getDocs(query(...))` 無法分辨 `posts/:id/comments`。
+
+### 2.4 runTransaction / writeBatch stub 寫法（S1 實測）
 
 ```js
-// TODO（S1 pilot 後）：若 pilot 涵蓋 transaction/batch，填入 stub 模式
+const tx = {
+  get: vi.fn(async (ref) => createDocSnapshot(ref.id, null)),
+  set: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+};
+runTransaction.mockImplementation(async (_db, callback) => callback(tx));
+
+const batch = {
+  set: vi.fn(),
+  delete: vi.fn(),
+  commit: vi.fn().mockResolvedValue(undefined),
+};
+writeBatch.mockReturnValue(batch);
 ```
+
+- `addCommentDocument` 需要 `runTransaction` 真正 invoke callback，且 `doc(collection(...))` 要回 stable generated id，否則 `getCommentById(postId, id)` 無法接上。
+- `toggleLikePost` 的 `tx.get(likeRef)` 要依 `ref.path` 回 exists true/false，不能一律回 post snapshot。
+- `deletePostTree` happy/error path 用 stable `batch.commit` spy；race path 用第二次 `getDoc(postRef)` 回 `exists() === false`。
+
+### 2.5 S1 posts-specific assertion pattern
+
+- `PostDetailClient-delete-race` 保持 Option B：必須讓 real `deletePost -> deletePostTree -> getDoc(false)` 觸發 UI catch branch，不可 mock `deletePost` reject。
+- `post-comment-reply` 不 assert `notifyPostNewComment` / `notifyPostCommentReply` internal function calls；改 assert SDK 邊界：
+  - `addDoc(collection(db, 'notifications'), payload)` for `post_new_comment`
+  - `writeBatch().set(doc(collection(db, 'notifications')), payload)` + `commit()` for `post_comment_reply`
+- notification payload 是 flattened actor fields：`actorUid`, `actorName`, `actorPhotoURL`，不是 nested `actor` object。
+- `@/components/*` mock 在本 spec 是灰區 out-of-scope 保留，不是正式 allowed boundary；不要把 S1 的保留解讀成可擴張規則。
 
 ---
 
@@ -132,13 +233,13 @@ echo "散落 unit/service+repo: $(($(violations tests/unit/service) + $(violatio
    - 散落（unit/service+repo）→ 看實際 import 決定 client 或 admin SDK
 4. **跑單檔測試**：`npx vitest run <file>`
 5. **跑單檔 lint**：`npx eslint <file>` — 確認規則 fire 但 0 violations
-6. **從 baseline 拿掉**：依該檔所在 batch 找對應 ESLint block：
+6. **記錄待移除 baseline**：依該檔所在 batch 找對應 ESLint block，寫進 session consolidation 清單；此步不可直接改 `eslint.config.mjs`：
    - `tests/integration/**` → block 18.6 ignores
    - `tests/unit/runtime/**` / `tests/unit/api/**` / `tests/unit/service/**` / `tests/unit/repo/**` → block 18.7 ignores
    - `tests/unit/lib/**` → block 18.8 ignores
-   - 該檔同時有 flaky 違規未清 → 加進 18.5 ignores
-7. **再跑全 lint**：`npm run lint`
-8. **commit**：commit message 含 `Baseline change: <block>: X → X-1 (removed: <file>)`（block 用 `18.6` / `18.7` / `18.8`）
+   - 該檔同時有 flaky 違規未清 → 記錄待移入 18.5 ignores
+7. **交給 session consolidation owner**：該 owner 一次更新 `eslint.config.mjs`、確認 baseline count、再跑 `npm run lint`
+8. **session commit / PR 紀錄**：commit 或 PR description 彙總 `Baseline change: <block>: X → Y (removed: <files>)`（block 用 `18.6` / `18.7` / `18.8`），不要 per-file commit
 
 ### 3.2 PR 收尾 checklist
 
@@ -196,7 +297,15 @@ echo "散落 unit/service+repo: $(($(violations tests/unit/service) + $(violatio
 
 ### S1 坑紀錄
 
-> （S1 完成時填）撞到的、解掉的、留待下個 session 注意的。
+- **S1 五檔全走 Option B**：`PostDetailClient-delete-race` 沒移出 spec；race branch 用 real `deletePost -> deletePostTree -> getDoc(false)` 觸發，沒有再 mock `deletePost` reject。
+- **`query()` stub 必須保留 collection path**：`getLatestComments` 會呼叫 `getDocs(query(collection(...)))`；若 `query` 只回 `{ parts }`，`getDocs` 分辨不出 `posts/:id/comments`，留言區會空。
+- **transaction `tx.get` 要看 ref path**：like path `posts/:id/likes/:uid` 要回 exists false 才會走 `tx.set`；一律回 post snapshot 會變成 unlike branch。
+- **`doc(collection(...))` 要產生 stable id**：`addCommentDocument` 用 generated comment ref id 回傳；S1 用 `new-comment` / `comment1` 接 `getCommentById` 與 notification payload。
+- **notification payload actor 是 flattened fields**：`buildNotificationDoc` 寫入 `actorUid` / `actorName` / `actorPhotoURL`，不是 `{ actor: ... }`。S2/S3 notification batch 不要沿用 nested actor assertion。
+- **edit dirty 真實路徑會 trim**：原本 mock `updatePost` 的測試以為 raw whitespace 會送出；移除 internal mock 後真實 `buildUpdatePostPayload` 會 trim，再由 `updateDoc` 接收 trimmed payload。
+- **ESLint helper object 避免同名 shorthand 誤報**：`firestoreMocks` 若寫 `addDoc: (addDoc)` 會觸發 `object-shorthand`；S1 用 computed key `['addDoc']` 保留可讀 key 並通過 lint。
+- **components mock 只算灰區保留**：`@/components/ShareButton` / `@/components/UserLink` 沒在本 spec 清理範圍，不要把它們稱為正式 allowed boundary。
+- **S1 verification**：五檔各自 `npx vitest run <file>` + `npx eslint <file>` 通過；18.6 baseline 已從 55 降到 50。
 
 ### S2 坑紀錄
 
