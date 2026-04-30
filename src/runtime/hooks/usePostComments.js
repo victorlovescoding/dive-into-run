@@ -7,16 +7,17 @@ import {
   addComment,
   deleteComment,
   getCommentById,
-  getMoreComments,
   updateComment,
 } from '@/runtime/client/use-cases/post-use-cases';
 import {
   notifyPostCommentReply,
   notifyPostNewComment,
 } from '@/runtime/client/use-cases/notification-use-cases';
+import {
+  usePostCommentsInfiniteScroll,
+  useScrollToHighlightedComment,
+} from '@/runtime/hooks/usePostCommentsEffects';
 import { useToast } from '@/runtime/providers/ToastProvider';
-
-const INFINITE_SCROLL_MARGIN = '300px 0px';
 
 /**
  * 將留言加上目前使用者視角的 UI flag。
@@ -109,108 +110,20 @@ export default function usePostComments({
     [user?.uid],
   );
 
-  // --- Infinite scroll ---
-  useEffect(() => {
-    if (
-      !bottomRef.current ||
-      !nextCursor ||
-      isLoadingNext ||
-      !postId ||
-      typeof IntersectionObserver === 'undefined'
-    ) {
-      return undefined;
-    }
-
-    const observer = new IntersectionObserver(
-      async (entries) => {
-        const entry = entries[0];
-        if (!entry.isIntersecting || isLoadingNext) return;
-
-        observer.unobserve(entry.target);
-        if (isMountedRef.current) {
-          setIsLoadingNext(true);
-        }
-
-        let shouldReobserve = true;
-        try {
-          const moreComments = await getMoreComments(postId, nextCursor);
-          if (!isMountedRef.current) return;
-
-          if (moreComments.length === 0) {
-            setNextCursor(null);
-            shouldReobserve = false;
-            return;
-          }
-
-          const last = moreComments[moreComments.length - 1] ?? null;
-          const hydratedComments = hydrateComments(moreComments, user?.uid);
-
-          setNextCursor(last);
-          setComments((prev) => {
-            const seen = new Set(prev.map((item) => item.id));
-            const fresh = hydratedComments.filter((item) => !seen.has(item.id));
-            return [...prev, ...fresh];
-          });
-
-          if (moreComments.length < 10) {
-            setNextCursor(null);
-            shouldReobserve = false;
-          }
-        } catch (loadMoreError) {
-          console.error(loadMoreError);
-          shouldReobserve = false;
-        } finally {
-          if (!isMountedRef.current) {
-            observer.disconnect();
-          } else {
-            setIsLoadingNext(false);
-            if (shouldReobserve && bottomRef.current) {
-              observer.observe(bottomRef.current);
-            } else {
-              observer.disconnect();
-            }
-          }
-        }
-      },
-      { root: null, threshold: 0, rootMargin: INFINITE_SCROLL_MARGIN },
-    );
-
-    const sentinel = bottomRef.current;
-    observer.observe(sentinel);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [comments.length, isLoadingNext, nextCursor, postId, user?.uid]);
-
-  // --- Highlight scroll-to-comment ---
-  useEffect(() => {
-    const commentId = searchParams.get('commentId');
-    if (!commentId) return undefined;
-
-    let attempts = 0;
-    const maxAttempts = 20;
-    const timer = setInterval(() => {
-      attempts += 1;
-      const element = document.getElementById(commentId);
-      if (element) {
-        clearInterval(timer);
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        element.classList.add('commentHighlight');
-        element.addEventListener(
-          'animationend',
-          () => {
-            element.classList.remove('commentHighlight');
-          },
-          { once: true },
-        );
-      } else if (attempts >= maxAttempts) {
-        clearInterval(timer);
-      }
-    }, 200);
-
-    return () => clearInterval(timer);
-  }, [searchParams]);
+  usePostCommentsInfiniteScroll({
+    bottomRef,
+    nextCursor,
+    isLoadingNext,
+    postId,
+    userUid: user?.uid,
+    commentsLength: comments.length,
+    isMountedRef,
+    setIsLoadingNext,
+    setNextCursor,
+    setComments,
+    hydrateComments,
+  });
+  useScrollToHighlightedComment(searchParams);
 
   // --- Handlers ---
 

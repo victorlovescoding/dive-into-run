@@ -53,13 +53,14 @@ export default function useStravaSync(lastSyncAt) {
 
   const sync = useCallback(async () => {
     if (isSyncingRef.current) return false;
+    setError(null);
+    if (cooldownRemaining > 0) return false;
+    if (!user) return false;
 
     isSyncingRef.current = true;
     setIsSyncing(true);
-    setError(null);
 
     try {
-      if (!user) return false;
       const token = await user.getIdToken();
       const res = await fetch('/api/strava/sync', {
         method: 'POST',
@@ -79,7 +80,7 @@ export default function useStravaSync(lastSyncAt) {
       isSyncingRef.current = false;
       setIsSyncing(false);
     }
-  }, [user]);
+  }, [cooldownRemaining, user]);
 
   return { sync, isSyncing, cooldownRemaining, error };
 }

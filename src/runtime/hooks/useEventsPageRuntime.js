@@ -2,13 +2,12 @@
 
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { countTotalPoints } from '@/runtime/events/event-runtime-helpers';
 import { getRemainingSeats } from '@/service/event-service';
-import { listTaiwanDistricts } from '@/service/taiwan-location-service';
 import { fetchLatestEvents, fetchNextEvents } from '@/runtime/client/use-cases/event-use-cases';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 import useEventsFilter from '@/runtime/hooks/useEventsFilter';
+import useEventsPageCreateFormState from '@/runtime/hooks/useEventsPageCreateFormState';
 import useEventMutations from '@/runtime/hooks/useEventMutations';
 import useEventParticipation from '@/runtime/hooks/useEventParticipation';
 /**
@@ -16,13 +15,18 @@ import useEventParticipation from '@/runtime/hooks/useEventParticipation';
  */
 
 /**
+ * @typedef {object} MergeableEvent
+ * @property {string} [id] - 活動識別碼。
+ */
+
+/**
  * 依 event id 合併列表，保留第一次出現的項目順序。
- * @template {{ id?: string }} T
+ * @template {MergeableEvent} T
  * @param {T[]} current - 既有列表。
  * @param {T[]} incoming - 新列表。
  * @returns {T[]} 合併後列表。
  */
-function mergeEventsById(current, incoming) {
+const mergeEventsById = (current, incoming) => {
   const map = new Map();
   [...current, ...incoming].forEach((event) => {
     if (event?.id && !map.has(event.id)) {
@@ -30,19 +34,13 @@ function mergeEventsById(current, incoming) {
     }
   });
   return Array.from(map.values());
-}
+};
 
 /**
  * events page runtime orchestration。
  * @returns {object} events page runtime state and handlers。
  */
 export default function useEventsPageRuntime() {
-  const [isFormOpen, setFormOpen] = useState(false);
-  const [showMap, setShowMap] = useState(false);
-  const [routeCoordinates, setRouteCoordinates] = useState(null);
-  const [selectedCity, setSelectedCity] = useState('');
-  const [selectedDistrict, setSelectedDistrict] = useState('');
-  const [minDateTime, setMinDateTime] = useState('');
   const [events, setEvents] = useState([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [loadError, setLoadError] = useState(null);
@@ -59,11 +57,24 @@ export default function useEventsPageRuntime() {
   const searchParams = useSearchParams();
 
   const hostName = user?.name || (user?.email ? user.email.split('@')[0] : '');
-  const selectedDistrictOptions = useMemo(() => listTaiwanDistricts(selectedCity), [selectedCity]);
-  const routePointCount = useMemo(
-    () => (Array.isArray(routeCoordinates) ? countTotalPoints(routeCoordinates) : 0),
-    [routeCoordinates],
-  );
+  const {
+    isFormOpen,
+    showMap,
+    routeCoordinates,
+    routePointCount,
+    selectedCity,
+    selectedDistrict,
+    selectedDistrictOptions,
+    minDateTime,
+    setSelectedDistrict,
+    setRouteCoordinates,
+    resetCreateForm,
+    handleCloseCreateForm,
+    handleSelectedCityChange,
+    handleEnableRoutePlanning,
+    handleDisableRoutePlanning,
+    handleToggleCreateRunForm: toggleCreateRunForm,
+  } = useEventsPageCreateFormState({ showToast });
 
   const loadLatestPage = useCallback(async ({ replaceExisting = false } = {}) => {
     if (isMountedRef.current) {
@@ -146,14 +157,6 @@ export default function useEventsPageRuntime() {
     showToast,
   });
 
-  const resetCreateForm = useCallback(() => {
-    setFormOpen(false);
-    setShowMap(false);
-    setRouteCoordinates(null);
-    setSelectedCity('');
-    setSelectedDistrict('');
-  }, []);
-
   const createCtx = useMemo(
     () => ({
       hostUid: user?.uid || '',
@@ -171,6 +174,13 @@ export default function useEventsPageRuntime() {
     showToast,
     createCtx,
   });
+
+  const handleToggleCreateRunForm = useCallback(() => {
+    toggleCreateRunForm({
+      draftFormData: mutationState.draftFormData,
+      userUid: user?.uid,
+    });
+  }, [mutationState.draftFormData, toggleCreateRunForm, user?.uid]);
 
   const loadMore = useCallback(async () => {
     if (isFormOpen || mutationState.isCreating) return;
@@ -213,64 +223,6 @@ export default function useEventsPageRuntime() {
     observer.observe(sentinelElement);
     return () => observer.disconnect();
   }, [hasMore, loadMore]);
-
-  const handleCloseCreateForm = useCallback(() => {
-    setFormOpen(false);
-  }, []);
-
-  const handleSelectedCityChange = useCallback((value) => {
-    setSelectedCity(value);
-    setSelectedDistrict('');
-  }, []);
-
-  const handleEnableRoutePlanning = useCallback(() => {
-    setShowMap(true);
-  }, []);
-
-  const handleDisableRoutePlanning = useCallback(() => {
-    setShowMap(false);
-    setRouteCoordinates(null);
-  }, []);
-
-  const handleToggleCreateRunForm = useCallback(() => {
-    if (!user?.uid) {
-      showToast('發起活動前請先登入', 'error');
-      return;
-    }
-
-    if (isFormOpen) {
-      setFormOpen(false);
-      return;
-    }
-
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    setMinDateTime(`${year}-${month}-${day}T${hours}:${minutes}`);
-
-    if (mutationState.draftFormData) {
-      setSelectedCity(mutationState.draftFormData.city || '');
-      setSelectedDistrict(mutationState.draftFormData.district || '');
-
-      if (mutationState.draftFormData.planRoute === 'yes') {
-        setShowMap(true);
-        setRouteCoordinates(mutationState.draftFormData.routeCoordinates || null);
-      } else {
-        setShowMap(false);
-        setRouteCoordinates(null);
-      }
-    } else {
-      setSelectedCity('');
-      setSelectedDistrict('');
-      setShowMap(false);
-      setRouteCoordinates(null);
-    }
-
-    setFormOpen(true);
-  }, [mutationState.draftFormData, isFormOpen, showToast, user?.uid]);
 
   return {
     user,

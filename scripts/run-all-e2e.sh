@@ -32,6 +32,9 @@ specs_for_feature() {
     019-posts-ui-refactor)
       echo "tests/e2e/posts-ui.spec.js"
       ;;
+    028)
+      echo "tests/e2e/strava-oauth-flow.spec.js"
+      ;;
     *)
       return 1
       ;;
@@ -54,6 +57,9 @@ feature_for_spec() {
       ;;
     posts-ui.spec.js)
       echo "019-posts-ui-refactor"
+      ;;
+    strava-oauth-flow.spec.js)
+      echo "028"
       ;;
     *)
       return 1

@@ -33,6 +33,26 @@ const featureSpecMatches = {
   '005-event-comments': ['event-comments.spec.js'],
   '014-notification-system': ['comment-notification-flow.spec.js', 'notification-flow.spec.js'],
   '019-posts-ui-refactor': ['posts-ui.spec.js'],
+  '028': ['strava-oauth-flow.spec.js'],
+};
+const firebaseClientEnv = {
+  NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'fake-api-key',
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:
+    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'dive-into-run.firebaseapp.com',
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'dive-into-run',
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET:
+    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'dive-into-run.appspot.com',
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:
+    process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '1234567890',
+  NEXT_PUBLIC_FIREBASE_APP_ID:
+    process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:1234567890:web:e2e',
+};
+const webServerEnv = {
+  ...firebaseClientEnv,
+  NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true',
+  FIREBASE_AUTH_EMULATOR_HOST: 'localhost:9099',
+  FIRESTORE_EMULATOR_HOST: 'localhost:8080',
+  FIREBASE_STORAGE_EMULATOR_HOST: 'localhost:9199',
 };
 
 const globalSetupPath = feature ? `${setupDir}/${feature}-global-setup.js` : undefined;
@@ -80,10 +100,7 @@ export default defineConfig({
     ? undefined
     : {
         command: [
-          'NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true',
-          'FIREBASE_AUTH_EMULATOR_HOST=localhost:9099',
-          'FIRESTORE_EMULATOR_HOST=localhost:8080',
-          'FIREBASE_STORAGE_EMULATOR_HOST=localhost:9199',
+          ...Object.entries(webServerEnv).map(([key, value]) => `${key}=${value}`),
           'npm run dev',
         ].join(' '),
         url: 'http://localhost:3000',

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import bindParticipantsOverlayListeners from '@/runtime/events/event-detail-participation-runtime-helpers';
 import { toNumber } from '@/runtime/events/event-runtime-helpers';
 import { buildUserPayload, getRemainingSeats, isDeadlinePassed } from '@/service/event-service';
 import {
@@ -121,36 +122,10 @@ export default function useEventDetailParticipation({
 
   useEffect(() => {
     if (!isParticipantsOpen) return undefined;
-
-    const overlay = participantsOverlayRef.current;
-
-    /**
-     * participants overlay backdrop click handler。
-     * @param {MouseEvent} eventObject - 原生滑鼠事件。
-     */
-    function handleClick(eventObject) {
-      if (eventObject.target === overlay) {
-        handleCloseParticipants();
-      }
-    }
-
-    /**
-     * participants overlay escape handler。
-     * @param {KeyboardEvent} eventObject - 原生鍵盤事件。
-     */
-    function handleKeyDown(eventObject) {
-      if (eventObject.key === 'Escape') {
-        handleCloseParticipants();
-      }
-    }
-
-    overlay?.addEventListener('click', handleClick);
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      overlay?.removeEventListener('click', handleClick);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
+    return bindParticipantsOverlayListeners(
+      participantsOverlayRef.current,
+      handleCloseParticipants,
+    );
   }, [handleCloseParticipants, isParticipantsOpen]);
 
   const handleOpenParticipants = useCallback(async () => {
