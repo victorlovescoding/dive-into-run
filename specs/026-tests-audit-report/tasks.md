@@ -2808,7 +2808,7 @@ S7 is deliberately **UI/process only**. It does not change production code, test
 
 ## S7 Execution Rule
 
-**主 agent 不下手任何 S7 實作**。S7 的 GitHub UI 操作、GitHub API 查證、handoff evidence、status update、doc-only closeout commit 都由 subagent 完成。
+**主 agent 不下手任何 S7 實作**。S7 的 GitHub UI/API 操作（UI 或 field-scoped API 皆可）、GitHub API 查證、handoff evidence、status update、doc-only closeout commit 都由 subagent 完成。
 
 每個 S7 task 配對 1 engineer subagent + 1 reviewer subagent：
 
@@ -2837,7 +2837,7 @@ Wave S7-6: T44-eng -> T44-rev
 
 ### T38 — Confirm merged baseline and exact GitHub check contexts
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Scope**: Read-only GitHub + local workflow inspection
 - **Standard**: R10 / no speculation about check names
 - **Dependencies**: S1-S6 PR merged into `main`
@@ -2882,7 +2882,7 @@ Wave S7-6: T44-eng -> T44-rev
 
 ### T39 — Required-check safety gate for Firestore Rules Gate
 
-- **Status**: `[ ]`
+- **Status**: `[x]` rerun 2026-04-30 after PR #26 (squash `01a78b5`) — decision **SAFE**; prior `[!]` UNSAFE row preserved in handoff §3
 - **Scope**: Read-only GitHub + workflow safety decision
 - **Standard**: R10 must not break unrelated PR merges
 - **Dependencies**: T38 `[x]`
@@ -2922,14 +2922,16 @@ Wave S7-6: T44-eng -> T44-rev
 
 ### T40 — Configure main branch protection required checks
 
-- **Status**: `[ ]`
-- **Scope**: GitHub UI only
+- **Status**: `[x]` 2026-04-30 — added `firestore-rules-gate` to required checks via `gh api PATCH .../required_status_checks`; only the checks list mutated (mechanism-deviation from prescribed UI noted; AC-T40.4 + tasks.md §rules already permit API evidence; rule wording reconciled in same edit)
+- **Scope**: GitHub branch-protection mutation (UI or field-scoped API; full-protection PUT forbidden)
 - **Standard**: R10 branch protection / exact observed check contexts
 - **Dependencies**: T38 `[x]`, T39 `[x]` and SAFE
 
 **Engineer Action**：
 
-1. Open GitHub UI: `Settings` -> `Branches` -> `main` branch protection rule.
+1. Mutate branch protection required-status-checks via either:
+   - GitHub UI: `Settings` -> `Branches` -> `main` branch protection rule, or
+   - field-scoped API: `gh api -X PATCH repos/<owner>/<repo>/branches/main/protection/required_status_checks` (read current `contexts`/`checks` first, write back the union — never use the full-protection PUT, which clobbers other fields).
 2. Enable or keep enabled "Require status checks to pass before merging".
 3. Select only the exact check contexts verified in T38 and allowed by T39:
    - CI job context (`ci` or observed equivalent)
@@ -2967,7 +2969,7 @@ Wave S7-6: T44-eng -> T44-rev
 
 ### T41 — API verification of branch protection state
 
-- **Status**: `[ ]`
+- **Status**: `[x]` 2026-04-30 — `gh api .../branches/main/protection` confirms 3 required contexts: `ci`, `e2e`, `firestore-rules-gate`
 - **Scope**: Read-only GitHub API
 - **Standard**: saved UI state must be machine-verifiable
 - **Dependencies**: T40 `[x]`
@@ -3011,7 +3013,7 @@ Wave S7-6: T44-eng -> T44-rev
 
 ### T42 — PR compatibility smoke for skipped-check deadlock
 
-- **Status**: `[ ]`
+- **Status**: `[x]` 2026-04-30 — `gh pr list --base main --state open` returned `[]`; recorded `not observed`
 - **Scope**: Read-only PR observation; no new PR unless user explicitly approves
 - **Standard**: Required checks must not leave unrelated PRs waiting forever
 - **Dependencies**: T41 `[x]`
@@ -3056,7 +3058,7 @@ Wave S7-6: T44-eng -> T44-rev
 
 ### T43 — Update handoff with S7 evidence and pitfalls
 
-- **Status**: `[ ]`
+- **Status**: `[x]` (rerun-amended 2026-04-30 — appended T39 SAFE rerun + T40/T41/T42 evidence after PR #26 squash `01a78b5` unblocked the rules gate)
 - **Files Written**:
   - `specs/026-tests-audit-report/handoff.md`
 - **Standard**: future sessions must see the GitHub UI state and pitfalls without re-discovering them
@@ -3094,7 +3096,7 @@ Wave S7-6: T44-eng -> T44-rev
 
 ### T44 — S7 docs closeout commit
 
-- **Status**: `[ ]`
+- **Status**: `[x]` (rerun-amended 2026-04-30 — new closeout commit records S7 completion after PR #26 unblock; prior blocked-S7 commit `98a5fa0` preserved in git history)
 - **Files Written**:
   - `specs/026-tests-audit-report/handoff.md`
   - `specs/026-tests-audit-report/tasks.md`
@@ -3124,6 +3126,7 @@ Wave S7-6: T44-eng -> T44-rev
    git add specs/026-tests-audit-report/handoff.md specs/026-tests-audit-report/tasks.md
    ```
 5. Commit, no push:
+
    ```text
    docs(026): record S7 branch protection evidence
 
@@ -3133,6 +3136,7 @@ Wave S7-6: T44-eng -> T44-rev
 
    Refs: project-health/2026-04-29-tests-audit-report.md L545-L550, L635-L639
    ```
+
    No `Co-Authored-By`.
 
 **Acceptance Criteria**：
