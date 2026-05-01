@@ -155,6 +155,7 @@ Keep commits ordered by dependency:
     - E2E locator changes use Playwright role/text locators unless the production UI truly lacks a semantic locator.
     - No `page.waitForTimeout()` is introduced.
     - Playwright verification follows `.codex/rules/e2e-commands.md`: use the current branch, run the vanilla Playwright config for `weather-page.spec.js`, and record that emulator-backed E2E is not required unless the test is changed to depend on emulator-only setup.
+    - `tests/e2e/weather-page.spec.js` cleanup deferred because repo bucket policy forbids e2e root changes in this branch; weather E2E live API baseline failure should be tracked separately, not fixed here.
   - Verification commands:
     - `git branch --show-current`
     - `npx vitest run tests/integration/weather/weather-page.test.jsx tests/integration/weather/favorites.test.jsx tests/integration/weather/township-drilldown.test.jsx`
@@ -449,14 +450,15 @@ Keep commits ordered by dependency:
     - No forbidden patterns are newly introduced in the branch diff: `fireEvent`, `container.querySelector`, `@ts-ignore`, a11y eslint disables, broad `vi.restoreAllMocks()` masking module mocks.
     - The final `rg` snapshots for test IDs, console spies, and factories are recorded in the review handoff.
     - Forbidden-pattern verification is diff-scoped against the PR baseline and must not fail because of unrelated pre-existing full-repo hits.
+    - E2E branch gate is expected to skip or report no changed E2E specs when root E2E diff is zero.
+    - If the branch still has any changed E2E spec, the branch gate must run it and must not hide failures.
   - Verification commands:
-    - `npm run lint:changed`
-    - `npm run type-check:changed`
-    - `git diff --name-only --diff-filter=ACMR origin/main...HEAD -- tests`
-    - `changed_vitest_tests="$(git diff --name-only --diff-filter=ACMR origin/main...HEAD -- tests | rg '^tests/(unit|integration|server)/.*\.(test|spec)\.(js|jsx)$' || true)"; if [ -n "$changed_vitest_tests" ]; then npx vitest run $changed_vitest_tests; else echo "No changed Vitest test files under tests/unit, tests/integration, or tests/server; skip Vitest changed-scope test run"; fi`
-    - `changed_e2e_tests="$(git diff --name-only --diff-filter=ACMR origin/main...HEAD -- tests/e2e | rg '\.spec\.(js|jsx)$' || true)"; if [ -n "$changed_e2e_tests" ]; then npx playwright test --config playwright.config.mjs $changed_e2e_tests; else echo "No changed Playwright e2e spec files under tests/e2e/**; skip Playwright changed-scope test run"; fi`
+    - `npm run lint:branch -- origin/main`
+    - `npm run type-check:branch -- origin/main`
+    - `TEST_BASE_REF=origin/main npm run test:branch`
+    - `TEST_BASE_REF=origin/main npm run test:e2e:branch`
     - Playwright precondition: run the command on the current branch. If `CI_E2E_SERVER_STARTED=1` is set, start `npm run dev` in a separate terminal first and wait for `localhost:3000`; otherwise `playwright.config.mjs` `webServer` starts the dev server automatically.
-    - `if git diff --unified=0 origin/main...HEAD -- src tests specs | rg "^\\+.*(@ts-ignore|fireEvent|container\\.querySelector|eslint-disable.*jsx-a11y|vi\\.restoreAllMocks\\(\\))"; then echo "Forbidden pattern added in branch diff"; exit 1; else echo "No forbidden patterns added in branch diff"; fi`
+    - `if git diff --unified=0 origin/main...HEAD -- src tests | rg "^\\+[^+].*(@ts-ignore|fireEvent|container\\.querySelector|eslint-disable.*jsx-a11y|vi\\.restoreAllMocks\\(\\))"; then echo "Forbidden pattern added in branch diff"; exit 1; else echo "No forbidden patterns added in branch diff"; fi`
     - `rg --count "data-testid|getByTestId|queryByTestId|findByTestId|getAllByTestId|queryAllByTestId|findAllByTestId" tests --glob "*.{js,jsx}"`
     - `rg --count "vi\\.spyOn\\(console, ['\\\"]error['\\\"]\\)|vi\\.spyOn\\(console, ['\\\"]warn['\\\"]\\)|\\.mockRestore\\(\\)|restoreAllMocks\\(\\)" tests --glob "*.{js,jsx}"`
   - Commit checkpoint: no commit unless verification updates a tracked handoff/status file.
