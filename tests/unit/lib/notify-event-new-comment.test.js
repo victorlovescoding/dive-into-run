@@ -152,7 +152,7 @@ describe('notifyEventNewComment', () => {
         read: false,
         createdAt: 'mock-timestamp',
       });
-      expect(mockBatch.commit).toHaveBeenCalledTimes(1);
+      expect(mockBatch.commit).toHaveBeenCalledWith();
     });
 
     it('參加者收到 event_participant_comment', async () => {
@@ -307,12 +307,11 @@ describe('notifyEventNewComment', () => {
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
 
       // Assert — 只有 host 1 則通知
-      expect(mockBatch.set).toHaveBeenCalledTimes(1);
       const recipients = getRecipientUids();
       const types = getNotificationTypes();
       expect(recipients).toEqual([HOST_UID]);
       expect(types).toEqual(['event_host_comment']);
-      expect(mockBatch.commit).toHaveBeenCalledTimes(1);
+      expect(mockBatch.commit).toHaveBeenCalledWith();
     });
 
     it('50-participant batch — 驗證 batch.set 呼叫次數正確', async () => {
@@ -328,11 +327,12 @@ describe('notifyEventNewComment', () => {
       await notifyEventNewComment(EVENT_ID, EVENT_TITLE, HOST_UID, COMMENT_ID, ACTOR);
 
       // Assert
-      // 1 (host) + 50 (participants) + 2 (new commenters, p1 deduped) = 53
-      expect(mockBatch.set).toHaveBeenCalledTimes(53);
-
       const recipients = getRecipientUids();
       const types = getNotificationTypes();
+
+      // 1 (host) + 50 (participants) + 2 (new commenters, p1 deduped) = 53.
+      // Fan-out cardinality is the notification contract, so assert the resulting recipients.
+      expect(recipients).toHaveLength(53);
 
       // host
       expect(recipients).toContain(HOST_UID);
@@ -353,7 +353,7 @@ describe('notifyEventNewComment', () => {
       expect(p1Calls).toHaveLength(1);
       expect(p1Calls[0][1].type).toBe('event_participant_comment');
 
-      expect(mockBatch.commit).toHaveBeenCalledTimes(1);
+      expect(mockBatch.commit).toHaveBeenCalledWith();
     });
   });
 });

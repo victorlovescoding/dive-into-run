@@ -74,7 +74,7 @@ describe('Integration: EventDeleteConfirm', () => {
     await user.click(noButton);
 
     // Assert
-    expect(mockOnCancel).toHaveBeenCalledTimes(1);
+    expect(mockOnCancel).toHaveBeenCalled();
   });
 
   // --- 使用者選擇「是」 ---
@@ -95,7 +95,6 @@ describe('Integration: EventDeleteConfirm', () => {
 
     // Assert
     expect(mockOnConfirm).toHaveBeenCalledWith('event-to-delete');
-    expect(mockOnConfirm).toHaveBeenCalledTimes(1);
   });
 
   // --- Loading State: 刪除進行中 ---

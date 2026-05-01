@@ -470,19 +470,19 @@ describe('Unit: updateUserBio', () => {
 
   it('合法 bio (≤150 字) 應呼叫 setDoc 並 merge:true', async () => {
     // Arrange
+    const userRef = { path: 'users/user-1' };
+    mockDoc.mockReturnValueOnce(userRef);
     mockSetDoc.mockResolvedValueOnce(undefined);
     const bio = '熱愛跑步的工程師，每週至少跑 30 公里';
 
     // Act
     const { updateUserBio } = await import('@/lib/firebase-profile');
-    await updateUserBio('user-1', bio);
+    const result = await updateUserBio('user-1', bio);
 
     // Assert
+    expect(result).toBeUndefined();
     expect(mockDoc).toHaveBeenCalledWith('mock-db', 'users', 'user-1');
-    expect(mockSetDoc).toHaveBeenCalledTimes(1);
-    const setDocArgs = mockSetDoc.mock.calls[0];
-    expect(setDocArgs[1]).toEqual({ bio });
-    expect(setDocArgs[2]).toEqual({ merge: true });
+    expect(mockSetDoc).toHaveBeenCalledWith(userRef, { bio }, { merge: true });
   });
 
   it('應 trim bio 後再寫入 Firestore', async () => {
@@ -501,15 +501,16 @@ describe('Unit: updateUserBio', () => {
 
   it('剛好 150 字應該成功寫入', async () => {
     // Arrange
+    const userRef = { path: 'users/user-1' };
+    mockDoc.mockReturnValueOnce(userRef);
     mockSetDoc.mockResolvedValueOnce(undefined);
     const bio = 'A'.repeat(150);
 
-    // Act
+    // Act + Assert
     const { updateUserBio } = await import('@/lib/firebase-profile');
-    await updateUserBio('user-1', bio);
-
-    // Assert
-    expect(mockSetDoc).toHaveBeenCalledTimes(1);
+    await expect(updateUserBio('user-1', bio)).resolves.toBeUndefined();
+    expect(mockDoc).toHaveBeenCalledWith('mock-db', 'users', 'user-1');
+    expect(mockSetDoc).toHaveBeenCalledWith(userRef, { bio }, { merge: true });
   });
 
   it('超過 150 字應拋出 Error 且不呼叫 setDoc', async () => {
@@ -531,14 +532,14 @@ describe('Unit: updateUserBio', () => {
 
   it('空字串 bio 應允許（清除既有簡介）', async () => {
     // Arrange
+    const userRef = { path: 'users/user-1' };
+    mockDoc.mockReturnValueOnce(userRef);
     mockSetDoc.mockResolvedValueOnce(undefined);
 
-    // Act
+    // Act + Assert
     const { updateUserBio } = await import('@/lib/firebase-profile');
-    await updateUserBio('user-1', '');
-
-    // Assert — 空字串應寫入（trim 後仍為空，視為清除）
-    expect(mockSetDoc).toHaveBeenCalledTimes(1);
-    expect(mockSetDoc.mock.calls[0][1]).toEqual({ bio: '' });
+    await expect(updateUserBio('user-1', '')).resolves.toBeUndefined();
+    expect(mockDoc).toHaveBeenCalledWith('mock-db', 'users', 'user-1');
+    expect(mockSetDoc).toHaveBeenCalledWith(userRef, { bio: '' }, { merge: true });
   });
 });

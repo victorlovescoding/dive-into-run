@@ -78,6 +78,24 @@ function buildCommentsSnapshot(authorUids) {
   };
 }
 
+/**
+ * 取得 batch.set 寫入的 notification payloads。
+ * @returns {Array<{ recipientUid: string, type: string }>} notification payloads。
+ */
+function getBatchPayloads() {
+  return mockBatch.set.mock.calls.map(
+    (/** @type {[unknown, { recipientUid: string, type: string }]} */ call) => call[1],
+  );
+}
+
+/**
+ * 取得 batch.set 寫入的 recipientUid。
+ * @returns {string[]} recipient UID 列表。
+ */
+function getBatchRecipientUids() {
+  return getBatchPayloads().map((payload) => payload.recipientUid);
+}
+
 // ---------------------------------------------------------------------------
 // notifyPostCommentReply
 // ---------------------------------------------------------------------------
@@ -99,7 +117,7 @@ describe('notifyPostCommentReply', () => {
     expect(mockedCollection).toHaveBeenCalledWith('mock-db', 'posts', POST_ID, 'comments');
     expect(mockedGetDocs).toHaveBeenCalled();
     expect(mockedWriteBatch).toHaveBeenCalledWith('mock-db');
-    expect(mockBatch.set).toHaveBeenCalledTimes(3);
+    expect(getBatchRecipientUids()).toEqual(['commenter1', 'commenter2', 'commenter3']);
 
     // payload 用真實 buildNotificationDoc 組出來，含真實中文 message
     ['commenter1', 'commenter2', 'commenter3'].forEach((uid) => {
@@ -119,7 +137,7 @@ describe('notifyPostCommentReply', () => {
       });
     });
 
-    expect(mockBatch.commit).toHaveBeenCalledTimes(1);
+    expect(mockBatch.commit).toHaveBeenCalledWith();
   });
 
   it('排除留言者本人 — actor 在過去留言者名單中應被排除', async () => {
@@ -129,14 +147,10 @@ describe('notifyPostCommentReply', () => {
     // Act
     await notifyPostCommentReply(POST_ID, POST_TITLE, POST_AUTHOR_UID, COMMENT_ID, ACTOR);
 
-    // Assert — actor 被排除，只剩 2 則通知
-    expect(mockBatch.set).toHaveBeenCalledTimes(2);
-    const recipientUids = mockBatch.set.mock.calls.map(
-      (/** @type {[unknown, {recipientUid: string}]} */ call) => call[1].recipientUid,
-    );
+    // Assert — actor 被排除，只剩 commenter1/commenter2 收通知
+    const recipientUids = getBatchRecipientUids();
     expect(recipientUids).not.toContain(ACTOR.uid);
-    expect(recipientUids).toContain('commenter1');
-    expect(recipientUids).toContain('commenter2');
+    expect(recipientUids).toEqual(['commenter1', 'commenter2']);
   });
 
   it('排除文章作者 — postAuthorUid 在留言者名單中應被排除（他收 post_new_comment）', async () => {
@@ -146,13 +160,10 @@ describe('notifyPostCommentReply', () => {
     // Act
     await notifyPostCommentReply(POST_ID, POST_TITLE, POST_AUTHOR_UID, COMMENT_ID, ACTOR);
 
-    // Assert — postAuthorUid 被排除，只剩 1 則通知
-    expect(mockBatch.set).toHaveBeenCalledTimes(1);
-    const recipientUids = mockBatch.set.mock.calls.map(
-      (/** @type {[unknown, {recipientUid: string}]} */ call) => call[1].recipientUid,
-    );
+    // Assert — postAuthorUid 被排除，只剩 commenter1 收通知
+    const recipientUids = getBatchRecipientUids();
     expect(recipientUids).not.toContain(POST_AUTHOR_UID);
-    expect(recipientUids).toContain('commenter1');
+    expect(recipientUids).toEqual(['commenter1']);
   });
 
   it('無過去留言者時不建立通知 — 空清單應 early return', async () => {
@@ -183,12 +194,7 @@ describe('notifyPostCommentReply', () => {
     // Act
     await notifyPostCommentReply(POST_ID, POST_TITLE, POST_AUTHOR_UID, COMMENT_ID, ACTOR);
 
-    // Assert — fetchDistinctCommentAuthors 去重後只剩 2 位，batch.set 應只呼叫 2 次
-    expect(mockBatch.set).toHaveBeenCalledTimes(2);
-    const recipientUids = mockBatch.set.mock.calls.map(
-      (/** @type {[unknown, {recipientUid: string}]} */ call) => call[1].recipientUid,
-    );
-    expect(recipientUids).toContain('commenter-a');
-    expect(recipientUids).toContain('commenter-b');
+    // Assert — fetchDistinctCommentAuthors 去重後只剩 commenter-a/commenter-b
+    expect(getBatchRecipientUids()).toEqual(['commenter-a', 'commenter-b']);
   });
 });

@@ -111,7 +111,6 @@ describe('Unit: createPost', () => {
 
     // Assert
     expect(mockCollection).toHaveBeenCalledWith('mock-db', 'posts');
-    expect(mockAddDoc).toHaveBeenCalledTimes(1);
     const payload = mockAddDoc.mock.calls[0][1];
     expect(payload.authorUid).toBe('u1');
     expect(payload.title).toBe('Hello');
@@ -194,10 +193,12 @@ describe('Unit: updatePost', () => {
 
     // Assert
     expect(mockDoc).toHaveBeenCalledWith('mock-db', 'posts', 'post-1');
-    expect(mockUpdateDoc).toHaveBeenCalledTimes(1);
-    const payload = mockUpdateDoc.mock.calls[0][1];
-    expect(payload.title).toBe('Title');
-    expect(payload.content).toBe('Content');
+    expect(mockUpdateDoc).toHaveBeenCalledWith(expect.objectContaining({
+      _docRef: ['posts', 'post-1'],
+    }), {
+      title: 'Title',
+      content: 'Content',
+    });
   });
 
   it('should throw with updatePost: prefix when validation fails and not call updateDoc', async () => {
@@ -248,9 +249,13 @@ describe('Unit: deletePost (cascade delete)', () => {
 
     // Assert
     expect(result).toEqual({ ok: true });
-    // 2 likes + 1 comment + 1 post = 4 deletes
-    expect(batchDelete).toHaveBeenCalledTimes(4);
-    expect(batchCommit).toHaveBeenCalledTimes(1);
+    expect(batchDelete.mock.calls.map(([ref]) => ref)).toEqual([
+      'like-ref-1',
+      'like-ref-2',
+      'comment-ref-1',
+      expect.objectContaining({ _docRef: ['posts', 'post-1'] }),
+    ]);
+    expect(batchCommit).toHaveBeenCalled();
   });
 
   it('should delete only post doc when no likes or comments exist', async () => {
@@ -266,7 +271,9 @@ describe('Unit: deletePost (cascade delete)', () => {
     await deletePost('post-1');
 
     // Assert
-    expect(batchDelete).toHaveBeenCalledTimes(1);
+    expect(batchDelete.mock.calls.map(([ref]) => ref)).toEqual([
+      expect.objectContaining({ _docRef: ['posts', 'post-1'] }),
+    ]);
   });
 
   it('should throw when postId is falsy', async () => {

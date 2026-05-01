@@ -20,9 +20,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // ---------------------------------------------------------------------------
 
 /** @type {import('vitest').Mock} */
-const mockDoc = vi.fn();
+const mockDoc = vi.fn((baseOrDb, ...segments) => ({
+  type: 'document',
+  path: typeof baseOrDb === 'object' && baseOrDb !== null && 'path' in baseOrDb
+    ? `${baseOrDb.path}/__auto__`
+    : segments.join('/'),
+}));
 /** @type {import('vitest').Mock} */
-const mockCollection = vi.fn();
+const mockCollection = vi.fn((_, ...segments) => ({
+  type: 'collection',
+  path: segments.join('/'),
+}));
 /** @type {import('vitest').Mock} */
 const mockQuery = vi.fn();
 /** @type {import('vitest').Mock} */
@@ -369,7 +377,7 @@ describe('Unit: addComment', () => {
     expect(result.content).toBe('好棒的路線！');
     expect(result.isEdited).toBe(false);
     expect(result.updatedAt).toBeNull();
-    expect(mockAddDoc).toHaveBeenCalledTimes(1);
+    expect(mockCollection).toHaveBeenCalledWith('mock-db', 'events', 'event-123', 'comments');
     const addDocArg = mockAddDoc.mock.calls[0][1];
     expect(addDocArg.authorUid).toBe('user-1');
     expect(addDocArg.authorName).toBe('Alice');
@@ -456,23 +464,24 @@ describe('Unit: updateComment', () => {
     // Arrange
     const { updateComment } = await import('@/lib/firebase-comments');
 
+    const mockTxGet = vi.fn().mockResolvedValue(
+      /** @type {import('firebase/firestore').DocumentSnapshot} */ (
+        /** @type {unknown} */ ({
+          exists: () => true,
+          data: () => ({
+            content: '原始留言',
+            createdAt: { toDate: () => new Date('2026-04-02T14:30:00') },
+            updatedAt: null,
+            isEdited: false,
+          }),
+        })
+      ),
+    );
     const mockTxUpdate = vi.fn();
     const mockTxSet = vi.fn();
     mockRunTransaction.mockImplementationOnce(async (_, callback) => {
       const mockTx = {
-        get: vi.fn().mockResolvedValue(
-          /** @type {import('firebase/firestore').DocumentSnapshot} */ (
-            /** @type {unknown} */ ({
-              exists: () => true,
-              data: () => ({
-                content: '原始留言',
-                createdAt: { toDate: () => new Date('2026-04-02T14:30:00') },
-                updatedAt: null,
-                isEdited: false,
-              }),
-            })
-          ),
-        ),
+        get: mockTxGet,
         update: mockTxUpdate,
         set: mockTxSet,
       };
@@ -483,9 +492,29 @@ describe('Unit: updateComment', () => {
     await updateComment('event-123', 'comment-1', '更新後的留言', '原始留言');
 
     // Assert
-    expect(mockRunTransaction).toHaveBeenCalledTimes(1);
-    expect(mockTxSet).toHaveBeenCalledTimes(1);
-    expect(mockTxUpdate).toHaveBeenCalledTimes(1);
+    expect(mockRunTransaction).toHaveBeenCalledWith('mock-db', expect.any(Function));
+    expect(mockDoc).toHaveBeenCalledWith('mock-db', 'events', 'event-123', 'comments', 'comment-1');
+    expect(mockCollection).toHaveBeenCalledWith(
+      'mock-db',
+      'events',
+      'event-123',
+      'comments',
+      'comment-1',
+      'history',
+    );
+    const commentRef = mockDoc.mock.results.find(
+      ({ value }) => value.path === 'events/event-123/comments/comment-1',
+    )?.value;
+    const historyDocRef = mockDoc.mock.results.find(
+      ({ value }) => value.path === 'events/event-123/comments/comment-1/history/__auto__',
+    )?.value;
+
+    expect(mockTxGet).toHaveBeenCalledWith(commentRef);
+    expect(mockTxSet).toHaveBeenCalledWith(historyDocRef, {
+      content: '原始留言',
+      editedAt: { _serverTimestamp: true },
+    });
+    expect(mockTxUpdate.mock.calls[0][0]).toBe(commentRef);
 
     const updateArg = mockTxUpdate.mock.calls[0][1];
     expect(updateArg.content).toBe('更新後的留言');
@@ -625,10 +654,16 @@ describe('Unit: deleteComment', () => {
     await deleteComment('event-123', 'comment-1');
 
     // Assert
-    expect(mockWriteBatch).toHaveBeenCalledTimes(1);
-    // 2 history + 1 comment = 3 deletes
-    expect(mockBatchDelete).toHaveBeenCalledTimes(3);
-    expect(mockBatchCommit).toHaveBeenCalledTimes(1);
+    expect(mockWriteBatch).toHaveBeenCalledWith('mock-db');
+    const commentRef = mockDoc.mock.results.find(
+      ({ value }) => value.path === 'events/event-123/comments/comment-1',
+    )?.value;
+    expect(mockBatchDelete.mock.calls.map(([ref]) => ref)).toEqual([
+      historyDocs[0].ref,
+      historyDocs[1].ref,
+      commentRef,
+    ]);
+    expect(mockBatchCommit).toHaveBeenCalled();
   });
 
   it('should succeed when comment has no history entries', async () => {
@@ -655,9 +690,11 @@ describe('Unit: deleteComment', () => {
     await deleteComment('event-123', 'comment-1');
 
     // Assert
-    // Only the comment doc itself
-    expect(mockBatchDelete).toHaveBeenCalledTimes(1);
-    expect(mockBatchCommit).toHaveBeenCalledTimes(1);
+    const commentRef = mockDoc.mock.results.find(
+      ({ value }) => value.path === 'events/event-123/comments/comment-1',
+    )?.value;
+    expect(mockBatchDelete.mock.calls.map(([ref]) => ref)).toEqual([commentRef]);
+    expect(mockBatchCommit).toHaveBeenCalled();
   });
 
   it('should throw when eventId or commentId is empty', async () => {

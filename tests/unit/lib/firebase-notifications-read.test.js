@@ -206,8 +206,13 @@ describe('watchNotifications', () => {
     snapshotCallback(secondSnapshot);
 
     // Assert
-    expect(onNext).toHaveBeenCalledTimes(2);
-    expect(onNew).toHaveBeenCalledTimes(1);
+    expect(onNext).toHaveBeenLastCalledWith(
+      [
+        { id: 'n1', message: 'old', read: false },
+        { id: 'n3', message: 'new', read: false },
+      ],
+      expect.objectContaining({ id: 'n3' }),
+    );
     expect(onNew).toHaveBeenCalledWith([{ id: 'n3', message: 'new', read: false }]);
   });
 

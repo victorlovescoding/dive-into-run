@@ -45,6 +45,9 @@ jobs:
       - name: Lint
         run: npm run lint -- --max-warnings 0
 
+      - name: Flaky pattern audit
+        run: npm run audit:flaky-patterns
+
       - name: Type check
         run: npm run type-check
 

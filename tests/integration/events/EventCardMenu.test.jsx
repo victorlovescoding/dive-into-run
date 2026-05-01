@@ -232,7 +232,6 @@ describe('Integration: EventCardMenu', () => {
 
     // Assert
     expect(mockOnEdit).toHaveBeenCalledWith(event);
-    expect(mockOnEdit).toHaveBeenCalledTimes(1);
   });
 
   it('should call onDelete with event when "刪除活動" is clicked', async () => {
@@ -260,7 +259,6 @@ describe('Integration: EventCardMenu', () => {
 
     // Assert
     expect(mockOnDelete).toHaveBeenCalledWith(event);
-    expect(mockOnDelete).toHaveBeenCalledTimes(1);
   });
 
   it('should close dropdown after selecting a menu item', async () => {

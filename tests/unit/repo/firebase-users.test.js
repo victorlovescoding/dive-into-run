@@ -69,7 +69,8 @@ describe('firebase-users › loginCheckUserData', () => {
     await loginCheckUserData(fbUser);
 
     // Assert
-    expect(mockGetDoc).toHaveBeenCalledTimes(1);
+    expect(mockDoc).toHaveBeenCalledWith('mock-db', 'users', 'user-1');
+    expect(mockGetDoc).toHaveBeenCalledWith('mock-doc-ref');
     expect(mockSetDoc).not.toHaveBeenCalled();
   });
 
@@ -87,17 +88,17 @@ describe('firebase-users › loginCheckUserData', () => {
 
     // Assert
     expect(mockDoc).toHaveBeenCalledWith('mock-db', 'users', 'user-1');
-    expect(mockSetDoc).toHaveBeenCalledTimes(1);
-    const [docRef, payload, options] = mockSetDoc.mock.calls[0];
-    expect(docRef).toBe('mock-doc-ref');
-    expect(payload).toEqual({
-      name: 'Alice',
-      email: 'alice@example.com',
-      uid: 'user-1',
-      photoURL: 'https://example.com/alice.jpg',
-      createdAt: { _serverTimestamp: true },
-    });
-    expect(options).toEqual({ merge: true });
+    expect(mockSetDoc).toHaveBeenCalledWith(
+      'mock-doc-ref',
+      {
+        name: 'Alice',
+        email: 'alice@example.com',
+        uid: 'user-1',
+        photoURL: 'https://example.com/alice.jpg',
+        createdAt: { _serverTimestamp: true },
+      },
+      { merge: true },
+    );
 
     warnSpy.mockRestore();
   });
@@ -128,11 +129,11 @@ describe('firebase-users › updateUserName', () => {
 
     // Assert
     expect(mockDoc).toHaveBeenCalledWith('mock-db', 'users', 'u1');
-    expect(mockSetDoc).toHaveBeenCalledTimes(1);
-    const [docRef, payload, options] = mockSetDoc.mock.calls[0];
-    expect(docRef).toBe('mock-doc-ref');
-    expect(payload).toEqual({ name: 'Alice', nameChangedAt: { _serverTimestamp: true } });
-    expect(options).toEqual({ merge: true });
+    expect(mockSetDoc).toHaveBeenCalledWith(
+      'mock-doc-ref',
+      { name: 'Alice', nameChangedAt: { _serverTimestamp: true } },
+      { merge: true },
+    );
   });
 
   it('空 uid 時 throw "沒有uid"', async () => {
@@ -173,7 +174,11 @@ describe('firebase-users › watchUserProfile', () => {
 
     // Assert
     expect(mockDoc).toHaveBeenCalledWith('mock-db', 'users', 'u1');
-    expect(mockOnSnapshot).toHaveBeenCalledTimes(1);
+    expect(mockOnSnapshot).toHaveBeenCalledWith(
+      'mock-doc-ref',
+      expect.any(Function),
+      expect.any(Function),
+    );
     expect(result).toBe(unsub);
   });
 
@@ -238,14 +243,14 @@ describe('firebase-users › updateUserPhotoURL', () => {
 
     // Assert
     expect(mockDoc).toHaveBeenCalledWith('mock-db', 'users', 'u1');
-    expect(mockSetDoc).toHaveBeenCalledTimes(1);
-    const [docRef, payload, options] = mockSetDoc.mock.calls[0];
-    expect(docRef).toBe('mock-doc-ref');
-    expect(payload).toEqual({
-      photoURL: 'https://example.com/new.jpg',
-      photoUpdatedAt: { _serverTimestamp: true },
-    });
-    expect(options).toEqual({ merge: true });
+    expect(mockSetDoc).toHaveBeenCalledWith(
+      'mock-doc-ref',
+      {
+        photoURL: 'https://example.com/new.jpg',
+        photoUpdatedAt: { _serverTimestamp: true },
+      },
+      { merge: true },
+    );
   });
 
   it('空 url 時 throw "沒有url"', async () => {

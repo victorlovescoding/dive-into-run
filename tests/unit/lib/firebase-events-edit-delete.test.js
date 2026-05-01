@@ -200,8 +200,9 @@ describe('Unit: updateEvent', () => {
 
     // Assert
     expect(result.ok).toBe(true);
-    expect(mockUpdate).toHaveBeenCalledTimes(1);
-    expect(mockUpdate.mock.calls[0][1]).toEqual(
+    expect(mockUpdate).toHaveBeenCalled();
+    const updatePayload = mockUpdate.mock.calls.at(-1)?.[1];
+    expect(updatePayload).toEqual(
       expect.objectContaining({ remainingSeats: 4, maxParticipants: 12 }),
     );
   });
@@ -244,8 +245,9 @@ describe('Unit: updateEvent', () => {
     // Assert
     expect(result.ok).toBe(true);
     expect(Timestamp.fromDate).toHaveBeenCalled();
-    expect(mockUpdate).toHaveBeenCalledTimes(1);
-    expect(mockUpdate.mock.calls[0][1]).toEqual(
+    expect(mockUpdate).toHaveBeenCalled();
+    const updatePayload = mockUpdate.mock.calls.at(-1)?.[1];
+    expect(updatePayload).toEqual(
       expect.objectContaining({
         time: expect.objectContaining({ seconds: expect.any(Number) }),
       }),
@@ -316,7 +318,7 @@ describe('Unit: deleteEvent', () => {
   it('should also delete all participants in the subcollection (FR-011)', async () => {
     // Arrange
     const { deleteEvent } = await import('@/lib/firebase-events');
-    const { getDocs, writeBatch } = await import('firebase/firestore');
+    const { doc, getDocs, writeBatch } = await import('firebase/firestore');
 
     // 模擬 participants 子集合有 3 筆資料
     vi.mocked(getDocs).mockResolvedValueOnce(
@@ -332,6 +334,12 @@ describe('Unit: deleteEvent', () => {
     );
 
     const eventId = 'event-with-participants';
+    const eventRef = { id: eventId, path: `events/${eventId}` };
+    vi.mocked(doc).mockReturnValueOnce(
+      /** @type {import('firebase/firestore').DocumentReference} */ (
+        /** @type {unknown} */ (eventRef)
+      ),
+    );
 
     // Act
     const result = await deleteEvent(eventId);
@@ -340,11 +348,15 @@ describe('Unit: deleteEvent', () => {
     expect(result).toBeDefined();
     expect(result.ok).toBe(true);
 
-    // writeBatch 應被呼叫一次，batch.delete 應呼叫 4 次（3 participants + 1 event）
-    expect(vi.mocked(writeBatch)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(writeBatch)).toHaveBeenCalledWith('mock-db');
     const batch = vi.mocked(writeBatch).mock.results[0].value;
-    expect(batch.delete).toHaveBeenCalledTimes(4);
-    expect(batch.commit).toHaveBeenCalledTimes(1);
+    expect(batch.delete.mock.calls.map(([ref]) => ref)).toEqual([
+      { id: 'p1', path: 'events/e/participants/p1' },
+      { id: 'p2', path: 'events/e/participants/p2' },
+      { id: 'p3', path: 'events/e/participants/p3' },
+      eventRef,
+    ]);
+    expect(batch.commit).toHaveBeenCalled();
   });
 
   it('should throw error when eventId is missing', async () => {
@@ -392,12 +404,18 @@ describe('Unit: deleteEvent', () => {
   it('should succeed even when event has no participants', async () => {
     // Arrange
     const { deleteEvent } = await import('@/lib/firebase-events');
-    const { getDocs, writeBatch } = await import('firebase/firestore');
+    const { doc, getDocs, writeBatch } = await import('firebase/firestore');
 
     // @ts-expect-error — partial QuerySnapshot mock: only `docs` needed
     vi.mocked(getDocs).mockResolvedValueOnce({ docs: [] });
 
     const eventId = 'event-no-participants';
+    const eventRef = { id: eventId, path: `events/${eventId}` };
+    vi.mocked(doc).mockReturnValueOnce(
+      /** @type {import('firebase/firestore').DocumentReference} */ (
+        /** @type {unknown} */ (eventRef)
+      ),
+    );
 
     // Act
     const result = await deleteEvent(eventId);
@@ -406,9 +424,8 @@ describe('Unit: deleteEvent', () => {
     expect(result).toBeDefined();
     expect(result.ok).toBe(true);
 
-    // 只刪 event 本身，batch.delete 應呼叫 1 次
     const batch = vi.mocked(writeBatch).mock.results[0].value;
-    expect(batch.delete).toHaveBeenCalledTimes(1);
-    expect(batch.commit).toHaveBeenCalledTimes(1);
+    expect(batch.delete.mock.calls.map(([ref]) => ref)).toEqual([eventRef]);
+    expect(batch.commit).toHaveBeenCalled();
   });
 });

@@ -387,7 +387,10 @@ describe('Unit: fetchMyEvents', () => {
 
     // Assert — should only fetch once despite appearing in both queries
     expect(result.items).toHaveLength(1);
-    expect(mockGetDoc).toHaveBeenCalledTimes(1);
+    const eventDocLookups = mockDoc.mock.calls.filter(
+      ([, collectionName]) => collectionName === 'events',
+    );
+    expect(eventDocLookups).toEqual([['mock-db', 'events', 'shared-event']]);
   });
 
   it('should return empty items when nextCursor is null on subsequent call', async () => {
@@ -633,8 +636,10 @@ describe('Unit: fetchMyComments', () => {
       pageSize: 5,
     });
 
-    // Assert — only 1 getDoc call for the 2 comments (same parent)
-    expect(mockGetDoc).toHaveBeenCalledTimes(1);
+    const parentTitleLookups = mockDoc.mock.calls.filter(
+      ([, collectionName, parentId]) => collectionName === 'posts' && parentId === 'post-1',
+    );
+    expect(parentTitleLookups).toEqual([['mock-db', 'posts', 'post-1']]);
     expect(result.items[0].parentTitle).toBe('Cached Post');
     expect(result.items[1].parentTitle).toBe('Cached Post');
     // titleCache should be updated
