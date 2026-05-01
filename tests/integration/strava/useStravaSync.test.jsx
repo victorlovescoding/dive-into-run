@@ -50,8 +50,8 @@ function TestComponent({ lastSyncAt }) {
       <button type="button" onClick={sync} disabled={isSyncing || cooldownRemaining > 0}>
         Sync
       </button>
-      <span data-testid="syncing">{String(isSyncing)}</span>
-      <span data-testid="cooldown">{cooldownRemaining}</span>
+      <output aria-label="同步狀態">{String(isSyncing)}</output>
+      <output aria-label="同步冷卻秒數">{cooldownRemaining}</output>
       {error && <div role="alert">{error}</div>}
     </div>
   );
@@ -94,17 +94,17 @@ describe('useStravaSync', () => {
 
     renderWithAuth(<TestComponent lastSyncAt={null} />);
 
-    expect(screen.getByTestId('syncing')).toHaveTextContent('false');
+    expect(screen.getByLabelText('同步狀態')).toHaveTextContent('false');
 
     await user.click(screen.getByRole('button', { name: 'Sync' }));
 
-    expect(screen.getByTestId('syncing')).toHaveTextContent('true');
+    expect(screen.getByLabelText('同步狀態')).toHaveTextContent('true');
 
     await act(async () => {
       resolveFetch({ ok: true, json: () => Promise.resolve({}) });
     });
 
-    expect(screen.getByTestId('syncing')).toHaveTextContent('false');
+    expect(screen.getByLabelText('同步狀態')).toHaveTextContent('false');
   });
 
   it('shows cooldownRemaining counting down from lastSyncAt', () => {
@@ -118,20 +118,20 @@ describe('useStravaSync', () => {
 
     renderWithAuth(<TestComponent lastSyncAt={lastSyncAt} />);
 
-    expect(screen.getByTestId('cooldown')).toHaveTextContent('180');
+    expect(screen.getByLabelText('同步冷卻秒數')).toHaveTextContent('180');
 
     // Advance 10 seconds
     act(() => {
       vi.advanceTimersByTime(10_000);
     });
 
-    expect(screen.getByTestId('cooldown')).toHaveTextContent('170');
+    expect(screen.getByLabelText('同步冷卻秒數')).toHaveTextContent('170');
   });
 
   it('cooldownRemaining is 0 when lastSyncAt is null', () => {
     renderWithAuth(<TestComponent lastSyncAt={null} />);
 
-    expect(screen.getByTestId('cooldown')).toHaveTextContent('0');
+    expect(screen.getByLabelText('同步冷卻秒數')).toHaveTextContent('0');
   });
 
   it('does not call API when already syncing (double-sync guard)', async () => {
@@ -252,7 +252,7 @@ describe('useStravaSync', () => {
 
     const { unmount } = renderWithAuth(<TestComponent lastSyncAt={lastSyncAt} />);
 
-    expect(screen.getByTestId('cooldown')).toHaveTextContent('240');
+    expect(screen.getByLabelText('同步冷卻秒數')).toHaveTextContent('240');
 
     unmount();
 

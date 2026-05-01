@@ -55,7 +55,7 @@ test.describe('Weather Page E2E', () => {
     await clickCountyOnMap(page);
 
     // Wait for weather card to appear (loading → success)
-    await expect(page.getByTestId('current-temperature')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/\d+°/).first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should show BackToOverview button after drill-down', async ({ page }) => {
@@ -78,7 +78,7 @@ test.describe('Weather Page E2E', () => {
 
   test('should update URL params on location selection', async ({ page }) => {
     await clickCountyOnMap(page);
-    await expect(page.getByTestId('current-temperature')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/\d+°/).first()).toBeVisible({ timeout: 10000 });
 
     // URL should contain county param
     const url = page.url();

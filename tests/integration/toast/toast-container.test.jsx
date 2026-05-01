@@ -12,7 +12,7 @@ vi.mock('@/contexts/ToastContext', () => ({
 
 vi.mock('@/components/Toast', () => ({
   default: ({ toast, onClose }) => (
-    <div data-testid={`toast-${toast.id}`} role={toast.type === 'error' ? 'alert' : 'status'}>
+    <div role={toast.type === 'error' ? 'alert' : 'status'}>
       <span>{toast.message}</span>
       <button type="button" aria-label="關閉通知" onClick={() => onClose(toast.id)}>
         &times;
@@ -51,9 +51,11 @@ describe('ToastContainer', () => {
 
     render(<ToastContainer />);
 
-    expect(screen.getByTestId('toast-id-1')).toBeInTheDocument();
-    expect(screen.getByTestId('toast-id-2')).toBeInTheDocument();
-    expect(screen.getByTestId('toast-id-3')).toBeInTheDocument();
+    const statusToasts = screen.getAllByRole('status');
+    expect(statusToasts).toHaveLength(2);
+    expect(statusToasts[0]).toHaveTextContent('成功訊息');
+    expect(statusToasts[1]).toHaveTextContent('資訊訊息');
+    expect(screen.getByRole('alert')).toHaveTextContent('錯誤訊息');
   });
 
   // --- 3. 容器有 aria-live="polite" 屬性 ---

@@ -147,16 +147,15 @@ vi.mock('next/image', () => ({
 }));
 
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
+  MapContainer: ({ children }) => <div>{children}</div>,
   GeoJSON: ({ data, onEachFeature }) => {
     const features = data?.features || [];
     return (
-      <div data-testid="geojson-layer">
+      <div>
         {features.map((feature) => (
           <button
             key={feature.properties.TOWNCODE || feature.properties.COUNTYCODE}
             type="button"
-            data-testid={`feature-${feature.properties.TOWNCODE || feature.properties.COUNTYCODE}`}
             onClick={() => {
               if (onEachFeature) {
                 const handler = {};
@@ -315,7 +314,7 @@ describe('Township drill-down integration', () => {
     const user = userEvent.setup();
     render(<WeatherPage />);
 
-    await user.click(screen.getByTestId('feature-65000'));
+    await user.click(screen.getByRole('button', { name: '新北市' }));
 
     expect(await screen.findByText('板橋區')).toBeInTheDocument();
     expect(screen.getByText('中和區')).toBeInTheDocument();
@@ -326,8 +325,8 @@ describe('Township drill-down integration', () => {
     const user = userEvent.setup();
     render(<WeatherPage />);
 
-    await user.click(screen.getByTestId('feature-65000'));
-    await user.click(await screen.findByTestId('feature-65000010'));
+    await user.click(screen.getByRole('button', { name: '新北市' }));
+    await user.click(await screen.findByRole('button', { name: '板橋區' }));
 
     expect(await screen.findByText('新北市 · 板橋區')).toBeInTheDocument();
     expect(screen.getByText('晴時多雲')).toBeInTheDocument();
@@ -337,9 +336,9 @@ describe('Township drill-down integration', () => {
     const user = userEvent.setup();
     render(<WeatherPage />);
 
-    await user.click(screen.getByTestId('feature-65000'));
-    await user.click(await screen.findByTestId('feature-65000010'));
-    await user.click(screen.getByTestId('feature-65000020'));
+    await user.click(screen.getByRole('button', { name: '新北市' }));
+    await user.click(await screen.findByRole('button', { name: '板橋區' }));
+    await user.click(screen.getByRole('button', { name: '中和區' }));
 
     expect(await screen.findByText('新北市 · 中和區')).toBeInTheDocument();
     expect(screen.getByText('陰時多雲')).toBeInTheDocument();
@@ -349,7 +348,7 @@ describe('Township drill-down integration', () => {
     const user = userEvent.setup();
     render(<WeatherPage />);
 
-    await user.click(screen.getByTestId('feature-65000'));
+    await user.click(screen.getByRole('button', { name: '新北市' }));
     await screen.findByText('板橋區');
 
     await user.click(screen.getByRole('button', { name: /全台總覽/ }));

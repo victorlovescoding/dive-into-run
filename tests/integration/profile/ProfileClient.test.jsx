@@ -55,11 +55,11 @@ vi.mock('@/app/users/[uid]/ProfileHeader', () => ({
    * @returns {import('react').ReactElement} Mocked header.
    */
   default: ({ user }) => (
-    <div data-testid="profile-header-mock">
-      <span data-testid="header-name">{user.name}</span>
-      <span data-testid="header-uid">{user.uid}</span>
-      {user.bio != null && <span data-testid="header-bio">{user.bio}</span>}
-    </div>
+    <section aria-label="profile header mock">
+      <h2>{user.name}</h2>
+      <output aria-label="profile header uid">{user.uid}</output>
+      {user.bio != null && <p>{user.bio}</p>}
+    </section>
   ),
 }));
 
@@ -71,13 +71,13 @@ vi.mock('@/app/users/[uid]/ProfileStats', () => ({
    * @returns {import('react').ReactElement} Mocked stats.
    */
   default: ({ stats }) => (
-    <div data-testid="profile-stats-mock">
-      <span data-testid="stats-hosted">{stats.hostedCount}</span>
-      <span data-testid="stats-joined">{stats.joinedCount}</span>
-      <span data-testid="stats-distance">
+    <section aria-label="profile stats mock">
+      <output aria-label="hosted count">{stats.hostedCount}</output>
+      <output aria-label="joined count">{stats.joinedCount}</output>
+      <output aria-label="total distance">
         {stats.totalDistanceKm === null ? 'hidden' : String(stats.totalDistanceKm)}
-      </span>
-    </div>
+      </output>
+    </section>
   ),
 }));
 
@@ -87,7 +87,11 @@ vi.mock('@/app/users/[uid]/ProfileEventList', () => ({
    * @param {string} props.uid - Target uid.
    * @returns {import('react').ReactElement} Mocked event list.
    */
-  default: ({ uid }) => <div data-testid="profile-events-mock">{uid}</div>,
+  default: ({ uid }) => (
+    <section aria-label="profile events mock">
+      <output aria-label="profile events uid">{uid}</output>
+    </section>
+  ),
 }));
 
 /**
@@ -171,7 +175,7 @@ describe('Integration: ProfileClient thin entry', () => {
 
     renderProfileClient({ user });
 
-    expect(await screen.findByTestId('profile-stats-mock')).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'profile stats mock' })).toBeInTheDocument();
     expect(firestoreMock.where).toHaveBeenCalledWith('hostUid', '==', 'user-xyz');
     expect(firestoreMock.where).toHaveBeenCalledWith('uid', '==', 'user-xyz');
   });
@@ -179,15 +183,15 @@ describe('Integration: ProfileClient thin entry', () => {
   it('renders header, stats, and event list from runtime boundary', async () => {
     renderProfileClient({ user: createProfile() });
 
-    expect(screen.getByTestId('profile-header-mock')).toBeInTheDocument();
-    expect(screen.getByTestId('header-name')).toHaveTextContent('Alice Runner');
-    expect(screen.getByTestId('header-uid')).toHaveTextContent('user-abc');
-    expect(screen.getByTestId('header-bio')).toHaveTextContent('每天晨跑 5 公里。');
-    expect(await screen.findByTestId('profile-stats-mock')).toBeInTheDocument();
-    expect(screen.getByTestId('stats-hosted')).toHaveTextContent('3');
-    expect(screen.getByTestId('stats-joined')).toHaveTextContent('7');
-    expect(screen.getByTestId('stats-distance')).toHaveTextContent('hidden');
-    expect(screen.getByTestId('profile-events-mock')).toHaveTextContent('user-abc');
+    expect(screen.getByRole('region', { name: 'profile header mock' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Alice Runner' })).toBeInTheDocument();
+    expect(screen.getByLabelText('profile header uid')).toHaveTextContent('user-abc');
+    expect(screen.getByText('每天晨跑 5 公里。')).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'profile stats mock' })).toBeInTheDocument();
+    expect(screen.getByLabelText('hosted count')).toHaveTextContent('3');
+    expect(screen.getByLabelText('joined count')).toHaveTextContent('7');
+    expect(screen.getByLabelText('total distance')).toHaveTextContent('hidden');
+    expect(screen.getByLabelText('profile events uid')).toHaveTextContent('user-abc');
   });
 
   it('shows loading state when runtime reports stats loading', () => {
@@ -195,9 +199,9 @@ describe('Integration: ProfileClient thin entry', () => {
 
     renderProfileClient({ user: createProfile() });
 
-    expect(screen.getByTestId('profile-header-mock')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'profile header mock' })).toBeInTheDocument();
     expect(screen.getByText(/載入中/)).toBeInTheDocument();
-    expect(screen.queryByTestId('profile-stats-mock')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'profile stats mock' })).not.toBeInTheDocument();
   });
 
   it('shows error state when runtime reports stats error', async () => {
@@ -207,13 +211,13 @@ describe('Integration: ProfileClient thin entry', () => {
     renderProfileClient({ user: createProfile() });
 
     expect(await screen.findByText('無法載入統計')).toBeInTheDocument();
-    expect(screen.queryByTestId('profile-stats-mock')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'profile stats mock' })).not.toBeInTheDocument();
   });
 
   it('passes null totalDistanceKm through to ProfileStats', async () => {
     renderProfileClient({ user: createProfile() });
 
-    expect(await screen.findByTestId('stats-distance')).toHaveTextContent('hidden');
+    expect(await screen.findByLabelText('total distance')).toHaveTextContent('hidden');
   });
 
   it('shows self-profile banner and edit link when runtime marks own profile', () => {

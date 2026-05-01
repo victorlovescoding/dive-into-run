@@ -138,16 +138,15 @@ vi.mock('next/image', () => ({
 }));
 
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
+  MapContainer: ({ children }) => <div>{children}</div>,
   GeoJSON: ({ data, onEachFeature }) => {
     const features = data?.features || [];
     return (
-      <div data-testid="geojson-layer">
+      <div>
         {features.map((feature) => (
           <button
             key={feature.properties.COUNTYCODE}
             type="button"
-            data-testid={`feature-${feature.properties.COUNTYCODE}`}
             onClick={() => {
               if (onEachFeature) {
                 const handler = {};
@@ -366,7 +365,7 @@ describe('Favorites integration', () => {
     it('should show toast when clicking favorite without login', async () => {
       const user = userEvent.setup();
       renderWeatherPage();
-      await user.click(screen.getByTestId('feature-63000'));
+      await user.click(screen.getByRole('button', { name: '臺北市' }));
       await screen.findByRole('button', { name: /加入收藏/i });
 
       await user.click(screen.getByRole('button', { name: /加入收藏/i }));
@@ -381,7 +380,7 @@ describe('Favorites integration', () => {
       setAuthUser('test-uid');
       const user = userEvent.setup();
       renderWeatherPage();
-      await user.click(screen.getByTestId('feature-63000'));
+      await user.click(screen.getByRole('button', { name: '臺北市' }));
       await screen.findByRole('button', { name: /加入收藏/i });
 
       await user.click(screen.getByRole('button', { name: /加入收藏/i }));
@@ -413,7 +412,7 @@ describe('Favorites integration', () => {
 
       const user = userEvent.setup();
       renderWeatherPage();
-      await user.click(screen.getByTestId('feature-63000'));
+      await user.click(screen.getByRole('button', { name: '臺北市' }));
       // 等到 isFavorited 把按鈕切到「取消收藏」
       await screen.findByRole('button', { name: /取消收藏/i });
 
@@ -493,7 +492,7 @@ describe('Favorites integration', () => {
 
       const user = userEvent.setup();
       renderWeatherPage();
-      await user.click(screen.getByTestId('feature-63000'));
+      await user.click(screen.getByRole('button', { name: '臺北市' }));
       await screen.findByRole('button', { name: /加入收藏/i });
 
       await user.click(screen.getByRole('button', { name: /加入收藏/i }));

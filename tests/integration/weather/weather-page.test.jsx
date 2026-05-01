@@ -161,13 +161,13 @@ vi.mock('next/image', () => ({
 }));
 
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
+  MapContainer: ({ children }) => <div>{children}</div>,
   GeoJSON: ({ data, onEachFeature }) => {
     const features = data?.features || [];
     return (
-      <div data-testid="geojson-layer">
+      <div>
         {features.map((feature) => {
-          const testId = feature.properties.islandId
+          const featureKey = feature.properties.islandId
             ? `island-${feature.properties.islandId}`
             : `feature-${feature.properties.TOWNCODE || feature.properties.COUNTYCODE}`;
           const label = feature.properties.islandId
@@ -176,9 +176,8 @@ vi.mock('react-leaflet', () => ({
 
           return (
             <button
-              key={testId}
+              key={featureKey}
               type="button"
-              data-testid={testId}
               onClick={() => {
                 if (onEachFeature) {
                   const handler = {};
@@ -356,7 +355,7 @@ describe('WeatherPage integration', () => {
   it('renders the map container and county features', () => {
     render(<WeatherPage />);
 
-    expect(screen.getByTestId('map-container')).toBeInTheDocument();
+    expect(screen.getByRole('application', { name: '台灣互動地圖' })).toBeInTheDocument();
     expect(screen.getByText('臺北市')).toBeInTheDocument();
     expect(screen.getByText('新北市')).toBeInTheDocument();
   });
@@ -371,11 +370,11 @@ describe('WeatherPage integration', () => {
     const user = userEvent.setup();
     render(<WeatherPage />);
 
-    await user.click(screen.getByTestId('feature-63000'));
+    await user.click(screen.getByRole('button', { name: '臺北市' }));
 
     expect(await screen.findByText('晴時多雲')).toBeInTheDocument();
     expect(screen.getByText('臺北市')).toBeInTheDocument();
-    expect(screen.getByTestId('current-temperature')).toHaveTextContent('28°');
+    expect(screen.getByText('28°')).toBeInTheDocument();
     await waitFor(() => {
       const calls = fetchControls.fetchMock.mock.calls.map((call) => String(call[0]));
       expect(calls.some((url) => url.includes('county=%E8%87%BA%E5%8C%97%E5%B8%82'))).toBe(true);
@@ -394,7 +393,7 @@ describe('WeatherPage integration', () => {
 
     const user = userEvent.setup();
     render(<WeatherPage />);
-    await user.click(screen.getByTestId('feature-63000'));
+    await user.click(screen.getByRole('button', { name: '臺北市' }));
 
     expect(await screen.findByLabelText('天氣資料載入中')).toBeInTheDocument();
 
@@ -419,7 +418,7 @@ describe('WeatherPage integration', () => {
     const user = userEvent.setup();
     render(<WeatherPage />);
 
-    await user.click(screen.getByTestId('feature-63000'));
+    await user.click(screen.getByRole('button', { name: '臺北市' }));
     const retryButton = await screen.findByRole('button', { name: /重試/ });
 
     await user.click(retryButton);
@@ -431,7 +430,7 @@ describe('WeatherPage integration', () => {
     const user = userEvent.setup();
     render(<WeatherPage />);
 
-    await user.click(screen.getByTestId('island-lanyu'));
+    await user.click(screen.getByRole('button', { name: '蘭嶼鄉' }));
 
     expect(await screen.findByText('臺東縣 · 蘭嶼鄉')).toBeInTheDocument();
   });

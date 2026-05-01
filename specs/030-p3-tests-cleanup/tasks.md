@@ -101,7 +101,7 @@ Keep commits ordered by dependency:
     - `rg -n "^- \\[[ x]\\] T[0-9]{3}" specs/030-p3-tests-cleanup/tasks.md`
   - Commit checkpoint: commit after this task if the team wants a docs planning commit. Suggested message: `docs(test): plan p3 cleanup tasks`.
 
-- [ ] T002 Refresh and classify `data-testid` inventory
+- [x] T002 Refresh and classify `data-testid` inventory
   - Scope: data-testid cleanup preflight.
   - Owned files: `specs/030-p3-tests-cleanup/tasks.md` inventory/status and owned-file-list updates only during the serialized inventory planning update gate; no test code changes.
   - Dependencies: T001.
@@ -118,7 +118,7 @@ Keep commits ordered by dependency:
     - `rg -n "data-testid|getByTestId|queryByTestId|findByTestId|getAllByTestId|queryAllByTestId|findAllByTestId" tests --glob "*.{js,jsx}"`
   - Commit checkpoint: none by itself; include in the data-testid cleanup commit after T006.
 
-- [ ] T003 Clean auth/profile `data-testid` cases
+- [x] T003 Clean auth/profile `data-testid` cases
   - Scope: replace query-only test IDs in auth/profile integration tests where an accessible query can express the behavior.
   - Owned files:
     - `tests/integration/auth/AuthProvider.test.jsx`
@@ -139,7 +139,7 @@ Keep commits ordered by dependency:
     - `npm run type-check:changed`
   - Commit checkpoint: none by itself; include in the data-testid cleanup commit after T006.
 
-- [ ] T004 Clean weather/map `data-testid` cases
+- [x] T004 Clean weather/map `data-testid` cases
   - Scope: reduce unnecessary `data-testid` in weather integration and E2E tests while preserving map-stub coverage.
   - Owned files:
     - `tests/integration/weather/weather-page.test.jsx`
@@ -164,7 +164,7 @@ Keep commits ordered by dependency:
     - `npm run type-check:changed`
   - Commit checkpoint: none by itself; include in the data-testid cleanup commit after T006.
 
-- [ ] T005 Clean strava/dashboard/profile-list `data-testid` cases
+- [x] T005 Clean strava/dashboard/profile-list `data-testid` cases
   - Scope: reduce dynamic card/list `data-testid` use in Strava, dashboard, and profile list tests.
   - Owned files:
     - `tests/integration/strava/RunsPage.test.jsx`
@@ -190,7 +190,7 @@ Keep commits ordered by dependency:
     - `npm run type-check:changed`
   - Commit checkpoint: none by itself; include in the data-testid cleanup commit after T006.
 
-- [ ] T006 Clean explicitly owned residual `data-testid` cases and commit data-testid batch
+- [x] T006 Clean explicitly owned residual `data-testid` cases and commit data-testid batch
   - Scope: finish residual low-risk `data-testid` cleanup only for files listed here or explicitly added by T002 before assignment.
   - Owned files:
     - `tests/integration/notifications/NotificationPanel.test.jsx`
@@ -217,7 +217,7 @@ Keep commits ordered by dependency:
     - `npm run type-check:changed`
   - Commit checkpoint: commit T002-T006 together after Reviewer approval. Suggested message: `test: prefer accessible queries over test ids`.
 
-- [ ] T007 Refresh console spy/manual restore inventory and choose helper pattern
+- [x] T007 Refresh console spy/manual restore inventory and choose helper pattern
   - Scope: spy cleanup preflight.
   - Owned files:
     - `tests/_helpers/mock-helpers.js` only if adding a shared helper is approved by the Reviewer.
@@ -235,7 +235,7 @@ Keep commits ordered by dependency:
     - `rg -n "vi\\.spyOn\\(console, ['\\\"]error['\\\"]\\)|vi\\.spyOn\\(console, ['\\\"]warn['\\\"]\\)|\\.mockRestore\\(\\)|restoreAllMocks\\(\\)" tests --glob "*.{js,jsx}"`
   - Commit checkpoint: none by itself; include in the spy cleanup commit after T010.
 
-- [ ] T008 Consolidate audit primary console error spies
+- [x] T008 Consolidate audit primary console error spies
   - Scope: clean the audit report's primary spy target and create the shared spy helper if T007 selected one.
   - Owned files:
     - `tests/unit/lib/firebase-posts-comments-likes.test.js`
@@ -283,9 +283,13 @@ Keep commits ordered by dependency:
 
 - [ ] T010 Consolidate explicitly owned integration console error spies and commit spy batch
   - Scope: clean integration delete-race console spies and only the additional files that T007 explicitly adds before assignment.
+    - Also handle T007-approved repo/lib/runtime console warn/error spy cleanup files.
   - Owned files:
     - `tests/integration/events/EventDetailClient-delete-race.test.jsx`
     - `tests/integration/posts/PostDetailClient-delete-race.test.jsx`
+    - `tests/unit/repo/firebase-users.test.js`
+    - `tests/unit/lib/firebase-posts-crud.test.js`
+    - `tests/unit/runtime/post-use-cases.test.js`
   - Dependencies: T009.
   - Engineer role: Spy Cleanup Engineer C.
   - Reviewer role: Integration Race Test Reviewer.
@@ -297,12 +301,12 @@ Keep commits ordered by dependency:
     - `rg` output for manual console error restore is lower than T007 baseline.
   - Verification commands:
     - `rg -n "vi\\.spyOn\\(console, ['\\\"]error['\\\"]\\)|vi\\.spyOn\\(console, ['\\\"]warn['\\\"]\\)|\\.mockRestore\\(\\)|restoreAllMocks\\(\\)" tests --glob "*.{js,jsx}"`
-    - `npx vitest run tests/integration/events/EventDetailClient-delete-race.test.jsx tests/integration/posts/PostDetailClient-delete-race.test.jsx`
+    - `npx vitest run tests/integration/events/EventDetailClient-delete-race.test.jsx tests/integration/posts/PostDetailClient-delete-race.test.jsx tests/unit/repo/firebase-users.test.js tests/unit/lib/firebase-posts-crud.test.js tests/unit/runtime/post-use-cases.test.js`
     - `npm run lint:changed`
     - `npm run type-check:changed`
   - Commit checkpoint: commit T007-T010 together after Reviewer approval. Suggested message: `test: centralize console spy cleanup`.
 
-- [ ] T011 Refresh factory duplication inventory and decide helper destinations
+- [x] T011 Refresh factory duplication inventory and decide helper destinations
   - Scope: factory extraction preflight.
   - Owned files:
     - `specs/030-p3-tests-cleanup/tasks.md` inventory/status and owned-file-list updates only during the serialized inventory planning update gate.
@@ -313,7 +317,7 @@ Keep commits ordered by dependency:
   - Acceptance criteria:
     - Duplicate factories are grouped by domain: generic Firestore snapshots, users/profiles, notifications, posts/comments, events/dashboard, Strava, weather.
     - Existing helper files are preferred when domain-specific helpers already exist.
-    - A new `tests/_helpers/factories.js` is allowed only for genuinely cross-domain primitives such as Firestore-like doc/query snapshots or generic test users.
+    - A new `tests/_helpers/factories.js` is allowed only for genuinely cross-domain Firestore primitives such as `createFirestoreDocSnapshot` and `createFirestoreQuerySnapshot`; domain defaults must stay in domain helpers.
     - The plan avoids a giant kitchen-sink helper that increases coupling across unrelated test domains.
     - If the chosen helper destinations differ from T012-T014, this task must update the exact owned-file lists during the serialized inventory planning update gate and get Reviewer approval before implementation starts.
   - Verification commands:
@@ -324,9 +328,11 @@ Keep commits ordered by dependency:
 - [ ] T012 Extract notification/profile factories
   - Scope: move repeated notification/profile data builders into reviewed helpers; this is the only factory task allowed to create or edit the generic helper.
   - Owned files:
-    - `tests/_helpers/factories.js` if T011 approves generic primitives.
-    - `tests/_helpers/notification-fixtures.js` if T011 chooses a domain helper.
+    - `tests/_helpers/factories.js` for cross-domain Firestore primitives only.
+    - `tests/_helpers/notification-fixtures.js`
+    - `tests/_helpers/profile-fixtures.js`
     - `tests/integration/notifications/notification-click.test.jsx`
+    - `tests/integration/notifications/notification-triggers.test.jsx`
     - `tests/integration/notifications/NotificationToast.test.jsx`
     - `tests/integration/notifications/NotificationPaginationStateful.test.jsx`
     - `tests/integration/notifications/NotificationPagination.test.jsx`
@@ -343,11 +349,12 @@ Keep commits ordered by dependency:
   - Acceptance criteria:
     - At least two duplicated notification builders are replaced by shared helpers without changing test behavior.
     - Profile builders with the same shape are either consolidated or explicitly left local because their shape differs.
+    - `tests/_helpers/factories.js` exports only cross-domain Firestore primitives such as `createFirestoreDocSnapshot` and `createFirestoreQuerySnapshot`; notification/profile defaults stay in `notification-fixtures.js` or `profile-fixtures.js`.
     - New exported helper functions include meaningful JSDoc with lowercase `{object}` typedefs/properties where applicable.
     - No helper imports production `src/**` code unless an existing same-domain helper already does so safely.
     - This task owns any edit to `tests/_helpers/factories.js`; later factory tasks may import it but must not edit it.
   - Verification commands:
-    - `npx vitest run tests/integration/notifications/notification-click.test.jsx tests/integration/notifications/NotificationToast.test.jsx tests/integration/notifications/NotificationPaginationStateful.test.jsx tests/integration/notifications/NotificationPagination.test.jsx tests/integration/notifications/NotificationTabs.test.jsx tests/integration/notifications/NotificationPanel.test.jsx tests/integration/notifications/NotificationBell.test.jsx tests/integration/notifications/notification-error.test.jsx tests/integration/profile/ProfileClient.test.jsx tests/integration/profile/ProfileHeader.test.jsx tests/integration/profile/ProfileStats.test.jsx`
+    - `npx vitest run tests/integration/notifications/notification-click.test.jsx tests/integration/notifications/notification-triggers.test.jsx tests/integration/notifications/NotificationToast.test.jsx tests/integration/notifications/NotificationPaginationStateful.test.jsx tests/integration/notifications/NotificationPagination.test.jsx tests/integration/notifications/NotificationTabs.test.jsx tests/integration/notifications/NotificationPanel.test.jsx tests/integration/notifications/NotificationBell.test.jsx tests/integration/notifications/notification-error.test.jsx tests/integration/profile/ProfileClient.test.jsx tests/integration/profile/ProfileHeader.test.jsx tests/integration/profile/ProfileStats.test.jsx`
     - `npm run lint:changed`
     - `npm run type-check:changed`
   - Commit checkpoint: none by itself; include in the factory extraction commit after T014.
@@ -358,18 +365,27 @@ Keep commits ordered by dependency:
     - `tests/_helpers/comment-fixtures.js`
     - `tests/_helpers/post-comments-fixtures.js`
     - `tests/_helpers/event-participation-fixtures.js`
+    - `tests/_helpers/use-events-page-runtime-test-helpers.js`
     - `tests/integration/profile/ProfileEventList.test.jsx`
     - `tests/integration/dashboard/DashboardTabs.test.jsx`
     - `tests/integration/dashboard/DashboardEventCard.test.jsx`
     - `tests/integration/dashboard/DashboardPostCard.test.jsx`
     - `tests/integration/dashboard/DashboardCommentCard.test.jsx`
+    - `tests/integration/comments/CommentSection.test.jsx`
     - `tests/integration/posts/PostFeed.test.jsx`
     - `tests/integration/posts/PostDetail.test.jsx`
+    - `tests/integration/posts/PostDetailClient-delete-race.test.jsx`
+    - `tests/integration/posts/post-detail-edit-dirty.test.jsx`
+    - `tests/integration/posts/posts-page-edit-dirty.test.jsx`
     - `tests/integration/posts/post-form-validation.test.jsx`
     - `tests/integration/posts/post-edit-validation.test.jsx`
     - `tests/integration/posts/post-comment-reply.test.jsx`
     - `tests/integration/events/EventsPage.test.jsx`
     - `tests/integration/events/EventDetailClient-delete-race.test.jsx`
+    - `tests/integration/events/event-detail-comment-runtime.test.jsx`
+    - `tests/integration/events/EventCardMenu.test.jsx`
+    - `tests/integration/events/EventEditForm.test.jsx`
+    - `tests/unit/runtime/useComments.test.jsx`
   - Dependencies: T006, T010, T011, T012.
   - Engineer role: Factory Engineer B.
   - Reviewer role: Posts/Events Test Reviewer.
@@ -380,7 +396,7 @@ Keep commits ordered by dependency:
     - No broad behavior rewrites or mock-boundary cleanup are mixed into this factory task.
     - This task may consume `tests/_helpers/factories.js` from T012 but must not edit it.
   - Verification commands:
-    - `npx vitest run tests/integration/profile/ProfileEventList.test.jsx tests/integration/dashboard/DashboardTabs.test.jsx tests/integration/dashboard/DashboardEventCard.test.jsx tests/integration/dashboard/DashboardPostCard.test.jsx tests/integration/dashboard/DashboardCommentCard.test.jsx tests/integration/posts/PostFeed.test.jsx tests/integration/posts/PostDetail.test.jsx tests/integration/posts/post-form-validation.test.jsx tests/integration/posts/post-edit-validation.test.jsx tests/integration/posts/post-comment-reply.test.jsx tests/integration/events/EventsPage.test.jsx tests/integration/events/EventDetailClient-delete-race.test.jsx`
+    - `npx vitest run tests/integration/profile/ProfileEventList.test.jsx tests/integration/dashboard/DashboardTabs.test.jsx tests/integration/dashboard/DashboardEventCard.test.jsx tests/integration/dashboard/DashboardPostCard.test.jsx tests/integration/dashboard/DashboardCommentCard.test.jsx tests/integration/comments/CommentSection.test.jsx tests/integration/posts/PostFeed.test.jsx tests/integration/posts/PostDetail.test.jsx tests/integration/posts/PostDetailClient-delete-race.test.jsx tests/integration/posts/post-detail-edit-dirty.test.jsx tests/integration/posts/posts-page-edit-dirty.test.jsx tests/integration/posts/post-form-validation.test.jsx tests/integration/posts/post-edit-validation.test.jsx tests/integration/posts/post-comment-reply.test.jsx tests/integration/events/EventsPage.test.jsx tests/integration/events/EventDetailClient-delete-race.test.jsx tests/integration/events/event-detail-comment-runtime.test.jsx tests/integration/events/EventCardMenu.test.jsx tests/integration/events/EventEditForm.test.jsx tests/unit/runtime/useComments.test.jsx`
     - `npm run lint:changed`
     - `npm run type-check:changed`
   - Commit checkpoint: none by itself; include in the factory extraction commit after T014.
@@ -391,7 +407,6 @@ Keep commits ordered by dependency:
     - `tests/_helpers/strava-fixtures.js`
     - `tests/_helpers/use-weather-page-runtime-test-helpers.js`
     - `tests/_helpers/use-posts-page-runtime-test-helpers.js`
-    - `tests/_helpers/use-events-page-runtime-test-helpers.js`
     - `tests/integration/strava/RunsActivityCard.test.jsx`
     - `tests/integration/strava/RunsActivityList.test.jsx`
     - `tests/integration/strava/RunCalendarDialog.test.jsx`
@@ -399,10 +414,13 @@ Keep commits ordered by dependency:
     - `tests/integration/weather/favorites.test.jsx`
     - `tests/integration/weather/township-drilldown.test.jsx`
     - `tests/unit/runtime/useStravaActivities.test.jsx`
+    - `tests/unit/runtime/sync-strava-activities.test.js`
     - `tests/unit/runtime/useRunsPageRuntime.test.jsx`
     - `tests/unit/runtime/useRunCalendar.test.jsx`
     - `tests/unit/runtime/useWeatherFavorites.test.jsx`
     - `tests/unit/runtime/useWeatherPageRuntime.test.jsx`
+    - `tests/unit/service/firebase-admin-helpers.test.js`
+    - `tests/unit/service/groupActivitiesByDay.test.js`
   - Dependencies: T006, T010, T011, T012, T013.
   - Engineer role: Factory Engineer C.
   - Reviewer role: Strava/Weather Test Reviewer.
@@ -413,7 +431,7 @@ Keep commits ordered by dependency:
     - `rg` output shows fewer duplicate local factory definitions than the T011 baseline for the touched domains.
     - This task may consume `tests/_helpers/factories.js` from T012 but must not edit it.
   - Verification commands:
-    - `npx vitest run tests/integration/strava/RunsActivityCard.test.jsx tests/integration/strava/RunsActivityList.test.jsx tests/integration/strava/RunCalendarDialog.test.jsx tests/integration/weather/weather-page.test.jsx tests/integration/weather/favorites.test.jsx tests/integration/weather/township-drilldown.test.jsx tests/unit/runtime/useStravaActivities.test.jsx tests/unit/runtime/useRunsPageRuntime.test.jsx tests/unit/runtime/useRunCalendar.test.jsx tests/unit/runtime/useWeatherFavorites.test.jsx tests/unit/runtime/useWeatherPageRuntime.test.jsx`
+    - `npx vitest run tests/integration/strava/RunsActivityCard.test.jsx tests/integration/strava/RunsActivityList.test.jsx tests/integration/strava/RunCalendarDialog.test.jsx tests/integration/weather/weather-page.test.jsx tests/integration/weather/favorites.test.jsx tests/integration/weather/township-drilldown.test.jsx tests/unit/runtime/useStravaActivities.test.jsx tests/unit/runtime/sync-strava-activities.test.js tests/unit/runtime/useRunsPageRuntime.test.jsx tests/unit/runtime/useRunCalendar.test.jsx tests/unit/runtime/useWeatherFavorites.test.jsx tests/unit/runtime/useWeatherPageRuntime.test.jsx tests/unit/service/firebase-admin-helpers.test.js tests/unit/service/groupActivitiesByDay.test.js`
     - `rg -n "\\b(make[A-Z][A-Za-z0-9_]*|create[A-Z][A-Za-z0-9_]*|build[A-Z][A-Za-z0-9_]*)\\b\\s*=|function\\s+(make[A-Z][A-Za-z0-9_]*|create[A-Z][A-Za-z0-9_]*|build[A-Z][A-Za-z0-9_]*)" tests --glob "*.{js,jsx}"`
     - `npm run lint:changed`
     - `npm run type-check:changed`

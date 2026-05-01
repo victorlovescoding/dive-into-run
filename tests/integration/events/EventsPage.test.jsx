@@ -50,7 +50,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('next/dynamic', () => ({
-  default: () => () => <div data-testid="event-map">Map Mock</div>,
+  default: () => () => <div>Map Mock</div>,
 }));
 
 vi.mock('next/navigation', () => ({

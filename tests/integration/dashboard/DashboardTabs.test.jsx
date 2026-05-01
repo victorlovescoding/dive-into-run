@@ -44,17 +44,17 @@ vi.mock('firebase/firestore', () => ({
 // Mock card components
 vi.mock('@/components/DashboardEventCard', () => ({
   default: ({ event, isHost }) => (
-    <div data-testid={`event-${event.id}`}>
+    <article aria-label={event.title}>
       {event.title}
       {isHost && ' [主辦]'}
-    </div>
+    </article>
   ),
 }));
 vi.mock('@/components/DashboardPostCard', () => ({
-  default: ({ post }) => <div data-testid={`post-${post.id}`}>{post.title}</div>,
+  default: ({ post }) => <article aria-label={post.title}>{post.title}</article>,
 }));
 vi.mock('@/components/DashboardCommentCard', () => ({
-  default: ({ comment }) => <div data-testid={`comment-${comment.id}`}>{comment.text}</div>,
+  default: ({ comment }) => <article aria-label={comment.text}>{comment.text}</article>,
 }));
 
 const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
@@ -375,11 +375,11 @@ describe('DashboardTabs', () => {
 
     // Assert
     await waitFor(() => {
-      expect(screen.getByTestId('event-e1')).toBeInTheDocument();
+      expect(screen.getByRole('article', { name: 'Event 1' })).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId('event-e1')).toHaveTextContent('Event 1 [主辦]');
-    expect(screen.getByTestId('event-e2')).toHaveTextContent('Event 2 [主辦]');
+    expect(screen.getByRole('article', { name: 'Event 1' })).toHaveTextContent('Event 1 [主辦]');
+    expect(screen.getByRole('article', { name: 'Event 2' })).toHaveTextContent('Event 2 [主辦]');
   });
 
   // --- 8. 空資料顯示 empty state ---
@@ -428,7 +428,7 @@ describe('DashboardTabs', () => {
 
     // Assert — items show up
     await waitFor(() => {
-      expect(screen.getByTestId('event-e1')).toBeInTheDocument();
+      expect(screen.getByRole('article', { name: 'Event 1' })).toBeInTheDocument();
     });
   });
 
@@ -511,12 +511,12 @@ describe('DashboardTabs', () => {
 
     // Assert
     await waitFor(() => {
-      expect(screen.getByTestId('event-e1')).toBeInTheDocument();
+      expect(screen.getByRole('article', { name: 'Event 1' })).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId('event-e1')).toHaveTextContent('Event 1 [主辦]');
-    expect(screen.getByTestId('event-e2')).toHaveTextContent('Event 2');
-    expect(screen.getByTestId('event-e2')).not.toHaveTextContent('[主辦]');
+    expect(screen.getByRole('article', { name: 'Event 1' })).toHaveTextContent('Event 1 [主辦]');
+    expect(screen.getByRole('article', { name: 'Event 2' })).toHaveTextContent('Event 2');
+    expect(screen.getByRole('article', { name: 'Event 2' })).not.toHaveTextContent('[主辦]');
   });
 
   // === Keyboard navigation (WAI-ARIA Tabs pattern) ===

@@ -10,7 +10,7 @@ vi.mock('next/image', () => ({
 }));
 vi.mock('@/components/UserLink', () => ({
   default: ({ name, uid }) => (
-    <a href={`/users/${uid}`} data-testid="user-link">
+    <a href={`/users/${uid}`}>
       <span>{name}</span>
     </a>
   ),
@@ -45,7 +45,8 @@ describe('PostCard', () => {
   describe('作者資訊', () => {
     it('顯示作者名稱', () => {
       render(<PostCard post={basePost} />);
-      expect(screen.getByText('小明')).toBeInTheDocument();
+      const authorLink = screen.getByRole('link', { name: '小明' });
+      expect(authorLink).toHaveAttribute('href', '/users/user-1');
     });
 
     it('以真實 helper 顯示相對時間', () => {

@@ -4,7 +4,9 @@ import { render, screen } from '@testing-library/react';
 // `@/components/RunsRouteMap` 屬下游 UI 子元件灰區（plan §6 第 8 條），保留 mock；
 // 真實 Leaflet 地圖在 jsdom 無法渲染。
 vi.mock('@/components/RunsRouteMap', () => ({
-  default: ({ summaryPolyline }) => <div data-testid="route-map" data-polyline={summaryPolyline} />,
+  default: ({ summaryPolyline }) => (
+    <figure aria-label="路線地圖" data-polyline={summaryPolyline} />
+  ),
 }));
 
 import RunsActivityCard from '@/components/RunsActivityCard';
@@ -62,7 +64,7 @@ describe('RunsActivityCard', () => {
     const activity = createMockActivity({ summaryPolyline: 'abc123' });
     render(<RunsActivityCard activity={activity} />);
 
-    const map = screen.getByTestId('route-map');
+    const map = screen.getByRole('figure', { name: '路線地圖' });
     expect(map).toBeInTheDocument();
     expect(map).toHaveAttribute('data-polyline', 'abc123');
   });
@@ -71,6 +73,6 @@ describe('RunsActivityCard', () => {
     const activity = createMockActivity({ summaryPolyline: null });
     render(<RunsActivityCard activity={activity} />);
 
-    expect(screen.queryByTestId('route-map')).not.toBeInTheDocument();
+    expect(screen.queryByRole('figure', { name: '路線地圖' })).not.toBeInTheDocument();
   });
 });

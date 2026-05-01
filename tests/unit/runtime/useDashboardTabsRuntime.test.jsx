@@ -42,7 +42,7 @@ function DashboardTabsRuntimeHarness({ useDashboardTabsRuntime, uid }) {
 
   return (
     <div>
-      <output data-testid="active-tab">{String(runtime.activeTab)}</output>
+      <output aria-label="目前分頁索引">{String(runtime.activeTab)}</output>
       <div role="tablist">
         {runtime.tabs.map((tabConfig, index) => (
           <button
@@ -133,17 +133,17 @@ describe('useDashboardTabsRuntime', () => {
     eventsTab.focus();
     await user.keyboard('{ArrowRight}');
 
-    await waitFor(() => expect(screen.getByTestId('active-tab')).toHaveTextContent('1'));
+    await waitFor(() => expect(screen.getByLabelText('目前分頁索引')).toHaveTextContent('1'));
     expect(postsTab).toHaveFocus();
 
     await user.keyboard('{End}');
 
-    await waitFor(() => expect(screen.getByTestId('active-tab')).toHaveTextContent('2'));
+    await waitFor(() => expect(screen.getByLabelText('目前分頁索引')).toHaveTextContent('2'));
     expect(commentsTab).toHaveFocus();
 
     await user.keyboard('{Home}');
 
-    await waitFor(() => expect(screen.getByTestId('active-tab')).toHaveTextContent('0'));
+    await waitFor(() => expect(screen.getByLabelText('目前分頁索引')).toHaveTextContent('0'));
     expect(eventsTab).toHaveFocus();
   });
 });

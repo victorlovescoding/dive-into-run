@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
 vi.mock('@/components/RunsActivityCard', () => ({
-  default: ({ activity }) => <div data-testid={`card-${activity.stravaId}`}>{activity.name}</div>,
+  default: ({ activity }) => <article aria-label={activity.name}>{activity.name}</article>,
 }));
 
 import RunsActivityList from '@/components/RunsActivityList';
@@ -59,10 +59,8 @@ describe('RunsActivityList', () => {
 
     render(<RunsActivityList activities={activities} isLoading={false} error={null} />);
 
-    expect(screen.getByTestId('card-111')).toBeInTheDocument();
-    expect(screen.getByTestId('card-222')).toBeInTheDocument();
-    expect(screen.getByText('晨跑')).toBeInTheDocument();
-    expect(screen.getByText('夜跑')).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: '晨跑' })).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: '夜跑' })).toBeInTheDocument();
   });
 
   describe('infinite scroll', () => {

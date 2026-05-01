@@ -178,7 +178,7 @@ describe('Integration: ProfileHeader', () => {
     render(<ProfileHeader user={profile} />);
 
     // Assert — 原始字串應該被當文字 render，而不是 script tag
-    const bio = screen.getByTestId('profile-bio');
+    const bio = screen.getByText(maliciousBio);
     expect(bio).toHaveTextContent(maliciousBio);
     // 確認 React escape 後 bio 元素本身是 <p>，沒有真的產生 script element
     expect(bio.tagName).toBe('P');
