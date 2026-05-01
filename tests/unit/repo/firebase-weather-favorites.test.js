@@ -90,14 +90,20 @@ describe('firebase-weather-favorites', () => {
 
       // Assert
       expect(docId).toBe('newDoc123');
-      expect(mockedAddDoc).toHaveBeenCalledTimes(1);
+      expect(mockedCollection).toHaveBeenCalledWith({}, 'users', 'user1', 'weatherFavorites');
+      expect(mockedWhere).toHaveBeenCalledWith('countyCode', '==', '65000');
+      expect(mockedWhere).toHaveBeenCalledWith('townshipCode', '==', '65000010');
+      expect(mockedQuery).toHaveBeenCalledWith('collectionRef', 'whereClause', 'whereClause');
+      expect(mockedGetDocs).toHaveBeenCalledWith('queryRef');
       expect(mockedAddDoc).toHaveBeenCalledWith(
-        expect.anything(),
+        'collectionRef',
         expect.objectContaining({
           countyCode: '65000',
           countyName: '新北市',
           townshipCode: '65000010',
           townshipName: '板橋區',
+          displaySuffix: null,
+          createdAt: { _type: 'serverTimestamp' },
         }),
       );
     });
@@ -152,8 +158,14 @@ describe('firebase-weather-favorites', () => {
       await removeFavorite('user1', 'docToRemove');
 
       // Assert
-      expect(mockedDoc).toHaveBeenCalled();
-      expect(mockedDeleteDoc).toHaveBeenCalledTimes(1);
+      expect(mockedDoc).toHaveBeenCalledWith(
+        {},
+        'users',
+        'user1',
+        'weatherFavorites',
+        'docToRemove',
+      );
+      expect(mockedDeleteDoc).toHaveBeenCalledWith('docRef');
     });
   });
 
