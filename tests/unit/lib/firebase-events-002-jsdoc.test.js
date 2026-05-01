@@ -151,7 +151,16 @@ describe('firebase-events', () => {
       const mockDocs = [];
       asMock(firestore.getDocs).mockResolvedValueOnce({ docs: mockDocs });
       await queryEvents({ startTime: '2023-01-01', endTime: '2023-01-02' });
-      expect(firestore.where).toHaveBeenCalledTimes(2);
+      expect(firestore.where).toHaveBeenCalledWith(
+        'time',
+        '>=',
+        expect.objectContaining({ seconds: expect.any(Number) }),
+      );
+      expect(firestore.where).toHaveBeenCalledWith(
+        'time',
+        '<=',
+        expect.objectContaining({ seconds: expect.any(Number) }),
+      );
     });
   });
 
