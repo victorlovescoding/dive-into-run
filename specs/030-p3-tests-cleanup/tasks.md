@@ -463,7 +463,7 @@ Keep commits ordered by dependency:
     - `rg --count "vi\\.spyOn\\(console, ['\\\"]error['\\\"]\\)|vi\\.spyOn\\(console, ['\\\"]warn['\\\"]\\)|\\.mockRestore\\(\\)|restoreAllMocks\\(\\)" tests --glob "*.{js,jsx}"`
   - Commit checkpoint: no commit unless verification updates a tracked handoff/status file.
 
-- [ ] T016 Final reviewer signoff and PR prep gate
+- [x] T016 Final reviewer signoff and PR prep gate
   - Scope: final process gate before push/PR.
   - Owned files:
     - `specs/030-p3-tests-cleanup/tasks.md` status line only.
