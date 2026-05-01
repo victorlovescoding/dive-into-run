@@ -95,6 +95,11 @@ describe('createPost validation guard', () => {
 
     // Assert
     expect(result).toEqual({ id: 'mock-id' });
-    expect(mockedAddDoc).toHaveBeenCalledTimes(1);
+    expect(mockedAddDoc.mock.calls[0]?.[1]).toEqual(expect.objectContaining({
+      title: '有效標題',
+      content: '有效內容',
+      authorUid: 'test-uid',
+      authorImgURL: 'test.jpg',
+    }));
   });
 });

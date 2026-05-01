@@ -58,12 +58,13 @@ describe('deletePost', () => {
     expect(getDocs).toHaveBeenCalledWith('likes-col');
     expect(getDocs).toHaveBeenCalledWith('comments-col');
     expect(writeBatch).toHaveBeenCalledWith('mock-db');
-    expect(mockBatchDelete).toHaveBeenCalledTimes(4); // 2 likes + 1 comment + 1 post
-    expect(mockBatchDelete).toHaveBeenCalledWith('like-ref-1');
-    expect(mockBatchDelete).toHaveBeenCalledWith('like-ref-2');
-    expect(mockBatchDelete).toHaveBeenCalledWith('comment-ref-1');
-    expect(mockBatchDelete).toHaveBeenCalledWith('post-ref');
-    expect(mockBatchCommit).toHaveBeenCalledOnce();
+    expect(mockBatchDelete.mock.calls.map(([ref]) => ref)).toEqual([
+      'like-ref-1',
+      'like-ref-2',
+      'comment-ref-1',
+      'post-ref',
+    ]);
+    expect(mockBatchCommit).toHaveBeenCalled();
     expect(result).toEqual({ ok: true });
   });
 
@@ -79,9 +80,8 @@ describe('deletePost', () => {
     const result = await deletePost('post-456');
 
     expect(writeBatch).toHaveBeenCalledWith('mock-db');
-    expect(mockBatchDelete).toHaveBeenCalledTimes(1); // only post doc
-    expect(mockBatchDelete).toHaveBeenCalledWith('post-ref');
-    expect(mockBatchCommit).toHaveBeenCalledOnce();
+    expect(mockBatchDelete.mock.calls.map(([ref]) => ref)).toEqual(['post-ref']);
+    expect(mockBatchCommit).toHaveBeenCalled();
     expect(result).toEqual({ ok: true });
   });
 

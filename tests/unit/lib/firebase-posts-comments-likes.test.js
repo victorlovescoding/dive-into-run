@@ -433,7 +433,7 @@ describe('Unit: addComment', () => {
 
     // Assert
     expect(result).toEqual({ id: expect.any(String) });
-    expect(tx.set).toHaveBeenCalledTimes(1);
+    expect(tx.set).toHaveBeenCalledWith(expect.objectContaining({ id: 'auto-generated-id' }), expect.any(Object));
     const setPayload = tx.set.mock.calls[0][1];
     expect(setPayload.authorUid).toBe('u1');
     expect(setPayload.authorName).toBe('Alice');
@@ -523,8 +523,9 @@ describe('Unit: updateComment (no trim, no validation)', () => {
 
     // Assert
     expect(mockDoc).toHaveBeenCalledWith('mock-db', 'posts', 'post-1', 'comments', 'c-1');
-    expect(mockUpdateDoc).toHaveBeenCalledTimes(1);
-    expect(mockUpdateDoc.mock.calls[0][1]).toEqual({ comment: '  raw  ' });
+    expect(mockUpdateDoc).toHaveBeenCalledWith(expect.objectContaining({
+      _docRef: ['posts', 'post-1', 'comments', 'c-1'],
+    }), { comment: '  raw  ' });
   });
 
   it('should propagate updateDoc rejection', async () => {
