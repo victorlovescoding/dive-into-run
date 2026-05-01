@@ -5,8 +5,8 @@ const mockVerifyIdToken = vi.fn();
 const mockBatchSet = vi.fn();
 const mockBatchUpdate = vi.fn();
 const mockBatchCommit = vi.fn().mockResolvedValue(undefined);
-/** @type {import('vitest').Mock<(path: string, id: string) => { id: string }>} */
-const mockDocRef = vi.fn(() => ({ id: 'mock-ref' }));
+/** @type {import('vitest').Mock<(path: string, id: string) => { path: string, id: string }>} */
+const mockDocRef = vi.fn((path, id) => ({ path, id }));
 const mockServerTimestamp = vi.fn(() => ({ _serverTimestamp: true }));
 const mockTimestampFromDate = vi.fn((date) => ({ _date: date }));
 
@@ -101,6 +101,29 @@ function createStravaActivity(overrides = {}) {
     average_speed: 2.89,
     ...overrides,
   };
+}
+
+/**
+ * Reads Firestore batch set calls as persisted document IDs and payloads.
+ * @returns {{ docRef: { path: string, id: string }, payload: object, options: object }[]} Batch set records.
+ */
+function getBatchSetRecords() {
+  return mockBatchSet.mock.calls.map(([docRef, payload, options]) => ({
+    docRef,
+    payload,
+    options,
+  }));
+}
+
+/**
+ * Reads Firestore batch update calls as target document refs and payloads.
+ * @returns {{ docRef: { path: string, id: string }, payload: object }[]} Batch update records.
+ */
+function getBatchUpdateRecords() {
+  return mockBatchUpdate.mock.calls.map(([docRef, payload]) => ({
+    docRef,
+    payload,
+  }));
 }
 
 describe('verifyAuthToken', () => {
@@ -222,7 +245,23 @@ describe('syncStravaActivities', () => {
 
     // Assert
     expect(count).toBe(3);
-    expect(mockBatchSet).toHaveBeenCalledTimes(3);
+    expect(getBatchSetRecords()).toEqual([
+      expect.objectContaining({
+        docRef: { path: 'stravaActivities', id: '1' },
+        payload: expect.objectContaining({ stravaId: 1, type: 'Run' }),
+        options: { merge: true },
+      }),
+      expect.objectContaining({
+        docRef: { path: 'stravaActivities', id: '3' },
+        payload: expect.objectContaining({ stravaId: 3, type: 'TrailRun' }),
+        options: { merge: true },
+      }),
+      expect.objectContaining({
+        docRef: { path: 'stravaActivities', id: '5' },
+        payload: expect.objectContaining({ stravaId: 5, type: 'VirtualRun' }),
+        options: { merge: true },
+      }),
+    ]);
   });
 
   it('batch writes correct field mapping to stravaActivities/{stravaId}', async () => {
@@ -311,14 +350,19 @@ describe('syncStravaActivities', () => {
       afterEpoch: 0,
     });
 
-    // Assert — activity batch + final lastSyncAt batch = 2 commits
-    expect(mockBatchCommit).toHaveBeenCalledTimes(2);
+    // Assert
     expect(mockDocRef).toHaveBeenCalledWith('stravaTokens', 'user-sync');
     expect(mockDocRef).toHaveBeenCalledWith('stravaConnections', 'user-sync');
-    expect(mockBatchUpdate).toHaveBeenCalledTimes(2);
-    expect(mockBatchUpdate).toHaveBeenCalledWith(expect.anything(), {
-      lastSyncAt: { _serverTimestamp: true },
-    });
+    expect(getBatchUpdateRecords()).toEqual([
+      {
+        docRef: { path: 'stravaTokens', id: 'user-sync' },
+        payload: { lastSyncAt: { _serverTimestamp: true } },
+      },
+      {
+        docRef: { path: 'stravaConnections', id: 'user-sync' },
+        payload: { lastSyncAt: { _serverTimestamp: true } },
+      },
+    ]);
   });
 
   it('returns correct synced count', async () => {
@@ -385,19 +429,43 @@ describe('syncStravaActivities', () => {
 
     // Assert
     expect(count).toBe(101);
-    expect(mockedFetch).toHaveBeenCalledTimes(2);
     expect(mockedFetch).toHaveBeenNthCalledWith(
       1,
-      expect.stringContaining('&page=1'),
-      expect.anything(),
+      'https://www.strava.com/api/v3/athlete/activities?after=0&per_page=100&page=1',
+      { headers: { Authorization: 'Bearer token' } },
     );
     expect(mockedFetch).toHaveBeenNthCalledWith(
       2,
-      expect.stringContaining('&page=2'),
-      expect.anything(),
+      'https://www.strava.com/api/v3/athlete/activities?after=0&per_page=100&page=2',
+      { headers: { Authorization: 'Bearer token' } },
     );
-    // activity batch x2 + lastSyncAt batch x1 = 3 commits
-    expect(mockBatchCommit).toHaveBeenCalledTimes(3);
+    expect(getBatchSetRecords()).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        docRef: { path: 'stravaActivities', id: '1' },
+        payload: expect.objectContaining({ stravaId: 1 }),
+        options: { merge: true },
+      }),
+      expect.objectContaining({
+        docRef: { path: 'stravaActivities', id: '100' },
+        payload: expect.objectContaining({ stravaId: 100 }),
+        options: { merge: true },
+      }),
+      expect.objectContaining({
+        docRef: { path: 'stravaActivities', id: '201' },
+        payload: expect.objectContaining({ stravaId: 201 }),
+        options: { merge: true },
+      }),
+    ]));
+    expect(getBatchUpdateRecords()).toEqual([
+      {
+        docRef: { path: 'stravaTokens', id: 'user-paginate' },
+        payload: { lastSyncAt: { _serverTimestamp: true } },
+      },
+      {
+        docRef: { path: 'stravaConnections', id: 'user-paginate' },
+        payload: { lastSyncAt: { _serverTimestamp: true } },
+      },
+    ]);
   });
 
   it('returns 0 for empty activities response', async () => {
@@ -418,8 +486,15 @@ describe('syncStravaActivities', () => {
     // Assert
     expect(count).toBe(0);
     expect(mockBatchSet).not.toHaveBeenCalled();
-    // updateLastSyncAt still commits (batch.update x2 + commit x1)
-    expect(mockBatchUpdate).toHaveBeenCalledTimes(2);
-    expect(mockBatchCommit).toHaveBeenCalledTimes(1);
+    expect(getBatchUpdateRecords()).toEqual([
+      {
+        docRef: { path: 'stravaTokens', id: 'user-1' },
+        payload: { lastSyncAt: { _serverTimestamp: true } },
+      },
+      {
+        docRef: { path: 'stravaConnections', id: 'user-1' },
+        payload: { lastSyncAt: { _serverTimestamp: true } },
+      },
+    ]);
   });
 });
