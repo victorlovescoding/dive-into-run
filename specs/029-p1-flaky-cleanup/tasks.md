@@ -276,11 +276,12 @@ Maximum parallel plan:
 
 ### T012. Push, PR, CI, Merge Main
 
-- [ ] **Owner team**: Team A Engineer / Team A Reviewer
+- [x] **Owner team**: Team A Engineer / Team A Reviewer
 - **Scope / discovery method**: Main-agent orchestration only after all implementation tasks are reviewed and committed.
 - **Dependencies**: T011.
 - **Can run in parallel with**: None.
 - **Acceptance criteria**: Branch pushed; PR opened against `main`; GitHub required checks pass (`ci` and `e2e`, plus any repo-required checks visible at PR time); code review gate passed; PR merged to `main`; local main updated; feature branch/worktree follow-up recorded.
+- **Completion evidence**: PR #30 merged; CI/e2e/Firestore Rules Gate succeeded; local `main` fast-forward completed.
 - **Verification commands**:
   ```bash
   git status --short --branch
