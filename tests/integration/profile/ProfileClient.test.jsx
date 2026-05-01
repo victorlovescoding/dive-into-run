@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import ProfileClient from '@/app/users/[uid]/ProfileClient';
+import { createPublicProfileDateFixture as createProfile } from '../../_helpers/profile-fixtures';
 
 const firestoreMock = vi.hoisted(() => ({
   collection: vi.fn((db, path) => ({ type: 'collection', db, path })),
@@ -102,22 +103,6 @@ vi.mock('@/app/users/[uid]/ProfileEventList', () => ({
  * @property {string} [bio] - 簡介。
  * @property {Date} createdAt - 加入日期。
  */
-
-/**
- * 建立測試用 public profile。
- * @param {Partial<MockPublicProfile>} [overrides] - 覆蓋欄位。
- * @returns {MockPublicProfile} profile。
- */
-function createProfile(overrides = {}) {
-  return {
-    uid: 'user-abc',
-    name: 'Alice Runner',
-    photoURL: 'https://example.com/alice.jpg',
-    bio: '每天晨跑 5 公里。',
-    createdAt: new Date(2024, 2, 15),
-    ...overrides,
-  };
-}
 
 /**
  * 建立 Firebase count aggregate snapshot。

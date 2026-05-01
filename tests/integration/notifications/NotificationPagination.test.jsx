@@ -64,6 +64,11 @@ import {
   startAfter,
   where,
 } from 'firebase/firestore';
+import {
+  createIndexedNotificationFixture,
+  createNotificationDocSnapshot,
+  createNotificationList,
+} from '../../_helpers/notification-fixtures';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -85,23 +90,9 @@ const mockUser = {
  * @returns {import('@/lib/notification-helpers').NotificationItem} 測試用通知。
  */
 function createNotification(id, read = false) {
-  const index = parseInt(id.replace('n', ''), 10);
-  const ms = index * 1000;
-  return /** @type {import('@/lib/notification-helpers').NotificationItem} */ ({
-    id,
-    recipientUid: 'user1',
-    type: 'event_modified',
-    actorUid: 'actor1',
-    actorName: 'Actor',
-    actorPhotoURL: 'https://example.com/photo.jpg',
-    entityType: 'event',
-    entityId: 'evt1',
-    entityTitle: '跑步',
-    commentId: null,
-    message: `通知 ${id}`,
-    read,
-    createdAt: { toDate: () => new Date(ms), toMillis: () => ms },
-  });
+  return /** @type {import('@/lib/notification-helpers').NotificationItem} */ (
+    createIndexedNotificationFixture(id, undefined, { read })
+  );
 }
 
 /**
@@ -111,7 +102,9 @@ function createNotification(id, read = false) {
  * @returns {import('@/lib/notification-helpers').NotificationItem[]} 通知陣列。
  */
 function createNotifications(count, startIndex = 1) {
-  return Array.from({ length: count }, (_, i) => createNotification(`n${startIndex + i}`));
+  return /** @type {import('@/lib/notification-helpers').NotificationItem[]} */ (
+    createNotificationList(count, { startIndex })
+  );
 }
 
 /** @type {((snapshot: { docs: QueryNotificationDoc[], docChanges: () => { type: string, doc: QueryNotificationDoc }[] }) => void) | undefined} */
@@ -133,8 +126,7 @@ let intersectionCallback;
  * @returns {QueryNotificationDoc} Firestore document snapshot 形狀。
  */
 function createNotificationDoc(notification) {
-  const { id, ...data } = notification;
-  return { id, data: () => data };
+  return /** @type {QueryNotificationDoc} */ (createNotificationDocSnapshot(notification));
 }
 
 /**

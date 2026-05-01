@@ -21,6 +21,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { createPublicProfileTimestampFixture as createProfile } from '../../_helpers/profile-fixtures';
 
 /* ==========================================================================
    Module mocks — next/image + next/link only. Do NOT mock React.
@@ -65,22 +66,6 @@ vi.mock('next/link', () => ({
  * @property {string} [bio] - 個人簡介（未設定代表 undefined）。
  * @property {{ toDate: () => Date }} createdAt - 加入日期（類 Firestore Timestamp）。
  */
-
-/**
- * 建立測試用 PublicProfile。
- * @param {Partial<MockPublicProfile>} [overrides] - 覆蓋欄位。
- * @returns {MockPublicProfile} 測試資料。
- */
-function createProfile(overrides = {}) {
-  return {
-    uid: 'user-abc',
-    name: 'Alice Runner',
-    photoURL: 'https://example.com/alice.jpg',
-    bio: '每天晨跑 5 公里，週末登山路跑。',
-    createdAt: { toDate: () => new Date(2024, 2, 15) }, // 2024-03-15
-    ...overrides,
-  };
-}
 
 /**
  * 動態載入 ProfileHeader 元件，讓 vi.mock 生效並於元件新增/修改後立刻反映。

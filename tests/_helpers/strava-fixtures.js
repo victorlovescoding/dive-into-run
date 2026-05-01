@@ -24,6 +24,22 @@
  * @property {number} average_speed - Average speed in m/s.
  */
 
+/**
+ * @typedef {object} StravaFirestoreActivity
+ * @property {string} id - Firestore document ID.
+ * @property {string} uid - User ID.
+ * @property {number} stravaId - Strava activity ID.
+ * @property {string} name - Activity title.
+ * @property {string} type - Strava activity type.
+ * @property {number} distanceMeters - Distance in meters.
+ * @property {number} movingTimeSec - Moving time in seconds.
+ * @property {import('firebase/firestore').Timestamp} startDate - Start timestamp.
+ * @property {string} startDateLocal - ISO local start time.
+ * @property {string | null} summaryPolyline - Polyline summary.
+ * @property {number} averageSpeed - Average speed in m/s.
+ * @property {import('firebase/firestore').Timestamp} syncedAt - Sync timestamp.
+ */
+
 const DEFAULT_TOKEN = Object.freeze({
   access_token: 'strava-access-token',
   refresh_token: 'strava-refresh-token',
@@ -77,12 +93,62 @@ const DEFAULT_TRAIL_RUN_ACTIVITY = Object.freeze({
 });
 
 /**
+ * Builds a Timestamp-like value for Firestore-facing activity fixtures.
+ * @param {string | Date} value - ISO date string or Date.
+ * @returns {import('firebase/firestore').Timestamp} Timestamp-like object.
+ */
+function timestampLike(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  return /** @type {import('firebase/firestore').Timestamp} */ (
+    /** @type {unknown} */ ({
+      toDate: () => date,
+    })
+  );
+}
+
+/**
  * Builds a Strava activity payload with caller overrides.
  * @param {Partial<StravaActivityPayload>} [overrides] - Activity field overrides.
  * @returns {StravaActivityPayload} Full activity payload.
  */
 export function createStravaActivity(overrides = {}) {
   return { ...DEFAULT_RUN_ACTIVITY, ...overrides };
+}
+
+/**
+ * Builds a Firestore-shaped Strava activity with caller overrides.
+ * @param {Partial<StravaFirestoreActivity>} [overrides] - Activity field overrides.
+ * @returns {StravaFirestoreActivity} Firestore activity fixture.
+ */
+export function createStravaFirestoreActivity(overrides = {}) {
+  return {
+    id: 'act-1',
+    uid: 'user-1',
+    stravaId: 12345,
+    name: '晨跑',
+    type: 'Run',
+    distanceMeters: 5200,
+    movingTimeSec: 1710,
+    startDate: timestampLike('2026-04-01T06:00:00'),
+    startDateLocal: '2026-04-01T06:00:00',
+    summaryPolyline: 'encodedstring',
+    averageSpeed: 3.04,
+    syncedAt: timestampLike('2026-04-01T12:00:00'),
+    ...overrides,
+  };
+}
+
+/**
+ * Builds a Firestore doc snapshot for a Strava activity.
+ * @param {string} id - Document ID.
+ * @param {Partial<StravaFirestoreActivity>} [overrides] - Activity data overrides.
+ * @returns {{ id: string, data: () => StravaFirestoreActivity }} Firestore doc snapshot.
+ */
+export function createStravaActivityDoc(id, overrides = {}) {
+  return {
+    id,
+    data: () => createStravaFirestoreActivity({ id, ...overrides }),
+  };
 }
 
 /**

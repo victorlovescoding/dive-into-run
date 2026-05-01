@@ -76,6 +76,10 @@ import { AuthContext } from '@/runtime/providers/AuthProvider';
 import NotificationProvider from '@/runtime/providers/NotificationProvider';
 import NotificationPanel from '@/components/Notifications/NotificationPanel';
 import NotificationBell from '@/components/Notifications/NotificationBell';
+import {
+  createNotificationDocSnapshot,
+  createNotificationFixture as createMockNotification,
+} from '../../_helpers/notification-fixtures';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -105,39 +109,14 @@ let unreadSnapshotError;
 const unsubscribeCallbacks = /** @type {import('vitest').Mock[]} */ ([]);
 
 /**
- * 建立測試用通知資料。
- * @param {Partial<import('@/lib/notification-helpers').NotificationItem>} [overrides] - 覆寫欄位。
- * @returns {import('@/lib/notification-helpers').NotificationItem} 測試用通知。
- */
-function createMockNotification(overrides = {}) {
-  return /** @type {import('@/lib/notification-helpers').NotificationItem} */ ({
-    id: 'n1',
-    recipientUid: 'user1',
-    type: 'event_modified',
-    actorUid: 'actor1',
-    actorName: 'Test Actor',
-    actorPhotoURL: '',
-    entityType: 'event',
-    entityId: 'evt1',
-    entityTitle: '週末跑步',
-    commentId: null,
-    message: '你所參加的『週末跑步』活動資訊有更動',
-    read: false,
-    createdAt: /** @type {any} */ (new Date()),
-    ...overrides,
-  });
-}
-
-/**
  * 建立 Firestore document snapshot mock。
  * @param {import('@/lib/notification-helpers').NotificationItem} notification - 通知資料。
  * @returns {{ id: string, data: () => import('@/lib/notification-helpers').NotificationItem }} snapshot。
  */
 function createNotificationSnapshot(notification) {
-  return {
-    id: notification.id,
-    data: () => notification,
-  };
+  return /** @type {{ id: string, data: () => import('@/lib/notification-helpers').NotificationItem }} */ (
+    createNotificationDocSnapshot(notification, { includeIdInData: true })
+  );
 }
 
 /**

@@ -95,6 +95,10 @@ vi.mock('next/image', () => ({
 // Imports (after vi.mock — Vitest hoists mocks above these)
 // ---------------------------------------------------------------------------
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
+import {
+  createFirestoreDocSnapshot as createDocSnapshot,
+  createFirestoreQuerySnapshot as createQuerySnapshot,
+} from '../../_helpers/factories';
 
 const firestoreMocks = {
   ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
@@ -142,30 +146,6 @@ const mockComments = [
     createdAt: { toDate: () => new Date('2026-04-15T07:00:00Z') },
   },
 ];
-
-/**
- * 建立 Firestore document snapshot stub。
- * @param {string} id - document ID。
- * @param {object | null} data - document data，null 表示不存在。
- * @returns {object} Firestore-like document snapshot。
- */
-function createDocSnapshot(id, data) {
-  return {
-    id,
-    ref: { id, path: `mock/${id}` },
-    exists: () => data !== null,
-    data: () => data,
-  };
-}
-
-/**
- * 建立 Firestore query snapshot stub。
- * @param {object[]} docs - Firestore-like document snapshots。
- * @returns {{ docs: object[], size: number }} Firestore-like query snapshot。
- */
-function createQuerySnapshot(docs) {
-  return { docs, size: docs.length };
-}
 
 /**
  * 設定 S1 posts 測試共用的 Firestore SDK 邊界 stub。

@@ -155,6 +155,10 @@ vi.mock('@/components/UserLink', () => ({
 // ---------------------------------------------------------------------------
 
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
+import {
+  createFirestoreDocSnapshot as createDocSnapshot,
+  createFirestoreQuerySnapshot as createQuerySnapshot,
+} from '../../_helpers/factories';
 
 const firestoreMocks = {
   ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
@@ -197,21 +201,6 @@ const existingComments = [
   { id: 'old-comment-2', authorUid: 'author1', comment: '作者留言' },
   { id: 'old-comment-3', authorUid: 'user1', comment: '自己的留言' },
 ];
-
-/**
- * 建立 Firestore document snapshot stub。
- * @param {string} id - document ID。
- * @param {object | null} data - document data，null 表示不存在。
- * @returns {object} Firestore-like document snapshot。
- */
-function createDocSnapshot(id, data) {
-  return {
-    id,
-    ref: { id, path: `mock/${id}` },
-    exists: () => data !== null,
-    data: () => data,
-  };
-}
 
 /**
  * 設定留言通知測試需要的 Firestore SDK 邊界 stub。
@@ -276,12 +265,11 @@ function setupFirestoreMocks() {
   });
   firestoreMocks.getDocs.mockImplementation(async (ref) => {
     if (ref.path === 'posts/post1/comments') {
-      return {
-        docs: existingComments.map((comment) => createDocSnapshot(comment.id, comment)),
-        size: existingComments.length,
-      };
+      return createQuerySnapshot(
+        existingComments.map((comment) => createDocSnapshot(comment.id, comment)),
+      );
     }
-    return { docs: [], size: 0 };
+    return createQuerySnapshot([]);
   });
 
   return { tx, batch };

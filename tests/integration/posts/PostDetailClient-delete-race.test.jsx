@@ -95,6 +95,7 @@ vi.mock('next/image', () => ({
 // Imports (after vi.mock — Vitest hoists mocks above these)
 // ---------------------------------------------------------------------------
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
+import { createFirestoreDocSnapshot as createDocSnapshot } from '../../_helpers/factories';
 
 const firestoreMocks = {
   ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
@@ -132,21 +133,6 @@ const mockPost = {
   commentsCount: 0,
   isAuthor: true,
 };
-
-/**
- * 建立 Firestore document snapshot stub。
- * @param {string} id - document ID。
- * @param {object | null} data - document data，null 表示不存在。
- * @returns {object} Firestore-like document snapshot。
- */
-function createDocSnapshot(id, data) {
-  return {
-    id,
-    ref: { id, path: `mock/${id}` },
-    exists: () => data !== null,
-    data: () => data,
-  };
-}
 
 /**
  * 設定刪除流程需要的 Firestore SDK 邊界 stub。

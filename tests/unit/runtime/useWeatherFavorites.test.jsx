@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import useWeatherFavorites from '@/runtime/hooks/useWeatherFavorites';
+import {
+  COUNTY_LOCATION,
+  TOWNSHIP_LOCATION,
+  USER,
+  createFavorite,
+  createSnapshot,
+  createWeatherPayload,
+} from '../../_helpers/use-weather-page-runtime-test-helpers';
 
 const TOAST_PROVIDER_MODULE = vi.hoisted(() => '@/runtime/providers/ToastProvider');
 
@@ -26,49 +34,6 @@ vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
 vi.mock(TOAST_PROVIDER_MODULE, () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
-
-const USER = {
-  uid: 'user-1',
-  name: 'Test User',
-  email: 'user@example.com',
-  photoURL: '',
-  bio: null,
-  getIdToken: async () => 'token',
-};
-const COUNTY_LOCATION = {
-  countyCode: '63000',
-  countyName: '臺北市',
-  townshipCode: null,
-  townshipName: null,
-  displaySuffix: null,
-};
-const TOWNSHIP_LOCATION = {
-  countyCode: '65000',
-  countyName: '新北市',
-  townshipCode: '65000010',
-  townshipName: '板橋區',
-  displaySuffix: null,
-};
-
-/**
- * @param {string} id - favorite id。
- * @param {typeof COUNTY_LOCATION} location - location fixture。
- * @returns {{ id: string } & typeof COUNTY_LOCATION} favorite doc。
- */
-function createFavorite(id, location) {
-  return { id, ...location };
-}
-
-/**
- * @param {Array<{ id: string } & typeof COUNTY_LOCATION>} docs - favorite docs。
- * @returns {{ empty: boolean, docs: Array<{ id: string, data: () => object }> }} query snapshot。
- */
-function createSnapshot(docs) {
-  return {
-    empty: docs.length === 0,
-    docs: docs.map((favorite) => ({ id: favorite.id, data: () => favorite })),
-  };
-}
 
 /**
  * @returns {{ promise: Promise<void>, resolve: () => void }} deferred。
@@ -144,18 +109,10 @@ beforeEach(() => {
   mockFetch.mockImplementation(async (input) => {
     const url = new URL(typeof input === 'string' ? input : input.url, 'http://localhost');
     const township = url.searchParams.get('township');
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        data: {
-          today: {
-            weatherCode: township ? '11' : '02',
-            currentTemp: township ? 26 : 30,
-          },
-        },
-      }),
-      { status: 200 },
-    );
+    const payload = township
+      ? createWeatherPayload('新北市 · 板橋區', '11', 26)
+      : createWeatherPayload('臺北市', '02', 30);
+    return new Response(JSON.stringify(payload), { status: 200 });
   });
 });
 

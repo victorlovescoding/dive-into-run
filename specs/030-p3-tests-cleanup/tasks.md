@@ -325,7 +325,7 @@ Keep commits ordered by dependency:
     - `rg -n "\\b(make[A-Z][A-Za-z0-9_]*|create[A-Z][A-Za-z0-9_]*|build[A-Z][A-Za-z0-9_]*)\\b\\s*=|function\\s+(make[A-Z][A-Za-z0-9_]*|create[A-Z][A-Za-z0-9_]*|build[A-Z][A-Za-z0-9_]*)" tests --glob "*.{js,jsx}"`
   - Commit checkpoint: none by itself; include in the factory extraction commit after T014.
 
-- [ ] T012 Extract notification/profile factories
+- [x] T012 Extract notification/profile factories
   - Scope: move repeated notification/profile data builders into reviewed helpers; this is the only factory task allowed to create or edit the generic helper.
   - Owned files:
     - `tests/_helpers/factories.js` for cross-domain Firestore primitives only.
@@ -359,7 +359,7 @@ Keep commits ordered by dependency:
     - `npm run type-check:changed`
   - Commit checkpoint: none by itself; include in the factory extraction commit after T014.
 
-- [ ] T013 Extract posts/events/dashboard factories
+- [x] T013 Extract posts/events/dashboard factories
   - Scope: consolidate repeated post/event/comment Firestore snapshot builders without editing generic helper ownership from T012.
   - Owned files:
     - `tests/_helpers/comment-fixtures.js`
@@ -401,7 +401,7 @@ Keep commits ordered by dependency:
     - `npm run type-check:changed`
   - Commit checkpoint: none by itself; include in the factory extraction commit after T014.
 
-- [ ] T014 Extract Strava/weather/runtime factories and commit factory batch
+- [x] T014 Extract Strava/weather/runtime factories and commit factory batch
   - Scope: finish factory cleanup in Strava, weather, and runtime hook tests without editing generic helper ownership from T012.
   - Owned files:
     - `tests/_helpers/strava-fixtures.js`

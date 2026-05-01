@@ -15,6 +15,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WeatherPage from '@/components/weather/WeatherPage';
+import { createWeatherPayload } from '../../_helpers/use-weather-page-runtime-test-helpers';
 
 /* ==========================================================================
    Hoisted shared state (mock factories pick these up before module init).
@@ -208,61 +209,6 @@ vi.mock('firebase/firestore', () => firestoreMock);
    ========================================================================== */
 
 /**
- * Build today weather payload for fetch fixture.
- * @param {string} weatherDesc - 天氣描述。
- * @param {number} currentTemp - 當前溫度。
- * @returns {import('@/types/weather-types').TodayWeather} 今日天氣。
- */
-function buildToday(weatherDesc, currentTemp) {
-  return {
-    currentTemp,
-    weatherDesc,
-    weatherCode: '2',
-    morningTemp: currentTemp + 2,
-    eveningTemp: currentTemp - 4,
-    rainProb: 10,
-    humidity: 72,
-    uv: null,
-    aqi: null,
-  };
-}
-
-/**
- * Build tomorrow weather payload for fetch fixture.
- * @returns {import('@/types/weather-types').TomorrowWeather} 明日天氣。
- */
-function buildTomorrow() {
-  return {
-    weatherDesc: '多雲',
-    weatherCode: '4',
-    morningTemp: 29,
-    eveningTemp: 23,
-    rainProb: 30,
-    humidity: 78,
-    uv: null,
-  };
-}
-
-/**
- * Build a successful /api/weather response Body shape.
- * @param {string} locationName - locationName 欄位。
- * @param {string} weatherDesc - 天氣描述。
- * @param {number} currentTemp - 當前溫度。
- * @returns {{ ok: true, data: import('@/types/weather-types').WeatherInfo }} API payload。
- */
-function buildWeatherPayload(locationName, weatherDesc, currentTemp) {
-  return {
-    ok: true,
-    data: {
-      locationName,
-      locationNameShort: locationName,
-      today: buildToday(weatherDesc, currentTemp),
-      tomorrow: buildTomorrow(),
-    },
-  };
-}
-
-/**
  * 安裝 fetch mock — 依 URL 的 county / township query 分流回不同 fixture。
  * @returns {import('vitest').Mock} fetch mock。
  */
@@ -274,19 +220,26 @@ function installWeatherFetch() {
     const county = params.get('county');
 
     if (township === '板橋區') {
-      return new Response(JSON.stringify(buildWeatherPayload('新北市 · 板橋區', '晴時多雲', 28)), {
-        status: 200,
-      });
+      return new Response(
+        JSON.stringify(createWeatherPayload('新北市 · 板橋區', '2', 28, {
+          weatherDesc: '晴時多雲',
+        })),
+        { status: 200 },
+      );
     }
     if (township === '中和區') {
-      return new Response(JSON.stringify(buildWeatherPayload('新北市 · 中和區', '陰時多雲', 26)), {
-        status: 200,
-      });
+      return new Response(
+        JSON.stringify(createWeatherPayload('新北市 · 中和區', '2', 26, {
+          weatherDesc: '陰時多雲',
+        })),
+        { status: 200 },
+      );
     }
 
-    return new Response(JSON.stringify(buildWeatherPayload(county ?? '新北市', '多雲', 27)), {
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify(createWeatherPayload(county ?? '新北市', '2', 27, { weatherDesc: '多雲' })),
+      { status: 200 },
+    );
   });
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;

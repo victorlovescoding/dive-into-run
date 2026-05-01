@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { createStravaActivityDoc } from '../../_helpers/strava-fixtures';
 
 const {
   mockUseContext,
@@ -72,16 +73,6 @@ function mockAuth(user) {
 }
 
 /**
- * 建立活動文件 snapshot。
- * @param {string} id - 文件 ID。
- * @param {object} data - 活動資料。
- * @returns {{ id: string, data: () => object }} snapshot。
- */
-function createActivityDoc(id, data) {
-  return { id, data: () => data };
-}
-
-/**
  * 建立可手動 resolve 的 Promise。
  * @returns {{ promise: Promise<any>, resolve: (value: any) => void }} deferred promise 控制器。
  */
@@ -114,19 +105,19 @@ describe('useRunCalendar', () => {
   it('loads month activities and aggregates the real day map + summary', async () => {
     mockGetDocs.mockResolvedValueOnce({
       docs: [
-        createActivityDoc('a1', {
+        createStravaActivityDoc('a1', {
           uid: 'u1',
           type: 'Run',
           distanceMeters: 5000,
           startDateLocal: '2026-04-05T07:00:00',
         }),
-        createActivityDoc('a2', {
+        createStravaActivityDoc('a2', {
           uid: 'u1',
           type: 'Run',
           distanceMeters: 3000,
           startDateLocal: '2026-04-05T19:00:00',
         }),
-        createActivityDoc('a3', {
+        createStravaActivityDoc('a3', {
           uid: 'u1',
           type: 'TrailRun',
           distanceMeters: 8000,
@@ -209,7 +200,7 @@ describe('useRunCalendar', () => {
     mockGetDocs
       .mockResolvedValueOnce({
         docs: [
-          createActivityDoc('a1', {
+          createStravaActivityDoc('a1', {
             uid: 'u1',
             type: 'Run',
             distanceMeters: 5000,
@@ -237,7 +228,7 @@ describe('useRunCalendar', () => {
     await act(async () => {
       deferred.resolve({
         docs: [
-          createActivityDoc('a2', {
+          createStravaActivityDoc('a2', {
             uid: 'u1',
             type: 'VirtualRun',
             distanceMeters: 2000,

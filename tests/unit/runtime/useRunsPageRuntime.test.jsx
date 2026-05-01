@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import useRunsPageRuntime from '@/runtime/hooks/useRunsPageRuntime';
+import { createStravaActivityDoc } from '../../_helpers/strava-fixtures';
 
 const TOAST_PROVIDER_MODULE = vi.hoisted(() => '@/runtime/providers/ToastProvider');
 
@@ -94,25 +95,21 @@ function createUser(overrides = {}) {
 }
 
 /**
- * 建立 Strava 活動 snapshot。
- * @param {string} id - 文件 id。
- * @param {string} name - 活動名稱。
- * @returns {{ id: string, data: () => object }} snapshot。
- */
-function createActivityDoc(id, name) {
-  return {
-    id,
-    data: () => ({ uid: 'u1', stravaId: Number(id), name }),
-  };
-}
-
-/**
  * 建立 lastSyncAt timestamp-like 物件。
  * @param {Date} date - 上次同步時間。
  * @returns {{ toDate: () => Date }} timestamp-like。
  */
 function createTimestamp(date) {
   return { toDate: () => date };
+}
+
+/**
+ * @param {string} id - Document ID.
+ * @param {string} name - Activity name.
+ * @returns {ReturnType<typeof createStravaActivityDoc>} Strava activity snapshot.
+ */
+function activityDoc(id, name) {
+  return createStravaActivityDoc(id, { uid: 'u1', stravaId: Number(id), name });
 }
 
 /**
@@ -179,10 +176,10 @@ describe('useRunsPageRuntime', () => {
   it('composes connection + activities and refreshes after successful sync', async () => {
     const listener = installConnectionListener();
     runsPageBoundaryMocks.mockGetDocs
-      .mockResolvedValueOnce({ docs: [createActivityDoc('1', 'Morning Run')] })
-      .mockResolvedValueOnce({ docs: [createActivityDoc('1', 'Morning Run')] })
+      .mockResolvedValueOnce({ docs: [activityDoc('1', 'Morning Run')] })
+      .mockResolvedValueOnce({ docs: [activityDoc('1', 'Morning Run')] })
       .mockResolvedValueOnce({
-        docs: [createActivityDoc('1', 'Morning Run'), createActivityDoc('2', 'Recovery Jog')],
+        docs: [activityDoc('1', 'Morning Run'), activityDoc('2', 'Recovery Jog')],
       });
     runsPageBoundaryMocks.mockFetch.mockResolvedValueOnce({ ok: true });
     const view = renderRuntime();
@@ -215,10 +212,10 @@ describe('useRunsPageRuntime', () => {
   it('refreshes activities and flips sync button to cooldown when lastSyncAt changes', async () => {
     const listener = installConnectionListener();
     runsPageBoundaryMocks.mockGetDocs
-      .mockResolvedValueOnce({ docs: [createActivityDoc('1', 'Morning Run')] })
-      .mockResolvedValueOnce({ docs: [createActivityDoc('1', 'Morning Run')] })
+      .mockResolvedValueOnce({ docs: [activityDoc('1', 'Morning Run')] })
+      .mockResolvedValueOnce({ docs: [activityDoc('1', 'Morning Run')] })
       .mockResolvedValueOnce({
-        docs: [createActivityDoc('9', 'Post Sync Run')],
+        docs: [activityDoc('9', 'Post Sync Run')],
       });
     const view = renderRuntime();
 
@@ -270,8 +267,8 @@ describe('useRunsPageRuntime', () => {
   it('reacts to auth switching by loading composed data and then clearing it', async () => {
     const listener = installConnectionListener();
     runsPageBoundaryMocks.mockGetDocs
-      .mockResolvedValueOnce({ docs: [createActivityDoc('1', 'Morning Run')] })
-      .mockResolvedValueOnce({ docs: [createActivityDoc('1', 'Morning Run')] });
+      .mockResolvedValueOnce({ docs: [activityDoc('1', 'Morning Run')] })
+      .mockResolvedValueOnce({ docs: [activityDoc('1', 'Morning Run')] });
     const view = renderRuntime({ user: null, loading: false });
 
     expect(view.result.current.user).toBeNull();

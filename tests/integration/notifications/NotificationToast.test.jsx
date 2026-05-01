@@ -44,12 +44,13 @@ import NotificationProvider from '@/runtime/providers/NotificationProvider';
 import NotificationToast from '@/components/Notifications/NotificationToast';
 import NotificationBell from '@/components/Notifications/NotificationBell';
 import { onSnapshot } from 'firebase/firestore';
+import { createFirestoreQuerySnapshot } from '../../_helpers/factories';
 
 const mockedOnSnapshot = /** @type {import('vitest').Mock} */ (onSnapshot);
 
-/** @type {((snapshot: ReturnType<typeof createSnapshot>) => void) | undefined} */
+/** @type {((snapshot: ReturnType<typeof createFirestoreQuerySnapshot>) => void) | undefined} */
 let allSnapshotCallback;
-/** @type {((snapshot: ReturnType<typeof createSnapshot>) => void) | undefined} */
+/** @type {((snapshot: ReturnType<typeof createFirestoreQuerySnapshot>) => void) | undefined} */
 let unreadSnapshotCallback;
 /** @type {((error: Error) => void) | undefined} */
 let allErrorCallback;
@@ -84,30 +85,18 @@ function createNotificationData(id, message, read = false) {
 }
 
 /**
- * 建立 Firestore 文件 snapshot mock。
- * @param {string} id - 文件 ID。
- * @param {object} data - 文件資料。
- * @returns {{ id: string, data: () => object }} 文件 snapshot。
- */
-function createDocSnapshot(id, data) {
-  return { id, data: () => data };
-}
-
-/**
  * 建立 Firestore query snapshot mock。
  * @param {Array<{ id: string, data: object }>} docs - 文件資料。
  * @param {Array<{ type: string, id: string, data: object }>} [changes] - docChanges 資料。
- * @returns {{ docs: Array<{ id: string, data: () => object }>, docChanges: () => Array<{ type: string, doc: { id: string, data: () => object } }> }} snapshot mock。
+ * @returns {ReturnType<typeof createFirestoreQuerySnapshot>} snapshot mock。
  */
 function createSnapshot(docs, changes = []) {
-  return {
-    docs: docs.map((doc) => createDocSnapshot(doc.id, doc.data)),
-    docChanges: () =>
-      changes.map((change) => ({
-        type: change.type,
-        doc: createDocSnapshot(change.id, change.data),
-      })),
-  };
+  return createFirestoreQuerySnapshot(docs, {
+    changes: changes.map((change) => ({
+      type: change.type,
+      doc: { id: change.id, data: change.data },
+    })),
+  });
 }
 
 /**

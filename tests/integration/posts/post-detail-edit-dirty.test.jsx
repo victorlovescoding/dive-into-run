@@ -22,6 +22,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
+import { createFirestoreDocSnapshot as createDocSnapshot } from '../../_helpers/factories';
 
 // ---------------------------------------------------------------------------
 // Hoisted shared state (available inside vi.mock factories)
@@ -187,21 +188,6 @@ const mockPost = {
   likesCount: 0,
   commentsCount: 0,
 };
-
-/**
- * 建立 Firestore document snapshot stub。
- * @param {string} id - document ID。
- * @param {object | null} data - document data，null 表示不存在。
- * @returns {object} Firestore-like document snapshot。
- */
-function createDocSnapshot(id, data) {
-  return {
-    id,
-    ref: { id, path: `mock/${id}` },
-    exists: () => data !== null,
-    data: () => data,
-  };
-}
 
 /** 設定編輯 dirty gate 測試需要的 Firestore SDK 邊界 stub。 */
 function setupFirestoreMocks() {

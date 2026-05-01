@@ -24,6 +24,10 @@ import {
 } from 'firebase/firestore';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import PostPage from '@/app/posts/page';
+import {
+  createFirestoreDocSnapshot as createDocSnapshot,
+  createFirestoreQuerySnapshot as createQuerySnapshot,
+} from '../../_helpers/factories';
 
 // ---------------------------------------------------------------------------
 // Hoisted shared state (available inside vi.mock factories)
@@ -181,30 +185,6 @@ const mockPosts = [
 let postPages = [[]];
 /** @type {Map<string, object>} */
 let documentsByPath = new Map();
-
-/**
- * 建立 Firestore-like document snapshot。
- * @param {string} id - 文件 ID。
- * @param {object | null} data - 文件資料。
- * @returns {object} Firestore-like document snapshot。
- */
-function createDocSnapshot(id, data) {
-  return {
-    id,
-    ref: { id, path: `mock/${id}` },
-    exists: () => data !== null,
-    data: () => data,
-  };
-}
-
-/**
- * 建立 Firestore query snapshot stub。
- * @param {object[]} docs - Firestore-like document snapshots。
- * @returns {{ docs: object[], size: number }} Firestore-like query snapshot。
- */
-function createQuerySnapshot(docs) {
-  return { docs, size: docs.length };
-}
 
 /**
  * 設定 posts query 回傳頁面。

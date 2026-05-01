@@ -1,4 +1,7 @@
 import { vi } from 'vitest';
+import { createFirestoreDocSnapshot } from './factories';
+
+export { createFirestoreDocSnapshot as createDocSnapshot } from './factories';
 
 /**
  * @typedef {object} ParticipantDoc
@@ -51,26 +54,13 @@ export function createEventFixture(overrides = {}) {
 }
 
 /**
- * 建立 Firestore-like 文件 snapshot（給 getDocs 使用）。
- * @param {string} id - 文件 ID。
- * @param {object} data - doc data。
- * @returns {{ id: string, data: () => object }} snapshot。
- */
-export function createDocSnapshot(id, data) {
-  return {
-    id,
-    data: () => data,
-  };
-}
-
-/**
  * 建立 participant 文件 snapshot 列表（給 fetchParticipants 用）。
  * @param {ParticipantDoc[]} participants - 參加者陣列。
  * @returns {Array<{ id: string, data: () => ParticipantDoc }>} snapshot 陣列。
  */
 export function createParticipantSnapshots(participants) {
   return participants.map((participant) =>
-    createDocSnapshot(participant.id, /** @type {object} */ (participant)),
+    createFirestoreDocSnapshot(participant.id, /** @type {object} */ (participant)),
   );
 }
 

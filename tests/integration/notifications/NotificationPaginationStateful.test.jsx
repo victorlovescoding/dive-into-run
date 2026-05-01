@@ -67,6 +67,11 @@ import {
   startAfter,
   where,
 } from 'firebase/firestore';
+import {
+  createIndexedNotificationFixture,
+  createNotificationDocSnapshot,
+  createNotificationList,
+} from '../../_helpers/notification-fixtures';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -89,22 +94,9 @@ const mockUser = {
  * @returns {import('@/lib/notification-helpers').NotificationItem} 測試用通知。
  */
 function createNotification(id, index, read = false) {
-  const ms = index * 1000;
-  return /** @type {import('@/lib/notification-helpers').NotificationItem} */ ({
-    id,
-    recipientUid: 'user1',
-    type: 'event_modified',
-    actorUid: 'actor1',
-    actorName: 'Actor',
-    actorPhotoURL: 'https://example.com/photo.jpg',
-    entityType: 'event',
-    entityId: 'evt1',
-    entityTitle: '跑步',
-    commentId: null,
-    message: `通知 ${id}`,
-    read,
-    createdAt: { toDate: () => new Date(ms), toMillis: () => ms },
-  });
+  return /** @type {import('@/lib/notification-helpers').NotificationItem} */ (
+    createIndexedNotificationFixture(id, index, { read })
+  );
 }
 
 /** @type {((entries: IntersectionObserverEntry[]) => void) | undefined} */
@@ -126,8 +118,7 @@ let unreadSnapshotCallback;
  * @returns {QueryNotificationDoc} Firestore document snapshot 形狀。
  */
 function createNotificationDoc(notification) {
-  const { id, ...data } = notification;
-  return { id, data: () => data };
+  return /** @type {QueryNotificationDoc} */ (createNotificationDocSnapshot(notification));
 }
 
 /**
@@ -314,10 +305,7 @@ function renderPanel() {
 describe('NotificationPagination — stateful cursor tests', () => {
   it('should traverse all pages without gaps or duplicates (all tab)', async () => {
     // 13 notifications: n13(newest) → n1(oldest)
-    const all = Array.from({ length: 13 }, (_, i) => {
-      const idx = 13 - i;
-      return createNotification(`n${idx}`, idx);
-    });
+    const all = createNotificationList(13, { descending: true });
 
     const { fireAllListener, fireUnreadListener } = setupStatefulFirestore(all);
     const user = userEvent.setup();
@@ -359,10 +347,7 @@ describe('NotificationPagination — stateful cursor tests', () => {
   });
 
   it('should chain cursors correctly across multiple fetchMore calls', async () => {
-    const all = Array.from({ length: 15 }, (_, i) => {
-      const idx = 15 - i;
-      return createNotification(`n${idx}`, idx);
-    });
+    const all = createNotificationList(15, { descending: true });
 
     const { allDocs, fireAllListener, fireUnreadListener } = setupStatefulFirestore(all);
     const user = userEvent.setup();
@@ -401,10 +386,7 @@ describe('NotificationPagination — stateful cursor tests', () => {
   });
 
   it('should merge correctly when listener fires new data after loadMore', async () => {
-    const initial = Array.from({ length: 8 }, (_, i) => {
-      const idx = 8 - i;
-      return createNotification(`n${idx}`, idx);
-    });
+    const initial = createNotificationList(8, { descending: true });
 
     const { fireAllListener, fireAllListenerWith, fireUnreadListener } =
       setupStatefulFirestore(initial);
@@ -447,10 +429,7 @@ describe('NotificationPagination — stateful cursor tests', () => {
 
   it('should paginate unread tab via client-side slice (Phase 1)', async () => {
     // 8 unread notifications — all within listener's 100 limit
-    const unreadItems = Array.from({ length: 8 }, (_, i) => {
-      const idx = 8 - i;
-      return createNotification(`u${idx}`, idx);
-    });
+    const unreadItems = createNotificationList(8, { prefix: 'u', descending: true });
     const allItems = unreadItems.map((n) => ({ ...n, read: true }));
 
     const { fireAllListener, fireUnreadListener } = setupStatefulFirestore(allItems);
@@ -489,13 +468,11 @@ describe('NotificationPagination — stateful cursor tests', () => {
     { timeout: 15000 },
     async () => {
       // 100 unread in listener (at capacity) + 3 more on server
-      const unreadItems = Array.from({ length: 100 }, (_, i) => {
-        const idx = 100 - i;
-        return createNotification(`u${idx}`, idx);
-      });
-      const serverExtra = Array.from({ length: 3 }, (_, i) => {
-        const idx = 103 - i;
-        return createNotification(`s${idx}`, idx);
+      const unreadItems = createNotificationList(100, { prefix: 'u', descending: true });
+      const serverExtra = createNotificationList(3, {
+        startIndex: 101,
+        prefix: 's',
+        descending: true,
       });
 
       const { fireAllListener, fireUnreadListener, setUnreadServerDocs } =

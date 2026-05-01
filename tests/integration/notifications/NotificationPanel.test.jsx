@@ -51,37 +51,11 @@ vi.mock('next/image', () => ({
 import { NotificationContext } from '@/runtime/providers/NotificationProvider';
 import NotificationPanel from '@/components/Notifications/NotificationPanel';
 import NotificationItem from '@/components/Notifications/NotificationItem';
+import { createNotificationFixture as createMockNotification } from '../../_helpers/notification-fixtures';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/**
- * 建立測試用通知資料。
- * @param {Partial<import('@/lib/notification-helpers').NotificationItem>} [overrides] - 覆寫欄位。
- * @returns {import('@/lib/notification-helpers').NotificationItem} 測試用通知。
- */
-function createMockNotification(overrides = {}) {
-  return /** @type {import('@/lib/notification-helpers').NotificationItem} */ ({
-    id: 'n1',
-    recipientUid: 'user1',
-    type: 'event_modified',
-    actorUid: 'actor1',
-    actorName: 'Test Actor',
-    actorPhotoURL: 'https://example.com/photo.jpg',
-    entityType: 'event',
-    entityId: 'evt1',
-    entityTitle: '週末跑步',
-    commentId: null,
-    message: '你所參加的『週末跑步』活動資訊有更動',
-    read: false,
-    createdAt: {
-      toDate: () => new Date(Date.now() - 5 * 60 * 1000),
-      toMillis: () => Date.now() - 5 * 60 * 1000,
-    },
-    ...overrides,
-  });
-}
 
 /**
  * 建立 NotificationContext 預設 mock value。

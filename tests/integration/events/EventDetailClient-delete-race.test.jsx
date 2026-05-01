@@ -21,6 +21,10 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import EventDetailClient from '@/app/events/[id]/eventDetailClient';
+import {
+  createFirestoreDocSnapshot as createDocSnapshot,
+  createFirestoreQuerySnapshot as createQuerySnapshot,
+} from '../../_helpers/factories';
 
 const { mockShowToast, mockPush, mockReplace, mockAuthContext } = vi.hoisted(() => {
   const { createContext } = require('react');
@@ -142,21 +146,6 @@ const mockEvent = {
 };
 
 /**
- * 建立 Firestore document snapshot stub。
- * @param {string} id - document ID。
- * @param {object | null} data - document data，null 表示不存在。
- * @returns {object} Firestore-like document snapshot。
- */
-function createDocSnapshot(id, data) {
-  return {
-    id,
-    ref: { id, path: `mock/${id}` },
-    exists: () => data !== null,
-    data: () => data,
-  };
-}
-
-/**
  * 設定刪除流程需要的 Firestore SDK 邊界 stub。
  * @param {{ deleteEventExists?: boolean, batchError?: Error | null }} [options] - 刪除情境。
  * @returns {{ batch: { delete: import('vitest').Mock, commit: import('vitest').Mock } }} SDK spies。
@@ -207,9 +196,9 @@ function setupFirestoreMocks({ deleteEventExists = true, batchError = null } = {
     return createDocSnapshot(String(ref.id), null);
   });
   firestoreMocks.getDocs.mockImplementation(async (ref) => {
-    if (ref.path === 'events/event-1/participants') return { docs: [], size: 0 };
-    if (ref.path === 'events/event-1/comments') return { docs: [], size: 0 };
-    return { docs: [], size: 0 };
+    if (ref.path === 'events/event-1/participants') return createQuerySnapshot([]);
+    if (ref.path === 'events/event-1/comments') return createQuerySnapshot([]);
+    return createQuerySnapshot([]);
   });
 
   return { batch };

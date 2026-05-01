@@ -76,6 +76,10 @@ import {
 import { onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import NotificationBell from '@/components/Notifications/NotificationBell';
 import Navbar from '@/components/Navbar/Navbar';
+import {
+  createNotificationDocSnapshot,
+  createNotificationList,
+} from '../../_helpers/notification-fixtures';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -103,11 +107,7 @@ let unreadSnapshotCallback;
  * @returns {QueryNotificationDoc} Firestore document snapshot 形狀。
  */
 function createNotificationDoc(notification) {
-  const { id, ...data } = notification;
-  return {
-    id,
-    data: () => data,
-  };
+  return /** @type {QueryNotificationDoc} */ (createNotificationDocSnapshot(notification));
 }
 
 /**
@@ -117,21 +117,19 @@ function createNotificationDoc(notification) {
  * @returns {QueryNotificationDoc[]} 假通知文件陣列。
  */
 function fakeNotifications(count, read = false) {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `n${i}`,
-    recipientUid: 'u1',
-    type: /** @type {const} */ ('event_modified'),
-    actorUid: 'a1',
-    actorName: 'Actor',
-    actorPhotoURL: '',
-    entityType: /** @type {const} */ ('event'),
-    entityId: 'e1',
-    entityTitle: 'Test Event',
-    commentId: null,
-    message: 'test',
+  return createNotificationList(count, {
+    startIndex: 0,
     read,
-    createdAt: /** @type {any} */ (new Date()),
-  })).map(createNotificationDoc);
+    getOverrides: () => ({
+      recipientUid: 'u1',
+      actorUid: 'a1',
+      actorPhotoURL: '',
+      entityId: 'e1',
+      entityTitle: 'Test Event',
+      message: 'test',
+      createdAt: new Date(),
+    }),
+  }).map(createNotificationDoc);
 }
 
 /**

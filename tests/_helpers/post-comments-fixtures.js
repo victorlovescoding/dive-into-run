@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+import { createFirestoreDocSnapshot } from './factories';
 
 /**
  * @typedef {Parameters<typeof import('@/runtime/hooks/usePostComments').default>[0]} PostCommentsParams
@@ -43,12 +44,7 @@ export function createPostCommentRaw(overrides = {}) {
  * @returns {{ id: string, exists: () => boolean, data: () => object, ref: object }} snapshot。
  */
 export function createFirestoreDoc(id, data) {
-  return {
-    id,
-    exists: () => true,
-    data: () => data,
-    ref: { id, path: `posts/p1/comments/${id}` },
-  };
+  return createFirestoreDocSnapshot(id, data, { path: `posts/p1/comments/${id}` });
 }
 
 /**

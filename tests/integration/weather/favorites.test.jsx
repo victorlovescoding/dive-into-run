@@ -17,6 +17,13 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WeatherPage from '@/components/weather/WeatherPage';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
+import {
+  COUNTY_LOCATION,
+  TOWNSHIP_LOCATION,
+  createFavorite,
+  createWeatherFavoritesGetDocsHandler,
+  createWeatherPayload,
+} from '../../_helpers/use-weather-page-runtime-test-helpers';
 
 /* ==========================================================================
    Hoisted shared state (mock factories pick these up before module init).
@@ -201,69 +208,6 @@ vi.mock('firebase/firestore', () => firestoreMock);
    ========================================================================== */
 
 /**
- * @typedef {object} FavoriteRecord
- * @property {string} id - 文件 ID。
- * @property {string} countyCode - 縣市代碼。
- * @property {string} countyName - 縣市名。
- * @property {string | null} townshipCode - 鄉鎮代碼。
- * @property {string | null} townshipName - 鄉鎮名。
- * @property {string | null} [displaySuffix] - 顯示後綴。
- */
-
-/**
- * 把 favorite docs 包成 firestore-shaped query snapshot。
- * @param {FavoriteRecord[]} favorites - 收藏列。
- * @returns {{ docs: Array<{ id: string, data: () => FavoriteRecord }>, empty: boolean, size: number }} snapshot。
- */
-function buildFavoritesSnapshot(favorites) {
-  return {
-    docs: favorites.map((favorite) => ({
-      id: favorite.id,
-      data: () => favorite,
-    })),
-    empty: favorites.length === 0,
-    size: favorites.length,
-  };
-}
-
-/**
- * 根據 query 的 collection path / where constraints 分流回不同 snapshot。
- * - 第一段 segment === 'users' 且最後段 === 'weatherFavorites' → favorites collection
- *   - 若有 countyCode where → favorites lookup（addFavorite/isFavorited）
- *   - 否則 → getFavorites listing
- * @param {FavoriteRecord[]} favorites - 目前狀態下的收藏列。
- * @returns {(arg: any) => Promise<any>} getDocs implementation。
- */
-function buildGetDocsImpl(favorites) {
-  return async function getDocsImpl(arg) {
-    const queryValue = arg ?? {};
-    const path = queryValue.source?.path ?? queryValue.path ?? '';
-    if (!path.endsWith('weatherFavorites')) {
-      return buildFavoritesSnapshot([]);
-    }
-
-    const constraints = queryValue.constraints ?? [];
-    const countyCodeFilter = constraints.find(
-      (constraint) => constraint?.field === 'countyCode',
-    )?.value;
-    const townshipCodeFilter = constraints.find(
-      (constraint) => constraint?.field === 'townshipCode',
-    )?.value;
-
-    if (countyCodeFilter) {
-      const matched = favorites.filter(
-        (favorite) =>
-          favorite.countyCode === countyCodeFilter &&
-          (favorite.townshipCode ?? null) === (townshipCodeFilter ?? null),
-      );
-      return buildFavoritesSnapshot(matched);
-    }
-
-    return buildFavoritesSnapshot(favorites);
-  };
-}
-
-/**
  * 用目前 authState 包 AuthContext.Provider 後 render WeatherPage。
  * @returns {ReturnType<typeof render>} render result。
  */
@@ -290,32 +234,7 @@ function installWeatherFetch() {
       const county = params.get('county') ?? '臺北市';
       const locationName = township ? `${county} · ${township}` : county;
       return new Response(
-        JSON.stringify({
-          ok: true,
-          data: {
-            locationName,
-            today: {
-              currentTemp: 28,
-              weatherDesc: '晴時多雲',
-              weatherCode: '2',
-              morningTemp: 30,
-              eveningTemp: 24,
-              rainProb: 10,
-              humidity: 72,
-              uv: null,
-              aqi: null,
-            },
-            tomorrow: {
-              weatherDesc: '多雲',
-              weatherCode: '4',
-              morningTemp: 29,
-              eveningTemp: 23,
-              rainProb: 30,
-              humidity: 78,
-              uv: null,
-            },
-          },
-        }),
+        JSON.stringify(createWeatherPayload(locationName, '2', 28, { weatherDesc: '晴時多雲' })),
         { status: 200 },
       );
     }),
@@ -327,22 +246,8 @@ function installWeatherFetch() {
    ========================================================================== */
 
 const mockFavorites = [
-  {
-    id: 'fav-1',
-    countyCode: '63000',
-    countyName: '臺北市',
-    townshipCode: null,
-    townshipName: null,
-    displaySuffix: null,
-  },
-  {
-    id: 'fav-2',
-    countyCode: '65000',
-    countyName: '新北市',
-    townshipCode: '65000010',
-    townshipName: '板橋區',
-    displaySuffix: null,
-  },
+  createFavorite('fav-1', COUNTY_LOCATION),
+  createFavorite('fav-2', TOWNSHIP_LOCATION),
 ];
 
 describe('Favorites integration', () => {
@@ -352,7 +257,7 @@ describe('Favorites integration', () => {
     installWeatherFetch();
     globalThis.localStorage?.clear?.();
     window.history.replaceState({}, '', '/');
-    firestoreMock.getDocs.mockImplementation(buildGetDocsImpl([]));
+    firestoreMock.getDocs.mockImplementation(createWeatherFavoritesGetDocsHandler([]));
     firestoreMock.addDoc.mockResolvedValue({ id: 'new-doc-id' });
     firestoreMock.deleteDoc.mockResolvedValue(undefined);
   });
@@ -398,17 +303,8 @@ describe('Favorites integration', () => {
   describe('authenticated user — remove favorite', () => {
     it('should remove favorite and show empty icon', async () => {
       setAuthUser('test-uid');
-      const initialFavorites = [
-        {
-          id: 'existing-doc',
-          countyCode: '63000',
-          countyName: '臺北市',
-          townshipCode: null,
-          townshipName: null,
-          displaySuffix: null,
-        },
-      ];
-      firestoreMock.getDocs.mockImplementation(buildGetDocsImpl(initialFavorites));
+      const initialFavorites = [createFavorite('existing-doc', COUNTY_LOCATION)];
+      firestoreMock.getDocs.mockImplementation(createWeatherFavoritesGetDocsHandler(initialFavorites));
 
       const user = userEvent.setup();
       renderWeatherPage();
@@ -417,7 +313,7 @@ describe('Favorites integration', () => {
       await screen.findByRole('button', { name: /取消收藏/i });
 
       // 移除前先把 favorites 清掉，讓 reload 後不顯示 chip
-      firestoreMock.getDocs.mockImplementation(buildGetDocsImpl([]));
+      firestoreMock.getDocs.mockImplementation(createWeatherFavoritesGetDocsHandler([]));
       await user.click(screen.getByRole('button', { name: /取消收藏/i }));
 
       await waitFor(() => {
@@ -432,7 +328,7 @@ describe('Favorites integration', () => {
   describe('favorites bar rendering', () => {
     it('should render favorite chips from runtime state', async () => {
       setAuthUser('test-uid');
-      firestoreMock.getDocs.mockImplementation(buildGetDocsImpl(mockFavorites));
+      firestoreMock.getDocs.mockImplementation(createWeatherFavoritesGetDocsHandler(mockFavorites));
 
       renderWeatherPage();
 
@@ -444,7 +340,7 @@ describe('Favorites integration', () => {
   describe('clicking favorite chip', () => {
     it('should update card when clicking a favorite chip', async () => {
       setAuthUser('test-uid');
-      firestoreMock.getDocs.mockImplementation(buildGetDocsImpl(mockFavorites));
+      firestoreMock.getDocs.mockImplementation(createWeatherFavoritesGetDocsHandler(mockFavorites));
 
       const user = userEvent.setup();
       renderWeatherPage();
@@ -460,7 +356,9 @@ describe('Favorites integration', () => {
     it('should remove chip and call removeFavorite on click', async () => {
       setAuthUser('test-uid');
       let currentFavorites = mockFavorites.slice();
-      firestoreMock.getDocs.mockImplementation((arg) => buildGetDocsImpl(currentFavorites)(arg));
+      firestoreMock.getDocs.mockImplementation((arg) =>
+        createWeatherFavoritesGetDocsHandler(currentFavorites)(arg),
+      );
 
       const user = userEvent.setup();
       renderWeatherPage();
