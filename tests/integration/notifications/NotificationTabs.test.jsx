@@ -56,6 +56,10 @@ import NotificationProvider from '@/runtime/providers/NotificationProvider';
 import NotificationPanel from '@/components/Notifications/NotificationPanel';
 import NotificationBell from '@/components/Notifications/NotificationBell';
 import { onSnapshot } from 'firebase/firestore';
+import {
+  createIndexedNotificationFixture,
+  createNotificationQuerySnapshot,
+} from '../../_helpers/notification-fixtures';
 
 const mockedOnSnapshot = /** @type {import('vitest').Mock} */ (onSnapshot);
 
@@ -79,61 +83,19 @@ const mockUser = {
  * @returns {import('@/lib/notification-helpers').NotificationItem} 測試用通知。
  */
 function createNotification(id, read = false) {
-  return /** @type {import('@/lib/notification-helpers').NotificationItem} */ ({
-    id,
-    recipientUid: 'user1',
-    type: 'event_modified',
-    actorUid: 'actor1',
-    actorName: 'Actor',
-    actorPhotoURL: 'https://example.com/photo.jpg',
-    entityType: 'event',
-    entityId: 'evt1',
-    entityTitle: '跑步',
-    commentId: null,
-    message: `通知 ${id}`,
-    read,
-    createdAt: {
-      toDate: () => new Date(Date.now() - 5 * 60 * 1000),
-      toMillis: () => Date.now() - 5 * 60 * 1000,
-    },
-  });
+  return /** @type {import('@/lib/notification-helpers').NotificationItem} */ (
+    createIndexedNotificationFixture(id, undefined, { read })
+  );
 }
 
-/** @type {((snapshot: ReturnType<typeof createSnapshot>) => void) | undefined} */
+/** @type {((snapshot: ReturnType<typeof createNotificationQuerySnapshot>) => void) | undefined} */
 let allSnapshotCallback;
-/** @type {((snapshot: ReturnType<typeof createSnapshot>) => void) | undefined} */
+/** @type {((snapshot: ReturnType<typeof createNotificationQuerySnapshot>) => void) | undefined} */
 let unreadSnapshotCallback;
 /** @type {((error: Error) => void) | undefined} */
 let allErrorCallback;
 /** @type {((error: Error) => void) | undefined} */
 let unreadErrorCallback;
-
-/**
- * 建立 Firestore 文件 snapshot mock。
- * @param {string} id - 文件 ID。
- * @param {object} data - 文件資料。
- * @returns {{ id: string, data: () => object }} 文件 snapshot。
- */
-function createDocSnapshot(id, data) {
-  return { id, data: () => data };
-}
-
-/**
- * 建立 Firestore query snapshot mock。
- * @param {Array<{ id: string, data: object }>} docs - 文件資料。
- * @param {Array<{ type: string, id: string, data: object }>} [changes] - docChanges 資料。
- * @returns {{ docs: Array<{ id: string, data: () => object }>, docChanges: () => Array<{ type: string, doc: { id: string, data: () => object } }> }} snapshot mock。
- */
-function createSnapshot(docs, changes = []) {
-  return {
-    docs: docs.map((doc) => createDocSnapshot(doc.id, doc.data)),
-    docChanges: () =>
-      changes.map((change) => ({
-        type: change.type,
-        doc: createDocSnapshot(change.id, change.data),
-      })),
-  };
-}
 
 /**
  * 判斷 query 是否為未讀通知 listener。
@@ -151,17 +113,11 @@ function isUnreadNotificationsQuery(queryRef) {
 /**
  * 推送 all listener snapshot。
  * @param {import('@/lib/notification-helpers').NotificationItem[]} notifications - 通知資料。
- * @param {Array<{ type: string, id: string, data: object }>} [changes] - docChanges 資料。
  * @returns {void}
  */
-function emitAllSnapshot(notifications, changes = []) {
+function emitAllSnapshot(notifications) {
   act(() => {
-    allSnapshotCallback?.(
-      createSnapshot(
-        notifications.map((notification) => ({ id: notification.id, data: notification })),
-        changes,
-      ),
-    );
+    allSnapshotCallback?.(createNotificationQuerySnapshot(notifications));
   });
 }
 
@@ -172,11 +128,7 @@ function emitAllSnapshot(notifications, changes = []) {
  */
 function emitUnreadSnapshot(notifications) {
   act(() => {
-    unreadSnapshotCallback?.(
-      createSnapshot(
-        notifications.map((notification) => ({ id: notification.id, data: notification })),
-      ),
-    );
+    unreadSnapshotCallback?.(createNotificationQuerySnapshot(notifications));
   });
 }
 

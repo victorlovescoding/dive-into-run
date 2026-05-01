@@ -16,7 +16,7 @@
  * Rules: AAA pattern、strict JSDoc、mock firebase/firestore + firebase-client。
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Module-level mocks
@@ -81,6 +81,14 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
+
+/** @type {ReturnType<typeof vi.spyOn> | undefined} */
+let consoleErrorSpy;
+
+afterEach(() => {
+  consoleErrorSpy?.mockRestore();
+  consoleErrorSpy = undefined;
+});
 
 // ---------------------------------------------------------------------------
 // Typedefs
@@ -477,30 +485,26 @@ describe('Unit: addComment', () => {
     // Arrange
     const { addComment } = await import('@/lib/firebase-posts');
     setupTxOnce({ getSnap: { exists: () => false } });
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     /** @type {MockUser} */
     const user = { uid: 'u1', name: 'Alice' };
 
     // Act & Assert
     await expect(addComment('post-1', { user, comment: 'hi' })).rejects.toThrow('Post not found');
-    expect(errorSpy).toHaveBeenCalledWith('新增留言失敗:', expect.any(Error));
-
-    errorSpy.mockRestore();
+    expect(consoleErrorSpy).toHaveBeenCalledWith('新增留言失敗:', expect.any(Error));
   });
 
   it('should log + re-throw when runTransaction itself rejects', async () => {
     // Arrange
     const { addComment } = await import('@/lib/firebase-posts');
     mockRunTransaction.mockRejectedValueOnce(new Error('tx failed'));
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     /** @type {MockUser} */
     const user = { uid: 'u1', name: 'Alice' };
 
     // Act & Assert
     await expect(addComment('post-1', { user, comment: 'hi' })).rejects.toThrow('tx failed');
-    expect(errorSpy).toHaveBeenCalledWith('新增留言失敗:', expect.any(Error));
-
-    errorSpy.mockRestore();
+    expect(consoleErrorSpy).toHaveBeenCalledWith('新增留言失敗:', expect.any(Error));
   });
 });
 
@@ -706,15 +710,13 @@ describe('Unit: hasUserLikedPost (singular)', () => {
     // Arrange
     const { hasUserLikedPost } = await import('@/lib/firebase-posts');
     mockGetDoc.mockRejectedValueOnce(new Error('getDoc failed'));
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     // Act
     const result = await hasUserLikedPost('u1', 'post-1');
 
     // Assert — catch 吞 error，回 false 而非 throw
     expect(result).toBe(false);
-    expect(errorSpy).toHaveBeenCalledWith('hasUserLikedPost failed:', expect.any(Error));
-
-    errorSpy.mockRestore();
+    expect(consoleErrorSpy).toHaveBeenCalledWith('hasUserLikedPost failed:', expect.any(Error));
   });
 });

@@ -59,23 +59,23 @@ vi.mock('firebase/firestore', () => ({
 // ---- Component (灰區) leaf mocks，保留以隔離 leaflet / dialog -----------
 
 vi.mock('@/components/RunsLoginGuide', () => ({
-  default: () => <div data-testid="login-guide">請先登入</div>,
+  default: () => <section aria-label="登入提示">請先登入</section>,
 }));
 vi.mock('@/components/RunsConnectGuide', () => ({
-  default: () => <div data-testid="connect-guide">連結 Strava</div>,
+  default: () => <section aria-label="Strava 連結提示">連結 Strava</section>,
 }));
 vi.mock('@/components/RunsActivityList', () => ({
   default: ({ activities, isLoading, loadMore, hasMore, isLoadingMore }) => (
-    <div data-testid="activity-list">
+    <section aria-label="活動列表">
       {isLoading ? 'loading' : `${activities.length} activities`}
-      {loadMore && <span data-testid="has-load-more" />}
-      {typeof hasMore === 'boolean' && <span data-testid="has-has-more" />}
-      {typeof isLoadingMore === 'boolean' && <span data-testid="has-is-loading-more" />}
-    </div>
+      {loadMore && <span>load more available</span>}
+      {typeof hasMore === 'boolean' && <span>has more flag provided</span>}
+      {typeof isLoadingMore === 'boolean' && <span>loading more flag provided</span>}
+    </section>
   ),
 }));
 vi.mock('@/components/RunCalendarDialog', () => ({
-  default: ({ open }) => (open ? <div data-testid="calendar-dialog">calendar open</div> : null),
+  default: ({ open }) => (open ? <div role="dialog">calendar open</div> : null),
 }));
 
 import { onSnapshot, getDocs } from 'firebase/firestore';
@@ -164,8 +164,8 @@ describe('RunsPage', () => {
     render(<RunsPage />);
 
     expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(screen.queryByTestId('login-guide')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('connect-guide')).not.toBeInTheDocument();
+    expect(screen.queryByText('請先登入')).not.toBeInTheDocument();
+    expect(screen.queryByText('連結 Strava')).not.toBeInTheDocument();
   });
 
   it('shows RunsLoginGuide when user is not logged in', () => {
@@ -173,9 +173,9 @@ describe('RunsPage', () => {
 
     render(<RunsPage />);
 
-    expect(screen.getByTestId('login-guide')).toBeInTheDocument();
-    expect(screen.queryByTestId('connect-guide')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('activity-list')).not.toBeInTheDocument();
+    expect(screen.getByText('請先登入')).toBeInTheDocument();
+    expect(screen.queryByText('連結 Strava')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '活動列表' })).not.toBeInTheDocument();
   });
 
   it('shows RunsConnectGuide when user is logged in but not connected', async () => {
@@ -185,10 +185,10 @@ describe('RunsPage', () => {
     render(<RunsPage />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('connect-guide')).toBeInTheDocument();
+      expect(screen.getByText('連結 Strava')).toBeInTheDocument();
     });
-    expect(screen.queryByTestId('login-guide')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('activity-list')).not.toBeInTheDocument();
+    expect(screen.queryByText('請先登入')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '活動列表' })).not.toBeInTheDocument();
   });
 
   it('shows athlete name and activity list when connected', async () => {
@@ -206,10 +206,10 @@ describe('RunsPage', () => {
       expect(screen.getByText('John Runner')).toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(screen.getByTestId('activity-list')).toHaveTextContent('2 activities');
+      expect(screen.getByRole('region', { name: '活動列表' })).toHaveTextContent('2 activities');
     });
-    expect(screen.queryByTestId('login-guide')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('connect-guide')).not.toBeInTheDocument();
+    expect(screen.queryByText('請先登入')).not.toBeInTheDocument();
+    expect(screen.queryByText('連結 Strava')).not.toBeInTheDocument();
   });
 
   it('sync button calls fetch /api/strava/sync on click', async () => {
@@ -268,7 +268,7 @@ describe('RunsPage', () => {
     const calBtn = await screen.findByRole('button', { name: '跑步月曆' });
     await user.click(calBtn);
 
-    expect(screen.getByTestId('calendar-dialog')).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toHaveTextContent('calendar open');
   });
 
   it('shows disconnect button when connected', async () => {

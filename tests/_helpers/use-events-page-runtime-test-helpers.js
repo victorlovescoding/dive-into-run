@@ -1,3 +1,8 @@
+import {
+  createFirestoreDocSnapshot,
+  createFirestoreQuerySnapshot,
+} from './factories';
+
 /**
  * 建立 Timestamp-like 測試物件。
  * @param {string} iso - ISO 日期字串。
@@ -54,10 +59,7 @@ export function createEventList(count, startIndex = 1, getOverrides) {
  * @returns {{ id: string, data: () => import('@/service/event-service').EventData }} snapshot。
  */
 export function createEventDoc(event) {
-  return {
-    id: String(event.id),
-    data: () => event,
-  };
+  return createFirestoreDocSnapshot(String(event.id), event);
 }
 
 /**
@@ -66,18 +68,18 @@ export function createEventDoc(event) {
  * @param {import('@/service/event-service').EventData[]} options.latestEvents - 初始頁資料。
  * @param {import('@/service/event-service').EventData[]} [options.nextEvents] - 下一頁資料。
  * @param {import('@/service/event-service').EventData[]} [options.filteredEvents] - 篩選結果。
- * @returns {(ref: { constraints?: Array<{ type?: string }> }) => Promise<{ docs: Array<{ id: string, data: () => import('@/service/event-service').EventData }> }>} getDocs dispatcher。
+ * @returns {(ref: { constraints?: Array<{ type?: string }> }) => Promise<import('./factories').FirestoreQuerySnapshot>} getDocs dispatcher。
  */
 export function createGetDocsDispatcher({ latestEvents, nextEvents = [], filteredEvents = [] }) {
   return async (ref) => {
     const constraints = ref?.constraints ?? [];
     if (constraints.some((constraint) => constraint?.type === 'startAfter')) {
-      return { docs: nextEvents.map(createEventDoc) };
+      return createFirestoreQuerySnapshot(nextEvents.map(createEventDoc));
     }
     if (constraints.some((constraint) => constraint?.type === 'where')) {
-      return { docs: filteredEvents.map(createEventDoc) };
+      return createFirestoreQuerySnapshot(filteredEvents.map(createEventDoc));
     }
-    return { docs: latestEvents.map(createEventDoc) };
+    return createFirestoreQuerySnapshot(latestEvents.map(createEventDoc));
   };
 }
 

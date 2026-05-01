@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { createStravaActivityDoc } from '../../_helpers/strava-fixtures';
 
 const {
   mockUseContext,
@@ -63,19 +64,6 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
 
 /**
- * 建立活動文件 snapshot。
- * @param {string} id - doc id。
- * @param {object} data - doc data。
- * @returns {{ id: string, data: () => object }} snapshot。
- */
-function createActivityDoc(id, data) {
-  return {
-    id,
-    data: () => data,
-  };
-}
-
-/**
  * 設定 hook 看到的 AuthContext 值。
  * @param {{ uid: string, name?: string|null, email?: string|null, photoURL?: string|null }|null} user - 使用者。
  * @returns {void}
@@ -107,8 +95,8 @@ describe('useStravaActivities', () => {
   it('shows loading then displays activities', async () => {
     mockGetDocs.mockResolvedValueOnce({
       docs: [
-        createActivityDoc('doc1', { stravaId: 12345, name: '晨跑', uid: 'u1' }),
-        createActivityDoc('doc2', { stravaId: 67890, name: '夜跑', uid: 'u1' }),
+        createStravaActivityDoc('doc1', { stravaId: 12345, name: '晨跑', uid: 'u1' }),
+        createStravaActivityDoc('doc2', { stravaId: 67890, name: '夜跑', uid: 'u1' }),
       ],
     });
 
@@ -171,7 +159,7 @@ describe('useStravaActivities', () => {
 
   it('stores lastDoc from initial load for pagination cursor', async () => {
     const docs = Array.from({ length: 10 }, (_, index) =>
-      createActivityDoc(`doc${index + 1}`, {
+      createStravaActivityDoc(`doc${index + 1}`, {
         stravaId: index + 1,
         name: `Run ${index + 1}`,
         uid: 'u1',
@@ -192,7 +180,7 @@ describe('useStravaActivities', () => {
 
   it('sets hasMore to false when returned page is shorter than page size', async () => {
     mockGetDocs.mockResolvedValueOnce({
-      docs: [createActivityDoc('doc1', { stravaId: 1, name: 'Run 1', uid: 'u1' })],
+      docs: [createStravaActivityDoc('doc1', { stravaId: 1, name: 'Run 1', uid: 'u1' })],
     });
     mockAuth({ uid: 'u1', name: 'Test', email: null, photoURL: null });
 
@@ -207,7 +195,7 @@ describe('useStravaActivities', () => {
   });
 
   it('loadMore appends activities to existing list', async () => {
-    const fakeCursor = createActivityDoc('doc1', { stravaId: 1, name: 'Run 1', uid: 'u1' });
+    const fakeCursor = createStravaActivityDoc('doc1', { stravaId: 1, name: 'Run 1', uid: 'u1' });
 
     mockGetDocs.mockResolvedValueOnce({
       docs: [fakeCursor],
@@ -222,7 +210,7 @@ describe('useStravaActivities', () => {
     });
 
     mockGetDocs.mockResolvedValueOnce({
-      docs: [createActivityDoc('doc2', { stravaId: 2, name: 'Run 2', uid: 'u1' })],
+      docs: [createStravaActivityDoc('doc2', { stravaId: 2, name: 'Run 2', uid: 'u1' })],
     });
 
     await act(async () => {
@@ -237,7 +225,7 @@ describe('useStravaActivities', () => {
   });
 
   it('isLoadingMore is true during loadMore, false after', async () => {
-    const fakeCursor = createActivityDoc('doc1', { stravaId: 1, name: 'Run 1', uid: 'u1' });
+    const fakeCursor = createStravaActivityDoc('doc1', { stravaId: 1, name: 'Run 1', uid: 'u1' });
 
     /** @type {(value: any) => void} */
     let resolveLoadMore;
@@ -273,7 +261,7 @@ describe('useStravaActivities', () => {
 
     await act(async () => {
       resolveLoadMore({
-        docs: [createActivityDoc('doc2', { stravaId: 2, name: 'Run 2', uid: 'u1' })],
+        docs: [createStravaActivityDoc('doc2', { stravaId: 2, name: 'Run 2', uid: 'u1' })],
       });
       await loadMorePromise;
     });
@@ -285,7 +273,7 @@ describe('useStravaActivities', () => {
 
   it('refresh re-fetches activities from scratch', async () => {
     mockGetDocs.mockResolvedValueOnce({
-      docs: [createActivityDoc('doc1', { stravaId: 1, name: 'Run 1', uid: 'u1' })],
+      docs: [createStravaActivityDoc('doc1', { stravaId: 1, name: 'Run 1', uid: 'u1' })],
     });
     mockAuth({ uid: 'u1', name: 'Test', email: null, photoURL: null });
 
@@ -298,8 +286,8 @@ describe('useStravaActivities', () => {
 
     mockGetDocs.mockResolvedValueOnce({
       docs: [
-        createActivityDoc('doc1', { stravaId: 1, name: 'Run 1', uid: 'u1' }),
-        createActivityDoc('doc2', { stravaId: 2, name: 'Run 2', uid: 'u1' }),
+        createStravaActivityDoc('doc1', { stravaId: 1, name: 'Run 1', uid: 'u1' }),
+        createStravaActivityDoc('doc2', { stravaId: 2, name: 'Run 2', uid: 'u1' }),
       ],
     });
 
@@ -323,7 +311,7 @@ describe('useStravaActivities', () => {
   });
 
   it('loadMore guards against concurrent calls', async () => {
-    const fakeCursor = createActivityDoc('doc1', { stravaId: 1, name: 'Run 1', uid: 'u1' });
+    const fakeCursor = createStravaActivityDoc('doc1', { stravaId: 1, name: 'Run 1', uid: 'u1' });
 
     /** @type {(value: any) => void} */
     let resolveLoadMore;
@@ -365,7 +353,7 @@ describe('useStravaActivities', () => {
 
     await act(async () => {
       resolveLoadMore({
-        docs: [createActivityDoc('doc2', { stravaId: 2, name: 'Run 2', uid: 'u1' })],
+        docs: [createStravaActivityDoc('doc2', { stravaId: 2, name: 'Run 2', uid: 'u1' })],
       });
       await loadMorePromise;
     });

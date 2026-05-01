@@ -1,0 +1,587 @@
+# P3 Tests Cleanup Tasks
+
+Source audit: `specs/030-p3-tests-cleanup/2026-04-29-tests-audit-report.md`
+
+This plan covers only the audit report P3 cleanup scope:
+
+- `data-testid` cleanup
+- `vi.spyOn(console, 'error')` and related manual restore cleanup
+- shared mock/test factory extraction
+
+## Operating Rules
+
+- Main agent is process owner only. All file/code changes below must be done by an Engineer subagent and reviewed by a separate Reviewer subagent.
+- Reviewer approval is required before changing a task checkbox to `- [x]`.
+- Keep all task checkboxes unchecked until that exact task has passed reviewer signoff.
+- Do not push, open PR, merge, or delete the worktree until T001-T016 are complete and reviewer-approved.
+- T017-T021 are no-checkbox delivery gates. They are the only gates allowed to push, open PR, wait for CI, merge, and sync local `main`.
+- T017-T020 still require Engineer + Reviewer validation, but their completion evidence is recorded in PR/GitHub state and the final report, not by editing this tracked file after CI.
+- If the main agent compacts or a new session takes over, the first action is to read this file, then continue from the checked boxes, team configuration, and dependencies below.
+- If compact/restart happens, the new session must not push, open PR, or merge until every task before T017 is checked.
+- Do not revert unrelated changes. Work only in files owned by the active task.
+- Before implementing any code changes, re-run the inventory commands in T002/T007/T011 because the copied audit sample may be stale. Current observation: the audit example `tests/unit/runtime/useStravaActivities.test.jsx` no longer contains `data-testid`.
+
+## Current Inventory Snapshot
+
+These are planning inputs, not completion criteria. Refresh before editing.
+
+- Existing helper destination candidates:
+  - `tests/_helpers/mock-helpers.js`
+  - `tests/_helpers/comment-fixtures.js`
+  - `tests/_helpers/post-comments-fixtures.js`
+  - `tests/_helpers/event-participation-fixtures.js`
+  - `tests/_helpers/strava-fixtures.js`
+  - `tests/_helpers/use-posts-page-runtime-test-helpers.js`
+  - `tests/_helpers/use-events-page-runtime-test-helpers.js`
+  - `tests/_helpers/use-weather-page-runtime-test-helpers.js`
+- No current `tests/_helpers/factories.js`.
+- High `data-testid` clusters found by current scan:
+  - `tests/integration/profile/ProfileClient.test.jsx`
+  - `tests/integration/auth/AuthProvider.test.jsx`
+  - `tests/integration/strava/RunsPage.test.jsx`
+  - `tests/integration/profile/ProfileEventList.test.jsx`
+  - `tests/integration/dashboard/DashboardTabs.test.jsx`
+  - `tests/integration/weather/weather-page.test.jsx`
+  - `tests/integration/weather/township-drilldown.test.jsx`
+  - `tests/integration/weather/favorites.test.jsx`
+  - `tests/integration/strava/RunsRouteMap.test.jsx`
+- Audit primary console spy target:
+  - `tests/unit/lib/firebase-posts-comments-likes.test.js`
+- Additional current console spy/manual restore clusters:
+  - `tests/unit/runtime/useEventMutations.test.jsx`
+  - `tests/unit/runtime/useEventDetailMutations.test.jsx`
+  - `tests/integration/events/EventDetailClient-delete-race.test.jsx`
+  - `tests/integration/posts/PostDetailClient-delete-race.test.jsx`
+  - `tests/unit/runtime/useProfileRuntime.test.jsx`
+  - `tests/unit/runtime/useMemberPageRuntime.test.jsx`
+  - `tests/unit/runtime/useProfileEventsRuntime.test.jsx`
+  - `tests/unit/runtime/useEventParticipation.test.jsx`
+  - `tests/unit/runtime/useEventDetailParticipation.test.jsx`
+
+## Parallel Team Plan
+
+Maximum recommended parallel teams at any time: 3.
+
+- First parallel wave: T002, T007, T011 inventory collection may run at the same time as read-only scans/findings; they must not concurrently edit `tasks.md`.
+- Serialized inventory planning update gate: if T002/T007/T011 need owned-file-list, inventory/status, or scope updates in `tasks.md`, apply those updates only after all three inventory reviewers have approved their findings, then patch `tasks.md` in fixed order T002 -> T007 -> T011, with the matching Inventory Reviewer approval after each update.
+- Second wave: T003, T004, T005 may run in parallel only after T002 and any serialized T002 `tasks.md` update are reviewer-approved.
+- T008 may start only after T007 and any serialized T007 `tasks.md` update are reviewer-approved.
+- T012 may start only after T006, T010, T011, and any serialized T011 `tasks.md` update are reviewer-approved.
+- Spy cleanup is serialized through T008 -> T009 -> T010 because a shared helper may be selected in T007.
+- Factory extraction waits for T006 and T010, then uses file ownership to avoid same-file edits:
+  - T012 owns generic factory helper creation plus notification/profile tests.
+  - T013 owns posts/events/dashboard tests and may consume helpers created by T012, but does not edit `tests/_helpers/factories.js`.
+  - T014 owns Strava/weather/runtime helpers and tests, and starts after T012/T013.
+- No Engineer may add files to their task scope while editing. If inventory finds additional replace-now files, the matching Inventory Engineer must first patch this file's owned-file list during the serialized inventory planning update gate and the Inventory Reviewer must approve that planning update before implementation starts.
+
+Keep commits ordered by dependency:
+
+1. Docs planning checkpoint after T001.
+2. `data-testid` cleanup commit after T002-T006 pass.
+3. Spy cleanup commit after T007-T010 pass.
+4. Factory extraction commit after T011-T014 pass.
+5. Final verification / PR prep commit after T015-T016 pass, only if generated docs or PR-prep files are intentionally changed.
+6. Delivery gates T017-T021 should not create new code changes or checkbox-only commits. Record delivery evidence in PR/GitHub/final report instead of post-CI tracked docs edits.
+
+## Delivery Notes
+
+T017-T021 are intentionally no-checkbox delivery gates. After CI passes, a tracked docs-only checkbox commit would create a new PR head SHA and invalidate the CI result that merge depends on. Delivery evidence for push, PR creation, latest-head CI, merge, and local `main` sync belongs in GitHub state and the final report, not in a post-CI `tasks.md` update.
+
+## Tasks
+
+- [x] T001 Docs planning checkpoint
+  - Scope: planning only.
+  - Owned files: `specs/030-p3-tests-cleanup/tasks.md`.
+  - Dependencies: none.
+  - Engineer role: Tasks Planner Engineer.
+  - Reviewer role: Planning Reviewer.
+  - Acceptance criteria:
+    - `tasks.md` exists and covers all three P3 scopes.
+    - Every task has ID, scope, owned files, dependencies, Engineer role, Reviewer role, acceptance criteria, verification commands, and commit checkpoint.
+    - No production or test code is changed by this planning task.
+    - All task checkboxes remain unchecked.
+  - Verification commands:
+    - `git status --short`
+    - `test -f specs/030-p3-tests-cleanup/tasks.md`
+    - `rg -n "^- \\[[ x]\\] T[0-9]{3}" specs/030-p3-tests-cleanup/tasks.md`
+  - Commit checkpoint: commit after this task if the team wants a docs planning commit. Suggested message: `docs(test): plan p3 cleanup tasks`.
+
+- [x] T002 Refresh and classify `data-testid` inventory
+  - Scope: data-testid cleanup preflight.
+  - Owned files: `specs/030-p3-tests-cleanup/tasks.md` inventory/status and owned-file-list updates only during the serialized inventory planning update gate; no test code changes.
+  - Dependencies: T001.
+  - Engineer role: Data-testid Inventory Engineer.
+  - Reviewer role: RTL Query Reviewer.
+  - Acceptance criteria:
+    - Current `data-testid` / `getByTestId` / `queryByTestId` / `findByTestId` use is grouped into: replace now, keep with reason, defer because production accessibility needs a separate feature.
+    - The audit report stale sample is handled explicitly: do not spend cleanup effort on files that no longer contain `data-testid`.
+    - Replacement candidates prefer `getByRole`, `getByLabelText`, `getByText`, `within(...)`, `findByRole`, Playwright `page.getByRole`, or `page.getByText`.
+    - Retained `data-testid` cases are limited to third-party map stubs, sentinel/intersection-observer probes, layout-only containers, or deliberately mocked child components with no stable accessible surface.
+    - If replace-now files are found outside T003-T006, this task must update the exact owned-file list of the receiving task during the serialized inventory planning update gate and get Reviewer approval before any implementation Engineer is assigned.
+  - Verification commands:
+    - `rg --count "data-testid|getByTestId|queryByTestId|findByTestId|getAllByTestId|queryAllByTestId|findAllByTestId" tests --glob "*.{js,jsx}"`
+    - `rg -n "data-testid|getByTestId|queryByTestId|findByTestId|getAllByTestId|queryAllByTestId|findAllByTestId" tests --glob "*.{js,jsx}"`
+  - Commit checkpoint: none by itself; include in the data-testid cleanup commit after T006.
+
+- [x] T003 Clean auth/profile `data-testid` cases
+  - Scope: replace query-only test IDs in auth/profile integration tests where an accessible query can express the behavior.
+  - Owned files:
+    - `tests/integration/auth/AuthProvider.test.jsx`
+    - `tests/integration/profile/ProfileClient.test.jsx`
+    - `tests/integration/profile/ProfileHeader.test.jsx`
+    - `tests/integration/profile/ProfileStats.test.jsx`
+  - Dependencies: T002.
+  - Engineer role: Data-testid Engineer A.
+  - Reviewer role: RTL Query Reviewer A.
+  - Acceptance criteria:
+    - Test harness output fields use semantic roles or visible text where practical, not `data-testid`.
+    - Mocked child components expose stable accessible text/roles when assertions need to inspect them.
+    - No production component changes are made unless the Reviewer explicitly confirms the test is exposing a real accessibility gap and the main agent gets user approval first.
+    - Assertions remain behavior-focused and do not move to brittle `container.querySelector`.
+  - Verification commands:
+    - `npx vitest run tests/integration/auth/AuthProvider.test.jsx tests/integration/profile/ProfileClient.test.jsx tests/integration/profile/ProfileHeader.test.jsx tests/integration/profile/ProfileStats.test.jsx`
+    - `npm run lint:changed`
+    - `npm run type-check:changed`
+  - Commit checkpoint: none by itself; include in the data-testid cleanup commit after T006.
+
+- [x] T004 Clean weather/map `data-testid` cases
+  - Scope: reduce unnecessary `data-testid` in weather integration and E2E tests while preserving map-stub coverage.
+  - Owned files:
+    - `tests/integration/weather/weather-page.test.jsx`
+    - `tests/integration/weather/favorites.test.jsx`
+    - `tests/integration/weather/township-drilldown.test.jsx`
+    - `tests/e2e/weather-page.spec.js`
+  - Dependencies: T002.
+  - Engineer role: Data-testid Engineer B.
+  - Reviewer role: Weather Test Reviewer.
+  - Acceptance criteria:
+    - User interactions use role/text queries wherever the UI exposes accessible controls.
+    - Map feature stubs may keep `data-testid` only where the test is selecting synthetic GeoJSON features that have no accessible DOM equivalent.
+    - E2E locator changes use Playwright role/text locators unless the production UI truly lacks a semantic locator.
+    - No `page.waitForTimeout()` is introduced.
+    - Playwright verification follows `.codex/rules/e2e-commands.md`: use the current branch, run the vanilla Playwright config for `weather-page.spec.js`, and record that emulator-backed E2E is not required unless the test is changed to depend on emulator-only setup.
+    - `tests/e2e/weather-page.spec.js` cleanup deferred because repo bucket policy forbids e2e root changes in this branch; weather E2E live API baseline failure should be tracked separately, not fixed here.
+  - Verification commands:
+    - `git branch --show-current`
+    - `npx vitest run tests/integration/weather/weather-page.test.jsx tests/integration/weather/favorites.test.jsx tests/integration/weather/township-drilldown.test.jsx`
+    - `npx playwright test --config playwright.config.mjs tests/e2e/weather-page.spec.js`
+    - If `CI_E2E_SERVER_STARTED=1` is set, first run `npm run dev` in a separate terminal on the same branch and wait until Next.js reports `localhost:3000`; otherwise Playwright `webServer` starts `npm run dev` automatically.
+    - `npm run lint:changed`
+    - `npm run type-check:changed`
+  - Commit checkpoint: none by itself; include in the data-testid cleanup commit after T006.
+
+- [x] T005 Clean strava/dashboard/profile-list `data-testid` cases
+  - Scope: reduce dynamic card/list `data-testid` use in Strava, dashboard, and profile list tests.
+  - Owned files:
+    - `tests/integration/strava/RunsPage.test.jsx`
+    - `tests/integration/strava/runs-page-sync-error.test.jsx`
+    - `tests/integration/strava/RunsActivityList.test.jsx`
+    - `tests/integration/strava/RunsActivityCard.test.jsx`
+    - `tests/integration/strava/RunsRouteMap.test.jsx`
+    - `tests/integration/strava/useStravaSync.test.jsx`
+    - `tests/integration/dashboard/DashboardTabs.test.jsx`
+    - `tests/integration/profile/ProfileEventList.test.jsx`
+    - `tests/unit/runtime/useDashboardTabsRuntime.test.jsx`
+  - Dependencies: T002.
+  - Engineer role: Data-testid Engineer C.
+  - Reviewer role: Dashboard/Strava Test Reviewer.
+  - Acceptance criteria:
+    - List/card assertions prefer text, role, or `within(list)` queries over ID-derived test IDs.
+    - Hook harness-only fields in `useDashboardTabsRuntime` / `useStravaSync` use semantic output/status labels where practical.
+    - Leaflet route-map stubs may retain test IDs only for synthetic map internals such as `polyline` payload inspection.
+    - No test loses coverage for pagination, selected tab, sync cooldown, or route polyline behavior.
+  - Verification commands:
+    - `npx vitest run tests/integration/strava/RunsPage.test.jsx tests/integration/strava/runs-page-sync-error.test.jsx tests/integration/strava/RunsActivityList.test.jsx tests/integration/strava/RunsActivityCard.test.jsx tests/integration/strava/RunsRouteMap.test.jsx tests/integration/strava/useStravaSync.test.jsx tests/integration/dashboard/DashboardTabs.test.jsx tests/integration/profile/ProfileEventList.test.jsx tests/unit/runtime/useDashboardTabsRuntime.test.jsx`
+    - `npm run lint:changed`
+    - `npm run type-check:changed`
+  - Commit checkpoint: none by itself; include in the data-testid cleanup commit after T006.
+
+- [x] T006 Clean explicitly owned residual `data-testid` cases and commit data-testid batch
+  - Scope: finish residual low-risk `data-testid` cleanup only for files listed here or explicitly added by T002 before assignment.
+  - Owned files:
+    - `tests/integration/notifications/NotificationPanel.test.jsx`
+    - `tests/integration/notifications/notification-click.test.jsx`
+    - `tests/integration/navbar/NavbarMobile.test.jsx`
+    - `tests/integration/navbar/NavbarDesktop.test.jsx`
+    - `tests/integration/toast/toast-container.test.jsx`
+    - `tests/integration/posts/PostFeed.test.jsx`
+    - `tests/integration/posts/PostCard.test.jsx`
+    - `tests/integration/events/EventsPage.test.jsx`
+  - Dependencies: T003, T004, T005.
+  - Engineer role: Data-testid Integration Engineer.
+  - Reviewer role: RTL Query Final Reviewer.
+  - Acceptance criteria:
+    - Remaining replace-now `data-testid` items from T002 are replaced only when they are in this task's owned files.
+    - If T002 found more replace-now files, this task is not assigned until T002 has patched this owned-file list and the Reviewer has approved that update.
+    - Remaining keep-with-reason cases are documented in the task review comment or in this file before checkbox completion.
+    - `rg --count` for test IDs is lower than the T002 baseline, unless every remaining case has an explicit keep reason.
+    - No `fireEvent` or `container.querySelector` is introduced.
+  - Verification commands:
+    - `rg --count "data-testid|getByTestId|queryByTestId|findByTestId|getAllByTestId|queryAllByTestId|findAllByTestId" tests --glob "*.{js,jsx}"`
+    - `npx vitest run tests/integration/notifications/NotificationPanel.test.jsx tests/integration/notifications/notification-click.test.jsx tests/integration/navbar/NavbarMobile.test.jsx tests/integration/navbar/NavbarDesktop.test.jsx tests/integration/toast/toast-container.test.jsx tests/integration/posts/PostFeed.test.jsx tests/integration/posts/PostCard.test.jsx tests/integration/events/EventsPage.test.jsx`
+    - `npm run lint:changed`
+    - `npm run type-check:changed`
+  - Commit checkpoint: commit T002-T006 together after Reviewer approval. Suggested message: `test: prefer accessible queries over test ids`.
+
+- [x] T007 Refresh console spy/manual restore inventory and choose helper pattern
+  - Scope: spy cleanup preflight.
+  - Owned files:
+    - `tests/_helpers/mock-helpers.js` only if adding a shared helper is approved by the Reviewer.
+    - `specs/030-p3-tests-cleanup/tasks.md` inventory/status and owned-file-list updates only during the serialized inventory planning update gate.
+  - Dependencies: T001.
+  - Engineer role: Spy Inventory Engineer.
+  - Reviewer role: Vitest Cleanup Reviewer.
+  - Acceptance criteria:
+    - Current `vi.spyOn(console, 'error')`, `console.warn`, `mockRestore()`, and `vi.restoreAllMocks()` usage is grouped into: console spy cleanup, unrelated browser/global spy cleanup, keep as-is.
+    - The chosen cleanup pattern is explicit before code edits: local `let consoleErrorSpy` with `beforeEach`/`afterEach`, or shared helper in `tests/_helpers/mock-helpers.js` only if it reduces real duplication.
+    - Shared helper, if added, has meaningful JSDoc and does not hide assertions.
+    - If console-spy replace-now files are found outside T008-T010, this task must update the exact owned-file list of the receiving task during the serialized inventory planning update gate and get Reviewer approval before any implementation Engineer is assigned.
+  - Verification commands:
+    - `rg --count "vi\\.spyOn\\(console, ['\\\"]error['\\\"]\\)|vi\\.spyOn\\(console, ['\\\"]warn['\\\"]\\)|\\.mockRestore\\(\\)|restoreAllMocks\\(\\)" tests --glob "*.{js,jsx}"`
+    - `rg -n "vi\\.spyOn\\(console, ['\\\"]error['\\\"]\\)|vi\\.spyOn\\(console, ['\\\"]warn['\\\"]\\)|\\.mockRestore\\(\\)|restoreAllMocks\\(\\)" tests --glob "*.{js,jsx}"`
+  - Commit checkpoint: none by itself; include in the spy cleanup commit after T010.
+
+- [x] T008 Consolidate audit primary console error spies
+  - Scope: clean the audit report's primary spy target and create the shared spy helper if T007 selected one.
+  - Owned files:
+    - `tests/unit/lib/firebase-posts-comments-likes.test.js`
+    - `tests/_helpers/mock-helpers.js` only if T007 selected a shared helper.
+  - Dependencies: T007.
+  - Engineer role: Spy Cleanup Engineer A.
+  - Reviewer role: Firebase Posts Test Reviewer.
+  - Acceptance criteria:
+    - The three local `vi.spyOn(console, 'error')` cases in `firebase-posts-comments-likes.test.js` no longer manually call `mockRestore()` inside individual tests.
+    - Cleanup runs in `afterEach` even if an assertion fails.
+    - Existing behavior assertions remain: `新增留言失敗:` and `hasUserLikedPost failed:` are still asserted.
+    - No unrelated refactor of Firebase mocks is included.
+  - Verification commands:
+    - `npx vitest run tests/unit/lib/firebase-posts-comments-likes.test.js`
+    - `npm run lint:changed`
+    - `npm run type-check:changed`
+  - Commit checkpoint: none by itself; include in the spy cleanup commit after T010.
+
+- [x] T009 Consolidate runtime hook console error spies
+  - Scope: remove repeated per-test manual console error restore in runtime hook tests.
+  - Owned files:
+    - `tests/unit/runtime/useEventMutations.test.jsx`
+    - `tests/unit/runtime/useEventDetailMutations.test.jsx`
+    - `tests/unit/runtime/useEventParticipation.test.jsx`
+    - `tests/unit/runtime/useEventDetailParticipation.test.jsx`
+    - `tests/unit/runtime/useProfileRuntime.test.jsx`
+    - `tests/unit/runtime/useMemberPageRuntime.test.jsx`
+    - `tests/unit/runtime/useProfileEventsRuntime.test.jsx`
+    - `tests/unit/runtime/useDashboardTab.test.jsx`
+    - `tests/unit/runtime/useEventsFilter.test.jsx`
+  - Dependencies: T008.
+  - Engineer role: Spy Cleanup Engineer B.
+  - Reviewer role: Runtime Hook Test Reviewer.
+  - Acceptance criteria:
+    - Console error spies are restored through `afterEach` or the helper created in T008, not at the tail of individual tests.
+    - Tests that assert console output still assert it explicitly.
+    - Tests that only silence expected React/hook console errors do not accidentally mask unexpected errors across tests.
+    - `vi.restoreAllMocks()` is not used as a blunt replacement if the file relies on module-level mocks that should persist.
+    - This task may import from `tests/_helpers/mock-helpers.js`, but it does not edit that helper; helper changes go through T008.
+  - Verification commands:
+    - `npx vitest run tests/unit/runtime/useEventMutations.test.jsx tests/unit/runtime/useEventDetailMutations.test.jsx tests/unit/runtime/useEventParticipation.test.jsx tests/unit/runtime/useEventDetailParticipation.test.jsx tests/unit/runtime/useProfileRuntime.test.jsx tests/unit/runtime/useMemberPageRuntime.test.jsx tests/unit/runtime/useProfileEventsRuntime.test.jsx tests/unit/runtime/useDashboardTab.test.jsx tests/unit/runtime/useEventsFilter.test.jsx`
+    - `npm run lint:changed`
+    - `npm run type-check:changed`
+  - Commit checkpoint: none by itself; include in the spy cleanup commit after T010.
+
+- [x] T010 Consolidate explicitly owned integration console error spies and commit spy batch
+  - Scope: clean integration delete-race console spies and only the additional files that T007 explicitly adds before assignment.
+    - Also handle T007-approved repo/lib/runtime console warn/error spy cleanup files.
+  - Owned files:
+    - `tests/integration/events/EventDetailClient-delete-race.test.jsx`
+    - `tests/integration/posts/PostDetailClient-delete-race.test.jsx`
+    - `tests/unit/repo/firebase-users.test.js`
+    - `tests/unit/lib/firebase-posts-crud.test.js`
+    - `tests/unit/runtime/post-use-cases.test.js`
+  - Dependencies: T009.
+  - Engineer role: Spy Cleanup Engineer C.
+  - Reviewer role: Integration Race Test Reviewer.
+  - Acceptance criteria:
+    - Delete-race tests still distinguish no-error and expected-error paths.
+    - Console `warn` and `error` spies are restored even on failure.
+    - If T007 found more console-spy replace-now files, this task is not assigned until T007 has patched this owned-file list and the Reviewer has approved that update.
+    - Remaining manual `mockRestore()` calls are either unrelated non-console globals with a keep reason or moved to `afterEach`.
+    - `rg` output for manual console error restore is lower than T007 baseline.
+  - Verification commands:
+    - `rg -n "vi\\.spyOn\\(console, ['\\\"]error['\\\"]\\)|vi\\.spyOn\\(console, ['\\\"]warn['\\\"]\\)|\\.mockRestore\\(\\)|restoreAllMocks\\(\\)" tests --glob "*.{js,jsx}"`
+    - `npx vitest run tests/integration/events/EventDetailClient-delete-race.test.jsx tests/integration/posts/PostDetailClient-delete-race.test.jsx tests/unit/repo/firebase-users.test.js tests/unit/lib/firebase-posts-crud.test.js tests/unit/runtime/post-use-cases.test.js`
+    - `npm run lint:changed`
+    - `npm run type-check:changed`
+  - Commit checkpoint: commit T007-T010 together after Reviewer approval. Suggested message: `test: centralize console spy cleanup`.
+
+- [x] T011 Refresh factory duplication inventory and decide helper destinations
+  - Scope: factory extraction preflight.
+  - Owned files:
+    - `specs/030-p3-tests-cleanup/tasks.md` inventory/status and owned-file-list updates only during the serialized inventory planning update gate.
+    - No test code changes.
+  - Dependencies: T001.
+  - Engineer role: Factory Inventory Engineer.
+  - Reviewer role: Test Helper Architecture Reviewer.
+  - Acceptance criteria:
+    - Duplicate factories are grouped by domain: generic Firestore snapshots, users/profiles, notifications, posts/comments, events/dashboard, Strava, weather.
+    - Existing helper files are preferred when domain-specific helpers already exist.
+    - A new `tests/_helpers/factories.js` is allowed only for genuinely cross-domain Firestore primitives such as `createFirestoreDocSnapshot` and `createFirestoreQuerySnapshot`; domain defaults must stay in domain helpers.
+    - The plan avoids a giant kitchen-sink helper that increases coupling across unrelated test domains.
+    - If the chosen helper destinations differ from T012-T014, this task must update the exact owned-file lists during the serialized inventory planning update gate and get Reviewer approval before implementation starts.
+  - Verification commands:
+    - `find tests/_helpers -maxdepth 2 -type f | sort`
+    - `rg -n "\\b(make[A-Z][A-Za-z0-9_]*|create[A-Z][A-Za-z0-9_]*|build[A-Z][A-Za-z0-9_]*)\\b\\s*=|function\\s+(make[A-Z][A-Za-z0-9_]*|create[A-Z][A-Za-z0-9_]*|build[A-Z][A-Za-z0-9_]*)" tests --glob "*.{js,jsx}"`
+  - Commit checkpoint: none by itself; include in the factory extraction commit after T014.
+
+- [x] T012 Extract notification/profile factories
+  - Scope: move repeated notification/profile data builders into reviewed helpers; this is the only factory task allowed to create or edit the generic helper.
+  - Owned files:
+    - `tests/_helpers/factories.js` for cross-domain Firestore primitives only.
+    - `tests/_helpers/notification-fixtures.js`
+    - `tests/_helpers/profile-fixtures.js`
+    - `tests/integration/notifications/notification-click.test.jsx`
+    - `tests/integration/notifications/notification-triggers.test.jsx`
+    - `tests/integration/notifications/NotificationToast.test.jsx`
+    - `tests/integration/notifications/NotificationPaginationStateful.test.jsx`
+    - `tests/integration/notifications/NotificationPagination.test.jsx`
+    - `tests/integration/notifications/NotificationTabs.test.jsx`
+    - `tests/integration/notifications/NotificationPanel.test.jsx`
+    - `tests/integration/notifications/NotificationBell.test.jsx`
+    - `tests/integration/notifications/notification-error.test.jsx`
+    - `tests/integration/profile/ProfileClient.test.jsx`
+    - `tests/integration/profile/ProfileHeader.test.jsx`
+    - `tests/integration/profile/ProfileStats.test.jsx`
+  - Dependencies: T006, T010, T011.
+  - Engineer role: Factory Engineer A.
+  - Reviewer role: Notification/Profile Test Reviewer.
+  - Acceptance criteria:
+    - At least two duplicated notification builders are replaced by shared helpers without changing test behavior.
+    - Profile builders with the same shape are either consolidated or explicitly left local because their shape differs.
+    - `tests/_helpers/factories.js` exports only cross-domain Firestore primitives such as `createFirestoreDocSnapshot` and `createFirestoreQuerySnapshot`; notification/profile defaults stay in `notification-fixtures.js` or `profile-fixtures.js`.
+    - New exported helper functions include meaningful JSDoc with lowercase `{object}` typedefs/properties where applicable.
+    - No helper imports production `src/**` code unless an existing same-domain helper already does so safely.
+    - This task owns any edit to `tests/_helpers/factories.js`; later factory tasks may import it but must not edit it.
+  - Verification commands:
+    - `npx vitest run tests/integration/notifications/notification-click.test.jsx tests/integration/notifications/notification-triggers.test.jsx tests/integration/notifications/NotificationToast.test.jsx tests/integration/notifications/NotificationPaginationStateful.test.jsx tests/integration/notifications/NotificationPagination.test.jsx tests/integration/notifications/NotificationTabs.test.jsx tests/integration/notifications/NotificationPanel.test.jsx tests/integration/notifications/NotificationBell.test.jsx tests/integration/notifications/notification-error.test.jsx tests/integration/profile/ProfileClient.test.jsx tests/integration/profile/ProfileHeader.test.jsx tests/integration/profile/ProfileStats.test.jsx`
+    - `npm run lint:changed`
+    - `npm run type-check:changed`
+  - Commit checkpoint: none by itself; include in the factory extraction commit after T014.
+
+- [x] T013 Extract posts/events/dashboard factories
+  - Scope: consolidate repeated post/event/comment Firestore snapshot builders without editing generic helper ownership from T012.
+  - Owned files:
+    - `tests/_helpers/comment-fixtures.js`
+    - `tests/_helpers/post-comments-fixtures.js`
+    - `tests/_helpers/event-participation-fixtures.js`
+    - `tests/_helpers/use-events-page-runtime-test-helpers.js`
+    - `tests/integration/profile/ProfileEventList.test.jsx`
+    - `tests/integration/dashboard/DashboardTabs.test.jsx`
+    - `tests/integration/dashboard/DashboardEventCard.test.jsx`
+    - `tests/integration/dashboard/DashboardPostCard.test.jsx`
+    - `tests/integration/dashboard/DashboardCommentCard.test.jsx`
+    - `tests/integration/comments/CommentSection.test.jsx`
+    - `tests/integration/posts/PostFeed.test.jsx`
+    - `tests/integration/posts/PostDetail.test.jsx`
+    - `tests/integration/posts/PostDetailClient-delete-race.test.jsx`
+    - `tests/integration/posts/post-detail-edit-dirty.test.jsx`
+    - `tests/integration/posts/posts-page-edit-dirty.test.jsx`
+    - `tests/integration/posts/post-form-validation.test.jsx`
+    - `tests/integration/posts/post-edit-validation.test.jsx`
+    - `tests/integration/posts/post-comment-reply.test.jsx`
+    - `tests/integration/events/EventsPage.test.jsx`
+    - `tests/integration/events/EventDetailClient-delete-race.test.jsx`
+    - `tests/integration/events/event-detail-comment-runtime.test.jsx`
+    - `tests/integration/events/EventCardMenu.test.jsx`
+    - `tests/integration/events/EventEditForm.test.jsx`
+    - `tests/unit/runtime/useComments.test.jsx`
+  - Dependencies: T006, T010, T011, T012.
+  - Engineer role: Factory Engineer B.
+  - Reviewer role: Posts/Events Test Reviewer.
+  - Acceptance criteria:
+    - Repeated Firestore `createDocSnapshot` / `createQuerySnapshot` helpers are replaced by shared helpers where shapes match.
+    - Domain-specific event/post builders remain in domain helpers if they encode behavior-specific defaults.
+    - Tests keep readable Arrange sections; extraction should reduce duplication without hiding important scenario data.
+    - No broad behavior rewrites or mock-boundary cleanup are mixed into this factory task.
+    - This task may consume `tests/_helpers/factories.js` from T012 but must not edit it.
+  - Verification commands:
+    - `npx vitest run tests/integration/profile/ProfileEventList.test.jsx tests/integration/dashboard/DashboardTabs.test.jsx tests/integration/dashboard/DashboardEventCard.test.jsx tests/integration/dashboard/DashboardPostCard.test.jsx tests/integration/dashboard/DashboardCommentCard.test.jsx tests/integration/comments/CommentSection.test.jsx tests/integration/posts/PostFeed.test.jsx tests/integration/posts/PostDetail.test.jsx tests/integration/posts/PostDetailClient-delete-race.test.jsx tests/integration/posts/post-detail-edit-dirty.test.jsx tests/integration/posts/posts-page-edit-dirty.test.jsx tests/integration/posts/post-form-validation.test.jsx tests/integration/posts/post-edit-validation.test.jsx tests/integration/posts/post-comment-reply.test.jsx tests/integration/events/EventsPage.test.jsx tests/integration/events/EventDetailClient-delete-race.test.jsx tests/integration/events/event-detail-comment-runtime.test.jsx tests/integration/events/EventCardMenu.test.jsx tests/integration/events/EventEditForm.test.jsx tests/unit/runtime/useComments.test.jsx`
+    - `npm run lint:changed`
+    - `npm run type-check:changed`
+  - Commit checkpoint: none by itself; include in the factory extraction commit after T014.
+
+- [x] T014 Extract Strava/weather/runtime factories and commit factory batch
+  - Scope: finish factory cleanup in Strava, weather, and runtime hook tests without editing generic helper ownership from T012.
+  - Owned files:
+    - `tests/_helpers/strava-fixtures.js`
+    - `tests/_helpers/use-weather-page-runtime-test-helpers.js`
+    - `tests/_helpers/use-posts-page-runtime-test-helpers.js`
+    - `tests/integration/strava/RunsActivityCard.test.jsx`
+    - `tests/integration/strava/RunsActivityList.test.jsx`
+    - `tests/integration/strava/RunCalendarDialog.test.jsx`
+    - `tests/integration/weather/weather-page.test.jsx`
+    - `tests/integration/weather/favorites.test.jsx`
+    - `tests/integration/weather/township-drilldown.test.jsx`
+    - `tests/unit/runtime/useStravaActivities.test.jsx`
+    - `tests/unit/runtime/sync-strava-activities.test.js`
+    - `tests/unit/runtime/useRunsPageRuntime.test.jsx`
+    - `tests/unit/runtime/useRunCalendar.test.jsx`
+    - `tests/unit/runtime/useWeatherFavorites.test.jsx`
+    - `tests/unit/runtime/useWeatherPageRuntime.test.jsx`
+    - `tests/unit/service/firebase-admin-helpers.test.js`
+    - `tests/unit/service/groupActivitiesByDay.test.js`
+  - Dependencies: T006, T010, T011, T012, T013.
+  - Engineer role: Factory Engineer C.
+  - Reviewer role: Strava/Weather Test Reviewer.
+  - Acceptance criteria:
+    - Existing `strava-fixtures.js` is reused for activity payloads instead of creating duplicate local `createMockActivity` functions where shapes match.
+    - Weather helpers are reused for weather payload/favorite snapshots where shapes match.
+    - Generic helper extraction, if any, does not force unrelated domains to import Strava/weather-specific helpers.
+    - `rg` output shows fewer duplicate local factory definitions than the T011 baseline for the touched domains.
+    - This task may consume `tests/_helpers/factories.js` from T012 but must not edit it.
+  - Verification commands:
+    - `npx vitest run tests/integration/strava/RunsActivityCard.test.jsx tests/integration/strava/RunsActivityList.test.jsx tests/integration/strava/RunCalendarDialog.test.jsx tests/integration/weather/weather-page.test.jsx tests/integration/weather/favorites.test.jsx tests/integration/weather/township-drilldown.test.jsx tests/unit/runtime/useStravaActivities.test.jsx tests/unit/runtime/sync-strava-activities.test.js tests/unit/runtime/useRunsPageRuntime.test.jsx tests/unit/runtime/useRunCalendar.test.jsx tests/unit/runtime/useWeatherFavorites.test.jsx tests/unit/runtime/useWeatherPageRuntime.test.jsx tests/unit/service/firebase-admin-helpers.test.js tests/unit/service/groupActivitiesByDay.test.js`
+    - `rg -n "\\b(make[A-Z][A-Za-z0-9_]*|create[A-Z][A-Za-z0-9_]*|build[A-Z][A-Za-z0-9_]*)\\b\\s*=|function\\s+(make[A-Z][A-Za-z0-9_]*|create[A-Z][A-Za-z0-9_]*|build[A-Z][A-Za-z0-9_]*)" tests --glob "*.{js,jsx}"`
+    - `npm run lint:changed`
+    - `npm run type-check:changed`
+  - Commit checkpoint: commit T011-T014 together after Reviewer approval. Suggested message: `test: extract shared test factories`.
+
+- [x] T015 Full changed-scope verification
+  - Scope: verify all P3 cleanup changes together.
+  - Owned files: no edits except `specs/030-p3-tests-cleanup/tasks.md` status line after Reviewer approval.
+  - Dependencies: T006, T010, T014.
+  - Engineer role: Verification Engineer.
+  - Reviewer role: Quality Gate Reviewer.
+  - Acceptance criteria:
+    - All changed-file tests pass.
+    - Changed-file lint and type-check pass.
+    - No forbidden patterns are newly introduced in the branch diff: `fireEvent`, `container.querySelector`, `@ts-ignore`, a11y eslint disables, broad `vi.restoreAllMocks()` masking module mocks.
+    - The final `rg` snapshots for test IDs, console spies, and factories are recorded in the review handoff.
+    - Forbidden-pattern verification is diff-scoped against the PR baseline and must not fail because of unrelated pre-existing full-repo hits.
+    - E2E branch gate is expected to skip or report no changed E2E specs when root E2E diff is zero.
+    - If the branch still has any changed E2E spec, the branch gate must run it and must not hide failures.
+  - Verification commands:
+    - `npm run lint:branch -- origin/main`
+    - `npm run type-check:branch -- origin/main`
+    - `TEST_BASE_REF=origin/main npm run test:branch`
+    - `TEST_BASE_REF=origin/main npm run test:e2e:branch`
+    - Playwright precondition: run the command on the current branch. If `CI_E2E_SERVER_STARTED=1` is set, start `npm run dev` in a separate terminal first and wait for `localhost:3000`; otherwise `playwright.config.mjs` `webServer` starts the dev server automatically.
+    - `if git diff --unified=0 origin/main...HEAD -- src tests | rg "^\\+[^+].*(@ts-ignore|fireEvent|container\\.querySelector|eslint-disable.*jsx-a11y|vi\\.restoreAllMocks\\(\\))"; then echo "Forbidden pattern added in branch diff"; exit 1; else echo "No forbidden patterns added in branch diff"; fi`
+    - `rg --count "data-testid|getByTestId|queryByTestId|findByTestId|getAllByTestId|queryAllByTestId|findAllByTestId" tests --glob "*.{js,jsx}"`
+    - `rg --count "vi\\.spyOn\\(console, ['\\\"]error['\\\"]\\)|vi\\.spyOn\\(console, ['\\\"]warn['\\\"]\\)|\\.mockRestore\\(\\)|restoreAllMocks\\(\\)" tests --glob "*.{js,jsx}"`
+  - Commit checkpoint: no commit unless verification updates a tracked handoff/status file.
+
+- [x] T016 Final reviewer signoff and PR prep gate
+  - Scope: final process gate before push/PR.
+  - Owned files:
+    - `specs/030-p3-tests-cleanup/tasks.md` status line only.
+    - PR description draft if the team intentionally creates one.
+  - Dependencies: T015.
+  - Engineer role: PR Prep Engineer.
+  - Reviewer role: Final Reviewer.
+  - Acceptance criteria:
+    - T001-T015 are complete and reviewer-approved before this task is marked complete.
+    - At T016 completion, T001-T016 are checked; T017-T021 are no-checkbox post-signoff delivery gates.
+    - Commit history contains the planned checkpoints or an explicitly reviewed alternative split.
+    - PR summary includes before/after inventory counts and retained `data-testid` reasons.
+    - No push/PR/merge happens before this task passes.
+  - Verification commands:
+    - `git status --short`
+    - `git log --oneline --decorate -5`
+    - `node -e "const fs=require('fs'); const text=fs.readFileSync('specs/030-p3-tests-cleanup/tasks.md','utf8'); const lines=text.split(/\\n/); const checked=new Set(lines.map(l=>{ const m=l.match(/^- \\[x\\] (T\\d{3})\\b/); return m&&m[1]; }).filter(Boolean)); const missing=[]; for (let i=1;i<=16;i+=1){ const id='T'+String(i).padStart(3,'0'); if (!checked.has(id)) missing.push(id); } const deliveryCheckboxes=[...text.matchAll(/^- \\[[ x]\\] (T0(?:17|18|19|20|21))\\b/gm)].map(m=>m[1]); if (missing.length || deliveryCheckboxes.length) { console.error(JSON.stringify({missingCheckedTasks:missing,deliveryCheckboxes})); process.exit(1); } console.log('T001-T016 checked; T017-T021 no-checkbox');"`
+  - Commit checkpoint: optional final PR-prep commit only for intentional docs/PR-prep changes. Suggested message: `docs(test): record p3 cleanup verification`.
+
+- T017 Push feature branch (no-checkbox delivery gate)
+  - Scope: publish the reviewed feature branch after T016.
+  - Owned files: none.
+  - Dependencies: T016.
+  - Engineer role: Delivery Engineer.
+  - Reviewer role: Delivery Reviewer.
+  - Acceptance criteria:
+    - Working tree has no unreviewed code/test changes before push.
+    - Branch is not `main`.
+    - Branch is pushed with `HEAD` to avoid hook false positives from branch names.
+    - Engineer and Reviewer validate the push evidence in GitHub or the final report; do not edit tracked docs to mark this gate complete.
+  - Verification commands:
+    - `git status --short`
+    - `git branch --show-current`
+    - `git push -u origin HEAD`
+  - Commit checkpoint: none.
+
+- T018 Open pull request (no-checkbox delivery gate)
+  - Scope: open the GitHub PR after branch push.
+  - Owned files: none, unless a reviewed PR draft file was intentionally added before T016.
+  - Dependencies: T017.
+  - Engineer role: PR Engineer.
+  - Reviewer role: PR Reviewer.
+  - Acceptance criteria:
+    - PR targets `main`.
+    - PR body includes cleanup scope, before/after inventory counts, retained test ID reasons, verification commands, and reviewer signoff summary.
+    - PR link is recorded in GitHub-visible state or the final report.
+    - Engineer and Reviewer validate the PR evidence in GitHub or the final report; do not edit tracked docs to mark this gate complete.
+  - Verification commands:
+    - `test -f /tmp/p3-tests-cleanup-pr-body.md`
+    - `gh pr create --base main --head "$(git branch --show-current)" --title "test: clean up p3 test debt" --body-file /tmp/p3-tests-cleanup-pr-body.md`
+    - `gh pr view --json number,url,baseRefName,headRefName,state`
+  - Commit checkpoint: none.
+
+- T019 Wait for required CI (no-checkbox delivery gate)
+  - Scope: wait for required PR checks before merge.
+  - Owned files: none.
+  - Dependencies: T018.
+  - Engineer role: CI Watch Engineer.
+  - Reviewer role: CI Reviewer.
+  - Acceptance criteria:
+    - Required checks complete successfully before merge.
+    - At minimum, `ci` and `e2e` are complete and successful.
+    - If GitHub branch protection reports an additional required check such as `firestore-rules-gate / rules`, it must also be complete and successful.
+    - Failed CI is debugged through a separate fix task and reviewed before rerun; do not merge with failing checks.
+    - CI acceptance is bound to the latest PR head SHA reported by GitHub after T018/T019 starts.
+    - Once required CI passes on the latest PR head SHA, checkbox-only commits are forbidden; proceed directly to T020 merge.
+    - Engineer and Reviewer validate CI evidence in GitHub or the final report; do not edit tracked docs to mark this gate complete.
+  - Verification commands:
+    - `gh pr view --json number,url,headRefOid,mergeStateStatus,reviewDecision,statusCheckRollup`
+    - `gh pr checks --watch`
+    - `gh pr checks`
+    - `gh pr view --json mergeStateStatus,reviewDecision,statusCheckRollup`
+  - Commit checkpoint: none unless CI fixes require reviewed code/test/docs changes; such fixes must use their own commit before returning to this task.
+
+- T020 Merge PR and sync local main (no-checkbox delivery gate)
+  - Scope: merge the PR after T019 and sync local `main`.
+  - Owned files: none.
+  - Dependencies: T019.
+  - Engineer role: Merge Engineer.
+  - Reviewer role: Merge Reviewer.
+  - Acceptance criteria:
+    - PR is merged only after required CI is successful.
+    - Remote branch is deleted by the merge command when allowed.
+    - Local `main` is updated to the merge commit.
+    - Local stale tracking refs are pruned.
+    - The original worktree/branch state is recorded if the user wants to continue related work after merge.
+    - Merge and local `main` sync evidence are recorded in the final report, not by post-merge tracked docs edits.
+    - Engineer and Reviewer validate merge/local-sync evidence in GitHub or the final report; do not edit tracked docs to mark this gate complete.
+  - Verification commands:
+    - `gh pr merge --merge --delete-branch`
+    - `git worktree list`
+    - `git -C /Users/chentzuyu/Desktop/dive-into-run fetch --prune`
+    - `git -C /Users/chentzuyu/Desktop/dive-into-run checkout main`
+    - `git -C /Users/chentzuyu/Desktop/dive-into-run pull --ff-only`
+    - `git -C /Users/chentzuyu/Desktop/dive-into-run status --short`
+    - `git -C /Users/chentzuyu/Desktop/dive-into-run log --oneline --decorate -5`
+  - Commit checkpoint: none.
+
+- T021 Final completion guard (no-checkbox delivery guard)
+  - Scope: verify the task plan is fully complete after merge/local sync.
+  - Owned files: none.
+  - Dependencies: T020.
+  - Engineer role: Final Verification Engineer.
+  - Reviewer role: Final Delivery Reviewer.
+  - Acceptance criteria:
+    - Before final completion is reported, all checkbox tasks T001-T016 are checked after reviewer approval.
+    - T017-T020 intentionally have no checkboxes and require Engineer + Reviewer validation through PR/GitHub/final-report evidence.
+    - T021 intentionally has no checkbox and does not participate in an all-checked gate; completion is expressed by the final response or PR merge result, not by a post-merge tracked `tasks.md` edit.
+    - No post-merge local tracked changes remain unless explicitly documented.
+    - Final report includes PR URL, merge commit, and local `main` sync evidence.
+  - Verification commands:
+    - `node -e "const fs=require('fs'); const text=fs.readFileSync('specs/030-p3-tests-cleanup/tasks.md','utf8'); const lines=text.split(/\\n/); const checked=new Set(lines.map(l=>{ const m=l.match(/^- \\[x\\] (T\\d{3})\\b/); return m&&m[1]; }).filter(Boolean)); const missing=[]; for (let i=1;i<=16;i+=1){ const id='T'+String(i).padStart(3,'0'); if (!checked.has(id)) missing.push(id); } const unchecked=[...text.matchAll(/^- \\[ \\] (T\\d{3})\\b/gm)].map(m=>m[1]); const deliveryCheckboxes=[...text.matchAll(/^- \\[[ x]\\] (T0(?:17|18|19|20|21))\\b/gm)].map(m=>m[1]); if (missing.length || unchecked.length || deliveryCheckboxes.length) { console.error(JSON.stringify({missingCheckedTasks:missing,uncheckedTasks:unchecked,deliveryCheckboxes})); process.exit(1); } console.log('T001-T016 checked; T017-T021 are no-checkbox delivery gates');"`
+    - `git status --short`
+    - `git branch --show-current`
+    - `git log --oneline --decorate -5`
+  - Commit checkpoint: none. Do not create a post-merge tracked docs change only to mark T021 complete.

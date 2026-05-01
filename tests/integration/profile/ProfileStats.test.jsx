@@ -18,6 +18,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { createProfileStatsFixture as createStats } from '../../_helpers/profile-fixtures';
 
 /* ==========================================================================
    Type Definitions
@@ -29,20 +30,6 @@ import { render, screen } from '@testing-library/react';
  * @property {number} joinedCount - 參加活動數量。
  * @property {number | null} totalDistanceKm - 累計跑步公里數（null = 未連結 Strava）。
  */
-
-/**
- * 建立測試用 ProfileStats。
- * @param {Partial<MockProfileStats>} [overrides] - 覆蓋欄位。
- * @returns {MockProfileStats} 測試資料。
- */
-function createStats(overrides = {}) {
-  return {
-    hostedCount: 5,
-    joinedCount: 12,
-    totalDistanceKm: 42.7,
-    ...overrides,
-  };
-}
 
 /**
  * 動態載入 ProfileStats 元件。

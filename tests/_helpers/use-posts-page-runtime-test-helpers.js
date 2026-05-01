@@ -1,3 +1,8 @@
+import {
+  createFirestoreDocSnapshot,
+  createFirestoreQuerySnapshot,
+} from './factories';
+
 /**
  * 建立 Timestamp-like 測試物件。
  * @param {string} iso - ISO 日期字串。
@@ -69,35 +74,10 @@ export function createPostList(count, startIndex = 1, getOverrides) {
   });
 }
 
-/**
- * 建立 Firestore-like document snapshot。
- * @param {string} id - 文件 ID。
- * @param {object | null} data - 文件資料。
- * @returns {{ id: string, ref: { id: string, path: string }, exists: () => boolean, data: () => object | null }} snapshot。
- */
-export function createDocumentSnapshot(id, data) {
-  return {
-    id,
-    ref: { id, path: `mock/${id}` },
-    exists: () => data !== null,
-    data: () => data,
-  };
-}
-
-/**
- * 建立 Firestore-like query snapshot。
- * @param {Array<{ id: string, data: () => object | null, ref?: { id: string, path: string } }>} docs - 文件列表。
- * @returns {{ docs: Array<{ id: string, data: () => object | null, ref: { id: string, path: string } }>, size: number }} query snapshot。
- */
-export function createQuerySnapshot(docs) {
-  return {
-    docs: docs.map((doc) => ({
-      ...doc,
-      ref: doc.ref ?? { id: doc.id, path: `mock/${doc.id}` },
-    })),
-    size: docs.length,
-  };
-}
+export {
+  createFirestoreDocSnapshot as createDocumentSnapshot,
+  createFirestoreQuerySnapshot as createQuerySnapshot,
+};
 
 /**
  * 建立 posts query document snapshot。
@@ -146,21 +126,39 @@ export function createDocsDispatcher({
     const constraints = ref?.constraints ?? [];
 
     if (path === 'likes') {
-      return createQuerySnapshot(
+      return createFirestoreQuerySnapshot(
         likedPostIds.map((postId) =>
-          createDocumentSnapshot(`${postId}-like`, { uid: 'user-1', postId }),
+          createFirestoreDocSnapshot(`${postId}-like`, { uid: 'user-1', postId }),
         ),
       );
     }
 
     if (path === 'posts' && constraints.some((constraint) => constraint?.type === 'startAfter')) {
-      return createQuerySnapshot(nextPosts.map(createPostDoc));
+      return createFirestoreQuerySnapshot(
+        nextPosts.map((post) => ({
+          id: String(post.id),
+          data: post,
+          path: `posts/${String(post.id)}`,
+        })),
+      );
     }
 
     if (path === 'posts') {
-      return createQuerySnapshot(latestPosts.map(createPostDoc));
+      return createFirestoreQuerySnapshot(
+        latestPosts.map((post) => ({
+          id: String(post.id),
+          data: post,
+          path: `posts/${String(post.id)}`,
+        })),
+      );
     }
 
-    return createQuerySnapshot(collectionDocs[path] ?? []);
+    return createFirestoreQuerySnapshot(
+      (collectionDocs[path] ?? []).map((doc) => ({
+        id: doc.id,
+        data: doc.data(),
+        path: doc.ref.path,
+      })),
+    );
   };
 }

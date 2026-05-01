@@ -15,7 +15,7 @@
  * Rules: AAA pattern、strict JSDoc、mock firebase/firestore + firebase-client。
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Module-level mocks
@@ -618,8 +618,16 @@ describe('Unit: getMorePostsBySearch (pagination)', () => {
 // ---------------------------------------------------------------------------
 
 describe('Unit: getPostDetail', () => {
+  /** @type {ReturnType<typeof vi.spyOn> | undefined} */
+  let consoleWarnSpy;
+
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    consoleWarnSpy?.mockRestore();
+    consoleWarnSpy = undefined;
   });
 
   it('should return Post object with id when doc exists', async () => {
@@ -643,16 +651,14 @@ describe('Unit: getPostDetail', () => {
     // Arrange
     const { getPostDetail } = await import('@/lib/firebase-posts');
     mockGetDoc.mockResolvedValueOnce({ exists: () => false });
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     // Act
     const result = await getPostDetail('missing');
 
     // Assert
     expect(result).toBeNull();
-    expect(warnSpy).toHaveBeenCalledWith('No such document!');
-
-    warnSpy.mockRestore();
+    expect(consoleWarnSpy).toHaveBeenCalledWith('No such document!');
   });
 
   it('should propagate getDoc rejection', async () => {

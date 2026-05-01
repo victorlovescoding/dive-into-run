@@ -14,6 +14,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WeatherPage from '@/components/weather/WeatherPage';
+import { createWeatherPayload } from '../../_helpers/use-weather-page-runtime-test-helpers';
 
 /* ==========================================================================
    Hoisted shared state.
@@ -161,13 +162,13 @@ vi.mock('next/image', () => ({
 }));
 
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
+  MapContainer: ({ children }) => <div>{children}</div>,
   GeoJSON: ({ data, onEachFeature }) => {
     const features = data?.features || [];
     return (
-      <div data-testid="geojson-layer">
+      <div>
         {features.map((feature) => {
-          const testId = feature.properties.islandId
+          const featureKey = feature.properties.islandId
             ? `island-${feature.properties.islandId}`
             : `feature-${feature.properties.TOWNCODE || feature.properties.COUNTYCODE}`;
           const label = feature.properties.islandId
@@ -176,9 +177,8 @@ vi.mock('react-leaflet', () => ({
 
           return (
             <button
-              key={testId}
+              key={featureKey}
               type="button"
-              data-testid={testId}
               onClick={() => {
                 if (onEachFeature) {
                   const handler = {};
@@ -232,42 +232,6 @@ vi.mock('firebase/firestore', () => firestoreMock);
    ========================================================================== */
 
 /**
- * Build today weather payload.
- * @param {string} weatherDesc - 天氣描述。
- * @param {number} currentTemp - 當前溫度。
- * @returns {import('@/types/weather-types').TodayWeather} 今日天氣。
- */
-function buildToday(weatherDesc, currentTemp) {
-  return {
-    currentTemp,
-    weatherDesc,
-    weatherCode: '2',
-    morningTemp: currentTemp + 2,
-    eveningTemp: currentTemp - 4,
-    rainProb: 10,
-    humidity: 72,
-    uv: null,
-    aqi: null,
-  };
-}
-
-/**
- * Build tomorrow weather payload.
- * @returns {import('@/types/weather-types').TomorrowWeather} 明日天氣。
- */
-function buildTomorrow() {
-  return {
-    weatherDesc: '多雲',
-    weatherCode: '4',
-    morningTemp: 29,
-    eveningTemp: 23,
-    rainProb: 30,
-    humidity: 78,
-    uv: null,
-  };
-}
-
-/**
  * @typedef {object} FetchControls
  * @property {() => void} setError - 把下次 /api/weather 改成回 ok=false。
  * @property {() => void} setSuccess - 把下次 /api/weather 改回成功。
@@ -308,14 +272,7 @@ function installWeatherFetch() {
     }
 
     return new Response(
-      JSON.stringify({
-        ok: true,
-        data: {
-          locationName,
-          today: buildToday(weatherDesc, currentTemp),
-          tomorrow: buildTomorrow(),
-        },
-      }),
+      JSON.stringify(createWeatherPayload(locationName, '2', currentTemp, { weatherDesc })),
       { status: 200 },
     );
   });
@@ -356,7 +313,7 @@ describe('WeatherPage integration', () => {
   it('renders the map container and county features', () => {
     render(<WeatherPage />);
 
-    expect(screen.getByTestId('map-container')).toBeInTheDocument();
+    expect(screen.getByRole('application', { name: '台灣互動地圖' })).toBeInTheDocument();
     expect(screen.getByText('臺北市')).toBeInTheDocument();
     expect(screen.getByText('新北市')).toBeInTheDocument();
   });
@@ -371,11 +328,11 @@ describe('WeatherPage integration', () => {
     const user = userEvent.setup();
     render(<WeatherPage />);
 
-    await user.click(screen.getByTestId('feature-63000'));
+    await user.click(screen.getByRole('button', { name: '臺北市' }));
 
     expect(await screen.findByText('晴時多雲')).toBeInTheDocument();
     expect(screen.getByText('臺北市')).toBeInTheDocument();
-    expect(screen.getByTestId('current-temperature')).toHaveTextContent('28°');
+    expect(screen.getByText('28°')).toBeInTheDocument();
     await waitFor(() => {
       const calls = fetchControls.fetchMock.mock.calls.map((call) => String(call[0]));
       expect(calls.some((url) => url.includes('county=%E8%87%BA%E5%8C%97%E5%B8%82'))).toBe(true);
@@ -394,20 +351,13 @@ describe('WeatherPage integration', () => {
 
     const user = userEvent.setup();
     render(<WeatherPage />);
-    await user.click(screen.getByTestId('feature-63000'));
+    await user.click(screen.getByRole('button', { name: '臺北市' }));
 
     expect(await screen.findByLabelText('天氣資料載入中')).toBeInTheDocument();
 
     resolveFetch(
       new Response(
-        JSON.stringify({
-          ok: true,
-          data: {
-            locationName: '臺北市',
-            today: buildToday('晴時多雲', 28),
-            tomorrow: buildTomorrow(),
-          },
-        }),
+        JSON.stringify(createWeatherPayload('臺北市', '2', 28, { weatherDesc: '晴時多雲' })),
         { status: 200 },
       ),
     );
@@ -419,7 +369,7 @@ describe('WeatherPage integration', () => {
     const user = userEvent.setup();
     render(<WeatherPage />);
 
-    await user.click(screen.getByTestId('feature-63000'));
+    await user.click(screen.getByRole('button', { name: '臺北市' }));
     const retryButton = await screen.findByRole('button', { name: /重試/ });
 
     await user.click(retryButton);
@@ -431,7 +381,7 @@ describe('WeatherPage integration', () => {
     const user = userEvent.setup();
     render(<WeatherPage />);
 
-    await user.click(screen.getByTestId('island-lanyu'));
+    await user.click(screen.getByRole('button', { name: '蘭嶼鄉' }));
 
     expect(await screen.findByText('臺東縣 · 蘭嶼鄉')).toBeInTheDocument();
   });

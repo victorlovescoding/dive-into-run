@@ -15,6 +15,10 @@ import {
 } from 'firebase/firestore';
 import EventDetailClient from '@/app/events/[id]/eventDetailClient';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
+import {
+  createFirestoreDocSnapshot as createDocSnapshot,
+  createFirestoreQuerySnapshot as createQuerySnapshot,
+} from '../../_helpers/factories';
 
 const { mockShowToast } = vi.hoisted(() => ({
   mockShowToast: vi.fn(),
@@ -128,21 +132,6 @@ const mockEvent = {
 };
 
 /**
- * 建立 Firestore document snapshot stub。
- * @param {string} id - document ID。
- * @param {object | null} data - document data，null 表示不存在。
- * @returns {object} Firestore-like document snapshot。
- */
-function createDocSnapshot(id, data) {
-  return {
-    id,
-    ref: { id, path: `mock/${id}` },
-    exists: () => data !== null,
-    data: () => data,
-  };
-}
-
-/**
  * 設定活動詳情留言通知需要的 Firestore SDK 邊界 stub。
  * @returns {{ batch: { set: import('vitest').Mock, commit: import('vitest').Mock } }} SDK spies。
  */
@@ -184,24 +173,18 @@ function setupFirestoreMocks() {
   });
   firestoreMocks.getDocs.mockImplementation(async (ref) => {
     if (ref.path === 'events/evt1/participants') {
-      return {
-        docs: [
-          createDocSnapshot('participant-1', { uid: 'participant-1' }),
-          createDocSnapshot('runner-1', { uid: 'runner-1' }),
-        ],
-        size: 2,
-      };
+      return createQuerySnapshot([
+        createDocSnapshot('participant-1', { uid: 'participant-1' }),
+        createDocSnapshot('runner-1', { uid: 'runner-1' }),
+      ]);
     }
     if (ref.path === 'events/evt1/comments') {
-      return {
-        docs: [
-          createDocSnapshot('comment-old-1', { authorUid: 'commenter-1' }),
-          createDocSnapshot('comment-old-2', { authorUid: 'runner-1' }),
-        ],
-        size: 2,
-      };
+      return createQuerySnapshot([
+        createDocSnapshot('comment-old-1', { authorUid: 'commenter-1' }),
+        createDocSnapshot('comment-old-2', { authorUid: 'runner-1' }),
+      ]);
     }
-    return { docs: [], size: 0 };
+    return createQuerySnapshot([]);
   });
 
   return { batch };

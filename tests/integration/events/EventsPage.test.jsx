@@ -19,6 +19,10 @@ import {
 import EventsPage from '@/app/events/page';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import ToastProvider from '@/runtime/providers/ToastProvider';
+import {
+  createFirestoreDocSnapshot as createDocSnapshot,
+  createFirestoreQuerySnapshot as createQuerySnapshot,
+} from '../../_helpers/factories';
 
 /**
  * @typedef {object} MockUser
@@ -50,7 +54,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('next/dynamic', () => ({
-  default: () => () => <div data-testid="event-map">Map Mock</div>,
+  default: () => () => <div>Map Mock</div>,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -127,21 +131,6 @@ const mockEvents = [
 ];
 
 /**
- * 建立 Firestore document snapshot stub。
- * @param {string} id - document ID。
- * @param {object | null} data - document data，null 表示不存在。
- * @returns {object} Firestore-like document snapshot。
- */
-function createDocSnapshot(id, data) {
-  return {
-    id,
-    ref: { id, path: `mock/${id}` },
-    exists: () => data !== null,
-    data: () => data,
-  };
-}
-
-/**
  * 設定 EventsPage 需要的 Firestore SDK 邊界 stub。
  * @param {{ joinedIds?: string[] }} [options] - 使用者已參加活動 ID。
  */
@@ -167,12 +156,9 @@ function setupFirestoreMocks({ joinedIds = ['event-1'] } = {}) {
   firestoreMocks.startAfter.mockImplementation((...parts) => ({ type: 'startAfter', parts }));
   firestoreMocks.getDocs.mockImplementation(async (ref) => {
     if (ref.path === 'events') {
-      return {
-        docs: mockEvents.map((event) => createDocSnapshot(event.id, event)),
-        size: mockEvents.length,
-      };
+      return createQuerySnapshot(mockEvents.map((event) => createDocSnapshot(event.id, event)));
     }
-    return { docs: [], size: 0 };
+    return createQuerySnapshot([]);
   });
   firestoreMocks.getDoc.mockImplementation(async (ref) => {
     if (ref.path === 'events/event-1/participants/user-123') {

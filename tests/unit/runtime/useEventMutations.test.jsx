@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import {
   createEventMutationProps,
@@ -63,11 +63,18 @@ async function loadHook() {
   return (await import('@/runtime/hooks/useEventMutations')).default;
 }
 
+/** @type {ReturnType<typeof vi.spyOn> | undefined} */
+let consoleErrorSpy;
+
 describe('useEventMutations', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
     vi.clearAllMocks();
     vi.resetModules();
+  });
+
+  afterEach(() => {
+    consoleErrorSpy?.mockRestore();
+    consoleErrorSpy = undefined;
   });
 
   describe('create', () => {
@@ -120,7 +127,7 @@ describe('useEventMutations', () => {
 
     it('stores draft data and shows an error toast when create fails', async () => {
       mockAddDoc.mockRejectedValueOnce(new Error('firestore down'));
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const props = createEventMutationProps({ routeCoordinates: [[{ lat: 25, lng: 121 }]] });
       const useEventMutations = await loadHook();
       const { result } = renderHook(() => useEventMutations(props));
@@ -137,7 +144,6 @@ describe('useEventMutations', () => {
       expect(props.createCtx.resetCreateForm).not.toHaveBeenCalled();
       expect(result.current.draftFormData).toMatchObject({ title: '清晨慢跑', city: '台北市' });
       expect(result.current.isCreating).toBe(false);
-      consoleErrorSpy.mockRestore();
     });
 
     it('skips state updates after unmount during create completion', async () => {
@@ -215,7 +221,7 @@ describe('useEventMutations', () => {
 
     it('shows an error toast when update fails', async () => {
       mockRunTransaction.mockRejectedValueOnce(new Error('tx failed'));
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const props = createEventMutationProps();
       const useEventMutations = await loadHook();
       const { result } = renderHook(() => useEventMutations(props));
@@ -230,7 +236,6 @@ describe('useEventMutations', () => {
 
       expect(props.setEvents).not.toHaveBeenCalled();
       expect(result.current.isUpdating).toBe(false);
-      consoleErrorSpy.mockRestore();
     });
   });
 
@@ -261,7 +266,7 @@ describe('useEventMutations', () => {
 
     it('shows an error toast when delete fails', async () => {
       mockGetDoc.mockResolvedValueOnce({ exists: () => false });
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const props = createEventMutationProps();
       const useEventMutations = await loadHook();
       const { result } = renderHook(() => useEventMutations(props));
@@ -276,7 +281,6 @@ describe('useEventMutations', () => {
 
       expect(props.setEvents).not.toHaveBeenCalled();
       expect(result.current.isDeletingEvent).toBe(false);
-      consoleErrorSpy.mockRestore();
     });
   });
 

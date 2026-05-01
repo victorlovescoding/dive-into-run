@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { getDocs } from 'firebase/firestore';
+import RunCalendarDialog from '@/components/RunCalendarDialog';
+import { createStravaActivityDoc } from '../../_helpers/strava-fixtures';
 
 vi.mock('@/contexts/AuthContext', async () => {
   const { createContext } = await import('react');
@@ -42,35 +45,7 @@ vi.mock('firebase/firestore', () => ({
   },
 }));
 
-import { getDocs } from 'firebase/firestore';
-import RunCalendarDialog from '@/components/RunCalendarDialog';
-
 const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
-
-/**
- * 建立一個 stravaActivities Firestore document snapshot。
- * @param {string} id - Doc id。
- * @param {{startDateLocal: string, type: string, distanceMeters: number}} data - Activity 資料（日期僅靠 startDateLocal 推算 day number）。
- * @returns {{id: string, data: () => object}} doc snapshot stub。
- */
-function createActivityDoc(id, data) {
-  return {
-    id,
-    data: () => ({
-      uid: 'user-1',
-      stravaId: Number(id.split('-')[1]) || 1,
-      name: data.type === 'TrailRun' ? '越野跑' : '晨跑',
-      type: data.type,
-      distanceMeters: data.distanceMeters,
-      movingTimeSec: 1800,
-      startDate: { toDate: () => new Date(data.startDateLocal) },
-      startDateLocal: data.startDateLocal,
-      summaryPolyline: null,
-      averageSpeed: 3,
-      syncedAt: { toDate: () => new Date() },
-    }),
-  };
-}
 
 /**
  * 取得測試啟動當下的 (year, month) 配對 — 與 RunCalendarDialog 內部 `new Date()` 對齊。
@@ -89,20 +64,32 @@ function currentYearMonth() {
 function buildMonthFixture(ym) {
   const mm = String(ym.month + 1).padStart(2, '0');
   return [
-    createActivityDoc('act-1', {
+    createStravaActivityDoc('act-1', {
+      stravaId: 1,
+      name: '晨跑',
       startDateLocal: `${ym.year}-${mm}-05T07:00:00`,
       type: 'Run',
       distanceMeters: 5200,
+      summaryPolyline: null,
+      averageSpeed: 3,
     }),
-    createActivityDoc('act-2', {
+    createStravaActivityDoc('act-2', {
+      stravaId: 2,
+      name: '晨跑',
       startDateLocal: `${ym.year}-${mm}-10T07:00:00`,
       type: 'Run',
       distanceMeters: 8000,
+      summaryPolyline: null,
+      averageSpeed: 3,
     }),
-    createActivityDoc('act-3', {
+    createStravaActivityDoc('act-3', {
+      stravaId: 3,
+      name: '越野跑',
       startDateLocal: `${ym.year}-${mm}-10T18:00:00`,
       type: 'TrailRun',
       distanceMeters: 3000,
+      summaryPolyline: null,
+      averageSpeed: 3,
     }),
   ];
 }

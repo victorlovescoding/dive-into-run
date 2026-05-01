@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createStravaActivity } from '../../_helpers/strava-fixtures';
 
 // --- Mock firebase-admin module ---
 const mockGet = vi.fn();
@@ -73,32 +74,18 @@ async function importStravaServerModules() {
   };
 }
 
-// --- Helpers ---
-
-/**
- * Creates a mock Strava API activity.
- * @param {object} [overrides] - Fields to override.
- * @returns {object} Mock activity object.
- */
-function createStravaActivity(overrides = {}) {
-  return {
-    id: 12345,
-    name: 'Morning Run',
-    type: 'Run',
-    distance: 5200.5,
-    moving_time: 1800,
-    start_date: '2024-01-15T08:00:00Z',
-    start_date_local: '2024-01-15T16:00:00',
-    map: { summary_polyline: 'abc123polyline' },
-    average_speed: 2.89,
-    ...overrides,
-  };
-}
-
 describe('mapStravaActivityToDoc', () => {
   it('maps Strava API fields to Firestore document shape', async () => {
     // Arrange
-    const activity = createStravaActivity();
+    const activity = createStravaActivity({
+      id: 12345,
+      distance: 5200.5,
+      moving_time: 1800,
+      start_date: '2024-01-15T08:00:00Z',
+      start_date_local: '2024-01-15T16:00:00',
+      map: { summary_polyline: 'abc123polyline' },
+      average_speed: 2.89,
+    });
 
     // Act
     const { mapStravaActivityToDoc } = await importStravaServerModules();

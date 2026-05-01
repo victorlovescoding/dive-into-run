@@ -1,34 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import RunsActivityList from '@/components/RunsActivityList';
+import { createStravaFirestoreActivity } from '../../_helpers/strava-fixtures';
 
 vi.mock('@/components/RunsActivityCard', () => ({
-  default: ({ activity }) => <div data-testid={`card-${activity.stravaId}`}>{activity.name}</div>,
+  default: ({ activity }) => <article aria-label={activity.name}>{activity.name}</article>,
 }));
-
-import RunsActivityList from '@/components/RunsActivityList';
-
-/**
- * 建立 mock StravaActivity 物件。
- * @param {object} [overrides] - 覆寫屬性。
- * @returns {object} mock activity。
- */
-function createMockActivity(overrides = {}) {
-  return {
-    id: 'act-1',
-    uid: 'user-1',
-    stravaId: 12345,
-    name: '晨跑',
-    type: 'Run',
-    distanceMeters: 5200,
-    movingTimeSec: 1710,
-    startDate: { toDate: () => new Date('2026-04-01T06:00:00') },
-    startDateLocal: '2026-04-01T06:00:00',
-    summaryPolyline: 'encoded',
-    averageSpeed: 3.04,
-    syncedAt: { toDate: () => new Date('2026-04-01T12:00:00') },
-    ...overrides,
-  };
-}
 
 describe('RunsActivityList', () => {
   it('shows loading skeleton when isLoading is true', () => {
@@ -53,16 +30,14 @@ describe('RunsActivityList', () => {
 
   it('renders RunsActivityCard for each activity', () => {
     const activities = [
-      createMockActivity({ stravaId: 111, name: '晨跑' }),
-      createMockActivity({ stravaId: 222, name: '夜跑', id: 'act-2' }),
+      createStravaFirestoreActivity({ stravaId: 111, name: '晨跑' }),
+      createStravaFirestoreActivity({ stravaId: 222, name: '夜跑', id: 'act-2' }),
     ];
 
     render(<RunsActivityList activities={activities} isLoading={false} error={null} />);
 
-    expect(screen.getByTestId('card-111')).toBeInTheDocument();
-    expect(screen.getByTestId('card-222')).toBeInTheDocument();
-    expect(screen.getByText('晨跑')).toBeInTheDocument();
-    expect(screen.getByText('夜跑')).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: '晨跑' })).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: '夜跑' })).toBeInTheDocument();
   });
 
   describe('infinite scroll', () => {
@@ -86,7 +61,7 @@ describe('RunsActivityList', () => {
     });
 
     it('renders sentinel div when hasMore is true', () => {
-      const activities = [createMockActivity()];
+      const activities = [createStravaFirestoreActivity()];
 
       render(
         <RunsActivityList
@@ -103,7 +78,7 @@ describe('RunsActivityList', () => {
 
     it('calls loadMore when IntersectionObserver fires', () => {
       const loadMore = vi.fn();
-      const activities = [createMockActivity()];
+      const activities = [createStravaFirestoreActivity()];
 
       render(
         <RunsActivityList
@@ -121,7 +96,7 @@ describe('RunsActivityList', () => {
     });
 
     it('shows loading spinner when isLoadingMore is true', () => {
-      const activities = [createMockActivity()];
+      const activities = [createStravaFirestoreActivity()];
 
       render(
         <RunsActivityList
@@ -138,7 +113,7 @@ describe('RunsActivityList', () => {
     });
 
     it('shows "已載入全部紀錄" when hasMore is false and activities exist', () => {
-      const activities = [createMockActivity()];
+      const activities = [createStravaFirestoreActivity()];
 
       render(
         <RunsActivityList activities={activities} isLoading={false} error={null} hasMore={false} />,

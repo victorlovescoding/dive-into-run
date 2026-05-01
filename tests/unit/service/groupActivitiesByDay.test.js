@@ -6,29 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { groupActivitiesByDay } from '@/service/strava-data-service';
-
-/**
- * 建立測試用 StravaActivity stub。
- * @param {Partial<import('@/lib/firebase-strava').StravaActivity>} overrides - 覆寫欄位。
- * @returns {import('@/lib/firebase-strava').StravaActivity} 完整的活動物件。
- */
-function makeActivity(overrides = {}) {
-  return {
-    id: 'act-1',
-    uid: 'user-1',
-    stravaId: 12345,
-    name: 'Morning Run',
-    type: 'Run',
-    distanceMeters: 5000,
-    movingTimeSec: 1800,
-    startDate: /** @type {any} */ ({ toDate: () => new Date('2026-04-07T06:30:00Z') }),
-    startDateLocal: '2026-04-07T06:30:00Z',
-    summaryPolyline: null,
-    averageSpeed: 2.78,
-    syncedAt: /** @type {any} */ ({ toDate: () => new Date() }),
-    ...overrides,
-  };
-}
+import { createStravaFirestoreActivity as makeActivity } from '../../_helpers/strava-fixtures';
 
 // ---------------------------------------------------------------------------
 // groupActivitiesByDay
@@ -69,9 +47,9 @@ describe('Unit: groupActivitiesByDay', () => {
   it('should sum distanceMeters for same type on the same day', () => {
     // Arrange — three Run activities on 2026-04-07
     const activities = [
-      makeActivity({ id: 'a1', distanceMeters: 3000 }),
-      makeActivity({ id: 'a2', distanceMeters: 5000 }),
-      makeActivity({ id: 'a3', distanceMeters: 2000 }),
+      makeActivity({ id: 'a1', startDateLocal: '2026-04-07T06:30:00Z', distanceMeters: 3000 }),
+      makeActivity({ id: 'a2', startDateLocal: '2026-04-07T07:30:00Z', distanceMeters: 5000 }),
+      makeActivity({ id: 'a3', startDateLocal: '2026-04-07T08:30:00Z', distanceMeters: 2000 }),
     ];
 
     // Act
@@ -91,8 +69,18 @@ describe('Unit: groupActivitiesByDay', () => {
   it('should keep different types separate within the same day', () => {
     // Arrange — Run + VirtualRun on same day
     const activities = [
-      makeActivity({ id: 'a1', type: 'Run', distanceMeters: 5000 }),
-      makeActivity({ id: 'a2', type: 'VirtualRun', distanceMeters: 3000 }),
+      makeActivity({
+        id: 'a1',
+        type: 'Run',
+        startDateLocal: '2026-04-07T06:30:00Z',
+        distanceMeters: 5000,
+      }),
+      makeActivity({
+        id: 'a2',
+        type: 'VirtualRun',
+        startDateLocal: '2026-04-07T07:30:00Z',
+        distanceMeters: 3000,
+      }),
     ];
 
     // Act
@@ -130,9 +118,24 @@ describe('Unit: groupActivitiesByDay', () => {
   it('should order runs as Run > VirtualRun > TrailRun regardless of input order', () => {
     // Arrange — insert in reverse order: TrailRun, VirtualRun, Run
     const activities = [
-      makeActivity({ id: 'a1', type: 'TrailRun', distanceMeters: 4000 }),
-      makeActivity({ id: 'a2', type: 'VirtualRun', distanceMeters: 3000 }),
-      makeActivity({ id: 'a3', type: 'Run', distanceMeters: 5000 }),
+      makeActivity({
+        id: 'a1',
+        type: 'TrailRun',
+        startDateLocal: '2026-04-07T06:30:00Z',
+        distanceMeters: 4000,
+      }),
+      makeActivity({
+        id: 'a2',
+        type: 'VirtualRun',
+        startDateLocal: '2026-04-07T07:30:00Z',
+        distanceMeters: 3000,
+      }),
+      makeActivity({
+        id: 'a3',
+        type: 'Run',
+        startDateLocal: '2026-04-07T08:30:00Z',
+        distanceMeters: 5000,
+      }),
     ];
 
     // Act

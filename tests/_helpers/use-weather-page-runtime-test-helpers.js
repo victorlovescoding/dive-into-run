@@ -47,9 +47,15 @@ export const TOWNSHIP_LOCATION = {
  * @param {string} locationName - 顯示地點名。
  * @param {string} weatherCode - 天氣代碼。
  * @param {number} currentTemp - 當前溫度。
+ * @param {{
+ *   weatherDesc?: string,
+ *   today?: Partial<import('@/types/weather-types').TodayWeather>,
+ *   tomorrow?: Partial<import('@/types/weather-types').TomorrowWeather>,
+ * }} [options] - payload overrides。
  * @returns {{ ok: true, data: import('@/types/weather-types').WeatherInfo }} weather payload。
  */
-export function createWeatherPayload(locationName, weatherCode, currentTemp) {
+export function createWeatherPayload(locationName, weatherCode, currentTemp, options = {}) {
+  const weatherDesc = options.weatherDesc ?? '晴時多雲';
   return {
     ok: true,
     data: {
@@ -57,7 +63,7 @@ export function createWeatherPayload(locationName, weatherCode, currentTemp) {
       locationNameShort: locationName,
       today: {
         currentTemp,
-        weatherDesc: '晴時多雲',
+        weatherDesc,
         weatherCode,
         morningTemp: currentTemp + 1,
         eveningTemp: currentTemp - 3,
@@ -65,15 +71,17 @@ export function createWeatherPayload(locationName, weatherCode, currentTemp) {
         humidity: 72,
         uv: null,
         aqi: null,
+        ...(options.today ?? {}),
       },
       tomorrow: {
         weatherDesc: '多雲',
         weatherCode: '04',
-        morningTemp: currentTemp,
+        morningTemp: currentTemp + 1,
         eveningTemp: currentTemp - 2,
         rainProb: 20,
         humidity: 78,
         uv: null,
+        ...(options.tomorrow ?? {}),
       },
     },
   };
@@ -90,11 +98,47 @@ export function createFavorite(id, location) {
 
 /**
  * @param {Array<{ id: string } & typeof COUNTY_LOCATION>} favorites - favorite docs。
- * @returns {{ empty: boolean, docs: Array<{ id: string, data: () => object }> }} snapshot。
+ * @returns {{ empty: boolean, size: number, docs: Array<{ id: string, data: () => object }> }} snapshot。
  */
 export function createSnapshot(favorites) {
   return {
     empty: favorites.length === 0,
+    size: favorites.length,
     docs: favorites.map((favorite) => ({ id: favorite.id, data: () => favorite })),
+  };
+}
+
+/**
+ * Builds a Firestore `getDocs` test double for weather favorites queries.
+ * @param {Array<{ id: string } & typeof COUNTY_LOCATION>} favorites - favorite docs。
+ * @returns {(arg: any) => Promise<ReturnType<typeof createSnapshot>>} getDocs implementation。
+ */
+export function createWeatherFavoritesGetDocsHandler(favorites) {
+  return async (arg) => {
+    const queryValue = arg ?? {};
+    const path = queryValue.source?.path ?? queryValue.path ?? '';
+    if (!path.endsWith('weatherFavorites')) {
+      return createSnapshot([]);
+    }
+
+    const constraints = queryValue.constraints ?? [];
+    const countyCodeFilter = constraints.find(
+      (constraint) => constraint?.field === 'countyCode',
+    )?.value;
+    const townshipCodeFilter = constraints.find(
+      (constraint) => constraint?.field === 'townshipCode',
+    )?.value;
+
+    if (countyCodeFilter) {
+      return createSnapshot(
+        favorites.filter(
+          (favorite) =>
+            favorite.countyCode === countyCodeFilter &&
+            (favorite.townshipCode ?? null) === (townshipCodeFilter ?? null),
+        ),
+      );
+    }
+
+    return createSnapshot(favorites);
   };
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useRef } from 'react';
 import {
@@ -124,6 +124,9 @@ function createClickEvent() {
   );
 }
 
+/** @type {ReturnType<typeof vi.spyOn> | undefined} */
+let consoleErrorSpy;
+
 describe('useEventParticipation', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -132,6 +135,11 @@ describe('useEventParticipation', () => {
     mockGetDoc.mockReset();
     mockRunTransaction.mockReset();
     mockServerTimestamp.mockClear();
+  });
+
+  afterEach(() => {
+    consoleErrorSpy?.mockRestore();
+    consoleErrorSpy = undefined;
   });
 
   it('skips membership fetch when user is missing', async () => {
@@ -230,7 +238,7 @@ describe('useEventParticipation', () => {
 
   it('shows join error toast and clears pending state when transaction fails', async () => {
     const useEventParticipation = await loadHook();
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const event = createEvent({ id: 'e1' });
     const props = createProps({ events: [event] });
 
@@ -247,7 +255,6 @@ describe('useEventParticipation', () => {
     });
 
     expect(result.current.pendingByEventId.e1).toBeUndefined();
-    consoleSpy.mockRestore();
   });
 
   it('leaves an event and restores remaining seats while reducing participants count', async () => {

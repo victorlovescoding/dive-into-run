@@ -63,10 +63,10 @@ vi.mock('@/components/DashboardEventCard', () => ({
    * @returns {import('react').ReactElement} Mocked card.
    */
   default: ({ event, isHost }) => (
-    <div data-testid={`event-${event.id}`}>
+    <article aria-label={event.title}>
       {event.title}
       {isHost && ' [主辦]'}
-    </div>
+    </article>
   ),
 }));
 
@@ -194,9 +194,9 @@ describe('Integration: ProfileEventList', () => {
     render(<ProfileEventList uid={TEST_UID} />);
 
     // Assert
-    expect(await screen.findByTestId('event-p1-0')).toBeInTheDocument();
-    expect(screen.getByTestId('event-p1-1')).toBeInTheDocument();
-    expect(screen.getByTestId('event-p1-2')).toBeInTheDocument();
+    expect(await screen.findByRole('article', { name: 'Event p1-0' })).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'Event p1-1' })).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'Event p1-2' })).toBeInTheDocument();
 
     expect(firestoreMock.where).toHaveBeenCalledWith('hostUid', '==', TEST_UID);
   });
@@ -212,8 +212,8 @@ describe('Integration: ProfileEventList', () => {
     render(<ProfileEventList uid={TEST_UID} />);
 
     // Assert — mock 的 DashboardEventCard 會在 isHost=true 時 append [主辦]
-    expect(await screen.findByTestId('event-p1-0')).toHaveTextContent('[主辦]');
-    expect(screen.getByTestId('event-p1-1')).toHaveTextContent('[主辦]');
+    expect(await screen.findByRole('article', { name: 'Event p1-0' })).toHaveTextContent('[主辦]');
+    expect(screen.getByRole('article', { name: 'Event p1-1' })).toHaveTextContent('[主辦]');
   });
 
   // --- AS4: 空狀態 ---
@@ -283,7 +283,7 @@ describe('Integration: ProfileEventList', () => {
     render(<ProfileEventList uid={TEST_UID} />);
 
     // Assert — sentinel 不存在
-    await screen.findByTestId('event-p1-0');
+    await screen.findByRole('article', { name: 'Event p1-0' });
     expect(screen.queryByTestId('profile-event-list-sentinel')).not.toBeInTheDocument();
   });
 
@@ -298,7 +298,7 @@ describe('Integration: ProfileEventList', () => {
     // Act
     render(<ProfileEventList uid={TEST_UID} />);
 
-    await screen.findByTestId('event-p1-0');
+    await screen.findByRole('article', { name: 'Event p1-0' });
     const sentinel = await screen.findByTestId('profile-event-list-sentinel');
     expect(sentinel).toBeInTheDocument();
 
@@ -315,8 +315,8 @@ describe('Integration: ProfileEventList', () => {
     expect(await screen.findByText(/載入更多失敗/)).toBeInTheDocument();
 
     // Assert — 原本的項目仍在
-    expect(screen.getByTestId('event-p1-0')).toBeInTheDocument();
-    expect(screen.getByTestId('event-p1-4')).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'Event p1-0' })).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'Event p1-4' })).toBeInTheDocument();
     expect(getDocs).toHaveBeenCalledWith(
       expect.objectContaining({
         constraints: expect.arrayContaining([

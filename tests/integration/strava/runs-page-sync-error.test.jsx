@@ -57,14 +57,14 @@ vi.mock('firebase/firestore', () => ({
 
 // 灰區 component leaf mocks（Leaflet / dialog 在 jsdom 不可渲染）
 vi.mock('@/components/RunsLoginGuide', () => ({
-  default: () => <div data-testid="login-guide">請先登入</div>,
+  default: () => <section aria-label="登入提示">請先登入</section>,
 }));
 vi.mock('@/components/RunsConnectGuide', () => ({
-  default: () => <div data-testid="connect-guide">連結 Strava</div>,
+  default: () => <section aria-label="Strava 連結提示">連結 Strava</section>,
 }));
 vi.mock('@/components/RunsActivityList', () => ({
   default: ({ activities }) => (
-    <ul data-testid="activity-list">
+    <ul aria-label="活動列表">
       {activities.map((activity) => (
         <li key={activity.id}>{activity.name}</li>
       ))}
@@ -72,7 +72,7 @@ vi.mock('@/components/RunsActivityList', () => ({
   ),
 }));
 vi.mock('@/components/RunCalendarDialog', () => ({
-  default: ({ open }) => (open ? <div data-testid="calendar-dialog">calendar open</div> : null),
+  default: ({ open }) => (open ? <div role="dialog">calendar open</div> : null),
 }));
 
 import { onSnapshot, getDocs } from 'firebase/firestore';

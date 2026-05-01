@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createStravaActivity } from '../../_helpers/strava-fixtures';
 
 // --- Mock firebase-admin module ---
 const mockVerifyIdToken = vi.fn();
@@ -65,41 +66,6 @@ async function importStravaRuntimeModules() {
   return {
     verifyAuthToken: runtime.verifyAuthToken,
     syncStravaActivities: runtime.syncStravaActivities,
-  };
-}
-
-// --- Factory helpers ---
-
-/**
- * @typedef {object} StravaActivity
- * @property {number} id - Strava activity ID.
- * @property {string} name - Activity name.
- * @property {string} type - Activity type.
- * @property {number} distance - Distance in meters.
- * @property {number} moving_time - Moving time in seconds.
- * @property {string} start_date - ISO date string.
- * @property {string} start_date_local - Local ISO date string.
- * @property {{ summary_polyline: string | null }} map - Map data.
- * @property {number} average_speed - Average speed in m/s.
- */
-
-/**
- * Creates a mock Strava API activity.
- * @param {Partial<StravaActivity>} overrides - Fields to override.
- * @returns {StravaActivity} Mock activity object.
- */
-function createStravaActivity(overrides = {}) {
-  return {
-    id: 12345,
-    name: 'Morning Run',
-    type: 'Run',
-    distance: 5200.5,
-    moving_time: 1800,
-    start_date: '2024-01-15T08:00:00Z',
-    start_date_local: '2024-01-15T16:00:00',
-    map: { summary_polyline: 'abc123polyline' },
-    average_speed: 2.89,
-    ...overrides,
   };
 }
 

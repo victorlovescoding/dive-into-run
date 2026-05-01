@@ -72,10 +72,10 @@ function ContextView() {
     <AuthContext.Consumer>
       {(value) => (
         <>
-          <span data-testid="loading">{value.loading ? 'true' : 'false'}</span>
-          <span data-testid="uid">{value.user ? value.user.uid : 'null'}</span>
-          <span data-testid="name">{value.user ? (value.user.name ?? '') : ''}</span>
-          <span data-testid="email">{value.user ? (value.user.email ?? '') : ''}</span>
+          <output aria-label="auth loading">{value.loading ? 'true' : 'false'}</output>
+          <output aria-label="auth uid">{value.user ? value.user.uid : 'null'}</output>
+          <output aria-label="auth name">{value.user ? (value.user.name ?? '') : ''}</output>
+          <output aria-label="auth email">{value.user ? (value.user.email ?? '') : ''}</output>
         </>
       )}
     </AuthContext.Consumer>
@@ -112,9 +112,9 @@ describe('AuthProvider', () => {
     await auth.emit(null);
 
     await waitFor(() => {
-      expect(screen.getByTestId('loading')).toHaveTextContent('false');
+      expect(screen.getByLabelText('auth loading')).toHaveTextContent('false');
     });
-    expect(screen.getByTestId('uid')).toHaveTextContent('null');
+    expect(screen.getByLabelText('auth uid')).toHaveTextContent('null');
     expect(getDocMock).not.toHaveBeenCalled();
     expect(onSnapshotMock).not.toHaveBeenCalled();
   });
@@ -134,11 +134,11 @@ describe('AuthProvider', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('loading')).toHaveTextContent('false');
+      expect(screen.getByLabelText('auth loading')).toHaveTextContent('false');
     });
-    expect(screen.getByTestId('uid')).toHaveTextContent('user-1');
-    expect(screen.getByTestId('name')).toHaveTextContent('Profile Name');
-    expect(screen.getByTestId('email')).toHaveTextContent('profile@example.com');
+    expect(screen.getByLabelText('auth uid')).toHaveTextContent('user-1');
+    expect(screen.getByLabelText('auth name')).toHaveTextContent('Profile Name');
+    expect(screen.getByLabelText('auth email')).toHaveTextContent('profile@example.com');
     expect(setDocMock).not.toHaveBeenCalled();
   });
 
@@ -165,10 +165,10 @@ describe('AuthProvider', () => {
       { merge: true },
     );
     await waitFor(() => {
-      expect(screen.getByTestId('uid')).toHaveTextContent('user-1');
+      expect(screen.getByLabelText('auth uid')).toHaveTextContent('user-1');
     });
-    expect(screen.getByTestId('name')).toHaveTextContent('');
-    expect(screen.getByTestId('email')).toHaveTextContent('');
+    expect(screen.getByLabelText('auth name')).toBeEmptyDOMElement();
+    expect(screen.getByLabelText('auth email')).toBeEmptyDOMElement();
   });
 
   it('profile snapshot 後續 update：context user 隨之刷新', async () => {
@@ -181,15 +181,15 @@ describe('AuthProvider', () => {
     profile.emit({ name: 'First', email: 'a@x.com' });
 
     await waitFor(() => {
-      expect(screen.getByTestId('name')).toHaveTextContent('First');
+      expect(screen.getByLabelText('auth name')).toHaveTextContent('First');
     });
 
     profile.emit({ name: 'Second', email: 'b@x.com', bio: 'updated' });
 
     await waitFor(() => {
-      expect(screen.getByTestId('name')).toHaveTextContent('Second');
+      expect(screen.getByLabelText('auth name')).toHaveTextContent('Second');
     });
-    expect(screen.getByTestId('email')).toHaveTextContent('b@x.com');
+    expect(screen.getByLabelText('auth email')).toHaveTextContent('b@x.com');
   });
 
   it('登出：user 回 null、profile listener 被取消', async () => {
@@ -202,16 +202,16 @@ describe('AuthProvider', () => {
     profile.emit({ name: 'Active' });
 
     await waitFor(() => {
-      expect(screen.getByTestId('name')).toHaveTextContent('Active');
+      expect(screen.getByLabelText('auth name')).toHaveTextContent('Active');
     });
 
     await auth.emit(null);
 
     await waitFor(() => {
-      expect(screen.getByTestId('uid')).toHaveTextContent('null');
+      expect(screen.getByLabelText('auth uid')).toHaveTextContent('null');
     });
     expect(profile.unsubscribe).toHaveBeenCalled();
-    expect(screen.getByTestId('loading')).toHaveTextContent('false');
+    expect(screen.getByLabelText('auth loading')).toHaveTextContent('false');
   });
 
   it('unmount：auth + profile listener 都被取消', async () => {
@@ -223,7 +223,7 @@ describe('AuthProvider', () => {
     await auth.emit(makeFbUser());
     profile.emit({ name: 'Mounted' });
     await waitFor(() => {
-      expect(screen.getByTestId('name')).toHaveTextContent('Mounted');
+      expect(screen.getByLabelText('auth name')).toHaveTextContent('Mounted');
     });
 
     unmount();
