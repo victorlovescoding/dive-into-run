@@ -438,7 +438,7 @@ Keep commits ordered by dependency:
     - `npm run type-check:changed`
   - Commit checkpoint: commit T011-T014 together after Reviewer approval. Suggested message: `test: extract shared test factories`.
 
-- [ ] T015 Full changed-scope verification
+- [x] T015 Full changed-scope verification
   - Scope: verify all P3 cleanup changes together.
   - Owned files: no edits except `specs/030-p3-tests-cleanup/tasks.md` status line after Reviewer approval.
   - Dependencies: T006, T010, T014.
