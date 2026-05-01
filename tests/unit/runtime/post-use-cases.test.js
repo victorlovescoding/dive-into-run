@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 
 const mockAddDoc = vi.fn();
 const mockUpdateDoc = vi.fn();
@@ -79,6 +79,14 @@ beforeEach(() => {
 });
 
 describe('post-use-cases split', () => {
+  /** @type {ReturnType<typeof vi.spyOn> | undefined} */
+  let consoleWarnSpy;
+
+  afterEach(() => {
+    consoleWarnSpy?.mockRestore();
+    consoleWarnSpy = undefined;
+  });
+
   it('createPost uses service validation and repo write', async () => {
     mockAddDoc.mockResolvedValue({ id: 'post-1' });
 
@@ -105,14 +113,13 @@ describe('post-use-cases split', () => {
   });
 
   it('getPostDetail warns on missing document and normalizes snapshots', async () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     mockGetDoc.mockResolvedValue({
       exists: () => false,
     });
 
     await expect(runtime.getPostDetail('missing')).resolves.toBeNull();
-    expect(warnSpy).toHaveBeenCalledWith('No such document!');
-    warnSpy.mockRestore();
+    expect(consoleWarnSpy).toHaveBeenCalledWith('No such document!');
   });
 
   it('addComment trims content and preserves repo-facing comment payload', async () => {

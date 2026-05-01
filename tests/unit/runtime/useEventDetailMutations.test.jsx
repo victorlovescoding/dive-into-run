@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import {
   createMutationParams,
@@ -96,11 +96,22 @@ async function renderTarget(ctx) {
   return renderHook(() => useEventDetailMutations(ctx.params));
 }
 
+/** @type {ReturnType<typeof vi.spyOn> | undefined} */
+let consoleErrorSpy;
+/** @type {ReturnType<typeof vi.spyOn> | undefined} */
+let consoleWarnSpy;
+
 describe('useEventDetailMutations', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
     vi.clearAllMocks();
     vi.resetModules();
+  });
+
+  afterEach(() => {
+    consoleErrorSpy?.mockRestore();
+    consoleErrorSpy = undefined;
+    consoleWarnSpy?.mockRestore();
+    consoleWarnSpy = undefined;
   });
 
   describe('handleEditSubmit', () => {
@@ -147,7 +158,7 @@ describe('useEventDetailMutations', () => {
     });
 
     it('surfaces the capacity guard when maxParticipants drops below joined count', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockRunTransaction.mockImplementationOnce(async (_db, callback) =>
         callback({
           get: vi.fn().mockResolvedValueOnce({
@@ -175,7 +186,6 @@ describe('useEventDetailMutations', () => {
       expect(ctx.setEventMock).not.toHaveBeenCalled();
       expect(ctx.getEvent()).toMatchObject({ maxParticipants: 10, participantsCount: 8 });
       expect(result.current.isUpdating).toBe(false);
-      consoleErrorSpy.mockRestore();
     });
   });
 
@@ -223,7 +233,7 @@ describe('useEventDetailMutations', () => {
     });
 
     it('treats an already-deleted event as a guarded race path', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       mockGetDocs.mockResolvedValueOnce({ docs: [] });
       mockGetDoc.mockResolvedValueOnce({ exists: () => false });
       const ctx = createMutationParams();
@@ -241,11 +251,10 @@ describe('useEventDetailMutations', () => {
       expect(ctx.router.push).not.toHaveBeenCalled();
       expect(result.current.deletingEventId).toBeNull();
       expect(result.current.isDeletingEvent).toBe(false);
-      consoleWarnSpy.mockRestore();
     });
 
     it('shows the generic failure toast for non-race delete errors', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockGetDocs.mockRejectedValueOnce(new Error('boom'));
       const ctx = createMutationParams();
       const { result } = await renderTarget(ctx);
@@ -259,7 +268,6 @@ describe('useEventDetailMutations', () => {
 
       expect(ctx.router.push).not.toHaveBeenCalled();
       expect(result.current.isDeletingEvent).toBe(false);
-      consoleErrorSpy.mockRestore();
     });
   });
 

@@ -5,7 +5,7 @@
  * `@/service/profile-service` 與 `@/repo/client/firebase-profile-repo` 走真實實作。
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 
 const {
@@ -57,6 +57,8 @@ const TEST_UID = 'user-abc';
 
 /** @type {Array<{ observe: import('vitest').Mock, disconnect: import('vitest').Mock, trigger: (entries: Array<{ isIntersecting: boolean }>) => void }>} */
 let observerControls = [];
+/** @type {ReturnType<typeof vi.spyOn> | undefined} */
+let consoleErrorSpy;
 
 /**
  * 建立 mock event snapshot。
@@ -141,6 +143,11 @@ beforeEach(() => {
       }
     )
   );
+});
+
+afterEach(() => {
+  consoleErrorSpy?.mockRestore();
+  consoleErrorSpy = undefined;
 });
 
 describe('useProfileEventsRuntime', () => {
@@ -244,7 +251,7 @@ describe('useProfileEventsRuntime', () => {
   });
 
   it('sets initialError when the first page fails', async () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockGetDocs.mockRejectedValueOnce(new Error('firestore unavailable'));
 
     const useProfileEventsRuntime = await loadHook();
@@ -255,11 +262,11 @@ describe('useProfileEventsRuntime', () => {
     expect(result.current.initialError).toBe('載入失敗');
     expect(result.current.items).toEqual([]);
     expect(result.current.hasMore).toBe(false);
-    expect(errorSpy).toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it('keeps the current page and surfaces loadMoreError when pagination fails', async () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockGetDocs
       .mockResolvedValueOnce({
         docs: Array.from({ length: 6 }, (_, index) => createEventDoc(`p1-${index}`)),
@@ -282,6 +289,6 @@ describe('useProfileEventsRuntime', () => {
 
     expect(result.current.items).toHaveLength(5);
     expect(result.current.isLoadingMore).toBe(false);
-    expect(errorSpy).toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 });

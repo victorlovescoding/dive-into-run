@@ -74,6 +74,8 @@ vi.mock(TOAST_PROVIDER_MODULE, () => ({
 let originalCreateImageBitmap;
 let originalGetContext;
 let originalToBlob;
+/** @type {ReturnType<typeof vi.spyOn> | undefined} */
+let consoleErrorSpy;
 
 /**
  * 動態載入 hook，避免在 mock 註冊前提早取用模組。
@@ -164,6 +166,8 @@ describe('useMemberPageRuntime', () => {
     /** @type {any} */ (window).createImageBitmap = originalCreateImageBitmap;
     /** @type {any} */ (HTMLCanvasElement.prototype).getContext = originalGetContext;
     HTMLCanvasElement.prototype.toBlob = originalToBlob;
+    consoleErrorSpy?.mockRestore();
+    consoleErrorSpy = undefined;
   });
 
   it('prefills current name and updates Firestore with trimmed name on submit', async () => {
@@ -230,7 +234,7 @@ describe('useMemberPageRuntime', () => {
   });
 
   it('shows toast and clears file input when avatar upload fails', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     memberPageBoundaryMocks.mockUploadBytes.mockRejectedValueOnce(new Error('upload failed'));
     const { result, showToast } = await renderMemberPageRuntime();
     const changeEvent = createFileChangeEvent(createAvatarFile());
@@ -243,7 +247,6 @@ describe('useMemberPageRuntime', () => {
     expect(showToast).toHaveBeenLastCalledWith('上傳大頭貼失敗，請稍後再試', 'error');
     expect(changeEvent.target.value).toBe('');
     expect(consoleErrorSpy).toHaveBeenCalled();
-    consoleErrorSpy.mockRestore();
   });
 
   it('skips file picker, avatar upload, and name submit when auth is missing', async () => {

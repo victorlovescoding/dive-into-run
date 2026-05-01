@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 
 const {
@@ -108,12 +108,20 @@ function createProfileUser(overrides = {}) {
   };
 }
 
+/** @type {ReturnType<typeof vi.spyOn> | undefined} */
+let consoleErrorSpy;
+
 describe('useProfileRuntime', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
     mockUseContext.mockReset();
     mockAuth(null);
+  });
+
+  afterEach(() => {
+    consoleErrorSpy?.mockRestore();
+    consoleErrorSpy = undefined;
   });
 
   it('fetches profile stats and exposes hosted/joined counts on success', async () => {
@@ -188,7 +196,7 @@ describe('useProfileRuntime', () => {
   });
 
   it('exposes statsError and clears stats when getProfileStats rejects', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockGetCountFromServer.mockRejectedValueOnce(new Error('Firestore error'));
     mockAuth({ uid: 'viewer-uid' });
 
@@ -203,8 +211,6 @@ describe('useProfileRuntime', () => {
     expect(result.current.stats).toBeNull();
     expect(result.current.isStatsLoading).toBe(false);
     expect(consoleErrorSpy).toHaveBeenCalled();
-
-    consoleErrorSpy.mockRestore();
   });
 
   it('wraps Date createdAt with toDate adapter for ProfileHeader', async () => {

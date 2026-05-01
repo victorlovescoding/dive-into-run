@@ -27,6 +27,9 @@ async function renderEventDetailParticipationHook(initialProps) {
   return renderHook((props) => useEventDetailParticipation(props), { initialProps });
 }
 
+/** @type {ReturnType<typeof vi.spyOn> | undefined} */
+let consoleErrorSpy;
+
 describe('useEventDetailParticipation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -34,7 +37,8 @@ describe('useEventDetailParticipation', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    consoleErrorSpy?.mockRestore();
+    consoleErrorSpy = undefined;
   });
 
   it('computes remaining seats from fetched participants and exposes can_join state', async () => {
@@ -111,7 +115,7 @@ describe('useEventDetailParticipation', () => {
   });
 
   it('surfaces participantsError when refreshParticipants fails', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     eventDetailParticipationBoundaryMocks.mockGetDocs.mockRejectedValueOnce(new Error('boom'));
     eventDetailParticipationBoundaryMocks.mockGetDoc.mockResolvedValueOnce({
       exists: () => false,
@@ -127,7 +131,6 @@ describe('useEventDetailParticipation', () => {
 
     expect(result.current.participants).toEqual([]);
     expect(result.current.participantsLoading).toBe(false);
-    consoleErrorSpy.mockRestore();
   });
 
   it('resets joined state when the viewing user changes', async () => {

@@ -254,7 +254,7 @@ Keep commits ordered by dependency:
     - `npm run type-check:changed`
   - Commit checkpoint: none by itself; include in the spy cleanup commit after T010.
 
-- [ ] T009 Consolidate runtime hook console error spies
+- [x] T009 Consolidate runtime hook console error spies
   - Scope: remove repeated per-test manual console error restore in runtime hook tests.
   - Owned files:
     - `tests/unit/runtime/useEventMutations.test.jsx`
@@ -281,7 +281,7 @@ Keep commits ordered by dependency:
     - `npm run type-check:changed`
   - Commit checkpoint: none by itself; include in the spy cleanup commit after T010.
 
-- [ ] T010 Consolidate explicitly owned integration console error spies and commit spy batch
+- [x] T010 Consolidate explicitly owned integration console error spies and commit spy batch
   - Scope: clean integration delete-race console spies and only the additional files that T007 explicitly adds before assignment.
     - Also handle T007-approved repo/lib/runtime console warn/error spy cleanup files.
   - Owned files:

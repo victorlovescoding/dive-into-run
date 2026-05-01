@@ -8,7 +8,7 @@
  * Pattern 對齊 specs/005-event-comments/tests/unit/firebase-comments.test.js。
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   loginCheckUserData,
   updateUserName,
@@ -43,6 +43,11 @@ vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
 // ---------------------------------------------------------------------------
 
 describe('firebase-users › loginCheckUserData', () => {
+  /** @type {ReturnType<typeof vi.spyOn> | undefined} */
+  let consoleWarnSpy;
+  /** @type {ReturnType<typeof vi.spyOn> | undefined} */
+  let consoleErrorSpy;
+
   const fbUser = /** @type {import('firebase/auth').User} */ (
     /** @type {unknown} */ ({
       uid: 'user-1',
@@ -55,6 +60,13 @@ describe('firebase-users › loginCheckUserData', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDoc.mockReturnValue('mock-doc-ref');
+  });
+
+  afterEach(() => {
+    consoleWarnSpy?.mockRestore();
+    consoleWarnSpy = undefined;
+    consoleErrorSpy?.mockRestore();
+    consoleErrorSpy = undefined;
   });
 
   it('doc 已存在時不呼叫 setDoc', async () => {
@@ -81,7 +93,7 @@ describe('firebase-users › loginCheckUserData', () => {
         /** @type {unknown} */ ({ exists: () => false })
       ),
     );
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     // Act
     await loginCheckUserData(fbUser);
@@ -100,20 +112,17 @@ describe('firebase-users › loginCheckUserData', () => {
       { merge: true },
     );
 
-    warnSpy.mockRestore();
   });
 
   it('getDoc reject 時 re-throw 並 console.error', async () => {
     // Arrange
     const boom = new Error('boom');
     mockGetDoc.mockRejectedValueOnce(boom);
-    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     // Act & Assert
     await expect(loginCheckUserData(fbUser)).rejects.toThrow('boom');
-    expect(errSpy).toHaveBeenCalledWith(boom);
-
-    errSpy.mockRestore();
+    expect(consoleErrorSpy).toHaveBeenCalledWith(boom);
   });
 });
 
