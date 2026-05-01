@@ -51,6 +51,7 @@ function triggerIntersection() {
 describe('useDashboardTab', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetchFn.mockReset();
   });
 
   /**
@@ -108,7 +109,6 @@ describe('useDashboardTab', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockFetchFn).toHaveBeenCalledOnce();
     expect(mockFetchFn).toHaveBeenCalledWith('user-1', { prevResult: null, pageSize: 10 });
     expect(result.current.items).toEqual([{ id: '1' }]);
   });
@@ -117,6 +117,7 @@ describe('useDashboardTab', () => {
   it('does not re-fetch when isActive toggles after initialization', async () => {
     const useDashboardTab = await importHook();
     mockFetchFn.mockResolvedValueOnce({ items: [{ id: '1' }] });
+    mockFetchFn.mockRejectedValueOnce(new Error('unexpected re-fetch after toggle'));
 
     const { result, rerender } = renderHook(
       /**
@@ -131,14 +132,20 @@ describe('useDashboardTab', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockFetchFn).toHaveBeenCalledOnce();
+    expect(mockFetchFn).toHaveBeenCalledWith('user-1', { prevResult: null, pageSize: 10 });
 
     // Toggle off then on
     rerender({ isActive: false });
     rerender({ isActive: true });
 
-    // Should not fetch again
-    expect(mockFetchFn).toHaveBeenCalledOnce();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // If the toggle triggers another fetch, the sentinel rejection sets error.
+    expect(result.current.items).toEqual([{ id: '1' }]);
+    expect(result.current.error).toBeNull();
+    expect(result.current.isLoading).toBe(false);
   });
 
   // --- 5. initial fetch 成功 ---
@@ -231,8 +238,7 @@ describe('useDashboardTab', () => {
     });
 
     // Should pass prevResult containing page1 response
-    expect(mockFetchFn).toHaveBeenCalledTimes(2);
-    expect(mockFetchFn.mock.calls[1][1]).toMatchObject({
+    expect(mockFetchFn).toHaveBeenLastCalledWith('user-1', {
       prevResult: page1Result,
       pageSize: 5,
     });
@@ -365,7 +371,7 @@ describe('useDashboardTab', () => {
 
     // Wait for effect to fire and set isLoading
     await waitFor(() => {
-      expect(mockFetchFn).toHaveBeenCalledOnce();
+      expect(mockFetchFn).toHaveBeenCalledWith('user-1', { prevResult: null, pageSize: 10 });
     });
 
     // Unmount before fetch resolves

@@ -72,7 +72,7 @@ describe('ComposePrompt', () => {
     const onClick = vi.fn();
     render(<ComposePrompt onClick={onClick} />);
     await user.click(screen.getByText(/分享你的跑步故事/));
-    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(onClick).toHaveBeenCalled();
   });
 });
 

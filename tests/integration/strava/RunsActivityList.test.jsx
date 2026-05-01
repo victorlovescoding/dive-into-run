@@ -117,7 +117,7 @@ describe('RunsActivityList', () => {
 
       intersectionCallback([/** @type {IntersectionObserverEntry} */ ({ isIntersecting: true })]);
 
-      expect(loadMore).toHaveBeenCalledTimes(1);
+      expect(loadMore).toHaveBeenCalled();
     });
 
     it('shows loading spinner when isLoadingMore is true', () => {

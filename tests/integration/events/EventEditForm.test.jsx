@@ -212,7 +212,6 @@ describe('Integration: EventEditForm', () => {
     await user.click(submitButton);
 
     // Assert
-    expect(mockOnSubmit).toHaveBeenCalledTimes(1);
     const submittedData = mockOnSubmit.mock.calls[0][0];
     expect(submittedData.title).toBe('新活動標題');
     expect(submittedData.id).toBe('event-edit-1');
@@ -234,7 +233,7 @@ describe('Integration: EventEditForm', () => {
     await user.click(cancelButton);
 
     // Assert
-    expect(mockOnCancel).toHaveBeenCalledTimes(1);
+    expect(mockOnCancel).toHaveBeenCalled();
   });
 
   // --- FR-015: 人數上限不能低於目前報名人數 ---

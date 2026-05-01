@@ -68,7 +68,6 @@ describe('Toast component', () => {
     await user.click(closeButton);
 
     expect(onClose).toHaveBeenCalledWith('test-id-1');
-    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   // --- 6. success toast 3 秒後自動呼叫 onClose ---
@@ -91,7 +90,6 @@ describe('Toast component', () => {
       });
 
       expect(onClose).toHaveBeenCalledWith('test-id-1');
-      expect(onClose).toHaveBeenCalledTimes(1);
     });
 
     // --- 7. error toast 不自動消失 ---

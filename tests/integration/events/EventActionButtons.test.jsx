@@ -97,7 +97,7 @@ describe('Integration: EventActionButtons', () => {
 
     // Interact
     await user.click(joinButton);
-    expect(mockOnJoin).toHaveBeenCalledTimes(1);
+    expect(mockOnJoin).toHaveBeenCalledWith(mockEvent, expect.anything());
   });
 
   it('should render "Leave Event" button when user has joined', async () => {
@@ -150,7 +150,7 @@ describe('Integration: EventActionButtons', () => {
 
     // Interact
     await user.click(leaveButton);
-    expect(mockOnLeave).toHaveBeenCalledTimes(1);
+    expect(mockOnLeave).toHaveBeenCalledWith(mockEvent, expect.anything());
   });
 
   it('should render "Full" text when event is full and user not joined', () => {

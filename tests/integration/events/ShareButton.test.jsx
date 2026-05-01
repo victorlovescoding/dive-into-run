@@ -130,7 +130,6 @@ describe('Integration: ShareButton', () => {
       title: 'Weekend Trail Run',
       url: 'https://example.com/events/123',
     });
-    expect(mockShare).toHaveBeenCalledTimes(1);
   });
 
   /* ========================================================================

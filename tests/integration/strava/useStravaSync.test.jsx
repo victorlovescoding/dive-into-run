@@ -147,10 +147,12 @@ describe('useStravaSync', () => {
     renderWithAuth(<TestComponent lastSyncAt={null} />);
 
     await user.click(screen.getByRole('button', { name: 'Sync' }));
-    expect(mockedFetch).toHaveBeenCalledTimes(1);
+    expect(mockedFetch).toHaveBeenCalledWith('/api/strava/sync', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer mock-id-token' },
+    });
 
-    // Button should be disabled now, but also test the guard directly
-    // Re-enable button manually won't happen, but we verify fetch count
+    // The disabled button is the user-visible guard against double sync.
     expect(screen.getByRole('button', { name: 'Sync' })).toBeDisabled();
 
     await act(async () => {

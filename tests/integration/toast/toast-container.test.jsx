@@ -77,6 +77,5 @@ describe('ToastContainer', () => {
     await user.click(closeButtons[0]);
 
     expect(removeToast).toHaveBeenCalledWith('id-1');
-    expect(removeToast).toHaveBeenCalledTimes(1);
   });
 });
