@@ -83,6 +83,24 @@ function buildParticipantsSnapshot(uids) {
   };
 }
 
+/**
+ * 取得 batch.set 寫入的 notification payloads。
+ * @returns {Array<{ recipientUid: string, type: string }>} notification payloads。
+ */
+function getBatchPayloads() {
+  return mockBatch.set.mock.calls.map(
+    (/** @type {[unknown, { recipientUid: string, type: string }]} */ call) => call[1],
+  );
+}
+
+/**
+ * 取得 batch.set 寫入的 recipientUid。
+ * @returns {string[]} recipient UID 列表。
+ */
+function getBatchRecipientUids() {
+  return getBatchPayloads().map((payload) => payload.recipientUid);
+}
+
 // ---------------------------------------------------------------------------
 // notifyEventModified
 // ---------------------------------------------------------------------------
@@ -112,8 +130,8 @@ describe('notifyEventModified', () => {
     // Act
     await notifyEventModified('evt-1', '週末登山團', actor);
 
-    // Assert — 3 participants minus actor = 2
-    expect(mockBatch.set).toHaveBeenCalledTimes(2);
+    // Assert — 3 participants minus actor = only user-1/user-2 receive notifications
+    expect(getBatchRecipientUids()).toEqual(['user-1', 'user-2']);
   });
 
   it('should set correct notification fields for each recipient', async () => {
@@ -146,7 +164,7 @@ describe('notifyEventModified', () => {
     await notifyEventModified('evt-1', '週末登山團', actor);
 
     // Assert
-    expect(mockBatch.commit).toHaveBeenCalledTimes(1);
+    expect(mockBatch.commit).toHaveBeenCalledWith();
   });
 
   it('should NOT create notification for the actor themselves', async () => {
@@ -187,8 +205,9 @@ describe('notifyEventCancelled', () => {
     // Act
     await notifyEventCancelled('evt-2', '晨跑社練習', participants, actor);
 
-    // Assert — 3 minus actor = 2; 不應觸發 fetchParticipantUids → 不應呼叫 events/.../participants getDocs
-    expect(mockBatch.set).toHaveBeenCalledTimes(2);
+    // Assert — 3 minus actor = only user-1/user-2 receive notifications;
+    // 不應觸發 fetchParticipantUids → 不應呼叫 events/.../participants getDocs。
+    expect(getBatchRecipientUids()).toEqual(['user-1', 'user-2']);
     expect(mockedGetDocs).not.toHaveBeenCalled();
   });
 
@@ -222,7 +241,7 @@ describe('notifyEventCancelled', () => {
     await notifyEventCancelled('evt-2', '晨跑社練習', participants, actor);
 
     // Assert
-    expect(mockBatch.commit).toHaveBeenCalledTimes(1);
+    expect(mockBatch.commit).toHaveBeenCalledWith();
   });
 });
 
@@ -278,7 +297,20 @@ describe('notifyPostNewComment', () => {
     await notifyPostNewComment('post-1', '台北馬拉松心得', postAuthorUid, 'cmt-1', actor);
 
     // Assert
-    expect(mockedAddDoc).toHaveBeenCalledTimes(1);
+    expect(mockedAddDoc).toHaveBeenCalledWith(expect.any(Object), {
+      recipientUid: 'author-uid',
+      type: 'post_new_comment',
+      actorUid: 'actor-uid',
+      actorName: 'Actor Name',
+      actorPhotoURL: 'https://photo.url/actor.jpg',
+      entityType: 'post',
+      entityId: 'post-1',
+      entityTitle: '台北馬拉松心得',
+      commentId: 'cmt-1',
+      message: '你的文章『台北馬拉松心得』有一則新的留言',
+      read: false,
+      createdAt: 'mock-server-timestamp',
+    });
     expect(mockedWriteBatch).not.toHaveBeenCalled();
   });
 });
