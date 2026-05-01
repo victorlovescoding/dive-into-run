@@ -14,7 +14,8 @@ This plan covers only the audit report P3 cleanup scope:
 - Reviewer approval is required before changing a task checkbox to `- [x]`.
 - Keep all task checkboxes unchecked until that exact task has passed reviewer signoff.
 - Do not push, open PR, merge, or delete the worktree until T001-T016 are complete and reviewer-approved.
-- T017-T021 are the only tasks allowed to push, open PR, wait for CI, merge, and sync local `main`.
+- T017-T021 are no-checkbox delivery gates. They are the only gates allowed to push, open PR, wait for CI, merge, and sync local `main`.
+- T017-T020 still require Engineer + Reviewer validation, but their completion evidence is recorded in PR/GitHub state and the final report, not by editing this tracked file after CI.
 - If the main agent compacts or a new session takes over, the first action is to read this file, then continue from the checked boxes, team configuration, and dependencies below.
 - If compact/restart happens, the new session must not push, open PR, or merge until every task before T017 is checked.
 - Do not revert unrelated changes. Work only in files owned by the active task.
@@ -80,7 +81,11 @@ Keep commits ordered by dependency:
 3. Spy cleanup commit after T007-T010 pass.
 4. Factory extraction commit after T011-T014 pass.
 5. Final verification / PR prep commit after T015-T016 pass, only if generated docs or PR-prep files are intentionally changed.
-6. Delivery tasks T017-T021 should not create new code changes; commit only if a tracked PR/status doc was intentionally updated and reviewed.
+6. Delivery gates T017-T021 should not create new code changes or checkbox-only commits. Record delivery evidence in PR/GitHub/final report instead of post-CI tracked docs edits.
+
+## Delivery Notes
+
+T017-T021 are intentionally no-checkbox delivery gates. After CI passes, a tracked docs-only checkbox commit would create a new PR head SHA and invalidate the CI result that merge depends on. Delivery evidence for push, PR creation, latest-head CI, merge, and local `main` sync belongs in GitHub state and the final report, not in a post-CI `tasks.md` update.
 
 ## Tasks
 
@@ -473,17 +478,17 @@ Keep commits ordered by dependency:
   - Reviewer role: Final Reviewer.
   - Acceptance criteria:
     - T001-T015 are complete and reviewer-approved before this task is marked complete.
-    - Before T016 is marked complete, T016 is the only unchecked task among T001-T016; T017-T020 are post-signoff delivery tasks and remain unchecked, and T021 is a no-checkbox delivery guard.
+    - At T016 completion, T001-T016 are checked; T017-T021 are no-checkbox post-signoff delivery gates.
     - Commit history contains the planned checkpoints or an explicitly reviewed alternative split.
     - PR summary includes before/after inventory counts and retained `data-testid` reasons.
     - No push/PR/merge happens before this task passes.
   - Verification commands:
     - `git status --short`
     - `git log --oneline --decorate -5`
-    - `node -e "const fs=require('fs'); const text=fs.readFileSync('specs/030-p3-tests-cleanup/tasks.md','utf8'); const unchecked=[...text.matchAll(/^- \\[ \\] (T\\d{3})/gm)].map(m=>m[1]).filter(id=>Number(id.slice(1))<=16); const bad=unchecked.filter(id=>id!=='T016'); if (bad.length || !unchecked.includes('T016')) { console.error('Expected only T016 unchecked among T001-T016, got: '+unchecked.join(', ')); process.exit(1); } console.log('Only T016 unchecked among T001-T016');"`
+    - `node -e "const fs=require('fs'); const text=fs.readFileSync('specs/030-p3-tests-cleanup/tasks.md','utf8'); const lines=text.split(/\\n/); const checked=new Set(lines.map(l=>{ const m=l.match(/^- \\[x\\] (T\\d{3})\\b/); return m&&m[1]; }).filter(Boolean)); const missing=[]; for (let i=1;i<=16;i+=1){ const id='T'+String(i).padStart(3,'0'); if (!checked.has(id)) missing.push(id); } const deliveryCheckboxes=[...text.matchAll(/^- \\[[ x]\\] (T0(?:17|18|19|20|21))\\b/gm)].map(m=>m[1]); if (missing.length || deliveryCheckboxes.length) { console.error(JSON.stringify({missingCheckedTasks:missing,deliveryCheckboxes})); process.exit(1); } console.log('T001-T016 checked; T017-T021 no-checkbox');"`
   - Commit checkpoint: optional final PR-prep commit only for intentional docs/PR-prep changes. Suggested message: `docs(test): record p3 cleanup verification`.
 
-- [ ] T017 Push feature branch
+- T017 Push feature branch (no-checkbox delivery gate)
   - Scope: publish the reviewed feature branch after T016.
   - Owned files: none.
   - Dependencies: T016.
@@ -493,13 +498,14 @@ Keep commits ordered by dependency:
     - Working tree has no unreviewed code/test changes before push.
     - Branch is not `main`.
     - Branch is pushed with `HEAD` to avoid hook false positives from branch names.
+    - Engineer and Reviewer validate the push evidence in GitHub or the final report; do not edit tracked docs to mark this gate complete.
   - Verification commands:
     - `git status --short`
     - `git branch --show-current`
     - `git push -u origin HEAD`
   - Commit checkpoint: none.
 
-- [ ] T018 Open pull request
+- T018 Open pull request (no-checkbox delivery gate)
   - Scope: open the GitHub PR after branch push.
   - Owned files: none, unless a reviewed PR draft file was intentionally added before T016.
   - Dependencies: T017.
@@ -508,14 +514,15 @@ Keep commits ordered by dependency:
   - Acceptance criteria:
     - PR targets `main`.
     - PR body includes cleanup scope, before/after inventory counts, retained test ID reasons, verification commands, and reviewer signoff summary.
-    - PR link is recorded in the session handoff or final report.
+    - PR link is recorded in GitHub-visible state or the final report.
+    - Engineer and Reviewer validate the PR evidence in GitHub or the final report; do not edit tracked docs to mark this gate complete.
   - Verification commands:
     - `test -f /tmp/p3-tests-cleanup-pr-body.md`
     - `gh pr create --base main --head "$(git branch --show-current)" --title "test: clean up p3 test debt" --body-file /tmp/p3-tests-cleanup-pr-body.md`
     - `gh pr view --json number,url,baseRefName,headRefName,state`
   - Commit checkpoint: none.
 
-- [ ] T019 Wait for required CI
+- T019 Wait for required CI (no-checkbox delivery gate)
   - Scope: wait for required PR checks before merge.
   - Owned files: none.
   - Dependencies: T018.
@@ -526,13 +533,17 @@ Keep commits ordered by dependency:
     - At minimum, `ci` and `e2e` are complete and successful.
     - If GitHub branch protection reports an additional required check such as `firestore-rules-gate / rules`, it must also be complete and successful.
     - Failed CI is debugged through a separate fix task and reviewed before rerun; do not merge with failing checks.
+    - CI acceptance is bound to the latest PR head SHA reported by GitHub after T018/T019 starts.
+    - Once required CI passes on the latest PR head SHA, checkbox-only commits are forbidden; proceed directly to T020 merge.
+    - Engineer and Reviewer validate CI evidence in GitHub or the final report; do not edit tracked docs to mark this gate complete.
   - Verification commands:
+    - `gh pr view --json number,url,headRefOid,mergeStateStatus,reviewDecision,statusCheckRollup`
     - `gh pr checks --watch`
     - `gh pr checks`
     - `gh pr view --json mergeStateStatus,reviewDecision,statusCheckRollup`
   - Commit checkpoint: none unless CI fixes require reviewed code/test/docs changes; such fixes must use their own commit before returning to this task.
 
-- [ ] T020 Merge PR and sync local main
+- T020 Merge PR and sync local main (no-checkbox delivery gate)
   - Scope: merge the PR after T019 and sync local `main`.
   - Owned files: none.
   - Dependencies: T019.
@@ -544,6 +555,8 @@ Keep commits ordered by dependency:
     - Local `main` is updated to the merge commit.
     - Local stale tracking refs are pruned.
     - The original worktree/branch state is recorded if the user wants to continue related work after merge.
+    - Merge and local `main` sync evidence are recorded in the final report, not by post-merge tracked docs edits.
+    - Engineer and Reviewer validate merge/local-sync evidence in GitHub or the final report; do not edit tracked docs to mark this gate complete.
   - Verification commands:
     - `gh pr merge --merge --delete-branch`
     - `git worktree list`
@@ -561,12 +574,13 @@ Keep commits ordered by dependency:
   - Engineer role: Final Verification Engineer.
   - Reviewer role: Final Delivery Reviewer.
   - Acceptance criteria:
-    - Before final completion is reported, all checkbox tasks T001-T020 are checked after reviewer approval.
-    - T021 intentionally has no checkbox and does not participate in the all-checked gate; completion is expressed by the final response or PR merge result, not by a post-merge tracked `tasks.md` edit.
+    - Before final completion is reported, all checkbox tasks T001-T016 are checked after reviewer approval.
+    - T017-T020 intentionally have no checkboxes and require Engineer + Reviewer validation through PR/GitHub/final-report evidence.
+    - T021 intentionally has no checkbox and does not participate in an all-checked gate; completion is expressed by the final response or PR merge result, not by a post-merge tracked `tasks.md` edit.
     - No post-merge local tracked changes remain unless explicitly documented.
     - Final report includes PR URL, merge commit, and local `main` sync evidence.
   - Verification commands:
-    - `node -e "const fs=require('fs'); const text=fs.readFileSync('specs/030-p3-tests-cleanup/tasks.md','utf8'); const unchecked=[...text.matchAll(/^- \\[ \\] (T\\d{3})/gm)].map(m=>m[1]).filter(id=>Number(id.slice(1))<=20); if (unchecked.length) { console.error('Unchecked checkbox tasks remain: '+unchecked.join(', ')); process.exit(1); } if (/^- \\[[ x]\\] T021/m.test(text)) { console.error('T021 must remain a no-checkbox delivery guard'); process.exit(1); } console.log('All checkbox tasks T001-T020 checked; T021 is no-checkbox by design');"`
+    - `node -e "const fs=require('fs'); const text=fs.readFileSync('specs/030-p3-tests-cleanup/tasks.md','utf8'); const lines=text.split(/\\n/); const checked=new Set(lines.map(l=>{ const m=l.match(/^- \\[x\\] (T\\d{3})\\b/); return m&&m[1]; }).filter(Boolean)); const missing=[]; for (let i=1;i<=16;i+=1){ const id='T'+String(i).padStart(3,'0'); if (!checked.has(id)) missing.push(id); } const unchecked=[...text.matchAll(/^- \\[ \\] (T\\d{3})\\b/gm)].map(m=>m[1]); const deliveryCheckboxes=[...text.matchAll(/^- \\[[ x]\\] (T0(?:17|18|19|20|21))\\b/gm)].map(m=>m[1]); if (missing.length || unchecked.length || deliveryCheckboxes.length) { console.error(JSON.stringify({missingCheckedTasks:missing,uncheckedTasks:unchecked,deliveryCheckboxes})); process.exit(1); } console.log('T001-T016 checked; T017-T021 are no-checkbox delivery gates');"`
     - `git status --short`
     - `git branch --show-current`
     - `git log --oneline --decorate -5`
