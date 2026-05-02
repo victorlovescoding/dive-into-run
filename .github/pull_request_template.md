@@ -31,7 +31,7 @@
 ## Audit Checklist
 
 <!--
-  Five sub-sections derived from the 026 tests audit
+  Four sub-sections derived from the 026 tests audit
   (project-health/2026-04-29-tests-audit-report.md). Tick every box that
   applies to this PR; unchecked boxes need a one-line justification in the
   PR description so reviewers can mechanically diff the audit posture.
@@ -56,11 +56,6 @@
 
 - [ ] If this PR adds files under `src/ui/**`, `src/components/**`, or `src/app/**`, the vitest coverage `include` glob in `vitest.config.mjs` already covers that directory (avoid the `not displayed` blackhole described at audit L172-181: 55 + 17 + 15 files currently absent from the report). [P0-4, audit L168-181]
 - [ ] If this PR changes `vitest.config.mjs` `thresholds`, a baseline report is attached showing per-directory threshold deltas (e.g. `src/ui/**` lines 30 -> 35), aligned with the per-directory `+5 per sprint` ramp at audit L188-204. [P0-4, audit L185-206]
-
-### Baseline tracking
-
-- [ ] If this PR removes a file from any ESLint `ignores` baseline (mock-boundary or flaky-pattern), the underlying violation is fixed AND the commit message body records the change in the form `Baseline change: block 18.6/18.7/18.8: N -> M (removed: file1, file2, ...)`. Example from audit L649: `Baseline change: block 18.6: N -> N-3 (removed: file1, file2, file3)`. [audit L641-652]
-- [ ] If this PR adds entries to a baseline `ignores` list (discouraged; only when an immediate fix is impossible), the commit message body states the reason AND links a Wave 3 cleanup follow-up issue (so the baseline does not silently grow). [audit L641-654]
 
 ## Related
 

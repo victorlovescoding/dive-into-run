@@ -30,10 +30,17 @@ export default defineConfig({
         '**/*.d.ts',
       ],
       thresholds: {
-        // TODO: Phase 1 將 include 擴到 src/{service,repo,runtime,lib,config}/**，實測 lines ~70.55%。
-        // 暫降至 70 解 gate；config 0 test、runtime/repo coverage 偏低是已知 baseline。
-        // 觀察 1-2 週後依新增測試節奏分階段提回 80 → 90 → 95。
-        lines: 70,
+        // S9: per-directory coverage gate. ui/components/app use Wave 3 baseline +5
+        // and should keep ramping by +5 per review until the practical 60-70 floor.
+        // Do not force src/app/** to 70+; app entries are thin and E2E-heavy.
+        'src/service/**': { lines: 80 },
+        'src/repo/**': { lines: 75 },
+        'src/runtime/**': { lines: 60 },
+        'src/lib/**': { lines: 80 },
+        'src/config/**': { lines: 70 },
+        'src/ui/**': { lines: 94.43 },
+        'src/components/**': { lines: 91.64 },
+        'src/app/**': { lines: 95.07 },
       },
     },
     projects: [

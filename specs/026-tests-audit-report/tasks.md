@@ -3163,6 +3163,1159 @@ Wave S7-6: T44-eng -> T44-rev
 
 ---
 
+## S8 — ESLint warn → error 升級（baseline retire + grep gate exit 1）
+
+> S1-S7 已完成 / merged。S8 從 T45 開始追加，沿用本檔同一份 Reviewer 認證標準 / Retry & Escalation / Subagent 配對表（下方擴充）/ 通用須知。
+> **觸發前提**：Wave 3 mock cleanup + flaky cleanup 全清空（baseline 0）— 由 T45 precondition gate 驗證。
+> **主 agent 完全不下手**——所有 task（含後續修改、retry、commit、handoff sync）都由 subagent 完成；retry/escalation 流程沿用本檔通用須知。
+
+## S8 Goal
+
+Wave 3 完成後，把 S6 + S4 既有的「baseline-mute」防線升級到「全 codebase 真擋」：
+
+1. **`eslint.config.mjs`** — block 18.5（broad flaky `tests/**`）+ block 18.6（integration mock-boundary + flaky combined）的 `ignores: [...]` 清空為 `ignores: []`，規則對全 codebase 生效；message 文字同步移除 baseline 相關提示，改記 baseline retire 事實。
+2. **`scripts/audit-mock-boundary.sh`** — `exit 0`（warn-only）改 `exit 1`（findings>0 時 block）；註解區同步 S8 trigger 已完成。
+3. **`scripts/audit-flaky-patterns.sh`** — 同上。
+4. **`.husky/pre-commit`** — 兩條 audit 行的 `|| true` 拔除，audit script 非 0 exit 真的擋 commit。
+5. **`.github/pull_request_template.md`** — 移除「baseline 變化」相關 checkbox（baseline 已清空 → 該條失去意義）；其他 4 類 audit checkbox 與通用章節保留。
+
+S8 規模 **~50-100 行 diff**（多數為 ignores array 清空 + message 文字 + 1-2 行 shell + 1 行 husky + PR template 1-2 條 checkbox 移除），但 risk 高（pre-commit gate + CI gate 嚴度躍升 → 任何漏網違規會立刻擋本 commit）。
+
+## S8 References
+
+- Audit report：[`project-health/2026-04-29-tests-audit-report.md`](../../project-health/2026-04-29-tests-audit-report.md)
+  - **L660-664** — S8 章節（觸發型升級的精準動作清單）
+  - **L77-111** — P0-1 mock-boundary（要清的舊有 233 mock）
+  - **L293-318** — P1-4 / P1-5 flaky pattern（要清的 109 toHaveBeenCalledTimes + setTimeout）
+  - **L552-556** — R6 + R7 規則層級
+  - **L607-612** — S4 audit script warn-only 設計（S8 改 exit 1）
+  - **L622-633** — S6 ESLint rule + ignores baseline 設計（S8 清空 ignores）
+  - **L641-657** — Baseline 追蹤三道防線（S8 後 PR template baseline checkbox 為第 2 道防線退場）
+- 既有實作參考（S8 改動的對象）：
+  - `eslint.config.mjs:438-586` — block 18.5 + 18.6（S6 T35 attempt-3 (B') 結構）
+  - `scripts/audit-mock-boundary.sh` + `scripts/audit-flaky-patterns.sh` — S4 T18/T19 實作（exit 0 warn-only）
+  - `.husky/pre-commit:8-9` — S4 T20 加入兩支 audit script（`|| true` 雙保險）
+  - `.github/pull_request_template.md` — S2 T07 撰寫（含 baseline 變化 checkbox，14 條 `- [ ]`）
+- Audit IDs：P0-1（mock-boundary）/ P1-4（toHaveBeenCalledTimes）/ P1-5（setTimeout）
+- Rules：R6（mock-boundary error）/ R7（flaky-pattern error）/ R8（pre-commit gate）/ R11（PR template）
+
+## S8 核心設計決策（必讀）
+
+| 決策                                         | 內容                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **觸發前提：Wave 3 baseline 清空必須先驗證** | T45 spike 必須驗證 (a) `tests/integration/**` 中 `vi.mock('@/{repo,service,runtime}/...')` 0 hits、(b) `tests/**` 全域 `toHaveBeenCalledTimes` + `new Promise.*setTimeout`/`setTimeout.*Promise` 0 hits、(c) `npm run lint -- --max-warnings 0` exit 0。任一未滿足 → T45 標 `[!]` escalated，S8 全停（T46-T53 不執行），回報用戶決議是否縮小 scope（例：只升 mock 不升 flaky） |
+| **不縮小 scope（除非 T45 escalate）**        | 預設 S8 五項全做；T45 escalate 後才允許按用戶決議縮小，subagent 不可自行縮小                                                                                                                                                                                                                                                                                                   |
+| **不動 ESLint rule 結構**                    | 只清 `ignores: [...]` 內容（→ `[]`）+ 同步 message 文字；**不**改 `selector`、**不**移除 block 18.5 / 18.6、**不**改 severity（仍 `'error'`）；S8 是「baseline 退場」不是「rule 重設計」                                                                                                                                                                                       |
+| **不升級 setTimeout AST**（保留 grep gate）  | T33 (C) 決議放棄 setTimeout AST（FP 風險過高）；S8 不重啟此議題；setTimeout 仍由 `scripts/audit-flaky-patterns.sh` 監督，但 S8 把 audit script 升 exit 1 後 setTimeout 也會被擋                                                                                                                                                                                                |
+| **commit 前自我 gate 必跑**                  | T53 commit 觸發 pre-commit hook 會跑 audit script（已 exit 1）；commit 前 engineer 必先手動跑 `bash scripts/audit-mock-boundary.sh && bash scripts/audit-flaky-patterns.sh && npm run lint -- --max-warnings 0` 三條 exit 0；不然會被自己改的 hook 擋 commit                                                                                                                   |
+| **PR template baseline checkbox 移除策略**   | T48/T51 確認 S2 T07 寫的 PR template（14 條 `- [ ]` checkbox）中具體哪幾條對應「baseline 變化」（cf. handoff §3 T07 evidence + audit L651-657）；只移該條（預期 1-2 條），其他 4 類 audit checkbox（mock / flaky / firestore / coverage）+ 通用 Summary / Test Plan / Related 章節保留                                                                                         |
+| **commit message 紀錄 baseline retire**      | T53 commit message 必含 `Baseline retire: mock-boundary 33 → 0, flaky-pattern 45 → 0`（呼應 S6 commit `Baseline start: mock-boundary 33, flaky-pattern 45`，提供完整生命週期紀錄）                                                                                                                                                                                             |
+| **不動 §3 T01-T44 evidence**                 | S1-S7 紀錄已凍結；S8 任何 subagent 不可改 §3 既有 row、Evidence Detail、§2 既有 risk 表                                                                                                                                                                                                                                                                                        |
+| **Wave 3 cleanup 不在 S8 scope**             | Wave 3（清 233 mock + 109 flaky）是另案 PR；S8 只做「baseline 退場」這個觸發後動作。如果 T45 確認 grep 0 hits 但 git log 看不到完整 cleanup commits，仍視為 SAFE（以 main HEAD 觀察值為主）                                                                                                                                                                                    |
+| **PR template 變更生效時機**                 | PR template merge 進 main 後，**下個** PR 才自動套用新版（無 baseline 變化 checkbox）；本 S8 PR 自身仍套用 S2 留下的舊版 template，PR description 手寫即可                                                                                                                                                                                                                     |
+
+## S8 Concurrency
+
+```text
+Wave S8-0 (序列)：T45-eng → T45-rev   (precondition gate; SAFE → Wave S8-1; UNSAFE → S8 全停)
+                       ↓ T45 rev-pass + SAFE
+Wave S8-1 (3 並行)：T46-eng | T47-eng | T48-eng   (3 design spikes; 各自 read-only)
+                       ↓ each 完成 → 觸發對應 reviewer ↓
+                  T46-rev | T47-rev | T48-rev
+                       ↓ all rev-pass
+Wave S8-2 (3 並行)：T49-eng | T50-eng | T51-eng   (3 implements; 改不同檔)
+                       ↓ each 完成 → 觸發對應 reviewer ↓
+                  T49-rev | T50-rev | T51-rev
+                       ↓ all rev-pass
+Wave S8-3 (序列)：T52-eng → T52-rev   (smoke positive + negative; 含 cleanup)
+                       ↓ rev-pass
+Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + handoff sync)
+```
+
+| 項目                                      | 值                                                                         |
+| ----------------------------------------- | -------------------------------------------------------------------------- |
+| Max concurrent subagent (S8)              | **3**（Wave S8-1 / S8-2 各 3 並行；engineer 與 reviewer 同 task 內仍序列） |
+| Total subagent invocations (S8, no retry) | **18**（9 task × 2）                                                       |
+
+> 為什麼 Wave S8-1 / S8-2 可平行：
+>
+> - **Wave S8-1**：T46（eslint.config.mjs）/ T47（scripts + husky）/ T48（PR template）三 spike read-only design，各寫 §3 不同 row，無 file-level race。
+> - **Wave S8-2**：T49 改 `eslint.config.mjs`、T50 改 `scripts/audit-*.sh` + `.husky/pre-commit`、T51 改 `.github/pull_request_template.md` — 完全不同檔案集合，無 git race。
+> - **Wave S8-3 / S8-4 必須序列**：T52 smoke 需 T49+T50+T51 三實作齊全；T53 commit 需 T52 smoke 通過 + 一次性整合驗證才能下 commit。
+
+## S8 Risks（subagent 必讀，補充進 handoff.md §2 S8 子表）
+
+| Risk                                                                     | Why it matters                                                                                                                          | Action                                                                                                                                                                                          |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wave 3 cleanup 殘留 → 升 exit 1 後 audit script + ESLint 立刻擋本 commit | T45 若漏驗某 pattern，T53 自己會被自己改的 gate 擋；S8 PR 無法 merge                                                                    | T45 必跑 audit L626-633 兩條原始 grep + `npm run lint -- --max-warnings 0`，三命令都 exit 0 才簽 SAFE；reviewer 必須獨立重跑全部三命令                                                          |
+| Block 18.5 / 18.6 message 仍提到 baseline ignores                        | S8 清空 ignores 後 message 提到「If this file is in the S6 baseline ignores list」會誤導新貢獻者                                        | T46 設計列出 message 必須改寫的句子（含原文 + 新文）；T49 嚴格依設計改寫；reviewer 跑 `grep -n "baseline ignores list" eslint.config.mjs` 確認 0 hits                                           |
+| Husky `\|\| true` 拔除後 audit script 任何非 0 exit 都擋 commit          | 包括 typo / file rename / 預期外殘留違規；本地 commit 全部會被擋                                                                        | T47 設計含 rollback 路徑（如何短時 restore `\|\| true`）；T53 commit 前手動跑兩 audit script 確認 exit 0；如被擋不可自行加回 `\|\| true`，必須回 T45 重新驗 baseline                            |
+| PR template 移除 checkbox 的「準確邊界」                                 | S2 T07 留下的 template 可能多條 checkbox 提到 baseline；T51 若漏移 / 多移 → 不一致或破壞 audit 防線                                     | T48 spike 必須完整 dump 現行 template + 標註每條與 baseline 相關的 checkbox 行號 + 決議「移哪幾條」+「為何不移其他」；T51 嚴格依設計改                                                          |
+| smoke temp 檔殘留 → cleanup 必須 reviewer 雙驗                           | T52 故意建 smoke 違規檔測 gate；若 cleanup 漏，T53 commit 會把 smoke temp 檔意外帶進 main                                               | T52 cleanup 後 `git status --short \| grep "_s8-smoke"` 必為空；T53 commit 前再驗一次；reviewer 自跑 smoke + 自驗 cleanup                                                                       |
+| commit 7 檔規模大 → stage 階段易誤加 untracked                           | 7 檔散在 root / scripts / .husky / .github / specs；`git add -A` 易吃進不該加的 untracked（coverage/、未清的 smoke、node_modules race） | T53 嚴格 `git add` 明確列檔；commit 前 `git status --short` 確認 clean working tree（除 7 檔已 stage）；smoke temp 檔已在 T52 cleanup                                                           |
+| commit message 不加 Co-Authored-By                                       | user memory `feedback_no_coauthor`                                                                                                      | T53 commit 後 `git log -1 --format=%B \| grep -ic "Co-Authored-By"` 必為 0                                                                                                                      |
+| 主 agent 不下手                                                          | S8 task 任何 Edit/Bash 修改/驗證/commit 都派 subagent；主 agent 違規 = 繞過 user 規則                                                   | 主 agent 只 spawn subagent + 收 result + retry orchestration；主 agent 可以 commit `docs(spec): ...` 類型的 tasks.md 變動（本次產出），**不可** commit `chore(eslint+gate): ...` 類型的 S8 實作 |
+| Wave 3 cleanup 各 PR 與 S8 PR 順序                                       | Wave 3 系列 PR 必須先全 merge 進 main，S8 才有意義；否則 T53 自己被擋                                                                   | T45 必須驗 main HEAD（拉最新 origin/main）；reviewer 拉最新 main 重驗                                                                                                                           |
+
+## S8 Tasks
+
+### T45 — Precondition gate: Wave 3 baseline-cleared verification
+
+- **Status**: `[x]`
+- **Files Read**: `eslint.config.mjs`（block 18.5 / 18.6 ignores 現況）；整個 `tests/` 目錄（read-only grep）
+- **Files Written**: 只動 `specs/026-tests-audit-report/handoff.md` §3 T45 row + §2 S8 子表（補風險），**不**動任何代碼/配置
+- **Audit**: P0-1 / P1-4 / P1-5 / R6 / R7
+- **Dependencies**: 無（precondition gate）
+
+**Engineer Action**：
+
+1. **環境自查**：
+   - `git rev-parse --abbrev-ref HEAD` → 確認在 `026-tests-audit-report` branch（或用戶指定的 S8 branch）
+   - `git fetch origin main && git log origin/main -1 --format='%h %s'` → 確認 main HEAD 已含 Wave 3 cleanup（commit hash 由 user 確認範圍）
+2. **mock-boundary 真值 grep**（audit L626-633 給定 pattern）：
+
+   ```bash
+   grep -rln "vi\.mock(['\"]@/\(repo\|service\|runtime\)/" tests/integration/ --include="*.test.*" | sort -u | wc -l
+   ```
+
+   期望結果：`0`
+
+3. **flaky pattern 真值 grep**（audit L630 給定 pattern）：
+
+   ```bash
+   grep -rln "toHaveBeenCalledTimes\|new Promise.*setTimeout" tests --include="*.test.*" | sort -u | wc -l
+   ```
+
+   期望結果：`0`
+
+4. **ESLint full lint 驗證**：
+
+   ```bash
+   npm run lint -- --max-warnings 0
+   ```
+
+   期望結果：exit 0
+
+5. **ESLint baseline 現況**（informational，不擋 SAFE 判定）：
+
+   ```bash
+   awk '/18\.5 flaky-pattern/,/18\.6 mock-boundary/' eslint.config.mjs | grep -cE "^\s*'tests/" || echo 0
+   awk '/18\.6 mock-boundary/,/19\. File size/' eslint.config.mjs | grep -cE "^\s*'tests/" || echo 0
+   ```
+
+   記錄當前 ignores 列表大小（block 18.5 / 18.6 各自）
+
+6. **SAFE/UNSAFE 決議**：
+   - **SAFE**：Step 2/3/4 全 0 hits / exit 0；簽署「Wave 3 baseline cleared, S8 proceeds」
+   - **UNSAFE**：任一 step fail；標 T45 `[!]` escalated；handoff §0 + §2 + §3 T45 row 寫清楚 escalation reason 與實測數字；T46-T53 全部保持 `[ ]`，主 agent 回報用戶決議
+
+**Acceptance Criteria**：
+
+- **AC-T45.1**: 環境自查兩命令 evidence 含 branch 名稱 + main HEAD commit
+- **AC-T45.2**: Mock-boundary grep 命令完整輸出貼出（含 `wc -l` 結果），結果必為 `0`；如非 0 則 escalate
+- **AC-T45.3**: Flaky pattern grep 命令輸出貼出，結果必為 `0`；如非 0 則 escalate
+- **AC-T45.4**: `npm run lint -- --max-warnings 0` 輸出 tail 5 行 + exit code = 0；如非 0 則 escalate
+- **AC-T45.5**: ESLint baseline 現況（block 18.5 / 18.6 ignores 個數）記入 §3 T45 evidence；不參與 SAFE 判定但作為 T46/T49 改動參考
+- **AC-T45.6**: SAFE/UNSAFE 決議明文寫在 §3 T45 evidence 起首；UNSAFE 時 §0 / §2 同步更新 escalation 紀錄
+- **AC-T45.7**: 0 diff 在 code/config 檔案；只 §3 + §2 handoff 變動
+
+  ```bash
+  git diff --name-only | grep -v "specs/026-tests-audit-report/" || echo "0 hits (expected)"
+  ```
+
+**Engineer Evidence**（貼到 `handoff.md` §3 T45 row）：
+
+- AC-T45.1 環境自查兩命令輸出
+- AC-T45.2 / .3 grep + `wc -l` 完整輸出
+- AC-T45.4 lint tail 5 行 + `echo $?`
+- AC-T45.5 baseline 現況數字
+- AC-T45.6 SAFE/UNSAFE 一行明文決議
+- AC-T45.7 git diff scope 確認
+
+**Reviewer 驗證**：
+
+- 獨立重跑 AC-T45.2 / .3 / .4（這三是 SAFE 判定核心，**不能跳過**）
+- Read engineer evidence 中的 grep 輸出，確認與 reviewer 自跑結果一致
+- Read `eslint.config.mjs` block 18.5 + 18.6 確認 ignores 現況數字
+- 在 §3 T45 reviewer 欄填名稱 + 時間戳 + ≥ 5 行驗證結論 + reviewer 自跑數字
+- **Reject 條件**：engineer 簽 SAFE 但 reviewer 自跑 grep 非 0 / lint exit≠0 / baseline 數字與 engineer 報告差距 > 1
+
+---
+
+### T46 — Spike: ESLint config edit plan (block 18.5 + 18.6)
+
+- **Status**: `[x]`
+- **Files Read**: `eslint.config.mjs`（block 18.5 / 18.6 完整內容，L438-586 範圍）
+- **Files Written**: 只動 `handoff.md` §3 T46 row（design 全寫 evidence 區），**不**動 `eslint.config.mjs`
+- **Audit**: R6 / R7 / P0-1 / P1-4 / P1-5
+- **Dependencies**: T45 `[x]` SAFE
+
+**Engineer Action**：在 `handoff.md` §3 T46 evidence 寫 6 節：
+
+1. **block 18.5 現狀 dump** — 全 block 內容（含 comment / files / ignores / rules）；標出每行行號
+2. **block 18.6 現狀 dump** — 同上
+3. **目標 diff 草稿（block 18.5）**：
+   - `ignores: [...]` 整個 array 改為 `ignores: []`（保留欄位以保持 flat-config 結構，**不**刪除欄位）
+   - 註解區「Baseline start: 45 (S4 grep frozen, S6-effective via T33 (C))」改為「Baseline retire: 45 → 0 (S8, commit <T53-hash>); rule applies to all matched files」
+   - 註解區「退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)」改為「Status: retired (S8, 2026-XX-XX)」
+   - rule message 中「If this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).」整段刪除
+   - rule message 中「For 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin.」改為「For 'new Promise + setTimeout' sleep patterns the ESLint rule does NOT lint — `scripts/audit-flaky-patterns.sh` covers it; S8 already upgraded the script to `exit 1` so this pattern blocks pre-commit and CI now.」
+4. **目標 diff 草稿（block 18.6）**：
+   - `ignores: [...]` 整 array → `ignores: []`
+   - 註解「Baseline start: 47 = 33 (mock-boundary, S4 grep frozen) ∪ 23 (45-flaky ∩ tests/integration/\*\*); 9 overlap → 47 unique paths」改為「Baseline retire: 47 → 0 (S8, commit <T53-hash>); rule applies to all matched files」
+   - 註解「退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)」改為「Status: retired (S8, 2026-XX-XX)」
+   - 三條 rule message 中提到 baseline / AST custom plugin 的句子全部移除或改寫，比照 block 18.5
+5. **scope 限制**（防 scope creep）：
+   - **不**改 `selector`（mock string-literal / mock template-literal / flaky `toHaveBeenCalledTimes`）
+   - **不**移除 block 18.5 / 18.6 整體
+   - **不**改 severity（仍 `'error'`）
+   - **不**動 block 18 / block 19（其他 ESLint 規則）
+   - **不**新增 AST 規則處理 setTimeout（T33 (C) 決議保留）
+6. **T49 驗收 checklist**（給 T49 + reviewer 用）：列 ≥ 5 條 T49 必須符合的規則
+
+**Acceptance Criteria**：
+
+- **AC-T46.1**: §3 T46 evidence 含 6 節，各節有具體內容（非空）
+- **AC-T46.2**: block 18.5 + 18.6 dump 行號正確（與 reviewer 獨立 read 結果一致）
+- **AC-T46.3**: 目標 diff 草稿包含「ignores → []」、「Baseline retire」comment、「baseline ignores list」message 改寫三類，每類 ≥ 1 具體 before/after 對照
+- **AC-T46.4**: scope 限制 5 條全列出
+- **AC-T46.5**: T49 驗收 checklist ≥ 5 條，至少含「ignores 兩 block 都為 `[]`」「message 不再提 baseline ignores list」「lint --max-warnings 0 exit 0」「block 18 / 19 0 diff」「scope 限制全遵守」
+
+**Engineer Evidence**：上述 6 節完整內容 + 0 code/config diff 確認（`git diff eslint.config.mjs` 必空）
+
+**Reviewer 驗證**：
+
+- Read `eslint.config.mjs` L438-586，比對 engineer dump 屬實
+- 驗證草稿的 message 改寫文字語法通順（ESLint message 需 valid JS string）
+- 確認 scope 限制 5 條都列出
+- 在 §3 T46 reviewer 欄簽名 + 時間戳 + ≥ 4 行驗證結論
+- **Reject 條件**：engineer 改了 `eslint.config.mjs` / dump 行號錯誤 / 漏列 scope 限制條 / message 改寫含中英混雜不通順
+
+---
+
+### T47 — Spike: audit script + husky edit plan (exit 0 → exit 1; remove `|| true`)
+
+- **Status**: `[x]`
+- **Files Read**: `scripts/audit-mock-boundary.sh`、`scripts/audit-flaky-patterns.sh`、`.husky/pre-commit`
+- **Files Written**: 只動 `handoff.md` §3 T47 row（design）；**不**動 script / husky
+- **Audit**: R8 / P0-1 / P1-4 / P1-5
+- **Dependencies**: T45 `[x]` SAFE
+
+**Engineer Action**：在 `handoff.md` §3 T47 evidence 寫 7 節：
+
+1. **三檔現狀 dump**（含完整內容 + 行號標注）
+2. **目標 diff 草稿（`scripts/audit-mock-boundary.sh`）**：
+   - 註解 L4 `# exit 0 (warn-only). S8 trigger: change to exit 1 after Wave 3 mock cleanup.` → `# exit 1 (block) when findings>0. S8 retired warn-only mode (Wave 3 cleanup complete).`
+   - **empty-path 分支**（L13-16，無 `tests/integration` 目錄時）保留 `exit 0`（避免 CI 無此目錄環境誤擋）
+   - L33 `echo "(warn-only; exit 0)"` → 條件式 echo：`findings = 0` 時 `echo "(no findings; exit 0)"`、`findings > 0` 時 `echo "(blocking; exit 1)"`
+   - L34 `exit 0` → 條件式：`findings = 0` → `exit 0`；`findings > 0` → `exit 1`
+   - 實作具體形式由 T50 engineer 落地（最小 diff），但語意必須符合上述
+3. **目標 diff 草稿（`scripts/audit-flaky-patterns.sh`）**：對齊 mock-boundary，三類改動同樣套用（含 empty-path 分支 exit 0 保留）
+4. **目標 diff 草稿（`.husky/pre-commit`）**：
+   - L8 `bash scripts/audit-mock-boundary.sh || true` → `bash scripts/audit-mock-boundary.sh`
+   - L9 `bash scripts/audit-flaky-patterns.sh || true` → `bash scripts/audit-flaky-patterns.sh`
+   - 註解區若有提到 warn-only 字樣 → 同步更新（如果存在；目前 .husky/pre-commit 註解 L6-7 提到「S4 (warn-only)」，T50 engineer 改為「S8 (blocking)」）
+5. **rollback 路徑**（如 T53 commit 自己被擋的應急）：
+   - 暫時 restore `|| true`（修改 .husky/pre-commit 兩行）→ commit S8 retract → 回 T45 重新 verify baseline → 修 violation → 移除 `|| true` 重 commit
+   - 此 rollback 路徑只用於緊急情況；T45 SAFE 的前提下 T53 不應該被擋
+6. **scope 限制**：
+   - **不**改 PATTERN（grep regex）
+   - **不**改 SEARCH_PATH
+   - **不**改 head / output format / line count 限制
+   - **不**動其他 husky hook 行（lint / type-check / depcruise / spellcheck / vitest）
+   - **不**改 `set +e` 選項
+7. **T50 驗收 checklist**（給 T50 + reviewer 用）：列 ≥ 5 條 T50 必須符合的規則
+
+**Acceptance Criteria**：
+
+- **AC-T47.1**: §3 T47 evidence 含 7 節
+- **AC-T47.2**: 三檔 dump 行號正確（reviewer 獨立 Read 一致）
+- **AC-T47.3**: 目標 diff 草稿三檔各含具體 before/after，且明示「empty path 分支保留 exit 0」（避免 CI 在無 tests/ 目錄環境誤擋）
+- **AC-T47.4**: rollback 路徑明文寫出（短句即可，不用流程圖）
+- **AC-T47.5**: scope 限制 5 條全列出
+- **AC-T47.6**: T50 驗收 checklist ≥ 5 條，至少含「兩 audit script findings>0 時 exit 1」「empty path 仍 exit 0」「husky `|| true` 兩行已移除」「shell 語法 `bash -n` 通過」「scope 限制全遵守」
+
+**Engineer Evidence**：7 節完整內容 + 0 code diff 確認
+
+**Reviewer 驗證**：
+
+- Read 三檔，比對 engineer dump 屬實
+- 確認 rollback 路徑可行（無 typo / 無語法錯）
+- 在 §3 T47 reviewer 欄簽名 + ≥ 4 行驗證結論
+
+---
+
+### T48 — Spike: PR template baseline checkbox edit plan
+
+- **Status**: `[x]`
+- **Files Read**: `.github/pull_request_template.md`、`handoff.md` §3 T07 evidence（S2 留下的 template content 設計紀錄）、audit L641-657
+- **Files Written**: 只動 `handoff.md` §3 T48 row（design）；**不**動 PR template
+- **Audit**: R11 / L641-657
+- **Dependencies**: T45 `[x]` SAFE
+
+**Engineer Action**：在 `handoff.md` §3 T48 evidence 寫 5 節：
+
+1. **PR template 現狀 dump** — 完整檔案內容 + 行號標注
+2. **baseline 相關 checkbox 識別**：
+   - 列出每條提到 `baseline` / `Baseline change` / `ignores` / `mock-boundary baseline` / `flaky baseline` 字樣的 checkbox 行號
+   - 每條註明：保留 / 移除 / 改寫
+   - 預期至少有 1-2 條完整移除（對應 audit L651-657 提到的「從 ESLint ignores baseline 拿掉某檔時，已處理該檔的 mock-boundary / flaky 違規...」checkbox）
+   - 同時是否含 `Baseline change: <type>: N → M` commit message 範例段？該段 S8 後失去意義 → 一併處理
+3. **目標 diff 草稿**：
+   - `before` / `after` 對照（移除哪幾行 / 改哪幾行）
+   - 確保移除後 markdown 結構完整（H2 / H3 / `- [ ]` 不錯位、空行間距正確）
+4. **保留條目清單**：4 類 audit checkbox（mock / flaky / firestore / coverage）+ 通用 Summary / Test Plan / Related 章節**全部保留**；列出每條保留的 checkbox 行號
+5. **T51 驗收 checklist**（給 T51 + reviewer 用）：列 ≥ 4 條 T51 必須符合的規則（移除行數、保留 checkbox count、`grep -c "Baseline change:"` 必為 0、`grep -c "^- \[ \]"` 必降 1-2 條而不是大降）
+
+**Acceptance Criteria**：
+
+- **AC-T48.1**: §3 T48 evidence 含 5 節
+- **AC-T48.2**: PR template dump 行號正確（reviewer 獨立 Read 一致）
+- **AC-T48.3**: baseline 相關行清單明確（含「移除 / 改寫 / 保留」決議）
+- **AC-T48.4**: 保留條目清單明文（4 類 audit + 通用章節）
+- **AC-T48.5**: T51 驗收 checklist ≥ 4 條
+
+**Engineer Evidence**：5 節完整內容 + 0 file diff 確認
+
+**Reviewer 驗證**：
+
+- Read `.github/pull_request_template.md` 全檔，比對 engineer dump 屬實
+- Read `handoff.md` §3 T07 evidence 確認 S2 設計與本 spike 不矛盾
+- 確認移除清單與保留清單互不重疊
+- 在 §3 T48 reviewer 欄簽名 + ≥ 3 行驗證結論
+
+---
+
+### T49 — Implement ESLint config (block 18.5 + 18.6 ignores → [])
+
+- **Status**: `[x]`
+- **Files Written**: `eslint.config.mjs`
+- **Files Read**: `handoff.md` §3 T46 design
+- **Audit**: R6 / R7
+- **Dependencies**: T46 `[x]`
+
+**Engineer Action**：
+
+1. Read T46 design（§3 T46 evidence 全部 6 節）
+2. Edit `eslint.config.mjs`：
+   - block 18.5 `ignores: [...]` → `ignores: []`
+   - block 18.5 註解「Baseline start...」→「Baseline retire 45 → 0...」、「退場條件...」→「Status: retired (S8, <today's date>)」
+   - block 18.5 rule message 中「If this file is in the S6 baseline ignores list...」整段刪除
+   - block 18.5 rule message 中「For 'new Promise + setTimeout'...S8 trigger upgrades it to AST custom plugin」→「...S8 already upgraded the script to `exit 1` so this pattern blocks pre-commit and CI now.」
+   - block 18.6 `ignores: [...]` → `ignores: []`
+   - block 18.6 註解 + 三條 rule message 同樣套用 baseline retire 改寫
+3. 跑 `npm run lint -- --max-warnings 0`，確認 exit 0
+4. 跑 `npm run lint -- --max-warnings 0 tests/integration/`，確認 exit 0（precondition：T45 已驗 0 violations）
+5. **不**動其他 block / files / selector / severity / block 18 / block 19
+
+**Acceptance Criteria**：
+
+- **AC-T49.1**: `git diff eslint.config.mjs` 顯示**只有** block 18.5 + 18.6 內容變動
+
+  ```bash
+  git diff eslint.config.mjs | head -200
+  ```
+
+- **AC-T49.2**: 兩 ignores arrays 都為 `[]`
+
+  ```bash
+  awk '/18\.5 flaky-pattern/,/18\.6 mock-boundary/' eslint.config.mjs | grep -cE "^\s*ignores:\s*\[\]\s*,?$"
+  awk '/18\.6 mock-boundary/,/19\. File size/' eslint.config.mjs | grep -cE "^\s*ignores:\s*\[\]\s*,?$"
+  ```
+
+  各期望輸出 ≥ 1
+
+- **AC-T49.3**: rule messages 不再提 baseline ignores list
+
+  ```bash
+  grep -c "If this file is in the S6.*baseline ignores list" eslint.config.mjs
+  ```
+
+  期望輸出 `0`
+
+- **AC-T49.4**: rule messages 不再提 AST custom plugin（被改寫為 S8 already upgraded）
+
+  ```bash
+  grep -c "S8 trigger upgrades it to AST custom plugin" eslint.config.mjs
+  ```
+
+  期望輸出 `0`
+
+- **AC-T49.5**: rule messages / 註解含「Baseline retire」或「retired (S8」字樣
+
+  ```bash
+  grep -cE "Baseline retire|retired \(S8" eslint.config.mjs
+  ```
+
+  期望輸出 ≥ 2（block 18.5 + 18.6）
+
+- **AC-T49.6**: `npm run lint -- --max-warnings 0` exit 0
+- **AC-T49.7**: ESLint config 結構完整（總體行數 ≤ 原 596 行；不應有大幅增長）
+
+  ```bash
+  wc -l eslint.config.mjs
+  ```
+
+- **AC-T49.8**: scope 限制遵守
+
+  ```bash
+  git diff --stat eslint.config.mjs            # 期望只有 1 檔
+  git diff --name-only | grep -v "eslint.config.mjs\|specs/026-tests-audit-report/"  # 期望 0 hits
+  ```
+
+**Engineer Evidence**：
+
+- AC-T49.1 git diff 完整輸出
+- AC-T49.2 / .3 / .4 / .5 grep 結果
+- AC-T49.6 lint tail 5 行 + exit code
+- AC-T49.7 wc -l eslint.config.mjs
+- AC-T49.8 git diff --stat / git diff --name-only
+
+**Reviewer 驗證**：
+
+- 重跑 AC-T49.1 / .2 / .3 / .6
+- Read `eslint.config.mjs` block 18.5 / 18.6 確認 ignores `[]` + message 不含 baseline 相關文字
+- 在 §3 T49 reviewer 欄簽名 + ≥ 4 行驗證結論
+- **Reject 條件**：ignores 仍含 entry / message 仍提 baseline ignores list / lint exit ≠ 0 / scope 蔓延（動到其他 block 或檔案）
+
+---
+
+### T50 — Implement audit script + husky (exit 1, no `|| true`)
+
+- **Status**: `[x]`
+- **Files Written**: `scripts/audit-mock-boundary.sh`、`scripts/audit-flaky-patterns.sh`、`.husky/pre-commit`
+- **Files Read**: `handoff.md` §3 T47 design
+- **Audit**: R8
+- **Dependencies**: T47 `[x]`
+
+**Engineer Action**：
+
+1. Read T47 design（§3 T47 evidence 全部 7 節）
+2. Edit `scripts/audit-mock-boundary.sh`：
+   - L4 註解改 warn-only 為 retired 字樣
+   - empty-path 分支（L13-16）保留 exit 0
+   - findings > 0 時 → exit 1；findings = 0 時 → exit 0
+3. Edit `scripts/audit-flaky-patterns.sh`：對齊 mock-boundary 同樣三類改動
+4. Edit `.husky/pre-commit`：
+   - L8 `bash scripts/audit-mock-boundary.sh || true` → `bash scripts/audit-mock-boundary.sh`
+   - L9 `bash scripts/audit-flaky-patterns.sh || true` → `bash scripts/audit-flaky-patterns.sh`
+   - 若 L6-7 註解含 warn-only 字樣 → 改 blocking 字樣
+5. 跑 `bash -n scripts/audit-mock-boundary.sh && bash -n scripts/audit-flaky-patterns.sh && bash -n .husky/pre-commit` 確認語法
+6. 跑兩 audit script 在當前 working tree（T45 SAFE 已驗 0 violations）：
+   - `bash scripts/audit-mock-boundary.sh; echo "exit=$?"` → 期望 0
+   - `bash scripts/audit-flaky-patterns.sh; echo "exit=$?"` → 期望 0
+7. **不**動 PATTERN / SEARCH_PATH / head 50 / 其他 husky hook 行 / `set +e`
+
+**Acceptance Criteria**：
+
+- **AC-T50.1**: `git diff --stat` 顯示**只有** 3 檔（兩 audit script + husky pre-commit）
+- **AC-T50.2**: 兩 audit script 註解區含 retired 字樣
+
+  ```bash
+  grep -cE "retired|S8.*complete|exit 1.*block" scripts/audit-mock-boundary.sh
+  grep -cE "retired|S8.*complete|exit 1.*block" scripts/audit-flaky-patterns.sh
+  ```
+
+  各期望 ≥ 1
+
+- **AC-T50.3**: `.husky/pre-commit` 不再含 `|| true`（限 audit-\* 行）
+
+  ```bash
+  grep -c "audit-.*\.sh || true" .husky/pre-commit
+  ```
+
+  期望輸出 `0`
+
+- **AC-T50.4**: shell 語法檢查全綠
+
+  ```bash
+  bash -n scripts/audit-mock-boundary.sh && echo OK1
+  bash -n scripts/audit-flaky-patterns.sh && echo OK2
+  bash -n .husky/pre-commit && echo OK3
+  ```
+
+- **AC-T50.5**: 兩 audit script 在當前 working tree exit 0（依賴 T45 SAFE）
+- **AC-T50.6**: 兩 audit script 在「故意違規」測試環境會 exit 1（**不在本 task 驗，留給 T52 smoke**；本 AC 只記錄 T52 鎖鏈）
+- **AC-T50.7**: PATTERN / SEARCH_PATH / 其他 husky 行 0 diff
+
+  ```bash
+  git diff scripts/audit-mock-boundary.sh | grep -E "^[-+]PATTERN=|^[-+]SEARCH_PATH=|^[-+].*head -50" | wc -l   # 期望 0
+  git diff scripts/audit-flaky-patterns.sh | grep -E "^[-+]PATTERN=|^[-+]SEARCH_PATH=|^[-+].*head -50" | wc -l  # 期望 0
+  git diff .husky/pre-commit | grep -E "^[-+]npm run (lint|type-check|depcruise|spellcheck)|^[-+]npx vitest" | wc -l   # 期望 0
+  ```
+
+**Engineer Evidence**：
+
+- AC-T50.1 git diff --stat
+- AC-T50.2 / .3 grep 結果
+- AC-T50.4 三 `bash -n` 結果
+- AC-T50.5 兩 audit script 跑當前 working tree 的 stdout + exit code
+- AC-T50.7 三 grep 結果
+
+**Reviewer 驗證**：
+
+- 重跑 AC-T50.4 / .5
+- Read 三檔確認 diff 範圍與 T47 設計一致
+- 在 §3 T50 reviewer 欄簽名 + ≥ 3 行驗證結論
+- **Reject 條件**：husky 仍含 audit `|| true` / audit script empty-path 分支變 exit 1 / 動到其他 husky hook 行 / shell 語法錯
+
+---
+
+### T51 — Implement PR template (remove baseline checkbox)
+
+- **Status**: `[x]`
+- **Files Written**: `.github/pull_request_template.md`
+- **Files Read**: `handoff.md` §3 T48 design
+- **Audit**: R11 / L641-657
+- **Dependencies**: T48 `[x]`
+
+**Engineer Action**：
+
+1. Read T48 design（§3 T48 evidence 全部 5 節）
+2. Edit `.github/pull_request_template.md`：依 T48 移除清單刪除 baseline 相關 checkbox + `Baseline change:` commit message 範例段（如有）
+3. 確認保留清單條目完整（4 類 audit + 通用章節）
+4. 跑 `npm run spellcheck`、`grep -c "^- \[ \]" .github/pull_request_template.md`、`grep -c "Baseline change:" .github/pull_request_template.md`
+
+**Acceptance Criteria**：
+
+- **AC-T51.1**: `git diff --stat .github/pull_request_template.md` 顯示僅該檔變動，行數降低（移除動作）
+- **AC-T51.2**: `grep -c "Baseline change:" .github/pull_request_template.md` = 0
+- **AC-T51.3**: `grep -c "^- \[ \]" .github/pull_request_template.md` 比 S2 T07 留下的數字（≥ 10，實際 14）少 1-2 條（依 T48 移除設計）；不可大降
+- **AC-T51.4**: 保留條目（4 類 audit category）每類仍 ≥ 2 個 checkbox（grep 區段判斷依 T48 清單）
+- **AC-T51.5**: `npm run spellcheck` exit 0；UTF-8 / no BOM
+
+  ```bash
+  file .github/pull_request_template.md
+  ```
+
+- **AC-T51.6**: 行數 ≤ 200（沿用 S2 T07 約束）
+
+  ```bash
+  wc -l .github/pull_request_template.md
+  ```
+
+**Engineer Evidence**：
+
+- AC-T51.1 git diff --stat + 完整 git diff
+- AC-T51.2 / .3 / .4 grep 結果
+- AC-T51.5 spellcheck tail 5 行 + `file` 命令輸出
+- AC-T51.6 wc -l
+
+**Reviewer 驗證**：
+
+- 重跑 AC-T51.2 / .3 / .5
+- Read `.github/pull_request_template.md` 全檔，確認 4 類 audit checkbox 仍齊全
+- 在 §3 T51 reviewer 欄簽名 + ≥ 3 行驗證結論
+- **Reject 條件**：`Baseline change:` 殘留 / 4 類 audit 任一類 < 2 checkbox / spellcheck 失敗 / 行數爆增 / 含 BOM
+
+---
+
+### T52 — Smoke test S8 rules (positive + negative)
+
+- **Status**: `[x]`
+- **Files Written**: smoke temp 檔（必 T52 內 cleanup）；只在 §3 T52 row 留 evidence
+- **Files Read**: T49 / T50 / T51 改後的 5 檔
+- **Audit**: R6 / R7 / R8
+- **Dependencies**: T49 `[x]`、T50 `[x]`、T51 `[x]`
+
+**Engineer Action**：
+
+1. **Positive smoke (mock-boundary ESLint)**：
+   - `tests/integration/_s8-smoke-mock.test.jsx` 建臨時檔，內含：
+
+     ```javascript
+     import { vi } from 'vitest';
+     vi.mock('@/repo/firebase-users');
+     ```
+
+   - 跑 `npx eslint tests/integration/_s8-smoke-mock.test.jsx; echo "exit=$?"` → 期望 exit 1，stdout 含 `no-restricted-syntax` 與 `Integration tests must not vi.mock` message
+
+2. **Positive smoke (flaky ESLint - tests/**)\*\*：
+   - `tests/unit/_s8-smoke-flaky.test.js` 建臨時檔，內含：
+
+     ```javascript
+     import { describe, it, expect, vi } from 'vitest';
+     describe('s8 smoke', () => {
+       it('flaky', () => {
+         const spy = vi.fn();
+         spy();
+         expect(spy).toHaveBeenCalledTimes(1);
+       });
+     });
+     ```
+
+   - 跑 `npx eslint tests/unit/_s8-smoke-flaky.test.js; echo "exit=$?"` → 期望 exit 1，stdout 含 `toHaveBeenCalledTimes` message
+
+3. **Positive smoke (audit-mock-boundary.sh)**：
+   - 在 step 1 smoke 檔尚存的情況下跑 `bash scripts/audit-mock-boundary.sh; echo "exit=$?"` → 期望 exit 1，stdout 含 `AUDIT MOCK-BOUNDARY: 1 findings`（或 ≥ 1）
+4. **Positive smoke (audit-flaky-patterns.sh)**：
+   - 在 step 2 smoke 檔尚存的情況下跑 `bash scripts/audit-flaky-patterns.sh; echo "exit=$?"` → 期望 exit 1
+5. **Cleanup**：刪除兩 smoke 檔
+
+   ```bash
+   rm tests/integration/_s8-smoke-mock.test.jsx tests/unit/_s8-smoke-flaky.test.js
+   ```
+
+6. **Negative smoke (post-cleanup)**：
+   - 跑 `npm run lint -- --max-warnings 0; echo "exit=$?"` → exit 0
+   - 跑 `bash scripts/audit-mock-boundary.sh; echo "exit=$?"` → exit 0
+   - 跑 `bash scripts/audit-flaky-patterns.sh; echo "exit=$?"` → exit 0
+7. **Smoke 殘留驗證**：
+
+   ```bash
+   git status --short | grep "_s8-smoke" | wc -l
+   ```
+
+   期望 `0`
+
+**Acceptance Criteria**：
+
+- **AC-T52.1**: Positive mock smoke：ESLint exit 1 + message 含 `Integration tests must not vi.mock`
+- **AC-T52.2**: Positive flaky smoke：ESLint exit 1 + message 含 `toHaveBeenCalledTimes`
+- **AC-T52.3**: Positive audit-mock-boundary.sh：exit 1 + stdout 含 `1 findings`（或 ≥ 1）
+- **AC-T52.4**: Positive audit-flaky-patterns.sh：exit 1
+- **AC-T52.5**: Negative ESLint：exit 0
+- **AC-T52.6**: Negative audit scripts：exit 0
+- **AC-T52.7**: cleanup 完成後 `git status --short | grep "_s8-smoke" | wc -l` = 0
+- **AC-T52.8**: 不動其他檔（5 個 implement 後檔不再變、`coverage/` 等 untracked 不誤動）
+
+  ```bash
+  git diff --name-only | grep -v "specs/026-tests-audit-report/" || echo "0 hits (expected)"
+  ```
+
+**Engineer Evidence**：
+
+- AC-T52.1 / .2 / .3 / .4 / .5 / .6 完整 stdout + exit code
+- AC-T52.7 `git status --short` 輸出
+- 順便記下「Wave 3 cleanup 留下的 baseline-decay 觀察」（如：T45 已是 0，本 smoke 額外印證 gate 真擋）
+
+**Reviewer 驗證**：
+
+- 獨立重跑 AC-T52.1 / .3 / .5（這三是 gate 真擋的核心）
+- 自己建一個 smoke 檔再跑（reviewer **不能**信 engineer 的 smoke + cleanup —— 必須自己跑一次完整 cycle）
+- 確認 reviewer 自己的 smoke 也清乾淨（reviewer 跑完後 `git status --short` 也驗 0）
+- 在 §3 T52 reviewer 欄簽名 + 命令輸出 + ≥ 4 行驗證結論
+- **Reject 條件**：positive smoke 沒擋 / cleanup 殘留 / negative smoke 失敗 / reviewer 自跑與 engineer 結果不一致
+
+---
+
+### T53 — S8 integration verify + commit
+
+- **Status**: `[x]`
+- **Files Written**:
+  - `specs/026-tests-audit-report/handoff.md` §0 / §1 / §2 S8 / §3 T53 / §5
+  - `specs/026-tests-audit-report/tasks.md`（T45-T53 status `[ ]` → `[x]`、Scope summary S8 row 更新）
+- **Files committed**:
+  - `eslint.config.mjs`
+  - `scripts/audit-mock-boundary.sh`
+  - `.husky/pre-commit`
+  - `.github/pull_request_template.md`
+  - `specs/026-tests-audit-report/handoff.md`
+  - `specs/026-tests-audit-report/tasks.md`
+  - Note: actual S8 commit is 6 tracked changed files. `scripts/audit-flaky-patterns.sh` is intentionally excluded because T47/T50 confirmed latest main already had findings>0 blocking behavior and S8 kept it at 0 diff.
+- **Dependencies**: T45-T52 全部 `[x]`
+
+**Engineer Action**：
+
+1. 確認 §3 T45-T52 全部 `rev-pass` + engineer/reviewer 雙簽名；T45 必須是 SAFE
+2. 一次性重跑 S8 final gate（見 AC-T53.2）
+3. 更新 `handoff.md`：
+   - §0：S8 scope `done`、T45-T53 狀態 `done (rev-pass)`、Last commit (S8) 留待 commit 後填
+   - §1：S8 已完成工作 + 後續（PR / S9 啟動條件）
+   - §2 S8 risk 子表保留實際踩坑（補上 retry 過程中發現的新風險）
+   - §3 T53 evidence
+   - §5：補 ESLint version + 任何 S8 環境細節
+4. 更新 `tasks.md`：
+   - T45-T53 status `[ ]` → `[x]`
+   - Scope summary table 中 S8 row 從 `(Wave 3 後)` 更新為 `✅ 本檔 T45-T53（commit pending in this T53 commit）`
+   - 開頭 Scope summary 段落補上 S8 commit pending note；實際 hash 以 commit 後 `git log -1` 為準
+5. **commit 前自我 gate（critical）**：手動跑
+
+   ```bash
+   bash scripts/audit-mock-boundary.sh
+   bash scripts/audit-flaky-patterns.sh
+   npm run lint -- --max-warnings 0
+   ```
+
+   三條都必須 exit 0；不然 pre-commit hook 會擋
+
+6. 明確列檔 stage（**禁** `git add -A`）：
+
+   ```bash
+   git add eslint.config.mjs \
+           scripts/audit-mock-boundary.sh \
+           .husky/pre-commit \
+           .github/pull_request_template.md \
+           specs/026-tests-audit-report/handoff.md \
+           specs/026-tests-audit-report/tasks.md
+   ```
+
+7. `git commit`（不 push），message 必含 `Baseline retire:` 行
+8. `git status` 確認 working tree clean（除 untracked `coverage/` / `node_modules/` 等 gitignored）
+
+**Acceptance Criteria**：
+
+- **AC-T53.1**: §3 T45-T52 全 `rev-pass`，T45 簽 SAFE；`tasks.md` T45-T53 全 `[x]`
+- **AC-T53.2**: 一次性重跑（commit 前）：
+
+  ```bash
+  npm run lint -- --max-warnings 0
+  npm run type-check
+  npm run depcruise
+  npm run spellcheck
+  npx vitest run --project=browser
+  bash scripts/audit-mock-boundary.sh
+  bash scripts/audit-flaky-patterns.sh
+  ```
+
+  全部 exit 0。**不需** 跑 server / coverage（S8 不動 server / 不重做 coverage instrumentation）。如任一 fail，必須根因修完，不可放寬 rule / 加回 `|| true`。
+
+- **AC-T53.3**: `git diff --name-only --cached` 僅含 6 檔（4 implement tracked diffs + 2 spec markdown）。**禁** `package.json` / `package-lock.json` / `vitest.config.mjs` / `firestore.rules` / `tests/**` / `src/**` / `cspell.json`（除 T51 真有加詞需求且已 reviewer 通過）。`scripts/audit-flaky-patterns.sh` 只有在真有 diff 時才可 stage；本 T53 actual diff 為 0，故不 stage。
+- **AC-T53.4**: commit message 格式：
+
+  ```text
+  chore(eslint): retire S8 audit baseline
+
+  - eslint.config.mjs: retire block 18.5 / 18.6 baseline ignores
+  - scripts/audit-mock-boundary.sh: make findings block with exit 1
+  - .husky/pre-commit: remove mock audit fallback
+  - .github/pull_request_template.md: remove S8 baseline tracking
+
+  Baseline retire: mock-boundary 33 -> 0, flaky-pattern 45 -> 0
+  Trigger: Wave 3 mock + flaky cleanup complete (T45 SAFE)
+
+  Refs: project-health/2026-04-29-tests-audit-report.md L77-111, L293-318, L552-556, L607-612, L622-633, L641-657, L660-664
+  ```
+
+  不加 `Co-Authored-By`。
+
+- **AC-T53.5**: `git show HEAD --stat` 顯示 6 檔；`git show HEAD --name-only` 不含禁區檔
+- **AC-T53.6**: `git log -1 --format=%B | grep -ic "Co-Authored-By"` = 0
+- **AC-T53.7**: `git log -1 --format=%B | grep -c "Baseline retire:"` = 1
+- **AC-T53.8**: branch ≠ `main`；不 push
+
+**Engineer Evidence**：
+
+- AC-T53.2 / .3 / .4 / .5 / .6 / .7 命令輸出
+- `git show HEAD --stat`
+- handoff §0 / §1 / §3 T53 摘要
+
+**Reviewer 驗證**：
+
+- 重跑 AC-T53.2 全部 7 命令（接受耗時，這是 S8 final gate）
+- `git show HEAD --stat` + `git show HEAD --name-only` 確認檔案範圍
+- Read commit message 確認 `Baseline retire:` 行 + refs + 無 Co-Authored-By
+- Read `handoff.md` §0 / §1 / §2 S8 / §3 T45-T53 / §5
+- Read `tasks.md` 確認 T45-T53 全 `[x]` + Scope summary S8 row 已更新
+- `git log origin/026-tests-audit-report..HEAD 2>&1` 應顯示 ≥ 1 commit ahead（未 push）
+- 在 §3 T53 reviewer 欄簽名 + 命令輸出 + ≥ 5 行驗證結論
+
+---
+
+## S9 — Per-directory coverage threshold（T54-T60）
+
+- **Status**: `[x]` reviewer-pass; committed
+- **Audit**: P0-4 / P2-4 / R2
+- **Source**: `project-health/2026-04-29-tests-audit-report.md`
+  - L185-206 — per-directory threshold 建議與 monthly +5 ramp
+  - L351-353 — global `lines: 70` 暫降值缺 review cadence
+  - L521-526 — R2 per-directory threshold gate
+  - L580 / L665-668 — S9 觸發型任務
+- **Trigger**: S8 commit 已完成，且 Wave 3 補測已完成到足以支撐 S9 threshold。若任一前置不成立，T54 必須 escalated，T55-T60 不執行。
+- **Primary files**:
+  - `vitest.config.mjs`
+  - `docs/QUALITY_SCORE.md`
+  - `.github/pull_request_template.md`（read-only，確認 coverage baseline checkbox 仍保留）
+  - `specs/026-tests-audit-report/handoff.md`
+  - `specs/026-tests-audit-report/tasks.md`
+
+### S9 Execution Rule
+
+**主 agent 不下手任何 S9 實作或後續修改**。S9 執行時，主 agent 只負責派工、讀 reviewer 結論、把 reject feedback 轉派回 engineer；所有改檔、驗證、修正、handoff evidence、commit 都必須由 subagent 完成。
+
+每個 task 必須配對 1 engineer + 1 reviewer：
+
+1. Engineer 完成該 task 後，先把實作重點、命令輸出、踩坑與下一步寫進 `handoff.md` §3 對應 T54-T60 row。
+2. Reviewer 讀 engineer 改的檔案、重跑 task 指定 AC 命令，並檢查 engineer 寫進 `handoff.md` 的內容是否準確、沒有誇大或遺漏 blocker。
+3. Reviewer reject 時，主 agent 必須把同一 task 交回 engineer 修到 pass；禁止主 agent 自己改。
+4. 同一 task 最多 3 次 engineer attempt；第 3 次仍 reject，標 `[!]` escalated 並回報用戶。
+
+### S9 Concurrency
+
+```
+Wave S9-0 (序列):       T54-eng -> T54-rev
+Wave S9-1 (2 task):     T55-eng | T56-eng
+                              ↓ each 完成後立即觸發 reviewer ↓
+Wave S9-1 review:       T55-rev | T56-rev
+Wave S9-2 (序列):       T57-eng -> T57-rev
+Wave S9-3 (2 task):     T58-eng | T59-eng
+                              ↓ each 完成後立即觸發 reviewer ↓
+Wave S9-3 review:       T58-rev | T59-rev
+Wave S9-4 (序列):       T60-eng -> T60-rev
+```
+
+- Max concurrent engineer subagents: **2**
+- Max active task pairs: **2**
+- Max live subagents if reviewers overlap with next ready work: **4**（2 engineer + 2 reviewer）
+- No retry case total subagent invocations: **14**（T54-T60 各 engineer + reviewer）
+- `T57` 必須等 `T55` + `T56` 都 `[x]`；`T60` 必須等 `T57` + `T58` + `T59` 都 `[x]`
+
+### S9 Threshold Policy
+
+S9 不接受「為了讓 coverage pass 而臨時調低」。
+
+| Layer | Target policy |
+| ----- | ------------- |
+| `src/service/**` | `lines: 80` |
+| `src/repo/**` | `lines: 75` |
+| `src/runtime/**` | `lines: 60` |
+| `src/lib/**` | `lines: 80`，但 T56 必須先用 fresh `coverage-summary.json` 驗證實際可過；若因 S3 記錄的 lib coverage 算法差異導致不可過，必須 escalated |
+| `src/config/**` | `lines: 70` |
+| `src/ui/**` | Wave 3 後 fresh baseline + 5 percentage points；不得高於 70，若未達 baseline+5 則 escalated |
+| `src/components/**` | Wave 3 後 fresh baseline + 5 percentage points；不得高於 70，若未達 baseline+5 則 escalated |
+| `src/app/**` | Wave 3 後 fresh baseline + 5 percentage points；不得強拉到 70+；若未達 baseline+5 則 escalated |
+
+動態層的精確數字由 T56 產出；T57 只能使用 T56 reviewer-pass 的數字。若 Vitest path threshold 實作只接受整數，採 `Math.floor(freshPct) + 5`；若 T55 證實可接受小數，採 `freshPct + 5` 並保留 2 位小數。不能猜，必須由 T55 的本機 smoke 證據決定。
+
+### T54 — S9 precondition + source-of-truth gate
+
+- **Status**: `[x]` reviewer-pass
+- **Files Written**: `handoff.md` §0 / §1 / §2 S9 risk note / §3 T54 row
+- **Files Read**: `git log`, `tasks.md`, `handoff.md`, `project-health/2026-04-29-tests-audit-report.md`, `docs/QUALITY_SCORE.md`, `vitest.config.mjs`
+- **Dependencies**: S8 done
+
+**Engineer Action**：
+
+1. Confirm current branch is not `main` and working tree starts clean.
+2. Confirm latest local commit includes S8 closeout (`65ee9a0 chore(eslint): retire S8 audit baseline` or newer equivalent). If branch was rebased/amended, record actual `git log -1 --oneline`.
+3. Confirm `tasks.md` has T45-T53 `[x]` and `handoff.md` §0 says S8 done.
+4. Confirm Wave 3 補測 evidence exists. Minimum acceptable evidence:
+   - S8 T45 SAFE baseline shows mock-boundary 0 and flaky 0.
+   - A later Wave 3 coverage-improvement commit or handoff note exists for ui/components/app. If no such evidence exists, T54 escalates and S9 stops.
+5. Read audit L185-206 / L351-353 / L521-526 / L665-668 and record S9 source lines in `handoff.md`.
+
+**Acceptance Criteria**：
+
+- **AC-T54.1**: `git status --short --branch` shows branch != `main`; no unstaged unrelated changes before work.
+- **AC-T54.2**: `git log -1 --oneline` recorded; S8 completion source is explicit.
+- **AC-T54.3**: S9 trigger verdict is one of exactly:
+  - `READY: S8 done + Wave 3 coverage evidence found`
+  - `BLOCKED: <specific missing evidence>`
+- **AC-T54.4**: If blocked, T55-T60 remain `[ ]`, `handoff.md` records blocker, and engineer does not edit code/config.
+- **AC-T54.5**: `handoff.md` §3 T54 row includes audit line refs and exact files read.
+
+**Engineer Evidence**：
+
+- `git status --short --branch`
+- `git log -1 --oneline`
+- `rg -n "T45|T53|S8|Wave 3|coverage|ui|components|app" specs/026-tests-audit-report/handoff.md specs/026-tests-audit-report/tasks.md`
+- T54 trigger verdict
+
+**Reviewer 驗證**：
+
+- Re-run AC-T54.1 / .2.
+- Read `handoff.md` §0 / §1 / §3 T54 and `tasks.md` T45-T53.
+- Verify blocked/ready verdict is supported by actual text, not inference.
+- Reject if engineer continues past a blocked trigger or fails to cite exact evidence.
+
+---
+
+### T55 — Vitest path-threshold syntax spike
+
+- **Status**: `[x]` reviewer-pass
+- **Files Written**: temporary smoke config only（must cleanup）；`handoff.md` §3 T55 row
+- **Files Read**: `vitest.config.mjs`, installed Vitest package docs/types/source under `node_modules/vitest` or local package metadata
+- **Dependencies**: T54 `[x]` and verdict `READY`
+
+**Engineer Action**：
+
+1. Verify current installed Vitest version from `npm ls vitest --depth=0` or package metadata.
+2. Prove the exact path-threshold syntax supported by this installed Vitest version. Acceptable proof:
+   - local docs/types/source reference; and
+   - a temp config smoke that intentionally sets one path threshold above actual coverage and makes `npx vitest run --coverage` fail for that path.
+3. Temp file naming: `vitest.s9-threshold-smoke.config.mjs` or `/tmp/s9-threshold-smoke.*`; if created in repo root, it must be removed before task ends.
+4. Decide whether threshold values may use decimals. This must be evidence-backed; otherwise use integer floor policy.
+
+**Acceptance Criteria**：
+
+- **AC-T55.1**: Vitest version recorded.
+- **AC-T55.2**: Supported syntax recorded exactly, e.g. `thresholds: { 'src/ui/**': { lines: N } }`; no unsupported key names.
+- **AC-T55.3**: Negative smoke proves path threshold can fail. Expected outcome: command exits non-zero and output mentions the threshold/path or line threshold failure.
+- **AC-T55.4**: Positive cleanup check: `git status --short | grep "s9-threshold-smoke" | wc -l` = `0`.
+- **AC-T55.5**: Decimal support decision recorded as `decimal-ok` or `integer-only`; if uncertain, record `integer-only`.
+
+**Engineer Evidence**：
+
+- Vitest version command output
+- local docs/types/source path or grep snippet used as proof
+- negative smoke command + exit code + relevant output
+- cleanup status
+- decimal support decision
+
+**Reviewer 驗證**：
+
+- Re-run or independently inspect the syntax proof.
+- Re-run cleanup check.
+- Reject if engineer only copies audit prose without proving current Vitest support.
+- Reject if any temp config remains.
+
+---
+
+### T56 — Fresh per-layer baseline + target table
+
+- **Status**: `[x]` reviewer-pass
+- **Files Written**: `handoff.md` §3 T56 row; no config/code changes
+- **Files Read**: `coverage/coverage-summary.json` after fresh run, `docs/QUALITY_SCORE.md`, `vitest.config.mjs`
+- **Dependencies**: T54 `[x]` and verdict `READY`
+
+**Engineer Action**：
+
+1. Run fresh coverage:
+
+   ```bash
+   npm run test:coverage
+   ```
+
+2. Extract total coverage metrics and per-layer line percentages for:
+   - `src/service/**`
+   - `src/repo/**`
+   - `src/runtime/**`
+   - `src/lib/**`
+   - `src/config/**`
+   - `src/ui/**`
+   - `src/components/**`
+   - `src/app/**`
+3. Compare fresh ui/components/app numbers against `docs/QUALITY_SCORE.md` S3 baselines (`62.52% / 52.43% / 47.92%`) and record deltas.
+4. Build S9 target table using S9 Threshold Policy and T55 decimal decision if already complete; if T55 is still pending, record both integer and decimal candidate values and let T57 use the reviewer-pass decision.
+5. If any target is above fresh current coverage, mark `BLOCKED_THRESHOLD: <layer> current X < target Y`; do not lower target silently.
+
+**Acceptance Criteria**：
+
+- **AC-T56.1**: `npm run test:coverage` exit 0; output includes `Coverage report from v8`; `coverage/coverage-summary.json` exists.
+- **AC-T56.2**: T56 evidence includes total `lines/statements/branches/functions`.
+- **AC-T56.3**: T56 evidence includes 8-layer line% table and ui/components/app delta from S3 baseline.
+- **AC-T56.4**: T56 target table includes all 8 threshold entries and a pass/block verdict per entry.
+- **AC-T56.5**: If any target cannot pass, T57-T60 remain `[ ]` and `handoff.md` records blocker in PR-ready wording.
+
+**Engineer Evidence**：
+
+- Coverage command exit code + tail 50 lines
+- `coverage-summary.json` extraction command/output
+- 8-layer fresh baseline table
+- S9 target table + pass/block verdict
+
+**Reviewer 驗證**：
+
+- Re-run the JSON extraction at minimum; full `npm run test:coverage` is preferred if time allows.
+- Verify layer percentages are computed from real coverage files, not copied from `docs/QUALITY_SCORE.md`.
+- Reject if target table omits lib/config or hides a failing layer.
+
+---
+
+### T57 — Implement per-directory thresholds in Vitest config
+
+- **Status**: `[x]` reviewer-pass
+- **Files Written**: `vitest.config.mjs`, `handoff.md` §3 T57 row
+- **Dependencies**: T55 `[x]`, T56 `[x]`, all T56 target entries pass
+
+**Engineer Action**：
+
+1. Edit only `vitest.config.mjs`.
+2. Replace global `thresholds: { lines: 70 }` with per-directory thresholds from T56.
+3. Keep `coverage.include` and `coverage.exclude` unchanged unless T56 found a parsing error blocker and reviewer explicitly approved a minimal exclude.
+4. Add a short milestone comment near thresholds:
+   - ui/components/app ramp +5 per month/sprint until 60-70.
+   - Do not force `src/app/**` to 70+ because app pages are thin entries/E2E-heavy.
+5. Do not change `projects`, aliases, test environments, or reporter settings.
+
+**Acceptance Criteria**：
+
+- **AC-T57.1**: `git diff vitest.config.mjs` only changes the coverage `thresholds` block and adjacent threshold comment.
+- **AC-T57.2**: `coverage.include` remains `src/{service,repo,runtime,lib,config,ui,components,app}/**`.
+- **AC-T57.3**: `coverage.exclude` has 0 diff.
+- **AC-T57.4**: Config import succeeds:
+
+  ```bash
+  node -e "import('./vitest.config.mjs').then(m=>console.log(JSON.stringify(m.default.test.coverage.thresholds,null,2)))"
+  ```
+
+- **AC-T57.5**: Imported thresholds exactly match T56 reviewer-pass target table.
+- **AC-T57.6**: `npm run test:coverage` exit 0 with new thresholds.
+
+**Engineer Evidence**：
+
+- Full `git diff vitest.config.mjs`
+- config import output
+- coverage command exit code + tail 50 lines
+- statement that include/exclude/projects had 0 unintended diff
+
+**Reviewer 驗證**：
+
+- Re-run AC-T57.4 and inspect threshold object.
+- Re-run `git diff vitest.config.mjs` and compare with T56 table.
+- Re-run `npm run test:coverage` unless already blocked by environment; if skipped, reviewer must state why and at least verify the engineer's fresh log file exists.
+- Reject if config touches non-threshold settings or target values drift from T56.
+
+---
+
+### T58 — Threshold gate smoke (positive + negative)
+
+- **Status**: `[x]` reviewer-pass
+- **Files Written**: temporary smoke config only（must cleanup）；`handoff.md` §3 T58 row
+- **Dependencies**: T57 `[x]`
+
+**Engineer Action**：
+
+1. Positive gate: run `npm run test:coverage` on real config and confirm pass.
+2. Negative gate: create a temporary config that imports/duplicates current config and raises exactly one path threshold above fresh current coverage, then run coverage expecting fail.
+3. Cleanup all temporary config/log artifacts created under repo root. `/tmp` logs may remain if referenced in evidence.
+4. Re-run `git status --short | grep "s9" || true` and prove no temp repo files remain.
+
+**Acceptance Criteria**：
+
+- **AC-T58.1**: Positive real-config coverage exits 0.
+- **AC-T58.2**: Negative smoke exits non-zero and failure text identifies coverage threshold failure.
+- **AC-T58.3**: Negative smoke changes only temp config, not production `vitest.config.mjs`.
+- **AC-T58.4**: Cleanup leaves no `vitest.s9-*`, `_s9-*`, or similar temp repo files.
+- **AC-T58.5**: `handoff.md` records why this proves the S9 gate is actually active, not just syntactically present.
+
+**Engineer Evidence**：
+
+- Positive command + exit code + coverage summary tail
+- Negative command + exit code + threshold failure excerpt
+- Cleanup `git status` proof
+
+**Reviewer 驗證**：
+
+- Independently inspect that production config was not temporarily weakened after smoke.
+- Re-run cleanup check.
+- Re-run the config import from T57 and confirm threshold object still matches T56.
+- Reject if negative smoke is skipped without a documented environment blocker.
+
+---
+
+### T59 — Documentation + handoff sync for S9 ramp
+
+- **Status**: `[x]` reviewer-pass
+- **Files Written**: `docs/QUALITY_SCORE.md`, `specs/026-tests-audit-report/handoff.md`, `specs/026-tests-audit-report/tasks.md`
+- **Files Read**: `.github/pull_request_template.md`
+- **Dependencies**: T57 `[x]`
+
+**Engineer Action**：
+
+1. Update `docs/QUALITY_SCORE.md`:
+   - `Last Updated` to actual date.
+   - `Next Review` to the next monthly/ramp review date.
+   - Layer-Level Known Gaps: replace “下一步是把低覆蓋層逐步補測” with current per-directory threshold/ramp state.
+   - Score History: add S9 row with exact threshold table summary.
+2. Confirm `.github/pull_request_template.md` still has the Coverage baseline/threshold checkbox. Do not edit it unless missing; if missing, escalate instead of inventing a new template change.
+3. Update `handoff.md`:
+   - §0 S9 scope and T54-T60 current statuses.
+   - §1 next-session checklist / PR step.
+   - §2 S9 risks and any T55-T58 pitfalls.
+   - §3 T59 row.
+4. Update `tasks.md` T54-T60 statuses only for tasks actually reviewer-pass by this point.
+
+**Acceptance Criteria**：
+
+- **AC-T59.1**: `docs/QUALITY_SCORE.md` includes exact S9 threshold values and next review cadence.
+- **AC-T59.2**: `docs/QUALITY_SCORE.md` Score History has one S9 row.
+- **AC-T59.3**: `.github/pull_request_template.md` coverage checkbox still mentions threshold/baseline evidence; no template diff unless escalated.
+- **AC-T59.4**: `handoff.md` has S9 §0/§1/§2/§3 updates and records engineer pitfalls in concise live-handoff form.
+- **AC-T59.5**: `tasks.md` T54-T59 statuses match reviewer-pass reality; no future task marked done early.
+- **AC-T59.6**: `npm run spellcheck` exit 0 or cSpell issue is fixed without inline disable.
+
+**Engineer Evidence**：
+
+- `git diff docs/QUALITY_SCORE.md specs/026-tests-audit-report/handoff.md specs/026-tests-audit-report/tasks.md`
+- PR template coverage checkbox grep output
+- spellcheck output
+
+**Reviewer 驗證**：
+
+- Read all doc diffs.
+- Verify threshold values match T56/T57 exactly.
+- Verify `handoff.md` records real pitfalls, not vague “done” prose.
+- Re-run PR template grep and spellcheck if feasible.
+- Reject if docs invent numbers not present in T56/T57 evidence.
+
+---
+
+### T60 — S9 integration verify + commit
+
+- **Status**: `[x]` reviewer-pass; engineer commit `ad34c36`, reviewer docs update captured
+- **Files Written**: `handoff.md` §0 / §1 / §3 T60 / §5, `tasks.md` statuses + scope summary
+- **Files Committed**:
+  - `vitest.config.mjs`
+  - `docs/QUALITY_SCORE.md`
+  - `specs/026-tests-audit-report/handoff.md`
+  - `specs/026-tests-audit-report/tasks.md`
+- **Dependencies**: T54-T59 all `[x]`
+
+**Engineer Action**：
+
+1. Confirm T54-T59 all reviewer-pass and `handoff.md` has engineer + reviewer evidence for each.
+2. Run final gate:
+
+   ```bash
+   npm run test:coverage
+   npm run lint -- --max-warnings 0
+   npm run type-check
+   npm run depcruise
+   npm run spellcheck
+   npx vitest run --project=browser
+   bash scripts/audit-mock-boundary.sh
+   bash scripts/audit-flaky-patterns.sh
+   ```
+
+3. Update `tasks.md` T54-T60 statuses to `[x]` only after final gate passes.
+4. Update S9 scope summary with commit-pending wording; actual hash is filled after commit if this task chooses to amend docs before committing, otherwise next session records it.
+5. Stage only the 4 allowed files. Do not use `git add -A`.
+6. Commit locally, no push, no PR.
+
+**Acceptance Criteria**：
+
+- **AC-T60.1**: `handoff.md` §3 T54-T59 all have engineer + reviewer evidence; no reviewer pending.
+- **AC-T60.2**: final gate commands all exit 0.
+- **AC-T60.3**: `git diff --name-only --cached` contains only allowed 4 files.
+- **AC-T60.4**: commit message:
+
+  ```text
+  chore(coverage): add per-directory thresholds
+
+  - vitest coverage now gates service/repo/runtime/lib/config/ui/components/app independently
+  - ui/components/app use Wave 3 baseline +5 with monthly ramp notes
+  - docs record next threshold review cadence
+
+  Threshold ramp: ui/components/app +5 per review until 60-70
+
+  Refs: project-health/2026-04-29-tests-audit-report.md L185-206, L351-353, L521-526, L665-668
+  ```
+
+  No `Co-Authored-By`.
+
+- **AC-T60.5**: `git show HEAD --stat` shows only allowed files.
+- **AC-T60.6**: `git log -1 --format=%B | grep -ic "Co-Authored-By"` = 0.
+- **AC-T60.7**: branch != `main`; no push.
+
+**Engineer Evidence**：
+
+- final gate command outputs + exit codes
+- `git diff --name-only --cached`
+- `git show HEAD --stat`
+- commit message body
+- post-commit `git status --short --branch`
+
+**Reviewer 驗證**：
+
+- Re-run at least `npm run test:coverage`, `npm run lint -- --max-warnings 0`, and both audit scripts.
+- Read `vitest.config.mjs`, `docs/QUALITY_SCORE.md`, `tasks.md`, `handoff.md`.
+- Verify commit message has threshold ramp and no Co-Authored-By.
+- Verify no push/PR was done.
+- Reject if coverage passes only because threshold was lowered below T56 target.
+
+---
+
 ## Reviewer 認證標準（適用所有 task）
 
 | 必做                                                                 | 不能只做                         |
@@ -3228,12 +4381,28 @@ Wave S7-6: T44-eng -> T44-rev
 | T42  | S7    | general-purpose        | general-purpose        | S7-4 | (none, 序列)       |
 | T43  | S7    | general-purpose        | general-purpose        | S7-5 | (none, 序列)       |
 | T44  | S7    | general-purpose        | general-purpose        | S7-6 | (none, 序列)       |
+| T45  | S8    | general-purpose        | general-purpose        | S8-0 | (none, 序列)       |
+| T46  | S8    | general-purpose        | general-purpose        | S8-1 | T47, T48           |
+| T47  | S8    | general-purpose        | general-purpose        | S8-1 | T46, T48           |
+| T48  | S8    | general-purpose        | general-purpose        | S8-1 | T46, T47           |
+| T49  | S8    | general-purpose        | general-purpose        | S8-2 | T50, T51           |
+| T50  | S8    | general-purpose        | general-purpose        | S8-2 | T49, T51           |
+| T51  | S8    | general-purpose        | general-purpose        | S8-2 | T49, T50           |
+| T52  | S8    | general-purpose        | general-purpose        | S8-3 | (none, 序列)       |
+| T53  | S8    | general-purpose        | general-purpose        | S8-4 | (none, 序列)       |
+| T54  | S9    | general-purpose        | general-purpose        | S9-0 | (none, 序列)       |
+| T55  | S9    | general-purpose        | general-purpose        | S9-1 | T56                |
+| T56  | S9    | general-purpose        | general-purpose        | S9-1 | T55                |
+| T57  | S9    | general-purpose        | general-purpose        | S9-2 | (none, 序列)       |
+| T58  | S9    | general-purpose        | general-purpose        | S9-3 | T59                |
+| T59  | S9    | general-purpose        | general-purpose        | S9-3 | T58                |
+| T60  | S9    | general-purpose        | general-purpose        | S9-4 | (none, 序列)       |
 
 ## Subagent 通用須知
 
 - **必看檔案**（spawn 時 attach 路徑）：
   - 本檔 `specs/026-tests-audit-report/tasks.md`
-  - `specs/026-tests-audit-report/handoff.md`（特別是 §2 Must-Read Risks，含 S1 / S2 / S3 / S4 / S5 / S6 / S7 子表）
+  - `specs/026-tests-audit-report/handoff.md`（特別是 §2 Must-Read Risks，含 S1 / S2 / S3 / S4 / S5 / S6 / S7 / S8 子表）
   - `project-health/2026-04-29-tests-audit-report.md`：
     - **S1 (T01-T05)**：L324-360 + L586-592
     - **S2 (T06-T09)**：L77-95 / L113-141 / L168-208 / L294-318 / L545-551 / L594-598 / L641-657
@@ -3242,6 +4411,8 @@ Wave S7-6: T44-eng -> T44-rev
     - **S5 (T23-T31)**：L113-141 + L538-544 + L614-620
     - **S6 (T32-T37)**：L77-111 + L293-318 + L373-379 + L552-556 + L622-633 + L641-657 + L660-664
     - **S7 (T38-T44)**：L545-550 + L568-579 + L635-639 + L685-689；另讀 GitHub docs required-check skip behavior（連結在 S7 章節）
+    - **S8 (T45-T53)**：L660-664（S8 動作清單）+ L77-111 + L293-318 + L552-556 + L607-612 + L622-633 + L641-657
+    - **S9 (T54-T60)**：L185-206 + L351-353 + L521-526 + L580 + L665-668
   - 對應的目標檔本身：
     - S1: 4 個 config 檔
     - S2: `.github/pull_request_template.md` + 必要時 `cspell.json`
@@ -3250,14 +4421,16 @@ Wave S7-6: T44-eng -> T44-rev
     - S5: `firestore.rules`（Read-only）、`package.json`、`package-lock.json`、`tests/server/rules/**`、`.github/workflows/firestore-rules-gate.yml`
     - S6: `eslint.config.mjs`（**唯一** code 改動點）；read-only：`scripts/audit-mock-boundary.sh` / `scripts/audit-flaky-patterns.sh`（pattern 對齊參考）、S4 baseline 凍結數字（`handoff.md` §3 T21）
     - S7: GitHub branch protection UI/API；read-only：final `main` `.github/workflows/ci.yml` + `.github/workflows/firestore-rules-gate.yml`；write-only evidence：`handoff.md` / `tasks.md`
+    - S8: `eslint.config.mjs`（block 18.5 + 18.6 ignores → []）+ `scripts/audit-mock-boundary.sh` + `scripts/audit-flaky-patterns.sh` + `.husky/pre-commit` + `.github/pull_request_template.md`；read-only 參考：`handoff.md` §3 T07（S2 PR template 設計）/ §3 T34（S6 baseline 33+45 起點）/ §3 T35（S6 attempt-3 (B') 結構）
+    - S9: `vitest.config.mjs` + `docs/QUALITY_SCORE.md` + read-only `.github/pull_request_template.md` + `coverage/coverage-summary.json`（生成後讀取）+ `handoff.md` §3 T10/T13/T15（S3 baseline）/ §3 T45/T53（S8 trigger）/ §2 S3 coverage pitfalls
 
 - **必要工具**：Read、Edit、Bash（跑驗證）、Write（engineer 建新檔用，reviewer 不該 Write 任何受審檔）
 
 - **禁區**：
-  - Reviewer 不能 Edit/Write 受審檔（S1: config 檔；S2: `.github/`、`cspell.json`；S3: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`cspell.json`、`handoff.md` engineer evidence 區；S4: `scripts/audit-*.sh`、`.husky/pre-commit`、`handoff.md` engineer evidence 區；S5: `package*.json`、`tests/server/rules/**`、`.github/workflows/firestore-rules-gate.yml`、`handoff.md` engineer evidence 區；S6: `eslint.config.mjs`、`handoff.md` engineer evidence 區；S7: GitHub branch protection settings、`handoff.md` engineer evidence 區）
-  - Engineer 不能改 task scope 外的檔案（例：T01 不能動 playwright config；T07 不能動 cspell.json，加詞屬於 T08 範圍；T12 不能動 threshold；T14 不能改 service/repo/runtime/lib/config 既有 V8 Cov 數字；T16/T17 spike 不能寫 script 或改 husky；T18/T19 不能動 husky；T20 不能改 script；T20 對 husky 必須只 append、不刪改既有 5 行；T23 不能改 code/test/package；T26-T30 不能改 helper API；S5 全程不能改 `firestore.rules` / `vitest.config.mjs` / `.github/workflows/ci.yml`；T32/T33 spike 不能改 `eslint.config.mjs`；T34 不能改 code/config，只 capture baseline 寫 handoff；T35 全程不能動 `package.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` / `.github/**` / `tests/**` / `src/**`；T36 必須 cleanup smoke temp 檔，不留殘留；S7 全程不能改 code/config/test/workflow，T40 前必須先通過 T39）
+  - Reviewer 不能 Edit/Write 受審檔（S1: config 檔；S2: `.github/`、`cspell.json`；S3: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`cspell.json`、`handoff.md` engineer evidence 區；S4: `scripts/audit-*.sh`、`.husky/pre-commit`、`handoff.md` engineer evidence 區；S5: `package*.json`、`tests/server/rules/**`、`.github/workflows/firestore-rules-gate.yml`、`handoff.md` engineer evidence 區；S6: `eslint.config.mjs`、`handoff.md` engineer evidence 區；S7: GitHub branch protection settings、`handoff.md` engineer evidence 區；S8: `eslint.config.mjs`、`scripts/audit-*.sh`、`.husky/pre-commit`、`.github/pull_request_template.md`、`handoff.md` engineer evidence 區；S9: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`handoff.md` engineer evidence 區、`tasks.md` engineer status 區）
+  - Engineer 不能改 task scope 外的檔案（例：T01 不能動 playwright config；T07 不能動 cspell.json，加詞屬於 T08 範圍；T12 不能動 threshold；T14 不能改 service/repo/runtime/lib/config 既有 V8 Cov 數字；T16/T17 spike 不能寫 script 或改 husky；T18/T19 不能動 husky；T20 不能改 script；T20 對 husky 必須只 append、不刪改既有 5 行；T23 不能改 code/test/package；T26-T30 不能改 helper API；S5 全程不能改 `firestore.rules` / `vitest.config.mjs` / `.github/workflows/ci.yml`；T32/T33 spike 不能改 `eslint.config.mjs`；T34 不能改 code/config，只 capture baseline 寫 handoff；T35 全程不能動 `package.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` / `.github/**` / `tests/**` / `src/**`；T36 必須 cleanup smoke temp 檔，不留殘留；S7 全程不能改 code/config/test/workflow，T40 前必須先通過 T39；T45 不准動任何 code/config/script/husky/template，只 §3 + §2 handoff 變動；T46/T47/T48 spike 只動 §3 對應 row，不准 Edit eslint.config / scripts / husky / template；T49 只改 `eslint.config.mjs`，不准動其他；T50 只改 `scripts/audit-*.sh` + `.husky/pre-commit`，不准動 eslint.config / template / 其他 husky hook 行；T51 只改 `.github/pull_request_template.md`，不准動 `cspell.json`（除非真有加詞需求且已 reviewer 通過）；T52 smoke temp 檔必須在 T52 內 cleanup；T53 只允許 commit 7 檔；T54 不能改 code/config，只能寫 handoff trigger verdict；T55/T58 smoke temp 檔必須 cleanup；T56 不能改 code/config/docs，只能寫 handoff baseline；T57 只改 `vitest.config.mjs` threshold block；T59 只改 docs/handoff/tasks，不准動 `vitest.config.mjs`；T60 只允許 commit S9 allowed files）
   - 任何 subagent 不能 push remote、不能開 PR、不能改 git config；S7 T40 只允許改 GitHub branch protection required-check 設定，不允許順手改其他 repository settings
-  - **Commit-only task**：S1 只有 T05 engineer 可 commit；S2 只有 T09 engineer 可 commit；S3 只有 T15 engineer 可 commit；S4 只有 T22 engineer 可 commit；S5 只有 T31 engineer 可 commit；S6 只有 T37 engineer 可 commit；S7 只有 T44 engineer 可 commit；其他 task engineer 只改檔不 commit
+  - **Commit-only task**：S1 只有 T05 engineer 可 commit；S2 只有 T09 engineer 可 commit；S3 只有 T15 engineer 可 commit；S4 只有 T22 engineer 可 commit；S5 只有 T31 engineer 可 commit；S6 只有 T37 engineer 可 commit；S7 只有 T44 engineer 可 commit；S8 只有 T53 engineer 可 commit；S9 只有 T60 engineer 可 commit；其他 task engineer 只改檔不 commit
   - **Threshold 紀律（S3 專屬）**：T13 發現 70 threshold 跌破時**禁止**自行降 threshold，必須 escalate（標 `[!]`）；T12-T14 任何 task **禁止**設 per-directory threshold（屬 S9 觸發型）
   - **Coverage artifact 紀律（S3 專屬）**：`coverage/` 為 gitignored，T15 commit 必須 `git status` 確認該目錄為 untracked，**禁** `git add -A` / `git add coverage`
   - **Warn-only 紀律（S4 專屬）**：T18/T19 script 末行必須 `exit 0`，**禁止**設 `exit 1` / `exit ${count}` 等真擋邏輯；T20 husky append 行必加 `|| true` 雙保險；T21 smoke test 即使 temp 檔在場 audit script 仍須 exit 0；S8 升級到 exit 1 屬觸發型，不在本 S4 scope
@@ -3272,6 +4445,16 @@ Wave S7-6: T44-eng -> T44-rev
   - **Required-check safety gate（S7 專屬）**：T39 若判定 `firestore-rules-gate` 仍是 workflow-level path-filtered，T40 不得把該 check 設為 required；必須 escalated。這不是 reviewer 偏好，是 GitHub required-check 行為限制。
   - **GitHub UI scope（S7 專屬）**：T40 只改 required status checks；禁止改 review count、admin enforcement、signed commits、linear history、force-push/deletion 等 unrelated branch-protection 設定。
   - **UI evidence 紀律（S7 專屬）**：GitHub UI 變更沒有 git diff；T40-T42 必須用 screenshot transcription 或 `gh api` JSON 補足 evidence，不能只寫「我已勾選」。
+  - **Precondition gate（S8 專屬）**：T45 必須驗 (a) `tests/integration/**` mock-boundary grep 0 hits、(b) `tests/**` flaky pattern grep 0 hits、(c) `npm run lint -- --max-warnings 0` exit 0；任一失敗 → T45 標 `[!]` escalated，T46-T53 全部保持 `[ ]`，主 agent 回報用戶決議。subagent **不可** 自行縮小 scope。
+  - **Rule 結構紀律（S8 專屬）**：T49 只清 `ignores: [...]` 內容（→ `[]`）+ 同步 message 文字；**禁止** 改 `selector` / 移除 block 18.5 / 18.6 / 改 severity（仍 `'error'`）/ 動 block 18 / block 19 / 新增 AST 規則處理 setTimeout（T33 (C) 決議保留）。
+  - **Empty-path 分支保留紀律（S8 專屬）**：T50 兩 audit script 的 empty-path 分支（無 `tests/integration` 或 `tests` 目錄時）**必須保留 `exit 0`**，避免 CI 在無此目錄環境誤擋；只有 findings>0 才 exit 1。
+  - **Husky `\|\| true` 移除紀律（S8 專屬）**：T50 只能拔 audit-\* 兩行的 `\|\| true`，**禁止** 動其他 husky hook 行（lint / type-check / depcruise / spellcheck / vitest）；T53 commit 被擋時**禁止** 自行加回 `\|\| true`，必須回 T45 重 verify baseline。
+  - **PR template scope 紀律（S8 專屬）**：T51 只移 baseline 相關 checkbox（依 T48 設計，預期 1-2 條）+ `Baseline change:` 範例段；4 類 audit checkbox（mock / flaky / firestore / coverage）+ 通用 Summary / Test Plan / Related 章節**全部保留**；`grep -c "^- \[ \]"` 不可大降（≥ 12）。
+  - **Smoke temp 檔紀律（S8 專屬）**：T52 兩支 smoke temp 檔（`tests/integration/_s8-smoke-mock.test.jsx` + `tests/unit/_s8-smoke-flaky.test.js` 或同等檔名）**必須在 T52 內 cleanup**；T53 commit 前驗 `git status --short | grep "_s8-smoke" | wc -l = 0`；commit 含 7 檔（不含任何 temp / log / coverage / node_modules）。
+  - **Baseline retire 紀律（S8 專屬）**：T53 commit message 必含 `Baseline retire: mock-boundary 33 → 0, flaky-pattern 45 → 0` 行，呼應 S6 commit `Baseline start:`，提供完整生命週期紀錄。
+  - **Per-directory threshold 紀律（S9 專屬）**：T57 必須使用 T56 reviewer-pass target table；禁止因 coverage fail 自行降低 target、縮小 include、或新增 exclude。若 lib/config/ui/components/app 任一 layer 無法通過 audit target，必須 escalated。
+  - **S9 trigger 紀律**：T54 若找不到 Wave 3 coverage-improvement evidence，S9 必須停在 T54；subagent 不准把 `docs/QUALITY_SCORE.md` 的 S3 baseline 當成 Wave 3 完成證據。
+  - **S9 temp 檔紀律**：T55/T58 的 threshold smoke 可建 temp config，但必須在同 task cleanup；T60 commit 不得包含 temp config、coverage artifact、log、node_modules。
 
 - **Pre-commit hook 注意**：
   - `.husky/pre-commit` 會跑：lint --max-warnings 0、type-check、depcruise、spellcheck、vitest browser（**不**跑 coverage）
@@ -3282,6 +4465,9 @@ Wave S7-6: T44-eng -> T44-rev
   - **S5 額外**：T31 commit 前必跑 `npm run test:server -- tests/server/rules` + `npm run test:server`；這兩條不是 pre-commit hook 內容，但 rules gate/CI 會依賴。
   - **S6 額外**：T37 commit 前必跑 `npm run lint -- --max-warnings 0`（含 S6 新 rule，必須綠）+ `npx eslint --print-config <baseline 內檔>` 證 ignores 生效；不需跑 server / coverage。
   - **S7 額外**：T44 是 doc-only closeout；先跑 spellcheck 或記錄 spellcheck script 不支援 file args 的 fallback，再由 hook 跑完整 repo gate。
+  - **S8 後**（T53 commit 起）：兩條 audit 行的 `|| true` 已拔除，audit script `findings > 0` → exit 1 真擋 commit；T53（與後續所有 commit）engineer 必先手動跑 `bash scripts/audit-mock-boundary.sh && bash scripts/audit-flaky-patterns.sh && npm run lint -- --max-warnings 0` 三條 exit 0 才下 commit；如被擋，**禁止** 自行加回 `|| true`，必須回 T45 重 verify baseline → 修 violation → 重 commit。CI 同樣會被 audit script + ESLint 兩道擋，無法 merge。
+  - **S8 commit-only**：T53 engineer 在 commit 前還要手動跑 `npx vitest run --project=browser` 確認無 regression（pre-commit hook 已含 vitest browser，但兩道驗證雙保險）；不需跑 server / coverage（S8 不動 server / 不重做 coverage instrumentation）。
+  - **S9 額外**：T60 engineer 必跑 `npm run test:coverage`；pre-commit hook 不跑 coverage，但 S9 的唯一價值就是 coverage threshold gate，不能只靠 hook。
   - hook 失敗時：fix issue → re-stage → 新 commit（**不要** `--amend`）
 
 - **回報格式**（spawn 結束時的 result）：
@@ -3292,16 +4478,16 @@ Wave S7-6: T44-eng -> T44-rev
 
 ## Scope summary
 
-本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，已 commit `5f09820`）、S4（T16-T22，已 commit `a55fa76`）、S5（T23-T31，已 commit `28c5cb8`）、S6（T32-T37，已 commit `d89887c` + reviewer signoff `5606155`）、S7（T38-T44，planned）。後續：
+本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，已 commit `5f09820`）、S4（T16-T22，已 commit `a55fa76`）、S5（T23-T31，已 commit `28c5cb8`）、S6（T32-T37，已 commit `d89887c` + reviewer signoff `5606155`）、S7（T38-T44，planned）、S8（T45-T53，已 commit `65ee9a0`）、**S9（T54-T60，planned；trigger 條件：S8 done + Wave 3 coverage evidence）**。後續：
 
-| Commit | Goal                                          | Spec            |
-| ------ | --------------------------------------------- | --------------- |
-| S1     | align test config defaults                    | ✅ 本檔 T01-T05 |
-| S2     | PR template + audit checkbox                  | ✅ 本檔 T06-T09 |
-| S3     | coverage include + baseline                   | ✅ 本檔 T10-T15 |
-| S4     | pre-commit grep gate (warn-only)              | ✅ 本檔 T16-T22 |
-| S5     | firestore rules infra + 5 critical specs      | ✅ 本檔 T23-T31 |
-| S6     | ESLint mock-boundary + flaky rules (baseline) | ✅ 本檔 T32-T37 |
-| S7     | GitHub branch protection required checks (UI) | ✅ 本檔 T38-T44 |
-| S8     | ESLint warn → error 升級（觸發型）            | (Wave 3 後)     |
-| S9     | Per-directory coverage threshold（觸發型）    | (Wave 3 後)     |
+| Commit | Goal                                          | Spec                               |
+| ------ | --------------------------------------------- | ---------------------------------- |
+| S1     | align test config defaults                    | ✅ 本檔 T01-T05                    |
+| S2     | PR template + audit checkbox                  | ✅ 本檔 T06-T09                    |
+| S3     | coverage include + baseline                   | ✅ 本檔 T10-T15                    |
+| S4     | pre-commit grep gate (warn-only)              | ✅ 本檔 T16-T22                    |
+| S5     | firestore rules infra + 5 critical specs      | ✅ 本檔 T23-T31                    |
+| S6     | ESLint mock-boundary + flaky rules (baseline) | ✅ 本檔 T32-T37                    |
+| S7     | GitHub branch protection required checks (UI) | ✅ 本檔 T38-T44                    |
+| S8     | ESLint baseline retire + audit gate exit 1    | ✅ 本檔 T45-T53（commit `65ee9a0`） |
+| S9     | Per-directory coverage threshold（觸發型）    | ✅ 本檔 T54-T60（planned）          |
