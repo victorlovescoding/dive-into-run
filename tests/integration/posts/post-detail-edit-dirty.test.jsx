@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   addDoc,
@@ -21,23 +21,6 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
-import { createFirestoreDocSnapshot as createDocSnapshot } from '../../_helpers/factories';
-
-// ---------------------------------------------------------------------------
-// Hoisted shared state (available inside vi.mock factories)
-// ---------------------------------------------------------------------------
-const { mockShowToast, mockAuthContext } = vi.hoisted(() => {
-  const { createContext } = require('react');
-  return {
-    mockShowToast: vi.fn(),
-    mockAuthContext: createContext({
-      user: { uid: 'test-uid', name: 'Test User', photoURL: 'test.jpg' },
-      setUser: () => {},
-      loading: false,
-    }),
-  };
-});
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -52,14 +35,6 @@ vi.mock('next/image', () => ({
   // 測試替身：把 next/image 換成原生 img；alt 由 props 帶入。
 
   default: (props) => <img {...props} />,
-}));
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: mockShowToast }),
-}));
-
-vi.mock('@/runtime/providers/AuthProvider', () => ({
-  AuthContext: mockAuthContext,
 }));
 
 vi.mock('@/components/ShareButton', () => ({
@@ -95,6 +70,15 @@ vi.mock('firebase/firestore', () => ({
     now: vi.fn(() => ({ toDate: () => new Date('2026-04-15T08:00:00Z') })),
   },
 }));
+
+// ---------------------------------------------------------------------------
+// Imports (after vi.mock — Vitest hoists mocks above these)
+// ---------------------------------------------------------------------------
+import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
+import { createFirestoreDocSnapshot as createDocSnapshot } from '../../_helpers/factories';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 
 // ---------------------------------------------------------------------------
 // Typed mock handles (vi.mock above is hoisted by Vitest before these lines)
@@ -189,6 +173,27 @@ const mockPost = {
   commentsCount: 0,
 };
 
+const mockUser = {
+  uid: 'test-uid',
+  name: 'Test User',
+  email: null,
+  photoURL: 'test.jpg',
+  bio: null,
+  getIdToken: async () => '',
+};
+
+/**
+ * 使用 T005 post harness：真實 AuthContext/ToastContext value，不 mock runtime provider。
+ * @returns {ReturnType<typeof renderWithAuthToast>} render 結果與 context spies。
+ */
+function renderPostDetail() {
+  return renderWithAuthToast(<PostDetailClient postId="post-1" />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+    auth: { user: mockUser },
+  });
+}
+
 /** 設定編輯 dirty gate 測試需要的 Firestore SDK 邊界 stub。 */
 function setupFirestoreMocks() {
   firestoreMocks.collection.mockImplementation((_dbOrRef, ...segments) => ({
@@ -250,7 +255,7 @@ describe('PostDetailClient edit dirty gate', () => {
   it('keeps submit button disabled when no modification happens', async () => {
     // Arrange
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post-1" />);
+    renderPostDetail();
     await enterEditMode(user);
 
     // Act
@@ -269,7 +274,7 @@ describe('PostDetailClient edit dirty gate', () => {
   it('disables submit again after typing then reverting the modification', async () => {
     // Arrange
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post-1" />);
+    renderPostDetail();
     await enterEditMode(user);
     const titleInput = screen.getByPlaceholderText('標題');
 
@@ -291,7 +296,7 @@ describe('PostDetailClient edit dirty gate', () => {
   it('submits through service-layer trim for whitespace-padded values', async () => {
     // Arrange
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post-1" />);
+    renderPostDetail();
     await enterEditMode(user);
     const titleInput = screen.getByPlaceholderText('標題');
     const contentInput = screen.getByPlaceholderText('分享你的想法...');
@@ -315,7 +320,7 @@ describe('PostDetailClient edit dirty gate', () => {
   it('keeps submit disabled when only trailing whitespace is appended to title (trim compare)', async () => {
     // Arrange
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post-1" />);
+    renderPostDetail();
     await enterEditMode(user);
     const titleInput = screen.getByPlaceholderText('標題');
 
@@ -330,7 +335,7 @@ describe('PostDetailClient edit dirty gate', () => {
   it('restores original values when re-opening the same post after cancel', async () => {
     // Arrange
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post-1" />);
+    renderPostDetail();
     await enterEditMode(user);
     const titleInput = screen.getByPlaceholderText('標題');
 

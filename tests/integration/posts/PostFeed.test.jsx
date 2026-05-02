@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { useMemo } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   addDoc,
@@ -26,15 +25,10 @@ import {
 // ---------------------------------------------------------------------------
 // Hoisted shared state (available inside vi.mock factories)
 // ---------------------------------------------------------------------------
-const { mockShowToast, mockReplace, mockSearchParamsGet, mockAuthContext } = vi.hoisted(() => {
-  const { createContext } = require('react');
-  return {
-    mockShowToast: vi.fn(),
-    mockReplace: vi.fn(),
-    mockSearchParamsGet: vi.fn().mockReturnValue(null),
-    mockAuthContext: createContext({ user: null, setUser: () => {}, loading: false }),
-  };
-});
+const { mockReplace, mockSearchParamsGet } = vi.hoisted(() => ({
+  mockReplace: vi.fn(),
+  mockSearchParamsGet: vi.fn().mockReturnValue(null),
+}));
 
 // ---------------------------------------------------------------------------
 // Module mocks (hoisted)
@@ -42,14 +36,6 @@ const { mockShowToast, mockReplace, mockSearchParamsGet, mockAuthContext } = vi.
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: mockReplace }),
   useSearchParams: () => ({ get: mockSearchParamsGet }),
-}));
-
-vi.mock('@/runtime/providers/AuthProvider', () => ({
-  AuthContext: mockAuthContext,
-}));
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: mockShowToast }),
 }));
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
@@ -94,11 +80,13 @@ vi.mock('next/image', () => ({
 // Imports (after vi.mock — Vitest hoists mocks above these)
 // ---------------------------------------------------------------------------
 import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
 import PostPage from '@/app/posts/page';
 import {
   createFirestoreDocSnapshot as createDocSnapshot,
   createFirestoreQuerySnapshot as createQuerySnapshot,
 } from '../../_helpers/factories';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 
 const firestoreMocks = {
   ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
@@ -248,30 +236,18 @@ function setupFirestoreMocks() {
 // ---------------------------------------------------------------------------
 
 /**
- * 用 AuthContext 包裹子元件，提供測試用使用者。
- * @param {object} props - 元件 props。
- * @param {import('react').ReactNode} props.children - 子元件。
- * @param {object | null} [props.user] - 覆寫使用者，預設 null（未登入）。
- * @returns {import('react').ReactElement} 包裹後的元件。
- */
-function AuthWrapper({ children, user = null }) {
-  const authValue = useMemo(() => ({ user, setUser: vi.fn(), loading: false }), [user]);
-  return <AuthContext.Provider value={authValue}>{children}</AuthContext.Provider>;
-}
-
-/**
- * 渲染 PostPage（含 AuthWrapper）並等待初始 API 呼叫完成。
+ * 渲染 PostPage（含真實 AuthContext/ToastContext value）並等待初始 API 呼叫完成。
  * @param {object} [options] - 渲染選項。
  * @param {object | null} [options.user] - 使用者物件，預設 null。
  * @returns {Promise<import('@testing-library/user-event').UserEvent>} userEvent 實例。
  */
 async function renderPostPage({ user = null } = {}) {
   const ue = userEvent.setup();
-  render(
-    <AuthWrapper user={user}>
-      <PostPage />
-    </AuthWrapper>,
-  );
+  renderWithAuthToast(<PostPage />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+    auth: { user },
+  });
   await waitFor(() => {
     expect(firestoreMocks.getDocs).toHaveBeenCalled();
   });
@@ -303,14 +279,7 @@ describe('Feed layout', () => {
   it('wraps the feed in a container with the "feed" CSS class for max-width', async () => {
     // 重構後 page.jsx 會將外層 div 加上 styles.feed class（max-width 680px 置中）
     // 目前 page.jsx 外層 <div> 沒有 className → 此測試應 FAIL
-    render(
-      <AuthWrapper>
-        <PostPage />
-      </AuthWrapper>,
-    );
-    await waitFor(() => {
-      expect(firestoreMocks.getDocs).toHaveBeenCalled();
-    });
+    await renderPostPage();
 
     // feed wrapper 是 layout-only div，沒語意 role；加 data-testid 後直接 query；保留 className 驗證原意圖
     const feedContainer = screen.getByTestId('post-feed');
