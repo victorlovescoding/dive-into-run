@@ -97,6 +97,10 @@ export const TEST_DEPENDENCY_SURFACES = Object.freeze({
     description: 'src/components/**',
     depCruisePathPattern: '^src/components(?:/|$)',
   }),
+  'src-ui': Object.freeze({
+    description: 'src/ui/**',
+    depCruisePathPattern: '^src/ui(?:/|$)',
+  }),
   'src-contexts': Object.freeze({
     description: 'src/contexts/**',
     depCruisePathPattern: '^src/contexts(?:/|$)',
@@ -129,6 +133,7 @@ const UNIT_ALLOWED_SURFACES = Object.freeze([
   'src-repo',
   'src-service',
   'src-runtime',
+  'src-ui',
   'src-app-api',
 ]);
 
@@ -138,6 +143,7 @@ const INTEGRATION_ALLOWED_SURFACES = Object.freeze([
   'src-app-api',
   'src-app-non-api',
   'src-components',
+  'src-ui',
   'src-contexts',
   'src-hooks',
   'src-runtime-providers',
@@ -188,12 +194,14 @@ const UNIT_ALLOWED_PATH_PATTERNS = Object.freeze([
   '^src/repo(?:/|$)',
   '^src/service(?:/|$)',
   '^src/runtime/(?!providers(?:/|$))',
+  '^src/ui(?:/|$)',
   '^src/app/api(?:/|$)',
 ]);
 
 const INTEGRATION_ALLOWED_PATH_PATTERNS = Object.freeze([
   '^src/app(?:/|$)',
   '^src/components(?:/|$)',
+  '^src/ui(?:/|$)',
   '^src/contexts(?:/|$)',
   '^src/hooks(?:/|$)',
   '^src/runtime(?:/|$)',
@@ -379,6 +387,9 @@ export function classifyDependencySurface(reference) {
   }
   if (resolvedPath.startsWith('src/components/')) {
     return 'src-components';
+  }
+  if (resolvedPath.startsWith('src/ui/')) {
+    return 'src-ui';
   }
   if (resolvedPath.startsWith('src/contexts/')) {
     return 'src-contexts';

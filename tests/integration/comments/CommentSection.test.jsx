@@ -20,11 +20,12 @@
  * 6. AAA Pattern (Arrange, Act, Assert) is mandatory.
  */
 
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { AuthContext } from '@/contexts/AuthContext';
 import CommentSection from '@/components/CommentSection';
+import { useSearchParams } from 'next/navigation';
 import {
   addDoc,
   collection,
@@ -107,6 +108,7 @@ const mockedAddDoc = /** @type {import('vitest').Mock} */ (addDoc);
 const mockedRunTransaction = /** @type {import('vitest').Mock} */ (runTransaction);
 const mockedWriteBatch = /** @type {import('vitest').Mock} */ (writeBatch);
 const mockedStartAfter = /** @type {import('vitest').Mock} */ (startAfter);
+const mockedUseSearchParams = /** @type {import('vitest').Mock} */ (useSearchParams);
 
 /* ==========================================================================
    Type Definitions
@@ -288,6 +290,7 @@ let intersectionCallback = null;
 describe('Integration: CommentSection', () => {
   beforeEach(() => {
     intersectionCallback = null;
+    mockedUseSearchParams.mockReturnValue(new URLSearchParams());
 
     // jsdom 不支援 HTMLDialogElement.showModal/close，需 polyfill
     if (!HTMLDialogElement.prototype.showModal) {
@@ -319,6 +322,7 @@ describe('Integration: CommentSection', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
   /* ========================================================================
@@ -445,6 +449,70 @@ describe('Integration: CommentSection', () => {
       // Assert
       await screen.findAllByRole('listitem');
       expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
+  });
+
+  /* ========================================================================
+     深連結留言定位
+     ======================================================================== */
+
+  describe('深連結留言定位', () => {
+    it('should scroll to commentId target, highlight it, and remove highlight after animation', () => {
+      // Arrange
+      vi.useFakeTimers();
+      mockedUseSearchParams.mockReturnValue(new URLSearchParams('commentId=comment-target'));
+      mockGetDocsPendingOnce();
+
+      const target = document.createElement('article');
+      const scrollIntoView = vi.fn();
+      target.id = 'comment-target';
+      target.scrollIntoView = scrollIntoView;
+      document.body.appendChild(target);
+
+      // Act
+      const { unmount } = renderWithAuth(<CommentSection eventId="e1" />, {
+        user: createMockUser(),
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+
+      // Assert
+      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+      expect(target.classList.contains('commentHighlight')).toBe(true);
+
+      act(() => {
+        target.dispatchEvent(new Event('animationend'));
+      });
+
+      expect(target.classList.contains('commentHighlight')).toBe(false);
+
+      unmount();
+      target.remove();
+    });
+
+    it('should stop polling when the commentId target never appears', () => {
+      // Arrange
+      vi.useFakeTimers();
+      mockedUseSearchParams.mockReturnValue(new URLSearchParams('commentId=missing-comment'));
+      mockGetDocsPendingOnce();
+      const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
+
+      // Act
+      const { unmount } = renderWithAuth(<CommentSection eventId="e1" />, {
+        user: createMockUser(),
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(4_000);
+      });
+
+      // Assert
+      expect(clearIntervalSpy).toHaveBeenCalled();
+
+      unmount();
+      clearIntervalSpy.mockRestore();
     });
   });
 
