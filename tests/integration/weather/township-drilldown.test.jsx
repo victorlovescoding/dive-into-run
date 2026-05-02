@@ -6,34 +6,23 @@
  * back. Mock boundary stays at:
  *   - `global.fetch` for `/api/weather`
  *   - `firebase/firestore` for favorites query (returns empty list)
- *   - `@/runtime/providers/AuthProvider` AuthContext (no logged-in user)
+ *   - real `AuthContext.Provider` value (no logged-in user)
+ *   - real `ToastContext.Provider` no-op value
  *   - third-party leaflet / topojson-client / next/image (jsdom/runtime safety)
  *   - `@/data/geo/*` topology fixtures (real towns.json is 50k+ features)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WeatherPage from '@/components/weather/WeatherPage';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 import { createWeatherPayload } from '../../_helpers/use-weather-page-runtime-test-helpers';
 
 /* ==========================================================================
-   Hoisted shared state (mock factories pick these up before module init).
-   ========================================================================== */
-
-const { mockAuthContext } = vi.hoisted(() => {
-  const { createContext } = require('react');
-  return {
-    mockAuthContext: createContext({
-      user: null,
-      setUser: () => {},
-      loading: false,
-    }),
-  };
-});
-
-/* ==========================================================================
-   Module mocks — third-party + provider boundary.
+   Module mocks — third-party/jsdom boundaries.
    ========================================================================== */
 
 vi.stubGlobal(
@@ -182,12 +171,6 @@ vi.mock('react-leaflet', () => ({
   }),
 }));
 
-vi.mock('@/runtime/providers/AuthProvider', () => ({ AuthContext: mockAuthContext }));
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: vi.fn(), removeToast: vi.fn(), toasts: [] }),
-}));
-
 vi.mock('@/config/client/firebase-client', () => ({ db: { app: 'test-firestore' } }));
 
 const firestoreMock = vi.hoisted(() => ({
@@ -207,6 +190,17 @@ vi.mock('firebase/firestore', () => firestoreMock);
 /* ==========================================================================
    Helpers
    ========================================================================== */
+
+/**
+ * 用真實 AuthContext / ToastContext provider value render WeatherPage。
+ * @returns {ReturnType<typeof renderWithAuthToast>} render 結果。
+ */
+function renderWeatherPage() {
+  return renderWithAuthToast(<WeatherPage />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+  });
+}
 
 /**
  * 安裝 fetch mock — 依 URL 的 county / township query 分流回不同 fixture。
@@ -265,7 +259,7 @@ describe('Township drill-down integration', () => {
 
   it('shows township features after clicking a county', async () => {
     const user = userEvent.setup();
-    render(<WeatherPage />);
+    renderWeatherPage();
 
     await user.click(screen.getByRole('button', { name: '新北市' }));
 
@@ -276,7 +270,7 @@ describe('Township drill-down integration', () => {
 
   it('updates weather when a township is clicked', async () => {
     const user = userEvent.setup();
-    render(<WeatherPage />);
+    renderWeatherPage();
 
     await user.click(screen.getByRole('button', { name: '新北市' }));
     await user.click(await screen.findByRole('button', { name: '板橋區' }));
@@ -287,7 +281,7 @@ describe('Township drill-down integration', () => {
 
   it('updates weather when switching between townships', async () => {
     const user = userEvent.setup();
-    render(<WeatherPage />);
+    renderWeatherPage();
 
     await user.click(screen.getByRole('button', { name: '新北市' }));
     await user.click(await screen.findByRole('button', { name: '板橋區' }));
@@ -299,7 +293,7 @@ describe('Township drill-down integration', () => {
 
   it('returns to overview when clicking back button', async () => {
     const user = userEvent.setup();
-    render(<WeatherPage />);
+    renderWeatherPage();
 
     await user.click(screen.getByRole('button', { name: '新北市' }));
     await screen.findByText('板橋區');

@@ -4,32 +4,20 @@
  * Drives the real `useWeatherPageRuntime` (no fake hook) against:
  *   - mocked `global.fetch` for `/api/weather` (success / error / signal-aware)
  *   - mocked `firebase/firestore` SDK (favorites query empty)
- *   - mocked `AuthContext` (no logged-in user)
- *   - mocked `ToastProvider`
+ *   - real `AuthContext.Provider` value (no logged-in user)
+ *   - real `ToastContext.Provider` no-op value
  *   - third-party leaflet / topojson-client / next/image (jsdom safety)
  *   - `@/data/geo/*` topology fixtures
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WeatherPage from '@/components/weather/WeatherPage';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 import { createWeatherPayload } from '../../_helpers/use-weather-page-runtime-test-helpers';
-
-/* ==========================================================================
-   Hoisted shared state.
-   ========================================================================== */
-
-const { mockAuthContext } = vi.hoisted(() => {
-  const { createContext } = require('react');
-  return {
-    mockAuthContext: createContext({
-      user: null,
-      setUser: () => {},
-      loading: false,
-    }),
-  };
-});
 
 /* ==========================================================================
    Module mocks.
@@ -205,12 +193,6 @@ vi.mock('react-leaflet', () => ({
   }),
 }));
 
-vi.mock('@/runtime/providers/AuthProvider', () => ({ AuthContext: mockAuthContext }));
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: vi.fn(), removeToast: vi.fn(), toasts: [] }),
-}));
-
 vi.mock('@/config/client/firebase-client', () => ({ db: { app: 'test-firestore' } }));
 
 const firestoreMock = vi.hoisted(() => ({
@@ -290,6 +272,17 @@ function installWeatherFetch() {
   };
 }
 
+/**
+ * 用真實 AuthContext / ToastContext provider value render WeatherPage。
+ * @returns {ReturnType<typeof renderWithAuthToast>} render 結果。
+ */
+function renderWeatherPage() {
+  return renderWithAuthToast(<WeatherPage />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+  });
+}
+
 /* ==========================================================================
    Tests
    ========================================================================== */
@@ -311,7 +304,7 @@ describe('WeatherPage integration', () => {
   });
 
   it('renders the map container and county features', () => {
-    render(<WeatherPage />);
+    renderWeatherPage();
 
     expect(screen.getByRole('application', { name: '台灣互動地圖' })).toBeInTheDocument();
     expect(screen.getByText('臺北市')).toBeInTheDocument();
@@ -319,14 +312,14 @@ describe('WeatherPage integration', () => {
   });
 
   it('shows empty state when no location is selected', () => {
-    render(<WeatherPage />);
+    renderWeatherPage();
 
     expect(screen.getByText(/請先在地圖上選擇/)).toBeInTheDocument();
   });
 
   it('updates the weather card when a county is clicked', async () => {
     const user = userEvent.setup();
-    render(<WeatherPage />);
+    renderWeatherPage();
 
     await user.click(screen.getByRole('button', { name: '臺北市' }));
 
@@ -350,7 +343,7 @@ describe('WeatherPage integration', () => {
     );
 
     const user = userEvent.setup();
-    render(<WeatherPage />);
+    renderWeatherPage();
     await user.click(screen.getByRole('button', { name: '臺北市' }));
 
     expect(await screen.findByLabelText('天氣資料載入中')).toBeInTheDocument();
@@ -367,7 +360,7 @@ describe('WeatherPage integration', () => {
   it('shows the error state and recovers via retry', async () => {
     fetchControls.setError();
     const user = userEvent.setup();
-    render(<WeatherPage />);
+    renderWeatherPage();
 
     await user.click(screen.getByRole('button', { name: '臺北市' }));
     const retryButton = await screen.findByRole('button', { name: /重試/ });
@@ -379,7 +372,7 @@ describe('WeatherPage integration', () => {
 
   it('triggers island click handler and updates weather card', async () => {
     const user = userEvent.setup();
-    render(<WeatherPage />);
+    renderWeatherPage();
 
     await user.click(screen.getByRole('button', { name: '蘭嶼鄉' }));
 

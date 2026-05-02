@@ -5,8 +5,8 @@
  *   - mocked `firebase/firestore` SDK (favorite CRUD via `addFavorite` / `getFavorites` /
  *     `isFavorited` / `removeFavorite` paths in `firebase-weather-favorites-repo`)
  *   - mocked `global.fetch` for `/api/weather` (county-level success payload)
- *   - mocked `AuthContext` (toggle login state per-test via `setAuthUser`)
- *   - mocked `ToastProvider` so we can assert toast messages
+ *   - real `AuthContext.Provider` value (toggle login state per-test via `setAuthUser`)
+ *   - real `ToastContext.Provider` value with a spy for toast assertions
  *
  * `topojson-client`, `@/data/geo/*`, `react-leaflet`, `next/image`, `leaflet` stay
  * mocked because jsdom can't render Leaflet and the real geo files are huge.
@@ -17,6 +17,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WeatherPage from '@/components/weather/WeatherPage';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 import {
   COUNTY_LOCATION,
   TOWNSHIP_LOCATION,
@@ -29,20 +31,10 @@ import {
    Hoisted shared state (mock factories pick these up before module init).
    ========================================================================== */
 
-const { mockAuthContext, mockShowToast, authState } = vi.hoisted(() => {
-  const { createContext } = require('react');
-  /** @type {{ user: { uid: string, name: string | null, email: string | null, photoURL: string | null, bio: string | null, getIdToken: () => Promise<string> } | null }} */
-  const state = { user: null };
-  return {
-    mockAuthContext: createContext({
-      user: null,
-      setUser: () => {},
-      loading: false,
-    }),
-    mockShowToast: vi.fn(),
-    authState: state,
-  };
-});
+const mockShowToast = vi.fn();
+
+/** @type {{ user: { uid: string, name: string | null, email: string | null, photoURL: string | null, bio: string | null, getIdToken: () => Promise<string> } | null }} */
+const authState = { user: null };
 
 /**
  * 設定登入使用者；null 代表登出。
@@ -179,14 +171,6 @@ vi.mock('react-leaflet', () => ({
   }),
 }));
 
-vi.mock('@/runtime/providers/AuthProvider', () => ({
-  AuthContext: mockAuthContext,
-}));
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: mockShowToast, removeToast: vi.fn(), toasts: [] }),
-}));
-
 vi.mock('@/config/client/firebase-client', () => ({ db: { app: 'test-firestore' } }));
 
 const firestoreMock = vi.hoisted(() => ({
@@ -212,11 +196,12 @@ vi.mock('firebase/firestore', () => firestoreMock);
  * @returns {ReturnType<typeof render>} render result。
  */
 function renderWeatherPage() {
-  return render(
-    <AuthContext.Provider value={{ user: authState.user, setUser: () => {}, loading: false }}>
-      <WeatherPage />
-    </AuthContext.Provider>,
-  );
+  return renderWithAuthToast(<WeatherPage />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+    auth: { user: authState.user },
+    toast: { showToast: mockShowToast },
+  });
 }
 
 /**
