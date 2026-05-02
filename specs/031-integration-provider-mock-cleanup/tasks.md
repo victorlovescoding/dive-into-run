@@ -220,7 +220,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/weather/favorites.test.jsx tests/integration/weather/township-drilldown.test.jsx tests/integration/weather/weather-page.test.jsx`
   - Commit point: yes, after review. Suggested message: `test: remove weather provider mocks`.
 
-- [ ] T014 - Domain integration sweep
+- [x] T014 - Domain integration sweep
   - Owner engineer: Engineer E
   - Reviewer: Reviewer E
   - Depends on: T004, T007, T010, T011, T013
@@ -230,7 +230,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/events/EventDetailClient-delete-race.test.jsx tests/integration/events/event-detail-comment-runtime.test.jsx tests/integration/posts/PostDetail.test.jsx tests/integration/posts/PostDetailClient-delete-race.test.jsx tests/integration/posts/PostFeed.test.jsx tests/integration/posts/post-comment-reply.test.jsx tests/integration/posts/post-detail-edit-dirty.test.jsx tests/integration/posts/post-edit-validation.test.jsx tests/integration/posts/post-form-validation.test.jsx tests/integration/posts/posts-page-edit-dirty.test.jsx tests/integration/strava/CallbackPage.test.jsx tests/integration/strava/RunCalendarDialog.test.jsx tests/integration/strava/RunsPage.test.jsx tests/integration/strava/runs-page-sync-error.test.jsx tests/integration/toast/crud-toast.test.jsx tests/integration/weather/favorites.test.jsx tests/integration/weather/township-drilldown.test.jsx tests/integration/weather/weather-page.test.jsx`
   - Commit point: no.
 
-- [ ] T015 - Final PR acceptance gates
+- [x] T015 - Final PR acceptance gates
   - Owner engineer: Engineer E
   - Reviewer: Reviewer E
   - Depends on: T014
