@@ -11,27 +11,65 @@ vi.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
 }));
 
-vi.mock('@/runtime/providers/AuthProvider', async () => {
-  const { createContext } = await import('react');
-  return {
-    AuthContext: createContext({ user: null, loading: true }),
-    default: ({ children }) => children,
-  };
-});
+vi.mock('firebase/app', () => ({
+  initializeApp: vi.fn(() => ({})),
+}));
+
+vi.mock('firebase/auth', () => ({
+  getAuth: vi.fn(() => ({})),
+  GoogleAuthProvider: vi.fn(function GoogleAuthProvider() {
+    this.setCustomParameters = vi.fn();
+  }),
+  connectAuthEmulator: vi.fn(),
+  signInWithEmailAndPassword: vi.fn(),
+  signOut: vi.fn(),
+  signInWithPopup: vi.fn(),
+  onAuthStateChanged: vi.fn(() => vi.fn()),
+}));
+
+vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(() => ({})),
+  connectFirestoreEmulator: vi.fn(),
+  doc: vi.fn(),
+  getDoc: vi.fn(),
+  onSnapshot: vi.fn(),
+  serverTimestamp: vi.fn(),
+  setDoc: vi.fn(),
+}));
+
+vi.mock('firebase/storage', () => ({
+  getStorage: vi.fn(() => ({})),
+  connectStorageEmulator: vi.fn(),
+}));
 
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import CallbackPage from '@/app/runs/callback/page';
+import { createTestAuthContextValue } from '../../_helpers/provider-test-helpers';
+
+/**
+ * 建立符合 AuthContextValue user 契約的測試使用者。
+ * @param {Partial<NonNullable<import('@/runtime/providers/AuthProvider').AuthContextValue['user']>>} [overrides] - 使用者欄位覆寫。
+ * @returns {NonNullable<import('@/runtime/providers/AuthProvider').AuthContextValue['user']>} 測試使用者。
+ */
+function createTestUser(overrides = {}) {
+  return {
+    uid: 'user-1',
+    name: 'Test User',
+    email: null,
+    photoURL: null,
+    bio: null,
+    getIdToken: vi.fn().mockResolvedValue('id-token-1'),
+    ...overrides,
+  };
+}
 
 /**
  * 包入指定 AuthContext value 的 wrapper render。
- * @param {{user: object | null, loading: boolean}} authValue - 模擬 AuthContext value（測試只用 user/loading 兩欄）。
+ * @param {Partial<import('@/runtime/providers/AuthProvider').AuthContextValue>} authValue - AuthContext 測試值覆寫。
  * @returns {ReturnType<typeof render>} render result。
  */
 function renderWithAuth(authValue) {
-  // 補滿 AuthContextValue 完整 shape 以滿足 type-check（測試本身只用 user/loading）。
-  const value = /** @type {import('@/runtime/providers/AuthProvider').AuthContextValue} */ (
-    /** @type {unknown} */ ({ ...authValue, setUser: () => {} })
-  );
+  const value = createTestAuthContextValue(authValue);
   return render(
     <AuthContext.Provider value={value}>
       <CallbackPage />
@@ -56,10 +94,7 @@ describe('CallbackPage', () => {
     fetchSpy.mockReturnValue(new Promise(() => {})); // never resolve
 
     renderWithAuth({
-      user: {
-        uid: 'user-1',
-        getIdToken: vi.fn().mockResolvedValue('id-token-1'),
-      },
+      user: createTestUser(),
       loading: false,
     });
 
@@ -82,7 +117,7 @@ describe('CallbackPage', () => {
     mockSearchParams.get.mockImplementation((key) => (key === 'error' ? 'access_denied' : null));
 
     renderWithAuth({
-      user: { uid: 'user-1', getIdToken: vi.fn() },
+      user: createTestUser({ getIdToken: vi.fn() }),
       loading: false,
     });
 
@@ -105,10 +140,7 @@ describe('CallbackPage', () => {
     });
 
     renderWithAuth({
-      user: {
-        uid: 'user-1',
-        getIdToken: vi.fn().mockResolvedValue('id-token-1'),
-      },
+      user: createTestUser(),
       loading: false,
     });
 
