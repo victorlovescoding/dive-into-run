@@ -416,7 +416,7 @@ Parallel conflict rules for Wave A:
     - Commit contains only T030 files.
     - `handoff.md` records touched files and evidence.
 
-- [ ] T032 Add second app thin-entry behavior coverage slice
+- [x] T032 Add second app thin-entry behavior coverage slice
   - Owner: App Engineer B
   - Reviewer: App Reviewer B
   - Dependencies: T005
@@ -435,7 +435,7 @@ Parallel conflict rules for Wave A:
     - Focused Vitest passes with the exact command above.
     - Reviewer confirms no shared app helper or `tests/integration/app/root-layout.test.jsx` conflict was introduced.
 
-- [ ] T033 Review and commit second app slice
+- [x] T033 Review and commit second app slice
   - Owner: App Reviewer B
   - Reviewer: Flow Reviewer
   - Dependencies: T032
