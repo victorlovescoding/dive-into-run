@@ -81,9 +81,14 @@
 | T52 S8 smoke positive/negative   | done (rev-pass; temp files cleaned)                                                                                                    |
 | T53 verify + commit              | done by this S8 commit                                                                                                                 |
 | Last commit (S8)                 | commit pending in this T53 commit; source of truth after commit is `git log -1`                                                        |
-| **S9** scope                     | **blocked at T54 — missing Wave 3 coverage-improvement evidence for ui/components/app; T55-T60 not executed**                          |
-| T54 precondition gate            | blocked — `BLOCKED: Wave 3 coverage-improvement commit or handoff note for ui/components/app is missing`                               |
-| T55-T60                          | pending; do not run until T54 is rerun with READY evidence                                                                              |
+| **S9** scope                     | **engineer complete; reviewer pending — per-directory coverage thresholds imported after rebase to `origin/main` `81d3b2a`**           |
+| T54 precondition gate            | engineer PASS — latest `origin/main` has Wave 3 evidence `a8c7ad9` and gap-close commit `81d3b2a`                                       |
+| T55 path-threshold spike         | engineer PASS — Vitest `4.1.4` supports path thresholds and decimal values (`decimal-ok`)                                               |
+| T56 fresh baseline + targets     | engineer PASS — current ui/components/app `97.56% / 92.73% / 96.03%` clear Wave 3+5 targets `94.43 / 91.64 / 95.07`                    |
+| T57 thresholds import            | engineer PASS — `vitest.config.mjs` threshold block only; include/exclude unchanged                                                     |
+| T58 threshold smoke              | engineer PASS — real config pass + temp negative config fails on `src/app/**` threshold                                                  |
+| T59 docs/handoff sync            | engineer PASS — `docs/QUALITY_SCORE.md` records S9 thresholds and 2026-06-03 next review; PR template read-only confirmed               |
+| T60 verify + commit              | engineer PASS pending this commit; reviewer should verify commit hash with `git log -1`                                                  |
 
 ## §1 Next Session Checklist
 
@@ -180,9 +185,11 @@
 
 **Next step**：
 
-- [ ] 開 PR：`026-tests-audit-report` → `main`（含 S8 closeout commit），等 protected-branch checks（`ci` / `e2e` / `firestore-rules-gate`）綠 → merge → 刪 branch。
-- [ ] **S9 啟動條件**：S8 commit merged 後，才推 per-directory coverage threshold / follow-up baseline ramp；不要再把 S8 retired baseline checkbox 加回 PR template。
-- [ ] **S9/T54 current blocker**：不要啟動 T55-T60。T54 找到 S8 commit source，但沒有找到後續 Wave 3 coverage-improvement commit 或 handoff note for ui/components/app；`docs/QUALITY_SCORE.md` 的 S3 baseline 只能證明 baseline collected，不能當成 Wave 3 補測完成證據。
+- [ ] 開 PR：`026-tests-audit-report` → `main`（含 S8 + S9 closeout commits），等 protected-branch checks（`ci` / `e2e` / `firestore-rules-gate`）綠 → merge → 刪 branch。
+- [x] **S9/T54 trigger gate PASS**：026 已 rebase onto latest `origin/main` `81d3b2a test: close S9 coverage gaps (#35)`；`a8c7ad9` provides Wave 3 coverage evidence and `81d3b2a` closes the previous T56 gap.
+- [x] **S9/T55 path-threshold spike PASS**：Vitest `4.1.4` supports `thresholds: { 'src/ui/**': { lines: N } }`; decimal threshold decision = `decimal-ok`.
+- [x] **S9/T56 threshold table PASS**：fresh coverage clears targets: service 93.42 >= 80, repo 95.22 >= 75, runtime 92.12 >= 60, lib 95.49 >= 80, config 82.35 >= 70, ui 97.56 >= 94.43, components 92.73 >= 91.64, app 96.03 >= 95.07.
+- [x] **S9/T57-T60 engineer closeout done**：threshold config imported, positive/negative smoke completed, docs synced, final gates run, local commit created; reviewer still needs to validate.
 
 ## §2 Must-Read Risks（已知踩坑 + subagent 增補）
 
@@ -7319,9 +7326,9 @@ Body must include one `Baseline retire:` line and no `Co-Authored-By`. This foll
 
 #### Stash note
 
-`stash@{0}` exists as `On 026-tests-audit-report: t45-handoff-pre-rebase`; `git stash show --name-status stash@{0}` shows only `specs/026-tests-audit-report/handoff.md`. Its old 2026-05-01 UNSAFE content is superseded by the later SAFE row and current S8 evidence; T53 may drop it after commit if final status is clean.
+S9 used a temporary stash named `s9-preserve-existing-handoff-tasks` to rebase dirty `handoff.md` / `tasks.md` changes onto latest `origin/main`. Effective information was integrated into this S9 closeout section, then `git stash drop stash@{0}` removed it. `git stash list` is empty after cleanup.
 
-### T54 Evidence Detail
+### Historical T54 Evidence Detail (superseded by 2026-05-03 S9 rerun)
 
 | Task | Status | Engineer | Eng evidence (excerpt) | Reviewer | Rev evidence (excerpt) |
 | ---- | ------ | -------- | ---------------------- | -------- | ---------------------- |
@@ -7386,6 +7393,60 @@ specs/026-tests-audit-report/tasks.md:4456:  - **S9 trigger 紀律**：T54 若�
 `BLOCKED: Wave 3 coverage-improvement commit or handoff note for ui/components/app is missing`
 
 Important pitfall: S8 T45 SAFE proves mock/flaky baseline cleared for S8. It does not prove ui/components/app coverage improved after S3. The only coverage evidence found is S3 baseline (`ui 62.52% / components 52.43% / app 47.92%`) plus task text saying this baseline must not be treated as Wave 3 completion evidence.
+
+### S9 Engineer Closeout Evidence (2026-05-03)
+
+| Task | Engineer verdict | Evidence summary | Reviewer |
+| ---- | ---------------- | ---------------- | -------- |
+| T54 | PASS | Preflight started from branch `026-tests-audit-report`; existing dirty `handoff.md` / `tasks.md` changes were stashed as `s9-preserve-existing-handoff-tasks` before rebase. `git fetch origin main` moved `origin/main` from `a8c7ad9` to `81d3b2a`; `git rebase origin/main` succeeded with no conflicts. `git merge-base --is-ancestor origin/main HEAD` exit 0. Latest source evidence: `81d3b2a1eafe869687b949c1bd6876a1227b0af7 test: close S9 coverage gaps (#35)`, while `a8c7ad9` remains the Wave 3 evidence commit. | pending |
+| T55 | PASS | `npm ls vitest --depth=0` -> `vitest@4.1.4`. Local type/source proof: `node_modules/vitest/dist/chunks/reporters.d.BwkR0iL5.d.ts:781-782` supports `[glob: string]`, and `coverage.Da5gzbsu.js:817` / `:870` show glob matching and threshold comparison. Temp smoke under `/tmp/s9-threshold-smoke`: path threshold `src/ui/**` exited 1 with `threshold (100%)`; decimal config exited 1 with `threshold (83.34%)`. Decision: `decimal-ok`. Cleanup checks: `/tmp/s9-threshold-smoke` absent and repo `git status --short | grep "s9-threshold-smoke" | wc -l` = 0. Pitfall: first smoke without explicit `root` scanned repo tests; not used as evidence. | pending |
+| T56 | PASS | Fresh `npm run test:coverage` exit 0 after rebase to `81d3b2a`: 166 files / 1439 tests passed; totals lines 92.95% (4351/4681), statements 90.81% (4681/5155), branches 79.72% (2571/3225), functions 92.66% (1187/1281). Layer lines from `coverage/coverage-summary.json`: service 93.42, repo 95.22, runtime 92.12, lib 95.49, config 82.35, ui 97.56, components 92.73, app 96.03. Wave 3+5 targets: service 80, repo 75, runtime 60, lib 80, config 70, ui 94.43, components 91.64, app 95.07. All PASS. | pending |
+| T57 | PASS | `vitest.config.mjs` changed only the `coverage.thresholds` block and adjacent threshold comment. `coverage.include` remains `src/{service,repo,runtime,lib,config,ui,components,app}/**`; `coverage.exclude` has no diff. Config import command printed all eight path threshold keys exactly matching T56 target table. Positive `npm run test:coverage` with new thresholds exited 0. | pending |
+| T58 | PASS | Positive real-config gate: `npm run test:coverage` exit 0 with 166 files / 1439 tests and total lines 92.95%. Negative temp config `/tmp/vitest.s9-negative.config.mjs` raised only `src/app/**` to `lines: 101.03`; wrapped in `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --coverage --config /tmp/vitest.s9-negative.config.mjs"` and exited 1 with `Coverage for lines (96.02%) does not meet "src/app/**" threshold (101.03%)`. Temp file cleanup verified absent. Pitfall: running the negative config without emulator failed for server-test setup, not threshold; not used as evidence. | pending |
+| T59 | PASS | `docs/QUALITY_SCORE.md` updated `Last Updated` to 2026-05-03, `Next Review` to 2026-06-03, per-layer V8 coverage to fresh values, known gap #2 to S9 threshold/ramp state, and Score History with S9 threshold table summary. `.github/pull_request_template.md` read-only grep confirmed coverage threshold/baseline checkbox at line 58; no template diff. | pending |
+| T60 | PASS | Final gates run by engineer before commit: `npm run test:coverage`, `npm run lint -- --max-warnings 0`, `npm run type-check`, `npm run depcruise`, `npm run spellcheck`, `npx vitest run --project=browser`, `bash scripts/audit-mock-boundary.sh`, `bash scripts/audit-flaky-patterns.sh`, plus threshold import and staged-scope checks. Commit message planned: `chore(coverage): add per-directory thresholds`; no `Co-Authored-By`. | pending |
+
+#### S9 target table
+
+| Layer | Fresh lines | Target | Verdict |
+| ----- | ----------: | -----: | ------- |
+| `src/service/**` | 93.42% | 80.00% | PASS |
+| `src/repo/**` | 95.22% | 75.00% | PASS |
+| `src/runtime/**` | 92.12% | 60.00% | PASS |
+| `src/lib/**` | 95.49% | 80.00% | PASS |
+| `src/config/**` | 82.35% | 70.00% | PASS |
+| `src/ui/**` | 97.56% | 94.43% | PASS |
+| `src/components/**` | 92.73% | 91.64% | PASS |
+| `src/app/**` | 96.03% | 95.07% | PASS |
+
+#### S9 verification evidence
+
+```text
+$ node -e "import('./vitest.config.mjs').then(m=>console.log(JSON.stringify(m.default.test.coverage.thresholds,null,2)))"
+{
+  "src/service/**": { "lines": 80 },
+  "src/repo/**": { "lines": 75 },
+  "src/runtime/**": { "lines": 60 },
+  "src/lib/**": { "lines": 80 },
+  "src/config/**": { "lines": 70 },
+  "src/ui/**": { "lines": 94.43 },
+  "src/components/**": { "lines": 91.64 },
+  "src/app/**": { "lines": 95.07 }
+}
+
+$ npm run test:coverage
+Exit: 0
+Test Files 166 passed (166); Tests 1439 passed (1439)
+Lines 92.95% (4351/4681); Statements 90.8% (4681/5155); Branches 79.72% (2571/3225); Functions 92.66% (1187/1281)
+
+$ firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --coverage --config /tmp/vitest.s9-negative.config.mjs"
+Exit: 1
+ERROR: Coverage for lines (96.02%) does not meet "src/app/**" threshold (101.03%)
+
+$ rg -n "threshold|baseline|Coverage" .github/pull_request_template.md
+55:### Coverage
+58:- [ ] If this PR changes `vitest.config.mjs` `thresholds`, a baseline report is attached...
+```
 
 ## §4 Pattern Index
 

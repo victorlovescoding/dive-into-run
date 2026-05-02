@@ -1,7 +1,7 @@
 # Quality Score Matrix
 
-> Last Updated: 2026-04-29
-> Next Review: 2026-05-13
+> Last Updated: 2026-05-03
+> Next Review: 2026-06-03
 
 Agent 開工前讀此文件，立即知道哪裡弱、該優先投資什麼。
 
@@ -14,25 +14,25 @@ Agent 開工前讀此文件，立即知道哪裡弱、該優先投資什麼。
 | Layer       | Files | Static | Test Ratio | JSDoc Density | V8 Cov | Grade |
 | ----------- | ----- | ------ | ---------- | ------------- | ------ | ----- |
 | types/      | 2     | Clean  | 0.00 (0)   | 1.67 Good     | —      | B+ †  |
-| config/     | 6     | Clean  | 0.17 (1)   | 1.88 Good     | —      | B     |
-| repo/       | 19    | Clean  | 0.47 (9)   | 3.90 Full     | —      | A-    |
-| service/    | 14    | Clean  | 0.79 (11)  | 5.41 Full     | —      | A-    |
-| runtime/    | 32    | Clean  | 2.09 (67)  | 5.33 Full     | —      | A+    |
-| ui/         | 12    | Clean  | 0.00 (0)   | 6.07 Full     | 62.52% | C     |
-| lib/        | 20    | Clean  | 1.30 (26)  | 2.17 Good     | 94.7%  | A     |
-| components/ | 54    | Clean  | 0.74 (40)  | 7.45 Full     | 52.43% | A-    |
-| app/        | 15    | Clean  | TBD        | TBD           | 47.92% | TBD   |
+| config/     | 6     | Clean  | 0.17 (1)   | 1.88 Good     | 82.35% | B     |
+| repo/       | 19    | Clean  | 0.47 (9)   | 3.90 Full     | 95.22% | A-    |
+| service/    | 14    | Clean  | 0.79 (11)  | 5.41 Full     | 93.42% | A-    |
+| runtime/    | 32    | Clean  | 2.09 (67)  | 5.33 Full     | 92.12% | A+    |
+| ui/         | 12    | Clean  | 0.00 (0)   | 6.07 Full     | 97.56% | C     |
+| lib/        | 20    | Clean  | 1.30 (26)  | 2.17 Good     | 95.49% | A     |
+| components/ | 54    | Clean  | 0.74 (40)  | 7.45 Full     | 92.73% | A-    |
+| app/        | 15    | Clean  | TBD        | TBD           | 96.03% | TBD   |
 
 > **Static** = type-check + lint 合併（目前全 clean）。
 > **Test Ratio** = test files targeting this layer / source files。括號內為 test file 絕對數。
 > **JSDoc Density** = `@param`/`@returns`/`@type`/`@typedef` annotations / exports。Full ≥ 3.0、Good ≥ 1.5、Partial < 1.5。
-> **V8 Cov** = vitest V8 coverage。目前只 instrument `src/lib/**`（vitest.config.mjs `include`），其他層標「—」。
+> **V8 Cov** = vitest V8 coverage。S9 已對 `src/{service,repo,runtime,lib,config,ui,components,app}/**` 啟用 per-directory threshold gate。
 > **†** types/ 適用純宣告例外（≤ 3 files、無邏輯），test ratio 0 不降至 C。
 
 ### Layer-Level Known Gaps
 
 1. **ui/ 零直接測試（Grade C）** — 12 個 screen components 沒有任何 render/snapshot/integration tests。這是最大的品質缺口。
-2. **Coverage instrumentation 已擴展至 8 層** — `vitest.config.mjs` `include` 由 `src/lib/**` 擴增至 `src/{service,repo,runtime,lib,config,ui,components,app}/**`，ui / components / app 首度有 V8 cov baseline（見 Per-Layer Quality 表 V8 Cov 欄）。下一步是把低覆蓋層（如 ui/）逐步補測。
+2. **S9 per-directory threshold gate 已啟用** — `vitest.config.mjs` 現在分層 gate：service 80、repo 75、runtime 60、lib 80、config 70、ui 94.43、components 91.64、app 95.07。ui / components / app 以 Wave 3 baseline +5 起跳，下一次 review 依實測逐步 ramp，避免回到單一 global `lines: 70`。
 3. **config/ 測試稀疏** — 6 files 只有 1 個 test file。Firebase config 難以 unit test，但 geo data helpers（`taiwan-locations.js`、`weather-geo-cache.js`）可測。
 4. **lib/ JSDoc 最弱** — 42 exports 只有 91 annotations（2.2/export），其他層都在 3.9 以上。作為 facade 層，JSDoc 是下游 consumer 的主要文檔。
 
@@ -66,6 +66,7 @@ Agent 開工前讀此文件，立即知道哪裡弱、該優先投資什麼。
 | ---------- | ------- | --------- | ---------- | ------------------------------------------------------------------------------------------------------ |
 | 2026-04-24 | B+      | A-        | B+         | Initial grading + rubric 量化（service ↓A-, runtime ↑A+, lib ↑A, components ↓A-）。                    |
 | 2026-04-29 | B+      | A-        | B+         | Coverage include 擴至 8 層 (S3); ui/components/app 首度有 V8 cov baseline (62.52% / 52.43% / 47.92%)。 |
+| 2026-05-03 | B+      | A-        | B+         | S9 啟用 per-directory coverage thresholds：service/repo/runtime/lib/config = 80/75/60/80/70，ui/components/app = 94.43/91.64/95.07；下一次 review 依 coverage delta 調整 ramp。 |
 
 ---
 
