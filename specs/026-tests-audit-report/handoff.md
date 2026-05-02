@@ -1,8 +1,8 @@
-# Handoff — 026 tests audit report (S1-S5 done)
+# Handoff — 026 tests audit report (S1-S8 done)
 
 <!-- cspell:words blackhole Conly drwxr dryrun ENOTFOUND libc npmjs numstat pathspec pathspecs PCRE quasis revprev rwxr subtable supremum victorlovescoding -->
 
-> **Live handoff**：S1-S5 已完成；§0/§1/§3/§5 隨每個 commit-only task 更新。
+> **Live handoff**：S1-S8 已完成；§0/§1/§3/§5 隨每個 commit-only task 更新。
 > **Update rule**：本檔只放當前狀態 + 重要踩坑 + final evidence。長篇歷史日誌不放這裡。
 > **S1 ≠ S2**：S1 evidence（T01-T05 + Evidence Detail）已凍結為歷史記錄，S2 任何 subagent **不可改 S1 evidence 區**；S2 只在 §0/§1/§3 T06-T09 列、§2 S2 子表、§3 T06-T09 Evidence Detail、§4 / §5 / §6 進行擴充。
 
@@ -70,6 +70,17 @@
 | T43 handoff correction           | rerun-amended — appended T39-rerun / T40 / T41 / T42 evidence; UNSAFE history row preserved                                            |
 | T44 docs closeout commit         | rerun-amended — new closeout commit records S7 completion; prior blocked-S7 commit `98a5fa0` preserved in git history                  |
 | S7 outcome                       | done; required-check list = `ci` + `e2e` + `firestore-rules-gate`; S8/S9 unblocked                                                     |
+| **S8** scope                     | **done — ESLint baseline retire + audit gate exit 1 (T45-T53)**                                                                        |
+| T45 precondition gate            | done (rev-pass; SAFE on 2026-05-02 after rebase to `origin/main` `8800725`)                                                            |
+| T46 ESLint edit spike            | done (rev-pass)                                                                                                                        |
+| T47 audit script + Husky spike   | done (rev-pass; noted flaky audit already blocking)                                                                                    |
+| T48 PR template spike            | done (retry 2 rev-pass; L58 coverage baseline preserved)                                                                               |
+| T49 ESLint baseline retire       | done (rev-pass; scoped to block 18.5 / 18.6; block 18.7 / 18.8 left alone)                                                             |
+| T50 audit gate blocking          | done (rev-pass; changed mock-boundary + Husky only; flaky script 0 diff by design)                                                     |
+| T51 PR template retire           | done (rev-pass; S8 baseline tracking removed, coverage baseline retained)                                                              |
+| T52 S8 smoke positive/negative   | done (rev-pass; temp files cleaned)                                                                                                    |
+| T53 verify + commit              | done by this S8 commit                                                                                                                 |
+| Last commit (S8)                 | commit pending in this T53 commit; source of truth after commit is `git log -1`                                                        |
 
 ## §1 Next Session Checklist
 
@@ -156,11 +167,18 @@
 - [x] T42 done 2026-04-30 — open-PR list against `main` empty (`[]`)；deadlock smoke 紀錄為 `not observed`（AC-T42.3）
 - [x] T43-T44 rerun-amended 紀錄 S7 完成；UNSAFE 歷史 row + 原 blocked-S7 commit `98a5fa0` 皆保留
 
+**S8 已完成工作（T45-T53 rev-pass；T53 final gate fresh PASS）**：
+
+- [x] T45 SAFE：latest `origin/main` `8800725`，mock-boundary grep `0`、flaky grep `0`、lint exit `0`；舊 UNSAFE rows 只作歷史。
+- [x] T46/T49：`eslint.config.mjs` block 18.5 / 18.6 baseline retired；block 18.7 / 18.8 仍屬 spec 027 scope，不在 S8 改。
+- [x] T47/T50：`scripts/audit-mock-boundary.sh` findings > 0 now exits `1`；`.husky/pre-commit` 移除 mock audit `|| true`。`scripts/audit-flaky-patterns.sh` 在 latest main 已 blocking，S8 保持 0 diff。
+- [x] T48/T51：PR template 移除 S8 ESLint/mock/flaky baseline tracking；L58 coverage baseline checkbox preserved.
+- [x] T52/T53：positive/negative smoke pass、no `_s8-smoke` residual、final seven-command gate pass。
+
 **Next step**：
 
-- [ ] 開 PR：`026-tests-audit-report` → `main`（含 S6 + S7 closeout），等 protected-branch checks（`ci` / `e2e` / `firestore-rules-gate`）綠 → merge → 刪 branch
-- [ ] **S8** 啟動：依 audit L640-649 推進 wave 3 mock cleanup → 把 S4 audit script 從 warn-only 改 exit 1 + S6 ESLint ignores 逐步減少
-- [ ] **S9** 啟動：依 audit L650-660 推進 flaky cleanup（`toHaveBeenCalledTimes` → call-arg assertion）→ 將 flaky-pattern audit 改 exit 1
+- [ ] 開 PR：`026-tests-audit-report` → `main`（含 S8 closeout commit），等 protected-branch checks（`ci` / `e2e` / `firestore-rules-gate`）綠 → merge → 刪 branch。
+- [ ] **S9 啟動條件**：S8 commit merged 後，才推 per-directory coverage threshold / follow-up baseline ramp；不要再把 S8 retired baseline checkbox 加回 PR template。
 
 ## §2 Must-Read Risks（已知踩坑 + subagent 增補）
 
@@ -341,10 +359,13 @@
 | Husky `\|\| true` 拔除後 audit script 任何非 0 exit 都擋 commit          | 包括 typo / file rename / 預期外殘留違規；本地 commit 全部會被擋                                                                        | T47 設計含 rollback 路徑（如何短時 restore `\|\| true`）；T53 commit 前手動跑兩 audit script 確認 exit 0；如被擋不可自行加回 `\|\| true`，必須回 T45 重新驗 baseline                            |
 | PR template 移除 checkbox 的「準確邊界」                                 | S2 T07 留下的 template 可能多條 checkbox 提到 baseline；T51 若漏移 / 多移 → 不一致或破壞 audit 防線                                     | T48 spike 必須完整 dump 現行 template + 標註每條與 baseline 相關的 checkbox 行號 + 決議「移哪幾條」+「為何不移其他」；T51 嚴格依設計改                                                          |
 | smoke temp 檔殘留 → cleanup 必須 reviewer 雙驗                           | T52 故意建 smoke 違規檔測 gate；若 cleanup 漏，T53 commit 會把 smoke temp 檔意外帶進 main                                               | T52 cleanup 後 `git status --short \| grep "_s8-smoke"` 必為空；T53 commit 前再驗一次；reviewer 自跑 smoke + 自驗 cleanup                                                                       |
-| commit 7 檔規模大 → stage 階段易誤加 untracked                           | 7 檔散在 root / scripts / .husky / .github / specs；`git add -A` 易吃進不該加的 untracked（coverage/、未清的 smoke、node_modules race） | T53 嚴格 `git add` 明確列檔；commit 前 `git status --short` 確認 clean working tree（除 7 檔已 stage）；smoke temp 檔已在 T52 cleanup                                                           |
+| commit 實際 6 檔 → stage 階段易誤加 untracked                            | tasks.md 原 AC-T53.3/5 預期 7 檔含 `scripts/audit-flaky-patterns.sh`；T47/T50 已確認 latest main 的 flaky script 早已 findings>0 exit 1，S8 正確保持 0 diff。若為湊 7 檔製造 no-op diff，反而污染 scope。 | T53 嚴格 `git add` 明確列 6 檔；cached list 必須剛好是 `eslint.config.mjs`、`scripts/audit-mock-boundary.sh`、`.husky/pre-commit`、`.github/pull_request_template.md`、`handoff.md`、`tasks.md`；不 stage `scripts/audit-flaky-patterns.sh` 除非它真有 diff。 |
 | commit message 不加 Co-Authored-By                                       | user memory `feedback_no_coauthor`                                                                                                      | T53 commit 後 `git log -1 --format=%B \| grep -ic "Co-Authored-By"` 必為 0                                                                                                                      |
 | 主 agent 不下手                                                          | S8 task 任何 Edit/Bash 修改/驗證/commit 都派 subagent；主 agent 違規 = 繞過 user 規則                                                   | 主 agent 只 spawn subagent + 收 result + retry orchestration；主 agent 可以 commit `docs(spec): ...` 類型的 tasks.md 變動（本次產出），**不可** commit `chore(eslint+gate): ...` 類型的 S8 實作 |
 | Wave 3 cleanup 各 PR 與 S8 PR 順序                                       | Wave 3 系列 PR 必須先全 merge 進 main，S8 才有意義；否則 T53 自己被擋                                                                   | T45 必須驗 main HEAD（拉最新 origin/main）；reviewer 拉最新 main 重驗                                                                                                                           |
+| T45 stale handoff rerun evidence vs latest main                          | 2026-05-01 dirty handoff diff 記錄 `origin/main` `3dfd3e4` 時 mock-boundary 仍為 18；2026-05-02 rebase 到 `8800725` 後已清為 0，若只讀舊 row 會誤判 S8 blocked | 以最新 T45 SAFE row 為 current state；保留 2026-05-01 rerun evidence 作歷史，但 T46-T53 應依 2026-05-02 `mock=0 / flaky=0 / lint=0` 繼續 |
+| T49 grep drift：block 18.7 / 18.8 仍有 spec 027 baseline wording          | 原 T49 AC 的 full-file grep 會看到 `baseline ignores list` / `AST custom plugin` hits，但那些 hits 位於 block 18.7 / 18.8，不屬 S8 T49 ownership。 | T53 evidence 使用 scoped interpretation：S8 only retires block 18.5 / 18.6；不改 selector/severity/block 18.7/18.8，也不把 spec 027 scope 混入 S8。 |
+| T48 L58 baseline wording不可誤刪                                          | PR template L58 的 `baseline report is attached` 是 coverage threshold / R1 evidence，不是 S8 ESLint ignores baseline tracking。T48 retry 2 reviewer 已因 inventory 漏列 L58 reject 過一次。 | T51/T53 保留 L58 coverage checkbox；只移除 `### Baseline tracking` 與 ESLint `ignores` / `Baseline change:` 相關 checkbox。 |
 
 ### T01 Evidence Detail
 
@@ -5496,6 +5517,1800 @@ Scope guarantee:
 | ---- | ----------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | T45  | `[!]` escalated (UNSAFE — ratified) | T45-engineer-claude / 2026-04-30 CST | **DECISION: UNSAFE** — Wave 3 cleanup not merged to `origin/main`; mock-boundary grep = 33 (expected 0) and flaky-pattern grep = 45 (expected 0); only AC-T45.4 (lint exit 0) passes. AC-T45.2 / .3 fail → S8 全停。<br><br>**AC-T45.1 env self-check**:<br>`$ git rev-parse --abbrev-ref HEAD` → `026-tests-audit-report`<br>`$ git fetch origin main && git log origin/main -1 --format='%h %s'` → `141eabe docs(026): S7 branch protection completion + rule reconcile (#27)` (main HEAD, post-S7 closeout, **no Wave 3 cleanup commits visible**).<br><br>**AC-T45.2 mock-boundary grep (FAIL — expected 0, got 33)**:<br>`$ grep -rln "vi\.mock(['\"]@/\(repo\|service\|runtime\)/" tests/integration/ --include="*.test.*" \| sort -u \| wc -l` → `33`<br>Sample hits (first 10): `tests/integration/comments/CommentSection.test.jsx`, `tests/integration/comments/event-comment-notification.test.jsx`, `tests/integration/dashboard/DashboardTabs.test.jsx`, `tests/integration/events/EventDetailClient-delete-race.test.jsx`, `tests/integration/events/EventsPage.test.jsx`, `tests/integration/events/event-detail-comment-runtime.test.jsx`, `tests/integration/notifications/NotificationBell.test.jsx`, `tests/integration/notifications/NotificationPagination.test.jsx`, `tests/integration/notifications/NotificationPaginationStateful.test.jsx`, `tests/integration/notifications/NotificationPanel.test.jsx`. Number matches S4 T21 / S6 T34 frozen baseline (33) — **no drift, but also no cleanup**.<br><br>**AC-T45.3 flaky pattern grep (FAIL — expected 0, got 45)**:<br>`$ grep -rln "toHaveBeenCalledTimes\|new Promise.*setTimeout" tests --include="*.test.*" \| sort -u \| wc -l` → `45`<br>Sample hits (first 10): `tests/integration/comments/event-comment-notification.test.jsx`, `tests/integration/dashboard/useDashboardTab.test.jsx`, `tests/integration/events/EventActionButtons.test.jsx`, `tests/integration/events/EventCardMenu.test.jsx`, `tests/integration/events/EventDeleteConfirm.test.jsx`, `tests/integration/events/EventEditForm.test.jsx`, `tests/integration/events/ShareButton.test.jsx`, `tests/integration/navbar/NavbarDesktop.test.jsx`, `tests/integration/navbar/NavbarMobile.test.jsx`, `tests/integration/notifications/NotificationPaginationStateful.test.jsx`. Number matches S4 T21 / S6 T34 frozen baseline (45) — **no drift, but also no cleanup**.<br><br>**AC-T45.4 lint full run (PASS)**:<br>`$ npm run lint -- --max-warnings 0` (tail 5 lines):<br>`> dive-into-run@0.1.0 lint`<br>`> eslint src specs tests --max-warnings 0`<br>`Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .`<br>`exit=0` (only React-version settings warning, no lint error — block 18.5 / 18.6 ignores currently absorb the 33 mock + 45 flaky violations, which is exactly why baseline ignores still exist).<br><br>**AC-T45.5 ESLint baseline 現況 (informational)**:<br>`$ awk '/18\.5 flaky-pattern/,/18\.6 mock-boundary/' eslint.config.mjs \| grep -cE "^\s*'tests/"` → `45` (block 18.5 flaky-pattern ignores list size).<br>`$ awk '/18\.6 mock-boundary/,/19\. File size/' eslint.config.mjs \| grep -cE "^\s*'tests/"` → `47` (block 18.6 mock-boundary ignores list size — 33 mock baseline files + likely 14 union shared with flaky list / S4-effective union; T46 spike will dump verbatim and reconcile).<br><br>**AC-T45.6 SAFE/UNSAFE decision**: **UNSAFE** (per top of row). Step 2 (mock=33) and Step 3 (flaky=45) both fail SAFE criterion (expected 0). Step 4 (lint exit 0) passes only because block 18.5 / 18.6 baseline ignores are still active. T45 marked `[!]` escalated; T46-T53 remain `[ ]`.<br><br>**AC-T45.7 scope verification**:<br>`$ git diff --name-only \| grep -v "specs/026-tests-audit-report/" \|\| echo "0 hits (expected)"` → `0 hits (expected)` (verified pre-edit; this handoff.md update is the only diff in scope).<br><br>**Escalation note for 主 agent / user**: `origin/main` HEAD `141eabe` does not contain Wave 3 mock-cleanup or flaky-cleanup commits. Numbers (33 / 45) are identical to S4 T21 / S6 T34 frozen baselines, confirming no Wave 3 cleanup PR has merged yet. Per S8 spec (tasks.md L3169 「觸發前提」 + L3206-3207), S8 cannot proceed without baseline-cleared main. User decision required: (a) wait for Wave 3 cleanup PRs to merge then re-run T45, or (b) explicitly narrow S8 scope (e.g., mock-only or flaky-only retire — requires spec amendment), or (c) abandon S8 in this branch and reschedule. | T45-reviewer / 2026-04-30 CST | **RATIFY UNSAFE** — independent rerun of all three SAFE-decision-core commands matches engineer numbers exactly; no drift, no anomaly. S8 must halt; T46-T53 stay `[ ]`.<br><br>**Independent rerun AC-T45.2 (mock-boundary)**:<br>`$ grep -rln "vi\.mock(['\"]@/\(repo\|service\|runtime\)/" tests/integration/ --include="*.test.*" \| sort -u \| wc -l` → `33` ✅ matches engineer (33).<br><br>**Independent rerun AC-T45.3 (flaky pattern)**:<br>`$ grep -rln "toHaveBeenCalledTimes\|new Promise.*setTimeout" tests --include="*.test.*" \| sort -u \| wc -l` → `45` ✅ matches engineer (45).<br><br>**Independent rerun AC-T45.4 (lint)**:<br>`$ npm run lint -- --max-warnings 0` tail 5 → `> dive-into-run@0.1.0 lint` / `> eslint src specs tests --max-warnings 0` / `Warning: React version not specified in eslint-plugin-react settings. ...` / `exit=0` ✅ matches engineer (exit 0; only the unrelated React-version settings warning).<br><br>**ESLint baseline cross-check (AC-T45.5 informational)**:<br>`$ awk '/18\.5 flaky-pattern/,/18\.6 mock-boundary/' eslint.config.mjs \| grep -cE "^\s*'tests/"` → `45` ✅ matches engineer.<br>`$ awk '/18\.6 mock-boundary/,/19\. File size/' eslint.config.mjs \| grep -cE "^\s*'tests/"` → `47` ✅ matches engineer. Baseline list sizes (45 / 47) align with grep counts (mock=33 ⊆ 47 mock-list; flaky=45 = 45 flaky-list); lint exit 0 only because these baseline ignores still absorb the violations — exactly the engineer's diagnosis.<br><br>**Reject-condition check (per spec)**: spec rejects when engineer signed SAFE but reviewer finds non-zero / lint≠0 / baseline diff > 1. Here engineer signed **UNSAFE** and reviewer numbers are byte-identical (33 / 45 / exit 0; baseline 45 / 47); no reject triggered. Engineer's escalation logic is sound: `origin/main` HEAD `141eabe` is the post-S7 closeout commit with no Wave 3 mock/flaky cleanup merged, so AC-T45.2 / .3 cannot meet the SAFE criterion (expected 0).<br><br>**Conclusion (≥5 lines)**:<br>1. UNSAFE decision is **ratified**. All three SAFE-decision-core commands return identical numbers to engineer's claim (33 / 45 / exit 0).<br>2. No anomalies — numbers match S4 T21 / S6 T34 frozen baselines (33 mock / 45 flaky), confirming zero drift since S6 baseline freeze and confirming **zero Wave 3 cleanup has landed** on `origin/main`.<br>3. Lint exit 0 is **not** evidence of cleanup; it is evidence that block 18.5 / 18.6 baseline ignore lists (45 / 47 entries) are still actively suppressing the 33 + 45 violations. Removing those ignores under current main HEAD would immediately produce 33 + 45 = 78 ESLint errors.<br>4. Per `tasks.md` S8 觸發前提 (L3169) and S8 Risks row 1 (L332), S8 baseline-retire **cannot** proceed until Wave 3 cleanup PRs merge to main. T45 correctly halts T46-T53.<br>5. Escalation to 主 agent / user remains valid: options (a) wait for Wave 3 cleanup PR merge then rerun T45, (b) spec amendment to narrow S8 scope, or (c) reschedule S8. **No code/config modified by reviewer; only this handoff.md row updated with signature.** |
 
+#### T45 rerun history preserved from pre-rebase dirty diff — 2026-05-01 21:12:32 CST
+
+This row preserves the existing dirty-diff evidence that was present before the 2026-05-02 rebase. It is historical only and is superseded by the 2026-05-02 SAFE rerun below.
+
+- Engineer: S8 T45 rerun engineer-codex.
+- Decision at that time: **UNSAFE** on `origin/main` `3dfd3e4 Merge pull request #32 from victorlovescoding/030-p3-tests-cleanup`.
+- Rebase/ancestor at that time: branch `026-tests-audit-report`; `git merge-base --is-ancestor origin/main HEAD` -> `ancestor_exit=0`.
+- Mock-boundary grep: `grep -rln "vi\.mock(['\"]@/\(repo\|service\|runtime\)/" tests/integration/ --include="*.test.*" | sort -u | wc -l` -> `18`.
+- Flaky grep: `grep -rln "toHaveBeenCalledTimes\|new Promise.*setTimeout" tests --include="*.test.*" | sort -u | wc -l` -> `0`.
+- Lint: `npm run lint -- --max-warnings 0` -> `lint_exit=0`; tail contained the normal React-version settings warning.
+- Baseline counts: block 18.5 -> `45`; block 18.6 -> `11`.
+- Reviewer: S8 T45 rerun reviewer-codex / 2026-05-01 21:17:07 CST; ratified UNSAFE with identical numbers (`18 / 0 / lint_exit=0 / baseline 45 / 11`).
+- Scope note from dirty diff: only `handoff.md` evidence/signature was changed; no code/config/script/husky/template/tasks change, no commit, no push.
+
+#### T45 rerun after latest rebase — 2026-05-02 14:54:33 CST
+
+**Decision: SAFE — Wave 3 baseline cleared on latest `origin/main`; T46-T53 may proceed.**
+
+- Engineer: S8 T45 engineer-codex.
+- Preflight before stash/rebase:
+  - `git status --short --branch` -> `## 026-tests-audit-report` + ` M specs/026-tests-audit-report/handoff.md`.
+  - `git log -1 --oneline` -> `4296d94 docs(026): T45 precondition gate UNSAFE — S8 halted, T46-T53 blocked`.
+  - `git diff --stat` -> `specs/026-tests-audit-report/handoff.md | 57 +++++++++++++++++++++++++++++++++`.
+- Dirty diff handling:
+  - `git stash push -m t45-handoff-pre-rebase -- specs/026-tests-audit-report/handoff.md` -> saved handoff-only dirty diff.
+  - `git fetch origin main` -> success.
+  - `git rebase origin/main` -> success; no conflict.
+  - `git stash pop` -> exit `1`, stash kept and no working-tree change; old dirty-diff evidence preserved in the 2026-05-01 history block above.
+- AC-T45.1 environment:
+  - `git rev-parse --abbrev-ref HEAD` -> `026-tests-audit-report`.
+  - `git rev-parse --short HEAD` -> `e5dc9cb`.
+  - `git log origin/main -1 --format='%h %s'` -> `8800725 test: remove integration provider mocks (#33)`.
+  - `git merge-base --is-ancestor origin/main HEAD; printf 'ancestor_exit:%s\n' "$?"` -> `ancestor_exit:0`.
+- AC-T45.2 mock-boundary grep:
+  - `grep -rln "vi\.mock(['\"]@/\(repo\|service\|runtime\)/" tests/integration/ --include="*.test.*" | sort -u | wc -l` -> `0`.
+- AC-T45.3 flaky grep:
+  - `grep -rln "toHaveBeenCalledTimes\|new Promise.*setTimeout" tests --include="*.test.*" | sort -u | wc -l` -> `0`.
+- AC-T45.4 lint:
+  - `npm run lint -- --max-warnings 0` tail + exit:
+    ```text
+    > dive-into-run@0.1.0 lint
+    > eslint src specs tests --max-warnings 0
+
+    Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+    lint_exit:0
+    ```
+- AC-T45.5 ESLint baseline counts (informational; not SAFE decision):
+  - `awk '/18\.5 flaky-pattern/,/18\.6 mock-boundary/' eslint.config.mjs | grep -cE "^\s*'tests/" || true` -> `45`.
+  - `awk '/18\.6 mock-boundary/,/19\. File size/' eslint.config.mjs | grep -cE "^\s*'tests/" || true` -> `11`.
+- AC-T45.6 decision:
+  - **SAFE**. Mock-boundary grep `0`, flaky grep `0`, and lint exit `0`; S8 precondition is met on latest `origin/main` `8800725`.
+  - T46-T53 may proceed; no S8 scope amendment is needed.
+- AC-T45.7 scope verification:
+  - Before handoff edit, `git diff --name-only` -> empty.
+  - This T45 update only writes `specs/026-tests-audit-report/handoff.md` §1 current note, §2 S8 risk note, and §3 T45 evidence.
+
+- Reviewer: S8 T45 reviewer-codex / 2026-05-02 15:00:07 CST — **PASS / RATIFY SAFE**.
+  - `git status --short --branch` -> `## 026-tests-audit-report` + ` M specs/026-tests-audit-report/handoff.md`.
+  - `git log -1 --oneline` -> `e5dc9cb docs(026): T45 precondition gate UNSAFE — S8 halted, T46-T53 blocked`.
+  - `git log origin/main -1 --format='%H %s'` -> `8800725db3ba19179072a64b7c8f0dc360225a46 test: remove integration provider mocks (#33)`.
+  - `git merge-base --is-ancestor origin/main HEAD; echo "ancestor_exit=$?"` -> `ancestor_exit=0`.
+  - `grep -rln "vi\.mock(['\"]@/\(repo\|service\|runtime\)/" tests/integration/ --include="*.test.*" | sort -u | wc -l` -> `0`.
+  - `grep -rln "toHaveBeenCalledTimes\|new Promise.*setTimeout" tests --include="*.test.*" | sort -u | wc -l` -> `0`.
+  - `npm run lint -- --max-warnings 0; echo "lint_exit=$?"` tail + exit:
+    ```text
+    > dive-into-run@0.1.0 lint
+    > eslint src specs tests --max-warnings 0
+    Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+    lint_exit=0
+    ```
+  - ESLint block 18.5 / 18.6 ignores count:
+    - `awk '/18\.5 flaky-pattern/,/18\.6 mock-boundary/' eslint.config.mjs | grep -cE "^\s*'tests/" || true` -> `45`.
+    - `awk '/18\.6 mock-boundary/,/19\. File size/' eslint.config.mjs | grep -cE "^\s*'tests/" || true` -> `11`.
+  - Scope check before reviewer edit: `git diff --name-only | grep -v "specs/026-tests-audit-report/" || echo "0 hits (expected)"` -> `0 hits (expected)`.
+  - Reviewer conclusion:
+    1. PASS / RATIFY SAFE: independent rerun matches the latest engineer SAFE row on the three decision gates (`mock=0`, `flaky=0`, `lint_exit=0`).
+    2. `origin/main` is an ancestor of current `HEAD`, and latest `origin/main` is `8800725db3ba19179072a64b7c8f0dc360225a46 test: remove integration provider mocks (#33)`.
+    3. The old 2026-04-30 and 2026-05-01 UNSAFE rows are historical only; the current 2026-05-02 SAFE row is the valid state.
+    4. Block 18.5 / 18.6 ignores still contain `45 / 11` entries, but this is informational for T46/T49 and does not invalidate T45 because source grep counts are both zero.
+    5. T46-T53 may continue; no S8 scope amendment is needed.
+    6. No scope drift observed: only `specs/026-tests-audit-report/handoff.md` is dirty; no code/config/script/husky/template/tasks files were modified by reviewer.
+
+### T47 Evidence Detail
+
+**Engineer**: S8 T47 engineer-codex / 2026-05-02 CST / **Status**: eng-done
+
+Files read: `specs/026-tests-audit-report/tasks.md` T47/T50/Subagent notes; latest T45 SAFE row + §2 S8 risks; `scripts/audit-mock-boundary.sh`; `scripts/audit-flaky-patterns.sh`; `.husky/pre-commit`. Files written: only this `handoff.md` T47 evidence section. Scripts and Husky remain read-only for T47.
+
+#### 1. 三檔現狀 dump + 行號
+
+`scripts/audit-mock-boundary.sh`:
+
+```text
+     1	#!/usr/bin/env bash
+     2	# S0 audit gate: warn (don't block) on tests that mock @/{lib,repo,service,runtime}/.
+     3	# Runtime provider mocks are allowed React boundaries and are excluded.
+     4	# Refs: project-health/2026-04-29-tests-audit-report.md L77-111 (P0-1), L607-612 (S4)
+     5	# exit 0 (warn-only). S8 trigger: change to exit 1 after Wave 3 mock cleanup.
+     6
+     7	set +e
+     8
+     9	PATTERN='vi\.mock\(['\''"]@/(lib|repo|service|runtime)/'
+    10	PROVIDERS_PATTERN='@/runtime/providers/'
+    11	SEARCH_PATH='tests'
+    12
+    13	if [ ! -d "$SEARCH_PATH" ]; then
+    14	  echo "AUDIT MOCK-BOUNDARY: 0 findings (skipped: no $SEARCH_PATH)"
+    15	  echo "(warn-only; exit 0)"
+    16	  exit 0
+    17	fi
+    18
+    19	findings=$(grep -rEn "$PATTERN" "$SEARCH_PATH" --include='*.test.*' 2>/dev/null | grep -v "$PROVIDERS_PATTERN" || true)
+    20	files=$(grep -rEln "$PATTERN" "$SEARCH_PATH" --include='*.test.*' 2>/dev/null | grep -v "$PROVIDERS_PATTERN" | sort -u || true)
+    21	if [ -z "$files" ]; then
+    22	  count=0
+    23	else
+    24	  count=$(printf '%s\n' "$files" | grep -c .)
+    25	fi
+    26
+    27	echo "AUDIT MOCK-BOUNDARY: $count findings"
+    28	if [ "$count" -gt 0 ] && [ -n "$findings" ]; then
+    29	  line_count=$(printf '%s\n' "$findings" | grep -c .)
+    30	  printf '%s\n' "$findings" | head -50
+    31	  if [ "$line_count" -gt 50 ]; then
+    32	    echo "... ($((line_count - 50)) more line(s); run \`grep -rEn \"$PATTERN\" $SEARCH_PATH --include='*.test.*'\` for full list)"
+    33	  fi
+    34	fi
+    35	echo "(warn-only; exit 0)"
+    36	exit 0
+```
+
+`scripts/audit-flaky-patterns.sh`:
+
+```text
+     1	#!/usr/bin/env bash
+     2	# Flaky-pattern prevention gate for executable test/spec files.
+     3	# Blocks exact async call-count assertions and fixed sleep waits without
+     4	# flagging comments that document the forbidden patterns.
+     5	set -euo pipefail
+     6
+     7	node <<'NODE'
+     8	const fs = require('fs');
+     9	const path = require('path');
+    10
+    11	const TEST_ROOT = 'tests';
+    12	const TEST_FILE_RE = /\.(test|spec)\.(js|jsx|mjs)$/;
+    13	const MAX_CONTEXT_CHARS = 1200;
+    14
+    15	const checks = [
+    16	  {
+    17	    id: 'toHaveBeenCalledTimes',
+    18	    pattern: /toHaveBeenCalledTimes\s*\(/g,
+    19	    message:
+    20	      'Use behavior/payload assertions instead of toHaveBeenCalledTimes(N); exact async call counts are flaky.',
+    21	  },
+    22	  {
+    23	    id: 'new Promise + setTimeout',
+    24	    pattern: new RegExp(
+    25	      String.raw`new\s+Promise\s*\((?:[\s\S]{0,${MAX_CONTEXT_CHARS}}?)setTimeout\s*\(`,
+    26	      'g',
+    27	    ),
+    28	    message:
+    29	      'Use waitFor/findBy/fake timers instead of a fixed new Promise(...setTimeout...) sleep.',
+    30	  },
+    31	  {
+    32	    id: 'setTimeout + Promise',
+    33	    pattern: new RegExp(
+    34	      String.raw`setTimeout\s*\((?:[^;]{0,${MAX_CONTEXT_CHARS}}?)\bPromise\b`,
+    35	      'g',
+    36	    ),
+    37	    message:
+    38	      'Use waitFor/findBy/fake timers instead of a fixed setTimeout(...Promise...) sleep.',
+    39	  },
+    40	  {
+    41	    id: 'page.waitForTimeout',
+    42	    pattern: /page\s*\.\s*waitForTimeout\s*\(/g,
+    43	    message: 'Use Playwright auto-waiting or web-first assertions instead of page.waitForTimeout().',
+    44	  },
+    45	];
+    46
+    47	function listFiles(dir) {
+    48	  if (!fs.existsSync(dir)) {
+    49	    return [];
+    50	  }
+    51
+    52	  const entries = fs.readdirSync(dir, { withFileTypes: true });
+    53	  const files = [];
+    54
+    55	  for (const entry of entries) {
+    56	    const fullPath = path.join(dir, entry.name);
+    57	    if (entry.isDirectory()) {
+    58	      files.push(...listFiles(fullPath));
+    59	    } else if (entry.isFile() && TEST_FILE_RE.test(fullPath)) {
+    60	      files.push(fullPath);
+    61	    }
+    62	  }
+    63
+    64	  return files;
+    65	}
+    66
+    67	function maskCommentsAndStrings(source) {
+    68	  const chars = source.split('');
+    69	  let state = 'code';
+    70	  let quote = '';
+    71	  let escaped = false;
+    72
+    73	  for (let i = 0; i < chars.length; i += 1) {
+    74	    const current = chars[i];
+    75	    const next = chars[i + 1];
+    76
+    77	    if (state === 'lineComment') {
+    78	      if (current === '\n') {
+    79	        state = 'code';
+    80	      } else {
+    81	        chars[i] = ' ';
+    82	      }
+    83	      continue;
+    84	    }
+    85
+    86	    if (state === 'blockComment') {
+    87	      if (current === '*' && next === '/') {
+    88	        chars[i] = ' ';
+    89	        chars[i + 1] = ' ';
+    90	        i += 1;
+    91	        state = 'code';
+    92	      } else if (current !== '\n') {
+    93	        chars[i] = ' ';
+    94	      }
+    95	      continue;
+    96	    }
+    97
+    98	    if (state === 'string') {
+    99	      if (current !== '\n') {
+   100	        chars[i] = ' ';
+   101	      }
+   102	      if (escaped) {
+   103	        escaped = false;
+   104	      } else if (current === '\\') {
+   105	        escaped = true;
+   106	      } else if (current === quote) {
+   107	        state = 'code';
+   108	        quote = '';
+   109	      }
+   110	      continue;
+   111	    }
+   112
+   113	    if (current === '/' && next === '/') {
+   114	      chars[i] = ' ';
+   115	      chars[i + 1] = ' ';
+   116	      i += 1;
+   117	      state = 'lineComment';
+   118	      continue;
+   119	    }
+   120
+   121	    if (current === '/' && next === '*') {
+   122	      chars[i] = ' ';
+   123	      chars[i + 1] = ' ';
+   124	      i += 1;
+   125	      state = 'blockComment';
+   126	      continue;
+   127	    }
+   128
+   129	    if (current === '\'' || current === '"' || current === '`') {
+   130	      chars[i] = ' ';
+   131	      state = 'string';
+   132	      quote = current;
+   133	      escaped = false;
+   134	    }
+   135	  }
+   136
+   137	  return chars.join('');
+   138	}
+   139
+   140	function lineForIndex(source, index) {
+   141	  let line = 1;
+   142	  for (let i = 0; i < index; i += 1) {
+   143	    if (source[i] === '\n') {
+   144	      line += 1;
+   145	    }
+   146	  }
+   147	  return line;
+   148	}
+   149
+   150	function sourceLine(source, line) {
+   151	  return source.split(/\r?\n/)[line - 1]?.trim() ?? '';
+   152	}
+   153
+   154	const findings = [];
+   155
+   156	for (const file of listFiles(TEST_ROOT).sort()) {
+   157	  const source = fs.readFileSync(file, 'utf8');
+   158	  const searchable = maskCommentsAndStrings(source);
+   159
+   160	  for (const check of checks) {
+   161	    check.pattern.lastIndex = 0;
+   162	    let match = check.pattern.exec(searchable);
+   163	    while (match !== null) {
+   164	      const line = lineForIndex(searchable, match.index);
+   165	      findings.push({
+   166	        file,
+   167	        line,
+   168	        id: check.id,
+   169	        message: check.message,
+   170	        source: sourceLine(source, line),
+   171	      });
+   172	      match = check.pattern.exec(searchable);
+   173	    }
+   174	  }
+   175	}
+   176
+   177	if (findings.length === 0) {
+   178	  console.log('AUDIT FLAKY-PATTERN: 0 findings');
+   179	  process.exit(0);
+   180	}
+   181
+   182	console.error(`AUDIT FLAKY-PATTERN: ${findings.length} finding(s)`);
+   183	for (const finding of findings) {
+   184	  console.error(`${finding.file}:${finding.line}: ${finding.id}`);
+   185	  console.error(`  ${finding.message}`);
+   186	  console.error(`  ${finding.source}`);
+   187	}
+   188	process.exit(1);
+   189	NODE
+```
+
+`.husky/pre-commit`:
+
+```text
+     1	npm run lint -- --max-warnings 0
+     2	npm run type-check
+     3	npm run depcruise
+     4	npm run spellcheck
+     5	npx vitest run --project=browser
+     6	# S4/S8 audit gates: mock-boundary remains warn-only; flaky patterns block.
+     7	# Refs: specs/026-tests-audit-report/tasks.md S4 / audit L607-612
+     8	bash scripts/audit-mock-boundary.sh || true
+     9	npm run audit:flaky-patterns
+```
+
+Current-state notes:
+
+- `scripts/audit-mock-boundary.sh` is still warn-only: L5 says S8 trigger later; L35 prints `(warn-only; exit 0)`; L36 always exits 0.
+- `scripts/audit-flaky-patterns.sh` is already blocking on findings: L177-L180 exit 0 only when `findings.length === 0`; L188 exits 1 when findings exist.
+- `scripts/audit-flaky-patterns.sh` empty-path behavior is already exit 0: `listFiles(TEST_ROOT)` returns `[]` if `tests` does not exist (L47-L50), so findings stay empty and L177-L180 exit 0.
+- `.husky/pre-commit` has only one remaining `|| true`: L8 mock-boundary. L9 already runs flaky audit without `|| true`.
+
+#### 2. `scripts/audit-mock-boundary.sh` target diff draft
+
+T50 should keep `PATTERN`, `PROVIDERS_PATTERN`, `SEARCH_PATH`, `set +e`, `head -50`, grep include, and grep command shape unchanged. The empty-path branch must continue to exit 0.
+
+```diff
+@@
+-# exit 0 (warn-only). S8 trigger: change to exit 1 after Wave 3 mock cleanup.
++# exit 1 (block) when findings > 0. S8 retired warn-only mode (Wave 3 cleanup complete).
+@@
+ if [ ! -d "$SEARCH_PATH" ]; then
+   echo "AUDIT MOCK-BOUNDARY: 0 findings (skipped: no $SEARCH_PATH)"
+-  echo "(warn-only; exit 0)"
++  echo "(skipped; exit 0)"
+   exit 0
+ fi
+@@
+-echo "(warn-only; exit 0)"
+-exit 0
++if [ "$count" -gt 0 ]; then
++  echo "(blocking; exit 1)"
++  exit 1
++fi
++
++echo "(no findings; exit 0)"
++exit 0
+```
+
+Before/after:
+
+- Before: any result exits 0; findings only print warnings.
+- After: no findings exits 0; findings > 0 exits 1.
+- Empty path remains exit 0 and must not block CI when `tests` is absent.
+
+#### 3. `scripts/audit-flaky-patterns.sh` target diff draft
+
+This file is already semantically blocking. T50 should not rewrite the Node scanner or patterns; only add a short S8-retired comment if a diff is needed for AC-T50.2. Empty path remains exit 0 through the existing `listFiles()` path.
+
+```diff
+@@
+ # Flaky-pattern prevention gate for executable test/spec files.
+ # Blocks exact async call-count assertions and fixed sleep waits without
+ # flagging comments that document the forbidden patterns.
++# S8 retired warn-only mode: no findings exit 0; findings > 0 exit 1.
+ set -euo pipefail
+```
+
+Before/after:
+
+- Before: `findings.length === 0` exits 0; findings > 0 exits 1.
+- After: same semantics; only the header documents the S8 blocking state.
+- Empty path remains exit 0 because missing `TEST_ROOT='tests'` returns an empty file list and therefore zero findings.
+
+#### 4. `.husky/pre-commit` target diff draft
+
+T50 should only remove the remaining audit-line `|| true` and update the audit comment. Do not change lint, type-check, depcruise, spellcheck, vitest, or the `npm run audit:flaky-patterns` command shape.
+
+```diff
+@@
+-# S4/S8 audit gates: mock-boundary remains warn-only; flaky patterns block.
+-# Refs: specs/026-tests-audit-report/tasks.md S4 / audit L607-612
+-bash scripts/audit-mock-boundary.sh || true
++# S8 audit gates: mock-boundary and flaky patterns block.
++# Refs: specs/026-tests-audit-report/tasks.md S8 / audit L607-612
++bash scripts/audit-mock-boundary.sh
+ npm run audit:flaky-patterns
+```
+
+Before/after:
+
+- Before: mock-boundary cannot block because L8 has `|| true`; flaky audit already blocks via L9.
+- After: both audit gates block pre-commit on non-zero exit.
+- There is no second `|| true` to remove in the current `.husky/pre-commit`; T50 must not invent one or rewrite L9.
+
+#### 5. Rollback path
+
+Emergency rollback if T53 commit is blocked by the newly blocking mock audit despite T45 SAFE:
+
+1. Restore only the mock audit hook fallback in `.husky/pre-commit`: `bash scripts/audit-mock-boundary.sh || true`.
+2. Commit an explicit S8 retract/rollback note; do not silently ship a weakened gate.
+3. Return to T45 and rerun the three SAFE checks against latest `origin/main`.
+4. Fix the real violation or stale baseline source.
+5. Remove `|| true` again and rerun T50/T52/T53 verification.
+
+This rollback path is emergency-only. Under the latest T45 SAFE row (`mock=0`, `flaky=0`, `lint_exit=0`), T53 should not need it.
+
+#### 6. Scope limits
+
+- Do not change `PATTERN` or `PROVIDERS_PATTERN` in `scripts/audit-mock-boundary.sh`.
+- Do not change `SEARCH_PATH='tests'` in `scripts/audit-mock-boundary.sh` or `TEST_ROOT='tests'` in `scripts/audit-flaky-patterns.sh`.
+- Do not change `head -50`, output list shape, grep include, line-count logic, or Node finding output format.
+- Do not touch other `.husky/pre-commit` hook lines: lint, type-check, depcruise, spellcheck, or vitest.
+- Do not change `set +e` in mock-boundary or `set -euo pipefail` in flaky-patterns.
+
+#### 7. T50 acceptance checklist
+
+1. `scripts/audit-mock-boundary.sh` exits 1 when `count > 0` and exits 0 when `count == 0`.
+2. `scripts/audit-mock-boundary.sh` empty-path branch still exits 0.
+3. `scripts/audit-flaky-patterns.sh` keeps current findings > 0 exit 1 behavior.
+4. `scripts/audit-flaky-patterns.sh` empty-path behavior still exits 0 through empty file list.
+5. `.husky/pre-commit` no longer has `|| true` on audit gate lines; current L9 remains `npm run audit:flaky-patterns`.
+6. `bash -n scripts/audit-mock-boundary.sh`, `bash -n scripts/audit-flaky-patterns.sh`, and `bash -n .husky/pre-commit` pass.
+7. `git diff -- scripts/audit-mock-boundary.sh scripts/audit-flaky-patterns.sh .husky/pre-commit` shows only the planned comment/exit/hook changes.
+8. `PATTERN`, `PROVIDERS_PATTERN`, `SEARCH_PATH`, `TEST_ROOT`, `head -50`, and non-audit husky lines have 0 unintended diff.
+9. Current working tree with T45 SAFE data makes both audit commands exit 0 before T53 commit.
+
+---
+
+**Reviewer**: S8 T47 reviewer-codex / 2026-05-02 CST / **Status**: rev-pass
+
+Scope: reviewer-only evidence appended to this T47 section. No script, Husky, implementation, commit, push, or PR changes.
+
+Reviewer checks:
+
+- Read `specs/026-tests-audit-report/tasks.md` T47 reviewer requirements and AC-T47.1-.6.
+- Read current `scripts/audit-mock-boundary.sh`, `scripts/audit-flaky-patterns.sh`, and `.husky/pre-commit` with `nl -ba`; engineer dump line numbers/content match current files.
+- Confirmed T47 engineer evidence has 7 sections: three-file dump, mock target diff, flaky target diff, Husky target diff, rollback path, scope limits, and T50 acceptance checklist.
+- Confirmed required content is present: mock audit findings > 0 changes to exit 1, empty-path branches preserve exit 0, flaky audit drift is documented, Husky `|| true` removal strategy is documented, rollback path exists, 5 scope limits are listed, and T50 checklist has 9 items.
+- Drift check is reasonable: current mock audit is still warn-only (`echo "(warn-only; exit 0)"` + final `exit 0`) and `.husky/pre-commit` still swallows it with `|| true`; current flaky audit already exits 1 on findings and Husky runs it through `npm run audit:flaky-patterns` without `|| true`.
+- Syntax checks passed: `bash -n scripts/audit-mock-boundary.sh`, `bash -n scripts/audit-flaky-patterns.sh`, and `bash -n .husky/pre-commit`.
+- Verification commands: `git diff scripts/audit-mock-boundary.sh scripts/audit-flaky-patterns.sh .husky/pre-commit` produced no output; `git diff --name-only | grep -v "specs/026-tests-audit-report/" || echo "0 hits (expected)"` -> `0 hits (expected)`; `git diff --check -- specs/026-tests-audit-report/handoff.md` produced no output.
+- Additional current-state probe: `bash scripts/audit-mock-boundary.sh` -> `AUDIT MOCK-BOUNDARY: 0 findings`, `(warn-only; exit 0)`, `mock_exit:0`; `bash scripts/audit-flaky-patterns.sh` -> `AUDIT FLAKY-PATTERN: 0 findings`, `flaky_exit:0`.
+
+Conclusion:
+
+1. PASS: AC-T47.1-.6 are satisfied against current disk state.
+2. PASS: engineer's dump is accurate; no stale line-number mismatch found in the three required files.
+3. PASS: the documented drift is not a defect in T47; it correctly narrows T50 to the minimal diff: make mock audit blocking and remove only the remaining mock audit `|| true`.
+4. PASS: T50 should not rewrite the flaky scanner or invent a second Husky `|| true` removal; flaky is already blocking through `npm run audit:flaky-patterns`.
+5. Scope drift: none observed beyond this reviewer evidence append in `handoff.md`.
+
+### T46 Evidence Detail
+
+**Engineer**: S8 T46 engineer-codex / 2026-05-02 CST / **Status**: eng-done
+
+Files read: `tasks.md` T46/T49/Subagent notes; latest T45 SAFE row + reviewer signature; §2 S8 risks; §3 T34/T35 baseline/structure reference; `eslint.config.mjs` block 18.5/18.6. Files written: only this `handoff.md` T46 evidence section. `eslint.config.mjs` remains read-only for T46.
+
+#### 1. block 18.5 現狀 dump + 行號
+
+Source: `eslint.config.mjs` L461-L528. Current ignore count = 45.
+
+```text
+461  // 18.5 flaky-pattern (audit P1-4 / P1-5 / R7 / spec 026 S6) — fires on tests/**
+462  //      NOTE: positioned AFTER block 18 (the strict-test block whose
+463  //      'no-restricted-syntax': 'off' would otherwise override this rule
+464  //      via flat-config last-write-wins). Attempt 3 / option (B') per T35.
+465  //      Baseline start: 45 (S4 grep frozen, S6-effective via T33 (C))
+466  //      退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)
+467  //      Per T33 (C): 只擋 toHaveBeenCalledTimes，setTimeout 維度交給 S4 grep
+468  //      gate 監督，S8 觸發型升級成 AST custom plugin。
+469  {
+470    files: ['tests/**/*.{js,jsx,mjs}'],
+471    ignores: [
+472      'tests/integration/comments/event-comment-notification.test.jsx',
+473      'tests/integration/dashboard/useDashboardTab.test.jsx',
+474      'tests/integration/events/EventActionButtons.test.jsx',
+475      'tests/integration/events/EventCardMenu.test.jsx',
+476      'tests/integration/events/EventDeleteConfirm.test.jsx',
+477      'tests/integration/events/EventEditForm.test.jsx',
+478      'tests/integration/events/ShareButton.test.jsx',
+479      'tests/integration/navbar/NavbarDesktop.test.jsx',
+480      'tests/integration/navbar/NavbarMobile.test.jsx',
+481      'tests/integration/notifications/NotificationPaginationStateful.test.jsx',
+482      'tests/integration/notifications/NotificationPanel.test.jsx',
+483      'tests/integration/posts/ComposeModal.test.jsx',
+484      'tests/integration/profile/BioEditor.test.jsx',
+485      'tests/integration/profile/ProfileClient.test.jsx',
+486      'tests/integration/strava/CallbackPage.test.jsx',
+487      'tests/integration/strava/RunCalendarDialog.test.jsx',
+488      'tests/integration/strava/RunsActivityList.test.jsx',
+489      'tests/integration/strava/RunsPage.test.jsx',
+490      'tests/integration/strava/useStravaSync.test.jsx',
+491      'tests/integration/toast/toast-container.test.jsx',
+492      'tests/integration/toast/toast-ui.test.jsx',
+493      'tests/integration/weather/township-drilldown.test.jsx',
+494      'tests/integration/weather/weather-page.test.jsx',
+495      'tests/unit/lib/create-post-validation.test.js',
+496      'tests/unit/lib/deletePost.test.js',
+497      'tests/unit/lib/firebase-comments.test.js',
+498      'tests/unit/lib/firebase-events-002-jsdoc.test.js',
+499      'tests/unit/lib/firebase-events-edit-delete.test.js',
+500      'tests/unit/lib/firebase-events.test.js',
+501      'tests/unit/lib/firebase-member.test.js',
+502      'tests/unit/lib/firebase-notifications-read.test.js',
+503      'tests/unit/lib/firebase-notifications-write.test.js',
+504      'tests/unit/lib/firebase-posts-comments-likes.test.js',
+505      'tests/unit/lib/firebase-posts-crud.test.js',
+506      'tests/unit/lib/firebase-profile.test.js',
+507      'tests/unit/lib/notify-event-new-comment.test.js',
+508      'tests/unit/lib/notify-post-comment-reply.test.js',
+509      'tests/unit/repo/firebase-profile-server.test.js',
+510      'tests/unit/repo/firebase-users.test.js',
+511      'tests/unit/repo/firebase-weather-favorites.test.js',
+512      'tests/unit/runtime/notification-use-cases.test.js',
+513      'tests/unit/runtime/post-use-cases.test.js',
+514      'tests/unit/runtime/profile-events-runtime.test.js',
+515      'tests/unit/runtime/sync-strava-activities.test.js',
+516      'tests/unit/runtime/useStravaActivities.test.jsx',
+517    ],
+518    rules: {
+519      'no-restricted-syntax': [
+520        'error',
+521        {
+522          selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
+523          message:
+524            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin.",
+525        },
+526      ],
+527    },
+528  },
+```
+
+#### 2. block 18.6 現狀 dump + 行號
+
+Source: `eslint.config.mjs` L530-L584. Current file is newer than the original S6 T35 text: comment says `Baseline start: 55`, while the actual ignore list currently has 11 literal paths. T49 must follow this latest file state, not the old `47` wording from early S8 task text.
+
+```text
+530  // 18.6 mock-boundary + flaky combined (audit P0-1 / R6 / P1-4 / P1-5 / R7 / spec 026 S6 / spec 027 S0) — integration override; replaces 18.5 for tests/integration/** so mock selectors are not nuked by rule-level overwrite.
+531  //      Baseline start: 55 = 47 (spec 026 baseline) + 8 (spec 027 S0 selector expansion).
+532  //      退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)
+533  //      Selectors: disallow vi.mock('@/lib|repo|service/...') and vi.mock('@/runtime/...') except providers.
+534  //      Flaky selector duplicated here because flat-config rule overrides at rule-name level.
+535  {
+536    files: ['tests/integration/**/*.{js,jsx,mjs}'],
+537    ignores: [
+538      'tests/integration/dashboard/useDashboardTab.test.jsx',
+539      'tests/integration/events/EventActionButtons.test.jsx',
+540      'tests/integration/events/EventCardMenu.test.jsx',
+541      'tests/integration/events/EventDeleteConfirm.test.jsx',
+542      'tests/integration/events/EventEditForm.test.jsx',
+543      'tests/integration/events/ShareButton.test.jsx',
+544      'tests/integration/posts/ComposeModal.test.jsx',
+545      'tests/integration/strava/RunsActivityList.test.jsx',
+546      'tests/integration/strava/useStravaSync.test.jsx',
+547      'tests/integration/toast/toast-container.test.jsx',
+548      'tests/integration/toast/toast-ui.test.jsx',
+549    ],
+550    rules: {
+551      'no-restricted-syntax': [
+552        'error',
+553        {
+554          selector:
+555            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/(lib|repo|service)\\//]",
+556          message:
+557            "Integration tests must not vi.mock('@/lib|repo|service/...') — exercise real repo code and mock only external boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S0 block 18.6 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+558        },
+559        {
+560          selector:
+561            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/runtime\\/(?!providers\\/)/]",
+562          message:
+563            "Integration tests must not vi.mock('@/runtime/...') except '@/runtime/providers/*' React provider boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S0 block 18.6 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+564        },
+565        {
+566          selector:
+567            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/(lib|repo|service)\\//]",
+568          message:
+569            "Integration tests must not vi.mock('@/lib|repo|service/...') — exercise real repo code and mock only external boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S0 block 18.6 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+570        },
+571        {
+572          selector:
+573            "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/runtime\\/(?!providers\\/)/]",
+574          message:
+575            "Integration tests must not vi.mock('@/runtime/...') except '@/runtime/providers/*' React provider boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S0 block 18.6 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+576        },
+577        {
+578          selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
+579          message:
+580            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin.",
+581        },
+582      ],
+583    },
+584  },
+```
+
+#### 3. block 18.5 目標 diff 草稿
+
+T49 should change only block 18.5 comment text, the `ignores` field, and the two baseline-related message sentences. Keep `files`, selector, severity, and block placement intact.
+
+```diff
+ // 18.5 flaky-pattern (audit P1-4 / P1-5 / R7 / spec 026 S6) — fires on tests/**
+ //      NOTE: positioned AFTER block 18 (the strict-test block whose
+ //      'no-restricted-syntax': 'off' would otherwise override this rule
+ //      via flat-config last-write-wins). Attempt 3 / option (B') per T35.
+-//      Baseline start: 45 (S4 grep frozen, S6-effective via T33 (C))
+-//      退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)
++//      Baseline retire: 45 → 0 (S8, commit <T53-hash>); rule applies to all matched files.
++//      Status: retired (S8, 2026-05-02)
+ //      Per T33 (C): 只擋 toHaveBeenCalledTimes，setTimeout 維度交給 S4 grep
+-//      gate 監督，S8 觸發型升級成 AST custom plugin。
++//      gate 監督；S8 upgraded that script gate to block pre-commit and CI.
+ {
+   files: ['tests/**/*.{js,jsx,mjs}'],
+-  ignores: [
+-    'tests/integration/comments/event-comment-notification.test.jsx',
+-    ...
+-    'tests/unit/runtime/useStravaActivities.test.jsx',
+-  ],
++  ignores: [],
+   rules: {
+     'no-restricted-syntax': [
+       'error',
+       {
+         selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
+         message:
+-          "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin.",
++          "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nFor 'new Promise + setTimeout' sleep patterns the ESLint rule does NOT lint — scripts/audit-flaky-patterns.sh covers it; S8 already upgraded the script to exit 1 so this pattern blocks pre-commit and CI now.",
+       },
+     ],
+   },
+ },
+```
+
+Before/after checklist for block 18.5:
+
+- `ignores: [45 paths]` → `ignores: []`; keep the field, do not delete it.
+- `Baseline start: 45...` → `Baseline retire: 45 → 0 (S8, commit <T53-hash>); rule applies to all matched files.`
+- `退場條件: Wave 3 cleanup...` → `Status: retired (S8, 2026-05-02)`.
+- Remove the sentence beginning `If this file is in the S6 flaky-pattern baseline ignores list`.
+- Replace `S8 trigger upgrades it to AST custom plugin` with script-gate wording: `S8 already upgraded the script to exit 1 so this pattern blocks pre-commit and CI now.`
+
+#### 4. block 18.6 目標 diff 草稿
+
+T49 must follow the current block 18.6 file state: comment baseline wording is 55, current ignore list count is 11. Do not resurrect the old 47-path design. Clear the actual 11 entries to `[]`, and retire the current `55` wording in the comment.
+
+```diff
+ // 18.6 mock-boundary + flaky combined (audit P0-1 / R6 / P1-4 / P1-5 / R7 / spec 026 S6 / spec 027 S0) — integration override; replaces 18.5 for tests/integration/** so mock selectors are not nuked by rule-level overwrite.
+-//      Baseline start: 55 = 47 (spec 026 baseline) + 8 (spec 027 S0 selector expansion).
+-//      退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)
++//      Baseline retire: 55 → 0 (S8, commit <T53-hash>); rule applies to all matched files.
++//      Status: retired (S8, 2026-05-02); current ignore array had 11 remaining paths.
+ //      Selectors: disallow vi.mock('@/lib|repo|service/...') and vi.mock('@/runtime/...') except providers.
+ //      Flaky selector duplicated here because flat-config rule overrides at rule-name level.
+ {
+   files: ['tests/integration/**/*.{js,jsx,mjs}'],
+-  ignores: [
+-    'tests/integration/dashboard/useDashboardTab.test.jsx',
+-    ...
+-    'tests/integration/toast/toast-ui.test.jsx',
+-  ],
++  ignores: [],
+   rules: {
+     'no-restricted-syntax': [
+       'error',
+       {
+         selector:
+           "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/(lib|repo|service)\\//]",
+         message:
+-          "Integration tests must not vi.mock('@/lib|repo|service/...') — exercise real repo code and mock only external boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S0 block 18.6 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
++          "Integration tests must not vi.mock('@/lib|repo|service/...') — exercise real repo code and mock only external boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nBaseline retired in S8; this rule now applies to all matched integration test files.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+       },
+       {
+         selector:
+           "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='Literal'][arguments.0.value=/^@\\/runtime\\/(?!providers\\/)/]",
+         message:
+-          "Integration tests must not vi.mock('@/runtime/...') except '@/runtime/providers/*' React provider boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S0 block 18.6 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
++          "Integration tests must not vi.mock('@/runtime/...') except '@/runtime/providers/*' React provider boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nBaseline retired in S8; this rule now applies to all matched integration test files.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+       },
+       {
+         selector:
+           "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/(lib|repo|service)\\//]",
+         message:
+-          "Integration tests must not vi.mock('@/lib|repo|service/...') — exercise real repo code and mock only external boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S0 block 18.6 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
++          "Integration tests must not vi.mock('@/lib|repo|service/...') — exercise real repo code and mock only external boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nBaseline retired in S8; this rule now applies to all matched integration test files.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+       },
+       {
+         selector:
+           "CallExpression[callee.object.name='vi'][callee.property.name='mock'][arguments.0.type='TemplateLiteral'][arguments.0.expressions.length=0][arguments.0.quasis.0.value.cooked=/^@\\/runtime\\/(?!providers\\/)/]",
+         message:
+-          "Integration tests must not vi.mock('@/runtime/...') except '@/runtime/providers/*' React provider boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nIf this file is in the S0 block 18.6 baseline ignores list, the rule won't fire; new violations outside baseline must be removed.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
++          "Integration tests must not vi.mock('@/runtime/...') except '@/runtime/providers/*' React provider boundaries.\nRefs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).\nBaseline retired in S8; this rule now applies to all matched integration test files.\nFor dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR.",
+       },
+       {
+         selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
+         message:
+-          "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin.",
++          "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nFor 'new Promise + setTimeout' sleep patterns the ESLint rule does NOT lint — scripts/audit-flaky-patterns.sh covers it; S8 already upgraded the script to exit 1 so this pattern blocks pre-commit and CI now.",
+       },
+     ],
+   },
+ },
+```
+
+Before/after checklist for block 18.6:
+
+- `ignores: [11 current paths]` → `ignores: []`; do not restore or hard-code old 47-path union.
+- `Baseline start: 55 = 47 (spec 026 baseline) + 8 (spec 027 S0 selector expansion).` → `Baseline retire: 55 → 0 (S8, commit <T53-hash>); rule applies to all matched files.`
+- `退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)` → `Status: retired (S8, 2026-05-02); current ignore array had 11 remaining paths.`
+- All four mock-boundary messages: replace `If this file is in the S0 block 18.6 baseline ignores list...` with `Baseline retired in S8; this rule now applies to all matched integration test files.`
+- Flaky duplicate message: same rewrite as block 18.5, removing `baseline ignores list` and `S8 trigger upgrades it to AST custom plugin`.
+
+#### 5. scope 限制 5 條
+
+1. Do not change any `selector` string in block 18.5 or 18.6.
+2. Do not remove block 18.5 or block 18.6; only clear `ignores` and update comments/messages.
+3. Do not change severity; both blocks must keep `'error'`.
+4. Do not modify block 18, block 18.7, block 19, or any other ESLint config block.
+5. Do not add an AST rule for setTimeout; T33 (C) still stands, and setTimeout remains covered by `scripts/audit-flaky-patterns.sh`.
+
+#### 6. T49 驗收 checklist
+
+1. `git diff eslint.config.mjs` shows changes only inside block 18.5 L461-L528 and block 18.6 L530-L584-equivalent ranges; no block 18 / 18.7 / 19 diff.
+2. In block 18.5, `ignores` is exactly `ignores: []`.
+3. In block 18.6, `ignores` is exactly `ignores: []`, clearing the current 11 literal paths and not reintroducing the old 47-path baseline.
+4. `grep -c "baseline ignores list" eslint.config.mjs` returns `0`.
+5. `grep -c "S8 trigger upgrades it to AST custom plugin" eslint.config.mjs` returns `0`.
+6. `grep -cE "Baseline retire|retired \\(S8" eslint.config.mjs` returns at least `2`.
+7. `npm run lint -- --max-warnings 0` exits `0`.
+8. `npm run lint -- --max-warnings 0 tests/integration/` exits `0`.
+9. `git diff --name-only | grep -v "eslint.config.mjs\\|specs/026-tests-audit-report/"` returns `0` hits.
+10. Scope limits above remain true: selectors unchanged, severity unchanged, blocks retained, no setTimeout AST selector added.
+
+**Reviewer**: S8 T46 reviewer-codex / 2026-05-02 15:09:19 CST / **Status**: rev-pass
+
+Reviewer evidence:
+
+- Read `eslint.config.mjs` block 18.5 via `nl -ba eslint.config.mjs | sed -n '461,584p'`: engineer dump L461-L528 matches current file content, including `Baseline start: 45`, 45 literal `ignores`, and the existing baseline/setTimeout message text.
+- Read block 18.6 in the same command: engineer dump L530-L584 matches current file content, including current drift `Baseline start: 55 = 47 + 8` and exactly 11 literal `ignores`; the plan correctly says not to resurrect old 47-path wording.
+- Checked T46 evidence structure: 6 sections are present and non-empty; they include `ignores -> []`, Baseline retire wording, baseline ignores list message rewrite, setTimeout/audit-script message rewrite, 5 scope limits, and a T49 checklist with 10 items.
+- Scope limits are explicit and sufficient: no selector changes, no block removal, severity remains `'error'`, no edits to block 18 / 18.7 / 19 / other blocks, and no new setTimeout AST rule.
+- Verification commands passed: `git diff eslint.config.mjs` produced no output; `git diff --name-only | grep -v "specs/026-tests-audit-report/" || echo "0 hits (expected)"` returned `0 hits (expected)`; `git diff --check -- specs/026-tests-audit-report/handoff.md` produced no output.
+- Conclusion: PASS. T46 is a read-only design spike with no ESLint config drift, no scope drift outside `specs/026-tests-audit-report/`, and the latest block 18.6 55/11 state is handled in the T49 instructions.
+
+### T48 Evidence Detail
+
+**Engineer**: S8 T48 engineer-codex / 2026-05-02 CST / **Status**: eng-done
+
+Files read: `specs/026-tests-audit-report/tasks.md` T48/T51/Subagent notes; latest T45 SAFE row; §3 T07 row; `.github/pull_request_template.md`; `project-health/2026-04-29-tests-audit-report.md` L641-657. Files written: only this `handoff.md` T48 evidence section. PR template remains read-only for T48.
+
+#### 1. PR template 現狀 dump + 行號
+
+Source: `nl -ba .github/pull_request_template.md` on current checkout.
+
+```text
+     1	<!--
+     2	  GitHub renders this template into the PR description editor for new PRs
+     3	  whose base branch contains this file. Author: fill in Summary / Test Plan
+     4	  / Related; tick the Audit Checklist boxes. If a checkbox does not apply,
+     5	  leave it unchecked AND add a one-line note in the PR description (do not
+     6	  delete the line — reviewers run grep over the rendered body).
+     7	-->
+     8
+     9	## Summary
+    10
+    11	<!--
+    12	  1-3 bullet points: the why, the what, and any cross-cutting impact.
+    13	  Example:
+    14	  - Add Firestore rules unit test for posts.likes collectionGroup (P0-2).
+    15	  - Adjust client read path so unauthenticated users hit deny branch first.
+    16	  - Affects tests/server/rules/, no production code change.
+    17	-->
+    18
+    19	## Test Plan
+    20
+    21	<!--
+    22	  Bulleted checklist of the verifications you ran locally + on CI.
+    23	  Replace the placeholders below with the exact commands and outputs.
+    24	-->
+    25
+    26	- [ ] `npm test` — browser project green (record file/test counts)
+    27	- [ ] `npm run test:server` — server project green (or N/A, with reason)
+    28	- [ ] Affected E2E specs green (`npx playwright test ...`) — or N/A
+    29	- [ ] `npm run lint` / `npm run type-check` / `npm run spellcheck` green
+    30
+    31	## Audit Checklist
+    32
+    33	<!--
+    34	  Five sub-sections derived from the 026 tests audit
+    35	  (project-health/2026-04-29-tests-audit-report.md). Tick every box that
+    36	  applies to this PR; unchecked boxes need a one-line justification in the
+    37	  PR description so reviewers can mechanically diff the audit posture.
+    38	-->
+    39
+    40	### Mock boundary
+    41
+    42	- [ ] Any new/changed test in this PR does **not** mock `@/lib/**`, `@/repo/**`, `@/service/**`, or `@/runtime/**` (except `@/runtime/providers/**`). These layers are inside the mock-boundary cleanup scope. [P0-1, audit L77-95; anti-pattern sample audit L83]
+    43	- [ ] Allowed boundary mocks are limited to repo-external or approved edge boundaries: `@/config/**`, `@/runtime/providers/**`, `@/contexts/**`, `@/data/**`, Firebase SDK/Admin SDK, third-party SDKs, browser APIs, and external fetch/network calls. [P0-1, audit L77-95; specs/027-tests-mock-cleanup]
+    44
+    45	### Flaky pattern
+    46
+    47	- [ ] Any new test in this PR does **not** introduce `toHaveBeenCalledTimes(N)` (unless N has explicit semantic meaning); prefer `toHaveBeenCalled()`, `toHaveBeenLastCalledWith(...)`, or `toHaveBeenNthCalledWith(n, ...)`. [P1-4, audit L294-305; anti-pattern sample audit L295 `useStravaActivities.test.jsx:268`]
+    48	- [ ] Any new test in this PR does **not** use `await new Promise(r => setTimeout(r, N))` paired with `act()` as a hard wait; use `waitFor(() => expect(...))` or `vi.useFakeTimers()` + `vi.runAllTimersAsync()` instead. [P1-5, audit L309-318; anti-pattern sample audit L311 `useStravaConnection.test.jsx:75-96`]
+    49
+    50	### Firestore rules
+    51
+    52	- [ ] If this PR modifies `firestore.rules`, a matching negative-path test was added under `tests/server/rules/` (unauthenticated read denied, cross-user update denied, forged `recipientUid` denied, etc.). [P0-2, audit L113-141; five critical paths at audit L125-129]
+    53	- [ ] If this PR touches any of the five critical paths — `posts/{postId}/likes/{uid}` collectionGroup (rules L80-84) / Strava tokens read-only (L113-123) / event seat consistency (L151-166) / events participants cascade (L180-183) / notification `recipientUid` (L248-254) — a corresponding rules unit test is linked in this PR description. [P0-2, audit L121-129]
+    54
+    55	### Coverage
+    56
+    57	- [ ] If this PR adds files under `src/ui/**`, `src/components/**`, or `src/app/**`, the vitest coverage `include` glob in `vitest.config.mjs` already covers that directory (avoid the `not displayed` blackhole described at audit L172-181: 55 + 17 + 15 files currently absent from the report). [P0-4, audit L168-181]
+    58	- [ ] If this PR changes `vitest.config.mjs` `thresholds`, a baseline report is attached showing per-directory threshold deltas (e.g. `src/ui/**` lines 30 -> 35), aligned with the per-directory `+5 per sprint` ramp at audit L188-204. [P0-4, audit L185-206]
+    59
+    60	### Baseline tracking
+    61
+    62	- [ ] If this PR removes a file from any ESLint `ignores` baseline (mock-boundary or flaky-pattern), the underlying violation is fixed AND the commit message body records the change in the form `Baseline change: block 18.6/18.7/18.8: N -> M (removed: file1, file2, ...)`. Example from audit L649: `Baseline change: block 18.6: N -> N-3 (removed: file1, file2, file3)`. [audit L641-652]
+    63	- [ ] If this PR adds entries to a baseline `ignores` list (discouraged; only when an immediate fix is impossible), the commit message body states the reason AND links a Wave 3 cleanup follow-up issue (so the baseline does not silently grow). [audit L641-654]
+    64
+    65	## Related
+    66
+    67	<!--
+    68	  Links: closing issues, spec directory, audit report, related PRs.
+    69	  Example:
+    70	  - Closes #NN
+    71	  - Spec: specs/0XX-feature-slug/
+    72	  - Audit: project-health/2026-04-29-tests-audit-report.md (Lxx-yy)
+    73	  - Depends on: #MM
+    74	-->
+```
+
+Notes: current template has 74 lines, 5 H3 sections, 14 `- [ ]` checkboxes, and 1 `Baseline change:` occurrence. T07 evidence already recorded the same baseline: 74 lines / 5 H3 / 14 checkboxes / 1 `Baseline change:` / UTF-8 no BOM / 0 trailing whitespace.
+
+#### 2. Baseline 相關 checkbox / 段落識別
+
+Audit basis: project-health L641-657 says S6 baseline tracking was needed while ESLint `ignores` baseline existed; S8 L660-664 explicitly says to remove the PR template baseline-change checkbox after baseline is cleared.
+
+| Template line | Match reason | Decision | Rationale |
+| --- | --- | --- | --- |
+| L34 | Says `Five sub-sections`; after removing Baseline tracking, this becomes stale. | **Rewrite** to `Four sub-sections derived from the 026 tests audit`. | Keep the explanatory comment accurate while preserving the Audit Checklist wrapper. |
+| L58 | Coverage checkbox says `a baseline report is attached` for `vitest.config.mjs` threshold deltas. | **Preserve**. | This is R1/P0-4 coverage baseline tracking for quality-score / threshold ramp evidence; it is not the S8 ESLint `ignores` baseline tracking that must be retired. |
+| L60 | `### Baseline tracking` H3. | **Remove**. | S8 post-baseline template should expose only the 4 live audit categories; keeping an empty H3 would be misleading. |
+| L62 | Checkbox mentions ESLint `ignores` baseline, mock-boundary/flaky baseline, and contains 2 `Baseline change:` examples. | **Remove**. | This is the exact audit L651-652 PR-template baseline-change checkbox; S8 retires it after baseline is cleared. |
+| L63 | Checkbox allows adding entries to baseline `ignores` list. | **Remove**. | After T49 clears baseline ignores and T50 makes audit scripts blocking, future baseline growth should not be normalized in the PR template. |
+
+`Baseline change:` existence: yes, exactly 1 line in current PR template (`grep -c "Baseline change:" .github/pull_request_template.md` -> `1`), on L62. There is no separate standalone `Baseline change:` paragraph outside L62; removing L62 makes the template grep count `0`.
+
+No other checkbox line mentions ESLint/mock-boundary/flaky baseline tracking targeted by S8; L58 coverage baseline is explicitly preserved.
+
+#### 3. 目標 diff 草稿 before/after
+
+T51 should apply this template diff only, with no changes to scripts, ESLint, Husky, tasks, or this T48 design. T51 must delete only the S8 ESLint `ignores` baseline tracking section (L60-L63) and must not delete or rewrite L58 coverage baseline.
+
+```diff
+@@
+-  Five sub-sections derived from the 026 tests audit
++  Four sub-sections derived from the 026 tests audit
+@@
+-### Baseline tracking
+-
+-- [ ] If this PR removes a file from any ESLint `ignores` baseline (mock-boundary or flaky-pattern), the underlying violation is fixed AND the commit message body records the change in the form `Baseline change: block 18.6/18.7/18.8: N -> M (removed: file1, file2, ...)`. Example from audit L649: `Baseline change: block 18.6: N -> N-3 (removed: file1, file2, file3)`. [audit L641-652]
+-- [ ] If this PR adds entries to a baseline `ignores` list (discouraged; only when an immediate fix is impossible), the commit message body states the reason AND links a Wave 3 cleanup follow-up issue (so the baseline does not silently grow). [audit L641-654]
+-
+ ## Related
+```
+
+Expected after state:
+- H3 count: `grep -c "^### " .github/pull_request_template.md` goes `5 -> 4`.
+- Checkbox count: `grep -c "^- \[ \]" .github/pull_request_template.md` goes `14 -> 12`.
+- Baseline marker: `grep -c "Baseline change:" .github/pull_request_template.md` goes `1 -> 0`.
+- Markdown structure remains `## Summary` / `## Test Plan` / `## Audit Checklist` / four H3 audit categories / `## Related`, with a blank line before `## Related`.
+
+#### 4. 保留條目清單
+
+Common sections to preserve byte-for-byte except the L34 count wording above:
+- Summary: L9-L17 retained.
+- Test Plan: L19-L29 retained, including checkbox L26-L29.
+- Related: L65-L74 retained; after T51 deletion it shifts upward but content stays the same.
+
+Audit checkbox categories to preserve:
+- Mock boundary: H3 L40; checkbox L42 and L43 retained.
+- Flaky pattern: H3 L45; checkbox L47 and L48 retained.
+- Firestore rules: H3 L50; checkbox L52 and L53 retained.
+- Coverage: H3 L55; checkbox L57 and L58 retained.
+
+Test Plan checkbox lines retained:
+- L26 `npm test` browser project.
+- L27 `npm run test:server`.
+- L28 affected E2E specs.
+- L29 lint / type-check / spellcheck.
+
+Removed lines are only baseline section L60-L63, plus the one-word count rewrite at L34. Do not remove or rewrite the mock / flaky / firestore / coverage audit content.
+
+#### 5. T51 驗收 checklist
+
+1. `git diff --stat .github/pull_request_template.md` shows only `.github/pull_request_template.md` changed for T51, with net line count reduced by 3 lines (delete 4 lines, rewrite 1 line).
+2. `grep -c "Baseline change:" .github/pull_request_template.md` returns `0`.
+3. `grep -c "^- \[ \]" .github/pull_request_template.md` returns `12` exactly (`14 -> 12`; not a large drop).
+4. `grep -c "^### " .github/pull_request_template.md` returns `4`, and the remaining H3 list is exactly Mock boundary / Flaky pattern / Firestore rules / Coverage.
+5. Four audit categories each still have 2 checkbox lines: mock L42-L43, flaky L47-L48, firestore L52-L53, coverage L57-L58 in the pre-edit line map.
+6. Summary / Test Plan / Related sections remain present and readable; Test Plan still has 4 checkbox lines.
+7. `git diff .github/pull_request_template.md` contains no edits to audit IDs or commands outside the L34 count rewrite and L60-L63 deletion.
+8. `npm run spellcheck`, `file .github/pull_request_template.md`, and `wc -l .github/pull_request_template.md` satisfy T51 AC-T51.5 / AC-T51.6.
+
+**Reviewer**: S8 T48 reviewer-codex / 2026-05-02 15:10:25 CST / **Status**: rev-reject
+
+Reject reason: T48 baseline-related line inventory is incomplete. Independent grep found current template L58 also contains the word `baseline` (`a baseline report is attached...`). Engineer section 2 says "No other checkbox line mentions `baseline`, `Baseline change`, `ignores`, `mock-boundary baseline`, or `flaky baseline`", so AC-T48.3 is not strictly true even though the preserve list later keeps Coverage L57-L58.
+
+Reviewer verification:
+- Read `.github/pull_request_template.md` full file via `nl -ba`: engineer dump is otherwise accurate (74 lines, H3s at L40/L45/L50/L55/L60, checkboxes L26-L29/L42-L43/L47-L48/L52-L53/L57-L58/L62-L63).
+- `wc -l` -> `74`; `grep -c "^### "` -> `5`; `grep -c "^- \[ \]"` -> `14`; `grep -c "Baseline change:"` -> `1`, matching T07 row evidence and the T48 dump.
+- `grep -nE 'baseline|Baseline change|ignores|mock-boundary baseline|flaky baseline' .github/pull_request_template.md` -> hits L58, L62, L63. T48 only classified L60/L62/L63 plus L34, so the keyword inventory misses L58.
+- Read §3 T07 row: S2 baseline was 74 lines / 5 H3 / 14 checkbox / 1 `Baseline change:` / UTF-8 no BOM; T48 proposed future after-state 4 H3 / 12 checkbox / 0 `Baseline change:` does not contradict T07 as an S8 retirement plan.
+- Preserve/remove overlap check: remove list L60-L63; preserve list includes Summary L9-L17, Test Plan L19-L29, Related L65-L74, and audit categories L40-L58. No direct line overlap, and L58 is preserved, but the baseline-related inventory statement must be corrected before PASS.
+- Minimal-diff judgment: deleting `### Baseline tracking` + L62/L63 and rewriting `Five` -> `Four` is the right small implementation shape for T51 after the inventory correction; Summary/Test Plan/Related and the four live audit categories remain planned as retained.
+
+Required command checks:
+
+```text
+$ git diff .github/pull_request_template.md
+<empty>
+
+$ git diff --name-only | grep -v "specs/026-tests-audit-report/" || echo "0 hits (expected)"
+0 hits (expected)
+
+$ git diff --check -- specs/026-tests-audit-report/handoff.md
+<empty>
+```
+
+Conclusion:
+1. REJECT for AC-T48.3 only: the keyword inventory is not complete because current template L58 contains `baseline` and is omitted from the section 2 table / "No other checkbox" statement.
+2. The intended T51 implementation direction is otherwise reasonable and minimal: L34 `Five` -> `Four`, delete Baseline tracking L60-L63, preserve the four live audit categories and common sections.
+3. No PR template or implementation file was changed by reviewer; reviewer change is limited to this T48 evidence note.
+4. T51 should not proceed from this evidence until T48 engineer updates the inventory to explicitly classify L58 as **preserve** and narrows the "No other checkbox" statement to ESLint baseline-tracking lines only.
+
+**Engineer retry 2**: S8 T48 engineer-codex / 2026-05-02 CST / **Status**: eng-done
+
+Retry note: reviewer rejected AC-T48.3 because the baseline-related inventory omitted current PR template L58 (`a baseline report is attached...`) while the engineer text claimed no other checkbox line mentioned `baseline`. This retry fixes the inventory by adding L58 as **Preserve**, narrows the “No other checkbox” statement to the ESLint/mock-boundary/flaky baseline tracking targeted by S8, and keeps the T51 plan scoped to deleting only L60-L63 plus the L34 Five→Four wording change. T51 must remove the S8 ESLint baseline tracking section and must not remove L58 coverage baseline.
+
+**Reviewer retry 2**: S8 T48 reviewer-codex / 2026-05-02 CST / **Status**: rev-pass
+
+Verification:
+- Read `.github/pull_request_template.md` full file with `nl -ba`; current L58 coverage baseline checkbox still exists and remains under `### Coverage`, so it is R1/P0-4 coverage-threshold evidence, not the S8 ESLint/mock/flaky baseline-tracking section.
+- Read T48 Evidence Detail retry 2: L58 is explicitly listed as **Preserve**; the previous broad "No other checkbox" wording is narrowed to ESLint/mock-boundary/flaky baseline tracking targeted by S8; T51 remains scoped to deleting L60-L63 Baseline tracking plus L34 `Five` -> `Four`; T51 is explicitly forbidden from deleting or rewriting L58.
+- Read §3 T07 row and T07 Evidence Detail: T07 recorded the original template baseline as 74 lines / 5 H3 / 14 checkboxes / 1 `Baseline change:` / UTF-8 no BOM / 0 trailing whitespace. T48 retry 2 does not contradict that historical S2 evidence; it documents the S8 retirement plan for only the ESLint `ignores` baseline section.
+- Required checks passed: `git diff .github/pull_request_template.md` empty; `git diff --name-only | grep -v "specs/026-tests-audit-report/" || echo "0 hits (expected)"` -> `0 hits (expected)`; `git diff --check -- specs/026-tests-audit-report/handoff.md` empty.
+
+Conclusion:
+1. PASS: retry 2 fixes the previous reject by inventorying L58 as **Preserve** instead of treating all baseline wording as removable.
+2. PASS: T51 plan is now correctly narrow: remove only S8 ESLint `ignores` baseline tracking L60-L63 and update the section count wording from Five to Four.
+3. PASS: L58 coverage baseline remains protected and must not be deleted by T51.
+4. Scope drift: none observed outside `specs/026-tests-audit-report/handoff.md`; PR template diff is empty.
+
+### T49 Evidence Detail
+
+**Engineer**: S8 T49 engineer-codex / 2026-05-02 CST / **Status**: eng-done
+
+Files read: `specs/026-tests-audit-report/tasks.md` T49 acceptance; latest T45 SAFE + T46 Evidence Detail and reviewer PASS; `eslint.config.mjs` block 18.5 / 18.6. Files written by this task: `eslint.config.mjs` and this T49 evidence section only. Existing dirty diffs in `.husky/pre-commit`, `scripts/audit-mock-boundary.sh`, `.github/pull_request_template.md`, and earlier `handoff.md` sections are treated as parallel T50/T51/T47/T48 work and were not edited by T49.
+
+#### AC-T49.1 git diff eslint.config.mjs
+
+`git diff -- eslint.config.mjs` shows only block 18.5 and block 18.6 changed:
+
+```diff
+@@ -462,91 +462,33 @@ export default [
+-  //      Baseline start: 45 (S4 grep frozen, S6-effective via T33 (C))
+-  //      退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)
+-  //      Per T33 (C): 只擋 toHaveBeenCalledTimes，setTimeout 維度交給 S4 grep
+-  //      gate 監督，S8 觸發型升級成 AST custom plugin。
++  //      Baseline retire: 45 -> 0 (S8); rule applies to all matched files.
++  //      Status: retired (S8, 2026-05-02); ignores cleared.
++  //      Per T33 (C): 只擋 toHaveBeenCalledTimes；setTimeout 維度由
++  //      scripts/audit-flaky-patterns.sh exit 1 blocking pre-commit/CI。
+   {
+     files: ['tests/**/*.{js,jsx,mjs}'],
+-    ignores: [
+-      ...45 literal baseline paths...
+-    ],
++    ignores: [],
+@@
+-            "...If this file is in the S6 flaky-pattern baseline ignores list...S8 trigger upgrades it to AST custom plugin.",
++            "...Baseline retired in S8; this rule now applies to all matched test files.\nFor 'new Promise + setTimeout' sleep patterns, scripts/audit-flaky-patterns.sh now exits 1 and blocks pre-commit/CI.",
+@@
+-  //      Baseline start: 55 = 47 (spec 026 baseline) + 8 (spec 027 S0 selector expansion).
+-  //      退場條件: Wave 3 cleanup → S8 trigger (ignores → empty)
++  //      Baseline retire: 55 -> 0 (S8); actual remaining ignores retired: 11 -> 0.
++  //      Status: retired (S8, 2026-05-02); rule applies to all matched files.
+@@
+-    ignores: [
+-      ...11 literal baseline paths...
+-    ],
++    ignores: [],
+@@
+-            "...If this file is in the S0 block 18.6 baseline ignores list...",
++            "...Baseline retired in S8; this rule now applies to all matched integration test files...",
+@@
+-            "...If this file is in the S6 flaky-pattern baseline ignores list...S8 trigger upgrades it to AST custom plugin.",
++            "...Baseline retired in S8; this rule now applies to all matched integration test files.\nFor 'new Promise + setTimeout' sleep patterns, scripts/audit-flaky-patterns.sh now exits 1 and blocks pre-commit/CI.",
+```
+
+Scope check from the real diff: no selectors changed, severity remains `'error'`, block 18 / 18.7 / 19 are untouched.
+
+#### AC-T49.2 ignores [] counts
+
+```text
+$ awk '/18\.5 flaky-pattern/,/18\.6 mock-boundary/ { if ($0 ~ /ignores: \[\]/) c++ } END { print c+0 }' eslint.config.mjs
+1
+
+$ awk '/18\.6 mock-boundary/,/18\.7 mock-boundary/ { if ($0 ~ /ignores: \[\]/) c++ } END { print c+0 }' eslint.config.mjs
+1
+```
+
+#### AC-T49.3 / AC-T49.4 scoped message grep
+
+T49 ownership explicitly excludes block 18.7 / 18.8, so the mechanically correct check is scoped to block 18.5 / 18.6:
+
+```text
+$ awk '/18\.5 flaky-pattern/,/18\.7 mock-boundary/ { if ($0 ~ /baseline ignores list/) c++ } END { print c+0 }' eslint.config.mjs
+0
+
+$ awk '/18\.5 flaky-pattern/,/18\.7 mock-boundary/ { if ($0 ~ /AST custom plugin/) c++ } END { print c+0 }' eslint.config.mjs
+0
+```
+
+Whole-file grep pitfall for reviewer:
+
+```text
+$ grep -c "baseline ignores list" eslint.config.mjs
+10
+
+$ grep -c "AST custom plugin" eslint.config.mjs
+2
+```
+
+Those remaining hits are in block 18.7 / 18.8 (`eslint.config.mjs` L542, L548, L554, L560, L565, L585, L591, L597, L603, L608 after T49) and are outside T49's allowed ownership.
+
+#### AC-T49.5 Baseline retire / retired markers
+
+```text
+$ grep -cE "Baseline retire|retired \(S8" eslint.config.mjs
+10
+```
+
+#### AC-T49.6 lint
+
+```text
+$ npm run lint -- --max-warnings 0 > /tmp/t49-lint.txt 2>&1; rc=$?; tail -5 /tmp/t49-lint.txt; printf 'exit_code=%s\n' "$rc"; exit "$rc"
+
+> dive-into-run@0.1.0 lint
+> eslint src specs tests --max-warnings 0
+
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+exit_code=0
+```
+
+Wrapper pitfall: first wrapper used zsh variable name `status` and failed with `zsh:1: read-only variable: status`; rerun used `rc` and passed. The plain lint command was also run before the wrapper rerun and exited 0.
+
+#### AC-T49.7 wc -l eslint.config.mjs
+
+```text
+$ wc -l eslint.config.mjs
+     622 eslint.config.mjs
+```
+
+Line count dropped because block 18.5 removed 45 literal ignore paths and block 18.6 removed 11 literal ignore paths.
+
+#### AC-T49.8 scope checks
+
+```text
+$ git diff --name-only
+.github/pull_request_template.md
+.husky/pre-commit
+eslint.config.mjs
+scripts/audit-mock-boundary.sh
+specs/026-tests-audit-report/handoff.md
+
+$ git diff --check -- eslint.config.mjs specs/026-tests-audit-report/handoff.md
+<empty>
+```
+
+T49-owned file diff is `eslint.config.mjs`; this section is the required `handoff.md` evidence. The other changed files are concurrent S8 ownership work and were not touched by T49.
+
+**Reviewer**: S8 T49 reviewer-codex / 2026-05-02 15:26:59 CST / **Status**: rev-pass
+
+Reviewer evidence:
+
+- Read required context: `tasks.md` T49 reviewer requirements and AC-T49.1-.6; `handoff.md` T46 rev-pass design; T49 engineer evidence; current `eslint.config.mjs` block 18.5 / 18.6.
+- AC-T49.1 rerun: `git diff --unified=0 -- eslint.config.mjs` shows changes only in block 18.5 and block 18.6: baseline comment/message rewrites plus `ignores` arrays collapsed from 45 paths and 11 paths to `[]`. No selector, files glob, severity, block 18, block 18.7, block 18.8, or block 19 edit appears in the diff.
+- AC-T49.2 rerun: `awk '/18\.5 flaky-pattern/,/18\.6 mock-boundary/' eslint.config.mjs | grep -cE "^\s*ignores:\s*\[\]\s*,?$"` -> `1`; `awk '/18\.6 mock-boundary/,/18\.7 mock-boundary/' eslint.config.mjs | grep -cE "^\s*ignores:\s*\[\]\s*,?$"` -> `1`.
+- AC-T49.3 / AC-T49.4 full-file commands from `tasks.md` are not scope-correct after spec 027 added block 18.7 / 18.8: `grep -c "If this file is in the S6.*baseline ignores list" eslint.config.mjs` -> `2`; `grep -c "S8 trigger upgrades it to AST custom plugin" eslint.config.mjs` -> `2`. `rg -n "baseline ignores list|AST custom plugin" eslint.config.mjs` confirms all remaining hits are in block 18.7 / 18.8 (`L542`, `L548`, `L554`, `L560`, `L565`, `L585`, `L591`, `L597`, `L603`, `L608`), outside T49 ownership per T46.
+- Scoped T49 check passes: `awk '/18\.5 flaky-pattern/,/18\.7 mock-boundary/ { if ($0 ~ /baseline ignores list/) c++ } END { print c+0 }' eslint.config.mjs` -> `0`; `awk '/18\.5 flaky-pattern/,/18\.7 mock-boundary/ { if ($0 ~ /AST custom plugin/) c++ } END { print c+0 }' eslint.config.mjs` -> `0`.
+- AC-T49.5 rerun: `grep -cE "Baseline retire|retired \(S8" eslint.config.mjs` -> `10`, which is >= 2 and includes the T49 block 18.5 / 18.6 retire markers.
+- AC-T49.6 rerun: `npm run lint -- --max-warnings 0` exit `0`; output includes only the existing React version settings warning from `eslint-plugin-react`.
+- Read block 18.5 / 18.6 directly: current lines 461-527 show `ignores: []` in both blocks, `'no-restricted-syntax': ['error', ...]` preserved, all existing selectors preserved, and messages now say `Baseline retired in S8` / script gate `now exits 1 and blocks pre-commit/CI` instead of S6 baseline ignores or AST custom plugin.
+- Scope / whitespace: `git diff --name-only` currently lists `.github/pull_request_template.md`, `.husky/pre-commit`, `eslint.config.mjs`, `scripts/audit-mock-boundary.sh`, and `specs/026-tests-audit-report/handoff.md`; per user instruction, the non-`eslint.config.mjs` dirty implementation files are parallel T50/T51 ownership, not T49 scope drift. `git diff --check -- eslint.config.mjs specs/026-tests-audit-report/handoff.md` produced no output.
+
+Conclusion:
+
+1. PASS: T49 implementation satisfies the T46 design for block 18.5 / 18.6 baseline retire.
+2. The original full-file AC-T49.3 / .4 grep fails only because block 18.7 / 18.8 still contain their own spec 027 baseline messaging; accepting the scoped 18.5 / 18.6 result is scope-correct and explicitly documented here.
+3. No rule semantics changed beyond the intended retire: selectors, severity, files globs, block order, block 18, block 18.7, block 18.8, and block 19 are unchanged by the `eslint.config.mjs` diff.
+4. Full lint passed with `--max-warnings 0`, so clearing the 18.5 / 18.6 ignore arrays did not expose remaining T49-target violations.
+5. Scope drift: none attributed to T49. The worktree has parallel T50/T51 diffs, but T49 ownership is limited to `eslint.config.mjs` plus this reviewer evidence in `handoff.md`.
+
+### T51 Evidence Detail
+
+**Engineer**: S8 T51 engineer-codex / 2026-05-02 CST / **Status**: eng-done
+
+Files read: `specs/026-tests-audit-report/tasks.md` T51, `handoff.md` §3 T48 retry 2 rev-pass design, `.github/pull_request_template.md`. Files written: `.github/pull_request_template.md` and this T51 evidence section only.
+
+Implementation:
+- `.github/pull_request_template.md` comment changed `Five sub-sections` -> `Four sub-sections`.
+- Removed only `### Baseline tracking` and its two ESLint `ignores` / `Baseline change:` checkbox lines.
+- Preserved L58 coverage baseline report checkbox under `### Coverage`; that is coverage threshold evidence, not S8 ESLint/mock/flaky baseline tracking.
+
+#### AC-T51.1 git diff --stat + full diff
+
+```text
+$ git diff --stat .github/pull_request_template.md
+ .github/pull_request_template.md | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+```
+
+```diff
+$ git diff -- .github/pull_request_template.md
+diff --git a/.github/pull_request_template.md b/.github/pull_request_template.md
+index 1a0dc01..366db27 100644
+--- a/.github/pull_request_template.md
++++ b/.github/pull_request_template.md
+@@ -31,7 +31,7 @@
+ ## Audit Checklist
+
+ <!--
+-  Five sub-sections derived from the 026 tests audit
++  Four sub-sections derived from the 026 tests audit
+   (project-health/2026-04-29-tests-audit-report.md). Tick every box that
+   applies to this PR; unchecked boxes need a one-line justification in the
+   PR description so reviewers can mechanically diff the audit posture.
+@@ -57,11 +57,6 @@
+ - [ ] If this PR adds files under `src/ui/**`, `src/components/**`, or `src/app/**`, the vitest coverage `include` glob in `vitest.config.mjs` already covers that directory (avoid the `not displayed` blackhole described at audit L172-181: 55 + 17 + 15 files currently absent from the report). [P0-4, audit L168-181]
+ - [ ] If this PR changes `vitest.config.mjs` `thresholds`, a baseline report is attached showing per-directory threshold deltas (e.g. `src/ui/**` lines 30 -> 35), aligned with the per-directory `+5 per sprint` ramp at audit L188-204. [P0-4, audit L185-206]
+
+-### Baseline tracking
+-
+-- [ ] If this PR removes a file from any ESLint `ignores` baseline (mock-boundary or flaky-pattern), the underlying violation is fixed AND the commit message body records the change in the form `Baseline change: block 18.6/18.7/18.8: N -> M (removed: file1, file2, ...)`. Example from audit L649: `Baseline change: block 18.6: N -> N-3 (removed: file1, file2, file3)`. [audit L641-652]
+-- [ ] If this PR adds entries to a baseline `ignores` list (discouraged; only when an immediate fix is impossible), the commit message body states the reason AND links a Wave 3 cleanup follow-up issue (so the baseline does not silently grow). [audit L641-654]
+-
+ ## Related
+
+ <!--
+```
+
+#### AC-T51.2 / AC-T51.3 counts
+
+```text
+$ grep -c "Baseline change:" .github/pull_request_template.md
+0
+
+$ grep -c "^- \[ \]" .github/pull_request_template.md
+12
+```
+
+Result: `Baseline change:` went `1 -> 0`; checkbox count went `14 -> 12`.
+
+#### AC-T51.4 audit category checkbox preservation
+
+```text
+$ grep -n "^### " .github/pull_request_template.md
+40:### Mock boundary
+45:### Flaky pattern
+50:### Firestore rules
+55:### Coverage
+
+$ awk '/^### Mock boundary/{section="Mock boundary"; next} /^### Flaky pattern/{section="Flaky pattern"; next} /^### Firestore rules/{section="Firestore rules"; next} /^### Coverage/{section="Coverage"; next} /^## Related/{section=""} section && /^- \[ \]/{counts[section]++} END{for (i in counts) print i ":" counts[i]}' .github/pull_request_template.md
+Mock boundary:2
+Coverage:2
+Flaky pattern:2
+Firestore rules:2
+```
+
+Result: the four live audit categories remain exactly `Mock boundary`, `Flaky pattern`, `Firestore rules`, `Coverage`; each still has 2 checkbox lines. Summary / Test Plan / Related sections remain present; Test Plan retains its 4 checkbox lines.
+
+#### AC-T51.5 spellcheck + file
+
+```text
+$ npm run spellcheck
+exit=0
+tail:
+412/415 tests/unit/service/profile-service.test.js 3.71ms
+413/415 tests/unit/service/strava-helpers.test.js 2.31ms
+414/415 tests/unit/service/weather-forecast-service.test.js 5.89ms
+415/415 tests/unit/service/weather-helpers.test.js 4.24ms
+CSpell: Files checked: 415, Issues found: 0 in 0 files.
+
+$ file .github/pull_request_template.md
+.github/pull_request_template.md: exported SGML document text, Unicode text, UTF-8 text, with very long lines (363)
+```
+
+#### AC-T51.6 line count
+
+```text
+$ wc -l .github/pull_request_template.md
+      69 .github/pull_request_template.md
+```
+
+#### Additional checks requested by user
+
+```text
+$ git diff --check -- .github/pull_request_template.md specs/026-tests-audit-report/handoff.md
+<empty>
+
+$ git diff --name-only
+.github/pull_request_template.md
+.husky/pre-commit
+eslint.config.mjs
+scripts/audit-mock-boundary.sh
+specs/026-tests-audit-report/handoff.md
+```
+
+Scope note: outside my ownership, `eslint.config.mjs` is present in the worktree, consistent with T49 ownership; `.husky/pre-commit` and `scripts/audit-mock-boundary.sh` are present, consistent with T50 ownership. I did not read/modify/revert/format those files.
+
+**Reviewer**: S8 T51 reviewer-codex / 2026-05-02 CST / **Status**: rev-pass
+
+Fresh verification:
+
+```text
+$ grep -c "Baseline change:" .github/pull_request_template.md
+0
+
+$ grep -c "^- \[ \]" .github/pull_request_template.md
+12
+
+$ grep -n "^## \|^### \|baseline\|Baseline change\|^- \[ \]" .github/pull_request_template.md
+9:## Summary
+19:## Test Plan
+26:- [ ] `npm test` — browser project green (record file/test counts)
+27:- [ ] `npm run test:server` — server project green (or N/A, with reason)
+28:- [ ] Affected E2E specs green (`npx playwright test ...`) — or N/A
+29:- [ ] `npm run lint` / `npm run type-check` / `npm run spellcheck` green
+31:## Audit Checklist
+40:### Mock boundary
+42:- [ ] Any new/changed test in this PR does **not** mock `@/lib/**`, `@/repo/**`, `@/service/**`, or `@/runtime/**` (except `@/runtime/providers/**`). These layers are inside the mock-boundary cleanup scope. [P0-1, audit L77-95; anti-pattern sample audit L83]
+43:- [ ] Allowed boundary mocks are limited to repo-external or approved edge boundaries: `@/config/**`, `@/runtime/providers/**`, `@/contexts/**`, `@/data/**`, Firebase SDK/Admin SDK, third-party SDKs, browser APIs, and external fetch/network calls. [P0-1, audit L77-95; specs/027-tests-mock-cleanup]
+45:### Flaky pattern
+47:- [ ] Any new test in this PR does **not** introduce `toHaveBeenCalledTimes(N)` (unless N has explicit semantic meaning); prefer `toHaveBeenCalled()`, `toHaveBeenLastCalledWith(...)`, or `toHaveBeenNthCalledWith(n, ...)`. [P1-4, audit L294-305; anti-pattern sample audit L295 `useStravaActivities.test.jsx:268`]
+48:- [ ] Any new test in this PR does **not** use `await new Promise(r => setTimeout(r, N))` paired with `act()` as a hard wait; use `waitFor(() => expect(...))` or `vi.useFakeTimers()` + `vi.runAllTimersAsync()` instead. [P1-5, audit L309-318; anti-pattern sample audit L311 `useStravaConnection.test.jsx:75-96`]
+50:### Firestore rules
+52:- [ ] If this PR modifies `firestore.rules`, a matching negative-path test was added under `tests/server/rules/` (unauthenticated read denied, cross-user update denied, forged `recipientUid` denied, etc.). [P0-2, audit L113-141; five critical paths at audit L125-129]
+53:- [ ] If this PR touches any of the five critical paths — `posts/{postId}/likes/{uid}` collectionGroup (rules L80-84) / Strava tokens read-only (L113-123) / event seat consistency (L151-166) / events participants cascade (L180-183) / notification `recipientUid` (L248-254) — a corresponding rules unit test is linked in this PR description. [P0-2, audit L121-129]
+55:### Coverage
+57:- [ ] If this PR adds files under `src/ui/**`, `src/components/**`, or `src/app/**`, the vitest coverage `include` glob in `vitest.config.mjs` already covers that directory (avoid the `not displayed` blackhole described at audit L172-181: 55 + 17 + 15 files currently absent from the report). [P0-4, audit L168-181]
+58:- [ ] If this PR changes `vitest.config.mjs` `thresholds`, a baseline report is attached showing per-directory threshold deltas (e.g. `src/ui/**` lines 30 -> 35), aligned with the per-directory `+5 per sprint` ramp at audit L188-204. [P0-4, audit L185-206]
+60:## Related
+```
+
+Section-count verification:
+
+```text
+$ awk '/^### Mock boundary/{s="Mock boundary"; next} /^### Flaky pattern/{s="Flaky pattern"; next} /^### Firestore rules/{s="Firestore rules"; next} /^### Coverage/{s="Coverage"; next} /^## Related/{s=""} s && /^- \[ \]/{counts[s]++} END{print "Mock boundary:" counts["Mock boundary"]+0; print "Flaky pattern:" counts["Flaky pattern"]+0; print "Firestore rules:" counts["Firestore rules"]+0; print "Coverage:" counts["Coverage"]+0}' .github/pull_request_template.md
+Mock boundary:2
+Flaky pattern:2
+Firestore rules:2
+Coverage:2
+
+$ wc -l .github/pull_request_template.md
+      69 .github/pull_request_template.md
+```
+
+AC-T51.5 / formatting:
+
+```text
+$ npm run spellcheck
+CSpell: Files checked: 415, Issues found: 0 in 0 files.
+
+$ file .github/pull_request_template.md
+.github/pull_request_template.md: exported SGML document text, Unicode text, UTF-8 text, with very long lines (363)
+
+$ xxd -l 3 .github/pull_request_template.md
+00000000: 3c21 2d                                  <!-
+
+$ git diff --check -- .github/pull_request_template.md specs/026-tests-audit-report/handoff.md
+<empty>
+```
+
+Scope:
+
+```text
+$ git diff --name-only
+.github/pull_request_template.md
+.husky/pre-commit
+eslint.config.mjs
+scripts/audit-mock-boundary.sh
+specs/026-tests-audit-report/handoff.md
+```
+
+Conclusion:
+1. PASS: AC-T51.2 / .3 / .5 all pass on fresh rerun (`Baseline change:` = 0, checkbox count = 12, spellcheck exit 0).
+2. PASS: full-file read confirms `Summary`, `Test Plan`, and `Related` remain, `Four sub-sections` replaced stale `Five`, and the S8 baseline tracking H3 is removed.
+3. PASS: the four live audit categories remain exactly `Mock boundary`, `Flaky pattern`, `Firestore rules`, and `Coverage`; each has 2 checkbox lines.
+4. PASS: L58 coverage baseline checkbox is preserved under `### Coverage`; only the ESLint/mock/flaky baseline-tracking section was removed.
+5. Scope drift: no T51 drift found. T51-owned files are `.github/pull_request_template.md` plus this handoff evidence; dirty `.husky/pre-commit`, `eslint.config.mjs`, and `scripts/audit-mock-boundary.sh` are T50/T49 scope and were not read/modified/reverted by this reviewer.
+
+### T50 Evidence Detail
+
+**Engineer**: S8 T50 engineer-codex / 2026-05-02 CST / **Status**: eng-done
+
+Files read: `specs/026-tests-audit-report/tasks.md` T50; `handoff.md` T47 design + reviewer pass; `scripts/audit-mock-boundary.sh`; `scripts/audit-flaky-patterns.sh`; `.husky/pre-commit`. Files written: `scripts/audit-mock-boundary.sh`, `.husky/pre-commit`, and this `handoff.md` T50 evidence only. `scripts/audit-flaky-patterns.sh` was read-only because T47 reviewer confirmed it already blocks on findings and Husky already runs it without `|| true`.
+
+#### Scope / drift note
+
+- T50 scoped implementation changed only mock-boundary script + Husky hook.
+- `scripts/audit-flaky-patterns.sh` has 0 diff by design drift: it already has `findings.length === 0 -> process.exit(0)` and findings > 0 -> `process.exit(1)`. Rewriting the Node scanner would add risk without changing behavior.
+- Full worktree still contains parallel/previous dirty files from other owners (`eslint.config.mjs`, `.github/pull_request_template.md`, and existing `handoff.md` history). T50 evidence below uses scoped commands for T50-owned files.
+
+#### AC-T50.1 scoped diff stat
+
+```text
+$ git diff --stat -- scripts/audit-mock-boundary.sh scripts/audit-flaky-patterns.sh .husky/pre-commit
+ .husky/pre-commit              |  6 +++---
+ scripts/audit-mock-boundary.sh | 12 ++++++++----
+ 2 files changed, 11 insertions(+), 7 deletions(-)
+```
+
+Expected drift: flaky script 0 diff because it was already blocking.
+
+#### AC-T50.2 retired/block grep
+
+```text
+$ grep -cE "retired|S8.*complete|exit 1.*block" scripts/audit-mock-boundary.sh
+1
+
+$ grep -cE "Blocks|process\.exit\(1\)|findings > 0" scripts/audit-flaky-patterns.sh
+2
+```
+
+#### AC-T50.3 audit fallback grep
+
+```text
+$ grep -c "audit-.*\.sh || true" .husky/pre-commit || true
+0
+```
+
+Only the mock-boundary audit fallback was removed; `npm run audit:flaky-patterns` was already blocking and remains unchanged.
+
+#### AC-T50.4 shell syntax
+
+```text
+$ bash -n scripts/audit-mock-boundary.sh && echo OK1
+OK1
+
+$ bash -n scripts/audit-flaky-patterns.sh && echo OK2
+OK2
+
+$ bash -n .husky/pre-commit && echo OK3
+OK3
+```
+
+#### AC-T50.5 current-tree audit exits
+
+```text
+$ bash scripts/audit-mock-boundary.sh; printf 'exit=%s\n' $?
+AUDIT MOCK-BOUNDARY: 0 findings
+(no findings; exit 0)
+exit=0
+
+$ bash scripts/audit-flaky-patterns.sh; printf 'exit=%s\n' $?
+AUDIT FLAKY-PATTERN: 0 findings
+exit=0
+```
+
+#### AC-T50.7 pattern/search/head/other-hook diff checks
+
+```text
+$ git diff scripts/audit-mock-boundary.sh | grep -E "^[-+]PATTERN=|^[-+]SEARCH_PATH=|^[-+].*head -50" | wc -l
+       0
+
+$ git diff scripts/audit-flaky-patterns.sh | grep -E "^[-+]PATTERN=|^[-+]SEARCH_PATH=|^[-+].*head -50" | wc -l
+       0
+
+$ git diff .husky/pre-commit | grep -E "^[-+]npm run (lint|type-check|depcruise|spellcheck)|^[-+]npx vitest" | wc -l
+       0
+```
+
+`PATTERN`, `PROVIDERS_PATTERN`, `SEARCH_PATH`, `head -50`, mock `set +e`, flaky scanner logic, and non-audit Husky lines were preserved.
+
+#### Diff check
+
+```text
+$ git diff --check -- scripts/audit-mock-boundary.sh scripts/audit-flaky-patterns.sh .husky/pre-commit specs/026-tests-audit-report/handoff.md
+<empty>
+```
+
+#### Implementation summary
+
+- `scripts/audit-mock-boundary.sh`: empty-path branch still exits 0; `count == 0` exits 0; `count > 0` prints `(blocking; exit 1)` and exits 1.
+- `.husky/pre-commit`: removed only `bash scripts/audit-mock-boundary.sh || true`; kept lint, type-check, depcruise, spellcheck, browser Vitest, and `npm run audit:flaky-patterns` unchanged.
+- No commit, push, PR, or edits to `eslint.config.mjs`, `.github/pull_request_template.md`, `tasks.md`, or `tests/**`.
+
+**Reviewer**: S8 T50 reviewer-codex / 2026-05-02 15:26:29 CST / **Status**: rev-pass
+
+Scope: reviewer-only evidence appended to this T50 section. No edits to `scripts/**`, `.husky/**`, tests, config, commit, push, or PR.
+
+Reviewer verification:
+
+```text
+$ bash -n scripts/audit-mock-boundary.sh && echo OK1
+OK1
+
+$ bash -n scripts/audit-flaky-patterns.sh && echo OK2
+OK2
+
+$ bash -n .husky/pre-commit && echo OK3
+OK3
+
+$ bash scripts/audit-mock-boundary.sh; printf 'exit=%s\n' $?
+AUDIT MOCK-BOUNDARY: 0 findings
+(no findings; exit 0)
+exit=0
+
+$ bash scripts/audit-flaky-patterns.sh; printf 'exit=%s\n' $?
+AUDIT FLAKY-PATTERN: 0 findings
+exit=0
+```
+
+Temp-dir behavior probes:
+
+```text
+$ <temp repo with tests/integration/mock-boundary.test.jsx containing vi.mock('@/repo/firebase-posts')>
+AUDIT MOCK-BOUNDARY: 1 findings
+tests/integration/mock-boundary.test.jsx:2:vi.mock('@/repo/firebase-posts');
+(blocking; exit 1)
+exit=1
+
+$ <temp repo with no tests directory>
+AUDIT MOCK-BOUNDARY: 0 findings (skipped: no tests)
+(no findings; exit 0)
+exit=0
+
+$ <temp repo with tests/unit/flaky.test.js containing toHaveBeenCalledTimes(1)>
+AUDIT FLAKY-PATTERN: 1 finding(s)
+tests/unit/flaky.test.js:2: toHaveBeenCalledTimes
+  Use behavior/payload assertions instead of toHaveBeenCalledTimes(N); exact async call counts are flaky.
+  expect(fn).toHaveBeenCalledTimes(1);
+exit=1
+
+$ <temp repo with no tests directory>
+AUDIT FLAKY-PATTERN: 0 findings
+exit=0
+```
+
+Diff/scope checks:
+
+```text
+$ git diff --stat -- scripts/audit-mock-boundary.sh scripts/audit-flaky-patterns.sh .husky/pre-commit
+ .husky/pre-commit              |  6 +++---
+ scripts/audit-mock-boundary.sh | 12 ++++++++----
+ 2 files changed, 11 insertions(+), 7 deletions(-)
+
+$ grep -c "audit-.*\.sh || true" .husky/pre-commit || true
+0
+
+$ git diff -- scripts/audit-flaky-patterns.sh
+<empty>
+
+$ git diff scripts/audit-mock-boundary.sh | grep -E "^[-+]PATTERN=|^[-+]PROVIDERS_PATTERN=|^[-+]SEARCH_PATH=|^[-+].*head -50|^[-+]set \+e" | wc -l
+       0
+
+$ git diff scripts/audit-flaky-patterns.sh | grep -E "^[-+]PATTERN=|^[-+]SEARCH_PATH=|^[-+].*head -50|^[-+]set -euo pipefail" | wc -l
+       0
+
+$ git diff .husky/pre-commit | grep -E "^[-+]npm run (lint|type-check|depcruise|spellcheck)|^[-+]npx vitest|^[-+]npm run audit:flaky-patterns" | wc -l
+       0
+
+$ git diff --check -- scripts/audit-mock-boundary.sh scripts/audit-flaky-patterns.sh .husky/pre-commit specs/026-tests-audit-report/handoff.md
+<empty>
+```
+
+Conclusion:
+
+1. PASS: AC-T50.4 / AC-T50.5 reruns pass; both audit scripts are syntactically valid and exit 0 on the current clean working tree.
+2. PASS: mock-boundary now blocks when findings > 0, exits 0 when count = 0, and preserves the empty-path exit 0 branch.
+3. PASS: `.husky/pre-commit` removed only the mock audit `|| true`; `npm run audit:flaky-patterns` remains unchanged and already blocking per T47 drift.
+4. PASS: `scripts/audit-flaky-patterns.sh` has 0 diff by design; temp probe confirms it still exits 1 on findings and 0 on empty path.
+5. PASS: `PATTERN`, `PROVIDERS_PATTERN`, `SEARCH_PATH`, `set +e`, `head -50`, flaky scanner shape, and non-audit Husky lines have 0 unintended diff.
+6. Scope drift: expected parallel dirty files still exist (`eslint.config.mjs`, `.github/pull_request_template.md`, handoff history), but T50-owned implementation scope is only `scripts/audit-mock-boundary.sh` + `.husky/pre-commit`; reviewer changed only this `handoff.md` T50 evidence.
+
+### T52 Evidence Detail
+
+**Engineer**: S8 T52 engineer-codex / 2026-05-02 CST / **Status**: eng-done
+
+Files read: `specs/026-tests-audit-report/tasks.md` T52 acceptance; `handoff.md` T49/T50/T51 reviewer PASS evidence; T49-T51 changed files (`eslint.config.mjs`, `scripts/audit-mock-boundary.sh`, `scripts/audit-flaky-patterns.sh`, `.husky/pre-commit`, `.github/pull_request_template.md`). Files temporarily written and cleaned in-task: `tests/integration/_s8-smoke-mock.test.jsx`, `tests/unit/_s8-smoke-flaky.test.js`. Persistent file written by T52: this `handoff.md` evidence only.
+
+Smoke temp contents:
+
+```javascript
+// tests/integration/_s8-smoke-mock.test.jsx
+import { vi } from 'vitest';
+
+vi.mock('@/repo/firebase-users');
+```
+
+```javascript
+// tests/unit/_s8-smoke-flaky.test.js
+import { describe, expect, it, vi } from 'vitest';
+
+describe('s8 smoke', () => {
+  it('flaky', () => {
+    const spy = vi.fn();
+    spy();
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+#### AC-T52.1 positive mock ESLint
+
+```text
+$ npx eslint tests/integration/_s8-smoke-mock.test.jsx; echo "exit=$?"
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+
+/Users/chentzuyu/Desktop/dive-into-run-026-tests-audit-report/tests/integration/_s8-smoke-mock.test.jsx
+  3:1  error  Integration tests must not vi.mock('@/lib|repo|service/...') — exercise real repo code and mock only external boundaries.
+Refs: project-health/2026-04-29-tests-audit-report.md P0-1 (L77-111) / R6 (L552-556).
+Baseline retired in S8; this rule now applies to all matched integration test files.
+For dynamic / aliased paths the rule cannot reach you — reviewer must catch in PR  no-restricted-syntax
+
+✖ 1 problem (1 error, 0 warnings)
+
+exit=1
+```
+
+Result: PASS. Exit 1 and message includes `Integration tests must not vi.mock`.
+
+#### AC-T52.2 positive flaky ESLint
+
+```text
+$ npx eslint tests/unit/_s8-smoke-flaky.test.js; echo "exit=$?"
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+
+/Users/chentzuyu/Desktop/dive-into-run-026-tests-audit-report/tests/unit/_s8-smoke-flaky.test.js
+  7:5  error  Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.
+Refs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).
+Baseline retired in S8; this rule now applies to all matched test files.
+For 'new Promise + setTimeout' sleep patterns, scripts/audit-flaky-patterns.sh now exits 1 and blocks pre-commit/CI  no-restricted-syntax
+
+✖ 1 problem (1 error, 0 warnings)
+
+exit=1
+```
+
+Result: PASS. Exit 1 and message includes `toHaveBeenCalledTimes`.
+
+#### AC-T52.3 / AC-T52.4 positive audit scripts
+
+```text
+$ bash scripts/audit-mock-boundary.sh; echo "exit=$?"
+AUDIT MOCK-BOUNDARY: 1 findings
+tests/integration/_s8-smoke-mock.test.jsx:3:vi.mock('@/repo/firebase-users');
+(blocking; exit 1)
+exit=1
+
+$ bash scripts/audit-flaky-patterns.sh; echo "exit=$?"
+AUDIT FLAKY-PATTERN: 1 finding(s)
+tests/unit/_s8-smoke-flaky.test.js:7: toHaveBeenCalledTimes
+  Use behavior/payload assertions instead of toHaveBeenCalledTimes(N); exact async call counts are flaky.
+  expect(spy).toHaveBeenCalledTimes(1);
+exit=1
+```
+
+Result: PASS. Mock audit reports 1 finding and exits 1; flaky audit reports 1 finding and exits 1.
+
+#### Cleanup
+
+Deleted:
+
+```text
+tests/integration/_s8-smoke-mock.test.jsx
+tests/unit/_s8-smoke-flaky.test.js
+```
+
+#### AC-T52.5 / AC-T52.6 negative post-cleanup
+
+```text
+$ npm run lint -- --max-warnings 0; echo "exit=$?"
+> dive-into-run@0.1.0 lint
+> eslint src specs tests --max-warnings 0
+
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+exit=0
+
+$ bash scripts/audit-mock-boundary.sh; echo "exit=$?"
+AUDIT MOCK-BOUNDARY: 0 findings
+(no findings; exit 0)
+exit=0
+
+$ bash scripts/audit-flaky-patterns.sh; echo "exit=$?"
+AUDIT FLAKY-PATTERN: 0 findings
+exit=0
+```
+
+Result: PASS. Negative ESLint and both audit scripts exit 0 after cleanup.
+
+#### AC-T52.7 / AC-T52.8 cleanup and scope
+
+```text
+$ git status --short | grep "_s8-smoke" | wc -l
+       0
+
+$ git diff --name-only | grep -E "_s8-smoke|coverage/|node_modules" || echo "0 smoke/coverage/node hits (expected)"
+0 smoke/coverage/node hits (expected)
+
+$ git diff --name-only
+.github/pull_request_template.md
+.husky/pre-commit
+eslint.config.mjs
+scripts/audit-mock-boundary.sh
+specs/026-tests-audit-report/handoff.md
+```
+
+Result: PASS. No `_s8-smoke` residual; no `coverage/` or `node_modules` diff; changed files are only T49-T51 implementation files plus `handoff.md`.
+
+Baseline-decay observation: T45 had already verified mock-boundary grep `0`, flaky grep `0`, and lint `0`; T52 adds positive proof that the retired-baseline gates now fail on new violations and stay green after cleanup.
+
+**Reviewer**: S8 T52 reviewer-codex / 2026-05-02 15:35:36 CST / **Status**: rev-pass
+
+Reviewer scope: independently reran the core smoke cycle with reviewer-owned temp files. No edits to `eslint.config.mjs`, `scripts/**`, `.husky/**`, `.github/pull_request_template.md`, `tasks.md`, commit, push, or PR. Persistent reviewer write is limited to this T52 evidence block.
+
+Fresh verification:
+
+```text
+$ npx eslint tests/integration/_s8-smoke-mock.test.jsx; echo "exit=$?"
+/Users/chentzuyu/Desktop/dive-into-run-026-tests-audit-report/tests/integration/_s8-smoke-mock.test.jsx
+  3:1  error  Integration tests must not vi.mock('@/lib|repo|service/...') — exercise real repo code and mock only external boundaries.
+...
+exit=1
+
+$ bash scripts/audit-mock-boundary.sh; echo "exit=$?"
+AUDIT MOCK-BOUNDARY: 1 findings
+tests/integration/_s8-smoke-mock.test.jsx:3:vi.mock('@/repo/firebase-users');
+(blocking; exit 1)
+exit=1
+
+$ npm run lint -- --max-warnings 0; echo "exit=$?"
+> eslint src specs tests --max-warnings 0
+Warning: React version not specified in eslint-plugin-react settings. See https://github.com/jsx-eslint/eslint-plugin-react#configuration .
+exit=0
+
+$ npx eslint tests/unit/_s8-smoke-flaky.test.js; echo "exit=$?"
+/Users/chentzuyu/Desktop/dive-into-run-026-tests-audit-report/tests/unit/_s8-smoke-flaky.test.js
+  7:5  error  Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.
+...
+exit=1
+
+$ bash scripts/audit-flaky-patterns.sh; echo "exit=$?"
+AUDIT FLAKY-PATTERN: 1 finding(s)
+tests/unit/_s8-smoke-flaky.test.js:7: toHaveBeenCalledTimes
+  expect(spy).toHaveBeenCalledTimes(1);
+exit=1
+
+$ bash scripts/audit-flaky-patterns.sh; echo "exit=$?"
+AUDIT FLAKY-PATTERN: 0 findings
+exit=0
+
+$ bash scripts/audit-mock-boundary.sh; echo "exit=$?"
+AUDIT MOCK-BOUNDARY: 0 findings
+(no findings; exit 0)
+exit=0
+
+$ git status --short | grep "_s8-smoke" | wc -l
+       0
+
+$ git diff --name-only | grep -E "_s8-smoke|coverage/|node_modules" || echo "0 smoke/coverage/node hits"
+0 smoke/coverage/node hits
+```
+
+Conclusion:
+
+1. PASS: reviewer-created mock-boundary temp file is blocked by ESLint with `Integration tests must not vi.mock` and by `scripts/audit-mock-boundary.sh` with `1 findings` / exit 1.
+2. PASS: after deleting the mock temp, full lint exits 0 with `--max-warnings 0`, so the positive smoke did not leave the repo in a failing state.
+3. PASS: reviewer-created flaky temp file is blocked by ESLint on `toHaveBeenCalledTimes` and by `scripts/audit-flaky-patterns.sh` with 1 finding / exit 1.
+4. PASS: after deleting the flaky temp, both audit scripts exit 0 and `_s8-smoke` residual count is 0.
+5. PASS: no smoke, coverage, or node_modules drift found; scope remains T49-T51 implementation files plus this handoff evidence.
+6. T53 可繼續：T52 core smoke evidence is independently reproduced and cleanup is clean.
+
+### T53 Evidence Detail
+
+**Engineer**: S8 T53 engineer-codex / 2026-05-02 CST / **Status**: eng-done
+
+Files read: `tasks.md` T53 acceptance + Subagent 通用須知; `handoff.md` latest T45 SAFE / T46-T52 reviewer PASS; `feedback_no_coauthor.md`. Files written: `specs/026-tests-audit-report/handoff.md` and `specs/026-tests-audit-report/tasks.md`. Files staged for commit: exactly 6 tracked changed files; `scripts/audit-flaky-patterns.sh` has 0 diff because T47/T50 confirmed it was already blocking on findings.
+
+#### AC-T53.1 prerequisite check
+
+- Latest T45 current state is SAFE on 2026-05-02: `mock=0`, `flaky=0`, `lint_exit=0`, latest `origin/main` `8800725`; older UNSAFE rows are historical only.
+- T46 reviewer: rev-pass.
+- T47 reviewer: rev-pass; drift noted that flaky audit already blocks and Husky already invokes it without `|| true`.
+- T48 retry 2 reviewer: rev-pass; L58 coverage baseline checkbox preserved.
+- T49 reviewer: rev-pass; baseline retire scoped to ESLint block 18.5 / 18.6, while block 18.7 / 18.8 remain outside S8 ownership.
+- T50 reviewer: rev-pass; actual implementation changed only `scripts/audit-mock-boundary.sh` + `.husky/pre-commit`; `scripts/audit-flaky-patterns.sh` 0 diff by design.
+- T51 reviewer: rev-pass.
+- T52 reviewer: rev-pass; positive/negative smoke pass and `_s8-smoke` residual count is 0.
+
+#### AC-T53.2 final gate (fresh, commit pre-stage)
+
+```text
+$ npm run lint -- --max-warnings 0
+exit=0
+tail: Warning: React version not specified in eslint-plugin-react settings.
+
+$ npm run type-check
+exit=0
+
+$ npm run depcruise
+exit=0
+summary: no dependency violations found (1445 modules, 3615 dependencies cruised)
+note: existing Node MODULE_TYPELESS_PACKAGE_JSON warning for specs/021-layered-dependency-architecture/test-bucket-policy.js
+
+$ npm run spellcheck
+exit=0
+summary: CSpell: Files checked: 415, Issues found: 0 in 0 files.
+
+$ npx vitest run --project=browser
+exit=0
+summary: Test Files 147 passed (147); Tests 1281 passed (1281)
+note: jsdom printed the existing "Window's scrollTo() method" not implemented message.
+
+$ bash scripts/audit-mock-boundary.sh
+AUDIT MOCK-BOUNDARY: 0 findings
+(no findings; exit 0)
+exit=0
+
+$ bash scripts/audit-flaky-patterns.sh
+AUDIT FLAKY-PATTERN: 0 findings
+exit=0
+```
+
+#### AC-T53.3 staged file expectation
+
+Actual committed files must be 6, not the older 7-file task text:
+
+```text
+.github/pull_request_template.md
+.husky/pre-commit
+eslint.config.mjs
+scripts/audit-mock-boundary.sh
+specs/026-tests-audit-report/handoff.md
+specs/026-tests-audit-report/tasks.md
+```
+
+Forbidden paths intentionally not staged: `package.json`, `package-lock.json`, `vitest.config.mjs`, `firestore.rules`, `tests/**`, `src/**`, `coverage/**`, `node_modules/**`, `cspell.json`. `scripts/audit-flaky-patterns.sh` was not staged because it has no diff.
+
+#### AC-T53.4 commit message plan
+
+Commit message first line:
+
+```text
+chore(eslint): retire S8 audit baseline
+```
+
+Body must include one `Baseline retire:` line and no `Co-Authored-By`. This follows `feedback_no_coauthor.md`.
+
+#### Environment addendum
+
+- Node: `v22.22.0`
+- Vitest: `vitest/4.1.4 darwin-arm64 node-v22.22.0`
+- Playwright: `Version 1.58.0`
+- ESLint: `v9.33.0`
+
+#### Stash note
+
+`stash@{0}` exists as `On 026-tests-audit-report: t45-handoff-pre-rebase`; `git stash show --name-status stash@{0}` shows only `specs/026-tests-audit-report/handoff.md`. Its old 2026-05-01 UNSAFE content is superseded by the later SAFE row and current S8 evidence; T53 may drop it after commit if final status is clean.
+
 ## §4 Pattern Index
 
 > Subagent 在實作中發現的可重用 pattern（one-liner、技巧）填於此節，供後續 S3-S10 重用。
@@ -5531,6 +7346,7 @@ Scope guarantee:
 | @firebase/rules-unit-testing | 5.0.0                                                                                                |
 | jq                           | jq-1.6-159-apple-gcff5336-dirty                                                                      |
 | ESLint (S6)                  | v9.33.0（flat config — `eslint.config.mjs`；S6 block 18.5/18.6 用 `no-restricted-syntax` esquery）   |
+| ESLint (S8)                  | v9.33.0（T53 fresh `npx eslint --version`; S8 retires block 18.5/18.6 baseline only）                |
 
 ## §6 References
 

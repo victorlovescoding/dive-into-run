@@ -3261,7 +3261,7 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
 ### T45 — Precondition gate: Wave 3 baseline-cleared verification
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Read**: `eslint.config.mjs`（block 18.5 / 18.6 ignores 現況）；整個 `tests/` 目錄（read-only grep）
 - **Files Written**: 只動 `specs/026-tests-audit-report/handoff.md` §3 T45 row + §2 S8 子表（補風險），**不**動任何代碼/配置
 - **Audit**: P0-1 / P1-4 / P1-5 / R6 / R7
@@ -3344,7 +3344,7 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
 ### T46 — Spike: ESLint config edit plan (block 18.5 + 18.6)
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Read**: `eslint.config.mjs`（block 18.5 / 18.6 完整內容，L438-586 範圍）
 - **Files Written**: 只動 `handoff.md` §3 T46 row（design 全寫 evidence 區），**不**動 `eslint.config.mjs`
 - **Audit**: R6 / R7 / P0-1 / P1-4 / P1-5
@@ -3395,7 +3395,7 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
 ### T47 — Spike: audit script + husky edit plan (exit 0 → exit 1; remove `|| true`)
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Read**: `scripts/audit-mock-boundary.sh`、`scripts/audit-flaky-patterns.sh`、`.husky/pre-commit`
 - **Files Written**: 只動 `handoff.md` §3 T47 row（design）；**不**動 script / husky
 - **Audit**: R8 / P0-1 / P1-4 / P1-5
@@ -3447,7 +3447,7 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
 ### T48 — Spike: PR template baseline checkbox edit plan
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Read**: `.github/pull_request_template.md`、`handoff.md` §3 T07 evidence（S2 留下的 template content 設計紀錄）、audit L641-657
 - **Files Written**: 只動 `handoff.md` §3 T48 row（design）；**不**動 PR template
 - **Audit**: R11 / L641-657
@@ -3488,7 +3488,7 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
 ### T49 — Implement ESLint config (block 18.5 + 18.6 ignores → [])
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `eslint.config.mjs`
 - **Files Read**: `handoff.md` §3 T46 design
 - **Audit**: R6 / R7
@@ -3582,7 +3582,7 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
 ### T50 — Implement audit script + husky (exit 1, no `|| true`)
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `scripts/audit-mock-boundary.sh`、`scripts/audit-flaky-patterns.sh`、`.husky/pre-commit`
 - **Files Read**: `handoff.md` §3 T47 design
 - **Audit**: R8
@@ -3663,7 +3663,7 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
 ### T51 — Implement PR template (remove baseline checkbox)
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: `.github/pull_request_template.md`
 - **Files Read**: `handoff.md` §3 T48 design
 - **Audit**: R11 / L641-657
@@ -3712,7 +3712,7 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
 ### T52 — Smoke test S8 rules (positive + negative)
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**: smoke temp 檔（必 T52 內 cleanup）；只在 §3 T52 row 留 evidence
 - **Files Read**: T49 / T50 / T51 改後的 5 檔
 - **Audit**: R6 / R7 / R8
@@ -3801,18 +3801,18 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
 ### T53 — S8 integration verify + commit
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Files Written**:
   - `specs/026-tests-audit-report/handoff.md` §0 / §1 / §2 S8 / §3 T53 / §5
   - `specs/026-tests-audit-report/tasks.md`（T45-T53 status `[ ]` → `[x]`、Scope summary S8 row 更新）
 - **Files committed**:
   - `eslint.config.mjs`
   - `scripts/audit-mock-boundary.sh`
-  - `scripts/audit-flaky-patterns.sh`
   - `.husky/pre-commit`
   - `.github/pull_request_template.md`
   - `specs/026-tests-audit-report/handoff.md`
   - `specs/026-tests-audit-report/tasks.md`
+  - Note: actual S8 commit is 6 tracked changed files. `scripts/audit-flaky-patterns.sh` is intentionally excluded because T47/T50 confirmed latest main already had findings>0 blocking behavior and S8 kept it at 0 diff.
 - **Dependencies**: T45-T52 全部 `[x]`
 
 **Engineer Action**：
@@ -3827,8 +3827,8 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
    - §5：補 ESLint version + 任何 S8 環境細節
 4. 更新 `tasks.md`：
    - T45-T53 status `[ ]` → `[x]`
-   - Scope summary table 中 S8 row 從 `(Wave 3 後)` 更新為 `✅ 本檔 T45-T53（commit <hash>）`
-   - 開頭 Scope summary 段落補上 S8 commit hash
+   - Scope summary table 中 S8 row 從 `(Wave 3 後)` 更新為 `✅ 本檔 T45-T53（commit pending in this T53 commit）`
+   - 開頭 Scope summary 段落補上 S8 commit pending note；實際 hash 以 commit 後 `git log -1` 為準
 5. **commit 前自我 gate（critical）**：手動跑
 
    ```bash
@@ -3844,7 +3844,6 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
    ```bash
    git add eslint.config.mjs \
            scripts/audit-mock-boundary.sh \
-           scripts/audit-flaky-patterns.sh \
            .husky/pre-commit \
            .github/pull_request_template.md \
            specs/026-tests-audit-report/handoff.md \
@@ -3871,29 +3870,26 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
   全部 exit 0。**不需** 跑 server / coverage（S8 不動 server / 不重做 coverage instrumentation）。如任一 fail，必須根因修完，不可放寬 rule / 加回 `|| true`。
 
-- **AC-T53.3**: `git diff --name-only --cached` 僅含 7 檔（5 implement + 2 spec markdown）。**禁** `package.json` / `package-lock.json` / `vitest.config.mjs` / `firestore.rules` / `tests/**` / `src/**` / `cspell.json`（除 T51 真有加詞需求且已 reviewer 通過）。
+- **AC-T53.3**: `git diff --name-only --cached` 僅含 6 檔（4 implement tracked diffs + 2 spec markdown）。**禁** `package.json` / `package-lock.json` / `vitest.config.mjs` / `firestore.rules` / `tests/**` / `src/**` / `cspell.json`（除 T51 真有加詞需求且已 reviewer 通過）。`scripts/audit-flaky-patterns.sh` 只有在真有 diff 時才可 stage；本 T53 actual diff 為 0，故不 stage。
 - **AC-T53.4**: commit message 格式：
 
   ```text
-  chore(eslint+gate): retire S6 baseline + audit script exit 1 (S8)
+  chore(eslint): retire S8 audit baseline
 
-  - eslint.config.mjs: block 18.5 + 18.6 ignores baseline → []
-    - mock-boundary 33 → 0 (P0-1 / R6); flaky-pattern 45 → 0 (P1-4/P1-5 / R7)
-    - rule messages updated to record baseline retire (S8 trigger)
-  - scripts/audit-mock-boundary.sh: warn-only (exit 0) → blocking (exit 1)
-  - scripts/audit-flaky-patterns.sh: warn-only (exit 0) → blocking (exit 1)
-  - .husky/pre-commit: drop `|| true` from both audit gate rows
-  - .github/pull_request_template.md: remove baseline-tracking checkbox(es)
+  - eslint.config.mjs: retire block 18.5 / 18.6 baseline ignores
+  - scripts/audit-mock-boundary.sh: make findings block with exit 1
+  - .husky/pre-commit: remove mock audit fallback
+  - .github/pull_request_template.md: remove S8 baseline tracking
 
-  Baseline retire: mock-boundary 33 → 0, flaky-pattern 45 → 0
-  Trigger: Wave 3 mock + flaky cleanup complete (verified by T45 SAFE precondition gate)
+  Baseline retire: mock-boundary 33 -> 0, flaky-pattern 45 -> 0
+  Trigger: Wave 3 mock + flaky cleanup complete (T45 SAFE)
 
   Refs: project-health/2026-04-29-tests-audit-report.md L77-111, L293-318, L552-556, L607-612, L622-633, L641-657, L660-664
   ```
 
   不加 `Co-Authored-By`。
 
-- **AC-T53.5**: `git show HEAD --stat` 顯示 7 檔；`git show HEAD --name-only` 不含禁區檔
+- **AC-T53.5**: `git show HEAD --stat` 顯示 6 檔；`git show HEAD --name-only` 不含禁區檔
 - **AC-T53.6**: `git log -1 --format=%B | grep -ic "Co-Authored-By"` = 0
 - **AC-T53.7**: `git log -1 --format=%B | grep -c "Baseline retire:"` = 1
 - **AC-T53.8**: branch ≠ `main`；不 push
@@ -4065,7 +4061,7 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
 ## Scope summary
 
-本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，已 commit `5f09820`）、S4（T16-T22，已 commit `a55fa76`）、S5（T23-T31，已 commit `28c5cb8`）、S6（T32-T37，已 commit `d89887c` + reviewer signoff `5606155`）、S7（T38-T44，planned）、**S8（T45-T53，planned；trigger 條件：Wave 3 mock + flaky cleanup baseline 清空）**。後續：
+本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，已 commit `5f09820`）、S4（T16-T22，已 commit `a55fa76`）、S5（T23-T31，已 commit `28c5cb8`）、S6（T32-T37，已 commit `d89887c` + reviewer signoff `5606155`）、S7（T38-T44，planned）、**S8（T45-T53，commit pending in T53 commit；trigger 條件：Wave 3 mock + flaky cleanup baseline 清空）**。後續：
 
 | Commit | Goal                                          | Spec                               |
 | ------ | --------------------------------------------- | ---------------------------------- |
@@ -4076,5 +4072,5 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 | S5     | firestore rules infra + 5 critical specs      | ✅ 本檔 T23-T31                    |
 | S6     | ESLint mock-boundary + flaky rules (baseline) | ✅ 本檔 T32-T37                    |
 | S7     | GitHub branch protection required checks (UI) | ✅ 本檔 T38-T44                    |
-| S8     | ESLint baseline retire + audit gate exit 1    | ✅ 本檔 T45-T53（planned；觸發型） |
+| S8     | ESLint baseline retire + audit gate exit 1    | ✅ 本檔 T45-T53（commit pending in this T53 commit） |
 | S9     | Per-directory coverage threshold（觸發型）    | (Wave 3 後)                        |
