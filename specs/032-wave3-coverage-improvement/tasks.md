@@ -348,7 +348,7 @@ Evidence:
 
 ### T006 — Commit wave 3 batch 1
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Owner**: P2-E0
 - **Reviewer**: P2-R0
 - **Dependencies**: T002-T005 reviewer PASS
@@ -454,12 +454,18 @@ Evidence:
     - No production files, `coverage/`, logs, temp files, or `package-lock.json` are part of the changed file set.
   - Files staged for Commit 1: `specs/032-wave3-coverage-improvement/tasks.md`, `tests/integration/app/app-thin-entries.test.jsx`, `tests/integration/events/EventMap.test.jsx`, `tests/integration/events/EventRouteEditor.test.jsx`, `tests/integration/events/EventsFilterPanel.test.jsx`, `tests/integration/events/ParticipantsModal.test.jsx`, `tests/integration/member/MemberPage.test.jsx`, `tests/integration/strava/RunsLoginGuide.test.jsx`.
   - Commit 1 message: `test(coverage): cover wave3 ui surfaces`.
-  - Commit 1 hash: `<pending>`.
-- Reviewer:
+  - Commit 1 hash: `dd6338ec826600d7a658a73d2ed27a6b6da48577`.
+- Reviewer: P2-R0 2026-05-02 PASS.
+  - Verified actual Commit 1 hash from git: `dd6338ec826600d7a658a73d2ed27a6b6da48577`.
+  - `git log -1 --format=%H` returned `dd6338ec826600d7a658a73d2ed27a6b6da48577`.
+  - `git log -1 --format=%B` exactly matches `test(coverage): cover wave3 ui surfaces` with body `Baseline change: ui/components/app coverage lifted for 026 S9 T54 evidence`; `Co-Authored-By` count is `0`.
+  - `git show --name-only --format='' HEAD` contains only `specs/032-wave3-coverage-improvement/tasks.md` plus the seven T002-T005 integration test files; no production files, no `coverage/`, and no `package-lock.json`.
+  - `git status --short --branch` returned `## 032-wave3-coverage-improvement` clean.
+  - Verified current `coverage/coverage-summary.json` exists and matches engineer fresh evidence: total lines `4280 / 4681 = 91.43%`, `src/ui/**` lines `110 / 123 = 89.43%`, `src/components/**` lines `739 / 853 = 86.64%`, `src/app/**` lines `136 / 151 = 90.07%`.
 
 ### T007 — Lane E triage: decide if residual component gaps need another batch
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Owner**: P2-E5
 - **Reviewer**: P2-R5
 - **Dependencies**: T006 `[x]`
@@ -482,12 +488,24 @@ Acceptance criteria:
 
 Evidence:
 
-- Engineer:
-- Reviewer:
+- Engineer: P2-E5 2026-05-02.
+  - Read fresh post-T006 `coverage/coverage-summary.json` (mtime `May  2 18:21:21 2026`).
+  - Extracted line coverage:
+    - `src/ui/**`: `110 / 123 = 89.43%` vs target candidate `83.05%`.
+    - `src/components/**`: `739 / 853 = 86.64%` vs target candidate `79.91%`.
+    - `src/app/**`: `136 / 151 = 90.07%` vs target candidate `66.59%`.
+  - Decision: `ENOUGH_FOR_S9_T54`.
+  - T008/T009 not needed because all three target candidates are already met by post-T006 coverage.
+- Reviewer: P2-R5 2026-05-02 PASS.
+  - Independently recalculated line coverage from post-T006 `coverage/coverage-summary.json` (mtime `May  2 18:21:21 2026`).
+  - `src/ui/**`: `110 / 123 = 89.43%` vs target candidate `83.05%`.
+  - `src/components/**`: `739 / 853 = 86.64%` vs target candidate `79.91%`.
+  - `src/app/**`: `136 / 151 = 90.07%` vs target candidate `66.59%`.
+  - All three layer targets are met, so `ENOUGH_FOR_S9_T54` is accepted and T008/T009 are not needed.
 
 ### T008 — Optional batch 2: comments / notification component residuals
 
-- **Status**: `[ ]`
+- **Status**: `[x]` no-op; not needed by T007
 - **Owner**: P2-E5
 - **Reviewer**: P2-R5
 - **Dependencies**: T007 decision `NEEDS_BATCH_2`
@@ -511,12 +529,12 @@ Acceptance criteria:
 
 Evidence:
 
-- Engineer:
-- Reviewer:
+- Engineer: P2-E5 2026-05-02 — no-op. T007 decision was `ENOUGH_FOR_S9_T54`, so no comments/notification residual batch was needed.
+- Reviewer: P2-R5 2026-05-02 — no-op accepted through T007 PASS. No files changed for T008.
 
 ### T009 — Optional batch 2: app/layout thin-entry residuals
 
-- **Status**: `[ ]`
+- **Status**: `[x]` no-op; not needed by T007
 - **Owner**: P2-E3
 - **Reviewer**: P2-R3
 - **Dependencies**: T007 decision `NEEDS_BATCH_2`
@@ -538,12 +556,12 @@ Acceptance criteria:
 
 Evidence:
 
-- Engineer:
-- Reviewer:
+- Engineer: P2-E5 2026-05-02 — no-op. T007 decision was `ENOUGH_FOR_S9_T54`, so no app/layout residual batch was needed.
+- Reviewer: P2-R5 2026-05-02 — no-op accepted through T007 PASS. No files changed for T009.
 
 ### T010 — Commit optional batch 2 or record no-op
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Owner**: P2-E0
 - **Reviewer**: P2-R0
 - **Dependencies**: T007 `[x]`; T008/T009 if needed
@@ -572,12 +590,24 @@ Acceptance criteria:
 
 Evidence:
 
-- Engineer:
+- Engineer: P2-E0 2026-05-02 no-op path; no Commit 2.
+  - Confirmed T007 status is `[x]` and decision is `ENOUGH_FOR_S9_T54`; T008/T009 are `[x]` no-op and explicitly not needed by T007.
+  - Confirmed no T008/T009 changed files exist after T006: `git diff --name-only HEAD` returned only `specs/032-wave3-coverage-improvement/tasks.md`.
+  - `git status --short --branch` returned `## 032-wave3-coverage-improvement` plus only ` M specs/032-wave3-coverage-improvement/tasks.md`; this is the allowed ledger update after the T006 commit.
+  - Git history untouched after T006: HEAD remains `dd6338ec826600d7a658a73d2ed27a6b6da48577` (`test(coverage): cover wave3 ui surfaces`), so no Commit 2 was created.
+  - Next work is T011/T012 final handoff docs: run final gates, create/update `specs/032-wave3-coverage-improvement/handoff.md`, then final docs commit if reviewer passes.
 - Reviewer:
+- Reviewer: P2-R0 2026-05-02 PASS.
+  - Verified T007 is `[x]` and its accepted decision is `ENOUGH_FOR_S9_T54`.
+  - Verified T008 and T009 are both `[x]` no-op / not needed by T007, with reviewer no-op acceptance recorded.
+  - `git diff --name-status HEAD` shows only `M specs/032-wave3-coverage-improvement/tasks.md`; no T008/T009 test or source files changed after T006.
+  - `git status --short --branch` shows branch `032-wave3-coverage-improvement` dirty only by `specs/032-wave3-coverage-improvement/tasks.md`.
+  - HEAD remains `dd6338ec826600d7a658a73d2ed27a6b6da48577` (`test(coverage): cover wave3 ui surfaces`), so git history was untouched after T006 and no Commit 2 was created.
+  - Therefore T010 no-op path is correct.
 
 ### T011 — Final gate + handoff.md evidence package
 
-- **Status**: `[ ]`
+- **Status**: `[x]`
 - **Owner**: P2-E0
 - **Reviewer**: P2-R0
 - **Dependencies**: T006 `[x]`, T010 `[x]` or no-op
@@ -631,7 +661,22 @@ Acceptance criteria:
 Evidence:
 
 - Engineer:
-- Reviewer:
+  - T011 engineer PASS candidate; reviewer should verify before marking `[x]`.
+  - Authoritative evidence package created at `specs/032-wave3-coverage-improvement/handoff.md`.
+  - Final gates all exited 0: `npm run test:coverage`; targeted Vitest changed files; `npm run lint -- --max-warnings 0`; `npm run type-check`; `npm run depcruise`; `npm run spellcheck`; `npx vitest run --project=browser`; `bash scripts/audit-mock-boundary.sh`; `bash scripts/audit-flaky-patterns.sh`.
+  - Fresh total coverage from `coverage/coverage-summary.json`: lines 91.43% (4280/4681), statements 89.27% (4602/5155), branches 78.44% (2530/3225), functions 91.80% (1176/1281).
+  - Fresh target line coverage: `src/ui/**` 89.43% (delta +26.91 from Baseline before, +11.38 from fresh/current baseline); `src/components/**` 86.64% (+34.21, +11.73); `src/app/**` 90.07% (+42.15, +28.48).
+  - Commit hash: T006 `dd6338ec826600d7a658a73d2ed27a6b6da48577`; T010 n/a no-op. No commit/push done in T011.
+- Reviewer: P2-R0 2026-05-02 PASS.
+  - Verified `specs/032-wave3-coverage-improvement/handoff.md` exists and contains all required exact strings.
+  - Verified Baseline before is `ui 62.52 / components 52.43 / app 47.92`.
+  - Verified fresh/current baseline is `ui 78.05 / components 74.91 / app 61.59`.
+  - Verified Fresh after is `ui 89.43 / components 86.64 / app 90.07`.
+  - Verified T006 commit hash is `dd6338ec826600d7a658a73d2ed27a6b6da48577`.
+  - Verified T010 is recorded as `n/a no-op`, and HEAD remains T006 commit.
+  - Verified T011 tasks evidence records all final gates exit 0, including `npm run spellcheck`.
+  - Verified `handoff.md` command table records `npm run spellcheck` exit `0`.
+  - Verified `git status --short --branch` shows only `M specs/032-wave3-coverage-improvement/tasks.md` and `?? specs/032-wave3-coverage-improvement/handoff.md`.
 
 ### T012 — Final handoff docs commit
 
@@ -673,7 +718,13 @@ Acceptance criteria:
 
 Evidence:
 
-- Engineer:
+- Engineer: P2-E0 2026-05-02 PASS candidate; reviewer should verify before marking `[x]`.
+  - Verified T011 status is `[x]` and reviewer evidence is `P2-R0 2026-05-02 PASS`.
+  - `git status --short --branch` showed only allowed dirty files before staging: `M specs/032-wave3-coverage-improvement/tasks.md` and `?? specs/032-wave3-coverage-improvement/handoff.md`.
+  - Verified `handoff.md` still contains exact required strings: `Wave 3 coverage-improvement evidence for ui/components/app exists.`, `Baseline before`, `Fresh after`, `Commit hash`, and `S9 T54 can treat this as coverage-improvement evidence.`
+  - Planned staged files: `specs/032-wave3-coverage-improvement/tasks.md` and `specs/032-wave3-coverage-improvement/handoff.md` only.
+  - Planned commit message: `docs(coverage): record wave3 evidence plan` with body `Refs: 026 S9 T54 precondition`.
+  - No push or PR planned for T012 engineer execution.
 - Reviewer:
 
 ## 6. Handoff Evidence
