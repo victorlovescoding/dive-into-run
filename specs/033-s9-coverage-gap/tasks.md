@@ -538,7 +538,7 @@ Parallel conflict rules for Wave A:
 
 ### Quality Gates And Delivery
 
-- [ ] T050 Run full local gates
+- [x] T050 Run full local gates
   - Owner: Gate Engineer
   - Reviewer: Gate Reviewer
   - Dependencies: T044
@@ -551,7 +551,7 @@ Parallel conflict rules for Wave A:
     - Every gate passes, or any failure is recorded with exact command and failure summary.
     - Reviewer confirms no policy weakening.
 
-- [ ] T051 Final coverage confirmation
+- [x] T051 Final coverage confirmation
   - Owner: Coverage Engineer
   - Reviewer: Coverage Reviewer
   - Dependencies: T050
@@ -566,7 +566,7 @@ Parallel conflict rules for Wave A:
     - `src/app/** >= 95.07`.
     - Reviewer confirms numbers are fresh and reproducible.
 
-- [ ] T052 Final docs evidence update
+- [x] T052 Final docs evidence update
   - Owner: Handoff Engineer
   - Reviewer: Handoff Reviewer
   - Dependencies: T051
@@ -580,7 +580,7 @@ Parallel conflict rules for Wave A:
     - Forbidden docs remain untouched.
     - Reviewer accepts final docs.
 
-- [ ] T053 Final commit before PR
+- [x] T053 Final commit before PR
   - Owner: Flow Engineer
   - Reviewer: Flow Reviewer
   - Dependencies: T052

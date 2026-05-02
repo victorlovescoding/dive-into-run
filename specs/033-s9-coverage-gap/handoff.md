@@ -7,7 +7,7 @@
 - Base: latest `main` at worktree creation
 - Main agent role: process coordinator only
 - Implementation rule: every repo write must be done by an Engineer subagent and accepted by a paired Reviewer subagent
-- Current phase: Wave A implementation in progress; T010/T011 accepted and committed, T012/T013 accepted and committed, T020/T021 accepted and committed, T022/T023 accepted and committed, T030/T031 accepted and committed, other Wave A task files remain uncommitted by other task owners.
+- Current phase: final docs evidence update accepted. T050 full gates, T051 final coverage, and T052 final docs evidence are accepted; no commit has been made by this handoff update.
 - T001 Setup Engineer evidence:
   - `pwd` => `/Users/chentzuyu/Desktop/dive-into-run-033-s9-coverage-gap`
   - `git branch --show-current` => `033-s9-coverage-gap`
@@ -401,10 +401,10 @@ T030/T031 review evidence, 2026-05-02 22:49:03 CST:
 
 ## Coverage After
 
-- T040 midpoint command: `npm run test:coverage`
-- T040 midpoint timestamp: `2026-05-02 23:04:37 Asia/Taipei` (`coverage/coverage-summary.json` mtime from Coverage Reviewer rerun)
-- T040 midpoint exit code: `0`
-- T040 midpoint summary source: fresh `coverage/coverage-summary.json`
+- Final command: `npm run test:coverage` (from T050 gate run)
+- Final timestamp: `2026-05-02 23:23:59 Asia/Taipei` (`coverage/coverage-summary.json` mtime verified by T051 Coverage Engineer)
+- Final exit code: `0`
+- Final summary source: fresh `coverage/coverage-summary.json`
 - Layer metric: statement coverage, aggregate `statements.covered / statements.total` from the fresh JSON summary, same protocol as T002.
 - `src/types/**`: N/A (`0 / 0` statements, 0 files; delta from baseline N/A)
 - `src/config/**`: `82.35%` (`28 / 34` statements, 6 files; delta `+0.00`)
@@ -412,11 +412,85 @@ T030/T031 review evidence, 2026-05-02 22:49:03 CST:
 - `src/service/**`: `92.78%` (`514 / 554` statements, 15 files; delta `+0.00`)
 - `src/runtime/**`: `88.81%` (`2436 / 2743` statements, 46 files; delta `+0.00`)
 - `src/ui/**`: `96.27%` (`129 / 134` statements, 21 files; delta `+11.20`) — target `>= 94.43` met
-- `src/components/**`: `90.05%` (`833 / 925` statements, 90 files; delta `+4.21`) — below target `>= 91.64`; needs at least `848 / 925`, gap `+15` covered statements
+- `src/components/**`: `91.68%` (`848 / 925` statements, 90 files; delta `+5.84`) — target `>= 91.64` met
 - `src/app/**`: `95.45%` (`147 / 154` statements, 33 files; delta `+6.49`) — target `>= 95.07` met
-- T040 run output summary: 166 test files passed, 1437 tests passed, V8 total statements `90.51%` (`4666 / 5155`).
-- Final command: pending
-- Final summary source: pending final rebaseline after any Wave B work.
+- Final run output summary: 166 test files passed, 1439 tests passed, V8 total statements `90.8%` (`4681 / 5155`).
+- T051 Coverage Engineer note: recalculated all 8 tracked source groups from the final JSON summary; T051 Coverage Reviewer accepted the final numbers.
+
+## T050 Gate Evidence
+
+T050 Gate Engineer ran all Required Gates fresh on 2026-05-02. T044 dependency was satisfied before starting: `tasks.md` marks T044 `[x]`, and `handoff.md` records T044 Flow Reviewer acceptance at `2026-05-02 23:18:41 CST`.
+
+Pre-gate working tree check:
+
+- `git status --short --branch` -> exit `0`, output only `## 033-s9-coverage-gap`
+- `git diff --name-only` -> exit `0`, no output
+
+Required Gates, in requested order:
+
+1. `npm run test:coverage` -> exit `0`
+   - Evidence: 166 test files passed, 1439 tests passed.
+   - Coverage summary: statements `90.8%` (`4681 / 5155`), branches `79.78%`, functions `92.66%`, lines `92.95%`.
+   - Firebase emulator script exited successfully with code `0`.
+2. `npm run lint -- --max-warnings 0` -> exit `0`
+   - Evidence: ESLint command ran as `eslint src specs tests --max-warnings 0`.
+   - Output had only the existing eslint-plugin-react settings notice; no ESLint warnings or errors.
+3. `npm run type-check` -> exit `0`
+   - Evidence: `tsc --noEmit` completed with no diagnostics.
+4. `npm run depcruise` -> exit `0`
+   - Evidence: no dependency violations found across 1463 modules / 3713 dependencies.
+   - Output included the existing Node `MODULE_TYPELESS_PACKAGE_JSON` performance warning for the test bucket policy file; no dependency failure.
+5. `npm run spellcheck` -> exit `0`
+   - Evidence: CSpell checked 427 files and found 0 issues in 0 files.
+6. `npx vitest run --project=browser` -> exit `0`
+   - Evidence: 159 test files passed, 1355 tests passed.
+   - Output included existing jsdom `window.scrollTo` and `--localstorage-file` warnings; no test failure.
+7. `bash scripts/audit-mock-boundary.sh` -> exit `0`
+   - Evidence: `AUDIT MOCK-BOUNDARY: 0 findings` and warn-only exit `0`.
+8. `bash scripts/audit-flaky-patterns.sh` -> exit `0`
+   - Evidence: `AUDIT FLAKY-PATTERN: 0 findings`.
+
+Failure summary: none. No threshold, include/exclude, baseline-ignore, suppression, or policy patch was made to pass gates. T050 Gate Reviewer accepted the full gate evidence.
+
+## Final Delivery Evidence
+
+### Coverage Before T002
+
+- `src/types/**`: N/A (`0 / 0` statements, 0 files)
+- `src/config/**`: `82.35%` (`28 / 34` statements, 6 files)
+- `src/repo/**`: `94.78%` (`436 / 460` statements, 19 files)
+- `src/service/**`: `92.78%` (`514 / 554` statements, 15 files)
+- `src/runtime/**`: `88.81%` (`2436 / 2743` statements, 46 files)
+- `src/ui/**`: `85.07%` (`114 / 134` statements, 21 files)
+- `src/components/**`: `85.84%` (`794 / 925` statements, 90 files)
+- `src/app/**`: `88.96%` (`137 / 154` statements, 33 files)
+
+### Coverage After T051
+
+- `src/types/**`: N/A (`0 / 0` statements, 0 files)
+- `src/config/**`: `82.35%` (`28 / 34` statements, 6 files)
+- `src/repo/**`: `94.78%` (`436 / 460` statements, 19 files)
+- `src/service/**`: `92.78%` (`514 / 554` statements, 15 files)
+- `src/runtime/**`: `88.81%` (`2436 / 2743` statements, 46 files)
+- `src/ui/**`: `96.27%` (`129 / 134` statements, 21 files) — target `>= 94.43` met
+- `src/components/**`: `91.68%` (`848 / 925` statements, 90 files) — target `>= 91.64` met
+- `src/app/**`: `95.45%` (`147 / 154` statements, 33 files) — target `>= 95.07` met
+
+### Delivery Scope
+
+- Touched test files:
+  - `tests/unit/lib/test-bucket-policy.test.js`
+  - `tests/unit/ui/event-formatters.test.js`
+  - `tests/integration/dashboard/DashboardTabsScreen.test.jsx`
+  - `tests/integration/comments/CommentCardMenu.test.jsx`
+  - `tests/integration/comments/CommentSection.test.jsx`
+  - `tests/integration/notifications/NotificationPanel.test.jsx`
+  - `tests/integration/app/root-layout.test.jsx`
+  - `tests/integration/app/weather-layout.test.jsx`
+  - `tests/integration/app/weather-page-entry.test.jsx`
+- Production files touched and why: none; this delivery adds behavior coverage and docs evidence only.
+- Policy/test-bucket file touched separately: `specs/021-layered-dependency-architecture/test-buckets/policy.js` for T006 precise `src-ui` test-bucket policy modeling. It allows unit/integration imports for `src/ui/**` and keeps e2e/helper buckets denied; it does not change production behavior.
+- Full T050 gate evidence: all 8 required gates passed with exit `0`; see `T050 Gate Evidence` above.
 
 ## Touched Files
 
@@ -427,17 +501,23 @@ T030/T031 review evidence, 2026-05-02 22:49:03 CST:
 
 ### Tests
 
+- `tests/unit/lib/test-bucket-policy.test.js`
 - `tests/unit/ui/event-formatters.test.js`
 - `tests/integration/dashboard/DashboardTabsScreen.test.jsx`
 - `tests/integration/comments/CommentCardMenu.test.jsx`
 - `tests/integration/comments/CommentSection.test.jsx`
 - `tests/integration/notifications/NotificationPanel.test.jsx`
 - `tests/integration/app/root-layout.test.jsx`
+- `tests/integration/app/weather-layout.test.jsx`
+- `tests/integration/app/weather-page-entry.test.jsx`
+
+### Policy/Test-Bucket
+
+- `specs/021-layered-dependency-architecture/test-buckets/policy.js` — T006 precise `src-ui` test-bucket policy modeling for unit/integration allow and e2e/helper deny. This is not a production behavior change.
 
 ### Production
 
-- None
-- Production files may be touched only for testability after Reviewer approval and must be explained here.
+- None. Production behavior was not changed.
 
 ## Pitfalls
 
@@ -470,11 +550,14 @@ T030/T031 review evidence, 2026-05-02 22:49:03 CST:
 - T042 Components Gap Reviewer: accepted 2026-05-02 23:15:53 CST. Verified `tests/integration/comments/CommentSection.test.jsx` extends the primary `src/components/CommentSection.jsx` slice with real `CommentSection` scroll-to-comment behavior: mocked `next/navigation` supplies `commentId`, the real effect polls the DOM, calls `scrollIntoView({ behavior: 'smooth', block: 'center' })`, adds `commentHighlight`, removes it on `animationend`, and clears polling when the target never appears. No canonical-layer mocks, snapshot/import/render-only tests, suppression comments, sleep/timeouts, or forbidden-file diffs were added. Fresh commands passed: `npx eslint --max-warnings 0 tests/integration/comments/CommentSection.test.jsx`, `npx vitest run --project=browser tests/integration/comments/CommentSection.test.jsx` (1 file / 33 tests), `npm run type-check`, and `npm run depcruise`.
 - T043 App Gap Reviewer: skipped 2026-05-02. Verified T040 is checked and the fresh T040 `src/app/**` value is `95.45%` (`147 / 154` statements), meeting target `>= 95.07`; no app fallback slice is needed, and no code or test files were changed for T043.
 - T044 Flow Reviewer: accepted 2026-05-02 23:18:41 CST. Verified T040, T041, T042, and T043 are checked; T041/T043 are documented skips because `src/ui/**` and `src/app/**` already met targets at T040; T042 has accepted Components Gap Reviewer evidence and only the expected files are dirty. Fresh second-pass commands passed: `npx vitest run --project=browser tests/integration/comments/CommentSection.test.jsx` (1 file / 33 tests) and `npm run depcruise` (no dependency violations across 1463 modules / 3713 dependencies). Commit scope is limited to `tests/integration/comments/CommentSection.test.jsx`, `specs/033-s9-coverage-gap/tasks.md`, and `specs/033-s9-coverage-gap/handoff.md`.
-- Implementation Reviewers: T010/T011 and T012/T013 accepted 2026-05-02; remaining implementation reviewers pending.
-- Gate Reviewer: pending
+- Implementation Reviewers: accepted/skipped implementation scope is recorded above for T010/T011, T012/T013, T020/T021, T022/T023, T030/T031, T032/T033, T041, T042, and T043; no implementation reviewer is pending for PR-ready local handoff.
+- T050 Gate Reviewer: accepted 2026-05-02. Verified T044 is checked; T050 handoff evidence records all eight required gates run fresh on 2026-05-02 with exit `0`; pre-gate working tree evidence was clean; current reviewer pre-edit status had only `specs/033-s9-coverage-gap/handoff.md` dirty; branch diff shows no coverage threshold/include/exclude, baseline-ignore, or suppression changes; the only policy diff is the accepted T006 `src-ui` surface modeling with unit/integration allow and e2e/helper deny coverage, so no policy weakening was found.
+- T051 Coverage Reviewer: accepted 2026-05-02 23:23:59 CST final coverage evidence. Verified T050 is checked, `coverage/coverage-summary.json` mtime is `2026-05-02 23:23:59 +0800`, all 8 tracked groups were independently recalculated from statement coverage in the final JSON summary, `src/ui/**` is `96.27%` (`129 / 134`), `src/components/**` is `91.68%` (`848 / 925`), and `src/app/**` is `95.45%` (`147 / 154`), meeting all targets. Branch diff has no coverage threshold/include/exclude, baseline-ignore, suppression, `vitest.config.mjs`, or package coverage-config changes; the only policy diff remains the previously accepted T006 `src-ui` test-bucket modeling.
+- T052 Handoff Reviewer: accepted 2026-05-02 23:41:53 CST. Verified T051 was checked and T052 was unchecked before review; final delivery evidence includes before coverage, after coverage, touched test files, production files touched and why, policy/test-bucket files touched and why, remaining risk, and full T050 gate evidence. Forbidden docs `specs/026-tests-audit-report/tasks.md`, `specs/026-tests-audit-report/handoff.md`, `docs/QUALITY_SCORE.md`, and `.github/pull_request_template.md` had no status or diff output. Final status wording was updated with this signoff.
+- T053 Flow Reviewer: accepted 2026-05-02 23:43:47 CST. Verified T052 is checked and T053 was unchecked before this final signoff; pre-commit dirty scope is limited to `specs/033-s9-coverage-gap/tasks.md` and `specs/033-s9-coverage-gap/handoff.md`; final docs evidence is accepted for local PR handoff; commit scope must include only those two files.
 
 ## Remaining Risk
 
-- T006 policy modeling is reviewed and committed; T010/T011, T012/T013, T020/T021, T022/T023, T030/T031, and T032/T033 are accepted. Other Wave A task files remain uncommitted and must be reviewed/staged by their own task owners.
-- Parallel implementation must avoid touching the same test helper or test file without coordination.
-- Wave B secondary/tertiary candidates that only had compact T003 notes must not start until handoff has complete metadata and a Reviewer accepts the metadata.
+- Local PR-readiness risk is low: T050 passed all required local gates and T051 confirmed all final coverage targets from the fresh `coverage/coverage-summary.json`.
+- CI remains the external verification gate after PR creation. If CI fails, add a new Engineer + Reviewer task before T053, fix only the failing scope, and rerun the required gates.
+- Do not make checkbox-only commits after CI has passed; T052 is accepted and T053 is the next local step.
