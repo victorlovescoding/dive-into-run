@@ -7,7 +7,7 @@
 - Base: latest `main` at worktree creation
 - Main agent role: process coordinator only
 - Implementation rule: every repo write must be done by an Engineer subagent and accepted by a paired Reviewer subagent
-- Current phase: setup/planning only; coverage implementation has not started
+- Current phase: Wave A implementation in progress; T010/T011 accepted and committed, other Wave A task files remain uncommitted by other task owners.
 - T001 Setup Engineer evidence:
   - `pwd` => `/Users/chentzuyu/Desktop/dive-into-run-033-s9-coverage-gap`
   - `git branch --show-current` => `033-s9-coverage-gap`
@@ -297,6 +297,25 @@ T006 Engineer evidence, 2026-05-02 22:17:38 CST:
 - Focused policy Vitest: `npx vitest run --project=browser tests/unit/lib/test-bucket-policy.test.js` -> passed, 1 file / 4 tests.
 - Depcruise: `npm run depcruise` -> passed, no dependency violations found across 1463 modules / 3712 dependencies.
 
+## T010/T011 UI Slice Handoff
+
+T010 UI Engineer A added pure behavior coverage for `src/ui/events/event-formatters.js` in `tests/unit/ui/event-formatters.test.js`.
+
+T010/T011 review evidence, 2026-05-02 22:26:13 CST:
+
+- Touched T010 slice file: `tests/unit/ui/event-formatters.test.js`.
+- Production files touched: none.
+- Shared helpers touched: none.
+- Tests execute the real `@/ui/events/event-formatters` module and real `countTotalPoints` through the production import chain.
+- Behavior coverage includes null/missing date fallback, plain datetime string `T` replacement, Timestamp-like `toDate()`, non-Date object fallback, numeric and numeric-string pace formatting, blank/null/invalid/negative pace fallback text, route coordinate point counting, legacy `route.pointsCount`, and unset route label.
+- Reviewer scan found no snapshot-only, import-only, render-only, or empty tests.
+- Reviewer scan found no canonical-layer mocks and no `@ts-ignore`, `eslint-disable`, or `cspell-disable`.
+- Fresh lint: `npx eslint tests/unit/ui/event-formatters.test.js` -> passed; only existing React version settings warning.
+- Fresh focused Vitest: `npx vitest run --project=browser tests/unit/ui/event-formatters.test.js` -> passed, 1 file / 12 tests.
+- Fresh type-check: `npm run type-check` -> passed.
+- Fresh depcruise: `npm run depcruise` -> passed, no dependency violations found across 1463 modules / 3712 dependencies.
+- Forbidden files check: `git diff --name-only` listed only `tests/integration/notifications/NotificationPanel.test.jsx` before this doc update; untracked non-T010 Wave A files were present but were not staged for T010/T011.
+
 ## Coverage After
 
 - Final command: pending
@@ -319,11 +338,11 @@ T006 Engineer evidence, 2026-05-02 22:17:38 CST:
 
 ### Tests
 
-- Pending
+- `tests/unit/ui/event-formatters.test.js`
 
 ### Production
 
-- Pending
+- None
 - Production files may be touched only for testability after Reviewer approval and must be explained here.
 
 ## Pitfalls
@@ -349,11 +368,11 @@ T006 Engineer evidence, 2026-05-02 22:17:38 CST:
 - T006 Blocker-Fix: accepted 2026-05-02. Diagnosis Engineer and Reviewer approved adding a precise `src-ui` test bucket surface as policy modeling. Policy Modeling Reviewer accepted the implemented policy/test/doc diff and committed it as its own task before Wave A commits.
 - T006 Docs Reviewer: accepted 2026-05-02. Verified T006 is inserted after T005 and before Wave A, has an Engineer/Reviewer pair, depends on T005, is not parallel-safe, makes T010/T012 depend on T006, and records that T006 should land before any Wave A commit. Acceptance is narrow to precise `src-ui` policy modeling, unit/integration allow behavior, e2e/tests-helper deny behavior, no `src-other`, no deny/threshold/include/exclude/baseline-ignore/suppression changes, policy-test update, `npm run depcruise`, and the focused policy Vitest command. This docs review did not mark T006 done and touched only this handoff sign-off.
 - T006 Policy Modeling Reviewer: accepted 2026-05-02 22:20:38 CST. Verified `src-ui` is modeled as `^src/ui(?:/|$)`, only unit/integration buckets allow `src-ui` surfaces/path patterns, e2e/tests-helper still deny `src/**` with empty allowed path patterns, no `src-other` allow was added, deny rules were not weakened, and no coverage threshold/include/exclude/baseline-ignore/suppression files changed. Fresh evidence: `npx vitest run --project=browser tests/unit/lib/test-bucket-policy.test.js` passed 1 file / 4 tests; `npm run depcruise` passed with no dependency violations across 1463 modules / 3712 dependencies.
-- Implementation Reviewers: pending
+- Implementation Reviewers: T010/T011 accepted 2026-05-02; remaining implementation reviewers pending.
 - Gate Reviewer: pending
 
 ## Remaining Risk
 
-- T006 policy modeling is reviewed and committed; Wave A may proceed according to task dependencies and conflict rules.
+- T006 policy modeling is reviewed and committed; T010/T011 is accepted. Other Wave A task files remain uncommitted and must be reviewed/staged by their own task owners.
 - Parallel implementation must avoid touching the same test helper or test file without coordination.
 - Wave B secondary/tertiary candidates that only had compact T003 notes must not start until handoff has complete metadata and a Reviewer accepts the metadata.

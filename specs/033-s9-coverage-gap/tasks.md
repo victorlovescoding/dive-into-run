@@ -252,7 +252,7 @@ Parallel conflict rules for Wave A:
 
 ### UI Coverage Track
 
-- [ ] T010 Add first UI behavior coverage slice
+- [x] T010 Add first UI behavior coverage slice
   - Owner: UI Engineer A
   - Reviewer: UI Reviewer A
   - Dependencies: T006
@@ -271,7 +271,7 @@ Parallel conflict rules for Wave A:
     - Focused Vitest passes with the exact command above.
     - Reviewer confirms no canonical-layer mocks, no production change, and no shared helper edit.
 
-- [ ] T011 Review and commit first UI slice
+- [x] T011 Review and commit first UI slice
   - Owner: UI Reviewer A
   - Reviewer: Flow Reviewer
   - Dependencies: T010
