@@ -7,7 +7,7 @@
 - Base: latest `main` at worktree creation
 - Main agent role: process coordinator only
 - Implementation rule: every repo write must be done by an Engineer subagent and accepted by a paired Reviewer subagent
-- Current phase: Wave A implementation in progress; T010/T011 accepted and committed, T012/T013 accepted and committed, other Wave A task files remain uncommitted by other task owners.
+- Current phase: Wave A implementation in progress; T010/T011 accepted and committed, T012/T013 accepted and committed, T020/T021 accepted and committed, other Wave A task files remain uncommitted by other task owners.
 - T001 Setup Engineer evidence:
   - `pwd` => `/Users/chentzuyu/Desktop/dive-into-run-033-s9-coverage-gap`
   - `git branch --show-current` => `033-s9-coverage-gap`
@@ -336,6 +336,26 @@ T012/T013 review evidence, 2026-05-02 22:31:13 CST:
 - Fresh depcruise: `npm run depcruise` -> passed, no dependency violations found across 1463 modules / 3712 dependencies.
 - Forbidden files check before this doc update: `git status --short` listed only another task tracked file and untracked Wave A files; no forbidden files were listed, and only T012 files were staged for this commit.
 
+## T020/T021 Components Slice Handoff
+
+T020 Components Engineer A added behavior coverage for `src/components/CommentCardMenu.jsx` in `tests/integration/comments/CommentCardMenu.test.jsx`.
+
+T020/T021 review evidence, 2026-05-02 22:39:05 CST:
+
+- Touched T020 slice file: `tests/integration/comments/CommentCardMenu.test.jsx`.
+- Production files touched: none.
+- Shared helpers touched: none.
+- Tests render the real `CommentCardMenu` component with prop callback spies only.
+- Behavior coverage includes menu open with first-item focus, ArrowDown/ArrowUp/Home/End focus movement, Escape close with trigger focus return, outside-click close, Edit callback, and Delete callback.
+- Reviewer scan found no snapshot-only, import-only, render-only, or empty tests.
+- Reviewer scan found no canonical-layer mocks and no `@ts-ignore`, `eslint-disable`, or `cspell-disable`.
+- Reviewer scan found no sleeps or brittle exact call-count assertions.
+- Fresh lint: `npx eslint tests/integration/comments/CommentCardMenu.test.jsx` -> passed; only existing React version settings warning.
+- Fresh focused Vitest: `npx vitest run --project=browser tests/integration/comments/CommentCardMenu.test.jsx` -> passed, 1 file / 6 tests.
+- Fresh type-check: `npm run type-check` -> passed.
+- Fresh depcruise: `npm run depcruise` -> passed, no dependency violations found across 1463 modules / 3712 dependencies.
+- Forbidden files check before this doc update: `git diff --name-only` listed only `tests/integration/notifications/NotificationPanel.test.jsx`; untracked non-T020 Wave A files were present but were not staged for T020/T021. Forbidden docs/config files had no status or diff output.
+
 ## Coverage After
 
 - Final command: pending
@@ -360,6 +380,7 @@ T012/T013 review evidence, 2026-05-02 22:31:13 CST:
 
 - `tests/unit/ui/event-formatters.test.js`
 - `tests/integration/dashboard/DashboardTabsScreen.test.jsx`
+- `tests/integration/comments/CommentCardMenu.test.jsx`
 
 ### Production
 

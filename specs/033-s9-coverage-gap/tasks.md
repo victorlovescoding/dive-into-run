@@ -318,7 +318,7 @@ Parallel conflict rules for Wave A:
 
 ### Components Coverage Track
 
-- [ ] T020 Add first components behavior coverage slice
+- [x] T020 Add first components behavior coverage slice
   - Owner: Components Engineer A
   - Reviewer: Components Reviewer A
   - Dependencies: T005
@@ -337,7 +337,7 @@ Parallel conflict rules for Wave A:
     - Focused Vitest passes with the exact command above.
     - Reviewer confirms this slice does not edit `tests/integration/notifications/NotificationPanel.test.jsx`.
 
-- [ ] T021 Review and commit first components slice
+- [x] T021 Review and commit first components slice
   - Owner: Components Reviewer A
   - Reviewer: Flow Reviewer
   - Dependencies: T020
