@@ -3914,7 +3914,7 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
 ## S9 — Per-directory coverage threshold（T54-T60）
 
-- **Status**: `[~]` engineer complete; reviewer pending
+- **Status**: `[x]` reviewer-pass; committed
 - **Audit**: P0-4 / P2-4 / R2
 - **Source**: `project-health/2026-04-29-tests-audit-report.md`
   - L185-206 — per-directory threshold 建議與 monthly +5 ramp
@@ -3979,7 +3979,7 @@ S9 不接受「為了讓 coverage pass 而臨時調低」。
 
 ### T54 — S9 precondition + source-of-truth gate
 
-- **Status**: `[~]` engineer complete; reviewer pending
+- **Status**: `[x]` reviewer-pass
 - **Files Written**: `handoff.md` §0 / §1 / §2 S9 risk note / §3 T54 row
 - **Files Read**: `git log`, `tasks.md`, `handoff.md`, `project-health/2026-04-29-tests-audit-report.md`, `docs/QUALITY_SCORE.md`, `vitest.config.mjs`
 - **Dependencies**: S8 done
@@ -4022,7 +4022,7 @@ S9 不接受「為了讓 coverage pass 而臨時調低」。
 
 ### T55 — Vitest path-threshold syntax spike
 
-- **Status**: `[~]` engineer complete; reviewer pending
+- **Status**: `[x]` reviewer-pass
 - **Files Written**: temporary smoke config only（must cleanup）；`handoff.md` §3 T55 row
 - **Files Read**: `vitest.config.mjs`, installed Vitest package docs/types/source under `node_modules/vitest` or local package metadata
 - **Dependencies**: T54 `[x]` and verdict `READY`
@@ -4063,7 +4063,7 @@ S9 不接受「為了讓 coverage pass 而臨時調低」。
 
 ### T56 — Fresh per-layer baseline + target table
 
-- **Status**: `[~]` engineer complete; reviewer pending
+- **Status**: `[x]` reviewer-pass
 - **Files Written**: `handoff.md` §3 T56 row; no config/code changes
 - **Files Read**: `coverage/coverage-summary.json` after fresh run, `docs/QUALITY_SCORE.md`, `vitest.config.mjs`
 - **Dependencies**: T54 `[x]` and verdict `READY`
@@ -4114,7 +4114,7 @@ S9 不接受「為了讓 coverage pass 而臨時調低」。
 
 ### T57 — Implement per-directory thresholds in Vitest config
 
-- **Status**: `[~]` engineer complete; reviewer pending
+- **Status**: `[x]` reviewer-pass
 - **Files Written**: `vitest.config.mjs`, `handoff.md` §3 T57 row
 - **Dependencies**: T55 `[x]`, T56 `[x]`, all T56 target entries pass
 
@@ -4160,7 +4160,7 @@ S9 不接受「為了讓 coverage pass 而臨時調低」。
 
 ### T58 — Threshold gate smoke (positive + negative)
 
-- **Status**: `[~]` engineer complete; reviewer pending
+- **Status**: `[x]` reviewer-pass
 - **Files Written**: temporary smoke config only（must cleanup）；`handoff.md` §3 T58 row
 - **Dependencies**: T57 `[x]`
 
@@ -4196,7 +4196,7 @@ S9 不接受「為了讓 coverage pass 而臨時調低」。
 
 ### T59 — Documentation + handoff sync for S9 ramp
 
-- **Status**: `[~]` engineer complete; reviewer pending
+- **Status**: `[x]` reviewer-pass
 - **Files Written**: `docs/QUALITY_SCORE.md`, `specs/026-tests-audit-report/handoff.md`, `specs/026-tests-audit-report/tasks.md`
 - **Files Read**: `.github/pull_request_template.md`
 - **Dependencies**: T57 `[x]`
@@ -4243,7 +4243,7 @@ S9 不接受「為了讓 coverage pass 而臨時調低」。
 
 ### T60 — S9 integration verify + commit
 
-- **Status**: `[~]` engineer complete; reviewer pending
+- **Status**: `[x]` reviewer-pass; engineer commit `ad34c36`, reviewer docs update captured
 - **Files Written**: `handoff.md` §0 / §1 / §3 T60 / §5, `tasks.md` statuses + scope summary
 - **Files Committed**:
   - `vitest.config.mjs`
