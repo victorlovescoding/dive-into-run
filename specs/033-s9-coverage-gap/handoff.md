@@ -401,16 +401,22 @@ T030/T031 review evidence, 2026-05-02 22:49:03 CST:
 
 ## Coverage After
 
+- T040 midpoint command: `npm run test:coverage`
+- T040 midpoint timestamp: `2026-05-02 23:04:37 Asia/Taipei` (`coverage/coverage-summary.json` mtime from Coverage Reviewer rerun)
+- T040 midpoint exit code: `0`
+- T040 midpoint summary source: fresh `coverage/coverage-summary.json`
+- Layer metric: statement coverage, aggregate `statements.covered / statements.total` from the fresh JSON summary, same protocol as T002.
+- `src/types/**`: N/A (`0 / 0` statements, 0 files; delta from baseline N/A)
+- `src/config/**`: `82.35%` (`28 / 34` statements, 6 files; delta `+0.00`)
+- `src/repo/**`: `94.78%` (`436 / 460` statements, 19 files; delta `+0.00`)
+- `src/service/**`: `92.78%` (`514 / 554` statements, 15 files; delta `+0.00`)
+- `src/runtime/**`: `88.81%` (`2436 / 2743` statements, 46 files; delta `+0.00`)
+- `src/ui/**`: `96.27%` (`129 / 134` statements, 21 files; delta `+11.20`) — target `>= 94.43` met
+- `src/components/**`: `90.05%` (`833 / 925` statements, 90 files; delta `+4.21`) — below target `>= 91.64`; needs at least `848 / 925`, gap `+15` covered statements
+- `src/app/**`: `95.45%` (`147 / 154` statements, 33 files; delta `+6.49`) — target `>= 95.07` met
+- T040 run output summary: 166 test files passed, 1437 tests passed, V8 total statements `90.51%` (`4666 / 5155`).
 - Final command: pending
-- Final summary source: pending
-- `src/types/**`: pending
-- `src/config/**`: pending
-- `src/repo/**`: pending
-- `src/service/**`: pending
-- `src/runtime/**`: pending
-- `src/ui/**`: pending, target `>= 94.43`
-- `src/components/**`: pending, target `>= 91.64`
-- `src/app/**`: pending, target `>= 95.07`
+- Final summary source: pending final rebaseline after any Wave B work.
 
 ## Touched Files
 
@@ -424,6 +430,7 @@ T030/T031 review evidence, 2026-05-02 22:49:03 CST:
 - `tests/unit/ui/event-formatters.test.js`
 - `tests/integration/dashboard/DashboardTabsScreen.test.jsx`
 - `tests/integration/comments/CommentCardMenu.test.jsx`
+- `tests/integration/comments/CommentSection.test.jsx`
 - `tests/integration/notifications/NotificationPanel.test.jsx`
 - `tests/integration/app/root-layout.test.jsx`
 
@@ -458,6 +465,11 @@ T030/T031 review evidence, 2026-05-02 22:49:03 CST:
 - T012/T013 UI Reviewer B + Flow Reviewer: accepted 2026-05-02 22:31:13 CST. Verified `tests/integration/dashboard/DashboardTabsScreen.test.jsx` covers real `DashboardTabsScreen` behavior with literal runtime props, uses only a minimal external `next/link` mock, avoids canonical-layer mocks and suppression comments, and passes fresh lint, focused browser Vitest, type-check, and depcruise gates.
 - T030/T031 App Reviewer A + Flow Reviewer: accepted 2026-05-02 22:49:03 CST. Verified `tests/integration/app/root-layout.test.jsx` covers real `src/app/layout.jsx` metadata and root shell behavior, uses no app/runtime/component internal mocks, does not touch T032 weather files, avoids suppression comments, and passes fresh lint, focused browser Vitest, type-check, and depcruise gates.
 - T032/T033 App Reviewer B + Flow Reviewer: accepted 2026-05-02 22:54:52 CST. Verified `tests/integration/app/weather-layout.test.jsx` covers real `src/app/weather/layout.jsx` metadata plus Fraunces wrapper behavior, and `tests/integration/app/weather-page-entry.test.jsx` covers real `src/app/weather/page.jsx` `next/dynamic({ ssr: false })` delegation while loading the real weather component path. The slice uses only external/framework/browser/Firebase SDK boundaries for stubs, has no `@/runtime`, `@/service`, `@/repo`, `@/ui`, `@/components`, or `@/app` mocks, avoids suppression comments, leaves forbidden files unchanged, and passes fresh lint, focused browser Vitest, type-check, and depcruise gates.
+- T040 Coverage Reviewer: accepted 2026-05-02 23:04:37 CST. Verified dependencies T006/T011/T013/T021/T023/T031/T033 are checked, fresh `npm run test:coverage` exited 0 with 166 test files / 1437 tests passed, `coverage/coverage-summary.json` mtime is `2026-05-02 23:04:37 +0800`, all 8 tracked groups were recalculated with statement coverage from the fresh JSON summary, `src/ui/**` is `96.27%` and target met, `src/components/**` is `90.05%` and target not met with `+15` covered statements still needed, `src/app/**` is `95.45%` and target met, and the working tree before reviewer signoff had only `specs/033-s9-coverage-gap/handoff.md` modified with no untracked files.
+- T041 UI Gap Reviewer: skipped 2026-05-02. Verified T040 is checked and the fresh T040 handoff value for `src/ui/**` is `96.27%` (`129 / 134` statements), above target `>= 94.43`; no UI gap slice was needed, and no code or test files were changed for T041.
+- T042 Components Gap Reviewer: accepted 2026-05-02 23:15:53 CST. Verified `tests/integration/comments/CommentSection.test.jsx` extends the primary `src/components/CommentSection.jsx` slice with real `CommentSection` scroll-to-comment behavior: mocked `next/navigation` supplies `commentId`, the real effect polls the DOM, calls `scrollIntoView({ behavior: 'smooth', block: 'center' })`, adds `commentHighlight`, removes it on `animationend`, and clears polling when the target never appears. No canonical-layer mocks, snapshot/import/render-only tests, suppression comments, sleep/timeouts, or forbidden-file diffs were added. Fresh commands passed: `npx eslint --max-warnings 0 tests/integration/comments/CommentSection.test.jsx`, `npx vitest run --project=browser tests/integration/comments/CommentSection.test.jsx` (1 file / 33 tests), `npm run type-check`, and `npm run depcruise`.
+- T043 App Gap Reviewer: skipped 2026-05-02. Verified T040 is checked and the fresh T040 `src/app/**` value is `95.45%` (`147 / 154` statements), meeting target `>= 95.07`; no app fallback slice is needed, and no code or test files were changed for T043.
+- T044 Flow Reviewer: accepted 2026-05-02 23:18:41 CST. Verified T040, T041, T042, and T043 are checked; T041/T043 are documented skips because `src/ui/**` and `src/app/**` already met targets at T040; T042 has accepted Components Gap Reviewer evidence and only the expected files are dirty. Fresh second-pass commands passed: `npx vitest run --project=browser tests/integration/comments/CommentSection.test.jsx` (1 file / 33 tests) and `npm run depcruise` (no dependency violations across 1463 modules / 3713 dependencies). Commit scope is limited to `tests/integration/comments/CommentSection.test.jsx`, `specs/033-s9-coverage-gap/tasks.md`, and `specs/033-s9-coverage-gap/handoff.md`.
 - Implementation Reviewers: T010/T011 and T012/T013 accepted 2026-05-02; remaining implementation reviewers pending.
 - Gate Reviewer: pending
 

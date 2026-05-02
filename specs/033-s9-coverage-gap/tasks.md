@@ -450,7 +450,7 @@ Parallel conflict rules for Wave A:
 
 ### Rebaseline And Second Pass
 
-- [ ] T040 Run mid-point coverage rebaseline
+- [x] T040 Run mid-point coverage rebaseline
   - Owner: Coverage Engineer
   - Reviewer: Coverage Reviewer
   - Dependencies: T011, T013, T021, T023, T031, T033
@@ -464,7 +464,7 @@ Parallel conflict rules for Wave A:
     - Fresh coverage values are recorded.
     - Reviewer confirms whether each target is met or still short.
 
-- [ ] T041 Add targeted gap slice if UI remains below 94.43
+- [x] T041 Add targeted gap slice if UI remains below 94.43
   - Owner: UI Gap Engineer
   - Reviewer: UI Gap Reviewer
   - Dependencies: T040
@@ -483,7 +483,7 @@ Parallel conflict rules for Wave A:
     - If executed, focused test passes and Reviewer accepts diff.
     - Reviewer confirms any secondary candidate had complete metadata before implementation.
 
-- [ ] T042 Add targeted gap slice if components remains below 91.64
+- [x] T042 Add targeted gap slice if components remains below 91.64
   - Owner: Components Gap Engineer
   - Reviewer: Components Gap Reviewer
   - Dependencies: T040
@@ -503,7 +503,7 @@ Parallel conflict rules for Wave A:
     - If executed, focused test passes and Reviewer accepts diff.
     - Reviewer confirms no rejected wrapper/static candidate was used.
 
-- [ ] T043 Add targeted gap slice if app remains below 95.07
+- [x] T043 Add targeted gap slice if app remains below 95.07
   - Owner: App Gap Engineer
   - Reviewer: App Gap Reviewer
   - Dependencies: T040
@@ -524,7 +524,7 @@ Parallel conflict rules for Wave A:
     - If executed, focused test passes and Reviewer accepts diff.
     - Reviewer confirms no `@/components`, `@/runtime`, or `@/app` internal mock was added.
 
-- [ ] T044 Review and commit second-pass coverage slices
+- [x] T044 Review and commit second-pass coverage slices
   - Owner: Flow Engineer
   - Reviewer: Flow Reviewer
   - Dependencies: T041, T042, T043
