@@ -36,6 +36,16 @@ describe('S014 test bucket policy', () => {
 
     expect(
       evaluateBucketImport(
+        'tests/unit/ui/event-formatters.test.js',
+        '@/ui/events/event-formatters',
+      ),
+    ).toMatchObject({
+      verdict: 'allow',
+      kind: 'src-ui',
+    });
+
+    expect(
+      evaluateBucketImport(
         'tests/unit/config/firebase-admin.test.js',
         '@/config/server/firebase-admin-app',
       ),
@@ -66,6 +76,16 @@ describe('S014 test bucket policy', () => {
 
     expect(
       evaluateBucketImport(
+        'tests/integration/dashboard/DashboardTabsScreen.test.jsx',
+        '@/ui/member/DashboardTabsScreen',
+      ),
+    ).toMatchObject({
+      verdict: 'allow',
+      kind: 'src-ui',
+    });
+
+    expect(
+      evaluateBucketImport(
         'tests/integration/notifications/notification-triggers.test.jsx',
         '@/repo/client/firebase-notifications-repo',
       ),
@@ -90,6 +110,13 @@ describe('S014 test bucket policy', () => {
     });
 
     expect(
+      evaluateBucketImport('tests/e2e/member-dashboard.spec.js', '@/ui/member/page'),
+    ).toMatchObject({
+      verdict: 'deny',
+      kind: 'src-ui',
+    });
+
+    expect(
       evaluateBucketImport('tests/_helpers/mock-helpers.js', './e2e-helpers.js'),
     ).toMatchObject({
       verdict: 'allow',
@@ -102,6 +129,13 @@ describe('S014 test bucket policy', () => {
     ).toMatchObject({
       verdict: 'deny',
       kind: 'src-lib',
+    });
+
+    expect(
+      evaluateBucketImport('tests/_helpers/render-helpers.js', '@/ui/member/DashboardTabsScreen'),
+    ).toMatchObject({
+      verdict: 'deny',
+      kind: 'src-ui',
     });
   });
 
@@ -119,7 +153,10 @@ describe('S014 test bucket policy', () => {
       TEST_BUCKET_DEPCRUISE_ARTIFACTS.find((artifact) => artifact.bucket === 'unit-tests-root'),
     ).toMatchObject({
       allow: {
-        resolvedPathPatterns: expect.arrayContaining(['^src/runtime/(?!providers(?:/|$))']),
+        resolvedPathPatterns: expect.arrayContaining([
+          '^src/runtime/(?!providers(?:/|$))',
+          '^src/ui(?:/|$)',
+        ]),
       },
       deny: {
         resolvedPathPatterns: expect.arrayContaining([
@@ -131,6 +168,9 @@ describe('S014 test bucket policy', () => {
     });
     expect(testBucketPolicy.depCruise['integration-tests-root'].allowedPathPatterns).toContain(
       '^src/config/(?:client|geo)(?:/|$)',
+    );
+    expect(testBucketPolicy.depCruise['integration-tests-root'].allowedPathPatterns).toContain(
+      '^src/ui(?:/|$)',
     );
   });
 

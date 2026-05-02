@@ -275,6 +275,28 @@ T004 Planning Engineer converted the T003 reviewed candidates into concrete impl
 - T042 fallback extends `EventEditForm.test.jsx`; do not pair it with another event form edit in the same wave.
 - T043 fallbacks extend profile tests only; avoid touching shared profile fixtures unless Reviewer agrees to serialize the profile slices.
 
+## T006 Blocker-Fix Handoff
+
+T010/T012 are blocked at depcruise because the test bucket policy does not model `src/ui/**` as an allowed test surface. Diagnosis Engineer and Reviewer approved the fix as precise policy modeling, not a threshold or policy workaround. T006 must be implemented and reviewed as an independent blocker-fix before T010/T012 commits, and should land before any Wave A commit because depcruise runs as a repo-wide commit gate.
+
+T006 scope:
+
+- Add precise `src-ui` surface `^src/ui(?:/|$)` in `specs/021-layered-dependency-architecture/test-buckets/policy.js`.
+- Allow only unit and integration buckets to import `src-ui` via explicit allowed surfaces/path patterns.
+- Keep e2e and tests-helper buckets denied from importing `src/ui`.
+- Do not add `src-other`, change deny rules, change thresholds, alter coverage include/exclude, add baseline ignore, or add suppression.
+- Update `tests/unit/lib/test-bucket-policy.test.js` to prove unit/integration allow and e2e/helper deny behavior.
+- Required evidence: `npm run depcruise` and `npx vitest run --project=browser tests/unit/lib/test-bucket-policy.test.js`.
+
+T006 Engineer evidence, 2026-05-02 22:17:38 CST:
+
+- Changed only T006 policy surfaces/tests plus this evidence note.
+- Added precise `src-ui` surface matcher `^src/ui(?:/|$)`.
+- Added `src-ui` only to unit and integration allowed surfaces/path patterns.
+- Kept e2e/tests-helper allowed path patterns empty and deny rules unchanged.
+- Focused policy Vitest: `npx vitest run --project=browser tests/unit/lib/test-bucket-policy.test.js` -> passed, 1 file / 4 tests.
+- Depcruise: `npm run depcruise` -> passed, no dependency violations found across 1463 modules / 3712 dependencies.
+
 ## Coverage After
 
 - Final command: pending
@@ -324,11 +346,14 @@ T004 Planning Engineer converted the T003 reviewed candidates into concrete impl
 - T004 Planning Engineer: submitted for review. Prepared concrete Wave A implementation slices, Wave B fallback pools, focused commands, acceptance criteria, and conflict notes. Did not add tests, modify production code, touch 026 docs, or mark T004 checked before Reviewer acceptance.
 - Planning Reviewer: accepted 2026-05-02. Verified T003 was checked and T004 was unchecked before review; Wave A slices T010/T012/T020/T022/T030/T032 have concrete source files, test paths, focused commands, and behavior acceptance criteria; Wave B T041/T042/T043 pools are based on T003 and block metadata-incomplete filler candidates; conflict notes cover helper/test overlap; T032 weather layout/page pairing is small enough because both app entries are tiny and use separate focused tests; status is limited to 033 planning docs.
 - T005 Setup Reviewer: accepted 2026-05-02. Verified commit `723845fa48276df68b636df914101d34f699fac0` exists on branch `033-s9-coverage-gap`, commit scope is only `specs/033-s9-coverage-gap/tasks.md` and `specs/033-s9-coverage-gap/handoff.md`, no `src/**`, `tests/**`, coverage artifacts, `package-lock.json`, or forbidden files were included, T001-T004 were checked while T005 remained unchecked before review, working tree had no tracked/untracked changes before this sign-off, and the successful commit means any pre-commit caveat warnings were non-blocking with no hook failure.
+- T006 Blocker-Fix: accepted 2026-05-02. Diagnosis Engineer and Reviewer approved adding a precise `src-ui` test bucket surface as policy modeling. Policy Modeling Reviewer accepted the implemented policy/test/doc diff and committed it as its own task before Wave A commits.
+- T006 Docs Reviewer: accepted 2026-05-02. Verified T006 is inserted after T005 and before Wave A, has an Engineer/Reviewer pair, depends on T005, is not parallel-safe, makes T010/T012 depend on T006, and records that T006 should land before any Wave A commit. Acceptance is narrow to precise `src-ui` policy modeling, unit/integration allow behavior, e2e/tests-helper deny behavior, no `src-other`, no deny/threshold/include/exclude/baseline-ignore/suppression changes, policy-test update, `npm run depcruise`, and the focused policy Vitest command. This docs review did not mark T006 done and touched only this handoff sign-off.
+- T006 Policy Modeling Reviewer: accepted 2026-05-02 22:20:38 CST. Verified `src-ui` is modeled as `^src/ui(?:/|$)`, only unit/integration buckets allow `src-ui` surfaces/path patterns, e2e/tests-helper still deny `src/**` with empty allowed path patterns, no `src-other` allow was added, deny rules were not weakened, and no coverage threshold/include/exclude/baseline-ignore/suppression files changed. Fresh evidence: `npx vitest run --project=browser tests/unit/lib/test-bucket-policy.test.js` passed 1 file / 4 tests; `npm run depcruise` passed with no dependency violations across 1463 modules / 3712 dependencies.
 - Implementation Reviewers: pending
 - Gate Reviewer: pending
 
 ## Remaining Risk
 
-- T005 planning baseline is reviewed and committed; next work may start from T010/T020/T030 according to dependency and conflict rules.
+- T006 policy modeling is reviewed and committed; Wave A may proceed according to task dependencies and conflict rules.
 - Parallel implementation must avoid touching the same test helper or test file without coordination.
 - Wave B secondary/tertiary candidates that only had compact T003 notes must not start until handoff has complete metadata and a Reviewer accepts the metadata.

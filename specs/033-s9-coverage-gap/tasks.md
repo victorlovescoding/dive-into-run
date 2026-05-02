@@ -206,9 +206,30 @@ Legend:
     - No coverage implementation has started.
     - Reviewer confirms commit scope.
 
+- [x] T006 Model src-ui test bucket surface
+  - Owner: Policy Modeling Engineer
+  - Reviewer: Policy Modeling Reviewer
+  - Dependencies: T005
+  - Parallel-safe: no
+  - Blocker fixed: T010/T012 depcruise failure caused by test bucket policy lacking a `src-ui` surface.
+  - Steps:
+    - Add a precise `src-ui` surface matcher in `specs/021-layered-dependency-architecture/test-buckets/policy.js`.
+    - Allow only unit and integration test buckets to import `src-ui` through explicit allowed surfaces/path patterns.
+    - Add focused policy tests proving the intended allow/deny matrix.
+    - Run the focused policy test and repo depcruise gate.
+  - Acceptance:
+    - `specs/021-layered-dependency-architecture/test-buckets/policy.js` adds precise `src-ui` surface `^src/ui(?:/|$)`.
+    - Unit and integration buckets may import `src-ui` via allowed surfaces/path patterns.
+    - E2E and tests-helper buckets still may not import `src/ui`.
+    - No `src-other` surface is added.
+    - Deny rules, thresholds, coverage include/exclude, baseline ignore, and suppression are unchanged.
+    - `tests/unit/lib/test-bucket-policy.test.js` proves unit/integration allow `src-ui` and e2e/helper deny it.
+    - `npm run depcruise` passes.
+    - `npx vitest run --project=browser tests/unit/lib/test-bucket-policy.test.js` passes.
+
 ### Parallel Execution Plan
 
-After T005, run these tracks with at most one Engineer and one Reviewer per track. Tracks in the same wave may run concurrently if they do not touch the same files.
+After T005, run T006 as a serial blocker-fix before any Wave A commit. After T006 is accepted, run these tracks with at most one Engineer and one Reviewer per track. Tracks in the same wave may run concurrently if they do not touch the same files.
 
 Wave A:
 
@@ -224,6 +245,7 @@ Wave B:
 Parallel conflict rules for Wave A:
 
 - Do not create or modify shared test helpers in Wave A unless the affected tracks are serialized.
+- T006 should land before any Wave A commit because the commit gate runs repo-wide depcruise.
 - T030 and T032 must use separate focused app test files; if an app helper is needed, coordinate through T031/T033 before either commit.
 - T022 owns `tests/integration/notifications/NotificationPanel.test.jsx`; no other concurrent task should edit notification panel tests.
 - T010/T012/T020 should use new focused test files and are expected to have no file overlap with each other or with T030/T032.
@@ -233,7 +255,7 @@ Parallel conflict rules for Wave A:
 - [ ] T010 Add first UI behavior coverage slice
   - Owner: UI Engineer A
   - Reviewer: UI Reviewer A
-  - Dependencies: T005
+  - Dependencies: T006
   - Parallel-safe: yes, with T020 and T030
   - Target production surface: `src/ui/events/event-formatters.js`
   - Expected test file: `tests/unit/ui/event-formatters.test.js`
@@ -265,7 +287,7 @@ Parallel conflict rules for Wave A:
 - [ ] T012 Add second UI behavior coverage slice
   - Owner: UI Engineer B
   - Reviewer: UI Reviewer B
-  - Dependencies: T005
+  - Dependencies: T006
   - Parallel-safe: yes, if it does not touch files from T010
   - Target production surface: `src/ui/member/DashboardTabsScreen.jsx`
   - Expected test file: `tests/integration/dashboard/DashboardTabsScreen.test.jsx`
