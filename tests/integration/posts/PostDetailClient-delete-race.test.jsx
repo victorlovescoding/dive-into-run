@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   addDoc,
@@ -25,17 +25,10 @@ import {
 // ---------------------------------------------------------------------------
 // Hoisted shared state (available inside vi.mock factories)
 // ---------------------------------------------------------------------------
-const { mockShowToast, mockPush, mockReplace, mockAuthContext } = vi.hoisted(() => {
-  const { createContext } = require('react');
-  return {
-    mockShowToast: vi.fn(),
-    mockPush: vi.fn(),
-    mockReplace: vi.fn(),
-    mockAuthContext: createContext({
-      user: { uid: 'user-1', name: '小明', photoURL: '/avatar.jpg' },
-    }),
-  };
-});
+const { mockPush, mockReplace } = vi.hoisted(() => ({
+  mockPush: vi.fn(),
+  mockReplace: vi.fn(),
+}));
 
 // ---------------------------------------------------------------------------
 // Module mocks (hoisted)
@@ -43,14 +36,6 @@ const { mockShowToast, mockPush, mockReplace, mockAuthContext } = vi.hoisted(() 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
   useSearchParams: () => new URLSearchParams(),
-}));
-
-vi.mock('@/runtime/providers/AuthProvider', () => ({
-  AuthContext: mockAuthContext,
-}));
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: mockShowToast }),
 }));
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
@@ -95,7 +80,10 @@ vi.mock('next/image', () => ({
 // Imports (after vi.mock — Vitest hoists mocks above these)
 // ---------------------------------------------------------------------------
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
 import { createFirestoreDocSnapshot as createDocSnapshot } from '../../_helpers/factories';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 
 const firestoreMocks = {
   ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
@@ -133,6 +121,27 @@ const mockPost = {
   commentsCount: 0,
   isAuthor: true,
 };
+
+const mockUser = {
+  uid: 'user-1',
+  name: '小明',
+  email: null,
+  photoURL: '/avatar.jpg',
+  bio: null,
+  getIdToken: async () => '',
+};
+
+/**
+ * 使用真實 AuthContext/ToastContext provider value 渲染文章詳情。
+ * @returns {ReturnType<typeof renderWithAuthToast>} render 結果與 context spies。
+ */
+function renderPostDetail() {
+  return renderWithAuthToast(<PostDetailClient postId="post-1" />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+    auth: { user: mockUser },
+  });
+}
 
 /**
  * 設定刪除流程需要的 Firestore SDK 邊界 stub。
@@ -234,14 +243,14 @@ describe('PostDetailClient delete race condition', () => {
     setupFirestoreMocks({ deletePostExists: false });
 
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post-1" />);
+    const { toastValue } = renderPostDetail();
     await clickDelete(user);
 
     await waitFor(() => {
       expect(screen.getByText('找不到這篇文章（可能已被刪除）')).toBeInTheDocument();
     });
     expect(screen.getByRole('alert')).toBeInTheDocument();
-    expect(mockShowToast).not.toHaveBeenCalled();
+    expect(toastValue.showToast).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
     // race 是預期內的情境，不該觸發 console.error（否則 Next.js dev overlay 會誤報）
     expect(consoleErrorSpy).not.toHaveBeenCalled();
@@ -255,11 +264,11 @@ describe('PostDetailClient delete race condition', () => {
     setupFirestoreMocks({ batchError: new Error('Firestore batch failed') });
 
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post-1" />);
+    const { toastValue } = renderPostDetail();
     await clickDelete(user);
 
     await waitFor(() => {
-      expect(mockShowToast).toHaveBeenCalledWith('刪除文章失敗，請稍後再試', 'error');
+      expect(toastValue.showToast).toHaveBeenCalledWith('刪除文章失敗，請稍後再試', 'error');
     });
     expect(screen.queryByText('找不到這篇文章（可能已被刪除）')).not.toBeInTheDocument();
     expect(mockPush).not.toHaveBeenCalled();
@@ -271,13 +280,16 @@ describe('PostDetailClient delete race condition', () => {
     const { batch } = setupFirestoreMocks();
 
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post-1" />);
+    const { toastValue } = renderPostDetail();
     await clickDelete(user);
 
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/posts?toast=文章已刪除');
     });
     expect(batch.commit).toHaveBeenCalled();
-    expect(mockShowToast).not.toHaveBeenCalledWith(expect.stringContaining('失敗'), 'error');
+    expect(toastValue.showToast).not.toHaveBeenCalledWith(
+      expect.stringContaining('失敗'),
+      'error',
+    );
   });
 });

@@ -150,7 +150,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/posts/post-edit-validation.test.jsx tests/integration/posts/post-form-validation.test.jsx`
   - Commit point: yes, after T006a and T006b both pass review. Suggested message: `test: remove post form provider mocks`.
 
-- [ ] T007 - Posts delete-race and reply cleanup
+- [x] T007 - Posts delete-race and reply cleanup
   - Owner engineer: Engineer B
   - Reviewer: Reviewer B
   - Depends on: T006a, T006b
@@ -180,7 +180,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/strava/RunsPage.test.jsx`
   - Commit point: no.
 
-- [ ] T010 - Strava sync-error cleanup
+- [x] T010 - Strava sync-error cleanup
   - Owner engineer: Engineer C
   - Reviewer: Reviewer C
   - Depends on: T009
