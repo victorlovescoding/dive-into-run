@@ -81,6 +81,9 @@
 | T52 S8 smoke positive/negative   | done (rev-pass; temp files cleaned)                                                                                                    |
 | T53 verify + commit              | done by this S8 commit                                                                                                                 |
 | Last commit (S8)                 | commit pending in this T53 commit; source of truth after commit is `git log -1`                                                        |
+| **S9** scope                     | **blocked at T54 — missing Wave 3 coverage-improvement evidence for ui/components/app; T55-T60 not executed**                          |
+| T54 precondition gate            | blocked — `BLOCKED: Wave 3 coverage-improvement commit or handoff note for ui/components/app is missing`                               |
+| T55-T60                          | pending; do not run until T54 is rerun with READY evidence                                                                              |
 
 ## §1 Next Session Checklist
 
@@ -179,6 +182,7 @@
 
 - [ ] 開 PR：`026-tests-audit-report` → `main`（含 S8 closeout commit），等 protected-branch checks（`ci` / `e2e` / `firestore-rules-gate`）綠 → merge → 刪 branch。
 - [ ] **S9 啟動條件**：S8 commit merged 後，才推 per-directory coverage threshold / follow-up baseline ramp；不要再把 S8 retired baseline checkbox 加回 PR template。
+- [ ] **S9/T54 current blocker**：不要啟動 T55-T60。T54 找到 S8 commit source，但沒有找到後續 Wave 3 coverage-improvement commit 或 handoff note for ui/components/app；`docs/QUALITY_SCORE.md` 的 S3 baseline 只能證明 baseline collected，不能當成 Wave 3 補測完成證據。
 
 ## §2 Must-Read Risks（已知踩坑 + subagent 增補）
 
@@ -366,6 +370,12 @@
 | T45 stale handoff rerun evidence vs latest main                          | 2026-05-01 dirty handoff diff 記錄 `origin/main` `3dfd3e4` 時 mock-boundary 仍為 18；2026-05-02 rebase 到 `8800725` 後已清為 0，若只讀舊 row 會誤判 S8 blocked | 以最新 T45 SAFE row 為 current state；保留 2026-05-01 rerun evidence 作歷史，但 T46-T53 應依 2026-05-02 `mock=0 / flaky=0 / lint=0` 繼續 |
 | T49 grep drift：block 18.7 / 18.8 仍有 spec 027 baseline wording          | 原 T49 AC 的 full-file grep 會看到 `baseline ignores list` / `AST custom plugin` hits，但那些 hits 位於 block 18.7 / 18.8，不屬 S8 T49 ownership。 | T53 evidence 使用 scoped interpretation：S8 only retires block 18.5 / 18.6；不改 selector/severity/block 18.7/18.8，也不把 spec 027 scope 混入 S8。 |
 | T48 L58 baseline wording不可誤刪                                          | PR template L58 的 `baseline report is attached` 是 coverage threshold / R1 evidence，不是 S8 ESLint ignores baseline tracking。T48 retry 2 reviewer 已因 inventory 漏列 L58 reject 過一次。 | T51/T53 保留 L58 coverage checkbox；只移除 `### Baseline tracking` 與 ESLint `ignores` / `Baseline change:` 相關 checkbox。 |
+
+### S9 Risks（新增 — T54 gate）
+
+| Risk | Why it matters | Action |
+| ---- | -------------- | ------ |
+| S3 coverage baseline 被誤當成 Wave 3 coverage evidence | S9 trigger 需要「S3 baseline 已收集 + Wave 3 補測完成」；目前只找到 S3 baseline (`ui 62.52% / components 52.43% / app 47.92%`) 與 S8 baseline retire，沒有找到後續 ui/components/app coverage-improvement commit 或 handoff note。 | T54 verdict = `BLOCKED: Wave 3 coverage-improvement commit or handoff note for ui/components/app is missing`。T55-T60 保持 pending；不要改 `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`tasks.md` 或任何 config/code。 |
 
 ### T01 Evidence Detail
 
@@ -7310,6 +7320,72 @@ Body must include one `Baseline retire:` line and no `Co-Authored-By`. This foll
 #### Stash note
 
 `stash@{0}` exists as `On 026-tests-audit-report: t45-handoff-pre-rebase`; `git stash show --name-status stash@{0}` shows only `specs/026-tests-audit-report/handoff.md`. Its old 2026-05-01 UNSAFE content is superseded by the later SAFE row and current S8 evidence; T53 may drop it after commit if final status is clean.
+
+### T54 Evidence Detail
+
+| Task | Status | Engineer | Eng evidence (excerpt) | Reviewer | Rev evidence (excerpt) |
+| ---- | ------ | -------- | ---------------------- | -------- | ---------------------- |
+| T54 | blocked | S9/T54 engineer-codex / 2026-05-02 CST | `git status --short --branch` -> `## 026-tests-audit-report` (branch != main; no dirty lines before T54 edit). `git log -1 --oneline` -> `d333cf4 docs(026): plan S9 coverage thresholds`; explicit S8 completion source is commit `65ee9a0 chore(eslint): retire S8 audit baseline` from `git log --oneline --grep "retire S8 audit baseline"` and `git log --oneline -8`. Read files: `specs/026-tests-audit-report/tasks.md` S9 T54-T60; `specs/026-tests-audit-report/handoff.md` §0/§1/§2/§3 T45/T53/S3 coverage evidence; `project-health/2026-04-29-tests-audit-report.md` L185-206 / L351-353 / L521-526 / L665-668; `docs/QUALITY_SCORE.md`; `vitest.config.mjs`. Audit refs: L185-204 per-directory threshold ramp, L351-353 Phase 1 threshold/no cadence, L521-526 R1/R2 split, L665-668 S9 trigger/action. `rg -n "Wave 3 coverage\|coverage-improvement\|補測\|ui/components/app" ...` found S3 baseline and S9 trigger text, but no later Wave 3 coverage-improvement commit/handoff note for ui/components/app. Exact trigger verdict: `BLOCKED: Wave 3 coverage-improvement commit or handoff note for ui/components/app is missing`. T55-T60 not executed; no code/config/docs/tasks edits. | pending T54 reviewer | pending — reviewer should rerun `git status --short --branch`, `git log -1 --oneline`, inspect this T54 evidence, and confirm the blocker is textual evidence, not inference. |
+
+#### T54 command evidence
+
+```text
+$ git status --short --branch
+## 026-tests-audit-report
+
+$ git log -1 --oneline
+d333cf4 docs(026): plan S9 coverage thresholds
+
+$ git log --oneline --grep "retire S8 audit baseline"
+65ee9a0 chore(eslint): retire S8 audit baseline
+
+$ git log --oneline -8
+d333cf4 docs(026): plan S9 coverage thresholds
+65ee9a0 chore(eslint): retire S8 audit baseline
+e5dc9cb docs(026): T45 precondition gate UNSAFE — S8 halted, T46-T53 blocked
+780e837 docs(026): plan S8 ESLint baseline retire + audit gate exit 1 (T45-T53)
+8800725 test: remove integration provider mocks (#33)
+7efc473 test: remove integration provider mocks
+80db987 test: remove strava provider mocks
+74f9ba2 test: remove post race provider mocks
+```
+
+```text
+$ rg -n "T45|T53|S8|Wave 3|coverage|ui|components|app" specs/026-tests-audit-report/handoff.md specs/026-tests-audit-report/tasks.md
+specs/026-tests-audit-report/handoff.md:73:| **S8** scope                     | **done — ESLint baseline retire + audit gate exit 1 (T45-T53)**                                                                        |
+specs/026-tests-audit-report/handoff.md:82:| T53 verify + commit              | done by this S8 commit                                                                                                                 |
+specs/026-tests-audit-report/handoff.md:170:**S8 已完成工作（T45-T53 rev-pass；T53 final gate fresh PASS）**：
+specs/026-tests-audit-report/handoff.md:172:- [x] T45 SAFE：latest `origin/main` `8800725`，mock-boundary grep `0`、flaky grep `0`、lint exit `0`；舊 UNSAFE rows 只作歷史。
+specs/026-tests-audit-report/handoff.md:255:| **T13 lines% 反直覺微升**（T13 實際遭遇）                     | 預期加入 ui/components/app 三層多為低覆蓋 → 總體 line% 應下降；實測 T10 70.69% → T13 71.28%（+0.59pp）...
+specs/026-tests-audit-report/handoff.md:315:| T11  | rev-pass ... QUALITY_SCORE.md ... ui/components/app row ...
+specs/026-tests-audit-report/handoff.md:318:| T14  | rev-pass ... Score History ... ui/components/app 首度有 V8 cov baseline (62.52% / 52.43% / 47.92%) ...
+specs/026-tests-audit-report/handoff.md:319:| T15  | rev-pass ... `npm run test:coverage` exit 0 ... Lines 71.28% ...
+specs/026-tests-audit-report/handoff.md:5536:**Decision: SAFE — Wave 3 baseline cleared on latest `origin/main`; T46-T53 may proceed.**
+specs/026-tests-audit-report/handoff.md:7235:- Latest T45 current state is SAFE on 2026-05-02: `mock=0`, `flaky=0`, `lint_exit=0`, latest `origin/main` `8800725`; older UNSAFE rows are historical only.
+specs/026-tests-audit-report/handoff.md:7244:#### AC-T53.2 final gate (fresh, commit pre-stage)
+specs/026-tests-audit-report/tasks.md:3924:- **Trigger**: S8 commit 已完成，且 Wave 3 補測已完成到足以支撐 S9 threshold。若任一前置不成立，T54 必須 escalated，T55-T60 不執行。
+specs/026-tests-audit-report/tasks.md:3992:4. Confirm Wave 3 補測 evidence exists. Minimum acceptable evidence:
+specs/026-tests-audit-report/tasks.md:3994:   - A later Wave 3 coverage-improvement commit or handoff note exists for ui/components/app. If no such evidence exists, T54 escalates and S9 stops.
+specs/026-tests-audit-report/tasks.md:4002:  - `READY: S8 done + Wave 3 coverage evidence found`
+specs/026-tests-audit-report/tasks.md:4456:  - **S9 trigger 紀律**：T54 若找不到 Wave 3 coverage-improvement evidence，S9 必須停在 T54；subagent 不准把 `docs/QUALITY_SCORE.md` 的 S3 baseline 當成 Wave 3 完成證據。
+```
+
+```text
+$ rg -n "Wave 3 coverage|coverage-improvement|補測|ui/components/app" specs/026-tests-audit-report/handoff.md specs/026-tests-audit-report/tasks.md docs/QUALITY_SCORE.md project-health/2026-04-29-tests-audit-report.md
+docs/QUALITY_SCORE.md:35:... ui / components / app 首度有 V8 cov baseline ... 下一步是把低覆蓋層（如 ui/）逐步補測。
+docs/QUALITY_SCORE.md:68:... Coverage include 擴至 8 層 (S3); ui/components/app 首度有 V8 cov baseline (62.52% / 52.43% / 47.92%)。
+project-health/2026-04-29-tests-audit-report.md:580:| S9 | Per-directory threshold（觸發型）| ⏸ Wave 3 後 | TBD | Wave 3 補測完成 |
+project-health/2026-04-29-tests-audit-report.md:667:- **觸發條件**: S3 baseline 已收集 + Wave 3 補測完成
+specs/026-tests-audit-report/tasks.md:3924:- **Trigger**: S8 commit 已完成，且 Wave 3 補測已完成到足以支撐 S9 threshold。若任一前置不成立，T54 必須 escalated，T55-T60 不執行。
+specs/026-tests-audit-report/tasks.md:3994:   - A later Wave 3 coverage-improvement commit or handoff note exists for ui/components/app. If no such evidence exists, T54 escalates and S9 stops.
+specs/026-tests-audit-report/tasks.md:4456:  - **S9 trigger 紀律**：T54 若找不到 Wave 3 coverage-improvement evidence，S9 必須停在 T54；subagent 不准把 `docs/QUALITY_SCORE.md` 的 S3 baseline 當成 Wave 3 完成證據。
+```
+
+#### T54 verdict
+
+`BLOCKED: Wave 3 coverage-improvement commit or handoff note for ui/components/app is missing`
+
+Important pitfall: S8 T45 SAFE proves mock/flaky baseline cleared for S8. It does not prove ui/components/app coverage improved after S3. The only coverage evidence found is S3 baseline (`ui 62.52% / components 52.43% / app 47.92%`) plus task text saying this baseline must not be treated as Wave 3 completion evidence.
 
 ## §4 Pattern Index
 
