@@ -3912,6 +3912,410 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
 ---
 
+## S9 — Per-directory coverage threshold（T54-T60）
+
+- **Status**: planned
+- **Audit**: P0-4 / P2-4 / R2
+- **Source**: `project-health/2026-04-29-tests-audit-report.md`
+  - L185-206 — per-directory threshold 建議與 monthly +5 ramp
+  - L351-353 — global `lines: 70` 暫降值缺 review cadence
+  - L521-526 — R2 per-directory threshold gate
+  - L580 / L665-668 — S9 觸發型任務
+- **Trigger**: S8 commit 已完成，且 Wave 3 補測已完成到足以支撐 S9 threshold。若任一前置不成立，T54 必須 escalated，T55-T60 不執行。
+- **Primary files**:
+  - `vitest.config.mjs`
+  - `docs/QUALITY_SCORE.md`
+  - `.github/pull_request_template.md`（read-only，確認 coverage baseline checkbox 仍保留）
+  - `specs/026-tests-audit-report/handoff.md`
+  - `specs/026-tests-audit-report/tasks.md`
+
+### S9 Execution Rule
+
+**主 agent 不下手任何 S9 實作或後續修改**。S9 執行時，主 agent 只負責派工、讀 reviewer 結論、把 reject feedback 轉派回 engineer；所有改檔、驗證、修正、handoff evidence、commit 都必須由 subagent 完成。
+
+每個 task 必須配對 1 engineer + 1 reviewer：
+
+1. Engineer 完成該 task 後，先把實作重點、命令輸出、踩坑與下一步寫進 `handoff.md` §3 對應 T54-T60 row。
+2. Reviewer 讀 engineer 改的檔案、重跑 task 指定 AC 命令，並檢查 engineer 寫進 `handoff.md` 的內容是否準確、沒有誇大或遺漏 blocker。
+3. Reviewer reject 時，主 agent 必須把同一 task 交回 engineer 修到 pass；禁止主 agent 自己改。
+4. 同一 task 最多 3 次 engineer attempt；第 3 次仍 reject，標 `[!]` escalated 並回報用戶。
+
+### S9 Concurrency
+
+```
+Wave S9-0 (序列):       T54-eng -> T54-rev
+Wave S9-1 (2 task):     T55-eng | T56-eng
+                              ↓ each 完成後立即觸發 reviewer ↓
+Wave S9-1 review:       T55-rev | T56-rev
+Wave S9-2 (序列):       T57-eng -> T57-rev
+Wave S9-3 (2 task):     T58-eng | T59-eng
+                              ↓ each 完成後立即觸發 reviewer ↓
+Wave S9-3 review:       T58-rev | T59-rev
+Wave S9-4 (序列):       T60-eng -> T60-rev
+```
+
+- Max concurrent engineer subagents: **2**
+- Max active task pairs: **2**
+- Max live subagents if reviewers overlap with next ready work: **4**（2 engineer + 2 reviewer）
+- No retry case total subagent invocations: **14**（T54-T60 各 engineer + reviewer）
+- `T57` 必須等 `T55` + `T56` 都 `[x]`；`T60` 必須等 `T57` + `T58` + `T59` 都 `[x]`
+
+### S9 Threshold Policy
+
+S9 不接受「為了讓 coverage pass 而臨時調低」。
+
+| Layer | Target policy |
+| ----- | ------------- |
+| `src/service/**` | `lines: 80` |
+| `src/repo/**` | `lines: 75` |
+| `src/runtime/**` | `lines: 60` |
+| `src/lib/**` | `lines: 80`，但 T56 必須先用 fresh `coverage-summary.json` 驗證實際可過；若因 S3 記錄的 lib coverage 算法差異導致不可過，必須 escalated |
+| `src/config/**` | `lines: 70` |
+| `src/ui/**` | Wave 3 後 fresh baseline + 5 percentage points；不得高於 70，若未達 baseline+5 則 escalated |
+| `src/components/**` | Wave 3 後 fresh baseline + 5 percentage points；不得高於 70，若未達 baseline+5 則 escalated |
+| `src/app/**` | Wave 3 後 fresh baseline + 5 percentage points；不得強拉到 70+；若未達 baseline+5 則 escalated |
+
+動態層的精確數字由 T56 產出；T57 只能使用 T56 reviewer-pass 的數字。若 Vitest path threshold 實作只接受整數，採 `Math.floor(freshPct) + 5`；若 T55 證實可接受小數，採 `freshPct + 5` 並保留 2 位小數。不能猜，必須由 T55 的本機 smoke 證據決定。
+
+### T54 — S9 precondition + source-of-truth gate
+
+- **Status**: `[ ]`
+- **Files Written**: `handoff.md` §0 / §1 / §2 S9 risk note / §3 T54 row
+- **Files Read**: `git log`, `tasks.md`, `handoff.md`, `project-health/2026-04-29-tests-audit-report.md`, `docs/QUALITY_SCORE.md`, `vitest.config.mjs`
+- **Dependencies**: S8 done
+
+**Engineer Action**：
+
+1. Confirm current branch is not `main` and working tree starts clean.
+2. Confirm latest local commit includes S8 closeout (`65ee9a0 chore(eslint): retire S8 audit baseline` or newer equivalent). If branch was rebased/amended, record actual `git log -1 --oneline`.
+3. Confirm `tasks.md` has T45-T53 `[x]` and `handoff.md` §0 says S8 done.
+4. Confirm Wave 3 補測 evidence exists. Minimum acceptable evidence:
+   - S8 T45 SAFE baseline shows mock-boundary 0 and flaky 0.
+   - A later Wave 3 coverage-improvement commit or handoff note exists for ui/components/app. If no such evidence exists, T54 escalates and S9 stops.
+5. Read audit L185-206 / L351-353 / L521-526 / L665-668 and record S9 source lines in `handoff.md`.
+
+**Acceptance Criteria**：
+
+- **AC-T54.1**: `git status --short --branch` shows branch != `main`; no unstaged unrelated changes before work.
+- **AC-T54.2**: `git log -1 --oneline` recorded; S8 completion source is explicit.
+- **AC-T54.3**: S9 trigger verdict is one of exactly:
+  - `READY: S8 done + Wave 3 coverage evidence found`
+  - `BLOCKED: <specific missing evidence>`
+- **AC-T54.4**: If blocked, T55-T60 remain `[ ]`, `handoff.md` records blocker, and engineer does not edit code/config.
+- **AC-T54.5**: `handoff.md` §3 T54 row includes audit line refs and exact files read.
+
+**Engineer Evidence**：
+
+- `git status --short --branch`
+- `git log -1 --oneline`
+- `rg -n "T45|T53|S8|Wave 3|coverage|ui|components|app" specs/026-tests-audit-report/handoff.md specs/026-tests-audit-report/tasks.md`
+- T54 trigger verdict
+
+**Reviewer 驗證**：
+
+- Re-run AC-T54.1 / .2.
+- Read `handoff.md` §0 / §1 / §3 T54 and `tasks.md` T45-T53.
+- Verify blocked/ready verdict is supported by actual text, not inference.
+- Reject if engineer continues past a blocked trigger or fails to cite exact evidence.
+
+---
+
+### T55 — Vitest path-threshold syntax spike
+
+- **Status**: `[ ]`
+- **Files Written**: temporary smoke config only（must cleanup）；`handoff.md` §3 T55 row
+- **Files Read**: `vitest.config.mjs`, installed Vitest package docs/types/source under `node_modules/vitest` or local package metadata
+- **Dependencies**: T54 `[x]` and verdict `READY`
+
+**Engineer Action**：
+
+1. Verify current installed Vitest version from `npm ls vitest --depth=0` or package metadata.
+2. Prove the exact path-threshold syntax supported by this installed Vitest version. Acceptable proof:
+   - local docs/types/source reference; and
+   - a temp config smoke that intentionally sets one path threshold above actual coverage and makes `npx vitest run --coverage` fail for that path.
+3. Temp file naming: `vitest.s9-threshold-smoke.config.mjs` or `/tmp/s9-threshold-smoke.*`; if created in repo root, it must be removed before task ends.
+4. Decide whether threshold values may use decimals. This must be evidence-backed; otherwise use integer floor policy.
+
+**Acceptance Criteria**：
+
+- **AC-T55.1**: Vitest version recorded.
+- **AC-T55.2**: Supported syntax recorded exactly, e.g. `thresholds: { 'src/ui/**': { lines: N } }`; no unsupported key names.
+- **AC-T55.3**: Negative smoke proves path threshold can fail. Expected outcome: command exits non-zero and output mentions the threshold/path or line threshold failure.
+- **AC-T55.4**: Positive cleanup check: `git status --short | grep "s9-threshold-smoke" | wc -l` = `0`.
+- **AC-T55.5**: Decimal support decision recorded as `decimal-ok` or `integer-only`; if uncertain, record `integer-only`.
+
+**Engineer Evidence**：
+
+- Vitest version command output
+- local docs/types/source path or grep snippet used as proof
+- negative smoke command + exit code + relevant output
+- cleanup status
+- decimal support decision
+
+**Reviewer 驗證**：
+
+- Re-run or independently inspect the syntax proof.
+- Re-run cleanup check.
+- Reject if engineer only copies audit prose without proving current Vitest support.
+- Reject if any temp config remains.
+
+---
+
+### T56 — Fresh per-layer baseline + target table
+
+- **Status**: `[ ]`
+- **Files Written**: `handoff.md` §3 T56 row; no config/code changes
+- **Files Read**: `coverage/coverage-summary.json` after fresh run, `docs/QUALITY_SCORE.md`, `vitest.config.mjs`
+- **Dependencies**: T54 `[x]` and verdict `READY`
+
+**Engineer Action**：
+
+1. Run fresh coverage:
+
+   ```bash
+   npm run test:coverage
+   ```
+
+2. Extract total coverage metrics and per-layer line percentages for:
+   - `src/service/**`
+   - `src/repo/**`
+   - `src/runtime/**`
+   - `src/lib/**`
+   - `src/config/**`
+   - `src/ui/**`
+   - `src/components/**`
+   - `src/app/**`
+3. Compare fresh ui/components/app numbers against `docs/QUALITY_SCORE.md` S3 baselines (`62.52% / 52.43% / 47.92%`) and record deltas.
+4. Build S9 target table using S9 Threshold Policy and T55 decimal decision if already complete; if T55 is still pending, record both integer and decimal candidate values and let T57 use the reviewer-pass decision.
+5. If any target is above fresh current coverage, mark `BLOCKED_THRESHOLD: <layer> current X < target Y`; do not lower target silently.
+
+**Acceptance Criteria**：
+
+- **AC-T56.1**: `npm run test:coverage` exit 0; output includes `Coverage report from v8`; `coverage/coverage-summary.json` exists.
+- **AC-T56.2**: T56 evidence includes total `lines/statements/branches/functions`.
+- **AC-T56.3**: T56 evidence includes 8-layer line% table and ui/components/app delta from S3 baseline.
+- **AC-T56.4**: T56 target table includes all 8 threshold entries and a pass/block verdict per entry.
+- **AC-T56.5**: If any target cannot pass, T57-T60 remain `[ ]` and `handoff.md` records blocker in PR-ready wording.
+
+**Engineer Evidence**：
+
+- Coverage command exit code + tail 50 lines
+- `coverage-summary.json` extraction command/output
+- 8-layer fresh baseline table
+- S9 target table + pass/block verdict
+
+**Reviewer 驗證**：
+
+- Re-run the JSON extraction at minimum; full `npm run test:coverage` is preferred if time allows.
+- Verify layer percentages are computed from real coverage files, not copied from `docs/QUALITY_SCORE.md`.
+- Reject if target table omits lib/config or hides a failing layer.
+
+---
+
+### T57 — Implement per-directory thresholds in Vitest config
+
+- **Status**: `[ ]`
+- **Files Written**: `vitest.config.mjs`, `handoff.md` §3 T57 row
+- **Dependencies**: T55 `[x]`, T56 `[x]`, all T56 target entries pass
+
+**Engineer Action**：
+
+1. Edit only `vitest.config.mjs`.
+2. Replace global `thresholds: { lines: 70 }` with per-directory thresholds from T56.
+3. Keep `coverage.include` and `coverage.exclude` unchanged unless T56 found a parsing error blocker and reviewer explicitly approved a minimal exclude.
+4. Add a short milestone comment near thresholds:
+   - ui/components/app ramp +5 per month/sprint until 60-70.
+   - Do not force `src/app/**` to 70+ because app pages are thin entries/E2E-heavy.
+5. Do not change `projects`, aliases, test environments, or reporter settings.
+
+**Acceptance Criteria**：
+
+- **AC-T57.1**: `git diff vitest.config.mjs` only changes the coverage `thresholds` block and adjacent threshold comment.
+- **AC-T57.2**: `coverage.include` remains `src/{service,repo,runtime,lib,config,ui,components,app}/**`.
+- **AC-T57.3**: `coverage.exclude` has 0 diff.
+- **AC-T57.4**: Config import succeeds:
+
+  ```bash
+  node -e "import('./vitest.config.mjs').then(m=>console.log(JSON.stringify(m.default.test.coverage.thresholds,null,2)))"
+  ```
+
+- **AC-T57.5**: Imported thresholds exactly match T56 reviewer-pass target table.
+- **AC-T57.6**: `npm run test:coverage` exit 0 with new thresholds.
+
+**Engineer Evidence**：
+
+- Full `git diff vitest.config.mjs`
+- config import output
+- coverage command exit code + tail 50 lines
+- statement that include/exclude/projects had 0 unintended diff
+
+**Reviewer 驗證**：
+
+- Re-run AC-T57.4 and inspect threshold object.
+- Re-run `git diff vitest.config.mjs` and compare with T56 table.
+- Re-run `npm run test:coverage` unless already blocked by environment; if skipped, reviewer must state why and at least verify the engineer's fresh log file exists.
+- Reject if config touches non-threshold settings or target values drift from T56.
+
+---
+
+### T58 — Threshold gate smoke (positive + negative)
+
+- **Status**: `[ ]`
+- **Files Written**: temporary smoke config only（must cleanup）；`handoff.md` §3 T58 row
+- **Dependencies**: T57 `[x]`
+
+**Engineer Action**：
+
+1. Positive gate: run `npm run test:coverage` on real config and confirm pass.
+2. Negative gate: create a temporary config that imports/duplicates current config and raises exactly one path threshold above fresh current coverage, then run coverage expecting fail.
+3. Cleanup all temporary config/log artifacts created under repo root. `/tmp` logs may remain if referenced in evidence.
+4. Re-run `git status --short | grep "s9" || true` and prove no temp repo files remain.
+
+**Acceptance Criteria**：
+
+- **AC-T58.1**: Positive real-config coverage exits 0.
+- **AC-T58.2**: Negative smoke exits non-zero and failure text identifies coverage threshold failure.
+- **AC-T58.3**: Negative smoke changes only temp config, not production `vitest.config.mjs`.
+- **AC-T58.4**: Cleanup leaves no `vitest.s9-*`, `_s9-*`, or similar temp repo files.
+- **AC-T58.5**: `handoff.md` records why this proves the S9 gate is actually active, not just syntactically present.
+
+**Engineer Evidence**：
+
+- Positive command + exit code + coverage summary tail
+- Negative command + exit code + threshold failure excerpt
+- Cleanup `git status` proof
+
+**Reviewer 驗證**：
+
+- Independently inspect that production config was not temporarily weakened after smoke.
+- Re-run cleanup check.
+- Re-run the config import from T57 and confirm threshold object still matches T56.
+- Reject if negative smoke is skipped without a documented environment blocker.
+
+---
+
+### T59 — Documentation + handoff sync for S9 ramp
+
+- **Status**: `[ ]`
+- **Files Written**: `docs/QUALITY_SCORE.md`, `specs/026-tests-audit-report/handoff.md`, `specs/026-tests-audit-report/tasks.md`
+- **Files Read**: `.github/pull_request_template.md`
+- **Dependencies**: T57 `[x]`
+
+**Engineer Action**：
+
+1. Update `docs/QUALITY_SCORE.md`:
+   - `Last Updated` to actual date.
+   - `Next Review` to the next monthly/ramp review date.
+   - Layer-Level Known Gaps: replace “下一步是把低覆蓋層逐步補測” with current per-directory threshold/ramp state.
+   - Score History: add S9 row with exact threshold table summary.
+2. Confirm `.github/pull_request_template.md` still has the Coverage baseline/threshold checkbox. Do not edit it unless missing; if missing, escalate instead of inventing a new template change.
+3. Update `handoff.md`:
+   - §0 S9 scope and T54-T60 current statuses.
+   - §1 next-session checklist / PR step.
+   - §2 S9 risks and any T55-T58 pitfalls.
+   - §3 T59 row.
+4. Update `tasks.md` T54-T60 statuses only for tasks actually reviewer-pass by this point.
+
+**Acceptance Criteria**：
+
+- **AC-T59.1**: `docs/QUALITY_SCORE.md` includes exact S9 threshold values and next review cadence.
+- **AC-T59.2**: `docs/QUALITY_SCORE.md` Score History has one S9 row.
+- **AC-T59.3**: `.github/pull_request_template.md` coverage checkbox still mentions threshold/baseline evidence; no template diff unless escalated.
+- **AC-T59.4**: `handoff.md` has S9 §0/§1/§2/§3 updates and records engineer pitfalls in concise live-handoff form.
+- **AC-T59.5**: `tasks.md` T54-T59 statuses match reviewer-pass reality; no future task marked done early.
+- **AC-T59.6**: `npm run spellcheck` exit 0 or cSpell issue is fixed without inline disable.
+
+**Engineer Evidence**：
+
+- `git diff docs/QUALITY_SCORE.md specs/026-tests-audit-report/handoff.md specs/026-tests-audit-report/tasks.md`
+- PR template coverage checkbox grep output
+- spellcheck output
+
+**Reviewer 驗證**：
+
+- Read all doc diffs.
+- Verify threshold values match T56/T57 exactly.
+- Verify `handoff.md` records real pitfalls, not vague “done” prose.
+- Re-run PR template grep and spellcheck if feasible.
+- Reject if docs invent numbers not present in T56/T57 evidence.
+
+---
+
+### T60 — S9 integration verify + commit
+
+- **Status**: `[ ]`
+- **Files Written**: `handoff.md` §0 / §1 / §3 T60 / §5, `tasks.md` statuses + scope summary
+- **Files Committed**:
+  - `vitest.config.mjs`
+  - `docs/QUALITY_SCORE.md`
+  - `specs/026-tests-audit-report/handoff.md`
+  - `specs/026-tests-audit-report/tasks.md`
+- **Dependencies**: T54-T59 all `[x]`
+
+**Engineer Action**：
+
+1. Confirm T54-T59 all reviewer-pass and `handoff.md` has engineer + reviewer evidence for each.
+2. Run final gate:
+
+   ```bash
+   npm run test:coverage
+   npm run lint -- --max-warnings 0
+   npm run type-check
+   npm run depcruise
+   npm run spellcheck
+   npx vitest run --project=browser
+   bash scripts/audit-mock-boundary.sh
+   bash scripts/audit-flaky-patterns.sh
+   ```
+
+3. Update `tasks.md` T54-T60 statuses to `[x]` only after final gate passes.
+4. Update S9 scope summary with commit-pending wording; actual hash is filled after commit if this task chooses to amend docs before committing, otherwise next session records it.
+5. Stage only the 4 allowed files. Do not use `git add -A`.
+6. Commit locally, no push, no PR.
+
+**Acceptance Criteria**：
+
+- **AC-T60.1**: `handoff.md` §3 T54-T59 all have engineer + reviewer evidence; no reviewer pending.
+- **AC-T60.2**: final gate commands all exit 0.
+- **AC-T60.3**: `git diff --name-only --cached` contains only allowed 4 files.
+- **AC-T60.4**: commit message:
+
+  ```text
+  chore(coverage): add per-directory thresholds
+
+  - vitest coverage now gates service/repo/runtime/lib/config/ui/components/app independently
+  - ui/components/app use Wave 3 baseline +5 with monthly ramp notes
+  - docs record next threshold review cadence
+
+  Threshold ramp: ui/components/app +5 per review until 60-70
+
+  Refs: project-health/2026-04-29-tests-audit-report.md L185-206, L351-353, L521-526, L665-668
+  ```
+
+  No `Co-Authored-By`.
+
+- **AC-T60.5**: `git show HEAD --stat` shows only allowed files.
+- **AC-T60.6**: `git log -1 --format=%B | grep -ic "Co-Authored-By"` = 0.
+- **AC-T60.7**: branch != `main`; no push.
+
+**Engineer Evidence**：
+
+- final gate command outputs + exit codes
+- `git diff --name-only --cached`
+- `git show HEAD --stat`
+- commit message body
+- post-commit `git status --short --branch`
+
+**Reviewer 驗證**：
+
+- Re-run at least `npm run test:coverage`, `npm run lint -- --max-warnings 0`, and both audit scripts.
+- Read `vitest.config.mjs`, `docs/QUALITY_SCORE.md`, `tasks.md`, `handoff.md`.
+- Verify commit message has threshold ramp and no Co-Authored-By.
+- Verify no push/PR was done.
+- Reject if coverage passes only because threshold was lowered below T56 target.
+
+---
+
 ## Reviewer 認證標準（適用所有 task）
 
 | 必做                                                                 | 不能只做                         |
@@ -3986,6 +4390,13 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 | T51  | S8    | general-purpose        | general-purpose        | S8-2 | T49, T50           |
 | T52  | S8    | general-purpose        | general-purpose        | S8-3 | (none, 序列)       |
 | T53  | S8    | general-purpose        | general-purpose        | S8-4 | (none, 序列)       |
+| T54  | S9    | general-purpose        | general-purpose        | S9-0 | (none, 序列)       |
+| T55  | S9    | general-purpose        | general-purpose        | S9-1 | T56                |
+| T56  | S9    | general-purpose        | general-purpose        | S9-1 | T55                |
+| T57  | S9    | general-purpose        | general-purpose        | S9-2 | (none, 序列)       |
+| T58  | S9    | general-purpose        | general-purpose        | S9-3 | T59                |
+| T59  | S9    | general-purpose        | general-purpose        | S9-3 | T58                |
+| T60  | S9    | general-purpose        | general-purpose        | S9-4 | (none, 序列)       |
 
 ## Subagent 通用須知
 
@@ -4001,6 +4412,7 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
     - **S6 (T32-T37)**：L77-111 + L293-318 + L373-379 + L552-556 + L622-633 + L641-657 + L660-664
     - **S7 (T38-T44)**：L545-550 + L568-579 + L635-639 + L685-689；另讀 GitHub docs required-check skip behavior（連結在 S7 章節）
     - **S8 (T45-T53)**：L660-664（S8 動作清單）+ L77-111 + L293-318 + L552-556 + L607-612 + L622-633 + L641-657
+    - **S9 (T54-T60)**：L185-206 + L351-353 + L521-526 + L580 + L665-668
   - 對應的目標檔本身：
     - S1: 4 個 config 檔
     - S2: `.github/pull_request_template.md` + 必要時 `cspell.json`
@@ -4010,14 +4422,15 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
     - S6: `eslint.config.mjs`（**唯一** code 改動點）；read-only：`scripts/audit-mock-boundary.sh` / `scripts/audit-flaky-patterns.sh`（pattern 對齊參考）、S4 baseline 凍結數字（`handoff.md` §3 T21）
     - S7: GitHub branch protection UI/API；read-only：final `main` `.github/workflows/ci.yml` + `.github/workflows/firestore-rules-gate.yml`；write-only evidence：`handoff.md` / `tasks.md`
     - S8: `eslint.config.mjs`（block 18.5 + 18.6 ignores → []）+ `scripts/audit-mock-boundary.sh` + `scripts/audit-flaky-patterns.sh` + `.husky/pre-commit` + `.github/pull_request_template.md`；read-only 參考：`handoff.md` §3 T07（S2 PR template 設計）/ §3 T34（S6 baseline 33+45 起點）/ §3 T35（S6 attempt-3 (B') 結構）
+    - S9: `vitest.config.mjs` + `docs/QUALITY_SCORE.md` + read-only `.github/pull_request_template.md` + `coverage/coverage-summary.json`（生成後讀取）+ `handoff.md` §3 T10/T13/T15（S3 baseline）/ §3 T45/T53（S8 trigger）/ §2 S3 coverage pitfalls
 
 - **必要工具**：Read、Edit、Bash（跑驗證）、Write（engineer 建新檔用，reviewer 不該 Write 任何受審檔）
 
 - **禁區**：
-  - Reviewer 不能 Edit/Write 受審檔（S1: config 檔；S2: `.github/`、`cspell.json`；S3: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`cspell.json`、`handoff.md` engineer evidence 區；S4: `scripts/audit-*.sh`、`.husky/pre-commit`、`handoff.md` engineer evidence 區；S5: `package*.json`、`tests/server/rules/**`、`.github/workflows/firestore-rules-gate.yml`、`handoff.md` engineer evidence 區；S6: `eslint.config.mjs`、`handoff.md` engineer evidence 區；S7: GitHub branch protection settings、`handoff.md` engineer evidence 區；S8: `eslint.config.mjs`、`scripts/audit-*.sh`、`.husky/pre-commit`、`.github/pull_request_template.md`、`handoff.md` engineer evidence 區）
-  - Engineer 不能改 task scope 外的檔案（例：T01 不能動 playwright config；T07 不能動 cspell.json，加詞屬於 T08 範圍；T12 不能動 threshold；T14 不能改 service/repo/runtime/lib/config 既有 V8 Cov 數字；T16/T17 spike 不能寫 script 或改 husky；T18/T19 不能動 husky；T20 不能改 script；T20 對 husky 必須只 append、不刪改既有 5 行；T23 不能改 code/test/package；T26-T30 不能改 helper API；S5 全程不能改 `firestore.rules` / `vitest.config.mjs` / `.github/workflows/ci.yml`；T32/T33 spike 不能改 `eslint.config.mjs`；T34 不能改 code/config，只 capture baseline 寫 handoff；T35 全程不能動 `package.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` / `.github/**` / `tests/**` / `src/**`；T36 必須 cleanup smoke temp 檔，不留殘留；S7 全程不能改 code/config/test/workflow，T40 前必須先通過 T39；T45 不准動任何 code/config/script/husky/template，只 §3 + §2 handoff 變動；T46/T47/T48 spike 只動 §3 對應 row，不准 Edit eslint.config / scripts / husky / template；T49 只改 `eslint.config.mjs`，不准動其他；T50 只改 `scripts/audit-*.sh` + `.husky/pre-commit`，不准動 eslint.config / template / 其他 husky hook 行；T51 只改 `.github/pull_request_template.md`，不准動 `cspell.json`（除非真有加詞需求且已 reviewer 通過）；T52 smoke temp 檔必須在 T52 內 cleanup；T53 只允許 commit 7 檔）
+  - Reviewer 不能 Edit/Write 受審檔（S1: config 檔；S2: `.github/`、`cspell.json`；S3: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`cspell.json`、`handoff.md` engineer evidence 區；S4: `scripts/audit-*.sh`、`.husky/pre-commit`、`handoff.md` engineer evidence 區；S5: `package*.json`、`tests/server/rules/**`、`.github/workflows/firestore-rules-gate.yml`、`handoff.md` engineer evidence 區；S6: `eslint.config.mjs`、`handoff.md` engineer evidence 區；S7: GitHub branch protection settings、`handoff.md` engineer evidence 區；S8: `eslint.config.mjs`、`scripts/audit-*.sh`、`.husky/pre-commit`、`.github/pull_request_template.md`、`handoff.md` engineer evidence 區；S9: `vitest.config.mjs`、`docs/QUALITY_SCORE.md`、`handoff.md` engineer evidence 區、`tasks.md` engineer status 區）
+  - Engineer 不能改 task scope 外的檔案（例：T01 不能動 playwright config；T07 不能動 cspell.json，加詞屬於 T08 範圍；T12 不能動 threshold；T14 不能改 service/repo/runtime/lib/config 既有 V8 Cov 數字；T16/T17 spike 不能寫 script 或改 husky；T18/T19 不能動 husky；T20 不能改 script；T20 對 husky 必須只 append、不刪改既有 5 行；T23 不能改 code/test/package；T26-T30 不能改 helper API；S5 全程不能改 `firestore.rules` / `vitest.config.mjs` / `.github/workflows/ci.yml`；T32/T33 spike 不能改 `eslint.config.mjs`；T34 不能改 code/config，只 capture baseline 寫 handoff；T35 全程不能動 `package.json` / `.husky/**` / `scripts/**` / `vitest.config.mjs` / `firestore.rules` / `.github/**` / `tests/**` / `src/**`；T36 必須 cleanup smoke temp 檔，不留殘留；S7 全程不能改 code/config/test/workflow，T40 前必須先通過 T39；T45 不准動任何 code/config/script/husky/template，只 §3 + §2 handoff 變動；T46/T47/T48 spike 只動 §3 對應 row，不准 Edit eslint.config / scripts / husky / template；T49 只改 `eslint.config.mjs`，不准動其他；T50 只改 `scripts/audit-*.sh` + `.husky/pre-commit`，不准動 eslint.config / template / 其他 husky hook 行；T51 只改 `.github/pull_request_template.md`，不准動 `cspell.json`（除非真有加詞需求且已 reviewer 通過）；T52 smoke temp 檔必須在 T52 內 cleanup；T53 只允許 commit 7 檔；T54 不能改 code/config，只能寫 handoff trigger verdict；T55/T58 smoke temp 檔必須 cleanup；T56 不能改 code/config/docs，只能寫 handoff baseline；T57 只改 `vitest.config.mjs` threshold block；T59 只改 docs/handoff/tasks，不准動 `vitest.config.mjs`；T60 只允許 commit S9 allowed files）
   - 任何 subagent 不能 push remote、不能開 PR、不能改 git config；S7 T40 只允許改 GitHub branch protection required-check 設定，不允許順手改其他 repository settings
-  - **Commit-only task**：S1 只有 T05 engineer 可 commit；S2 只有 T09 engineer 可 commit；S3 只有 T15 engineer 可 commit；S4 只有 T22 engineer 可 commit；S5 只有 T31 engineer 可 commit；S6 只有 T37 engineer 可 commit；S7 只有 T44 engineer 可 commit；S8 只有 T53 engineer 可 commit；其他 task engineer 只改檔不 commit
+  - **Commit-only task**：S1 只有 T05 engineer 可 commit；S2 只有 T09 engineer 可 commit；S3 只有 T15 engineer 可 commit；S4 只有 T22 engineer 可 commit；S5 只有 T31 engineer 可 commit；S6 只有 T37 engineer 可 commit；S7 只有 T44 engineer 可 commit；S8 只有 T53 engineer 可 commit；S9 只有 T60 engineer 可 commit；其他 task engineer 只改檔不 commit
   - **Threshold 紀律（S3 專屬）**：T13 發現 70 threshold 跌破時**禁止**自行降 threshold，必須 escalate（標 `[!]`）；T12-T14 任何 task **禁止**設 per-directory threshold（屬 S9 觸發型）
   - **Coverage artifact 紀律（S3 專屬）**：`coverage/` 為 gitignored，T15 commit 必須 `git status` 確認該目錄為 untracked，**禁** `git add -A` / `git add coverage`
   - **Warn-only 紀律（S4 專屬）**：T18/T19 script 末行必須 `exit 0`，**禁止**設 `exit 1` / `exit ${count}` 等真擋邏輯；T20 husky append 行必加 `|| true` 雙保險；T21 smoke test 即使 temp 檔在場 audit script 仍須 exit 0；S8 升級到 exit 1 屬觸發型，不在本 S4 scope
@@ -4039,6 +4452,9 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
   - **PR template scope 紀律（S8 專屬）**：T51 只移 baseline 相關 checkbox（依 T48 設計，預期 1-2 條）+ `Baseline change:` 範例段；4 類 audit checkbox（mock / flaky / firestore / coverage）+ 通用 Summary / Test Plan / Related 章節**全部保留**；`grep -c "^- \[ \]"` 不可大降（≥ 12）。
   - **Smoke temp 檔紀律（S8 專屬）**：T52 兩支 smoke temp 檔（`tests/integration/_s8-smoke-mock.test.jsx` + `tests/unit/_s8-smoke-flaky.test.js` 或同等檔名）**必須在 T52 內 cleanup**；T53 commit 前驗 `git status --short | grep "_s8-smoke" | wc -l = 0`；commit 含 7 檔（不含任何 temp / log / coverage / node_modules）。
   - **Baseline retire 紀律（S8 專屬）**：T53 commit message 必含 `Baseline retire: mock-boundary 33 → 0, flaky-pattern 45 → 0` 行，呼應 S6 commit `Baseline start:`，提供完整生命週期紀錄。
+  - **Per-directory threshold 紀律（S9 專屬）**：T57 必須使用 T56 reviewer-pass target table；禁止因 coverage fail 自行降低 target、縮小 include、或新增 exclude。若 lib/config/ui/components/app 任一 layer 無法通過 audit target，必須 escalated。
+  - **S9 trigger 紀律**：T54 若找不到 Wave 3 coverage-improvement evidence，S9 必須停在 T54；subagent 不准把 `docs/QUALITY_SCORE.md` 的 S3 baseline 當成 Wave 3 完成證據。
+  - **S9 temp 檔紀律**：T55/T58 的 threshold smoke 可建 temp config，但必須在同 task cleanup；T60 commit 不得包含 temp config、coverage artifact、log、node_modules。
 
 - **Pre-commit hook 注意**：
   - `.husky/pre-commit` 會跑：lint --max-warnings 0、type-check、depcruise、spellcheck、vitest browser（**不**跑 coverage）
@@ -4051,6 +4467,7 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
   - **S7 額外**：T44 是 doc-only closeout；先跑 spellcheck 或記錄 spellcheck script 不支援 file args 的 fallback，再由 hook 跑完整 repo gate。
   - **S8 後**（T53 commit 起）：兩條 audit 行的 `|| true` 已拔除，audit script `findings > 0` → exit 1 真擋 commit；T53（與後續所有 commit）engineer 必先手動跑 `bash scripts/audit-mock-boundary.sh && bash scripts/audit-flaky-patterns.sh && npm run lint -- --max-warnings 0` 三條 exit 0 才下 commit；如被擋，**禁止** 自行加回 `|| true`，必須回 T45 重 verify baseline → 修 violation → 重 commit。CI 同樣會被 audit script + ESLint 兩道擋，無法 merge。
   - **S8 commit-only**：T53 engineer 在 commit 前還要手動跑 `npx vitest run --project=browser` 確認無 regression（pre-commit hook 已含 vitest browser，但兩道驗證雙保險）；不需跑 server / coverage（S8 不動 server / 不重做 coverage instrumentation）。
+  - **S9 額外**：T60 engineer 必跑 `npm run test:coverage`；pre-commit hook 不跑 coverage，但 S9 的唯一價值就是 coverage threshold gate，不能只靠 hook。
   - hook 失敗時：fix issue → re-stage → 新 commit（**不要** `--amend`）
 
 - **回報格式**（spawn 結束時的 result）：
@@ -4061,7 +4478,7 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 
 ## Scope summary
 
-本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，已 commit `5f09820`）、S4（T16-T22，已 commit `a55fa76`）、S5（T23-T31，已 commit `28c5cb8`）、S6（T32-T37，已 commit `d89887c` + reviewer signoff `5606155`）、S7（T38-T44，planned）、**S8（T45-T53，commit pending in T53 commit；trigger 條件：Wave 3 mock + flaky cleanup baseline 清空）**。後續：
+本檔涵蓋 S1（T01-T05，已 commit `97e78d2`）、S2（T06-T09，已 commit `818e249`）、S3（T10-T15，已 commit `5f09820`）、S4（T16-T22，已 commit `a55fa76`）、S5（T23-T31，已 commit `28c5cb8`）、S6（T32-T37，已 commit `d89887c` + reviewer signoff `5606155`）、S7（T38-T44，planned）、S8（T45-T53，已 commit `65ee9a0`）、**S9（T54-T60，planned；trigger 條件：S8 done + Wave 3 coverage evidence）**。後續：
 
 | Commit | Goal                                          | Spec                               |
 | ------ | --------------------------------------------- | ---------------------------------- |
@@ -4072,5 +4489,5 @@ Wave S8-4 (序列)：T53-eng → T53-rev   (final integration verify + commit + 
 | S5     | firestore rules infra + 5 critical specs      | ✅ 本檔 T23-T31                    |
 | S6     | ESLint mock-boundary + flaky rules (baseline) | ✅ 本檔 T32-T37                    |
 | S7     | GitHub branch protection required checks (UI) | ✅ 本檔 T38-T44                    |
-| S8     | ESLint baseline retire + audit gate exit 1    | ✅ 本檔 T45-T53（commit pending in this T53 commit） |
-| S9     | Per-directory coverage threshold（觸發型）    | (Wave 3 後)                        |
+| S8     | ESLint baseline retire + audit gate exit 1    | ✅ 本檔 T45-T53（commit `65ee9a0`） |
+| S9     | Per-directory coverage threshold（觸發型）    | ✅ 本檔 T54-T60（planned）          |
