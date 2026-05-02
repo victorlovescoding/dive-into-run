@@ -100,7 +100,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/events/EventsPage.test.jsx tests/integration/notifications/notification-error.test.jsx`
   - Commit point: yes, after review. Suggested message: `test: add provider harness helpers`.
 
-- [ ] T003 - Events delete-race integration cleanup
+- [x] T003 - Events delete-race integration cleanup
   - Owner engineer: Engineer A
   - Reviewer: Reviewer A
   - Depends on: T002
@@ -120,7 +120,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/events/EventDetailClient-delete-race.test.jsx tests/integration/events/event-detail-comment-runtime.test.jsx`
   - Commit point: yes, after review. Suggested message: `test: remove event provider mocks`.
 
-- [ ] T005 - Posts detail/feed baseline cleanup
+- [x] T005 - Posts detail/feed baseline cleanup
   - Owner engineer: Engineer B
   - Reviewer: Reviewer B
   - Depends on: T002
@@ -160,7 +160,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/posts/PostDetailClient-delete-race.test.jsx tests/integration/posts/post-comment-reply.test.jsx`
   - Commit point: yes, after review. Suggested message: `test: remove post race provider mocks`.
 
-- [ ] T008 - Strava auth-context cleanup
+- [x] T008 - Strava auth-context cleanup
   - Owner engineer: Engineer C
   - Reviewer: Reviewer C
   - Depends on: T002
@@ -190,7 +190,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/strava/CallbackPage.test.jsx tests/integration/strava/RunCalendarDialog.test.jsx tests/integration/strava/RunsPage.test.jsx tests/integration/strava/runs-page-sync-error.test.jsx`
   - Commit point: yes, after review. Suggested message: `test: remove strava provider mocks`.
 
-- [ ] T011 - CRUD toast provider cleanup
+- [x] T011 - CRUD toast provider cleanup
   - Owner engineer: Engineer D
   - Reviewer: Reviewer D
   - Depends on: T002
@@ -200,7 +200,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/toast/crud-toast.test.jsx`
   - Commit point: yes, after review. Suggested message: `test: remove crud toast provider mock`.
 
-- [ ] T012 - Weather favorites cleanup
+- [x] T012 - Weather favorites cleanup
   - Owner engineer: Engineer D
   - Reviewer: Reviewer D
   - Depends on: T002
