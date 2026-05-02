@@ -384,7 +384,7 @@ Parallel conflict rules for Wave A:
 
 ### App Coverage Track
 
-- [ ] T030 Add first app thin-entry behavior coverage slice
+- [x] T030 Add first app thin-entry behavior coverage slice
   - Owner: App Engineer A
   - Reviewer: App Reviewer A
   - Dependencies: T005
@@ -403,7 +403,7 @@ Parallel conflict rules for Wave A:
     - Focused Vitest passes with the exact command above.
     - Reviewer confirms this slice does not edit the T032 weather app test file.
 
-- [ ] T031 Review and commit first app slice
+- [x] T031 Review and commit first app slice
   - Owner: App Reviewer A
   - Reviewer: Flow Reviewer
   - Dependencies: T030
