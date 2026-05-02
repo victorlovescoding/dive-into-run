@@ -110,7 +110,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/events/EventDetailClient-delete-race.test.jsx`
   - Commit point: no; commit with T004.
 
-- [ ] T004 - Events comment runtime cleanup
+- [x] T004 - Events comment runtime cleanup
   - Owner engineer: Engineer A
   - Reviewer: Reviewer A
   - Depends on: T003
@@ -130,7 +130,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/posts/PostDetail.test.jsx tests/integration/posts/PostFeed.test.jsx`
   - Commit point: no; commit with T006a/T006b.
 
-- [ ] T006a - Posts dirty-state cleanup
+- [x] T006a - Posts dirty-state cleanup
   - Owner engineer: Engineer B
   - Reviewer: Reviewer B
   - Depends on: T005
@@ -140,7 +140,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/posts/post-detail-edit-dirty.test.jsx tests/integration/posts/posts-page-edit-dirty.test.jsx`
   - Commit point: no; commit with T006b.
 
-- [ ] T006b - Posts validation/form cleanup
+- [x] T006b - Posts validation/form cleanup
   - Owner engineer: Engineer B
   - Reviewer: Reviewer B
   - Depends on: T005
@@ -170,7 +170,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/strava/CallbackPage.test.jsx tests/integration/strava/RunCalendarDialog.test.jsx`
   - Commit point: no; commit with T010.
 
-- [ ] T009 - Strava runs page cleanup
+- [x] T009 - Strava runs page cleanup
   - Owner engineer: Engineer C
   - Reviewer: Reviewer C
   - Depends on: T008
@@ -210,7 +210,7 @@ If the session compacts or a new agent resumes, this file is the execution sourc
   - Verification command: `npx vitest run tests/integration/weather/favorites.test.jsx`
   - Commit point: no; commit with T013.
 
-- [ ] T013 - Weather township/page cleanup
+- [x] T013 - Weather township/page cleanup
   - Owner engineer: Engineer D
   - Reviewer: Reviewer D
   - Depends on: T012

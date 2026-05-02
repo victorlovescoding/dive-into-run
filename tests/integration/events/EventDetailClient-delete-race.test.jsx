@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   collection,
@@ -21,33 +21,22 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import EventDetailClient from '@/app/events/[id]/eventDetailClient';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
 import {
   createFirestoreDocSnapshot as createDocSnapshot,
   createFirestoreQuerySnapshot as createQuerySnapshot,
 } from '../../_helpers/factories';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 
-const { mockShowToast, mockPush, mockReplace, mockAuthContext } = vi.hoisted(() => {
-  const { createContext } = require('react');
-  return {
-    mockShowToast: vi.fn(),
-    mockPush: vi.fn(),
-    mockReplace: vi.fn(),
-    mockAuthContext: createContext({
-      user: { uid: 'host-1', name: 'Victor', photoURL: '/avatar.jpg' },
-    }),
-  };
-});
+const { mockPush, mockReplace } = vi.hoisted(() => ({
+  mockPush: vi.fn(),
+  mockReplace: vi.fn(),
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
-}));
-
-vi.mock('@/runtime/providers/AuthProvider', () => ({
-  AuthContext: mockAuthContext,
-}));
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: mockShowToast }),
+  usePathname: () => '/events/event-1',
 }));
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
@@ -145,6 +134,15 @@ const mockEvent = {
   hostPhotoURL: '/avatar.jpg',
 };
 
+const mockUser = {
+  uid: 'host-1',
+  name: 'Victor',
+  email: 'victor@example.com',
+  photoURL: '/avatar.jpg',
+  bio: null,
+  getIdToken: vi.fn().mockResolvedValue('token'),
+};
+
 /**
  * 設定刪除流程需要的 Firestore SDK 邊界 stub。
  * @param {{ deleteEventExists?: boolean, batchError?: Error | null }} [options] - 刪除情境。
@@ -204,6 +202,18 @@ function setupFirestoreMocks({ deleteEventExists = true, batchError = null } = {
   return { batch };
 }
 
+/**
+ * 使用真實 AuthContext / ToastContext Provider harness render 活動詳情頁。
+ * @returns {ReturnType<typeof renderWithAuthToast>} render 結果與 context spies。
+ */
+function renderEventDetailClient() {
+  return renderWithAuthToast(<EventDetailClient id="event-1" />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+    auth: { user: mockUser },
+  });
+}
+
 describe('EventDetailClient delete race condition', () => {
   /** @type {ReturnType<typeof vi.spyOn>} */
   let consoleErrorSpy;
@@ -240,7 +250,7 @@ describe('EventDetailClient delete race condition', () => {
     setupFirestoreMocks({ deleteEventExists: false });
 
     const user = userEvent.setup();
-    render(<EventDetailClient id="event-1" />);
+    const { toastValue } = renderEventDetailClient();
     await openAndConfirmDelete(user);
 
     await waitFor(() => {
@@ -250,7 +260,7 @@ describe('EventDetailClient delete race condition', () => {
       expect.objectContaining({ path: 'events/event-1' }),
     );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(mockShowToast).not.toHaveBeenCalled();
+    expect(toastValue.showToast).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
     expect(consoleErrorSpy).not.toHaveBeenCalled();
     expect(consoleWarnSpy).toHaveBeenCalledWith(
@@ -262,11 +272,11 @@ describe('EventDetailClient delete race condition', () => {
     setupFirestoreMocks({ batchError: new Error('Firestore batch failed') });
 
     const user = userEvent.setup();
-    render(<EventDetailClient id="event-1" />);
+    const { toastValue } = renderEventDetailClient();
     await openAndConfirmDelete(user);
 
     await waitFor(() => {
-      expect(mockShowToast).toHaveBeenCalledWith('刪除活動失敗，請稍後再試', 'error');
+      expect(toastValue.showToast).toHaveBeenCalledWith('刪除活動失敗，請稍後再試', 'error');
     });
     expect(screen.queryByText('找不到這個活動（可能已被刪除）')).not.toBeInTheDocument();
     expect(mockPush).not.toHaveBeenCalled();
@@ -277,7 +287,7 @@ describe('EventDetailClient delete race condition', () => {
     const { batch } = setupFirestoreMocks();
 
     const user = userEvent.setup();
-    render(<EventDetailClient id="event-1" />);
+    const { toastValue } = renderEventDetailClient();
     await openAndConfirmDelete(user);
 
     await waitFor(() => {
@@ -285,6 +295,6 @@ describe('EventDetailClient delete race condition', () => {
     });
     expect(batch.delete).toHaveBeenCalledWith(expect.objectContaining({ path: 'events/event-1' }));
     expect(batch.commit).toHaveBeenCalled();
-    expect(mockShowToast).not.toHaveBeenCalledWith(expect.stringContaining('失敗'), 'error');
+    expect(toastValue.showToast).not.toHaveBeenCalledWith(expect.stringContaining('失敗'), 'error');
   });
 });

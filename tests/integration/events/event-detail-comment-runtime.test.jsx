@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   collection,
@@ -15,14 +15,12 @@ import {
 } from 'firebase/firestore';
 import EventDetailClient from '@/app/events/[id]/eventDetailClient';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
 import {
   createFirestoreDocSnapshot as createDocSnapshot,
   createFirestoreQuerySnapshot as createQuerySnapshot,
 } from '../../_helpers/factories';
-
-const { mockShowToast } = vi.hoisted(() => ({
-  mockShowToast: vi.fn(),
-}));
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
 
@@ -40,17 +38,6 @@ vi.mock('firebase/firestore', () => ({
   Timestamp: {
     fromDate: vi.fn((date) => ({ toDate: () => date })),
   },
-}));
-
-vi.mock('@/runtime/providers/AuthProvider', async () => {
-  const { createContext } = await import('react');
-  return {
-    AuthContext: createContext({ user: null, setUser: () => {}, loading: false }),
-  };
-});
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: mockShowToast }),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -190,6 +177,22 @@ function setupFirestoreMocks() {
   return { batch };
 }
 
+/**
+ * 使用真實 AuthContext / ToastContext Provider harness render 活動詳情頁。
+ * @returns {ReturnType<typeof renderWithAuthToast>} render 結果與 context spies。
+ */
+function renderEventDetailClient() {
+  return renderWithAuthToast(<EventDetailClient id="evt1" />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+    auth: {
+      user: mockUser,
+      setUser: vi.fn(),
+      loading: false,
+    },
+  });
+}
+
 describe('EventDetailClient comment notification runtime wiring', () => {
   /** @type {{ batch: { set: import('vitest').Mock, commit: import('vitest').Mock } }} */
   let sdkSpies;
@@ -202,11 +205,7 @@ describe('EventDetailClient comment notification runtime wiring', () => {
   it('routes CommentSection callback through real notification use-case and writes SDK payloads', async () => {
     const user = userEvent.setup();
 
-    render(
-      <AuthContext.Provider value={{ user: mockUser, setUser: vi.fn(), loading: false }}>
-        <EventDetailClient id="evt1" />
-      </AuthContext.Provider>,
-    );
+    const { toastValue } = renderEventDetailClient();
 
     await screen.findByText('週末晨跑');
 
@@ -249,6 +248,6 @@ describe('EventDetailClient comment notification runtime wiring', () => {
       }),
     );
     expect(sdkSpies.batch.commit).toHaveBeenCalled();
-    expect(mockShowToast).not.toHaveBeenCalledWith(expect.stringContaining('失敗'), 'error');
+    expect(toastValue.showToast).not.toHaveBeenCalledWith(expect.stringContaining('失敗'), 'error');
   });
 });
