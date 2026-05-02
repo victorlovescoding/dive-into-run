@@ -7,7 +7,7 @@
 - Base: latest `main` at worktree creation
 - Main agent role: process coordinator only
 - Implementation rule: every repo write must be done by an Engineer subagent and accepted by a paired Reviewer subagent
-- Current phase: Wave A implementation in progress; T010/T011 accepted and committed, T012/T013 accepted and committed, T020/T021 accepted and committed, other Wave A task files remain uncommitted by other task owners.
+- Current phase: Wave A implementation in progress; T010/T011 accepted and committed, T012/T013 accepted and committed, T020/T021 accepted and committed, T022/T023 accepted and committed, other Wave A task files remain uncommitted by other task owners.
 - T001 Setup Engineer evidence:
   - `pwd` => `/Users/chentzuyu/Desktop/dive-into-run-033-s9-coverage-gap`
   - `git branch --show-current` => `033-s9-coverage-gap`
@@ -356,6 +356,28 @@ T020/T021 review evidence, 2026-05-02 22:39:05 CST:
 - Fresh depcruise: `npm run depcruise` -> passed, no dependency violations found across 1463 modules / 3712 dependencies.
 - Forbidden files check before this doc update: `git diff --name-only` listed only `tests/integration/notifications/NotificationPanel.test.jsx`; untracked non-T020 Wave A files were present but were not staged for T020/T021. Forbidden docs/config files had no status or diff output.
 
+## T022/T023 Components Slice Handoff
+
+T022 Components Engineer B added behavior coverage for `src/components/Notifications/NotificationPanel.jsx` in `tests/integration/notifications/NotificationPanel.test.jsx`.
+
+T022/T023 review evidence, 2026-05-02 22:43:38 CST:
+
+- Touched T022 slice file: `tests/integration/notifications/NotificationPanel.test.jsx`.
+- Production files touched: none.
+- Shared helpers touched: none.
+- Tests render the real `NotificationPanel` and `NotificationItem` components through real `NotificationContext.Provider` values.
+- Boundary mocks are limited to external Firebase SDK, Next router/image, and browser `IntersectionObserver`.
+- Behavior coverage includes Escape close, Tab and Shift+Tab focus trap, bell-control outside-click exception, initial load-more button, infinite-scroll sentinel load-more callback, and notification click mark-read/router-push/close behavior.
+- Reviewer scan found no snapshot-only, import-only, render-only, or empty tests.
+- Reviewer scan found no canonical-layer mocks and no `@ts-ignore`, `eslint-disable`, or `cspell-disable`.
+- Reviewer scan found no sleeps or brittle exact call-count assertions.
+- Fresh lint: `npx eslint tests/integration/notifications/NotificationPanel.test.jsx` -> passed; only existing React version settings warning.
+- Fresh focused Vitest: `npx vitest run --project=browser tests/integration/notifications/NotificationPanel.test.jsx` -> passed, 1 file / 17 tests.
+- Fresh type-check: `npm run type-check` -> passed.
+- Fresh depcruise: `npm run depcruise` -> passed, no dependency violations found across 1463 modules / 3712 dependencies.
+- Forbidden files check before this doc update: scoped status listed only `tests/integration/notifications/NotificationPanel.test.jsx`; untracked non-T022 Wave A app test files were present but were not staged for T022/T023. Forbidden docs/config files had no status or diff output.
+- Remaining components gap: final coverage recalculation is still pending; T022 adds the planned second components slice, but `src/components/** >= 91.64` must be confirmed by a later `npm run test:coverage`.
+
 ## Coverage After
 
 - Final command: pending
@@ -381,6 +403,7 @@ T020/T021 review evidence, 2026-05-02 22:39:05 CST:
 - `tests/unit/ui/event-formatters.test.js`
 - `tests/integration/dashboard/DashboardTabsScreen.test.jsx`
 - `tests/integration/comments/CommentCardMenu.test.jsx`
+- `tests/integration/notifications/NotificationPanel.test.jsx`
 
 ### Production
 

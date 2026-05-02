@@ -350,7 +350,7 @@ Parallel conflict rules for Wave A:
     - Commit contains only T020 files.
     - `handoff.md` records touched files and evidence.
 
-- [ ] T022 Add second components behavior coverage slice
+- [x] T022 Add second components behavior coverage slice
   - Owner: Components Engineer B
   - Reviewer: Components Reviewer B
   - Dependencies: T005
@@ -369,7 +369,7 @@ Parallel conflict rules for Wave A:
     - Focused Vitest passes with the exact command above.
     - Reviewer confirms no concurrent task edited the same notification test file.
 
-- [ ] T023 Review and commit second components slice
+- [x] T023 Review and commit second components slice
   - Owner: Components Reviewer B
   - Reviewer: Flow Reviewer
   - Dependencies: T022
