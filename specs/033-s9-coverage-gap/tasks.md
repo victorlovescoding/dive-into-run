@@ -284,7 +284,7 @@ Parallel conflict rules for Wave A:
     - Commit contains only the accepted UI test slice and any approved helper changes.
     - `handoff.md` records touched files and evidence.
 
-- [ ] T012 Add second UI behavior coverage slice
+- [x] T012 Add second UI behavior coverage slice
   - Owner: UI Engineer B
   - Reviewer: UI Reviewer B
   - Dependencies: T006
@@ -303,7 +303,7 @@ Parallel conflict rules for Wave A:
     - Focused Vitest passes with the exact command above.
     - Reviewer confirms the test would catch a realistic render-state regression and no forbidden mocks were added.
 
-- [ ] T013 Review and commit second UI slice
+- [x] T013 Review and commit second UI slice
   - Owner: UI Reviewer B
   - Reviewer: Flow Reviewer
   - Dependencies: T012

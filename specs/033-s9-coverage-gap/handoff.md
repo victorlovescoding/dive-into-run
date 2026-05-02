@@ -7,7 +7,7 @@
 - Base: latest `main` at worktree creation
 - Main agent role: process coordinator only
 - Implementation rule: every repo write must be done by an Engineer subagent and accepted by a paired Reviewer subagent
-- Current phase: Wave A implementation in progress; T010/T011 accepted and committed, other Wave A task files remain uncommitted by other task owners.
+- Current phase: Wave A implementation in progress; T010/T011 accepted and committed, T012/T013 accepted and committed, other Wave A task files remain uncommitted by other task owners.
 - T001 Setup Engineer evidence:
   - `pwd` => `/Users/chentzuyu/Desktop/dive-into-run-033-s9-coverage-gap`
   - `git branch --show-current` => `033-s9-coverage-gap`
@@ -316,6 +316,26 @@ T010/T011 review evidence, 2026-05-02 22:26:13 CST:
 - Fresh depcruise: `npm run depcruise` -> passed, no dependency violations found across 1463 modules / 3712 dependencies.
 - Forbidden files check: `git diff --name-only` listed only `tests/integration/notifications/NotificationPanel.test.jsx` before this doc update; untracked non-T010 Wave A files were present but were not staged for T010/T011.
 
+## T012/T013 UI Slice Handoff
+
+T012 UI Engineer B added behavior coverage for `src/ui/member/DashboardTabsScreen.jsx` in `tests/integration/dashboard/DashboardTabsScreen.test.jsx`.
+
+T012/T013 review evidence, 2026-05-02 22:31:13 CST:
+
+- Touched T012 slice file: `tests/integration/dashboard/DashboardTabsScreen.test.jsx`.
+- Production files touched: none.
+- Shared helpers touched: none.
+- Tests render the real `DashboardTabsScreen` with literal runtime props and real dashboard card components.
+- Only external framework boundary mock added: `next/link` test anchor replacement.
+- Behavior coverage includes tab selection changing the visible panel, posts item-list link rendering, comments item-list link rendering, posts loading-more state, comments end hint, initial error retry, and load-more error retry.
+- Reviewer scan found no snapshot-only, import-only, render-only, or empty tests.
+- Reviewer scan found no canonical-layer mocks and no `@ts-ignore`, `eslint-disable`, or `cspell-disable`.
+- Fresh lint: `npx eslint tests/integration/dashboard/DashboardTabsScreen.test.jsx` -> passed; only existing React version settings warning.
+- Fresh focused Vitest: `npx vitest run --project=browser tests/integration/dashboard/DashboardTabsScreen.test.jsx` -> passed, 1 file / 3 tests.
+- Fresh type-check: `npm run type-check` -> passed.
+- Fresh depcruise: `npm run depcruise` -> passed, no dependency violations found across 1463 modules / 3712 dependencies.
+- Forbidden files check before this doc update: `git status --short` listed only another task tracked file and untracked Wave A files; no forbidden files were listed, and only T012 files were staged for this commit.
+
 ## Coverage After
 
 - Final command: pending
@@ -339,6 +359,7 @@ T010/T011 review evidence, 2026-05-02 22:26:13 CST:
 ### Tests
 
 - `tests/unit/ui/event-formatters.test.js`
+- `tests/integration/dashboard/DashboardTabsScreen.test.jsx`
 
 ### Production
 
@@ -368,11 +389,12 @@ T010/T011 review evidence, 2026-05-02 22:26:13 CST:
 - T006 Blocker-Fix: accepted 2026-05-02. Diagnosis Engineer and Reviewer approved adding a precise `src-ui` test bucket surface as policy modeling. Policy Modeling Reviewer accepted the implemented policy/test/doc diff and committed it as its own task before Wave A commits.
 - T006 Docs Reviewer: accepted 2026-05-02. Verified T006 is inserted after T005 and before Wave A, has an Engineer/Reviewer pair, depends on T005, is not parallel-safe, makes T010/T012 depend on T006, and records that T006 should land before any Wave A commit. Acceptance is narrow to precise `src-ui` policy modeling, unit/integration allow behavior, e2e/tests-helper deny behavior, no `src-other`, no deny/threshold/include/exclude/baseline-ignore/suppression changes, policy-test update, `npm run depcruise`, and the focused policy Vitest command. This docs review did not mark T006 done and touched only this handoff sign-off.
 - T006 Policy Modeling Reviewer: accepted 2026-05-02 22:20:38 CST. Verified `src-ui` is modeled as `^src/ui(?:/|$)`, only unit/integration buckets allow `src-ui` surfaces/path patterns, e2e/tests-helper still deny `src/**` with empty allowed path patterns, no `src-other` allow was added, deny rules were not weakened, and no coverage threshold/include/exclude/baseline-ignore/suppression files changed. Fresh evidence: `npx vitest run --project=browser tests/unit/lib/test-bucket-policy.test.js` passed 1 file / 4 tests; `npm run depcruise` passed with no dependency violations across 1463 modules / 3712 dependencies.
-- Implementation Reviewers: T010/T011 accepted 2026-05-02; remaining implementation reviewers pending.
+- T012/T013 UI Reviewer B + Flow Reviewer: accepted 2026-05-02 22:31:13 CST. Verified `tests/integration/dashboard/DashboardTabsScreen.test.jsx` covers real `DashboardTabsScreen` behavior with literal runtime props, uses only a minimal external `next/link` mock, avoids canonical-layer mocks and suppression comments, and passes fresh lint, focused browser Vitest, type-check, and depcruise gates.
+- Implementation Reviewers: T010/T011 and T012/T013 accepted 2026-05-02; remaining implementation reviewers pending.
 - Gate Reviewer: pending
 
 ## Remaining Risk
 
-- T006 policy modeling is reviewed and committed; T010/T011 is accepted. Other Wave A task files remain uncommitted and must be reviewed/staged by their own task owners.
+- T006 policy modeling is reviewed and committed; T010/T011 and T012/T013 are accepted. Other Wave A task files remain uncommitted and must be reviewed/staged by their own task owners.
 - Parallel implementation must avoid touching the same test helper or test file without coordination.
 - Wave B secondary/tertiary candidates that only had compact T003 notes must not start until handoff has complete metadata and a Reviewer accepts the metadata.
