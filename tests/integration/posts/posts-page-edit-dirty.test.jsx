@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useMemo } from 'react';
 import {
   addDoc,
   collection,
@@ -22,25 +21,14 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import { AuthContext } from '@/runtime/providers/AuthProvider';
-import PostPage from '@/app/posts/page';
-import {
-  createFirestoreDocSnapshot as createDocSnapshot,
-  createFirestoreQuerySnapshot as createQuerySnapshot,
-} from '../../_helpers/factories';
 
 // ---------------------------------------------------------------------------
 // Hoisted shared state (available inside vi.mock factories)
 // ---------------------------------------------------------------------------
-const { mockShowToast, mockReplace, mockSearchParamsGet, mockAuthContext } = vi.hoisted(() => {
-  const { createContext } = require('react');
-  return {
-    mockShowToast: vi.fn(),
-    mockReplace: vi.fn(),
-    mockSearchParamsGet: vi.fn().mockReturnValue(null),
-    mockAuthContext: createContext({ user: null, setUser: () => {}, loading: false }),
-  };
-});
+const { mockReplace, mockSearchParamsGet } = vi.hoisted(() => ({
+  mockReplace: vi.fn(),
+  mockSearchParamsGet: vi.fn().mockReturnValue(null),
+}));
 
 // ---------------------------------------------------------------------------
 // Module mocks (hoisted)
@@ -48,14 +36,6 @@ const { mockShowToast, mockReplace, mockSearchParamsGet, mockAuthContext } = vi.
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: mockReplace }),
   useSearchParams: () => ({ get: mockSearchParamsGet }),
-}));
-
-vi.mock('@/runtime/providers/AuthProvider', () => ({
-  AuthContext: mockAuthContext,
-}));
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: mockShowToast }),
 }));
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
@@ -97,6 +77,18 @@ vi.mock('next/image', () => ({
 
   default: (props) => <img {...props} />,
 }));
+
+// ---------------------------------------------------------------------------
+// Imports (after vi.mock — Vitest hoists mocks above these)
+// ---------------------------------------------------------------------------
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
+import PostPage from '@/app/posts/page';
+import {
+  createFirestoreDocSnapshot as createDocSnapshot,
+  createFirestoreQuerySnapshot as createQuerySnapshot,
+} from '../../_helpers/factories';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 
 const firestoreMocks = {
   ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
@@ -260,20 +252,7 @@ function setupFirestoreMocks() {
 // ---------------------------------------------------------------------------
 
 /**
- * 用 AuthContext 包裹子元件，提供測試用使用者。
- * @param {object} props - 元件 props。
- * @param {import('react').ReactNode} props.children - 子元件。
- * @param {object | null} [props.user] - 覆寫使用者，預設 TEST_USER。
- * @returns {import('react').ReactElement} 包裹後的元件。
- */
-function AuthWrapper({ children, user = TEST_USER }) {
-  // useMemo 避免 Provider value 每次 render 都建新物件 → 觸發 react/jsx-no-constructed-context-values
-  const value = useMemo(() => ({ user, setUser: vi.fn(), loading: false }), [user]);
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-/**
- * 渲染 PostPage（含 AuthWrapper）並等待初始 API 呼叫完成。
+ * 渲染 PostPage（含真實 AuthContext/ToastContext value）並等待初始 API 呼叫完成。
  *
  * 回傳物件解構（非單值）以滿足 testing-library/render-result-naming-convention：
  * 規則將呼叫 `render()` 的 wrapper 視為 render-returning function，僅允許
@@ -282,11 +261,11 @@ function AuthWrapper({ children, user = TEST_USER }) {
  */
 async function renderPostPage() {
   const user = userEvent.setup();
-  render(
-    <AuthWrapper>
-      <PostPage />
-    </AuthWrapper>,
-  );
+  renderWithAuthToast(<PostPage />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+    auth: { user: TEST_USER },
+  });
   await waitFor(() => {
     expect(firestoreMocks.getDocs).toHaveBeenCalled();
   });
@@ -453,11 +432,11 @@ describe('Posts page new-post flow (sanity — not affected by dirty gate)', () 
     });
 
     const user = userEvent.setup();
-    render(
-      <AuthWrapper>
-        <PostPage />
-      </AuthWrapper>,
-    );
+    renderWithAuthToast(<PostPage />, {
+      authContext: AuthContext,
+      toastContext: ToastContext,
+      auth: { user: TEST_USER },
+    });
     await waitFor(() => {
       expect(firestoreMocks.getDocs).toHaveBeenCalled();
     });

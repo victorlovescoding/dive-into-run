@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   addDoc,
@@ -89,43 +89,6 @@ vi.mock('firebase/app', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mocks -- contexts
-// ---------------------------------------------------------------------------
-
-vi.mock('@/runtime/providers/AuthProvider', async () => {
-  const { createContext } = await import('react');
-  return {
-    AuthContext: createContext({
-      user: {
-        uid: 'user1',
-        name: 'Test User',
-        email: null,
-        photoURL: 'http://photo.jpg',
-        bio: null,
-        getIdToken: async () => '',
-      },
-      setUser: () => {},
-      loading: false,
-    }),
-    default: ({ children }) => children,
-  };
-});
-
-const mockShowToast = vi.fn();
-vi.mock('@/runtime/providers/ToastProvider', async () => {
-  const { createContext } = await import('react');
-  return {
-    useToast: () => ({ showToast: mockShowToast }),
-    ToastContext: createContext({
-      toasts: [],
-      showToast: () => {},
-      removeToast: () => {},
-    }),
-    default: ({ children }) => children,
-  };
-});
-
-// ---------------------------------------------------------------------------
 // Mocks -- next
 // ---------------------------------------------------------------------------
 
@@ -155,10 +118,13 @@ vi.mock('@/components/UserLink', () => ({
 // ---------------------------------------------------------------------------
 
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
 import {
   createFirestoreDocSnapshot as createDocSnapshot,
   createFirestoreQuerySnapshot as createQuerySnapshot,
 } from '../../_helpers/factories';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 
 const firestoreMocks = {
   ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
@@ -201,6 +167,27 @@ const existingComments = [
   { id: 'old-comment-2', authorUid: 'author1', comment: '作者留言' },
   { id: 'old-comment-3', authorUid: 'user1', comment: '自己的留言' },
 ];
+
+const mockUser = {
+  uid: 'user1',
+  name: 'Test User',
+  email: null,
+  photoURL: 'http://photo.jpg',
+  bio: null,
+  getIdToken: async () => '',
+};
+
+/**
+ * 使用真實 AuthContext/ToastContext provider value 渲染文章詳情。
+ * @returns {ReturnType<typeof renderWithAuthToast>} render 結果與 context spies。
+ */
+function renderPostDetail() {
+  return renderWithAuthToast(<PostDetailClient postId="post1" />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+    auth: { user: mockUser },
+  });
+}
 
 /**
  * 設定留言通知測試需要的 Firestore SDK 邊界 stub。
@@ -290,7 +277,7 @@ describe('PostDetailClient — 留言跟帖通知 (notifyPostCommentReply)', () 
 
   it('送出留言後建立新留言通知和跟帖通知', async () => {
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post1" />);
+    renderPostDetail();
 
     // 等文章載入
     await screen.findByText('測試文章');
@@ -337,7 +324,7 @@ describe('PostDetailClient — 留言跟帖通知 (notifyPostCommentReply)', () 
 
   it('notifyPostCommentReply 只通知排除作者與留言者後的跟帖者', async () => {
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post1" />);
+    renderPostDetail();
 
     // 等文章載入
     await screen.findByText('測試文章');

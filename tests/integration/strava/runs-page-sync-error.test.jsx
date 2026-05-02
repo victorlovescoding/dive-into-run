@@ -1,34 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// ---- Provider / SDK boundary mocks --------------------------------------
-
-const { mockAuthValue, mockShowToast } = vi.hoisted(() => ({
-  mockAuthValue: { user: null, loading: false, setUser: () => {} },
-  mockShowToast: { fn: null },
-}));
-
-vi.mock('@/contexts/AuthContext', async () => {
-  const { createContext } = await import('react');
-  const ctx = createContext(mockAuthValue);
-  return { AuthContext: ctx, default: ctx };
-});
-
-vi.mock('@/runtime/providers/AuthProvider', async () => {
-  const { useContext } = await import('react');
-  const { AuthContext } = await import('@/contexts/AuthContext');
-  return {
-    AuthContext,
-    default: ({ children }) => children,
-    useAuth: () => useContext(AuthContext),
-  };
-});
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: mockShowToast.fn || (() => {}) }),
-  default: ({ children }) => children,
-}));
+// ---- SDK boundary mocks --------------------------------------------------
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
 
@@ -76,7 +50,10 @@ vi.mock('@/components/RunCalendarDialog', () => ({
 }));
 
 import { onSnapshot, getDocs } from 'firebase/firestore';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
 import RunsPage from '@/app/runs/page';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 
 const mockedOnSnapshot = /** @type {import('vitest').Mock} */ (onSnapshot);
 const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
@@ -95,14 +72,42 @@ const cachedActivities = [
   { id: 'a2', stravaId: 101, name: '河濱慢跑' },
 ];
 
+/** @type {{user: object | null, loading: boolean}} */
+let authValue;
+/** @type {(message: string, type?: string, duration?: number) => unknown} */
+let mockShowToast;
+
+/**
+ * 設定 AuthContext value。
+ * @param {{user: object | null, loading: boolean}} value - Auth 值。
+ * @returns {void}
+ */
+function setAuth(value) {
+  authValue = value;
+}
+
+/**
+ * 使用真實 AuthContext.Provider / ToastContext.Provider render runs page。
+ * @returns {ReturnType<typeof renderWithAuthToast>} render 結果與 context spies。
+ */
+function renderRunsPage() {
+  return renderWithAuthToast(<RunsPage />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+    auth: authValue,
+    toast: {
+      showToast: mockShowToast,
+    },
+  });
+}
+
 describe('RunsPage sync error handling', () => {
   /** @type {ReturnType<typeof vi.fn>} */
   let fetchSpy;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockAuthValue.user = mockUser;
-    mockAuthValue.loading = false;
+    setAuth({ user: mockUser, loading: false });
 
     // connection: connected athlete
     mockedOnSnapshot.mockImplementation((_docRef, onNext) => {
@@ -122,7 +127,7 @@ describe('RunsPage sync error handling', () => {
 
     fetchSpy = vi.fn();
     globalThis.fetch = /** @type {typeof globalThis.fetch} */ (/** @type {unknown} */ (fetchSpy));
-    mockShowToast.fn = vi.fn();
+    mockShowToast = /** @type {typeof mockShowToast} */ (vi.fn());
   });
 
   it('should display sync error message when sync fetch returns ok=false', async () => {
@@ -133,13 +138,13 @@ describe('RunsPage sync error handling', () => {
     });
 
     const user = userEvent.setup();
-    render(<RunsPage />);
+    renderRunsPage();
 
     const syncBtn = await screen.findByRole('button', { name: /同步/i });
     await user.click(syncBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('同步失敗，請稍後再試')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent('同步失敗，請稍後再試');
     });
   });
 
@@ -150,7 +155,7 @@ describe('RunsPage sync error handling', () => {
     });
 
     const user = userEvent.setup();
-    render(<RunsPage />);
+    renderRunsPage();
 
     // cached activities render once getDocs resolves
     await waitFor(() => {
@@ -162,7 +167,7 @@ describe('RunsPage sync error handling', () => {
     await user.click(syncBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('同步失敗，請稍後再試')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent('同步失敗，請稍後再試');
     });
     // 失敗後 cached activities 仍存在
     expect(screen.getByText('晨跑 5K')).toBeInTheDocument();
@@ -173,7 +178,7 @@ describe('RunsPage sync error handling', () => {
     fetchSpy.mockResolvedValue({ ok: true, json: async () => ({}) });
 
     const user = userEvent.setup();
-    render(<RunsPage />);
+    renderRunsPage();
 
     const syncBtn = await screen.findByRole('button', { name: /同步/i });
     await user.click(syncBtn);

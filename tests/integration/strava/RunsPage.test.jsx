@@ -1,35 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// ---- Provider / SDK boundary mocks --------------------------------------
-
-const { mockAuthValue, mockShowToast } = vi.hoisted(() => ({
-  mockAuthValue: { user: null, loading: false, setUser: () => {} },
-  mockShowToast: { fn: null },
-}));
-
-vi.mock('@/contexts/AuthContext', async () => {
-  const { createContext } = await import('react');
-  const ctx = createContext(mockAuthValue);
-  return { AuthContext: ctx, default: ctx };
-});
-
-vi.mock('@/runtime/providers/AuthProvider', async () => {
-  const { useContext } = await import('react');
-  const { AuthContext } = await import('@/contexts/AuthContext');
-  return {
-    AuthContext,
-    default: ({ children }) => children,
-    // re-export for hooks that import from runtime/providers/AuthProvider
-    useAuth: () => useContext(AuthContext),
-  };
-});
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: mockShowToast.fn || (() => {}) }),
-  default: ({ children }) => children,
-}));
+// ---- SDK boundary mocks --------------------------------------------------
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
 
@@ -79,7 +52,10 @@ vi.mock('@/components/RunCalendarDialog', () => ({
 }));
 
 import { onSnapshot, getDocs } from 'firebase/firestore';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
 import RunsPage from '@/app/runs/page';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 
 const mockedOnSnapshot = /** @type {import('vitest').Mock} */ (onSnapshot);
 const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
@@ -122,16 +98,6 @@ function setupGetDocsActivities(activities) {
   });
 }
 
-/**
- * 設定 AuthContext value（透過 hoisted mockAuthValue mutate）。
- * @param {{user: object | null, loading: boolean}} value - Auth 值。
- * @returns {void}
- */
-function setAuth(value) {
-  mockAuthValue.user = value.user;
-  mockAuthValue.loading = value.loading;
-}
-
 const mockUser = {
   uid: 'u1',
   name: 'Test',
@@ -140,6 +106,35 @@ const mockUser = {
   bio: null,
   getIdToken: vi.fn().mockResolvedValue('id-token-1'),
 };
+
+/** @type {{user: object | null, loading: boolean}} */
+let authValue;
+/** @type {(message: string, type?: string, duration?: number) => unknown} */
+let mockShowToast;
+
+/**
+ * 設定 AuthContext value。
+ * @param {{user: object | null, loading: boolean}} value - Auth 值。
+ * @returns {void}
+ */
+function setAuth(value) {
+  authValue = value;
+}
+
+/**
+ * 使用真實 AuthContext.Provider / ToastContext.Provider render runs page。
+ * @returns {ReturnType<typeof renderWithAuthToast>} render 結果與 context spies。
+ */
+function renderRunsPage() {
+  return renderWithAuthToast(<RunsPage />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+    auth: authValue,
+    toast: {
+      showToast: mockShowToast,
+    },
+  });
+}
 
 describe('RunsPage', () => {
   /** @type {ReturnType<typeof vi.fn>} */
@@ -155,13 +150,13 @@ describe('RunsPage', () => {
       json: async () => ({}),
     });
     globalThis.fetch = /** @type {typeof globalThis.fetch} */ (/** @type {unknown} */ (fetchSpy));
-    mockShowToast.fn = vi.fn();
+    mockShowToast = /** @type {typeof mockShowToast} */ (vi.fn());
   });
 
   it('shows loading skeleton when auth is loading', () => {
     setAuth({ user: null, loading: true });
 
-    render(<RunsPage />);
+    renderRunsPage();
 
     expect(screen.getByRole('status')).toBeInTheDocument();
     expect(screen.queryByText('請先登入')).not.toBeInTheDocument();
@@ -171,7 +166,7 @@ describe('RunsPage', () => {
   it('shows RunsLoginGuide when user is not logged in', () => {
     setAuth({ user: null, loading: false });
 
-    render(<RunsPage />);
+    renderRunsPage();
 
     expect(screen.getByText('請先登入')).toBeInTheDocument();
     expect(screen.queryByText('連結 Strava')).not.toBeInTheDocument();
@@ -182,7 +177,7 @@ describe('RunsPage', () => {
     setAuth({ user: mockUser, loading: false });
     // default onSnapshot emits null connection
 
-    render(<RunsPage />);
+    renderRunsPage();
 
     await waitFor(() => {
       expect(screen.getByText('連結 Strava')).toBeInTheDocument();
@@ -200,7 +195,7 @@ describe('RunsPage', () => {
     });
     setupGetDocsActivities([{ id: '1' }, { id: '2' }]);
 
-    render(<RunsPage />);
+    renderRunsPage();
 
     await waitFor(() => {
       expect(screen.getByText('John Runner')).toBeInTheDocument();
@@ -221,7 +216,7 @@ describe('RunsPage', () => {
     });
 
     const user = userEvent.setup();
-    render(<RunsPage />);
+    renderRunsPage();
 
     const syncBtn = await screen.findByRole('button', { name: /同步/i });
     await user.click(syncBtn);
@@ -247,7 +242,7 @@ describe('RunsPage', () => {
       lastSyncAt,
     });
 
-    render(<RunsPage />);
+    renderRunsPage();
 
     const syncButton = await screen.findByRole('button', { name: '冷卻中' });
     expect(syncButton).toBeDisabled();
@@ -263,7 +258,7 @@ describe('RunsPage', () => {
     });
 
     const user = userEvent.setup();
-    render(<RunsPage />);
+    renderRunsPage();
 
     const calBtn = await screen.findByRole('button', { name: '跑步月曆' });
     await user.click(calBtn);
@@ -279,7 +274,7 @@ describe('RunsPage', () => {
       lastSyncAt: null,
     });
 
-    render(<RunsPage />);
+    renderRunsPage();
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: '取消連結' })).toBeInTheDocument();
@@ -296,7 +291,7 @@ describe('RunsPage', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     const user = userEvent.setup();
-    render(<RunsPage />);
+    renderRunsPage();
 
     const disconnectBtn = await screen.findByRole('button', { name: '取消連結' });
     await user.click(disconnectBtn);
@@ -309,6 +304,30 @@ describe('RunsPage', () => {
           headers: expect.objectContaining({ Authorization: 'Bearer id-token-1' }),
         }),
       );
+    });
+  });
+
+  it('shows error toast when disconnect fetch fails', async () => {
+    setAuth({ user: mockUser, loading: false });
+    setupOnSnapshotConnected({
+      connected: true,
+      athleteName: 'John',
+      lastSyncAt: null,
+    });
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    fetchSpy.mockResolvedValue({
+      ok: false,
+      json: async () => ({}),
+    });
+
+    const user = userEvent.setup();
+    const { toastValue } = renderRunsPage();
+
+    const disconnectBtn = await screen.findByRole('button', { name: '取消連結' });
+    await user.click(disconnectBtn);
+
+    await waitFor(() => {
+      expect(toastValue.showToast).toHaveBeenCalledWith('取消連結失敗，請稍後再試', 'error');
     });
   });
 
@@ -329,7 +348,7 @@ describe('RunsPage', () => {
     });
 
     const user = userEvent.setup();
-    render(<RunsPage />);
+    renderRunsPage();
 
     const disconnectBtn = await screen.findByRole('button', { name: '取消連結' });
     await user.click(disconnectBtn);

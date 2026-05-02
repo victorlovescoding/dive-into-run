@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   addDoc,
@@ -25,18 +25,6 @@ import {
 // ---------------------------------------------------------------------------
 // Hoisted shared state (available inside vi.mock factories)
 // ---------------------------------------------------------------------------
-const { mockShowToast, mockAuthContext } = vi.hoisted(() => {
-  const { createContext } = require('react');
-  return {
-    mockShowToast: vi.fn(),
-    mockAuthContext: createContext({
-      user: { uid: 'test-uid', name: 'Test User', photoURL: '/test.jpg' },
-      setUser: () => {},
-      loading: false,
-    }),
-  };
-});
-
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
@@ -48,14 +36,6 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('next/image', () => ({
   default: (props) => <img {...props} />,
-}));
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: mockShowToast }),
-}));
-
-vi.mock('@/runtime/providers/AuthProvider', () => ({
-  AuthContext: mockAuthContext,
 }));
 
 vi.mock('@/components/ShareButton', () => ({
@@ -97,8 +77,11 @@ vi.mock('firebase/firestore', () => ({
 // ---------------------------------------------------------------------------
 
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
 import { POST_TITLE_MAX_LENGTH } from '@/runtime/client/use-cases/post-use-cases';
 import { createFirestoreDocSnapshot as createDocSnapshot } from '../../_helpers/factories';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 
 const firestoreMocks = {
   ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
@@ -155,6 +138,27 @@ const mockPost = {
   likesCount: 0,
   commentsCount: 0,
 };
+
+const mockUser = {
+  uid: 'test-uid',
+  name: 'Test User',
+  email: null,
+  photoURL: '/test.jpg',
+  bio: null,
+  getIdToken: async () => '',
+};
+
+/**
+ * 使用真實 AuthContext/ToastContext provider value 渲染文章詳情。
+ * @returns {ReturnType<typeof renderWithAuthToast>} render 結果與 context spies。
+ */
+function renderPostDetail() {
+  return renderWithAuthToast(<PostDetailClient postId="post-1" />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+    auth: { user: mockUser },
+  });
+}
 
 /** 設定編輯表單測試需要的 Firestore SDK 邊界 stub。 */
 function setupFirestoreMocks() {
@@ -228,7 +232,7 @@ describe('PostDetailClient edit form validation', () => {
     it('shows merged error toast when both title and content are cleared', async () => {
       // Arrange
       const user = userEvent.setup();
-      render(<PostDetailClient postId="post-1" />);
+      const { toastValue } = renderPostDetail();
       await enterEditMode(user);
 
       const titleInput = screen.getByPlaceholderText('標題');
@@ -240,14 +244,14 @@ describe('PostDetailClient edit form validation', () => {
       await user.click(screen.getByRole('button', { name: '更新' }));
 
       // Assert
-      expect(mockShowToast).toHaveBeenCalledWith('請輸入標題和內容', 'error');
+      expect(toastValue.showToast).toHaveBeenCalledWith('請輸入標題和內容', 'error');
       expect(firestoreMocks.updateDoc).not.toHaveBeenCalled();
     });
 
     it('shows title error toast when only title is empty', async () => {
       // Arrange
       const user = userEvent.setup();
-      render(<PostDetailClient postId="post-1" />);
+      const { toastValue } = renderPostDetail();
       await enterEditMode(user);
 
       const titleInput = screen.getByPlaceholderText('標題');
@@ -257,14 +261,14 @@ describe('PostDetailClient edit form validation', () => {
       await user.click(screen.getByRole('button', { name: '更新' }));
 
       // Assert
-      expect(mockShowToast).toHaveBeenCalledWith('請輸入標題', 'error');
+      expect(toastValue.showToast).toHaveBeenCalledWith('請輸入標題', 'error');
       expect(firestoreMocks.updateDoc).not.toHaveBeenCalled();
     });
 
     it('shows content error toast when only content is empty', async () => {
       // Arrange
       const user = userEvent.setup();
-      render(<PostDetailClient postId="post-1" />);
+      const { toastValue } = renderPostDetail();
       await enterEditMode(user);
 
       const contentInput = screen.getByPlaceholderText('分享你的想法...');
@@ -274,14 +278,14 @@ describe('PostDetailClient edit form validation', () => {
       await user.click(screen.getByRole('button', { name: '更新' }));
 
       // Assert
-      expect(mockShowToast).toHaveBeenCalledWith('請輸入內容', 'error');
+      expect(toastValue.showToast).toHaveBeenCalledWith('請輸入內容', 'error');
       expect(firestoreMocks.updateDoc).not.toHaveBeenCalled();
     });
 
     it('shows length error toast when title exceeds 50 chars', async () => {
       // Arrange
       const user = userEvent.setup();
-      render(<PostDetailClient postId="post-1" />);
+      const { toastValue } = renderPostDetail();
       await enterEditMode(user);
 
       const titleInput = screen.getByPlaceholderText('標題');
@@ -293,7 +297,7 @@ describe('PostDetailClient edit form validation', () => {
       await user.click(screen.getByRole('button', { name: '更新' }));
 
       // Assert
-      expect(mockShowToast).toHaveBeenCalledWith('標題不可超過 50 字', 'error');
+      expect(toastValue.showToast).toHaveBeenCalledWith('標題不可超過 50 字', 'error');
       expect(firestoreMocks.updateDoc).not.toHaveBeenCalled();
     });
   });
@@ -302,7 +306,7 @@ describe('PostDetailClient edit form validation', () => {
     it('calls updateDoc with valid title and content', async () => {
       // Arrange
       const user = userEvent.setup();
-      render(<PostDetailClient postId="post-1" />);
+      renderPostDetail();
       await enterEditMode(user);
 
       const titleInput = screen.getByPlaceholderText('標題');

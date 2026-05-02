@@ -14,10 +14,6 @@ let mockSearchParams = new URLSearchParams();
 // ---------------------------------------------------------------------------
 // Module mocks (hoisted)
 // ---------------------------------------------------------------------------
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: mockShowToast, removeToast: mockRemoveToast }),
-}));
-
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
   useSearchParams: () => mockSearchParams,
@@ -159,10 +155,16 @@ vi.mock('firebase/firestore', () => {
 // ---------------------------------------------------------------------------
 import { addDoc, updateDoc, getDoc, getDocs, writeBatch } from 'firebase/firestore';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import RunTogetherPage from '@/app/events/page';
 import PostPage from '@/app/posts/page';
 import { asMock } from '../../_helpers/mock-helpers';
+import {
+  AuthToastTestProviders,
+  createTestAuthContextValue,
+  createTestToastContextValue,
+} from '../../_helpers/provider-test-helpers';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -183,8 +185,22 @@ const TEST_USER = {
  * @returns {import('react').ReactElement} Provider wrapper.
  */
 function AuthWrapper({ children, user = TEST_USER }) {
-  const value = { user, setUser: vi.fn(), loading: false };
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const authValue = createTestAuthContextValue({ user });
+  const toastValue = createTestToastContextValue({
+    showToast: mockShowToast,
+    removeToast: mockRemoveToast,
+  });
+
+  return (
+    <AuthToastTestProviders
+      authContext={AuthContext}
+      authValue={authValue}
+      toastContext={ToastContext}
+      toastValue={toastValue}
+    >
+      {children}
+    </AuthToastTestProviders>
+  );
 }
 
 /**

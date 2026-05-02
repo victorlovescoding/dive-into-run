@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { useMemo } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   addDoc,
@@ -26,15 +25,10 @@ import {
 // ---------------------------------------------------------------------------
 // Hoisted shared state (available inside vi.mock factories)
 // ---------------------------------------------------------------------------
-const { mockShowToast, mockReplace, mockSearchParamsGet, mockAuthContext } = vi.hoisted(() => {
-  const { createContext } = require('react');
-  return {
-    mockShowToast: vi.fn(),
-    mockReplace: vi.fn(),
-    mockSearchParamsGet: vi.fn().mockReturnValue(null),
-    mockAuthContext: createContext({ user: null, setUser: () => {}, loading: false }),
-  };
-});
+const { mockReplace, mockSearchParamsGet } = vi.hoisted(() => ({
+  mockReplace: vi.fn(),
+  mockSearchParamsGet: vi.fn().mockReturnValue(null),
+}));
 
 // ---------------------------------------------------------------------------
 // Module mocks (hoisted)
@@ -44,16 +38,8 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => ({ get: mockSearchParamsGet }),
 }));
 
-vi.mock('@/runtime/providers/AuthProvider', () => ({
-  AuthContext: mockAuthContext,
-}));
-
 vi.mock('next/image', () => ({
   default: (props) => <img {...props} />,
-}));
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: mockShowToast }),
 }));
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
@@ -86,11 +72,13 @@ vi.mock('firebase/firestore', () => ({
 // Imports (after vi.mock — Vitest hoists mocks above these)
 // ---------------------------------------------------------------------------
 import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
 import PostPage from '@/app/posts/page';
 import {
   createFirestoreDocSnapshot as createDocSnapshot,
   createFirestoreQuerySnapshot as createQuerySnapshot,
 } from '../../_helpers/factories';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 
 const firestoreMocks = {
   ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
@@ -204,36 +192,27 @@ function setupFirestoreMocks() {
 // ---------------------------------------------------------------------------
 
 /**
- * 用 AuthContext 包裹子元件，提供測試用使用者。
- * @param {object} props - 元件 props。
- * @param {import('react').ReactNode} props.children - 子元件。
- * @param {object | null} [props.user] - 覆寫使用者，預設 TEST_USER。
- * @returns {import('react').ReactElement} 包裹後的元件。
- */
-function AuthWrapper({ children, user = TEST_USER }) {
-  const authValue = useMemo(() => ({ user, setUser: vi.fn(), loading: false }), [user]);
-  return <AuthContext.Provider value={authValue}>{children}</AuthContext.Provider>;
-}
-
-/**
  * 渲染 PostPage 並等待初始載入完成。
  *
  * 回傳物件解構（非單值）以滿足 testing-library/render-result-naming-convention：
  * 規則將呼叫 `render()` 的 wrapper 視為 render-returning function，僅允許
  * `view` / `utils` 或解構命名；用解構保留語意正確的 `user` 名稱。
- * @returns {Promise<{ user: import('@testing-library/user-event').UserEvent }>} userEvent 實例。
+ * @returns {Promise<{
+ *   user: import('@testing-library/user-event').UserEvent,
+ *   toastValue: import('../../_helpers/provider-test-helpers').ToastContextValue
+ * }>} userEvent 實例與 toast context spy。
  */
 async function renderPostPage() {
   const user = userEvent.setup();
-  render(
-    <AuthWrapper>
-      <PostPage />
-    </AuthWrapper>,
-  );
+  const { toastValue } = renderWithAuthToast(<PostPage />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+    auth: { user: TEST_USER },
+  });
   await waitFor(() => {
     expect(firestoreMocks.getDocs).toHaveBeenCalled();
   });
-  return { user };
+  return { user, toastValue };
 }
 
 /**
@@ -306,7 +285,7 @@ describe('PostPage form validation', () => {
   describe('create mode validation (US1+US2)', () => {
     it('shows merged error toast when both title and content are empty', async () => {
       // Arrange
-      const { user } = await renderPostPage();
+      const { user, toastValue } = await renderPostPage();
       await openComposeForm(user);
 
       // Act — leave both fields empty, submit
@@ -314,14 +293,14 @@ describe('PostPage form validation', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockShowToast).toHaveBeenCalledWith('請輸入標題和內容', 'error');
+        expect(toastValue.showToast).toHaveBeenCalledWith('請輸入標題和內容', 'error');
       });
       expect(firestoreMocks.addDoc).not.toHaveBeenCalled();
     });
 
     it('shows title error toast when title is empty but content is filled', async () => {
       // Arrange
-      const { user } = await renderPostPage();
+      const { user, toastValue } = await renderPostPage();
       await openComposeForm(user);
 
       // Act — fill content only
@@ -331,14 +310,14 @@ describe('PostPage form validation', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockShowToast).toHaveBeenCalledWith('請輸入標題', 'error');
+        expect(toastValue.showToast).toHaveBeenCalledWith('請輸入標題', 'error');
       });
       expect(firestoreMocks.addDoc).not.toHaveBeenCalled();
     });
 
     it('shows content error toast when content is empty but title is filled', async () => {
       // Arrange
-      const { user } = await renderPostPage();
+      const { user, toastValue } = await renderPostPage();
       await openComposeForm(user);
 
       // Act — fill title only
@@ -348,14 +327,14 @@ describe('PostPage form validation', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockShowToast).toHaveBeenCalledWith('請輸入內容', 'error');
+        expect(toastValue.showToast).toHaveBeenCalledWith('請輸入內容', 'error');
       });
       expect(firestoreMocks.addDoc).not.toHaveBeenCalled();
     });
 
     it('shows length error toast when title exceeds 50 characters', async () => {
       // Arrange
-      const { user } = await renderPostPage();
+      const { user, toastValue } = await renderPostPage();
       await openComposeForm(user);
 
       // Act — fill title with 51 characters
@@ -369,7 +348,7 @@ describe('PostPage form validation', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockShowToast).toHaveBeenCalledWith('標題不可超過 50 字', 'error');
+        expect(toastValue.showToast).toHaveBeenCalledWith('標題不可超過 50 字', 'error');
       });
       expect(firestoreMocks.addDoc).not.toHaveBeenCalled();
     });
@@ -393,12 +372,7 @@ describe('PostPage form validation', () => {
         },
       ]);
 
-      const user = userEvent.setup();
-      render(
-        <AuthWrapper>
-          <PostPage />
-        </AuthWrapper>,
-      );
+      const { user, toastValue } = await renderPostPage();
 
       // Wait for post to appear
       await waitFor(() => {
@@ -419,7 +393,7 @@ describe('PostPage form validation', () => {
 
       // Assert
       await waitFor(() => {
-        expect(mockShowToast).toHaveBeenCalledWith('請輸入標題', 'error');
+        expect(toastValue.showToast).toHaveBeenCalledWith('請輸入標題', 'error');
       });
       expect(firestoreMocks.updateDoc).not.toHaveBeenCalled();
     });
@@ -432,7 +406,7 @@ describe('PostPage form validation', () => {
     it('calls createPost with correct args when input is valid', async () => {
       // Arrange
       const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
-      const { user } = await renderPostPage();
+      const { user, toastValue } = await renderPostPage();
       await openComposeForm(user);
 
       // Act — fill valid title and content
@@ -456,7 +430,7 @@ describe('PostPage form validation', () => {
         });
       });
       await waitFor(() => {
-        expect(mockShowToast).toHaveBeenCalledWith('發佈文章成功');
+        expect(toastValue.showToast).toHaveBeenCalledWith('發佈文章成功');
       });
 
       scrollToSpy.mockRestore();

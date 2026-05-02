@@ -2,27 +2,30 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getDocs } from 'firebase/firestore';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
 import RunCalendarDialog from '@/components/RunCalendarDialog';
 import { createStravaActivityDoc } from '../../_helpers/strava-fixtures';
+import { createTestAuthContextValue } from '../../_helpers/provider-test-helpers';
 
-vi.mock('@/contexts/AuthContext', async () => {
-  const { createContext } = await import('react');
-  return {
-    AuthContext: createContext({ user: { uid: 'user-1' }, loading: false }),
-  };
-});
+vi.mock('firebase/app', () => ({
+  initializeApp: vi.fn(() => ({})),
+}));
 
-vi.mock('@/runtime/providers/AuthProvider', async () => {
-  const { createContext } = await import('react');
-  return {
-    AuthContext: createContext({ user: { uid: 'user-1' }, loading: false }),
-    default: ({ children }) => children,
-  };
-});
-
-vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
+vi.mock('firebase/auth', () => ({
+  getAuth: vi.fn(() => ({})),
+  GoogleAuthProvider: vi.fn(function GoogleAuthProvider() {
+    this.setCustomParameters = vi.fn();
+  }),
+  connectAuthEmulator: vi.fn(),
+  signInWithEmailAndPassword: vi.fn(),
+  signOut: vi.fn(),
+  signInWithPopup: vi.fn(),
+  onAuthStateChanged: vi.fn(() => vi.fn()),
+}));
 
 vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(() => ({})),
+  connectFirestoreEmulator: vi.fn(),
   collection: vi.fn((_db, ...segments) => ({ type: 'collection', path: segments.join('/') })),
   doc: vi.fn((base, ...segments) => ({
     type: 'doc',
@@ -38,14 +41,43 @@ vi.mock('firebase/firestore', () => ({
   limit: vi.fn((n) => ({ __type: 'limit', n })),
   startAfter: vi.fn((cursor) => ({ __type: 'startAfter', cursor })),
   getDocs: vi.fn(),
+  getDoc: vi.fn(),
   onSnapshot: vi.fn(),
+  serverTimestamp: vi.fn(),
+  setDoc: vi.fn(),
   Timestamp: {
     fromDate: vi.fn((date) => ({ toDate: () => date, __ts: date.getTime() })),
     now: vi.fn(() => ({ toDate: () => new Date() })),
   },
 }));
 
+vi.mock('firebase/storage', () => ({
+  getStorage: vi.fn(() => ({})),
+  connectStorageEmulator: vi.fn(),
+}));
+
 const mockedGetDocs = /** @type {import('vitest').Mock} */ (getDocs);
+
+/**
+ * 用真實 AuthContext.Provider render 跑步月曆。
+ * @param {import('react').ReactElement} ui - 測試目標。
+ * @returns {ReturnType<typeof render>} render result。
+ */
+function renderWithAuth(ui) {
+  const authValue = createTestAuthContextValue({
+    user: {
+      uid: 'user-1',
+      name: 'Test User',
+      email: null,
+      photoURL: null,
+      bio: null,
+      getIdToken: vi.fn().mockResolvedValue('id-token-1'),
+    },
+    loading: false,
+  });
+
+  return render(<AuthContext.Provider value={authValue}>{ui}</AuthContext.Provider>);
+}
 
 /**
  * 取得測試啟動當下的 (year, month) 配對 — 與 RunCalendarDialog 內部 `new Date()` 對齊。
@@ -128,7 +160,7 @@ describe('RunCalendarDialog', () => {
     it('open=true 時呼叫 showModal', async () => {
       const onClose = vi.fn();
 
-      render(<RunCalendarDialog open onClose={onClose} />);
+      renderWithAuth(<RunCalendarDialog open onClose={onClose} />);
 
       expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled();
       // 等待 hook 真實 fetch 完成，避免 act warning
@@ -138,7 +170,7 @@ describe('RunCalendarDialog', () => {
     it('點擊關閉按鈕呼叫 onClose', async () => {
       const user = userEvent.setup();
       const onClose = vi.fn();
-      render(<RunCalendarDialog open onClose={onClose} />);
+      renderWithAuth(<RunCalendarDialog open onClose={onClose} />);
 
       await user.click(screen.getByRole('button', { name: '關閉月曆' }));
 
@@ -148,7 +180,7 @@ describe('RunCalendarDialog', () => {
 
   describe('日曆網格 rendering', () => {
     it('顯示 weekday headers（日～六）', async () => {
-      render(<RunCalendarDialog open onClose={vi.fn()} />);
+      renderWithAuth(<RunCalendarDialog open onClose={vi.fn()} />);
 
       const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
       weekdays.forEach((label) => {
@@ -158,7 +190,7 @@ describe('RunCalendarDialog', () => {
     });
 
     it('dayMap 含資料時顯示日期數字', async () => {
-      render(<RunCalendarDialog open onClose={vi.fn()} />);
+      renderWithAuth(<RunCalendarDialog open onClose={vi.fn()} />);
 
       // 真實 hook fetch + service groupActivitiesByDay 後，5 / 10 在 dayActive cell 內
       await waitFor(() => {
@@ -170,7 +202,7 @@ describe('RunCalendarDialog', () => {
 
   describe('Icon display per activity type', () => {
     it('dayMap 含不同 type 時顯示對應距離文字', async () => {
-      render(<RunCalendarDialog open onClose={vi.fn()} />);
+      renderWithAuth(<RunCalendarDialog open onClose={vi.fn()} />);
 
       await waitFor(() => {
         // day 5: Run 5200m → "5.2"
@@ -184,7 +216,7 @@ describe('RunCalendarDialog', () => {
 
   describe('月份總結值', () => {
     it('顯示正確的總里程', async () => {
-      render(<RunCalendarDialog open onClose={vi.fn()} />);
+      renderWithAuth(<RunCalendarDialog open onClose={vi.fn()} />);
 
       // totals: 5200 + 8000 + 3000 = 16200 → 16.2 km
       await waitFor(() => {
@@ -193,7 +225,7 @@ describe('RunCalendarDialog', () => {
     });
 
     it('顯示各類型小計文字', async () => {
-      render(<RunCalendarDialog open onClose={vi.fn()} />);
+      renderWithAuth(<RunCalendarDialog open onClose={vi.fn()} />);
 
       await waitFor(() => {
         // Run 13200 → 戶外 13.2 km
@@ -223,7 +255,7 @@ describe('RunCalendarDialog', () => {
       const user = userEvent.setup();
       const { current, target } = getExpectedTitles(1);
 
-      render(<RunCalendarDialog open onClose={vi.fn()} />);
+      renderWithAuth(<RunCalendarDialog open onClose={vi.fn()} />);
       expect(screen.getByText(current)).toBeInTheDocument();
 
       await user.click(screen.getByRole('button', { name: '下一個月' }));
@@ -237,7 +269,7 @@ describe('RunCalendarDialog', () => {
       const user = userEvent.setup();
       const { current, target } = getExpectedTitles(-1);
 
-      render(<RunCalendarDialog open onClose={vi.fn()} />);
+      renderWithAuth(<RunCalendarDialog open onClose={vi.fn()} />);
       expect(screen.getByText(current)).toBeInTheDocument();
 
       await user.click(screen.getByRole('button', { name: '上一個月' }));

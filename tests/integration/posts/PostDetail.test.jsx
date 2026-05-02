@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   addDoc,
@@ -25,17 +25,10 @@ import {
 // ---------------------------------------------------------------------------
 // Hoisted shared state (available inside vi.mock factories)
 // ---------------------------------------------------------------------------
-const { mockShowToast, mockPush, mockReplace, mockAuthContext } = vi.hoisted(() => {
-  const { createContext } = require('react');
-  return {
-    mockShowToast: vi.fn(),
-    mockPush: vi.fn(),
-    mockReplace: vi.fn(),
-    mockAuthContext: createContext({
-      user: { uid: 'user-1', name: '小明', photoURL: '/avatar.jpg' },
-    }),
-  };
-});
+const { mockPush, mockReplace } = vi.hoisted(() => ({
+  mockPush: vi.fn(),
+  mockReplace: vi.fn(),
+}));
 
 // ---------------------------------------------------------------------------
 // Module mocks (hoisted)
@@ -43,14 +36,6 @@ const { mockShowToast, mockPush, mockReplace, mockAuthContext } = vi.hoisted(() 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
   useSearchParams: () => new URLSearchParams(),
-}));
-
-vi.mock('@/runtime/providers/AuthProvider', () => ({
-  AuthContext: mockAuthContext,
-}));
-
-vi.mock('@/runtime/providers/ToastProvider', () => ({
-  useToast: () => ({ showToast: mockShowToast }),
 }));
 
 vi.mock('@/config/client/firebase-client', () => ({ db: {} }));
@@ -95,10 +80,13 @@ vi.mock('next/image', () => ({
 // Imports (after vi.mock — Vitest hoists mocks above these)
 // ---------------------------------------------------------------------------
 import PostDetailClient from '@/app/posts/[id]/PostDetailClient';
+import { AuthContext } from '@/runtime/providers/AuthProvider';
+import { ToastContext } from '@/runtime/providers/ToastProvider';
 import {
   createFirestoreDocSnapshot as createDocSnapshot,
   createFirestoreQuerySnapshot as createQuerySnapshot,
 } from '../../_helpers/factories';
+import { renderWithAuthToast } from '../../_helpers/provider-test-helpers';
 
 const firestoreMocks = {
   ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
@@ -146,6 +134,27 @@ const mockComments = [
     createdAt: { toDate: () => new Date('2026-04-15T07:00:00Z') },
   },
 ];
+
+const mockUser = {
+  uid: 'user-1',
+  name: '小明',
+  email: null,
+  photoURL: '/avatar.jpg',
+  bio: null,
+  getIdToken: async () => '',
+};
+
+/**
+ * 使用真實 AuthContext/ToastContext provider value 渲染文章詳情。
+ * @returns {ReturnType<typeof renderWithAuthToast>} render 結果與 context spies。
+ */
+function renderPostDetail() {
+  return renderWithAuthToast(<PostDetailClient postId="post-1" />, {
+    authContext: AuthContext,
+    toastContext: ToastContext,
+    auth: { user: mockUser },
+  });
+}
 
 /**
  * 設定 S1 posts 測試共用的 Firestore SDK 邊界 stub。
@@ -235,19 +244,19 @@ describe('PostDetailClient', () => {
   });
 
   it('文章區域以 PostCard 呈現（article 語義元素）', async () => {
-    render(<PostDetailClient postId="post-1" />);
+    renderPostDetail();
     const articles = await screen.findAllByRole('article');
     expect(articles[0]).toBeInTheDocument();
   });
 
   it('顯示文章標題和完整內容', async () => {
-    render(<PostDetailClient postId="post-1" />);
+    renderPostDetail();
     expect(await screen.findByText('晨跑日記')).toBeInTheDocument();
     expect(screen.getByText('今天跑了十公里')).toBeInTheDocument();
   });
 
   it('留言以 CommentCard 呈現（每則留言各自為 article 語義元素）', async () => {
-    render(<PostDetailClient postId="post-1" />);
+    renderPostDetail();
     await screen.findByText('晨跑日記');
     // 文章本身 1 個 article + 留言 1 個 article = 至少 2 個
     const articles = screen.getAllByRole('article');
@@ -255,13 +264,13 @@ describe('PostDetailClient', () => {
   });
 
   it('顯示留言列表', async () => {
-    render(<PostDetailClient postId="post-1" />);
+    renderPostDetail();
     expect(await screen.findByText('跑得好！')).toBeInTheDocument();
   });
 
   it('按讚按鈕可點擊', async () => {
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post-1" />);
+    renderPostDetail();
     await screen.findByText('晨跑日記');
     const likeButton = screen.getByRole('button', { name: '按讚' });
     await user.click(likeButton);
@@ -274,7 +283,7 @@ describe('PostDetailClient', () => {
 
   it('留言輸入後可送出', async () => {
     const user = userEvent.setup();
-    render(<PostDetailClient postId="post-1" />);
+    renderPostDetail();
     await screen.findByText('晨跑日記');
     const input = screen.getByPlaceholderText(/留言/);
     await user.type(input, '好棒');
