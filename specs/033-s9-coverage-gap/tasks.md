@@ -193,7 +193,7 @@ Legend:
     - Each slice has one clear target surface, one likely test file area, and focused verification.
     - Reviewer confirms parallel-safe grouping is realistic.
 
-- [ ] T005 Commit planning baseline
+- [x] T005 Commit planning baseline
   - Owner: Setup Engineer
   - Reviewer: Setup Reviewer
   - Dependencies: T004
