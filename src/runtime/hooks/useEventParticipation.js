@@ -17,6 +17,10 @@ import {
  */
 
 /**
+ * @typedef {'checking' | 'joined' | 'notJoined'} MembershipStatus
+ */
+
+/**
  * @typedef {object} UseEventParticipationParams
  * @property {{ uid?: string, name?: string, email?: string, photoURL?: string } | null} user - 當前登入使用者。
  * @property {EventData[]} events - 活動列表，用於查詢使用者已參加的活動。
@@ -29,6 +33,7 @@ import {
  * @typedef {object} UseEventParticipationReturn
  * @property {Record<string, 'joining' | 'leaving'>} pendingByEventId - 各活動正在進行中的參加/退出操作。
  * @property {Set<string>} myJoinedEventIds - 當前使用者已參加的活動 ID 集合。
+ * @property {Record<string, MembershipStatus>} membershipStatusByEventId - 各活動的報名狀態查詢結果。
  * @property {(event: EventData, clickEvent: import('react').MouseEvent) => Promise<void>} handleJoinClick - 處理點擊參加活動。
  * @property {(event: EventData, clickEvent: import('react').MouseEvent) => Promise<void>} handleLeaveClick - 處理點擊退出活動。
  */
@@ -48,22 +53,40 @@ export default function useEventParticipation({
 }) {
   const [pendingByEventId, setPendingByEventId] = useState({});
   const [myJoinedEventIds, setMyJoinedEventIds] = useState(() => new Set());
+  const [membershipStatusByEventId, setMembershipStatusByEventId] = useState({});
   const membershipCheckedRef = useRef(new Set());
+  const membershipUserUidRef = useRef(null);
 
   useEffect(() => {
     if (!user?.uid) {
       setMyJoinedEventIds(new Set());
+      setMembershipStatusByEventId({});
       membershipCheckedRef.current = new Set();
+      membershipUserUidRef.current = null;
       return undefined;
     }
 
-    const eventIds = events.map((event) => event?.id).filter(Boolean);
+    if (membershipUserUidRef.current !== user.uid) {
+      setMyJoinedEventIds(new Set());
+      setMembershipStatusByEventId({});
+      membershipCheckedRef.current = new Set();
+      membershipUserUidRef.current = user.uid;
+    }
+
+    const eventIds = events.map((event) => event?.id).filter(Boolean).map(String);
     const uncheckedIds = eventIds.filter((eventId) => !membershipCheckedRef.current.has(eventId));
     if (uncheckedIds.length === 0) {
       return undefined;
     }
 
     let cancelled = false;
+    setMembershipStatusByEventId((previous) => {
+      const next = { ...previous };
+      uncheckedIds.forEach((eventId) => {
+        next[eventId] = 'checking';
+      });
+      return next;
+    });
 
     (async () => {
       try {
@@ -77,24 +100,59 @@ export default function useEventParticipation({
           joined.forEach((eventId) => joinedEventIds.add(eventId));
         }
 
-        uncheckedIds.forEach((eventId) => membershipCheckedRef.current.add(eventId));
-
-        if (!cancelled && joinedEventIds.size > 0) {
-          setMyJoinedEventIds((previous) => {
-            const next = new Set(previous);
-            joinedEventIds.forEach((eventId) => next.add(eventId));
-            return next;
-          });
+        if (cancelled) {
+          return;
         }
+
+        setMyJoinedEventIds((previous) => {
+          const next = new Set(previous);
+          uncheckedIds.forEach((eventId) => {
+            if (joinedEventIds.has(eventId)) {
+              next.add(eventId);
+            } else {
+              next.delete(eventId);
+            }
+          });
+          return next;
+        });
+
+        setMembershipStatusByEventId((previous) => {
+          const next = { ...previous };
+          uncheckedIds.forEach((eventId) => {
+            next[eventId] = joinedEventIds.has(eventId) ? 'joined' : 'notJoined';
+          });
+          return next;
+        });
+
+        uncheckedIds.forEach((eventId) => membershipCheckedRef.current.add(eventId));
       } catch (error) {
         console.error('查詢已參加活動失敗:', error);
+        if (cancelled || !isMountedRef.current) {
+          return;
+        }
+
+        setMyJoinedEventIds((previous) => {
+          const next = new Set(previous);
+          uncheckedIds.forEach((eventId) => next.delete(eventId));
+          return next;
+        });
+
+        setMembershipStatusByEventId((previous) => {
+          const next = { ...previous };
+          uncheckedIds.forEach((eventId) => {
+            next[eventId] = 'notJoined';
+          });
+          return next;
+        });
+
+        uncheckedIds.forEach((eventId) => membershipCheckedRef.current.add(eventId));
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [events, user?.uid]);
+  }, [events, isMountedRef, user?.uid]);
 
   const handleJoinClick = useCallback(
     /**
@@ -133,6 +191,8 @@ export default function useEventParticipation({
             next.add(eventId);
             return next;
           });
+          setMembershipStatusByEventId((previous) => ({ ...previous, [eventId]: 'joined' }));
+          membershipCheckedRef.current.add(eventId);
 
           if (result.status === 'joined') {
             setEvents((previous) =>
@@ -160,6 +220,8 @@ export default function useEventParticipation({
               String(item.id) === eventId ? { ...item, remainingSeats: 0 } : item,
             ),
           );
+          setMembershipStatusByEventId((previous) => ({ ...previous, [eventId]: 'notJoined' }));
+          membershipCheckedRef.current.add(eventId);
           return;
         }
 
@@ -215,6 +277,8 @@ export default function useEventParticipation({
             next.delete(eventId);
             return next;
           });
+          setMembershipStatusByEventId((previous) => ({ ...previous, [eventId]: 'notJoined' }));
+          membershipCheckedRef.current.add(eventId);
 
           if (result.status === 'left') {
             setEvents((previous) =>
@@ -254,9 +318,13 @@ export default function useEventParticipation({
     [isMountedRef, setEvents, showToast, user],
   );
 
+  const canExposeMembershipState = Boolean(user?.uid)
+    && membershipUserUidRef.current === user.uid;
+
   return {
     pendingByEventId,
-    myJoinedEventIds,
+    myJoinedEventIds: canExposeMembershipState ? myJoinedEventIds : new Set(),
+    membershipStatusByEventId: canExposeMembershipState ? membershipStatusByEventId : {},
     handleJoinClick,
     handleLeaveClick,
   };

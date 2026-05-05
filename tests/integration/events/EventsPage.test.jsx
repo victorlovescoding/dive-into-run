@@ -131,10 +131,38 @@ const mockEvents = [
 ];
 
 /**
- * 設定 EventsPage 需要的 Firestore SDK 邊界 stub。
- * @param {{ joinedIds?: string[] }} [options] - 使用者已參加活動 ID。
+ * 建立可由測試控制 resolve 時機的 Promise。
+ * @template T
+ * @returns {{ promise: Promise<T>, resolve: (value: T) => void }} deferred promise。
  */
-function setupFirestoreMocks({ joinedIds = ['event-1'] } = {}) {
+function createDeferred() {
+  /** @type {(value: T) => void} */
+  let resolve = () => {};
+  const promise = new Promise((innerResolve) => {
+    resolve = innerResolve;
+  });
+
+  return { promise, resolve };
+}
+
+/**
+ * 建立使用者參加狀態的 Firestore doc snapshot。
+ * @param {string[]} joinedIds - 使用者已參加活動 ID。
+ * @returns {ReturnType<typeof createDocSnapshot>} participant doc snapshot。
+ */
+function createMembershipSnapshot(joinedIds) {
+  return createDocSnapshot(
+    'user-123',
+    joinedIds.includes('event-1') ? { uid: 'user-123' } : null,
+  );
+}
+
+/**
+ * 設定 EventsPage 需要的 Firestore SDK 邊界 stub。
+ * @param {{ joinedIds?: string[], membershipSnapshotPromise?: Promise<ReturnType<typeof createDocSnapshot>> }} [options]
+ * - 使用者已參加活動 ID 與可控 membership 查詢結果。
+ */
+function setupFirestoreMocks({ joinedIds = ['event-1'], membershipSnapshotPromise } = {}) {
   firestoreMocks.collection.mockImplementation((_dbOrRef, ...segments) => ({
     type: 'collection',
     path: segments.join('/'),
@@ -162,10 +190,7 @@ function setupFirestoreMocks({ joinedIds = ['event-1'] } = {}) {
   });
   firestoreMocks.getDoc.mockImplementation(async (ref) => {
     if (ref.path === 'events/event-1/participants/user-123') {
-      return createDocSnapshot(
-        'user-123',
-        joinedIds.includes('event-1') ? { uid: 'user-123' } : null,
-      );
+      return membershipSnapshotPromise ?? createMembershipSnapshot(joinedIds);
     }
     return createDocSnapshot(String(ref.id), null);
   });
@@ -236,7 +261,16 @@ describe('EventsPage Integration Tests', () => {
   });
 
   it('should show joined status if user is a participant', async () => {
+    const membership = createDeferred();
+    setupFirestoreMocks({ membershipSnapshotPromise: membership.promise });
     renderPage();
+
+    expect(await screen.findByText('Morning Run')).toBeInTheDocument();
+
+    const checkingButton = await screen.findByRole('button', { name: /確認報名狀態/ });
+    expect(checkingButton).toBeDisabled();
+
+    membership.resolve(createMembershipSnapshot(['event-1']));
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /退出/i })).toBeInTheDocument();
@@ -260,6 +294,9 @@ describe('EventsPage Integration Tests', () => {
     renderPage();
 
     const joinBtn = await screen.findByRole('button', { name: /參加/i });
+    await waitFor(() => {
+      expect(joinBtn).toBeEnabled();
+    });
     await user.click(joinBtn);
 
     await waitFor(() => {

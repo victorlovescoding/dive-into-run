@@ -47,7 +47,7 @@ describe('Integration: EventActionButtons', () => {
     vi.clearAllMocks();
   });
 
-  it('should render "Join Event" button when user is logged in, not host, not joined, and event not full', async () => {
+  it('should render "Join Event" button when user is logged in, membership is notJoined, and event not full', async () => {
     // Arrange
     const user = userEvent.setup();
     /** @type {import('vitest').Mock} */
@@ -82,10 +82,11 @@ describe('Integration: EventActionButtons', () => {
         user={mockUser}
         onJoin={mockOnJoin}
         onLeave={mockOnLeave}
-        isPending={false}
+        isPending={undefined}
         isCreating={false}
         isFormOpen={false}
         myJoinedEventIds={new Set()}
+        membershipStatus="notJoined"
       />,
     );
 
@@ -135,7 +136,7 @@ describe('Integration: EventActionButtons', () => {
         user={mockUser}
         onJoin={mockOnJoin}
         onLeave={mockOnLeave}
-        isPending={false}
+        isPending={undefined}
         isCreating={false}
         isFormOpen={false}
         myJoinedEventIds={new Set(['event-1'])}
@@ -182,7 +183,7 @@ describe('Integration: EventActionButtons', () => {
         user={mockUser}
         onJoin={vi.fn()}
         onLeave={vi.fn()}
-        isPending={false}
+        isPending={undefined}
         isCreating={false}
         isFormOpen={false}
         myJoinedEventIds={new Set()}
@@ -223,7 +224,7 @@ describe('Integration: EventActionButtons', () => {
         user={mockUser}
         onJoin={vi.fn()}
         onLeave={vi.fn()}
-        isPending={false}
+        isPending={undefined}
         isCreating={false}
         isFormOpen={false}
         myJoinedEventIds={new Set()}
@@ -235,7 +236,7 @@ describe('Integration: EventActionButtons', () => {
     expect(screen.queryByRole('button', { name: /leave event/i })).not.toBeInTheDocument();
   });
 
-  it('should be disabled when operation is pending', () => {
+  it('should be disabled and show joining label when join operation is pending', () => {
     // Arrange
     /** @type {User} */
     const mockUser = { uid: 'user-123' };
@@ -264,7 +265,7 @@ describe('Integration: EventActionButtons', () => {
         user={mockUser}
         onJoin={vi.fn()}
         onLeave={vi.fn()}
-        isPending
+        isPending="joining"
         isCreating={false}
         isFormOpen={false}
         myJoinedEventIds={new Set()}
@@ -272,10 +273,60 @@ describe('Integration: EventActionButtons', () => {
     );
 
     // Act
-    const joinButton = screen.getByRole('button', { name: /參加活動/i });
+    const joinButton = screen.getByRole('button', { name: /報名中…/i });
 
     // Assert
     expect(joinButton).toBeDisabled();
+  });
+
+  it('should disable join while membership status is checking', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    /** @type {import('vitest').Mock} */
+    const mockOnJoin = vi.fn();
+
+    /** @type {User} */
+    const mockUser = { uid: 'user-123' };
+
+    /** @type {EventData} */
+    const mockEvent = {
+      id: 'event-1',
+      hostUid: 'host-999',
+      hostName: 'Test Host',
+      maxParticipants: 10,
+      participants: [],
+      participantsCount: 0,
+      title: 'Mock Event',
+      time: '2099-01-01T10:00',
+      registrationDeadline: '2099-12-31T23:59',
+      city: '臺北市',
+      district: '中正區',
+      meetPlace: '公園',
+      distanceKm: 5,
+      paceSec: 360,
+    };
+
+    render(
+      <EventActionButtons
+        event={mockEvent}
+        user={mockUser}
+        onJoin={mockOnJoin}
+        onLeave={vi.fn()}
+        isPending={undefined}
+        isCreating={false}
+        isFormOpen={false}
+        myJoinedEventIds={new Set()}
+        membershipStatus="checking"
+      />,
+    );
+
+    // Act
+    const checkingButton = screen.getByRole('button', { name: /確認報名狀態…/i });
+    await user.click(checkingButton);
+
+    // Assert
+    expect(checkingButton).toBeDisabled();
+    expect(mockOnJoin).not.toHaveBeenCalled();
   });
 
   it('should NOT render Join/Leave buttons if user is NOT logged in', () => {
@@ -304,7 +355,7 @@ describe('Integration: EventActionButtons', () => {
         user={null} // Not logged in
         onJoin={vi.fn()}
         onLeave={vi.fn()}
-        isPending={false}
+        isPending={undefined}
         isCreating={false}
         isFormOpen={false}
         myJoinedEventIds={new Set()}
