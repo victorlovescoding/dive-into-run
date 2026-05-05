@@ -2,7 +2,7 @@
 
 > **用途**：測試撰寫的規範、範例與決策依據查找。配合 TDD skill 使用。
 > **範圍**：Unit / Integration / E2E 三層級；含本 repo 獨家 pattern。
-> **前提**：已熟讀 `.claude/references/coding-standards.md`。
+> **前提**：已熟讀 `.claude/rules/coding-rules.md` 與 `.claude/rules/code-style.md`。
 
 ---
 
@@ -14,11 +14,21 @@
 | -------------------------------- | -------------------------------------------------------- |
 | 要寫新的測試（從 RED 開始）      | 執行 `test-driven-development` skill（強制 5 步驟流程）  |
 | 已在寫測試、想查某個規範或範例   | 讀本 handbook 對應章節                                   |
-| 想看 mock / JSDoc 的**語法細節** | 讀 skill/references/coding-style.md、jsdoc-cheatsheet.md |
-| 想照抄**測試檔結構**             | 讀 skill/references/boilerplate.js                       |
-| 想知道**反模式**詳細案例         | 讀 skill/references/testing-anti-patterns.md             |
+| 想看 mock / JSDoc 的**語法細節** | 讀 `.claude/skills/test-driven-development/references/coding-style.md`、`jsdoc-cheatsheet.md` |
+| 想照抄**測試檔結構**             | 讀 `.claude/skills/test-driven-development/references/boilerplate.js`                       |
+| 想知道**反模式**詳細案例         | 讀 `.claude/skills/test-driven-development/references/testing-anti-patterns.md`             |
 
 Skill 是**流程**（做什麼、照什麼順序），handbook 是**字典**（怎麼做、為何如此）。
+
+---
+
+## Current Blocking Rules（commit blockers）
+
+這些不是風格建議，是目前會被 commit gate 或 CI 擋下的測試規則。寫測試前先確認：
+
+- **Mock boundary**：不要 `vi.mock()` repo 內部 layer：`@/lib/**`、`@/repo/**`、`@/service/**`、`@/runtime/**`。例外只限明確允許的 React provider boundary，例如 `@/runtime/providers/**`。優先 mock Firebase SDK、第三方 SDK、browser API、external fetch/network 等外部邊界。機械 gate：`scripts/audit-mock-boundary.sh`。
+- **Flaky patterns**：不要新增 `expect(...).toHaveBeenCalledTimes(...)`、fixed sleep、`await new Promise((resolve) => setTimeout(resolve, N))`、`page.waitForTimeout(...)`。改用 behavior/payload assertion、`waitFor`、`findBy*`、Playwright web-first assertions 或 fake timers。機械 gate：`scripts/audit-flaky-patterns.sh`。
+- **Test bucket imports**：不同測試 bucket 可 import 的 `src/**` surface 不同；不要憑感覺跨 layer import。可執行政策來源：`specs/021-layered-dependency-architecture/test-buckets/policy.js`。
 
 ---
 
@@ -173,7 +183,7 @@ await user.click(button);
 
 ### 查詢優先序
 
-`getByRole` > `getByLabelText` > `getByPlaceholderText` > `getByText` > `getByTestId`。**禁用** `container.querySelector`（違反 coding-standards 禁令清單）。
+`getByRole` > `getByLabelText` > `getByPlaceholderText` > `getByText` > `getByTestId`。**禁用** `container.querySelector`（違反 `.claude/rules/coding-rules.md` 禁令清單）。
 
 ```jsx
 // ❌ BAD
@@ -329,7 +339,7 @@ test.describe.configure({ mode: 'serial' });
 
 - 不要重複 mock `vitest.setup.jsx` 已 mock 的東西
 - 每個 `vi.mock()` 後**必須**加 typed alias
-- Mock typedef 欄位名**必須**對齊 production function 參數（見 skill/references/coding-style.md）
+- Mock typedef 欄位名**必須**對齊 production function 參數（見 `.claude/skills/test-driven-development/references/coding-style.md`）
 
 ---
 
@@ -496,13 +506,16 @@ test.describe.configure({ mode: 'serial' });
 
 | 指令                                                          | 用途                                      |
 | ------------------------------------------------------------- | ----------------------------------------- |
-| `npm run test`                                                | 全專案 Vitest（unit + integration）       |
-| `npm run test:branch`                                         | 僅當前 branch 的 Vitest                   |
-| `npx vitest run tests/unit/service/x.test.js`                 | 單檔 unit                                 |
-| `npx vitest run tests/integration/notifications/x.test.jsx`   | 單檔 integration                          |
-| `npm run test:e2e:branch`                                     | 當前 branch E2E（自動選 emulator 或一般） |
-| `E2E_FEATURE=<feature> npm run test:e2e:emulator`             | 指定 feature 跑 E2E + emulator            |
-| `firebase emulators:exec --only auth,firestore,storage "..."` | 手動控制 emulator 生命週期                |
+| `npm run test`                                                | Browser/jsdom Vitest only（unit + integration）；不跑 server project |
+| `npm run test:browser`                                        | Browser/jsdom Vitest（unit + integration）                    |
+| `npm run test:server`                                         | Server Vitest（Firebase Auth/Firestore emulator wrapper）     |
+| `npm run test:coverage`                                       | Coverage（Firebase Auth/Firestore emulator wrapper）          |
+| `npm run test:branch`                                         | 僅當前 branch 的 Vitest                                       |
+| `npx vitest run tests/unit/service/x.test.js`                 | 單檔 unit                                                     |
+| `npx vitest run tests/integration/notifications/x.test.jsx`   | 單檔 integration                                              |
+| `npm run test:e2e:branch`                                     | 當前 branch E2E（自動選 emulator 或一般）                     |
+| `E2E_FEATURE=<feature> npm run test:e2e:emulator`             | 指定 feature 跑 E2E + emulator                                |
+| `firebase emulators:exec --only auth,firestore,storage "..."` | 手動控制 emulator 生命週期                                    |
 
 ### 關鍵檔案
 
@@ -531,7 +544,7 @@ expect(el).not.toBeChecked();
 // Mock calls
 expect(mockFn).toHaveBeenCalledOnce();
 expect(mockFn).toHaveBeenCalledWith(expect.objectContaining({ uid: 'x' }));
-expect(mockFn).toHaveBeenCalledTimes(3);
+expect(mockFn).toHaveBeenNthCalledWith(2, expect.objectContaining({ uid: 'x' }));
 
 // Async
 await waitFor(() => expect(mockFn).toHaveBeenCalled());

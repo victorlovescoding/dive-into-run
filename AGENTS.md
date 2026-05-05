@@ -34,7 +34,7 @@ npm run lint:changed        # 只 lint git changed files
 npm run type-check          # TypeScript-powered JSDoc type checking (tsc --noEmit)
 npm run type-check:changed  # 只顯示 changed files 的 type errors
 npm run spellcheck          # cSpell 拼字檢查 (src + specs + tests)
-npm run test                # Full Vitest projects; server project requires Firebase Emulator
+npm run test                # Browser/jsdom Vitest project only (same as test:browser)
 npm run test:browser        # Browser/jsdom Vitest only (unit + integration)
 npm run test:server         # Server Vitest via Firebase Auth/Firestore emulator
 npm run test:coverage       # Coverage via Firebase Auth/Firestore emulator
@@ -43,7 +43,7 @@ npx playwright test tests/e2e/path/to/file.spec.js # 單一 Playwright 檔
 ```
 
 > E2E 指令參考 → `.codex/rules/e2e-commands.md`（參考文件，不是 Codex native Rules auto-load）
-> Repo-wide audit 一律用 `npx eslint src specs tests`，不是 `npm run lint`
+> Repo-wide lint audit 可用 `npm run lint`（目前等於 `eslint src specs tests`）。需要避開 npm wrapper 或臨時加 CLI flags 時，才直接用等價的 `npx eslint src specs tests ...`。
 
 ## Architecture
 
