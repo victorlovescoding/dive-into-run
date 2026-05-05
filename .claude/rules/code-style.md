@@ -7,7 +7,7 @@ paths:
 
 # Code Style Quick Reference
 
-> 完整編碼規範 → `.claude/references/coding-standards.md`
+> 完整編碼規範 → `.claude/rules/coding-rules.md`
 
 ## Formatting
 
@@ -29,7 +29,7 @@ paths:
 
 // Component props (destructured)
 /**
- * @param {Object} props
+ * @param {object} props
  * @param {User} props.user
  * @param {(id: string) => void} props.onUpdate
  */

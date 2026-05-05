@@ -43,6 +43,7 @@ export default function EventsPageScreen() {
     isCreating,
     pendingByEventId,
     myJoinedEventIds,
+    membershipStatusByEventId,
     draftFormData,
     editingEvent,
     isUpdating,
@@ -101,6 +102,7 @@ export default function EventsPageScreen() {
         isFormOpen={isFormOpen}
         pendingByEventId={pendingByEventId}
         myJoinedEventIds={myJoinedEventIds}
+        membershipStatusByEventId={membershipStatusByEventId}
         getRemainingSeats={getRemainingSeats}
         onJoin={handleJoinClick}
         onLeave={handleLeaveClick}

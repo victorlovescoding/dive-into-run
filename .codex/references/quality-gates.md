@@ -6,17 +6,19 @@
 
 ---
 
-## 1. Pre-commit Gate (5 Sequential Checks)
+## 1. Pre-commit Gate (7 Sequential Checks)
 
 Any failure blocks the commit. Runs in this exact order:
 
-| #   | Check              | Command                               | Blocks When                           |
-| --- | ------------------ | ------------------------------------- | ------------------------------------- |
-| 1   | ESLint             | `npm run lint -- --max-warnings 0`    | Any error OR warning (zero tolerance) |
-| 2   | Type Check         | `npm run type-check` (`tsc --noEmit`) | Any JSDoc type error                  |
-| 3   | Dependency Cruiser | `npm run depcruise`                   | Architecture rule violation           |
-| 4   | CSpell             | `npm run spellcheck`                  | Spelling error in src/specs           |
-| 5   | Vitest             | `npx vitest run --project=browser`    | Any test failure                      |
+| #   | Check                | Command                               | Blocks When                                             |
+| --- | -------------------- | ------------------------------------- | ------------------------------------------------------- |
+| 1   | ESLint               | `npm run lint -- --max-warnings 0`    | Any error OR warning (zero tolerance)                   |
+| 2   | Type Check           | `npm run type-check` (`tsc --noEmit`) | Any JSDoc type error                                    |
+| 3   | Dependency Cruiser   | `npm run depcruise`                   | Architecture rule violation                             |
+| 4   | CSpell               | `npm run spellcheck`                  | Spelling error in `src`, `specs`, or `tests` JS/JSX     |
+| 5   | Vitest Browser       | `npx vitest run --project=browser`    | Any browser/jsdom unit or integration test failure      |
+| 6   | Mock Boundary Audit  | `bash scripts/audit-mock-boundary.sh` | Forbidden internal-layer mock in executable tests       |
+| 7   | Flaky Pattern Audit  | `npm run audit:flaky-patterns`        | Forbidden flaky assertion or fixed-sleep pattern        |
 
 `block-dangerous-commands.js` prevents bypassing via `--no-verify`, `git add -A`, `git add .`, `git commit -a`.
 
@@ -134,7 +136,17 @@ import { getEventById } from '@/lib/firebase-events';
 
 ---
 
-## 4. Dangerous Command Blocks
+## 4. Test Audit Blockers
+
+**Mock boundary audit** -- `scripts/audit-mock-boundary.sh` blocks casual mocks of internal repo layers in executable tests. Mock external boundaries instead; do not mock `@/lib`, `@/repo`, `@/service`, or `@/runtime` except explicitly allowed provider boundaries.
+
+**Flaky pattern audit** -- `scripts/audit-flaky-patterns.sh` blocks flaky call-count and fixed-sleep patterns such as `toHaveBeenCalledTimes`, `setTimeout` sleeps, `new Promise(...setTimeout...)`, and `page.waitForTimeout`.
+
+Both audits are commit blockers through `.husky/pre-commit`.
+
+---
+
+## 5. Dangerous Command Blocks
 
 `block-dangerous-commands.js` (PreToolUse hook) blocks 20 patterns:
 
@@ -148,7 +160,7 @@ import { getEventById } from '@/lib/firebase-events';
 
 ---
 
-## 5. Quick Don't List
+## 6. Quick Don't List
 
 | Forbidden                              | Alternative                           | Enforced by                  |
 | -------------------------------------- | ------------------------------------- | ---------------------------- |
@@ -162,12 +174,14 @@ import { getEventById } from '@/lib/firebase-events';
 | Higher layer import                    | Move function down or accept as param | dependency-cruiser           |
 | `src/lib/` import from canonical layer | Import from canonical home            | dependency-cruiser           |
 | `firebase/*` in UI layers              | `src/lib/firebase-*.js`               | ESLint no-restricted-imports |
+| Internal layer mocks in tests          | Mock external boundaries              | `audit-mock-boundary.sh`     |
+| `toHaveBeenCalledTimes` / fixed sleeps | Behavior assertions / async waits     | `audit-flaky-patterns.sh`    |
 | `--no-verify`                          | Fix the pre-commit failure            | block-dangerous-commands.js  |
 | `git add -A` / `git add .`             | Stage specific files by name          | block-dangerous-commands.js  |
 
 ---
 
-## 6. Dev Sensors (Quick Self-Check)
+## 7. Dev Sensors (Quick Self-Check)
 
 Run these during development, don't wait for pre-commit:
 
@@ -175,6 +189,8 @@ Run these during development, don't wait for pre-commit:
 | ---------------------------- | -------------------------------- | ----------------------------------- |
 | `npm run lint:changed`       | Git changed files                | After completing a file             |
 | `npm run type-check:changed` | Git changed files (filtered tsc) | After modifying function signatures |
+| `bash scripts/audit-mock-boundary.sh` | Executable tests | After changing test mocks |
+| `bash scripts/audit-flaky-patterns.sh` | Executable tests/specs | After changing async assertions or waits |
 | `npm run test:branch`        | Branch vitest only               | After completing a feature slice    |
 
 Full sensor reference -> `.codex/rules/sensors.md`

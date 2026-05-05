@@ -2,7 +2,7 @@
 
 > **用途**：測試撰寫的規範、範例與決策依據查找。配合 TDD skill 使用。
 > **範圍**：Unit / Integration / E2E 三層級；含本 repo 獨家 pattern。
-> **前提**：已熟讀 `.codex/references/coding-standards.md`。
+> **前提**：已熟讀 `.codex/rules/coding-rules.md` 與 `.codex/rules/code-style.md`。
 
 ---
 
@@ -14,11 +14,21 @@
 | -------------------------------- | -------------------------------------------------------- |
 | 要寫新的測試（從 RED 開始）      | 執行 `test-driven-development` skill（強制 5 步驟流程）  |
 | 已在寫測試、想查某個規範或範例   | 讀本 handbook 對應章節                                   |
-| 想看 mock / JSDoc 的**語法細節** | 讀 skill/references/coding-style.md、jsdoc-cheatsheet.md |
-| 想照抄**測試檔結構**             | 讀 skill/references/boilerplate.js                       |
-| 想知道**反模式**詳細案例         | 讀 skill/references/testing-anti-patterns.md             |
+| 想看 mock / JSDoc 的**語法細節** | 讀 `.codex/skills/test-driven-development/references/coding-style.md`、`jsdoc-cheatsheet.md` |
+| 想照抄**測試檔結構**             | 讀 `.codex/skills/test-driven-development/references/boilerplate.js`                       |
+| 想知道**反模式**詳細案例         | 讀 `.codex/skills/test-driven-development/references/testing-anti-patterns.md`             |
 
 Skill 是**流程**（做什麼、照什麼順序），handbook 是**字典**（怎麼做、為何如此）。
+
+---
+
+## Current Blocking Rules（commit blockers）
+
+這些不是風格建議，是目前會被 commit gate 或 CI 擋下的測試規則。寫測試前先確認：
+
+- **Mock boundary**：不要 `vi.mock()` repo 內部 layer：`@/lib/**`、`@/repo/**`、`@/service/**`、`@/runtime/**`。例外只限明確允許的 React provider boundary，例如 `@/runtime/providers/**`。優先 mock Firebase SDK、第三方 SDK、browser API、external fetch/network 等外部邊界。機械 gate：`scripts/audit-mock-boundary.sh`。
+- **Flaky patterns**：不要新增 `expect(...).toHaveBeenCalledTimes(...)`、fixed sleep、`await new Promise((resolve) => setTimeout(resolve, N))`、`page.waitForTimeout(...)`。改用 behavior/payload assertion、`waitFor`、`findBy*`、Playwright web-first assertions 或 fake timers。機械 gate：`scripts/audit-flaky-patterns.sh`。
+- **Test bucket imports**：不同測試 bucket 可 import 的 `src/**` surface 不同；不要憑感覺跨 layer import。可執行政策來源：`specs/021-layered-dependency-architecture/test-buckets/policy.js`。
 
 ---
 
@@ -98,7 +108,7 @@ it('should return the correct sum', () => {
 
 ### vi.mock + typed alias
 
-語法細節見 `.agents/skills/test-driven-development/references/coding-style.md`。一句話規則：`vi.mock()` 後**立刻**為每個被 mock 的 function 建 `/** @type {import('vitest').Mock} */` alias，否則 `.mockResolvedValueOnce` 會觸發 TS2339。
+語法細節見 `.codex/skills/test-driven-development/references/coding-style.md`。一句話規則：`vi.mock()` 後**立刻**為每個被 mock 的 function 建 `/** @type {import('vitest').Mock} */` alias，否則 `.mockResolvedValueOnce` 會觸發 TS2339。
 
 ### 實際範例
 
@@ -173,7 +183,7 @@ await user.click(button);
 
 ### 查詢優先序
 
-`getByRole` > `getByLabelText` > `getByPlaceholderText` > `getByText` > `getByTestId`。**禁用** `container.querySelector`（違反 coding-standards 禁令清單）。
+`getByRole` > `getByLabelText` > `getByPlaceholderText` > `getByText` > `getByTestId`。**禁用** `container.querySelector`（違反 `.codex/rules/coding-rules.md` 禁令清單）。
 
 ```jsx
 // ❌ BAD
@@ -329,7 +339,7 @@ test.describe.configure({ mode: 'serial' });
 
 - 不要重複 mock `vitest.setup.jsx` 已 mock 的東西
 - 每個 `vi.mock()` 後**必須**加 typed alias
-- Mock typedef 欄位名**必須**對齊 production function 參數（見 skill/references/coding-style.md）
+- Mock typedef 欄位名**必須**對齊 production function 參數（見 `.codex/skills/test-driven-development/references/coding-style.md`）
 
 ---
 
@@ -352,7 +362,7 @@ const mockResponse = {
 };
 ```
 
-詳細見 `.agents/skills/test-driven-development/references/testing-anti-patterns.md` Anti-Pattern 4。
+詳細見 `.codex/skills/test-driven-development/references/testing-anti-patterns.md` Anti-Pattern 4。
 
 ### Typedef 對齊生產型別
 
@@ -405,7 +415,7 @@ const mockResponse = {
 
 ## 10. Anti-Patterns 速查表
 
-詳細案例見 `.agents/skills/test-driven-development/references/testing-anti-patterns.md`。
+詳細案例見 `.codex/skills/test-driven-development/references/testing-anti-patterns.md`。
 
 | #   | 反模式                          | 一句話修復                              |
 | --- | ------------------------------- | --------------------------------------- |
@@ -496,7 +506,7 @@ test.describe.configure({ mode: 'serial' });
 
 | 指令                                                          | 用途                                                          |
 | ------------------------------------------------------------- | ------------------------------------------------------------- |
-| `npm run test`                                                | 全專案 Vitest projects；server project 需要 Firebase Emulator |
+| `npm run test`                                                | Browser/jsdom Vitest only（unit + integration）；不跑 server project |
 | `npm run test:browser`                                        | Browser/jsdom Vitest（unit + integration）                    |
 | `npm run test:server`                                         | Server Vitest（Firebase Auth/Firestore emulator wrapper）     |
 | `npm run test:coverage`                                       | Coverage（Firebase Auth/Firestore emulator wrapper）          |
@@ -511,11 +521,11 @@ test.describe.configure({ mode: 'serial' });
 
 | 用途             | 路徑                                                                         |
 | ---------------- | ---------------------------------------------------------------------------- |
-| TDD skill 入口   | `.agents/skills/test-driven-development/SKILL.md`                            |
-| Mock 語法規範    | `.agents/skills/test-driven-development/references/coding-style.md`          |
-| JSDoc 進階       | `.agents/skills/test-driven-development/references/jsdoc-cheatsheet.md`      |
-| 測試 boilerplate | `.agents/skills/test-driven-development/references/boilerplate.js`           |
-| 反模式全集       | `.agents/skills/test-driven-development/references/testing-anti-patterns.md` |
+| TDD skill 入口   | `.codex/skills/test-driven-development/SKILL.md`                            |
+| Mock 語法規範    | `.codex/skills/test-driven-development/references/coding-style.md`          |
+| JSDoc 進階       | `.codex/skills/test-driven-development/references/jsdoc-cheatsheet.md`      |
+| 測試 boilerplate | `.codex/skills/test-driven-development/references/boilerplate.js`           |
+| 反模式全集       | `.codex/skills/test-driven-development/references/testing-anti-patterns.md` |
 | Vitest 配置      | `vitest.config.mjs`、`vitest.setup.jsx`                                      |
 | Playwright 配置  | `playwright.config.mjs`、`playwright.emulator.config.mjs`                    |
 | E2E 共用 helper  | `tests/_helpers/e2e-helpers.js`                                              |
@@ -534,7 +544,7 @@ expect(el).not.toBeChecked();
 // Mock calls
 expect(mockFn).toHaveBeenCalledOnce();
 expect(mockFn).toHaveBeenCalledWith(expect.objectContaining({ uid: 'x' }));
-expect(mockFn).toHaveBeenCalledTimes(3);
+expect(mockFn).toHaveBeenNthCalledWith(2, expect.objectContaining({ uid: 'x' }));
 
 // Async
 await waitFor(() => expect(mockFn).toHaveBeenCalled());

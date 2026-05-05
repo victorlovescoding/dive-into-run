@@ -26,11 +26,13 @@ import styles from './EventActionButtons.module.css';
  * - Callback for joining the event.
  * @property {(ev: EventData, e: React.MouseEvent) => Promise<void>|void} onLeave
  * - Callback for leaving the event.
- * @property {string|boolean} isPending
- * - Loading state for the current event ('joining', 'leaving', or false).
+ * @property {'joining'|'leaving'|undefined} isPending
+ * - Loading state for the current event.
  * @property {boolean} isCreating - Global state indicating if an event is being created.
  * @property {boolean} isFormOpen - Global state indicating if the creation form is open.
  * @property {Set<string>} myJoinedEventIds - Set of event IDs the user has already joined.
+ * @property {'checking'|'joined'|'notJoined'} [membershipStatus]
+ * - Membership lookup state for the current event.
  */
 
 /**
@@ -47,6 +49,7 @@ export default function EventActionButtons({
   isCreating,
   isFormOpen,
   myJoinedEventIds,
+  membershipStatus = 'notJoined',
 }) {
   if (!user?.uid) {
     return <div className={styles.helperText}>加入活動前請先登入</div>;
@@ -57,7 +60,8 @@ export default function EventActionButtons({
   }
 
   const eventId = String(event.id);
-  const joined = myJoinedEventIds.has(eventId);
+  const isCheckingMembership = membershipStatus === 'checking';
+  const joined = membershipStatus === 'joined' || myJoinedEventIds.has(eventId);
   const remaining = getRemainingSeats(event);
   const isDisabled = Boolean(isPending) || isCreating || isFormOpen;
 
@@ -77,6 +81,17 @@ export default function EventActionButtons({
         ) : (
           '退出活動'
         )}
+      </button>
+    );
+  }
+
+  if (isCheckingMembership) {
+    return (
+      <button type="button" className={styles.submitButton} disabled aria-disabled="true">
+        <span className={styles.spinnerLabel}>
+          <div className={`${styles.spinner} ${styles.buttonSpinner}`} />
+          確認報名狀態…
+        </span>
       </button>
     );
   }

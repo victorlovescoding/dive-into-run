@@ -19,8 +19,9 @@ import styles from './EventsPageScreen.module.css';
  * @property {boolean} hasMore - 是否還有更多活動可載入。
  * @property {import('react').RefObject<HTMLDivElement | null>} sentinelRef - 無限滾動觸發哨兵元素的 ref。
  * @property {boolean} isFormOpen - 建立表單是否開啟中。
- * @property {Record<string, boolean>} pendingByEventId - 各活動的操作等待狀態。
+ * @property {Record<string, 'joining' | 'leaving'>} pendingByEventId - 各活動的操作等待狀態。
  * @property {Set<string>} myJoinedEventIds - 使用者已加入的活動 ID 集合。
+ * @property {Record<string, 'checking' | 'joined' | 'notJoined'>} membershipStatusByEventId - 各活動的報名狀態。
  * @property {(event: object) => number} getRemainingSeats - 計算活動剩餘名額。
  * @property {(event: object) => void} onJoin - 加入活動的回呼。
  * @property {(event: object) => void} onLeave - 離開活動的回呼。
@@ -51,6 +52,7 @@ export default function EventsListSection({
   isFormOpen,
   pendingByEventId,
   myJoinedEventIds,
+  membershipStatusByEventId,
   getRemainingSeats,
   onJoin,
   onLeave,
@@ -191,6 +193,7 @@ export default function EventsListSection({
                     isCreating={isCreating}
                     isFormOpen={isFormOpen}
                     myJoinedEventIds={myJoinedEventIds}
+                    membershipStatus={membershipStatusByEventId[String(event.id)] || 'checking'}
                   />
                 </div>
               </div>
