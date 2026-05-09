@@ -1,0 +1,18 @@
+{
+  "feature": "<feature-name>",
+  "branch": "<branch-name>",
+  "worktree": "<absolute-path>",
+  "phase": "spec",
+  "activeTask": null,
+  "completedTasks": [],
+  "blocked": false,
+  "blockedReason": null,
+  "lastVerifiedCommit": null,
+  "lastVerification": {
+    "command": null,
+    "exitCode": null,
+    "summary": null,
+    "verifiedAt": null
+  },
+  "updatedAt": null
+}
