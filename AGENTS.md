@@ -98,17 +98,28 @@ Six canonical layers with forward-only dependency: Types → Config → Repo →
 
 ### Development Lifecycle
 
-8 階段開發流程，每階段都有 Guide（前饋）和 Sensor（反饋）：
+Superpowers-first workflow。完整契約見 `docs/superpowers/workflow.md`；本節只保留入口地圖。
 
-1. **需求釐清** — Plan mode + speckit.clarify / AskUserQuestion
-   - 複雜功能：frontend-design skill 討論 UI → PRD/spec.md
-2. **規格制定** — speckit.specify（只放 WHAT/WHY，技術細節留 Plan）
-3. **技術規劃** — Plan mode + speckit.plan（DB schema、RWD、frontend-design subagent）
-4. **任務拆分** — Plan mode + speckit.tasks（依賴分析、最大化平行）
-5. **品質審核** — Plan mode + speckit.analyze → 新 session 交叉驗證
-6. **TDD 實作** — speckit.implement（嚴格 RED→GREEN→REFACTOR per task）
-7. **Code Review** — codereview-roasted → 逐一修 issues → 🟢 Good taste + ✅ Worth merging
-8. **Merge** — 通過 roasted review 後 merge 回 main（main 受 PR + 2 status check 保護）
+1. **隔離 workspace** — `using-git-worktrees`
+   - 不在 `main` 直接修改或 commit。
+2. **需求釐清** — `brainstorming`
+   - 使用者只需要參與這一階段；批准 `spec.md` 並給一次啟動授權後，後續可由 agent 團隊自動執行。
+3. **規格文件** — `specs/<feature>/spec.md`
+   - 只寫 WHAT/WHY、使用者情境、驗收標準；技術細節留給 plan。
+4. **技術規劃** — `writing-plans` → `specs/<feature>/plan.md`
+   - 決定資料流、檔案責任、測試策略、風險與停損條件。
+5. **任務拆分** — `specs/<feature>/tasks.md` + `status.json`
+   - 每個 task slice 必須有 Engineer + Reviewer、owned files、dependencies、acceptance criteria、verification commands、commit checkpoint。
+6. **TDD 實作** — `subagent-driven-development`
+   - 主 agent 只做 dispatcher/coordinator；不得直接改 production code/test。
+   - Engineer 寫測試/修 bug 前必讀 `.codex/references/testing-handbook.md`，並走 RED → GREEN → REFACTOR。
+7. **Review / Debug** — paired Reviewer + `receiving-code-review` / `systematic-debugging`
+   - Reviewer PASS 前不得勾選 task；Reviewer REJECT 退回同一 Engineer 修到 PASS。
+8. **驗證與收尾** — `verification-before-completion` → `finishing-a-development-branch`
+   - Fresh verification evidence 後才可 commit / push / PR / merge。
+   - 預設 closeout：push feature branch → 開 PR → CI green → GitHub merge PR → 本地 `main` fast-forward 到 `origin/main`。
+
+`speckit.*` 屬 legacy workflow；除非使用者明確要求，Codex 不預設使用。
 
 ## Reference Docs（分層 Context — 按需載入）
 
@@ -118,6 +129,7 @@ Six canonical layers with forward-only dependency: Types → Config → Repo →
 | `.codex/references/testing-handbook.md` | ✅ 已有 | 測試撰寫完整手冊                                                                |
 | `.codex/references/review-standards.md` | 🔜 待建 | Code Review 標準與 checklist                                                    |
 | `.codex/references/harness-articles/`   | ✅ 已有 | 5 篇 harness engineering 文章摘要（Fowler、OpenAI、Anthropic、Datadog、Stripe） |
+| `docs/superpowers/workflow.md`          | ✅ 已有 | Superpowers-first agent workflow、durable artifacts、subagent/reviewer gate     |
 | `docs/QUALITY_SCORE.md`                 | ✅ 已有 | Per-layer + per-domain 品質矩陣（coverage、lint、type-check、JSDoc、test 分佈） |
 
 ## Environment & Secrets
