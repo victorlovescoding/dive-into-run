@@ -10,6 +10,7 @@
     "lint": "eslint src specs tests",
     "lint:changed": "bash scripts/lint-changed.sh",
     "audit:flaky-patterns": "bash scripts/audit-flaky-patterns.sh",
+    "doc:freshness": "bash scripts/doc-freshness-check.sh",
     "depcruise": "depcruise --config .dependency-cruiser.mjs --output-type err-long src specs tests",
     "depcruise:json": "depcruise --config .dependency-cruiser.mjs --output-type json src specs tests",
     "test": "vitest --project=browser",

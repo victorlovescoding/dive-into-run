@@ -1,5 +1,6 @@
 # Testing Handbook
 
+> Last-Verified: 2026-05-10
 > **用途**：測試撰寫的規範、範例與決策依據查找。配合 TDD skill 使用。
 > **範圍**：Unit / Integration / E2E 三層級；含本 repo 獨家 pattern。
 > **前提**：已熟讀 `.codex/rules/coding-rules.md` 與 `.codex/rules/code-style.md`。
