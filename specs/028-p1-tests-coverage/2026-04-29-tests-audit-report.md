@@ -15,6 +15,52 @@
 
 ---
 
+## 0. 2026-05-10 目前狀態追蹤
+
+> 這份 `specs/**/2026-04-29-tests-audit-report.md` 是 tracked copy。更完整的本地主檔在 `project-health/2026-04-29-tests-audit-report.md`，但 `project-health/` 目前被 `.gitignore` 忽略。原始 2026-04-29 audit 內容保留在下方；本節只更新目前狀態。
+
+**目前結論**：Apr 29 audit 的 P0/P1/P2 主體已大多完成或 gate 化；剩餘工作不是「照原報告清舊債」，而是補強 CI parity、E2E routing/project ID、Firestore rules 已知 gap，以及整理 P3 retained cleanup。
+
+### Fresh verification（2026-05-10）
+
+| 項目 | 目前狀態 |
+| --- | --- |
+| Current checkout | `7200df8`; 相較 2026-05-10 quality report base `c8c3b3c`，後續只新增 `AGENTS.md` 與 `docs/superpowers/**` |
+| Test corpus | `178` executable test files |
+| Coverage baseline | `project-health/2026-05-10-test-quality-review.md`: `166 files / 1440 tests passed`, total lines `92.97%` |
+| Mock-boundary gate | `bash scripts/audit-mock-boundary.sh` => `0 findings` |
+| Flaky-pattern gate | `npm run audit:flaky-patterns` => `0 findings` |
+| Broad `vi.mock('@/...')` | `158` occurrences remain, mostly `@/config`, `@/components`, `@/data`, `@/app`, `@/contexts`; not P0 mock-boundary findings |
+| Exact `data-testid` | `7` occurrences remain |
+| Console spies | `29` occurrences remain |
+| Local `make*` factories | `22` local definitions across `11` files |
+| Runtime hook direct tests | `29` hook files vs `26` direct hook test files |
+
+### Closeout matrix
+
+| Audit item | 2026-05-10 status |
+| --- | --- |
+| P0-1 Mock 紀律 | ✅ local gate clean；🟡 CI 沒直接跑 `scripts/audit-mock-boundary.sh`，目前主要靠 ESLint + local hook |
+| P0-2 Firestore Rules | 🟡 rules tests/workflow 已有；但 `events.rules.test.js` 仍把 current security gap 固定成 `assertSucceeds` |
+| P0-3 Server include | ✅ `tests/server/**/*.test.js` |
+| P0-4 Coverage include | ✅ `ui/components/app` 已納入，S9 per-directory threshold 已上線 |
+| P1-1 Runtime hooks | ✅ 原 audit target 已補；🟡 若採最新 1:1 標準，仍缺 `useEventsPageCreateFormState`、`usePostCommentsEffects`、`usePostsPageRuntimeHelpers` |
+| P1-2 Auth | ✅ `auth-service` / `AuthProvider` tests 已存在 |
+| P1-3 Strava OAuth | ✅ callback route + E2E core contract 已補；🟡 E2E runner/project ID 仍要整理 |
+| P1-4 / P1-5 Flaky | ✅ executable matches 為 `0`，新增會被 gate 擋 |
+| P2-1 / P2-4 / P2-5 | ✅ default project、coverage threshold、Playwright timeout 已解 |
+| P2-2 Server pre-commit | ✅ 設計上接受 fast local gate；server/rules 由 CI 補償 |
+| P2-3 Project ID | 🟡 scripts 多數是 `demo-test`，但 `tests/_helpers/e2e-helpers.js` 仍有 `dive-into-run` |
+| P3 cleanup | 🟡 PR #32 已清主要項；剩餘項要重盤 retained reasons，不是 0-match 任務 |
+
+### Follow-up queue
+
+1. CI 加上 `bash scripts/audit-mock-boundary.sh`，讓 shell gate local/CI parity 完整。
+2. 修 `events.rules.test.js` current-gap：改 rules 後把該案例轉成 `assertFails`。
+3. 統一 E2E project ID，並補 `audit:e2e-routing` 防 emulator-dependent spec 被當 vanilla spec。
+4. 檢查 E2E skip / thin smoke，改成真 journey 或改名避免誤導。
+5. 整理 stale trackers / config：`specs/031...` T016/T017、`eslint.config.mjs` 18.7/18.8 unit baseline arrays。
+
 ## TL;DR — 30 秒版
 
 **最痛的兩件事**：
