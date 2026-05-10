@@ -400,6 +400,69 @@ export default [
     },
   },
 
+  // 16. D4-MVP: high-confidence No logic in JSX gate
+  {
+    files: ['src/**/*.{js,jsx}'],
+    // D4-MVP baseline is 14 existing violations / 10 files; retire by cleaning those files, do not add new files.
+    ignores: [
+      'src/components/CommentHistoryModal.jsx',
+      'src/components/EventRouteEditor.jsx',
+      'src/components/Navbar/MobileDrawer.jsx',
+      'src/components/Navbar/Navbar.jsx',
+      'src/components/PostCard.jsx',
+      'src/components/RunCalendarDialog.jsx',
+      'src/components/weather/FavoritesBar.jsx',
+      'src/ui/events/EventsListSection.jsx',
+      'src/ui/events/PaceSelector.jsx',
+      'src/ui/events/ParticipantsModal.jsx',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'JSXExpressionContainer > CallExpression[callee.type=/^(ArrowFunctionExpression|FunctionExpression)$/]',
+          message:
+            'No IIFEs inside JSX. Move branching/data preparation above the return, or extract a helper/component before rendering.',
+        },
+        {
+          selector: 'JSXExpressionContainer ConditionalExpression ConditionalExpression',
+          message:
+            'No nested ternaries inside JSX. Prepare a named render state before JSX or extract the branch into a small component.',
+        },
+        {
+          selector:
+            'JSXExpressionContainer CallExpression[callee.property.name=/^(filter|reduce|sort|toSorted)$/]',
+          message:
+            'No filter/reduce/sort/toSorted inside JSX. Compute the collection before JSX so render markup stays declarative.',
+        },
+        {
+          selector:
+            "JSXExpressionContainer CallExpression[callee.property.name='map'] > ArrowFunctionExpression[body.type='BlockStatement']",
+          message:
+            'No block-bodied map callbacks inside JSX. Extract the callback, precompute rows, or render a child component.',
+        },
+        {
+          selector:
+            "JSXExpressionContainer ObjectExpression > SpreadElement[argument.type='ConditionalExpression']",
+          message:
+            'No conditional object spread inside JSX. Build props/style objects before JSX and pass the prepared value.',
+        },
+        {
+          selector: "JSXSpreadAttribute[argument.type='ConditionalExpression']",
+          message:
+            'No conditional JSX prop spread. Build the props object before JSX and spread the prepared value.',
+        },
+        {
+          selector:
+            "JSXSpreadAttribute ObjectExpression > SpreadElement[argument.type='ConditionalExpression']",
+          message:
+            'No conditional object spread inside JSX props. Build props/style objects before JSX and pass the prepared value.',
+        },
+      ],
+    },
+  },
+
   // 17.5 testing-library 規則（Constitution: testing-standards.md）
   //      Rationale: integration tests must use userEvent (not fireEvent),
   //      query by role/label (not container.querySelector). Mechanical guard
