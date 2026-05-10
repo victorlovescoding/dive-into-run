@@ -1,5 +1,7 @@
 # AGENTS.md
 
+> Last-Verified: 2026-05-10
+
 This file provides guidance to AI coding agents working in this repository.
 
 > Codex source of truth: `AGENTS.md`.

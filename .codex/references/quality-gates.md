@@ -1,5 +1,6 @@
 # Quality Gates Reference
 
+> Last-Verified: 2026-05-10
 > Agent-only. What will block your commit and what architecture constraints exist.
 > Coding style/formatting rules -> `.codex/rules/coding-rules.md`, `.codex/rules/code-style.md`
 > Testing rules -> `.codex/rules/testing-standards.md`

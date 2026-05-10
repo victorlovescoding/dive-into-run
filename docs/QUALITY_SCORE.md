@@ -2,6 +2,7 @@
 
 > Last Updated: 2026-05-03
 > Next Review: 2026-06-03
+> Last-Verified: 2026-05-10
 
 Agent 開工前讀此文件，立即知道哪裡弱、該優先投資什麼。
 

@@ -1,5 +1,7 @@
 # Superpowers Workflow
 
+> Last-Verified: 2026-05-10
+
 This repo uses Superpowers as the workflow language and `specs/<feature>/...` as the durable state backend.
 
 ## Goals
