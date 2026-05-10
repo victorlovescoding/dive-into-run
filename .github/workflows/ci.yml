@@ -51,6 +51,9 @@ jobs:
       - name: Flaky pattern audit
         run: npm run audit:flaky-patterns
 
+      - name: Mock boundary audit
+        run: bash scripts/audit-mock-boundary.sh
+
       - name: Type check
         run: npm run type-check
 

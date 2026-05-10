@@ -1,51 +1,26 @@
 {
+  "schemaVersion": 1,
   "feature": "gap-b-tech-debt-tracker",
   "branch": "034-gap-b-tech-debt-tracker",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-034-gap-b-tech-debt-tracker",
   "phase": "complete",
   "activeTask": null,
+  "completedTasks": [
+    "T001",
+    "T002",
+    "T003",
+    "T004"
+  ],
   "blocked": false,
   "blockedReason": null,
-  "latestVerifiedCommit": "7200df8d12334f0dfe3c8f9d09e6ce062875416f",
-  "updatedAt": "2026-05-10T23:25:00+08:00",
-  "tasks": [
+  "lastVerification": [
     {
-      "id": "T001",
-      "title": "Inventory and classify source findings",
-      "status": "completed",
-      "engineer": "Engineer B or assigned docs Engineer",
-      "reviewer": "Reviewer B or assigned docs Reviewer",
-      "blockedReason": null
-    },
-    {
-      "id": "T002",
-      "title": "Create the tracker document",
-      "status": "completed",
-      "engineer": "Engineer B or assigned docs Engineer",
-      "reviewer": "Reviewer B or assigned docs Reviewer",
-      "blockedReason": null
-    },
-    {
-      "id": "T003",
-      "title": "Verify tracker and update workflow state",
-      "status": "completed",
-      "engineer": "Engineer B or assigned docs Engineer",
-      "reviewer": "Reviewer B or assigned docs Reviewer",
-      "blockedReason": null
-    },
-    {
-      "id": "T004",
-      "title": "Final docs closeout",
-      "status": "completed",
-      "engineer": "Coordinator or assigned closeout Engineer",
-      "reviewer": "Final docs Reviewer",
-      "blockedReason": null
+      "command": "npm run lint:changed && npm run type-check:changed && docs verification checks",
+      "exitCode": 0,
+      "summary": "Changed JS gates no-op passed; status JSON parsed; placeholder, trailing whitespace, no-index diff, and ASCII checks passed; final docs reviewer PASS.",
+      "verifiedAt": "2026-05-10T23:25:00+08:00"
     }
   ],
-  "lastVerification": {
-    "command": "npm run lint:changed && npm run type-check:changed && docs verification checks",
-    "exitCode": 0,
-    "summary": "Changed JS gates no-op passed; status JSON parsed; placeholder, trailing whitespace, no-index diff, and ASCII checks passed; final docs reviewer PASS.",
-    "verifiedAt": "2026-05-10T23:25:00+08:00"
-  }
+  "lastVerifiedCommit": "7200df8d12334f0dfe3c8f9d09e6ce062875416f",
+  "updatedAt": "2026-05-10T23:25:00+08:00"
 }

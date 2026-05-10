@@ -12,7 +12,11 @@
 // Constants
 // ---------------------------------------------------------------------------
 
-export const PROJECT_ID = 'dive-into-run';
+export const PROJECT_ID =
+  process.env.FIREBASE_PROJECT_ID ||
+  process.env.GCLOUD_PROJECT ||
+  process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+  'demo-test';
 export const AUTH_EMULATOR_URL = 'http://localhost:9099';
 export const FIRESTORE_EMULATOR_URL = 'http://localhost:8080';
 

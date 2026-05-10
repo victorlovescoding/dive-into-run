@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 1,
   "feature": "039-gap-g-specs-index",
   "branch": "039-gap-g-specs-index",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-039-gap-g-specs-index",
@@ -11,57 +12,20 @@
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerification": {
-    "commands": [
-      {
-        "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/039-gap-g-specs-index/status.json','utf8')); console.log('status.json ok')\"",
-        "exitCode": 0,
-        "summary": "status.json ok"
-      },
-      {
-        "command": "for f in specs/INDEX.md specs/039-gap-g-specs-index/*; do out=\"$(git diff --no-index --check -- /dev/null \"$f\" 2>&1 || true)\"; test -z \"$out\" || { printf '%s\\n' \"$out\"; exit 1; }; done",
-        "exitCode": 0,
-        "summary": "No whitespace errors reported for untracked docs files."
-      },
-      {
-        "command": "rg placeholder marker scan over specs/INDEX.md and specs/039-gap-g-specs-index",
-        "exitCode": 0,
-        "summary": "No output after command examples were rewritten to avoid self-matching."
-      },
-      {
-        "command": "git status --short",
-        "exitCode": 0,
-        "summary": "Only untracked owned paths are present: specs/039-gap-g-specs-index/ and specs/INDEX.md."
-      }
-    ],
-    "verifiedAt": "2026-05-10T23:59:23+08:00",
-    "summary": "Docs verification passed; final docs reviewer PASS."
-  },
-  "updatedAt": "2026-05-10T23:59:23+08:00",
-  "tasks": [
+  "lastVerification": [
     {
-      "id": "T001",
-      "title": "Inventory current specs",
-      "status": "completed",
-      "engineer": "Gap G docs Engineer",
-      "reviewer": "Gap G docs Reviewer",
-      "blockedReason": null
+      "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/039-gap-g-specs-index/status.json','utf8')); console.log('status.json ok')\"",
+      "exitCode": 0,
+      "summary": "status.json ok",
+      "verifiedAt": "2026-05-10T23:59:23+08:00"
     },
     {
-      "id": "T002",
-      "title": "Create specs index and 039 docs",
-      "status": "completed",
-      "engineer": "Gap G docs Engineer",
-      "reviewer": "Gap G docs Reviewer",
-      "blockedReason": null
-    },
-    {
-      "id": "T003",
-      "title": "Verify and review",
-      "status": "completed",
-      "engineer": "Gap G docs Engineer or coordinator",
-      "reviewer": "Gap G docs Reviewer",
-      "blockedReason": null
+      "command": "git status --short",
+      "exitCode": 0,
+      "summary": "Only untracked owned paths are present: specs/039-gap-g-specs-index/ and specs/INDEX.md.",
+      "verifiedAt": "2026-05-10T23:59:23+08:00"
     }
-  ]
+  ],
+  "lastVerifiedCommit": null,
+  "updatedAt": "2026-05-10T23:59:23+08:00"
 }

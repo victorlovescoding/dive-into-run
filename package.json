@@ -11,6 +11,7 @@
     "lint:changed": "bash scripts/lint-changed.sh",
     "audit:flaky-patterns": "bash scripts/audit-flaky-patterns.sh",
     "doc:freshness": "bash scripts/doc-freshness-check.sh",
+    "workflow:validate": "node scripts/validate-workflow-state.js",
     "depcruise": "depcruise --config .dependency-cruiser.mjs --output-type err-long src specs tests",
     "depcruise:json": "depcruise --config .dependency-cruiser.mjs --output-type json src specs tests",
     "test": "vitest --project=browser",

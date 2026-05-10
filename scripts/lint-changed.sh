@@ -14,4 +14,4 @@ if [ -z "$FILES" ]; then
   exit 0
 fi
 
-echo "$FILES" | xargs npx eslint
+echo "$FILES" | xargs npx eslint --no-warn-ignored

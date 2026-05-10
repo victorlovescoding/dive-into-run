@@ -14,10 +14,10 @@
 
 1. `AGENTS.md`
 2. `docs/superpowers/workflow.md`
-3. `specs/<feature>/spec.md`
-4. `specs/<feature>/plan.md`
-5. `specs/<feature>/tasks.md`
-6. `specs/<feature>/status.json`
+3. `specs/<feature>/handoff.md`
+4. `specs/<feature>/tasks.md`
+5. `specs/<feature>/status.json`
+6. `specs/<feature>/spec.md` / `specs/<feature>/plan.md` as needed
 
 ## Next Action
 

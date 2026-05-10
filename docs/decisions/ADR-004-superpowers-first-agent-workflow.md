@@ -22,6 +22,8 @@ Partially Verified
 - `AGENTS.md` states `speckit.*` is legacy workflow and is not used by default unless the user explicitly requests it.
 - `docs/superpowers/workflow.md` defines Superpowers as the repo workflow language and `specs/<feature>/...` as the durable state backend.
 - `docs/superpowers/workflow.md` requires `spec.md`, `plan.md`, `tasks.md`, `handoff.md`, and `status.json` under each workflow feature.
+- `docs/superpowers/status.schema.json` defines the canonical `status.json` shape for current workflow features.
+- `npm run workflow:validate` validates current `specs/*/status.json` files against the canonical workflow-state contract.
 - `specs/037-gap-e-design-docs-adr/tasks.md` records that `status.json` adoption is still a known workflow gap to acknowledge in this ADR.
 
 ## Supersedes
@@ -33,6 +35,8 @@ None
 - `AGENTS.md`
 - `docs/superpowers/workflow.md`
 - `docs/superpowers/templates/`
+- `docs/superpowers/status.schema.json`
+- `scripts/validate-workflow-state.js`
 - `specs/037-gap-e-design-docs-adr/tasks.md`
 - `docs/decisions/INDEX.md`
 
@@ -58,7 +62,10 @@ For new Superpowers-first feature work, the intended durable state set lives und
 
 `spec.md` records product intent, `plan.md` records implementation strategy, `tasks.md` records task slices and Engineer/Reviewer gates, `handoff.md` records session resume state, and `status.json` records machine-readable dispatcher state.
 
-`status.json` adoption is still a known workflow gap: current workflow docs require it, and this feature uses it, but agents must not assume every historical `specs/<feature>/` directory already has a complete or current `status.json`.
+`status.json` adoption is narrowed to current Superpowers workflow features:
+current status files must follow `docs/superpowers/status.schema.json`, while
+historical `specs/<feature>/` directories may remain legacy evidence unless a
+new session explicitly upgrades them.
 
 ## Consequences
 
@@ -67,6 +74,7 @@ For new Superpowers-first feature work, the intended durable state set lives und
 - Engineer and Reviewer responsibilities must be recorded in `tasks.md`.
 - Resume flows should read `AGENTS.md`, `docs/superpowers/workflow.md`, `handoff.md`, `tasks.md`, and `status.json` before continuing.
 - Historical specs may be incomplete, stale, or built under older conventions; agents must inspect the actual files before treating them as compliant.
+- Current status files should pass `npm run workflow:validate`; historical specs without `status.json` are not automatically non-compliant.
 
 ## Agent Guidance
 
@@ -85,6 +93,9 @@ Documentary checks:
 
 ```bash
 rg -n "Superpowers-first|speckit|spec.md|plan.md|tasks.md|handoff.md|status.json" AGENTS.md docs/superpowers/workflow.md specs/037-gap-e-design-docs-adr/tasks.md
+npm run workflow:validate
 ```
 
-This decision is only partially mechanically verified because the workflow documents define the intended durable state set, but repository-wide `status.json` adoption across all historical specs is not guaranteed.
+This decision is only partially mechanically verified because current
+`status.json` files have a validator, but repository-wide adoption across all
+historical specs is intentionally not required.

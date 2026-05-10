@@ -58,11 +58,21 @@ setup_for_feature() {
 
 is_vanilla_spec() {
   case "$(basename "$1")" in
-    comment-notifications.spec.js | \
-      events-page.spec.js | \
+    events-page.spec.js | \
       events.spec.js | \
       run-calendar.spec.js | \
       weather-page.spec.js)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+is_emulator_spec() {
+  case "$(basename "$1")" in
+    comment-notifications.spec.js)
       return 0
       ;;
     *)
@@ -173,6 +183,8 @@ fi
 
 VANILLA_SPECS=()
 VANILLA_SPEC_COUNT=0
+EMULATOR_SPECS=()
+EMULATOR_SPEC_COUNT=0
 UNKNOWN_SPECS=()
 UNKNOWN_SPEC_COUNT=0
 
@@ -182,6 +194,9 @@ for spec in "${CHANGED_SPECS[@]}"; do
     UNKNOWN_SPEC_COUNT=$((UNKNOWN_SPEC_COUNT + 1))
   elif feature_for_spec "$spec" > /dev/null; then
     :
+  elif is_emulator_spec "$spec"; then
+    EMULATOR_SPECS+=("$spec")
+    EMULATOR_SPEC_COUNT=$((EMULATOR_SPEC_COUNT + 1))
   elif is_vanilla_spec "$spec"; then
     VANILLA_SPECS+=("$spec")
     VANILLA_SPEC_COUNT=$((VANILLA_SPEC_COUNT + 1))
@@ -220,6 +235,18 @@ print_plan() {
   done
   if [ "$seeded_count" -eq 0 ]; then
     echo "- (none)"
+  fi
+
+  echo ""
+  echo "Emulator specs without feature setup:"
+  if [ "$EMULATOR_SPEC_COUNT" -eq 0 ]; then
+    echo "- (none)"
+  else
+    echo "  setup: (none)"
+    echo "  config: playwright.emulator.config.mjs"
+    for spec in "${EMULATOR_SPECS[@]}"; do
+      echo "  - $spec"
+    done
   fi
 
   echo ""
@@ -264,7 +291,7 @@ fi
 needs_emulator() {
   local spec
   for spec in "${CHANGED_SPECS[@]}"; do
-    if feature_for_spec "$spec" >/dev/null 2>&1; then
+    if feature_for_spec "$spec" >/dev/null 2>&1 || is_emulator_spec "$spec"; then
       return 0
     fi
   done
@@ -273,7 +300,7 @@ needs_emulator() {
 
 if [ -z "${INSIDE_EMULATOR_EXEC:-}" ] && needs_emulator; then
   exec firebase emulators:exec --only auth,firestore,storage --project=demo-test \
-    "INSIDE_EMULATOR_EXEC=1 bash $(printf '%q' "${BASH_SOURCE[0]}")"
+    "FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test INSIDE_EMULATOR_EXEC=1 bash $(printf '%q' "${BASH_SOURCE[0]}")"
 fi
 
 for feature in "${FEATURE_ORDER[@]}"; do
@@ -293,6 +320,10 @@ for feature in "${FEATURE_ORDER[@]}"; do
     --config playwright.emulator.config.mjs \
     "${feature_specs[@]}"
 done
+
+if [ "$EMULATOR_SPEC_COUNT" -gt 0 ]; then
+  npx playwright test --config playwright.emulator.config.mjs "${EMULATOR_SPECS[@]}"
+fi
 
 if [ "$VANILLA_SPEC_COUNT" -gt 0 ]; then
   npx playwright test --config playwright.config.mjs "${VANILLA_SPECS[@]}"

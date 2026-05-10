@@ -1,6 +1,6 @@
 # Superpowers Workflow
 
-> Last-Verified: 2026-05-10
+> Last-Verified: 2026-05-11
 
 This repo uses Superpowers as the workflow language and `specs/<feature>/...` as the durable state backend.
 
@@ -21,9 +21,15 @@ Every feature that uses this workflow must keep this five-file set under `specs/
 | `plan.md` | Technical approach, file responsibilities, data flow, testing strategy, risk analysis. |
 | `tasks.md` | Human-readable task board with Engineer/Reviewer pairs, dependencies, acceptance criteria, verification commands, and commit checkpoints. |
 | `handoff.md` | Live brief for the next session: current state, next read order, latest verification, blockers, and pitfalls. |
-| `status.json` | Machine-readable dispatcher state: phase, active task, blocked reason, and latest verified commit. |
+| `status.json` | Machine-readable dispatcher state matching `docs/superpowers/status.schema.json`. |
 
 Use the templates in `docs/superpowers/templates/` when creating a new feature.
+
+Historical `specs/**` entries may predate this workflow or contain stricter
+session-local rules. Treat them as evidence for that feature, not as defaults
+for new Superpowers work. For new work, this document and the templates are the
+workflow source of truth unless the user explicitly narrows authority for a
+specific feature.
 
 ## Skill Chain
 
@@ -151,7 +157,9 @@ Any compacted, resumed, or fresh session must start with:
 3. Read `specs/<feature>/handoff.md`.
 4. Read `specs/<feature>/tasks.md`.
 5. Read `specs/<feature>/status.json`.
-6. Confirm `git status --short --branch`.
-7. Continue from the first incomplete unblocked task.
+6. Read `specs/<feature>/spec.md` and `specs/<feature>/plan.md` only as needed
+   to resolve scope, acceptance criteria, or implementation details.
+7. Confirm `git status --short --branch`.
+8. Continue from the first incomplete unblocked task.
 
 If these files disagree, treat it as a stop condition and reconcile before dispatching more work.

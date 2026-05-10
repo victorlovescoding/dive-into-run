@@ -70,7 +70,7 @@ test.describe('Notification Flow - Event Edit (T036)', () => {
 
     // Step 2: Navigate to event detail page
     await page.goto('/events/test-event-notif');
-    await expect(page.getByText('E2E 通知測試活動')).toBeVisible();
+    await expect(page.getByText('E2E 通知測試活動').filter({ visible: true })).toBeVisible();
 
     // Step 3: Edit the event — open menu -> edit -> modify -> save
     const menuBtn = page.getByRole('button', { name: /更多操作/i });
