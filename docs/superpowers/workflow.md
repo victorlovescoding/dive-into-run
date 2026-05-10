@@ -37,6 +37,8 @@ Use the templates in `docs/superpowers/templates/` when creating a new feature.
 3. `writing-plans`
    - Produce `specs/<feature>/plan.md` and seed task slices.
    - Plans must be decision-complete: exact paths, commands, testing expectations, and stop conditions.
+   - Cross-feature architecture or workflow decisions must check `docs/decisions/INDEX.md` and the relevant ADRs first.
+   - New long-term cross-feature decisions should create or update an ADR.
 4. `subagent-driven-development`
    - Main agent dispatches fresh task-local subagents.
    - Engineer owns implementation for one task slice.
