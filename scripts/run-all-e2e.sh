@@ -67,6 +67,17 @@ feature_for_spec() {
   esac
 }
 
+is_emulator_spec() {
+  case "$(basename "$1")" in
+    comment-notifications.spec.js)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 discover_features() {
   for setup in tests/e2e/_setup/*-global-setup.js; do
     [ -f "$setup" ] || continue
@@ -76,10 +87,18 @@ discover_features() {
 
 discover_vanilla_specs() {
   find tests/e2e -maxdepth 1 -name '*.spec.js' -print 2>/dev/null | sort | while IFS= read -r spec; do
-    if feature_for_spec "$spec" > /dev/null; then
+    if feature_for_spec "$spec" > /dev/null || is_emulator_spec "$spec"; then
       continue
     fi
     echo "$spec"
+  done
+}
+
+discover_emulator_specs() {
+  find tests/e2e -maxdepth 1 -name '*.spec.js' -print 2>/dev/null | sort | while IFS= read -r spec; do
+    if is_emulator_spec "$spec"; then
+      echo "$spec"
+    fi
   done
 }
 
@@ -112,6 +131,18 @@ EOF
   done
   if [ "$seeded_count" -eq 0 ]; then
     echo "- (none)"
+  fi
+
+  echo ""
+  echo "Emulator specs without feature setup:"
+  if [ ${#EMULATOR_SPECS[@]} -eq 0 ]; then
+    echo "- (none)"
+  else
+    echo "  setup: (none)"
+    echo "  config: playwright.emulator.config.mjs"
+    for spec in "${EMULATOR_SPECS[@]}"; do
+      echo "  - $spec"
+    done
   fi
 
   echo ""
@@ -152,6 +183,14 @@ done <<EOF
 $(discover_features)
 EOF
 
+EMULATOR_SPECS=()
+while IFS= read -r spec; do
+  [ -n "$spec" ] || continue
+  EMULATOR_SPECS+=("$spec")
+done <<EOF
+$(discover_emulator_specs)
+EOF
+
 VANILLA_SPECS=()
 while IFS= read -r spec; do
   [ -n "$spec" ] || continue
@@ -166,6 +205,10 @@ if [ "$MODE" = "list" ]; then
 fi
 
 validate_plan
+
+export FIREBASE_PROJECT_ID=demo-test
+export GCLOUD_PROJECT=demo-test
+export NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test
 
 # ---------------------------------------------------------------------------
 # 1. Start Firebase Emulator
@@ -190,6 +233,9 @@ done
 # 2. Start Next.js dev server with emulator env vars
 # ---------------------------------------------------------------------------
 NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true \
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test \
+FIREBASE_PROJECT_ID=demo-test \
+GCLOUD_PROJECT=demo-test \
 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 \
 FIRESTORE_EMULATOR_HOST=localhost:8080 \
 FIREBASE_STORAGE_EMULATOR_HOST=localhost:9199 \
@@ -259,6 +305,20 @@ EOF
     FAILED_FEATURES+=("$feature")
   fi
 done
+
+if [ ${#EMULATOR_SPECS[@]} -gt 0 ]; then
+  echo ""
+  echo "=========================================="
+  echo "Running emulator E2E specs without setup"
+  echo "=========================================="
+  if npx playwright test --config playwright.emulator.config.mjs "${EMULATOR_SPECS[@]}"; then
+    echo "PASSED: emulator"
+    PASSED=$((PASSED + 1))
+  else
+    echo "FAILED: emulator"
+    FAILED_FEATURES+=("emulator")
+  fi
+fi
 
 # Run any vanilla E2E specs (no globalSetup, don't need emulator)
 if [ ${#VANILLA_SPECS[@]} -gt 0 ]; then

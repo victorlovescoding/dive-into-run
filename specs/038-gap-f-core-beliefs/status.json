@@ -1,25 +1,25 @@
 {
+  "schemaVersion": 1,
   "feature": "038-gap-f-core-beliefs",
   "branch": "038-gap-f-core-beliefs",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-038-gap-f-core-beliefs",
   "phase": "complete",
   "activeTask": null,
+  "completedTasks": [
+    "T001",
+    "T002",
+    "T003"
+  ],
   "blocked": false,
   "blockedReason": null,
-  "latestVerifiedCommit": "cdb4e921fcd1a484dabfbbe860977d35bb087df7",
-  "scope": "docs-only",
-  "canonicalReference": ".codex/references/core-beliefs.md",
-  "tasks": {
-    "T001": {
-      "title": "Workflow Artifacts",
-      "status": "completed"
-    },
-    "T002": {
-      "title": "Core Beliefs Reference",
-      "status": "completed"
-    },
-    "T003": {
-      "title": "Docs Consistency Verification",
-      "status": "completed"
+  "lastVerification": [
+    {
+      "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/038-gap-f-core-beliefs/status.json','utf8')); console.log('status.json ok')\"; git diff --check -- AGENTS.md .codex/references/core-beliefs.md specs/038-gap-f-core-beliefs; rg -n \"[R]EPLACE_ME|[F]ILL_ME|[P]LACEHOLDER_VALUE\" AGENTS.md .codex/references/core-beliefs.md specs/038-gap-f-core-beliefs; rg -n \"^## \" .codex/references/core-beliefs.md; git status --short --branch",
+      "exitCode": 0,
+      "summary": "Final docs verification passed after reviewer PASS for the docs-only Gap F core beliefs implementation.",
+      "verifiedAt": "2026-05-10T00:00:00+08:00"
     }
-  }
+  ],
+  "lastVerifiedCommit": "cdb4e921fcd1a484dabfbbe860977d35bb087df7",
+  "updatedAt": "2026-05-10T00:00:00+08:00"
 }

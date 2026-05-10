@@ -44,6 +44,6 @@ Husky pre-commit 會自動執行 7 個 sequential checks，全部通過才能 co
 
 ## Code Review Gate
 
-> 完整審查標準 → `.codex/references/review-standards.md`（待建）
+> 完整審查標準 → `.codex/references/review-standards.md`
 
 Merge 前需通過 codereview-roasted 取得 🟢 Good taste + ✅ Worth merging。

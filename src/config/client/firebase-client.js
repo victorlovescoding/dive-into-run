@@ -36,10 +36,10 @@ const storage = getStorage(app);
 // Connect to Emulators based on environment variable
 if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
   console.warn('Connecting to Firebase Emulators...');
+  connectFirestoreEmulator(db, 'localhost', 8080);
   if (typeof window !== 'undefined') {
     // client side
     connectAuthEmulator(auth, 'http://localhost:9099');
-    connectFirestoreEmulator(db, 'localhost', 8080);
     connectStorageEmulator(storage, 'localhost', 9199);
     // Expose auth helpers for E2E tests (emulator only)
     window.testFirebaseHelpers = {

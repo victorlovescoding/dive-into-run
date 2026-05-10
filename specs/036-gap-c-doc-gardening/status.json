@@ -1,9 +1,10 @@
 {
+  "schemaVersion": 1,
   "feature": "036-gap-c-doc-gardening",
   "branch": "036-gap-c-doc-gardening",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-036-gap-c-doc-gardening",
   "phase": "local_implementation_complete",
-  "activeTask": "closeout",
+  "activeTask": null,
   "completedTasks": [
     "T001",
     "T002",
@@ -14,125 +15,14 @@
   ],
   "blocked": false,
   "blockedReason": null,
+  "lastVerification": [
+    {
+      "command": "npm run doc:freshness; bash -n scripts/doc-freshness-check.sh; test -x scripts/doc-freshness-check.sh; git diff --check; status.json parse; git diff --quiet -- package-lock.json",
+      "exitCode": 0,
+      "summary": "Local final verification passed: doc freshness, shell syntax, executable bit, whitespace diff check, status JSON parse, and unchanged package-lock.",
+      "verifiedAt": "2026-05-10T23:47:43+08:00"
+    }
+  ],
   "lastVerifiedCommit": "7200df8d12334f0dfe3c8f9d09e6ce062875416f",
-  "lastVerification": {
-    "command": "npm run doc:freshness; bash -n scripts/doc-freshness-check.sh; test -x scripts/doc-freshness-check.sh; git diff --check; status.json parse; git diff --quiet -- package-lock.json",
-    "exitCode": 0,
-    "summary": "Local final verification passed: doc freshness, shell syntax, executable bit, whitespace diff check, status JSON parse, and unchanged package-lock.",
-    "verifiedAt": "2026-05-10T23:47:43+08:00"
-  },
-  "reviewFixes": [
-    {
-      "id": "RF001",
-      "status": "addressed",
-      "summary": "T004 now requires missing-metadata and stale-date negative-path verification against a temp copy via DOC_FRESHNESS_ROOT, followed by git diff --quiet to prove no worktree pollution."
-    },
-    {
-      "id": "RF002",
-      "status": "addressed",
-      "summary": "handoff.md Read Order and tasks.md Compact Guard now match the workflow resume protocol first five files: AGENTS.md, docs/superpowers/workflow.md, handoff.md, tasks.md, status.json."
-    },
-    {
-      "id": "RF003",
-      "status": "addressed",
-      "summary": "Freshness scope now includes a 45-day stale threshold in spec, plan, tasks, handoff, and status."
-    }
-  ],
-  "tasks": [
-    {
-      "id": "T001",
-      "title": "Planning seed verification",
-      "status": "completed",
-      "ownedFiles": [
-        "specs/036-gap-c-doc-gardening/spec.md",
-        "specs/036-gap-c-doc-gardening/plan.md",
-        "specs/036-gap-c-doc-gardening/tasks.md",
-        "specs/036-gap-c-doc-gardening/handoff.md",
-        "specs/036-gap-c-doc-gardening/status.json"
-      ],
-      "dependencies": [],
-      "engineer": "Engineer worker",
-      "reviewer": "Reviewer worker",
-      "commitCheckpoint": "chore: seed gap c doc gardening workflow"
-    },
-    {
-      "id": "T002",
-      "title": "Review-standards minimal reference doc",
-      "status": "completed",
-      "ownedFiles": [
-        ".codex/references/review-standards.md"
-      ],
-      "dependencies": [
-        "T001"
-      ],
-      "engineer": "Engineer worker",
-      "reviewer": "Reviewer worker",
-      "commitCheckpoint": "docs: add review standards reference"
-    },
-    {
-      "id": "T003",
-      "title": "Last-Verified metadata on key docs",
-      "status": "completed",
-      "ownedFiles": [
-        "AGENTS.md",
-        "docs/superpowers/workflow.md",
-        ".codex/references/quality-gates.md",
-        ".codex/references/testing-handbook.md",
-        ".codex/references/review-standards.md",
-        "docs/QUALITY_SCORE.md"
-      ],
-      "dependencies": [
-        "T002"
-      ],
-      "engineer": "Engineer worker",
-      "reviewer": "Reviewer worker",
-      "commitCheckpoint": "docs: add last verified metadata"
-    },
-    {
-      "id": "T004",
-      "title": "Doc freshness script plus package script",
-      "status": "completed",
-      "ownedFiles": [
-        "scripts/doc-freshness-check.sh",
-        "package.json"
-      ],
-      "dependencies": [
-        "T003"
-      ],
-      "engineer": "Engineer worker",
-      "reviewer": "Reviewer worker",
-      "commitCheckpoint": "chore: add doc freshness check"
-    },
-    {
-      "id": "T005",
-      "title": "CI integration plus local verification",
-      "status": "completed",
-      "ownedFiles": [
-        ".github/workflows/ci.yml"
-      ],
-      "dependencies": [
-        "T004"
-      ],
-      "engineer": "Engineer worker",
-      "reviewer": "Reviewer worker",
-      "commitCheckpoint": "ci: run doc freshness check"
-    },
-    {
-      "id": "T006",
-      "title": "Final docs update and handoff",
-      "status": "completed",
-      "ownedFiles": [
-        "specs/036-gap-c-doc-gardening/tasks.md",
-        "specs/036-gap-c-doc-gardening/handoff.md",
-        "specs/036-gap-c-doc-gardening/status.json"
-      ],
-      "dependencies": [
-        "T005"
-      ],
-      "engineer": "Coordinator or Engineer worker",
-      "reviewer": "Reviewer worker",
-      "commitCheckpoint": "docs: update gap c handoff"
-    }
-  ],
   "updatedAt": "2026-05-10T23:47:43+08:00"
 }

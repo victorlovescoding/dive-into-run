@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 1,
   "feature": "<feature-name>",
   "branch": "<branch-name>",
   "worktree": "<absolute-path>",
@@ -8,11 +9,6 @@
   "blocked": false,
   "blockedReason": null,
   "lastVerifiedCommit": null,
-  "lastVerification": {
-    "command": null,
-    "exitCode": null,
-    "summary": null,
-    "verifiedAt": null
-  },
+  "lastVerification": [],
   "updatedAt": null
 }

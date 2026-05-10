@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/victorlovescoding/dive-into-run/docs/superpowers/status.schema.json",
+  "title": "Superpowers Workflow Status",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "feature",
+    "branch",
+    "worktree",
+    "phase",
+    "activeTask",
+    "completedTasks",
+    "blocked",
+    "blockedReason",
+    "lastVerification",
+    "lastVerifiedCommit",
+    "updatedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "feature": {
+      "type": "string",
+      "minLength": 1
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "worktree": {
+      "type": "string",
+      "minLength": 1
+    },
+    "phase": {
+      "type": "string",
+      "minLength": 1
+    },
+    "activeTask": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "state",
+            "engineer",
+            "reviewer",
+            "attempt",
+            "ownedFiles",
+            "startedAt"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "state": {
+              "type": "string",
+              "minLength": 1
+            },
+            "engineer": {
+              "type": "string",
+              "minLength": 1
+            },
+            "reviewer": {
+              "type": "string",
+              "minLength": 1
+            },
+            "attempt": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "ownedFiles": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "startedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "completedTasks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "blocked": {
+      "type": "boolean"
+    },
+    "blockedReason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "lastVerification": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "command",
+          "exitCode",
+          "summary",
+          "verifiedAt"
+        ],
+        "properties": {
+          "command": {
+            "type": "string",
+            "minLength": 1
+          },
+          "exitCode": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "verifiedAt": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "lastVerifiedCommit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "updatedAt": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

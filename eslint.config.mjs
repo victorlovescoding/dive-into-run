@@ -270,7 +270,7 @@ export default [
       parser: tsParser,
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['vitest.setup.jsx'],
+          allowDefaultProject: ['vitest.setup.jsx', 'scripts/*.js'],
         },
         tsconfigRootDir: __dirname,
       },
