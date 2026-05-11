@@ -320,6 +320,25 @@ export default [
   // 10. Prettier 相容：關掉所有與 Prettier 衝突的格式規則
   prettier,
 
+  {
+    files: ['**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+    },
+    rules: {
+      'import/no-unresolved': ['error', { ignore: ['^node:'] }],
+    },
+  },
+
+  {
+    files: ['**/*.cjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'commonjs',
+    },
+  },
+
   // 11. 忽略的檔案和資料夾
   {
     ignores: [

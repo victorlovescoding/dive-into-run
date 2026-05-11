@@ -57,10 +57,15 @@ setup_for_feature() {
 }
 
 is_vanilla_spec() {
+  if is_quality_gate_e2e_spec "$1"; then
+    return 0
+  fi
+
   case "$(basename "$1")" in
     events-page.spec.js | \
       events.spec.js | \
       run-calendar.spec.js | \
+      security-headers.spec.js | \
       weather-page.spec.js)
       return 0
       ;;
@@ -163,15 +168,34 @@ is_top_level_e2e_spec() {
   esac
 }
 
+is_quality_gate_e2e_spec() {
+  case "$1" in
+    tests/e2e/quality-gates/*.spec.js)
+      case "${1#tests/e2e/quality-gates/}" in
+        */*)
+          return 1
+          ;;
+        *)
+          return 0
+          ;;
+      esac
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+is_routable_e2e_spec() {
+  is_top_level_e2e_spec "$1" || is_quality_gate_e2e_spec "$1"
+}
+
 changed_source="git diff $TEST_BASE_REF...HEAD + staged changes + unstaged changes"
 if [ -n "${TEST_E2E_BRANCH_CHANGED_SPECS:-}" ]; then
   changed_source="TEST_E2E_BRANCH_CHANGED_SPECS"
-  changed_specs_input="$TEST_E2E_BRANCH_CHANGED_SPECS"
-  while IFS= read -r spec; do
+  for spec in ${TEST_E2E_BRANCH_CHANGED_SPECS//,/ }; do
     add_changed_spec "$spec"
-  done <<EOF
-$changed_specs_input
-EOF
+  done
 else
   collect_changed_specs
 fi
@@ -189,7 +213,7 @@ UNKNOWN_SPECS=()
 UNKNOWN_SPEC_COUNT=0
 
 for spec in "${CHANGED_SPECS[@]}"; do
-  if ! is_top_level_e2e_spec "$spec"; then
+  if ! is_routable_e2e_spec "$spec"; then
     UNKNOWN_SPECS+=("$spec")
     UNKNOWN_SPEC_COUNT=$((UNKNOWN_SPEC_COUNT + 1))
   elif feature_for_spec "$spec" > /dev/null; then

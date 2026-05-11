@@ -86,7 +86,10 @@ discover_features() {
 }
 
 discover_vanilla_specs() {
-  find tests/e2e -maxdepth 1 -name '*.spec.js' -print 2>/dev/null | sort | while IFS= read -r spec; do
+  {
+    find tests/e2e -maxdepth 1 -name '*.spec.js' -print 2>/dev/null
+    find tests/e2e/quality-gates -maxdepth 1 -name '*.spec.js' -print 2>/dev/null
+  } | sort | while IFS= read -r spec; do
     if feature_for_spec "$spec" > /dev/null || is_emulator_spec "$spec"; then
       continue
     fi

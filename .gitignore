@@ -14,9 +14,15 @@
 /coverage
 /test-results
 /playwright-report
+/.lighthouseci
+/lhci-report
+/reports/bundle-budget
+/reports/type-check-strict
+/knip-report.json
 
 # next.js
 /.next/
+/.next/analyze/
 /out/
 
 # production
