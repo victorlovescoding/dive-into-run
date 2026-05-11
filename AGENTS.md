@@ -9,35 +9,17 @@ This file provides guidance to AI coding agents working in this repository.
 
 ## Required Context
 
-Before doing substantial work in this repo, load the memory indexes at:
+Before doing substantial work in this repo, treat this `AGENTS.md` as the
+repo entry map and load only task-relevant repo-versioned context.
 
-- `~/.codex/memories/global/AGENTS.md`
-- `~/.codex/memories/-Users-chentzuyu-Desktop-dive-into-run/AGENTS.md`
-- `~/.codex/memories/-Users-chentzuyu-Desktop-dive-into-run/MEMORY.md`
+Start from:
 
-Treat `MEMORY.md` as a routing index, not an include-all manifest. Load linked
-files under `entries/` and `references/` only when the current task matches the
-entry title, category, or keywords.
-
-Memory snapshots are historical unless they explicitly say they are current.
-When a memory reference conflicts with this workspace `AGENTS.md`, follow this
-workspace file and treat the memory payload as provenance.
-
-Common routing examples:
-
-- Tests, Vitest, emulator, E2E, or flaky behavior → relevant testing/Firebase/E2E entries
-- Workflow, subagents, handoff, worktrees, or session continuity → relevant workflow/multi-agent entries
-- Commit, PR, GitHub, CI, or branch policy → relevant Git/GitHub entries
-- Harness, mock, audit, or historical cleanup work → relevant harness/mock references
-- Provenance checks or Codex/Claude drift questions → relevant legacy `.claude/**` snapshots
-
-If the Codex project memory is missing or stale, fall back to current repo
-docs first:
-
-- `~/.codex/memories/global/AGENTS.md`
 - this `AGENTS.md`
-- `.codex/rules/`
-- `.codex/references/`
+- `.codex/rules/` for applicable coding, testing, and verification checklists
+- `.codex/references/` for matching workflow, quality, testing, review,
+  GitHub, or troubleshooting references
+- `docs/superpowers/workflow.md` for Superpowers lifecycle and subagent workflow
+- `docs/decisions/INDEX.md` for durable architecture and workflow decisions
 
 Use fallback sources as indexes first, then open only the task-relevant payload
 files. This is a required project onboarding step, not an optional reference.
@@ -45,7 +27,7 @@ Treat `.claude/**` as Codex legacy provenance; read it only for provenance,
 debugging, migration history, or when no Codex-native source exists.
 `project-health/` is an ignored local scratchpad/provenance surface, not an
 active rule source; use it only to locate historical reports when current
-Codex memory and repo docs are insufficient.
+repo docs are insufficient.
 
 ### Context Loading Discipline
 
