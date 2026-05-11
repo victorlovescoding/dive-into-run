@@ -122,30 +122,74 @@ legacy artifacts remain provenance, not current global rules.
 
 ## Main Agent Authority
 
+The main agent is control plane only. It coordinates state, dispatch, user
+communication, and closeout. It does not become the implementation,
+investigation, debugging, or review agent for repo-changing work.
+
 The main agent may:
 
-- Read routing/state artifacts: `AGENTS.md`, this workflow, `spec.md`, `plan.md`, `tasks.md`, `handoff.md`, `status.json`.
+- Read control-plane context: `AGENTS.md`, this workflow, active
+  `handoff.md`, `tasks.md`, `status.json`, and `git status --short --branch`.
+- Read task-local diff and changed-file lists after Engineer work.
+- Read exact evidence cited by Engineer or Reviewer: file/line references,
+  command summaries, and the precise nearby lines needed to verify the claim.
 - Dispatch Engineer, Reviewer, debugging, and read-only research subagents.
-- Use read-only research subagents for pure exploration; these usually need no
-  Reviewer because they do not change the repo.
 - Update `tasks.md`, `handoff.md`, and `status.json` after `review_passed`,
   `review_rejected`, or a real blocker.
 - Run or request verification needed to validate workflow state.
-- Push, open PR, watch CI, merge, and sync local `main` when the user has granted the one-time start authorization.
+- Stage, commit, push, open PR, watch CI, merge, and sync local `main` only
+  when the authorization boundary permits that specific step and the diff has
+  already passed Reviewer.
 - Edit workflow state files only when recording dispatch, `review_passed`,
   `review_rejected`, a blocker, or closeout evidence.
 
 The main agent must not:
 
-- Directly edit production code, executable tests, docs, or other repo files
-  during development, bugfix, refactor, testing, docs, or other repo-changing
-  tasks; actual edits go first to an Engineer subagent. Workflow state updates
-  listed above are the narrow exception.
+- Do domain or codebase broad exploration itself.
+- Read source broadly to design a fix.
+- Read `spec.md` or `plan.md` for implementation details as part of normal
+  control-plane operation.
+- Replace Engineer or Reviewer investigation with its own investigation.
+- Directly implement, review, debug, or refactor repo-changing work.
+- Directly edit production code, executable tests, docs, workflow docs, ADRs,
+  `.codex/**`, scripts, config, or other repo files during repo-changing tasks;
+  actual edits go first to an Engineer subagent. Workflow state updates listed
+  above are the narrow exception.
 - Expand an Engineer write set after dispatch without an explicit plan update.
 - Mark a task `completed` before `review_passed`.
-- Treat subagent reports as proof without checking diff and verification evidence.
+- Treat subagent narrative as proof without raw command summary, file:line
+  evidence, or checked task-local diff.
 - Continue past a stop condition by guessing.
 - Rewrite unrelated files or revert user changes.
+
+Exploration rule:
+
+- Pure exploration goes to a read-only Explorer subagent, not the main agent.
+- Explorer dispatch must include a bounded question, allowed read-only context,
+  forbidden writes, and expected evidence format.
+- If `spec.md` or `plan.md` content is needed, dispatch a bounded Explorer,
+  Engineer, or Reviewer to extract the required control-plane fact; otherwise
+  read only the precise line cited as evidence by that subagent.
+- Explorer results must include file/line, command output summary, and explicit
+  uncertainty. Narrative without evidence is only a hint.
+
+Repo-changing gray-area rule:
+
+- Docs-only changes, workflow docs, ADRs, `.codex/**`, scripts, config, and
+  generated workflow templates are repo-changing work.
+- These changes default to Engineer-owned edits plus Reviewer check.
+- Main-agent direct edits are limited to workflow state exception files
+  (`tasks.md`, `status.json`, `handoff.md`) when recording dispatch, review
+  result, blocker, or closeout evidence.
+
+Authorization boundary:
+
+- P1/P2/P3 tasks without approved `spec.md` must record exactly how far the
+  user authorized automation: edit, commit, push, PR creation, merge, and local
+  `main` sync are separate boundaries.
+- "Start fixing", "go implement", or equivalent wording authorizes the edit
+  phase only unless the user explicitly grants later closeout steps.
+- Do not interpret implementation approval as merge or local sync approval.
 
 Engineer boundary:
 
@@ -181,6 +225,21 @@ Task completion rule:
    state sync.
 
 `review_rejected` returns the task to the same Engineer unless the root cause is missing context, insufficient model capability, or a flawed plan.
+
+State drift rule:
+
+- `tasks.md`, `status.json`, and `handoff.md` must agree before dispatch,
+  commit, push, PR creation, merge, or local `main` sync.
+- If they disagree, stop and reconcile the workflow state or report `blocked`.
+- Reviewer PASS cannot be replaced by main-agent self-check.
+
+Evidence rule:
+
+- `lastVerification` and command evidence use one object or row per command.
+- Do not record shell chains with `&&` or `;` as one command entry. Split them
+  into separate verification entries with separate summaries and exit codes.
+- Subagent narrative is only a hint until backed by raw command summary,
+  file:line evidence, or reviewed diff.
 
 ## Parallelism
 
@@ -239,6 +298,18 @@ Closeout default after the one-time start authorization:
 
 Do not create checkbox-only commits after CI if doing so would invalidate the head SHA that CI validated. Record delivery evidence in the PR and final report instead.
 
+Closeout and staging rules:
+
+- The main agent may stage, commit, push, open PR, watch CI, merge, and sync
+  local `main` only after Reviewer has checked the diff and the authorization
+  boundary includes that step.
+- Staging must list concrete paths, for example:
+  `git add AGENTS.md docs/superpowers/workflow.md`.
+- Do not recommend or run `git add .`, `git add -A`, or `git add --all`.
+- Commit, push, PR, merge, and local sync remain stop points when authorization
+  is absent, workflow state drift exists, verification is stale, or Reviewer
+  PASS is missing.
+
 ## Resume Protocol
 
 Any compacted, resumed, or fresh session must start with:
@@ -248,8 +319,10 @@ Any compacted, resumed, or fresh session must start with:
 3. Read `specs/<feature>/handoff.md`.
 4. Read `specs/<feature>/tasks.md`.
 5. Read `specs/<feature>/status.json`.
-6. Read `specs/<feature>/spec.md` and `specs/<feature>/plan.md` only as needed
-   to resolve scope, acceptance criteria, or implementation details.
+6. Do not read `specs/<feature>/spec.md` or `specs/<feature>/plan.md` broadly
+   during resume. If state files need a fact from those docs, dispatch a
+   bounded Explorer, Engineer, or Reviewer to extract it, or read only a
+   precise line referenced as subagent evidence.
 7. Confirm `git status --short --branch`.
 8. Continue from the first incomplete unblocked task.
 

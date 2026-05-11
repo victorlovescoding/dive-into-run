@@ -25,9 +25,14 @@ Any failure blocks the commit. Runs in this exact order:
 
 `block-dangerous-commands.js` prevents bypassing via `--no-verify`, `git add -A`, `git add .`, `git commit -a`.
 
-CI also runs `npm run audit:use-effect-data-fetching` and
-`npm run audit:playwright-official-only` as blocking audit steps. Treat these
-two audits as both local pre-commit and CI gates.
+CI also runs mock-boundary, flaky-pattern, useEffect data-fetch, and Playwright
+official-only audits as blocking steps. Treat all four audits as both local
+pre-commit and CI gates.
+
+`npm run workflow:validate` validates `specs/*/status.json` workflow state.
+Run it after changing Superpowers status files. It blocks chained
+`lastVerification[].command` entries containing `&&` or `;`; record one command
+per evidence entry instead.
 
 ---
 
@@ -190,9 +195,8 @@ not `@playwright/test`, Node builtins, or relative helpers. Prefer locators
 and web-first assertions; reviewers still check this when AST enforcement is
 not reliable.
 
-All four audits are commit blockers through `.husky/pre-commit`.
-`audit:use-effect-data-fetching` and `audit:playwright-official-only` also
-block CI.
+All four audits are commit blockers through `.husky/pre-commit` and blocking
+CI steps.
 
 ### 4.1 Review Checklist Limitations
 

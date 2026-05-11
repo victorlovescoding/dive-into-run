@@ -79,6 +79,7 @@ const VERIFICATION_FIELDS = ['command', 'exitCode', 'summary', 'verifiedAt'];
 const VERIFICATION_PLAN_FIELDS = ['command', 'expectedSignal', 'lastRun'];
 const REVIEWER_DECISION_FIELDS = ['decision', 'reviewer', 'summary', 'decidedAt'];
 const REVIEWER_DECISIONS = new Set(['review_passed', 'review_rejected', 'blocked']);
+const SHELL_CHAIN_OPERATOR_PATTERN = /&&|;/;
 const TASK_EVIDENCE_FIELDS = [
   'engineerReport',
   'reviewerReport',
@@ -203,6 +204,24 @@ function validateNullableString(value, label, errors) {
 }
 
 /**
+ * Validates a command field as one auditable shell command.
+ * @param {unknown} value - Candidate command.
+ * @param {string} label - Error path label.
+ * @param {string[]} errors - Mutable error accumulator.
+ * @returns {void} No return value.
+ */
+function validateSingleCommand(value, label, errors) {
+  if (!isNonEmptyString(value)) {
+    errors.push(`${label} must be a non-empty string`);
+    return;
+  }
+
+  if (SHELL_CHAIN_OPERATOR_PATTERN.test(value)) {
+    errors.push(`${label} must be one command; split shell chains using && or ; into separate entries`);
+  }
+}
+
+/**
  * Validates a completed verification entry.
  * @param {unknown} value - Candidate verification entry.
  * @param {string} label - Error path label.
@@ -217,7 +236,11 @@ function validateVerificationResult(value, label, errors) {
 
   requireFields(value, VERIFICATION_FIELDS, label, errors);
 
-  ['command', 'summary', 'verifiedAt'].forEach((field) => {
+  if ('command' in value) {
+    validateSingleCommand(value.command, labelFor(label, 'command'), errors);
+  }
+
+  ['summary', 'verifiedAt'].forEach((field) => {
     if (field in value && !isNonEmptyString(value[field])) {
       errors.push(`${labelFor(label, field)} must be a non-empty string`);
     }
@@ -323,11 +346,13 @@ function validateVerificationPlanList(value, label, errors) {
 
     requireFields(verification, VERIFICATION_PLAN_FIELDS, itemLabel, errors);
 
-    ['command', 'expectedSignal'].forEach((field) => {
-      if (field in verification && !isNonEmptyString(verification[field])) {
-        errors.push(`${labelFor(itemLabel, field)} must be a non-empty string`);
-      }
-    });
+    if ('command' in verification) {
+      validateSingleCommand(verification.command, labelFor(itemLabel, 'command'), errors);
+    }
+
+    if ('expectedSignal' in verification && !isNonEmptyString(verification.expectedSignal)) {
+      errors.push(`${labelFor(itemLabel, 'expectedSignal')} must be a non-empty string`);
+    }
 
     if ('lastRun' in verification && verification.lastRun !== null) {
       validateVerificationResult(verification.lastRun, `${itemLabel}.lastRun`, errors);
