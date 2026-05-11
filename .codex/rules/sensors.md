@@ -15,6 +15,26 @@
 - `npm run test:e2e:branch` — 只跑當前 branch 的 Playwright E2E 測試（無 E2E 目錄時自動跳過）
 - **commit 前不需額外跑檢查** — Husky pre-commit 會自動執行全專案 lint + type-check + depcruise + spellcheck + browser Vitest + mock-boundary audit + flaky-pattern audit + useEffect data-fetch audit + Playwright official audit
 
+## Changed Surface → Required Verification Matrix
+
+Use the smallest row set that covers the changed files. These commands are in
+addition to focused reproduction or task-specific tests from the task contract.
+
+| Changed surface | Required local verification |
+| --------------- | --------------------------- |
+| Workflow docs: `AGENTS.md`, `docs/superpowers/**`, `.codex/rules/**`, `.codex/references/**`, `.agents/skills/**` | `npm run workflow:validate`, `npm run workflow:check`, `npm run workflow:links`, `git diff --check` |
+| Workflow scripts: `scripts/check-*.js`, `scripts/validate-workflow-state.js`, workflow npm scripts | The changed script command, `node scripts/check-superpowers-state.js --owned-files <owned paths...>` for explicit P1/P2 write sets, `npm run lint:changed`, `npm run type-check:changed`, `git diff --check` |
+| General scripts: `scripts/**` | The changed script command or focused smoke test, `npm run lint:changed`, `npm run type-check:changed`, `git diff --check` |
+| `src/service/**` | Focused unit test or `npm run test:branch`, `npm run lint:changed`, `npm run type-check:changed` |
+| `src/runtime/**` | Focused hook/runtime test or `npm run test:branch`, `npm run audit:use-effect-data-fetching`, `npm run lint:changed`, `npm run type-check:changed` |
+| `src/ui/**`, `src/components/**`, CSS modules, Tailwind-facing UI | Focused integration/browser test when available, `npm run lint:changed`, `npm run type-check:changed`, visual/browser check for meaningful UI changes |
+| `src/app/**` pages/layouts/routes | Focused integration/server/API test as applicable, `npm run lint:changed`, `npm run type-check:changed`; route/server changes also run server row |
+| Server-only code: API routes, Firebase Admin, server adapters, rules helpers | Focused server test or `npm run test:server`, `npm run lint:changed`, `npm run type-check:changed` |
+| E2E specs/helpers/config | Focused `npx playwright test ...` or `npm run test:e2e:branch`, `npm run audit:playwright-official-only`, `git diff --check` |
+| Test-only unit/integration/server changes | Focused changed test command, `npm run lint:changed`, `npm run type-check:changed`, relevant mock/flaky audit when touched |
+| `package.json` scripts or dependency metadata | Run the changed npm script, `npm run lint:changed`, `npm run type-check:changed`; stop and report if `package-lock.json` changes unexpectedly |
+| Config affecting build/lint/type/dependency graph | Run the affected config command plus `npm run lint:changed` and `npm run type-check:changed`; use full gate when scope is shared or uncertain |
+
 ## IDE Diagnostics（中速推理型 Sensor）
 
 Before marking a task complete, run `getDiagnostics` (via MCP) and fix items by severity:

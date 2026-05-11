@@ -67,6 +67,52 @@ engineer_done -> review_rejected -> ready
 coordinator-synced final task state. A failed command or missing evidence cannot
 be overridden by the main agent.
 
+## State Transition Table
+
+| From | To | Actor | Required evidence / condition | Notes |
+| ---- | -- | ----- | ----------------------------- | ----- |
+| `todo` | `ready` | Main agent | Dependencies satisfied, owned files and non-scope recorded | Do not dispatch if state files drift. |
+| `ready` | `in_progress` | Main agent | Engineer dispatch includes scope, owned files, non-scope, verification, and stop conditions | Engineer may write only owned files. |
+| `in_progress` | `engineer_done` | Engineer | Changed files, commands, exit codes, expected/actual signal, risks | Missing verification keeps the task in progress or blocked. |
+| `engineer_done` | `review_passed` | Reviewer | Diff checked, owned-file boundary verified, commands rerun or validated, PASS reason | Main agent still must sync state before `completed`. |
+| `engineer_done` | `review_rejected` | Reviewer | Concrete REJECT reason, affected files/commands, fix expectation | Increment attempt and return to `ready` for the same Engineer unless the plan/context is flawed. |
+| `review_rejected` | `ready` | Main agent | Re-dispatch brief names rejection, expected fix, unchanged owned files or approved update | Do not silently expand scope. |
+| `engineer_done` | `blocked` | Reviewer or Main agent | Stop condition, missing decision, permission, secret, migration, or plan flaw | Ask the user before continuing. |
+| `review_passed` | `completed` | Main agent | `tasks.md`, `status.json`, and `handoff.md` synced; final evidence recorded | Never complete directly from `engineer_done`. |
+| Any state | `blocked` | Main agent | Contradictory docs, forbidden scope, destructive operation, or second unresolved rejection | Stop rather than guessing. |
+
+After the first `review_rejected`, increment `attempt` and return the task to
+`ready` with the same Engineer by default. After a second `review_rejected`,
+stop unless the Reviewer identified a narrow, mechanical fix inside the same
+owned files and verification path. Stop immediately when the rejection points to
+a flawed plan, missing context, scope expansion, blocked dependency, or
+pre-existing failure outside the task.
+
+## Dispatch Minimum Format
+
+Engineer dispatch must include:
+
+- task id, profile, current state, attempt, wave, branch/worktree, and working
+  directory.
+- scope, non-scope, owned files, and read-only context.
+- implementation instructions and acceptance criteria.
+- exact verification commands with expected signal.
+- stop conditions, including owned-file overflow, new dependency, migration,
+  secrets, permissions, destructive operation, or unrelated failing gate.
+- required final report fields: status, changed files, commands with exit
+  codes, expected/actual signal, risks, and unverified items.
+
+Reviewer dispatch must include:
+
+- task id, profile, attempt, branch/worktree, working directory, and the
+  Engineer report.
+- owned files and non-scope to compare against the diff.
+- exact commands the Reviewer must rerun or validate, with expected signal.
+- PASS criteria and REJECT/BLOCKED criteria.
+- required report fields: one decision (`review_passed`,
+  `review_rejected`, or `blocked`), diff checked, commands, exit codes, reason,
+  and residual risk.
+
 ## State Sync Rules
 
 - `tasks.md`, `status.json`, and `handoff.md` must describe the same current
