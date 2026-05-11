@@ -8,6 +8,7 @@ This repo uses Superpowers as the workflow language and `specs/<feature>/...` as
 
 - Keep the main agent thin: dispatcher, status owner, and user-facing coordinator.
 - Put feature state on disk so compacted or fresh sessions can resume from files, not transcript memory.
+- Use a Planner subagent to slice repo-changing work before dispatch.
 - Require Engineer + Reviewer pairing for every independently deliverable task slice.
 - Route repo-changing edits through Engineer subagents first, including development, bugfix, refactor, testing, and docs work.
 - Preserve repo conventions: `AGENTS.md` is the entry map, `specs/` stores planning artifacts, and executable tests live under `tests/`.
@@ -109,15 +110,23 @@ legacy artifacts remain provenance, not current global rules.
    - Plans must be decision-complete: exact paths, commands, testing expectations, and stop conditions.
    - Cross-feature architecture or workflow decisions must check `docs/decisions/INDEX.md` and the relevant ADRs first.
    - New long-term cross-feature decisions should create or update an ADR.
-5. `subagent-driven-development`
+5. Planner subagent
+   - Slices repo-changing work; the main agent validates and dispatches.
+   - Output must include dependency graph, parallel waves, owned files,
+     read-only context, acceptance criteria, verification plan, and final
+     integration gate.
+   - Same-wave tasks require completely disjoint owned files.
+   - Shared helper, config, lockfile, and workflow state writes serialize or
+     become prerequisite tasks.
+6. `subagent-driven-development`
    - Main agent dispatches fresh task-local subagents.
    - Engineer owns implementation for one task slice, including docs-only and
      test-only repo changes.
    - Reviewer verifies the same non-read-only repo-changing slice before the
      task can be marked complete.
-6. `verification-before-completion`
+7. `verification-before-completion`
    - No completion, commit, push, PR, merge, or local sync claim without fresh evidence.
-7. `finishing-a-development-branch`
+8. `finishing-a-development-branch`
    - Push feature branch, open PR, wait for CI, merge on GitHub, then fast-forward local `main` when authorized by this workflow.
 
 ## Main Agent Authority
@@ -145,6 +154,7 @@ The main agent may:
 
 The main agent must not:
 
+- Self-slice repo-changing work instead of dispatching a Planner subagent.
 - Do domain or codebase broad exploration itself.
 - Read source broadly to design a fix.
 - Read `spec.md` or `plan.md` for implementation details as part of normal
@@ -208,6 +218,13 @@ Reviewer boundary:
 
 ## Task Slice Contract
 
+The Planner subagent owns the initial task slice plan for repo-changing work.
+Planner output must account for dependencies and execution order, including a
+dependency graph, parallel waves, owned files, read-only context, acceptance
+criteria, verification plan, browser evidence requirement for UI work, and the
+wave-level final integration gate. The main agent validates that output against
+scope and dispatches; it does not replace Planner slicing with its own plan.
+
 Every task in `tasks.md` must follow
 `docs/superpowers/task-contract.md`. The required block includes state,
 attempt, wave, scope, non-scope, owned files, read-only context, dependencies,
@@ -247,12 +264,16 @@ Default execution is one Engineer + Reviewer pair at a time.
 
 Parallel execution is allowed only when all are true:
 
-- Owned files are disjoint.
+- The Planner dependency graph says the tasks have no ordering dependency.
+- Owned files are completely disjoint across same-wave tasks.
 - No task writes shared helpers, config, lockfiles, or workflow state concurrently.
 - Each lane has a paired Reviewer.
 - A final integration gate runs after the wave.
 
 Recommended maximum in a shared worktree is two to three Engineer/Reviewer pairs. If in doubt, serialize.
+
+Shared helper, config, lockfile, or workflow state writes must serialize, or be
+split into prerequisite tasks that complete before dependent waves.
 
 ## Testing And Debugging Rules
 
@@ -263,6 +284,12 @@ Recommended maximum in a shared worktree is two to three Engineer/Reviewer pairs
 - Unit, integration, server, or E2E coverage is selected by behavior and risk; do not add every test type mechanically.
 - Test failures and unexpected behavior trigger `systematic-debugging`: reproduce, inspect evidence, find root cause, then fix.
 - Do not add flaky patterns, forbidden internal mocks, sleeps, `fireEvent`, `container.querySelector`, inline disables, or `@ts-ignore`.
+- UI task slices must include browser evidence using the sensor in
+  `.codex/rules/sensors.md`. Prefer Chrome DevTools MCP when callable; fallback
+  to the Codex Chrome plugin or available Browser surface and record the tool.
+- Browser evidence is required for UI conformance but does not replace
+  Playwright, Vitest, CI, or Reviewer checks, and cannot be used by the main
+  agent for self-review.
 
 ## Stop Conditions
 

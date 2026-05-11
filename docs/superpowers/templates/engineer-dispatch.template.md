@@ -13,6 +13,12 @@ not commit, push, open PRs, or revert other people's changes.
 - Branch:
 - Working directory:
 
+## Planner Context
+
+- Dependencies:
+- Same-wave lanes:
+- Final integration gate:
+
 ## Scope
 
 - Implement:
@@ -37,6 +43,24 @@ not commit, push, open PRs, or revert other people's changes.
 ## Acceptance Criteria
 
 - 
+
+## Browser Evidence
+
+For UI work, record target URL, route or journey, viewport or emulation,
+console cleared status, before/after snapshot, actions, console warnings or
+errors, failed network requests, screenshot artifact, expected vs actual UI
+signal, applicable trace/Lighthouse/memory evidence, residual risk, and tool
+used. Prefer Chrome DevTools MCP when callable; otherwise use Codex Chrome
+plugin or Browser. If no browser evidence surface is callable, stop and report
+blocked.
+
+- Required: <yes/no>
+- Tool:
+- Target URL:
+- Route or journey:
+- Viewport or emulation:
+- Screenshot artifact:
+- Expected vs actual UI signal:
 
 ## Verification Commands
 

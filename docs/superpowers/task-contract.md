@@ -10,6 +10,9 @@ This is the canonical contract for one independently deliverable task slice in
 - Main agent: control plane only. It owns dispatch, status updates,
   user-facing summaries, authorization-boundary tracking, and stop-condition
   enforcement.
+- Planner: slices repo-changing work before dispatch. It owns dependency graph,
+  parallel waves, owned files, read-only context, acceptance criteria,
+  verification plan, and final integration gate.
 - Engineer: implements exactly one task attempt inside the owned write set.
 - Reviewer: checks the task-local diff, reruns relevant verification, and
   records `review_passed`, `review_rejected`, or `blocked`.
@@ -18,6 +21,24 @@ The main agent must not edit production code, executable tests, docs, workflow
 docs, ADRs, `.codex/**`, scripts, config, or other repo-changing files for
 implementation tasks. It may edit workflow state only to record dispatch,
 `review_passed`, `review_rejected`, a real blocker, or closeout evidence.
+It also must not self-slice repo-changing work; it validates Planner output and
+dispatches from that contract.
+
+## Planner Output
+
+Planner output for repo-changing work must include:
+
+- Dependency graph and required execution order.
+- Parallel waves with a recommended maximum of two to three same-worktree lanes.
+- Owned files for each task, completely disjoint within the same wave.
+- Read-only context for each task.
+- Acceptance criteria for each task.
+- Verification plan, including any UI browser evidence requirement.
+- Wave-level final integration gate.
+
+Shared helper, config, lockfile, and workflow state writes must serialize or
+become prerequisite tasks. The main agent validates this output before dispatch
+and stops if same-wave owned files overlap or dependencies are unclear.
 
 ## Required Fields
 
@@ -36,6 +57,8 @@ Each task must record:
 - Acceptance criteria: behavior or doc outcomes required for completion.
 - Verification commands with expected signal: exact commands and the success
   signal to look for.
+- Browser evidence requirement for UI slices, or `not applicable` for non-UI
+  work.
 - Authorization boundary: whether automation may edit, commit, push, open PR,
   merge, and sync local `main`; P1/P2/P3 without approved `spec.md` must record
   this explicitly.
@@ -100,8 +123,12 @@ Engineer dispatch must include:
 - task id, profile, current state, attempt, wave, branch/worktree, and working
   directory.
 - scope, non-scope, owned files, and read-only context.
+- dependencies and any same-wave parallel lanes.
 - implementation instructions and acceptance criteria.
 - exact verification commands with expected signal.
+- browser evidence fields for UI work, including target URL, journey,
+  viewport, tool used, screenshot artifact, expected vs actual UI signal, and
+  console/network findings.
 - stop conditions, including owned-file overflow, new dependency, migration,
   secrets, permissions, destructive operation, or unrelated failing gate.
 - required final report fields: status, changed files, commands with exit
@@ -168,6 +195,8 @@ Reviewer must reject when:
 
 - Default dispatch is one Engineer + Reviewer pair at a time.
 - Parallel dispatch is allowed only when owned files are completely disjoint.
+- Planner must account for task dependencies and execution order before any
+  parallel wave starts.
 - Shared helpers, config, lockfiles, and workflow state cannot be parallel
   writes.
 - Every parallel lane must have its own Reviewer.
