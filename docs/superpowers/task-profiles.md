@@ -63,6 +63,57 @@ dispatcher continuity, or would otherwise depend on transcript memory.
 
 P4 uses the complete feature workflow and the required five-file artifact set.
 
+## Specs Artifact Policy
+
+`specs/` is durable workflow state, not a notebook for every bugfix. Small
+fixes, regular bugfixes, and docs cleanup should not pollute `specs/`.
+
+| Profile | Specs artifact rule |
+| ------- | ------------------- |
+| P0 | No `specs/` docs. |
+| P1 | No `specs/` docs; evidence lives in the conversation and PR body. |
+| P2 | No `specs/` docs by default; evidence lives in the conversation, task brief, and PR body for root cause, scope, and verification. Create durable repo docs only when the user explicitly asks for a long-term repo doc. |
+| P3 | No full five-file set. Create compact durable artifacts only for cross-session work, multi-task work, dispatcher continuity, or when transcript memory is not enough. |
+| P4 | Always create the full `specs/<feature>/` five-file set: `spec.md`, `plan.md`, `tasks.md`, `handoff.md`, and `status.json`. |
+
+P3 minimum rules:
+
+- Single-session high-risk fix: no `specs/` artifact.
+- Cross-session work: create `specs/<topic>/handoff.md` with current state,
+  next action, latest verification, and blockers.
+- Multi-task or multi-agent work: add `tasks.md`.
+- Add `status.json` only when machine-readable dispatcher state is needed.
+- If full product intent plus technical plan is needed, escalate to P4 and use
+  the full five-file set.
+
+If the user says "make a plan first", ask whether it should be a long-term repo
+doc or scratchpad. For P1/P2 PR bodies, include Summary, Root Cause, and
+Verification when useful.
+
+## Branch And Worktree Policy
+
+Branch isolates commit history. Worktree isolates the working directory. P1/P2
+default to a branch; P3/P4 default to a worktree.
+
+| Profile | Isolation rule |
+| ------- | -------------- |
+| P0 | No branch, no worktree. |
+| P1 | Branch by default; upgrade to worktree if the workspace is dirty or has an active branch/task. |
+| P2 | Branch by default; upgrade to worktree for multi-file scope, long tests, dirty workspace, active branch/task, or unmerged PR. |
+| P3 | Worktree by default. |
+| P4 | Always worktree. |
+
+Upgrade to a worktree for cross-session work, multi-agent work, long
+verification, dev server, emulator, E2E, dirty workspace, active feature
+branch, running task, unmerged PR, or when `main` must stay clean for lookup,
+hotfix, or comparison.
+
+If the current workspace already has another active feature branch, dirty tree,
+running task, or unmerged PR, new repo-changing work uses a worktree even if it
+would otherwise be P1/P2.
+
+Multi-worktree Git commands use `git -C <absolute-path> ...`.
+
 ## Non-Negotiables
 
 Lightweight profiles do not bypass repo safety rules:
