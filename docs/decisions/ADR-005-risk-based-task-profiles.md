@@ -76,6 +76,23 @@ means lighter artifacts and ceremony, not main-agent self-editing: repo-changing
 edits go first to an Engineer subagent. P4 work uses the full Superpowers
 feature workflow and required durable artifact set.
 
+Specs artifacts are profile-routed. P0 and P1 create no `specs/` docs. P2
+creates no `specs/` docs by default and records root cause, scope, and
+verification in conversation, task brief, and PR body unless the user
+explicitly asks for a long-term repo doc. P3 creates compact durable artifacts
+only for cross-session work, multi-task work, dispatcher continuity, or when
+transcript memory is not enough; a single-session high-risk fix needs no
+`specs/` artifact. P4 always creates the full `specs/<feature>/` five-file set:
+`spec.md`, `plan.md`, `tasks.md`, `handoff.md`, and `status.json`.
+
+Branch and worktree isolation are also profile-routed. P0 uses no branch or
+worktree. P1 and P2 default to a branch and upgrade to a worktree when the
+workspace is dirty, occupied by another active task or feature branch, has an
+unmerged PR, requires long verification, spans sessions, uses a dev server,
+emulator, or E2E, or needs `main` kept clean for lookup, hotfix, or comparison.
+P3 defaults to a worktree. P4 always uses a worktree. Multi-worktree Git
+commands use `git -C <absolute-path> ...`.
+
 This decision does not bypass safety gates. Branch isolation, owned-file and
 non-scope boundaries, Reviewer subagent checks for non-read-only repo-changing
 work, fresh verification, PR/CI, protected `main`, and stop conditions remain
@@ -87,6 +104,12 @@ needs no Reviewer.
 - Low-risk work should spend less time on durable artifacts and reviewer
   ceremony, but still routes non-read-only edits through Engineer and Reviewer
   subagents by default.
+- `specs/` remains durable workflow state, not a notebook for every bugfix;
+  small fixes, regular bugfixes, and docs cleanup should not create durable
+  specs artifacts unless explicitly needed by the selected profile.
+- Branches isolate commit history; worktrees isolate working directories. New
+  repo-changing work must upgrade to a worktree when the current workspace is
+  already occupied.
 - Normal bugfix and maintenance work still needs clear scope, focused
   verification, and regression coverage when behavior changes.
 - High-risk fixes and refactors still require explicit task contracts and

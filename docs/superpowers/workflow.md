@@ -27,6 +27,17 @@ smallest explicit scope and fresh verification that proves the change. P3 work
 uses an explicit task contract; keep durable artifacts compact unless the task
 crosses sessions or needs dispatcher continuity.
 
+Use the Specs Artifact Policy in `docs/superpowers/task-profiles.md` to decide
+whether workflow state belongs under `specs/`. P1/P2 default to no `specs/`
+artifacts; P3 uses compact durable artifacts only when transcript memory is not
+enough; P4 always uses the full five-file set.
+
+Use the Branch And Worktree Policy in
+`docs/superpowers/task-profiles.md` to choose isolation. P1/P2 default to a
+branch but upgrade to a worktree when the workspace is occupied, verification
+is long-running, work spans sessions, or multiple agents need independent
+working directories. P3 defaults to a worktree. P4 always uses a worktree.
+
 P1/P2/P3 are lighter in artifacts and ceremony, not in ownership. For any
 non-read-only repo-changing work, the main agent defaults to
 dispatcher/coordinator, sends actual edits first to an Engineer subagent, and
