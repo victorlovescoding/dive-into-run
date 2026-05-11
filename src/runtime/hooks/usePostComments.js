@@ -79,6 +79,7 @@ export default function usePostComments({
 
   const bottomRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const isMountedRef = useRef(false);
+  const editingCommentId = commentEditing?.id ?? null;
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -153,7 +154,7 @@ export default function usePostComments({
       try {
         await deleteComment(postId, commentId);
 
-        if (commentEditing?.id === commentId) {
+        if (editingCommentId === commentId) {
           setCommentEditing(null);
           setComment('');
         }
@@ -173,7 +174,7 @@ export default function usePostComments({
         console.error(deleteError);
       }
     },
-    [commentEditing?.id, postId, setOpenMenuPostId, setPostDetail, showToast],
+    [editingCommentId, postId, setOpenMenuPostId, setPostDetail, showToast],
   );
 
   /**

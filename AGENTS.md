@@ -73,6 +73,8 @@ npm run dev                 # Dev server (Next.js + Turbopack) on localhost:3000
 npm run build               # Production build
 npm run lint                # ESLint (Airbnb + React Hooks + JSDoc via flat config)
 npm run lint:changed        # 只 lint git changed files
+npm run audit:use-effect-data-fetching # UI/component effect data-fetch boundary audit
+npm run audit:playwright-official-only # Playwright official-only E2E audit
 npm run type-check          # TypeScript-powered JSDoc type checking (tsc --noEmit)
 npm run type-check:changed  # 只顯示 changed files 的 type errors
 npm run spellcheck          # cSpell 拼字檢查 (src + specs + tests)
@@ -121,11 +123,11 @@ Six canonical layers with forward-only dependency: Types → Config → Repo →
 
 | 文件                                | 建議查閱時機                              | 內容                                                                                                                     |
 | ----------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `.codex/rules/coding-rules.md`      | `src/**`, `specs/**`, `tests/**`          | 6 條 Non-Negotiable（無 @ts-ignore、無 JSX logic、無 eslint-disable a11y、JSDoc 規範、forward-only imports、300 行上限） |
+| `.codex/rules/coding-rules.md`      | `src/**`, `specs/**`, `tests/**`          | Non-Negotiable coding gates（React Hooks compiler、Next Core Web Vitals、effect data-fetch boundary、JSDoc、forward-only imports、300 行上限） |
 | `.codex/rules/code-style.md`        | `src/**`, `specs/**`, `tests/**` (js/jsx) | Formatting + JSDoc patterns                                                                                              |
-| `.codex/rules/testing-standards.md` | `tests/**`, test/spec 檔                  | Testing Trophy、AAA、userEvent                                                                                           |
+| `.codex/rules/testing-standards.md` | `tests/**`, test/spec 檔                  | Testing Trophy、Testing Library、Vitest、Playwright official gates                                                        |
 | `.codex/rules/e2e-commands.md`      | `tests/e2e/**`                            | Playwright + emulator 指令                                                                                               |
-| `.codex/rules/sensors.md`           | 需要跑驗證或檢查 gate 時                  | type-check/lint/test + IDE Diagnostics + pre-commit gate                                                                 |
+| `.codex/rules/sensors.md`           | 需要跑驗證或檢查 gate 時                  | type-check/lint/test/audits + IDE Diagnostics + pre-commit gate                                                          |
 
 ### Git Workflow (Non-Negotiable)
 

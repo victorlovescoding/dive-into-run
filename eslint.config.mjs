@@ -13,6 +13,7 @@ import eslintCommentsPlugin from '@eslint-community/eslint-plugin-eslint-comment
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 import testingLibrary from 'eslint-plugin-testing-library';
+import vitestPlugin from '@vitest/eslint-plugin';
 import confusingGlobals from 'confusing-browser-globals';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -43,6 +44,13 @@ const unitLibFlakyBaselineForCombinedBlocks = [
   'tests/unit/lib/notify-post-comment-reply.test.js',
 ];
 
+const vitestRecommendedRules = Object.fromEntries(
+  Object.entries(vitestPlugin.configs.recommended.rules).map(([ruleName, ruleConfig]) => [
+    ruleName.replace(/^vitest\//, '@vitest/'),
+    ruleConfig,
+  ])
+);
+
 export default [
   // 1. ESLint 官方推薦
   js.configs.recommended,
@@ -61,14 +69,13 @@ export default [
   react.configs.flat.recommended,
   react.configs.flat['jsx-runtime'],
 
-  // 3. React Hooks（手動控制：12 條 error + 5 compiler off）
+  // 3. React Hooks（official recommended-latest + compiler hardening）
   {
-    plugins: { 'react-hooks': reactHooks },
+    ...reactHooks.configs.flat['recommended-latest'],
     rules: {
-      // 原始 2 條
+      ...reactHooks.configs.flat['recommended-latest'].rules,
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
-      // v7 品質規則（React purity 規範）
+      'react-hooks/exhaustive-deps': 'error',
       'react-hooks/purity': 'error',
       'react-hooks/immutability': 'error',
       'react-hooks/globals': 'error',
@@ -76,15 +83,15 @@ export default [
       'react-hooks/set-state-in-render': 'error',
       'react-hooks/set-state-in-effect': 'error',
       'react-hooks/static-components': 'error',
-      'react-hooks/use-memo': 'error',
-      'react-hooks/error-boundaries': 'error',
       'react-hooks/component-hook-factories': 'error',
-      // Compiler 專用（目前不用）
-      'react-hooks/preserve-manual-memoization': 'off',
-      'react-hooks/incompatible-library': 'off',
-      'react-hooks/unsupported-syntax': 'off',
-      'react-hooks/config': 'off',
-      'react-hooks/gating': 'off',
+      'react-hooks/preserve-manual-memoization': 'error',
+      'react-hooks/incompatible-library': 'error',
+      'react-hooks/unsupported-syntax': 'error',
+      'react-hooks/config': 'error',
+      'react-hooks/gating': 'error',
+      'react-hooks/error-boundaries': 'error',
+      'react-hooks/use-memo': 'error',
+      'react-hooks/void-use-memo': 'error',
     },
   },
 
@@ -106,6 +113,25 @@ export default [
 
   // 6. Next.js（原生 flat config）
   nextPlugin.flatConfig.coreWebVitals,
+  {
+    rules: {
+      '@next/next/no-async-client-component': 'error',
+      '@next/next/no-head-element': 'error',
+      '@next/next/no-head-import-in-document': 'error',
+      '@next/next/no-document-import-in-page': 'error',
+      '@next/next/no-duplicate-head': 'error',
+      '@next/next/no-script-component-in-head': 'error',
+      '@next/next/no-before-interactive-script-outside-document': 'error',
+      '@next/next/google-font-display': 'error',
+      '@next/next/google-font-preconnect': 'error',
+      '@next/next/no-page-custom-font': 'error',
+      '@next/next/no-img-element': 'error',
+      '@next/next/no-html-link-for-pages': 'error',
+      '@next/next/no-sync-scripts': 'error',
+      '@next/next/inline-script-id': 'error',
+      '@next/next/no-unwanted-polyfillio': 'error',
+    },
+  },
 
   // 7. JSDoc
   jsdoc.configs['flat/recommended'],
@@ -480,10 +506,67 @@ export default [
     ...testingLibrary.configs['flat/react'],
     rules: {
       ...testingLibrary.configs['flat/react'].rules,
+      'testing-library/await-async-events': 'error',
+      'testing-library/await-async-queries': 'error',
+      'testing-library/await-async-utils': 'error',
+      'testing-library/no-await-sync-events': 'error',
+      'testing-library/no-await-sync-queries': 'error',
+      'testing-library/prefer-screen-queries': 'error',
+      'testing-library/no-container': 'error',
+      'testing-library/no-node-access': 'error',
+      'testing-library/no-wait-for-side-effects': 'error',
+      'testing-library/no-wait-for-multiple-assertions': 'error',
+      'testing-library/no-wait-for-snapshot': 'error',
       // Session 4 前置設定已恢復 no-node-access sensor；
       // 後續 Phase 4 清 baseline violations，避免增量 commit gate 再放行 DOM access。
       'testing-library/prefer-user-event': 'error',
-      'testing-library/no-node-access': 'error',
+      'testing-library/prefer-user-event-setup': 'error',
+      // Baseline has broad test id usage; keep off until path-level owners drain it.
+      'testing-library/no-test-id-queries': 'off',
+    },
+  },
+
+  // 17.6 Vitest official rules for non-E2E tests.
+  //      E2E is Playwright-owned and covered by the dedicated audit script.
+  {
+    files: ['tests/**/*.{js,jsx,mjs}', '**/*.test.{js,jsx,mjs}', '**/*.spec.{js,jsx,mjs}'],
+    ignores: ['tests/e2e/**'],
+    plugins: {
+      '@vitest': vitestPlugin,
+    },
+    rules: {
+      ...vitestRecommendedRules,
+      '@vitest/no-focused-tests': 'error',
+      '@vitest/no-disabled-tests': 'error',
+      '@vitest/no-commented-out-tests': 'error',
+      '@vitest/expect-expect': ['error', { assertFunctionNames: ['expect', 'assert'] }],
+      '@vitest/valid-expect': 'error',
+      '@vitest/no-identical-title': 'error',
+      '@vitest/no-standalone-expect': 'error',
+    },
+  },
+
+  // 17.7 Firebase rules helpers assert through rejected/resolved permission checks.
+  {
+    files: ['tests/server/rules/**/*.{js,jsx,mjs}'],
+    rules: {
+      '@vitest/expect-expect': [
+        'error',
+        { assertFunctionNames: ['expect', 'assert', 'assertSucceeds', 'assertFails'] },
+      ],
+    },
+  },
+
+  // 17.8 Vitest recommended baseline: keep official rules on, but avoid
+  //      rewriting existing assertion-style unit tests in this lint hardening.
+  {
+    files: [
+      'tests/unit/lib/update-post-trim.test.js',
+      'tests/unit/lib/update-post-validation.test.js',
+      'tests/unit/service/firebase-auth-helpers.test.js',
+    ],
+    rules: {
+      '@vitest/prefer-called-exactly-once-with': 'off',
     },
   },
 

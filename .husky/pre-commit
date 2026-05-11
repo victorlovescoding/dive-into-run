@@ -7,3 +7,5 @@ npx vitest run --project=browser
 # Refs: specs/026-tests-audit-report/tasks.md S8 / audit L607-612
 bash scripts/audit-mock-boundary.sh
 npm run audit:flaky-patterns
+npm run audit:use-effect-data-fetching
+npm run audit:playwright-official-only

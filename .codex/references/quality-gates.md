@@ -7,7 +7,7 @@
 
 ---
 
-## 1. Pre-commit Gate (7 Sequential Checks)
+## 1. Pre-commit Gate (9 Sequential Checks)
 
 Any failure blocks the commit. Runs in this exact order:
 
@@ -20,8 +20,14 @@ Any failure blocks the commit. Runs in this exact order:
 | 5   | Vitest Browser       | `npx vitest run --project=browser`    | Any browser/jsdom unit or integration test failure      |
 | 6   | Mock Boundary Audit  | `bash scripts/audit-mock-boundary.sh` | Forbidden internal-layer mock in executable tests       |
 | 7   | Flaky Pattern Audit  | `npm run audit:flaky-patterns`        | Forbidden flaky assertion or fixed-sleep pattern        |
+| 8   | useEffect Data Fetch Audit | `npm run audit:use-effect-data-fetching` | UI/component effect data fetch, Firebase/data-layer import, or exhaustive-deps suppression |
+| 9   | Playwright Official Audit | `npm run audit:playwright-official-only` | Focused E2E tests, fixed sleeps, or non-official E2E imports |
 
 `block-dangerous-commands.js` prevents bypassing via `--no-verify`, `git add -A`, `git add .`, `git commit -a`.
+
+CI also runs `npm run audit:use-effect-data-fetching` and
+`npm run audit:playwright-official-only` as blocking audit steps. Treat these
+two audits as both local pre-commit and CI gates.
 
 ---
 
@@ -113,7 +119,7 @@ import { useEventList } from '@/runtime/hooks/useEventList';
 
 ## 3. ESLint Mechanical Enforcement
 
-Beyond the 4 non-negotiable rules in `coding-rules.md`:
+Beyond the non-negotiable rules in `coding-rules.md`:
 
 **300-line file limit** -- `src/**/*.{js,jsx}`, excludes `src/config/geo/**`. `skipBlankLines: true`, `skipComments: true`. Severity: error.
 
@@ -135,15 +141,69 @@ import { getEventById } from '@/lib/firebase-events';
 
 **no-console** -- `console.log` is banned. Use `console.warn` or `console.error`.
 
+**React Hooks official compiler lint gates** -- `eslint-plugin-react-hooks`
+`recommended-latest` is active and the compiler-facing rules are errors:
+`rules-of-hooks`, `exhaustive-deps`, `purity`, `immutability`, `globals`,
+`refs`, `set-state-in-render`, `set-state-in-effect`, `static-components`,
+`component-hook-factories`, `preserve-manual-memoization`,
+`incompatible-library`, `unsupported-syntax`, `config`, `gating`,
+`error-boundaries`, `use-memo`, and `void-use-memo`.
+
+**Next official Core Web Vitals hardening** -- `@next/next/core-web-vitals`
+is active, with official rules promoted to errors where configured.
+`@next/next/no-img-element` is an error. Legitimate exceptions require a
+path-level documented ESLint override; inline disables are not acceptable.
+
+**Testing Library official rules** -- non-E2E tests enforce awaited async
+queries/events/utils, no awaited sync queries/events, `screen` queries,
+no `container`/node access, no `waitFor` side effects, no multiple
+assertions/snapshots inside `waitFor`, and `userEvent.setup()`.
+
+**Vitest official rules** -- non-E2E tests enforce `@vitest/eslint-plugin`
+recommended rules plus no focused, disabled, or commented-out tests,
+`expect-expect`, `valid-expect`, no identical titles, and no standalone
+`expect`. `tests/server/rules/**` is the only scoped exception where
+`assertSucceeds` and `assertFails` count as assertions.
+
+Existing non-official ESLint plugins (`eslint-plugin-react`, `jsx-a11y`,
+`import`, `jsdoc`, `eslint-comments`) remain legacy gates. This change
+does not expand their policy beyond current configured rules.
+
 ---
 
-## 4. Test Audit Blockers
+## 4. Audit Blockers
 
 **Mock boundary audit** -- `scripts/audit-mock-boundary.sh` blocks casual mocks of internal repo layers in executable tests. Mock external boundaries instead; do not mock `@/lib`, `@/repo`, `@/service`, or `@/runtime` except explicitly allowed provider boundaries.
 
 **Flaky pattern audit** -- `scripts/audit-flaky-patterns.sh` blocks the audited flaky-pattern ids: `toHaveBeenCalledTimes`, `new Promise + setTimeout`, `setTimeout + Promise`, and `page.waitForTimeout`.
 
-Both audits are commit blockers through `.husky/pre-commit`.
+**useEffect data-fetching audit** -- `npm run audit:use-effect-data-fetching`
+blocks direct data fetching in `src/ui/**` and `src/components/**` effects,
+including direct `fetch`, Firebase imports, repo/service imports, or
+`@/lib/firebase-*` imports. It also blocks `react-hooks/exhaustive-deps`
+suppression in `src/ui/**`, `src/components/**`, and `src/runtime/hooks/**`.
+
+**Playwright official-only audit** -- `npm run audit:playwright-official-only`
+blocks `.only`, `page.waitForTimeout`, obvious fixed sleeps, Playwright test
+API imports from anything except `@playwright/test`, and E2E imports that are
+not `@playwright/test`, Node builtins, or relative helpers. Prefer locators
+and web-first assertions; reviewers still check this when AST enforcement is
+not reliable.
+
+All four audits are commit blockers through `.husky/pre-commit`.
+`audit:use-effect-data-fetching` and `audit:playwright-official-only` also
+block CI.
+
+### 4.1 Review Checklist Limitations
+
+Some official-guidance semantics are review checklist items because the
+current audits intentionally do not try to prove them from AST alone:
+
+- Runtime hook effects that fetch or listen must synchronize with an external
+  system, include cleanup or stale guards, keep dependencies honest, and avoid
+  derived state.
+- Playwright E2E should prefer locators and web-first assertions when a
+  mechanical audit cannot reliably distinguish intent.
 
 ---
 
@@ -184,12 +244,19 @@ treat non-force push as destructive.
 | `var`                                  | `const` / `let`                       | ESLint                       |
 | `fireEvent` (tests)                    | `userEvent.setup()`                   | ESLint                       |
 | `container.querySelector` (tests)      | `screen.getByRole`                    | ESLint                       |
+| Awaited sync Testing Library query/event | Await only async query/event/userEvent | ESLint                     |
+| Multiple assertions or side effects in `waitFor` | One observable assertion, no side effects | ESLint                |
+| `test.only` / `describe.only`          | Remove focus marker                   | ESLint / Playwright audit    |
+| Disabled or commented-out tests        | Delete or fix the test                | ESLint                       |
 | File > 300 lines                       | Split into sub-hooks/components       | ESLint max-lines             |
+| `<img>` in Next UI                     | `next/image` or path-level documented override | ESLint              |
+| UI/component effect data fetch         | Runtime/service boundary              | `audit:use-effect-data-fetching` |
 | Higher layer import                    | Move function down or accept as param | dependency-cruiser           |
 | `src/lib/` import from canonical layer | Import from canonical home            | dependency-cruiser           |
 | `firebase/*` in UI layers              | `src/lib/firebase-*.js`               | ESLint no-restricted-imports |
 | Internal layer mocks in tests          | Mock external boundaries              | `audit-mock-boundary.sh`     |
 | `toHaveBeenCalledTimes` / audited fixed sleeps | Behavior assertions / async waits     | `audit-flaky-patterns.sh`    |
+| E2E non-official imports               | `@playwright/test` + relative helpers | `audit:playwright-official-only` |
 | `--no-verify`                          | Fix the pre-commit failure            | block-dangerous-commands.js  |
 | `git add -A` / `git add .`             | Stage specific files by name          | block-dangerous-commands.js  |
 
@@ -205,6 +272,8 @@ Run these during development, don't wait for pre-commit:
 | `npm run type-check:changed` | Git changed files (filtered tsc) | After modifying function signatures |
 | `bash scripts/audit-mock-boundary.sh` | Executable tests | After changing test mocks |
 | `bash scripts/audit-flaky-patterns.sh` | Executable tests under `tests/` | After changing async assertions or waits |
+| `npm run audit:use-effect-data-fetching` | `src/ui`, `src/components`, `src/runtime/hooks` | After changing effects or data-fetch boundaries |
+| `npm run audit:playwright-official-only` | Playwright E2E | After changing E2E tests or helpers |
 | `npm run test:branch`        | Branch vitest only               | After completing a feature slice    |
 
 Full sensor reference -> `.codex/rules/sensors.md`
