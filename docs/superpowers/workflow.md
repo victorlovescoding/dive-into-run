@@ -13,7 +13,8 @@ This repo uses Superpowers as the workflow language and `specs/<feature>/...` as
 
 ## Required Feature Artifacts
 
-Every feature that uses this workflow must keep this five-file set under `specs/<feature>/`:
+Every new Superpowers feature must keep this five-file set under
+`specs/<feature>/`:
 
 | File | Purpose |
 | ---- | ------- |
@@ -28,10 +29,10 @@ Task shape and task state transitions are defined by
 `docs/superpowers/task-contract.md`; this document is the process overview.
 
 Historical `specs/**` entries may predate this workflow or contain stricter
-session-local rules. Treat them as evidence for that feature, not as defaults
-for new Superpowers work. For new work, this document and the templates are the
-workflow source of truth unless the user explicitly narrows authority for a
-specific feature.
+session-local rules. Do not retrofit them for compliance unless the user asks.
+Treat them as evidence for that feature, not as defaults for new Superpowers
+work. For new work, this document and the templates are the workflow source of
+truth unless the user explicitly narrows authority for a specific feature.
 
 ## Skill Chain
 
@@ -127,7 +128,9 @@ Recommended maximum in a shared worktree is two to three Engineer/Reviewer pairs
 
 ## Testing And Debugging Rules
 
-- Before writing tests or fixing bugs, Engineer must read `.codex/references/testing-handbook.md`.
+- Before writing tests or fixing bugs, Engineer must read the blocking rules and
+  the relevant routed section of `.codex/references/testing-handbook.md`; do
+  not eager-load the whole handbook when the task only needs one test type.
 - Behavior changes follow TDD: RED -> GREEN -> REFACTOR.
 - Unit, integration, server, or E2E coverage is selected by behavior and risk; do not add every test type mechanically.
 - Test failures and unexpected behavior trigger `systematic-debugging`: reproduce, inspect evidence, find root cause, then fix.
@@ -178,5 +181,11 @@ Any compacted, resumed, or fresh session must start with:
    to resolve scope, acceptance criteria, or implementation details.
 7. Confirm `git status --short --branch`.
 8. Continue from the first incomplete unblocked task.
+
+Default resume scope is the active `specs/<feature>/` directory. Do not scan all
+of `specs/**` during startup. Historical specs, old `handoff-archive.md`,
+oversized `tasks.md`, reports, and large reference payloads are lookup material:
+open them only when the active feature explicitly points there or the current
+question requires provenance.
 
 If these files disagree, treat it as a stop condition and reconcile before dispatching more work.

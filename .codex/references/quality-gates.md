@@ -104,10 +104,10 @@ import { useEventList } from '@/runtime/hooks/useEventList';
 
 | Bucket      | Allowed imports                                                                       | Denied imports                                        |
 | ----------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Unit        | lib, config, repo, service, runtime (excl. providers), app/api                        | providers, components, contexts, hooks, app (non-API) |
-| Integration | app, components, contexts, hooks, runtime (incl. providers), lib, client config, data | repo, service, server config                          |
+| Unit        | lib, config, repo, service, runtime (excl. providers), ui, app/api                    | providers, components, contexts, hooks, app (non-API) |
+| Integration | app, components, ui, contexts, hooks, runtime (incl. providers), lib, client config, data | repo, service, server config                          |
 | E2E         | external packages + same-feature e2e relatives only                                   | All `src/`                                            |
-| test-utils  | external + relative (within test-utils) only                                          | All `src/`                                            |
+| tests-helpers | external + relative (within `tests/_helpers`) only                                  | All `src/`                                            |
 
 ---
 
@@ -141,7 +141,7 @@ import { getEventById } from '@/lib/firebase-events';
 
 **Mock boundary audit** -- `scripts/audit-mock-boundary.sh` blocks casual mocks of internal repo layers in executable tests. Mock external boundaries instead; do not mock `@/lib`, `@/repo`, `@/service`, or `@/runtime` except explicitly allowed provider boundaries.
 
-**Flaky pattern audit** -- `scripts/audit-flaky-patterns.sh` blocks flaky call-count and fixed-sleep patterns such as `toHaveBeenCalledTimes`, `setTimeout` sleeps, `new Promise(...setTimeout...)`, and `page.waitForTimeout`.
+**Flaky pattern audit** -- `scripts/audit-flaky-patterns.sh` blocks the audited flaky-pattern ids: `toHaveBeenCalledTimes`, `new Promise + setTimeout`, `setTimeout + Promise`, and `page.waitForTimeout`.
 
 Both audits are commit blockers through `.husky/pre-commit`.
 
@@ -176,7 +176,7 @@ Both audits are commit blockers through `.husky/pre-commit`.
 | `src/lib/` import from canonical layer | Import from canonical home            | dependency-cruiser           |
 | `firebase/*` in UI layers              | `src/lib/firebase-*.js`               | ESLint no-restricted-imports |
 | Internal layer mocks in tests          | Mock external boundaries              | `audit-mock-boundary.sh`     |
-| `toHaveBeenCalledTimes` / fixed sleeps | Behavior assertions / async waits     | `audit-flaky-patterns.sh`    |
+| `toHaveBeenCalledTimes` / audited fixed sleeps | Behavior assertions / async waits     | `audit-flaky-patterns.sh`    |
 | `--no-verify`                          | Fix the pre-commit failure            | block-dangerous-commands.js  |
 | `git add -A` / `git add .`             | Stage specific files by name          | block-dangerous-commands.js  |
 
@@ -191,7 +191,7 @@ Run these during development, don't wait for pre-commit:
 | `npm run lint:changed`       | Git changed files                | After completing a file             |
 | `npm run type-check:changed` | Git changed files (filtered tsc) | After modifying function signatures |
 | `bash scripts/audit-mock-boundary.sh` | Executable tests | After changing test mocks |
-| `bash scripts/audit-flaky-patterns.sh` | Executable tests/specs | After changing async assertions or waits |
+| `bash scripts/audit-flaky-patterns.sh` | Executable tests under `tests/` | After changing async assertions or waits |
 | `npm run test:branch`        | Branch vitest only               | After completing a feature slice    |
 
 Full sensor reference -> `.codex/rules/sensors.md`
