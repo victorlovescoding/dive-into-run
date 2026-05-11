@@ -8,9 +8,20 @@
 
 - ID:
 - Profile:
+- Wave:
 - Branch/worktree:
 - Working directory:
 - Status:
+
+## Planner Output
+
+- Dependency graph:
+- Parallel waves:
+- Owned files:
+- Read-only context:
+- Acceptance criteria:
+- Verification plan:
+- Final integration gate:
 
 ## Scope
 
@@ -32,6 +43,17 @@
 | ------- | --------------- |
 | `command` | exit 0 and key output |
 | `node scripts/check-superpowers-state.js --owned-files <owned paths...>` | exit 0 and changed tracked/untracked files are inside owned files |
+
+## Browser Evidence
+
+- Required for UI task: <yes/no>
+- Tool: <Chrome DevTools MCP / Codex Chrome plugin / Browser / not applicable>
+- Target URL:
+- Route or journey:
+- Viewport or emulation:
+- Screenshot artifact:
+- Expected vs actual UI signal:
+- Console and network findings:
 
 ## Reviewer Criteria
 

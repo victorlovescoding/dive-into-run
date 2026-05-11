@@ -7,6 +7,8 @@
 - Main agent is control plane only. Repo-changing edits belong to Engineer
   subagents, including code, executable tests, docs, workflow docs, ADRs,
   `.codex/**`, scripts, and config.
+- Planner subagent slices repo-changing work. Main validates Planner output and
+  dispatches; it does not self-slice repo-changing work.
 - If this file, `status.json`, and `handoff.md` disagree, reconcile or block
   before dispatch, commit, push, PR, merge, or local `main` sync.
 - A task can become `completed` only after `review_passed` and coordinator
@@ -17,10 +19,24 @@
 ## Team And Parallelism
 
 - Default: one Engineer + Reviewer pair at a time.
-- Parallel waves require completely disjoint owned files, one Reviewer per lane,
-  and a final integration gate.
+- Planner output must include dependency graph, execution order, parallel waves,
+  owned files, read-only context, acceptance criteria, verification plan, and
+  final integration gate.
+- Same-wave tasks require completely disjoint owned files, one Reviewer per
+  lane, and a final integration gate.
 - Shared helpers, config, lockfiles, and workflow state must serialize or become
   a prerequisite shared-helper task.
+- Recommended maximum in one shared worktree: two to three Engineer/Reviewer
+  pairs.
+
+## Planner Output
+
+- Dependency graph:
+  - <T001 -> T002 / none>
+- Parallel waves:
+  - `wave-1`: <task ids>
+- Final integration gate:
+  - `<command or browser/reviewer gate>`: <expected signal>
 
 ## Tasks
 
@@ -53,6 +69,12 @@ Read-only context:
 Dependencies:
 
 - <none / task IDs / user decision>
+
+Browser evidence:
+
+- <not applicable / required; target URL, route or journey, viewport, tool,
+  screenshot artifact, expected vs actual UI signal, console and network
+  findings>
 
 Engineer instructions:
 

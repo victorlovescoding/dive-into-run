@@ -28,13 +28,39 @@ addition to focused reproduction or task-specific tests from the task contract.
 | General scripts: `scripts/**` | The changed script command or focused smoke test, `npm run lint:changed`, `npm run type-check:changed`, `git diff --check` |
 | `src/service/**` | Focused unit test or `npm run test:branch`, `npm run lint:changed`, `npm run type-check:changed` |
 | `src/runtime/**` | Focused hook/runtime test or `npm run test:branch`, `npm run audit:use-effect-data-fetching`, `npm run lint:changed`, `npm run type-check:changed` |
-| `src/ui/**`, `src/components/**`, CSS modules, Tailwind-facing UI | Focused integration/browser test when available, `npm run lint:changed`, `npm run type-check:changed`, visual/browser check for meaningful UI changes |
-| `src/app/**` pages/layouts/routes | Focused integration/server/API test as applicable, `npm run lint:changed`, `npm run type-check:changed`; route/server changes also run server row |
+| `src/ui/**`, `src/components/**`, CSS modules, Tailwind-facing UI | Focused integration/browser test when available, `npm run lint:changed`, `npm run type-check:changed`, browser evidence sensor for meaningful UI changes |
+| `src/app/**` pages/layouts/routes | Focused integration/server/API test as applicable, `npm run lint:changed`, `npm run type-check:changed`; UI routes also require browser evidence sensor; route/server changes also run server row |
 | Server-only code: API routes, Firebase Admin, server adapters, rules helpers | Focused server test or `npm run test:server`, `npm run lint:changed`, `npm run type-check:changed` |
 | E2E specs/helpers/config | Focused `npx playwright test ...` or `npm run test:e2e:branch`, `npm run audit:playwright-official-only`, `git diff --check` |
 | Test-only unit/integration/server changes | Focused changed test command, `npm run lint:changed`, `npm run type-check:changed`, relevant mock/flaky audit when touched |
 | `package.json` scripts or dependency metadata | Run the changed npm script, `npm run lint:changed`, `npm run type-check:changed`; stop and report if `package-lock.json` changes unexpectedly |
 | Config affecting build/lint/type/dependency graph | Run the affected config command plus `npm run lint:changed` and `npm run type-check:changed`; use full gate when scope is shared or uncertain |
+
+## Browser Evidence Sensor
+
+UI task slices must include browser evidence. Prefer Chrome DevTools MCP when
+callable. If it is not callable, use the Codex Chrome plugin or available
+Browser surface and record the tool used.
+
+Evidence must record:
+
+- Target URL.
+- Route or journey.
+- Viewport or emulation.
+- Console cleared before interaction.
+- Snapshot before and after.
+- Actions performed.
+- Console errors and warnings.
+- Failed network requests.
+- Screenshot artifact.
+- Expected vs actual UI signal.
+- Trace, Lighthouse, or memory evidence only when the task explicitly asks for
+  it or high-risk debugging needs it.
+- Residual risk.
+
+If no browser evidence surface is callable, UI conformance is blocked. Do not
+fake verification. Browser evidence does not replace Playwright, Vitest, CI, or
+Reviewer checks, and the main agent cannot use it for self-review.
 
 ## IDE Diagnostics（中速推理型 Sensor）
 
