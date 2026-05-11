@@ -54,6 +54,12 @@ jobs:
       - name: Mock boundary audit
         run: bash scripts/audit-mock-boundary.sh
 
+      - name: useEffect data fetching audit
+        run: npm run audit:use-effect-data-fetching
+
+      - name: Playwright official APIs audit
+        run: npm run audit:playwright-official-only
+
       - name: Type check
         run: npm run type-check
 
