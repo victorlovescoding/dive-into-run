@@ -2,10 +2,13 @@
 
 ## Current State
 
+- Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree:
 - Branch:
 - Current phase:
 - Active task:
+- Active wave:
+- Latest reviewer decision:
 - Last verified commit:
 - Blocked: no
 - Blocked reason:
@@ -28,6 +31,15 @@
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
 | `<command>` | `<exit>` | `<short signal>` |
+
+## Closeout Checklist
+
+- [ ] `tasks.md` task states match `status.json`.
+- [ ] Active task and active wave match `status.json`.
+- [ ] Latest reviewer decision is recorded in `tasks.md` and `status.json`.
+- [ ] `lastVerification` has one entry per command.
+- [ ] Changed files are intentionally in scope.
+- [ ] Blockers are resolved or explicitly carried forward.
 
 ## Blockers
 
