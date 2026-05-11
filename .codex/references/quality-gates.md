@@ -7,7 +7,7 @@
 
 ---
 
-## 1. Pre-commit Gate (9 Sequential Checks)
+## 1. Pre-commit Gate (11 Sequential Checks)
 
 Any failure blocks the commit. Runs in this exact order:
 
@@ -17,17 +17,19 @@ Any failure blocks the commit. Runs in this exact order:
 | 2   | Type Check           | `npm run type-check` (`tsc --noEmit`) | Any JSDoc type error                                    |
 | 3   | Dependency Cruiser   | `npm run depcruise`                   | Architecture rule violation                             |
 | 4   | CSpell               | `npm run spellcheck`                  | Spelling error in `src`, `specs`, or `tests` JS/JSX     |
-| 5   | Vitest Browser       | `npx vitest run --project=browser`    | Any browser/jsdom unit or integration test failure      |
-| 6   | Mock Boundary Audit  | `bash scripts/audit-mock-boundary.sh` | Forbidden internal-layer mock in executable tests       |
-| 7   | Flaky Pattern Audit  | `npm run audit:flaky-patterns`        | Forbidden flaky assertion or fixed-sleep pattern        |
-| 8   | useEffect Data Fetch Audit | `npm run audit:use-effect-data-fetching` | UI/component effect data fetch, Firebase/data-layer import, or exhaustive-deps suppression |
-| 9   | Playwright Official Audit | `npm run audit:playwright-official-only` | Focused E2E tests, fixed sleeps, or non-official E2E imports |
+| 5   | Workflow State Check | `npm run workflow:check`              | Invalid workflow state, missing companion files, stale task sync |
+| 6   | Workflow Links Check | `npm run workflow:links`              | Broken repo-local references in workflow-critical docs  |
+| 7   | Vitest Browser       | `npx vitest run --project=browser`    | Any browser/jsdom unit or integration test failure      |
+| 8   | Mock Boundary Audit  | `bash scripts/audit-mock-boundary.sh` | Forbidden internal-layer mock in executable tests       |
+| 9   | Flaky Pattern Audit  | `npm run audit:flaky-patterns`        | Forbidden flaky assertion or fixed-sleep pattern        |
+| 10  | useEffect Data Fetch Audit | `npm run audit:use-effect-data-fetching` | UI/component effect data fetch, Firebase/data-layer import, or exhaustive-deps suppression |
+| 11  | Playwright Official Audit | `npm run audit:playwright-official-only` | Focused E2E tests, fixed sleeps, or non-official E2E imports |
 
 `block-dangerous-commands.js` prevents bypassing via `--no-verify`, `git add -A`, `git add .`, `git commit -a`.
 
-CI also runs mock-boundary, flaky-pattern, useEffect data-fetch, and Playwright
-official-only audits as blocking steps. Treat all four audits as both local
-pre-commit and CI gates.
+CI also runs workflow state/link checks plus mock-boundary, flaky-pattern,
+useEffect data-fetch, and Playwright official-only audits as blocking steps.
+Treat these as both local pre-commit and CI gates.
 
 `npm run workflow:validate` validates `specs/*/status.json` workflow state.
 Run it after changing Superpowers status files. It blocks chained
