@@ -17,6 +17,11 @@ no Codex-native source exists.
 - Load only task-relevant context. Do not expand every linked doc at startup.
 - Keep `AGENTS.md` as the entry map; open referenced docs only when they match
   the current task.
+- For repo-changing requests such as develop, implement, fix, refactor, test,
+  or document, read `docs/superpowers/workflow.md` before planning,
+  dispatching, or editing.
+- When choosing profile, artifacts, branch/worktree, or authorization boundary,
+  read `docs/superpowers/task-profiles.md`.
 - Do not revert changes you did not make. Work with existing dirty state.
 
 ## Repo Invariants
@@ -87,7 +92,9 @@ no Codex-native source exists.
   default Engineer-owned edit plus Reviewer check.
 - The only main-agent edit exception is workflow state updates that record
   dispatch, review result, blocker, or closeout evidence.
-- Pure exploration goes to a bounded read-only Explorer subagent with
+- Pure exploration, research, investigation, audit, or analysis without
+  immediate edits goes to a bounded read-only Explorer subagent. Dispatch must
+  include the specific question, allowed context, forbidden writes, and required
   file/line/command/uncertainty evidence.
 - If `tasks.md`, `status.json`, or `handoff.md` drift, do not dispatch, commit,
   push, open PRs, merge, or sync local `main`; reconcile first or block.
