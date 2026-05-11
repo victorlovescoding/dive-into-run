@@ -11,9 +11,31 @@ This repo uses Superpowers as the workflow language and `specs/<feature>/...` as
 - Require Engineer + Reviewer pairing for every independently deliverable task slice.
 - Preserve repo conventions: `AGENTS.md` is the entry map, `specs/` stores planning artifacts, and executable tests live under `tests/`.
 
+## Task Profile Routing
+
+Before execution, classify the task with
+`docs/superpowers/task-profiles.md`.
+
+Use Complexity C0-C4 and Risk R0-R4, then select Profile P0-P4 by the higher
+score. Any R4 task escalates directly to P4. If classification is unclear,
+choose the higher profile or stop and ask.
+
+Bugfix, maintenance, refactor, and docs work do not automatically use the full
+feature five-file set. P1/P2 work uses the smallest explicit scope and fresh
+verification that proves the change. P3 work uses an explicit task contract and
+Engineer/Reviewer gate; keep durable artifacts compact unless the task crosses
+sessions or needs dispatcher continuity.
+
+New features default to P4. P4 work uses this document's Required Feature
+Artifacts and full feature lifecycle.
+
+Task profiles only route workflow weight. They do not weaken branch isolation,
+owned-file/non-scope boundaries, fresh verification, PR/CI expectations, or
+stop conditions.
+
 ## Required Feature Artifacts
 
-Every new Superpowers feature must keep this five-file set under
+Every new P4 Superpowers feature must keep this five-file set under
 `specs/<feature>/`:
 
 | File | Purpose |
@@ -55,22 +77,27 @@ legacy artifacts remain provenance, not current global rules.
 1. `using-git-worktrees`
    - Detect existing isolation before creating anything.
    - Never modify or commit directly on `main`.
-2. `brainstorming`
+2. Task profile routing
+   - Classify work with `docs/superpowers/task-profiles.md` before execution.
+   - New feature work defaults to P4.
+   - Bugfix, maintenance, refactor, and docs work first choose P0-P4 by
+     Complexity and Risk instead of mechanically creating the feature five-file set.
+3. `brainstorming`
    - Clarify intent with the user.
    - Produce and validate `specs/<feature>/spec.md`.
    - User approval of the spec plus explicit start authorization unlocks the automated phases below.
-3. `writing-plans`
+4. `writing-plans`
    - Produce `specs/<feature>/plan.md` and seed task slices.
    - Plans must be decision-complete: exact paths, commands, testing expectations, and stop conditions.
    - Cross-feature architecture or workflow decisions must check `docs/decisions/INDEX.md` and the relevant ADRs first.
    - New long-term cross-feature decisions should create or update an ADR.
-4. `subagent-driven-development`
+5. `subagent-driven-development`
    - Main agent dispatches fresh task-local subagents.
    - Engineer owns implementation for one task slice.
    - Reviewer verifies the same slice before the task can be marked complete.
-5. `verification-before-completion`
+6. `verification-before-completion`
    - No completion, commit, push, PR, merge, or local sync claim without fresh evidence.
-6. `finishing-a-development-branch`
+7. `finishing-a-development-branch`
    - Push feature branch, open PR, wait for CI, merge on GitHub, then fast-forward local `main` when authorized by this workflow.
 
 ## Main Agent Authority

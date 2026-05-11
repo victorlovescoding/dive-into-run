@@ -12,6 +12,7 @@ Use ADRs for decisions that future agents must preserve across features. Do not 
 | ADR-002 | `src/lib` compatibility facade | Accepted | Verified |
 | ADR-003 | JSDoc + `checkJs` over application TypeScript | Accepted | Verified |
 | ADR-004 | Superpowers-first agent workflow | Accepted | Partially Verified |
+| ADR-005 | Risk-based task profiles | Accepted | Partially Verified |
 
 ## When To Add Or Update ADRs
 
