@@ -43,10 +43,10 @@ repo docs are insufficient.
   missing Codex-native source.
 - Treat large reports and archives (`project-health/**`, old `handoff-archive.md`,
   large historical `tasks.md`) as lookup payloads, never as startup context.
-- Prefer installed Superpowers plugin skills for generic workflow skills. Keep
-  repo-local `.agents/skills/**` for project-specific workflows and references
-  such as `worktree`, `test-driven-development`, and repo-specific review,
-  commit, Notion, frontend, or performance skills.
+- Use installed Superpowers plugin skills for generic Superpowers workflow
+  skills. Keep repo-local `.agents/skills/**` only for project-specific
+  workflows and references, such as `worktree`, `test-driven-development`,
+  repo-specific review, commit, Notion, frontend, and performance skills.
 
 ## Communication And Before Acting
 
