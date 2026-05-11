@@ -2,43 +2,57 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/victorlovescoding/dive-into-run/docs/superpowers/status.schema.json",
   "title": "Superpowers Workflow Status",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "schemaVersion",
-    "feature",
-    "branch",
-    "worktree",
-    "phase",
-    "activeTask",
-    "completedTasks",
-    "blocked",
-    "blockedReason",
-    "lastVerification",
-    "lastVerifiedCommit",
-    "updatedAt"
+  "oneOf": [
+    {
+      "$ref": "#/$defs/statusV1"
+    },
+    {
+      "$ref": "#/$defs/statusV2"
+    }
   ],
-  "properties": {
-    "schemaVersion": {
-      "const": 1
-    },
-    "feature": {
+  "$defs": {
+    "nonEmptyString": {
       "type": "string",
       "minLength": 1
     },
-    "branch": {
-      "type": "string",
-      "minLength": 1
+    "nullableString": {
+      "type": [
+        "string",
+        "null"
+      ]
     },
-    "worktree": {
-      "type": "string",
-      "minLength": 1
+    "stringList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      }
     },
-    "phase": {
-      "type": "string",
-      "minLength": 1
+    "verificationResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "exitCode",
+        "summary",
+        "verifiedAt"
+      ],
+      "properties": {
+        "command": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "exitCode": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "summary": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "verifiedAt": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
     },
-    "activeTask": {
+    "activeTaskV1": {
       "oneOf": [
         {
           "type": "null"
@@ -57,99 +71,374 @@
           ],
           "properties": {
             "id": {
-              "type": "string",
-              "minLength": 1
+              "$ref": "#/$defs/nonEmptyString"
             },
             "state": {
-              "type": "string",
-              "minLength": 1
+              "$ref": "#/$defs/nonEmptyString"
             },
             "engineer": {
-              "type": "string",
-              "minLength": 1
+              "$ref": "#/$defs/nonEmptyString"
             },
             "reviewer": {
-              "type": "string",
-              "minLength": 1
+              "$ref": "#/$defs/nonEmptyString"
             },
             "attempt": {
               "type": "integer",
               "minimum": 1
             },
             "ownedFiles": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "minLength": 1
-              }
+              "$ref": "#/$defs/stringList"
             },
             "startedAt": {
-              "type": "string",
-              "minLength": 1
+              "$ref": "#/$defs/nonEmptyString"
             }
           }
         }
       ]
     },
-    "completedTasks": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      },
-      "uniqueItems": true
-    },
-    "blocked": {
-      "type": "boolean"
-    },
-    "blockedReason": {
-      "type": [
-        "string",
-        "null"
+    "activeTaskV2": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/nonEmptyString"
+        }
       ]
     },
-    "lastVerification": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "command",
-          "exitCode",
-          "summary",
-          "verifiedAt"
-        ],
-        "properties": {
-          "command": {
-            "type": "string",
-            "minLength": 1
-          },
-          "exitCode": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "summary": {
-            "type": "string",
-            "minLength": 1
-          },
-          "verifiedAt": {
-            "type": "string",
-            "minLength": 1
+    "taskState": {
+      "enum": [
+        "todo",
+        "ready",
+        "in_progress",
+        "engineer_done",
+        "review_passed",
+        "review_rejected",
+        "completed",
+        "blocked"
+      ]
+    },
+    "reviewerDecision": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "reviewer",
+            "summary",
+            "decidedAt"
+          ],
+          "properties": {
+            "decision": {
+              "enum": [
+                "review_passed",
+                "review_rejected",
+                "blocked"
+              ]
+            },
+            "reviewer": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "summary": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "decidedAt": {
+              "$ref": "#/$defs/nonEmptyString"
+            }
           }
+        }
+      ]
+    },
+    "verificationPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "expectedSignal",
+        "lastRun"
+      ],
+      "properties": {
+        "command": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "expectedSignal": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "lastRun": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/verificationResult"
+            }
+          ]
         }
       }
     },
-    "lastVerifiedCommit": {
-      "type": [
-        "string",
-        "null"
-      ]
+    "taskEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "engineerReport",
+        "reviewerReport",
+        "commandOutputSummary",
+        "changedFilesSummary"
+      ],
+      "properties": {
+        "engineerReport": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "reviewerReport": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "commandOutputSummary": {
+          "$ref": "#/$defs/stringList"
+        },
+        "changedFilesSummary": {
+          "$ref": "#/$defs/stringList"
+        }
+      }
     },
-    "updatedAt": {
-      "type": [
-        "string",
-        "null"
-      ]
+    "taskV2": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "state",
+        "attempt",
+        "wave",
+        "engineer",
+        "reviewer",
+        "scope",
+        "nonScope",
+        "ownedFiles",
+        "readOnlyContext",
+        "dependencies",
+        "engineerInstructions",
+        "acceptanceCriteria",
+        "verification",
+        "reviewerPassCriteria",
+        "reviewerRejectCriteria",
+        "reviewerDecision",
+        "evidence"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "title": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "state": {
+          "$ref": "#/$defs/taskState"
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "wave": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            {
+              "type": "integer",
+              "minimum": 1
+            }
+          ]
+        },
+        "engineer": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "reviewer": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "scope": {
+          "$ref": "#/$defs/stringList"
+        },
+        "nonScope": {
+          "$ref": "#/$defs/stringList"
+        },
+        "ownedFiles": {
+          "$ref": "#/$defs/stringList"
+        },
+        "readOnlyContext": {
+          "$ref": "#/$defs/stringList"
+        },
+        "dependencies": {
+          "$ref": "#/$defs/stringList"
+        },
+        "engineerInstructions": {
+          "$ref": "#/$defs/stringList"
+        },
+        "acceptanceCriteria": {
+          "$ref": "#/$defs/stringList"
+        },
+        "verification": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/verificationPlan"
+          }
+        },
+        "reviewerPassCriteria": {
+          "$ref": "#/$defs/stringList"
+        },
+        "reviewerRejectCriteria": {
+          "$ref": "#/$defs/stringList"
+        },
+        "reviewerDecision": {
+          "$ref": "#/$defs/reviewerDecision"
+        },
+        "evidence": {
+          "$ref": "#/$defs/taskEvidence"
+        }
+      }
+    },
+    "statusV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "feature",
+        "branch",
+        "worktree",
+        "phase",
+        "activeTask",
+        "completedTasks",
+        "blocked",
+        "blockedReason",
+        "lastVerification",
+        "lastVerifiedCommit",
+        "updatedAt"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "feature": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "branch": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "worktree": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "phase": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "activeTask": {
+          "$ref": "#/$defs/activeTaskV1"
+        },
+        "completedTasks": {
+          "$ref": "#/$defs/stringList"
+        },
+        "blocked": {
+          "type": "boolean"
+        },
+        "blockedReason": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "lastVerification": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/verificationResult"
+          }
+        },
+        "lastVerifiedCommit": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "statusV2": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "feature",
+        "branch",
+        "worktree",
+        "phase",
+        "activeTask",
+        "activeWave",
+        "completedTasks",
+        "tasks",
+        "blocked",
+        "blockedReason",
+        "lastVerification",
+        "lastVerifiedCommit",
+        "updatedAt"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 2
+        },
+        "feature": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "branch": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "worktree": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "phase": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "activeTask": {
+          "$ref": "#/$defs/activeTaskV2"
+        },
+        "activeWave": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            {
+              "type": "integer",
+              "minimum": 1
+            }
+          ]
+        },
+        "completedTasks": {
+          "$ref": "#/$defs/stringList"
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/taskV2"
+          }
+        },
+        "blocked": {
+          "type": "boolean"
+        },
+        "blockedReason": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "lastVerification": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/verificationResult"
+          }
+        },
+        "lastVerifiedCommit": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
     }
   }
 }

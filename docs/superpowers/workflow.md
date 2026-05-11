@@ -24,6 +24,8 @@ Every feature that uses this workflow must keep this five-file set under `specs/
 | `status.json` | Machine-readable dispatcher state matching `docs/superpowers/status.schema.json`. |
 
 Use the templates in `docs/superpowers/templates/` when creating a new feature.
+Task shape and task state transitions are defined by
+`docs/superpowers/task-contract.md`; this document is the process overview.
 
 Historical `specs/**` entries may predate this workflow or contain stricter
 session-local rules. Treat them as evidence for that feature, not as defaults
@@ -60,40 +62,55 @@ The main agent may:
 
 - Read routing/state artifacts: `AGENTS.md`, this workflow, `spec.md`, `plan.md`, `tasks.md`, `handoff.md`, `status.json`.
 - Dispatch Engineer, Reviewer, debugging, and read-only research subagents.
-- Update `tasks.md`, `handoff.md`, and `status.json` after Reviewer PASS or a real blocker.
+- Update `tasks.md`, `handoff.md`, and `status.json` after `review_passed`,
+  `review_rejected`, or a real blocker.
 - Run or request verification needed to validate workflow state.
 - Push, open PR, watch CI, merge, and sync local `main` when the user has granted the one-time start authorization.
+- Edit workflow state files only when recording dispatch, `review_passed`,
+  `review_rejected`, a blocker, or closeout evidence.
 
 The main agent must not:
 
 - Directly edit production code or executable tests during implementation tasks.
-- Mark a task complete before Reviewer PASS.
+- Expand an Engineer write set after dispatch without an explicit plan update.
+- Mark a task `completed` before `review_passed`.
 - Treat subagent reports as proof without checking diff and verification evidence.
 - Continue past a stop condition by guessing.
 - Rewrite unrelated files or revert user changes.
 
+Engineer boundary:
+
+- Engineer modifies only the task-owned files.
+- Engineer reads only needed context, including read-only context from the task.
+- Engineer stops instead of widening scope, adding dependencies, changing data
+  contracts, or continuing after unclear verification failure.
+
+Reviewer boundary:
+
+- Reviewer inspects the task-local diff against the task contract.
+- Reviewer reruns or validates the required verification commands.
+- Reviewer records exactly one decision: `review_passed`, `review_rejected`, or
+  `blocked`.
+- Reviewer does not fix the task while reviewing it.
+
 ## Task Slice Contract
 
-Every task in `tasks.md` must include:
-
-- Task ID and short title.
-- Scope and owned files.
-- Dependencies.
-- Engineer role and Reviewer role.
-- Acceptance criteria.
-- Verification commands with expected signal.
-- Commit checkpoint.
-- Evidence section for Engineer report and Reviewer PASS/REJECT.
+Every task in `tasks.md` must follow
+`docs/superpowers/task-contract.md`. The required block includes state,
+attempt, wave, scope, non-scope, owned files, read-only context, dependencies,
+Engineer instructions, acceptance criteria, verification commands with expected
+signal, Reviewer PASS/REJECT criteria, and evidence.
 
 Task completion rule:
 
 1. Engineer implements only the owned scope.
 2. Engineer reports files changed, commands run, exit codes, evidence, risks, and status.
 3. Reviewer inspects the task-local diff and reruns the relevant verification.
-4. Reviewer records PASS or REJECT.
-5. Main agent updates task state only after PASS.
+4. Reviewer records `review_passed` or `review_rejected`.
+5. Main agent updates task state to `completed` only after `review_passed` and
+   state sync.
 
-Reviewer REJECT returns the task to the same Engineer unless the root cause is missing context, insufficient model capability, or a flawed plan.
+`review_rejected` returns the task to the same Engineer unless the root cause is missing context, insufficient model capability, or a flawed plan.
 
 ## Parallelism
 
@@ -111,7 +128,7 @@ Recommended maximum in a shared worktree is two to three Engineer/Reviewer pairs
 ## Testing And Debugging Rules
 
 - Before writing tests or fixing bugs, Engineer must read `.codex/references/testing-handbook.md`.
-- Behavior changes follow TDD: RED → GREEN → REFACTOR.
+- Behavior changes follow TDD: RED -> GREEN -> REFACTOR.
 - Unit, integration, server, or E2E coverage is selected by behavior and risk; do not add every test type mechanically.
 - Test failures and unexpected behavior trigger `systematic-debugging`: reproduce, inspect evidence, find root cause, then fix.
 - Do not add flaky patterns, forbidden internal mocks, sleeps, `fireEvent`, `container.querySelector`, inline disables, or `@ts-ignore`.
