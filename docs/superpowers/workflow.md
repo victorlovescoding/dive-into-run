@@ -15,8 +15,15 @@ This repo uses Superpowers as the workflow language and `specs/<feature>/...` as
 
 ## Task Profile Routing
 
+When the user asks to develop, implement, fix, refactor, test, document, or
+otherwise make repo-changing work, read this workflow before planning,
+dispatching, or editing.
+
 Before execution, classify the task with
 `docs/superpowers/task-profiles.md`.
+
+Read `docs/superpowers/task-profiles.md` when choosing the profile, artifacts,
+branch/worktree isolation, or authorization boundary.
 
 Use Complexity C0-C4 and Risk R0-R4, then select Profile P0-P4 by the higher
 score. Any R4 task escalates directly to P4. If classification is unclear,
@@ -339,7 +346,8 @@ Closeout and staging rules:
 
 ## Resume Protocol
 
-Any compacted, resumed, or fresh session must start with:
+Any compacted, resumed, or fresh session that is continuing an active
+Superpowers workflow must start with:
 
 1. Read `AGENTS.md`.
 2. Read `docs/superpowers/workflow.md`.
