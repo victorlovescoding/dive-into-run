@@ -1,6 +1,6 @@
 # Quality Gates Reference
 
-> Last-Verified: 2026-05-10
+> Last-Verified: 2026-05-11
 > Agent-only. What will block your commit and what architecture constraints exist.
 > Coding style/formatting rules -> `.codex/rules/coding-rules.md`, `.codex/rules/code-style.md`
 > Testing rules -> `.codex/rules/testing-standards.md`
@@ -147,17 +147,30 @@ Both audits are commit blockers through `.husky/pre-commit`.
 
 ---
 
-## 5. Dangerous Command Blocks
+## 5. Permission And Dangerous Command Blocks
 
-`block-dangerous-commands.js` (PreToolUse hook) blocks 20 patterns:
+New or changed permission `deny` rules are for true irreversible, rare
+destructive operations. The current hook also blocks a small explicit set of
+defense-bypass and secret-leak commands; treat those as hook behavior, not a
+reason to hard-deny normal workflow actions.
 
-| Category           | Examples                                                                                               |
-| ------------------ | ------------------------------------------------------------------------------------------------------ |
-| Batch delete       | `rm -rf *`, `find -delete`, `git rm -r`                                                                |
-| Git irreversible   | `git push --force`, `git reset --hard`, `git clean`, `git branch -D`, `git checkout --`, `git restore` |
-| Bypass prevention  | `--no-verify`, `-n` flag, `git add -A`, `git add .`, `git commit -a`                                   |
-| Privilege & leak   | `sudo`, `env`, `printenv`                                                                              |
-| System destruction | `mkfs`, `dd`, `reboot`, `shutdown`                                                                     |
+Do not add deny rules for deploys, ordinary writes, database migrations,
+Firestore add/update operations, CI triggers, or non-force `git push`. If a
+command is ambiguous, prompt/approval is the safer default because the user can
+judge the concrete context.
+
+`block-dangerous-commands.js` (PreToolUse hook) currently blocks these patterns:
+
+| Category                      | Examples                                                                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Filesystem destruction        | `rm -rf /`, `rm -rf *`, `find -delete`, `git rm -r`                                                           |
+| Network script execution      | `curl ... \| sh`, `wget ... \| bash`                                                                          |
+| Git ref rewrite / destruction | `git push --force`, `git push origin +branch`, `git push --delete`, `git push origin :branch`, `git reset --hard`, `git clean`, `git branch -D`, `git checkout --`, `git restore` |
+| Gate bypass                   | `git commit --no-verify`, `git commit -n`, `git add -A`, `git add --all`, `git add .`, `git commit -a`        |
+| Privilege / leak / system     | `sudo`, `env`, `printenv`, `chmod 777`, `chmod 666`, `chown root`, `mkfs`, `dd`, `fdisk`, `parted`, `reboot`, `shutdown`, `halt`, `poweroff`, writes to block devices, fork bombs |
+
+For normal feature branch publishing, use `git push -u origin HEAD`. Do not
+treat non-force push as destructive.
 
 ---
 

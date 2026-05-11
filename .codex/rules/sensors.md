@@ -8,7 +8,7 @@
 - `npm run lint:changed` / `lint:branch` — 快速確認 ESLint
 - `npm run test:browser -- --run` — 只跑 browser/jsdom Vitest unit + integration 測試
 - `bash scripts/audit-mock-boundary.sh` — 快速確認 tests 內沒有違規 mock 內部 layer
-- `bash scripts/audit-flaky-patterns.sh` — 快速確認 tests/specs 內沒有 call-count 或 fixed-sleep flaky pattern
+- `bash scripts/audit-flaky-patterns.sh` — 快速確認 `tests/` 內沒有 call-count 或 fixed-sleep flaky pattern
 - `npm run test:branch` — 只跑當前 branch 的 Vitest unit + integration 測試
 - `npm run test:e2e:branch` — 只跑當前 branch 的 Playwright E2E 測試（無 E2E 目錄時自動跳過）
 - **commit 前不需額外跑檢查** — Husky pre-commit 會自動執行全專案 lint + type-check + depcruise + spellcheck + browser Vitest + mock-boundary audit + flaky-pattern audit
@@ -41,6 +41,18 @@ Husky pre-commit 會自動執行 7 個 sequential checks，全部通過才能 co
 7. `npm run audit:flaky-patterns`（底層為 `scripts/audit-flaky-patterns.sh`）
 
 改測試 mock 時可先跑 `bash scripts/audit-mock-boundary.sh`；改 async assertion、wait 或 Playwright 等待策略時可先跑 `bash scripts/audit-flaky-patterns.sh`。
+
+## Failure Diagnosis SOP
+
+失敗時先保留可相信的證據，再修：
+
+1. 需要 exit code 決策時，避開裸 pipeline；用暫存輸出、`PIPESTATUS` 或 `set -o pipefail`。
+2. 外部工具改檔後，下一次 edit 前先重讀該檔。
+3. Pre-commit fail 後若有再改檔，重試 commit 前先 `git add <file>`，再看 `git diff --cached` 或 `git status`。
+4. 用 stash 做隔離診斷時，stash 前後都跑 `git stash list`。
+5. 大量 `TS2307 Cannot find module '@/...'` 先懷疑 tsconfig 沒載；改用 `npm run type-check` 或 `npx tsc --noEmit --project tsconfig.json`。
+
+細節與例外情境見 `.codex/references/troubleshooting.md`。
 
 ## Code Review Gate
 

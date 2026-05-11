@@ -1,8 +1,8 @@
 # Quality Score Matrix
 
-> Last Updated: 2026-05-03
+> Last Updated: 2026-05-11
 > Next Review: 2026-06-03
-> Last-Verified: 2026-05-10
+> Last-Verified: 2026-05-11
 
 Agent 開工前讀此文件，立即知道哪裡弱、該優先投資什麼。
 
@@ -112,7 +112,7 @@ Grade ladder: C → B- → B → B+ → A- → A → A+
 
 ### Domain Rubric（半量化）
 
-**主軸 — Test File Count**（specs/ 中覆蓋該 domain 的 test files）：
+**主軸 — Test File Count**（`tests/` 中覆蓋該 domain 的 test files）：
 
 | Test Files | Base Grade |
 | ---------- | ---------- |
@@ -139,11 +139,14 @@ Grade ladder: C → B- → B → B+ → A- → A → A+
 
 ```bash
 npm run type-check                          # → 0 errors = Clean
-npx eslint src --format json                # → per-layer error/warning count
+npm run lint                                # → eslint src specs tests
+npm run lint -- --format json               # → per-layer error/warning count
 npm run test:coverage                       # → coverage/coverage-summary.json (需 Firebase Emulator)
-find specs -name "*.test.*" | ...           # → per-layer test file count
+find tests \( -name "*.test.*" -o -name "*.spec.*" \) | ... # → per-layer/domain test file count
 grep -c "@param|@returns|@type" src/...     # → JSDoc annotation count
 ```
+
+此矩陣仍是人工維護的品質快照，不是自動產生的 dashboard。若分數或資料來源開始 stale，追蹤項目見 `docs/TECH_DEBT.md` 的 TD-010。
 
 ## Update Protocol
 

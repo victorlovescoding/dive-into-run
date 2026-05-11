@@ -34,6 +34,22 @@ Treat them as evidence for that feature, not as defaults for new Superpowers
 work. For new work, this document and the templates are the workflow source of
 truth unless the user explicitly narrows authority for a specific feature.
 
+## Artifact Persistence Policy
+
+Planning, analysis, progress, and review Markdown files default to scratchpad
+artifacts unless the user says they should become long-term repo docs.
+
+Ask before creating ambiguous Markdown artifacts:
+
+- long-term repo doc: tracked, maintained, and appropriate for future agents.
+- scratchpad: temporary coordination or explanation; do not stage or commit by
+  default.
+
+Approved Superpowers feature artifacts under `specs/<feature>/` are different:
+`spec.md`, `plan.md`, `tasks.md`, `handoff.md`, and `status.json` are durable
+repo workflow docs once the active workflow approves the feature. Historical
+legacy artifacts remain provenance, not current global rules.
+
 ## Skill Chain
 
 1. `using-git-worktrees`
