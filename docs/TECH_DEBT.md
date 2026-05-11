@@ -1,6 +1,6 @@
 # Tech Debt Tracker
 
-> Last Updated: 2026-05-11
+> Last Updated: 2026-05-12
 
 ## Purpose
 
@@ -37,12 +37,12 @@ items that already have an immediate task owner in an active feature plan.
 
 | ID | Severity | Domain | Description | Origin | Status | Next Trigger |
 | --- | --- | --- | --- | --- | --- | --- |
-| TD-001 | High | Firestore rules | Non-host event update rules currently allow adding unrelated fields through a known gap test, so the rules gate can preserve a security hole as passing behavior. | 2026-05-10 test quality review P0 Firestore rules | Open | Next Firestore rules change or dedicated security-rules cleanup. |
-| TD-006 | Medium | Integration tests | Integration tests can still mock broad internal surfaces such as `@/components`, `@/contexts`, and `@/app`, which can turn integration tests into shallow contract tests. | 2026-05-10 tests enforcement audit P1 integration mocks | Open | After P0 test gates are fixed; start with warning-mode audit. |
-| TD-007 | Medium | Async tests | Dense `waitFor` callbacks and call-order assertions inside `waitFor` remain possible and can hide flaky timing coupling. | 2026-05-10 tests enforcement audit P1 waitFor density | Open | Next audit-script expansion or async test cleanup. |
-| TD-008 | Medium | E2E | Some CI E2E specs are skipped, external-key dependent, or thinner than their names imply, so green E2E can overstate user-flow coverage. | 2026-05-10 test quality review P1 skipped thin E2E | Open | Next E2E feature work touching run calendar, weather, or events join/leave. |
-| TD-009 | Medium | Test helpers | Notification scroll test helper mirrors production logic and has drifted from the real hook behavior, so helper-based tests can pass while production polling/retry behavior regresses. | 2026-05-10 test quality review P2 helper drift | Open | Next notification scroll/highlight test work. |
-| TD-010 | Medium | Quality tracking | `docs/QUALITY_SCORE.md` is useful but manually updated; there is no quality-score update script or recurring scan feeding this tracker. | 2026-04-24 round1 Gap M quality GC | Deferred | When quality score updates become stale or a scheduled maintenance workflow is approved. |
+| TD-001 | High | Firestore rules | Non-host event update rules still use changedKeys() for the seat-counter allowlist, so adding a brand-new unrelated field remains allowed and is documented by an assertSucceeds known-gap test. | 2026-05-10 test quality review P0 Firestore rules; 2026-05-12 read-only recheck | Open | Next Firestore rules change or dedicated security-rules cleanup using affectedKeys() or an equivalent full-field allowlist. |
+| TD-006 | Medium | Integration tests | Integration tests still mock broad UI/App surfaces such as `@/components`, `@/contexts`, and `@/app`, which can turn integration tests into shallow contract tests. Existing mock-boundary gates block `@/lib`, `@/repo`, `@/service`, and non-provider `@/runtime` mocks, but do not cover these broader UI/app/context mocks. | 2026-05-10 tests enforcement audit P1 integration mocks; 2026-05-12 read-only recheck | Open | Next integration-test cleanup or expansion of mock-boundary audit scope. |
+| TD-007 | Medium | Async tests | Flaky async patterns are partially gated: CI blocks `toHaveBeenCalledTimes`, fixed sleeps, `page.waitForTimeout`, `waitFor` side effects, and multiple assertions inside a single `waitFor`. Remaining debt is high `waitFor` density plus call-order/count-like assertions such as `mock.calls.length >= N` or `toHaveBeenLastCalledWith` inside async waits. | 2026-05-10 tests enforcement audit P1 waitFor density; 2026-05-12 read-only recheck | Open | Next async test cleanup or expansion of flaky-pattern audit to cover waitFor density and call-order/count-like waits. |
+| TD-008 | Medium | E2E | CI E2E still overstates coverage because `run-calendar.spec.js` is entirely skipped, `weather-page.spec.js` skips without `CWA_API_KEY`, and `events-page.spec.js` is named like a join/leave flow but only verifies render smoke behavior. Seeded emulator routing has improved for most feature specs, so the remaining debt is focused on run calendar seeding, deterministic weather stubbing, and real events join/leave coverage. | 2026-05-10 test quality review P1 skipped thin E2E; 2026-05-12 read-only recheck | Open | Next E2E work touching run calendar auth/Strava seed setup, weather API stubbing, or events join/leave flows. |
+| TD-009 | Medium | Test helpers | Notification scroll helper still uses an obsolete one-shot timer and mirrors production behavior instead of importing or asserting the real scroll hook. Production post/event paths have partial direct unit/integration/E2E coverage, but helper-based tests can still pass while retry/max-attempt behavior regresses. | 2026-05-10 test quality review P2 helper drift; 2026-05-12 read-only recheck | Open | Replace helper-based notification scroll tests with real hook/component coverage, especially retry and max-attempt cases. |
+| TD-010 | Medium | Quality tracking | `docs/QUALITY_SCORE.md` remains a manually maintained quality snapshot. `doc:freshness` and CI now guard Last-Verified metadata freshness only; there is still no quality-score generation/update script or recurring scan that recomputes layer/domain scores. | 2026-04-24 round1 Gap M quality GC; 2026-05-12 read-only recheck | Deferred | When score data becomes stale, add a script that computes the matrix inputs and optionally opens or updates this tracker. |
 
 ## Resolved Items
 
@@ -71,6 +71,10 @@ items that already have an immediate task owner in an active feature plan.
 - `2026-05-10 test quality review` is the main source for confidence gaps:
   Firestore rules known-gap tests, thin E2E, async negative assertions,
   integration/unit classification drift, and helper logic drift.
+- `2026-05-12 read-only recheck` confirmed every Open Item still needs
+  follow-up; the main changes were narrower descriptions for TD-006 through
+  TD-010 and explicit recognition that doc freshness does not automate quality
+  scoring.
 - Excluded from Open Items: completed Gap A, completed Gap D1/D2/D3,
   completed provider mock cleanup, broad mutation testing, generic specs index
   work, and one-off observations without a concrete next trigger.
