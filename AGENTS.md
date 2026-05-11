@@ -71,6 +71,33 @@ no Codex-native source exists.
 - Executable tests live under `tests/`; `specs/` is for feature planning
   artifacts only.
 
+## Agent Workflow Boundaries
+
+- Superpowers lifecycle and task profile details live in
+  `docs/superpowers/workflow.md` and `docs/superpowers/task-profiles.md`; this
+  file is only the entry map.
+- Main agent is control plane only. It may read `AGENTS.md`,
+  `docs/superpowers/workflow.md`, active `handoff.md/tasks.md/status.json`,
+  `git status --short --branch`, task-local diffs or changed-file lists, and
+  exact Engineer/Reviewer evidence lines.
+- Main agent must not do broad source exploration, design fixes from its own
+  code investigation, or replace Engineer/Reviewer with self-review.
+- Repo-changing implementation goes Engineer-first. Docs-only, workflow docs,
+  ADRs, `.codex/**`, scripts, and config changes are still repo-changing work:
+  default Engineer-owned edit plus Reviewer check.
+- The only main-agent edit exception is workflow state updates that record
+  dispatch, review result, blocker, or closeout evidence.
+- Pure exploration goes to a bounded read-only Explorer subagent with
+  file/line/command/uncertainty evidence.
+- If `tasks.md`, `status.json`, or `handoff.md` drift, do not dispatch, commit,
+  push, open PRs, merge, or sync local `main`; reconcile first or block.
+- Fresh verification evidence is one command per evidence item. Do not record
+  `&&` or `;` chains as a single verification result.
+- Main agent closeout may stage, commit, push, open PRs, watch CI, and sync
+  `main` only after reviewed diff and within the user's authorization boundary.
+  Staging must list concrete files; do not use `git add .`, `git add -A`, or
+  `git add --all`.
+
 ## Common Commands
 
 ```bash

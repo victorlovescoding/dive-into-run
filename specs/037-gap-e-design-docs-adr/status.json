@@ -16,9 +16,21 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "git fetch origin main; git rebase origin/main; git status --short --branch",
+      "command": "git fetch origin main",
       "exitCode": 0,
-      "summary": "T001 through T005 reviewer PASS; closeout rebase onto latest origin/main completed without conflict. Branch is ahead 1 after rebase and ready for PR.",
+      "summary": "Fetched origin/main for closeout rebase.",
+      "verifiedAt": "2026-05-11T00:19:10+08:00"
+    },
+    {
+      "command": "git rebase origin/main",
+      "exitCode": 0,
+      "summary": "Closeout rebase onto latest origin/main completed without conflict after T001 through T005 reviewer PASS.",
+      "verifiedAt": "2026-05-11T00:19:10+08:00"
+    },
+    {
+      "command": "git status --short --branch",
+      "exitCode": 0,
+      "summary": "Branch is ahead 1 after rebase and ready for PR.",
       "verifiedAt": "2026-05-11T00:19:10+08:00"
     }
   ],

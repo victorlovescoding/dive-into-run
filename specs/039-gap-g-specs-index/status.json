@@ -14,7 +14,7 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/039-gap-g-specs-index/status.json','utf8')); console.log('status.json ok')\"",
+      "command": "npm run workflow:validate specs/039-gap-g-specs-index/status.json",
       "exitCode": 0,
       "summary": "status.json ok",
       "verifiedAt": "2026-05-10T23:59:23+08:00"

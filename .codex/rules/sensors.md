@@ -11,6 +11,7 @@
 - `bash scripts/audit-flaky-patterns.sh` — 快速確認 `tests/` 內沒有 call-count 或 fixed-sleep flaky pattern
 - `npm run audit:use-effect-data-fetching` — 快速確認 UI/components 沒有 effect data fetch，runtime hooks 沒有 suppress exhaustive-deps
 - `npm run audit:playwright-official-only` — 快速確認 E2E 沒有 `.only`、fixed sleep、非官方 Playwright imports
+- `npm run workflow:validate` — 快速確認 `specs/*/status.json` workflow state；`lastVerification[].command` 必須一筆一 command，不能用 `&&` 或 `;` 串接
 - `npm run test:branch` — 只跑當前 branch 的 Vitest unit + integration 測試
 - `npm run test:e2e:branch` — 只跑當前 branch 的 Playwright E2E 測試（無 E2E 目錄時自動跳過）
 - **commit 前不需額外跑檢查** — Husky pre-commit 會自動執行全專案 lint + type-check + depcruise + spellcheck + browser Vitest + mock-boundary audit + flaky-pattern audit + useEffect data-fetch audit + Playwright official audit
@@ -64,7 +65,7 @@ Husky pre-commit 會自動執行 9 個 sequential checks，全部通過才能 co
 8. `npm run audit:use-effect-data-fetching`
 9. `npm run audit:playwright-official-only`
 
-改測試 mock 時可先跑 `bash scripts/audit-mock-boundary.sh`；改 async assertion、wait 或 Playwright 等待策略時可先跑 `bash scripts/audit-flaky-patterns.sh`。改 UI/component/runtime hook effects 時跑 `npm run audit:use-effect-data-fetching`；改 E2E 或 E2E helpers 時跑 `npm run audit:playwright-official-only`。
+改測試 mock 時可先跑 `bash scripts/audit-mock-boundary.sh`；改 async assertion、wait 或 Playwright 等待策略時可先跑 `bash scripts/audit-flaky-patterns.sh`。改 UI/component/runtime hook effects 時跑 `npm run audit:use-effect-data-fetching`；改 E2E 或 E2E helpers 時跑 `npm run audit:playwright-official-only`。改 Superpowers workflow state 時跑 `npm run workflow:validate`。
 
 ## Failure Diagnosis SOP
 

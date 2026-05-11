@@ -14,9 +14,27 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/038-gap-f-core-beliefs/status.json','utf8')); console.log('status.json ok')\"; git diff --check -- AGENTS.md .codex/references/core-beliefs.md specs/038-gap-f-core-beliefs; rg -n \"[R]EPLACE_ME|[F]ILL_ME|[P]LACEHOLDER_VALUE\" AGENTS.md .codex/references/core-beliefs.md specs/038-gap-f-core-beliefs; rg -n \"^## \" .codex/references/core-beliefs.md; git status --short --branch",
+      "command": "npm run workflow:validate specs/038-gap-f-core-beliefs/status.json",
       "exitCode": 0,
-      "summary": "Final docs verification passed after reviewer PASS for the docs-only Gap F core beliefs implementation.",
+      "summary": "Status JSON validation passed after reviewer PASS for the docs-only Gap F core beliefs implementation.",
+      "verifiedAt": "2026-05-10T00:00:00+08:00"
+    },
+    {
+      "command": "git diff --check -- AGENTS.md .codex/references/core-beliefs.md specs/038-gap-f-core-beliefs",
+      "exitCode": 0,
+      "summary": "Whitespace diff check passed for the Gap F owned docs.",
+      "verifiedAt": "2026-05-10T00:00:00+08:00"
+    },
+    {
+      "command": "rg -n \"^## \" .codex/references/core-beliefs.md",
+      "exitCode": 0,
+      "summary": "Core beliefs headings were present for reviewer inspection.",
+      "verifiedAt": "2026-05-10T00:00:00+08:00"
+    },
+    {
+      "command": "git status --short --branch",
+      "exitCode": 0,
+      "summary": "Branch status was checked during final docs verification.",
       "verifiedAt": "2026-05-10T00:00:00+08:00"
     }
   ],

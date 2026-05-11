@@ -4,9 +4,15 @@
 
 - This file is the human-readable task source of truth for `specs/<feature>/`.
 - On resume, read `AGENTS.md`, `docs/superpowers/workflow.md`, `handoff.md`, this file, and `status.json` before dispatching work.
-- Main agent is coordinator only. Code and executable test changes belong to Engineer subagents.
+- Main agent is control plane only. Repo-changing edits belong to Engineer
+  subagents, including code, executable tests, docs, workflow docs, ADRs,
+  `.codex/**`, scripts, and config.
+- If this file, `status.json`, and `handoff.md` disagree, reconcile or block
+  before dispatch, commit, push, PR, merge, or local `main` sync.
 - A task can become `completed` only after `review_passed` and coordinator
   state sync.
+- Command evidence is one command per entry. Do not combine commands with `&&`
+  or `;`.
 
 ## Team And Parallelism
 
@@ -26,6 +32,7 @@
 - **Engineer**: <role>
 - **Reviewer**: <role>
 - **Commit checkpoint**: <none / phase commit name>
+- **Authorization boundary**: edit=<yes/no>, commit=<yes/no>, push=<yes/no>, PR=<yes/no>, merge=<yes/no>, local-main-sync=<yes/no>
 
 Scope:
 
@@ -62,6 +69,8 @@ Verification commands and expected signal:
 | Command | Expected signal |
 | ------- | --------------- |
 | `<command>` | <exit 0 and key output / no relevant errors> |
+
+> Use one command per row. Split shell chains into separate rows.
 
 Reviewer PASS criteria:
 
