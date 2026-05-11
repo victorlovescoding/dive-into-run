@@ -9,6 +9,7 @@ This repo uses Superpowers as the workflow language and `specs/<feature>/...` as
 - Keep the main agent thin: dispatcher, status owner, and user-facing coordinator.
 - Put feature state on disk so compacted or fresh sessions can resume from files, not transcript memory.
 - Require Engineer + Reviewer pairing for every independently deliverable task slice.
+- Route repo-changing edits through Engineer subagents first, including development, bugfix, refactor, testing, and docs work.
 - Preserve repo conventions: `AGENTS.md` is the entry map, `specs/` stores planning artifacts, and executable tests live under `tests/`.
 
 ## Task Profile Routing
@@ -20,18 +21,24 @@ Use Complexity C0-C4 and Risk R0-R4, then select Profile P0-P4 by the higher
 score. Any R4 task escalates directly to P4. If classification is unclear,
 choose the higher profile or stop and ask.
 
-Bugfix, maintenance, refactor, and docs work do not automatically use the full
-feature five-file set. P1/P2 work uses the smallest explicit scope and fresh
-verification that proves the change. P3 work uses an explicit task contract and
-Engineer/Reviewer gate; keep durable artifacts compact unless the task crosses
-sessions or needs dispatcher continuity.
+Bugfix, maintenance, refactor, testing, docs, and other repo-changing work do
+not automatically use the full feature five-file set. P1/P2 work uses the
+smallest explicit scope and fresh verification that proves the change. P3 work
+uses an explicit task contract; keep durable artifacts compact unless the task
+crosses sessions or needs dispatcher continuity.
+
+P1/P2/P3 are lighter in artifacts and ceremony, not in ownership. For any
+non-read-only repo-changing work, the main agent defaults to
+dispatcher/coordinator, sends actual edits first to an Engineer subagent, and
+uses a Reviewer subagent check before completion. Pure read-only exploration may
+use a read-only research subagent and usually needs no Reviewer.
 
 New features default to P4. P4 work uses this document's Required Feature
 Artifacts and full feature lifecycle.
 
 Task profiles only route workflow weight. They do not weaken branch isolation,
-owned-file/non-scope boundaries, fresh verification, PR/CI expectations, or
-stop conditions.
+owned-file/non-scope boundaries, Engineer-first editing, Reviewer-default
+checks, fresh verification, PR/CI expectations, or stop conditions.
 
 ## Required Feature Artifacts
 
@@ -93,8 +100,10 @@ legacy artifacts remain provenance, not current global rules.
    - New long-term cross-feature decisions should create or update an ADR.
 5. `subagent-driven-development`
    - Main agent dispatches fresh task-local subagents.
-   - Engineer owns implementation for one task slice.
-   - Reviewer verifies the same slice before the task can be marked complete.
+   - Engineer owns implementation for one task slice, including docs-only and
+     test-only repo changes.
+   - Reviewer verifies the same non-read-only repo-changing slice before the
+     task can be marked complete.
 6. `verification-before-completion`
    - No completion, commit, push, PR, merge, or local sync claim without fresh evidence.
 7. `finishing-a-development-branch`
@@ -106,6 +115,8 @@ The main agent may:
 
 - Read routing/state artifacts: `AGENTS.md`, this workflow, `spec.md`, `plan.md`, `tasks.md`, `handoff.md`, `status.json`.
 - Dispatch Engineer, Reviewer, debugging, and read-only research subagents.
+- Use read-only research subagents for pure exploration; these usually need no
+  Reviewer because they do not change the repo.
 - Update `tasks.md`, `handoff.md`, and `status.json` after `review_passed`,
   `review_rejected`, or a real blocker.
 - Run or request verification needed to validate workflow state.
@@ -115,7 +126,10 @@ The main agent may:
 
 The main agent must not:
 
-- Directly edit production code or executable tests during implementation tasks.
+- Directly edit production code, executable tests, docs, or other repo files
+  during development, bugfix, refactor, testing, docs, or other repo-changing
+  tasks; actual edits go first to an Engineer subagent. Workflow state updates
+  listed above are the narrow exception.
 - Expand an Engineer write set after dispatch without an explicit plan update.
 - Mark a task `completed` before `review_passed`.
 - Treat subagent reports as proof without checking diff and verification evidence.
@@ -149,7 +163,8 @@ Task completion rule:
 
 1. Engineer implements only the owned scope.
 2. Engineer reports files changed, commands run, exit codes, evidence, risks, and status.
-3. Reviewer inspects the task-local diff and reruns the relevant verification.
+3. Reviewer inspects the task-local diff and reruns the relevant verification
+   for non-read-only repo-changing work.
 4. Reviewer records `review_passed` or `review_rejected`.
 5. Main agent updates task state to `completed` only after `review_passed` and
    state sync.
@@ -202,12 +217,14 @@ Use phase commits:
 
 Closeout default after the one-time start authorization:
 
-1. Verify fresh local gates.
-2. Push feature branch.
-3. Open PR.
-4. Wait for required CI checks.
-5. Merge PR on GitHub when green.
-6. Fast-forward local `main` to `origin/main`.
+1. Work from an isolated branch/worktree, never direct-to-`main`.
+2. Verify fresh local gates.
+3. Commit reviewed changes.
+4. Push the feature branch.
+5. Open PR.
+6. Wait for required `ci` and `e2e` checks to complete successfully.
+7. Merge PR on GitHub when green.
+8. Fast-forward local `main` to `origin/main`.
 
 Do not create checkbox-only commits after CI if doing so would invalidate the head SHA that CI validated. Record delivery evidence in the PR and final report instead.
 
