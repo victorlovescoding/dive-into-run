@@ -7,19 +7,24 @@
 
 ---
 
-## 1. 導讀與分工
+## 1. 導讀與 routing
 
-本 handbook 是**查找型 reference**，不取代 `test-driven-development` skill。兩者分工：
+本 handbook 是**查找型 reference**，不取代 repo-specific `test-driven-development` skill，也不應在每次測試或 bugfix 時整份展開 550+ 行。下一節 `Current Blocking Rules` 是必讀摘要；其餘章節只按任務類型載入。
 
-| 情境                             | 工具                                                     |
+| 情境                             | 讀什麼                                                   |
 | -------------------------------- | -------------------------------------------------------- |
-| 要寫新的測試（從 RED 開始）      | 執行 `test-driven-development` skill（強制 5 步驟流程）  |
-| 已在寫測試、想查某個規範或範例   | 讀本 handbook 對應章節                                   |
+| 要寫新的測試（從 RED 開始）      | 執行 `.agents/skills/test-driven-development` skill（repo-specific 5 步驟流程） |
+| 只需要避免 commit/CI blocker     | 只讀 `Current Blocking Rules`                            |
+| Unit test / pure logic           | 讀 `4. Unit Tests 指南`                                  |
+| Integration / React interaction  | 讀 `5. Integration Tests 指南`                           |
+| E2E / Playwright                 | 讀 `6. E2E Tests 指南`                                   |
+| Server Vitest / Firebase Emulator server test | 讀 `.agents/skills/test-driven-development` 的 `Server Tests`、`.codex/rules/testing-standards.md`、`12. 快速查找表` |
+| Test helper placement            | 讀 `8. Fixture / Test Data`、`12. 快速查找表`             |
 | 想看 mock / JSDoc 的**語法細節** | 讀 `.agents/skills/test-driven-development/references/coding-style.md`、`jsdoc-cheatsheet.md` |
-| 想照抄**測試檔結構**             | 讀 `.agents/skills/test-driven-development/references/boilerplate.js`                       |
-| 想知道**反模式**詳細案例         | 讀 `.agents/skills/test-driven-development/references/testing-anti-patterns.md`             |
+| 想照抄**測試檔結構**             | 讀 `.agents/skills/test-driven-development/references/boilerplate.js` |
+| 想知道**反模式**詳細案例         | 讀 `.agents/skills/test-driven-development/references/testing-anti-patterns.md` |
 
-Skill 是**流程**（做什麼、照什麼順序），handbook 是**字典**（怎麼做、為何如此）。
+Skill 是**流程**（做什麼、照什麼順序），handbook 是**字典**（怎麼做、為何如此）。Superpowers generic TDD 可作通用方法論，但不能取代本 repo 的 `.agents/skills/test-driven-development` 與其 reference docs。
 
 ---
 
