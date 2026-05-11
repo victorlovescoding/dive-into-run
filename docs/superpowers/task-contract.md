@@ -7,15 +7,17 @@ This is the canonical contract for one independently deliverable task slice in
 
 ## Roles
 
-- Main agent: coordinator only. It owns dispatch, status updates, user-facing
-  summaries, and stop-condition enforcement.
+- Main agent: control plane only. It owns dispatch, status updates,
+  user-facing summaries, authorization-boundary tracking, and stop-condition
+  enforcement.
 - Engineer: implements exactly one task attempt inside the owned write set.
 - Reviewer: checks the task-local diff, reruns relevant verification, and
   records `review_passed`, `review_rejected`, or `blocked`.
 
-The main agent must not edit production code or executable tests for
-implementation tasks. It may edit workflow state after `review_passed`,
-`review_rejected`, or a real blocker.
+The main agent must not edit production code, executable tests, docs, workflow
+docs, ADRs, `.codex/**`, scripts, config, or other repo-changing files for
+implementation tasks. It may edit workflow state only to record dispatch,
+`review_passed`, `review_rejected`, a real blocker, or closeout evidence.
 
 ## Required Fields
 
@@ -34,6 +36,9 @@ Each task must record:
 - Acceptance criteria: behavior or doc outcomes required for completion.
 - Verification commands with expected signal: exact commands and the success
   signal to look for.
+- Authorization boundary: whether automation may edit, commit, push, open PR,
+  merge, and sync local `main`; P1/P2/P3 without approved `spec.md` must record
+  this explicitly.
 - Reviewer PASS criteria: checks required before `review_passed`.
 - Reviewer REJECT criteria: defects that force `review_rejected`.
 - Evidence: Engineer report, Reviewer report, command output summary, and
@@ -119,11 +124,13 @@ Reviewer dispatch must include:
   state before dispatch.
 - Drift between those files is a stop condition.
 - The coordinator must reconcile drift before dispatching an Engineer or
-  Reviewer.
+  Reviewer, committing, pushing, opening a PR, merging, or syncing local
+  `main`.
 - `handoff.md` must name the active task, active wave, latest reviewer decision,
   and blocker state from `status.json`.
 - `tasks.md` remains the human-readable task board; `status.json` mirrors the
   active machine state; `handoff.md` carries the next-session summary.
+- Reviewer PASS cannot be replaced by main-agent self-check.
 
 ## Boundaries
 
@@ -181,3 +188,7 @@ Reports must be concise but auditable:
 - Changed files summary: exact paths and the reason each file changed.
 
 `status.json.lastVerification` remains command-oriented: one object per command.
+Do not record shell chains with `&&` or `;` as one command entry. Split them
+into separate entries with their own exit codes and summaries. Subagent
+narrative is only a hint unless backed by raw command summary, file:line
+evidence, or reviewed diff.

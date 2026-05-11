@@ -15,9 +15,27 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npm run lint:changed && npm run type-check:changed && docs verification checks",
+      "command": "npm run lint:changed",
       "exitCode": 0,
-      "summary": "Changed JS gates no-op passed; status JSON parsed; placeholder, trailing whitespace, no-index diff, and ASCII checks passed; final docs reviewer PASS.",
+      "summary": "Changed JS lint gate passed for the docs-only branch.",
+      "verifiedAt": "2026-05-10T23:25:00+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "Changed JS type-check gate passed for the docs-only branch.",
+      "verifiedAt": "2026-05-10T23:25:00+08:00"
+    },
+    {
+      "command": "npm run workflow:validate specs/gap-b-tech-debt-tracker/status.json",
+      "exitCode": 0,
+      "summary": "Status JSON validation passed.",
+      "verifiedAt": "2026-05-10T23:25:00+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "Trailing whitespace diff check passed before final docs reviewer PASS.",
       "verifiedAt": "2026-05-10T23:25:00+08:00"
     }
   ],

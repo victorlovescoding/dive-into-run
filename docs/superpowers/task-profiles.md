@@ -57,6 +57,23 @@ P1 and P2 do not create the full `spec.md`, `plan.md`, `tasks.md`,
 owned files, Engineer-first edits, Reviewer check for non-read-only repo
 changes, and fresh verification evidence.
 
+When P1/P2 do not use full `specs/` artifacts, the main agent must still keep a
+minimum task brief in the conversation, PR body, or durable handoff if the work
+crosses sessions. Minimum task brief schema:
+
+- Profile: P1/P2/P3 classification with Complexity/Risk reason.
+- Branch/worktree decision: current branch or worktree path and why it is
+  sufficient.
+- Scope: exact allowed change.
+- Non-scope: explicit exclusions and forbidden expansion.
+- Owned files: exact write set for Engineer.
+- Read-only context: exact files or commands Engineer may inspect.
+- Acceptance criteria: observable outcome or doc rule that must hold.
+- Verification command and expected signal: one command per entry.
+- Engineer/Reviewer: named roles or subagent assignments.
+- Authorization boundary: whether automation may edit, commit, push, open PR,
+  merge, and sync local `main`.
+
 P3 should keep durable artifacts compact. Create or update a durable handoff,
 task note, or status artifact only when the task spans sessions, needs
 dispatcher continuity, or would otherwise depend on transcript memory.
@@ -142,10 +159,20 @@ Lightweight profiles do not bypass repo safety rules:
 - For P1/P2/P3 repo changes, lightweight means less artifact weight, not
   main-agent self-editing.
 - The main agent defaults to dispatcher/coordinator; actual development,
-  bugfix, refactor, testing, docs, and other repo edits go first to an Engineer
-  subagent.
+  bugfix, refactor, testing, docs, workflow docs, ADR, `.codex/**`, scripts,
+  config, and other repo edits go first to an Engineer subagent.
+- The main agent may read only control-plane context, task-local diffs, changed
+  file lists, and exact evidence lines. Broad domain or source exploration must
+  be delegated to a bounded read-only Explorer subagent.
 - Non-read-only repo-changing work defaults to a Reviewer subagent check before
   completion.
+- P1/P2/P3 without approved `spec.md` must record an authorization boundary.
+  Starting implementation is not authorization to commit, push, open PR, merge,
+  or sync local `main`.
+- Workflow state drift between `tasks.md`, `status.json`, and `handoff.md`
+  blocks dispatch and closeout until reconciled.
+- Verification evidence is one command per entry. Do not combine commands with
+  `&&` or `;`.
 - Respect owned files, non-scope, and user changes.
 - Keep branch/worktree, commit, push feature branch, PR, required `ci` + `e2e`
   green, GitHub merge, and local `main` fast-forward expectations from

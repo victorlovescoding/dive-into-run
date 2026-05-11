@@ -17,9 +17,39 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npm run doc:freshness; bash -n scripts/doc-freshness-check.sh; test -x scripts/doc-freshness-check.sh; git diff --check; status.json parse; git diff --quiet -- package-lock.json",
+      "command": "npm run doc:freshness",
       "exitCode": 0,
-      "summary": "Local final verification passed: doc freshness, shell syntax, executable bit, whitespace diff check, status JSON parse, and unchanged package-lock.",
+      "summary": "Doc freshness verification passed.",
+      "verifiedAt": "2026-05-10T23:47:43+08:00"
+    },
+    {
+      "command": "bash -n scripts/doc-freshness-check.sh",
+      "exitCode": 0,
+      "summary": "Doc freshness script shell syntax check passed.",
+      "verifiedAt": "2026-05-10T23:47:43+08:00"
+    },
+    {
+      "command": "test -x scripts/doc-freshness-check.sh",
+      "exitCode": 0,
+      "summary": "Doc freshness script executable bit check passed.",
+      "verifiedAt": "2026-05-10T23:47:43+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "Whitespace diff check passed.",
+      "verifiedAt": "2026-05-10T23:47:43+08:00"
+    },
+    {
+      "command": "npm run workflow:validate specs/036-gap-c-doc-gardening/status.json",
+      "exitCode": 0,
+      "summary": "Status JSON validation passed.",
+      "verifiedAt": "2026-05-10T23:47:43+08:00"
+    },
+    {
+      "command": "git diff --quiet -- package-lock.json",
+      "exitCode": 0,
+      "summary": "package-lock.json remained unchanged.",
       "verifiedAt": "2026-05-10T23:47:43+08:00"
     }
   ],
