@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "incremental": false,
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.strict.tsbuildinfo"
+  },
+  "files": [
+    "next.config.mjs",
+    "scripts/check-next-build-budget.mjs",
+    "scripts/run-knip-report.mjs",
+    "scripts/type-check-strict-report.mjs"
+  ],
+  "include": []
+}

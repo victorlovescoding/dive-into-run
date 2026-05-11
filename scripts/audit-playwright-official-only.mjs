@@ -397,6 +397,7 @@ function findKeyword(source, keyword, start, end) {
  */
 function isAllowedImportSpecifier(specifier) {
   return specifier === '@playwright/test'
+    || specifier === '@axe-core/playwright'
     || specifier.startsWith('.')
     || builtinSpecifiers.has(specifier);
 }
