@@ -15,9 +15,9 @@
 | -------------------------------- | -------------------------------------------------------- |
 | 要寫新的測試（從 RED 開始）      | 執行 `test-driven-development` skill（強制 5 步驟流程）  |
 | 已在寫測試、想查某個規範或範例   | 讀本 handbook 對應章節                                   |
-| 想看 mock / JSDoc 的**語法細節** | 讀 `.codex/skills/test-driven-development/references/coding-style.md`、`jsdoc-cheatsheet.md` |
-| 想照抄**測試檔結構**             | 讀 `.codex/skills/test-driven-development/references/boilerplate.js`                       |
-| 想知道**反模式**詳細案例         | 讀 `.codex/skills/test-driven-development/references/testing-anti-patterns.md`             |
+| 想看 mock / JSDoc 的**語法細節** | 讀 `.agents/skills/test-driven-development/references/coding-style.md`、`jsdoc-cheatsheet.md` |
+| 想照抄**測試檔結構**             | 讀 `.agents/skills/test-driven-development/references/boilerplate.js`                       |
+| 想知道**反模式**詳細案例         | 讀 `.agents/skills/test-driven-development/references/testing-anti-patterns.md`             |
 
 Skill 是**流程**（做什麼、照什麼順序），handbook 是**字典**（怎麼做、為何如此）。
 
@@ -109,7 +109,7 @@ it('should return the correct sum', () => {
 
 ### vi.mock + typed alias
 
-語法細節見 `.codex/skills/test-driven-development/references/coding-style.md`。一句話規則：`vi.mock()` 後**立刻**為每個被 mock 的 function 建 `/** @type {import('vitest').Mock} */` alias，否則 `.mockResolvedValueOnce` 會觸發 TS2339。
+語法細節見 `.agents/skills/test-driven-development/references/coding-style.md`。一句話規則：`vi.mock()` 後**立刻**為每個被 mock 的 function 建 `/** @type {import('vitest').Mock} */` alias，否則 `.mockResolvedValueOnce` 會觸發 TS2339。
 
 ### 實際範例
 
@@ -340,7 +340,7 @@ test.describe.configure({ mode: 'serial' });
 
 - 不要重複 mock `vitest.setup.jsx` 已 mock 的東西
 - 每個 `vi.mock()` 後**必須**加 typed alias
-- Mock typedef 欄位名**必須**對齊 production function 參數（見 `.codex/skills/test-driven-development/references/coding-style.md`）
+- Mock typedef 欄位名**必須**對齊 production function 參數（見 `.agents/skills/test-driven-development/references/coding-style.md`）
 
 ---
 
@@ -363,7 +363,7 @@ const mockResponse = {
 };
 ```
 
-詳細見 `.codex/skills/test-driven-development/references/testing-anti-patterns.md` Anti-Pattern 4。
+詳細見 `.agents/skills/test-driven-development/references/testing-anti-patterns.md` Anti-Pattern 4。
 
 ### Typedef 對齊生產型別
 
@@ -416,7 +416,7 @@ const mockResponse = {
 
 ## 10. Anti-Patterns 速查表
 
-詳細案例見 `.codex/skills/test-driven-development/references/testing-anti-patterns.md`。
+詳細案例見 `.agents/skills/test-driven-development/references/testing-anti-patterns.md`。
 
 | #   | 反模式                          | 一句話修復                              |
 | --- | ------------------------------- | --------------------------------------- |
@@ -522,11 +522,11 @@ test.describe.configure({ mode: 'serial' });
 
 | 用途             | 路徑                                                                         |
 | ---------------- | ---------------------------------------------------------------------------- |
-| TDD skill 入口   | `.codex/skills/test-driven-development/SKILL.md`                            |
-| Mock 語法規範    | `.codex/skills/test-driven-development/references/coding-style.md`          |
-| JSDoc 進階       | `.codex/skills/test-driven-development/references/jsdoc-cheatsheet.md`      |
-| 測試 boilerplate | `.codex/skills/test-driven-development/references/boilerplate.js`           |
-| 反模式全集       | `.codex/skills/test-driven-development/references/testing-anti-patterns.md` |
+| TDD skill 入口   | `.agents/skills/test-driven-development/SKILL.md`                            |
+| Mock 語法規範    | `.agents/skills/test-driven-development/references/coding-style.md`          |
+| JSDoc 進階       | `.agents/skills/test-driven-development/references/jsdoc-cheatsheet.md`      |
+| 測試 boilerplate | `.agents/skills/test-driven-development/references/boilerplate.js`           |
+| 反模式全集       | `.agents/skills/test-driven-development/references/testing-anti-patterns.md` |
 | Vitest 配置      | `vitest.config.mjs`、`vitest.setup.jsx`                                      |
 | Playwright 配置  | `playwright.config.mjs`、`playwright.emulator.config.mjs`                    |
 | E2E 共用 helper  | `tests/_helpers/e2e-helpers.js`                                              |
