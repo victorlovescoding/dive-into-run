@@ -45,6 +45,12 @@ jobs:
       - name: Doc freshness
         run: npm run doc:freshness
 
+      - name: Workflow state check
+        run: npm run workflow:check
+
+      - name: Workflow links check
+        run: npm run workflow:links
+
       - name: Lint
         run: npm run lint -- --max-warnings 0
 
