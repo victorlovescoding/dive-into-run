@@ -63,6 +63,26 @@ dispatcher continuity, or would otherwise depend on transcript memory.
 
 P4 uses the complete feature workflow and the required five-file artifact set.
 
+## Workflow Routing Decision Table
+
+Use this table after the C/R classification. The table chooses the lightest
+workflow that still preserves branch isolation, owned-file boundaries,
+Engineer-first edits, Reviewer checks for repo changes, fresh verification, and
+PR/CI closeout.
+
+| Task type / boundary case | Typical C/R -> Profile | Branch / worktree | Specs artifact | Engineer | Reviewer | Verification | Closeout |
+| ------------------------- | ---------------------- | ----------------- | -------------- | -------- | -------- | ------------ | -------- |
+| Read-only analysis, triage, or explanation | C0/R0 -> P0 | None | None | Optional read-only research subagent | Not required | Evidence from inspected files, commands, or links | Answer only; no commit |
+| Docs-only typo, wording, or small reference fix | C1/R0 -> P1 | Branch; worktree if current workspace is occupied | No `specs/`; conversation/task brief evidence | Required for repo-changing edit | Required compact check | `git diff --check` plus focused docs/link check when relevant | Commit/PR/CI if tracked repo change |
+| Docs-only workflow policy or durable process doc | C2-C3/R1-R3 -> P2/P3 | Branch for P2, worktree for P3 | P2 no `specs/`; P3 compact task contract only when session continuity needs it | Required | Required | Changed docs matrix, local link/workflow checks if workflow-critical | Commit/PR/CI; do not skip because it is "just docs" |
+| Test-only change | C1-C3/R1-R3 -> P1-P3 | Branch or worktree by profile; worktree for E2E/emulator or flaky cleanup | No `specs/` for P1/P2; compact P3 artifact if multi-agent | Required | Required | Target test, `lint:changed`, `type-check:changed`, relevant audits | Commit/PR/CI |
+| CI-only or workflow automation script | C2-C3/R2-R3 -> P2/P3 | Branch or worktree by profile; worktree when it can block other work | No full five-file set unless multi-session program | Required | Required | Script self-check, affected workflow command, `lint:changed`, `type-check:changed` | Commit/PR/CI; watch required checks |
+| Dependency metadata or package script change, no install | C1-C2/R2 | Branch; worktree if shared workspace | No `specs/` by default | Required | Required | `npm run <changed-script>`, `lint:changed`, `type-check:changed`; stop if lockfile changes unexpectedly | Commit/PR/CI |
+| New dependency, lockfile update, security-sensitive package change | Any/R4 -> P4 | Worktree | Full five-file set | Required | Required | Install/build/test gates from plan plus dependency/security rationale | Commit/PR/CI; ask before broad dependency change |
+| Review-comment fix on an existing PR | Usually C1-C2/R1-R3 -> P1-P3 | Existing PR branch/worktree; create worktree if dirty or parallel work exists | No new `specs/` unless the PR already uses them | Required | Required | Reproduce reviewer concern and rerun affected gate | Push PR branch; wait for required checks |
+| Hotfix | Usually C1-C3/R2-R4 | Fresh branch/worktree from updated `main`; never direct-to-`main` | P1/P2 no `specs/`; R4 uses P4 | Required | Required | Minimal reproduction plus the smallest high-signal regression gate | PR/CI/merge; ask before bypassing normal closeout |
+| New product feature or multi-session program | C4 or feature default -> P4 | Worktree | Full `specs/<feature>/` five-file set | Required per task slice | Required per task slice | Plan-defined gates, integration gate after waves | Commit phases, PR, required `ci` + `e2e`, GitHub merge |
+
 ## Specs Artifact Policy
 
 `specs/` is durable workflow state, not a notebook for every bugfix. Small
