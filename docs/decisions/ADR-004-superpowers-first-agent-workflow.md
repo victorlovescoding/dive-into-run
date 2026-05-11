@@ -22,6 +22,7 @@ Partially Verified
 - `AGENTS.md` states `speckit.*` is legacy workflow and is not used by default unless the user explicitly requests it.
 - `docs/superpowers/workflow.md` defines Superpowers as the repo workflow language and `specs/<feature>/...` as the durable state backend.
 - `docs/superpowers/workflow.md` requires `spec.md`, `plan.md`, `tasks.md`, `handoff.md`, and `status.json` under each workflow feature.
+- `docs/superpowers/workflow.md` defines the main agent as dispatcher/coordinator for repo-changing work and routes edits through Engineer subagents first.
 - `docs/superpowers/status.schema.json` defines the canonical `status.json` shape for current workflow features.
 - `npm run workflow:validate` validates current `specs/*/status.json` files against the canonical workflow-state contract.
 - `specs/037-gap-e-design-docs-adr/tasks.md` records that `status.json` adoption is still a known workflow gap to acknowledge in this ADR.
@@ -71,6 +72,12 @@ new session explicitly upgrades them.
 
 - New long-running feature work must keep state on disk instead of relying on chat transcript continuity.
 - The main agent should coordinate, dispatch, update workflow state, and verify evidence rather than directly editing production code during implementation task slices.
+- For development, bugfix, refactor, testing, docs, and other repo-changing
+  work, actual edits should go first to an Engineer subagent; the main agent
+  remains dispatcher/coordinator except for narrow workflow state updates.
+- Non-read-only repo-changing work should receive a Reviewer subagent check
+  before completion. Pure read-only exploration may use a read-only subagent
+  and usually needs no Reviewer.
 - Engineer and Reviewer responsibilities must be recorded in `tasks.md`.
 - Resume flows should read `AGENTS.md`, `docs/superpowers/workflow.md`, `handoff.md`, `tasks.md`, and `status.json` before continuing.
 - Historical specs may be incomplete, stale, or built under older conventions; agents must inspect the actual files before treating them as compliant.
@@ -85,6 +92,8 @@ Before starting or resuming substantial feature work:
 - Read `spec.md`, `plan.md`, `tasks.md`, `handoff.md`, and `status.json` when present.
 - If any required state file is missing, stale, or contradictory, treat that as a workflow gap to reconcile rather than inventing state from memory.
 - Do not default to `speckit.*`.
+- Do not treat P1/P2/P3 as permission for main-agent self-editing; those
+  profiles only reduce artifact and coordination weight.
 - Do not claim historical compliance without checking the feature directory.
 
 ## Verification

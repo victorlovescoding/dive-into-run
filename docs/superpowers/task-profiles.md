@@ -4,7 +4,8 @@
 
 This document routes work into the lightest Superpowers workflow profile that
 still preserves branch isolation, owned-file discipline, fresh verification,
-and PR/CI closeout.
+Engineer-first edits, Reviewer-default checks for repo changes, and PR/CI
+closeout.
 
 Use this before execution for bugfix, maintenance, refactor, docs, and feature
 work. If classification is unclear, choose the higher profile or stop and ask.
@@ -45,15 +46,16 @@ small.
 
 | Profile | Name | Default workflow |
 | ------- | ---- | ---------------- |
-| P0 | Read-only | Inspect, answer, or report. No edits. |
-| P1 | Quick Fix | Narrow edit, focused verification, concise final evidence. |
-| P2 | Standard Bugfix/Maintenance | Focused plan in conversation or task brief, targeted test/verification, optional reviewer based on risk. |
+| P0 | Read-only | Inspect, answer, or report. No edits; read-only subagent is allowed and usually needs no Reviewer. |
+| P1 | Quick Fix | Narrow Engineer edit, focused verification, compact Reviewer check, concise final evidence. |
+| P2 | Standard Bugfix/Maintenance | Focused plan in conversation or task brief, Engineer-owned edit, targeted test/verification, Reviewer check. |
 | P3 | High-risk Fix/Refactor | Explicit task contract, owned files, targeted Engineer/Reviewer pass, compact durable artifact only when work crosses sessions. |
 | P4 | Full Feature/Program | Full Superpowers feature workflow and durable five-file artifact set under `specs/<feature>/`. |
 
 P1 and P2 do not create the full `spec.md`, `plan.md`, `tasks.md`,
 `handoff.md`, and `status.json` set by default. They still need clear scope,
-owned files, and fresh verification evidence.
+owned files, Engineer-first edits, Reviewer check for non-read-only repo
+changes, and fresh verification evidence.
 
 P3 should keep durable artifacts compact. Create or update a durable handoff,
 task note, or status artifact only when the task spans sessions, needs
@@ -65,9 +67,18 @@ P4 uses the complete feature workflow and the required five-file artifact set.
 
 Lightweight profiles do not bypass repo safety rules:
 
-- Work must stay on a branch, never direct-to-`main`.
+- Repo-changing work must stay on a branch/worktree, never direct-to-`main`.
+- For P1/P2/P3 repo changes, lightweight means less artifact weight, not
+  main-agent self-editing.
+- The main agent defaults to dispatcher/coordinator; actual development,
+  bugfix, refactor, testing, docs, and other repo edits go first to an Engineer
+  subagent.
+- Non-read-only repo-changing work defaults to a Reviewer subagent check before
+  completion.
 - Respect owned files, non-scope, and user changes.
-- Keep branch/PR/CI closeout expectations from `AGENTS.md`.
+- Keep branch/worktree, commit, push feature branch, PR, required `ci` + `e2e`
+  green, GitHub merge, and local `main` fast-forward expectations from
+  `AGENTS.md`.
 - Run fresh verification before claiming completion.
 - Stop on unclear scope, contradictory docs, forbidden scope expansion, or
   destructive/irreversible operations.
@@ -76,7 +87,7 @@ Lightweight profiles do not bypass repo safety rules:
 
 | Scenario | Classification | Profile | Notes |
 | -------- | -------------- | ------- | ----- |
-| Fix a typo or update docs wording | C1/R0 | P1 | No full feature artifact set; verify with focused search or docs check. |
+| Fix a typo or update docs wording | C1/R0 | P1 | No full feature artifact set; Engineer edit plus compact Reviewer check; verify with focused search or docs check. |
 | Single-file UI display bug | C1/R1 | P1 | Target the component and run the smallest relevant UI/unit check when available. |
 | Service regression with coverage | C2/R2 | P2 | Add or update focused regression coverage; no automatic feature five-file set. |
 | Firebase listener flaky behavior | C3/R3 | P3 | Needs explicit task contract, Engineer/Reviewer gate, and targeted emulator or E2E evidence. |

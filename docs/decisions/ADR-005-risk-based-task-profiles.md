@@ -24,6 +24,8 @@ Partially Verified
   Feature Artifacts.
 - `docs/superpowers/task-profiles.md` defines Complexity, Risk, Profile
   selection, escalation, and non-negotiable safety rules.
+- `docs/superpowers/task-profiles.md` states P1/P2/P3 reduce artifact weight,
+  not Engineer-first or Reviewer-default ownership.
 - `docs/decisions/INDEX.md` lists this ADR.
 
 ## Supersedes
@@ -69,17 +71,22 @@ must choose the higher profile or stop and ask.
 
 P1/P2 work does not create the full feature five-file set by default. P3 work
 uses an explicit task contract and keeps durable artifacts compact unless the
-work crosses sessions or needs dispatcher continuity. P4 work uses the full
-Superpowers feature workflow and required durable artifact set.
+work crosses sessions or needs dispatcher continuity. For P1/P2/P3, lightweight
+means lighter artifacts and ceremony, not main-agent self-editing: repo-changing
+edits go first to an Engineer subagent. P4 work uses the full Superpowers
+feature workflow and required durable artifact set.
 
 This decision does not bypass safety gates. Branch isolation, owned-file and
-non-scope boundaries, fresh verification, PR/CI, protected `main`, and stop
-conditions remain required.
+non-scope boundaries, Reviewer subagent checks for non-read-only repo-changing
+work, fresh verification, PR/CI, protected `main`, and stop conditions remain
+required. Pure read-only exploration may use a read-only subagent and usually
+needs no Reviewer.
 
 ## Consequences
 
 - Low-risk work should spend less time on durable artifacts and reviewer
-  ceremony.
+  ceremony, but still routes non-read-only edits through Engineer and Reviewer
+  subagents by default.
 - Normal bugfix and maintenance work still needs clear scope, focused
   verification, and regression coverage when behavior changes.
 - High-risk fixes and refactors still require explicit task contracts and
@@ -98,7 +105,9 @@ Before changing files:
 1. Read `docs/superpowers/task-profiles.md`.
 2. Classify Complexity and Risk.
 3. Select the Profile.
-4. Use the selected workflow weight without weakening repo safety rules.
+4. For P1/P2/P3 repo-changing work, dispatch an Engineer before edits and a
+   Reviewer before completion.
+5. Use the selected workflow weight without weakening repo safety rules.
 
 Stop and ask when the task needs schema, security rules, migration, data
 deletion, permissions, secrets, new dependencies, irreversible operations, or
