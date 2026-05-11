@@ -1,6 +1,6 @@
 # Testing Handbook
 
-> Last-Verified: 2026-05-10
+> Last-Verified: 2026-05-11
 > **用途**：測試撰寫的規範、範例與決策依據查找。配合 TDD skill 使用。
 > **範圍**：Unit / Integration / E2E 三層級；含本 repo 獨家 pattern。
 > **前提**：已熟讀 `.codex/rules/coding-rules.md` 與 `.codex/rules/code-style.md`。
@@ -18,7 +18,7 @@
 | Unit test / pure logic           | 讀 `4. Unit Tests 指南`                                  |
 | Integration / React interaction  | 讀 `5. Integration Tests 指南`                           |
 | E2E / Playwright                 | 讀 `6. E2E Tests 指南`                                   |
-| Server Vitest / Firebase Emulator server test | 讀 `.agents/skills/test-driven-development` 的 `Server Tests`、`.codex/rules/testing-standards.md`、`12. 快速查找表` |
+| Server Vitest / Firebase Emulator server test | 讀 `.agents/skills/test-driven-development` 的 `Server Tests`、`11.5 Firebase Emulator + Vitest server checklist`、`12. 快速查找表` |
 | Test helper placement            | 讀 `8. Fixture / Test Data`、`12. 快速查找表`             |
 | 想看 mock / JSDoc 的**語法細節** | 讀 `.agents/skills/test-driven-development/references/coding-style.md`、`jsdoc-cheatsheet.md` |
 | 想照抄**測試檔結構**             | 讀 `.agents/skills/test-driven-development/references/boilerplate.js` |
@@ -32,9 +32,9 @@ Skill 是**流程**（做什麼、照什麼順序），handbook 是**字典**（
 
 這些不是風格建議，是目前會被 commit gate 或 CI 擋下的測試規則。寫測試前先確認：
 
-- **Mock boundary**：不要 `vi.mock()` repo 內部 layer：`@/lib/**`、`@/repo/**`、`@/service/**`、`@/runtime/**`。例外只限明確允許的 React provider boundary，例如 `@/runtime/providers/**`。優先 mock Firebase SDK、第三方 SDK、browser API、external fetch/network 等外部邊界。機械 gate：`scripts/audit-mock-boundary.sh`。
-- **Flaky patterns**：不要新增 `expect(...).toHaveBeenCalledTimes(...)`、fixed sleep、`await new Promise((resolve) => setTimeout(resolve, N))`、`page.waitForTimeout(...)`。改用 behavior/payload assertion、`waitFor`、`findBy*`、Playwright web-first assertions 或 fake timers。機械 gate：`scripts/audit-flaky-patterns.sh`。
-- **Test bucket imports**：不同測試 bucket 可 import 的 `src/**` surface 不同；不要憑感覺跨 layer import。可執行政策來源：`specs/021-layered-dependency-architecture/test-buckets/policy.js`。
+- **Mock boundary**：mock Firebase SDK、第三方 SDK、browser API、external fetch/network 等外部邊界；不要 `vi.mock()` repo 內部 layer：`@/lib/**`、`@/repo/**`、`@/service/**`、`@/runtime/**`。例外只限明確允許的 React provider boundary，例如 `@/runtime/providers/**`；若真的 mock 內部 layer，必須有不 mock 它的 self-test / matrix，否則會形成 coverage black hole。機械 gate：`scripts/audit-mock-boundary.sh`。
+- **Flaky patterns**：避免 exact call-count / call-order assertions，除非次數或順序本身是真正行為合約；尤其不要新增 `expect(...).toHaveBeenCalledTimes(...)`、fixed sleep、`await new Promise((resolve) => setTimeout(resolve, N))`、`page.waitForTimeout(...)`。改用 behavior/payload assertion、單一條件 `waitFor`、`findBy*`、Playwright web-first assertions 或 fake timers。機械 gate：`scripts/audit-flaky-patterns.sh`。
+- **Test bucket imports**：不同測試 bucket 可 import 的 `src/**` surface 不同；不要憑感覺跨 layer import。目前規則先讀 `.codex/references/quality-gates.md` 的 Test Bucket Rules；可執行政策仍暫時放在 legacy implementation location `specs/021-layered-dependency-architecture/test-buckets/policy.js`，直到遷移到非 `specs/**` 位置。
 
 ---
 
@@ -73,7 +73,7 @@ specs/
     └── data-model.md                # 選用
 ```
 
-- `<feature>` **一律**等於 `git branch --show-current`（例：`015-comment-notifications`）
+- `specs/<feature>/` 是 planning artifact 目錄命名；不要用它推論 E2E command routing。
 - E2E 檔名用 `.spec.js`、Vitest 用 `.test.js` — vitest.config.mjs 已把 `**/e2e/**` 排除
 - Unit test 放 `tests/unit/<layer>/X.test.js(x)`；integration test 放 `tests/integration/<domain>/X.test.jsx`
 - E2E test 放 `tests/e2e/<file>.spec.js`
@@ -118,7 +118,7 @@ it('should return the correct sum', () => {
 
 ### 實際範例
 
-來源：`tests/unit/service/firebase-auth-helpers.test.js`（legacy source before migration: `specs/010-responsive-navbar/tests/unit/firebase-auth-helpers.test.js`）
+來源：`tests/unit/service/firebase-auth-helpers.test.js`
 
 ```js
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -201,7 +201,7 @@ const btn = screen.getByRole('button', { name: /送出/i });
 
 ### Provider 包裹：renderWithProviders 模式
 
-來源：`tests/integration/notifications/NotificationBell.test.jsx`（legacy source before migration: `specs/014-notification-system/tests/integration/NotificationBell.test.jsx`）
+來源：`tests/integration/notifications/NotificationBell.test.jsx`
 
 ```jsx
 function renderWithProviders(ui, { user = null } = {}) {
@@ -220,7 +220,7 @@ it('should NOT render when user is null', () => {
 
 ### renderHook 測試 Hook
 
-來源：`tests/integration/toast/toast-context.test.jsx`（legacy source before migration: `specs/009-global-toast/tests/unit/toast-context.test.jsx`）
+來源：`tests/integration/toast/toast-context.test.jsx`
 
 ```jsx
 import { renderHook, act } from '@testing-library/react';
@@ -275,11 +275,19 @@ await expect(page.getByText('沒有符合條件的活動')).toBeVisible();
 
 明確需要更長 timeout 時用 `{ timeout: 15000 }` 參數，不要用 sleep。
 
+### Async readiness：DOM ready 不等於資料 ready
+
+`page.goto()`、`waitForSelector()`、`loginAsUser(..., { waitForSelector })` 只保證 DOM 或登入流程到某個可見狀態，不保證 `useEffect`、Firestore listener、route mock 或 background fetch 已完成。第一個依賴 async 資料的互動前，先等可觀察 ready signal：
+
+- 資料列表：等已知 title / row / empty state 出現。
+- Realtime listener：等 badge、toast container、loading 消失或 marker doc 被 render。
+- 需要 emulator seed 後再觸發 UI：先證明 listener initial snapshot 完成，再 seed 增量資料。
+
 ### Race Condition：Marker Notification 模式
 
 當 test 依賴 Firebase `onSnapshot` 的**即時推送**（例如 toast 彈出），必須確保 listener 已完成 initial snapshot，否則新 seed 的資料會被當成 initial batch 靜默丟掉。
 
-來源：`tests/e2e/comment-notifications.spec.js` Scenario 4（legacy source before migration: `specs/015-comment-notifications/tests/e2e/comment-notifications.spec.js`）
+來源：`tests/e2e/comment-notifications.spec.js` Scenario 4
 
 ```js
 test.beforeAll(async () => {
@@ -329,7 +337,18 @@ test.describe.configure({ mode: 'serial' });
 | `loginAsUser(page, email, password, { startPage })` | Playwright 登入並等待頁面 ready     |
 | `signOutUser(page)`                                 | 登出流程                            |
 
-執行：`E2E_FEATURE=<feature> npm run test:e2e:emulator` 或 `npm run test:e2e:branch`。
+執行：一般 flaky/debug 先用 `bash scripts/run-all-e2e.sh`；只跑目前 changed E2E specs 時用 `npm run test:e2e:branch`。
+已有 emulator/dev env 時才用 `E2E_FEATURE=<feature> npm run test:e2e:emulator` 指定 seeded setup。
+
+### E2E Debug SOP
+
+1. 用 `bash scripts/run-all-e2e.sh` 先跑 CI-like reproduction；完整流程過了，才縮到 `npm run test:e2e:branch` 或單檔。`npm run test:e2e:branch` 只收目前 diff/staged/unstaged 的 changed E2E specs；沒有 changed spec 會 skip，遇到 unknown spec 時改跑 run-all。
+2. 讀 Playwright error、call log、screenshot、`error-context.md`，先分清 locator 找不到、timeout、資料狀態錯還是真正 assertion fail。
+3. 區分症狀與根因：DOM 還在不等於資料沒刪；資料寫入成功不等於 listener 已收到。
+4. 一次只改一個變數；不要同時改 seed、locator、timeout。
+5. 用資料驗證猜想：Firestore REST 查 state、加暫時 log、看 screenshot。
+6. 假設被推翻就立刻換方向，不要把 timeout 拉長當修復。
+7. 修完至少重跑兩次；flaky 問題一次 pass 不算證據。
 
 ---
 
@@ -346,6 +365,7 @@ test.describe.configure({ mode: 'serial' });
 - 不要重複 mock `vitest.setup.jsx` 已 mock 的東西
 - 每個 `vi.mock()` 後**必須**加 typed alias
 - Mock typedef 欄位名**必須**對齊 production function 參數（見 `.agents/skills/test-driven-development/references/coding-style.md`）
+- Mock repo 內部 layer 會讓真實程式碼完全不執行，coverage 可能顯示 0% 或被 exclude 掩蓋。原則上 mock 外部邊界；若 consumer test 必須 mock 內部 layer，旁邊要有不 mock 該 layer 的 self-test / matrix，直接驗證輸出、state 或 adapter contract。
 
 ---
 
@@ -395,11 +415,13 @@ const mockResponse = {
 
 ### Iron Wall — 3 項檢查全綠才能 commit
 
-| 檢查       | 指令                                                                                                                          | 門檻           |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| Type Check | `npx tsc <test-file> --noEmit --allowJs --checkJs --jsx react-jsx --moduleResolution bundler --target esnext --module esnext` | **0 errors**   |
-| Lint       | `npx eslint <test-file>` （可 `--fix` 自動修）                                                                                | **0 problems** |
-| Sanity     | `grep "@ts-ignore" <test-file>`                                                                                               | **empty**      |
+| 檢查       | 指令                                                                                             | 門檻           |
+| ---------- | ------------------------------------------------------------------------------------------------ | -------------- |
+| Type Check | `npm run type-check:changed`；branch review 用 `npm run type-check:branch`；全量用 `npm run type-check` 或 `npx tsc --noEmit --project tsconfig.json` | **0 errors**   |
+| Lint       | `npm run lint:changed` 或 `npx eslint <test-file>`（可加 `--fix` 自動修）                        | **0 problems** |
+| Sanity     | `grep "@ts-ignore" <test-file>`                                                                  | **empty**      |
+
+不要對單一 JS/JSX 檔直接跑 `tsc <file> --allowJs --checkJs`。那種寫法不會完整套用本 repo 的 `tsconfig.json`、`@/` paths 與專案 include/exclude，容易得到假綠或假紅。
 
 ### 有效 RED vs 無效失敗
 
@@ -504,6 +526,26 @@ expect(screen.getByText('5')).toBeInTheDocument();
 test.describe.configure({ mode: 'serial' });
 ```
 
+### 11.5 Firebase Emulator + Vitest server checklist
+
+Server-only 邏輯、Firebase Admin、route/server adapters 放 `tests/server/**`，用 `npm run test:server -- tests/server/<suite>/<name>.test.js`。不要把需要 emulator 的測試塞進 browser/jsdom bucket，也不要把 server project 放進 pre-commit；pre-commit 應維持 browser Vitest + audit gates，server test 由手動指令與 CI 負責。
+
+Checklist：
+
+- `projectId` 對齊 `demo-test`：`firebase emulators:exec --project=demo-test`、server setup env（`GCLOUD_PROJECT` / `FIREBASE_ADMIN_PROJECT_ID`）與 REST endpoint 都要一致。
+- Vitest projects：browser project 不寫 `include`、只 exclude server；server project 明確 include `tests/server/**` 並保留 root alias/setup。
+- Emulator REST helpers 先 snapshot `const originalFetch = globalThis.fetch;`，cleanup / Auth REST / Firestore REST 都用 `originalFetch`，避免 test case 的 `vi.stubGlobal('fetch', ...)` 汙染下個 `beforeEach`。
+- Firestore state 用 REST DELETE 在 `beforeEach` 清；cleanup 要用同一個 `demo-test` project URL。
+- Admin SDK emulator init 可先靠 env lazy init；不要預設做 fake service account，除非實測證明需要。
+- V8 coverage 的 `lines.total` 是 instrumentable lines，不是 raw file lines；估 coverage 影響時看 `coverage/coverage-summary.json`，不要用檔案行數腦補。
+
+### 11.6 Flaky test gotchas
+
+- Exact call-count / call-order assertions 只在真正合約才用；一般 async flow 改驗 payload、visible state、output 或至少下限條件。`toHaveBeenCalledTimes` 目前會被 flaky audit 擋。
+- `waitFor` callback 只等一個條件；不要在裡面塞多個昂貴 DOM query、call-order assertion 或 negative assertion。`findBy*` 能表達「等元素出現」時優先用它。
+- Heavy fixture 會被 coverage instrumentation 放大。Pagination 通常用 3-5 筆 + boundary case；真的測大量資料時，放在專門測試並加 local timeout，不要拉大全域 timeout。
+- Dense `waitFor` 與 call-order cleanup 仍是 open debt，見 `docs/TECH_DEBT.md` 的 TD-007；不要把文件寫成「都已修完」。
+
 ---
 
 ## 12. 快速查找表
@@ -516,12 +558,16 @@ test.describe.configure({ mode: 'serial' });
 | `npm run test:browser`                                        | Browser/jsdom Vitest（unit + integration）                    |
 | `npm run test:server`                                         | Server Vitest（Firebase Auth/Firestore emulator wrapper）     |
 | `npm run test:coverage`                                       | Coverage（Firebase Auth/Firestore emulator wrapper）          |
+| `npm run type-check`                                          | 全 repo TypeScript/JSDoc 檢查（讀 `tsconfig.json`）            |
+| `npm run type-check:changed`                                  | 只顯示 changed JS/JSX/MJS 的 type errors                      |
+| `npm run type-check:branch`                                   | 只顯示 branch vs `main` changed files 的 type errors          |
 | `npm run test:branch`                                         | 僅當前 branch 的 Vitest                                       |
 | `npx vitest run tests/unit/service/x.test.js`                 | 單檔 unit                                                     |
 | `npx vitest run tests/integration/notifications/x.test.jsx`   | 單檔 integration                                              |
-| `npm run test:e2e:branch`                                     | 當前 branch E2E（自動選 emulator 或一般）                     |
-| `E2E_FEATURE=<feature> npm run test:e2e:emulator`             | 指定 feature 跑 E2E + emulator                                |
-| `firebase emulators:exec --only auth,firestore,storage "..."` | 手動控制 emulator 生命週期                                    |
+| `bash scripts/run-all-e2e.sh`                                 | CI-like 全 E2E reproduction；debug flaky 時先跑這個            |
+| `npm run test:e2e:branch`                                     | 目前 changed E2E specs routing；沒有 changed spec 會 skip，unknown spec 改跑 run-all |
+| `E2E_FEATURE=<feature> npm run test:e2e:emulator`             | 已有 emulator/dev env 時，指定 seeded setup 跑 E2E             |
+| `firebase emulators:exec --only auth,firestore,storage --project=demo-test "FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=<feature> npm run test:e2e:emulator"` | 手動控制 emulator 生命週期；project/env 必須對齊 `demo-test` |
 
 ### 關鍵檔案
 

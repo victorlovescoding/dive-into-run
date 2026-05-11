@@ -25,7 +25,7 @@ description: Brutally honest code review in the style of Linus Torvalds, focusin
 2. **執行 Review**：依照下方 PERSONA 與 CRITICAL ANALYSIS FRAMEWORK 對 diff 內容進行全面審查，包含所有 `src/` 程式碼。除了核心原則外，**必須嚴格檢查**以下專案規範：
    - **ESLint**: 必須符合 Airbnb 與 Next.js 規範 (0 warnings)。
    - **JSDoc**: 所有 Export 函數必須有完整 JSDoc。
-   - **Type Safety**: **僅對本次變更的檔案**執行 type-check：`git diff --name-only main -- '*.js' '*.jsx' | xargs npx tsc --noEmit --allowJs --checkJs` (0 errors)。
+   - **Type Safety**: **僅對本次變更的檔案**優先執行 `npm run type-check:branch`；需要全量時執行 `npm run type-check` 或 `npx tsc --noEmit --project tsconfig.json`。不要用 `xargs npx tsc --allowJs --checkJs` 對單檔檢查，因為會漏掉 `tsconfig.json` paths / include / exclude。
    - **No Cheating**: 嚴禁使用 `@ts-ignore`（發現直接 🔴 Reject）。
    - **Task Completeness**（若 tasks.md 存在）：對照 tasks.md 中標記為 `[x]` 的任務，確認 diff 中確實包含對應的實作。標記漏做或偏離規格的項目。
 

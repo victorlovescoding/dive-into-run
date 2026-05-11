@@ -21,9 +21,12 @@ When the user requests to commit code or asks for advice on committing:
 2.  **Draft the Commit Message**:
     - **Summary Line**: Create a concise summary (< 50 chars), capitalized, in imperative mood (e.g., "Add user login" not "Added user login").
     - **Body**: If necessary, provide a detailed explanation separated by a blank line, wrapped at 72 chars. Explain _why_ and _how_ it changed.
+    - **No Co-Author**: Do not include any `Co-Authored-By` line.
 
 3.  **Execute (or Suggest)**:
     - If the user asked you to commit, present the planned message and verify the `git add` strategy.
+    - If pre-commit modifies files or fails after staging, re-check `git status`
+      and confirm the staged content before retrying the commit.
     - If the user asked for advice, provide the formatted message and explain the rules applied.
 
 ## Reference Rules
@@ -37,3 +40,4 @@ For detailed rules on message formatting and commit timing, refer to [git_best_p
 - [ ] **Imperative**: Does the message start with a verb like "Fix", "Add", "Update"?
 - [ ] **Concise**: Is the first line under 50 chars?
 - [ ] **Detailed**: Is there a body explaining "why" if complex?
+- [ ] **No Co-Author**: Is there no `Co-Authored-By` trailer?
