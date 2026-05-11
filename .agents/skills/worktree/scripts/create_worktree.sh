@@ -74,12 +74,25 @@ resolve_name() {
   printf '%03d-%s\n' "${next_num}" "${description}"
 }
 
+resolve_base_ref() {
+  local base="$1"
+
+  if [[ "${base}" == "main" ]]; then
+    git fetch origin main:refs/remotes/origin/main
+    printf '%s\n' "origin/main"
+    return
+  fi
+
+  printf '%s\n' "${base}"
+}
+
 name="$(resolve_name "${input}")"
+base_ref="$(resolve_base_ref "${base_branch}")"
 path_name="${name//\//-}"
 target="../dive-into-run-${path_name}"
 install_log="/tmp/dive-into-run-${path_name}-npm-install.log"
 
-git worktree add "${target}" -b "${name}" "${base_branch}"
+git worktree add "${target}" -b "${name}" "${base_ref}"
 
 if [[ -f .env ]]; then
   cp .env "${target}/.env"
@@ -106,6 +119,6 @@ fi
 ) &
 
 echo "Worktree: ${target}"
-echo "Branch: ${name} (based on ${base_branch})"
+echo "Branch: ${name} (based on ${base_ref})"
 echo "Editor: ${editor_status}"
 echo "npm install: running..."

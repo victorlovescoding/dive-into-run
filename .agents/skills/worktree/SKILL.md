@@ -12,7 +12,7 @@ Use this skill when the user wants a new git worktree for this repository.
 It automates the repo's preferred worktree flow:
 
 1. Resolve the target worktree name.
-2. Create the worktree from the requested base branch or `main`.
+2. Create the worktree from the requested base branch or fresh `origin/main`.
 3. Copy `.env` into the new worktree.
 4. Open the new worktree in the requested editor or VS Code by default.
 5. Start `npm install` in the background.
@@ -44,7 +44,7 @@ bash .agents/skills/worktree/scripts/create_worktree.sh "<input>" "<base-branch>
 
 Defaults:
 
-- base branch: `main`
+- base branch: `main`, resolved by first fetching `origin main:refs/remotes/origin/main` and then using `origin/main`
 - editor: `code`
 
 ## Required behavior
@@ -53,6 +53,8 @@ Defaults:
 - Do not ask for confirmation for naming, base branch, or editor unless the request gives no usable description at all.
 - If the user gives no usable description and there is no task context to infer from, ask one question: `worktree 要做什麼？`
 - The target path must be `../dive-into-run-<name>`.
+- The default base does not use local `main`; it fetches `origin/main` first to avoid stale local `main`.
+- If the user explicitly passes a non-`main` base branch, create the worktree from that base as requested.
 - Because this writes outside the current repo root and may launch a GUI app, request escalated execution before running the script.
 - If worktree creation fails, report the exact failure and stop.
 - If editor launch fails, report it but do not treat it as fatal.
