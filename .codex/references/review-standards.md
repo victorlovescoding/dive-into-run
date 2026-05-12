@@ -77,6 +77,11 @@ Before PASS, confirm:
   outside the approved MVP.
 - Required metadata and references are present when the task is documentation
   work.
+- Source-of-truth, index, status, or review docs do not introduce soft semantic
+  drift: a real file, path, or source must not be described with the wrong
+  lifecycle, state, or authority. Verify contracted tables against registered
+  doc contracts and current repo files, then use human review for semantic
+  claims that are outside deterministic contracts.
 - Relevant quality gates from `.codex/references/quality-gates.md` are not
   violated by the diff.
 - Relevant testing patterns from `.codex/references/testing-handbook.md` are
