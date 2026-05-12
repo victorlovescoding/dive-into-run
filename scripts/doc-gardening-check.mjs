@@ -552,14 +552,31 @@ export function isSourceOfTruthPath(path) {
 export function buildReport({ findings = [] } = {}) {
   const reportFindings = findings.map((finding) => {
     const classification = classifyFinding(finding);
-
-    return {
+    const reportFinding = {
       code: classification.code,
       mode: classification.mode,
       path: finding.path,
       message: finding.message,
       hasFixedContent: typeof finding.fixedContent === 'string',
     };
+
+    if (typeof finding.severity === 'string') {
+      reportFinding.severity = finding.severity;
+    }
+
+    if (typeof finding.blocking === 'boolean') {
+      reportFinding.blocking = finding.blocking;
+    }
+
+    if (typeof finding.contractId === 'string') {
+      reportFinding.contractId = finding.contractId;
+    }
+
+    if (typeof finding.line === 'number') {
+      reportFinding.line = finding.line;
+    }
+
+    return reportFinding;
   });
 
   const autoFix = reportFindings.filter((finding) => finding.mode === 'auto-fix').length;
@@ -579,20 +596,28 @@ export function buildReport({ findings = [] } = {}) {
 
 /**
  * Runs doc gardening and optionally writes auto-fixable source-of-truth files.
- * @param {{ args?: string[], findings?: Array<object>, writeFile?: (path: string, content: string) => Promise<unknown> }} [options] Runtime options.
+ * @param {{ args?: string[], findings?: Array<object>, repoRoot?: string, contracts?: Array<object>, readFile?: (path: string) => Promise<string>, pathExists?: (path: string) => Promise<boolean>, writeFile?: (path: string, content: string) => Promise<unknown>, scanTables?: (options: { repoRoot: string, contracts: Array<object>, readFile: (path: string) => Promise<string>, pathExists: (path: string) => Promise<boolean> }) => Promise<Array<object>> }} [options] Runtime options.
  * @returns {Promise<object>} Report, fix counts, and process exit code.
  */
 export async function runDocGardening({
   args = [],
-  findings = [],
+  findings,
+  repoRoot = process.cwd(),
+  contracts = tableContracts,
+  readFile = defaultReadFile,
+  pathExists = defaultPathExists,
   writeFile = defaultWriteFile,
+  scanTables = scanContractedTables,
 } = {}) {
   const shouldFix = args.includes('--fix');
-  const report = buildReport({ findings });
+  const resolvedFindings = Array.isArray(findings)
+    ? findings
+    : await scanTables({ repoRoot, contracts, readFile, pathExists });
+  const report = buildReport({ findings: resolvedFindings });
   let fixedCount = 0;
 
   if (shouldFix) {
-    for (const finding of findings) {
+    for (const finding of resolvedFindings) {
       const classification = classifyFinding(finding);
 
       if (
@@ -621,7 +646,6 @@ export async function runDocGardening({
 async function main() {
   const result = await runDocGardening({
     args: process.argv.slice(2),
-    findings: [],
   });
 
   process.stdout.write(`${JSON.stringify(result.report, null, 2)}\n`);

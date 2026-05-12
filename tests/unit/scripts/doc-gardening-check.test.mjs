@@ -209,9 +209,130 @@ describe('buildReport', () => {
       vi.useRealTimers();
     }
   });
+
+  it('includes contract id line severity and blocking fields in reports', () => {
+    const report = buildReport({
+      findings: [
+        {
+          code: 'table-status-mismatch',
+          severity: 'blocking',
+          blocking: true,
+          contractId: 'doc-governance-source',
+          path: 'docs/automation/doc-gardening-sot.md',
+          line: 12,
+          message: 'Expected status active for AGENTS.md.',
+        },
+      ],
+    });
+
+    expect(report.findings[0]).toMatchObject({
+      code: 'table-status-mismatch',
+      mode: 'report-only',
+      severity: 'blocking',
+      blocking: true,
+      contractId: 'doc-governance-source',
+      path: 'docs/automation/doc-gardening-sot.md',
+      line: 12,
+    });
+  });
 });
 
 describe('runDocGardening', () => {
+  it('runs contracted table scanning when findings are not injected', async () => {
+    const scanContractedTables = vi.fn(async () => [
+      {
+        code: 'table-status-mismatch',
+        severity: 'blocking',
+        blocking: true,
+        contractId: 'doc-governance-source',
+        path: 'docs/automation/doc-gardening-sot.md',
+        line: 12,
+        message: 'Expected status active for AGENTS.md.',
+      },
+    ]);
+    const readFile = vi.fn();
+    const pathExists = vi.fn();
+
+    const result = await runDocGardening({
+      repoRoot: '/repo',
+      contracts: [TABLE_CONTRACT],
+      readFile,
+      pathExists,
+      scanTables: scanContractedTables,
+    });
+
+    expect(scanContractedTables).toHaveBeenCalledWith({
+      repoRoot: '/repo',
+      contracts: [TABLE_CONTRACT],
+      readFile,
+      pathExists,
+    });
+    expect(result.report.findings[0]).toMatchObject({
+      code: 'table-status-mismatch',
+      mode: 'report-only',
+      severity: 'blocking',
+      blocking: true,
+      contractId: 'doc-governance-source',
+      path: 'docs/automation/doc-gardening-sot.md',
+      line: 12,
+    });
+  });
+
+  it('preserves injected findings without running the scanner', async () => {
+    const scanContractedTables = vi.fn(async () => [
+      {
+        code: 'table-status-mismatch',
+        severity: 'blocking',
+        blocking: true,
+        contractId: 'doc-governance-source',
+        path: 'docs/automation/doc-gardening-sot.md',
+        line: 12,
+        message: 'Expected status active for AGENTS.md.',
+      },
+    ]);
+
+    const result = await runDocGardening({
+      findings: [REPORT_ONLY_FINDING],
+      scanTables: scanContractedTables,
+    });
+
+    expect(scanContractedTables).not.toHaveBeenCalled();
+    expect(result.report.findings).toEqual([
+      expect.objectContaining({
+        code: 'semantic-drift',
+        path: 'docs/automation/doc-gardening-sot.md',
+      }),
+    ]);
+  });
+
+  it('does not write contracted table findings in fix mode', async () => {
+    const writeFile = vi.fn();
+    const scanContractedTables = vi.fn(async () => [
+      {
+        code: 'table-status-mismatch',
+        severity: 'blocking',
+        blocking: true,
+        contractId: 'doc-governance-source',
+        path: 'docs/automation/doc-gardening-sot.md',
+        line: 12,
+        message: 'Expected status active for AGENTS.md.',
+      },
+    ]);
+
+    const result = await runDocGardening({
+      args: ['--fix'],
+      scanTables: scanContractedTables,
+      writeFile,
+    });
+
+    expect(result).toMatchObject({
+      fixedCount: 0,
+      reportOnlyCount: 1,
+      exitCode: 1,
+    });
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
   it('refuses to write report-only findings even when --fix is requested', async () => {
     const writeFile = vi.fn();
 
