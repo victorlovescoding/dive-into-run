@@ -8,18 +8,26 @@ const withBundleAnalyzer = bundleAnalyzer({
 const DEVELOPMENT_HSTS = 'max-age=0';
 const PRODUCTION_HSTS = 'max-age=63072000; includeSubDomains; preload';
 
-const cspReportOnly = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://lh3.googleusercontent.com https://firebasestorage.googleapis.com",
-  "font-src 'self' data:",
-  [
-    "connect-src 'self'",
+const CSP_REPORT_ONLY_DIRECTIVES = Object.freeze({
+  'default-src': Object.freeze(["'self'"]),
+  'base-uri': Object.freeze(["'self'"]),
+  'form-action': Object.freeze(["'self'"]),
+  'frame-ancestors': Object.freeze(["'none'"]),
+  'object-src': Object.freeze(["'none'"]),
+  'script-src': Object.freeze(["'self'", "'unsafe-inline'", "'unsafe-eval'"]),
+  'style-src': Object.freeze(["'self'", "'unsafe-inline'"]),
+  'img-src': Object.freeze([
+    "'self'",
+    'data:',
+    'blob:',
+    'https://lh3.googleusercontent.com',
+    'https://firebasestorage.googleapis.com',
+    'https://*.tile.openstreetmap.org',
+    'https://www.cwa.gov.tw',
+  ]),
+  'font-src': Object.freeze(["'self'", 'data:']),
+  'connect-src': Object.freeze([
+    "'self'",
     'http://localhost:*',
     'ws://localhost:*',
     'https://*.googleapis.com',
@@ -30,9 +38,15 @@ const cspReportOnly = [
     'https://firestore.googleapis.com',
     'https://firebaseinstallations.googleapis.com',
     'https://firebase.googleapis.com',
+    'https://firebasestorage.googleapis.com',
     'https://www.strava.com',
-  ].join(' '),
-].join('; ');
+    'https://nominatim.openstreetmap.org',
+  ]),
+});
+
+const cspReportOnly = Object.entries(CSP_REPORT_ONLY_DIRECTIVES)
+  .map(([directive, sources]) => `${directive} ${sources.join(' ')}`)
+  .join('; ');
 
 /**
  * Builds security response headers shared by pages and route handlers.

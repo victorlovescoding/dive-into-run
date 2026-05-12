@@ -20,6 +20,7 @@ FEATURE_ORDER=(
   "014-notification-system"
   "019-posts-ui-refactor"
   "028"
+  "046-quality-gates"
 )
 
 TEST_BASE_REF="${TEST_BASE_REF:-main}"
@@ -45,6 +46,9 @@ feature_for_spec() {
       ;;
     strava-oauth-flow.spec.js)
       echo "028"
+      ;;
+    axe-interactive-emulator.spec.js)
+      echo "046-quality-gates"
       ;;
     *)
       return 1
