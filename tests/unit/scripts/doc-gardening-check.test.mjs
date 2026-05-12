@@ -8,6 +8,7 @@ import {
   classifyFinding,
   isSourceOfTruthPath,
   runDocGardening,
+  tableContracts,
 } from '../../../scripts/doc-gardening-check.mjs';
 
 let parseMarkdownTables;
@@ -39,7 +40,7 @@ const TABLE_CONTRACT = {
   id: 'doc-governance-source',
   file: 'docs/automation/doc-gardening-sot.md',
   table: { heading: 'Source Of Truth Contract', ordinal: 1 },
-  requiredColumns: ['Path', 'Status'],
+  requiredColumns: ['Path', 'Status', 'Contract'],
   pathColumn: 'Path',
   statusColumn: 'Status',
   allowedStatuses: ['active', 'retired'],
@@ -99,8 +100,8 @@ function sourceTable(rows) {
 
 ## Source Of Truth Contract
 
-| Path | Status |
-| --- | --- |
+| Path | Status | Contract |
+| --- | --- | --- |
 ${rows}
 `;
 }
@@ -515,6 +516,26 @@ describe('runDocGardening', () => {
   });
 });
 
+describe('tableContracts', () => {
+  it('registers the doc gardening source-of-truth contract table', () => {
+    expect(tableContracts).toContainEqual(expect.objectContaining({
+      id: 'doc-governance-source',
+      file: 'docs/automation/doc-gardening-sot.md',
+      pathColumn: 'Path',
+      statusColumn: 'Status',
+      allowedStatuses: ['active', 'retired'],
+      requiresExistingPath: true,
+      kind: 'reference',
+    }));
+  });
+
+  it('keeps the checked-in source-of-truth table clean', async () => {
+    const findings = await scanContractedTables({ repoRoot: process.cwd() });
+
+    expect(findings).toEqual([]);
+  });
+});
+
 describe('parseMarkdownTables', () => {
   it('parses markdown tables with source lines and trimmed cells', () => {
     const tables = parseMarkdownTables(`# Doc Gardening
@@ -592,8 +613,8 @@ This prose mentions | pipes | but is not a table.
 describe('scanContractedTables', () => {
   it('returns no findings for a valid contracted source table', async () => {
     const repoRoot = createFixtureRepository({
-      sourceContent: sourceTable(`| AGENTS.md | active |
-| .codex/references/review-standards.md | active |`),
+      sourceContent: sourceTable(`| AGENTS.md | active | doc-governance-source |
+| .codex/references/review-standards.md | active | doc-governance-source |`),
     });
 
     const findings = await scanContractedTables({
@@ -665,10 +686,10 @@ describe('scanContractedTables', () => {
 
   it('emits table-path-mismatch for invalid and duplicate path rows', async () => {
     const repoRoot = createFixtureRepository({
-      sourceContent: sourceTable(`| ../secrets.md | active |
-| AGENTS.md | active |
-| AGENTS.md | active |
-| .codex/references/review-standards.md | active |`),
+      sourceContent: sourceTable(`| ../secrets.md | active | doc-governance-source |
+| AGENTS.md | active | doc-governance-source |
+| AGENTS.md | active | doc-governance-source |
+| .codex/references/review-standards.md | active | doc-governance-source |`),
     });
 
     const findings = await scanContractedTables({
@@ -690,7 +711,7 @@ describe('scanContractedTables', () => {
 
   it('emits table-index-mismatch when a required path is absent', async () => {
     const repoRoot = createFixtureRepository({
-      sourceContent: sourceTable('| AGENTS.md | active |'),
+      sourceContent: sourceTable('| AGENTS.md | active | doc-governance-source |'),
     });
 
     const findings = await scanContractedTables({
@@ -704,11 +725,55 @@ describe('scanContractedTables', () => {
     }));
   });
 
+  it('emits table-index-mismatch when the table includes an extra path', async () => {
+    const repoRoot = createFixtureRepository({
+      sourceContent: sourceTable(`| AGENTS.md | active | doc-governance-source |
+| docs/extra.md | active | doc-governance-source |
+| .codex/references/review-standards.md | active | doc-governance-source |`),
+      existingPaths: [
+        'AGENTS.md',
+        'docs/extra.md',
+        '.codex/references/review-standards.md',
+      ],
+    });
+
+    const findings = await scanContractedTables({
+      repoRoot,
+      contracts: [TABLE_CONTRACT],
+    });
+
+    expect(findings).toContainEqual(blockingFinding({
+      code: 'table-index-mismatch',
+      line: 8,
+      rowPath: 'docs/extra.md',
+    }));
+  });
+
+  it('emits table-contract-mismatch when a row names a different contract id', async () => {
+    const repoRoot = createFixtureRepository({
+      sourceContent: sourceTable(`| AGENTS.md | active | other-contract |
+| .codex/references/review-standards.md | active | doc-governance-source |`),
+    });
+
+    const findings = await scanContractedTables({
+      repoRoot,
+      contracts: [TABLE_CONTRACT],
+    });
+
+    expect(findings).toContainEqual(blockingFinding({
+      code: 'table-contract-mismatch',
+      line: 7,
+      rowPath: 'AGENTS.md',
+      contractValue: 'other-contract',
+      expectedContract: 'doc-governance-source',
+    }));
+  });
+
   it('emits table-path-mismatch when an existing-path row points at a missing repo path', async () => {
     const repoRoot = createFixtureRepository({
-      sourceContent: sourceTable(`| AGENTS.md | active |
-| docs/missing.md | retired |
-| .codex/references/review-standards.md | active |`),
+      sourceContent: sourceTable(`| AGENTS.md | active | doc-governance-source |
+| docs/missing.md | retired | doc-governance-source |
+| .codex/references/review-standards.md | active | doc-governance-source |`),
     });
 
     const findings = await scanContractedTables({
@@ -725,8 +790,8 @@ describe('scanContractedTables', () => {
 
   it('emits table-status-mismatch for invalid and unexpected statuses', async () => {
     const repoRoot = createFixtureRepository({
-      sourceContent: sourceTable(`| AGENTS.md | archived |
-| .codex/references/review-standards.md | retired |`),
+      sourceContent: sourceTable(`| AGENTS.md | archived | doc-governance-source |
+| .codex/references/review-standards.md | retired | doc-governance-source |`),
     });
 
     const findings = await scanContractedTables({
@@ -755,10 +820,10 @@ describe('scanContractedTables', () => {
 
 ## Source Of Truth Contract
 
-| Path | Status |
-| --- | --- |
-| AGENTS.md | active |
-| .codex/references/review-standards.md | active |
+| Path | Status | Contract |
+| --- | --- | --- |
+| AGENTS.md | active | doc-governance-source |
+| .codex/references/review-standards.md | active | doc-governance-source |
 
 ## Unregistered Inventory
 

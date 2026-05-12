@@ -30,7 +30,39 @@ const SOURCE_OF_TRUTH_PREFIXES = ['.codex/rules/', '.codex/references/'];
 
 const SPEC_CONTROL_FILES = new Set(['handoff.md', 'tasks.md', 'status.json']);
 
-export const tableContracts = [];
+export const tableContracts = [
+  {
+    id: 'doc-governance-source',
+    file: 'docs/automation/doc-gardening-sot.md',
+    table: { heading: 'Source Of Truth Contract', ordinal: 1 },
+    requiredColumns: ['Path', 'Status', 'Contract'],
+    pathColumn: 'Path',
+    statusColumn: 'Status',
+    allowedStatuses: ['active', 'retired'],
+    requiredPaths: [
+      'AGENTS.md',
+      'docs/automation/doc-gardening-sot.md',
+      'docs/decisions/INDEX.md',
+      'docs/superpowers/workflow.md',
+      'docs/superpowers/task-profiles.md',
+      '.codex/rules/sensors.md',
+      '.codex/references/quality-gates.md',
+      '.codex/references/review-standards.md',
+    ],
+    expectedStatuses: {
+      'AGENTS.md': 'active',
+      'docs/automation/doc-gardening-sot.md': 'active',
+      'docs/decisions/INDEX.md': 'active',
+      'docs/superpowers/workflow.md': 'active',
+      'docs/superpowers/task-profiles.md': 'active',
+      '.codex/rules/sensors.md': 'active',
+      '.codex/references/quality-gates.md': 'active',
+      '.codex/references/review-standards.md': 'active',
+    },
+    requiresExistingPath: true,
+    kind: 'reference',
+  },
+];
 
 /**
  * @typedef {{ line: number, cellsByHeader: Record<string, string>, cells: Record<string, string> }} MarkdownTableRow
@@ -370,6 +402,14 @@ export async function scanContractedTables({
       continue;
     }
 
+    const requiredPaths = Array.isArray(contract.requiredPaths)
+      ? contract.requiredPaths
+          .map((requiredPath) => normalizeContractPath(requiredPath))
+          .filter((requiredPath) => requiredPath != null)
+      : [];
+    const requiredPathSet = new Set(requiredPaths);
+    const requiresExactPaths = Array.isArray(contract.requiredPaths);
+    const requiresContractColumn = contract.requiredColumns?.includes('Contract');
     const seenPaths = new Set();
 
     for (const row of table.rows) {
@@ -403,6 +443,18 @@ export async function scanContractedTables({
       }
 
       seenPaths.add(normalizedPath);
+
+      if (requiresExactPaths && !requiredPathSet.has(normalizedPath)) {
+        findings.push(
+          tableFinding({
+            code: 'table-index-mismatch',
+            contract,
+            line: row.line,
+            message: `Contract table row is not registered as a required path: ${normalizedPath}`,
+            extra: { rowPath: normalizedPath },
+          })
+        );
+      }
 
       if (
         contract.requiresExistingPath === true &&
@@ -449,12 +501,30 @@ export async function scanContractedTables({
           })
         );
       }
+
+      if (requiresContractColumn) {
+        const contractValue = row.cellsByHeader.Contract;
+
+        if (contractValue !== contract.id) {
+          findings.push(
+            tableFinding({
+              code: 'table-contract-mismatch',
+              contract,
+              line: row.line,
+              message: `Contract table row for ${normalizedPath} must name contract ${contract.id}`,
+              extra: {
+                rowPath: normalizedPath,
+                contractValue,
+                expectedContract: contract.id,
+              },
+            })
+          );
+        }
+      }
     }
 
-    for (const requiredPath of contract.requiredPaths ?? []) {
-      const normalizedRequiredPath = normalizeContractPath(requiredPath);
-
-      if (normalizedRequiredPath != null && !seenPaths.has(normalizedRequiredPath)) {
+    for (const normalizedRequiredPath of requiredPaths) {
+      if (!seenPaths.has(normalizedRequiredPath)) {
         findings.push(
           tableFinding({
             code: 'table-index-mismatch',
