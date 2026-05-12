@@ -10,9 +10,7 @@
     "scripts/check-next-build-budget.mjs",
     "scripts/run-knip-report.mjs",
     "scripts/type-check-strict-report.mjs",
-    "src/types/not-found-messages.js",
-    "src/types/weather-types.js",
     "src/config/client/firebase-timestamp.js"
   ],
-  "include": []
+  "include": ["src/types/**/*"]
 }
