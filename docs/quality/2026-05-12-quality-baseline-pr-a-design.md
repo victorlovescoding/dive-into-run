@@ -36,7 +36,7 @@ run and head metadata.
 - `docs/quality/2026-05-12-quality-baseline-pr-a.md`
   - committed human-readable evidence summary.
   - explains what was collected, from which runs, and what the observed median,
-    max, and outlier values imply.
+    max, and report-only limitations imply.
 - Optional implementation notes in PR body only.
   - do not create temporary planning files unless explicitly authorized.
 
@@ -65,6 +65,7 @@ free of raw artifact bodies. Recommended top-level shape:
   "schemaVersion": 1,
   "generatedAt": "2026-05-12T00:00:00.000Z",
   "status": "report-only",
+  "outlierEvaluation": "not_evaluated",
   "source": {
     "workflowName": "Quality Budgets",
     "branch": "main",
@@ -90,10 +91,14 @@ Each metric entry should include observed values only:
 - `samples`: numeric values with their source `runId`.
 - `median`: observed median across collected samples.
 - `max`: observed maximum across collected samples.
-- `outliers`: explicit list with reason, or an empty list.
 - `unit`: count, bytes, score, route count, warning count, or another concrete
   unit.
 - `notes`: short explanation when parsing is partial or a metric is absent.
+
+PR A does not evaluate statistical outliers. The schema signal is the top-level
+`outlierEvaluation: "not_evaluated"` field, not per-metric `outliers` lists.
+Future PRs must define an explicit outlier rule before adding outlier lists,
+thresholds, or gate behavior.
 
 The current summarizer names these raw sources: Knip, bundle budget, strict
 type-check, and Lighthouse. PR A may normalize those same domains, but should
@@ -106,10 +111,12 @@ a PR. It should include:
 
 - Collection window and number of main-branch workflow runs.
 - Source table with run ID, head SHA, date, artifact name or ID, and run URL.
-- Metric table showing sample count, median, max, and outlier notes.
+- Metric table showing sample count, median, max, and notes.
 - Explicit statement that raw artifacts remain ignored and are not committed.
 - Explicit statement that the baseline is report-only and defines no hard
   thresholds.
+- Explicit statement that `outlierEvaluation` is `not_evaluated` because PR A
+  does not evaluate statistical outliers.
 - Known limitations, especially missing artifacts, partial parsing, or
   low sample count.
 - Future gate handoff: how `config/quality-baseline-summary.json` should be

@@ -32,7 +32,7 @@
 
 - Create: `config/quality-baseline-summary.json`
   - Owner: Baseline Collector Engineer.
-  - Responsibility: committed normalized baseline input for future gates, including run metadata, observed metric samples, median, max, outlier notes, units, and report-only status.
+  - Responsibility: committed normalized baseline input for future gates, including run metadata, observed metric samples, median, max, units, notes, top-level outlier evaluation status, and report-only status.
 - Create: `docs/quality/2026-05-12-quality-baseline-pr-a.md`
   - Owner: Evidence Writer Engineer.
   - Responsibility: reviewer/SOP evidence with source run traceability, metric summary, limitations, and future-gate handoff.
@@ -130,6 +130,7 @@ Create `config/quality-baseline-summary.json` with this stable top-level contrac
   "schemaVersion": 1,
   "generatedAt": "2026-05-12T00:00:00.000Z",
   "status": "report-only",
+  "outlierEvaluation": "not_evaluated",
   "source": {
     "workflowName": "Quality Budgets",
     "branch": "main",
@@ -144,9 +145,13 @@ Expected:
 
 - `generatedAt` is deterministic for the committed baseline.
 - `status` is exactly `report-only`.
+- `outlierEvaluation` is exactly `not_evaluated`.
 - `source.artifactCount` matches the number of selected usable artifacts.
 - `runs[]` contains only traceability metadata and artifact names or IDs.
-- `metrics` contains observed samples, median, max, outliers, unit, and notes.
+- `metrics` contains observed samples, median, max, unit, and notes.
+- PR A does not evaluate statistical outliers; do not add per-metric `outliers`
+  lists. Future PRs must define an explicit outlier rule before adding outlier
+  lists, thresholds, or gate behavior.
 - No field encodes a threshold, limit, budget, pass/fail gate, or CI enforcement decision.
 
 - [ ] **Step 6: Verify JSON syntax**
@@ -202,9 +207,11 @@ Required content:
 
 - collection window and number of selected successful `main` workflow runs.
 - source table with run ID, head SHA, date, artifact name or ID, and run URL.
-- metric table with sample count, median, max, and outlier notes.
+- metric table with sample count, median, max, and notes.
 - statement that raw artifacts and `reports/**` payloads remain uncommitted.
 - statement that the baseline is report-only and defines no hard thresholds.
+- statement that `outlierEvaluation` is `not_evaluated` because PR A does not
+  evaluate statistical outliers.
 - limitations for missing artifacts, partial parsing, or low sample count when applicable.
 - future handoff explaining that later PRs may consume `config/quality-baseline-summary.json` as input, but PR A does not enforce gates.
 
