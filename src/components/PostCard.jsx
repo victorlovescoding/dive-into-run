@@ -260,6 +260,11 @@ export default function PostCard({
     if (el) el.style.maxHeight = 'none';
   }
 
+  const contentWrapperClassName = needsTruncation
+    ? `${styles.contentWrapper}${isCollapsed ? ` ${styles.contentCollapsed}` : ''}`
+    : undefined;
+  const contentTransitionEnd = needsTruncation ? handleTransitionEnd : undefined;
+
   return (
     <article className={styles.card}>
       <div className={styles.header}>
@@ -294,12 +299,8 @@ export default function PostCard({
         <>
           <div
             ref={contentRef}
-            className={
-              needsTruncation
-                ? `${styles.contentWrapper}${isCollapsed ? ` ${styles.contentCollapsed}` : ''}`
-                : undefined
-            }
-            onTransitionEnd={needsTruncation ? handleTransitionEnd : undefined}
+            className={contentWrapperClassName}
+            onTransitionEnd={contentTransitionEnd}
           >
             <p className={styles.content}>{post.content}</p>
           </div>

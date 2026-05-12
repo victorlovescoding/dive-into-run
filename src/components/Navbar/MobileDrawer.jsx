@@ -29,6 +29,25 @@ export default function MobileDrawer({
 }) {
   const drawerClass = isDrawerOpen ? `${styles.drawer} ${styles.drawerOpen}` : styles.drawer;
   const overlayClass = isDrawerOpen ? `${styles.overlay} ${styles.overlayVisible}` : styles.overlay;
+  const drawerLinks = NAV_ITEMS.map((item) => {
+    const active = isActivePath(pathname, item.href);
+    const linkClass = active
+      ? `${styles.drawerLink} ${styles.drawerLinkActive}`
+      : styles.drawerLink;
+    const ariaCurrent = active ? 'page' : undefined;
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={linkClass}
+        onClick={handleLinkClick}
+        aria-current={ariaCurrent}
+      >
+        {item.label}
+      </Link>
+    );
+  });
 
   return (
     <>
@@ -58,25 +77,7 @@ export default function MobileDrawer({
           ✕
         </button>
 
-        <div className={styles.drawerLinks}>
-          {NAV_ITEMS.map((item) => {
-            const active = isActivePath(pathname, item.href);
-            const linkClass = active
-              ? `${styles.drawerLink} ${styles.drawerLinkActive}`
-              : styles.drawerLink;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={linkClass}
-                onClick={handleLinkClick}
-                {...(active ? { 'aria-current': 'page' } : {})}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
+        <div className={styles.drawerLinks}>{drawerLinks}</div>
 
         {/* Auth section */}
         <div className={styles.drawerAuth}>
