@@ -8,7 +8,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 const DEVELOPMENT_HSTS = 'max-age=0';
 const PRODUCTION_HSTS = 'max-age=63072000; includeSubDomains; preload';
 
-const CSP_REPORT_ONLY_DIRECTIVES = Object.freeze({
+export const CSP_REPORT_ONLY_DIRECTIVES = Object.freeze({
   'default-src': Object.freeze(["'self'"]),
   'base-uri': Object.freeze(["'self'"]),
   'form-action': Object.freeze(["'self'"]),
@@ -44,9 +44,13 @@ const CSP_REPORT_ONLY_DIRECTIVES = Object.freeze({
   ]),
 });
 
-const cspReportOnly = Object.entries(CSP_REPORT_ONLY_DIRECTIVES)
-  .map(([directive, sources]) => `${directive} ${sources.join(' ')}`)
-  .join('; ');
+export function buildCspReportOnlyHeaderValue() {
+  return Object.entries(CSP_REPORT_ONLY_DIRECTIVES)
+    .map(([directive, sources]) => `${directive} ${sources.join(' ')}`)
+    .join('; ');
+}
+
+const cspReportOnly = buildCspReportOnlyHeaderValue();
 
 /**
  * Builds security response headers shared by pages and route handlers.
