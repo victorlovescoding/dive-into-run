@@ -29,6 +29,19 @@ of truth. They may provide historical context for a human reader, but the
 checker and weekly automation must not treat them as policy sources or modify
 them as part of doc gardening.
 
+## Source Of Truth Contract
+
+| Path | Status | Contract |
+| --- | --- | --- |
+| AGENTS.md | active | doc-governance-source |
+| docs/automation/doc-gardening-sot.md | active | doc-governance-source |
+| docs/decisions/INDEX.md | active | doc-governance-source |
+| docs/superpowers/workflow.md | active | doc-governance-source |
+| docs/superpowers/task-profiles.md | active | doc-governance-source |
+| .codex/rules/sensors.md | active | doc-governance-source |
+| .codex/references/quality-gates.md | active | doc-governance-source |
+| .codex/references/review-standards.md | active | doc-governance-source |
+
 ## Run Cadence
 
 Doc gardening runs weekly on Monday at 09:00 Asia/Taipei through Codex
