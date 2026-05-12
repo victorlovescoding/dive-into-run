@@ -1,7 +1,17 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import nextConfig from '../../../next.config.mjs';
+import nextConfig, {
+  CSP_REPORT_ONLY_DIRECTIVES,
+  buildCspReportOnlyHeaderValue,
+} from '../../../next.config.mjs';
+
+const EXPECTED_CSP_REPORT_ONLY = Object.entries(CSP_REPORT_ONLY_DIRECTIVES)
+  .map(([directive, sources]) => `${directive} ${sources.join(' ')}`)
+  .join('; ');
+
+const EXPECTED_CSP_REPORT_ONLY_HEADER =
+  "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lh3.googleusercontent.com https://firebasestorage.googleapis.com https://*.tile.openstreetmap.org https://www.cwa.gov.tw; font-src 'self' data:; connect-src 'self' http://localhost:* ws://localhost:* https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://firebaseinstallations.googleapis.com https://firebase.googleapis.com https://firebasestorage.googleapis.com https://www.strava.com https://nominatim.openstreetmap.org";
 
 const REQUIRED_CSP_SOURCES = Object.freeze({
   'connect-src': [
@@ -63,6 +73,11 @@ describe('security headers config', () => {
     vi.unstubAllEnvs();
   });
 
+  it('builds the exact report-only CSP header from exported directives', () => {
+    expect(buildCspReportOnlyHeaderValue()).toBe(EXPECTED_CSP_REPORT_ONLY);
+    expect(buildCspReportOnlyHeaderValue()).toBe(EXPECTED_CSP_REPORT_ONLY_HEADER);
+  });
+
   it('applies report-only security headers to every route', async () => {
     vi.stubEnv('NODE_ENV', 'test');
 
@@ -74,9 +89,7 @@ describe('security headers config', () => {
     const headers = toHeaderMap(globalRule.headers);
 
     expect(headers.has('content-security-policy')).toBe(false);
-    expect(headers.get('content-security-policy-report-only')).toContain(
-      "frame-ancestors 'none'",
-    );
+    expect(headers.get('content-security-policy-report-only')).toBe(EXPECTED_CSP_REPORT_ONLY);
     expect(headers.get('strict-transport-security')).toBe('max-age=0');
     expect(headers.get('x-content-type-options')).toBe('nosniff');
     expect(headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
