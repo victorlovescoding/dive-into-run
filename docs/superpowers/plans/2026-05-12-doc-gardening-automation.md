@@ -5,9 +5,12 @@
 **Tech Stack:** Node.js scripts, npm scripts, Markdown docs, Codex automation tool, GitHub PR/CI closeout.
 ---
 ## File Structure
-- Create `docs/automation/doc-gardening-sot.md`
-- Create `scripts/doc-gardening-check.mjs`
-- Create `tests/unit/scripts/doc-gardening-check.test.mjs`
+Future files to create:
+```text
+docs/automation/doc-gardening-sot.md
+scripts/doc-gardening-check.mjs
+tests/unit/scripts/doc-gardening-check.test.mjs
+```
 - Modify `package.json`
 - Create Codex automation using tool after repo PR merges, not as tracked file
 ## Hard Constraints
@@ -20,7 +23,7 @@
 - Final closeout: push PR, wait for `ci` and `e2e`, GitHub merge, local main `pull --ff-only`, final branch main.
 - Weekly Codex automation is created after merge, not as tracked repo state.
 ## Concrete Snippets
-Markdown outline for `docs/automation/doc-gardening-sot.md`:
+Markdown outline for future file docs/automation/doc-gardening-sot.md:
 ```markdown
 # Doc Gardening Source of Truth
 > Last-Verified: 2026-05-12
@@ -251,25 +254,38 @@ JSON report shape:
 ## Implementation Tasks
 ### Task 1 Repo SoT Contract Markdown
 **Files list**
-- `docs/automation/doc-gardening-sot.md`
+```text
+docs/automation/doc-gardening-sot.md
+```
 **Steps**
 - [ ] Engineer creates the SoT markdown file from the outline above.
 - [ ] Encode source hierarchy, project-health exclusion, auto-fix classes, and report-only classes.
 - [ ] Define report/check/fix modes and human review expectations.
 - [ ] Reviewer confirms policy is narrow and enforceable.
 **Commands with expected signal**
-- [ ] `rg -n "project-health|Auto-Fix|Report-Only" docs/automation/doc-gardening-sot.md`
+- [ ] Run:
+```bash
+rg -n "project-health|Auto-Fix|Report-Only" docs/automation/doc-gardening-sot.md
+```
   - Expected signal: required policy anchors are present.
-- [ ] `git diff -- docs/automation/doc-gardening-sot.md`
+- [ ] Run:
+```bash
+git diff -- docs/automation/doc-gardening-sot.md
+```
   - Expected signal: only the SoT file changed.
 **Commit checkpoint**
 - Commit candidate: `docs: add doc gardening source contract`
-- Stage explicitly: `git add docs/automation/doc-gardening-sot.md`
+- Stage explicitly:
+```bash
+git add docs/automation/doc-gardening-sot.md
+```
 **Engineer/Reviewer requirement**
 - Engineer writes; Reviewer verifies no report-only class is auto-fixable.
 ### Task 2 Failing Tests and Fixtures
 **Files list**
-- `tests/unit/scripts/doc-gardening-check.test.mjs`
+```text
+tests/unit/scripts/doc-gardening-check.test.mjs
+```
 **Steps**
 - [ ] Engineer creates focused Vitest coverage using the concrete test snippet above.
 - [ ] Test allowed auto-fix classification and report-only classification with `classifyFinding()`.
@@ -280,19 +296,30 @@ JSON report shape:
 - [ ] Run targeted test and keep the expected missing-module failure.
 - [ ] Reviewer confirms tests encode the SoT contract.
 **Commands with expected signal**
-- [ ] `npx vitest run tests/unit/scripts/doc-gardening-check.test.mjs`
+- [ ] Run:
+```bash
+npx vitest run tests/unit/scripts/doc-gardening-check.test.mjs
+```
   - Expected signal: fails because checker module is absent.
-- [ ] `git diff -- tests/unit/scripts/doc-gardening-check.test.mjs`
+- [ ] Run:
+```bash
+git diff -- tests/unit/scripts/doc-gardening-check.test.mjs
+```
   - Expected signal: only tests and fixtures changed.
 **Commit checkpoint**
 - Commit candidate: `test: cover doc gardening classification`
-- Stage explicitly: `git add tests/unit/scripts/doc-gardening-check.test.mjs`
+- Stage explicitly:
+```bash
+git add tests/unit/scripts/doc-gardening-check.test.mjs
+```
 **Engineer/Reviewer requirement**
 - Engineer writes failing tests; Reviewer checks failure reason and coverage.
 ### Task 3 Node Checker/Report Implementation
 **Files list**
-- `scripts/doc-gardening-check.mjs`
-- `tests/unit/scripts/doc-gardening-check.test.mjs`
+```text
+scripts/doc-gardening-check.mjs
+tests/unit/scripts/doc-gardening-check.test.mjs
+```
 **Steps**
 - [ ] Engineer creates the checker module from the implementation snippet above and exports `classifyFinding()`, `isSourceOfTruthPath()`, `buildReport()`, and `runDocGardening()`.
 - [ ] Implement default check mode plus `--report` and `--fix` by deriving `mode` from `argv.includes("--fix")` and `argv.includes("--report")`.
@@ -302,24 +329,41 @@ JSON report shape:
 - [ ] Run targeted tests until green.
 - [ ] Reviewer verifies SoT compliance.
 **Commands with expected signal**
-- [ ] `npx vitest run tests/unit/scripts/doc-gardening-check.test.mjs`
+- [ ] Run:
+```bash
+npx vitest run tests/unit/scripts/doc-gardening-check.test.mjs
+```
   - Expected signal: tests pass.
-- [ ] `node scripts/doc-gardening-check.mjs --report`
+- [ ] Run:
+```bash
+node scripts/doc-gardening-check.mjs --report
+```
   - Expected signal: valid JSON report prints.
-- [ ] `node scripts/doc-gardening-check.mjs --fix`
+- [ ] Run:
+```bash
+node scripts/doc-gardening-check.mjs --fix
+```
   - Expected signal: only allowed mechanical fixes apply.
-- [ ] `git diff -- scripts/doc-gardening-check.mjs tests/unit/scripts/doc-gardening-check.test.mjs`
+- [ ] Run:
+```bash
+git diff -- scripts/doc-gardening-check.mjs tests/unit/scripts/doc-gardening-check.test.mjs
+```
   - Expected signal: scoped checker/test diff.
 **Commit checkpoint**
 - Commit candidate: `feat: add doc gardening checker`
-- Stage explicitly: `git add scripts/doc-gardening-check.mjs tests/unit/scripts/doc-gardening-check.test.mjs`
+- Stage explicitly:
+```bash
+git add scripts/doc-gardening-check.mjs tests/unit/scripts/doc-gardening-check.test.mjs
+```
 **Engineer/Reviewer requirement**
 - Engineer implements; Reviewer verifies `--fix` cannot alter report-only findings.
 ### Task 4 Npm Scripts and Local Verification
 **Files list**
 - `package.json`
-- `scripts/doc-gardening-check.mjs`
-- `tests/unit/scripts/doc-gardening-check.test.mjs`
+```text
+scripts/doc-gardening-check.mjs
+tests/unit/scripts/doc-gardening-check.test.mjs
+```
 **Steps**
 - [ ] Engineer adds `doc:gardening`, `doc:gardening:report`, and `doc:gardening:fix`.
 - [ ] Wire default, report, and fix modes directly to the Node script.
@@ -327,7 +371,10 @@ JSON report shape:
 - [ ] Confirm no report-only edits appear after fix mode.
 - [ ] Reviewer checks script names and command shape.
 **Commands with expected signal**
-- [ ] `npx vitest run tests/unit/scripts/doc-gardening-check.test.mjs`
+- [ ] Run:
+```bash
+npx vitest run tests/unit/scripts/doc-gardening-check.test.mjs
+```
   - Expected signal: targeted tests pass.
 - [ ] `npm run doc:gardening`
   - Expected signal: check-mode status reflects findings.
@@ -337,7 +384,10 @@ JSON report shape:
   - Expected signal: only metadata/link/index mismatches are fixed.
 **Commit checkpoint**
 - Commit candidate: `chore: expose doc gardening scripts`
-- Stage explicitly: `git add package.json scripts/doc-gardening-check.mjs tests/unit/scripts/doc-gardening-check.test.mjs`
+- Stage explicitly:
+```bash
+git add package.json scripts/doc-gardening-check.mjs tests/unit/scripts/doc-gardening-check.test.mjs
+```
 **Engineer/Reviewer requirement**
 - Engineer wires scripts; Reviewer verifies no chained npm scripts or safeguard bypass.
 ### Task 5 Codex Weekly Automation Setup After Merge
@@ -362,10 +412,12 @@ JSON report shape:
 - Main agent coordinates; Reviewer or user confirms before enabling.
 ### Task 6 Integration Closeout
 **Files list**
-- `docs/automation/doc-gardening-sot.md`
-- `scripts/doc-gardening-check.mjs`
-- `tests/unit/scripts/doc-gardening-check.test.mjs`
 - `package.json`
+```text
+docs/automation/doc-gardening-sot.md
+scripts/doc-gardening-check.mjs
+tests/unit/scripts/doc-gardening-check.test.mjs
+```
 **Steps**
 - [ ] Engineer confirms changed files are expected.
 - [ ] Engineer runs targeted tests, report command, and changed-file lint or branch gate.
@@ -376,7 +428,10 @@ JSON report shape:
 **Commands with expected signal**
 - [ ] `git status --short --branch`
   - Expected signal: feature branch, only planned files changed.
-- [ ] `npx vitest run tests/unit/scripts/doc-gardening-check.test.mjs`
+- [ ] Run:
+```bash
+npx vitest run tests/unit/scripts/doc-gardening-check.test.mjs
+```
   - Expected signal: targeted tests pass.
 - [ ] `npm run doc:gardening:report`
   - Expected signal: deterministic report summary emits.
@@ -386,13 +441,19 @@ JSON report shape:
   - Expected signal: changed-file lint passes.
 - [ ] `git diff --check`
   - Expected signal: no whitespace errors.
-- [ ] `git add docs/automation/doc-gardening-sot.md scripts/doc-gardening-check.mjs tests/unit/scripts/doc-gardening-check.test.mjs package.json`
+- [ ] Run:
+```bash
+git add docs/automation/doc-gardening-sot.md scripts/doc-gardening-check.mjs tests/unit/scripts/doc-gardening-check.test.mjs package.json
+```
 - [ ] `git status --short --branch`
 - [ ] `git commit`
 - [ ] `git push`
 - [ ] `git pull --ff-only`
 **Commit checkpoint**
 - Final commit candidate: `feat: add doc gardening automation checks`
-- Stage explicitly: `git add docs/automation/doc-gardening-sot.md scripts/doc-gardening-check.mjs tests/unit/scripts/doc-gardening-check.test.mjs package.json`
+- Stage explicitly:
+```bash
+git add docs/automation/doc-gardening-sot.md scripts/doc-gardening-check.mjs tests/unit/scripts/doc-gardening-check.test.mjs package.json
+```
 **Engineer/Reviewer requirement**
 - Engineer owns implementation evidence; Reviewer approves before completion; Main agent handles closeout only within authorization.
