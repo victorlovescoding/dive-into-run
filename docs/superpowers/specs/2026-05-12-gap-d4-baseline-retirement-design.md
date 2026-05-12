@@ -13,18 +13,19 @@ normalizing it as permanent policy.
 
 - Clear the current 14-violation / 10-file D4 baseline.
 - Remove the D4 baseline ignores from `eslint.config.mjs`.
-- Update `project-health/2026-04-24-openai-harness-gap-analysis.md` so its D4
-  status, counts, and remaining work are accurate after the baseline is gone.
 - Reviewer confirms there are zero remaining D4 baseline violations and no
   remaining baseline ignores.
+- PR includes only tracked implementation files: the 10 baseline source files
+  plus `eslint.config.mjs`.
+- After final verification, a separate subagent updates the ignored local
+  archive `project-health/2026-04-24-openai-harness-gap-analysis.md` in the
+  original repo, outside the PR.
 
 ## Scope
 
 - Fix only the files represented by the current D4 baseline.
 - Remove only the D4 baseline ignore entries needed to enforce the retired
   baseline.
-- Update only the project-health D4 analysis needed to match the resulting
-  state.
 - Preserve the existing MVP gate shape.
 
 ## Non-Scope
@@ -32,16 +33,19 @@ normalizing it as permanent policy.
 - No stronger lint rules.
 - No custom full JSX policy.
 - No unrelated refactors, source cleanup, dependency changes, package changes,
-  specs changes, or broader project-health rewrites.
+  specs changes, or project-health changes in the PR.
 - No behavioral product changes beyond the minimum edits needed to satisfy the
   existing D4 gate.
 
 ## Approved Approach
 
 Use a one-shot baseline retirement. Engineers remove the current D4 violations
-in coordinated slices, then delete the matching baseline ignores and update the
-health doc. The work should not add stricter rules or create a custom full JSX
-policy; success is the existing gate enforcing zero known D4 baseline debt.
+in coordinated slices, then delete the matching baseline ignores. The work
+should not add stricter rules or create a custom full JSX policy; success is
+the existing gate enforcing zero known D4 baseline debt. The project-health
+archive is ignored and absent from this worktree, so it is not a PR-owned file;
+update it separately in the original repo/local archive after final
+verification evidence exists.
 
 ## Agent Slicing
 
@@ -54,12 +58,12 @@ policy; success is the existing gate enforcing zero known D4 baseline debt.
      `RunCalendarDialog`, `FavoritesBar`.
    - Goal: clear D4 violations in dialog, editor, and compact control UI.
 
-3. Events UI plus gate/doc
+3. Events UI plus gate
    - Owned files: `EventsListSection`, `PaceSelector`, `ParticipantsModal`,
-     `eslint.config.mjs`,
-     `project-health/2026-04-24-openai-harness-gap-analysis.md`.
+     `eslint.config.mjs`.
    - Goal: clear remaining events UI violations, remove D4 baseline ignores,
-     and update the project-health analysis.
+     and leave project-health archive reconciliation to the separate local
+     follow-up.
 
 ## Verification
 
@@ -74,7 +78,9 @@ Reviewer must also confirm:
 
 - the 14-violation / 10-file D4 baseline is now zero;
 - `eslint.config.mjs` has no remaining D4 baseline ignores;
-- the project-health update accurately describes the retired baseline.
+- the PR diff does not include `project-health/**`;
+- the follow-up instructions clearly route the ignored project-health archive
+  update to a separate subagent after final verification.
 
 ## Closeout
 
@@ -82,7 +88,10 @@ Use the existing worktree and keep implementation Engineer-owned. Each slice
 needs Reviewer confirmation before closeout. After reviewed implementation and
 fresh verification, commit the feature branch, push it, open a PR, wait for
 required `ci` and `e2e` to pass, merge on GitHub, then fast-forward local
-`main` only after the merge is complete.
+`main` only after the merge is complete. After final verification evidence
+exists, dispatch a separate subagent to update the ignored
+`project-health/2026-04-24-openai-harness-gap-analysis.md` archive in the
+original repo/local archive; do not include that file in the implementation PR.
 
 ## Known Risk
 

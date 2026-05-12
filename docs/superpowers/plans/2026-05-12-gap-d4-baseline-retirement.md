@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Retire the current Gap D4 MVP lint baseline by removing the 14 known violations across the 10 baseline files, deleting the matching baseline ignores, and updating the D4 project-health status.
+**Goal:** Retire the current Gap D4 MVP lint baseline by removing the 14 known violations across the 10 baseline files and deleting the matching baseline ignores. The PR must not include `project-health/**`; the ignored local archive update happens separately in the original repo after final verification evidence exists.
 
 **Architecture:** Keep the existing D4-MVP `no-restricted-syntax` gate shape and make the baseline files comply with it. Implementation is split into three independent UI cleanup slices followed by one integration/closeout slice; the main agent coordinates only, while Engineer subagents edit and Reviewer subagents verify each repo-changing slice.
 
@@ -10,7 +10,7 @@
 
 ---
 
-## File Responsibility Map
+## Tracked PR File Responsibility Map
 
 - `src/components/Navbar/MobileDrawer.jsx`: Renders the mobile navigation drawer; remove JSX-time `NAV_ITEMS.map` block callback and conditional JSX prop spread by preparing drawer link elements before the returned JSX.
 - `src/components/Navbar/Navbar.jsx`: Renders the desktop navigation list and shell; remove JSX-time `NAV_ITEMS.map` block callback and conditional JSX prop spread by preparing desktop link elements before the returned JSX.
@@ -23,19 +23,25 @@
 - `src/ui/events/PaceSelector.jsx`: Renders pace minute/second selects; remove JSX-time option generation by preparing minute and second option elements before the returned JSX.
 - `src/ui/events/ParticipantsModal.jsx`: Renders participant rows; prepare participant row elements before JSX so this baseline file no longer depends on JSX-time collection rendering.
 - `eslint.config.mjs`: Owns the D4-MVP rule block; remove only the D4 baseline `ignores` list after all baseline files comply, keeping the rule selectors and messages intact.
-- `project-health/2026-04-24-openai-harness-gap-analysis.md`: Owns the historical Gap D4 analysis; update only the D4 status/count/remaining-work lines after the baseline is retired. In this worktree, `git ls-files --error-unmatch project-health/2026-04-24-openai-harness-gap-analysis.md` currently fails, so Task 3 must stop and report blocked if the file is still absent when implementation starts.
+
+## Local Archive Follow-up
+
+- `project-health/2026-04-24-openai-harness-gap-analysis.md`: Ignored local
+  archive, absent from this worktree, and not a PR-owned implementation file.
+  After final verification evidence exists, a separate subagent updates this
+  file in the original repo/local archive outside the PR.
 
 ## P3 Task Contract
 
-- Profile/classification: P3 High-risk Fix/Refactor, C3/R3. The change spans multiple UI domains plus lint gate and project-health documentation, but does not add product functionality, dependencies, schema changes, security rules, or migrations.
+- Profile/classification: P3 High-risk Fix/Refactor, C3/R3. The change spans multiple UI domains plus lint gate configuration, but does not add product functionality, dependencies, schema changes, security rules, migrations, or tracked project-health documentation.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-052-gap-d4-baseline-retirement`.
 - Branch rule: do not work on `main`; this plan assumes the existing isolated worktree branch is used.
-- Scope: clear only the current Gap D4 baseline files, remove only the matching D4-MVP baseline ignores, update only the D4 project-health status/count/remaining-work text, and keep the current D4-MVP gate shape.
-- Non-scope: no stronger lint rules, no custom full JSX policy, no unrelated source cleanup, no broad component rewrites, no dependency changes, no package script changes, no spec changes, no unrelated project-health rewrites, no product behavior changes beyond preserving current behavior while satisfying the D4 gate.
+- Scope: clear only the current Gap D4 baseline files, remove only the matching D4-MVP baseline ignores, and keep the current D4-MVP gate shape.
+- Non-scope: no stronger lint rules, no custom full JSX policy, no unrelated source cleanup, no broad component rewrites, no dependency changes, no package script changes, no spec changes, no project-health changes in the PR, no product behavior changes beyond preserving current behavior while satisfying the D4 gate.
 - Owned files for this plan document task: `docs/superpowers/plans/2026-05-12-gap-d4-baseline-retirement.md`.
 - Owned files for implementation tasks: each task lists its exact write set; Engineer subagents must not expand it.
-- Read-only context for implementation: `AGENTS.md`, `docs/superpowers/workflow.md`, `docs/superpowers/task-profiles.md`, `docs/superpowers/specs/2026-05-12-gap-d4-baseline-retirement-design.md`, the D4-MVP section of `eslint.config.mjs`, D4 lines only from `project-health/2026-04-24-openai-harness-gap-analysis.md` if present, the listed source files around the baseline lines, and `package.json` scripts only when checking verification commands.
-- Acceptance criteria: all 10 baseline source files avoid the current D4 restricted JSX patterns, `eslint.config.mjs` has no D4 baseline ignores, the project-health D4 status matches the retired baseline, fresh verification commands pass, and Reviewer subagents confirm zero remaining D4 baseline violations.
+- Read-only context for implementation: `AGENTS.md`, `docs/superpowers/workflow.md`, `docs/superpowers/task-profiles.md`, `docs/superpowers/specs/2026-05-12-gap-d4-baseline-retirement-design.md`, the D4-MVP section of `eslint.config.mjs`, the listed source files around the baseline lines, and `package.json` scripts only when checking verification commands.
+- Acceptance criteria: all 10 baseline source files avoid the current D4 restricted JSX patterns, `eslint.config.mjs` has no D4 baseline ignores, `project-health/**` is absent from the PR diff, fresh verification commands pass, and Reviewer subagents confirm zero remaining D4 baseline violations.
 - Verification command: `npx eslint src --no-error-on-unmatched-pattern`
   Expected signal: exit 0; no D4-MVP errors and no lint errors in `src`.
 - Verification command: `npm run lint:changed`
@@ -356,7 +362,7 @@
   git commit -m "refactor: clear d4 dialog editor baseline"
   ```
 
-## Task 3: Events UI Plus Gate/Doc
+## Task 3: Events UI Plus Gate
 
 **Profile:** P3 slice under the approved Gap D4 baseline retirement.
 
@@ -365,12 +371,10 @@
 - Modify: `src/ui/events/PaceSelector.jsx`
 - Modify: `src/ui/events/ParticipantsModal.jsx`
 - Modify: `eslint.config.mjs`
-- Modify: `project-health/2026-04-24-openai-harness-gap-analysis.md`
 
 **Read-only context:**
 - `docs/superpowers/specs/2026-05-12-gap-d4-baseline-retirement-design.md`
 - `eslint.config.mjs` D4-MVP block
-- `project-health/2026-04-24-openai-harness-gap-analysis.md` D4 lines only, if present
 - `src/ui/events/EventsListSection.jsx` around line 122
 - `src/ui/events/PaceSelector.jsx` around lines 30 and 53
 - `src/ui/events/ParticipantsModal.jsx` around line 101
@@ -378,14 +382,7 @@
 **Non-scope:**
 - Do not change event card behavior, filtering/loading semantics, event action callbacks, route labels, participant identity logic, pace field names, D4 rule selectors/messages, non-D4 ESLint rules, package scripts, or any file outside this task write set.
 
-- [ ] **Step 1: Engineer checks the project-health file boundary**
-
-  Run: `git ls-files --error-unmatch project-health/2026-04-24-openai-harness-gap-analysis.md`
-  Expected: exit 0 and the exact path printed.
-
-  If the command exits nonzero, stop this task as blocked and report that the design spec requires a project-health update but the referenced file is absent from the worktree. Do not create a replacement file, search for renamed project-health files, or widen scope without user approval.
-
-- [ ] **Step 2: Engineer reads the exact D4 patterns in this slice**
+- [ ] **Step 1: Engineer reads the exact D4 patterns in this slice**
 
   Inspect only the owned files and D4-MVP rule block. Identify these baseline patterns:
 
@@ -394,10 +391,9 @@
   PaceSelector: JSX generates minute and second options from inline array construction and map callbacks.
   ParticipantsModal: JSX renders participant rows from participants.map(...) inside returned JSX.
   eslint.config.mjs: D4-MVP block has an ignores list for the 10 baseline source files.
-  project-health D4 lines: status/count/remaining-work text still describes the pre-retirement baseline.
   ```
 
-- [ ] **Step 3: Engineer refactors EventsListSection event cards**
+- [ ] **Step 2: Engineer refactors EventsListSection event cards**
 
   Move the `events.map(...)` event-card rendering out of returned JSX into a
   prepared `eventCards` constant before the component return. Also prepare
@@ -433,7 +429,7 @@
 
   Keep all current metadata fields, `Link` href, `UserLink`, `EventActionButtons`, `EventCardMenu`, `getRemainingSeats(event)`, `renderRouteLabel(event)`, and pending/membership lookup semantics.
 
-- [ ] **Step 4: Engineer refactors PaceSelector options**
+- [ ] **Step 3: Engineer refactors PaceSelector options**
 
   Expected pattern:
 
@@ -461,7 +457,7 @@
 
   Render `{minuteOptions}` and `{secondOptions}` inside the existing selects. Preserve `name`, `id`, `required`, `defaultValue`, hidden disabled options, labels, and helper text.
 
-- [ ] **Step 5: Engineer refactors ParticipantsModal rows**
+- [ ] **Step 4: Engineer refactors ParticipantsModal rows**
 
   Expected pattern:
 
@@ -488,7 +484,7 @@
 
   Render `{participantRows}` inside `.participantsList`. Preserve loading/error/empty branches and modal markup.
 
-- [ ] **Step 6: Engineer removes only the D4 baseline ignores**
+- [ ] **Step 5: Engineer removes only the D4 baseline ignores**
 
   In `eslint.config.mjs`, update the D4-MVP block from:
 
@@ -521,19 +517,7 @@
 
   Keep the existing `no-restricted-syntax` selectors and messages unchanged.
 
-- [ ] **Step 7: Engineer updates only the D4 project-health lines**
-
-  In `project-health/2026-04-24-openai-harness-gap-analysis.md`, edit only the D4 status/count/remaining-work text so it states:
-
-  ```text
-  Gap D4 MVP baseline retired: 0 remaining baseline violations across 0 baseline files.
-  The D4-MVP ESLint gate now applies to src/**/*.{js,jsx} without baseline ignores.
-  Remaining D4 work: none for the retired baseline; future D4 work requires a separate approved scope.
-  ```
-
-  Preserve unrelated project-health sections. If the existing D4 section uses a table, update the equivalent cells with the same facts instead of changing the document structure.
-
-- [ ] **Step 8: Engineer runs focused and full verification**
+- [ ] **Step 6: Engineer runs focused and full verification**
 
   Verification command: `npx eslint src/ui/events/EventsListSection.jsx src/ui/events/PaceSelector.jsx src/ui/events/ParticipantsModal.jsx --no-error-on-unmatched-pattern`
   Expected signal: exit 0; no lint errors for the changed events UI files.
@@ -550,30 +534,30 @@
   Verification command: `git diff --check`
   Expected signal: exit 0; no whitespace errors.
 
-- [ ] **Step 9: Reviewer checks Task 3**
+- [ ] **Step 7: Reviewer checks Task 3**
 
   PASS criteria:
-  - Only the five owned files changed.
+  - Only the four owned files changed.
   - EventsListSection prepares event card elements before returned JSX and preserves empty/loading/filtering behavior.
   - PaceSelector prepares minute and second option elements before returned JSX and preserves submitted values.
   - ParticipantsModal prepares participant rows before returned JSX and preserves identity fallback, display name fallback, and host status label.
   - `eslint.config.mjs` removes only the D4 baseline comment and `ignores` list; D4 selectors/messages and other ESLint blocks are unchanged.
-  - The project-health D4 text accurately states the retired baseline, zero remaining baseline files, zero remaining baseline violations, and no remaining baseline ignores.
+  - `project-health/**` is not present in the diff.
   - `npx eslint src --no-error-on-unmatched-pattern` has fresh exit 0 evidence after the ignores removal.
 
   REJECT criteria:
   - Any D4 baseline ignore remains in `eslint.config.mjs`.
   - Any listed source file still depends on the D4 baseline to pass.
   - Any unowned file changed.
-  - The project-health edit rewrites unrelated sections or contradicts verification.
+  - Any `project-health/**` file is created or modified in the PR worktree.
   - Verification is missing, stale, combined into one shell command, or failing.
 
-- [ ] **Step 10: Commit checkpoint guidance**
+- [ ] **Step 8: Commit checkpoint guidance**
 
   Do not commit until Reviewer PASS. After PASS and user authorization to commit, use an atomic checkpoint such as:
 
   ```bash
-  git add src/ui/events/EventsListSection.jsx src/ui/events/PaceSelector.jsx src/ui/events/ParticipantsModal.jsx eslint.config.mjs project-health/2026-04-24-openai-harness-gap-analysis.md
+  git add src/ui/events/EventsListSection.jsx src/ui/events/PaceSelector.jsx src/ui/events/ParticipantsModal.jsx eslint.config.mjs
   git commit -m "chore: retire d4 baseline gate"
   ```
 
@@ -591,7 +575,6 @@
 - `git status --short --branch`
 - `git diff --check`
 - Exact D4-MVP block in `eslint.config.mjs`
-- Exact D4 status lines in `project-health/2026-04-24-openai-harness-gap-analysis.md`
 
 **Non-scope:**
 - Do not self-review as the main agent.
@@ -633,21 +616,39 @@
   - The full diff contains only the approved baseline retirement files.
   - All 10 original D4 baseline source files are clean under the D4-MVP gate.
   - `eslint.config.mjs` has no D4 baseline `ignores` list and no replacement baseline mechanism.
-  - `project-health/2026-04-24-openai-harness-gap-analysis.md` D4 status matches the final ESLint evidence.
+  - `project-health/**` is absent from the PR diff.
   - Final verification commands have fresh exit 0 evidence, except `git status --short --branch`, which must show the expected branch and reviewed file set.
 
   REJECT criteria:
   - Any D4 baseline ignore remains.
   - Any unreviewed file is modified.
-  - Verification does not match the project-health text.
+  - `project-health/**` appears in the PR diff.
   - Main agent made implementation edits instead of dispatching Engineer subagents.
 
-- [ ] **Step 4: Commit, push, PR, CI, merge, and sync only after authorization**
+- [ ] **Step 4: Dispatch local archive follow-up after final verification**
+
+  After final verification evidence exists and before PR closeout summary, dispatch a separate subagent in the original repo/local archive context to update only the ignored file:
+
+  ```text
+  project-health/2026-04-24-openai-harness-gap-analysis.md
+  ```
+
+  Required archive facts:
+
+  ```text
+  Gap D4 MVP baseline retired: 0 remaining baseline violations across 0 baseline files.
+  The D4-MVP ESLint gate now applies to src/**/*.{js,jsx} without baseline ignores.
+  Remaining D4 work: none for the retired baseline; future D4 work requires a separate approved scope.
+  ```
+
+  This ignored archive update is not a PR file, not a Task 3 blocker, and must not be staged with the implementation branch.
+
+- [ ] **Step 5: Commit, push, PR, CI, merge, and sync only after authorization**
 
   After final Reviewer PASS, ask for any missing authorization boundary. If authorized, close out in this order:
 
   ```bash
-  git add src/components/Navbar/MobileDrawer.jsx src/components/Navbar/Navbar.jsx src/components/PostCard.jsx src/components/CommentHistoryModal.jsx src/components/EventRouteEditor.jsx src/components/RunCalendarDialog.jsx src/components/weather/FavoritesBar.jsx src/ui/events/EventsListSection.jsx src/ui/events/PaceSelector.jsx src/ui/events/ParticipantsModal.jsx eslint.config.mjs project-health/2026-04-24-openai-harness-gap-analysis.md
+  git add src/components/Navbar/MobileDrawer.jsx src/components/Navbar/Navbar.jsx src/components/PostCard.jsx src/components/CommentHistoryModal.jsx src/components/EventRouteEditor.jsx src/components/RunCalendarDialog.jsx src/components/weather/FavoritesBar.jsx src/ui/events/EventsListSection.jsx src/ui/events/PaceSelector.jsx src/ui/events/ParticipantsModal.jsx eslint.config.mjs
   git commit -m "chore: retire gap d4 baseline"
   git push
   ```
@@ -657,7 +658,7 @@
 ## Self-Review Checklist For This Plan
 
 - The plan starts with the required writing-plans header.
-- The scope matches `docs/superpowers/specs/2026-05-12-gap-d4-baseline-retirement-design.md`: one-shot retirement, 10 baseline files, D4 ignores removal, project-health D4 update, no stronger lint policy.
+- The scope matches `docs/superpowers/specs/2026-05-12-gap-d4-baseline-retirement-design.md`: one-shot retirement, 10 baseline files, D4 ignores removal, no project-health changes in the PR, no stronger lint policy.
 - Each implementation slice has exact owned files, non-scope, Engineer instructions, verification commands, Reviewer PASS/REJECT criteria, and commit checkpoint guidance.
 - Verification commands are listed one command per evidence item with expected signals.
-- The plan records the current uncertainty that the referenced project-health file is absent from this worktree and turns it into a stop condition rather than inventing a replacement path.
+- The plan records the known fact that the project-health archive is ignored and absent from this worktree, keeps it out of PR-owned files, and routes the local archive update to a separate follow-up after final verification.
