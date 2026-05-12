@@ -139,7 +139,7 @@ npm run type-check:changed
 ```
 
 ```bash
-CI=1 firebase emulators:exec --only auth,firestore,storage --project dive-into-run "E2E_FEATURE=046-quality-gates npm run test:e2e:emulator -- tests/e2e/quality-gates/axe-interactive-emulator.spec.js"
+CI=1 firebase emulators:exec --only auth,firestore,storage --project=demo-test "FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=046-quality-gates npm run test:e2e:emulator -- tests/e2e/quality-gates/axe-interactive-emulator.spec.js"
 ```
 
 ```bash
