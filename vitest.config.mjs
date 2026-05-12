@@ -6,6 +6,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const BROWSER_PROJECT_MAX_WORKERS = 2;
+const BROWSER_PROJECT_TEST_TIMEOUT_MS = 30_000;
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -50,6 +53,8 @@ export default defineConfig({
           name: 'browser',
           environment: 'jsdom',
           setupFiles: './vitest.setup.jsx',
+          maxWorkers: BROWSER_PROJECT_MAX_WORKERS,
+          testTimeout: BROWSER_PROJECT_TEST_TIMEOUT_MS,
           exclude: ['tests/server/**', '**/e2e/**', '**/node_modules/**'],
           alias: {
             '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
