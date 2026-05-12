@@ -28,6 +28,19 @@ export default function CommentHistoryModal({ comment, history, historyError, on
   }
 
   const reversedHistory = useMemo(() => [...history].reverse(), [history]);
+  const historyEntries = reversedHistory.map((entry, i) => {
+    const isOriginal = i === reversedHistory.length - 1;
+
+    return (
+      <li key={entry.id || i} className={styles.entry}>
+        <div className={styles.entryHeader}>
+          {isOriginal && <span className={styles.badgeOriginal}>原始版本</span>}
+          <time className={styles.entryTime}>{formatCommentTimeFull(entry.editedAt)}</time>
+        </div>
+        <p className={styles.entryContent}>{entry.content}</p>
+      </li>
+    );
+  });
 
   return (
     <dialog ref={dialogRef} className={styles.dialog} onCancel={handleCancel}>
@@ -56,18 +69,7 @@ export default function CommentHistoryModal({ comment, history, historyError, on
             <p className={styles.entryContent}>{comment.content}</p>
           </li>
           {/* History entries (newest to oldest) */}
-          {reversedHistory.map((entry, i) => {
-            const isOriginal = i === reversedHistory.length - 1;
-            return (
-              <li key={entry.id || i} className={styles.entry}>
-                <div className={styles.entryHeader}>
-                  {isOriginal && <span className={styles.badgeOriginal}>原始版本</span>}
-                  <time className={styles.entryTime}>{formatCommentTimeFull(entry.editedAt)}</time>
-                </div>
-                <p className={styles.entryContent}>{entry.content}</p>
-              </li>
-            );
-          })}
+          {historyEntries}
         </ul>
       )}
     </dialog>
