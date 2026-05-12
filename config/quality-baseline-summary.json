@@ -1,0 +1,382 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-12T00:00:00.000Z",
+  "status": "report-only",
+  "outlierEvaluation": "not_evaluated",
+  "source": {
+    "workflowName": "Quality Budgets",
+    "workflowId": 274891430,
+    "workflowPath": ".github/workflows/quality-budgets.yml",
+    "branch": "main",
+    "event": "workflow_dispatch",
+    "artifactCount": 3,
+    "runCount": 3,
+    "collectionWindow": {
+      "startedAt": "2026-05-12T05:05:31Z",
+      "completedAt": "2026-05-12T05:12:37Z"
+    },
+    "notes": [
+      "Baseline uses successful workflow_dispatch runs on main at the same head SHA.",
+      "Raw artifact payloads are not committed; only normalized observations are recorded.",
+      "Outliers are not evaluated in PR A because the baseline is observed-only and has a three-run sample."
+    ]
+  },
+  "runs": [
+    {
+      "runId": 25714597130,
+      "runAttempt": 1,
+      "runNumber": 10,
+      "runUrl": "https://github.com/victorlovescoding/dive-into-run/actions/runs/25714597130",
+      "headSha": "cf5eee027269b6480bb0422247ec8974a6f66ab2",
+      "headBranch": "main",
+      "event": "workflow_dispatch",
+      "createdAt": "2026-05-12T05:05:47Z",
+      "completedAt": "2026-05-12T05:12:33Z",
+      "artifactNames": [
+        "quality-budget-reports"
+      ]
+    },
+    {
+      "runId": 25714592676,
+      "runAttempt": 1,
+      "runNumber": 9,
+      "runUrl": "https://github.com/victorlovescoding/dive-into-run/actions/runs/25714592676",
+      "headSha": "cf5eee027269b6480bb0422247ec8974a6f66ab2",
+      "headBranch": "main",
+      "event": "workflow_dispatch",
+      "createdAt": "2026-05-12T05:05:39Z",
+      "completedAt": "2026-05-12T05:12:27Z",
+      "artifactNames": [
+        "quality-budget-reports"
+      ]
+    },
+    {
+      "runId": 25714588719,
+      "runAttempt": 1,
+      "runNumber": 8,
+      "runUrl": "https://github.com/victorlovescoding/dive-into-run/actions/runs/25714588719",
+      "headSha": "cf5eee027269b6480bb0422247ec8974a6f66ab2",
+      "headBranch": "main",
+      "event": "workflow_dispatch",
+      "createdAt": "2026-05-12T05:05:31Z",
+      "completedAt": "2026-05-12T05:12:37Z",
+      "artifactNames": [
+        "quality-budget-reports"
+      ]
+    }
+  ],
+  "metrics": {
+    "knip.unusedFileCount": {
+      "unit": "count",
+      "samples": [
+        {
+          "runId": 25714597130,
+          "value": 0
+        },
+        {
+          "runId": 25714592676,
+          "value": 0
+        },
+        {
+          "runId": 25714588719,
+          "value": 0
+        }
+      ],
+      "median": 0,
+      "max": 0,
+      "notes": [
+        "Parsed from knip-report.json after removing a dotenv log prelude from each artifact payload."
+      ]
+    },
+    "knip.issueFileCount": {
+      "unit": "count",
+      "samples": [
+        {
+          "runId": 25714597130,
+          "value": 46
+        },
+        {
+          "runId": 25714592676,
+          "value": 46
+        },
+        {
+          "runId": 25714588719,
+          "value": 46
+        }
+      ],
+      "median": 46,
+      "max": 46,
+      "notes": [
+        "Parsed from knip-report.json after removing a dotenv log prelude from each artifact payload."
+      ]
+    },
+    "knip.unusedProductionDependencyCount": {
+      "unit": "count",
+      "samples": [
+        {
+          "runId": 25714597130,
+          "value": 1
+        },
+        {
+          "runId": 25714592676,
+          "value": 1
+        },
+        {
+          "runId": 25714588719,
+          "value": 1
+        }
+      ],
+      "median": 1,
+      "max": 1,
+      "notes": [
+        "Counts issue entries under the Knip dependencies key.",
+        "Parsed from knip-report.json after removing a dotenv log prelude from each artifact payload."
+      ]
+    },
+    "knip.unlistedDependencyCount": {
+      "unit": "count",
+      "samples": [
+        {
+          "runId": 25714597130,
+          "value": 6
+        },
+        {
+          "runId": 25714592676,
+          "value": 6
+        },
+        {
+          "runId": 25714588719,
+          "value": 6
+        }
+      ],
+      "median": 6,
+      "max": 6,
+      "notes": [
+        "Counts issue entries under the Knip unlisted key.",
+        "Parsed from knip-report.json after removing a dotenv log prelude from each artifact payload."
+      ]
+    },
+    "knip.unusedExportCount": {
+      "unit": "count",
+      "samples": [
+        {
+          "runId": 25714597130,
+          "value": 52
+        },
+        {
+          "runId": 25714592676,
+          "value": 52
+        },
+        {
+          "runId": 25714588719,
+          "value": 52
+        }
+      ],
+      "median": 52,
+      "max": 52,
+      "notes": [
+        "Counts issue entries under the Knip exports key.",
+        "Parsed from knip-report.json after removing a dotenv log prelude from each artifact payload."
+      ]
+    },
+    "bundle.routeCount": {
+      "unit": "route count",
+      "samples": [
+        {
+          "runId": 25714597130,
+          "value": 16
+        },
+        {
+          "runId": 25714592676,
+          "value": 16
+        },
+        {
+          "runId": 25714588719,
+          "value": 16
+        }
+      ],
+      "median": 16,
+      "max": 16,
+      "notes": [
+        "Parsed from reports/bundle-budget/next-build-budget.json."
+      ]
+    },
+    "bundle.warningCount": {
+      "unit": "warning count",
+      "samples": [
+        {
+          "runId": 25714597130,
+          "value": 1
+        },
+        {
+          "runId": 25714592676,
+          "value": 1
+        },
+        {
+          "runId": 25714588719,
+          "value": 1
+        }
+      ],
+      "median": 1,
+      "max": 1,
+      "notes": [
+        "Records observed report-only bundle warnings; this baseline does not define enforcement decisions."
+      ]
+    },
+    "bundle.findingCount": {
+      "unit": "finding count",
+      "samples": [
+        {
+          "runId": 25714597130,
+          "value": 0
+        },
+        {
+          "runId": 25714592676,
+          "value": 0
+        },
+        {
+          "runId": 25714588719,
+          "value": 0
+        }
+      ],
+      "median": 0,
+      "max": 0,
+      "notes": [
+        "Parsed from reports/bundle-budget/next-build-budget.json."
+      ]
+    },
+    "bundle.largestFirstLoadJsBytes": {
+      "unit": "bytes",
+      "samples": [
+        {
+          "runId": 25714597130,
+          "value": 267264,
+          "route": "/events/[id]"
+        },
+        {
+          "runId": 25714592676,
+          "value": 267264,
+          "route": "/events/[id]"
+        },
+        {
+          "runId": 25714588719,
+          "value": 267264,
+          "route": "/events/[id]"
+        }
+      ],
+      "median": 267264,
+      "max": 267264,
+      "notes": [
+        "Largest first-load route was /events/[id] in all selected runs."
+      ]
+    },
+    "strictTypeCheck.exitCode": {
+      "unit": "exit code",
+      "samples": [
+        {
+          "runId": 25714597130,
+          "value": 0,
+          "reportPath": "reports/type-check-strict/strict-report.txt"
+        },
+        {
+          "runId": 25714592676,
+          "value": 0,
+          "reportPath": "reports/type-check-strict/strict-report.txt"
+        },
+        {
+          "runId": 25714588719,
+          "value": 0,
+          "reportPath": "reports/type-check-strict/strict-report.txt"
+        }
+      ],
+      "median": 0,
+      "max": 0,
+      "notes": [
+        "Strict type-check report path signal was present in every selected artifact."
+      ]
+    },
+    "lighthouse.runCount": {
+      "unit": "run count",
+      "samples": [
+        {
+          "runId": 25714597130,
+          "value": 9
+        },
+        {
+          "runId": 25714592676,
+          "value": 9
+        },
+        {
+          "runId": 25714588719,
+          "value": 9
+        }
+      ],
+      "median": 9,
+      "max": 9,
+      "notes": [
+        "Parsed from lhci-report/manifest.json."
+      ]
+    },
+    "lighthouse.representativeRunCount": {
+      "unit": "run count",
+      "samples": [
+        {
+          "runId": 25714597130,
+          "value": 3,
+          "urls": [
+            "http://localhost:3000/",
+            "http://localhost:3000/events",
+            "http://localhost:3000/weather"
+          ]
+        },
+        {
+          "runId": 25714592676,
+          "value": 3,
+          "urls": [
+            "http://localhost:3000/",
+            "http://localhost:3000/events",
+            "http://localhost:3000/weather"
+          ]
+        },
+        {
+          "runId": 25714588719,
+          "value": 3,
+          "urls": [
+            "http://localhost:3000/",
+            "http://localhost:3000/events",
+            "http://localhost:3000/weather"
+          ]
+        }
+      ],
+      "median": 3,
+      "max": 3,
+      "notes": [
+        "Representative URLs were /, /events, and /weather on localhost in every selected run."
+      ]
+    },
+    "lighthouse.minimumRepresentativePerformanceScore": {
+      "unit": "ratio",
+      "scale": "0..1",
+      "samples": [
+        {
+          "runId": 25714597130,
+          "value": 0.89
+        },
+        {
+          "runId": 25714592676,
+          "value": 0.89
+        },
+        {
+          "runId": 25714588719,
+          "value": 0.96
+        }
+      ],
+      "median": 0.89,
+      "max": 0.96,
+      "notes": [
+        "Values are the minimum performance ratio among representative Lighthouse runs in each selected artifact.",
+        "Three-run sample only; outliers are not evaluated."
+      ]
+    }
+  }
+}
