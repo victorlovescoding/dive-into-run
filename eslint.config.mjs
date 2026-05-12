@@ -448,19 +448,6 @@ export default [
   // 16. D4-MVP: high-confidence No logic in JSX gate
   {
     files: ['src/**/*.{js,jsx}'],
-    // D4-MVP baseline is 14 existing violations / 10 files; retire by cleaning those files, do not add new files.
-    ignores: [
-      'src/components/CommentHistoryModal.jsx',
-      'src/components/EventRouteEditor.jsx',
-      'src/components/Navbar/MobileDrawer.jsx',
-      'src/components/Navbar/Navbar.jsx',
-      'src/components/PostCard.jsx',
-      'src/components/RunCalendarDialog.jsx',
-      'src/components/weather/FavoritesBar.jsx',
-      'src/ui/events/EventsListSection.jsx',
-      'src/ui/events/PaceSelector.jsx',
-      'src/ui/events/ParticipantsModal.jsx',
-    ],
     rules: {
       'no-restricted-syntax': [
         'error',

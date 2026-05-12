@@ -12,6 +12,25 @@ import styles from './EventsPageScreen.module.css';
  * @returns {import('react').ReactElement} 配速選擇器 JSX。
  */
 export default function PaceSelector({ defaultPaceMinutes, defaultPaceSeconds }) {
+  const minuteOptions = Array.from({ length: 19 }, (_, index) => {
+    const value = String(index + 2).padStart(2, '0');
+
+    return (
+      <option key={value} value={value}>
+        {index + 2}
+      </option>
+    );
+  });
+  const secondOptions = Array.from({ length: 60 }, (_, seconds) => {
+    const label = String(seconds).padStart(2, '0');
+
+    return (
+      <option key={seconds} value={label}>
+        {label}
+      </option>
+    );
+  });
+
   return (
     <div className={styles.formGroup}>
       <div className={styles.formLabel}>目標配速（每公里）</div>
@@ -27,14 +46,7 @@ export default function PaceSelector({ defaultPaceMinutes, defaultPaceSeconds })
             <option value="" disabled hidden>
               分
             </option>
-            {[...Array(19)].map((_, index) => {
-              const value = String(index + 2).padStart(2, '0');
-              return (
-                <option key={value} value={value}>
-                  {index + 2}
-                </option>
-              );
-            })}
+            {minuteOptions}
           </select>
           <span className={styles.paceUnit}>分</span>
         </label>
@@ -50,14 +62,7 @@ export default function PaceSelector({ defaultPaceMinutes, defaultPaceSeconds })
             <option value="" disabled hidden>
               秒
             </option>
-            {[...Array(60).keys()].map((seconds) => {
-              const label = String(seconds).padStart(2, '0');
-              return (
-                <option key={seconds} value={label}>
-                  {label}
-                </option>
-              );
-            })}
+            {secondOptions}
           </select>
           <span className={styles.paceUnit}>秒</span>
         </label>
