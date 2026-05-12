@@ -37,6 +37,15 @@ export default function EventRouteEditor({
   onRouteDrawn,
   onEditedRouteChange,
 }) {
+  const viewEncodedPolylines = route ? normalizeRoutePolylines(route) : undefined;
+  let drawRouteStatusText = '請在地圖上繪製路線';
+  if (editedRouteCoordinates) {
+    drawRouteStatusText = `路線已更新（${countTotalPoints(editedRouteCoordinates)} 點）`;
+  } else if (!routeCleared && route) {
+    drawRouteStatusText = `編輯既有路線（${route.pointsCount ?? '?'} 點）`;
+  }
+  const initialEncodedPolylines = routeCleared ? undefined : normalizeRoutePolylines(route);
+
   return (
     <div className={styles.formGroup}>
       <div className={styles.routeSectionLabel}>活動路線</div>
@@ -50,7 +59,7 @@ export default function EventRouteEditor({
           <div className={styles.mapContainer}>
             <EventMap
               mode="view"
-              encodedPolylines={normalizeRoutePolylines(route)}
+              encodedPolylines={viewEncodedPolylines}
               bbox={route.bbox}
               height={320}
             />
@@ -115,23 +124,12 @@ export default function EventRouteEditor({
 
       {routeMode === 'draw' && (
         <>
-          {editedRouteCoordinates ? (
-            <div className={styles.routeStatusText}>
-              路線已更新（
-              {countTotalPoints(editedRouteCoordinates)} 點）
-            </div>
-          ) : (
-            <div className={styles.routeStatusText}>
-              {!routeCleared && route
-                ? `編輯既有路線（${route.pointsCount ?? '?'} 點）`
-                : '請在地圖上繪製路線'}
-            </div>
-          )}
+          <div className={styles.routeStatusText}>{drawRouteStatusText}</div>
           <div className={styles.mapContainer}>
             <EventMap
               mode="draw"
               onRouteDrawn={onRouteDrawn}
-              initialEncodedPolylines={routeCleared ? undefined : normalizeRoutePolylines(route)}
+              initialEncodedPolylines={initialEncodedPolylines}
               height={320}
             />
           </div>

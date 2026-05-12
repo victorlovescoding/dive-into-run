@@ -36,57 +36,59 @@ import styles from './weather.module.css';
 export default function FavoritesBar({ favorites, summaries, activeId, onSelect, onRemove }) {
   if (!favorites.length) return null;
 
+  const favoriteChips = favorites.map((fav) => {
+    const summary = summaries[fav.id];
+    const name = formatLocationNameShort(fav.countyName, fav.townshipName);
+    const isActive = fav.id === activeId;
+
+    return (
+      <div
+        key={fav.id}
+        className={isActive ? styles.favoriteChipActive : styles.favoriteChip}
+        role="listitem"
+      >
+        <button
+          type="button"
+          className={styles.chipSelectButton}
+          onClick={() => onSelect(fav)}
+          aria-label={`切換到${name}`}
+        >
+          {summary?.weatherCode && (
+            <Image
+              className={styles.chipIcon}
+              src={getWeatherIconUrl(summary.weatherCode)}
+              alt=""
+              width={20}
+              height={20}
+              unoptimized
+            />
+          )}
+          <span className={styles.chipName}>{name}</span>
+          {summary?.currentTemp != null && (
+            <span className={styles.chipTemp}>
+              {summary.currentTemp}
+              &deg;
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          className={styles.chipRemove}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(fav);
+          }}
+          aria-label={`移除${name}收藏`}
+        >
+          &#10005;
+        </button>
+      </div>
+    );
+  });
+
   return (
     <div className={styles.favoritesBar} role="list" aria-label="收藏地點">
-      {favorites.map((fav) => {
-        const summary = summaries[fav.id];
-        const name = formatLocationNameShort(fav.countyName, fav.townshipName);
-        const isActive = fav.id === activeId;
-
-        return (
-          <div
-            key={fav.id}
-            className={isActive ? styles.favoriteChipActive : styles.favoriteChip}
-            role="listitem"
-          >
-            <button
-              type="button"
-              className={styles.chipSelectButton}
-              onClick={() => onSelect(fav)}
-              aria-label={`切換到${name}`}
-            >
-              {summary?.weatherCode && (
-                <Image
-                  className={styles.chipIcon}
-                  src={getWeatherIconUrl(summary.weatherCode)}
-                  alt=""
-                  width={20}
-                  height={20}
-                  unoptimized
-                />
-              )}
-              <span className={styles.chipName}>{name}</span>
-              {summary?.currentTemp != null && (
-                <span className={styles.chipTemp}>
-                  {summary.currentTemp}
-                  &deg;
-                </span>
-              )}
-            </button>
-            <button
-              type="button"
-              className={styles.chipRemove}
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove(fav);
-              }}
-              aria-label={`移除${name}收藏`}
-            >
-              &#10005;
-            </button>
-          </div>
-        );
-      })}
+      {favoriteChips}
     </div>
   );
 }

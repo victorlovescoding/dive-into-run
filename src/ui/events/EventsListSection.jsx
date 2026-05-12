@@ -61,6 +61,95 @@ export default function EventsListSection({
   onOpenFilter,
   loadMore,
 }) {
+  const isEmptyEventsList = !isLoadingEvents && !isFiltering && events.length === 0;
+  const emptyEventsMessage = isFilteredResults ? '沒有符合條件的活動' : '目前還沒有活動（先建立一筆看看）';
+  const eventCards = events.map((event) => (
+    <div key={event.id} className={styles.eventCardWrapper}>
+      <div className={styles.eventCard}>
+        <Link href={`/events/${event.id}`} className={styles.eventTitleLink}>
+          <div className={styles.eventTitle}>{event.title}</div>
+        </Link>
+
+        <div className={styles.eventMeta}>
+          <div>
+            時間：
+            {formatDateTime(event.time)}
+          </div>
+          <div>
+            報名截止：
+            {formatDateTime(event.registrationDeadline)}
+          </div>
+          <div>
+            地點：
+            {event.city} {event.district}
+          </div>
+          <div>
+            集合：
+            {event.meetPlace}
+          </div>
+        </div>
+
+        <div className={styles.eventMeta}>
+          <div>
+            距離：
+            {event.distanceKm} km
+          </div>
+          <div>
+            配速：
+            {formatPace(event.paceSec, event.pace)} /km
+          </div>
+          <div>
+            人數上限：
+            {event.maxParticipants}
+          </div>
+          <div>
+            剩餘名額：
+            {getRemainingSeats(event)}
+          </div>
+        </div>
+
+        <div className={styles.eventMeta}>
+          <div className={styles.hostRow}>
+            <span>主揪：</span>
+            <UserLink
+              uid={event.hostUid}
+              name={event.hostName}
+              photoURL={event.hostPhotoURL}
+              size={24}
+            />
+          </div>
+          <div>
+            路線：
+            {renderRouteLabel(event)}
+          </div>
+        </div>
+
+        <div className={styles.eventCardActions}>
+          <EventActionButtons
+            event={event}
+            user={user}
+            onJoin={onJoin}
+            onLeave={onLeave}
+            isPending={pendingByEventId[String(event.id)]}
+            isCreating={isCreating}
+            isFormOpen={isFormOpen}
+            myJoinedEventIds={myJoinedEventIds}
+            membershipStatus={membershipStatusByEventId[String(event.id)] || 'checking'}
+          />
+        </div>
+      </div>
+
+      <div className={styles.eventCardMenuWrapper}>
+        <EventCardMenu
+          event={event}
+          currentUserUid={user?.uid || null}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      </div>
+    </div>
+  ));
+
   return (
     <div className={styles.eventsSection}>
       <div className={styles.eventsHeaderRow}>
@@ -117,97 +206,10 @@ export default function EventsListSection({
       )}
 
       <div className={styles.eventList}>
-        {!isLoadingEvents && !isFiltering && events.length === 0 ? (
-          <div className={styles.emptyHint}>
-            {isFilteredResults ? '沒有符合條件的活動' : '目前還沒有活動（先建立一筆看看）'}
-          </div>
+        {isEmptyEventsList ? (
+          <div className={styles.emptyHint}>{emptyEventsMessage}</div>
         ) : (
-          events.map((event) => (
-            <div key={event.id} className={styles.eventCardWrapper}>
-              <div className={styles.eventCard}>
-                <Link href={`/events/${event.id}`} className={styles.eventTitleLink}>
-                  <div className={styles.eventTitle}>{event.title}</div>
-                </Link>
-
-                <div className={styles.eventMeta}>
-                  <div>
-                    時間：
-                    {formatDateTime(event.time)}
-                  </div>
-                  <div>
-                    報名截止：
-                    {formatDateTime(event.registrationDeadline)}
-                  </div>
-                  <div>
-                    地點：
-                    {event.city} {event.district}
-                  </div>
-                  <div>
-                    集合：
-                    {event.meetPlace}
-                  </div>
-                </div>
-
-                <div className={styles.eventMeta}>
-                  <div>
-                    距離：
-                    {event.distanceKm} km
-                  </div>
-                  <div>
-                    配速：
-                    {formatPace(event.paceSec, event.pace)} /km
-                  </div>
-                  <div>
-                    人數上限：
-                    {event.maxParticipants}
-                  </div>
-                  <div>
-                    剩餘名額：
-                    {getRemainingSeats(event)}
-                  </div>
-                </div>
-
-                <div className={styles.eventMeta}>
-                  <div className={styles.hostRow}>
-                    <span>主揪：</span>
-                    <UserLink
-                      uid={event.hostUid}
-                      name={event.hostName}
-                      photoURL={event.hostPhotoURL}
-                      size={24}
-                    />
-                  </div>
-                  <div>
-                    路線：
-                    {renderRouteLabel(event)}
-                  </div>
-                </div>
-
-                <div className={styles.eventCardActions}>
-                  <EventActionButtons
-                    event={event}
-                    user={user}
-                    onJoin={onJoin}
-                    onLeave={onLeave}
-                    isPending={pendingByEventId[String(event.id)]}
-                    isCreating={isCreating}
-                    isFormOpen={isFormOpen}
-                    myJoinedEventIds={myJoinedEventIds}
-                    membershipStatus={membershipStatusByEventId[String(event.id)] || 'checking'}
-                  />
-                </div>
-              </div>
-
-              <div className={styles.eventCardMenuWrapper}>
-                <EventCardMenu
-                  event={event}
-                  currentUserUid={user?.uid || null}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                />
-              </div>
-            </div>
-          ))
+          eventCards
         )}
       </div>
 

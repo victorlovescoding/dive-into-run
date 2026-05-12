@@ -29,6 +29,19 @@ export default function Navbar() {
   const hamburgerClass = isDrawerOpen
     ? `${styles.hamburger} ${styles.hamburgerOpen}`
     : styles.hamburger;
+  const desktopLinks = NAV_ITEMS.map((item) => {
+    const active = isActivePath(pathname, item.href);
+    const linkClass = active ? `${styles.link} ${styles.linkActive}` : styles.link;
+    const ariaCurrent = active ? 'page' : undefined;
+
+    return (
+      <li key={item.href}>
+        <Link href={item.href} className={linkClass} aria-current={ariaCurrent}>
+          {item.label}
+        </Link>
+      </li>
+    );
+  });
 
   return (
     <>
@@ -53,23 +66,7 @@ export default function Navbar() {
         </button>
 
         {/* Desktop links */}
-        <ul className={styles.desktopLinks}>
-          {NAV_ITEMS.map((item) => {
-            const active = isActivePath(pathname, item.href);
-            const linkClass = active ? `${styles.link} ${styles.linkActive}` : styles.link;
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={linkClass}
-                  {...(active ? { 'aria-current': 'page' } : {})}
-                >
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <ul className={styles.desktopLinks}>{desktopLinks}</ul>
 
         {user && (
           <div className={styles.bellWrapper}>

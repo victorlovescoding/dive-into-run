@@ -101,6 +101,37 @@ export default function RunCalendarDialog({ open, onClose }) {
     });
   }
 
+  /**
+   * @param {{ type: string, totalMeters: number }} run - Calendar run summary.
+   * @returns {import('react').ReactElement} Calendar run entry.
+   */
+  function renderRunEntry(run) {
+    const Icon = getRunIcon(run.type);
+
+    return (
+      <div key={run.type} className={styles.runEntry}>
+        <Icon size={12} />
+        <span className={styles.runDistance}>{(run.totalMeters / 1000).toFixed(1)}</span>
+      </div>
+    );
+  }
+
+  const calendarCells = gridCells.map(({ key, day }) => {
+    if (day === null) {
+      return <div key={key} className={styles.dayCell} />;
+    }
+
+    const dayActivities = dayMap.get(day);
+    const cellClass = dayActivities ? `${styles.dayCell} ${styles.dayActive}` : styles.dayCell;
+
+    return (
+      <div key={key} className={cellClass}>
+        <span className={styles.dayNumber}>{day}</span>
+        {dayActivities && dayActivities.runs.map(renderRunEntry)}
+      </div>
+    );
+  });
+
   return (
     <dialog ref={dialogRef} className={styles.dialog} aria-label="跑步月曆" onCancel={handleCancel}>
       <div className={styles.header}>
@@ -147,34 +178,7 @@ export default function RunCalendarDialog({ open, onClose }) {
       )}
 
       <div className={styles.grid}>
-        {gridCells.map(({ key, day }) => {
-          if (day === null) {
-            return <div key={key} className={styles.dayCell} />;
-          }
-
-          const dayActivities = dayMap.get(day);
-          const cellClass = dayActivities
-            ? `${styles.dayCell} ${styles.dayActive}`
-            : styles.dayCell;
-
-          return (
-            <div key={key} className={cellClass}>
-              <span className={styles.dayNumber}>{day}</span>
-              {dayActivities &&
-                dayActivities.runs.map((run) => {
-                  const Icon = getRunIcon(run.type);
-                  return (
-                    <div key={run.type} className={styles.runEntry}>
-                      <Icon size={12} />
-                      <span className={styles.runDistance}>
-                        {(run.totalMeters / 1000).toFixed(1)}
-                      </span>
-                    </div>
-                  );
-                })}
-            </div>
-          );
-        })}
+        {calendarCells}
       </div>
 
       {!isLoading && !error && (

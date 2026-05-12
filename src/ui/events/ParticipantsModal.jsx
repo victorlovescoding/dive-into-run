@@ -40,6 +40,25 @@ export default function ParticipantsModal({
     return null;
   }
 
+  const participantRows = participants.map((participant) => {
+    const participantUid = String(participant.uid || participant.id);
+    const participantName = participant.name || '（未命名）';
+    const participantStatus = participant.uid === hostUid ? '主揪' : '已參加';
+
+    return (
+      <div key={participantUid} className={styles.participantItem}>
+        <UserLink
+          uid={participantUid}
+          name={participantName}
+          photoURL={participant.photoURL}
+          size={36}
+          className={styles.participantLink}
+        />
+        <div className={styles.participantStatus}>{participantStatus}</div>
+      </div>
+    );
+  });
+
   return (
     <div
       ref={overlayRef}
@@ -85,23 +104,7 @@ export default function ParticipantsModal({
             <div className={styles.emptyHint}>目前還沒有人報名</div>
           ) : (
             <div className={styles.participantsList}>
-              {participants.map((participant) => (
-                <div
-                  key={String(participant.uid || participant.id)}
-                  className={styles.participantItem}
-                >
-                  <UserLink
-                    uid={String(participant.uid || participant.id)}
-                    name={participant.name || '（未命名）'}
-                    photoURL={participant.photoURL}
-                    size={36}
-                    className={styles.participantLink}
-                  />
-                  <div className={styles.participantStatus}>
-                    {participant.uid === hostUid ? '主揪' : '已參加'}
-                  </div>
-                </div>
-              ))}
+              {participantRows}
             </div>
           )}
         </div>
