@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { attachAxeReportOnly } from './quality-gate-helpers.js';
+import { attachAxeReportOnly, normalizeAxeViolationSignatures } from './quality-gate-helpers.js';
 
 const AXE_ROUTE_CASES = Object.freeze([
   {
@@ -21,6 +21,27 @@ const AXE_ROUTE_CASES = Object.freeze([
 ]);
 
 test.describe('axe smoke report-only', () => {
+  test('normalizes axe violation signatures in stable sorted order', () => {
+    const signatures = normalizeAxeViolationSignatures([
+      {
+        id: 'color-contrast',
+        impact: 'serious',
+        nodes: [{ target: ['.secondary'] }, { target: ['.primary'] }],
+      },
+      {
+        id: 'aria-dialog-name',
+        impact: 'critical',
+        nodes: [{ target: ['#dialog'] }],
+      },
+    ]);
+
+    expect(signatures).toEqual([
+      'aria-dialog-name|critical|#dialog',
+      'color-contrast|serious|.primary',
+      'color-contrast|serious|.secondary',
+    ]);
+  });
+
   for (const { label, path, heading } of AXE_ROUTE_CASES) {
     test(`${label} route attaches axe report`, async ({ page }, testInfo) => {
       await page.goto(path);

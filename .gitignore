@@ -18,6 +18,7 @@
 /lhci-report
 /reports/bundle-budget
 /reports/type-check-strict
+/reports/quality-baselines
 /knip-report.json
 
 # next.js

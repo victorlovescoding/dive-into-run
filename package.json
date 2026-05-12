@@ -21,6 +21,8 @@
     "depcruise:json": "depcruise --config .dependency-cruiser.mjs --output-type json src specs tests",
     "knip:report": "node scripts/run-knip-report.mjs",
     "knip:production-deps": "knip --production --include dependencies,unlisted --no-exit-code --reporter compact",
+    "knip:production-unlisted-deps": "node scripts/check-knip-production-unlisted-deps.mjs",
+    "quality:baseline-summary": "node scripts/summarize-quality-baselines.mjs",
     "test": "vitest --project=browser",
     "test:browser": "vitest --project=browser",
     "test:server": "bash -c 'firebase emulators:exec --only auth,firestore --project=demo-test \"vitest run --project=server $*\"' --",

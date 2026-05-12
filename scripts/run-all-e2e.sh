@@ -35,6 +35,9 @@ specs_for_feature() {
     028)
       echo "tests/e2e/strava-oauth-flow.spec.js"
       ;;
+    046-quality-gates)
+      echo "tests/e2e/quality-gates/axe-interactive-emulator.spec.js"
+      ;;
     *)
       return 1
       ;;
@@ -60,6 +63,9 @@ feature_for_spec() {
       ;;
     strava-oauth-flow.spec.js)
       echo "028"
+      ;;
+    axe-interactive-emulator.spec.js)
+      echo "046-quality-gates"
       ;;
     *)
       return 1
@@ -285,13 +291,12 @@ EOF
     exit 1
   fi
 
-  # Reset emulator state before each feature (wait for completion)
+  # Reset emulator state before each feature.
   echo "Resetting emulator state..."
   auth_status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "http://localhost:9099/emulator/v1/projects/demo-test/accounts")
   fs_status=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "http://localhost:8080/emulator/v1/projects/demo-test/databases/(default)/documents")
   if [ "$auth_status" != "200" ]; then echo "  Warning: Auth cleanup returned $auth_status"; fi
   if [ "$fs_status" != "200" ]; then echo "  Warning: Firestore cleanup returned $fs_status"; fi
-  sleep 1  # Let emulator finish internal cleanup
 
   echo ""
   echo "=========================================="

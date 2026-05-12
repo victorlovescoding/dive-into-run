@@ -6,6 +6,7 @@ dotenv.config();
 export default defineConfig({
   testDir: './tests/e2e',
   testMatch: '**/*.spec.js',
+  testIgnore: ['**/quality-gates/axe-interactive-emulator.spec.js'],
   timeout: 30_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,

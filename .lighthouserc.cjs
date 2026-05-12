@@ -9,7 +9,7 @@ module.exports = {
       startServerCommand: 'npm run start',
       startServerReadyPattern: 'Ready in',
       startServerReadyTimeout: 60000,
-      numberOfRuns: 1,
+      numberOfRuns: 3,
       settings: {
         chromeFlags: '--headless=new --no-sandbox',
         preset: 'desktop',

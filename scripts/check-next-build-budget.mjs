@@ -34,13 +34,30 @@ const SHARED_LINE_PATTERN =
  */
 
 /**
+ * @typedef {object} ReportWarning
+ * @property {string} code - Stable warning code for machines and Markdown.
+ * @property {string} message - Human-readable warning details.
+ */
+
+/**
+ * @typedef {object} BudgetConfigReport
+ * @property {'configured' | 'partial' | 'missing'} status - Budget configuration completeness.
+ * @property {number | null} maxFirstLoadJsBytes - First Load JS budget in bytes.
+ * @property {number | null} maxRouteSizeBytes - Route size budget in bytes.
+ * @property {{ BUNDLE_BUDGET_FIRST_LOAD_KB: 'configured' | 'unset', BUNDLE_BUDGET_ROUTE_SIZE_KB: 'configured' | 'unset' }} env - Per-variable status.
+ */
+
+/**
  * @typedef {object} BudgetReport
  * @property {string} generatedAt - ISO timestamp for the report.
+ * @property {'ok' | 'warning'} status - Overall report-only status.
  * @property {number} routeCount - Number of parsed routes.
  * @property {number | null} sharedFirstLoadJsBytes - Shared First Load JS size in bytes.
  * @property {{ route: string, firstLoadJsBytes: number } | null} largestFirstLoadRoute - Largest route by First Load JS.
+ * @property {BudgetConfigReport} budgetConfig - Budget configuration report.
  * @property {RouteMetric[]} routes - Route-level bundle metrics.
  * @property {BudgetFinding[]} findings - Report-only budget findings.
+ * @property {ReportWarning[]} warnings - Report-only warning statuses.
  */
 
 /**
@@ -120,12 +137,26 @@ function formatBytes(bytes) {
 /**
  * Parses optional report-only budgets from environment variables.
  * @param {Record<string, string | undefined>} env - Process environment.
- * @returns {{ maxFirstLoadJsBytes: number | null, maxRouteSizeBytes: number | null }} Budget thresholds.
+ * @returns {BudgetConfigReport} Budget thresholds and configuration status.
  */
 function readBudgets(env) {
+  const maxFirstLoadJsBytes = parseOptionalKilobytes(env.BUNDLE_BUDGET_FIRST_LOAD_KB);
+  const maxRouteSizeBytes = parseOptionalKilobytes(env.BUNDLE_BUDGET_ROUTE_SIZE_KB);
+  const configuredCount = [maxFirstLoadJsBytes, maxRouteSizeBytes].filter(
+    (budget) => budget !== null
+  ).length;
+
   return {
-    maxFirstLoadJsBytes: parseOptionalKilobytes(env.BUNDLE_BUDGET_FIRST_LOAD_KB),
-    maxRouteSizeBytes: parseOptionalKilobytes(env.BUNDLE_BUDGET_ROUTE_SIZE_KB),
+    status:
+      configuredCount === 2 ? 'configured' : configuredCount === 0 ? 'missing' : 'partial',
+    maxFirstLoadJsBytes,
+    maxRouteSizeBytes,
+    env: {
+      BUNDLE_BUDGET_FIRST_LOAD_KB:
+        maxFirstLoadJsBytes === null ? 'unset' : 'configured',
+      BUNDLE_BUDGET_ROUTE_SIZE_KB:
+        maxRouteSizeBytes === null ? 'unset' : 'configured',
+    },
   };
 }
 
@@ -183,6 +214,49 @@ function evaluateBudgets(metrics, budgets) {
 }
 
 /**
+ * Creates report-only warnings for missing metrics or budget configuration.
+ * @param {ParsedBuildMetrics} metrics - Parsed bundle metrics.
+ * @param {BudgetConfigReport} budgetConfig - Budget configuration report.
+ * @returns {ReportWarning[]} Report-only warnings.
+ */
+function createReportWarnings(metrics, budgetConfig) {
+  /** @type {ReportWarning[]} */
+  const warnings = [];
+
+  if (budgetConfig.status === 'missing') {
+    warnings.push({
+      code: 'missing-budget-config',
+      message:
+        'Bundle budget env vars are unset; report-only budget comparison was skipped.',
+    });
+  } else if (budgetConfig.status === 'partial') {
+    warnings.push({
+      code: 'partial-budget-config',
+      message: 'One bundle budget env var is unset; report-only comparison is partial.',
+    });
+  }
+
+  if (metrics.routes.length === 0) {
+    warnings.push({
+      code: 'no-route-metrics',
+      message: 'No Next route metrics were parsed from the build output.',
+    });
+  }
+
+  return warnings;
+}
+
+/**
+ * Returns the overall report-only status from warnings and budget findings.
+ * @param {ReportWarning[]} warnings - Report warnings.
+ * @param {BudgetFinding[]} findings - Budget findings.
+ * @returns {'ok' | 'warning'} Overall status.
+ */
+function getReportStatus(warnings, findings) {
+  return warnings.length > 0 || findings.length > 0 ? 'warning' : 'ok';
+}
+
+/**
  * Finds the route with the largest first-load JS payload.
  * @param {{ route: string, firstLoadJsBytes: number }[]} routes - Route metrics.
  * @returns {{ route: string, firstLoadJsBytes: number } | null} Largest route, if any.
@@ -210,6 +284,7 @@ function renderMarkdownReport(report) {
     '# Next Build Bundle Budget Report',
     '',
     `Generated: ${report.generatedAt}`,
+    `Status: ${report.status}`,
     `Routes parsed: ${report.routeCount}`,
     `Shared First Load JS: ${formatBytes(report.sharedFirstLoadJsBytes)}`,
     `Largest route First Load JS: ${
@@ -217,6 +292,23 @@ function renderMarkdownReport(report) {
         ? `${report.largestFirstLoadRoute.route} (${formatBytes(report.largestFirstLoadRoute.firstLoadJsBytes)})`
         : 'n/a'
     }`,
+    `Budget config: ${report.budgetConfig.status}`,
+    `Budget First Load JS: ${formatBytes(report.budgetConfig.maxFirstLoadJsBytes)}`,
+    `Budget Route Size: ${formatBytes(report.budgetConfig.maxRouteSizeBytes)}`,
+    '',
+    '## Warnings',
+    '',
+  ];
+
+  if (report.warnings.length === 0) {
+    lines.push('No report-only status warnings.');
+  } else {
+    for (const warning of report.warnings) {
+      lines.push(`- ${warning.code}: ${warning.message}`);
+    }
+  }
+
+  lines.push(
     '',
     '## Routes',
     '',
@@ -230,11 +322,11 @@ function renderMarkdownReport(report) {
     ),
     '',
     '## Findings',
-    '',
-  ];
+    ''
+  );
 
   if (report.findings.length === 0) {
-    lines.push('No report-only budget warnings.');
+    lines.push('No configured budget overage warnings.');
   } else {
     for (const finding of report.findings) {
       lines.push(
@@ -334,16 +426,24 @@ function main(argv) {
 
   const buildOutput = readOrCreateBuildOutput(options.inputPath);
   const metrics = parseNextBuildRouteMetrics(buildOutput.output);
-  const budgets = readBudgets(process.env);
+  const budgetConfig = readBudgets(process.env);
   const largestFirstLoadRoute = findLargestFirstLoadRoute(metrics.routes);
+  const findings = evaluateBudgets(metrics, budgetConfig);
+  const warnings = createReportWarnings(metrics, budgetConfig);
   const report = {
     generatedAt: new Date().toISOString(),
     source: buildOutput.source,
+    status: getReportStatus(warnings, findings),
     routeCount: metrics.routes.length,
     sharedFirstLoadJsBytes: metrics.sharedFirstLoadJsBytes,
     largestFirstLoadRoute,
-    budgets,
-    findings: evaluateBudgets(metrics, budgets),
+    budgetConfig,
+    budgets: {
+      maxFirstLoadJsBytes: budgetConfig.maxFirstLoadJsBytes,
+      maxRouteSizeBytes: budgetConfig.maxRouteSizeBytes,
+    },
+    findings,
+    warnings,
     routes: metrics.routes,
   };
 

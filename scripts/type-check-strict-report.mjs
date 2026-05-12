@@ -4,6 +4,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const OUT_DIR = 'reports/type-check-strict';
+const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
+const PROJECT_PATH = path.join(REPO_ROOT, 'tsconfig.strict.json');
+const OUT_DIR_PATH = path.join(REPO_ROOT, OUT_DIR);
 const TSC_BIN = fileURLToPath(new URL('../node_modules/typescript/bin/tsc', import.meta.url));
 
 /**
@@ -13,8 +16,9 @@ const TSC_BIN = fileURLToPath(new URL('../node_modules/typescript/bin/tsc', impo
 function main() {
   const result = spawnSync(
     process.execPath,
-    [TSC_BIN, '--noEmit', '--project', 'tsconfig.strict.json', '--pretty', 'false'],
+    [TSC_BIN, '--noEmit', '--project', PROJECT_PATH, '--pretty', 'false'],
     {
+      cwd: REPO_ROOT,
       encoding: 'utf8',
       maxBuffer: 20 * 1024 * 1024,
     }
@@ -23,10 +27,10 @@ function main() {
   const status = result.status ?? 1;
   const report = output || `Strict report completed with exit code ${status} and no compiler output.\n`;
 
-  mkdirSync(OUT_DIR, { recursive: true });
-  writeFileSync(path.join(OUT_DIR, 'strict-report.txt'), report);
+  mkdirSync(OUT_DIR_PATH, { recursive: true });
+  writeFileSync(path.join(OUT_DIR_PATH, 'strict-report.txt'), report);
   writeFileSync(
-    path.join(OUT_DIR, 'strict-report.json'),
+    path.join(OUT_DIR_PATH, 'strict-report.json'),
     `${JSON.stringify(
       {
         generatedAt: new Date().toISOString(),

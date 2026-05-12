@@ -71,6 +71,35 @@ export function collectReactHydrationErrors(page) {
 }
 
 /**
+ * Converts an axe node target into a stable string for report summaries.
+ * @param {unknown} target - Axe node target.
+ * @returns {string} Stable target text.
+ */
+function normalizeAxeTarget(target) {
+  if (Array.isArray(target)) {
+    return target.map((part) => String(part)).join(' ');
+  }
+  return String(target ?? '');
+}
+
+/**
+ * Builds stable sorted axe violation signatures as ruleId|impact|target.
+ * @param {{ id?: string, impact?: string | null, nodes?: { target?: unknown }[] }[]} violations - Axe violations.
+ * @returns {string[]} Stable sorted violation signatures.
+ */
+export function normalizeAxeViolationSignatures(violations) {
+  return violations
+    .flatMap((violation) => {
+      const ruleId = violation.id ?? '';
+      const impact = violation.impact ?? '';
+      return (violation.nodes ?? []).map(
+        (node) => `${ruleId}|${impact}|${normalizeAxeTarget(node.target)}`,
+      );
+    })
+    .sort((left, right) => left.localeCompare(right));
+}
+
+/**
  * Runs axe and attaches a report without failing the test on violations.
  * @param {import('@playwright/test').Page} page - Playwright page under test.
  * @param {import('@playwright/test').TestInfo} testInfo - Playwright test metadata.
@@ -79,23 +108,14 @@ export function collectReactHydrationErrors(page) {
  */
 export async function attachAxeReportOnly(page, testInfo, routeLabel) {
   const results = await new AxeBuilder({ page }).analyze();
-  const violations = results.violations.map(({ id, impact, description, nodes }) => ({
-    id,
-    impact,
-    description,
-    nodes: nodes.slice(0, 3).map(({ target, failureSummary }) => ({
-      target,
-      failureSummary,
-    })),
-    nodeCount: nodes.length,
-  }));
+  const violationSignatures = normalizeAxeViolationSignatures(results.violations);
 
-  await testInfo.attach(`axe-${routeLabel}.json`, {
+  await testInfo.attach(`axe-${routeLabel}-summary.json`, {
     body: JSON.stringify(
       {
         url: page.url(),
-        violationCount: violations.length,
-        violations,
+        violationCount: results.violations.length,
+        violationSignatures,
       },
       null,
       2,
@@ -103,10 +123,15 @@ export async function attachAxeReportOnly(page, testInfo, routeLabel) {
     contentType: 'application/json',
   });
 
-  if (violations.length > 0) {
+  await testInfo.attach(`axe-${routeLabel}-raw.json`, {
+    body: JSON.stringify(results, null, 2),
+    contentType: 'application/json',
+  });
+
+  if (results.violations.length > 0) {
     testInfo.annotations.push({
       type: 'axe-report-only',
-      description: `${routeLabel}: ${violations.length} violation(s) attached`,
+      description: `${routeLabel}: ${results.violations.length} violation(s) attached`,
     });
   }
 }

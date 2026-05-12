@@ -22,9 +22,19 @@ import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 
+const explicitEmulatorProjectId =
+  process.env.FIREBASE_PROJECT_ID ||
+  process.env.GCLOUD_PROJECT ||
+  process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
 dotenv.config();
 
 const feature = process.env.E2E_FEATURE;
+const emulatorProjectId = explicitEmulatorProjectId || 'demo-test';
+
+process.env.FIREBASE_PROJECT_ID = emulatorProjectId;
+process.env.GCLOUD_PROJECT = emulatorProjectId;
+process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = emulatorProjectId;
 
 const setupDir = './tests/e2e/_setup';
 const featureSpecMatches = {
@@ -34,12 +44,13 @@ const featureSpecMatches = {
   '014-notification-system': ['comment-notification-flow.spec.js', 'notification-flow.spec.js'],
   '019-posts-ui-refactor': ['posts-ui.spec.js'],
   '028': ['strava-oauth-flow.spec.js'],
+  '046-quality-gates': ['quality-gates/axe-interactive-emulator.spec.js'],
 };
 const firebaseClientEnv = {
   NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'fake-api-key',
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:
     process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'dive-into-run.firebaseapp.com',
-  NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'dive-into-run',
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: emulatorProjectId,
   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET:
     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'dive-into-run.appspot.com',
   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:
