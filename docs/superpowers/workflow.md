@@ -4,7 +4,7 @@
 
 This repo uses Superpowers as the workflow language and `specs/<feature>/...` as the durable state backend.
 
-`docs/superpowers/specs/` and `docs/superpowers/plans/` were old
+docs/superpowers/specs/ and docs/superpowers/plans/ were old
 Superpowers plugin default paths and are no longer used in this repo. If a
 plugin skill still hard-codes those paths, this repo policy overrides the
 plugin default. Historical outputs from those paths live under

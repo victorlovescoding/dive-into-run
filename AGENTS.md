@@ -125,7 +125,7 @@ npm run depcruise           # dependency direction check
 ## Legacy
 
 - `speckit.*` is legacy. Do not use it unless the user explicitly asks.
-- `docs/superpowers/specs/` and `docs/superpowers/plans/` were old
+- docs/superpowers/specs/ and docs/superpowers/plans/ were old
   Superpowers plugin default paths and are no longer used. If a plugin skill
   names those paths as defaults, repo policy overrides the plugin default.
 - Add durable workflow state according to `docs/superpowers/task-profiles.md`.
