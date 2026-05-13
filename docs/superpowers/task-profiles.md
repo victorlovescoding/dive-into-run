@@ -105,6 +105,12 @@ PR/CI closeout.
 `specs/` is durable workflow state, not a notebook for every bugfix. Small
 fixes, regular bugfixes, and docs cleanup should not pollute `specs/`.
 
+docs/superpowers/specs/ and docs/superpowers/plans/ were old Superpowers
+plugin default paths and are no longer used. If a plugin skill still
+hard-codes those paths, repo policy overrides the plugin default. Migrated
+outputs under `specs/_legacy/superpowers/**` are lookup/provenance only and
+are not active workflow state.
+
 | Profile | Specs artifact rule |
 | ------- | ------------------- |
 | P0 | No `specs/` docs. |

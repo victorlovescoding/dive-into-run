@@ -38,9 +38,9 @@
 - Branch rule: do not work on `main`; this plan assumes the existing isolated worktree branch is used.
 - Scope: clear only the current Gap D4 baseline files, remove only the matching D4-MVP baseline ignores, and keep the current D4-MVP gate shape.
 - Non-scope: no stronger lint rules, no custom full JSX policy, no unrelated source cleanup, no broad component rewrites, no dependency changes, no package script changes, no spec changes, no project-health changes in the PR, no product behavior changes beyond preserving current behavior while satisfying the D4 gate.
-- Owned files for this plan document task: `docs/superpowers/plans/2026-05-12-gap-d4-baseline-retirement.md`.
+- Owned files for this plan document task: `specs/_legacy/superpowers/plans/2026-05-12-gap-d4-baseline-retirement.md`.
 - Owned files for implementation tasks: each task lists its exact write set; Engineer subagents must not expand it.
-- Read-only context for implementation: `AGENTS.md`, `docs/superpowers/workflow.md`, `docs/superpowers/task-profiles.md`, `docs/superpowers/specs/2026-05-12-gap-d4-baseline-retirement-design.md`, the D4-MVP section of `eslint.config.mjs`, the listed source files around the baseline lines, and `package.json` scripts only when checking verification commands.
+- Read-only context for implementation: `AGENTS.md`, `docs/superpowers/workflow.md`, `docs/superpowers/task-profiles.md`, `specs/_legacy/superpowers/designs/2026-05-12-gap-d4-baseline-retirement-design.md`, the D4-MVP section of `eslint.config.mjs`, the listed source files around the baseline lines, and `package.json` scripts only when checking verification commands.
 - Acceptance criteria: all 10 baseline source files avoid the current D4 restricted JSX patterns, `eslint.config.mjs` has no D4 baseline ignores, `project-health/**` is absent from the PR diff, fresh verification commands pass, and Reviewer subagents confirm zero remaining D4 baseline violations.
 - Verification command: `npx eslint src --no-error-on-unmatched-pattern`
   Expected signal: exit 0; no D4-MVP errors and no lint errors in `src`.
@@ -63,7 +63,7 @@
 - Modify: `src/components/PostCard.jsx`
 
 **Read-only context:**
-- `docs/superpowers/specs/2026-05-12-gap-d4-baseline-retirement-design.md`
+- `specs/_legacy/superpowers/designs/2026-05-12-gap-d4-baseline-retirement-design.md`
 - `eslint.config.mjs` D4-MVP block
 - `src/components/Navbar/MobileDrawer.jsx` around lines 62 and 73
 - `src/components/Navbar/Navbar.jsx` around lines 57 and 65
@@ -196,7 +196,7 @@
 - Modify: `src/components/weather/FavoritesBar.jsx`
 
 **Read-only context:**
-- `docs/superpowers/specs/2026-05-12-gap-d4-baseline-retirement-design.md`
+- `specs/_legacy/superpowers/designs/2026-05-12-gap-d4-baseline-retirement-design.md`
 - `eslint.config.mjs` D4-MVP block
 - `src/components/CommentHistoryModal.jsx` around line 59
 - `src/components/EventRouteEditor.jsx` around line 125
@@ -373,7 +373,7 @@
 - Modify: `eslint.config.mjs`
 
 **Read-only context:**
-- `docs/superpowers/specs/2026-05-12-gap-d4-baseline-retirement-design.md`
+- `specs/_legacy/superpowers/designs/2026-05-12-gap-d4-baseline-retirement-design.md`
 - `eslint.config.mjs` D4-MVP block
 - `src/ui/events/EventsListSection.jsx` around line 122
 - `src/ui/events/PaceSelector.jsx` around lines 30 and 53
@@ -658,7 +658,7 @@
 ## Self-Review Checklist For This Plan
 
 - The plan starts with the required writing-plans header.
-- The scope matches `docs/superpowers/specs/2026-05-12-gap-d4-baseline-retirement-design.md`: one-shot retirement, 10 baseline files, D4 ignores removal, no project-health changes in the PR, no stronger lint policy.
+- The scope matches `specs/_legacy/superpowers/designs/2026-05-12-gap-d4-baseline-retirement-design.md`: one-shot retirement, 10 baseline files, D4 ignores removal, no project-health changes in the PR, no stronger lint policy.
 - Each implementation slice has exact owned files, non-scope, Engineer instructions, verification commands, Reviewer PASS/REJECT criteria, and commit checkpoint guidance.
 - Verification commands are listed one command per evidence item with expected signals.
 - The plan records the known fact that the project-health archive is ignored and absent from this worktree, keeps it out of PR-owned files, and routes the local archive update to a separate follow-up after final verification.

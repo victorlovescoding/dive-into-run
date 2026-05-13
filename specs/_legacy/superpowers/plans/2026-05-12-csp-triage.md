@@ -43,7 +43,7 @@
 - Modify: `tests/e2e/security-headers.spec.js`
   - Owner: Security E2E Engineer.
   - Responsibility: strengthen browser-visible security header assertions for key routes using the same exact directive expectations.
-- Read-only integration context: `package.json`, `docs/superpowers/specs/2026-05-12-csp-triage-design.md`, `AGENTS.md`, `docs/superpowers/workflow.md`, `docs/superpowers/task-profiles.md`.
+- Read-only integration context: `package.json`, `specs/_legacy/superpowers/designs/2026-05-12-csp-triage-design.md`, `AGENTS.md`, `docs/superpowers/workflow.md`, `docs/superpowers/task-profiles.md`.
 
 ## Target CSP Helper Contract
 
@@ -108,7 +108,7 @@ export function buildCspReportOnlyHeaderValue() {
 
 - Modify: `next.config.mjs`
 - Modify: `tests/unit/config/security-headers.test.js`
-- Read-only context: `package.json`, `docs/superpowers/specs/2026-05-12-csp-triage-design.md`
+- Read-only context: `package.json`, `specs/_legacy/superpowers/designs/2026-05-12-csp-triage-design.md`
 - Forbidden: E2E tests, docs, package files, lockfiles, app code, route handlers
 
 - [ ] **Step 1: Confirm branch and task boundary**
@@ -265,7 +265,7 @@ Expected: commit succeeds with only the two owned files staged.
 **Files:**
 
 - Create: `docs/security/csp-source-inventory.md`
-- Read-only context: `next.config.mjs`, `docs/superpowers/specs/2026-05-12-csp-triage-design.md`, `docs/TECH_DEBT.md`, `docs/decisions/INDEX.md`
+- Read-only context: `next.config.mjs`, `specs/_legacy/superpowers/designs/2026-05-12-csp-triage-design.md`, `docs/TECH_DEBT.md`, `docs/decisions/INDEX.md`
 - Forbidden: config files, tests, package files, app code, backlog docs, `specs/**`
 
 - [ ] **Step 1: Confirm branch and task boundary**

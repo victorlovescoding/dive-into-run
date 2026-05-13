@@ -4,7 +4,7 @@
 
 **Goal:** Triage the current Knip findings, publish a formal report at docs/quality/2026-05-12-knip-triage.md, and make only proven low-risk config, script, or dependency metadata cleanup while keeping the full Knip report report-only.
 
-**Architecture:** This is Option A from `docs/superpowers/specs/2026-05-12-knip-triage-design.md`: run current Knip commands after dependencies are installed, classify findings, document the result, and apply minimal cleanup only when the classification proves the change is narrow and behavior-preserving. Implementation is performed by Engineer subagents with disjoint owned files where possible, and each repo-changing slice receives Reviewer subagent review before completion; the main agent coordinates only and does not implement or self-review source changes.
+**Architecture:** This is Option A from `specs/_legacy/superpowers/designs/2026-05-12-knip-triage-design.md`: run current Knip commands after dependencies are installed, classify findings, document the result, and apply minimal cleanup only when the classification proves the change is narrow and behavior-preserving. Implementation is performed by Engineer subagents with disjoint owned files where possible, and each repo-changing slice receives Reviewer subagent review before completion; the main agent coordinates only and does not implement or self-review source changes.
 
 **Tech Stack:** Next.js 15 / React 19 repository, npm scripts, Knip, Node.js ES modules, Vitest for the focused Knip gate script test only when `scripts/check-knip-production-unlisted-deps.mjs` changes, changed-file lint/type-check gates.
 
@@ -17,7 +17,7 @@
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-053-knip-triage`.
 - Branch: `053-knip-triage`.
 - Authorization boundary: this plan authorizes only the future implementation edit phase by Engineer subagents after coordinator dispatch. It does not authorize staging, committing, pushing, opening a PR, merging, or syncing local `main`.
-- Current staged file to preserve: `docs/superpowers/specs/2026-05-12-knip-triage-design.md`. Do not unstage it during implementation or review.
+- Current staged file to preserve: `specs/_legacy/superpowers/designs/2026-05-12-knip-triage-design.md`. Do not unstage it during implementation or review.
 - Current blocker for normal commit: the pre-commit browser Vitest lane is known to time out in this workstream. Do not debug that timeout inside the Knip implementation task unless the coordinator receives explicit user authorization.
 
 ## Expected Files And Ownership
@@ -69,7 +69,7 @@ The triage report must classify each current Knip category into exactly one buck
 **Files:**
 
 - Create: docs/quality/2026-05-12-knip-triage.md
-- Read-only context: `docs/superpowers/specs/2026-05-12-knip-triage-design.md`, `package.json`, `knip.json`, `scripts/run-knip-report.mjs`, `scripts/check-knip-production-unlisted-deps.mjs`
+- Read-only context: `specs/_legacy/superpowers/designs/2026-05-12-knip-triage-design.md`, `package.json`, `knip.json`, `scripts/run-knip-report.mjs`, `scripts/check-knip-production-unlisted-deps.mjs`
 - Forbidden writes: `project-health/**`, `src/**`, `tests/**`, `package.json`, `package-lock.json`, `scripts/**`
 
 - [ ] **Step 1: Confirm branch, staged design doc, and task boundary**
@@ -80,7 +80,7 @@ Run:
 git status --short --branch
 ```
 
-Expected: branch is `053-knip-triage`; `docs/superpowers/specs/2026-05-12-knip-triage-design.md` remains staged; no implementation file is staged by the Engineer.
+Expected: branch is `053-knip-triage`; `specs/_legacy/superpowers/designs/2026-05-12-knip-triage-design.md` remains staged; no implementation file is staged by the Engineer.
 
 - [ ] **Step 2: Install current dependencies before running Knip**
 
