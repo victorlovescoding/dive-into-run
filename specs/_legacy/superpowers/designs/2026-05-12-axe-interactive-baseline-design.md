@@ -153,6 +153,8 @@ git status --short
 ```
 
 ```bash
+# Historical command note: this command records the old pre-migration path that
+# existed when the design doc was created.
 git diff -- docs/superpowers/specs/2026-05-12-axe-interactive-baseline-design.md
 ```
 

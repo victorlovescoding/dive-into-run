@@ -14,6 +14,9 @@ Mode: Option A - triage plus minimal cleanup
 
 ## Commands
 
+Migration note: command output below preserves historical old-path evidence
+from before Superpowers plugin outputs moved to `specs/_legacy/superpowers/**`.
+
 | Command | Exit | Signal |
 | --- | ---: | --- |
 | `git status --short --branch` | 0 | exited 0 on branch `053-knip-triage`; `docs/superpowers/specs/2026-05-12-knip-triage-design.md` remained staged and no implementation file was staged |

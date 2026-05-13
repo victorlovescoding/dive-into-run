@@ -4,6 +4,13 @@
 
 This repo uses Superpowers as the workflow language and `specs/<feature>/...` as the durable state backend.
 
+`docs/superpowers/specs/` and `docs/superpowers/plans/` were old
+Superpowers plugin default paths and are no longer used in this repo. If a
+plugin skill still hard-codes those paths, this repo policy overrides the
+plugin default. Historical outputs from those paths live under
+`specs/_legacy/superpowers/**` for lookup and provenance only; they are not
+active workflow state and are not resume entrypoints.
+
 ## Goals
 
 - Keep the main agent thin: dispatcher, status owner, and user-facing coordinator.
@@ -39,6 +46,10 @@ Use the Specs Artifact Policy in `docs/superpowers/task-profiles.md` to decide
 whether workflow state belongs under `specs/`. P1/P2 default to no `specs/`
 artifacts; P3 uses compact durable artifacts only when transcript memory is not
 enough; P4 always uses the full five-file set.
+
+When adding durable workflow state, follow
+`docs/superpowers/task-profiles.md`. Do not create new state in the legacy
+plugin paths.
 
 Use the Branch And Worktree Policy in
 `docs/superpowers/task-profiles.md` to choose isolation. P1/P2 default to a
@@ -81,6 +92,10 @@ session-local rules. Do not retrofit them for compliance unless the user asks.
 Treat them as evidence for that feature, not as defaults for new Superpowers
 work. For new work, this document and the templates are the workflow source of
 truth unless the user explicitly narrows authority for a specific feature.
+
+`specs/_legacy/superpowers/**` is narrower than ordinary historical
+`specs/**`: it contains migrated plugin outputs only. Use it for lookup or
+provenance, never as active feature workflow state.
 
 ## Artifact Persistence Policy
 
@@ -366,5 +381,9 @@ of `specs/**` during startup. Historical specs, old `handoff-archive.md`,
 oversized `tasks.md`, reports, and large reference payloads are lookup material:
 open them only when the active feature explicitly points there or the current
 question requires provenance.
+
+Active resume reads only the active `specs/<feature>/handoff.md`,
+`specs/<feature>/tasks.md`, and `specs/<feature>/status.json` after this
+workflow file. `specs/_legacy/superpowers/**` is never a resume entrypoint.
 
 If these files disagree, treat it as a stop condition and reconcile before dispatching more work.

@@ -45,7 +45,7 @@ Future implementation may touch only these files:
 
 Read-only context for all tasks:
 
-- `docs/superpowers/specs/2026-05-12-axe-interactive-baseline-design.md`
+- `specs/_legacy/superpowers/designs/2026-05-12-axe-interactive-baseline-design.md`
 - `AGENTS.md`
 - `docs/superpowers/workflow.md`
 - `docs/superpowers/task-profiles.md`
@@ -780,7 +780,7 @@ Expected before Task 4: each state reaches its UI assertions. The command may ex
 **Owned files:**
 
 - Modify: `tests/e2e/quality-gates/axe-interactive-baseline.json`
-- Read-only context: Playwright output from Task 3 summary attachments, `docs/superpowers/specs/2026-05-12-axe-interactive-baseline-design.md`
+- Read-only context: Playwright output from Task 3 summary attachments, `specs/_legacy/superpowers/designs/2026-05-12-axe-interactive-baseline-design.md`
 
 **Acceptance Criteria:**
 

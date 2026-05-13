@@ -28,7 +28,7 @@ Implementation-owned files:
 
 Read-only context for future agents:
 
-- `docs/superpowers/specs/2026-05-12-gap-c-semantic-drift-design.md`
+- `specs/_legacy/superpowers/designs/2026-05-12-gap-c-semantic-drift-design.md`
 - `docs/superpowers/workflow.md`
 - `docs/superpowers/task-profiles.md`
 - `.codex/references/quality-gates.md`
@@ -741,6 +741,8 @@ Read:
 
 ```bash
 sed -n '1,140p' .codex/references/review-standards.md
+# Historical command note: the command below records the old pre-migration path
+# that existed when this legacy plan was written.
 sed -n '140,156p' docs/superpowers/specs/2026-05-12-gap-c-semantic-drift-design.md
 ```
 

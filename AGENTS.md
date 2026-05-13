@@ -57,6 +57,9 @@ no Codex-native source exists.
 - Active feature specs: read only the active `specs/<feature>/` directory.
   Start from `handoff.md`, `tasks.md`, and `status.json` when present; open
   `spec.md` or `plan.md` only for missing scope or acceptance details.
+- Legacy Superpowers plugin outputs live under `specs/_legacy/superpowers/**`
+  and are lookup/provenance only. They are not active workflow state or resume
+  entrypoints.
 - Historical specs, `project-health/**`, archives, and old handoffs are lookup
   payloads, not startup context.
 
@@ -122,5 +125,12 @@ npm run depcruise           # dependency direction check
 ## Legacy
 
 - `speckit.*` is legacy. Do not use it unless the user explicitly asks.
+- `docs/superpowers/specs/` and `docs/superpowers/plans/` were old
+  Superpowers plugin default paths and are no longer used. If a plugin skill
+  names those paths as defaults, repo policy overrides the plugin default.
+- Add durable workflow state according to `docs/superpowers/task-profiles.md`.
+  P4 uses `specs/<feature>/`; P1/P2 default to no `specs/` artifacts; P3 uses
+  compact artifacts only for cross-session, multi-task, or dispatcher
+  continuity needs.
 - Prefer installed Superpowers plugin skills for generic workflow skills; keep
   repo-local `.agents/skills/**` for project-specific workflows and references.
