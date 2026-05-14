@@ -10,6 +10,7 @@ import { parseNextBuildRouteMetrics } from '../../../scripts/check-next-build-bu
 
 const require = createRequire(import.meta.url);
 const FIXTURE_PATH = 'tests/unit/scripts/fixtures/next-15-build-output.txt';
+const QUALITY_BUDGETS_WORKFLOW_PATH = '.github/workflows/quality-budgets.yml';
 
 /**
  * @typedef {object} NextBuildBudgetReport
@@ -201,6 +202,21 @@ describe('check-next-build-budget report output', () => {
     expect(markdown).toContain('Route policy: configured');
     expect(markdown).toContain('report-only proposal');
     expect(markdown).toContain('/events/[id] firstLoadJs');
+  });
+});
+
+describe('quality budget workflow bundle report path', () => {
+  it('runs bundle budget reports on pull requests with configured env and non-blocking artifact output', () => {
+    const workflow = readFileSync(QUALITY_BUDGETS_WORKFLOW_PATH, 'utf8');
+
+    expect(workflow).toContain('pull_request:');
+    expect(workflow).toContain('branches: [main]');
+    expect(workflow).toMatch(
+      /- name: Next bundle budget report[\s\S]*?run: npm run build:budget[\s\S]*?BUNDLE_BUDGET_FIRST_LOAD_KB:[\s\S]*?BUNDLE_BUDGET_ROUTE_SIZE_KB:[\s\S]*?continue-on-error: true/u
+    );
+    expect(workflow).toMatch(
+      /- name: Upload quality reports[\s\S]*?if: \$\{\{ always\(\) \}\}[\s\S]*?reports\/bundle-budget\//u
+    );
   });
 });
 
