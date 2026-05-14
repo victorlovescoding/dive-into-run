@@ -22,6 +22,67 @@ PR B does not add an enforced CSP header, add a collector endpoint, hard gate on
 CSP violation reporting, change HSTS preload behavior, or remove any CSP source.
 Removal requires a later approved task.
 
+## PR B Decision
+
+PR B keeps CSP in observation mode only. It records how to collect and review
+source evidence before enforcement work exists; it does not introduce reporting
+headers, a collector endpoint, an enforced policy, or CI failures on CSP
+violations.
+
+Until a collector exists, valid evidence can come from manual browser DevTools
+inspection or Playwright/request-level capture. A missing signal is not proof
+that a source is unused; record it as `unknown` or `needs-evidence` with the
+route, owner, and revisit date.
+
+## Violation Triage Paths
+
+| Path | Use when | Evidence to keep | Outcome |
+| --- | --- | --- | --- |
+| Manual browser / DevTools | A focused route or third-party flow needs human login, OAuth, media, maps, or weather verification. | Route URL, environment, browser, timestamp, Console CSP messages or absence, Network requests by host, screenshots only when they clarify the finding. | Update the source row's evidence wording, owner, and revisit date. If evidence is absent or partial, keep `unknown` / `needs-evidence`. |
+| Playwright / request-level capture | The route can be exercised repeatably in local, emulator, preview, or staging without adding product behavior. | Test or script name, environment, captured request hosts, CSP console events if collected, and whether the source was required, unused, or not reached. | Use as stronger route evidence than header-only tests, but do not turn violation reporting into a hard gate in PR B. |
+| Future collector | Manual and Playwright evidence are too sparse for enforcement readiness, or staging/production behavior needs longitudinal visibility. | Collector design, privacy review, retention, owner, rollout target, and the exact `report-uri` / `report-to` header change proposed. | Requires a later approved task. Adding the endpoint or reporting headers is outside PR B. |
+
+## Triage Decision Matrix
+
+| Finding | Decision |
+| --- | --- |
+| A route visibly needs a source and the request host matches the inventory. | Keep or upgrade to `runtime-required`; cite the route evidence, owner, and revisit date. |
+| Header tests cover the source but no runtime route evidence exists. | Keep the row, but mark browser need as `needs-evidence`; header coverage alone is not runtime proof. |
+| A route was tested and did not use the source. | Record the tested route and result, but keep the source unless a later approved removal task is opened. |
+| A route or third-party flow cannot be reached yet. | Record `unknown` / `needs-evidence`, the blocker, the expected owner, and the next revisit date. |
+| A violation appears in DevTools, Playwright, staging, or production logs. | Record directive, blocked URI, route, environment, owner, and whether it is expected compatibility, a missing source candidate, or a product bug. |
+| Evidence suggests a source can be removed. | Do not remove it in PR B. Open a later approved task with Reviewer-confirmed evidence and rollback plan. |
+
+## Source Evidence Record
+
+When updating a source row or follow-up note, include:
+
+- Source evidence: route or flow, environment, timestamp or run identifier,
+  tool used, and the observed host or CSP violation.
+- Owner: team or feature owner responsible for validating the source.
+- Expiry / revisit: date when `unknown`, `legacy`, `dev-only`, or temporary
+  rationale must be reviewed again.
+- Rationale: why the source is required, dev-only, legacy, or still unknown.
+- Gaps: use `unknown` or `needs-evidence` when evidence is missing, partial, or
+  blocked. Do not infer removal eligibility from missing evidence.
+
+## Collector Adoption Conditions
+
+Consider a later collector/reporting-header task only when at least one of
+these is true:
+
+- Staging or production behavior cannot be represented by manual DevTools or
+  Playwright/request evidence.
+- Enforcement readiness needs continuous violation trends instead of one-off
+  route checks.
+- Third-party, OAuth, media, map, weather, or Firebase flows show intermittent
+  hosts or environment-specific violations.
+- The project is ready to define collector ownership, privacy handling,
+  retention, alert policy, and a non-blocking rollout plan.
+
+That later task must explicitly approve any collector endpoint, `report-uri`,
+`report-to`, security header test updates, or enforcement work.
+
 ## Source Inventory
 
 | Directive | Source | Classification | Purpose | Route or feature dependency | Evidence status | Owner | Revisit date |
