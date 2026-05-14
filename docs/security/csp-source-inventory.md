@@ -80,6 +80,24 @@ When updating a source row or follow-up note, include:
 - Gaps: use `unknown` or `needs-evidence` when evidence is missing, partial, or
   blocked. Do not infer removal eligibility from missing evidence.
 
+## Required Runtime Evidence Coverage
+
+These rows track the route/runtime evidence specifically requested before any
+later CSP enforcement work. Missing or partial runtime signal is recorded as
+`needs-evidence`; it is not removal evidence.
+
+| Flow or runtime surface | Covered source(s) | Current classification / status | Runtime evidence or gap | Next evidence target |
+| --- | --- | --- | --- | --- |
+| Firebase Auth login | `connect-src` `https://identitytoolkit.googleapis.com`, `https://*.googleapis.com` | `runtime-required`; `needs-evidence` for production host capture | Header-covered and platform-required. Existing local/emulator auth coverage does not prove browser requests to production Auth hosts. | Preview/staging login with request host capture and CSP console review. |
+| Firebase Auth token refresh | `connect-src` `https://securetoken.googleapis.com`, `https://*.googleapis.com` | `runtime-required`; `needs-evidence` for production host capture | Header-covered and platform-required. No browser token refresh request capture is recorded. | Long-lived authenticated session or forced refresh with request host capture. |
+| Firestore read/write | `connect-src` `https://firestore.googleapis.com`, `https://*.googleapis.com` | `runtime-required`; `needs-evidence` for route-level host capture | Header-covered and platform-required. Existing evidence does not identify a browser route read/write request to production Firestore. | Authenticated route that reads and writes app data, with request host capture. |
+| Firebase Storage image/media | `img-src` / `connect-src` `https://firebasestorage.googleapis.com` | `unknown`; `needs-evidence` | Next image allowlist and media route dependency exist, but no browser image or storage request capture is recorded. | Seeded post/event media render and upload or download flow with request host capture. |
+| OSM tile load | `img-src` `https://*.tile.openstreetmap.org` | `unknown`; `needs-evidence` | Route dependency exists for map rendering, but no browser tile request capture is recorded. | `/events` create-map and `/events/[id]` route map view request capture. |
+| Nominatim geocoding | `connect-src` `https://nominatim.openstreetmap.org` | `unknown`; `needs-evidence` | Route dependency exists for map search/geocoding, but no browser search request capture is recorded. | Event map search interaction with request host capture. |
+| CWA weather icon/image | `img-src` `https://www.cwa.gov.tw` | `unknown`; `needs-evidence` | Route dependency exists for weather imagery, but no browser image request capture is recorded. | `/weather` route with weather card/favorite icon request capture. |
+| Next script/style/image runtime | `script-src` `'self'`, `'unsafe-inline'`, `'unsafe-eval'`; `style-src` `'self'`, `'unsafe-inline'`; `img-src` `'self'`, `data:`, `blob:`; `font-src` `'self'`, `data:` | Same-origin sources are `runtime-required`; inline/eval/data/blob/font gaps are `unknown` or `needs-evidence` | Header tests prove report-only header shape only. No production build/browser CSP event capture is recorded for inline script/style, eval, data/blob image, or data font compatibility. | Production build or preview route crawl with request hosts and CSP console event capture. |
+| Strava production OAuth/API path | `connect-src` `https://www.strava.com`, `connect-src` `'self'` for `/api/strava/*` | `unknown`; `needs-evidence` for browser `www.strava.com` need | E2E mocks browser OAuth navigation; server-side Strava API tests are not browser `connect-src` proof. | Real preview/staging OAuth path with credentials, or explicit decision that Strava is server-navigation only in a later approved task. |
+
 ## Collector Adoption Conditions
 
 Consider a later collector/reporting-header task only when at least one of
@@ -106,19 +124,19 @@ That later task must explicitly approve any collector endpoint, `report-uri`,
 | `form-action` | `'self'` | runtime-required | Restricts same-origin form submissions. | Auth and app forms. | Header-covered; browser form-flow evidence remains optional. | Security | Permanent |
 | `frame-ancestors` | `'none'` | runtime-required | Prevents framing. | All routes. | Header-covered by unit/E2E smoke; this is header behavior, not route runtime proof. | Security | Permanent |
 | `object-src` | `'none'` | runtime-required | Blocks plugin/object loads. | All routes. | Header-covered by unit/E2E smoke; policy hardening baseline. | Security | Permanent |
-| `script-src` | `'self'` | runtime-required | Allows same-origin scripts. | App shell. | Header-covered; browser app-shell proof should be collected before enforcement. | Security | Permanent |
+| `script-src` | `'self'` | runtime-required | Allows same-origin scripts. | App shell and Next runtime. | Header-covered; needs-evidence: browser app-shell script request/CSP event proof should be collected before enforcement. | Security | Permanent |
 | `script-src` | `'unsafe-inline'` | unknown | Framework/runtime inline script compatibility while report-only. | App shell. | needs-evidence: production or preview browser evidence required before classification changes. | Frontend | 2026-06-12 |
 | `script-src` | `'unsafe-eval'` | unknown | Dev/framework tooling compatibility while report-only. | App shell/local dev. | needs-evidence: production build/browser evidence required before classification changes. | Frontend | 2026-06-12 |
-| `style-src` | `'self'` | runtime-required | Allows same-origin styles. | App shell. | Header-covered; same-origin stylesheet route proof remains optional. | Frontend | Permanent |
+| `style-src` | `'self'` | runtime-required | Allows same-origin styles. | App shell and Next runtime. | Header-covered; same-origin stylesheet route proof remains optional; collect CSP event proof before enforcement. | Frontend | Permanent |
 | `style-src` | `'unsafe-inline'` | unknown | Inline styles from framework/map/weather UI and component style props. | App shell/maps/weather. | needs-evidence: browser evidence required before classification changes. | Frontend | 2026-06-12 |
-| `img-src` | `'self'` | runtime-required | Allows same-origin images. | App shell/media. | Header-covered; same-origin image route proof remains optional. | Frontend | Permanent |
+| `img-src` | `'self'` | runtime-required | Allows same-origin images. | App shell, media, and Next image optimizer output. | Header-covered; same-origin image route proof remains optional; collect Next image runtime evidence before enforcement. | Frontend | Permanent |
 | `img-src` | `data:` | unknown | Allows inline image/data URL fallbacks. | Icons/UI fallbacks. | needs-evidence: header-covered only; no route signal found in allowed search. | Frontend | 2026-06-12 |
 | `img-src` | `blob:` | unknown | Blob image previews/generated media. | Media previews. | needs-evidence: no route signal found in allowed search. | Frontend | 2026-06-12 |
 | `img-src` | `https://lh3.googleusercontent.com` | unknown | Google profile images. | Auth profile display. | needs-evidence: Next image allowlist and avatar routes exist, but no captured `lh3.googleusercontent.com` browser request yet. | Auth | 2026-06-12 |
 | `img-src` | `https://firebasestorage.googleapis.com` | unknown | Firebase Storage media. | Posts/events media. | needs-evidence: Next image allowlist exists, but no route-specific browser request captured yet. | Media | 2026-06-12 |
 | `img-src` | `https://*.tile.openstreetmap.org` | unknown | OSM map tile images. | Event create/detail map routes. | needs-evidence: route dependency exists; capture tile host on `/events` create-map and `/events/[id]` route view before classification changes. | Maps | 2026-06-12 |
 | `img-src` | `https://www.cwa.gov.tw` | unknown | CWA weather icon/image assets. | Weather UI and favorite chips. | needs-evidence: route dependency exists; capture icon host on `/weather` before classification changes. | Weather | 2026-06-12 |
-| `font-src` | `'self'` | runtime-required | Allows same-origin fonts. | App shell. | Header-covered; same-origin font route proof remains optional. | Frontend | Permanent |
+| `font-src` | `'self'` | runtime-required | Allows same-origin fonts. | App shell and Next font/runtime assets. | Header-covered; same-origin font route proof remains optional. | Frontend | Permanent |
 | `font-src` | `data:` | unknown | Data URL fonts if framework/assets need them. | App shell. | needs-evidence: production build/browser evidence required. | Frontend | 2026-06-12 |
 | `connect-src` | `'self'` | runtime-required | Allows same-origin API and route-handler requests. | All app/API routes. | Header-covered; same-origin `/api/strava/*` browser calls are visible in route code. | Security | Permanent |
 | `connect-src` | `http://localhost:*` | dev-only | Local development HTTP requests while report-only. | Local dev and emulator. | Header-covered; local-only, not production evidence. | Developer Experience | 2026-06-12 |
@@ -134,6 +152,11 @@ That later task must explicitly approve any collector endpoint, `report-uri`,
 | `connect-src` | `https://firebasestorage.googleapis.com` | unknown | Firebase Storage browser requests. | Posts/events media. | needs-evidence: no route-specific browser request captured yet. | Media | 2026-06-12 |
 | `connect-src` | `https://www.strava.com` | unknown | Browser-side Strava navigation/request compatibility and server-side Strava API context. | Strava OAuth/sync. | needs-evidence: browser OAuth navigation is mocked in E2E; server-side Strava API tests are not browser `connect-src` proof. | Integrations | 2026-06-12 |
 | `connect-src` | `https://nominatim.openstreetmap.org` | unknown | Geocoding/search requests. | Event map search/geocoding. | needs-evidence: route dependency exists through map search provider; capture search host before classification changes. | Maps | 2026-06-12 |
+
+No source is currently classified as `legacy`. If later evidence shows a source
+is historical compatibility rather than current runtime behavior, keep the
+source and reclassify it as `legacy` only in an approved follow-up; do not
+remove it from this inventory by inference.
 
 ## Route / Source Evidence Notes
 
