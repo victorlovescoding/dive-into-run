@@ -15,6 +15,9 @@ const FIXTURE_PATH = 'tests/unit/scripts/fixtures/next-15-build-output.txt';
  * @typedef {object} NextBuildBudgetReport
  * @property {string} status Report-only budget status.
  * @property {{ status?: string }} budgetConfig Parsed budget configuration metadata.
+ * @property {object} routePolicy Route-level report-only policy proposal metadata.
+ * @property {string} [routePolicy.status] Route policy proposal status.
+ * @property {Array<Record<string, unknown>>} [routePolicy.entries] Route proposal entries.
  * @property {Array<Record<string, unknown>>} warnings Report-only warning entries.
  * @property {number} routeCount Parsed route metric count.
  * @property {Array<Record<string, unknown>>} findings Budget finding entries.
@@ -138,6 +141,66 @@ describe('check-next-build-budget report output', () => {
         }),
       ])
     );
+  });
+
+  it('reads route-level policy proposals from baseline summary and keeps overages report-only', () => {
+    const outDir = createTempDir();
+    const baselinePath = path.join(outDir, 'quality-baseline-summary.json');
+    writeFileSync(
+      baselinePath,
+      `${JSON.stringify({
+        schemaVersion: 1,
+        status: 'report-only',
+        metrics: {
+          'bundle.largestFirstLoadJsBytes': {
+            unit: 'bytes',
+            samples: [
+              { runId: 1, value: 150000, route: '/events/[id]' },
+              { runId: 2, value: 150000, route: '/events/[id]' },
+              { runId: 3, value: 150000, route: '/events/[id]' },
+            ],
+            median: 150000,
+            max: 150000,
+          },
+        },
+      })}\n`
+    );
+
+    const result = runBudgetReport([
+      '--input',
+      FIXTURE_PATH,
+      '--out-dir',
+      outDir,
+      '--baseline-summary',
+      baselinePath,
+    ]);
+
+    expect(result.status).toBe(0);
+
+    const report = readJsonReport(outDir);
+    const markdown = readFileSync(path.join(outDir, 'next-build-budget.md'), 'utf8');
+
+    expect(report.status).toBe('warning');
+    expect(report.routePolicy.status).toBe('configured');
+    expect(report.routePolicy.entries).toEqual([
+      expect.objectContaining({
+        route: '/events/[id]',
+        metric: 'firstLoadJs',
+        proposedBudgetBytes: 150000,
+        mode: 'report-only',
+      }),
+    ]);
+    expect(report.findings).toContainEqual(
+      expect.objectContaining({
+        level: 'warning',
+        route: '/events/[id]',
+        metric: 'firstLoadJs',
+        policy: 'route-policy-proposal',
+      })
+    );
+    expect(markdown).toContain('Route policy: configured');
+    expect(markdown).toContain('report-only proposal');
+    expect(markdown).toContain('/events/[id] firstLoadJs');
   });
 });
 
