@@ -117,4 +117,16 @@ test.describe('axe interactive emulator baseline', () => {
       throw cleanupError;
     }
   });
+
+  test('event participation deadline disabled state matches axe baseline', async ({
+    page,
+  }, testInfo) => {
+    await loginAndOpenEvent(page);
+
+    const deadlineButton = page.getByRole('button', { name: /報名已截止/i });
+    await expect(deadlineButton).toBeVisible();
+    await expect(deadlineButton).toBeDisabled();
+
+    await attachInteractiveAxe(page, testInfo, 'event-participation-deadline-disabled');
+  });
 });
