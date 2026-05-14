@@ -392,6 +392,193 @@
       "reason": "Known existing finding reviewed before PR C hard-gate rollout.",
       "owner": "quality-gates",
       "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "aria-required-children",
+      "impact": "critical",
+      "target": ".Navbar-module___rHu7W__dropdown",
+      "signature": "aria-required-children|critical|.Navbar-module___rHu7W__dropdown",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "aria-required-parent",
+      "impact": "critical",
+      "target": "button[role=\"menuitem\"]",
+      "signature": "aria-required-parent|critical|button[role=\"menuitem\"]",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "color-contrast",
+      "impact": "serious",
+      "target": ".CommentSection-module__t_xYcq__endHint",
+      "signature": "color-contrast|serious|.CommentSection-module__t_xYcq__endHint",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "image-redundant-alt",
+      "impact": "minor",
+      "target": "img[alt=\"Test Commenter\"]",
+      "signature": "image-redundant-alt|minor|img[alt=\"Test Commenter\"]",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "image-redundant-alt",
+      "impact": "minor",
+      "target": "img[alt=\"Test Host\"]",
+      "signature": "image-redundant-alt|minor|img[alt=\"Test Host\"]",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "landmark-one-main",
+      "impact": "moderate",
+      "target": "html",
+      "signature": "landmark-one-main|moderate|html",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "listitem",
+      "impact": "serious",
+      "target": ".Navbar-module___rHu7W__dropdown > li",
+      "signature": "listitem|serious|.Navbar-module___rHu7W__dropdown > li",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "page-has-heading-one",
+      "impact": "moderate",
+      "target": "html",
+      "signature": "page-has-heading-one|moderate|html",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "region",
+      "impact": "moderate",
+      "target": ".EventDetailScreen-module__hupwEa__backLink",
+      "signature": "region|moderate|.EventDetailScreen-module__hupwEa__backLink",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "region",
+      "impact": "moderate",
+      "target": ".EventDetailScreen-module__hupwEa__detailHeader > .EventDetailScreen-module__hupwEa__eventTitle",
+      "signature": "region|moderate|.EventDetailScreen-module__hupwEa__detailHeader > .EventDetailScreen-module__hupwEa__eventTitle",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "region",
+      "impact": "moderate",
+      "target": ".EventDetailScreen-module__hupwEa__eventCard:nth-child(2) > .EventDetailScreen-module__hupwEa__eventMeta:nth-child(2)",
+      "signature": "region|moderate|.EventDetailScreen-module__hupwEa__eventCard:nth-child(2) > .EventDetailScreen-module__hupwEa__eventMeta:nth-child(2)",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "region",
+      "impact": "moderate",
+      "target": ".EventDetailScreen-module__hupwEa__eventCard:nth-child(3)",
+      "signature": "region|moderate|.EventDetailScreen-module__hupwEa__eventCard:nth-child(3)",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "region",
+      "impact": "moderate",
+      "target": ".EventDetailScreen-module__hupwEa__eventCard:nth-child(4)",
+      "signature": "region|moderate|.EventDetailScreen-module__hupwEa__eventCard:nth-child(4)",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "region",
+      "impact": "moderate",
+      "target": ".EventDetailScreen-module__hupwEa__eventMeta:nth-child(3)",
+      "signature": "region|moderate|.EventDetailScreen-module__hupwEa__eventMeta:nth-child(3)",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "region",
+      "impact": "moderate",
+      "target": ".EventDetailScreen-module__hupwEa__eventMeta:nth-child(4)",
+      "signature": "region|moderate|.EventDetailScreen-module__hupwEa__eventMeta:nth-child(4)",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "region",
+      "impact": "moderate",
+      "target": ".EventDetailScreen-module__hupwEa__statusPill",
+      "signature": "region|moderate|.EventDetailScreen-module__hupwEa__statusPill",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
+    },
+    {
+      "route": "/events/test-event-comments",
+      "state": "event-participation-deadline-disabled",
+      "ruleId": "region",
+      "impact": "moderate",
+      "target": ".firebase-emulator-warning",
+      "signature": "region|moderate|.firebase-emulator-warning",
+      "reason": "Known existing event detail participation deadline-state finding reviewed before PR C hard-gate rollout.",
+      "owner": "quality-gates",
+      "expiry": "2026-08-12"
     }
   ]
 }
