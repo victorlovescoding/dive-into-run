@@ -77,6 +77,25 @@ test.describe('axe interactive emulator baseline', () => {
     await attachInteractiveAxe(page, testInfo, 'event-comment-action-menu-open');
   });
 
+  test('event comment action menu keyboard open matches axe baseline', async ({
+    page,
+  }, testInfo) => {
+    await loginAndOpenEvent(page);
+
+    const seededComment = getSeededComment(page);
+    const moreActionsButton = seededComment.getByRole('button', {
+      name: /更多操作/i,
+    });
+    await moreActionsButton.focus();
+    await expect(moreActionsButton).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(page.getByRole('menuitem', { name: /編輯留言/i })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /刪除留言/i })).toBeVisible();
+
+    await attachInteractiveAxe(page, testInfo, 'event-comment-action-menu-keyboard-open');
+  });
+
   test('event comment edit dialog matches axe baseline', async ({ page }, testInfo) => {
     await loginAndOpenEvent(page);
 
