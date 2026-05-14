@@ -9,6 +9,16 @@ const PROJECT_PATH = path.join(REPO_ROOT, 'tsconfig.strict.json');
 const OUT_DIR_PATH = path.join(REPO_ROOT, OUT_DIR);
 const TSC_BIN = fileURLToPath(new URL('../node_modules/typescript/bin/tsc', import.meta.url));
 
+const STRICT_HARD_GATE_CRITERIA = Object.freeze({
+  scope: 'Only files explicitly listed in tsconfig.strict.json are in the strict island.',
+  failureMessage:
+    'Strict TypeScript/JSDoc island failed. Fix the listed strict errors or roll back the file that expanded tsconfig.strict.json.',
+  rollbackPath:
+    'Remove the most recent explicit file entry from tsconfig.strict.json, then rerun the strict island command.',
+  blockingExitCriteria:
+    'The runner may become blocking only after tsconfig.strict.json is clean on main and every file addition keeps the strict island clean in CI.',
+});
+
 /**
  * Runs the strict TypeScript/JSDoc island as a report-only check.
  * @returns {number} Always returns zero so this report does not block CI.
@@ -36,7 +46,9 @@ function main() {
         generatedAt: new Date().toISOString(),
         command: 'tsc --noEmit --project tsconfig.strict.json --pretty false',
         exitCode: status,
+        status: 'report-only',
         reportPath: path.join(OUT_DIR, 'strict-report.txt'),
+        hardGateCriteria: STRICT_HARD_GATE_CRITERIA,
       },
       null,
       2
