@@ -35,6 +35,15 @@ test.describe('axe interactive emulator baseline', () => {
     });
   }
 
+  /**
+   * Finds the seeded comment owned by the logged-in commenter.
+   * @param {import('@playwright/test').Page} page - Playwright page object.
+   * @returns {import('@playwright/test').Locator} Seeded comment article.
+   */
+  function getSeededComment(page) {
+    return page.getByRole('article').filter({ hasText: '留言者的測試留言' });
+  }
+
   test('event comment empty submit disabled matches axe baseline', async ({ page }, testInfo) => {
     await loginAndOpenEvent(page);
 
@@ -57,10 +66,21 @@ test.describe('axe interactive emulator baseline', () => {
     await attachInteractiveAxe(page, testInfo, 'event-comment-create-filled-input');
   });
 
+  test('event comment action menu open matches axe baseline', async ({ page }, testInfo) => {
+    await loginAndOpenEvent(page);
+
+    const seededComment = getSeededComment(page);
+    await seededComment.getByRole('button', { name: /更多操作/i }).click();
+    await expect(page.getByRole('menuitem', { name: /編輯留言/i })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /刪除留言/i })).toBeVisible();
+
+    await attachInteractiveAxe(page, testInfo, 'event-comment-action-menu-open');
+  });
+
   test('event comment edit dialog matches axe baseline', async ({ page }, testInfo) => {
     await loginAndOpenEvent(page);
 
-    const seededComment = page.getByRole('article').filter({ hasText: '留言者的測試留言' });
+    const seededComment = getSeededComment(page);
     await seededComment.getByRole('button', { name: /更多操作/i }).click();
     await page.getByRole('menuitem', { name: /編輯留言/i }).click();
 
@@ -70,6 +90,22 @@ test.describe('axe interactive emulator baseline', () => {
     await expect(page.getByRole('button', { name: /完成編輯/i })).toBeDisabled();
 
     await attachInteractiveAxe(page, testInfo, 'event-comment-edit-dialog');
+  });
+
+  test('event comment edit dirty enabled matches axe baseline', async ({ page }, testInfo) => {
+    await loginAndOpenEvent(page);
+
+    const seededComment = getSeededComment(page);
+    await seededComment.getByRole('button', { name: /更多操作/i }).click();
+    await page.getByRole('menuitem', { name: /編輯留言/i }).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const textbox = dialog.getByRole('textbox');
+    await textbox.fill(`axe edited comment ${Date.now()}`);
+    await expect(dialog.getByRole('button', { name: /完成編輯/i })).toBeEnabled();
+
+    await attachInteractiveAxe(page, testInfo, 'event-comment-edit-dirty-enabled');
   });
 
   test('event comment delete confirm dialog matches axe baseline', async ({ page }, testInfo) => {
