@@ -10,7 +10,9 @@
     "scripts/check-next-build-budget.mjs",
     "scripts/run-knip-report.mjs",
     "scripts/type-check-strict-report.mjs",
-    "src/config/client/firebase-timestamp.js"
+    "src/config/client/firebase-timestamp.js",
+    "src/config/server/strava-server-config.js",
+    "src/config/geo/taiwan-locations.js"
   ],
   "include": ["src/types/**/*"]
 }
