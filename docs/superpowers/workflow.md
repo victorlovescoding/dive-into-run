@@ -157,6 +157,69 @@ The main agent is control plane only. It coordinates state, dispatch, user
 communication, and closeout. It does not become the implementation,
 investigation, debugging, or review agent for repo-changing work.
 
+## Subagent Staffing And Stage Leads
+
+Subagent staffing rules, stage leads, advisor labels, Reviewer Matrix,
+Debugger modes, Verifier and Release Manager separation, and dispatch contract
+details live in `.codex/references/subagent-roles.md`. This workflow keeps the
+hard rules; that reference is the operating manual.
+
+Workflow precedence is:
+
+1. `AGENTS.md`, `docs/superpowers/**`, and repo rules.
+2. Superpowers plugin defaults.
+3. Specialized skills.
+
+Specialized skills may be attached to roles, but they cannot loosen repo
+workflow rules, owned-file boundaries, fresh verification, Reviewer checks, or
+authorization boundaries.
+
+Stage leads:
+
+| Stage | Lead |
+| ----- | ---- |
+| Spec | Main |
+| Plan | Planner |
+| Implementation | Main/Dispatcher |
+| Debug | Debugger |
+| Verification | Verifier |
+| Release | Release Manager |
+
+Staff by task profile:
+
+- P0: Main plus zero or one Explorer.
+- P1: Main, one Engineer, one Reviewer; Debugger only for unclear failure.
+- P2: Main, one Engineer, one Reviewer; add Test Strategist when needed;
+  Verifier recommended before commit or PR.
+- P3: Main, Architect advisor, Planner, Test Strategist, one
+  Engineer/Reviewer pair; Debugger mandatory on any failure; Verifier
+  mandatory; Release Manager only for closeout.
+- P4: Main, PM/Requirements, UX/UI, Feasibility advisor, Architect, Planner,
+  Test Strategist, one to three Engineer/Reviewer lanes, Debugger on failure,
+  Verifier, and Release Manager.
+
+Default to one Engineer/Reviewer pair. Same-wave parallel lanes are allowed
+only with completely disjoint owned files, one Reviewer per Engineer lane, no
+shared helper/config/lockfile/workflow-state/schema/rules/migration writes, and
+a final integration gate after the wave.
+
+Debugger uses `superpowers:systematic-debugging`, has diagnostic mode and fix
+mode, and never skips root-cause analysis. Fix mode requires owned files and
+edit authorization. After three failed fix attempts for the same symptom, stop
+for architecture or user discussion.
+
+Verifier and Release Manager are separate roles. Release Manager cannot
+self-verify and may cross commit, push, PR, merge, or local sync boundaries
+only after Reviewer PASS, Verifier PASS, no workflow state drift, and explicit
+authorization for that boundary.
+
+Every dispatch must include role, stage, profile, worktree/branch, scope,
+non-scope, allowed read context, owned files for writable roles, authorization
+boundary, required skill or protocol, stop conditions, and output format.
+
+Custom `.codex/agents/*.toml` subagent definitions are future work. Current
+repo role profiles and dispatch rules are defined by these docs only.
+
 The main agent may:
 
 - Read control-plane context: `AGENTS.md`, this workflow, active

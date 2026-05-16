@@ -53,6 +53,8 @@ no Codex-native source exists.
   `.codex/references/github-closeout.md`.
 - Superpowers lifecycle and task routing:
   `docs/superpowers/workflow.md` and `docs/superpowers/task-profiles.md`.
+- Subagent staffing, stage leads, role boundaries, and dispatch rules:
+  `.codex/references/subagent-roles.md`.
 - Durable architecture/workflow decisions: `docs/decisions/INDEX.md`.
 - Active feature specs: read only the active `specs/<feature>/` directory.
   Start from `handoff.md`, `tasks.md`, and `status.json` when present; open
