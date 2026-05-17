@@ -12,6 +12,11 @@ Superpowers work. It complements `AGENTS.md`,
 Use it when choosing subagent roles, assigning stage leads, deciding whether
 parallel lanes are safe, or writing a dispatch brief.
 
+Chinese and English repo-changing phrases, including develop, implement, fix,
+refactor, test, document, 開發, 實作, 修, 修正, 修 bug, 重構, 補測試, 改文件,
+and 更新文件, trigger workflow routing. Triggering routing does not grant edit
+authorization; writable roles still need an explicit authorization boundary.
+
 ## Precedence
 
 Follow workflow instructions in this order:
@@ -66,7 +71,7 @@ implementation.
 | Stage | Lead | Required support |
 | ----- | ---- | ---------------- |
 | Spec | Main | P4 always includes PM/Requirements, UX/UI, and Feasibility advisors. |
-| Plan | Planner | P3/P4 include Architect and Test Strategist; P1/P2 stay lighter by profile. |
+| Plan | Planner | P3/P4 include Architect and Test Strategist; P1/P2 stay lighter by profile. Single clear P1/P2 slices may use an inline minimum task brief; unclear or multi-slice P1/P2 work uses Planner. |
 | Implementation | Main/Dispatcher | Engineers and paired Reviewers by task lane. |
 | Debug | Debugger | Engineer may fix only after Debugger root cause and authorization. |
 | Verification | Verifier | Fresh command evidence before completion, commit, push, PR, merge, or sync claims. |
@@ -148,7 +153,7 @@ Every subagent dispatch must include:
 - Owned files for writable roles.
 - Allowed read-only context.
 - Authorization boundary: edit, commit, push, PR, merge, and local `main` sync
-  are separate.
+  are separate. Start/edit authorization does not imply closeout authorization.
 - Required skill or protocol.
 - Dependencies and same-wave lanes.
 - Acceptance criteria and verification commands with expected signal.
