@@ -18,8 +18,10 @@ no Codex-native source exists.
 - Keep `AGENTS.md` as the entry map; open referenced docs only when they match
   the current task.
 - For repo-changing requests such as develop, implement, fix, refactor, test,
-  or document, read `docs/superpowers/workflow.md` before planning,
-  dispatching, or editing.
+  document, 開發, 實作, 修, 修正, 修 bug, 重構, 補測試, 改文件, or
+  更新文件, read `docs/superpowers/workflow.md` before planning,
+  dispatching, or editing. This detects repo-changing intent only; it is not
+  edit authorization, and edits still require explicit confirmation.
 - When choosing profile, artifacts, branch/worktree, or authorization boundary,
   read `docs/superpowers/task-profiles.md`.
 - Do not revert changes you did not make. Work with existing dirty state.
@@ -106,8 +108,10 @@ no Codex-native source exists.
 - Fresh verification evidence is one command per evidence item. Do not record
   `&&` or `;` chains as a single verification result.
 - Main agent closeout may stage, commit, push, open PRs, watch CI, and sync
-  `main` only after reviewed diff and within the user's authorization boundary.
-  Staging must list concrete files; do not use `git add .`, `git add -A`, or
+  `main` only after reviewed diff and when the user's authorization boundary
+  explicitly includes each specific step. Start or edit authorization does not
+  imply commit, push, PR, merge, CI watch, or local sync authorization. Staging
+  must list concrete files; do not use `git add .`, `git add -A`, or
   `git add --all`.
 
 ## Common Commands

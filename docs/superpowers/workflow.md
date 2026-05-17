@@ -22,9 +22,11 @@ active workflow state and are not resume entrypoints.
 
 ## Task Profile Routing
 
-When the user asks to develop, implement, fix, refactor, test, document, or
-otherwise make repo-changing work, read this workflow before planning,
-dispatching, or editing.
+When the user asks to develop, implement, fix, refactor, test, document, 開發,
+實作, 修, 修正, 修 bug, 重構, 補測試, 改文件, 更新文件, or otherwise make
+repo-changing work, read this workflow before planning, dispatching, or
+editing. These phrases indicate repo-changing intent only; intent detection is
+not edit authorization, and edits still require explicit user confirmation.
 
 Before execution, classify the task with
 `docs/superpowers/task-profiles.md`.
@@ -41,6 +43,10 @@ not automatically use the full feature five-file set. P1/P2 work uses the
 smallest explicit scope and fresh verification that proves the change. P3 work
 uses an explicit task contract; keep durable artifacts compact unless the task
 crosses sessions or needs dispatcher continuity.
+
+For a single clear P1/P2 slice, the dispatcher may keep the minimum task brief
+inline instead of dispatching Planner. If P1/P2 scope is unclear or has multiple
+slices, dispatch Planner. P3/P4 require Planner.
 
 Use the Specs Artifact Policy in `docs/superpowers/task-profiles.md` to decide
 whether workflow state belongs under `specs/`. P1/P2 default to no `specs/`
@@ -149,7 +155,7 @@ legacy artifacts remain provenance, not current global rules.
 7. `verification-before-completion`
    - No completion, commit, push, PR, merge, or local sync claim without fresh evidence.
 8. `finishing-a-development-branch`
-   - Push feature branch, open PR, wait for CI, merge on GitHub, then fast-forward local `main` when authorized by this workflow.
+   - Push feature branch, open PR, wait for CI, merge on GitHub, then fast-forward local `main` only when the authorization boundary explicitly includes each step.
 
 ## Main Agent Authority
 
@@ -232,14 +238,16 @@ The main agent may:
   `review_rejected`, or a real blocker.
 - Run or request verification needed to validate workflow state.
 - Stage, commit, push, open PR, watch CI, merge, and sync local `main` only
-  when the authorization boundary permits that specific step and the diff has
-  already passed Reviewer.
+  when the authorization boundary explicitly permits that specific step and the
+  diff has already passed Reviewer. One-time start or edit authorization does
+  not authorize later closeout boundaries.
 - Edit workflow state files only when recording dispatch, `review_passed`,
   `review_rejected`, a blocker, or closeout evidence.
 
 The main agent must not:
 
-- Self-slice repo-changing work instead of dispatching a Planner subagent.
+- Self-slice repo-changing work when Planner is required; only the documented
+  single-clear-slice P1/P2 inline minimum task brief exception may skip Planner.
 - Do domain or codebase broad exploration itself.
 - Read source broadly to design a fix.
 - Read `spec.md` or `plan.md` for implementation details as part of normal
@@ -303,12 +311,14 @@ Reviewer boundary:
 
 ## Task Slice Contract
 
-The Planner subagent owns the initial task slice plan for repo-changing work.
-Planner output must account for dependencies and execution order, including a
-dependency graph, parallel waves, owned files, read-only context, acceptance
-criteria, verification plan, browser evidence requirement for UI work, and the
-wave-level final integration gate. The main agent validates that output against
-scope and dispatches; it does not replace Planner slicing with its own plan.
+Except for a single clear P1/P2 slice documented with the inline minimum task
+brief, the Planner subagent owns the initial task slice plan for repo-changing
+work. Planner output must account for dependencies and execution order,
+including a dependency graph, parallel waves, owned files, read-only context,
+acceptance criteria, verification plan, browser evidence requirement for UI
+work, and the wave-level final integration gate. The main agent validates that
+output against scope and dispatches; it does not replace required Planner
+slicing with its own plan.
 
 Every task in `tasks.md` must follow
 `docs/superpowers/task-contract.md`. The required block includes state,

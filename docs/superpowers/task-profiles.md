@@ -9,6 +9,9 @@ closeout.
 
 Use this before execution for bugfix, maintenance, refactor, docs, and feature
 work. If classification is unclear, choose the higher profile or stop and ask.
+Chinese requests such as 開發, 實作, 修, 修正, 修 bug, 重構, 補測試, 改文件,
+and 更新文件 count as repo-changing intent when they target this repo. Intent
+detection only routes the workflow; it is not edit authorization.
 
 ## Classification
 
@@ -57,9 +60,11 @@ P1 and P2 do not create the full `spec.md`, `plan.md`, `tasks.md`,
 owned files, Engineer-first edits, Reviewer check for non-read-only repo
 changes, and fresh verification evidence.
 
-When P1/P2 do not use full `specs/` artifacts, the main agent must still keep a
-minimum task brief in the conversation, PR body, or durable handoff if the work
-crosses sessions. Minimum task brief schema:
+When a P1/P2 task is a single clear slice, the main agent may keep a minimum
+task brief inline in the conversation, PR body, or durable handoff if the work
+crosses sessions. If P1/P2 scope is unclear or has multiple slices, dispatch
+Planner. P3/P4 require Planner before Engineer dispatch. Minimum task brief
+schema:
 
 - Profile: P1/P2/P3 classification with Complexity/Risk reason.
 - Branch/worktree decision: current branch or worktree path and why it is
@@ -174,7 +179,8 @@ Lightweight profiles do not bypass repo safety rules:
   completion.
 - P1/P2/P3 without approved `spec.md` must record an authorization boundary.
   Starting implementation is not authorization to commit, push, open PR, merge,
-  or sync local `main`.
+  watch CI, or sync local `main`; each closeout step must be explicitly inside
+  the authorization boundary before it runs.
 - Workflow state drift between `tasks.md`, `status.json`, and `handoff.md`
   blocks dispatch and closeout until reconciled.
 - Verification evidence is one command per entry. Do not combine commands with
