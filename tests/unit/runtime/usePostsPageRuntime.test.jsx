@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import usePostsPageRuntime from '@/runtime/hooks/usePostsPageRuntime';
+import { getFavoritePostIdsForPosts } from '@/runtime/hooks/usePostsPageRuntimeHelpers';
 import { installIntersectionObserverMock } from '../../_helpers/runtime-hook-test-helpers';
 import {
   createCollectionDoc,
@@ -20,6 +21,7 @@ const {
   mockCollectionGroup,
   mockDoc,
   mockDocumentId,
+  mockDeleteDoc,
   mockGetDoc,
   mockGetDocs,
   mockIncrement,
@@ -30,6 +32,7 @@ const {
   mockRunTransaction,
   mockSearchParamsGet,
   mockServerTimestamp,
+  mockSetDoc,
   mockShowToast,
   mockStartAfter,
   mockUpdateDoc,
@@ -43,6 +46,7 @@ const {
   mockAddDoc: vi.fn(),
   mockCollection: vi.fn((_db, ...segments) => ({ type: 'collection', path: segments.join('/') })),
   mockCollectionGroup: vi.fn((_db, groupId) => ({ type: 'collectionGroup', path: groupId })),
+  mockDeleteDoc: vi.fn(),
   mockDoc: vi.fn((base, ...segments) => ({
     type: 'doc',
     path: base?.type === 'collection' ? [base.path, ...segments].join('/') : segments.join('/'),
@@ -59,6 +63,7 @@ const {
   mockRunTransaction: vi.fn(),
   mockSearchParamsGet: vi.fn(),
   mockServerTimestamp: vi.fn(() => ({ __sentinel: 'serverTimestamp' })),
+  mockSetDoc: vi.fn(),
   mockShowToast: vi.fn(),
   mockStartAfter: vi.fn((...cursor) => ({ type: 'startAfter', cursor })),
   mockUpdateDoc: vi.fn(),
@@ -80,6 +85,7 @@ vi.mock('firebase/firestore', () => ({
   addDoc: mockAddDoc,
   collection: mockCollection,
   collectionGroup: mockCollectionGroup,
+  deleteDoc: mockDeleteDoc,
   doc: mockDoc,
   documentId: mockDocumentId,
   getDoc: mockGetDoc,
@@ -90,6 +96,7 @@ vi.mock('firebase/firestore', () => ({
   query: mockQuery,
   runTransaction: mockRunTransaction,
   serverTimestamp: mockServerTimestamp,
+  setDoc: mockSetDoc,
   startAfter: mockStartAfter,
   updateDoc: mockUpdateDoc,
   where: mockWhere,
@@ -130,6 +137,46 @@ function createSubmitEvent() {
   );
 }
 
+/**
+ * 建立 favorite document snapshot。
+ * @param {string} targetId - 收藏目標文章 ID。
+ * @returns {{ id: string, exists: () => boolean, data: () => { targetId: string } }} snapshot。
+ */
+function createFavoriteSnapshot(targetId) {
+  return {
+    id: targetId,
+    exists: () => true,
+    data: () => ({ targetId }),
+  };
+}
+
+/**
+ * 建立 favorite lookup 的 getDoc mock。
+ * @param {string[]} favoritePostIds - 已收藏文章 ID。
+ * @returns {(ref: { path?: string }) => Promise<object>} getDoc implementation。
+ */
+function createFavoriteGetDocDispatcher(favoritePostIds) {
+  const favoriteSet = new Set(favoritePostIds);
+  return async (ref) => {
+    const path = String(ref?.path ?? '');
+    const targetId = path.split('/').at(-1) ?? '';
+    if (path.includes('/favoritePosts/') && favoriteSet.has(targetId)) {
+      return createFavoriteSnapshot(targetId);
+    }
+    return createDocumentSnapshot('missing', null);
+  };
+}
+
+/**
+ * 建立 Firestore permission-denied error。
+ * @returns {Error & { code: string }} permission-denied error。
+ */
+function createPermissionDeniedError() {
+  return Object.assign(new Error('Missing or insufficient permissions.'), {
+    code: 'permission-denied',
+  });
+}
+
 describe('usePostsPageRuntime', () => {
   /** @type {ReturnType<typeof installIntersectionObserverMock>} */
   let observer;
@@ -141,8 +188,10 @@ describe('usePostsPageRuntime', () => {
     vi.stubGlobal('confirm', vi.fn(() => true));
     vi.stubGlobal('scrollTo', vi.fn());
     mockAddDoc.mockResolvedValue({ id: 'post-new' });
+    mockDeleteDoc.mockResolvedValue(undefined);
     mockGetDoc.mockResolvedValue(createDocumentSnapshot('missing', null));
     mockGetDocs.mockImplementation(createDocsDispatcher());
+    mockSetDoc.mockResolvedValue(undefined);
     mockSearchParamsGet.mockReturnValue(null);
   });
 
@@ -169,6 +218,53 @@ describe('usePostsPageRuntime', () => {
     expect(result.current.isLoading).toBe(false);
   });
 
+  it('loads the initial feed and hydrates post favorite flags', async () => {
+    const latestPosts = [createPostFixture(1), createPostFixture(2)];
+    mockGetDocs.mockImplementation(createDocsDispatcher({ latestPosts }));
+    mockGetDoc.mockImplementation(createFavoriteGetDocDispatcher(['post-1']));
+    createWrapper();
+    const { result } = renderHook(() => usePostsPageRuntime());
+
+    await waitFor(() => expect(result.current.posts).toHaveLength(2));
+
+    expect(result.current.posts[0]).toMatchObject({ id: 'post-1', isFavorited: true });
+    expect(result.current.posts[1]).toMatchObject({ id: 'post-2', isFavorited: false });
+  });
+
+  it('keeps the initial feed when favorite status hydration is permission denied', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const latestPosts = [createPostFixture(1), createPostFixture(2)];
+    mockGetDocs.mockImplementation(createDocsDispatcher({ latestPosts }));
+    mockGetDoc.mockImplementation(async (ref) => {
+      if (String(ref?.path ?? '').includes('/favoritePosts/')) {
+        throw createPermissionDeniedError();
+      }
+      return createDocumentSnapshot('missing', null);
+    });
+    createWrapper();
+
+    try {
+      const { result } = renderHook(() => usePostsPageRuntime());
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      expect(result.current.posts).toHaveLength(2);
+      expect(result.current.posts[0]).toMatchObject({ id: 'post-1', isFavorited: false });
+      expect(result.current.posts[1]).toMatchObject({ id: 'post-2', isFavorited: false });
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
+  });
+
+  it('rethrows non-permission errors from post favorite status hydration', async () => {
+    mockGetDoc.mockRejectedValueOnce(new Error('network failed'));
+
+    await expect(getFavoritePostIdsForPosts('user-1', [{ id: 'post-1' }])).rejects.toThrow(
+      'network failed',
+    );
+  });
+
   it('loads the next page through the observer and dedupes repeated ids', async () => {
     const latestPosts = createPostList(10);
     const nextPosts = [latestPosts[9], createPostFixture(11)];
@@ -191,6 +287,119 @@ describe('usePostsPageRuntime', () => {
     expect(result.current.posts.filter((post) => post.id === latestPosts[9].id)).toHaveLength(1);
     expect(result.current.posts.at(-1)?.id).toBe('post-11');
     expect(result.current.isLoadingNext).toBe(false);
+  });
+
+  it('loads favorite flags for the next page through the observer', async () => {
+    const latestPosts = createPostList(10);
+    const nextPosts = [createPostFixture(11)];
+    mockGetDocs.mockImplementation(createDocsDispatcher({ latestPosts, nextPosts }));
+    mockGetDoc.mockImplementation(createFavoriteGetDocDispatcher(['post-11']));
+    createWrapper();
+    const { result } = renderHook(() => usePostsPageRuntime());
+    const sentinel = document.createElement('div');
+
+    result.current.bottomRef.current = sentinel;
+
+    await waitFor(() => expect(result.current.posts).toHaveLength(10));
+    await waitFor(() => expect(observer.observe).toHaveBeenCalled());
+
+    act(() => {
+      observer.trigger([{ isIntersecting: true }]);
+    });
+
+    await waitFor(() => expect(result.current.posts).toHaveLength(11));
+
+    expect(result.current.posts.at(-1)).toMatchObject({
+      id: 'post-11',
+      isFavorited: true,
+    });
+  });
+
+  it('shows a login toast and does not write when unauthenticated users favorite a post', async () => {
+    mockGetDocs.mockImplementation(createDocsDispatcher({ latestPosts: [createPostFixture(1)] }));
+    const { showToast } = createWrapper({ user: null });
+    const { result } = renderHook(() => usePostsPageRuntime());
+
+    await waitFor(() => expect(result.current.posts).toHaveLength(1));
+
+    await act(async () => {
+      await result.current.handleToggleFavoritePost('post-1');
+    });
+
+    expect(showToast).toHaveBeenCalledWith('請先登入才能收藏', 'info');
+    expect(mockSetDoc).not.toHaveBeenCalled();
+    expect(mockDeleteDoc).not.toHaveBeenCalled();
+  });
+
+  it('adds a favorite optimistically and shows success toast', async () => {
+    mockGetDocs.mockImplementation(createDocsDispatcher({ latestPosts: [createPostFixture(1)] }));
+    const { showToast } = createWrapper();
+    const { result } = renderHook(() => usePostsPageRuntime());
+
+    await waitFor(() => expect(result.current.posts[0]).toMatchObject({ isFavorited: false }));
+
+    await act(async () => {
+      await result.current.handleToggleFavoritePost('post-1');
+    });
+
+    expect(result.current.posts[0]).toMatchObject({ id: 'post-1', isFavorited: true });
+    expect(mockSetDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'users/user-1/favoritePosts/post-1' }),
+      expect.objectContaining({ targetId: 'post-1' }),
+    );
+    expect(showToast).toHaveBeenCalledWith('已加入收藏', 'success');
+  });
+
+  it('rolls back add favorite failure and shows error toast', async () => {
+    mockGetDocs.mockImplementation(createDocsDispatcher({ latestPosts: [createPostFixture(1)] }));
+    mockSetDoc.mockRejectedValueOnce(new Error('write failed'));
+    const { showToast } = createWrapper();
+    const { result } = renderHook(() => usePostsPageRuntime());
+
+    await waitFor(() => expect(result.current.posts[0]).toMatchObject({ isFavorited: false }));
+
+    await act(async () => {
+      await result.current.handleToggleFavoritePost('post-1');
+    });
+
+    expect(result.current.posts[0]).toMatchObject({ id: 'post-1', isFavorited: false });
+    expect(showToast).toHaveBeenCalledWith('收藏失敗，請稍後再試', 'error');
+  });
+
+  it('removes a favorite optimistically and shows success toast', async () => {
+    mockGetDocs.mockImplementation(createDocsDispatcher({ latestPosts: [createPostFixture(1)] }));
+    mockGetDoc.mockImplementation(createFavoriteGetDocDispatcher(['post-1']));
+    const { showToast } = createWrapper();
+    const { result } = renderHook(() => usePostsPageRuntime());
+
+    await waitFor(() => expect(result.current.posts[0]).toMatchObject({ isFavorited: true }));
+
+    await act(async () => {
+      await result.current.handleToggleFavoritePost('post-1');
+    });
+
+    expect(result.current.posts[0]).toMatchObject({ id: 'post-1', isFavorited: false });
+    expect(mockDeleteDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'users/user-1/favoritePosts/post-1' }),
+    );
+    expect(showToast).toHaveBeenCalledWith('已取消收藏', 'success');
+  });
+
+  it('rolls back remove favorite failure and shows error toast', async () => {
+    mockGetDocs.mockImplementation(createDocsDispatcher({ latestPosts: [createPostFixture(1)] }));
+    mockGetDoc.mockImplementation(createFavoriteGetDocDispatcher(['post-1']));
+    mockDeleteDoc.mockRejectedValueOnce(new Error('delete failed'));
+    const { showToast } = createWrapper();
+    const { result } = renderHook(() => usePostsPageRuntime());
+
+    await waitFor(() => expect(result.current.posts[0]).toMatchObject({ isFavorited: true }));
+
+    await act(async () => {
+      await result.current.handleToggleFavoritePost('post-1');
+    });
+
+    expect(result.current.posts[0]).toMatchObject({ id: 'post-1', isFavorited: true });
+    expect(showToast).toHaveBeenCalledWith('取消收藏失敗，請稍後再試', 'error');
   });
 
   it('creates a post, prepends hydrated detail, and resets the composer state', async () => {

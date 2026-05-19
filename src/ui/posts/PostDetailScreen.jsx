@@ -66,6 +66,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     handleSubmitPost,
     handleDeletePost,
     handleToggleLike,
+    handleToggleFavoritePost,
     handleEditComment,
     handleDeleteComment,
     handleSubmitComment,
@@ -101,6 +102,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
             onEdit={handleOpenEdit}
             onDelete={handleDeletePost}
             onLike={handleToggleLike}
+            onToggleFavorite={handleToggleFavoritePost}
           >
             <ShareButton title={post.title} url={shareUrl} />
           </PostCard>

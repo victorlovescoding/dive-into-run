@@ -6,6 +6,19 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidFavoriteCreate(targetId) {
+      return request.resource.data.keys().hasAll(['targetId', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['targetId', 'createdAt'])
+        && request.resource.data.targetId == targetId
+        && request.resource.data.targetId is string
+        && request.resource.data.targetId.matches('^\\S(.*\\S)?$')
+        && request.resource.data.createdAt == request.time;
+    }
+
     match /users/{userId} {
       // 公開檔案頁面可被未登入訪客瀏覽（FR-007）
       allow read: if true;
@@ -26,6 +39,20 @@ service cloud.firestore {
 
       match /weatherFavorites/{docId} {
         allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      match /favoritePosts/{postId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidFavoriteCreate(postId);
+        allow delete: if isOwner(userId);
+        allow update: if false;
+      }
+
+      match /favoriteEvents/{eventId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidFavoriteCreate(eventId);
+        allow delete: if isOwner(userId);
+        allow update: if false;
       }
     }
 

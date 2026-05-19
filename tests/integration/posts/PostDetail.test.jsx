@@ -5,6 +5,7 @@ import {
   addDoc,
   collection,
   collectionGroup,
+  deleteDoc,
   doc,
   documentId,
   getDoc,
@@ -15,6 +16,7 @@ import {
   query,
   runTransaction,
   serverTimestamp,
+  setDoc,
   startAfter,
   Timestamp,
   updateDoc,
@@ -54,10 +56,12 @@ vi.mock('firebase/firestore', () => ({
   runTransaction: vi.fn(),
   increment: vi.fn((value) => ({ __type: 'increment', value })),
   collectionGroup: vi.fn(),
+  deleteDoc: vi.fn(),
   where: vi.fn(),
   writeBatch: vi.fn(),
   startAfter: vi.fn(),
   documentId: vi.fn(),
+  setDoc: vi.fn(),
   Timestamp: {
     fromDate: vi.fn((date) => ({ toDate: () => date })),
     now: vi.fn(() => ({ toDate: () => new Date('2026-04-15T08:00:00Z') })),
@@ -92,6 +96,7 @@ const firestoreMocks = {
   ['addDoc']: /** @type {import('vitest').Mock} */ (addDoc),
   ['collection']: /** @type {import('vitest').Mock} */ (collection),
   ['collectionGroup']: /** @type {import('vitest').Mock} */ (collectionGroup),
+  ['deleteDoc']: /** @type {import('vitest').Mock} */ (deleteDoc),
   ['doc']: /** @type {import('vitest').Mock} */ (doc),
   ['documentId']: /** @type {import('vitest').Mock} */ (documentId),
   ['getDoc']: /** @type {import('vitest').Mock} */ (getDoc),
@@ -102,6 +107,7 @@ const firestoreMocks = {
   ['query']: /** @type {import('vitest').Mock} */ (query),
   ['runTransaction']: /** @type {import('vitest').Mock} */ (runTransaction),
   ['serverTimestamp']: /** @type {import('vitest').Mock} */ (serverTimestamp),
+  ['setDoc']: /** @type {import('vitest').Mock} */ (setDoc),
   ['startAfter']: /** @type {import('vitest').Mock} */ (startAfter),
   ['updateDoc']: /** @type {import('vitest').Mock} */ (updateDoc),
   ['where']: /** @type {import('vitest').Mock} */ (where),
@@ -144,15 +150,21 @@ const mockUser = {
   getIdToken: async () => '',
 };
 
+/** @type {Set<string>} */
+let favoritePostIds = new Set();
+
 /**
  * 使用真實 AuthContext/ToastContext provider value 渲染文章詳情。
+ * @param {object | null} [user] - 測試使用者。
  * @returns {ReturnType<typeof renderWithAuthToast>} render 結果與 context spies。
  */
-function renderPostDetail() {
+function renderPostDetail(user = mockUser) {
   return renderWithAuthToast(<PostDetailClient postId="post-1" />, {
     authContext: AuthContext,
-    toastContext: ToastContext,
-    auth: { user: mockUser },
+    toastContext: /** @type {import('react').Context<import('../../_helpers/provider-test-helpers').ToastContextValue | undefined>} */ (
+      /** @type {unknown} */ (ToastContext)
+    ),
+    auth: { user },
   });
 }
 
@@ -204,11 +216,18 @@ function setupFirestoreMocks() {
   firestoreMocks.startAfter.mockImplementation((...parts) => ({ type: 'startAfter', parts }));
   firestoreMocks.documentId.mockReturnValue('__name__');
   firestoreMocks.addDoc.mockResolvedValue({ id: 'notification-1' });
+  firestoreMocks.deleteDoc.mockResolvedValue(undefined);
+  firestoreMocks.setDoc.mockResolvedValue(undefined);
   firestoreMocks.updateDoc.mockResolvedValue(undefined);
   firestoreMocks.runTransaction.mockImplementation(async (_db, callback) => callback(tx));
   firestoreMocks.writeBatch.mockReturnValue(batch);
   firestoreMocks.getDoc.mockImplementation(async (ref) => {
     if (ref.path === 'posts/post-1/likes/user-1') return createDocSnapshot('user-1', null);
+    if (ref.path === 'users/user-1/favoritePosts/post-1') {
+      return favoritePostIds.has('post-1')
+        ? createDocSnapshot('post-1', { targetId: 'post-1' })
+        : createDocSnapshot('missing', null);
+    }
     if (ref.path === 'posts/post-1/comments/new-comment') {
       return createDocSnapshot('new-comment', {
         authorUid: 'user-1',
@@ -240,6 +259,7 @@ describe('PostDetailClient', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    favoritePostIds = new Set();
     sdkSpies = setupFirestoreMocks();
   });
 
@@ -279,6 +299,51 @@ describe('PostDetailClient', () => {
       expect.objectContaining({ path: 'posts/post-1/likes/user-1' }),
       expect.objectContaining({ uid: 'user-1', postId: 'post-1' }),
     );
+  });
+
+  it('顯示文章詳情 bookmark button', async () => {
+    renderPostDetail();
+    await screen.findByText('晨跑日記');
+    const bookmarkButton = screen.getByRole('button', { name: '收藏文章' });
+    expect(bookmarkButton).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('依 favoritePosts 狀態顯示已收藏 bookmark button', async () => {
+    favoritePostIds = new Set(['post-1']);
+
+    renderPostDetail();
+    await screen.findByText('晨跑日記');
+
+    expect(screen.getByRole('button', { name: '取消收藏文章' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('點擊 bookmark button 會新增 favorite 並顯示成功 toast', async () => {
+    const user = userEvent.setup();
+    const { toastValue } = renderPostDetail();
+
+    await screen.findByText('晨跑日記');
+    await user.click(screen.getByRole('button', { name: '收藏文章' }));
+
+    expect(firestoreMocks.setDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'users/user-1/favoritePosts/post-1' }),
+      expect.objectContaining({ targetId: 'post-1' }),
+    );
+    expect(toastValue.showToast).toHaveBeenCalledWith('已加入收藏', 'success');
+  });
+
+  it('未登入點擊 bookmark button 只顯示登入 toast 且不寫入 favorite', async () => {
+    const user = userEvent.setup();
+    const { toastValue } = renderPostDetail(null);
+
+    await screen.findByText('晨跑日記');
+    await user.click(screen.getByRole('button', { name: '收藏文章' }));
+
+    expect(toastValue.showToast).toHaveBeenCalledWith('請先登入才能收藏', 'info');
+    expect(firestoreMocks.setDoc).not.toHaveBeenCalled();
+    expect(firestoreMocks.deleteDoc).not.toHaveBeenCalled();
   });
 
   it('留言輸入後可送出', async () => {

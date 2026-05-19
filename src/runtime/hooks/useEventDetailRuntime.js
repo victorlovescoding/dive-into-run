@@ -1,10 +1,16 @@
 'use client';
 
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toMs } from '@/runtime/events/event-runtime-helpers';
 import { normalizeRoutePolylines } from '@/service/event-service';
 import { fetchEventById } from '@/runtime/client/use-cases/event-use-cases';
+import {
+  addContentFavorite,
+  FAVORITE_CONTENT_TYPES,
+  getFavoritedTargetIds,
+  removeContentFavorite,
+} from '@/runtime/client/use-cases/content-favorite-use-cases';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 import useEventDetailParticipation from '@/runtime/hooks/useEventDetailParticipation';
@@ -43,6 +49,8 @@ export default function useEventDetailRuntime(id) {
   const [event, setEvent] = useState(/** @type {EventData | null} */ (null));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isFavoriteEvent, setIsFavoriteEvent] = useState(false);
+  const [isTogglingFavoriteEvent, setIsTogglingFavoriteEvent] = useState(false);
 
   const isMountedRef = useRef(false);
 
@@ -141,6 +149,74 @@ export default function useEventDetailRuntime(id) {
     };
   }, [id]);
 
+  useEffect(() => {
+    const uid = user?.uid;
+    if (!uid || !id) {
+      setIsFavoriteEvent(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    /** 同步目前活動詳情的收藏狀態。 */
+    async function refreshFavoriteState() {
+      try {
+        const ids = await getFavoritedTargetIds({
+          uid,
+          type: FAVORITE_CONTENT_TYPES.EVENT,
+          targetIds: [id],
+        });
+        if (!cancelled && isMountedRef.current) {
+          setIsFavoriteEvent(ids.has(id));
+        }
+      } catch (favoriteError) {
+        console.error('載入活動收藏狀態失敗:', favoriteError);
+        if (!cancelled && isMountedRef.current) {
+          setIsFavoriteEvent(false);
+        }
+      }
+    }
+
+    refreshFavoriteState();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, user?.uid]);
+
+  const handleToggleFavoriteEvent = useCallback(async () => {
+    const uid = user?.uid;
+    if (!uid) {
+      showToast('請先登入才能收藏', 'info');
+      return;
+    }
+    if (!id || isTogglingFavoriteEvent) return;
+
+    const wasFavorite = isFavoriteEvent;
+    setIsTogglingFavoriteEvent(true);
+    setIsFavoriteEvent(!wasFavorite);
+
+    try {
+      if (wasFavorite) {
+        await removeContentFavorite({ uid, type: FAVORITE_CONTENT_TYPES.EVENT, targetId: id });
+        showToast('已取消收藏', 'success');
+      } else {
+        await addContentFavorite({ uid, type: FAVORITE_CONTENT_TYPES.EVENT, targetId: id });
+        showToast('已加入收藏', 'success');
+      }
+    } catch (favoriteError) {
+      console.error('切換活動收藏失敗:', favoriteError);
+      setIsFavoriteEvent(wasFavorite);
+      showToast(
+        wasFavorite ? '取消收藏失敗，請稍後再試' : '收藏失敗，請稍後再試',
+        'error',
+      );
+    } finally {
+      if (isMountedRef.current) {
+        setIsTogglingFavoriteEvent(false);
+      }
+    }
+  }, [id, isFavoriteEvent, isTogglingFavoriteEvent, showToast, user?.uid]);
+
   const hasOverlay = isParticipantsOpen || editingEvent !== null || deletingEventId !== null;
 
   useEffect(() => {
@@ -191,6 +267,8 @@ export default function useEventDetailRuntime(id) {
     isUpdating,
     deletingEventId,
     isDeletingEvent,
+    isFavoriteEvent,
+    isTogglingFavoriteEvent,
     statusText,
     hasRoute,
     routePolylines,
@@ -210,5 +288,6 @@ export default function useEventDetailRuntime(id) {
     handleDeleteCancel,
     handleDeleteConfirm,
     handleCommentAdded,
+    handleToggleFavoriteEvent,
   };
 }

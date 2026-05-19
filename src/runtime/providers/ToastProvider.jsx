@@ -6,15 +6,22 @@ import { usePathname } from 'next/navigation';
 const MAX_TOASTS = 5;
 
 /**
+ * @typedef {object} ToastItemAction
+ * @property {string} label - 顯示在 action 按鈕上的文字。
+ * @property {() => void} callback - 使用者點擊 action 時執行的回呼。
+ */
+
+/**
  * @typedef {object} ToastItem
  * @property {string} id - 唯一識別碼。
  * @property {string} message - 顯示訊息。
  * @property {'success' | 'error' | 'info'} type - Toast 類型。
  * @property {number} createdAt - 建立時間戳。
+ * @property {ToastItemAction} [action] - 可選的 toast 操作，例如復原。
  */
 
 /**
- * @typedef {object} ToastAction
+ * @typedef {object} ToastReducerAction
  * @property {'ADD' | 'REMOVE' | 'CLEAR_ALL'} type - Action 類型。
  * @property {ToastItem | string} [payload] - Action 資料（ADD 為 ToastItem，REMOVE 為 id）。
  */
@@ -22,7 +29,7 @@ const MAX_TOASTS = 5;
 /**
  * @typedef {object} ToastContextValue
  * @property {ToastItem[]} toasts - 目前的 toast 佇列。
- * @property {(message: string, type?: 'success' | 'error' | 'info') => void} showToast - 新增 toast。
+ * @property {(message: string, type?: 'success' | 'error' | 'info', action?: ToastItemAction) => void} showToast - 新增 toast。
  * @property {(id: string) => void} removeToast - 移除指定 toast。
  */
 
@@ -33,7 +40,7 @@ export const ToastContext = /** @type {import('react').Context<ToastContextValue
 /**
  * Toast 佇列的 reducer。
  * @param {ToastItem[]} state - 目前佇列。
- * @param {ToastAction} action - 要處理的 action。
+ * @param {ToastReducerAction} action - 要處理的 action。
  * @returns {ToastItem[]} 新佇列。
  */
 export function toastReducer(state, action) {
@@ -70,14 +77,16 @@ export default function ToastProvider({ children }) {
      * 新增一筆 toast 通知。
      * @param {string} message - 顯示訊息。
      * @param {'success' | 'error' | 'info'} [type] - Toast 類型，預設 'success'。
+     * @param {ToastItemAction} [action] - 可選的 toast 操作。
      */
-    (message, type = 'success') => {
+    (message, type = 'success', action) => {
       /** @type {ToastItem} */
       const toast = {
         id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         message,
         type,
         createdAt: Date.now(),
+        ...(action ? { action } : {}),
       };
       dispatch({ type: 'ADD', payload: toast });
     },

@@ -194,6 +194,15 @@ function renderPostDetail() {
   });
 }
 
+/**
+ * Returns true for per-user favorite status lookups.
+ * @param {string} path - Firestore document path.
+ * @returns {boolean} Whether the path is a favorite status document.
+ */
+function isFavoriteStatusPath(path) {
+  return /^users\/[^/]+\/favorite(?:Posts|Events)\/[^/]+$/.test(path);
+}
+
 /** 設定編輯 dirty gate 測試需要的 Firestore SDK 邊界 stub。 */
 function setupFirestoreMocks() {
   firestoreMocks.collection.mockImplementation((_dbOrRef, ...segments) => ({
@@ -234,6 +243,7 @@ function setupFirestoreMocks() {
     commit: vi.fn().mockResolvedValue(undefined),
   });
   firestoreMocks.getDoc.mockImplementation(async (ref) => {
+    if (isFavoriteStatusPath(ref.path)) return createDocSnapshot(ref.id, null);
     if (ref.path === 'posts/post-1/likes/test-uid') return createDocSnapshot('test-uid', null);
     return createDocSnapshot('post-1', mockPost);
   });

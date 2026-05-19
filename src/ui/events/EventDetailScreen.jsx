@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import BookmarkButton from '@/components/BookmarkButton';
 import CommentSection from '@/components/CommentSection';
 import EventCardMenu from '@/components/EventCardMenu';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
@@ -37,6 +38,8 @@ export default function EventDetailScreen({ id, runtime }) {
     isUpdating,
     deletingEventId,
     isDeletingEvent,
+    isFavoriteEvent,
+    isTogglingFavoriteEvent,
     statusText,
     hasRoute,
     routePolylines,
@@ -56,6 +59,7 @@ export default function EventDetailScreen({ id, runtime }) {
     handleDeleteCancel,
     handleDeleteConfirm,
     handleCommentAdded,
+    handleToggleFavoriteEvent,
   } = runtime;
 
   return (
@@ -83,7 +87,14 @@ export default function EventDetailScreen({ id, runtime }) {
             <div className={styles.eventCard}>
               <div className={styles.detailHeader}>
                 <div className={styles.eventTitle}>{event.title}</div>
-                <div className={styles.detailHeaderRight}>
+                <div className={styles.detailHeaderRight} role="group" aria-label="活動操作">
+                  <BookmarkButton
+                    isActive={isFavoriteEvent}
+                    label={`收藏活動：${event.title}`}
+                    activeLabel={`取消收藏活動：${event.title}`}
+                    disabled={isTogglingFavoriteEvent}
+                    onClick={handleToggleFavoriteEvent}
+                  />
                   <ShareButton title={event.title} url={shareUrl} />
                   <div className={styles.statusPill}>{statusText}</div>
                   <EventCardMenu

@@ -4,6 +4,12 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'r
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getRemainingSeats } from '@/service/event-service';
 import { fetchLatestEvents, fetchNextEvents } from '@/runtime/client/use-cases/event-use-cases';
+import {
+  addContentFavorite,
+  FAVORITE_CONTENT_TYPES,
+  getFavoritedTargetIds,
+  removeContentFavorite,
+} from '@/runtime/client/use-cases/content-favorite-use-cases';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 import useEventsFilter from '@/runtime/hooks/useEventsFilter';
@@ -48,6 +54,7 @@ export default function useEventsPageRuntime() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState(null);
   const [hasMore, setHasMore] = useState(true);
+  const [favoriteEventIds, setFavoriteEventIds] = useState(() => new Set());
   const sentinelRef = useRef(null);
   const isMountedRef = useRef(false);
 
@@ -157,6 +164,46 @@ export default function useEventsPageRuntime() {
     showToast,
   });
 
+  const visibleEventIds = useMemo(
+    () => events.map((event) => String(event?.id || '')).filter(Boolean),
+    [events],
+  );
+  const visibleEventIdKey = visibleEventIds.join('\n');
+
+  useEffect(() => {
+    const uid = user?.uid;
+    if (!uid || visibleEventIds.length === 0) {
+      setFavoriteEventIds(new Set());
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    /** 依目前可見活動 ID 批次同步收藏狀態。 */
+    async function refreshFavoriteEventIds() {
+      try {
+        const ids = await getFavoritedTargetIds({
+          uid,
+          type: FAVORITE_CONTENT_TYPES.EVENT,
+          targetIds: visibleEventIds,
+        });
+        if (!cancelled && isMountedRef.current) { setFavoriteEventIds(ids); }
+      } catch (error) {
+        const isPermissionDenied =
+          error && typeof error === 'object'
+          && /** @type {{ code?: unknown }} */ (error).code === 'permission-denied';
+        if (isPermissionDenied && !cancelled && isMountedRef.current) { setFavoriteEventIds(new Set()); }
+        if (isPermissionDenied) return;
+        console.error('載入活動收藏狀態失敗:', error);
+      }
+    }
+
+    refreshFavoriteEventIds();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid, visibleEventIdKey, visibleEventIds]);
+
   const createCtx = useMemo(
     () => ({
       hostUid: user?.uid || '',
@@ -181,6 +228,49 @@ export default function useEventsPageRuntime() {
       userUid: user?.uid,
     });
   }, [mutationState.draftFormData, toggleCreateRunForm, user?.uid]);
+
+  const handleToggleFavoriteEvent = useCallback(
+    async (eventId) => {
+      const targetId = String(eventId || '');
+      const uid = user?.uid;
+      if (!uid) {
+        showToast('請先登入才能收藏', 'info');
+        return;
+      }
+      if (!targetId) return;
+
+      const wasFavorite = favoriteEventIds.has(targetId);
+      setFavoriteEventIds((previous) => {
+        const next = new Set(previous);
+        if (wasFavorite) next.delete(targetId);
+        else next.add(targetId);
+        return next;
+      });
+
+      try {
+        if (wasFavorite) {
+          await removeContentFavorite({ uid, type: FAVORITE_CONTENT_TYPES.EVENT, targetId });
+          showToast('已取消收藏', 'success');
+        } else {
+          await addContentFavorite({ uid, type: FAVORITE_CONTENT_TYPES.EVENT, targetId });
+          showToast('已加入收藏', 'success');
+        }
+      } catch (error) {
+        console.error('切換活動收藏失敗:', error);
+        setFavoriteEventIds((previous) => {
+          const next = new Set(previous);
+          if (wasFavorite) next.add(targetId);
+          else next.delete(targetId);
+          return next;
+        });
+        showToast(
+          wasFavorite ? '取消收藏失敗，請稍後再試' : '收藏失敗，請稍後再試',
+          'error',
+        );
+      }
+    },
+    [favoriteEventIds, showToast, user?.uid],
+  );
 
   const loadMore = useCallback(async () => {
     if (isFormOpen || mutationState.isCreating) return;
@@ -240,6 +330,7 @@ export default function useEventsPageRuntime() {
     isLoadingMore,
     loadMoreError,
     hasMore,
+    favoriteEventIds,
     sentinelRef,
     selectedDistrictOptions,
     getRemainingSeats,
@@ -249,6 +340,7 @@ export default function useEventsPageRuntime() {
     handleEnableRoutePlanning,
     handleDisableRoutePlanning,
     handleToggleCreateRunForm,
+    handleToggleFavoriteEvent,
     handleCloseCreateForm,
     loadMore,
     ...filterState,
