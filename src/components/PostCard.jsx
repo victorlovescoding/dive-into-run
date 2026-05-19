@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import Link from 'next/link';
+import BookmarkButton from '@/components/BookmarkButton';
 import UserLink from '@/components/UserLink';
 import { formatRelativeTime } from '@/lib/notification-helpers';
 import styles from './PostCard.module.css';
@@ -19,6 +20,7 @@ const TRUNCATE_THRESHOLD = 150;
  * @property {number} likesCount - 按讚數。
  * @property {number} commentsCount - 留言數。
  * @property {boolean} liked - 當前使用者是否已按讚。
+ * @property {boolean} [isFavorited] - 當前使用者是否已收藏。
  * @property {boolean} isAuthor - 當前使用者是否為作者。
  */
 
@@ -213,6 +215,7 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onEdit, onDelete }) {
  * @property {(postId: string) => void} [onEdit] - 編輯回呼。
  * @property {(postId: string) => void} [onDelete] - 刪除回呼。
  * @property {(postId: string) => void} [onLike] - 按讚回呼。
+ * @property {(postId: string) => void | Promise<void>} [onToggleFavorite] - 收藏切換回呼。
  * @property {import('react').ReactNode} [children] - 額外內容（詳文頁用，如 ShareButton）。
  * @property {import('react').Key} [key] - React reconciler 專用 key；非元件內部使用的 prop，
  *   但為了讓 JSDoc-based `checkJs` 不誤報 "Property 'key' does not exist on type 'PostCardProps'"，
@@ -232,6 +235,7 @@ export default function PostCard({
   onEdit,
   onDelete,
   onLike,
+  onToggleFavorite,
   children,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -313,18 +317,27 @@ export default function PostCard({
       )}
 
       <div className={styles.metaBar}>
-        <button
-          type="button"
-          className={likeClassName}
-          onClick={() => onLike?.(post.id)}
-          aria-label="按讚"
-          aria-pressed={post.liked}
-        >
-          <HeartIcon filled={post.liked} />
-          <span className={styles.metaCount}>{post.likesCount}</span>
-        </button>
+        <div className={styles.metaActions}>
+          <button
+            type="button"
+            className={likeClassName}
+            onClick={() => onLike?.(post.id)}
+            aria-label="按讚"
+            aria-pressed={post.liked}
+          >
+            <HeartIcon filled={post.liked} />
+            <span className={styles.metaCount}>{post.likesCount}</span>
+          </button>
 
-        <CommentMeta postId={post.id} count={post.commentsCount} truncate={truncate} />
+          <CommentMeta postId={post.id} count={post.commentsCount} truncate={truncate} />
+        </div>
+        <BookmarkButton
+          isActive={!!post.isFavorited}
+          label="收藏文章"
+          activeLabel="取消收藏文章"
+          className={styles.bookmarkButton}
+          onClick={() => onToggleFavorite?.(post.id)}
+        />
       </div>
 
       {children}

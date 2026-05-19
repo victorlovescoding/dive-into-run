@@ -1,0 +1,150 @@
+.container {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.title {
+  margin: 0 0 20px;
+  font-size: 28px;
+  line-height: 1.25;
+  color: #202124;
+}
+
+.tabBar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tab,
+.tabActive {
+  padding: 10px 20px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: #5f6368;
+  font-size: 15px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.tab:hover {
+  color: #202124;
+}
+
+.tabActive {
+  border-bottom-color: #1967d2;
+  color: #1967d2;
+  font-weight: 700;
+}
+
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.cardBody {
+  min-width: 0;
+}
+
+.cardLink {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.cardLink:hover .cardTitle {
+  color: #1967d2;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.35;
+  color: #202124;
+}
+
+.cardDescription,
+.missingText {
+  margin: 8px 0 0;
+  color: #5f6368;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.missingText {
+  color: #c5221f;
+}
+
+.removeButton {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #fff;
+  color: #3c4043;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.removeButton:hover {
+  border-color: #c5221f;
+  color: #c5221f;
+}
+
+.loading,
+.empty {
+  padding: 36px 0;
+  text-align: center;
+  color: #80868b;
+}
+
+.error {
+  margin: 8px 0;
+  padding: 16px;
+  border-radius: 8px;
+  background: #fce8e6;
+  color: #c5221f;
+}
+
+@media (max-width: 767px) {
+  .container {
+    padding: 20px 12px 40px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .tab,
+  .tabActive {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  .card {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .removeButton {
+    width: 100%;
+  }
+}

@@ -219,6 +219,15 @@ function docSnapshot(id, data) {
 }
 
 /**
+ * Returns true for per-user favorite status lookups.
+ * @param {string} path - Firestore document path.
+ * @returns {boolean} Whether the path is a favorite status document.
+ */
+function isFavoriteStatusPath(path) {
+  return /^users\/[^/]+\/favorite(?:Posts|Events)\/[^/]+$/.test(path);
+}
+
+/**
  * Build a Firestore-like query snapshot for tests.
  * @param {Array<{ id: string, data: () => unknown }>} docs - Doc snapshots.
  * @returns {object} query snapshot stub。
@@ -243,7 +252,7 @@ beforeEach(() => {
 
   // Default: 空 list / missing doc / write success — 個別測試以 mockResolvedValueOnce 覆寫。
   asMock(getDocs).mockResolvedValue(querySnapshot([]));
-  asMock(getDoc).mockResolvedValue(docSnapshot('unknown', null));
+  asMock(getDoc).mockImplementation(async (ref) => docSnapshot(ref?.id ?? 'unknown', null));
   asMock(addDoc).mockResolvedValue({ id: 'generated-id' });
   asMock(updateDoc).mockResolvedValue(undefined);
   asMock(writeBatch).mockReturnValue({
@@ -508,7 +517,12 @@ describe('Events page — CRUD handler toast calls', () => {
     // useEventParticipation.fetchJoinedParticipantDocuments 與 deleteEventTree 都會呼叫 getDoc，
     // 用 path 分流：top-level events/<id> → exists、participants subcollection → not exists。
     asMock(getDoc).mockImplementation(async (ref) => {
-      const segments = String(ref?.path ?? '').split('/');
+      const path = String(ref?.path ?? '');
+      if (isFavoriteStatusPath(path)) {
+        return docSnapshot(ref?.id ?? 'unknown', null);
+      }
+
+      const segments = path.split('/');
       if (segments[0] === 'events' && segments.length === 2) {
         return eventDoc;
       }
@@ -559,7 +573,7 @@ describe('Events page — CRUD handler toast calls', () => {
 
     // 全程 getDoc 都回 missing：useEventParticipation join check 不影響邏輯；
     // deleteEventTree 對 events/ev-fail-del 拿到 missing → throw EVENT_NOT_FOUND_MESSAGE → error toast。
-    asMock(getDoc).mockResolvedValue(docSnapshot('ev-fail-del', null));
+    asMock(getDoc).mockImplementation(async (ref) => docSnapshot(ref?.id ?? 'unknown', null));
 
     render(
       <AuthWrapper>
@@ -631,9 +645,17 @@ describe('Posts page — CRUD handler toast calls', () => {
     asMock(addDoc).mockResolvedValueOnce({ id: 'new-post-1' });
 
     // getPostDetail: getDoc(posts/new-post-1) → exists with data
-    asMock(getDoc).mockResolvedValueOnce(
-      postDoc('new-post-1', { title: 'New Post', content: 'Content' }),
-    );
+    const newPost = postDoc('new-post-1', { title: 'New Post', content: 'Content' });
+    asMock(getDoc).mockImplementation(async (ref) => {
+      const path = String(ref?.path ?? '');
+      if (isFavoriteStatusPath(path)) {
+        return docSnapshot(ref?.id ?? 'unknown', null);
+      }
+      if (path === 'posts/new-post-1') {
+        return newPost;
+      }
+      return docSnapshot(ref?.id ?? 'unknown', null);
+    });
 
     const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     const user = userEvent.setup();
@@ -781,7 +803,16 @@ describe('Posts page — CRUD handler toast calls', () => {
     asMock(getDocs).mockResolvedValueOnce(querySnapshot([post]));
 
     // deletePostTree: getDoc(postRef) → exists
-    asMock(getDoc).mockResolvedValueOnce(post);
+    asMock(getDoc).mockImplementation(async (ref) => {
+      const path = String(ref?.path ?? '');
+      if (isFavoriteStatusPath(path)) {
+        return docSnapshot(ref?.id ?? 'unknown', null);
+      }
+      if (path === 'posts/post-del-1') {
+        return post;
+      }
+      return docSnapshot(ref?.id ?? 'unknown', null);
+    });
 
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();
@@ -817,7 +848,7 @@ describe('Posts page — CRUD handler toast calls', () => {
     asMock(getDocs).mockResolvedValueOnce(querySnapshot([post]));
 
     // deletePostTree: getDoc(postRef) → missing → throw POST_NOT_FOUND_MESSAGE → catch → error toast
-    asMock(getDoc).mockResolvedValueOnce(docSnapshot('post-fail-del', null));
+    asMock(getDoc).mockImplementation(async (ref) => docSnapshot(ref?.id ?? 'unknown', null));
 
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = userEvent.setup();

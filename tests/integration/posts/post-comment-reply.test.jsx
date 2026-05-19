@@ -190,6 +190,15 @@ function renderPostDetail() {
 }
 
 /**
+ * Returns true for per-user favorite status lookups.
+ * @param {string} path - Firestore document path.
+ * @returns {boolean} Whether the path is a favorite status document.
+ */
+function isFavoriteStatusPath(path) {
+  return /^users\/[^/]+\/favorite(?:Posts|Events)\/[^/]+$/.test(path);
+}
+
+/**
  * 設定留言通知測試需要的 Firestore SDK 邊界 stub。
  * @returns {{ tx: object, batch: object }} 可供 assertion 使用的 SDK spies。
  */
@@ -238,6 +247,7 @@ function setupFirestoreMocks() {
   firestoreMocks.runTransaction.mockImplementation(async (_db, callback) => callback(tx));
   firestoreMocks.writeBatch.mockReturnValue(batch);
   firestoreMocks.getDoc.mockImplementation(async (ref) => {
+    if (isFavoriteStatusPath(ref.path)) return createDocSnapshot(ref.id, null);
     if (ref.path === 'posts/post1/likes/user1') return createDocSnapshot('user1', null);
     if (ref.path === 'posts/post1/comments/comment1') {
       return createDocSnapshot('comment1', {

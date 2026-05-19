@@ -39,6 +39,7 @@ export default function EventsPageScreen() {
     isLoadingMore,
     loadMoreError,
     hasMore,
+    favoriteEventIds,
     sentinelRef,
     isCreating,
     pendingByEventId,
@@ -80,6 +81,7 @@ export default function EventsPageScreen() {
     handleDeleteEventRequest,
     handleDeleteCancel,
     handleDeleteConfirm,
+    handleToggleFavoriteEvent,
     loadMore,
   } = useEventsPageRuntime();
 
@@ -103,11 +105,13 @@ export default function EventsPageScreen() {
         pendingByEventId={pendingByEventId}
         myJoinedEventIds={myJoinedEventIds}
         membershipStatusByEventId={membershipStatusByEventId}
+        favoriteEventIds={favoriteEventIds}
         getRemainingSeats={getRemainingSeats}
         onJoin={handleJoinClick}
         onLeave={handleLeaveClick}
         onEdit={handleEditEvent}
         onDelete={handleDeleteEventRequest}
+        onToggleFavoriteEvent={handleToggleFavoriteEvent}
         onOpenFilter={handleOpenFilter}
         loadMore={loadMore}
       />

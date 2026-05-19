@@ -3,18 +3,24 @@ import {
   getMorePosts,
   hasUserLikedPosts,
 } from '@/runtime/client/use-cases/post-use-cases';
+import {
+  FAVORITE_CONTENT_TYPES,
+  getFavoritedTargetIds,
+} from '@/runtime/client/use-cases/content-favorite-use-cases';
 
 /**
  * 為 post list 補上當前使用者視角的 UI flags。
  * @param {Array<object>} postItems - 原始文章資料。
  * @param {string | null | undefined} userUid - 當前使用者 UID。
  * @param {Set<string>} [likedPostIds] - 已按讚文章 ID 集合。
+ * @param {Set<string>} [favoritePostIds] - 已收藏文章 ID 集合。
  * @returns {Array<object>} 帶 liked / isAuthor 的文章。
  */
-export function hydratePosts(postItems, userUid, likedPostIds = new Set()) {
+export function hydratePosts(postItems, userUid, likedPostIds = new Set(), favoritePostIds = new Set()) {
   return (Array.isArray(postItems) ? postItems : []).map((postItem) => ({
     ...postItem,
     liked: likedPostIds.has(postItem.id),
+    isFavorited: favoritePostIds.has(postItem.id),
     isAuthor: postItem.authorUid === userUid,
   }));
 }
@@ -29,6 +35,16 @@ export function mergeUniquePosts(previousPosts, nextPosts) {
   const seenIds = new Set(previousPosts.map((postItem) => postItem.id));
   const freshPosts = nextPosts.filter((postItem) => !seenIds.has(postItem.id));
   return [...previousPosts, ...freshPosts];
+}
+
+/**
+ * 判斷是否為 Firestore 權限不足錯誤。
+ * @param {unknown} error - 捕捉到的錯誤。
+ * @returns {boolean} 是否為 permission-denied。
+ */
+function isPermissionDeniedError(error) {
+  if (!error || typeof error !== 'object') return false;
+  return /** @type {{ code?: unknown }} */ (error).code === 'permission-denied';
 }
 
 /**
@@ -49,16 +65,44 @@ export async function getLikedPostIdsForPosts(userUid, postItems) {
 }
 
 /**
+ * 取得文章列表的收藏集合。
+ * @param {string | null | undefined} userUid - 當前使用者 UID。
+ * @param {Array<{ id: string }>} postItems - 文章列表。
+ * @returns {Promise<Set<string>>} 已收藏文章 ID 集合。
+ */
+export async function getFavoritePostIdsForPosts(userUid, postItems) {
+  if (!userUid || postItems.length === 0) {
+    return new Set();
+  }
+
+  try {
+    return await getFavoritedTargetIds({
+      uid: userUid,
+      type: FAVORITE_CONTENT_TYPES.POST,
+      targetIds: postItems.map((postItem) => postItem.id),
+    });
+  } catch (error) {
+    if (isPermissionDeniedError(error)) {
+      return new Set();
+    }
+    throw error;
+  }
+}
+
+/**
  * 載入第一頁文章並補齊使用者視角欄位。
  * @param {string | null | undefined} userUid - 當前使用者 UID。
  * @returns {Promise<{ posts: Array<object>, nextCursor: object | null }>} hydrated posts 與下一頁 cursor。
  */
 export async function loadInitialPosts(userUid) {
   const latestPosts = await getLatestPosts();
-  const likedPostIds = await getLikedPostIdsForPosts(userUid, latestPosts);
+  const [likedPostIds, favoritePostIds] = await Promise.all([
+    getLikedPostIdsForPosts(userUid, latestPosts),
+    getFavoritePostIdsForPosts(userUid, latestPosts),
+  ]);
 
   return {
-    posts: hydratePosts(latestPosts, userUid, likedPostIds),
+    posts: hydratePosts(latestPosts, userUid, likedPostIds, favoritePostIds),
     nextCursor: latestPosts.at(-1) ?? null,
   };
 }
@@ -73,10 +117,13 @@ export async function loadInitialPosts(userUid) {
  */
 export async function loadMorePostsPage({ nextCursor, userUid, pageSize }) {
   const morePosts = await getMorePosts(nextCursor);
-  const likedPostIds = await getLikedPostIdsForPosts(userUid, morePosts);
+  const [likedPostIds, favoritePostIds] = await Promise.all([
+    getLikedPostIdsForPosts(userUid, morePosts),
+    getFavoritePostIdsForPosts(userUid, morePosts),
+  ]);
 
   return {
-    posts: hydratePosts(morePosts, userUid, likedPostIds),
+    posts: hydratePosts(morePosts, userUid, likedPostIds, favoritePostIds),
     nextCursor: morePosts.length < pageSize ? null : (morePosts.at(-1) ?? null),
   };
 }
@@ -107,6 +154,19 @@ export function createComposerDraft(postItem) {
 export function applyPostLikeState(previousPosts, postId, liked, likesCount) {
   return previousPosts.map((postItem) =>
     postItem.id === postId ? { ...postItem, liked, likesCount } : postItem,
+  );
+}
+
+/**
+ * 套用文章收藏 UI 狀態。
+ * @param {Array<object>} previousPosts - 既有文章。
+ * @param {string} postId - 文章 ID。
+ * @param {boolean} isFavorited - 目標收藏狀態。
+ * @returns {Array<object>} 更新後文章。
+ */
+export function applyPostFavoriteState(previousPosts, postId, isFavorited) {
+  return previousPosts.map((postItem) =>
+    postItem.id === postId ? { ...postItem, isFavorited } : postItem,
   );
 }
 

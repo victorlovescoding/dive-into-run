@@ -16,6 +16,7 @@ import styles from '@/app/posts/posts.module.css';
  * @param {(postId?: string) => void} props.onEdit - 開啟新增/編輯 modal。
  * @param {(postId: string) => void | Promise<void>} props.onDelete - 刪除文章。
  * @param {(postId: string) => void | Promise<void>} props.onLike - 按讚文章。
+ * @param {(postId: string) => void | Promise<void>} props.onToggleFavorite - 收藏文章。
  * @returns {import('react').ReactNode} 文章列表內容。
  */
 function renderPostList({
@@ -26,6 +27,7 @@ function renderPostList({
   onEdit,
   onDelete,
   onLike,
+  onToggleFavorite,
 }) {
   if (isLoading) {
     return <PostCardSkeleton count={3} />;
@@ -44,6 +46,7 @@ function renderPostList({
       onEdit={onEdit}
       onDelete={onDelete}
       onLike={onLike}
+      onToggleFavorite={onToggleFavorite}
     />
   ));
 }
@@ -76,6 +79,7 @@ export default function PostsPageScreen({ runtime }) {
     handleToggleOwnerMenu,
     handleDeletePost,
     handleSubmitPost,
+    handleToggleFavoritePost,
   } = runtime;
 
   return (
@@ -91,6 +95,7 @@ export default function PostsPageScreen({ runtime }) {
         onEdit: handleComposeButton,
         onDelete: handleDeletePost,
         onLike: handlePressLike,
+        onToggleFavorite: handleToggleFavoritePost,
       })}
 
       {isLoadingNext && <PostCardSkeleton count={1} />}

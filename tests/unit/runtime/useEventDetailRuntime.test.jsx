@@ -19,6 +19,9 @@ const { authState, mockShowToast, mockUseContext } = vi.hoisted(() => ({
   mockUseContext: vi.fn(),
 }));
 
+const mockSetDoc = vi.fn();
+const mockDeleteDoc = vi.fn();
+
 vi.mock('react', async (importOriginal) => {
   const actual = /** @type {typeof import('react')} */ (await importOriginal());
   mockUseContext.mockImplementation(() => authState.current);
@@ -31,6 +34,31 @@ vi.mock('react', async (importOriginal) => {
 vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
 vi.mock(TOAST_PROVIDER_MODULE, () => ({
   useToast: () => ({ showToast: mockShowToast }),
+}));
+
+vi.doMock('firebase/firestore', () => ({
+  addDoc: eventDetailRuntimeBoundaryMocks.mockAddDoc,
+  collection: eventDetailRuntimeBoundaryMocks.mockCollection,
+  deleteDoc: mockDeleteDoc,
+  doc: eventDetailRuntimeBoundaryMocks.mockDoc,
+  getDoc: eventDetailRuntimeBoundaryMocks.mockGetDoc,
+  getDocs: eventDetailRuntimeBoundaryMocks.mockGetDocs,
+  limit: eventDetailRuntimeBoundaryMocks.mockLimit,
+  onSnapshot: eventDetailRuntimeBoundaryMocks.mockOnSnapshot,
+  orderBy: eventDetailRuntimeBoundaryMocks.mockOrderBy,
+  query: eventDetailRuntimeBoundaryMocks.mockQuery,
+  runTransaction: eventDetailRuntimeBoundaryMocks.mockRunTransaction,
+  serverTimestamp: eventDetailRuntimeBoundaryMocks.mockServerTimestamp,
+  setDoc: mockSetDoc,
+  startAfter: eventDetailRuntimeBoundaryMocks.mockStartAfter,
+  updateDoc: eventDetailRuntimeBoundaryMocks.mockUpdateDoc,
+  where: eventDetailRuntimeBoundaryMocks.mockWhere,
+  writeBatch: eventDetailRuntimeBoundaryMocks.mockWriteBatch,
+  deleteField: eventDetailRuntimeBoundaryMocks.mockDeleteField,
+  Timestamp: {
+    fromDate: eventDetailRuntimeBoundaryMocks.mockTimestampFromDate,
+    now: eventDetailRuntimeBoundaryMocks.mockTimestampNow,
+  },
 }));
 
 /**
@@ -67,10 +95,57 @@ async function renderEventDetailRuntimeHook(options = {}) {
   };
 }
 
+/**
+ * 建立 Firestore document snapshot。
+ * @param {string} id - 文件 ID。
+ * @param {object | null} data - 文件資料，null 表示不存在。
+ * @returns {{ id: string, exists: () => boolean, data: () => object }} snapshot。
+ */
+function createDocSnapshot(id, data) {
+  return {
+    id,
+    exists: () => data !== null,
+    data: () => data ?? {},
+  };
+}
+
+/**
+ * 安裝活動詳情與收藏狀態的 Firestore stubs。
+ * @param {object} options - stub 設定。
+ * @param {string} options.id - 活動 ID。
+ * @param {import('@/service/event-service').EventData} options.event - 活動資料。
+ * @param {string[]} [options.favoriteEventIds] - 已收藏活動 ID。
+ */
+function installEventDetailFavoriteFirestore({ id, event, favoriteEventIds = [] }) {
+  installEventDetailRuntimeFirestore({ id, event, participants: [] });
+  const favorites = new Set(favoriteEventIds.map(String));
+
+  eventDetailRuntimeBoundaryMocks.mockGetDoc.mockImplementation(async (ref) => {
+    const path = String(ref?.path ?? '');
+    if (path === `events/${id}`) {
+      return createDocSnapshot(id, event);
+    }
+    if (path === `events/${id}/participants/u1`) {
+      return createDocSnapshot('u1', null);
+    }
+    const favoriteMatch = path.match(/^users\/[^/]+\/favoriteEvents\/([^/]+)$/);
+    if (favoriteMatch) {
+      const eventId = favoriteMatch[1];
+      return createDocSnapshot(
+        eventId,
+        favorites.has(eventId) ? { targetId: eventId, createdAt: `favorite-${eventId}` } : null,
+      );
+    }
+    return createDocSnapshot(String(ref?.id ?? 'missing'), null);
+  });
+}
+
 describe('useEventDetailRuntime', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockShowToast.mockReset();
+    mockSetDoc.mockResolvedValue(undefined);
+    mockDeleteDoc.mockResolvedValue(undefined);
     resetEventDetailRuntimeBoundaryMocks();
   });
 
@@ -198,5 +273,103 @@ describe('useEventDetailRuntime', () => {
 
     expect(result.current.deletingEventId).toBeNull();
     expect(result.current.isDeletingEvent).toBe(false);
+  });
+
+  it('loads the initial event favorite state for the route id', async () => {
+    const id = 'favorite-1';
+    const event = createRuntimeEvent({ id });
+    installEventDetailFavoriteFirestore({ id, event, favoriteEventIds: [id] });
+
+    const { result } = await renderEventDetailRuntimeHook({ id });
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+      expect(result.current.isFavoriteEvent).toBe(true);
+    });
+  });
+
+  it('adds an event favorite from the detail runtime', async () => {
+    const id = 'favorite-add';
+    const event = createRuntimeEvent({ id });
+    installEventDetailFavoriteFirestore({ id, event });
+
+    const { result, showToast } = await renderEventDetailRuntimeHook({ id });
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    await act(async () => {
+      await result.current.handleToggleFavoriteEvent();
+    });
+
+    expect(result.current.isFavoriteEvent).toBe(true);
+    expect(mockSetDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: `users/u1/favoriteEvents/${id}` }),
+      expect.objectContaining({ targetId: id }),
+    );
+    expect(showToast).toHaveBeenLastCalledWith('已加入收藏', 'success');
+  });
+
+  it('removes an event favorite from the detail runtime', async () => {
+    const id = 'favorite-remove';
+    const event = createRuntimeEvent({ id });
+    installEventDetailFavoriteFirestore({ id, event, favoriteEventIds: [id] });
+
+    const { result, showToast } = await renderEventDetailRuntimeHook({ id });
+
+    await waitFor(() => {
+      expect(result.current.isFavoriteEvent).toBe(true);
+    });
+
+    await act(async () => {
+      await result.current.handleToggleFavoriteEvent();
+    });
+
+    expect(result.current.isFavoriteEvent).toBe(false);
+    expect(mockDeleteDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: `users/u1/favoriteEvents/${id}` }),
+    );
+    expect(showToast).toHaveBeenLastCalledWith('已取消收藏', 'success');
+  });
+
+  it('rolls back the detail favorite state when adding fails', async () => {
+    const id = 'favorite-add-fail';
+    const event = createRuntimeEvent({ id });
+    mockSetDoc.mockRejectedValueOnce(new Error('add failed'));
+    installEventDetailFavoriteFirestore({ id, event });
+
+    const { result, showToast } = await renderEventDetailRuntimeHook({ id });
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    await act(async () => {
+      await result.current.handleToggleFavoriteEvent();
+    });
+
+    expect(result.current.isFavoriteEvent).toBe(false);
+    expect(showToast).toHaveBeenLastCalledWith('收藏失敗，請稍後再試', 'error');
+  });
+
+  it('rolls back the detail favorite state when removing fails', async () => {
+    const id = 'favorite-remove-fail';
+    const event = createRuntimeEvent({ id });
+    mockDeleteDoc.mockRejectedValueOnce(new Error('remove failed'));
+    installEventDetailFavoriteFirestore({ id, event, favoriteEventIds: [id] });
+
+    const { result, showToast } = await renderEventDetailRuntimeHook({ id });
+
+    await waitFor(() => {
+      expect(result.current.isFavoriteEvent).toBe(true);
+    });
+
+    await act(async () => {
+      await result.current.handleToggleFavoriteEvent();
+    });
+
+    expect(result.current.isFavoriteEvent).toBe(true);
+    expect(showToast).toHaveBeenLastCalledWith('取消收藏失敗，請稍後再試', 'error');
   });
 });

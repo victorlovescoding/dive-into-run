@@ -81,7 +81,8 @@ is_vanilla_spec() {
 
 is_emulator_spec() {
   case "$(basename "$1")" in
-    comment-notifications.spec.js)
+    comment-notifications.spec.js | \
+      saved-content-favorites.spec.js)
       return 0
       ;;
     *)

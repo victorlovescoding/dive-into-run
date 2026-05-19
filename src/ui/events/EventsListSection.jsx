@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import BookmarkButton from '@/components/BookmarkButton';
 import EventActionButtons from '@/components/EventActionButtons';
 import EventCardMenu from '@/components/EventCardMenu';
 import UserLink from '@/components/UserLink';
@@ -22,11 +23,13 @@ import styles from './EventsPageScreen.module.css';
  * @property {Record<string, 'joining' | 'leaving'>} pendingByEventId - 各活動的操作等待狀態。
  * @property {Set<string>} myJoinedEventIds - 使用者已加入的活動 ID 集合。
  * @property {Record<string, 'checking' | 'joined' | 'notJoined'>} membershipStatusByEventId - 各活動的報名狀態。
+ * @property {Set<string>} favoriteEventIds - 使用者已收藏的活動 ID 集合。
  * @property {(event: object) => number} getRemainingSeats - 計算活動剩餘名額。
  * @property {(event: object) => void} onJoin - 加入活動的回呼。
  * @property {(event: object) => void} onLeave - 離開活動的回呼。
  * @property {(event: object) => void} onEdit - 編輯活動的回呼。
  * @property {(ev: object) => void} onDelete - 刪除活動的回呼。
+ * @property {(eventId: string) => void} onToggleFavoriteEvent - 切換活動收藏的回呼。
  * @property {() => void} onOpenFilter - 開啟篩選面板的回呼。
  * @property {() => void} loadMore - 載入更多活動的回呼。
  */
@@ -53,11 +56,13 @@ export default function EventsListSection({
   pendingByEventId,
   myJoinedEventIds,
   membershipStatusByEventId,
+  favoriteEventIds,
   getRemainingSeats,
   onJoin,
   onLeave,
   onEdit,
   onDelete,
+  onToggleFavoriteEvent,
   onOpenFilter,
   loadMore,
 }) {
@@ -139,7 +144,17 @@ export default function EventsListSection({
         </div>
       </div>
 
-      <div className={styles.eventCardMenuWrapper}>
+      <div
+        className={styles.eventCardTopActions}
+        role="group"
+        aria-label={`${event.title} 操作`}
+      >
+        <BookmarkButton
+          isActive={favoriteEventIds.has(String(event.id))}
+          label={`收藏活動：${event.title}`}
+          activeLabel={`取消收藏活動：${event.title}`}
+          onClick={() => onToggleFavoriteEvent(String(event.id))}
+        />
         <EventCardMenu
           event={event}
           currentUserUid={user?.uid || null}

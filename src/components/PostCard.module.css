@@ -89,7 +89,20 @@
   z-index: 1;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
+  width: 100%;
+}
+
+.metaActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.bookmarkButton {
+  margin-left: auto;
 }
 
 .metaButton {

@@ -29,6 +29,7 @@ const basePost = {
   likesCount: 5,
   commentsCount: 3,
   liked: false,
+  isFavorited: false,
   isAuthor: false,
 };
 
@@ -93,10 +94,35 @@ describe('PostCard', () => {
       const user = userEvent.setup();
       const onLike = vi.fn();
       render(<PostCard post={basePost} onLike={onLike} />);
-      const buttons = screen.getAllByRole('button');
-      const likeButton = buttons[0];
+      const likeButton = screen.getByRole('button', { name: '按讚' });
       await user.click(likeButton);
       expect(onLike).toHaveBeenCalledWith('post-1');
+    });
+
+    it('顯示未收藏 bookmark button 並標記未按下狀態', () => {
+      render(<PostCard post={basePost} />);
+      const bookmarkButton = screen.getByRole('button', { name: '收藏文章' });
+      expect(bookmarkButton).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('顯示已收藏 bookmark button 並標記已按下狀態', () => {
+      render(<PostCard post={{ ...basePost, isFavorited: true }} />);
+      const bookmarkButton = screen.getByRole('button', { name: '取消收藏文章' });
+      expect(bookmarkButton).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('bookmark button 點擊觸發 onToggleFavorite', async () => {
+      const user = userEvent.setup();
+      const onToggleFavorite = vi.fn();
+      render(<PostCard post={basePost} onToggleFavorite={onToggleFavorite} />);
+      await user.click(screen.getByRole('button', { name: '收藏文章' }));
+      expect(onToggleFavorite).toHaveBeenCalledWith('post-1');
+    });
+
+    it('bookmark button 使用 far-right meta row placement class', () => {
+      render(<PostCard post={basePost} />);
+      const bookmarkButton = screen.getByRole('button', { name: '收藏文章' });
+      expect(bookmarkButton.className).toMatch(/bookmarkButton/);
     });
   });
 

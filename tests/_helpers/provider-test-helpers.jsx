@@ -9,9 +9,13 @@ import { vi } from 'vitest';
  */
 
 /**
+ * @typedef {import('@/runtime/providers/ToastProvider').ToastItemAction} ToastItemAction
+ */
+
+/**
  * @typedef {object} ToastContextValue
  * @property {unknown[]} toasts - Toast items.
- * @property {(message: string, type?: string, duration?: number) => unknown} showToast - Toast spy/no-op.
+ * @property {(message: string, type?: 'success' | 'error' | 'info', action?: ToastItemAction) => void} showToast - Toast spy/no-op.
  * @property {(id: string) => void} removeToast - Toast removal spy/no-op.
  */
 

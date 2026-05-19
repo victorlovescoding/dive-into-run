@@ -74,10 +74,13 @@
 }
 
 .eventTitle {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 1.1rem;
   font-weight: 700;
   color: #202124;
   margin-bottom: 8px;
+  overflow-wrap: anywhere;
 }
 
 .detailHeader {
@@ -90,7 +93,28 @@
 .detailHeaderRight {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
   gap: 8px;
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  .detailHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .detailHeader .eventTitle {
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .detailHeaderRight {
+    align-self: flex-end;
+  }
 }
 
 .statusPill {

@@ -11,6 +11,12 @@ import {
   validatePostInput,
 } from '@/runtime/client/use-cases/post-use-cases';
 import {
+  FAVORITE_CONTENT_TYPES,
+  addContentFavorite,
+  removeContentFavorite,
+} from '@/runtime/client/use-cases/content-favorite-use-cases';
+import {
+  applyPostFavoriteState,
   applyPostLikeState,
   createComposerDraft,
   hydratePosts,
@@ -188,6 +194,52 @@ export default function usePostsPageRuntime() {
   );
 
   /**
+   * 切換文章收藏，失敗時 rollback。
+   * @param {string} postId - 文章 ID。
+   */
+  const handleToggleFavoritePost = useCallback(
+    async (postId) => {
+      if (!userUid) {
+        showToast('請先登入才能收藏', 'info');
+        return;
+      }
+
+      const targetPost = posts.find((postItem) => postItem.id === postId);
+      if (!targetPost) return;
+
+      const wasFavorited = !!targetPost.isFavorited;
+      setPosts((previousPosts) => applyPostFavoriteState(previousPosts, postId, !wasFavorited));
+
+      try {
+        if (wasFavorited) {
+          await removeContentFavorite({
+            uid: userUid,
+            type: FAVORITE_CONTENT_TYPES.POST,
+            targetId: postId,
+          });
+          showToast('已取消收藏', 'success');
+          return;
+        }
+
+        await addContentFavorite({
+          uid: userUid,
+          type: FAVORITE_CONTENT_TYPES.POST,
+          targetId: postId,
+        });
+        showToast('已加入收藏', 'success');
+      } catch (error) {
+        console.error('Toggle favorite post error:', error);
+        setPosts((previousPosts) => applyPostFavoriteState(previousPosts, postId, wasFavorited));
+        showToast(
+          wasFavorited ? '取消收藏失敗，請稍後再試' : '收藏失敗，請稍後再試',
+          'error',
+        );
+      }
+    },
+    [posts, showToast, userUid],
+  );
+
+  /**
    * 切換作者操作選單。
    * @param {string} postId - 文章 ID。
    * @param {import('react').MouseEvent} event - click event。
@@ -287,6 +339,7 @@ export default function usePostsPageRuntime() {
     setContent,
     handleComposeButton,
     handlePressLike,
+    handleToggleFavoritePost,
     handleToggleOwnerMenu,
     handleDeletePost,
     handleSubmitPost,

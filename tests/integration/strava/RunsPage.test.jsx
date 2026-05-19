@@ -109,7 +109,7 @@ const mockUser = {
 
 /** @type {{user: object | null, loading: boolean}} */
 let authValue;
-/** @type {(message: string, type?: string, duration?: number) => unknown} */
+/** @type {import('@/runtime/providers/ToastProvider').ToastContextValue['showToast']} */
 let mockShowToast;
 
 /**

@@ -736,6 +736,8 @@
   text-decoration: none;
   color: inherit;
   display: block;
+  min-height: 40px;
+  margin-right: 96px;
 }
 
 .eventTitleLink:hover .eventTitle {
@@ -968,12 +970,15 @@
    004-event-edit-delete: 編輯 / 刪除相關樣式
    ====================================================== */
 
-/* 卡片右上角選單定位 */
-.eventCardMenuWrapper {
+/* 卡片右上角收藏與主揪選單 */
+.eventCardTopActions {
   position: absolute;
   top: 8px;
   right: 8px;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* 編輯表單 overlay */

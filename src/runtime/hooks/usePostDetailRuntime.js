@@ -12,6 +12,12 @@ import {
   updatePost,
   validatePostInput,
 } from '@/runtime/client/use-cases/post-use-cases';
+import {
+  FAVORITE_CONTENT_TYPES,
+  addContentFavorite,
+  getFavoritedTargetIds,
+  removeContentFavorite,
+} from '@/runtime/client/use-cases/content-favorite-use-cases';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 import usePostComments from '@/runtime/hooks/usePostComments';
@@ -72,6 +78,7 @@ export default function usePostDetailRuntime(postId) {
     return {
       ...postDetail,
       liked: !!postDetail.liked,
+      isFavorited: !!postDetail.isFavorited,
       isAuthor: !!postDetail.isAuthor,
     };
   }, [postDetail]);
@@ -111,17 +118,22 @@ export default function usePostDetailRuntime(postId) {
         if (cancelled || !isMountedRef.current) return;
 
         const last = commentsData[commentsData.length - 1] ?? null;
-        const nextPostDetail = user?.uid
-          ? {
-              ...postDetailData,
-              liked: await hasUserLikedPost(user.uid, postId),
-              isAuthor: postDetailData.authorUid === user.uid,
-            }
-          : {
-              ...postDetailData,
-              liked: false,
-              isAuthor: false,
-            };
+        const [liked, favoritePostIds] = user?.uid
+          ? await Promise.all([
+              hasUserLikedPost(user.uid, postId),
+              getFavoritedTargetIds({
+                uid: user.uid,
+                type: FAVORITE_CONTENT_TYPES.POST,
+                targetIds: [postId],
+              }),
+            ])
+          : [false, new Set()];
+        const nextPostDetail = {
+          ...postDetailData,
+          liked,
+          isFavorited: favoritePostIds.has(postId),
+          isAuthor: user?.uid ? postDetailData.authorUid === user.uid : false,
+        };
 
         if (cancelled || !isMountedRef.current) return;
         setPostDetail(nextPostDetail);
@@ -254,6 +266,42 @@ export default function usePostDetailRuntime(postId) {
     }
   }, [postDetail, postId, user?.uid]);
 
+  const handleToggleFavoritePost = useCallback(async () => {
+    if (!user?.uid || !postDetail) {
+      showToast('請先登入才能收藏', 'info');
+      return;
+    }
+
+    const wasFavorited = !!postDetail.isFavorited;
+    setPostDetail((prev) => (prev ? { ...prev, isFavorited: !wasFavorited } : prev));
+
+    try {
+      if (wasFavorited) {
+        await removeContentFavorite({
+          uid: user.uid,
+          type: FAVORITE_CONTENT_TYPES.POST,
+          targetId: postId,
+        });
+        showToast('已取消收藏', 'success');
+        return;
+      }
+
+      await addContentFavorite({
+        uid: user.uid,
+        type: FAVORITE_CONTENT_TYPES.POST,
+        targetId: postId,
+      });
+      showToast('已加入收藏', 'success');
+    } catch (favoriteError) {
+      console.error('Toggle post favorite error:', favoriteError);
+      setPostDetail((prev) => (prev ? { ...prev, isFavorited: wasFavorited } : prev));
+      showToast(
+        wasFavorited ? '取消收藏失敗，請稍後再試' : '收藏失敗，請稍後再試',
+        'error',
+      );
+    }
+  }, [postDetail, postId, showToast, user?.uid]);
+
   return {
     user,
     post,
@@ -279,6 +327,7 @@ export default function usePostDetailRuntime(postId) {
     handleSubmitPost,
     handleDeletePost,
     handleToggleLike,
+    handleToggleFavoritePost,
     handleEditComment,
     handleDeleteComment,
     handleSubmitComment,

@@ -54,6 +54,11 @@ export default function MemberPageScreen({ runtime, bioEditor, dashboardTabs }) 
           <Link href={`/users/${user.uid}`}>查看我的公開檔案</Link>
         </p>
       )}
+      {user && (
+        <p>
+          <Link href="/member/favorites">我的收藏</Link>
+        </p>
+      )}
       {bioEditor}
       {dashboardTabs}
     </div>
