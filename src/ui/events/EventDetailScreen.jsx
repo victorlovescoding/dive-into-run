@@ -63,7 +63,7 @@ export default function EventDetailScreen({ id, runtime }) {
   } = runtime;
 
   return (
-    <div className={styles.pageContainer}>
+    <main className={styles.pageContainer}>
       <div className={styles.eventsSection}>
         <Link href="/events" className={styles.backLink}>
           ← 回到活動列表
@@ -299,6 +299,6 @@ export default function EventDetailScreen({ id, runtime }) {
           />
         </div>
       )}
-    </div>
+    </main>
   );
 }
