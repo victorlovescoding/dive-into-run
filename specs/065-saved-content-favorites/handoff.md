@@ -3,30 +3,32 @@
 ## Current State
 
 - Must match `status.json`; reconcile before dispatch if this section differs.
-- Worktree: `/Users/chentzuyu/Desktop/dive-into-run-065-saved-content-favorites`
-- Branch: `065-saved-content-favorites`
+- Worktree: `/Users/chentzuyu/Desktop/dive-into-run`
+- Branch: `main`
 - Specs path: `specs/065-saved-content-favorites/`
-- Current phase: `verified_ready_for_pr`
+- Current phase: `deployed_ready_for_local_sync`
 - Active task: none
 - Active wave: none
-- Current HEAD: `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`
-- Remote head: `origin/065-saved-content-favorites` at `d6ac09f9a64f694833be097e1a816f3bc2806a5c`
+- Current HEAD: `34664f89d2f18ee707079886779348c8b01bcedc`
+- Remote head: `origin/main` at `34664f89d2f18ee707079886779348c8b01bcedc`
 - Origin main base observed: `55130520c0e1ff9a5222bf3c6c2f41dfd97be3ed`
 - Historical branch commits already pushed before this repair:
   - `e7394450f7393481a1bcc418ab6e0726993e240d` Add private content favorites
   - `d6ac09f9a64f694833be097e1a816f3bc2806a5c` Fix event detail landmark
 - Workflow/state repair commit:
   - `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a` Harden workflow closeout state
+- PR #99 merged into `main`:
+  - `34664f89d2f18ee707079886779348c8b01bcedc` Add saved content favorites (#99)
 - Latest reviewer decision: T007 `review_passed`; T007 is complete.
 - Latest reviewer summary at verification close: T007 test content, branch E2E mapping in `scripts/test-e2e-branch.sh`, and E2E REST auth cleanup passed review. Focused E2E, forced branch E2E mapping, branch tests, audits, workflow checks, lint, type-check, and whitespace checks passed at T007 close.
 - Post-T007 permission-denied fallback incident: resolved by recording the incident, preserving the permission-denied-only fallback, and rerunning fresh local verification.
-- Rules deploy status: required and changed; deploy authorized for closeout but not yet executed. No deploy evidence is recorded yet.
-- CI workflow state incident: GitHub CI run `26150844340` failed `Workflow state check` while local `npm run workflow:check` passed. Root cause was GitHub shallow checkout missing ancestor commit objects needed by the closeout range guard; fix is CI checkout `fetch-depth: 0` plus allowing exactly `.github/workflows/ci.yml` as workflow evidence. Reviewer PASS was recorded for the checkout-depth fix; rules deploy remains pending.
+- Rules deploy status: deployed. `firebase deploy --only firestore:rules --project dive-into-run` exited 0, compiled `firestore.rules`, and released rules to `cloud.firestore`.
+- CI workflow state incident: GitHub CI run `26150844340` failed `Workflow state check` while local `npm run workflow:check` passed. Root cause was GitHub shallow checkout missing ancestor commit objects needed by the closeout range guard; fix is CI checkout `fetch-depth: 0` plus allowing exactly `.github/workflows/ci.yml` as workflow evidence. Reviewer PASS was recorded for the checkout-depth fix; rerun CI `26151638769` succeeded.
 - Latest user authorization for closeout: stage=yes, commit=yes, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, deployFirestoreRules=yes, localMainSync=yes.
 - Future authorization boundary: commit=true, push=true, pullRequest=true, ciWatch=true, merge=true, localMainSync=true, deployFirestoreRules=true.
-- Last verified commit: `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`
+- Last verified commit: `34664f89d2f18ee707079886779348c8b01bcedc`
 - Blocked: no
-- Blocked reason: none. Firestore rules deploy remains pending as an authorized release action after PR merge.
+- Blocked reason: none. Firestore rules deploy completed after PR #99 merge; final local `main` sync remains the only closeout action.
 - Written spec approved by user on 2026-05-19.
 - Planner produced P4 implementation plan and task slices.
 - T001 completed after Reviewer PASS and Coordinator state sync.
@@ -36,8 +38,8 @@
 - T005 completed after Reviewer PASS and Coordinator state sync.
 - T006 completed after Reviewer PASS and Coordinator state sync.
 - T007 completed after Reviewer PASS and Coordinator state sync.
-- Post-T007 permission-denied fallback was implemented after the user report and reviewed, but the authorization gap and undeployed rules risk remain recorded as workflow state.
-- Current repair authorization: edit=yes for this directory rename and owned state files only; product/runtime/test/rules/script/docs outside `specs/065-saved-content-favorites/` remain non-scope.
+- Post-T007 permission-denied fallback was implemented after the user report and reviewed. Production Firestore rules were deployed after PR #99 merge.
+- Current repair authorization: edit=yes for deploy-evidence workflow state only; product/runtime/test/rules/script/docs outside `specs/065-saved-content-favorites/` remain non-scope.
 
 ## Read Order
 
@@ -53,7 +55,7 @@
 
 ## Next Action
 
-Ready for push, PR creation, CI watch, merge, Firestore rules deploy, and local main sync under the current explicit closeout authorization. Do not claim Firestore rules are deployed until the deploy command succeeds and evidence is recorded in the closeout report.
+Ready for deploy-evidence state PR/merge and final local main sync under the current explicit closeout authorization. Firestore rules deploy evidence is recorded in `status.json.rulesDeployStatus`.
 
 ## T007 Review And Verification
 
@@ -67,7 +69,7 @@ Ready for push, PR creation, CI watch, merge, Firestore rules deploy, and local 
 - Mapping Engineer modified only `is_emulator_spec()` in `scripts/test-e2e-branch.sh` to include `saved-content-favorites.spec.js`; Reviewer `review_passed`.
 - Focused E2E first failed because `documentExists()` REST read lacked admin header and got Firestore rules 403; fixed within the authorized E2E test file by adding `Authorization: Bearer owner`; Reviewer `review_passed`.
 - Product code edits and package/config edits remain non-scope for future work.
-- Current workflow state is verified for closeout. Firestore rules deploy remains pending as a separate authorized release action.
+- Current workflow state is verified for closeout. Firestore rules deploy completed after PR #99 merge and is recorded in `status.json.rulesDeployStatus`.
 
 | Command | Exit | Evidence |
 | --- | --- | --- |
@@ -91,6 +93,10 @@ Ready for push, PR creation, CI watch, merge, Firestore rules deploy, and local 
 - Fresh verification ran after the workflow/state repair and before commit `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`.
 - Commit `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a` passed the repo pre-commit gate.
 - PR #99 CI follow-up: GitHub CI run `26150844340` failed `Workflow state check`; local `npm run workflow:check` passed. The CI checkout now uses `fetch-depth: 0`, and `scripts/check-superpowers-state.js` treats only `.github/workflows/ci.yml` as additional workflow evidence so this workflow repair is not misclassified as product change in closeout-ish phases.
+- PR #99 GitHub checks on head `23b9e0e3a572f61cb2f4834feba6f700ec035ed5`: `CI` run `26151638769` succeeded, including `ci` and `e2e`; `Firestore Rules Gate` run `26151638732` succeeded; `Quality Budgets` run `26151638734` succeeded.
+- PR #99 was squash merged to `main` at `34664f89d2f18ee707079886779348c8b01bcedc`.
+- Firestore rules deploy: `firebase deploy --only firestore:rules --project dive-into-run` exited 0; `firestore.rules` compiled successfully and was released to `cloud.firestore`.
+- Legacy active spec directory `specs/saved-content-favorites/` was removed so the only active saved-content-favorites workflow state is `specs/065-saved-content-favorites/`.
 
 | Command | Exit | Evidence |
 | --- | --- | --- |
@@ -117,8 +123,8 @@ Ready for push, PR creation, CI watch, merge, Firestore rules deploy, and local 
 - Fallback: background favorite status hydration treats only `permission-denied` as empty/no-op to avoid console noise and page break. Generic errors still throw/log. User-triggered add/remove favorite failures still rollback and show toast.
 - Reviewer decision: `review_passed`; no blocking findings.
 - Authorization note: existing state did not contain explicit product-code edit authorization for this follow-up. Do not infer authorization.
-- Residual risk: until production Firestore rules are deployed, initial background favorite state may show unfilled/empty, but console/page break is avoided; active user write failures still toast.
-- Rules deploy status: required and changed; no production rules deploy evidence is recorded.
+- Residual risk: permission-denied fallback remains defensive for stale clients or rule propagation delays; active user write failures still toast.
+- Rules deploy status: deployed after PR #99 merge; production deploy evidence is recorded in `status.json.rulesDeployStatus`.
 - Changed files:
   - `src/runtime/hooks/usePostsPageRuntimeHelpers.js`
   - `src/runtime/hooks/useEventsPageRuntime.js`
@@ -355,8 +361,8 @@ Verified at: `2026-05-19T22:54:25+08:00`.
 
 ## Blockers
 
-- Current workflow blocker: none. Fresh local verification passed and `lastVerifiedCommit` is `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`.
-- Release blocker: none for closeout execution. Firestore rules changed and deploy is still pending, but `deployFirestoreRules=true`; do not claim deployed rules until the deploy command succeeds.
+- Current workflow blocker: none. PR #99 merged at `34664f89d2f18ee707079886779348c8b01bcedc`; `lastVerifiedCommit` now points at that main commit.
+- Release blocker: none for closeout execution. Firestore rules deploy completed with `firebase deploy --only firestore:rules --project dive-into-run` exit 0.
 - Historical T007 verifier blockers were resolved by T007 evidence: E2E spec existed and passed, `npm run depcruise` passed, and `bash scripts/audit-mock-boundary.sh` passed.
 
 ## Pitfalls
