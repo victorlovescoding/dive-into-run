@@ -81,6 +81,10 @@ checks, fresh verification, PR/CI expectations, or stop conditions.
 Every new P4 Superpowers feature must keep this five-file set under
 `specs/<feature>/`:
 
+Use the feature slug for `<feature>`, without the branch/worktree work item
+number. For example, use `specs/saved-content-favorites` for branch
+`065-saved-content-favorites`.
+
 | File | Purpose |
 | ---- | ------- |
 | `spec.md` | Product intent, user scenarios, requirements, success criteria. No implementation details unless needed to avoid ambiguity. |

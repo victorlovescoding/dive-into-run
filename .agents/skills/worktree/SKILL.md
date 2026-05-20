@@ -24,15 +24,29 @@ It automates the repo's preferred worktree flow:
   - base branch, if the user explicitly asks for one
   - editor, if the user explicitly asks for `antigravity`
 
-## Naming rules
+## Worktree naming rules
 
-- Preferred feature name format: `NNN-description`
-- If the input already starts with `NNN-`, use it as-is.
+- Preferred work item format: `NNN-description`
+- If the input already starts with `NNN-` or `<prefix>/NNN-`, use it as-is.
 - If the input starts with `chore/`, `fix/`, or `hotfix/`, use it as-is.
 - Otherwise, convert the input into kebab-case and prefix it with the next available 3-digit number.
-- To compute the next number, scan both:
-  - `specs/` directories matching `^[0-9]{3}-`
-  - existing git worktree branch names matching `^[0-9]{3}-`
+- Before computing the next number, refresh `origin` branch refs when available.
+- To compute the next number, scan:
+  - existing local and remote branch names matching `^[0-9]{3}-` or `*/NNN-*`, including `codex/NNN-*`
+  - existing git worktree branch names matching `^[0-9]{3}-` or `*/NNN-*`, including `codex/NNN-*`
+  - legacy `specs/` directories in all known worktrees matching `^[0-9]{3}-`
+- `NNN` is a sparse global work item id, not a `specs/` directory sequence.
+
+## Specs naming rules
+
+- New specs directories do not use the work item number.
+- Use `specs/<slug>` for new durable specs artifacts, for example:
+  - branch/worktree: `065-saved-content-favorites`
+  - spec directory: `specs/saved-content-favorites`
+- Preserve existing numbered specs directories as historical artifacts.
+- When a work item has specs, record the branch/worktree id in `status.json`,
+  `handoff.md`, or `specs/INDEX.md` instead of duplicating the number in the
+  specs directory name.
 
 ## Execution
 
@@ -44,7 +58,7 @@ bash .agents/skills/worktree/scripts/create_worktree.sh "<input>" "<base-branch>
 
 Defaults:
 
-- base branch: `main`, resolved by first fetching `origin main:refs/remotes/origin/main` and then using `origin/main`
+- base branch: `main`, resolved by first refreshing `origin` branch refs and then using `origin/main`
 - editor: `code`
 
 ## Required behavior
