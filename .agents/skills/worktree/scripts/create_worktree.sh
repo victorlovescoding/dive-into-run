@@ -20,34 +20,57 @@ slugify() {
     | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-+/-/g'
 }
 
-compute_specs_max() {
-  if [[ ! -d specs ]]; then
-    echo 0
-    return
-  fi
-
-  find specs -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null \
-    | awk -F- '/^[0-9]{3}-/ { n = $1 + 0; if (n > max) max = n } END { print max + 0 }'
+extract_work_item_numbers() {
+  sed -nE 's#^(.*/)?([0-9]{3})-[A-Za-z0-9].*#\2#p'
 }
 
-compute_worktree_max() {
+max_number() {
+  awk '{ n = $1 + 0; if (n > max) max = n } END { print max + 0 }'
+}
+
+list_worktree_paths() {
   git worktree list --porcelain \
-    | awk '
-      /^branch refs\/heads\/[0-9]{3}-/ {
-        sub(/^branch refs\/heads\//, "", $0)
-        split($0, parts, "-")
-        n = parts[1] + 0
-        if (n > max) max = n
-      }
-      END { print max + 0 }
-    '
+    | awk '/^worktree / { sub(/^worktree /, "", $0); print }'
+}
+
+compute_legacy_specs_max() {
+  list_worktree_paths \
+    | while IFS= read -r worktree_path; do
+        if [[ -d "${worktree_path}/specs" ]]; then
+          find "${worktree_path}/specs" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null
+        fi
+      done \
+    | extract_work_item_numbers \
+    | max_number
+}
+
+compute_branch_max() {
+  {
+    git for-each-ref --format='%(refname:short)' refs/heads refs/remotes 2>/dev/null
+    git worktree list --porcelain \
+      | awk '/^branch / { sub(/^branch refs\/heads\//, "", $0); print }'
+  } \
+    | extract_work_item_numbers \
+    | max_number
+}
+
+compute_next_number() {
+  local branch_max specs_max
+
+  branch_max="$(compute_branch_max)"
+  specs_max="$(compute_legacy_specs_max)"
+  if (( branch_max > specs_max )); then
+    echo $((branch_max + 1))
+  else
+    echo $((specs_max + 1))
+  fi
 }
 
 resolve_name() {
   local raw="$1"
-  local specs_max worktree_max next_num description
+  local next_num description
 
-  if [[ "${raw}" =~ ^[0-9]{3}- ]]; then
+  if [[ "${raw}" =~ ^([^/]+/)*[0-9]{3}- ]]; then
     printf '%s\n' "${raw}"
     return
   fi
@@ -63,22 +86,23 @@ resolve_name() {
     exit 1
   fi
 
-  specs_max="$(compute_specs_max)"
-  worktree_max="$(compute_worktree_max)"
-  if (( specs_max > worktree_max )); then
-    next_num=$((specs_max + 1))
-  else
-    next_num=$((worktree_max + 1))
-  fi
+  next_num="$(compute_next_number)"
 
   printf '%03d-%s\n' "${next_num}" "${description}"
+}
+
+refresh_remote_branch_refs() {
+  if git remote get-url origin >/dev/null 2>&1; then
+    git fetch origin '+refs/heads/*:refs/remotes/origin/*'
+  fi
 }
 
 resolve_base_ref() {
   local base="$1"
 
+  refresh_remote_branch_refs
+
   if [[ "${base}" == "main" ]]; then
-    git fetch origin main:refs/remotes/origin/main
     printf '%s\n' "origin/main"
     return
   fi
@@ -86,8 +110,8 @@ resolve_base_ref() {
   printf '%s\n' "${base}"
 }
 
-name="$(resolve_name "${input}")"
 base_ref="$(resolve_base_ref "${base_branch}")"
+name="$(resolve_name "${input}")"
 path_name="${name//\//-}"
 target="../dive-into-run-${path_name}"
 install_log="/tmp/dive-into-run-${path_name}-npm-install.log"

@@ -134,6 +134,11 @@ P3 minimum rules:
 - If full product intent plus technical plan is needed, escalate to P4 and use
   the full five-file set.
 
+Specs directory names use the feature/topic slug, not the branch/worktree work
+item number. Preserve existing numbered specs as historical artifacts, but name
+new durable specs `specs/<slug>` and record the corresponding `NNN-description`
+branch or worktree id in `status.json`, `handoff.md`, or `specs/INDEX.md`.
+
 If the user says "make a plan first", ask whether it should be a long-term repo
 doc or scratchpad. For P1/P2 PR bodies, include Summary, Root Cause, and
 Verification when useful.
