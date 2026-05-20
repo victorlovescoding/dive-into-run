@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "feature": "<feature-name>",
   "branch": "<branch-name>",
   "worktree": "<absolute-path>",
@@ -11,8 +11,23 @@
     "commit": false,
     "push": false,
     "pullRequest": false,
+    "ciWatch": false,
     "merge": false,
-    "localMainSync": false
+    "localMainSync": false,
+    "deployFirestoreRules": false
+  },
+  "currentHead": {
+    "branch": "<branch-name>",
+    "commit": "<local-head-commit>",
+    "capturedAt": "<ISO-8601 timestamp>",
+    "summary": "<local head snapshot>"
+  },
+  "remoteHead": {
+    "remote": "origin",
+    "branch": "<remote-branch-name>",
+    "commit": "<remote-head-commit>",
+    "capturedAt": "<ISO-8601 timestamp>",
+    "summary": "<remote head snapshot>"
   },
   "completedTasks": [],
   "tasks": [
@@ -78,6 +93,15 @@
   "blocked": false,
   "blockedReason": null,
   "lastVerifiedCommit": null,
+  "phaseCommits": [],
+  "rulesDeployStatus": {
+    "state": "not_applicable",
+    "required": false,
+    "changed": false,
+    "evidence": [],
+    "deployedCommit": null
+  },
+  "incidents": [],
   "lastVerification": [],
   "updatedAt": null
 }

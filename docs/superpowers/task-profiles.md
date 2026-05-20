@@ -76,8 +76,10 @@ schema:
 - Acceptance criteria: observable outcome or doc rule that must hold.
 - Verification command and expected signal: one command per entry.
 - Engineer/Reviewer: named roles or subagent assignments.
-- Authorization boundary: whether automation may edit, commit, push, open PR,
-  merge, and sync local `main`.
+- Authorization boundary: whether automation may `edit`, `commit`, `push`,
+  create a PR (`pullRequest`), watch CI (`ciWatch`), `merge`, sync local
+  `main` (`localMainSync`), and deploy Firestore/storage rules
+  (`deployFirestoreRules`).
 
 P3 should keep durable artifacts compact. Create or update a durable handoff,
 task note, or status artifact only when the task spans sessions, needs
@@ -183,9 +185,23 @@ Lightweight profiles do not bypass repo safety rules:
 - Non-read-only repo-changing work defaults to a Reviewer subagent check before
   completion.
 - P1/P2/P3 without approved `spec.md` must record an authorization boundary.
-  Starting implementation is not authorization to commit, push, open PR, merge,
-  watch CI, or sync local `main`; each closeout step must be explicitly inside
-  the authorization boundary before it runs.
+  Starting implementation is not authorization to `commit`, `push`,
+  `pullRequest` / PR creation, `ciWatch` / CI watch, `merge`,
+  `deployFirestoreRules`, or `localMainSync`; each closeout or release step
+  must be explicitly inside the authorization boundary before it runs.
+- Firestore/storage rules deploy is a separate release boundary. A PR merge,
+  green CI, or local `main` sync does not prove deployed rules or deployed
+  product behavior.
+- PR creation (`pullRequest`), CI watching (`ciWatch`), and `merge` may proceed
+  with a non-deployed rules state such as `required`, `pending`, or `blocked`
+  when the release risk is explicit and no deployed-rules or rules-backed
+  product behavior claim is made.
+- Final summaries must not imply deployed rules or deployed product behavior
+  unless `status.json.rulesDeployStatus.state` is `deployed` and deploy
+  evidence is recorded.
+- v3 status state must track local/remote head snapshots, latest verified
+  commit, phase commits, rules deploy status, and incidents when `status.json`
+  is present.
 - Workflow state drift between `tasks.md`, `status.json`, and `handoff.md`
   blocks dispatch and closeout until reconciled.
 - Verification evidence is one command per entry. Do not combine commands with

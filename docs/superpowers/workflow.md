@@ -2,7 +2,9 @@
 
 > Last-Verified: 2026-05-11
 
-This repo uses Superpowers as the workflow language and `specs/<feature>/...` as the durable state backend.
+This repo uses Superpowers as the workflow language and `specs/<feature>/...`
+as the durable state backend. New active workflow state uses
+`status.json` schemaVersion 3.
 
 docs/superpowers/specs/ and docs/superpowers/plans/ were old
 Superpowers plugin default paths and are no longer used in this repo. If a
@@ -91,11 +93,12 @@ number. For example, use `specs/saved-content-favorites` for branch
 | `plan.md` | Technical approach, file responsibilities, data flow, testing strategy, risk analysis. |
 | `tasks.md` | Human-readable task board with Engineer/Reviewer pairs, dependencies, acceptance criteria, verification commands, and commit checkpoints. |
 | `handoff.md` | Live brief for the next session: current state, next read order, latest verification, blockers, and pitfalls. |
-| `status.json` | Machine-readable dispatcher state matching `docs/superpowers/status.schema.json`. |
+| `status.json` | Machine-readable dispatcher state matching `docs/superpowers/status.schema.json`. New state uses schemaVersion 3. |
 
 Use the templates in `docs/superpowers/templates/` when creating a new feature.
-Task shape and task state transitions are defined by
-`docs/superpowers/task-contract.md`; this document is the process overview.
+Task shape, status schemaVersion 3 fields, and task state transitions are
+defined by `docs/superpowers/task-contract.md`; this document is the process
+overview.
 
 Historical `specs/**` entries may predate this workflow or contain stricter
 session-local rules. Do not retrofit them for compliance unless the user asks.
@@ -157,9 +160,12 @@ legacy artifacts remain provenance, not current global rules.
    - Reviewer verifies the same non-read-only repo-changing slice before the
      task can be marked complete.
 7. `verification-before-completion`
-   - No completion, commit, push, PR, merge, or local sync claim without fresh evidence.
+   - No completion, `commit`, `push`, `pullRequest` / PR creation,
+     `ciWatch`, `merge`, or `localMainSync` claim without fresh evidence.
 8. `finishing-a-development-branch`
-   - Push feature branch, open PR, wait for CI, merge on GitHub, then fast-forward local `main` only when the authorization boundary explicitly includes each step.
+   - Push feature branch, create a PR (`pullRequest`), watch CI (`ciWatch`),
+     merge on GitHub, then fast-forward local `main` (`localMainSync`) only
+     when the authorization boundary explicitly includes each step.
 
 ## Main Agent Authority
 
@@ -219,9 +225,9 @@ edit authorization. After three failed fix attempts for the same symptom, stop
 for architecture or user discussion.
 
 Verifier and Release Manager are separate roles. Release Manager cannot
-self-verify and may cross commit, push, PR, merge, or local sync boundaries
-only after Reviewer PASS, Verifier PASS, no workflow state drift, and explicit
-authorization for that boundary.
+self-verify and may cross `commit`, `push`, `pullRequest`, `ciWatch`, `merge`,
+or `localMainSync` boundaries only after Reviewer PASS, Verifier PASS, no
+workflow state drift, and explicit authorization for that boundary.
 
 Every dispatch must include role, stage, profile, worktree/branch, scope,
 non-scope, allowed read context, owned files for writable roles, authorization
@@ -241,10 +247,11 @@ The main agent may:
 - Update `tasks.md`, `handoff.md`, and `status.json` after `review_passed`,
   `review_rejected`, or a real blocker.
 - Run or request verification needed to validate workflow state.
-- Stage, commit, push, open PR, watch CI, merge, and sync local `main` only
-  when the authorization boundary explicitly permits that specific step and the
-  diff has already passed Reviewer. One-time start or edit authorization does
-  not authorize later closeout boundaries.
+- Stage, `commit`, `push`, create a PR (`pullRequest`), watch CI (`ciWatch`),
+  `merge`, and sync local `main` (`localMainSync`) only when the authorization
+  boundary explicitly permits that specific step and the diff has already
+  passed Reviewer. One-time start or edit authorization does not authorize
+  later closeout boundaries.
 - Edit workflow state files only when recording dispatch, `review_passed`,
   `review_rejected`, a blocker, or closeout evidence.
 
@@ -292,11 +299,17 @@ Repo-changing gray-area rule:
 Authorization boundary:
 
 - P1/P2/P3 tasks without approved `spec.md` must record exactly how far the
-  user authorized automation: edit, commit, push, PR creation, merge, and local
-  `main` sync are separate boundaries.
+  user authorized automation: `edit`, `commit`, `push`, `pullRequest` / PR
+  creation, `ciWatch`, `merge`, `localMainSync`, and
+  `deployFirestoreRules` are separate boundaries.
 - "Start fixing", "go implement", or equivalent wording authorizes the edit
   phase only unless the user explicitly grants later closeout steps.
-- Do not interpret implementation approval as merge or local sync approval.
+- Do not interpret implementation approval as `commit`, `push`,
+  `pullRequest` / PR creation, `ciWatch` / CI watch, `merge`,
+  `localMainSync`, or `deployFirestoreRules` approval.
+- `authorizationBoundary.deployFirestoreRules` is separate from `pullRequest`,
+  `ciWatch`, `merge`, and `localMainSync`. It must be true before automation
+  runs a Firestore or storage rules deploy command.
 
 Engineer boundary:
 
@@ -345,7 +358,8 @@ Task completion rule:
 State drift rule:
 
 - `tasks.md`, `status.json`, and `handoff.md` must agree before dispatch,
-  commit, push, PR creation, merge, or local `main` sync.
+  `commit`, `push`, `pullRequest` / PR creation, `ciWatch`, `merge`, or
+  `localMainSync`.
 - If they disagree, stop and reconcile the workflow state or report `blocked`.
 - Reviewer PASS cannot be replaced by main-agent self-check.
 
@@ -354,8 +368,42 @@ Evidence rule:
 - `lastVerification` and command evidence use one object or row per command.
 - Do not record shell chains with `&&` or `;` as one command entry. Split them
   into separate verification entries with separate summaries and exit codes.
+- `currentHead` and `remoteHead` are lightweight snapshots of the local branch
+  and tracking remote head when state is captured.
+- `lastVerifiedCommit` records the latest commit covered by fresh verification.
+- `phaseCommits` records checkpoint commits by phase, such as spec, plan,
+  implementation, review, or closeout.
+- `rulesDeployStatus` records whether rules deploy is applicable, required,
+  pending, blocked, or deployed, with deploy evidence and deployed commit when
+  deployed.
+- `incidents` records workflow or release incidents that must be resolved or
+  carried forward before closeout.
 - Subagent narrative is only a hint until backed by raw command summary,
   file:line evidence, or reviewed diff.
+
+## Rules Release Boundary
+
+Firestore and storage rules deployment is a release action, not a side effect
+of editing, committing, pushing, opening a PR, passing CI, merging, or syncing
+local `main`.
+
+- Rules deploy needs explicit `authorizationBoundary.deployFirestoreRules=true`.
+- Rules deploy evidence belongs in `rulesDeployStatus.evidence`; use one entry
+  per deploy command or deploy artifact.
+- If rules files changed but deploy is not authorized or not complete, set
+  `rulesDeployStatus.state` to `required`, `pending`, or `blocked` as
+  appropriate. Do not mark it `not_applicable`.
+- `rulesDeployStatus.state=deployed` requires deploy evidence and a
+  `deployedCommit` that identifies the deployed commit/ref.
+- Final summaries must not imply deployed Firestore rules or deployed product
+  behavior unless `rulesDeployStatus.state === "deployed"` and deploy evidence
+  is recorded. If deploy is pending or unauthorized, say that rules changes are
+  edited, reviewed, committed, pushed, or merged only as far as the evidence
+  proves.
+- PR creation (`pullRequest`), CI watching (`ciWatch`), and `merge` may proceed
+  while rules are not deployed, such as `rulesDeployStatus.state` of
+  `required`, `pending`, or `blocked`, when the release risk is explicit and no
+  deployed-rules or rules-backed product behavior claim is made.
 
 ## Parallelism
 
@@ -397,6 +445,11 @@ Stop and ask the user when any of these occurs:
 - `spec.md`, `plan.md`, or `tasks.md` contradict each other.
 - The work requires behavior outside the approved spec.
 - The task requires DB schema, security rules, permissions, data deletion, or migration changes.
+- An actual Firestore or storage rules deploy is requested but
+  `authorizationBoundary.deployFirestoreRules` is false or missing.
+- A summary, handoff, PR, or release note would claim deployed rules or
+  rules-backed product behavior while `rulesDeployStatus.state` is not
+  `deployed` with deploy evidence.
 - The task requires forbidden scope, a new dependency, or a broad refactor.
 - The same task is rejected by Reviewer twice without a clear fix path.
 - CI or tests fail for a non-flaky reason that points to a flawed plan or pre-existing system problem.
@@ -411,7 +464,7 @@ Use phase commits:
 3. Reviewed implementation batch commits.
 4. Final evidence / handoff commit, only when tracked evidence files intentionally changed.
 
-Closeout default after the one-time start authorization:
+Closeout default after explicit authorization for each boundary:
 
 1. Work from an isolated branch/worktree, never direct-to-`main`.
 2. Verify fresh local gates.
@@ -426,15 +479,25 @@ Do not create checkbox-only commits after CI if doing so would invalidate the he
 
 Closeout and staging rules:
 
-- The main agent may stage, commit, push, open PR, watch CI, merge, and sync
-  local `main` only after Reviewer has checked the diff and the authorization
-  boundary includes that step.
+- The main agent may stage, `commit`, `push`, create a PR (`pullRequest`),
+  watch CI (`ciWatch`), `merge`, and sync local `main` (`localMainSync`) only
+  after Reviewer has checked the diff and the authorization boundary includes
+  that step.
+- The main agent may deploy Firestore or storage rules only after Reviewer PASS,
+  fresh verification, no unresolved workflow incidents, and explicit
+  `deployFirestoreRules` authorization.
 - Staging must list concrete paths, for example:
   `git add AGENTS.md docs/superpowers/workflow.md`.
 - Do not recommend or run `git add .`, `git add -A`, or `git add --all`.
-- Commit, push, PR, merge, and local sync remain stop points when authorization
-  is absent, workflow state drift exists, verification is stale, or Reviewer
-  PASS is missing.
+- `commit`, `push`, `pullRequest`, `ciWatch`, `merge`, and `localMainSync`
+  remain stop points when their specific authorization is absent, workflow
+  state drift exists, verification is stale, Reviewer PASS is missing, or an
+  open incident blocks release.
+- Rules deploy remains a separate stop point when deploy authorization is
+  absent, deploy evidence is missing, or the deploy-specific workflow state is
+  blocked. Missing rules deploy authorization does not by itself block `edit`,
+  `commit`, `push`, `pullRequest`, `ciWatch`, or `merge` when the non-deployed
+  rules status and release risk are explicit.
 
 ## Resume Protocol
 

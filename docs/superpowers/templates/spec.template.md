@@ -28,3 +28,18 @@
 
 - Spec approved by: <user / date>
 - One-time automated execution authorization: <yes/no + date>
+- Authorization boundary:
+  - edit:
+  - commit:
+  - push:
+  - pullRequest:
+  - ciWatch:
+  - merge:
+  - localMainSync:
+  - deployFirestoreRules:
+
+## Release Notes
+
+- Firestore/storage rules deploy required: <yes/no/not applicable>
+- Final summaries must not imply deployed rules or deployed product behavior
+  unless `rulesDeployStatus.state` is `deployed` with deploy evidence.

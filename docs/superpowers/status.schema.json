@@ -8,6 +8,9 @@
     },
     {
       "$ref": "#/$defs/statusV2"
+    },
+    {
+      "$ref": "#/$defs/statusV3"
     }
   ],
   "$defs": {
@@ -300,6 +303,225 @@
         }
       }
     },
+    "authorizationBoundaryV3": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "edit",
+        "commit",
+        "push",
+        "pullRequest",
+        "ciWatch",
+        "merge",
+        "localMainSync",
+        "deployFirestoreRules"
+      ],
+      "properties": {
+        "edit": {
+          "type": "boolean"
+        },
+        "commit": {
+          "type": "boolean"
+        },
+        "push": {
+          "type": "boolean"
+        },
+        "pullRequest": {
+          "type": "boolean"
+        },
+        "ciWatch": {
+          "type": "boolean"
+        },
+        "merge": {
+          "type": "boolean"
+        },
+        "localMainSync": {
+          "type": "boolean"
+        },
+        "deployFirestoreRules": {
+          "type": "boolean"
+        }
+      }
+    },
+    "headSnapshotV3": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "ref": {
+              "$ref": "#/$defs/nullableString"
+            },
+            "commit": {
+              "$ref": "#/$defs/nullableString"
+            },
+            "sha": {
+              "$ref": "#/$defs/nullableString"
+            },
+            "branch": {
+              "$ref": "#/$defs/nullableString"
+            },
+            "remote": {
+              "$ref": "#/$defs/nullableString"
+            },
+            "source": {
+              "$ref": "#/$defs/nullableString"
+            },
+            "checkedAt": {
+              "$ref": "#/$defs/nullableString"
+            },
+            "capturedAt": {
+              "$ref": "#/$defs/nullableString"
+            },
+            "summary": {
+              "$ref": "#/$defs/nullableString"
+            }
+          }
+        }
+      ]
+    },
+    "phaseCommitV3": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "anyOf": [
+            {
+              "required": [
+                "ref"
+              ]
+            },
+            {
+              "required": [
+                "commit"
+              ]
+            },
+            {
+              "required": [
+                "commitRef"
+              ]
+            },
+            {
+              "required": [
+                "sha"
+              ]
+            }
+          ],
+          "properties": {
+            "phase": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "ref": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "commit": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "commitRef": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "sha": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "summary": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "committedAt": {
+              "$ref": "#/$defs/nonEmptyString"
+            }
+          }
+        }
+      ]
+    },
+    "deployEvidenceV3": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        {
+          "$ref": "#/$defs/verificationResult"
+        }
+      ]
+    },
+    "rulesDeployStatusV3": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "required",
+        "changed",
+        "evidence",
+        "deployedCommit"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "not_applicable",
+            "not_required",
+            "required",
+            "pending",
+            "blocked",
+            "deployed"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "changed": {
+          "type": "boolean"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/deployEvidenceV3"
+          }
+        },
+        "deployedCommit": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "incidentV3": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "state",
+        "summary"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "state": {
+          "enum": [
+            "open",
+            "mitigated",
+            "resolved",
+            "closed"
+          ]
+        },
+        "summary": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "openedAt": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "closedAt": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
     "statusV1": {
       "type": "object",
       "additionalProperties": false,
@@ -434,6 +656,117 @@
         },
         "lastVerifiedCommit": {
           "$ref": "#/$defs/nullableString"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "statusV3": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "feature",
+        "branch",
+        "worktree",
+        "phase",
+        "activeTask",
+        "activeWave",
+        "authorizationBoundary",
+        "currentHead",
+        "remoteHead",
+        "completedTasks",
+        "tasks",
+        "blocked",
+        "blockedReason",
+        "lastVerification",
+        "lastVerifiedCommit",
+        "phaseCommits",
+        "rulesDeployStatus",
+        "incidents",
+        "updatedAt"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 3
+        },
+        "feature": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "branch": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "worktree": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "phase": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "activeTask": {
+          "$ref": "#/$defs/activeTaskV2"
+        },
+        "activeWave": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            {
+              "type": "integer",
+              "minimum": 1
+            }
+          ]
+        },
+        "authorizationBoundary": {
+          "$ref": "#/$defs/authorizationBoundaryV3"
+        },
+        "currentHead": {
+          "$ref": "#/$defs/headSnapshotV3"
+        },
+        "remoteHead": {
+          "$ref": "#/$defs/headSnapshotV3"
+        },
+        "completedTasks": {
+          "$ref": "#/$defs/stringList"
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/taskV2"
+          }
+        },
+        "blocked": {
+          "type": "boolean"
+        },
+        "blockedReason": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "lastVerification": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/verificationResult"
+          }
+        },
+        "lastVerifiedCommit": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "phaseCommits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/phaseCommitV3"
+          }
+        },
+        "rulesDeployStatus": {
+          "$ref": "#/$defs/rulesDeployStatusV3"
+        },
+        "incidents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/incidentV3"
+          }
         },
         "updatedAt": {
           "$ref": "#/$defs/nullableString"
