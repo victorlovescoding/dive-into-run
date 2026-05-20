@@ -39,10 +39,10 @@ It automates the repo's preferred worktree flow:
 
 ## Specs naming rules
 
-- New specs directories do not use the work item number.
-- Use `specs/<slug>` for new durable specs artifacts, for example:
+- New specs directories follow the repo's active workflow state naming.
+- Use `specs/<feature>` for new durable specs artifacts, for example:
   - branch/worktree: `065-saved-content-favorites`
-  - spec directory: `specs/saved-content-favorites`
+  - spec directory: `specs/065-saved-content-favorites`
 - Preserve existing numbered specs directories as historical artifacts.
 - When a work item has specs, record the branch/worktree id in `status.json`,
   `handoff.md`, or `specs/INDEX.md` instead of duplicating the number in the

@@ -9,11 +9,12 @@
 - If this file, `status.json`, and `handoff.md` disagree, reconcile or block before dispatch, commit, push, PR, merge, or local `main` sync.
 - A task can become `completed` only after `review_passed` and coordinator state sync.
 - Command evidence is one command per entry. Do not combine commands with shell chain operators.
-- Current workflow phase: `verified_ready_for_pr`.
-- Current HEAD: `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`; remote `origin/065-saved-content-favorites` was last observed at `d6ac09f9a64f694833be097e1a816f3bc2806a5c` before the local workflow repair commit.
+- Current workflow phase: `deployed_ready_for_local_sync`.
+- Current HEAD: `34664f89d2f18ee707079886779348c8b01bcedc`; remote `origin/main` was last observed at `34664f89d2f18ee707079886779348c8b01bcedc` after PR #99 squash merge.
 - Origin main base observed: `55130520c0e1ff9a5222bf3c6c2f41dfd97be3ed`.
 - Historical branch commits already pushed before this repair: `e7394450f7393481a1bcc418ab6e0726993e240d` Add private content favorites; `d6ac09f9a64f694833be097e1a816f3bc2806a5c` Fix event detail landmark.
 - Workflow/state repair commit: `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a` Harden workflow closeout state.
+- PR #99 squash merge commit on main: `34664f89d2f18ee707079886779348c8b01bcedc` Add saved content favorites (#99).
 - Latest Plan Reviewer decision: `review_passed`.
 - Plan Reviewer summary at review close: Planner plan, tasks, and status covered FR-001 through FR-025; prior findings were closed; status was valid and synced; no workflow drift; implementation was still unauthorized.
 - User implementation edit authorization granted on 2026-05-19 by message `開工`.
@@ -22,10 +23,11 @@
 - T004, T005, and T006 completed after Reviewer PASS and Coordinator state sync.
 - T007 completed after script mapping, focused E2E cleanup, final verification, Reviewer PASS, and Coordinator state sync.
 - Post-T007 permission-denied fallback was implemented and reviewed after the user report; the incident is resolved by durable recording plus fresh local verification.
-- CI workflow state incident resolved: GitHub CI run `26150844340` failed `Workflow state check` while local `npm run workflow:check` passed. Root cause was GitHub shallow checkout missing ancestor commit objects for the closeout range guard; fix is CI checkout `fetch-depth: 0` plus allowlisting exactly `.github/workflows/ci.yml` as workflow evidence. Reviewer PASS was recorded for the checkout-depth fix.
-- Rules deploy status: required and changed; deploy authorized for closeout but not yet executed.
-- Last verified commit: `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`.
-- Blocked: no. Ready for push, PR, CI watch, merge, Firestore rules deploy, and local main sync under the current explicit closeout authorization.
+- CI workflow state incident resolved: GitHub CI run `26150844340` failed `Workflow state check` while local `npm run workflow:check` passed. Root cause was GitHub shallow checkout missing ancestor commit objects for the closeout range guard; fix is CI checkout `fetch-depth: 0` plus allowlisting exactly `.github/workflows/ci.yml` as workflow evidence. Reviewer PASS was recorded for the checkout-depth fix, and rerun CI `26151638769` succeeded.
+- PR #100 workflow links incident resolved: GitHub CI run `26152944921` failed `Workflow links check` while prior local `npm run workflow:links` passed because an untracked empty `specs/saved-content-favorites/` directory existed locally. GitHub checkout does not preserve empty directories, so inline-code examples in `docs/superpowers/workflow.md` and `.agents/skills/worktree/SKILL.md` pointed at a missing path. Fix: update both examples to existing `specs/065-saved-content-favorites/` and record the incident in handoff/tasks/status.
+- Rules deploy status: deployed after PR #99 merge. `firebase deploy --only firestore:rules --project dive-into-run` exited 0, compiled `firestore.rules`, and released rules to `cloud.firestore`.
+- Last verified commit: `34664f89d2f18ee707079886779348c8b01bcedc`.
+- Blocked: no. Ready for deploy-evidence state PR/merge and final local main sync under the current explicit closeout authorization.
 
 ## Team And Parallelism
 
@@ -1016,10 +1018,15 @@ Evidence:
 - Post-T007 authorization note: existing state did not contain explicit product-code edit authorization for this follow-up. Do not infer authorization.
 - Post-T007 Reviewer decision: `review_passed`; no blocking findings.
 - Post-T007 RED evidence: focused unit failed before fix; posts regression expected posts length 2 but got 0; events regression saw `console.error('載入活動收藏狀態失敗:', permission-denied)`.
-- Post-T007 residual risk: until production Firestore rules are deployed, initial background favorite state may show unfilled/empty, but console/page break is avoided; active user write failures still toast.
-- Rules deploy status: required and changed; no production rules deploy evidence is recorded.
-- Current workflow state is verified for closeout at `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`.
-- PR #99 CI incident `INC-CI-WORKFLOW-STATE-SHALLOW-CHECKOUT`: GitHub CI run `26150844340` failed `Workflow state check`; local `npm run workflow:check` passed. Root cause was shallow checkout missing ancestor commit objects. Fix: `.github/workflows/ci.yml` checkout `fetch-depth: 0` and `scripts/check-superpowers-state.js` allowlist entry for exactly `.github/workflows/ci.yml` as workflow evidence, not the whole `.github/` tree. Reviewer PASS recorded for the CI checkout-depth fix; Firestore rules deploy remains pending.
+- Post-T007 residual risk: permission-denied fallback remains defensive for stale clients or rule propagation delays; active user write failures still toast.
+- Rules deploy status: deployed after PR #99 merge; production deploy evidence is recorded in `status.json.rulesDeployStatus`.
+- Current workflow state is verified for closeout at `34664f89d2f18ee707079886779348c8b01bcedc`.
+- PR #99 CI incident `INC-CI-WORKFLOW-STATE-SHALLOW-CHECKOUT`: GitHub CI run `26150844340` failed `Workflow state check`; local `npm run workflow:check` passed. Root cause was shallow checkout missing ancestor commit objects. Fix: `.github/workflows/ci.yml` checkout `fetch-depth: 0` and `scripts/check-superpowers-state.js` allowlist entry for exactly `.github/workflows/ci.yml` as workflow evidence, not the whole `.github/` tree. Reviewer PASS recorded for the CI checkout-depth fix; rerun CI `26151638769` succeeded.
+- PR #100 CI incident `INC-CI-WORKFLOW-LINKS-EMPTY-DIR`: GitHub CI run `26152944921` failed `Workflow links check`; local `npm run workflow:links` had passed only because an untracked empty `specs/saved-content-favorites/` directory still existed locally. GitHub checkout omitted that empty directory, exposing stale inline-code references in `docs/superpowers/workflow.md` and `.agents/skills/worktree/SKILL.md`. Fix: point both examples at existing `specs/065-saved-content-favorites/` and verify in a clean archive copy without the empty directory.
+- PR #99 GitHub checks on head `23b9e0e3a572f61cb2f4834feba6f700ec035ed5`: `CI` run `26151638769` succeeded, including `ci` and `e2e`; `Firestore Rules Gate` run `26151638732` succeeded; `Quality Budgets` run `26151638734` succeeded.
+- PR #99 was squash merged to `main` at `34664f89d2f18ee707079886779348c8b01bcedc`.
+- Firestore rules deploy: `firebase deploy --only firestore:rules --project dive-into-run` exited 0; `firestore.rules` compiled successfully and was released to `cloud.firestore`.
+- Legacy active spec directory `specs/saved-content-favorites/` was removed so future agents see only `specs/065-saved-content-favorites/`.
 - Current closeout authorization includes commit, push, PR, CI-watch, merge, deploy, and local-main-sync. Product code edits and package/config edits remain non-scope for future work.
 - Command output summary:
   - `firebase emulators:exec --only auth,firestore,storage --project=demo-test "npx playwright test --config playwright.emulator.config.mjs tests/e2e/saved-content-favorites.spec.js"`: exit 0; 3 passed; Reviewer rerun also 3 passed (14.4s).

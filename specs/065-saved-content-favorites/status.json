@@ -1,9 +1,9 @@
 {
   "schemaVersion": 3,
   "feature": "065-saved-content-favorites",
-  "branch": "065-saved-content-favorites",
-  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-065-saved-content-favorites",
-  "phase": "verified_ready_for_pr",
+  "branch": "main",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run",
+  "phase": "deployed_ready_for_local_sync",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -17,17 +17,17 @@
     "deployFirestoreRules": true
   },
   "currentHead": {
-    "branch": "065-saved-content-favorites",
-    "commit": "95be04b582eb7c682d1a098f1cb3fac4aa66ee6a",
-    "capturedAt": "2026-05-20T16:20:56+08:00",
-    "summary": "HEAD snapshot after committing reviewed workflow/state repair. Fresh local verification passed before this evidence update; origin/main base observed 55130520c0e1ff9a5222bf3c6c2f41dfd97be3ed."
+    "branch": "main",
+    "commit": "34664f89d2f18ee707079886779348c8b01bcedc",
+    "capturedAt": "2026-05-20T16:59:48+08:00",
+    "summary": "GitHub main after PR #99 squash merge. PR head 23b9e0e3a572f61cb2f4834feba6f700ec035ed5 passed CI, e2e, Firestore Rules Gate, and Quality Budgets before merge."
   },
   "remoteHead": {
     "remote": "origin",
-    "branch": "065-saved-content-favorites",
-    "commit": "d6ac09f9a64f694833be097e1a816f3bc2806a5c",
-    "capturedAt": "2026-05-20T15:58:09+08:00",
-    "summary": "origin/065-saved-content-favorites matched local HEAD at capture time."
+    "branch": "main",
+    "commit": "34664f89d2f18ee707079886779348c8b01bcedc",
+    "capturedAt": "2026-05-20T16:59:48+08:00",
+    "summary": "origin/main after PR #99 squash merge."
   },
   "completedTasks": [
     "T001",
@@ -1208,6 +1208,66 @@
   "blockedReason": null,
   "lastVerification": [
     {
+      "command": "npm run workflow:links in clean archive copy without specs/saved-content-favorites/ empty directory",
+      "exitCode": 0,
+      "summary": "LOCAL LINKS: 41 file(s) scanned, all local references exist after updating docs/superpowers/workflow.md and .agents/skills/worktree/SKILL.md examples to specs/065-saved-content-favorites.",
+      "verifiedAt": "2026-05-20T17:20:09+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "6 status files valid and synced after PR #100 workflow links fix.",
+      "verifiedAt": "2026-05-20T17:20:09+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "No output; no whitespace errors after PR #100 workflow links fix.",
+      "verifiedAt": "2026-05-20T17:20:09+08:00"
+    },
+    {
+      "command": "node scripts/validate-workflow-state.js specs/065-saved-content-favorites/status.json",
+      "exitCode": 0,
+      "summary": "specs/065-saved-content-favorites/status.json: ok; WORKFLOW STATE: 1 status file(s) valid.",
+      "verifiedAt": "2026-05-20T17:20:09+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "6 status files valid and synced after removing legacy specs/saved-content-favorites from active workflow state.",
+      "verifiedAt": "2026-05-20T17:04:39+08:00"
+    },
+    {
+      "command": "node scripts/validate-workflow-state.js specs/065-saved-content-favorites/status.json",
+      "exitCode": 0,
+      "summary": "specs/065-saved-content-favorites/status.json: ok; WORKFLOW STATE: 1 status file(s) valid.",
+      "verifiedAt": "2026-05-20T17:04:39+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "No output; no whitespace errors after deploy-evidence state update and legacy specs directory removal.",
+      "verifiedAt": "2026-05-20T17:04:39+08:00"
+    },
+    {
+      "command": "firebase deploy --only firestore:rules --project dive-into-run",
+      "exitCode": 0,
+      "summary": "Deployed Firestore rules to Firebase project dive-into-run; firestore.rules compiled successfully and was released to cloud.firestore. CLI reported Deploy complete.",
+      "verifiedAt": "2026-05-20T16:59:48+08:00"
+    },
+    {
+      "command": "GitHub PR #99 checks for 23b9e0e3a572f61cb2f4834feba6f700ec035ed5",
+      "exitCode": 0,
+      "summary": "CI run 26151638769 completed successfully, including ci and e2e jobs. Firestore Rules Gate run 26151638732 succeeded. Quality Budgets run 26151638734 succeeded.",
+      "verifiedAt": "2026-05-20T16:59:48+08:00"
+    },
+    {
+      "command": "GitHub squash merge PR #99",
+      "exitCode": 0,
+      "summary": "Merged PR #99 into main with squash SHA 34664f89d2f18ee707079886779348c8b01bcedc.",
+      "verifiedAt": "2026-05-20T16:59:48+08:00"
+    },
+    {
       "command": "npm run workflow:check",
       "exitCode": 0,
       "summary": "6 status files valid and synced; PR #99 CI workflow-state repair is accepted with .github/workflows/ci.yml as the only added workflow evidence path.",
@@ -1328,47 +1388,45 @@
       "verifiedAt": "2026-05-20T16:20:56+08:00"
     }
   ],
-  "lastVerifiedCommit": "95be04b582eb7c682d1a098f1cb3fac4aa66ee6a",
+  "lastVerifiedCommit": "34664f89d2f18ee707079886779348c8b01bcedc",
   "phaseCommits": [
     {
-      "phase": "historical_commit_push",
-      "commit": "e7394450f7393481a1bcc418ab6e0726993e240d",
-      "summary": "Add private content favorites; historical commit already pushed before this state repair.",
-      "committedAt": "2026-05-20T01:01:07+08:00"
-    },
-    {
-      "phase": "historical_commit_push",
-      "commit": "d6ac09f9a64f694833be097e1a816f3bc2806a5c",
-      "summary": "Fix event detail landmark; historical commit already pushed before this state repair.",
-      "committedAt": "2026-05-20T01:33:07+08:00"
-    },
-    {
-      "phase": "workflow_state_repair",
-      "commit": "95be04b582eb7c682d1a098f1cb3fac4aa66ee6a",
-      "summary": "Harden workflow closeout state; verified by fresh local gates and pre-commit.",
-      "committedAt": "2026-05-20T16:20:56+08:00"
+      "phase": "pr_99_squash_merge",
+      "commit": "34664f89d2f18ee707079886779348c8b01bcedc",
+      "summary": "PR #99 Add saved content favorites merged into main after CI, e2e, Firestore Rules Gate, and Quality Budgets succeeded.",
+      "committedAt": "2026-05-20T16:59:48+08:00"
     }
   ],
   "rulesDeployStatus": {
-    "state": "pending",
+    "state": "deployed",
     "required": true,
     "changed": true,
     "evidence": [
-      "firestore.rules changed in the saved-content-favorites branch; Firestore rules deploy is authorized for closeout but not yet executed."
+      {
+        "command": "firebase deploy --only firestore:rules --project dive-into-run",
+        "exitCode": 0,
+        "summary": "Firestore rules compiled successfully and were released to cloud.firestore for Firebase project dive-into-run. CLI reported Deploy complete.",
+        "verifiedAt": "2026-05-20T16:59:48+08:00"
+      }
     ],
-    "deployedCommit": null
+    "deployedCommit": "34664f89d2f18ee707079886779348c8b01bcedc"
   },
   "incidents": [
     {
       "id": "INC-POST-T007-PERMISSION-DENIED-FALLBACK",
       "state": "resolved",
-      "summary": "Post-T007 /posts and /events logged permission-denied during background favorite status hydration against production Firestore rules. A permission-denied-only empty fallback was implemented, reviewed, and covered by fresh local verification; production rules deploy remains tracked separately in rulesDeployStatus."
+      "summary": "Post-T007 /posts and /events logged permission-denied during background favorite status hydration against production Firestore rules. A permission-denied-only empty fallback was implemented, reviewed, and covered by fresh local verification; production Firestore rules were deployed after PR #99 merge and are tracked in rulesDeployStatus."
     },
     {
       "id": "INC-CI-WORKFLOW-STATE-SHALLOW-CHECKOUT",
       "state": "resolved",
-      "summary": "PR #99 GitHub CI run 26150844340 failed Workflow state check while local npm run workflow:check passed. Root cause was GitHub shallow checkout missing ancestor commit objects required by the closeout range guard. Fix: .github/workflows/ci.yml checkout fetch-depth: 0 plus allowlist exactly .github/workflows/ci.yml as workflow evidence in scripts/check-superpowers-state.js. Reviewer PASS recorded for the CI checkout-depth fix; Firestore rules deploy remains pending."
+      "summary": "PR #99 GitHub CI run 26150844340 failed Workflow state check while local npm run workflow:check passed. Root cause was GitHub shallow checkout missing ancestor commit objects required by the closeout range guard. Fix: .github/workflows/ci.yml checkout fetch-depth: 0 plus allowlist exactly .github/workflows/ci.yml as workflow evidence in scripts/check-superpowers-state.js. Reviewer PASS recorded for the CI checkout-depth fix; rerun CI 26151638769 succeeded."
+    },
+    {
+      "id": "INC-CI-WORKFLOW-LINKS-EMPTY-DIR",
+      "state": "resolved",
+      "summary": "PR #100 GitHub CI run 26152944921 failed Workflow links check while a prior local npm run workflow:links passed because an untracked empty specs/saved-content-favorites/ directory existed locally. GitHub checkout does not preserve empty directories, so docs/superpowers/workflow.md and .agents/skills/worktree/SKILL.md referenced a missing path after the legacy active spec files were removed. Fix: update both examples to the existing specs/065-saved-content-favorites/ active workflow state and verify workflow:links in a clean archive copy without the empty directory; rulesDeployStatus remains deployed."
     }
   ],
-  "updatedAt": "2026-05-20T16:36:21+08:00"
+  "updatedAt": "2026-05-20T17:20:09+08:00"
 }

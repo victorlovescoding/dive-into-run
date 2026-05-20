@@ -83,8 +83,9 @@ checks, fresh verification, PR/CI expectations, or stop conditions.
 Every new P4 Superpowers feature must keep this five-file set under
 `specs/<feature>/`:
 
-Use the feature slug for `<feature>`, without the branch/worktree work item
-number. For example, use `specs/saved-content-favorites` for branch
+Use the feature slug for `<feature>` consistently with the active workflow
+state. For example, this repo's saved-content-favorites workflow state lives
+under `specs/065-saved-content-favorites` for branch
 `065-saved-content-favorites`.
 
 | File | Purpose |
