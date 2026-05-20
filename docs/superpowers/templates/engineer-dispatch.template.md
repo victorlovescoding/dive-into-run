@@ -19,6 +19,17 @@ not commit, push, open PRs, or revert other people's changes.
 - Same-wave lanes:
 - Final integration gate:
 
+## Authorization Boundary
+
+- edit:
+- commit:
+- push:
+- pullRequest:
+- ciWatch:
+- merge:
+- localMainSync:
+- deployFirestoreRules:
+
 ## Scope
 
 - Implement:
@@ -69,15 +80,32 @@ blocked.
 | `command` | exit 0 and key output |
 | `node scripts/check-superpowers-state.js --owned-files <owned paths...>` | exit 0 and changed tracked/untracked files are inside owned files |
 
+## Status V3 Updates
+
+- currentHead:
+- remoteHead:
+- lastVerifiedCommit:
+- phaseCommits:
+- rulesDeployStatus:
+  - state:
+  - required:
+  - changed:
+  - evidence:
+  - deployedCommit:
+- incidents:
+
 ## Stop Conditions
 
 Stop and report if the task requires files outside owned files, a new
 dependency, schema/security/permission/migration changes, destructive actions,
-secrets, unclear scope, or a failing gate that points outside this task.
+secrets, an actual Firestore/storage rules deploy without deploy authorization,
+an unsupported deployed-rules/product-behavior claim, unclear scope, or a
+failing gate that points outside this task.
 
 ## Required Final Report
 
 - status: `DONE`, `DONE_WITH_CONCERNS`, or `BLOCKED`
 - changed files:
 - commands run with exit codes and key signal:
+- rules deploy status and whether deploy evidence exists:
 - risks, unverified items, or blocker:

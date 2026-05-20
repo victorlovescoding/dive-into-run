@@ -5,16 +5,25 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-065-saved-content-favorites`
 - Branch: `065-saved-content-favorites`
-- Current phase: `implementation_complete_ready_for_closeout`
+- Specs path: `specs/065-saved-content-favorites/`
+- Current phase: `state_repair_verified_product_gates_stale`
 - Active task: none
 - Active wave: none
+- Current HEAD: `d6ac09f9a64f694833be097e1a816f3bc2806a5c`
+- Remote head: `origin/065-saved-content-favorites` at `d6ac09f9a64f694833be097e1a816f3bc2806a5c`
+- Origin main base observed: `55130520c0e1ff9a5222bf3c6c2f41dfd97be3ed`
+- Historical branch commits already pushed before this repair:
+  - `e7394450f7393481a1bcc418ab6e0726993e240d` Add private content favorites
+  - `d6ac09f9a64f694833be097e1a816f3bc2806a5c` Fix event detail landmark
 - Latest reviewer decision: T007 `review_passed`; T007 is complete.
-- Latest reviewer summary at verification close: T007 test content, branch E2E mapping in `scripts/test-e2e-branch.sh`, and E2E REST auth cleanup passed review. Focused E2E, forced branch E2E mapping, normal branch E2E skip behavior, branch tests, audits, workflow checks, lint, type-check, and whitespace checks passed.
-- Post-T007 permission console bugfix reviewer decision: `review_passed`; no blocking findings. This is recorded as a completed follow-up note and does not reopen T007 or change the feature phase.
-- Latest user authorization: T007 issue 1 authorized on 2026-05-19 by user message `好`, limited to adding `saved-content-favorites.spec.js` to `scripts/test-e2e-branch.sh` branch E2E mapping. Product code edits, package/config edits, commit, push, PR, merge, CI watch, and local main sync are not authorized.
-- Last verified commit: none
-- Blocked: no
-- Blocked reason: none. No known verification blockers remain.
+- Latest reviewer summary at verification close: T007 test content, branch E2E mapping in `scripts/test-e2e-branch.sh`, and E2E REST auth cleanup passed review. Focused E2E, forced branch E2E mapping, branch tests, audits, workflow checks, lint, type-check, and whitespace checks passed at T007 close.
+- Post-T007 permission-denied fallback incident: open. The fallback treats only background favorite status hydration `permission-denied` as empty/no-op; generic errors still throw/log, and user-triggered add/remove failures still rollback and toast. Existing state did not contain explicit product-code edit authorization for this follow-up.
+- Rules deploy status: required and changed; not deployed. No deploy evidence is recorded, and `deployFirestoreRules=false`.
+- Latest user authorization for this repair: edit=yes only for the `specs/saved-content-favorites` to `specs/065-saved-content-favorites` rename and owned state files in the renamed directory. Stage, commit, push, PR, merge, deploy, and local main sync are not authorized.
+- Future authorization boundary: commit=false, push=false, pullRequest=false, ciWatch=false, merge=false, localMainSync=false, deployFirestoreRules=false.
+- Last verified commit: null
+- Blocked: yes
+- Blocked reason: product/runtime/test verification for current HEAD was not rerun during this state repair, so `lastVerifiedCommit` remains null and release/closeout must not proceed from this state.
 - Written spec approved by user on 2026-05-19.
 - Planner produced P4 implementation plan and task slices.
 - T001 completed after Reviewer PASS and Coordinator state sync.
@@ -24,8 +33,8 @@
 - T005 completed after Reviewer PASS and Coordinator state sync.
 - T006 completed after Reviewer PASS and Coordinator state sync.
 - T007 completed after Reviewer PASS and Coordinator state sync.
-- Post-T007 permission console bugfix completed after user report; active task remains none and blockers remain clear.
-- Implementation authorization: T007 test edit=yes for `tests/e2e/saved-content-favorites.spec.js` and `tests/unit/runtime/useMemberFavoritesRuntime.test.jsx`; script mapping edit=yes only for `scripts/test-e2e-branch.sh`; product-code edit=no, package/config edit=no, commit=no, push=no, PR=no, merge=no, CI-watch=no, local-main-sync=no.
+- Post-T007 permission-denied fallback was implemented after the user report and reviewed, but the authorization gap and undeployed rules risk remain recorded as workflow state.
+- Current repair authorization: edit=yes for this directory rename and owned state files only; product/runtime/test/rules/script/docs outside `specs/065-saved-content-favorites/` remain non-scope.
 
 ## Read Order
 
@@ -33,15 +42,15 @@
 2. `docs/superpowers/workflow.md`
 3. `docs/superpowers/task-profiles.md`
 4. `docs/superpowers/task-contract.md`
-5. `specs/saved-content-favorites/handoff.md`
-6. `specs/saved-content-favorites/spec.md`
-7. `specs/saved-content-favorites/plan.md`
-8. `specs/saved-content-favorites/tasks.md`
-9. `specs/saved-content-favorites/status.json`
+5. `specs/065-saved-content-favorites/handoff.md`
+6. `specs/065-saved-content-favorites/spec.md`
+7. `specs/065-saved-content-favorites/plan.md`
+8. `specs/065-saved-content-favorites/tasks.md`
+9. `specs/065-saved-content-favorites/status.json`
 
 ## Next Action
 
-Ready for closeout decision. Do not stage, commit, push, open a PR, merge, watch CI, or sync local main without explicit authorization for that specific boundary.
+Blocked on fresh product/runtime/test verification and explicit release/deploy authorization. Do not stage, commit, push, open a PR, watch CI, merge, deploy Firestore rules, or sync local main without explicit authorization for that specific boundary.
 
 ## T007 Review And Verification
 
@@ -54,14 +63,14 @@ Ready for closeout decision. Do not stage, commit, push, open a PR, merge, watch
   - `tests/unit/runtime/useMemberFavoritesRuntime.test.jsx`
 - Mapping Engineer modified only `is_emulator_spec()` in `scripts/test-e2e-branch.sh` to include `saved-content-favorites.spec.js`; Reviewer `review_passed`.
 - Focused E2E first failed because `documentExists()` REST read lacked admin header and got Firestore rules 403; fixed within the authorized E2E test file by adding `Authorization: Bearer owner`; Reviewer `review_passed`.
-- Product code edits, package/config edits, commit, push, PR, merge, CI watch, and local main sync remain unauthorized.
-- No known verification blockers remain.
+- Product code edits, package/config edits, commit, push, PR, merge, CI watch, deploy, and local main sync remain unauthorized for future work.
+- Current workflow state is blocked because fresh product/runtime/test verification was not rerun during the schemaVersion 3 repair.
 
 | Command | Exit | Evidence |
 | --- | --- | --- |
 | `firebase emulators:exec --only auth,firestore,storage --project=demo-test "npx playwright test --config playwright.emulator.config.mjs tests/e2e/saved-content-favorites.spec.js"` | 0 | 3 passed; Reviewer rerun also 3 passed (14.4s). |
 | `TEST_E2E_BRANCH_CHANGED_SPECS=tests/e2e/saved-content-favorites.spec.js npm run test:e2e:branch` | 0 | Sandbox first failed with port EPERM; escalated rerun passed. Branch script routed spec to `Emulator specs without feature setup`; Playwright 3 passed (15.0s). |
-| `npm run test:e2e:branch` | 0 | Normal changed detection skipped because `tests/e2e/saved-content-favorites.spec.js` is untracked and no staging/commit authorization exists; expected until staging. Forced branch evidence validates mapping and spec execution. |
+| `npm run test:e2e:branch` | 0 | Historical normal changed detection run exited 0 with a documented skip before commit and push. Forced branch evidence validated mapping and spec execution. |
 | `npm run test:branch` | 0 | Browser Vitest 7 passed / 89 tests; server rules 6 passed / 88 tests. |
 | `npm run depcruise` | 0 | No dependency violations found (1540 modules, 3898 dependencies), with existing MODULE_TYPELESS warning only. |
 | `bash scripts/audit-mock-boundary.sh` | 0 | 0 findings. |
@@ -74,13 +83,15 @@ Ready for closeout decision. Do not stage, commit, push, open a PR, merge, watch
 | `npm run lint:changed` | 0 | Existing React-version warning only. |
 | `npm run type-check:changed` | 0 | No changed-file type errors. |
 
-## Post-T007 Permission Console Bugfix
+## Post-T007 Permission-Denied Fallback Incident
 
 - User report: after login, `/posts` and `/events` showed console `FirebaseError: Missing or insufficient permissions.`
 - Root cause: localhost:3001 connects to production Firestore; after login, background favorite status hydration reads `users/{uid}/favoritePosts|favoriteEvents/{targetId}`. If production rules do not yet include the new favorite subcollection rules, Firestore returns `permission-denied`.
-- Fix: background favorite status hydration treats only `permission-denied` as empty/no-op fallback to avoid console noise and page break. Generic errors still throw/log. User-triggered add/remove favorite failures still rollback and show toast.
+- Fallback: background favorite status hydration treats only `permission-denied` as empty/no-op to avoid console noise and page break. Generic errors still throw/log. User-triggered add/remove favorite failures still rollback and show toast.
 - Reviewer decision: `review_passed`; no blocking findings.
+- Authorization note: existing state did not contain explicit product-code edit authorization for this follow-up. Do not infer authorization.
 - Residual risk: until production Firestore rules are deployed, initial background favorite state may show unfilled/empty, but console/page break is avoided; active user write failures still toast.
+- Rules deploy status: required and changed; no production rules deploy evidence is recorded.
 - Changed files:
   - `src/runtime/hooks/usePostsPageRuntimeHelpers.js`
   - `src/runtime/hooks/useEventsPageRuntime.js`
@@ -291,9 +302,9 @@ Ready for closeout decision. Do not stage, commit, push, open a PR, merge, watch
 
 | Command | Exit | Evidence |
 | --- | --- | --- |
-| `rg -n "AC-T001|add/remove|batch|latest target|doc id mismatch|extra field|favoritePosts|favoriteEvents" specs/saved-content-favorites/tasks.md specs/saved-content-favorites/status.json` | 0 | Reviewer confirmed T001 acceptance coverage and rules/data terms are synced across `tasks.md` and `status.json`. |
-| `node scripts/validate-workflow-state.js specs/saved-content-favorites/status.json` | 0 | Reviewer confirmed workflow status schema validation passed. |
-| `node scripts/check-superpowers-state.js specs/saved-content-favorites/status.json` | 0 | Reviewer confirmed Superpowers state check passed. |
+| `rg -n "AC-T001|add/remove|batch|latest target|doc id mismatch|extra field|favoritePosts|favoriteEvents" specs/065-saved-content-favorites/tasks.md specs/065-saved-content-favorites/status.json` | 0 | Reviewer confirmed T001 acceptance coverage and rules/data terms are synced across `tasks.md` and `status.json`. |
+| `node scripts/validate-workflow-state.js specs/065-saved-content-favorites/status.json` | 0 | Reviewer confirmed workflow status schema validation passed. |
+| `node scripts/check-superpowers-state.js specs/065-saved-content-favorites/status.json` | 0 | Reviewer confirmed Superpowers state check passed. |
 | `git diff --check` | 0 | Reviewer confirmed no whitespace errors. |
 
 ## Latest Verification
@@ -302,8 +313,8 @@ Verified at: `2026-05-19T22:54:25+08:00`.
 
 | Command | Exit | Evidence |
 | --- | --- | --- |
-| `node scripts/validate-workflow-state.js specs/saved-content-favorites/status.json` | 0 | `status.json: ok`; `WORKFLOW STATE: 1 status file(s) valid` after T007 completion state sync. |
-| `node scripts/check-superpowers-state.js specs/saved-content-favorites/status.json` | 0 | `status.json: ok`; `sync ok`; `SUPERPOWERS CHECK: 1 status file(s) synced` after T007 completion state sync. |
+| `node scripts/validate-workflow-state.js specs/065-saved-content-favorites/status.json` | 0 | `status.json: ok`; `WORKFLOW STATE: 1 status file(s) valid` after T007 completion state sync. |
+| `node scripts/check-superpowers-state.js specs/065-saved-content-favorites/status.json` | 0 | `status.json: ok`; `sync ok`; `SUPERPOWERS CHECK: 1 status file(s) synced` after T007 completion state sync. |
 | `git diff --check` | 0 | No output; no whitespace errors after T007 completion state sync. |
 
 ## Closeout Checklist
@@ -317,13 +328,14 @@ Verified at: `2026-05-19T22:54:25+08:00`.
 
 ## Blockers
 
-- No known verification blockers remain for T007.
-- Previous verifier blockers are resolved by the current evidence: E2E spec exists and passes, `npm run depcruise` passes, and `bash scripts/audit-mock-boundary.sh` passes.
+- Current workflow blocker: product/runtime/test verification for HEAD `d6ac09f9a64f694833be097e1a816f3bc2806a5c` was not rerun during schemaVersion 3 state repair, so `lastVerifiedCommit` remains null.
+- Release blocker: Firestore rules changed and deploy is required, but no production deploy evidence exists and `deployFirestoreRules=false`.
+- Historical T007 verifier blockers were resolved by T007 evidence: E2E spec existed and passed, `npm run depcruise` passed, and `bash scripts/audit-mock-boundary.sh` passed.
 
 ## Pitfalls
 
 - Do not treat user message `1` or `好` as authorization for product code edits, package/config edits, commit, push, PR, merge, CI watch, or local main sync.
-- T007 is complete. Closeout remains unauthorized until the user explicitly authorizes staging, commit, push, PR, merge, CI watch, or local main sync.
+- T007 is complete. Closeout remains unauthorized until the user explicitly authorizes staging, commit, push, PR, CI watch, merge, deploy, or local main sync.
 - Do not place post-feed bookmark buttons only next to the like and comment group; they must sit at the far right of the bottom interaction row container.
 - Do not place event bookmark actions inside the author or host operation menu; they must be independent buttons near the right-side action cluster.
 - Do not store target snapshots in favorite documents.

@@ -2,24 +2,28 @@
 
 ## Compact Guard
 
-- This file is the human-readable task source of truth for `specs/saved-content-favorites/`.
+- This file is the human-readable task source of truth for `specs/065-saved-content-favorites/`.
 - On resume, read `AGENTS.md`, `docs/superpowers/workflow.md`, `handoff.md`, this file, and `status.json` before dispatching work.
 - Main agent is control plane only. Repo-changing edits belong to Engineer subagents, including code, executable tests, docs, workflow docs, ADRs, `.codex/**`, scripts, and config.
 - Planner subagent slices repo-changing work. Main validates Planner output and dispatches; it does not self-slice repo-changing work.
 - If this file, `status.json`, and `handoff.md` disagree, reconcile or block before dispatch, commit, push, PR, merge, or local `main` sync.
 - A task can become `completed` only after `review_passed` and coordinator state sync.
 - Command evidence is one command per entry. Do not combine commands with shell chain operators.
-- Current workflow phase: `implementation_complete_ready_for_closeout`.
+- Current workflow phase: `state_repair_verified_product_gates_stale`.
+- Current HEAD: `d6ac09f9a64f694833be097e1a816f3bc2806a5c`; remote `origin/065-saved-content-favorites` also observed at `d6ac09f9a64f694833be097e1a816f3bc2806a5c`.
+- Origin main base observed: `55130520c0e1ff9a5222bf3c6c2f41dfd97be3ed`.
+- Historical branch commits already pushed before this repair: `e7394450f7393481a1bcc418ab6e0726993e240d` Add private content favorites; `d6ac09f9a64f694833be097e1a816f3bc2806a5c` Fix event detail landmark.
 - Latest Plan Reviewer decision: `review_passed`.
 - Plan Reviewer summary at review close: Planner plan, tasks, and status covered FR-001 through FR-025; prior findings were closed; status was valid and synced; no workflow drift; implementation was still unauthorized.
 - User implementation edit authorization granted on 2026-05-19 by message `開工`.
-- Current implementation authorization boundary: T007 test edit=yes for `tests/e2e/saved-content-favorites.spec.js` and `tests/unit/runtime/useMemberFavoritesRuntime.test.jsx`; script mapping edit=yes only for `scripts/test-e2e-branch.sh`; product-code edit=no, package/config edit=no, commit=no, push=no, PR=no, merge=no, CI-watch=no, local-main-sync=no.
-- Latest user authorization: T007 issue 1 authorized on 2026-05-19 by user message `好`, limited to adding `saved-content-favorites.spec.js` to `scripts/test-e2e-branch.sh` branch E2E mapping. Product code edits, package/config edits, commit, push, PR, merge, CI watch, and local main sync are not authorized.
+- Current repair authorization boundary: edit=yes only for renaming `specs/saved-content-favorites` to `specs/065-saved-content-favorites` and editing owned state files in the renamed directory; stage=no, commit=no, push=no, PR=no, merge=no, deploy=no, local-main-sync=no.
+- Future release authorization boundary: commit=false, push=false, pullRequest=false, ciWatch=false, merge=false, localMainSync=false, deployFirestoreRules=false.
 - Active task: none. Active wave: none.
 - T004, T005, and T006 completed after Reviewer PASS and Coordinator state sync.
 - T007 completed after script mapping, focused E2E cleanup, final verification, Reviewer PASS, and Coordinator state sync.
-- Post-T007 permission console bugfix completed and reviewed after user report; feature phase remains `implementation_complete_ready_for_closeout` with no active task and no blocker.
-- No known verification blockers remain. Closeout remains unauthorized: commit=no, push=no, PR=no, merge=no, CI-watch=no, local-main-sync=no.
+- Post-T007 permission-denied fallback was implemented and reviewed after the user report; existing state did not contain explicit product-code edit authorization for this follow-up, so it is recorded as an open incident rather than inferred authorization.
+- Rules deploy status: required and changed; not deployed. No deploy evidence is recorded, and deployFirestoreRules=false.
+- Blocked: yes. Product/runtime/test verification for current HEAD was not rerun during schemaVersion 3 repair, so `lastVerifiedCommit` remains null. Closeout remains unauthorized: commit=no, push=no, PR=no, CI-watch=no, merge=no, deploy=no, local-main-sync=no.
 
 ## Team And Parallelism
 
@@ -32,7 +36,7 @@
 - T003 completed after Reviewer PASS and Coordinator state sync.
 - T004 and T005 completed after same-wave parallel implementation, Reviewer PASS, and Coordinator state sync.
 - T006 completed after Reviewer PASS and Coordinator state sync.
-- T007 completed after Reviewer PASS and Coordinator state sync. Product code edits, package/config edits, commit, push, PR, merge, CI watch, and local main sync remain unauthorized.
+- T007 completed after Reviewer PASS and Coordinator state sync. Product code edits, package/config edits, commit, push, PR, merge, CI watch, deploy, and local main sync remain unauthorized for future work.
 
 ## Planner Output
 
@@ -1005,17 +1009,19 @@ Evidence:
 
 - Latest Engineer report: T007 test edits completed in `tests/e2e/saved-content-favorites.spec.js` and `tests/unit/runtime/useMemberFavoritesRuntime.test.jsx`; mapping Engineer added `saved-content-favorites.spec.js` to `scripts/test-e2e-branch.sh` `is_emulator_spec()` only; focused E2E REST `documentExists()` was fixed within the authorized E2E file by adding `Authorization: Bearer owner`.
 - Latest Reviewer report: `review_passed` for T007 test content, branch E2E mapping, and E2E REST auth cleanup.
-- Post-T007 permission console bugfix: user reported that after login, `/posts` and `/events` showed console `FirebaseError: Missing or insufficient permissions.` Root cause was localhost:3001 connecting to production Firestore while background favorite status hydration reads `users/{uid}/favoritePosts|favoriteEvents/{targetId}`; if production rules do not yet include the new favorite subcollection rules, Firestore returns `permission-denied`.
-- Post-T007 bugfix behavior: background favorite status hydration treats only `permission-denied` as an empty/no-op fallback to avoid console noise and page break; generic errors still throw/log; user-triggered add/remove favorite failures still rollback and show toast.
+- Post-T007 permission-denied fallback incident: user reported that after login, `/posts` and `/events` showed console `FirebaseError: Missing or insufficient permissions.` Root cause was localhost:3001 connecting to production Firestore while background favorite status hydration reads `users/{uid}/favoritePosts|favoriteEvents/{targetId}`; if production rules do not yet include the new favorite subcollection rules, Firestore returns `permission-denied`.
+- Post-T007 fallback behavior: background favorite status hydration treats only `permission-denied` as an empty/no-op fallback to avoid console noise and page break; generic errors still throw/log; user-triggered add/remove favorite failures still rollback and show toast.
+- Post-T007 authorization note: existing state did not contain explicit product-code edit authorization for this follow-up. Do not infer authorization.
 - Post-T007 Reviewer decision: `review_passed`; no blocking findings.
 - Post-T007 RED evidence: focused unit failed before fix; posts regression expected posts length 2 but got 0; events regression saw `console.error('載入活動收藏狀態失敗:', permission-denied)`.
 - Post-T007 residual risk: until production Firestore rules are deployed, initial background favorite state may show unfilled/empty, but console/page break is avoided; active user write failures still toast.
-- No known verification blockers remain.
-- Closeout remains unauthorized: product code edits, package/config edits, commit, push, PR, merge, CI-watch, and local-main-sync are not authorized.
+- Rules deploy status: required and changed; no production rules deploy evidence is recorded.
+- Current workflow state is blocked because product/runtime/test verification for current HEAD was not rerun during schemaVersion 3 repair.
+- Closeout remains unauthorized: product code edits, package/config edits, commit, push, PR, CI-watch, merge, deploy, and local-main-sync are not authorized.
 - Command output summary:
   - `firebase emulators:exec --only auth,firestore,storage --project=demo-test "npx playwright test --config playwright.emulator.config.mjs tests/e2e/saved-content-favorites.spec.js"`: exit 0; 3 passed; Reviewer rerun also 3 passed (14.4s).
   - `TEST_E2E_BRANCH_CHANGED_SPECS=tests/e2e/saved-content-favorites.spec.js npm run test:e2e:branch`: sandbox first failed with port EPERM; escalated rerun exit 0; branch script routed spec to `Emulator specs without feature setup`; Playwright 3 passed (15.0s).
-  - `npm run test:e2e:branch`: exit 0; normal changed detection skipped because `tests/e2e/saved-content-favorites.spec.js` is untracked and no staging/commit authorization exists; expected until staging, while forced branch evidence validates mapping and spec execution.
+  - `npm run test:e2e:branch`: exit 0; historical normal changed detection run documented a skip before commit and push, while forced branch evidence validated mapping and spec execution.
   - `npm run test:branch`: exit 0; browser Vitest 7 passed / 89 tests; server rules 6 passed / 88 tests.
   - `npm run depcruise`: exit 0; no dependency violations found (1540 modules, 3898 dependencies), with existing MODULE_TYPELESS warning only.
   - `bash scripts/audit-mock-boundary.sh`: exit 0; 0 findings.
@@ -1035,7 +1041,7 @@ Evidence:
   - `scripts/test-e2e-branch.sh`
   - `tests/e2e/saved-content-favorites.spec.js`
   - `tests/unit/runtime/useMemberFavoritesRuntime.test.jsx`
-  - Post-T007 permission console bugfix: `src/runtime/hooks/usePostsPageRuntimeHelpers.js`
-  - Post-T007 permission console bugfix: `src/runtime/hooks/useEventsPageRuntime.js`
-  - Post-T007 permission console bugfix: `tests/unit/runtime/usePostsPageRuntime.test.jsx`
-  - Post-T007 permission console bugfix: `tests/unit/runtime/useEventsPageRuntime.test.jsx`
+  - Post-T007 permission-denied fallback: `src/runtime/hooks/usePostsPageRuntimeHelpers.js`
+  - Post-T007 permission-denied fallback: `src/runtime/hooks/useEventsPageRuntime.js`
+  - Post-T007 permission-denied fallback: `tests/unit/runtime/usePostsPageRuntime.test.jsx`
+  - Post-T007 permission-denied fallback: `tests/unit/runtime/useEventsPageRuntime.test.jsx`

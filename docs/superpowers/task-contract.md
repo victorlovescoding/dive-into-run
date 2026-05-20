@@ -59,13 +59,62 @@ Each task must record:
   signal to look for.
 - Browser evidence requirement for UI slices, or `not applicable` for non-UI
   work.
-- Authorization boundary: whether automation may edit, commit, push, open PR,
-  merge, and sync local `main`; P1/P2/P3 without approved `spec.md` must record
+- Authorization boundary: whether automation may `edit`, `commit`, `push`,
+  create a PR (`pullRequest`), watch CI (`ciWatch`), `merge`, sync local
+  `main` (`localMainSync`), and deploy Firestore/storage rules
+  (`deployFirestoreRules`); P1/P2/P3 without approved `spec.md` must record
   this explicitly.
 - Reviewer PASS criteria: checks required before `review_passed`.
 - Reviewer REJECT criteria: defects that force `review_rejected`.
 - Evidence: Engineer report, Reviewer report, command output summary, and
   changed files summary.
+
+## Status Schema Version 3
+
+New `status.json` files use `schemaVersion: 3` and must match
+`docs/superpowers/status.schema.json`.
+
+Required v3 release-state fields:
+
+- `authorizationBoundary.deployFirestoreRules`: boolean. This is separate from
+  `edit`, `commit`, `push`, `pullRequest`, `ciWatch`, `merge`, and
+  `localMainSync` authorization.
+- `currentHead`: `null`, a non-empty string, or a lightweight snapshot object
+  for the local branch/head when status is captured.
+- `remoteHead`: `null`, a non-empty string, or a lightweight snapshot object
+  for the tracking remote when status is captured.
+- `lastVerifiedCommit`: `null` or the commit/ref covered by the latest fresh
+  verification evidence.
+- `phaseCommits`: array of non-empty refs or objects that include at least one
+  commit reference field (`ref`, `commit`, `commitRef`, or `sha`) plus optional
+  `phase`, `summary`, and `committedAt`.
+- `rulesDeployStatus`: object with `state`, `required`, `changed`,
+  `evidence`, and `deployedCommit`.
+- `incidents`: array of `{ id, state, summary, openedAt?, closedAt? }` entries
+  for workflow or release incidents.
+
+`rulesDeployStatus.state` values:
+
+- `not_applicable`: no Firestore/storage rules surface is involved.
+- `not_required`: rules surface was considered and no deploy is required.
+- `required`: rules changes or release conditions require a deploy later.
+- `pending`: deploy is authorized or planned but not yet evidenced.
+- `blocked`: deploy is required but cannot proceed.
+- `deployed`: deploy completed with evidence recorded.
+
+Rules deployment is a release boundary. Do not treat `edit`, `commit`, `push`,
+`pullRequest`, `ciWatch`, `merge`, or `localMainSync` as deploy evidence.
+Final summaries must not imply deployed rules or deployed product behavior unless
+`rulesDeployStatus.state === "deployed"` and `rulesDeployStatus.evidence`
+contains deploy evidence.
+
+PR creation (`pullRequest`), CI watching (`ciWatch`), and `merge` may proceed
+with `rulesDeployStatus.state` of `required`, `pending`, or `blocked` when the
+release risk is explicit and no deployed-rules or rules-backed product behavior
+claim is made. Missing `authorizationBoundary.deployFirestoreRules` blocks the
+actual deploy command and deployed-rules claims, not ordinary `edit`, `commit`,
+`push`, `pullRequest`, `ciWatch`, `merge`, or `localMainSync` boundaries that
+have their own authorization.
 
 ## State Rules
 
@@ -123,6 +172,8 @@ Engineer dispatch must include:
 - task id, profile, current state, attempt, wave, branch/worktree, and working
   directory.
 - scope, non-scope, owned files, and read-only context.
+- authorization boundary, including `edit`, `commit`, `push`, `pullRequest`,
+  `ciWatch`, `merge`, `localMainSync`, and `deployFirestoreRules`.
 - dependencies and any same-wave parallel lanes.
 - implementation instructions and acceptance criteria.
 - exact verification commands with expected signal.
@@ -130,9 +181,11 @@ Engineer dispatch must include:
   viewport, tool used, screenshot artifact, expected vs actual UI signal, and
   console/network findings.
 - stop conditions, including owned-file overflow, new dependency, migration,
-  secrets, permissions, destructive operation, or unrelated failing gate.
+  secrets, permissions, rules deploy boundary, destructive operation, or
+  unrelated failing gate.
 - required final report fields: status, changed files, commands with exit
-  codes, expected/actual signal, risks, and unverified items.
+  codes, expected/actual signal, rules deploy status when relevant, risks, and
+  unverified items.
 
 Reviewer dispatch must include:
 
@@ -215,6 +268,9 @@ Reports must be concise but auditable:
 - Command output summary: one entry per command; do not merge multiple commands
   into one result.
 - Changed files summary: exact paths and the reason each file changed.
+- Final summary: describe rules/product release state only as far as
+  `rulesDeployStatus` and deploy evidence prove. If deploy is not recorded as
+  `deployed`, say deploy is pending, blocked, not required, or not applicable.
 
 `status.json.lastVerification` remains command-oriented: one object per command.
 Do not record shell chains with `&&` or `;` as one command entry. Split them

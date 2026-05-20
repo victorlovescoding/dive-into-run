@@ -15,6 +15,12 @@
   state sync.
 - Command evidence is one command per entry. Do not combine commands with `&&`
   or `;`.
+- New `status.json` state uses schemaVersion 3 and records `currentHead`,
+  `remoteHead`, `lastVerifiedCommit`, `phaseCommits`, `rulesDeployStatus`, and
+  `incidents`.
+- Final summaries must not imply deployed Firestore/storage rules or deployed
+  product behavior unless `rulesDeployStatus.state` is `deployed` with deploy
+  evidence.
 
 ## Team And Parallelism
 
@@ -26,6 +32,8 @@
   lane, and a final integration gate.
 - Shared helpers, config, lockfiles, and workflow state must serialize or become
   a prerequisite shared-helper task.
+- Shared schema, security rules, migration, and release-state writes must
+  serialize.
 - Recommended maximum in one shared worktree: two to three Engineer/Reviewer
   pairs.
 
@@ -48,7 +56,10 @@
 - **Engineer**: <role>
 - **Reviewer**: <role>
 - **Commit checkpoint**: <none / phase commit name>
-- **Authorization boundary**: edit=<yes/no>, commit=<yes/no>, push=<yes/no>, PR=<yes/no>, merge=<yes/no>, local-main-sync=<yes/no>
+- **Last verified commit**: <none / commit sha or ref>
+- **Authorization boundary**: edit=<yes/no>, commit=<yes/no>, push=<yes/no>, pullRequest=<yes/no>, ciWatch=<yes/no>, merge=<yes/no>, localMainSync=<yes/no>, deployFirestoreRules=<yes/no>
+- **Rules deploy status**: <not_applicable / not_required / required / pending / blocked / deployed>
+- **Incidents**: <none / incident IDs and state>
 
 Scope:
 
@@ -102,6 +113,8 @@ Reviewer PASS criteria:
   rationale.
 - Layer, testing, and workflow rules remain satisfied.
 - Behavior or docs changes stay inside scope and non-scope is untouched.
+- Rules deploy claims, if any, are backed by `rulesDeployStatus.state=deployed`
+  and deploy evidence.
 
 Reviewer REJECT criteria:
 
@@ -110,6 +123,8 @@ Reviewer REJECT criteria:
 - Acceptance criteria are unmet or unsupported by evidence.
 - Layer, testing, or workflow rules are violated.
 - Behavior or docs changed outside scope or inside non-scope.
+- Final evidence implies deployed rules or deployed product behavior without
+  `rulesDeployStatus.state=deployed` and deploy evidence.
 
 Evidence:
 
@@ -122,3 +137,10 @@ Evidence:
 - Changed files summary:
   - `<path>`
     - <why changed>
+- Phase commits:
+  - `<phase>`: `<commit/ref>` - <summary>
+- Rules deploy status:
+  - state: <not_applicable / not_required / required / pending / blocked / deployed>
+  - evidence: <none / deploy command and artifact>
+- Incidents:
+  - <none / incident id, state, summary>

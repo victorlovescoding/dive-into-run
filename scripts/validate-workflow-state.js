@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const SUPPORTED_SCHEMA_VERSIONS = new Set([1, 2]);
+const SUPPORTED_SCHEMA_VERSIONS = new Set([1, 2, 3]);
 
 const REQUIRED_FIELDS = [
   'schemaVersion',
@@ -86,6 +86,66 @@ const TASK_EVIDENCE_FIELDS = [
   'commandOutputSummary',
   'changedFilesSummary',
 ];
+const AUTHORIZATION_BOUNDARY_FIELDS = [
+  'edit',
+  'commit',
+  'push',
+  'pullRequest',
+  'ciWatch',
+  'merge',
+  'localMainSync',
+  'deployFirestoreRules',
+];
+const STATUS_V3_FIELDS = [
+  'activeWave',
+  'authorizationBoundary',
+  'currentHead',
+  'remoteHead',
+  'tasks',
+  'phaseCommits',
+  'rulesDeployStatus',
+  'incidents',
+];
+const STATUS_V3_TOP_LEVEL_FIELDS = [...REQUIRED_FIELDS, ...STATUS_V3_FIELDS];
+const HEAD_SNAPSHOT_STRING_FIELDS = [
+  'ref',
+  'commit',
+  'sha',
+  'branch',
+  'remote',
+  'source',
+  'checkedAt',
+  'capturedAt',
+  'summary',
+];
+const PHASE_COMMIT_STRING_FIELDS = [
+  'phase',
+  'ref',
+  'commit',
+  'commitRef',
+  'sha',
+  'summary',
+  'committedAt',
+];
+const COMMIT_REF_FIELDS = ['ref', 'commit', 'commitRef', 'sha'];
+const RULES_DEPLOY_STATUS_FIELDS = [
+  'state',
+  'required',
+  'changed',
+  'evidence',
+  'deployedCommit',
+];
+const RULES_DEPLOY_STATES = new Set([
+  'not_applicable',
+  'not_required',
+  'required',
+  'pending',
+  'blocked',
+  'deployed',
+]);
+const INCIDENT_FIELDS = ['id', 'state', 'summary'];
+const INCIDENT_OPTIONAL_FIELDS = ['openedAt', 'closedAt'];
+const INCIDENT_STATES = new Set(['open', 'mitigated', 'resolved', 'closed']);
 
 /**
  * Prints command usage.
@@ -138,6 +198,23 @@ function requireFields(value, fields, label, errors) {
   fields.forEach((field) => {
     if (!(field in value)) {
       errors.push(`${labelFor(label, field)} is required`);
+    }
+  });
+}
+
+/**
+ * Adds errors for fields outside an allowed set.
+ * @param {object} value - Object being validated.
+ * @param {string[]} fields - Allowed field names.
+ * @param {string} label - Error path label.
+ * @param {string[]} errors - Mutable error accumulator.
+ * @returns {void} No return value.
+ */
+function rejectUnknownFields(value, fields, label, errors) {
+  const allowed = new Set(fields);
+  Object.keys(value).forEach((field) => {
+    if (!allowed.has(field)) {
+      errors.push(`${labelFor(label, field)} is not allowed`);
     }
   });
 }
@@ -204,6 +281,73 @@ function validateNullableString(value, label, errors) {
 }
 
 /**
+ * Validates a boolean field.
+ * @param {unknown} value - Candidate boolean.
+ * @param {string} label - Error path label.
+ * @param {string[]} errors - Mutable error accumulator.
+ * @returns {void} No return value.
+ */
+function validateBoolean(value, label, errors) {
+  if (typeof value !== 'boolean') {
+    errors.push(`${label} must be a boolean`);
+  }
+}
+
+/**
+ * Validates a nullable string or lightweight git snapshot object.
+ * @param {unknown} value - Candidate head snapshot.
+ * @param {string} label - Error path label.
+ * @param {string[]} errors - Mutable error accumulator.
+ * @returns {void} No return value.
+ */
+function validateNullableHeadSnapshot(value, label, errors) {
+  if (value === null || isNonEmptyString(value)) {
+    return;
+  }
+
+  if (!isPlainObject(value)) {
+    errors.push(`${label} must be null, a non-empty string, or a snapshot object`);
+    return;
+  }
+
+  rejectUnknownFields(value, HEAD_SNAPSHOT_STRING_FIELDS, label, errors);
+
+  if (!HEAD_SNAPSHOT_STRING_FIELDS.some((field) => field in value)) {
+    errors.push(`${label} snapshot must include at least one recognized field`);
+  }
+
+  HEAD_SNAPSHOT_STRING_FIELDS.forEach((field) => {
+    if (field in value) {
+      validateNullableString(value[field], labelFor(label, field), errors);
+      if (value[field] === '') {
+        errors.push(`${labelFor(label, field)} must be null or a non-empty string`);
+      }
+    }
+  });
+}
+
+/**
+ * Validates automation authorization boundaries.
+ * @param {unknown} value - Candidate authorization boundary object.
+ * @param {string[]} errors - Mutable error accumulator.
+ * @returns {void} No return value.
+ */
+function validateAuthorizationBoundary(value, errors) {
+  if (!isPlainObject(value)) {
+    errors.push('authorizationBoundary must be an object');
+    return;
+  }
+
+  rejectUnknownFields(value, AUTHORIZATION_BOUNDARY_FIELDS, 'authorizationBoundary', errors);
+  requireFields(value, AUTHORIZATION_BOUNDARY_FIELDS, 'authorizationBoundary', errors);
+  AUTHORIZATION_BOUNDARY_FIELDS.forEach((field) => {
+    if (field in value) {
+      validateBoolean(value[field], labelFor('authorizationBoundary', field), errors);
+    }
+  });
+}
+
+/**
  * Validates a command field as one auditable shell command.
  * @param {unknown} value - Candidate command.
  * @param {string} label - Error path label.
@@ -226,12 +370,17 @@ function validateSingleCommand(value, label, errors) {
  * @param {unknown} value - Candidate verification entry.
  * @param {string} label - Error path label.
  * @param {string[]} errors - Mutable error accumulator.
+ * @param {{rejectUnknownFields?: boolean}} [options] - Validation options.
  * @returns {void} No return value.
  */
-function validateVerificationResult(value, label, errors) {
+function validateVerificationResult(value, label, errors, options = {}) {
   if (!isPlainObject(value)) {
     errors.push(`${label} must be an object`);
     return;
+  }
+
+  if (options.rejectUnknownFields === true) {
+    rejectUnknownFields(value, VERIFICATION_FIELDS, label, errors);
   }
 
   requireFields(value, VERIFICATION_FIELDS, label, errors);
@@ -256,16 +405,45 @@ function validateVerificationResult(value, label, errors) {
  * @param {unknown} value - Candidate verification list.
  * @param {string} label - Error path label.
  * @param {string[]} errors - Mutable error accumulator.
+ * @param {{rejectUnknownFields?: boolean}} [options] - Validation options.
  * @returns {void} No return value.
  */
-function validateVerificationList(value, label, errors) {
+function validateVerificationList(value, label, errors, options = {}) {
   if (!Array.isArray(value)) {
     errors.push(`${label} must be an array`);
     return;
   }
 
   value.forEach((verification, index) => {
-    validateVerificationResult(verification, `${label}[${index}]`, errors);
+    validateVerificationResult(verification, `${label}[${index}]`, errors, options);
+  });
+}
+
+/**
+ * Validates deploy evidence entries.
+ * @param {unknown} value - Candidate evidence list.
+ * @param {string} label - Error path label.
+ * @param {string[]} errors - Mutable error accumulator.
+ * @returns {void} No return value.
+ */
+function validateDeployEvidenceList(value, label, errors) {
+  if (!Array.isArray(value)) {
+    errors.push(`${label} must be an array`);
+    return;
+  }
+
+  value.forEach((entry, index) => {
+    const itemLabel = `${label}[${index}]`;
+    if (isNonEmptyString(entry)) {
+      return;
+    }
+
+    if (isPlainObject(entry)) {
+      validateVerificationResult(entry, itemLabel, errors, { rejectUnknownFields: true });
+      return;
+    }
+
+    errors.push(`${itemLabel} must be a non-empty string or verification result`);
   });
 }
 
@@ -315,7 +493,7 @@ function validateActiveTaskV2(value, tasks, errors) {
   }
 
   if (!isNonEmptyString(value)) {
-    errors.push('activeTask must be null or a non-empty string for schemaVersion 2');
+    errors.push('activeTask must be null or a non-empty string for schemaVersion 2 or 3');
     return;
   }
 
@@ -329,9 +507,10 @@ function validateActiveTaskV2(value, tasks, errors) {
  * @param {unknown} value - Candidate verification plan list.
  * @param {string} label - Error path label.
  * @param {string[]} errors - Mutable error accumulator.
+ * @param {{rejectUnknownFields?: boolean}} [options] - Validation options.
  * @returns {void} No return value.
  */
-function validateVerificationPlanList(value, label, errors) {
+function validateVerificationPlanList(value, label, errors, options = {}) {
   if (!Array.isArray(value)) {
     errors.push(`${label} must be an array`);
     return;
@@ -342,6 +521,10 @@ function validateVerificationPlanList(value, label, errors) {
     if (!isPlainObject(verification)) {
       errors.push(`${itemLabel} must be an object`);
       return;
+    }
+
+    if (options.rejectUnknownFields === true) {
+      rejectUnknownFields(verification, VERIFICATION_PLAN_FIELDS, itemLabel, errors);
     }
 
     requireFields(verification, VERIFICATION_PLAN_FIELDS, itemLabel, errors);
@@ -355,7 +538,7 @@ function validateVerificationPlanList(value, label, errors) {
     }
 
     if ('lastRun' in verification && verification.lastRun !== null) {
-      validateVerificationResult(verification.lastRun, `${itemLabel}.lastRun`, errors);
+      validateVerificationResult(verification.lastRun, `${itemLabel}.lastRun`, errors, options);
     }
   });
 }
@@ -365,12 +548,17 @@ function validateVerificationPlanList(value, label, errors) {
  * @param {unknown} value - Candidate evidence object.
  * @param {string} label - Error path label.
  * @param {string[]} errors - Mutable error accumulator.
+ * @param {{rejectUnknownFields?: boolean}} [options] - Validation options.
  * @returns {void} No return value.
  */
-function validateTaskEvidence(value, label, errors) {
+function validateTaskEvidence(value, label, errors, options = {}) {
   if (!isPlainObject(value)) {
     errors.push(`${label} must be an object`);
     return;
+  }
+
+  if (options.rejectUnknownFields === true) {
+    rejectUnknownFields(value, TASK_EVIDENCE_FIELDS, label, errors);
   }
 
   requireFields(value, TASK_EVIDENCE_FIELDS, label, errors);
@@ -393,9 +581,10 @@ function validateTaskEvidence(value, label, errors) {
  * @param {unknown} value - Candidate reviewer decision.
  * @param {string} label - Error path label.
  * @param {string[]} errors - Mutable error accumulator.
+ * @param {{rejectUnknownFields?: boolean}} [options] - Validation options.
  * @returns {void} No return value.
  */
-function validateReviewerDecision(value, label, errors) {
+function validateReviewerDecision(value, label, errors, options = {}) {
   if (value === null) {
     return;
   }
@@ -403,6 +592,10 @@ function validateReviewerDecision(value, label, errors) {
   if (!isPlainObject(value)) {
     errors.push(`${label} must be null or an object`);
     return;
+  }
+
+  if (options.rejectUnknownFields === true) {
+    rejectUnknownFields(value, REVIEWER_DECISION_FIELDS, label, errors);
   }
 
   requireFields(value, REVIEWER_DECISION_FIELDS, label, errors);
@@ -423,12 +616,17 @@ function validateReviewerDecision(value, label, errors) {
  * @param {unknown} task - Candidate task object.
  * @param {string} label - Error path label.
  * @param {string[]} errors - Mutable error accumulator.
+ * @param {{rejectUnknownFields?: boolean}} [options] - Validation options.
  * @returns {void} No return value.
  */
-function validateTaskV2(task, label, errors) {
+function validateTaskV2(task, label, errors, options = {}) {
   if (!isPlainObject(task)) {
     errors.push(`${label} must be an object`);
     return;
+  }
+
+  if (options.rejectUnknownFields === true) {
+    rejectUnknownFields(task, TASK_V2_FIELDS, label, errors);
   }
 
   requireFields(task, TASK_V2_FIELDS, label, errors);
@@ -458,15 +656,15 @@ function validateTaskV2(task, label, errors) {
   });
 
   if ('verification' in task) {
-    validateVerificationPlanList(task.verification, `${label}.verification`, errors);
+    validateVerificationPlanList(task.verification, `${label}.verification`, errors, options);
   }
 
   if ('reviewerDecision' in task) {
-    validateReviewerDecision(task.reviewerDecision, `${label}.reviewerDecision`, errors);
+    validateReviewerDecision(task.reviewerDecision, `${label}.reviewerDecision`, errors, options);
   }
 
   if ('evidence' in task) {
-    validateTaskEvidence(task.evidence, `${label}.evidence`, errors);
+    validateTaskEvidence(task.evidence, `${label}.evidence`, errors, options);
   }
 }
 
@@ -474,16 +672,134 @@ function validateTaskV2(task, label, errors) {
  * Validates schemaVersion 2 tasks.
  * @param {unknown} value - Candidate task list.
  * @param {string[]} errors - Mutable error accumulator.
+ * @param {{rejectUnknownFields?: boolean}} [options] - Validation options.
  * @returns {void} No return value.
  */
-function validateTasksV2(value, errors) {
+function validateTasksV2(value, errors, options = {}) {
   if (!Array.isArray(value)) {
     errors.push('tasks must be an array');
     return;
   }
 
   value.forEach((task, index) => {
-    validateTaskV2(task, `tasks[${index}]`, errors);
+    validateTaskV2(task, `tasks[${index}]`, errors, options);
+  });
+}
+
+/**
+ * Validates phase commit references.
+ * @param {unknown} value - Candidate phase commit list.
+ * @param {string[]} errors - Mutable error accumulator.
+ * @returns {void} No return value.
+ */
+function validatePhaseCommits(value, errors) {
+  if (!Array.isArray(value)) {
+    errors.push('phaseCommits must be an array');
+    return;
+  }
+
+  value.forEach((entry, index) => {
+    const label = `phaseCommits[${index}]`;
+    if (isNonEmptyString(entry)) {
+      return;
+    }
+
+    if (!isPlainObject(entry)) {
+      errors.push(`${label} must be a non-empty string or object`);
+      return;
+    }
+
+    rejectUnknownFields(entry, PHASE_COMMIT_STRING_FIELDS, label, errors);
+
+    if (!COMMIT_REF_FIELDS.some((field) => isNonEmptyString(entry[field]))) {
+      errors.push(`${label} must include a non-empty ref, commit, commitRef, or sha`);
+    }
+
+    PHASE_COMMIT_STRING_FIELDS.forEach((field) => {
+      if (field in entry && !isNonEmptyString(entry[field])) {
+        errors.push(`${labelFor(label, field)} must be a non-empty string`);
+      }
+    });
+  });
+}
+
+/**
+ * Validates Firestore/storage rules deployment status.
+ * @param {unknown} value - Candidate rules deploy status.
+ * @param {string[]} errors - Mutable error accumulator.
+ * @returns {void} No return value.
+ */
+function validateRulesDeployStatus(value, errors) {
+  if (!isPlainObject(value)) {
+    errors.push('rulesDeployStatus must be an object');
+    return;
+  }
+
+  rejectUnknownFields(value, RULES_DEPLOY_STATUS_FIELDS, 'rulesDeployStatus', errors);
+  requireFields(value, RULES_DEPLOY_STATUS_FIELDS, 'rulesDeployStatus', errors);
+
+  if ('state' in value && !RULES_DEPLOY_STATES.has(value.state)) {
+    errors.push('rulesDeployStatus.state must be a known deploy state');
+  }
+
+  ['required', 'changed'].forEach((field) => {
+    if (field in value) {
+      validateBoolean(value[field], labelFor('rulesDeployStatus', field), errors);
+    }
+  });
+
+  if ('evidence' in value) {
+    validateDeployEvidenceList(value.evidence, 'rulesDeployStatus.evidence', errors);
+  }
+
+  if ('deployedCommit' in value) {
+    validateNullableString(value.deployedCommit, 'rulesDeployStatus.deployedCommit', errors);
+    if (value.deployedCommit === '') {
+      errors.push('rulesDeployStatus.deployedCommit must be null or a non-empty string');
+    }
+  }
+}
+
+/**
+ * Validates recorded workflow incidents.
+ * @param {unknown} value - Candidate incidents list.
+ * @param {string[]} errors - Mutable error accumulator.
+ * @returns {void} No return value.
+ */
+function validateIncidents(value, errors) {
+  if (!Array.isArray(value)) {
+    errors.push('incidents must be an array');
+    return;
+  }
+
+  value.forEach((incident, index) => {
+    const label = `incidents[${index}]`;
+    if (!isPlainObject(incident)) {
+      errors.push(`${label} must be an object`);
+      return;
+    }
+
+    rejectUnknownFields(incident, [...INCIDENT_FIELDS, ...INCIDENT_OPTIONAL_FIELDS], label, errors);
+    requireFields(incident, INCIDENT_FIELDS, label, errors);
+
+    if ('state' in incident && !INCIDENT_STATES.has(incident.state)) {
+      errors.push(`${label}.state must be open, mitigated, resolved, or closed`);
+    }
+
+    INCIDENT_FIELDS.forEach((field) => {
+      if (field in incident && !isNonEmptyString(incident[field])) {
+        errors.push(`${labelFor(label, field)} must be a non-empty string`);
+      }
+    });
+
+    INCIDENT_OPTIONAL_FIELDS.forEach((field) => {
+      if (field in incident) {
+        validateNullableString(incident[field], labelFor(label, field), errors);
+        if (incident[field] === '') {
+          errors.push(`${labelFor(label, field)} must be null or a non-empty string`);
+        }
+      }
+    });
   });
 }
 
@@ -513,7 +829,7 @@ function validateStatusFile(filePath) {
   requireFields(parsed, REQUIRED_FIELDS, '', errors);
 
   if ('schemaVersion' in parsed && !SUPPORTED_SCHEMA_VERSIONS.has(parsed.schemaVersion)) {
-    errors.push('schemaVersion must be 1 or 2');
+    errors.push('schemaVersion must be 1, 2, or 3');
   }
 
   ['feature', 'branch', 'worktree', 'phase'].forEach((field) => {
@@ -522,10 +838,14 @@ function validateStatusFile(filePath) {
     }
   });
 
-  if (parsed.schemaVersion === 2) {
+  const strictV3Options = parsed.schemaVersion === 3
+    ? { rejectUnknownFields: true }
+    : {};
+
+  if (parsed.schemaVersion === 2 || parsed.schemaVersion === 3) {
     ['activeWave', 'tasks'].forEach((field) => {
       if (!(field in parsed)) {
-        errors.push(`${field} is required for schemaVersion 2`);
+        errors.push(`${field} is required for schemaVersion ${parsed.schemaVersion}`);
       }
     });
 
@@ -534,11 +854,45 @@ function validateStatusFile(filePath) {
     }
 
     if ('tasks' in parsed) {
-      validateTasksV2(parsed.tasks, errors);
+      validateTasksV2(parsed.tasks, errors, strictV3Options);
     }
 
     if ('activeTask' in parsed) {
       validateActiveTaskV2(parsed.activeTask, parsed.tasks, errors);
+    }
+
+    if (parsed.schemaVersion === 3) {
+      rejectUnknownFields(parsed, STATUS_V3_TOP_LEVEL_FIELDS, '', errors);
+
+      STATUS_V3_FIELDS.forEach((field) => {
+        if (!(field in parsed)) {
+          errors.push(`${field} is required for schemaVersion 3`);
+        }
+      });
+
+      if ('authorizationBoundary' in parsed) {
+        validateAuthorizationBoundary(parsed.authorizationBoundary, errors);
+      }
+
+      if ('currentHead' in parsed) {
+        validateNullableHeadSnapshot(parsed.currentHead, 'currentHead', errors);
+      }
+
+      if ('remoteHead' in parsed) {
+        validateNullableHeadSnapshot(parsed.remoteHead, 'remoteHead', errors);
+      }
+
+      if ('phaseCommits' in parsed) {
+        validatePhaseCommits(parsed.phaseCommits, errors);
+      }
+
+      if ('rulesDeployStatus' in parsed) {
+        validateRulesDeployStatus(parsed.rulesDeployStatus, errors);
+      }
+
+      if ('incidents' in parsed) {
+        validateIncidents(parsed.incidents, errors);
+      }
     }
   } else if ('activeTask' in parsed) {
     validateActiveTaskV1(parsed.activeTask, errors);
@@ -560,7 +914,7 @@ function validateStatusFile(filePath) {
   }
 
   if ('lastVerification' in parsed) {
-    validateVerificationList(parsed.lastVerification, 'lastVerification', errors);
+    validateVerificationList(parsed.lastVerification, 'lastVerification', errors, strictV3Options);
   }
 
   if ('lastVerifiedCommit' in parsed) {

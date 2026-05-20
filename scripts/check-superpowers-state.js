@@ -4,6 +4,22 @@ const childProcess = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+const CLOSEOUT_PHASE_PATTERN = /closeout|complete|completed|ready[-_ ]for[-_ ]pr|ready[-_ ]for[-_ ]merge|post[-_ ]rebase|release/i;
+const CLOSED_INCIDENT_STATES = new Set(['closed', 'resolved']);
+const RULES_FILES = new Set(['firestore.rules', 'storage.rules']);
+const WORKFLOW_EVIDENCE_FILES = new Set([
+  'AGENTS.md',
+  'docs/superpowers/status.schema.json',
+  'scripts/validate-workflow-state.js',
+  'scripts/check-superpowers-state.js',
+]);
+const WORKFLOW_EVIDENCE_PREFIXES = [
+  'specs/',
+  'docs/superpowers/',
+  '.codex/',
+  '.agents/skills/',
+];
+
 /**
  * Prints command usage.
  * @returns {void} No return value.
@@ -34,12 +50,105 @@ function isPlainObject(value) {
 }
 
 /**
+ * Checks for a string with non-whitespace content.
+ * @param {unknown} value - Value to inspect.
+ * @returns {boolean} Whether value is a non-blank string.
+ */
+function isNonBlankString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+/**
  * Reads a UTF-8 file.
  * @param {string} filePath - File path.
  * @returns {string} File contents.
  */
 function readText(filePath) {
   return fs.readFileSync(filePath, 'utf8');
+}
+
+/**
+ * Runs a git command and returns trimmed stdout.
+ * @param {string[]} args - Git arguments.
+ * @returns {string} Trimmed stdout.
+ */
+function readGit(args) {
+  return childProcess.execFileSync('git', args, { encoding: 'utf8' }).trim();
+}
+
+/**
+ * Checks whether a git ref resolves to a commit.
+ * @param {string} ref - Git ref.
+ * @returns {boolean} Whether the ref resolves.
+ */
+function commitExists(ref) {
+  try {
+    childProcess.execFileSync('git', ['rev-parse', '--verify', `${ref}^{commit}`], {
+      stdio: 'ignore',
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Checks whether a git ref is an ancestor of HEAD.
+ * @param {string} ref - Git ref.
+ * @returns {boolean} Whether ref is a HEAD ancestor.
+ */
+function isHeadAncestor(ref) {
+  try {
+    childProcess.execFileSync('git', ['merge-base', '--is-ancestor', ref, 'HEAD'], {
+      stdio: 'ignore',
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Gets a git diff name list. Missing refs return an empty list for optional sensors.
+ * @param {string[]} args - Git diff arguments.
+ * @returns {string[]} Changed files.
+ */
+function readGitDiffNames(args) {
+  try {
+    return readGit(['diff', '--name-only', ...args])
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Gets files changed on this branch relative to origin/main when available.
+ * @returns {string[]} Changed files.
+ */
+function getOriginMainChangedFiles() {
+  if (!commitExists('origin/main')) {
+    return [];
+  }
+
+  try {
+    const mergeBase = readGit(['merge-base', 'origin/main', 'HEAD']);
+    return readGitDiffNames([`${mergeBase}..HEAD`]);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Checks whether a path is a workflow/evidence-only path.
+ * @param {string} filePath - Repo-relative file path.
+ * @returns {boolean} Whether the path is workflow/evidence-only.
+ */
+function isWorkflowEvidencePath(filePath) {
+  return WORKFLOW_EVIDENCE_FILES.has(filePath)
+    || WORKFLOW_EVIDENCE_PREFIXES.some((prefix) => filePath.startsWith(prefix));
 }
 
 /**
@@ -201,6 +310,234 @@ function getActiveOwnedFiles(status) {
 }
 
 /**
+ * Checks whether a v3 status is in a closeout-like phase.
+ * @param {Record<string, unknown>} status - Parsed status object.
+ * @returns {boolean} Whether closeout guards apply.
+ */
+function isCloseoutishV3(status) {
+  return status.schemaVersion === 3
+    && typeof status.phase === 'string'
+    && CLOSEOUT_PHASE_PATTERN.test(status.phase);
+}
+
+/**
+ * Gets a commit ref from a phase commit entry.
+ * @param {unknown} entry - Phase commit entry.
+ * @returns {string|null} Commit ref.
+ */
+function getPhaseCommitRef(entry) {
+  if (typeof entry === 'string' && entry.length > 0) {
+    return entry;
+  }
+
+  if (!isPlainObject(entry)) {
+    return null;
+  }
+
+  for (const field of ['commit', 'commitRef', 'ref', 'sha']) {
+    if (typeof entry[field] === 'string' && entry[field].length > 0) {
+      return entry[field];
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Gets the deployed rules commit ref when present.
+ * @param {Record<string, unknown>} status - Parsed status object.
+ * @returns {string|null} Deployed commit ref.
+ */
+function getRulesDeployedCommit(status) {
+  if (!isPlainObject(status.rulesDeployStatus)) {
+    return null;
+  }
+
+  for (const field of ['deployedCommit', 'deployedRef', 'commit']) {
+    if (typeof status.rulesDeployStatus[field] === 'string' && status.rulesDeployStatus[field].length > 0) {
+      return status.rulesDeployStatus[field];
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Collects non-null v3 commit refs that must resolve and be HEAD ancestors.
+ * @param {Record<string, unknown>} status - Parsed status object.
+ * @returns {{label: string, ref: string}[]} Commit refs.
+ */
+function collectV3CommitRefs(status) {
+  const refs = [];
+
+  if (typeof status.lastVerifiedCommit === 'string' && status.lastVerifiedCommit.length > 0) {
+    refs.push({ label: 'lastVerifiedCommit', ref: status.lastVerifiedCommit });
+  }
+
+  if (Array.isArray(status.phaseCommits)) {
+    status.phaseCommits.forEach((entry, index) => {
+      const ref = getPhaseCommitRef(entry);
+      if (ref) {
+        refs.push({ label: `phaseCommits[${index}]`, ref });
+      }
+    });
+  }
+
+  const deployedCommit = getRulesDeployedCommit(status);
+  if (deployedCommit) {
+    refs.push({ label: 'rulesDeployStatus.deployedCommit', ref: deployedCommit });
+  }
+
+  return refs;
+}
+
+/**
+ * Checks whether an incident is still open.
+ * @param {unknown} incident - Incident object.
+ * @returns {boolean} Whether the incident is open.
+ */
+function isOpenIncident(incident) {
+  if (!isPlainObject(incident)) {
+    return true;
+  }
+
+  if (typeof incident.open === 'boolean') {
+    return incident.open;
+  }
+
+  if (typeof incident.state === 'string') {
+    return !CLOSED_INCIDENT_STATES.has(incident.state);
+  }
+
+  return true;
+}
+
+/**
+ * Gets changed files from git diff plus untracked files.
+ * @param {string} baseRef - Base ref.
+ * @returns {string[]} Changed file paths.
+ */
+function getChangedFiles(baseRef) {
+  const trackedOutput = childProcess.execFileSync('git', ['diff', '--name-only', baseRef], {
+    encoding: 'utf8',
+  });
+  const untrackedOutput = childProcess.execFileSync('git', ['ls-files', '--others', '--exclude-standard'], {
+    encoding: 'utf8',
+  });
+
+  return [...new Set(`${trackedOutput}\n${untrackedOutput}`
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean))]
+    .sort();
+}
+
+/**
+ * Gets files touched by commits and the current worktree.
+ * @param {Record<string, unknown>} status - Parsed status object.
+ * @returns {string[]} Repo-relative touched files.
+ */
+function getTouchedFiles(status) {
+  const files = new Set([
+    ...getChangedFiles('HEAD'),
+    ...getOriginMainChangedFiles(),
+  ]);
+
+  if (isNonBlankString(status.lastVerifiedCommit)) {
+    readGitDiffNames([`${status.lastVerifiedCommit.trim()}..HEAD`]).forEach((filePath) => {
+      files.add(filePath);
+    });
+  }
+
+  return [...files].sort();
+}
+
+/**
+ * Runs v3 semantic workflow guards.
+ * @param {string} statusFile - Status file path.
+ * @param {Record<string, unknown>} status - Parsed status object.
+ * @returns {string[]} Semantic errors.
+ */
+function checkV3Semantics(statusFile, status) {
+  if (status.schemaVersion !== 3) {
+    return [];
+  }
+
+  const errors = [];
+  const closeoutish = isCloseoutishV3(status);
+
+  if (closeoutish && !isNonBlankString(status.lastVerifiedCommit)) {
+    errors.push('v3 closeout-ish phase requires non-blank lastVerifiedCommit');
+  }
+
+  collectV3CommitRefs(status).forEach(({ label, ref }) => {
+    if (!isNonBlankString(ref)) {
+      errors.push(`${label} must be a non-blank commit ref`);
+      return;
+    }
+
+    const normalizedRef = ref.trim();
+
+    if (!commitExists(normalizedRef)) {
+      errors.push(`${label} (${ref}) must resolve to a commit`);
+      return;
+    }
+
+    if (!isHeadAncestor(normalizedRef)) {
+      errors.push(`${label} (${ref}) must be an ancestor of HEAD`);
+    }
+  });
+
+  if (
+    closeoutish
+    && isNonBlankString(status.lastVerifiedCommit)
+    && commitExists(status.lastVerifiedCommit.trim())
+  ) {
+    const rangeFiles = readGitDiffNames([`${status.lastVerifiedCommit.trim()}..HEAD`]);
+    const outOfEvidenceRange = rangeFiles.filter((filePath) => !isWorkflowEvidencePath(filePath));
+    if (outOfEvidenceRange.length > 0) {
+      errors.push(
+        `v3 closeout-ish phase has non-workflow/evidence changes after lastVerifiedCommit: ${outOfEvidenceRange.join(', ')}`
+      );
+    }
+  }
+
+  const touchedRulesFiles = getTouchedFiles(status).filter((filePath) => RULES_FILES.has(filePath));
+  if (touchedRulesFiles.length > 0) {
+    if (!isPlainObject(status.rulesDeployStatus)) {
+      errors.push(`v3 rules changes require rulesDeployStatus for: ${touchedRulesFiles.join(', ')}`);
+    } else {
+      if (status.rulesDeployStatus.state === 'not_applicable') {
+        errors.push(`v3 rules changes cannot have rulesDeployStatus.state=not_applicable for: ${touchedRulesFiles.join(', ')}`);
+      }
+
+      if (status.rulesDeployStatus.required !== true && status.rulesDeployStatus.changed !== true) {
+        errors.push('v3 rules changes require rulesDeployStatus.required=true or changed=true');
+      }
+    }
+  }
+
+  if (isPlainObject(status.rulesDeployStatus) && status.rulesDeployStatus.state === 'deployed') {
+    if (!Array.isArray(status.rulesDeployStatus.evidence) || status.rulesDeployStatus.evidence.length === 0) {
+      errors.push('rulesDeployStatus.state=deployed requires deploy evidence');
+    }
+
+    if (!isPlainObject(status.authorizationBoundary) || status.authorizationBoundary.deployFirestoreRules !== true) {
+      errors.push('rulesDeployStatus.state=deployed requires authorizationBoundary.deployFirestoreRules=true');
+    }
+  }
+
+  if (closeoutish && Array.isArray(status.incidents)) {
+    const openIncidents = status.incidents.filter(isOpenIncident);
+    if (openIncidents.length > 0) {
+      errors.push(`${statusFile} has ${openIncidents.length} open incident(s); closeout-ish v3 state is blocked`);
+    }
+  }
+
+  return errors;
+}
+
+/**
  * Checks whether text mentions a task id.
  * @param {string} text - File contents.
  * @param {string} taskId - Task id.
@@ -253,27 +590,11 @@ function checkStatusSync(statusFile) {
     });
   }
 
+  checkV3Semantics(statusFile, status).forEach((error) => {
+    errors.push(error);
+  });
+
   return { errors, activeTaskId, ownedFiles };
-}
-
-/**
- * Gets changed files from git diff plus untracked files.
- * @param {string} baseRef - Base ref.
- * @returns {string[]} Changed file paths.
- */
-function getChangedFiles(baseRef) {
-  const trackedOutput = childProcess.execFileSync('git', ['diff', '--name-only', baseRef], {
-    encoding: 'utf8',
-  });
-  const untrackedOutput = childProcess.execFileSync('git', ['ls-files', '--others', '--exclude-standard'], {
-    encoding: 'utf8',
-  });
-
-  return [...new Set(`${trackedOutput}\n${untrackedOutput}`
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean))]
-    .sort();
 }
 
 /**

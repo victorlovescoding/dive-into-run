@@ -1,6 +1,6 @@
 # Saved Content Favorites Implementation Plan
 
-**For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` or `superpowers:executing-plans` to implement this plan task by task. The task board in `specs/saved-content-favorites/tasks.md` uses checkbox-compatible task sections for tracking.
+**For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` or `superpowers:executing-plans` to implement this plan task by task. The task board in `specs/065-saved-content-favorites/tasks.md` uses checkbox-compatible task sections for tracking.
 
 **Goal:** Build private saved-content favorites for posts and events, with member favorites management, bookmark controls on all required cards and detail views, owner-only Firestore rules, and regression coverage.
 

@@ -12,6 +12,8 @@
 - Branch/worktree:
 - Working directory:
 - Status:
+- Last verified commit:
+- Phase commit checkpoint:
 
 ## Planner Output
 
@@ -28,6 +30,17 @@
 - Allowed change:
 - User-visible or workflow outcome:
 
+## Authorization Boundary
+
+- edit:
+- commit:
+- push:
+- pullRequest:
+- ciWatch:
+- merge:
+- localMainSync:
+- deployFirestoreRules:
+
 ## Owned Files
 
 - `path/to/file`
@@ -43,6 +56,20 @@
 | ------- | --------------- |
 | `command` | exit 0 and key output |
 | `node scripts/check-superpowers-state.js --owned-files <owned paths...>` | exit 0 and changed tracked/untracked files are inside owned files |
+
+## Status V3 State
+
+- currentHead:
+- remoteHead:
+- lastVerifiedCommit:
+- phaseCommits:
+- rulesDeployStatus:
+  - state:
+  - required:
+  - changed:
+  - evidence:
+  - deployedCommit:
+- incidents:
 
 ## Browser Evidence
 
@@ -68,10 +95,13 @@ REJECT when:
 - Diff touches non-owned files.
 - Verification is missing, stale, or failing.
 - Behavior/docs drift outside scope.
+- Final evidence implies deployed Firestore/storage rules or deployed product
+  behavior without `rulesDeployStatus.state=deployed` and deploy evidence.
 
 ## Final Evidence
 
 - Changed files:
 - Commands run with exit codes:
 - Key signal:
+- Rules deploy status:
 - Risks or unverified items:
