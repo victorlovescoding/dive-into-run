@@ -1208,6 +1208,30 @@
   "blockedReason": null,
   "lastVerification": [
     {
+      "command": "npm run workflow:links in clean archive copy without specs/saved-content-favorites/ empty directory",
+      "exitCode": 0,
+      "summary": "LOCAL LINKS: 41 file(s) scanned, all local references exist after updating docs/superpowers/workflow.md and .agents/skills/worktree/SKILL.md examples to specs/065-saved-content-favorites.",
+      "verifiedAt": "2026-05-20T17:20:09+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "6 status files valid and synced after PR #100 workflow links fix.",
+      "verifiedAt": "2026-05-20T17:20:09+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "No output; no whitespace errors after PR #100 workflow links fix.",
+      "verifiedAt": "2026-05-20T17:20:09+08:00"
+    },
+    {
+      "command": "node scripts/validate-workflow-state.js specs/065-saved-content-favorites/status.json",
+      "exitCode": 0,
+      "summary": "specs/065-saved-content-favorites/status.json: ok; WORKFLOW STATE: 1 status file(s) valid.",
+      "verifiedAt": "2026-05-20T17:20:09+08:00"
+    },
+    {
       "command": "npm run workflow:check",
       "exitCode": 0,
       "summary": "6 status files valid and synced after removing legacy specs/saved-content-favorites from active workflow state.",
@@ -1397,7 +1421,12 @@
       "id": "INC-CI-WORKFLOW-STATE-SHALLOW-CHECKOUT",
       "state": "resolved",
       "summary": "PR #99 GitHub CI run 26150844340 failed Workflow state check while local npm run workflow:check passed. Root cause was GitHub shallow checkout missing ancestor commit objects required by the closeout range guard. Fix: .github/workflows/ci.yml checkout fetch-depth: 0 plus allowlist exactly .github/workflows/ci.yml as workflow evidence in scripts/check-superpowers-state.js. Reviewer PASS recorded for the CI checkout-depth fix; rerun CI 26151638769 succeeded."
+    },
+    {
+      "id": "INC-CI-WORKFLOW-LINKS-EMPTY-DIR",
+      "state": "resolved",
+      "summary": "PR #100 GitHub CI run 26152944921 failed Workflow links check while a prior local npm run workflow:links passed because an untracked empty specs/saved-content-favorites/ directory existed locally. GitHub checkout does not preserve empty directories, so docs/superpowers/workflow.md and .agents/skills/worktree/SKILL.md referenced a missing path after the legacy active spec files were removed. Fix: update both examples to the existing specs/065-saved-content-favorites/ active workflow state and verify workflow:links in a clean archive copy without the empty directory; rulesDeployStatus remains deployed."
     }
   ],
-  "updatedAt": "2026-05-20T17:04:39+08:00"
+  "updatedAt": "2026-05-20T17:20:09+08:00"
 }

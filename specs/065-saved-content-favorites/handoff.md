@@ -24,6 +24,7 @@
 - Post-T007 permission-denied fallback incident: resolved by recording the incident, preserving the permission-denied-only fallback, and rerunning fresh local verification.
 - Rules deploy status: deployed. `firebase deploy --only firestore:rules --project dive-into-run` exited 0, compiled `firestore.rules`, and released rules to `cloud.firestore`.
 - CI workflow state incident: GitHub CI run `26150844340` failed `Workflow state check` while local `npm run workflow:check` passed. Root cause was GitHub shallow checkout missing ancestor commit objects needed by the closeout range guard; fix is CI checkout `fetch-depth: 0` plus allowing exactly `.github/workflows/ci.yml` as workflow evidence. Reviewer PASS was recorded for the checkout-depth fix; rerun CI `26151638769` succeeded.
+- PR #100 workflow links incident: GitHub CI run `26152944921` failed `Workflow links check` while a prior local `npm run workflow:links` passed because the local checkout still had an empty `specs/saved-content-favorites/` directory. GitHub checkout does not preserve empty directories, so `docs/superpowers/workflow.md` and `.agents/skills/worktree/SKILL.md` referenced a missing path. Fix: update both workflow examples to reference existing `specs/065-saved-content-favorites/` active workflow state and record this incident in 065 workflow state.
 - Latest user authorization for closeout: stage=yes, commit=yes, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, deployFirestoreRules=yes, localMainSync=yes.
 - Future authorization boundary: commit=true, push=true, pullRequest=true, ciWatch=true, merge=true, localMainSync=true, deployFirestoreRules=true.
 - Last verified commit: `34664f89d2f18ee707079886779348c8b01bcedc`
@@ -97,6 +98,7 @@ Ready for deploy-evidence state PR/merge and final local main sync under the cur
 - PR #99 was squash merged to `main` at `34664f89d2f18ee707079886779348c8b01bcedc`.
 - Firestore rules deploy: `firebase deploy --only firestore:rules --project dive-into-run` exited 0; `firestore.rules` compiled successfully and was released to `cloud.firestore`.
 - Legacy active spec directory `specs/saved-content-favorites/` was removed so the only active saved-content-favorites workflow state is `specs/065-saved-content-favorites/`.
+- PR #100 CI follow-up: GitHub CI run `26152944921` failed `Workflow links check` because `docs/superpowers/workflow.md` and `.agents/skills/worktree/SKILL.md` still had inline-code examples pointing at deleted legacy path `specs/saved-content-favorites`. The old local pass depended on an untracked empty directory that GitHub checkout could not reproduce. Both examples now point at `specs/065-saved-content-favorites/`, and a clean archive verification without that empty directory passed `npm run workflow:links`.
 
 | Command | Exit | Evidence |
 | --- | --- | --- |
