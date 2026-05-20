@@ -9,21 +9,22 @@
 - If this file, `status.json`, and `handoff.md` disagree, reconcile or block before dispatch, commit, push, PR, merge, or local `main` sync.
 - A task can become `completed` only after `review_passed` and coordinator state sync.
 - Command evidence is one command per entry. Do not combine commands with shell chain operators.
-- Current workflow phase: `state_repair_verified_product_gates_stale`.
-- Current HEAD: `d6ac09f9a64f694833be097e1a816f3bc2806a5c`; remote `origin/065-saved-content-favorites` also observed at `d6ac09f9a64f694833be097e1a816f3bc2806a5c`.
+- Current workflow phase: `verified_ready_for_pr`.
+- Current HEAD: `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`; remote `origin/065-saved-content-favorites` was last observed at `d6ac09f9a64f694833be097e1a816f3bc2806a5c` before the local workflow repair commit.
 - Origin main base observed: `55130520c0e1ff9a5222bf3c6c2f41dfd97be3ed`.
 - Historical branch commits already pushed before this repair: `e7394450f7393481a1bcc418ab6e0726993e240d` Add private content favorites; `d6ac09f9a64f694833be097e1a816f3bc2806a5c` Fix event detail landmark.
+- Workflow/state repair commit: `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a` Harden workflow closeout state.
 - Latest Plan Reviewer decision: `review_passed`.
 - Plan Reviewer summary at review close: Planner plan, tasks, and status covered FR-001 through FR-025; prior findings were closed; status was valid and synced; no workflow drift; implementation was still unauthorized.
 - User implementation edit authorization granted on 2026-05-19 by message `開工`.
-- Current repair authorization boundary: edit=yes only for renaming `specs/saved-content-favorites` to `specs/065-saved-content-favorites` and editing owned state files in the renamed directory; stage=no, commit=no, push=no, PR=no, merge=no, deploy=no, local-main-sync=no.
-- Future release authorization boundary: commit=false, push=false, pullRequest=false, ciWatch=false, merge=false, localMainSync=false, deployFirestoreRules=false.
+- Current closeout authorization boundary: stage=true, commit=true, push=true, pullRequest=true, ciWatch=true, merge=true, localMainSync=true, deployFirestoreRules=true.
 - Active task: none. Active wave: none.
 - T004, T005, and T006 completed after Reviewer PASS and Coordinator state sync.
 - T007 completed after script mapping, focused E2E cleanup, final verification, Reviewer PASS, and Coordinator state sync.
-- Post-T007 permission-denied fallback was implemented and reviewed after the user report; existing state did not contain explicit product-code edit authorization for this follow-up, so it is recorded as an open incident rather than inferred authorization.
-- Rules deploy status: required and changed; not deployed. No deploy evidence is recorded, and deployFirestoreRules=false.
-- Blocked: yes. Product/runtime/test verification for current HEAD was not rerun during schemaVersion 3 repair, so `lastVerifiedCommit` remains null. Closeout remains unauthorized: commit=no, push=no, PR=no, CI-watch=no, merge=no, deploy=no, local-main-sync=no.
+- Post-T007 permission-denied fallback was implemented and reviewed after the user report; the incident is resolved by durable recording plus fresh local verification.
+- Rules deploy status: required and changed; deploy authorized for closeout but not yet executed.
+- Last verified commit: `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`.
+- Blocked: no. Ready for push, PR, CI watch, merge, Firestore rules deploy, and local main sync under the current explicit closeout authorization.
 
 ## Team And Parallelism
 
@@ -56,7 +57,7 @@
 - Final integration gate:
   - Run T007 verification commands after T001 through T006 pass review and state is synced.
   - Browser evidence is required for all UI routes listed in T004, T005, and T006.
-  - No closeout step is authorized by the current boundary.
+  - Closeout is authorized by the current boundary after fresh verification.
 
 ## Tasks
 
@@ -1016,8 +1017,8 @@ Evidence:
 - Post-T007 RED evidence: focused unit failed before fix; posts regression expected posts length 2 but got 0; events regression saw `console.error('載入活動收藏狀態失敗:', permission-denied)`.
 - Post-T007 residual risk: until production Firestore rules are deployed, initial background favorite state may show unfilled/empty, but console/page break is avoided; active user write failures still toast.
 - Rules deploy status: required and changed; no production rules deploy evidence is recorded.
-- Current workflow state is blocked because product/runtime/test verification for current HEAD was not rerun during schemaVersion 3 repair.
-- Closeout remains unauthorized: product code edits, package/config edits, commit, push, PR, CI-watch, merge, deploy, and local-main-sync are not authorized.
+- Current workflow state is verified for closeout at `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`.
+- Current closeout authorization includes commit, push, PR, CI-watch, merge, deploy, and local-main-sync. Product code edits and package/config edits remain non-scope for future work.
 - Command output summary:
   - `firebase emulators:exec --only auth,firestore,storage --project=demo-test "npx playwright test --config playwright.emulator.config.mjs tests/e2e/saved-content-favorites.spec.js"`: exit 0; 3 passed; Reviewer rerun also 3 passed (14.4s).
   - `TEST_E2E_BRANCH_CHANGED_SPECS=tests/e2e/saved-content-favorites.spec.js npm run test:e2e:branch`: sandbox first failed with port EPERM; escalated rerun exit 0; branch script routed spec to `Emulator specs without feature setup`; Playwright 3 passed (15.0s).
