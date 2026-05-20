@@ -21,6 +21,7 @@
 - Latest reviewer summary at verification close: T007 test content, branch E2E mapping in `scripts/test-e2e-branch.sh`, and E2E REST auth cleanup passed review. Focused E2E, forced branch E2E mapping, branch tests, audits, workflow checks, lint, type-check, and whitespace checks passed at T007 close.
 - Post-T007 permission-denied fallback incident: resolved by recording the incident, preserving the permission-denied-only fallback, and rerunning fresh local verification.
 - Rules deploy status: required and changed; deploy authorized for closeout but not yet executed. No deploy evidence is recorded yet.
+- CI workflow state incident: GitHub CI run `26150844340` failed `Workflow state check` while local `npm run workflow:check` passed. Root cause was GitHub shallow checkout missing ancestor commit objects needed by the closeout range guard; fix is CI checkout `fetch-depth: 0` plus allowing exactly `.github/workflows/ci.yml` as workflow evidence. Reviewer PASS was recorded for the checkout-depth fix; rules deploy remains pending.
 - Latest user authorization for closeout: stage=yes, commit=yes, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, deployFirestoreRules=yes, localMainSync=yes.
 - Future authorization boundary: commit=true, push=true, pullRequest=true, ciWatch=true, merge=true, localMainSync=true, deployFirestoreRules=true.
 - Last verified commit: `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`
@@ -89,6 +90,7 @@ Ready for push, PR creation, CI watch, merge, Firestore rules deploy, and local 
 
 - Fresh verification ran after the workflow/state repair and before commit `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`.
 - Commit `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a` passed the repo pre-commit gate.
+- PR #99 CI follow-up: GitHub CI run `26150844340` failed `Workflow state check`; local `npm run workflow:check` passed. The CI checkout now uses `fetch-depth: 0`, and `scripts/check-superpowers-state.js` treats only `.github/workflows/ci.yml` as additional workflow evidence so this workflow repair is not misclassified as product change in closeout-ish phases.
 
 | Command | Exit | Evidence |
 | --- | --- | --- |

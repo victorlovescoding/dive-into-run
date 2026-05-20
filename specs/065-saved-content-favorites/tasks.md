@@ -22,6 +22,7 @@
 - T004, T005, and T006 completed after Reviewer PASS and Coordinator state sync.
 - T007 completed after script mapping, focused E2E cleanup, final verification, Reviewer PASS, and Coordinator state sync.
 - Post-T007 permission-denied fallback was implemented and reviewed after the user report; the incident is resolved by durable recording plus fresh local verification.
+- CI workflow state incident resolved: GitHub CI run `26150844340` failed `Workflow state check` while local `npm run workflow:check` passed. Root cause was GitHub shallow checkout missing ancestor commit objects for the closeout range guard; fix is CI checkout `fetch-depth: 0` plus allowlisting exactly `.github/workflows/ci.yml` as workflow evidence. Reviewer PASS was recorded for the checkout-depth fix.
 - Rules deploy status: required and changed; deploy authorized for closeout but not yet executed.
 - Last verified commit: `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`.
 - Blocked: no. Ready for push, PR, CI watch, merge, Firestore rules deploy, and local main sync under the current explicit closeout authorization.
@@ -1018,6 +1019,7 @@ Evidence:
 - Post-T007 residual risk: until production Firestore rules are deployed, initial background favorite state may show unfilled/empty, but console/page break is avoided; active user write failures still toast.
 - Rules deploy status: required and changed; no production rules deploy evidence is recorded.
 - Current workflow state is verified for closeout at `95be04b582eb7c682d1a098f1cb3fac4aa66ee6a`.
+- PR #99 CI incident `INC-CI-WORKFLOW-STATE-SHALLOW-CHECKOUT`: GitHub CI run `26150844340` failed `Workflow state check`; local `npm run workflow:check` passed. Root cause was shallow checkout missing ancestor commit objects. Fix: `.github/workflows/ci.yml` checkout `fetch-depth: 0` and `scripts/check-superpowers-state.js` allowlist entry for exactly `.github/workflows/ci.yml` as workflow evidence, not the whole `.github/` tree. Reviewer PASS recorded for the CI checkout-depth fix; Firestore rules deploy remains pending.
 - Current closeout authorization includes commit, push, PR, CI-watch, merge, deploy, and local-main-sync. Product code edits and package/config edits remain non-scope for future work.
 - Command output summary:
   - `firebase emulators:exec --only auth,firestore,storage --project=demo-test "npx playwright test --config playwright.emulator.config.mjs tests/e2e/saved-content-favorites.spec.js"`: exit 0; 3 passed; Reviewer rerun also 3 passed (14.4s).
