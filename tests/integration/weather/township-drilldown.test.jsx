@@ -136,26 +136,75 @@ vi.mock('next/image', () => ({
   default: ({ src, alt, ...props }) => <img src={src} alt={alt} {...props} />,
 }));
 
+const leafletMapMock = vi.hoisted(() => ({
+  fitBounds: vi.fn(),
+  zoomIn: vi.fn(),
+  zoomOut: vi.fn(),
+  setView: vi.fn(),
+  getContainer: vi.fn(() => ({ style: {} })),
+  invalidateSize: vi.fn(),
+}));
+
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children }) => <div>{children}</div>,
+  MapContainer: ({
+    children,
+    dragging,
+    scrollWheelZoom,
+    touchZoom,
+    doubleClickZoom,
+    zoomControl,
+  }) => (
+    <div
+      data-testid="leaflet-map-boundary"
+      data-dragging={String(dragging)}
+      data-scroll-wheel-zoom={String(scrollWheelZoom)}
+      data-touch-zoom={String(touchZoom)}
+      data-double-click-zoom={String(doubleClickZoom)}
+      data-zoom-control={String(zoomControl)}
+    >
+      {children}
+    </div>
+  ),
   GeoJSON: ({ data, onEachFeature }) => {
     const features = data?.features || [];
+    /**
+     * 觸發 mock Leaflet layer event。
+     * @param {import('geojson').Feature} feature - GeoJSON feature。
+     * @param {'mouseover' | 'mousemove' | 'mouseout' | 'click'} eventName - Leaflet event 名稱。
+     * @param {import('react').SyntheticEvent<HTMLButtonElement>} event - DOM event。
+     * @returns {void}
+     */
+    const triggerFeatureEvent = (feature, eventName, event) => {
+      if (!onEachFeature) return;
+
+      const handler = {};
+      const target = { feature, setStyle: vi.fn() };
+      const { nativeEvent } = event;
+      onEachFeature(feature, {
+        on: (events) => Object.assign(handler, events),
+        setStyle: vi.fn(),
+      });
+      handler[eventName]?.({
+        target,
+        originalEvent: {
+          clientX: 'clientX' in nativeEvent ? nativeEvent.clientX : 0,
+          clientY: 'clientY' in nativeEvent ? nativeEvent.clientY : 0,
+        },
+      });
+    };
+
     return (
       <div>
         {features.map((feature) => (
           <button
             key={feature.properties.TOWNCODE || feature.properties.COUNTYCODE}
             type="button"
-            onClick={() => {
-              if (onEachFeature) {
-                const handler = {};
-                onEachFeature(feature, {
-                  on: (events) => Object.assign(handler, events),
-                  setStyle: vi.fn(),
-                });
-                handler.click?.({ target: { feature, setStyle: vi.fn() } });
-              }
-            }}
+            onMouseOver={(event) => triggerFeatureEvent(feature, 'mouseover', event)}
+            onMouseMove={(event) => triggerFeatureEvent(feature, 'mousemove', event)}
+            onMouseOut={(event) => triggerFeatureEvent(feature, 'mouseout', event)}
+            onFocus={(event) => triggerFeatureEvent(feature, 'mouseover', event)}
+            onBlur={(event) => triggerFeatureEvent(feature, 'mouseout', event)}
+            onClick={(event) => triggerFeatureEvent(feature, 'click', event)}
           >
             {feature.properties.TOWNNAME || feature.properties.COUNTYNAME}
           </button>
@@ -164,10 +213,12 @@ vi.mock('react-leaflet', () => ({
     );
   },
   useMap: () => ({
-    fitBounds: vi.fn(),
-    setView: vi.fn(),
-    getContainer: () => ({ style: {} }),
-    invalidateSize: vi.fn(),
+    fitBounds: leafletMapMock.fitBounds,
+    zoomIn: leafletMapMock.zoomIn,
+    zoomOut: leafletMapMock.zoomOut,
+    setView: leafletMapMock.setView,
+    getContainer: leafletMapMock.getContainer,
+    invalidateSize: leafletMapMock.invalidateSize,
   }),
 }));
 
@@ -186,6 +237,9 @@ const firestoreMock = vi.hoisted(() => ({
 }));
 
 vi.mock('firebase/firestore', () => firestoreMock);
+
+const hadOriginalScrollIntoView = 'scrollIntoView' in Element.prototype;
+const originalScrollIntoView = Element.prototype.scrollIntoView;
 
 /* ==========================================================================
    Helpers
@@ -248,12 +302,19 @@ describe('Township drill-down integration', () => {
     vi.clearAllMocks();
     firestoreMock.getDocs.mockResolvedValue({ docs: [], empty: true, size: 0 });
     installWeatherFetch();
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    Element.prototype.scrollIntoView = vi.fn();
     globalThis.localStorage?.clear?.();
     // 重設 URL，避免上個 test 的 syncWeatherLocationToUrl 殘留影響下個 mount。
     window.history.replaceState({}, '', '/');
   });
 
   afterEach(() => {
+    if (hadOriginalScrollIntoView) {
+      Element.prototype.scrollIntoView = originalScrollIntoView;
+    } else {
+      delete Element.prototype.scrollIntoView;
+    }
     vi.unstubAllGlobals();
   });
 
@@ -277,6 +338,76 @@ describe('Township drill-down integration', () => {
 
     expect(await screen.findByText('新北市 · 板橋區')).toBeInTheDocument();
     expect(screen.getByText('晴時多雲')).toBeInTheDocument();
+    expect(screen.queryByText(/目前選取：/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '收合天氣資訊' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '展開天氣資訊' })).not.toBeInTheDocument();
+  });
+
+  it('keeps selected township weather available after collapsing the mobile sheet', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+    window.dispatchEvent(new Event('resize'));
+    const user = userEvent.setup();
+    renderWeatherPage();
+
+    expect(screen.queryByRole('button', { name: '收合天氣資訊' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '展開天氣資訊' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '新北市' }));
+    await user.click(await screen.findByRole('button', { name: '板橋區' }));
+
+    const weatherSheet = await screen.findByRole('region', { name: '天氣資訊' });
+    expect(weatherSheet).toHaveTextContent('新北市 · 板橋區');
+    expect(screen.getByRole('button', { name: /加入收藏/i })).toBeInTheDocument();
+
+    const collapseButton = screen.getByRole('button', { name: '收合天氣資訊' });
+    expect(collapseButton).toHaveAttribute('aria-expanded', 'true');
+    await user.click(collapseButton);
+
+    const expandButton = screen.getByRole('button', { name: '展開天氣資訊' });
+    expect(expandButton).toHaveAttribute('aria-expanded', 'false');
+    expect(expandButton).toBeInTheDocument();
+    expect(screen.getByText(/目前選取：新北市 · 板橋區/)).toBeInTheDocument();
+    const controlledContent = screen.getByTestId('weather-sheet-content');
+    expect(expandButton).toHaveAttribute('aria-controls', controlledContent.getAttribute('id'));
+    expect(controlledContent).toHaveAttribute('hidden');
+    expect(screen.queryByRole('button', { name: /加入收藏/i })).not.toBeInTheDocument();
+
+    await user.click(expandButton);
+
+    expect(screen.getByText('晴時多雲')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /加入收藏/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /全台總覽/ }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('板橋區')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('新北市')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '新北市' }));
+    await user.click(await screen.findByRole('button', { name: '板橋區' }));
+
+    expect(await screen.findByRole('button', { name: '收合天氣資訊' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '展開天氣資訊' })).not.toBeInTheDocument();
+    expect(screen.getByText('晴時多雲')).toBeInTheDocument();
+  });
+
+  it('shows and hides the township hover tooltip after county selection', async () => {
+    const user = userEvent.setup();
+    renderWeatherPage();
+
+    await user.click(screen.getByRole('button', { name: '新北市' }));
+    const banqiaoButton = await screen.findByRole('button', { name: '板橋區' });
+
+    await user.hover(banqiaoButton);
+
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('新北市 · 板橋區');
+
+    await user.pointer({ target: document.body });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    });
   });
 
   it('updates weather when switching between townships', async () => {

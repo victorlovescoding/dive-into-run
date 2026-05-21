@@ -302,6 +302,57 @@ const mockTownshipUvResponse = {
   },
 };
 
+const mockTownshipOnlyCountyUvResponse = {
+  records: {
+    Locations: [
+      {
+        Location: [
+          {
+            LocationName: '關西鎮',
+            WeatherElement: [
+              {
+                ElementName: '紫外線指數',
+                Time: [
+                  {
+                    StartTime: '2026-04-13T06:00:00+08:00',
+                    EndTime: '2026-04-13T18:00:00+08:00',
+                    ElementValue: [{ UVIndex: '7', UVExposureLevel: '高量級' }],
+                  },
+                  {
+                    StartTime: '2026-04-14T06:00:00+08:00',
+                    EndTime: '2026-04-14T18:00:00+08:00',
+                    ElementValue: [{ UVIndex: '6', UVExposureLevel: '高量級' }],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            LocationName: '竹北市',
+            WeatherElement: [
+              {
+                ElementName: '紫外線指數',
+                Time: [
+                  {
+                    StartTime: '2026-04-13T06:00:00+08:00',
+                    EndTime: '2026-04-13T18:00:00+08:00',
+                    ElementValue: [{ UVIndex: '8', UVExposureLevel: '過量級' }],
+                  },
+                  {
+                    StartTime: '2026-04-14T06:00:00+08:00',
+                    EndTime: '2026-04-14T18:00:00+08:00',
+                    ElementValue: [{ UVIndex: '7', UVExposureLevel: '高量級' }],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+};
+
 /**
  * @param {Record<string, string>} params Query params to attach to the weather route URL.
  * @returns {Request} Request instance for the weather API route.
@@ -388,6 +439,36 @@ describe('GET /api/weather', () => {
     await expect(response.json()).resolves.toMatchObject({
       ok: true,
       data: { locationName: '臺北市', locationNameShort: '臺北' },
+    });
+  });
+
+  it('county-only 新竹縣 UV dataset 只有鄉鎮 LocationName 時應回 200 且 UV 為 null', async () => {
+    getFetchMock().mockImplementation(async (input) => {
+      const url = getRequestUrl(input);
+      if (url.includes('F-C0032-001')) return createJsonResponse(mockCountyForecastResponse);
+      if (url.includes('F-D0047-011')) return createJsonResponse(mockTownshipOnlyCountyUvResponse);
+      if (url.includes('aqx_p_432')) return createJsonResponse(createAqiPayload('新竹縣', '45', '良好'));
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    const response = await GET(createRequest({ county: '新竹縣' }));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      data: {
+        locationName: '新竹縣',
+        locationNameShort: '新竹',
+        today: {
+          weatherDesc: '晴時多雲',
+          uv: null,
+          aqi: { value: 45, status: '良好' },
+        },
+        tomorrow: {
+          weatherDesc: '多雲時陰',
+          uv: null,
+        },
+      },
     });
   });
 

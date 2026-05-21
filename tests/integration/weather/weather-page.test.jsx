@@ -149,10 +149,63 @@ vi.mock('next/image', () => ({
   default: ({ src, alt, ...props }) => <img src={src} alt={alt} {...props} />,
 }));
 
+const leafletMapMock = vi.hoisted(() => ({
+  fitBounds: vi.fn(),
+  zoomIn: vi.fn(),
+  zoomOut: vi.fn(),
+  setView: vi.fn(),
+  getContainer: vi.fn(() => ({ style: {} })),
+  invalidateSize: vi.fn(),
+}));
+
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children }) => <div>{children}</div>,
+  MapContainer: ({
+    children,
+    dragging,
+    scrollWheelZoom,
+    touchZoom,
+    doubleClickZoom,
+    zoomControl,
+  }) => (
+    <div
+      data-testid="leaflet-map-boundary"
+      data-dragging={String(dragging)}
+      data-scroll-wheel-zoom={String(scrollWheelZoom)}
+      data-touch-zoom={String(touchZoom)}
+      data-double-click-zoom={String(doubleClickZoom)}
+      data-zoom-control={String(zoomControl)}
+    >
+      {children}
+    </div>
+  ),
   GeoJSON: ({ data, onEachFeature }) => {
     const features = data?.features || [];
+    /**
+     * 觸發 mock Leaflet layer event。
+     * @param {import('geojson').Feature} feature - GeoJSON feature。
+     * @param {'mouseover' | 'mousemove' | 'mouseout' | 'click'} eventName - Leaflet event 名稱。
+     * @param {import('react').SyntheticEvent<HTMLButtonElement>} event - DOM event。
+     * @returns {void}
+     */
+    const triggerFeatureEvent = (feature, eventName, event) => {
+      if (!onEachFeature) return;
+
+      const handler = {};
+      const target = { feature, setStyle: vi.fn() };
+      const { nativeEvent } = event;
+      onEachFeature(feature, {
+        on: (events) => Object.assign(handler, events),
+        setStyle: vi.fn(),
+      });
+      handler[eventName]?.({
+        target,
+        originalEvent: {
+          clientX: 'clientX' in nativeEvent ? nativeEvent.clientX : 0,
+          clientY: 'clientY' in nativeEvent ? nativeEvent.clientY : 0,
+        },
+      });
+    };
+
     return (
       <div>
         {features.map((feature) => {
@@ -167,16 +220,12 @@ vi.mock('react-leaflet', () => ({
             <button
               key={featureKey}
               type="button"
-              onClick={() => {
-                if (onEachFeature) {
-                  const handler = {};
-                  onEachFeature(feature, {
-                    on: (events) => Object.assign(handler, events),
-                    setStyle: vi.fn(),
-                  });
-                  handler.click?.({ target: { feature, setStyle: vi.fn() } });
-                }
-              }}
+              onMouseOver={(event) => triggerFeatureEvent(feature, 'mouseover', event)}
+              onMouseMove={(event) => triggerFeatureEvent(feature, 'mousemove', event)}
+              onMouseOut={(event) => triggerFeatureEvent(feature, 'mouseout', event)}
+              onFocus={(event) => triggerFeatureEvent(feature, 'mouseover', event)}
+              onBlur={(event) => triggerFeatureEvent(feature, 'mouseout', event)}
+              onClick={(event) => triggerFeatureEvent(feature, 'click', event)}
             >
               {label}
             </button>
@@ -186,10 +235,12 @@ vi.mock('react-leaflet', () => ({
     );
   },
   useMap: () => ({
-    fitBounds: vi.fn(),
-    setView: vi.fn(),
-    getContainer: () => ({ style: {} }),
-    invalidateSize: vi.fn(),
+    fitBounds: leafletMapMock.fitBounds,
+    zoomIn: leafletMapMock.zoomIn,
+    zoomOut: leafletMapMock.zoomOut,
+    setView: leafletMapMock.setView,
+    getContainer: leafletMapMock.getContainer,
+    invalidateSize: leafletMapMock.invalidateSize,
   }),
 }));
 
@@ -307,8 +358,72 @@ describe('WeatherPage integration', () => {
     renderWeatherPage();
 
     expect(screen.getByRole('application', { name: '台灣互動地圖' })).toBeInTheDocument();
+    expect(screen.getByTestId('leaflet-map-boundary')).toHaveAttribute('data-dragging', 'true');
+    expect(screen.getByTestId('leaflet-map-boundary')).toHaveAttribute(
+      'data-scroll-wheel-zoom',
+      'true',
+    );
+    expect(screen.getByTestId('leaflet-map-boundary')).toHaveAttribute('data-touch-zoom', 'true');
+    expect(screen.getByTestId('leaflet-map-boundary')).toHaveAttribute(
+      'data-double-click-zoom',
+      'true',
+    );
     expect(screen.getByText('臺北市')).toBeInTheDocument();
     expect(screen.getByText('新北市')).toBeInTheDocument();
+  });
+
+  it('shows and hides the county hover tooltip', async () => {
+    const user = userEvent.setup();
+    renderWeatherPage();
+
+    const taipeiButton = screen.getByRole('button', { name: '臺北市' });
+    await user.hover(taipeiButton);
+
+    const tooltip = await screen.findByRole('tooltip');
+    expect(tooltip).toHaveTextContent('臺北市');
+    expect(tooltip).toHaveStyle({
+      pointerEvents: 'none',
+      position: 'absolute',
+    });
+
+    await user.pointer({ target: document.body });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    });
+  });
+
+  it('wires custom map controls to the map boundary', async () => {
+    const user = userEvent.setup();
+    renderWeatherPage();
+
+    const zoomInButton = screen.getByRole('button', { name: '放大地圖' });
+    const zoomOutButton = screen.getByRole('button', { name: '縮小地圖' });
+    const resetButton = screen.getByRole('button', { name: '重設地圖範圍' });
+    const controls = screen.getByRole('group', { name: '地圖控制項' });
+
+    expect(controls).toHaveStyle({
+      position: 'absolute',
+    });
+
+    zoomInButton.focus();
+    expect(zoomInButton).toHaveFocus();
+    zoomOutButton.focus();
+    expect(zoomOutButton).toHaveFocus();
+    resetButton.focus();
+    expect(resetButton).toHaveFocus();
+
+    leafletMapMock.zoomIn.mockClear();
+    leafletMapMock.zoomOut.mockClear();
+    leafletMapMock.fitBounds.mockClear();
+
+    await user.click(zoomInButton);
+    await user.click(zoomOutButton);
+    await user.click(resetButton);
+
+    expect(leafletMapMock.zoomIn).toHaveBeenCalled();
+    expect(leafletMapMock.zoomOut).toHaveBeenCalled();
+    expect(leafletMapMock.fitBounds).toHaveBeenCalled();
   });
 
   it('shows empty state when no location is selected', () => {
