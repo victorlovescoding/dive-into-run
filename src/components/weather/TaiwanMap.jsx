@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect, useCallback } from 'react';
+import { useMemo, useEffect, useCallback, useRef, useState } from 'react';
 import { MapContainer, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { ISLAND_MARKERS } from '@/runtime/client/use-cases/weather-location-use-cases';
@@ -45,7 +45,28 @@ const MAP_CENTER = /** @type {[number, number]} */ ([23.5, 121]);
 const MAP_ZOOM = 7;
 const FIT_PADDING = /** @type {[number, number]} */ ([10, 10]);
 const MAP_BG = '#F7FCFE';
+const TOOLTIP_OFFSET = 12;
+const TOOLTIP_MARGIN = 8;
+const MAP_CONTROLS_STYLE = /** @type {import('react').CSSProperties} */ ({ position: 'absolute', top: '0.75rem', right: '0.75rem', zIndex: 500, display: 'flex', flexDirection: 'column', gap: '0.25rem' });
+const MAP_CONTROL_BUTTON_STYLE = /** @type {import('react').CSSProperties} */ ({ width: '2rem', height: '2rem', border: '1px solid rgba(44, 62, 80, 0.28)', borderRadius: '0.375rem', background: 'rgba(255, 255, 255, 0.92)', color: '#2c3e50', cursor: 'pointer', fontWeight: 700 });
 // #endregion
+
+/**
+ * 將地圖重設到指定 GeoJSON collection 的 bounds。
+ * @param {L.Map} map - Leaflet map instance。
+ * @param {import('geojson').FeatureCollection | null} geojsonData - GeoJSON 資料。
+ * @param {L.FitBoundsOptions} [options] - fitBounds options。
+ * @returns {void}
+ */
+function fitGeoJsonBounds(map, geojsonData, options = {}) {
+  if (!geojsonData?.features?.length) return;
+  try {
+    const layer = L.geoJSON(geojsonData);
+    map.fitBounds(layer.getBounds(), { padding: FIT_PADDING, ...options });
+  } catch {
+    /* Leaflet 在 jsdom 等非瀏覽器環境可能不可用 */
+  }
+}
 
 // #region InvalidateSizeHelper
 /**
@@ -62,16 +83,7 @@ function InvalidateSizeHelper({ geojsonData }) {
     const container = map.getContainer();
     const observer = new ResizeObserver(() => {
       map.invalidateSize();
-      if (geojsonData?.features?.length) {
-        requestAnimationFrame(() => {
-          try {
-            const layer = L.geoJSON(geojsonData);
-            map.fitBounds(layer.getBounds(), { padding: FIT_PADDING, animate: false });
-          } catch {
-            /* noop */
-          }
-        });
-      }
+      requestAnimationFrame(() => fitGeoJsonBounds(map, geojsonData, { animate: false }));
     });
     observer.observe(container);
     return () => observer.disconnect();
@@ -92,20 +104,34 @@ function FitBoundsHelper({ geojsonData }) {
   const map = useMap();
 
   useEffect(() => {
-    if (geojsonData?.features?.length) {
-      requestAnimationFrame(() => {
-        try {
-          map.invalidateSize();
-          const layer = L.geoJSON(geojsonData);
-          map.fitBounds(layer.getBounds(), { padding: FIT_PADDING });
-        } catch {
-          // Leaflet 在 jsdom 等非瀏覽器環境可能不可用
-        }
-      });
-    }
+    requestAnimationFrame(() => {
+      map.invalidateSize();
+      fitGeoJsonBounds(map, geojsonData);
+    });
   }, [map, geojsonData]);
 
   return null;
+}
+// #endregion
+
+// #region MapControls
+/**
+ * 地圖內部縮放與重設控制項。
+ * @param {object} props - 元件屬性。
+ * @param {import('geojson').FeatureCollection | null} props.geojsonData - 當前重設目標 GeoJSON。
+ * @returns {import('react').ReactElement} 地圖控制項。
+ */
+function MapControls({ geojsonData }) {
+  const map = useMap();
+  const handleReset = useCallback(() => fitGeoJsonBounds(map, geojsonData), [map, geojsonData]);
+
+  return (
+    <div className={styles.mapControls} role="group" aria-label="地圖控制項" style={MAP_CONTROLS_STYLE}>
+      <button type="button" className={styles.mapControlButton} style={MAP_CONTROL_BUTTON_STYLE} aria-label="放大地圖" onClick={() => map.zoomIn()}>+</button>
+      <button type="button" className={styles.mapControlButton} style={MAP_CONTROL_BUTTON_STYLE} aria-label="縮小地圖" onClick={() => map.zoomOut()}>-</button>
+      <button type="button" className={styles.mapControlButton} style={MAP_CONTROL_BUTTON_STYLE} aria-label="重設地圖範圍" onClick={handleReset}>⌂</button>
+    </div>
+  );
 }
 // #endregion
 
@@ -129,6 +155,21 @@ function TaiwanMap({
   onTownshipClick,
   onIslandClick,
 }) {
+  const mapContainerRef = useRef(null);
+  const [tooltip, setTooltip] = useState(null);
+
+  const showTooltip = useCallback((label, event) => {
+    const rect = mapContainerRef.current?.getBoundingClientRect();
+    const x = rect
+      ? Math.min(Math.max((event?.clientX ?? rect.left) - rect.left + TOOLTIP_OFFSET, TOOLTIP_MARGIN), Math.max(rect.width - TOOLTIP_MARGIN, TOOLTIP_MARGIN))
+      : TOOLTIP_OFFSET;
+    const y = rect
+      ? Math.min(Math.max((event?.clientY ?? rect.top) - rect.top + TOOLTIP_OFFSET, TOOLTIP_MARGIN), Math.max(rect.height - TOOLTIP_MARGIN, TOOLTIP_MARGIN))
+      : TOOLTIP_OFFSET;
+    setTooltip({ label, x, y });
+  }, []);
+  const hideTooltip = useCallback(() => setTooltip(null), []);
+
   // #region GeoJSON filtering (source data from weather-geo-cache)
   const townsGeoJson = useMemo(() => {
     if (!selectedCountyCode) return null;
@@ -192,22 +233,28 @@ function TaiwanMap({
       const name = feat.properties?.COUNTYNAME ?? '';
 
       layer.on({
-        mouseover: ({ target }) => {
+        mouseover: ({ target, originalEvent }) => {
           if (code !== selectedCountyCode) {
             /** @type {L.Path} */ (target).setStyle(HOVER_STYLE);
           }
+          showTooltip(name, originalEvent);
+        },
+        mousemove: ({ originalEvent }) => {
+          showTooltip(name, originalEvent);
         },
         mouseout: ({ target }) => {
           if (code !== selectedCountyCode) {
             /** @type {L.Path} */ (target).setStyle(DEFAULT_STYLE);
           }
+          hideTooltip();
         },
         click: () => {
+          hideTooltip();
           onCountyClick(code, name);
         },
       });
     },
-    [selectedCountyCode, onCountyClick],
+    [selectedCountyCode, onCountyClick, showTooltip, hideTooltip],
   );
 
   /**
@@ -221,25 +268,32 @@ function TaiwanMap({
       const townName = feat.properties?.TOWNNAME ?? '';
       const countyCode = feat.properties?.COUNTYCODE ?? '';
       const countyName = feat.properties?.COUNTYNAME ?? '';
+      const tooltipLabel = `${countyName} · ${townName}`;
 
       layer.on({
-        mouseover: ({ target }) => {
+        mouseover: ({ target, originalEvent }) => {
           if (townCode !== selectedTownshipCode) {
             /** @type {L.Path} */ (target).setStyle(HOVER_STYLE);
           }
+          showTooltip(tooltipLabel, originalEvent);
+        },
+        mousemove: ({ originalEvent }) => {
+          showTooltip(tooltipLabel, originalEvent);
         },
         mouseout: ({ target }) => {
           if (townCode !== selectedTownshipCode) {
             /** @type {L.Path} */ (target).setStyle(DEFAULT_STYLE);
           }
+          hideTooltip();
         },
         click: () => {
           if (townCode === selectedTownshipCode) return;
+          hideTooltip();
           onTownshipClick(townCode, townName, countyCode, countyName);
         },
       });
     },
-    [selectedTownshipCode, onTownshipClick],
+    [selectedTownshipCode, onTownshipClick, showTooltip, hideTooltip],
   );
 
   /**
@@ -300,21 +354,26 @@ function TaiwanMap({
 
   const activeGeoJson = mapLayer === 'overview' ? countiesGeoJson : townsGeoJson;
   const layerKey = `${mapLayer}-${selectedCountyCode ?? 'none'}-${selectedTownshipCode ?? 'none'}`;
+  const tooltipStyle = tooltip
+    ? /** @type {import('react').CSSProperties} */ ({ position: 'absolute', left: `${tooltip.x}px`, top: `${tooltip.y}px`, zIndex: 600, pointerEvents: 'none', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', background: 'rgba(255, 255, 255, 0.94)', color: '#2c3e50' })
+    : undefined;
 
   return (
-    <div className={styles.mapContainer} role="application" aria-label="台灣互動地圖">
+    <div ref={mapContainerRef} className={styles.mapContainer} role="application" aria-label="台灣互動地圖">
       <MapContainer
         center={MAP_CENTER}
         zoom={MAP_ZOOM}
         zoomControl={false}
-        dragging={false}
-        scrollWheelZoom={false}
-        doubleClickZoom={false}
+        dragging
+        scrollWheelZoom
+        touchZoom
+        doubleClickZoom
         attributionControl={false}
         style={{ position: 'absolute', inset: 0, background: MAP_BG }}
       >
         <InvalidateSizeHelper geojsonData={activeGeoJson} />
         <FitBoundsHelper geojsonData={activeGeoJson} />
+        <MapControls geojsonData={activeGeoJson} />
 
         {mapLayer === 'overview' && (
           <GeoJSON
@@ -343,6 +402,11 @@ function TaiwanMap({
           />
         )}
       </MapContainer>
+      {tooltip && (
+        <div className={styles.mapTooltip} role="tooltip" style={tooltipStyle}>
+          {tooltip.label}
+        </div>
+      )}
     </div>
   );
 }
