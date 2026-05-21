@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-067-weather-taiwan-md-map`
 - Branch: `067-weather-taiwan-md-map`
-- Current head: `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2`
+- Current head: `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`
 - Remote head: `origin/main` at `7ad004ee405b8485adeb9ca7ae5f19cd77cddb54`
 - Authorization boundary:
   - edit: true for T004 next
@@ -16,12 +16,12 @@
   - merge: false
   - localMainSync: false
   - deployFirestoreRules: false
-- Current phase: implementation_t004_pending
+- Current phase: implementation_t004_completed
 - Active task: none
 - Active wave: none
-- Latest reviewer decision: T003 code quality review passed on 2026-05-21T18:10:23Z
-- Last verified commit: `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2`
-- Phase commits: `c7710251a2dbd2f9282fcceb9f71a2276c652098`, `9da3cfee6b714cf091a6f6345ffc421939095302`, `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2`
+- Latest reviewer decision: T004 spec and code quality re-review passed on 2026-05-21T19:18:00Z
+- Last verified commit: `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`
+- Phase commits: `c7710251a2dbd2f9282fcceb9f71a2276c652098`, `9da3cfee6b714cf091a6f6345ffc421939095302`, `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2`, `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`
 - Rules deploy status: not_applicable
 - Incidents: `planner-review-rejection-2026-05-21` resolved
 - Blocked: no
@@ -42,7 +42,7 @@
 
 ## Next Action
 
-Commit the reviewed T003 mobile bottom-sheet slice, then dispatch T004 E2E coverage and browser evidence. Stop before push. Push, PR, CI watch, merge, local `main` sync, and rules deploy are not authorized.
+Commit the reviewed T004 E2E/browser-evidence slice, then run the pre-push verification gate. Stop before push. Push, PR, CI watch, merge, local `main` sync, and rules deploy are not authorized.
 
 ## Active Task And Wave
 
@@ -52,10 +52,32 @@ Commit the reviewed T003 mobile bottom-sheet slice, then dispatch T004 E2E cover
 - T002 state: `completed`, attempt 1 reviewed
 - T001 dependencies: approved `spec.md` and synced planning artifacts
 - T003 state: `completed`, attempt 4 reviewed
+- T004 state: `completed`, attempt 4 reviewed
 - T004 implementation owner: Weather E2E Engineer
-- T004 review owner: Test Strategist Reviewer
+- T004 review owner: Test Strategist Reviewer and Code Quality Reviewer
 
 ## Latest Verification
+
+T004 attempt 4 passed Engineer verification, spec re-review, code quality re-review, and Playwright screenshot evidence.
+
+| Command | Exit | Evidence |
+| ------- | ---- | -------- |
+| `npx playwright test tests/e2e/weather-page.spec.js --project=chromium` | 0 | 9/9 tests passed. |
+| `npm run lint:changed` | 0 | No changed-file lint errors. |
+| `npm run type-check:changed` | 0 | No changed-file type errors. |
+| `npm run spellcheck` | 0 | CSpell checked 453 files and found 0 issues after provider-name regex spelling fix. |
+| `node --input-type=module` | 0 | Screenshot evidence saved under `/private/tmp/weather-map-evidence`; desktop hover and selected polygon, tablet sheet, and mobile expanded/collapsed/overview states verified with no console errors, page errors, D3 requests, or tile-provider requests. |
+
+T004 Engineer changed files:
+
+- `tests/e2e/weather-page.spec.js`
+
+T004 reviewer result:
+
+- Decision: `review_passed`
+- Findings: none
+- Evidence: `CWA_API_KEY` skip preserved, real Leaflet pointer hover/click coverage, exact `county=63000` URL assertion after `台北市` selection, selected township polygon visibility, custom controls, tablet layout, mobile bottom-sheet collapse/expand/back-to-overview, no fixed waits, no synthetic app events.
+- Residual risk: route mock validates UI behavior rather than live CWA contract; selected polygon assertion intentionally couples to the current visual fill color.
 
 T003 attempt 4 code quality reviewer reran the focused verification and passed with no findings.
 
@@ -158,7 +180,7 @@ Coordinator fresh verification:
 
 ## Authorization Boundary
 
-- edit: true for T003 next, then T004 after T003 completes.
+- edit: true for completed T004 workflow state and commit preparation only.
 - commit: true
 - push: false
 - pullRequest: false
@@ -167,12 +189,13 @@ Coordinator fresh verification:
 - localMainSync: false
 - deployFirestoreRules: false
 
-## Browser Evidence To Collect Later
+## Browser Evidence Collected
 
-- Desktop 1440x900 at `http://localhost:3000/weather`: nonblank map, county hover tooltip, zoom-in, zoom-out, reset, selected polygon, no Taiwan.md left-bottom branding text, no new relevant console errors.
-- Tablet 834x1112: map and weather content do not overlap, controls usable, text remains inside containers.
-- Mobile 390x844: tap selection reveals weather bottom sheet, sheet dismissal preserves selected state, back-to-overview clears selected state, map pan/zoom does not make the sheet unusable.
-- Network observation: no new third-party tile source and no D3-related request.
+- Desktop 1440x900 at `http://localhost:3000/weather`: nonblank map, zoom-in, zoom-out, reset, `台北市` hover tooltip, township selected polygon, no Taiwan.md left-bottom branding text, and no console/page errors.
+- Tablet 834x1112: map and weather content visible without overlap; weather sheet content remains readable.
+- Mobile 390x844: tap selection reveals weather bottom sheet, sheet dismissal preserves `county=63000`, re-expansion restores content, and back-to-overview clears selected state.
+- Network observation: no third-party tile-provider request and no D3-related request in screenshot evidence.
+- Screenshots: `/private/tmp/weather-map-evidence/playwright-desktop-hover-1440x900.png`, `/private/tmp/weather-map-evidence/playwright-desktop-selected-1440x900.png`, `/private/tmp/weather-map-evidence/playwright-tablet-sheet-834x1112.png`, `/private/tmp/weather-map-evidence/playwright-mobile-expanded-390x844.png`, `/private/tmp/weather-map-evidence/playwright-mobile-collapsed-390x844.png`, `/private/tmp/weather-map-evidence/playwright-mobile-overview-390x844.png`.
 
 ## Closeout Checklist
 

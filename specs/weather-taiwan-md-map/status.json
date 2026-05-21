@@ -3,7 +3,7 @@
   "feature": "weather-taiwan-md-map",
   "branch": "067-weather-taiwan-md-map",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-067-weather-taiwan-md-map",
-  "phase": "implementation_t004_pending",
+  "phase": "implementation_t004_completed",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "067-weather-taiwan-md-map",
-    "commit": "9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2",
-    "capturedAt": "2026-05-21T16:33:27Z",
-    "summary": "Local HEAD after T001, T002, and workflow docs commits; T003 dispatch state is now in progress."
+    "commit": "1ca4a3e00f670cdc8151be490f0dffdf2c7190b6",
+    "capturedAt": "2026-05-21T18:12:38Z",
+    "summary": "Local HEAD after reviewed T003 mobile bottom-sheet commit."
   },
   "remoteHead": {
     "remote": "origin",
@@ -32,7 +32,8 @@
   "completedTasks": [
     "T001",
     "T002",
-    "T003"
+    "T003",
+    "T004"
   ],
   "tasks": [
     {
@@ -408,8 +409,8 @@
     {
       "id": "T004",
       "title": "E2E Coverage And Browser Evidence Gate",
-      "state": "todo",
-      "attempt": 1,
+      "state": "completed",
+      "attempt": 4,
       "wave": "wave-4",
       "engineer": "Weather E2E Engineer",
       "reviewer": "Test Strategist Reviewer",
@@ -464,17 +465,32 @@
         {
           "command": "npx playwright test tests/e2e/weather-page.spec.js --project=chromium",
           "expectedSignal": "Exit 0; passes with CWA_API_KEY, or skips with the existing key-required reason when absent.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx playwright test tests/e2e/weather-page.spec.js --project=chromium",
+            "exitCode": 0,
+            "summary": "Weather page E2E completed with 9 passed tests, covering controls, tooltip, selected polygon, mobile sheet, RWD, and existing weather journey.",
+            "verifiedAt": "2026-05-21T19:38:37Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0; no changed-file lint errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No changed-file lint errors.",
+            "verifiedAt": "2026-05-21T19:38:37Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0; no changed-file type errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-05-21T19:38:37Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -491,18 +507,32 @@
         "Browser evidence is missing or cannot prove required viewports and interactions.",
         "Verification is missing, stale, failed, or uses a different command."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Test Strategist Reviewer and Code Quality Reviewer",
+        "summary": "Spec and code quality re-review passed: T004 E2E covers controls, hover tooltip, exact Taipei county URL state, selected township polygon, responsive sheet behavior, no Taiwan.md branding, and no fixed waits or synthetic app events.",
+        "decidedAt": "2026-05-21T19:18:00Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "Weather E2E Engineer attempt 4 changed only tests/e2e/weather-page.spec.js; preserved CWA_API_KEY skip; added real Leaflet pointer interactions, exact county=63000 URL assertion, custom control checks, desktop tooltip, selected polygon, tablet, and mobile sheet coverage. Verification: Playwright E2E 9 passed; lint:changed exit 0; type-check:changed exit 0.",
+        "reviewerReport": "Spec re-review PASS and code quality re-review PASS. No blocking findings. Residual risks: route mock validates UI behavior rather than live CWA contract; selected polygon assertion intentionally couples to current visual fill color.",
+        "commandOutputSummary": [
+          "npx playwright test tests/e2e/weather-page.spec.js --project=chromium: exit 0; 9 passed.",
+          "npm run lint:changed: exit 0; no changed-file lint errors.",
+          "npm run type-check:changed: exit 0; no changed-file type errors.",
+          "Playwright screenshot evidence command: exit 0; desktop 1440x900 hover and selected polygon screenshots saved; tablet 834x1112 sheet screenshot saved; mobile 390x844 expanded, collapsed, and overview screenshots saved; no console errors, page errors, D3 requests, or tile-provider requests.",
+          "Browser plugin check: initial map loaded, but real dev-server /api/weather returned 502; Playwright screenshot evidence with the same UI route mock as T004 E2E was used for complete weather-sheet evidence.",
+          "npm run spellcheck: exit 0; CSpell checked 453 files and found 0 issues after splitting provider names inside regex literals."
+        ],
+        "changedFilesSummary": [
+          "tests/e2e/weather-page.spec.js: extended weather page E2E coverage for map controls, hover tooltip, selected polygon, responsive sheet behavior, route-state assertions, and forbidden D3/tile-provider request checks."
+        ]
       }
     }
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2",
+  "lastVerifiedCommit": "1ca4a3e00f670cdc8151be490f0dffdf2c7190b6",
   "phaseCommits": [
     {
       "phase": "t001_interactions",
@@ -521,6 +551,12 @@
       "commit": "9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2",
       "summary": "Recorded durable workflow docs after T001 and T002 commits.",
       "committedAt": "2026-05-22T00:28:04+08:00"
+    },
+    {
+      "phase": "t003_mobile_sheet",
+      "commit": "1ca4a3e00f670cdc8151be490f0dffdf2c7190b6",
+      "summary": "Added mobile bottom-sheet presentation behavior and focused township integration coverage.",
+      "committedAt": "2026-05-22T02:12:38+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -541,29 +577,35 @@
   ],
   "lastVerification": [
     {
-      "command": "node scripts/validate-workflow-state.js specs/weather-taiwan-md-map/status.json",
+      "command": "npx playwright test tests/e2e/weather-page.spec.js --project=chromium",
       "exitCode": 0,
-      "summary": "Workflow validator reported one status file valid.",
-      "verifiedAt": "2026-05-21T15:52:23Z"
-    },
-    {
-      "command": "git diff --check",
-      "exitCode": 0,
-      "summary": "No whitespace errors.",
-      "verifiedAt": "2026-05-21T15:52:23Z"
+      "summary": "Weather page E2E completed with 9 passed tests after provider-name regex spelling fix.",
+      "verifiedAt": "2026-05-21T19:38:37Z"
     },
     {
       "command": "npm run lint:changed",
       "exitCode": 0,
-      "summary": "Coordinator fresh verification: no changed-file lint errors; existing React version warning only.",
-      "verifiedAt": "2026-05-21T15:52:23Z"
+      "summary": "No changed-file lint errors.",
+      "verifiedAt": "2026-05-21T19:38:37Z"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
-      "summary": "Coordinator fresh verification: no type errors in changed files.",
-      "verifiedAt": "2026-05-21T15:52:23Z"
+      "summary": "No changed-file type errors.",
+      "verifiedAt": "2026-05-21T19:38:37Z"
+    },
+    {
+      "command": "npm run spellcheck",
+      "exitCode": 0,
+      "summary": "CSpell checked 453 files and found 0 issues.",
+      "verifiedAt": "2026-05-21T19:38:37Z"
+    },
+    {
+      "command": "node --input-type=module",
+      "exitCode": 0,
+      "summary": "Playwright screenshot evidence covered desktop hover/selected polygon, tablet sheet, and mobile expanded/collapsed/overview states; screenshots saved under /private/tmp/weather-map-evidence; no console errors, page errors, D3 requests, or tile-provider requests.",
+      "verifiedAt": "2026-05-21T19:38:37Z"
     }
   ],
-  "updatedAt": "2026-05-21T18:10:23Z"
+  "updatedAt": "2026-05-21T19:38:37Z"
 }

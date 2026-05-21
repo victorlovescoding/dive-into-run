@@ -27,7 +27,7 @@
 
 Current workflow state:
 
-- Phase: implementation, T004 pending dispatch.
+- Phase: implementation, T004 completed and pending commit.
 - Active task: none.
 - Active wave: none.
 - Planner review state: review_rejected addressed by Planner revision on 2026-05-21.
@@ -302,8 +302,8 @@ Evidence:
 - **Wave**: `wave-3`
 - **Engineer**: Weather Screen Engineer
 - **Reviewer**: Weather Flow Reviewer
-- **Commit checkpoint**: authorized after Reviewer PASS; pending T003 commit.
-- **Last verified commit**: `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2` before T003 edits.
+- **Commit checkpoint**: `1ca4a3e Add weather mobile sheet`
+- **Last verified commit**: `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`
 - **Authorization boundary**: current edit=yes for T003 owned files, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.
 - **Rules deploy status**: not_applicable
 - **Incidents**: none
@@ -400,19 +400,19 @@ Evidence:
 - Changed files summary:
   - `src/ui/weather/WeatherPageScreen.jsx`
   - `tests/integration/weather/township-drilldown.test.jsx`
-- Phase commits: pending T003 commit.
+- Phase commits: `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`
 - Rules deploy status: not_applicable.
 - Incidents: none.
 
 ### T004 - E2E Coverage And Browser Evidence Gate
 
-- **State**: `todo`
-- **Attempt**: 1
+- **State**: `completed`
+- **Attempt**: 4
 - **Wave**: `wave-4`
 - **Engineer**: Weather E2E Engineer
 - **Reviewer**: Test Strategist Reviewer
-- **Commit checkpoint**: none; future Release Manager action only after explicit `commit=true` authorization.
-- **Last verified commit**: none
+- **Commit checkpoint**: pending T004 commit.
+- **Last verified commit**: `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`
 - **Authorization boundary**: current edit=yes for T004 owned file after T003 completes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.
 - **Rules deploy status**: not_applicable
 - **Incidents**: none
@@ -505,10 +505,16 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: none yet.
-- Reviewer report: none yet.
-- Command output summary: none yet.
-- Changed files summary: none yet.
-- Phase commits: none.
+- Engineer report: Weather E2E Engineer attempt 4 changed only `tests/e2e/weather-page.spec.js`; preserved the `CWA_API_KEY` skip; added real Leaflet pointer interactions, exact `county=63000` URL assertion after `台北市` path selection, custom control checks, desktop tooltip, selected polygon, tablet, and mobile sheet coverage.
+- Reviewer report: spec re-review PASS and code quality re-review PASS. No blocking findings. Residual risks: route mock validates UI behavior rather than live CWA contract; selected polygon assertion intentionally couples to current visual fill color.
+- Command output summary:
+  - `npx playwright test tests/e2e/weather-page.spec.js --project=chromium`: exit 0; 9 passed.
+  - `npm run lint:changed`: exit 0; no changed-file lint errors.
+  - `npm run type-check:changed`: exit 0; no changed-file type errors.
+  - Playwright screenshot evidence command: exit 0; desktop 1440x900 hover and selected polygon, tablet 834x1112 sheet, and mobile 390x844 expanded/collapsed/overview screenshots saved under `/private/tmp/weather-map-evidence`; no console errors, page errors, D3 requests, or tile-provider requests.
+  - Browser plugin check: initial map loaded, but real dev-server `/api/weather` returned 502; Playwright screenshot evidence with the same UI route mock as T004 E2E was used for complete weather-sheet evidence.
+- Changed files summary:
+  - `tests/e2e/weather-page.spec.js`
+- Phase commits: pending T004 commit.
 - Rules deploy status: not_applicable.
 - Incidents: none.
