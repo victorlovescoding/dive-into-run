@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "067-weather-taiwan-md-map",
-    "commit": "8cb9056cde41f9de87e5d141103ca0793f2304c2",
-    "capturedAt": "2026-05-21T20:41:01Z",
-    "summary": "Local HEAD after reviewed county weather UV fallback bugfix commit and post-commit pre-push verification."
+    "commit": "2f1cd71e65b259e40e20f7d40c68f8c3f8bdc545",
+    "capturedAt": "2026-05-21T22:43:14Z",
+    "summary": "Local HEAD after rebasing weather map branch onto latest origin/main."
   },
   "remoteHead": {
     "remote": "origin",
@@ -532,41 +532,41 @@
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "8cb9056cde41f9de87e5d141103ca0793f2304c2",
+  "lastVerifiedCommit": "2f1cd71e65b259e40e20f7d40c68f8c3f8bdc545",
   "phaseCommits": [
     {
       "phase": "t001_interactions",
-      "commit": "c7710251a2dbd2f9282fcceb9f71a2276c652098",
+      "commit": "2baf369544b4d2616fd141e0a3879bc15a045b21",
       "summary": "Added weather map interactions, custom controls, hover tooltips, and focused integration coverage.",
       "committedAt": "2026-05-22T00:12:16+08:00"
     },
     {
       "phase": "t002_styling",
-      "commit": "9da3cfee6b714cf091a6f6345ffc421939095302",
+      "commit": "eedb78836522cfd79c42219aefcb649087fa631e",
       "summary": "Styled the weather map surface, controls, compass, tooltip, and responsive sheet hooks.",
       "committedAt": "2026-05-22T00:20:59+08:00"
     },
     {
       "phase": "workflow_docs_seed",
-      "commit": "9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2",
+      "commit": "063a3b24085854021947ac3758278ba705465446",
       "summary": "Recorded durable workflow docs after T001 and T002 commits.",
       "committedAt": "2026-05-22T00:28:04+08:00"
     },
     {
       "phase": "t003_mobile_sheet",
-      "commit": "1ca4a3e00f670cdc8151be490f0dffdf2c7190b6",
+      "commit": "19e68152d94e2994d0851b97f2b1f4b669c82760",
       "summary": "Added mobile bottom-sheet presentation behavior and focused township integration coverage.",
       "committedAt": "2026-05-22T02:12:38+08:00"
     },
     {
       "phase": "t004_e2e_coverage",
-      "commit": "bccbc5b43b6d833acc982cf2af2d0b0a11b92f54",
+      "commit": "f3302f1a06ef1f2f99ef2ab383bc802d5f4cf3d4",
       "summary": "Added weather page E2E coverage and recorded browser evidence for desktop, tablet, and mobile.",
       "committedAt": "2026-05-22T03:41:52+08:00"
     },
     {
       "phase": "county_weather_uv_fallback",
-      "commit": "8cb9056cde41f9de87e5d141103ca0793f2304c2",
+      "commit": "0209e4e7ca7ec40e4ae263b19d2e58e5ccbd9af9",
       "summary": "Fixed county-only weather API fallback when UV data has township rows but no county aggregate.",
       "committedAt": "2026-05-22T04:36:21+08:00"
     }
@@ -631,5 +631,5 @@
       "verifiedAt": "2026-05-21T20:41:01Z"
     }
   ],
-  "updatedAt": "2026-05-21T20:41:01Z"
+  "updatedAt": "2026-05-21T22:43:14Z"
 }

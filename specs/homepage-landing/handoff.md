@@ -8,7 +8,7 @@
 - Current head: `781f62aa5871d3caeb10c17195475b8e271a8f27`
 - Remote head: `origin/main` at `7ad004ee405b8485adeb9ca7ae5f19cd77cddb54`
 - Profile: P4 full feature.
-- Current phase: release_in_progress.
+- Current phase: merged.
 - Active task: none.
 - Active wave: none.
 - Task queue:
@@ -52,9 +52,7 @@
 
 ## Next Action
 
-Proceed with release closeout: stage concrete files, commit, push, open PR, watch required `ci` and `e2e`, merge on GitHub after required checks pass, then fast-forward local `main`.
-
-Do not deploy rules, edit package files, edit global layout/Navbar, or edit E2E tests.
+No active work. The homepage landing feature has already been merged through GitHub. Use this spec as historical state only unless new homepage work is explicitly authorized.
 
 ## Planner Evidence
 

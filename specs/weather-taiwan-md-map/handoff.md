@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-067-weather-taiwan-md-map`
 - Branch: `067-weather-taiwan-md-map`
-- Current head: `8cb9056cde41f9de87e5d141103ca0793f2304c2`
+- Current head: `2f1cd71e65b259e40e20f7d40c68f8c3f8bdc545`
 - Remote head: `origin/main` at `8ef92652695aedce89343a10c29499f4c561ff17`
 - Authorization boundary:
   - edit: true for completed weather map work and county weather UV fallback bugfix
@@ -20,8 +20,8 @@
 - Active task: none
 - Active wave: none
 - Latest reviewer decision: county weather UV fallback spec re-review and code quality review passed on 2026-05-21T20:22Z
-- Last verified commit: `8cb9056cde41f9de87e5d141103ca0793f2304c2`
-- Phase commits: `c7710251a2dbd2f9282fcceb9f71a2276c652098`, `9da3cfee6b714cf091a6f6345ffc421939095302`, `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2`, `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`, `bccbc5b43b6d833acc982cf2af2d0b0a11b92f54`, `8cb9056cde41f9de87e5d141103ca0793f2304c2`
+- Last verified commit: `2f1cd71e65b259e40e20f7d40c68f8c3f8bdc545`
+- Phase commits: `2baf369544b4d2616fd141e0a3879bc15a045b21`, `eedb78836522cfd79c42219aefcb649087fa631e`, `063a3b24085854021947ac3758278ba705465446`, `19e68152d94e2994d0851b97f2b1f4b669c82760`, `f3302f1a06ef1f2f99ef2ab383bc802d5f4cf3d4`, `0209e4e7ca7ec40e4ae263b19d2e58e5ccbd9af9`
 - Rules deploy status: not_applicable
 - Incidents: `planner-review-rejection-2026-05-21` resolved
 - Blocked: no
@@ -58,7 +58,7 @@ Stop and request push authorization. Post-bugfix pre-push verification has passe
 
 ## Latest Verification
 
-Post-bugfix pre-push final gate passed on commit `8cb9056cde41f9de87e5d141103ca0793f2304c2`.
+Post-bugfix pre-push final gate passed on rebased commit `2f1cd71e65b259e40e20f7d40c68f8c3f8bdc545`.
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
@@ -74,7 +74,7 @@ County weather UV fallback bugfix:
 
 - Root cause: county-only weather normalization looked for a county aggregate UV
   `LocationName`, but CWA F-D0047 can return only township rows for a county.
-- Fix commit: `8cb9056cde41f9de87e5d141103ca0793f2304c2`
+- Fix commit: `0209e4e7ca7ec40e4ae263b19d2e58e5ccbd9af9`
 - Changed files: `src/service/weather-forecast-service.js`,
   `tests/unit/service/weather-forecast-service.test.js`,
   `tests/unit/api/weather-api-route.test.js`.
