@@ -25,6 +25,9 @@ import styles from './Toast.module.css';
 /** @type {number} 自動消失延遲（毫秒）。 */
 const AUTO_DISMISS_MS = 3000;
 
+/** @type {number} 錯誤通知自動消失延遲（毫秒）。 */
+const ERROR_AUTO_DISMISS_MS = 5000;
+
 /**
  * 根據 toast type 回傳對應的 ARIA role。
  * @param {ToastType} type - Toast 類型。
@@ -32,6 +35,15 @@ const AUTO_DISMISS_MS = 3000;
  */
 function getAriaRole(type) {
   return type === 'error' ? 'alert' : 'status';
+}
+
+/**
+ * 根據 toast type 回傳自動消失延遲。
+ * @param {ToastType} type - Toast 類型。
+ * @returns {number} 延遲毫秒數。
+ */
+function getAutoDismissMs(type) {
+  return type === 'error' ? ERROR_AUTO_DISMISS_MS : AUTO_DISMISS_MS;
 }
 
 /**
@@ -62,13 +74,11 @@ export default function Toast({ toast, onClose }) {
     action?.callback();
   }, [action]);
 
-  // 自動消失：success/info 3 秒後呼叫 onClose
+  // 自動消失：success/info 3 秒後、error 5 秒後呼叫 onClose
   useEffect(() => {
-    if (type === 'error') return undefined;
-
     const timerId = setTimeout(() => {
       handleClose();
-    }, AUTO_DISMISS_MS);
+    }, getAutoDismissMs(type));
 
     return () => clearTimeout(timerId);
   }, [type, handleClose]);
