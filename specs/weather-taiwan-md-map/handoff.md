@@ -5,10 +5,10 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-067-weather-taiwan-md-map`
 - Branch: `067-weather-taiwan-md-map`
-- Current head: `bccbc5b43b6d833acc982cf2af2d0b0a11b92f54`
-- Remote head: `origin/main` at `7ad004ee405b8485adeb9ca7ae5f19cd77cddb54`
+- Current head: `8cb9056cde41f9de87e5d141103ca0793f2304c2`
+- Remote head: `origin/main` at `8ef92652695aedce89343a10c29499f4c561ff17`
 - Authorization boundary:
-  - edit: true for T004 next
+  - edit: true for completed weather map work and county weather UV fallback bugfix
   - commit: true
   - push: false
   - pullRequest: false
@@ -19,9 +19,9 @@
 - Current phase: ready_for_push
 - Active task: none
 - Active wave: none
-- Latest reviewer decision: T004 spec and code quality re-review passed on 2026-05-21T19:18:00Z
-- Last verified commit: `bccbc5b43b6d833acc982cf2af2d0b0a11b92f54`
-- Phase commits: `c7710251a2dbd2f9282fcceb9f71a2276c652098`, `9da3cfee6b714cf091a6f6345ffc421939095302`, `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2`, `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`, `bccbc5b43b6d833acc982cf2af2d0b0a11b92f54`
+- Latest reviewer decision: county weather UV fallback spec re-review and code quality review passed on 2026-05-21T20:22Z
+- Last verified commit: `8cb9056cde41f9de87e5d141103ca0793f2304c2`
+- Phase commits: `c7710251a2dbd2f9282fcceb9f71a2276c652098`, `9da3cfee6b714cf091a6f6345ffc421939095302`, `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2`, `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`, `bccbc5b43b6d833acc982cf2af2d0b0a11b92f54`, `8cb9056cde41f9de87e5d141103ca0793f2304c2`
 - Rules deploy status: not_applicable
 - Incidents: `planner-review-rejection-2026-05-21` resolved
 - Blocked: no
@@ -42,7 +42,7 @@
 
 ## Next Action
 
-Stop and request push authorization. Pre-push verification has passed. Push, PR, CI watch, merge, local `main` sync, and rules deploy are not authorized.
+Stop and request push authorization. Post-bugfix pre-push verification has passed. Push, PR, CI watch, merge, local `main` sync, and rules deploy are not authorized.
 
 ## Active Task And Wave
 
@@ -58,16 +58,30 @@ Stop and request push authorization. Pre-push verification has passed. Push, PR,
 
 ## Latest Verification
 
-Pre-push final gate passed on commit `bccbc5b43b6d833acc982cf2af2d0b0a11b92f54`.
+Post-bugfix pre-push final gate passed on commit `8cb9056cde41f9de87e5d141103ca0793f2304c2`.
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `npm run lint:changed` | 0 | No changed JS files to lint after T004 commit. |
-| `npm run type-check:changed` | 0 | No changed JS files to type-check after T004 commit. |
-| `npm run depcruise` | 0 | No dependency violations found across 1540 modules and 3900 dependencies. |
-| `npm run test:branch` | 0 | Branch Vitest routed weather integration coverage; 2 files / 14 tests passed. |
-| `npm run build` | 0 | Next.js production build compiled and generated 17 static pages successfully. |
+| `npx vitest run tests/unit/service/weather-forecast-service.test.js tests/unit/api/weather-api-route.test.js` | 0 | Focused weather service and API regression coverage passed; 2 files / 17 tests passed. |
+| `npm run spellcheck` | 0 | CSpell checked 453 files and found 0 issues after fixture rename. |
+| `git commit -m "Fix county weather UV fallback"` | 0 | Commit hook passed lint, type-check, depcruise, spellcheck, workflow checks, link checks, full Vitest suite (171 files / 1502 tests), and audits. |
+| `curl -sS -i 'http://localhost:3000/api/weather?county=%E6%96%B0%E7%AB%B9%E7%B8%A3'` | 0 | Local weather API returned HTTP 200 `ok:true` for 新竹縣 with today/tomorrow `uv: null` instead of 502. |
+| `npm run test:branch` | 0 | Branch Vitest routed weather coverage; 4 files / 31 tests passed. |
 | `npm run test:e2e:branch` | 0 | Branch E2E routed `tests/e2e/weather-page.spec.js`; 9 Playwright tests passed. |
+| `npm run build` | 0 | Next.js production build compiled and generated 17 static pages successfully. |
+
+County weather UV fallback bugfix:
+
+- Root cause: county-only weather normalization looked for a county aggregate UV
+  `LocationName`, but CWA F-D0047 can return only township rows for a county.
+- Fix commit: `8cb9056cde41f9de87e5d141103ca0793f2304c2`
+- Changed files: `src/service/weather-forecast-service.js`,
+  `tests/unit/service/weather-forecast-service.test.js`,
+  `tests/unit/api/weather-api-route.test.js`.
+- Reviewer result: spec re-review passed; code quality review approved with no
+  blocking findings. Minor accepted risk: wrapper keys off the existing
+  `No UV data found for location:` helper message until a future typed error is
+  warranted.
 
 T004 attempt 4 passed Engineer verification, spec re-review, code quality re-review, and Playwright screenshot evidence.
 
