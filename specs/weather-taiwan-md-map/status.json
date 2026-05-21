@@ -3,7 +3,7 @@
   "feature": "weather-taiwan-md-map",
   "branch": "067-weather-taiwan-md-map",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-067-weather-taiwan-md-map",
-  "phase": "implementation_t004_completed",
+  "phase": "ready_for_push",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "067-weather-taiwan-md-map",
-    "commit": "1ca4a3e00f670cdc8151be490f0dffdf2c7190b6",
-    "capturedAt": "2026-05-21T18:12:38Z",
-    "summary": "Local HEAD after reviewed T003 mobile bottom-sheet commit."
+    "commit": "bccbc5b43b6d833acc982cf2af2d0b0a11b92f54",
+    "capturedAt": "2026-05-21T19:45:21Z",
+    "summary": "Local HEAD after reviewed T004 E2E coverage commit and before pre-push workflow-state sync."
   },
   "remoteHead": {
     "remote": "origin",
@@ -532,7 +532,7 @@
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "1ca4a3e00f670cdc8151be490f0dffdf2c7190b6",
+  "lastVerifiedCommit": "bccbc5b43b6d833acc982cf2af2d0b0a11b92f54",
   "phaseCommits": [
     {
       "phase": "t001_interactions",
@@ -557,6 +557,12 @@
       "commit": "1ca4a3e00f670cdc8151be490f0dffdf2c7190b6",
       "summary": "Added mobile bottom-sheet presentation behavior and focused township integration coverage.",
       "committedAt": "2026-05-22T02:12:38+08:00"
+    },
+    {
+      "phase": "t004_e2e_coverage",
+      "commit": "bccbc5b43b6d833acc982cf2af2d0b0a11b92f54",
+      "summary": "Added weather page E2E coverage and recorded browser evidence for desktop, tablet, and mobile.",
+      "committedAt": "2026-05-22T03:41:52+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -577,35 +583,41 @@
   ],
   "lastVerification": [
     {
-      "command": "npx playwright test tests/e2e/weather-page.spec.js --project=chromium",
-      "exitCode": 0,
-      "summary": "Weather page E2E completed with 9 passed tests after provider-name regex spelling fix.",
-      "verifiedAt": "2026-05-21T19:38:37Z"
-    },
-    {
       "command": "npm run lint:changed",
       "exitCode": 0,
-      "summary": "No changed-file lint errors.",
-      "verifiedAt": "2026-05-21T19:38:37Z"
+      "summary": "No changed JS files to lint after T004 commit.",
+      "verifiedAt": "2026-05-21T19:45:21Z"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
-      "summary": "No changed-file type errors.",
-      "verifiedAt": "2026-05-21T19:38:37Z"
+      "summary": "No changed JS files to type-check after T004 commit.",
+      "verifiedAt": "2026-05-21T19:45:21Z"
     },
     {
-      "command": "npm run spellcheck",
+      "command": "npm run depcruise",
       "exitCode": 0,
-      "summary": "CSpell checked 453 files and found 0 issues.",
-      "verifiedAt": "2026-05-21T19:38:37Z"
+      "summary": "No dependency violations found across 1540 modules and 3900 dependencies.",
+      "verifiedAt": "2026-05-21T19:45:21Z"
     },
     {
-      "command": "node --input-type=module",
+      "command": "npm run test:branch",
       "exitCode": 0,
-      "summary": "Playwright screenshot evidence covered desktop hover/selected polygon, tablet sheet, and mobile expanded/collapsed/overview states; screenshots saved under /private/tmp/weather-map-evidence; no console errors, page errors, D3 requests, or tile-provider requests.",
-      "verifiedAt": "2026-05-21T19:38:37Z"
+      "summary": "Branch Vitest routed weather integration coverage; 2 files and 14 tests passed.",
+      "verifiedAt": "2026-05-21T19:45:21Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "summary": "Next.js production build compiled and generated 17 static pages successfully.",
+      "verifiedAt": "2026-05-21T19:45:21Z"
+    },
+    {
+      "command": "npm run test:e2e:branch",
+      "exitCode": 0,
+      "summary": "Branch E2E routed tests/e2e/weather-page.spec.js; 9 Playwright tests passed.",
+      "verifiedAt": "2026-05-21T19:45:21Z"
     }
   ],
-  "updatedAt": "2026-05-21T19:38:37Z"
+  "updatedAt": "2026-05-21T19:45:21Z"
 }

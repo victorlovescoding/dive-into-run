@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-067-weather-taiwan-md-map`
 - Branch: `067-weather-taiwan-md-map`
-- Current head: `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`
+- Current head: `bccbc5b43b6d833acc982cf2af2d0b0a11b92f54`
 - Remote head: `origin/main` at `7ad004ee405b8485adeb9ca7ae5f19cd77cddb54`
 - Authorization boundary:
   - edit: true for T004 next
@@ -16,12 +16,12 @@
   - merge: false
   - localMainSync: false
   - deployFirestoreRules: false
-- Current phase: implementation_t004_completed
+- Current phase: ready_for_push
 - Active task: none
 - Active wave: none
 - Latest reviewer decision: T004 spec and code quality re-review passed on 2026-05-21T19:18:00Z
-- Last verified commit: `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`
-- Phase commits: `c7710251a2dbd2f9282fcceb9f71a2276c652098`, `9da3cfee6b714cf091a6f6345ffc421939095302`, `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2`, `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`
+- Last verified commit: `bccbc5b43b6d833acc982cf2af2d0b0a11b92f54`
+- Phase commits: `c7710251a2dbd2f9282fcceb9f71a2276c652098`, `9da3cfee6b714cf091a6f6345ffc421939095302`, `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2`, `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`, `bccbc5b43b6d833acc982cf2af2d0b0a11b92f54`
 - Rules deploy status: not_applicable
 - Incidents: `planner-review-rejection-2026-05-21` resolved
 - Blocked: no
@@ -42,7 +42,7 @@
 
 ## Next Action
 
-Commit the reviewed T004 E2E/browser-evidence slice, then run the pre-push verification gate. Stop before push. Push, PR, CI watch, merge, local `main` sync, and rules deploy are not authorized.
+Stop and request push authorization. Pre-push verification has passed. Push, PR, CI watch, merge, local `main` sync, and rules deploy are not authorized.
 
 ## Active Task And Wave
 
@@ -57,6 +57,17 @@ Commit the reviewed T004 E2E/browser-evidence slice, then run the pre-push verif
 - T004 review owner: Test Strategist Reviewer and Code Quality Reviewer
 
 ## Latest Verification
+
+Pre-push final gate passed on commit `bccbc5b43b6d833acc982cf2af2d0b0a11b92f54`.
+
+| Command | Exit | Evidence |
+| ------- | ---- | -------- |
+| `npm run lint:changed` | 0 | No changed JS files to lint after T004 commit. |
+| `npm run type-check:changed` | 0 | No changed JS files to type-check after T004 commit. |
+| `npm run depcruise` | 0 | No dependency violations found across 1540 modules and 3900 dependencies. |
+| `npm run test:branch` | 0 | Branch Vitest routed weather integration coverage; 2 files / 14 tests passed. |
+| `npm run build` | 0 | Next.js production build compiled and generated 17 static pages successfully. |
+| `npm run test:e2e:branch` | 0 | Branch E2E routed `tests/e2e/weather-page.spec.js`; 9 Playwright tests passed. |
 
 T004 attempt 4 passed Engineer verification, spec re-review, code quality re-review, and Playwright screenshot evidence.
 
@@ -180,7 +191,7 @@ Coordinator fresh verification:
 
 ## Authorization Boundary
 
-- edit: true for completed T004 workflow state and commit preparation only.
+- edit: true for pre-push workflow-state sync only.
 - commit: true
 - push: false
 - pullRequest: false
