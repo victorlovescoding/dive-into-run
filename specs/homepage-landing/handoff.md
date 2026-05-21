@@ -5,10 +5,10 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-069-homepage-landing`
 - Branch: `069-homepage-landing`
-- Current head: `7ad004ee405b8485adeb9ca7ae5f19cd77cddb54`
+- Current head: `781f62aa5871d3caeb10c17195475b8e271a8f27`
 - Remote head: `origin/main` at `7ad004ee405b8485adeb9ca7ae5f19cd77cddb54`
 - Profile: P4 full feature.
-- Current phase: publish_authorized.
+- Current phase: release_in_progress.
 - Active task: none.
 - Active wave: none.
 - Task queue:
@@ -18,8 +18,9 @@
   - `T002-fix-1`: completed, CSS-only tablet overlap fix; Reviewer PASS.
   - `T002-fix-2`: completed, CSS-only desktop event/map overlap fix; Reviewer PASS.
 - Latest reviewer decision: `VG001` review_passed.
-- Last verified commit: none.
-- Phase commits: none.
+- Last verified commit: `781f62aa5871d3caeb10c17195475b8e271a8f27`.
+- Phase commits:
+  - `781f62aa5871d3caeb10c17195475b8e271a8f27` - Add homepage landing.
 - Rules deploy status: not applicable.
 - Incidents: none.
 - Blocked: no.

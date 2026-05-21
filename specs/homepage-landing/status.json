@@ -3,7 +3,7 @@
   "feature": "homepage-landing",
   "branch": "069-homepage-landing",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-069-homepage-landing",
-  "phase": "publish_authorized",
+  "phase": "release_in_progress",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "069-homepage-landing",
-    "commit": "7ad004ee405b8485adeb9ca7ae5f19cd77cddb54",
-    "capturedAt": "2026-05-21T15:13:34Z",
-    "summary": "Worktree branch created from origin/main before homepage workflow artifacts."
+    "commit": "781f62aa5871d3caeb10c17195475b8e271a8f27",
+    "capturedAt": "2026-05-21T18:51:06Z",
+    "summary": "Local homepage landing implementation commit after pre-commit hook verification."
   },
   "remoteHead": {
     "remote": "origin",
@@ -638,8 +638,15 @@
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": null,
-  "phaseCommits": [],
+  "lastVerifiedCommit": "781f62aa5871d3caeb10c17195475b8e271a8f27",
+  "phaseCommits": [
+    {
+      "phase": "homepage landing implementation",
+      "commit": "781f62aa5871d3caeb10c17195475b8e271a8f27",
+      "summary": "Add homepage landing",
+      "committedAt": "2026-05-21T18:51:06Z"
+    }
+  ],
   "rulesDeployStatus": {
     "state": "not_applicable",
     "required": false,
@@ -812,5 +819,5 @@
       "verifiedAt": "2026-05-21T18:08:02Z"
     }
   ],
-  "updatedAt": "2026-05-21T18:41:27Z"
+  "updatedAt": "2026-05-21T18:51:06Z"
 }
