@@ -136,26 +136,75 @@ vi.mock('next/image', () => ({
   default: ({ src, alt, ...props }) => <img src={src} alt={alt} {...props} />,
 }));
 
+const leafletMapMock = vi.hoisted(() => ({
+  fitBounds: vi.fn(),
+  zoomIn: vi.fn(),
+  zoomOut: vi.fn(),
+  setView: vi.fn(),
+  getContainer: vi.fn(() => ({ style: {} })),
+  invalidateSize: vi.fn(),
+}));
+
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children }) => <div>{children}</div>,
+  MapContainer: ({
+    children,
+    dragging,
+    scrollWheelZoom,
+    touchZoom,
+    doubleClickZoom,
+    zoomControl,
+  }) => (
+    <div
+      data-testid="leaflet-map-boundary"
+      data-dragging={String(dragging)}
+      data-scroll-wheel-zoom={String(scrollWheelZoom)}
+      data-touch-zoom={String(touchZoom)}
+      data-double-click-zoom={String(doubleClickZoom)}
+      data-zoom-control={String(zoomControl)}
+    >
+      {children}
+    </div>
+  ),
   GeoJSON: ({ data, onEachFeature }) => {
     const features = data?.features || [];
+    /**
+     * 觸發 mock Leaflet layer event。
+     * @param {import('geojson').Feature} feature - GeoJSON feature。
+     * @param {'mouseover' | 'mousemove' | 'mouseout' | 'click'} eventName - Leaflet event 名稱。
+     * @param {import('react').SyntheticEvent<HTMLButtonElement>} event - DOM event。
+     * @returns {void}
+     */
+    const triggerFeatureEvent = (feature, eventName, event) => {
+      if (!onEachFeature) return;
+
+      const handler = {};
+      const target = { feature, setStyle: vi.fn() };
+      const { nativeEvent } = event;
+      onEachFeature(feature, {
+        on: (events) => Object.assign(handler, events),
+        setStyle: vi.fn(),
+      });
+      handler[eventName]?.({
+        target,
+        originalEvent: {
+          clientX: 'clientX' in nativeEvent ? nativeEvent.clientX : 0,
+          clientY: 'clientY' in nativeEvent ? nativeEvent.clientY : 0,
+        },
+      });
+    };
+
     return (
       <div>
         {features.map((feature) => (
           <button
             key={feature.properties.TOWNCODE || feature.properties.COUNTYCODE}
             type="button"
-            onClick={() => {
-              if (onEachFeature) {
-                const handler = {};
-                onEachFeature(feature, {
-                  on: (events) => Object.assign(handler, events),
-                  setStyle: vi.fn(),
-                });
-                handler.click?.({ target: { feature, setStyle: vi.fn() } });
-              }
-            }}
+            onMouseOver={(event) => triggerFeatureEvent(feature, 'mouseover', event)}
+            onMouseMove={(event) => triggerFeatureEvent(feature, 'mousemove', event)}
+            onMouseOut={(event) => triggerFeatureEvent(feature, 'mouseout', event)}
+            onFocus={(event) => triggerFeatureEvent(feature, 'mouseover', event)}
+            onBlur={(event) => triggerFeatureEvent(feature, 'mouseout', event)}
+            onClick={(event) => triggerFeatureEvent(feature, 'click', event)}
           >
             {feature.properties.TOWNNAME || feature.properties.COUNTYNAME}
           </button>
@@ -164,10 +213,12 @@ vi.mock('react-leaflet', () => ({
     );
   },
   useMap: () => ({
-    fitBounds: vi.fn(),
-    setView: vi.fn(),
-    getContainer: () => ({ style: {} }),
-    invalidateSize: vi.fn(),
+    fitBounds: leafletMapMock.fitBounds,
+    zoomIn: leafletMapMock.zoomIn,
+    zoomOut: leafletMapMock.zoomOut,
+    setView: leafletMapMock.setView,
+    getContainer: leafletMapMock.getContainer,
+    invalidateSize: leafletMapMock.invalidateSize,
   }),
 }));
 
@@ -277,6 +328,24 @@ describe('Township drill-down integration', () => {
 
     expect(await screen.findByText('新北市 · 板橋區')).toBeInTheDocument();
     expect(screen.getByText('晴時多雲')).toBeInTheDocument();
+  });
+
+  it('shows and hides the township hover tooltip after county selection', async () => {
+    const user = userEvent.setup();
+    renderWeatherPage();
+
+    await user.click(screen.getByRole('button', { name: '新北市' }));
+    const banqiaoButton = await screen.findByRole('button', { name: '板橋區' });
+
+    await user.hover(banqiaoButton);
+
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('新北市 · 板橋區');
+
+    await user.pointer({ target: document.body });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    });
   });
 
   it('updates weather when switching between townships', async () => {
