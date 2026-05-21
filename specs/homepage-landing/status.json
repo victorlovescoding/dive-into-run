@@ -1,0 +1,816 @@
+{
+  "schemaVersion": 3,
+  "feature": "homepage-landing",
+  "branch": "069-homepage-landing",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-069-homepage-landing",
+  "phase": "publish_authorized",
+  "activeTask": null,
+  "activeWave": null,
+  "authorizationBoundary": {
+    "edit": true,
+    "commit": true,
+    "push": true,
+    "pullRequest": true,
+    "ciWatch": true,
+    "merge": true,
+    "localMainSync": true,
+    "deployFirestoreRules": false
+  },
+  "currentHead": {
+    "branch": "069-homepage-landing",
+    "commit": "7ad004ee405b8485adeb9ca7ae5f19cd77cddb54",
+    "capturedAt": "2026-05-21T15:13:34Z",
+    "summary": "Worktree branch created from origin/main before homepage workflow artifacts."
+  },
+  "remoteHead": {
+    "remote": "origin",
+    "branch": "main",
+    "commit": "7ad004ee405b8485adeb9ca7ae5f19cd77cddb54",
+    "capturedAt": "2026-05-21T15:13:34Z",
+    "summary": "origin/main at worktree creation."
+  },
+  "completedTasks": [
+    "T001",
+    "T002",
+    "T002-fix-1",
+    "T002-fix-2",
+    "VG001"
+  ],
+  "tasks": [
+    {
+      "id": "T001",
+      "title": "Write failing homepage integration test",
+      "state": "completed",
+      "wave": "W1",
+      "attempt": 1,
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "dependencies": [],
+      "ownedFiles": [
+        "tests/integration/app/home-page-entry.test.jsx"
+      ],
+      "scope": [
+        "Create the failing homepage integration test only.",
+        "Assert the approved homepage landing sections, static content, CTA hrefs, page-specific footer, and absence of homepage navigation.",
+        "Run the focused integration command and record a RED failure caused by missing homepage UI."
+      ],
+      "nonScope": [
+        "No production source edits.",
+        "No E2E test edits.",
+        "No package or lockfile changes.",
+        "No workflow artifact edits unless Main dispatches state sync separately."
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        ".codex/rules/testing-standards.md",
+        "specs/homepage-landing/spec.md",
+        "specs/homepage-landing/plan.md",
+        "src/app/page.jsx",
+        "tests/integration/app/weather-page-entry.test.jsx"
+      ],
+      "engineerInstructions": [
+        "Follow tests/integration/app contract in tasks.md.",
+        "Use Testing Library screen and role/text-first queries.",
+        "Do not mock internal layers or use flaky test patterns.",
+        "Do not edit production source."
+      ],
+      "acceptanceCriteria": [
+        "tests/integration/app/home-page-entry.test.jsx exists.",
+        "Test imports Home from @/app/page.",
+        "Test asserts all event CTAs use /events.",
+        "Test asserts no homepage navigation landmark.",
+        "Focused command fails for missing homepage UI rather than syntax, import, provider, or environment errors."
+      ],
+      "verification": [
+        {
+          "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+          "expectedSignal": "Non-zero exit caused by missing homepage landing UI assertions.",
+          "lastRun": {
+            "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+            "exitCode": 1,
+            "summary": "RED failure reached Vitest: expected H1 to contain 今天，一起出門跑。; current page rendered only Dive Into Run and required homepage regions were missing.",
+            "verifiedAt": "2026-05-21T15:56:42Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff only touches tests/integration/app/home-page-entry.test.jsx.",
+        "RED failure proves the approved homepage product gap.",
+        "Assertions are role/text-first and CTA hrefs are exactly /events.",
+        "No internal-layer mocks, fixed sleeps, fireEvent, or focused/disabled tests."
+      ],
+      "reviewerRejectCriteria": [
+        "Test passes before production implementation.",
+        "Test fails because of syntax, import, provider, or environment setup.",
+        "Test omits required sections or accepts unverified CTA hrefs.",
+        "Test writes or requires production source changes."
+      ],
+      "evidence": {
+        "engineerReport": "DONE. Created tests/integration/app/home-page-entry.test.jsx. Ran npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx with exit 1. RED failure reached Vitest: expected H1 to contain 今天，一起出門跑。; current page rendered only Dive Into Run and required homepage regions were missing. No src/** diff.",
+        "reviewerReport": "review_passed. RED test valid. Focused command exit 1 for missing hero copy/required homepage region, not syntax/import/provider/environment. CTA href assertions are exactly /events.",
+        "commandOutputSummary": [
+          "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx: exit 1; RED failure caused by missing homepage landing UI."
+        ],
+        "changedFilesSummary": [
+          "tests/integration/app/home-page-entry.test.jsx: new RED integration test for homepage landing behavior."
+        ]
+      },
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Reviewer",
+        "summary": "RED test valid. Focused command exit 1 for missing hero copy/required homepage region, not syntax/import/provider/environment. CTA href assertions are exactly /events.",
+        "decidedAt": "2026-05-21T15:59:16Z"
+      }
+    },
+    {
+      "id": "T002",
+      "title": "Implement thin page and render-only HomePage UI",
+      "state": "completed",
+      "wave": "W2",
+      "attempt": 1,
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "dependencies": [
+        "T001"
+      ],
+      "ownedFiles": [
+        "src/app/page.jsx",
+        "src/ui/home/HomePage.jsx",
+        "src/ui/home/HomePage.module.css"
+      ],
+      "scope": [
+        "Implement the static homepage landing UI after T001 Reviewer PASS.",
+        "Keep src/app/page.jsx thin and delegate to HomePage.",
+        "Create render-only semantic homepage markup and component-scoped CSS.",
+        "Preserve /events for all discovery and creation CTAs."
+      ],
+      "nonScope": [
+        "No tests/** edits.",
+        "No src/app/layout.jsx, src/app/globals.css, Navbar, package, lockfile, Firebase, service, repo, runtime hook, API route, auth, posts, runs, weather, or event-detail edits.",
+        "No live data, new dependencies, Open Design font imports, or Open Design topnav."
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        ".codex/rules/testing-standards.md",
+        ".codex/rules/sensors.md",
+        "specs/homepage-landing/spec.md",
+        "specs/homepage-landing/plan.md",
+        "specs/homepage-landing/tasks.md",
+        "src/app/page.jsx",
+        "src/app/layout.jsx",
+        "src/app/globals.css",
+        "src/app/events/page.jsx",
+        "tests/integration/app/home-page-entry.test.jsx",
+        "tests/e2e/quality-gates/hydration-smoke.spec.js",
+        "tests/e2e/quality-gates/axe-smoke.spec.js",
+        "Open Design MCP artifact dive-into-run-website-ui / index.html"
+      ],
+      "engineerInstructions": [
+        "Confirm T001 reviewed RED evidence before editing production code.",
+        "Do not add use client unless a browser-only API is proven necessary.",
+        "Render one main and one page-specific footer, and no homepage navigation landmark.",
+        "Use static presentation data only.",
+        "Implement responsive CSS module behavior for 375px, 768px, and 1280px."
+      ],
+      "acceptanceCriteria": [
+        "T001 focused integration test passes without changing the T001 test file.",
+        "src/app/page.jsx imports and returns HomePage only.",
+        "HomePage renders required hero, run groups, trust/system, runner profile, CTA panel, and footer content.",
+        "All event CTAs use /events.",
+        "No forbidden files are modified.",
+        "Reduced-motion and focus-visible styles exist."
+      ],
+      "verification": [
+        {
+          "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+            "exitCode": 0,
+            "summary": "GREEN: focused homepage integration passed after T002 implementation.",
+            "verifiedAt": "2026-05-21T16:12:08Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed-file lint passed after helper-order fix.",
+            "verifiedAt": "2026-05-21T16:12:08Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type-check passed.",
+            "verifiedAt": "2026-05-21T16:12:08Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff only touches src/app/page.jsx, src/ui/home/HomePage.jsx, and src/ui/home/HomePage.module.css.",
+        "T001 test file is unchanged during T002.",
+        "Component is render-only and server-compatible.",
+        "CTA hrefs are exactly /events.",
+        "No duplicate nav/topnav/header chrome exists.",
+        "Focused integration, lint changed, and type-check changed commands pass."
+      ],
+      "reviewerRejectCriteria": [
+        "Any forbidden file is modified.",
+        "Component imports runtime, service, repo, Firebase, weather, Strava, or live data.",
+        "Component renders a second nav/header/topnav.",
+        "CTA hrefs use any route other than /events.",
+        "T001 test is changed to make implementation pass.",
+        "Commands fail or are not run."
+      ],
+      "evidence": {
+        "engineerReport": "DONE. Changed src/app/page.jsx, src/ui/home/HomePage.jsx, and src/ui/home/HomePage.module.css. Focused test passed after implementation; lint:changed passed after helper-order fix; type-check:changed passed. T001 test file unchanged during T002.",
+        "reviewerReport": "review_passed. Focused integration exit 0, lint:changed exit 0 with existing React-version warning only, type-check:changed exit 0. App entry thin; component render-only; all CTAs /events; no nav/header/navigation landmark, live data, or forbidden imports.",
+        "commandOutputSummary": [
+          "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx: exit 0 after implementation.",
+          "npm run lint:changed: exit 0 after helper-order fix.",
+          "npm run type-check:changed: exit 0."
+        ],
+        "changedFilesSummary": [
+          "src/app/page.jsx: thin route entry delegates to HomePage.",
+          "src/ui/home/HomePage.jsx: static render-only homepage UI.",
+          "src/ui/home/HomePage.module.css: component-scoped responsive homepage styling."
+        ]
+      },
+      "reviewerDecision": null
+    },
+    {
+      "id": "VG001",
+      "title": "Final verification and responsive visual QA gate",
+      "state": "completed",
+      "wave": "W3",
+      "attempt": 3,
+      "engineer": "Verifier",
+      "reviewer": "Main coordinator",
+      "dependencies": [
+        "T002",
+        "T002-fix-1",
+        "T002-fix-2"
+      ],
+      "ownedFiles": [],
+      "scope": [
+        "Run final local verification commands.",
+        "Collect Browser plugin visual evidence for 375x812, 768x1024, and 1280x800.",
+        "Confirm workflow state and authorization boundaries."
+      ],
+      "nonScope": [
+        "No product code edits.",
+        "No test edits.",
+        "No package or lockfile changes.",
+        "No commit, push, PR, CI watch, merge, local main sync, deploy, or rules deploy."
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        ".codex/rules/e2e-commands.md",
+        ".codex/rules/sensors.md",
+        "specs/homepage-landing/spec.md",
+        "specs/homepage-landing/plan.md",
+        "specs/homepage-landing/tasks.md",
+        "specs/homepage-landing/handoff.md",
+        "specs/homepage-landing/status.json",
+        "Task T001 and T002 Engineer/Reviewer evidence",
+        "Current diff and changed-file list"
+      ],
+      "engineerInstructions": [
+        "Run one verification command per evidence item.",
+        "Use Browser plugin for responsive visual QA after starting npm run dev.",
+        "Record console state, failed network requests, screenshot or snapshot evidence, expected signal, actual signal, and residual risk.",
+        "Do not edit files unless Main separately dispatches workflow-state evidence updates."
+      ],
+      "acceptanceCriteria": [
+        "All final verification commands pass.",
+        "Browser evidence exists for 375x812, 768x1024, and 1280x800.",
+        "Visual QA confirms no duplicate navigation, horizontal scrolling, overlap, clipped CTA text, invisible focus, or content above the global Navbar.",
+        "Workflow artifacts agree and closeout boundaries remain false.",
+        "rulesDeployStatus remains not_applicable."
+      ],
+      "verification": [
+        {
+          "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+            "exitCode": 0,
+            "summary": "VG001 final attempt: focused homepage integration passed, 1 file / 2 tests.",
+            "verifiedAt": "2026-05-21T18:08:02Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "VG001 final attempt: changed-file lint passed; existing React-version warning only.",
+            "verifiedAt": "2026-05-21T18:08:02Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "VG001 final attempt: changed-file type-check reported no errors.",
+            "verifiedAt": "2026-05-21T18:08:02Z"
+          }
+        },
+        {
+          "command": "npm run test:e2e:hydration",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run test:e2e:hydration",
+            "exitCode": 0,
+            "summary": "VG001 final attempt: hydration smoke passed, 3 tests.",
+            "verifiedAt": "2026-05-21T18:08:02Z"
+          }
+        },
+        {
+          "command": "npm run test:e2e:axe",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run test:e2e:axe",
+            "exitCode": 0,
+            "summary": "VG001 final attempt: axe smoke passed, 7 tests.",
+            "verifiedAt": "2026-05-21T18:08:02Z"
+          }
+        },
+        {
+          "command": "npm run workflow:validate",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run workflow:validate",
+            "exitCode": 0,
+            "summary": "VG001 final attempt: 7 status files valid.",
+            "verifiedAt": "2026-05-21T18:08:02Z"
+          }
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "VG001 final attempt: 7 status files synced.",
+            "verifiedAt": "2026-05-21T18:08:02Z"
+          }
+        },
+        {
+          "command": "npm run workflow:links",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run workflow:links",
+            "exitCode": 0,
+            "summary": "VG001 final attempt: 41 local reference files scanned; all local links exist.",
+            "verifiedAt": "2026-05-21T18:08:02Z"
+          }
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "VG001 final attempt: no whitespace errors.",
+            "verifiedAt": "2026-05-21T18:08:02Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "All verification commands pass.",
+        "Browser evidence covers all required viewports and records console/network state.",
+        "Changed files stay inside approved task write sets.",
+        "tasks.md, handoff.md, and status.json agree.",
+        "Unauthorized closeout and deployment boundaries remain untouched."
+      ],
+      "reviewerRejectCriteria": [
+        "Any verification command fails.",
+        "Browser evidence is missing or blocked.",
+        "Visual QA shows duplicate navigation, horizontal scrolling, overlap, clipped text, invisible focus, or unaddressed contrast risk.",
+        "Diff includes forbidden files or package changes.",
+        "Workflow state drifts or any unauthorized boundary is crossed."
+      ],
+      "evidence": {
+        "engineerReport": "VG001 final attempt ran after T002-fix-1 and T002-fix-2. All command gates passed. Browser QA passed at 375x812, 768x1024, and 1280x800 with one global nav, no horizontal scroll, visible CTA focus, and no weather/event/map overlap. Screenshots: /private/tmp/homepage-qa-attempt3-375x812.png, /private/tmp/homepage-qa-attempt3-768x1024.png, /private/tmp/homepage-qa-attempt3-1280x800-before-focus.png. Dev server stopped.",
+        "reviewerReport": "review_passed. Final command gates exited 0, Browser QA passed all required viewports, workflow files were synced, and closeout boundaries remained untouched.",
+        "commandOutputSummary": [
+          "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx: exit 0; 1 file / 2 tests passed.",
+          "npm run lint:changed: exit 0; existing React-version warning only.",
+          "npm run type-check:changed: exit 0; no type errors in changed files.",
+          "npm run test:e2e:hydration: exit 0; 3 tests passed.",
+          "npm run test:e2e:axe: exit 0; 7 tests passed.",
+          "npm run workflow:validate: exit 0; 7 status files valid.",
+          "npm run workflow:check: exit 0; 7 status files synced.",
+          "npm run workflow:links: exit 0; 41 local reference files scanned, all local references exist.",
+          "git diff --check: exit 0; no output."
+        ],
+        "changedFilesSummary": [
+          "Scope check: changed files remain src/app/page.jsx, src/ui/home/HomePage.jsx, src/ui/home/HomePage.module.css, tests/integration/app/home-page-entry.test.jsx, and specs/homepage-landing workflow state."
+        ]
+      },
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Verifier",
+        "summary": "All final commands passed and Browser QA passed at 375x812, 768x1024, and 1280x800. Dev server stopped and unauthorized closeout boundaries were not crossed.",
+        "decidedAt": "2026-05-21T18:08:02Z"
+      }
+    },
+    {
+      "id": "T002-fix-1",
+      "title": "Fix tablet hero card overlap",
+      "state": "completed",
+      "wave": "W2-fix",
+      "attempt": 1,
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "dependencies": [
+        "VG001"
+      ],
+      "ownedFiles": [
+        "src/ui/home/HomePage.module.css"
+      ],
+      "scope": [
+        "Fix 768x1024 weather chip and event card overlap in the hero scene.",
+        "Keep the fix scoped to responsive CSS for the 641-820px band unless evidence requires otherwise."
+      ],
+      "nonScope": [
+        "No JSX changes.",
+        "No test edits.",
+        "No package or lockfile changes.",
+        "No global layout, Navbar, or globals.css edits."
+      ],
+      "readOnlyContext": [
+        "src/ui/home/HomePage.module.css",
+        "src/ui/home/HomePage.jsx",
+        "specs/homepage-landing/plan.md",
+        "VG001 browser evidence",
+        "Debugger diagnosis"
+      ],
+      "engineerInstructions": [
+        "Use the Debugger root cause: at 768px max-width 1080 stretches eventCard while weatherChip keeps desktop top/left.",
+        "Add the smallest CSS media-query fix so the weather chip sits above the stretched event card at 641-820px.",
+        "Do not edit JSX or tests."
+      ],
+      "acceptanceCriteria": [
+        "At 768x1024, weather chip and event card no longer overlap.",
+        "375x812 and 1280x800 visual behavior remains in scope for verifier recheck.",
+        "Focused integration, lint changed, and type-check changed remain green."
+      ],
+      "verification": [
+        {
+          "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+            "exitCode": 0,
+            "summary": "Focused homepage integration remained green after the tablet overlap CSS fix.",
+            "verifiedAt": "2026-05-21T17:29:31Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed-file lint passed after the tablet overlap CSS fix; existing React-version warning only.",
+            "verifiedAt": "2026-05-21T17:29:31Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type-check reported no errors after the tablet overlap CSS fix.",
+            "verifiedAt": "2026-05-21T17:29:31Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only src/ui/home/HomePage.module.css.",
+        "Fix addresses the diagnosed 641-820px overlap without broad unrelated restyling.",
+        "Focused integration, lint changed, and type-check changed pass."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches JSX, tests, package files, global styles, Navbar, or workflow files without Main authorization.",
+        "Fix is a broad unrelated redesign.",
+        "Verification commands fail or are not run."
+      ],
+      "evidence": {
+        "engineerReport": "DONE. Changed only src/ui/home/HomePage.module.css. Added a 641-820px media query that moves the weather chip above the stretched event card and lowers the event card to prevent the 768x1024 overlap. Focused integration, lint:changed, and type-check:changed exited 0.",
+        "reviewerReport": "review_passed. CSS fix is narrowly targeted to the diagnosed 641-820px tablet band and only changes positional separation for .weatherChip and .eventCard. Required verification commands all exited 0. Browser visual QA still must be rerun by VG001.",
+        "commandOutputSummary": [
+          "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx: exit 0; 1 file / 2 tests passed.",
+          "npm run lint:changed: exit 0; existing React-version warning only.",
+          "npm run type-check:changed: exit 0; no type errors in changed files."
+        ],
+        "changedFilesSummary": [
+          "src/ui/home/HomePage.module.css: added 641-820px responsive separation for weather chip and hero event card."
+        ]
+      },
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Reviewer",
+        "summary": "CSS-only 641-820px tablet overlap fix passed review; focused integration, lint:changed, and type-check:changed exited 0. VG001 browser QA remains required.",
+        "decidedAt": "2026-05-21T17:34:07Z"
+      }
+    },
+    {
+      "id": "T002-fix-2",
+      "title": "Fix desktop hero event and map card overlap",
+      "state": "completed",
+      "wave": "W2-fix-2",
+      "attempt": 1,
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "dependencies": [
+        "VG001"
+      ],
+      "ownedFiles": [
+        "src/ui/home/HomePage.module.css"
+      ],
+      "scope": [
+        "Fix 1280x800 event card and map card overlap in the hero scene.",
+        "Keep the fix scoped to responsive CSS for desktop hero scene spacing or height.",
+        "Preserve the already passing 375x812 and 768x1024 behavior."
+      ],
+      "nonScope": [
+        "No JSX changes.",
+        "No test edits.",
+        "No package or lockfile changes.",
+        "No global layout, Navbar, or globals.css edits.",
+        "No broad homepage redesign."
+      ],
+      "readOnlyContext": [
+        "src/ui/home/HomePage.module.css",
+        "src/ui/home/HomePage.jsx",
+        "specs/homepage-landing/tasks.md",
+        "specs/homepage-landing/handoff.md",
+        "VG001 retry browser evidence",
+        "Debugger diagnosis for 1280x800 event/map overlap"
+      ],
+      "engineerInstructions": [
+        "Use the Debugger root cause: at 1280x800, desktop base CSS keeps sceneWrap at min-height 540px while eventCard uses top alignment and mapCard uses bottom alignment in the same relative container.",
+        "Add the smallest CSS fix, preferably a 1081-1320px desktop media query that gives the hero scene enough vertical space or separates the event/map slots.",
+        "Do not edit JSX, tests, global styles, package files, or workflow state."
+      ],
+      "acceptanceCriteria": [
+        "At 1280x800, event card and map card no longer overlap.",
+        "375x812 and 768x1024 remain in scope for verifier recheck.",
+        "Focused integration, lint changed, and type-check changed remain green."
+      ],
+      "verification": [
+        {
+          "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+            "exitCode": 0,
+            "summary": "Focused homepage integration remained green after the desktop overlap CSS fix, 1 file / 2 tests.",
+            "verifiedAt": "2026-05-21T17:52:13Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed-file lint passed after the desktop overlap CSS fix; existing React-version warning only.",
+            "verifiedAt": "2026-05-21T17:52:13Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type-check reported no errors after the desktop overlap CSS fix.",
+            "verifiedAt": "2026-05-21T17:52:13Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only src/ui/home/HomePage.module.css.",
+        "Fix addresses the diagnosed 1280x800 desktop event/map overlap without broad unrelated restyling.",
+        "Focused integration, lint changed, and type-check changed pass."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches JSX, tests, package files, global styles, Navbar, or workflow files without Main authorization.",
+        "Fix is a broad unrelated redesign.",
+        "Verification commands fail or are not run."
+      ],
+      "evidence": {
+        "engineerReport": "DONE. Changed only src/ui/home/HomePage.module.css. Added a 1081-1320px desktop media query that increases .sceneWrap min-height to 670px and .morningScene min-height to 620px, giving the absolute event and map cards enough vertical separation at 1280x800 without touching <=1080px rules. Focused integration, lint:changed, and type-check:changed exited 0.",
+        "reviewerReport": "review_passed. CSS change is narrow and directly matches the diagnosed 1280x800 overlap: it increases only the desktop scene/container height for 1081-1320px, without touching JSX, tests, package files, global styles, Navbar, or <=1080px rules. Required verification commands all exited 0. Browser visual QA still must be rerun by VG001.",
+        "commandOutputSummary": [
+          "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx: exit 0; 1 file / 2 tests passed.",
+          "npm run lint:changed: exit 0; existing React-version warning only.",
+          "npm run type-check:changed: exit 0; no type errors in changed files."
+        ],
+        "changedFilesSummary": [
+          "src/ui/home/HomePage.module.css: added 1081-1320px desktop scene height rule for event/map card separation."
+        ]
+      },
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Reviewer",
+        "summary": "CSS-only 1081-1320px desktop overlap fix passed review; focused integration, lint:changed, and type-check:changed exited 0. VG001 browser QA remains required.",
+        "decidedAt": "2026-05-21T17:55:45Z"
+      }
+    }
+  ],
+  "blocked": false,
+  "blockedReason": null,
+  "lastVerifiedCommit": null,
+  "phaseCommits": [],
+  "rulesDeployStatus": {
+    "state": "not_applicable",
+    "required": false,
+    "changed": false,
+    "evidence": [],
+    "deployedCommit": null
+  },
+  "incidents": [],
+  "lastVerification": [
+    {
+      "command": "git status --short --branch",
+      "exitCode": 0,
+      "summary": "Worktree on 069-homepage-landing...origin/main; specs/homepage-landing/ is untracked workflow artifact state before Planner artifact edits are committed or staged.",
+      "verifiedAt": "2026-05-21T15:40:40Z"
+    },
+    {
+      "command": "npm run workflow:validate",
+      "exitCode": 0,
+      "summary": "specs/homepage-landing/status.json ok; 7 status files valid.",
+      "verifiedAt": "2026-05-21T15:51:15Z"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "specs/homepage-landing/status.json sync ok; 7 status files synced.",
+      "verifiedAt": "2026-05-21T15:51:15Z"
+    },
+    {
+      "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+      "exitCode": 0,
+      "summary": "Focused homepage integration remained green after the tablet overlap CSS fix.",
+      "verifiedAt": "2026-05-21T17:29:31Z"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "Changed-file lint passed after the tablet overlap CSS fix; existing React-version warning only.",
+      "verifiedAt": "2026-05-21T17:29:31Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "Changed-file type-check reported no errors after the tablet overlap CSS fix.",
+      "verifiedAt": "2026-05-21T17:29:31Z"
+    },
+    {
+      "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+      "exitCode": 0,
+      "summary": "VG001 retry: focused homepage integration passed, 1 file / 2 tests.",
+      "verifiedAt": "2026-05-21T17:44:51Z"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "VG001 retry: changed-file lint passed; existing React-version warning only.",
+      "verifiedAt": "2026-05-21T17:44:51Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "VG001 retry: changed-file type-check reported no errors.",
+      "verifiedAt": "2026-05-21T17:44:51Z"
+    },
+    {
+      "command": "npm run test:e2e:hydration",
+      "exitCode": 0,
+      "summary": "VG001 retry: hydration smoke passed, 3 tests.",
+      "verifiedAt": "2026-05-21T17:44:51Z"
+    },
+    {
+      "command": "npm run test:e2e:axe",
+      "exitCode": 0,
+      "summary": "VG001 retry: axe smoke passed, 7 tests.",
+      "verifiedAt": "2026-05-21T17:44:51Z"
+    },
+    {
+      "command": "npm run workflow:validate",
+      "exitCode": 0,
+      "summary": "VG001 retry: 7 status files valid.",
+      "verifiedAt": "2026-05-21T17:44:51Z"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "VG001 retry: 7 status files synced.",
+      "verifiedAt": "2026-05-21T17:44:51Z"
+    },
+    {
+      "command": "npm run workflow:links",
+      "exitCode": 0,
+      "summary": "VG001 retry: 41 local reference files scanned; all local links exist.",
+      "verifiedAt": "2026-05-21T17:44:51Z"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "VG001 retry: no whitespace errors.",
+      "verifiedAt": "2026-05-21T17:44:51Z"
+    },
+    {
+      "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+      "exitCode": 0,
+      "summary": "Focused homepage integration remained green after the desktop overlap CSS fix.",
+      "verifiedAt": "2026-05-21T17:52:13Z"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "Changed-file lint passed after the desktop overlap CSS fix; existing React-version warning only.",
+      "verifiedAt": "2026-05-21T17:52:13Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "Changed-file type-check reported no errors after the desktop overlap CSS fix.",
+      "verifiedAt": "2026-05-21T17:52:13Z"
+    },
+    {
+      "command": "npm run test:browser -- --run tests/integration/app/home-page-entry.test.jsx",
+      "exitCode": 0,
+      "summary": "VG001 final attempt: focused homepage integration passed, 1 file / 2 tests.",
+      "verifiedAt": "2026-05-21T18:08:02Z"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "VG001 final attempt: changed-file lint passed; existing React-version warning only.",
+      "verifiedAt": "2026-05-21T18:08:02Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "VG001 final attempt: changed-file type-check reported no errors.",
+      "verifiedAt": "2026-05-21T18:08:02Z"
+    },
+    {
+      "command": "npm run test:e2e:hydration",
+      "exitCode": 0,
+      "summary": "VG001 final attempt: hydration smoke passed, 3 tests.",
+      "verifiedAt": "2026-05-21T18:08:02Z"
+    },
+    {
+      "command": "npm run test:e2e:axe",
+      "exitCode": 0,
+      "summary": "VG001 final attempt: axe smoke passed, 7 tests.",
+      "verifiedAt": "2026-05-21T18:08:02Z"
+    },
+    {
+      "command": "npm run workflow:validate",
+      "exitCode": 0,
+      "summary": "VG001 final attempt: 7 status files valid.",
+      "verifiedAt": "2026-05-21T18:08:02Z"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "VG001 final attempt: 7 status files synced.",
+      "verifiedAt": "2026-05-21T18:08:02Z"
+    },
+    {
+      "command": "npm run workflow:links",
+      "exitCode": 0,
+      "summary": "VG001 final attempt: 41 local reference files scanned; all local links exist.",
+      "verifiedAt": "2026-05-21T18:08:02Z"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "VG001 final attempt: no whitespace errors.",
+      "verifiedAt": "2026-05-21T18:08:02Z"
+    }
+  ],
+  "updatedAt": "2026-05-21T18:41:27Z"
+}
