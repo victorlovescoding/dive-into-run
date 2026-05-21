@@ -5,10 +5,10 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-067-weather-taiwan-md-map`
 - Branch: `067-weather-taiwan-md-map`
-- Current head: `7ad004ee405b8485adeb9ca7ae5f19cd77cddb54`
+- Current head: `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2`
 - Remote head: `origin/main` at `7ad004ee405b8485adeb9ca7ae5f19cd77cddb54`
 - Authorization boundary:
-  - edit: true for T003 next, then T004 after T003 completes
+  - edit: true for T004 next
   - commit: true
   - push: false
   - pullRequest: false
@@ -16,12 +16,12 @@
   - merge: false
   - localMainSync: false
   - deployFirestoreRules: false
-- Current phase: implementation_t003_pending
+- Current phase: implementation_t004_pending
 - Active task: none
 - Active wave: none
-- Latest reviewer decision: T002 code quality review passed on 2026-05-21T15:49:47Z
-- Last verified commit: none
-- Phase commits: none
+- Latest reviewer decision: T003 code quality review passed on 2026-05-21T18:10:23Z
+- Last verified commit: `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2`
+- Phase commits: `c7710251a2dbd2f9282fcceb9f71a2276c652098`, `9da3cfee6b714cf091a6f6345ffc421939095302`, `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2`
 - Rules deploy status: not_applicable
 - Incidents: `planner-review-rejection-2026-05-21` resolved
 - Blocked: no
@@ -42,7 +42,7 @@
 
 ## Next Action
 
-Commit T001/T002 completed slices atomically, then continue T003 and T004. Stop before push. Push, PR, CI watch, merge, local `main` sync, and rules deploy are not authorized.
+Commit the reviewed T003 mobile bottom-sheet slice, then dispatch T004 E2E coverage and browser evidence. Stop before push. Push, PR, CI watch, merge, local `main` sync, and rules deploy are not authorized.
 
 ## Active Task And Wave
 
@@ -51,10 +51,32 @@ Commit T001/T002 completed slices atomically, then continue T003 and T004. Stop 
 - T001 state: `completed`, attempt 2 reviewed
 - T002 state: `completed`, attempt 1 reviewed
 - T001 dependencies: approved `spec.md` and synced planning artifacts
-- T001 implementation owner: Map UI Engineer
-- T001 review owner: Weather UI Reviewer
+- T003 state: `completed`, attempt 4 reviewed
+- T004 implementation owner: Weather E2E Engineer
+- T004 review owner: Test Strategist Reviewer
 
 ## Latest Verification
+
+T003 attempt 4 code quality reviewer reran the focused verification and passed with no findings.
+
+| Command | Exit | Evidence |
+| ------- | ---- | -------- |
+| `npx vitest run --project=browser tests/integration/weather/township-drilldown.test.jsx` | 0 | 6/6 tests passed. |
+| `npm run lint:changed` | 0 | No changed-file lint errors; existing React version warning only. |
+| `npm run type-check:changed` | 0 | No changed-file type errors. |
+| `git diff --check -- src/ui/weather/WeatherPageScreen.jsx tests/integration/weather/township-drilldown.test.jsx` | 0 | No whitespace errors in T003 product/test diff. |
+
+T003 Engineer changed files:
+
+- `src/ui/weather/WeatherPageScreen.jsx`
+- `tests/integration/weather/township-drilldown.test.jsx`
+
+T003 reviewer result:
+
+- Decision: `review_passed`
+- Findings: none
+- Evidence: mobile-only bottom-sheet controls, `aria-controls` plus hidden controlled content when collapsed, desktop summary/control absence, same-township reselect reset, and `scrollIntoView` cleanup are covered by the focused integration test.
+- Residual risk: real-browser visual/mobile evidence remains T004 scope.
 
 T001 attempt 2 code quality reviewer reran the focused verification and passed with no findings.
 

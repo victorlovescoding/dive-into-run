@@ -3,7 +3,7 @@
   "feature": "weather-taiwan-md-map",
   "branch": "067-weather-taiwan-md-map",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-067-weather-taiwan-md-map",
-  "phase": "implementation_t003_pending",
+  "phase": "implementation_t004_pending",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "067-weather-taiwan-md-map",
-    "commit": "7ad004ee405b8485adeb9ca7ae5f19cd77cddb54",
-    "capturedAt": "2026-05-21T14:17:21Z",
-    "summary": "Local HEAD at planning start."
+    "commit": "9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2",
+    "capturedAt": "2026-05-21T16:33:27Z",
+    "summary": "Local HEAD after T001, T002, and workflow docs commits; T003 dispatch state is now in progress."
   },
   "remoteHead": {
     "remote": "origin",
@@ -31,7 +31,8 @@
   },
   "completedTasks": [
     "T001",
-    "T002"
+    "T002",
+    "T003"
   ],
   "tasks": [
     {
@@ -287,8 +288,8 @@
     {
       "id": "T003",
       "title": "Mobile Bottom Sheet",
-      "state": "todo",
-      "attempt": 1,
+      "state": "completed",
+      "attempt": 4,
       "wave": "wave-3",
       "engineer": "Weather Screen Engineer",
       "reviewer": "Weather Flow Reviewer",
@@ -341,17 +342,32 @@
         {
           "command": "npx vitest run --project=browser tests/integration/weather/township-drilldown.test.jsx",
           "expectedSignal": "Exit 0; township drill-down, existing township tooltip coverage from T001, bottom sheet, and back-to-overview pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser tests/integration/weather/township-drilldown.test.jsx",
+            "exitCode": 0,
+            "summary": "Attempt 4 code quality reviewer rerun: 6/6 tests passed.",
+            "verifiedAt": "2026-05-21T18:10:23Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0; no changed-file lint errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Attempt 4 code quality reviewer rerun: no changed-file lint errors; existing React version warning only.",
+            "verifiedAt": "2026-05-21T18:10:23Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0; no changed-file type errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Attempt 4 code quality reviewer rerun: no changed-file type errors.",
+            "verifiedAt": "2026-05-21T18:10:23Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -368,12 +384,25 @@
         "Bottom-sheet behavior is missing, stale, or not covered by tests.",
         "Verification is missing, stale, failed, or uses a different command."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T003 Attempt 4 Code Quality Reviewer",
+        "summary": "Attempt 4 review passed with no findings. Prior desktop summary/control, stale collapsed state, collapsed accessibility, and scrollIntoView cleanup findings are resolved; focused Vitest, lint, type-check, and diff check exited 0.",
+        "decidedAt": "2026-05-21T18:10:23Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE attempt 4. Added mobile-only bottom-sheet presentation state in WeatherPageScreen.jsx, including viewport tracking, mobile-only collapse/reopen control, aria-controls, hidden controlled content while collapsed, and location-label keyed remounting. Updated township drill-down integration coverage for desktop no-control behavior, mobile collapse/expand persistence, favorite reachability, same-township reselect after overview, and scrollIntoView cleanup. No stage, commit, push, PR, CSS, map, runtime, package, lockfile, or workflow-state edits by Engineer.",
+        "reviewerReport": "Attempt 4 spec compliance reviewer passed with no blocking findings. Attempt 4 code quality reviewer passed with no findings; prior desktop UI regression, collapsed a11y mismatch, stale collapsed state, desktop collapse semantics, presentation-key, and scrollIntoView cleanup findings are resolved. Real-browser visual/mobile evidence remains T004 scope.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser tests/integration/weather/township-drilldown.test.jsx: attempt 4 code quality reviewer rerun exit 0; 6/6 tests passed.",
+          "npm run lint:changed: attempt 4 code quality reviewer rerun exit 0; no changed-file lint errors.",
+          "npm run type-check:changed: attempt 4 code quality reviewer rerun exit 0; no changed-file type errors.",
+          "git diff --check -- src/ui/weather/WeatherPageScreen.jsx tests/integration/weather/township-drilldown.test.jsx: attempt 4 code quality reviewer rerun exit 0."
+        ],
+        "changedFilesSummary": [
+          "src/ui/weather/WeatherPageScreen.jsx",
+          "tests/integration/weather/township-drilldown.test.jsx"
+        ]
       }
     },
     {
@@ -473,8 +502,27 @@
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": null,
-  "phaseCommits": [],
+  "lastVerifiedCommit": "9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2",
+  "phaseCommits": [
+    {
+      "phase": "t001_interactions",
+      "commit": "c7710251a2dbd2f9282fcceb9f71a2276c652098",
+      "summary": "Added weather map interactions, custom controls, hover tooltips, and focused integration coverage.",
+      "committedAt": "2026-05-22T00:12:16+08:00"
+    },
+    {
+      "phase": "t002_styling",
+      "commit": "9da3cfee6b714cf091a6f6345ffc421939095302",
+      "summary": "Styled the weather map surface, controls, compass, tooltip, and responsive sheet hooks.",
+      "committedAt": "2026-05-22T00:20:59+08:00"
+    },
+    {
+      "phase": "workflow_docs_seed",
+      "commit": "9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2",
+      "summary": "Recorded durable workflow docs after T001 and T002 commits.",
+      "committedAt": "2026-05-22T00:28:04+08:00"
+    }
+  ],
   "rulesDeployStatus": {
     "state": "not_applicable",
     "required": false,
@@ -517,5 +565,5 @@
       "verifiedAt": "2026-05-21T15:52:23Z"
     }
   ],
-  "updatedAt": "2026-05-21T15:58:10Z"
+  "updatedAt": "2026-05-21T18:10:23Z"
 }

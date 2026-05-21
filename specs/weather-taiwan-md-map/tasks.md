@@ -20,14 +20,14 @@
 - Default staffing: one Engineer plus one Reviewer per task.
 - Parallelism: none by default. The task graph is serialized because map DOM contracts, CSS hooks, bottom-sheet layout, and E2E assertions depend on each other.
 - Same-wave owned-file rule: satisfied because each wave has one writable task.
-- Implementation authorization: T001 and T002 edits were authorized by the user on 2026-05-21 and are complete; T003-T004 remain future task contracts until separately authorized.
+- Implementation authorization: T001 and T002 are complete and committed; the user authorized T003 and T004 edits through the pre-push stage on 2026-05-21.
 - Commit checkpoint rule: user authorized atomic commits on 2026-05-21; push, PR, CI watch, merge, local main sync, and rules deploy remain unauthorized.
 
 ## Planner Output
 
 Current workflow state:
 
-- Phase: implementation, T003 pending dispatch.
+- Phase: implementation, T004 pending dispatch.
 - Active task: none.
 - Active wave: none.
 - Planner review state: review_rejected addressed by Planner revision on 2026-05-21.
@@ -72,9 +72,9 @@ Browser integration gate:
 - **Wave**: `wave-1`
 - **Engineer**: Map UI Engineer
 - **Reviewer**: Weather UI Reviewer
-- **Commit checkpoint**: none; future Release Manager action only after explicit `commit=true` authorization.
-- **Last verified commit**: none
-- **Authorization boundary**: current edit=no, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.
+- **Commit checkpoint**: `c771025 Add weather map interactions`
+- **Last verified commit**: `c7710251a2dbd2f9282fcceb9f71a2276c652098`
+- **Authorization boundary**: current edit=yes for T003/T004 owned files, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.
 - **Rules deploy status**: not_applicable
 - **Incidents**: none
 
@@ -185,7 +185,7 @@ Evidence:
   - `src/components/weather/TaiwanMap.jsx`
   - `tests/integration/weather/weather-page.test.jsx`
   - `tests/integration/weather/township-drilldown.test.jsx`
-- Phase commits: none.
+- Phase commits: `c7710251a2dbd2f9282fcceb9f71a2276c652098`
 - Rules deploy status: not_applicable.
 - Incidents: none.
 
@@ -196,9 +196,9 @@ Evidence:
 - **Wave**: `wave-2`
 - **Engineer**: Weather Visual Engineer
 - **Reviewer**: UX UI Reviewer
-- **Commit checkpoint**: none; future Release Manager action only after explicit `commit=true` authorization.
-- **Last verified commit**: none
-- **Authorization boundary**: current edit=no, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no. Future T003 work is now authorized by the user, but T003 has not been dispatched yet.
+- **Commit checkpoint**: `9da3cfe Style weather map surface`
+- **Last verified commit**: `9da3cfee6b714cf091a6f6345ffc421939095302`
+- **Authorization boundary**: current edit=yes for T003/T004 owned files, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.
 - **Rules deploy status**: not_applicable
 - **Incidents**: none
 
@@ -291,19 +291,19 @@ Evidence:
   - `rg -n "vw|!important|:global\\(|url\\(|@import|position:\\s*fixed|z-index|overflow-wrap|white-space" src/components/weather/weather.module.css`: exit 0; no reject-worthy CSS patterns found.
 - Changed files summary:
   - `src/components/weather/weather.module.css`
-- Phase commits: none.
+- Phase commits: `9da3cfee6b714cf091a6f6345ffc421939095302`
 - Rules deploy status: not_applicable.
 - Incidents: none.
 
 ### T003 - Mobile Bottom Sheet
 
-- **State**: `todo`
-- **Attempt**: 1
+- **State**: `completed`
+- **Attempt**: 4
 - **Wave**: `wave-3`
 - **Engineer**: Weather Screen Engineer
 - **Reviewer**: Weather Flow Reviewer
-- **Commit checkpoint**: none; future Release Manager action only after explicit `commit=true` authorization.
-- **Last verified commit**: none
+- **Commit checkpoint**: authorized after Reviewer PASS; pending T003 commit.
+- **Last verified commit**: `9ff6304f93a5e94b4b0f77ba12d2c2611a292ef2` before T003 edits.
 - **Authorization boundary**: current edit=yes for T003 owned files, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.
 - **Rules deploy status**: not_applicable
 - **Incidents**: none
@@ -390,11 +390,17 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: none yet.
-- Reviewer report: none yet.
-- Command output summary: none yet.
-- Changed files summary: none yet.
-- Phase commits: none.
+- Engineer report: DONE attempt 4. Added mobile-only bottom-sheet presentation state in `WeatherPageScreen.jsx`, including viewport tracking, mobile-only collapse/reopen control, `aria-controls`, hidden controlled content while collapsed, and location-label keyed remounting. Updated township drill-down integration coverage for desktop no-control behavior, mobile collapse/expand persistence, favorite reachability, same-township reselect after overview, and `scrollIntoView` cleanup. No stage, commit, push, PR, CSS, map, runtime, package, lockfile, or workflow-state edits by Engineer.
+- Reviewer report: Attempt 4 spec compliance reviewer passed with no blocking findings. Attempt 4 code quality reviewer passed with no findings; prior desktop UI regression, collapsed a11y mismatch, stale collapsed state, desktop collapse semantics, presentation-key, and `scrollIntoView` cleanup findings are resolved. Real-browser visual/mobile evidence remains T004 scope.
+- Command output summary:
+  - `npx vitest run --project=browser tests/integration/weather/township-drilldown.test.jsx`: attempt 4 code quality reviewer rerun exit 0; 6/6 tests passed.
+  - `npm run lint:changed`: attempt 4 code quality reviewer rerun exit 0; no changed-file lint errors.
+  - `npm run type-check:changed`: attempt 4 code quality reviewer rerun exit 0; no changed-file type errors.
+  - `git diff --check -- src/ui/weather/WeatherPageScreen.jsx tests/integration/weather/township-drilldown.test.jsx`: attempt 4 code quality reviewer rerun exit 0.
+- Changed files summary:
+  - `src/ui/weather/WeatherPageScreen.jsx`
+  - `tests/integration/weather/township-drilldown.test.jsx`
+- Phase commits: pending T003 commit.
 - Rules deploy status: not_applicable.
 - Incidents: none.
 

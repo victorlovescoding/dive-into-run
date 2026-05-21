@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useId, useState } from 'react';
 import BackToOverviewButton from '@/components/weather/BackToOverviewButton';
 import FavoriteButton from '@/components/weather/FavoriteButton';
 import FavoritesBar from '@/components/weather/FavoritesBar';
@@ -9,6 +10,37 @@ import WeatherCardEmpty from '@/components/weather/WeatherCardEmpty';
 import WeatherCardError from '@/components/weather/WeatherCardError';
 import WeatherCardSkeleton from '@/components/weather/WeatherCardSkeleton';
 import styles from '@/components/weather/weather.module.css';
+
+const MOBILE_WEATHER_SHEET_MAX_WIDTH = 767;
+
+/**
+ * @returns {boolean} Whether the viewport matches the mobile bottom-sheet breakpoint.
+ */
+function getIsMobileWeatherSheetMode() {
+  return typeof window !== 'undefined' && window.innerWidth <= MOBILE_WEATHER_SHEET_MAX_WIDTH;
+}
+
+/**
+ * Tracks only the presentation breakpoint used by the weather bottom sheet.
+ * @returns {boolean} Whether bottom-sheet controls should be enabled.
+ */
+function useIsMobileWeatherSheetMode() {
+  const [isMobileWeatherSheetMode, setIsMobileWeatherSheetMode] = useState(
+    getIsMobileWeatherSheetMode,
+  );
+
+  useEffect(() => {
+    const updateIsMobileWeatherSheetMode = () => {
+      setIsMobileWeatherSheetMode(getIsMobileWeatherSheetMode());
+    };
+
+    updateIsMobileWeatherSheetMode();
+    window.addEventListener('resize', updateIsMobileWeatherSheetMode);
+    return () => window.removeEventListener('resize', updateIsMobileWeatherSheetMode);
+  }, []);
+
+  return isMobileWeatherSheetMode;
+}
 
 /**
  * 依照 runtime weather state 渲染卡片內容。
@@ -33,6 +65,76 @@ function renderWeatherCard({ weatherState, weatherData, onRetry }) {
   }
 
   return null;
+}
+
+/**
+ * 取得目前選取地點顯示文字。
+ * @param {import('@/runtime/hooks/weather-page-runtime-helpers').SelectedLocation | null} selectedLocation - Runtime 選取地點。
+ * @param {import('@/types/weather-types').WeatherInfo | null} weatherData - 已載入天氣資料。
+ * @returns {string} 使用者可讀的地點名稱。
+ */
+function getSelectedLocationLabel(selectedLocation, weatherData) {
+  if (weatherData?.locationName) return weatherData.locationName;
+  if (!selectedLocation) return '';
+
+  const { countyName, townshipName } = selectedLocation;
+  return townshipName ? `${countyName} · ${townshipName}` : countyName;
+}
+
+/**
+ * Mobile weather information sheet with location-scoped presentation state.
+ * @param {object} props - Component props。
+ * @param {import('react').Ref<HTMLElement>} props.cardPanelRef - Weather card panel ref。
+ * @param {string} props.selectedLocationKey - Selected location identity。
+ * @param {string} props.selectedLocationLabel - Selected location display label。
+ * @param {boolean} props.isMobileWeatherSheetMode - Whether mobile sheet controls are enabled。
+ * @param {import('react').ReactNode} props.children - Weather information content。
+ * @returns {import('react').ReactElement} Weather information panel。
+ */
+function WeatherInformationPanel({
+  cardPanelRef,
+  selectedLocationKey,
+  selectedLocationLabel,
+  isMobileWeatherSheetMode,
+  children,
+}) {
+  const weatherSheetContentId = useId();
+  const [isWeatherSheetCollapsed, setIsWeatherSheetCollapsed] = useState(false);
+  const isMobileWeatherSheetCollapsed = isMobileWeatherSheetMode && isWeatherSheetCollapsed;
+  const weatherSheetClassName = [
+    styles.cardPanel,
+    styles.weatherSheet,
+    isMobileWeatherSheetCollapsed ? styles.weatherSheetCollapsed : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return (
+    <section ref={cardPanelRef} className={weatherSheetClassName} aria-label="天氣資訊">
+      {selectedLocationKey && isMobileWeatherSheetMode && (
+        <button
+          type="button"
+          className={styles.weatherSheetDismiss}
+          aria-label={isMobileWeatherSheetCollapsed ? '展開天氣資訊' : '收合天氣資訊'}
+          aria-expanded={!isMobileWeatherSheetCollapsed}
+          aria-controls={weatherSheetContentId}
+          onClick={() => setIsWeatherSheetCollapsed((isCollapsed) => !isCollapsed)}
+        >
+          <span className={styles.weatherSheetHandle} aria-hidden="true" />
+        </button>
+      )}
+      {isMobileWeatherSheetMode && selectedLocationLabel && (
+        <div>目前選取：{selectedLocationLabel}</div>
+      )}
+      <div
+        id={weatherSheetContentId}
+        data-testid="weather-sheet-content"
+        hidden={isMobileWeatherSheetCollapsed}
+      >
+        {children}
+      </div>
+    </section>
+  );
 }
 
 /**
@@ -65,31 +167,52 @@ export default function WeatherPageScreen({ runtime }) {
     handleFavoriteRemove,
   } = runtime;
 
+  const selectedLocationKey = selectedLocation
+    ? `${selectedLocation.countyCode}:${selectedLocation.townshipCode ?? ''}`
+    : '';
+  const selectedLocationLabel = getSelectedLocationLabel(selectedLocation, weatherData);
+  const selectedLocationPresentationKey = selectedLocationKey
+    ? `${selectedLocationKey}:${selectedLocationLabel}`
+    : 'overview';
+  const isMobileWeatherSheetMode = useIsMobileWeatherSheetMode();
+
+  const weatherInformationContent = (
+    <>
+      {favorites.length > 0 && (
+        <FavoritesBar
+          favorites={favorites}
+          summaries={favSummaries}
+          activeId={activeFavoriteId}
+          onSelect={handleFavoriteSelect}
+          onRemove={handleFavoriteRemove}
+        />
+      )}
+
+      <div style={{ position: 'relative' }}>
+        {renderWeatherCard({ weatherState, weatherData, onRetry: handleRetry })}
+        {weatherState === 'success' && selectedLocation && (
+          <FavoriteButton
+            isFavorited={isFavorited}
+            isLoading={isFavoriteMutating}
+            onClick={handleFavoriteToggle}
+          />
+        )}
+      </div>
+    </>
+  );
+
   return (
     <div className={styles.weatherRoot}>
       <div className={styles.pageLayout}>
-        <div ref={cardPanelRef} className={styles.cardPanel}>
-          {favorites.length > 0 && (
-            <FavoritesBar
-              favorites={favorites}
-              summaries={favSummaries}
-              activeId={activeFavoriteId}
-              onSelect={handleFavoriteSelect}
-              onRemove={handleFavoriteRemove}
-            />
-          )}
-
-          <div style={{ position: 'relative' }}>
-            {renderWeatherCard({ weatherState, weatherData, onRetry: handleRetry })}
-            {weatherState === 'success' && selectedLocation && (
-              <FavoriteButton
-                isFavorited={isFavorited}
-                isLoading={isFavoriteMutating}
-                onClick={handleFavoriteToggle}
-              />
-            )}
-          </div>
-        </div>
+        <WeatherInformationPanel
+          key={selectedLocationPresentationKey}
+          cardPanelRef={cardPanelRef}
+          selectedLocationKey={selectedLocationKey}
+          selectedLocationLabel={selectedLocationLabel}
+          isMobileWeatherSheetMode={isMobileWeatherSheetMode}
+        >
+          {weatherInformationContent}
+        </WeatherInformationPanel>
 
         <div className={styles.mapPanel}>
           {mapLayer === 'county' && <BackToOverviewButton onClick={handleBackToOverview} />}
