@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "067-weather-taiwan-md-map",
-    "commit": "bccbc5b43b6d833acc982cf2af2d0b0a11b92f54",
-    "capturedAt": "2026-05-21T19:45:21Z",
-    "summary": "Local HEAD after reviewed T004 E2E coverage commit and before pre-push workflow-state sync."
+    "commit": "8cb9056cde41f9de87e5d141103ca0793f2304c2",
+    "capturedAt": "2026-05-21T20:41:01Z",
+    "summary": "Local HEAD after reviewed county weather UV fallback bugfix commit and post-commit pre-push verification."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "7ad004ee405b8485adeb9ca7ae5f19cd77cddb54",
-    "capturedAt": "2026-05-21T14:17:21Z",
-    "summary": "origin/main at planning start."
+    "commit": "8ef92652695aedce89343a10c29499f4c561ff17",
+    "capturedAt": "2026-05-21T20:41:01Z",
+    "summary": "Local origin/main ref before push authorization."
   },
   "completedTasks": [
     "T001",
@@ -532,7 +532,7 @@
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "bccbc5b43b6d833acc982cf2af2d0b0a11b92f54",
+  "lastVerifiedCommit": "8cb9056cde41f9de87e5d141103ca0793f2304c2",
   "phaseCommits": [
     {
       "phase": "t001_interactions",
@@ -563,6 +563,12 @@
       "commit": "bccbc5b43b6d833acc982cf2af2d0b0a11b92f54",
       "summary": "Added weather page E2E coverage and recorded browser evidence for desktop, tablet, and mobile.",
       "committedAt": "2026-05-22T03:41:52+08:00"
+    },
+    {
+      "phase": "county_weather_uv_fallback",
+      "commit": "8cb9056cde41f9de87e5d141103ca0793f2304c2",
+      "summary": "Fixed county-only weather API fallback when UV data has township rows but no county aggregate.",
+      "committedAt": "2026-05-22T04:36:21+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -583,41 +589,47 @@
   ],
   "lastVerification": [
     {
-      "command": "npm run lint:changed",
+      "command": "npx vitest run tests/unit/service/weather-forecast-service.test.js tests/unit/api/weather-api-route.test.js",
       "exitCode": 0,
-      "summary": "No changed JS files to lint after T004 commit.",
-      "verifiedAt": "2026-05-21T19:45:21Z"
+      "summary": "Focused weather service and API regression coverage passed; 2 files and 17 tests passed.",
+      "verifiedAt": "2026-05-21T20:35:53Z"
     },
     {
-      "command": "npm run type-check:changed",
+      "command": "npm run spellcheck",
       "exitCode": 0,
-      "summary": "No changed JS files to type-check after T004 commit.",
-      "verifiedAt": "2026-05-21T19:45:21Z"
+      "summary": "CSpell checked 453 files and found 0 issues after fixture rename.",
+      "verifiedAt": "2026-05-21T20:36:00Z"
     },
     {
-      "command": "npm run depcruise",
+      "command": "git commit -m \"Fix county weather UV fallback\"",
       "exitCode": 0,
-      "summary": "No dependency violations found across 1540 modules and 3900 dependencies.",
-      "verifiedAt": "2026-05-21T19:45:21Z"
+      "summary": "Commit hook passed lint, type-check, depcruise, spellcheck, workflow checks, link checks, full Vitest suite (171 files, 1502 tests), and audits.",
+      "verifiedAt": "2026-05-21T20:36:21Z"
+    },
+    {
+      "command": "curl -sS -i 'http://localhost:3000/api/weather?county=%E6%96%B0%E7%AB%B9%E7%B8%A3'",
+      "exitCode": 0,
+      "summary": "Local weather API returned HTTP 200 ok:true for 新竹縣 with today/tomorrow uv null instead of 502.",
+      "verifiedAt": "2026-05-21T20:24:43Z"
     },
     {
       "command": "npm run test:branch",
       "exitCode": 0,
-      "summary": "Branch Vitest routed weather integration coverage; 2 files and 14 tests passed.",
-      "verifiedAt": "2026-05-21T19:45:21Z"
-    },
-    {
-      "command": "npm run build",
-      "exitCode": 0,
-      "summary": "Next.js production build compiled and generated 17 static pages successfully.",
-      "verifiedAt": "2026-05-21T19:45:21Z"
+      "summary": "Branch Vitest routed weather coverage; 4 files and 31 tests passed.",
+      "verifiedAt": "2026-05-21T20:23:05Z"
     },
     {
       "command": "npm run test:e2e:branch",
       "exitCode": 0,
       "summary": "Branch E2E routed tests/e2e/weather-page.spec.js; 9 Playwright tests passed.",
-      "verifiedAt": "2026-05-21T19:45:21Z"
+      "verifiedAt": "2026-05-21T20:40:00Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "summary": "Next.js production build compiled and generated 17 static pages successfully.",
+      "verifiedAt": "2026-05-21T20:41:01Z"
     }
   ],
-  "updatedAt": "2026-05-21T19:45:21Z"
+  "updatedAt": "2026-05-21T20:41:01Z"
 }
