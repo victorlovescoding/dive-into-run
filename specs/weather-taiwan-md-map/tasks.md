@@ -27,7 +27,7 @@
 
 Current workflow state:
 
-- Phase: implementation, T004 completed and pending commit.
+- Phase: ready for push; pre-push verification passed.
 - Active task: none.
 - Active wave: none.
 - Planner review state: review_rejected addressed by Planner revision on 2026-05-21.
@@ -411,8 +411,8 @@ Evidence:
 - **Wave**: `wave-4`
 - **Engineer**: Weather E2E Engineer
 - **Reviewer**: Test Strategist Reviewer
-- **Commit checkpoint**: pending T004 commit.
-- **Last verified commit**: `1ca4a3e00f670cdc8151be490f0dffdf2c7190b6`
+- **Commit checkpoint**: `bccbc5b Add weather map E2E coverage`
+- **Last verified commit**: `bccbc5b43b6d833acc982cf2af2d0b0a11b92f54`
 - **Authorization boundary**: current edit=yes for T004 owned file after T003 completes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.
 - **Rules deploy status**: not_applicable
 - **Incidents**: none
@@ -515,6 +515,6 @@ Evidence:
   - Browser plugin check: initial map loaded, but real dev-server `/api/weather` returned 502; Playwright screenshot evidence with the same UI route mock as T004 E2E was used for complete weather-sheet evidence.
 - Changed files summary:
   - `tests/e2e/weather-page.spec.js`
-- Phase commits: pending T004 commit.
+- Phase commits: `bccbc5b43b6d833acc982cf2af2d0b0a11b92f54`
 - Rules deploy status: not_applicable.
 - Incidents: none.
