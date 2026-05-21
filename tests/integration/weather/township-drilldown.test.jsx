@@ -238,6 +238,9 @@ const firestoreMock = vi.hoisted(() => ({
 
 vi.mock('firebase/firestore', () => firestoreMock);
 
+const hadOriginalScrollIntoView = 'scrollIntoView' in Element.prototype;
+const originalScrollIntoView = Element.prototype.scrollIntoView;
+
 /* ==========================================================================
    Helpers
    ========================================================================== */
@@ -299,12 +302,19 @@ describe('Township drill-down integration', () => {
     vi.clearAllMocks();
     firestoreMock.getDocs.mockResolvedValue({ docs: [], empty: true, size: 0 });
     installWeatherFetch();
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    Element.prototype.scrollIntoView = vi.fn();
     globalThis.localStorage?.clear?.();
     // 重設 URL，避免上個 test 的 syncWeatherLocationToUrl 殘留影響下個 mount。
     window.history.replaceState({}, '', '/');
   });
 
   afterEach(() => {
+    if (hadOriginalScrollIntoView) {
+      Element.prototype.scrollIntoView = originalScrollIntoView;
+    } else {
+      delete Element.prototype.scrollIntoView;
+    }
     vi.unstubAllGlobals();
   });
 
@@ -327,6 +337,58 @@ describe('Township drill-down integration', () => {
     await user.click(await screen.findByRole('button', { name: '板橋區' }));
 
     expect(await screen.findByText('新北市 · 板橋區')).toBeInTheDocument();
+    expect(screen.getByText('晴時多雲')).toBeInTheDocument();
+    expect(screen.queryByText(/目前選取：/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '收合天氣資訊' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '展開天氣資訊' })).not.toBeInTheDocument();
+  });
+
+  it('keeps selected township weather available after collapsing the mobile sheet', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+    window.dispatchEvent(new Event('resize'));
+    const user = userEvent.setup();
+    renderWeatherPage();
+
+    expect(screen.queryByRole('button', { name: '收合天氣資訊' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '展開天氣資訊' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '新北市' }));
+    await user.click(await screen.findByRole('button', { name: '板橋區' }));
+
+    const weatherSheet = await screen.findByRole('region', { name: '天氣資訊' });
+    expect(weatherSheet).toHaveTextContent('新北市 · 板橋區');
+    expect(screen.getByRole('button', { name: /加入收藏/i })).toBeInTheDocument();
+
+    const collapseButton = screen.getByRole('button', { name: '收合天氣資訊' });
+    expect(collapseButton).toHaveAttribute('aria-expanded', 'true');
+    await user.click(collapseButton);
+
+    const expandButton = screen.getByRole('button', { name: '展開天氣資訊' });
+    expect(expandButton).toHaveAttribute('aria-expanded', 'false');
+    expect(expandButton).toBeInTheDocument();
+    expect(screen.getByText(/目前選取：新北市 · 板橋區/)).toBeInTheDocument();
+    const controlledContent = screen.getByTestId('weather-sheet-content');
+    expect(expandButton).toHaveAttribute('aria-controls', controlledContent.getAttribute('id'));
+    expect(controlledContent).toHaveAttribute('hidden');
+    expect(screen.queryByRole('button', { name: /加入收藏/i })).not.toBeInTheDocument();
+
+    await user.click(expandButton);
+
+    expect(screen.getByText('晴時多雲')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /加入收藏/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /全台總覽/ }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('板橋區')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('新北市')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '新北市' }));
+    await user.click(await screen.findByRole('button', { name: '板橋區' }));
+
+    expect(await screen.findByRole('button', { name: '收合天氣資訊' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '展開天氣資訊' })).not.toBeInTheDocument();
     expect(screen.getByText('晴時多雲')).toBeInTheDocument();
   });
 
