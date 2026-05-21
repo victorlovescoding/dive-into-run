@@ -19,6 +19,7 @@ import {
 } from '@/service/weather-forecast-helpers';
 
 /** @typedef {import('@/types/weather-types').AqiInfo} AqiInfo */
+/** @typedef {import('@/types/weather-types').UvInfo} UvInfo */
 /** @typedef {import('@/types/weather-types').WeatherInfo} WeatherInfo */
 /** @typedef {import('@/service/weather-forecast-helpers').CountyForecastResponse} CountyForecastResponse */
 /** @typedef {import('@/service/weather-forecast-helpers').TownshipForecastResponse} TownshipForecastResponse */
@@ -27,6 +28,7 @@ import {
 const CWA_BASE = 'https://opendata.cwa.gov.tw/api/v1/rest/datastore';
 const EPA_AQI_URL = 'https://data.moenv.gov.tw/api/v2/aqx_p_432';
 const COUNTY_DEFAULT_HUMIDITY = 70;
+const UV_LOCATION_NOT_FOUND_PREFIX = 'No UV data found for location:';
 
 /**
  * @param {unknown} error 要判斷的錯誤物件。
@@ -102,6 +104,26 @@ function buildEpaUrl(apiKey) {
 }
 
 /**
+ * County-only UV datasets can be township-granular without a county aggregate row.
+ * @param {TownshipForecastResponse | null} uvData UV dataset response。
+ * @param {string} county 已正規化的縣市名稱。
+ * @param {Date} now 目前比較基準時間。
+ * @param {boolean} isTomorrow 是否要抓明日 UV。
+ * @returns {UvInfo | null} 縣市 UV 資訊；缺少縣市 aggregate 時回傳 `null`。
+ */
+function extractOptionalCountyUvInfo(uvData, county, now, isTomorrow) {
+  try {
+    return extractUvInfo(uvData, county, now, isTomorrow);
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith(UV_LOCATION_NOT_FOUND_PREFIX)) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+/**
  * @param {CountyForecastResponse} cwaData 縣市層級的 CWA response。
  * @param {TownshipForecastResponse | null} uvData UV dataset response。
  * @param {AqiInfo | null} aqiInfo 該縣市的 AQI 資訊。
@@ -159,7 +181,7 @@ function normalizeCountyWeather(cwaData, uvData, aqiInfo, county, now) {
       eveningTemp: getCountyTimeNumber(minTemp, todayIndex),
       rainProb: getCountyTimeNumber(rain, todayIndex),
       humidity: COUNTY_DEFAULT_HUMIDITY,
-      uv: extractUvInfo(uvData, county, now, false),
+      uv: extractOptionalCountyUvInfo(uvData, county, now, false),
       aqi: aqiInfo,
     },
     tomorrow: {
@@ -169,7 +191,7 @@ function normalizeCountyWeather(cwaData, uvData, aqiInfo, county, now) {
       eveningTemp: getCountyTimeNumber(minTemp, tomorrowIndex),
       rainProb: getCountyTimeNumber(rain, tomorrowIndex),
       humidity: COUNTY_DEFAULT_HUMIDITY,
-      uv: extractUvInfo(uvData, county, now, true),
+      uv: extractOptionalCountyUvInfo(uvData, county, now, true),
     },
   };
 }

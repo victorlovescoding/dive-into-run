@@ -306,6 +306,57 @@ const mockTownshipUvResponse = {
   },
 };
 
+const mockTownshipOnlyCountyUvResponse = {
+  records: {
+    Locations: [
+      {
+        Location: [
+          {
+            LocationName: '關西鎮',
+            WeatherElement: [
+              {
+                ElementName: '紫外線指數',
+                Time: [
+                  {
+                    StartTime: '2026-04-13T06:00:00+08:00',
+                    EndTime: '2026-04-13T18:00:00+08:00',
+                    ElementValue: [{ UVIndex: '7', UVExposureLevel: '高量級' }],
+                  },
+                  {
+                    StartTime: '2026-04-14T06:00:00+08:00',
+                    EndTime: '2026-04-14T18:00:00+08:00',
+                    ElementValue: [{ UVIndex: '6', UVExposureLevel: '高量級' }],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            LocationName: '竹北市',
+            WeatherElement: [
+              {
+                ElementName: '紫外線指數',
+                Time: [
+                  {
+                    StartTime: '2026-04-13T06:00:00+08:00',
+                    EndTime: '2026-04-13T18:00:00+08:00',
+                    ElementValue: [{ UVIndex: '8', UVExposureLevel: '過量級' }],
+                  },
+                  {
+                    StartTime: '2026-04-14T06:00:00+08:00',
+                    EndTime: '2026-04-14T18:00:00+08:00',
+                    ElementValue: [{ UVIndex: '7', UVExposureLevel: '高量級' }],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+};
+
 /**
  * @param {object} payload 要回傳的 JSON payload。
  * @returns {Promise<{ ok: true, json: () => Promise<object> }>} 模擬的成功 fetch response。
@@ -415,6 +466,34 @@ describe('getWeatherForecast', () => {
     expect(result.today.uv).toBeNull();
     expect(result.today.aqi).toBeNull();
     expect(result.tomorrow.uv).toBeNull();
+  });
+
+  it('county flow 的 UV dataset 只有鄉鎮 LocationName 時仍應成功且 UV 為 null', async () => {
+    fetchMock
+      .mockImplementationOnce(() => okJson(mockCountyForecastResponse))
+      .mockImplementationOnce(() => okJson(mockTownshipOnlyCountyUvResponse))
+      .mockImplementationOnce(() =>
+        okJson({
+          records: [{ county: '新竹縣', aqi: '45', status: '良好' }],
+        }),
+      );
+
+    const result = await getWeatherForecast({ county: '新竹縣', now: NOW });
+
+    expect(result).toMatchObject({
+      locationName: '新竹縣',
+      locationNameShort: '新竹',
+      today: {
+        currentTemp: 30,
+        weatherDesc: '晴時多雲',
+        uv: null,
+        aqi: { value: 45, status: '良好' },
+      },
+      tomorrow: {
+        weatherDesc: '多雲時陰',
+        uv: null,
+      },
+    });
   });
 
   it('應正規化 township flow，覆蓋 DataTime/day-night/明日夜間時段選擇', async () => {
@@ -542,9 +621,9 @@ describe('getWeatherForecast', () => {
     expect(getWeatherForecastPublicErrorMessage(error)).toBe('Failed to fetch weather data');
   });
 
-  it('UV lookup 找不到目標地點時應 fail closed，不可回第一筆 UV', async () => {
+  it('township flow 的 UV lookup 找不到目標地點時應 fail closed，不可回第一筆 UV', async () => {
     fetchMock
-      .mockImplementationOnce(() => okJson(mockCountyForecastResponse))
+      .mockImplementationOnce(() => okJson(mockTownshipForecastResponse))
       .mockImplementationOnce(() =>
         okJson({
           records: {
@@ -552,8 +631,8 @@ describe('getWeatherForecast', () => {
               {
                 Location: [
                   {
-                    ...mockCountyUvResponse.records.Locations[0].Location[0],
-                    LocationName: '高雄市',
+                    ...mockTownshipUvResponse.records.Locations[0].Location[0],
+                    LocationName: '三重區',
                   },
                 ],
               },
@@ -563,13 +642,15 @@ describe('getWeatherForecast', () => {
       )
       .mockImplementationOnce(() =>
         okJson({
-          records: [{ county: '臺北市', aqi: '45', status: '良好' }],
+          records: [{ county: '新北市', aqi: '52', status: '普通' }],
         }),
       );
 
-    const error = await getWeatherForecast({ county: '臺北市', now: NOW }).catch(
-      (caught) => caught,
-    );
+    const error = await getWeatherForecast({
+      county: '新北市',
+      township: '板橋區',
+      now: NOW,
+    }).catch((caught) => caught);
 
     expect(error).toMatchObject({
       message: 'Failed to fetch weather data',
