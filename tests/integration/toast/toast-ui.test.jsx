@@ -92,15 +92,21 @@ describe('Toast component', () => {
       expect(onClose).toHaveBeenCalledWith('test-id-1');
     });
 
-    // --- 7. error toast 不自動消失 ---
-    it('does not auto-dismiss error toast', () => {
+    // --- 7. error toast 5 秒後自動呼叫 onClose ---
+    it('auto-dismisses error toast after 5 seconds', () => {
       render(<Toast toast={mockErrorToast} onClose={onClose} />);
 
       act(() => {
-        vi.advanceTimersByTime(5000);
+        vi.advanceTimersByTime(4999);
       });
 
       expect(onClose).not.toHaveBeenCalled();
+
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+
+      expect(onClose).toHaveBeenCalledWith('test-id-2');
     });
 
     it('auto-dismisses info toast after 3 seconds', () => {
