@@ -38,6 +38,9 @@ specs_for_feature() {
     046-quality-gates)
       echo "tests/e2e/quality-gates/axe-interactive-emulator.spec.js"
       ;;
+    068-runner-following)
+      echo "tests/e2e/runner-following.spec.js"
+      ;;
     *)
       return 1
       ;;
@@ -66,6 +69,9 @@ feature_for_spec() {
       ;;
     axe-interactive-emulator.spec.js)
       echo "046-quality-gates"
+      ;;
+    runner-following.spec.js)
+      echo "068-runner-following"
       ;;
     *)
       return 1
