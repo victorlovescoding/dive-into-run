@@ -110,6 +110,23 @@ describe('notifications Firestore rules', () => {
     );
   });
 
+  it('allows runner_followed notifications without weakening the type allowlist', async () => {
+    const db = authenticatedDb(testEnv, ACTOR_UID);
+
+    await assertSucceeds(
+      db.doc('notifications/runner-followed').set(
+        notificationData({
+          type: 'runner_followed',
+          entityType: 'user',
+          entityId: ACTOR_UID,
+          entityTitle: 'Actor Runner',
+          commentId: null,
+          message: 'Actor Runner 已開始追蹤你。',
+        }),
+      ),
+    );
+  });
+
   it('denies creating notifications when read is not false', async () => {
     const db = authenticatedDb(testEnv, ACTOR_UID);
 

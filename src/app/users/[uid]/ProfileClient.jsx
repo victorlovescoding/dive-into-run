@@ -1,6 +1,8 @@
 'use client';
 import useProfileRuntime from '@/runtime/hooks/useProfileRuntime';
 import ProfileScreen from '@/ui/users/ProfileScreen';
+import FollowButton from '@/components/FollowButton';
+import FollowListModal from './FollowListModal';
 import ProfileEventList from './ProfileEventList';
 import ProfileHeader from './ProfileHeader';
 import ProfileStats from './ProfileStats';
@@ -15,10 +17,37 @@ export default function ProfileClient(props) {
     <ProfileScreen
       runtime={runtime}
       header={<ProfileHeader user={runtime.headerUser} />}
+      followControl={
+        runtime.followControl.isVisible ? (
+          <FollowButton
+            isFollowing={runtime.followControl.isFollowing}
+            isPending={runtime.followControl.isPending}
+            label={runtime.followControl.label}
+            onToggle={runtime.followControl.onToggle}
+          />
+        ) : null
+      }
       statsSection={
         runtime.stats && !runtime.isStatsLoading && !runtime.statsError ? (
-          <ProfileStats stats={runtime.stats} />
+          <ProfileStats
+            stats={runtime.stats}
+            followersCount={runtime.followCounts.followersCount}
+            followingCount={runtime.followCounts.followingCount}
+            onOpenFollowers={runtime.followListModal.open}
+            onOpenFollowing={runtime.followListModal.open}
+          />
         ) : null
+      }
+      toastMessage={runtime.toastMessage}
+      modal={
+        <FollowListModal
+          isOpen={runtime.followListModal.isOpen}
+          title={runtime.followListModal.title}
+          rows={runtime.followListModal.rows}
+          isLoading={runtime.followListModal.isLoading}
+          error={runtime.followListModal.error}
+          onClose={runtime.followListModal.close}
+        />
       }
       eventList={<ProfileEventList uid={runtime.profileUid} />}
     />

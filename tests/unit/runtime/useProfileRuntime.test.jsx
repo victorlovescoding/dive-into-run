@@ -1,13 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
 const {
   mockUseContext,
   mockCollection,
   mockCollectionGroup,
+  mockDoc,
+  mockGetDoc,
+  mockGetDocs,
   mockQuery,
   mockWhere,
   mockGetCountFromServer,
+  mockRunTransaction,
 } = vi.hoisted(() => ({
   mockUseContext: vi.fn(),
   mockCollection: vi.fn((_db, ...segments) => ({
@@ -18,6 +22,12 @@ const {
     type: 'collectionGroup',
     path: segment,
   })),
+  mockDoc: vi.fn((_db, ...segments) => ({
+    type: 'doc',
+    path: segments.join('/'),
+  })),
+  mockGetDoc: vi.fn(),
+  mockGetDocs: vi.fn(),
   mockQuery: vi.fn((collectionRef, ...constraints) => ({
     type: 'query',
     path: collectionRef?.path,
@@ -25,6 +35,7 @@ const {
   })),
   mockWhere: vi.fn((field, op, value) => ({ type: 'where', field, op, value })),
   mockGetCountFromServer: vi.fn(),
+  mockRunTransaction: vi.fn(),
 }));
 
 vi.mock('react', async (importOriginal) => {
@@ -37,7 +48,7 @@ vi.mock('react', async (importOriginal) => {
 });
 
 vi.mock('firebase/firestore', () => ({
-  doc: vi.fn(),
+  doc: mockDoc,
   collection: mockCollection,
   collectionGroup: mockCollectionGroup,
   query: mockQuery,
@@ -45,17 +56,19 @@ vi.mock('firebase/firestore', () => ({
   orderBy: vi.fn(),
   limit: vi.fn(),
   startAfter: vi.fn(),
-  getDoc: vi.fn(),
-  getDocs: vi.fn(),
+  getDoc: mockGetDoc,
+  getDocs: mockGetDocs,
   getCountFromServer: mockGetCountFromServer,
   setDoc: vi.fn(),
+  serverTimestamp: vi.fn(() => ({ type: 'serverTimestamp' })),
+  runTransaction: mockRunTransaction,
 }));
 
 vi.mock('@/config/client/firebase-client', () => ({ db: 'mock-db' }));
 
 /**
  * 設定 hook 看到的 AuthContext 值。
- * @param {{ uid: string } | null} user - 當前登入者。
+ * @param {{ uid: string, name?: string, photoURL?: string } | null} user - 當前登入者。
  * @returns {void}
  */
 function mockAuth(user) {
@@ -85,6 +98,40 @@ function createCountSnapshot(count) {
 }
 
 /**
+ * 建立 follow 文件列表 snapshot。
+ * @param {Array<{ id: string, data: () => object }>} docs - 文件 snapshots。
+ * @returns {{ docs: Array<{ id: string, data: () => object }>, size: number }} query snapshot。
+ */
+function createDocsSnapshot(docs) {
+  return { docs, size: docs.length };
+}
+
+/**
+ * 建立 follow 文件 snapshot。
+ * @param {boolean} exists - 文件是否存在。
+ * @returns {{ exists: () => boolean }} doc snapshot。
+ */
+function createDocSnapshot(exists) {
+  return { exists: () => exists };
+}
+
+/**
+ * 建立會維持 pending 的 promise 控制器。
+ * @returns {{ promise: Promise<{ following: boolean, stateChanged: boolean }>, resolve: (value: { following: boolean, stateChanged: boolean }) => void, reject: (error: Error) => void }} deferred。
+ */
+function createFollowDeferred() {
+  /** @type {(value: { following: boolean, stateChanged: boolean }) => void} */
+  let resolve = () => {};
+  /** @type {(error: Error) => void} */
+  let reject = () => {};
+  const promise = new Promise((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, resolve, reject };
+}
+
+/**
  * 動態載入 hook，避免測試間 module cache 汙染。
  * @returns {Promise<typeof import('@/runtime/hooks/useProfileRuntime').default>} hook。
  */
@@ -94,8 +141,8 @@ async function loadHook() {
 
 /**
  * 建立 ProfileRuntimeUser fixture。
- * @param {Partial<{ uid: string, name: string, photoURL: string, bio: string, createdAt: Date | { toDate: () => Date } }>} [overrides] - 覆寫欄位。
- * @returns {{ uid: string, name: string, photoURL: string, bio: string, createdAt: Date | { toDate: () => Date } }} profile user。
+ * @param {Partial<{ uid: string, name: string, photoURL: string, bio: string, createdAt: Date | { toDate: () => Date }, followersCount: number }>} [overrides] - 覆寫欄位。
+ * @returns {{ uid: string, name: string, photoURL: string, bio: string, createdAt: Date | { toDate: () => Date }, followersCount?: number }} profile user。
  */
 function createProfileUser(overrides = {}) {
   return {
@@ -117,6 +164,11 @@ describe('useProfileRuntime', () => {
     vi.resetModules();
     mockUseContext.mockReset();
     mockAuth(null);
+    mockGetDoc.mockResolvedValue(createDocSnapshot(false));
+    mockGetDocs.mockResolvedValue(createDocsSnapshot([]));
+    mockRunTransaction.mockImplementation(() =>
+      Promise.resolve({ following: true, stateChanged: false }),
+    );
   });
 
   afterEach(() => {
@@ -241,5 +293,190 @@ describe('useProfileRuntime', () => {
 
     expect(result.current.headerUser.createdAt).toBe(firestoreLike);
     expect(result.current.headerUser.createdAt.toDate()).toEqual(expectedDate);
+  });
+
+  it('exposes public follow counts and list loading for signed-out visitors without a follow button', async () => {
+    mockGetCountFromServer
+      .mockResolvedValueOnce(createCountSnapshot(1))
+      .mockResolvedValueOnce(createCountSnapshot(2));
+    mockGetDocs
+      .mockResolvedValueOnce(
+        createDocsSnapshot([
+          {
+            id: 'target-a',
+            data: () => ({
+              targetUid: 'target-a',
+              targetName: 'Target A',
+              targetPhotoURL: '',
+              createdAt: 'now',
+            }),
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        createDocsSnapshot([
+          {
+            id: 'follower-a',
+            data: () => ({
+              followerUid: 'follower-a',
+              followerName: 'Follower A',
+              followerPhotoURL: '',
+              createdAt: 'later',
+            }),
+          },
+        ]),
+      );
+    mockAuth(null);
+
+    const useProfileRuntime = await loadHook();
+    const profileUser = createProfileUser({ followersCount: 6 });
+    const { result } = renderHook(() => useProfileRuntime(profileUser));
+
+    await waitFor(() => {
+      expect(result.current.followCounts).toEqual(
+        expect.objectContaining({ followersCount: 6, followingCount: 1 }),
+      );
+    });
+    expect(result.current.followControl).toEqual(
+      expect.objectContaining({ isVisible: false, isPending: false }),
+    );
+
+    await act(async () => {
+      await result.current.followListModal.open('followers');
+    });
+
+    await waitFor(() => {
+      expect(result.current.followListModal).toEqual(
+        expect.objectContaining({
+          isOpen: true,
+          direction: 'followers',
+          rows: [expect.objectContaining({ uid: 'follower-a', name: 'Follower A' })],
+        }),
+      );
+    });
+  });
+
+  it('optimistically follows and unfollows a non-self profile', async () => {
+    mockGetCountFromServer
+      .mockResolvedValueOnce(createCountSnapshot(0))
+      .mockResolvedValueOnce(createCountSnapshot(0));
+    mockGetDoc.mockResolvedValue(createDocSnapshot(false));
+    mockGetDocs.mockResolvedValue(createDocsSnapshot([]));
+    mockAuth({ uid: 'viewer-uid', name: 'Viewer Runner', photoURL: '' });
+
+    const useProfileRuntime = await loadHook();
+    const profileUser = createProfileUser({
+      uid: 'target-uid',
+      name: 'Target Runner',
+      followersCount: 2,
+    });
+    const { result } = renderHook(() => useProfileRuntime(profileUser));
+
+    await waitFor(() => {
+      expect(result.current.followControl).toEqual(
+        expect.objectContaining({ isVisible: true, isFollowing: false }),
+      );
+    });
+
+    await act(async () => {
+      await result.current.followControl.onToggle();
+    });
+
+    expect(result.current.followControl).toEqual(
+      expect.objectContaining({ isFollowing: true, isPending: false, label: '追蹤中' }),
+    );
+    expect(result.current.followCounts.followersCount).toBe(3);
+
+    mockRunTransaction.mockResolvedValueOnce({ following: false, stateChanged: true });
+
+    await act(async () => {
+      await result.current.followControl.onToggle();
+    });
+
+    expect(result.current.followControl).toEqual(
+      expect.objectContaining({ isFollowing: false, isPending: false }),
+    );
+    expect(result.current.followCounts.followersCount).toBe(2);
+  });
+
+  it('disables the follow button and exposes a pending label while mutation is in flight', async () => {
+    const deferred = createFollowDeferred();
+    mockGetCountFromServer
+      .mockResolvedValueOnce(createCountSnapshot(0))
+      .mockResolvedValueOnce(createCountSnapshot(0));
+    mockGetDoc.mockResolvedValue(createDocSnapshot(false));
+    mockGetDocs.mockResolvedValue(createDocsSnapshot([]));
+    mockRunTransaction.mockReturnValueOnce(deferred.promise);
+    mockAuth({ uid: 'viewer-uid', name: 'Viewer Runner', photoURL: '' });
+
+    const useProfileRuntime = await loadHook();
+    const profileUser = createProfileUser({ uid: 'target-uid', followersCount: 0 });
+    const { result } = renderHook(() => useProfileRuntime(profileUser));
+
+    await waitFor(() => {
+      expect(result.current.followControl.isVisible).toBe(true);
+    });
+
+    act(() => {
+      result.current.followControl.onToggle();
+    });
+
+    expect(result.current.followControl).toEqual(
+      expect.objectContaining({ isPending: true, label: '追蹤中' }),
+    );
+
+    await act(async () => {
+      deferred.resolve({ following: true, stateChanged: true });
+      await deferred.promise;
+    });
+  });
+
+  it('rolls back optimistic follow state and exposes a toast when follow fails', async () => {
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockGetCountFromServer
+      .mockResolvedValueOnce(createCountSnapshot(0))
+      .mockResolvedValueOnce(createCountSnapshot(0));
+    mockGetDoc.mockResolvedValue(createDocSnapshot(false));
+    mockGetDocs.mockResolvedValue(createDocsSnapshot([]));
+    mockRunTransaction.mockRejectedValueOnce(new Error('write failed'));
+    mockAuth({ uid: 'viewer-uid', name: 'Viewer Runner', photoURL: '' });
+
+    const useProfileRuntime = await loadHook();
+    const profileUser = createProfileUser({ uid: 'target-uid', followersCount: 4 });
+    const { result } = renderHook(() => useProfileRuntime(profileUser));
+
+    await waitFor(() => {
+      expect(result.current.followControl.isVisible).toBe(true);
+    });
+
+    await act(async () => {
+      await result.current.followControl.onToggle();
+    });
+
+    expect(result.current.followControl).toEqual(
+      expect.objectContaining({ isFollowing: false, isPending: false }),
+    );
+    expect(result.current.followCounts.followersCount).toBe(4);
+    expect(result.current.toastMessage).toBe('追蹤失敗，請稍後再試。');
+  });
+
+  it('hides follow controls for the signed-in profile owner', async () => {
+    mockGetCountFromServer
+      .mockResolvedValueOnce(createCountSnapshot(0))
+      .mockResolvedValueOnce(createCountSnapshot(0));
+    mockGetDocs.mockResolvedValue(createDocsSnapshot([]));
+    mockAuth({ uid: 'profile-uid', name: 'Profile Name', photoURL: '' });
+
+    const useProfileRuntime = await loadHook();
+    const profileUser = createProfileUser({ uid: 'profile-uid', followersCount: 8 });
+    const { result } = renderHook(() => useProfileRuntime(profileUser));
+
+    await waitFor(() => {
+      expect(result.current.followCounts.followingCount).toBe(0);
+    });
+
+    expect(result.current.followControl).toEqual(
+      expect.objectContaining({ isVisible: false, isFollowing: false }),
+    );
   });
 });

@@ -175,12 +175,13 @@ function createUser() {
 }
 
 /**
- * Renders the app member page route with a signed-in auth context.
+ * Renders the app member page route with an auth context.
+ * @param {{ user?: ReturnType<typeof createUser> | null }} [options] - Render options.
  * @returns {import('@testing-library/react').RenderResult} Render result.
  */
-function renderMemberPage() {
+function renderMemberPage({ user = createUser() } = {}) {
   return render(
-    <AuthContext.Provider value={{ user: createUser(), loading: false, setUser: vi.fn() }}>
+    <AuthContext.Provider value={{ user, loading: false, setUser: vi.fn() }}>
       <ToastContext.Provider value={{ toasts: [], showToast: vi.fn(), removeToast: vi.fn() }}>
         <MemberPage />
       </ToastContext.Provider>
@@ -285,6 +286,17 @@ describe('Member favorites route', () => {
       'href',
       '/member/favorites',
     );
+    expect(screen.getByRole('link', { name: '我的追蹤跑友' })).toHaveAttribute(
+      'href',
+      '/member/following',
+    );
+  });
+
+  it('hides member management entry links when no user is signed in', () => {
+    renderMemberPage({ user: null });
+
+    expect(screen.queryByRole('link', { name: '我的收藏' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '我的追蹤跑友' })).not.toBeInTheDocument();
   });
 
   it('renders post and event favorite tabs with linked cards in newest favorite order', async () => {

@@ -157,11 +157,17 @@ function createFavoriteSnapshot(eventId, exists) {
  * @param {object} [options] - dispatcher 設定。
  * @param {string[]} [options.joinedEventIds] - 已報名活動 ID。
  * @param {string[]} [options.favoriteEventIds] - 已收藏活動 ID。
+ * @param {string[]} [options.followedHostUids] - 已追蹤的主揪 UID。
  * @returns {(ref: { path?: string, id?: string }) => Promise<object>} getDoc dispatcher。
  */
-function createEventPageGetDocDispatcher({ joinedEventIds = [], favoriteEventIds = [] } = {}) {
+function createEventPageGetDocDispatcher({
+  joinedEventIds = [],
+  favoriteEventIds = [],
+  followedHostUids = [],
+} = {}) {
   const membershipDispatcher = createGetDocDispatcher(joinedEventIds);
   const favorites = new Set(favoriteEventIds.map(String));
+  const followedHosts = new Set(followedHostUids.map(String));
 
   return async (ref) => {
     const path = String(ref?.path ?? '');
@@ -169,6 +175,15 @@ function createEventPageGetDocDispatcher({ joinedEventIds = [], favoriteEventIds
     if (favoriteMatch) {
       const eventId = favoriteMatch[1];
       return createFavoriteSnapshot(eventId, favorites.has(eventId));
+    }
+    const followMatch = path.match(/^users\/[^/]+\/following\/([^/]+)$/);
+    if (followMatch) {
+      const targetUid = followMatch[1];
+      return {
+        id: targetUid,
+        exists: () => followedHosts.has(targetUid),
+        data: () => ({ targetUid }),
+      };
     }
     return membershipDispatcher(ref);
   };
@@ -184,6 +199,36 @@ function createPermissionDeniedError() {
   });
 }
 
+/**
+ * 建立可執行 follow/unfollow transaction callback 的 Firestore transaction mock。
+ * @param {object} options - transaction 初始狀態。
+ * @param {string} options.followerUid - 追蹤者 UID。
+ * @param {string} options.targetUid - 被追蹤主揪 UID。
+ * @param {boolean} [options.initiallyFollowing] - 初始是否已追蹤。
+ * @returns {(db: unknown, callback: (tx: object) => Promise<{ following: boolean }>) => Promise<{ following: boolean }>} runTransaction mock implementation。
+ */
+function createFollowTransactionDispatcher({ followerUid, targetUid, initiallyFollowing = false }) {
+  let isFollowing = initiallyFollowing;
+
+  return async (_db, callback) => {
+    const transaction = {
+      get: vi.fn(async (ref) => {
+        const path = String(ref?.path ?? '');
+        if (path === `users/${followerUid}/following/${targetUid}`) {
+          return { exists: () => isFollowing, data: () => ({ targetUid }) };
+        }
+        return { exists: () => true, data: () => ({ followersCount: isFollowing ? 1 : 0 }) };
+      }),
+      set: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    };
+    const result = await callback(transaction);
+    isFollowing = result.following;
+    return result;
+  };
+}
+
 describe('useEventsPageRuntime', () => {
   /** @type {ReturnType<typeof installIntersectionObserverMock>} */
   let observer;
@@ -196,6 +241,8 @@ describe('useEventsPageRuntime', () => {
     mockGetDoc.mockImplementation(createGetDocDispatcher());
     mockSetDoc.mockResolvedValue(undefined);
     mockDeleteDoc.mockResolvedValue(undefined);
+    mockAddDoc.mockResolvedValue({ id: 'notification-1' });
+    mockRunTransaction.mockReset();
   });
 
   afterEach(() => {
@@ -446,6 +493,85 @@ describe('useEventsPageRuntime', () => {
     await waitFor(() => {
       expect(Array.from(result.current.favoriteEventIds)).toEqual(['event-7']);
     });
+  });
+
+  it('hydrates visible non-self event host follow state in a batched refresh', async () => {
+    const events = [
+      createEventFixture(1, { hostUid: 'host-a', hostName: 'Host A' }),
+      createEventFixture(2, { hostUid: 'host-b', hostName: 'Host B' }),
+      createEventFixture(3, { hostUid: 'host-a', hostName: 'Host A Again' }),
+      createEventFixture(4, { hostUid: 'user-1', hostName: 'Alice' }),
+    ];
+    mockGetDocs.mockImplementation(createGetDocsDispatcher({ latestEvents: events }));
+    mockGetDoc.mockImplementation(
+      createEventPageGetDocDispatcher({ followedHostUids: ['host-b'] }),
+    );
+    createWrapper({ user: createTestUser({ uid: 'user-1' }) });
+    const { result } = renderHook(() => useEventsPageRuntime());
+
+    await waitFor(() => {
+      expect(result.current.events).toHaveLength(4);
+    });
+
+    await waitFor(() => {
+      expect(result.current.hostFollowStateByUid['host-a']).toMatchObject({
+        isVisible: true,
+        isFollowing: false,
+        label: '追蹤',
+      });
+      expect(result.current.hostFollowStateByUid['host-b']).toMatchObject({
+        isVisible: true,
+        isFollowing: true,
+        label: '追蹤中',
+      });
+    });
+
+    expect(result.current.hostFollowStateByUid['user-1']).toBeUndefined();
+    expect(mockGetDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'users/user-1/following/host-a' }),
+    );
+    expect(mockGetDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'users/user-1/following/host-b' }),
+    );
+    expect(mockGetDoc).not.toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'users/user-1/following/user-1' }),
+    );
+  });
+
+  it('toggles a visible event list host follow state through the shared follow use-cases', async () => {
+    const [event] = createEventList(1, 1, () => ({ hostUid: 'host-a', hostName: 'Host A' }));
+    mockGetDocs.mockImplementation(createGetDocsDispatcher({ latestEvents: [event] }));
+    mockGetDoc.mockImplementation(createEventPageGetDocDispatcher());
+    mockRunTransaction.mockImplementation(
+      createFollowTransactionDispatcher({ followerUid: 'user-1', targetUid: 'host-a' }),
+    );
+    const { showToast } = createWrapper({ user: createTestUser({ uid: 'user-1' }) });
+    const { result } = renderHook(() => useEventsPageRuntime());
+
+    await waitFor(() => {
+      expect(result.current.hostFollowStateByUid['host-a']).toMatchObject({
+        isFollowing: false,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleToggleHostFollow(event);
+    });
+
+    expect(result.current.hostFollowStateByUid['host-a']).toMatchObject({
+      isFollowing: true,
+      isPending: false,
+      label: '追蹤中',
+    });
+    expect(mockRunTransaction).toHaveBeenCalled();
+    expect(mockAddDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'notifications' }),
+      expect.objectContaining({
+        recipientUid: 'host-a',
+        type: 'runner_followed',
+      }),
+    );
+    expect(showToast).toHaveBeenLastCalledWith('已開始追蹤', 'success');
   });
 
   it('shows a login toast and skips writes when an anonymous user toggles an event favorite', async () => {

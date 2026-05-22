@@ -12,6 +12,7 @@
  * @property {string} photoURL - 頭像 URL，可能為空字串。
  * @property {string} [bio] - 個人簡介（0–150 字），未設定時 undefined。
  * @property {import('firebase/firestore').Timestamp} createdAt - 加入平台日期。
+ * @property {number} [followersCount] - 公開追蹤者數量。
  */
 
 /**
@@ -31,6 +32,9 @@ function toPublicProfile(uid, data) {
 
   if (typeof data.bio === 'string' && data.bio.length > 0) {
     profile.bio = data.bio;
+  }
+  if (typeof data.followersCount === 'number') {
+    profile.followersCount = data.followersCount;
   }
 
   return profile;

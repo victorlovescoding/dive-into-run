@@ -10,6 +10,92 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function userPath(userId) {
+      return /databases/$(database)/documents/users/$(userId);
+    }
+
+    function followingPath(followerUid, targetUid) {
+      return /databases/$(database)/documents/users/$(followerUid)/following/$(targetUid);
+    }
+
+    function followerPath(targetUid, followerUid) {
+      return /databases/$(database)/documents/users/$(targetUid)/followers/$(followerUid);
+    }
+
+    function existingFollowersCount() {
+      return resource.data.followersCount is number ? resource.data.followersCount : 0;
+    }
+
+    function userFollowersCountBefore(userId) {
+      return get(userPath(userId)).data.followersCount is number
+        ? get(userPath(userId)).data.followersCount
+        : 0;
+    }
+
+    function userFollowersCountAfter(userId) {
+      return getAfter(userPath(userId)).data.followersCount is number
+        ? getAfter(userPath(userId)).data.followersCount
+        : 0;
+    }
+
+    function isValidFollowPayload(followerUid, targetUid) {
+      return request.resource.data.keys().hasAll([
+          'followerUid', 'followerName', 'followerPhotoURL',
+          'targetUid', 'targetName', 'targetPhotoURL',
+          'status', 'createdAt',
+        ])
+        && request.resource.data.keys().hasOnly([
+          'followerUid', 'followerName', 'followerPhotoURL',
+          'targetUid', 'targetName', 'targetPhotoURL',
+          'status', 'createdAt',
+        ])
+        && request.resource.data.followerUid == followerUid
+        && request.resource.data.targetUid == targetUid
+        && request.resource.data.followerName is string
+        && request.resource.data.followerPhotoURL is string
+        && request.resource.data.targetName is string
+        && request.resource.data.targetPhotoURL is string
+        && request.resource.data.status == 'following'
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function followersCountIncrements(targetUid) {
+      return userFollowersCountAfter(targetUid) == userFollowersCountBefore(targetUid) + 1;
+    }
+
+    function followersCountDecrements(targetUid) {
+      return userFollowersCountAfter(targetUid) == userFollowersCountBefore(targetUid) - 1
+        && userFollowersCountAfter(targetUid) >= 0;
+    }
+
+    function isValidFollowersCountUpdate(userId) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['followersCount'])
+        || (
+          userId != request.auth.uid
+          && request.resource.data.followersCount is number
+          && request.resource.data.followersCount >= 0
+          && (
+            (
+              request.resource.data.followersCount == existingFollowersCount() + 1
+              && existsAfter(followerPath(userId, request.auth.uid))
+              && !exists(followerPath(userId, request.auth.uid))
+            )
+            || (
+              request.resource.data.followersCount == existingFollowersCount() - 1
+              && !existsAfter(followerPath(userId, request.auth.uid))
+              && exists(followerPath(userId, request.auth.uid))
+            )
+          )
+        );
+    }
+
+    function isValidFollowCountUpdate(userId) {
+      return isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['followersCount'])
+        && isValidFollowersCountUpdate(userId);
+    }
+
     function isValidFavoriteCreate(targetId) {
       return request.resource.data.keys().hasAll(['targetId', 'createdAt'])
         && request.resource.data.keys().hasOnly(['targetId', 'createdAt'])
@@ -19,21 +105,29 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
     }
 
+    function isValidUserCreate(userId) {
+      return isOwner(userId)
+        && !request.resource.data.keys().hasAny(['followersCount', 'followingCount']);
+    }
+
     match /users/{userId} {
       // 公開檔案頁面可被未登入訪客瀏覽（FR-007）
       allow read: if true;
 
-      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isValidUserCreate(userId);
 
       // 限制本人寫入；只有當「這次更新實際動到 bio 欄位」才驗證 bio
       // 的型別與長度。這避免既有 over-length bio 在 rules 上線後被鎖死，
       // 讓使用者仍能正常更新 name / photoURL 等欄位。
       allow update: if isSignedIn()
         && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['followersCount', 'followingCount'])
         && (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['bio'])
           || (request.resource.data.bio is string && request.resource.data.bio.size() <= 150)
-        );
+        )
+        || isValidFollowCountUpdate(userId);
 
       allow delete: if false;
 
@@ -52,6 +146,40 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow create: if isOwner(userId) && isValidFavoriteCreate(eventId);
         allow delete: if isOwner(userId);
+        allow update: if false;
+      }
+
+      match /following/{targetUid} {
+        allow read: if true;
+        allow create: if isOwner(userId)
+          && userId != targetUid
+          && isValidFollowPayload(userId, targetUid)
+          && existsAfter(followerPath(targetUid, userId))
+          && !exists(followerPath(targetUid, userId))
+          && followersCountIncrements(targetUid);
+        allow delete: if isOwner(userId)
+          && userId != targetUid
+          && !existsAfter(followerPath(targetUid, userId))
+          && exists(followerPath(targetUid, userId))
+          && followersCountDecrements(targetUid);
+        allow update: if false;
+      }
+
+      match /followers/{followerUid} {
+        allow read: if true;
+        allow create: if isSignedIn()
+          && request.auth.uid == followerUid
+          && userId != followerUid
+          && isValidFollowPayload(followerUid, userId)
+          && existsAfter(followingPath(followerUid, userId))
+          && !exists(followingPath(followerUid, userId))
+          && followersCountIncrements(userId);
+        allow delete: if isSignedIn()
+          && request.auth.uid == followerUid
+          && userId != followerUid
+          && !existsAfter(followingPath(followerUid, userId))
+          && exists(followingPath(followerUid, userId))
+          && followersCountDecrements(userId);
         allow update: if false;
       }
     }
@@ -267,6 +395,7 @@ service cloud.firestore {
           'event_modified', 'event_cancelled', 'post_new_comment',
           'post_comment_reply', 'event_host_comment',
           'event_participant_comment', 'event_comment_reply',
+          'runner_followed',
         ]
         && request.resource.data.read == false
         && request.resource.data.createdAt == request.time;

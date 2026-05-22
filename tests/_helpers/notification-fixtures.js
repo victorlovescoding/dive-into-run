@@ -7,7 +7,7 @@ import { createFirestoreDocSnapshot, createFirestoreQuerySnapshot } from './fact
  */
 
 /**
- * @typedef {'event_modified'|'event_cancelled'|'post_new_comment'|'post_comment_reply'|'event_host_comment'|'event_participant_comment'|'event_comment_reply'} NotificationFixtureType
+ * @typedef {'event_modified'|'event_cancelled'|'post_new_comment'|'post_comment_reply'|'event_host_comment'|'event_participant_comment'|'event_comment_reply'|'runner_followed'} NotificationFixtureType
  */
 
 /**
@@ -18,7 +18,7 @@ import { createFirestoreDocSnapshot, createFirestoreQuerySnapshot } from './fact
  * @property {string} actorUid - Actor UID.
  * @property {string} actorName - Actor display name.
  * @property {string} actorPhotoURL - Actor avatar URL.
- * @property {'event'|'post'} entityType - Linked entity type.
+ * @property {'event'|'post'|'user'} entityType - Linked entity type.
  * @property {string} entityId - Linked entity ID.
  * @property {string} entityTitle - Linked entity title.
  * @property {string | null} commentId - Linked comment ID.

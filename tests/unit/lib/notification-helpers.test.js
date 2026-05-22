@@ -8,14 +8,30 @@ import { buildNotificationMessage } from '@/service/notification-service';
  * @param {string} partial.type - 通知類型。
  * @param {string} partial.entityId - 實體 ID。
  * @param {string|null} partial.commentId - 留言 ID。
+ * @param {string} [partial.actorUid] - 觸發者 UID。
  * @returns {import('@/service/notification-service').NotificationItem} 測試用通知物件。
  */
-function makeNotification({ type, entityId, commentId }) {
+function makeNotification({
+  type,
+  entityId,
+  commentId,
+  actorUid = 'actor-1',
+}) {
   return /** @type {import('@/service/notification-service').NotificationItem} */ ({
     type,
     entityId,
     commentId,
+    actorUid,
   });
+}
+
+/**
+ * Casts feature-introduced notification type strings for RED-phase tests.
+ * @param {string} type - Notification type candidate.
+ * @returns {import('@/service/notification-service').NotificationType} Notification type.
+ */
+function asNotificationType(type) {
+  return /** @type {import('@/service/notification-service').NotificationType} */ (type);
 }
 
 describe('buildNotificationMessage', () => {
@@ -62,6 +78,15 @@ describe('buildNotificationMessage', () => {
       const result = buildNotificationMessage('event_comment_reply', '登山趣');
 
       expect(result).toBe('你留言過的活動『登山趣』有一則新的留言');
+    });
+
+    it('runner_followed — 回傳跑友追蹤通知訊息', () => {
+      const result = buildNotificationMessage(
+        asNotificationType('runner_followed'),
+        'Viewer Runner',
+      );
+
+      expect(result).toBe('Viewer Runner 已開始追蹤你。');
     });
   });
 });
@@ -152,6 +177,19 @@ describe('getNotificationLink', () => {
       const result = getNotificationLink(notification);
 
       expect(result).toBe('/events/event-4?commentId=c-5');
+    });
+
+    it('runner_followed — 回傳追蹤者公開 profile 連結', () => {
+      const notification = makeNotification({
+        type: 'runner_followed',
+        entityId: 'viewer',
+        commentId: null,
+        actorUid: 'viewer',
+      });
+
+      const result = getNotificationLink(notification);
+
+      expect(result).toBe('/users/viewer');
     });
   });
 });

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import BookmarkButton from '@/components/BookmarkButton';
 import EventActionButtons from '@/components/EventActionButtons';
 import EventCardMenu from '@/components/EventCardMenu';
+import FollowButton from '@/components/FollowButton';
 import UserLink from '@/components/UserLink';
 import { formatDateTime, formatPace, renderRouteLabel } from './event-formatters';
 import styles from './EventsPageScreen.module.css';
@@ -122,6 +123,14 @@ export default function EventsListSection({
               photoURL={event.hostPhotoURL}
               size={24}
             />
+            {event.hostFollowControl?.isVisible && (
+              <FollowButton
+                isFollowing={event.hostFollowControl.isFollowing}
+                isPending={event.hostFollowControl.isPending}
+                label={event.hostFollowControl.label}
+                onToggle={event.hostFollowControl.onToggle}
+              />
+            )}
           </div>
           <div>
             路線：

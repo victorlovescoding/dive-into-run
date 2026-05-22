@@ -36,15 +36,52 @@ function formatKilometers(km) {
  * 3. count 欄位即使為 0 也顯示 `0`（不隱藏）。
  * @param {object} props - 元件屬性。
  * @param {ProfileStatsData} props.stats - 統計數據。
+ * @param {number} [props.followersCount] - 公開追蹤者數量。
+ * @param {number} [props.followingCount] - 公開追蹤中數量。
+ * @param {(direction: 'followers') => void} [props.onOpenFollowers] - 開啟追蹤者名單。
+ * @param {(direction: 'following') => void} [props.onOpenFollowing] - 開啟追蹤中名單。
  * @returns {import('react').ReactElement} 統計卡片。
  */
-export default function ProfileStats({ stats }) {
+export default function ProfileStats({
+  stats,
+  followersCount,
+  followingCount,
+  onOpenFollowers,
+  onOpenFollowing,
+}) {
   const { hostedCount, joinedCount, totalDistanceKm } = stats;
   const showDistance = totalDistanceKm !== null;
+  const showFollowCounts =
+    typeof followersCount === 'number' &&
+    typeof followingCount === 'number' &&
+    typeof onOpenFollowers === 'function' &&
+    typeof onOpenFollowing === 'function';
   const distanceText = showDistance ? formatKilometers(totalDistanceKm) : '';
 
   return (
     <section className={styles.stats} aria-label="使用者統計">
+      {showFollowCounts && (
+        <>
+          <button
+            type="button"
+            className={styles.statItemButton}
+            aria-label={`${followersCount} 位追蹤者`}
+            onClick={() => onOpenFollowers('followers')}
+          >
+            <span className={styles.statValue}>{followersCount}</span>
+            <span className={styles.statLabel}>位追蹤者</span>
+          </button>
+          <button
+            type="button"
+            className={styles.statItemButton}
+            aria-label={`${followingCount} 位追蹤中`}
+            onClick={() => onOpenFollowing('following')}
+          >
+            <span className={styles.statValue}>{followingCount}</span>
+            <span className={styles.statLabel}>位追蹤中</span>
+          </button>
+        </>
+      )}
       <div className={styles.statItem}>
         <span className={styles.statValue}>{hostedCount}</span>
         <span className={styles.statLabel}>開團數</span>

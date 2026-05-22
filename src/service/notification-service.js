@@ -13,7 +13,7 @@
  * @property {string} actorUid - 觸發者 UID。
  * @property {string} actorName - 觸發者顯示名稱。
  * @property {string} actorPhotoURL - 觸發者頭像 URL。
- * @property {'event'|'post'} entityType - 關聯實體類型。
+ * @property {'event'|'post'|'user'} entityType - 關聯實體類型。
  * @property {string} entityId - 關聯實體 ID。
  * @property {string} entityTitle - 關聯實體標題。
  * @property {string|null} commentId - 留言 ID。
@@ -23,7 +23,7 @@
  */
 
 /**
- * @typedef {'event_modified'|'event_cancelled'|'post_new_comment'|'post_comment_reply'|'event_host_comment'|'event_participant_comment'|'event_comment_reply'} NotificationType
+ * @typedef {'event_modified'|'event_cancelled'|'post_new_comment'|'post_comment_reply'|'event_host_comment'|'event_participant_comment'|'event_comment_reply'|'runner_followed'} NotificationType
  */
 
 /** @type {Record<NotificationType, (title: string) => string>} */
@@ -35,6 +35,7 @@ const MESSAGE_BUILDERS = {
   event_host_comment: (title) => `你主辦的活動『${title}』有一則新的留言`,
   event_participant_comment: (title) => `你參加的活動『${title}』有一則新的留言`,
   event_comment_reply: (title) => `你留言過的活動『${title}』有一則新的留言`,
+  runner_followed: (actorName) => `${actorName} 已開始追蹤你。`,
 };
 
 /**

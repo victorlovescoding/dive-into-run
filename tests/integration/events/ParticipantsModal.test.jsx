@@ -280,6 +280,7 @@ describe('EventDetailClient participants modal integration', () => {
       'href',
       '/users/participant-2',
     );
+    expect(within(dialog).queryByRole('button', { name: /追蹤/ })).not.toBeInTheDocument();
     expect(screen.getByText('主揪')).toBeInTheDocument();
     expect(screen.getByText('已參加')).toBeInTheDocument();
 

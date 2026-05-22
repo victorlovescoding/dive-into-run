@@ -16,8 +16,9 @@
  * 3. Strict JSDoc; no `any`.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { createProfileStatsFixture as createStats } from '../../_helpers/profile-fixtures';
 
 /* ==========================================================================
@@ -32,15 +33,22 @@ import { createProfileStatsFixture as createStats } from '../../_helpers/profile
  */
 
 /**
+ * @typedef {object} MockProfileStatsProps
+ * @property {MockProfileStats} stats - 活動統計。
+ * @property {number} [followersCount] - 公開追蹤者數量。
+ * @property {number} [followingCount] - 公開追蹤中數量。
+ * @property {(direction: 'followers') => void} [onOpenFollowers] - 開啟追蹤者清單。
+ * @property {(direction: 'following') => void} [onOpenFollowing] - 開啟追蹤中清單。
+ */
+
+/**
  * 動態載入 ProfileStats 元件。
- * @returns {Promise<(props: { stats: MockProfileStats }) => import('react').ReactElement>}
+ * @returns {Promise<(props: MockProfileStatsProps) => import('react').ReactElement>}
  *   ProfileStats 元件。
  */
 async function importProfileStats() {
   const mod = await import('@/app/users/[uid]/ProfileStats');
-  return /** @type {(props: { stats: MockProfileStats }) => import('react').ReactElement} */ (
-    mod.default
-  );
+  return /** @type {(props: MockProfileStatsProps) => import('react').ReactElement} */ (mod.default);
 }
 
 /* ==========================================================================
@@ -132,5 +140,32 @@ describe('Integration: ProfileStats', () => {
 
     // Assert
     expect(screen.getByText(/100\s?km/)).toBeInTheDocument();
+  });
+
+  it('renders public follow counts as accessible buttons', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const ProfileStats = await importProfileStats();
+    const stats = createStats({ hostedCount: 1, joinedCount: 2, totalDistanceKm: null });
+    const onOpenFollowers = vi.fn();
+    const onOpenFollowing = vi.fn();
+
+    // Act
+    render(
+      <ProfileStats
+        stats={stats}
+        followersCount={9}
+        followingCount={4}
+        onOpenFollowers={onOpenFollowers}
+        onOpenFollowing={onOpenFollowing}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '9 位追蹤者' }));
+    await user.click(screen.getByRole('button', { name: '4 位追蹤中' }));
+
+    // Assert
+    expect(onOpenFollowers).toHaveBeenCalledWith('followers');
+    expect(onOpenFollowing).toHaveBeenCalledWith('following');
   });
 });

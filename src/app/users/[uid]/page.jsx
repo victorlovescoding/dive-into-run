@@ -13,6 +13,7 @@ import ProfileClient from './ProfileClient';
  * @property {string} photoURL - 頭像 URL。
  * @property {string} [bio] - 個人簡介。
  * @property {Date} createdAt - 加入日期（序列化後的 Date 實例）。
+ * @property {number} [followersCount] - 公開追蹤者數量。
  */
 
 /**
@@ -26,7 +27,7 @@ import ProfileClient from './ProfileClient';
  * @param {PublicProfile} profile - Admin SDK 抓到的原始 profile。
  * @returns {SerializedPublicProfile} RSC-safe 的 profile 物件。
  */
-function serializeProfile(profile) {
+export function serializeProfile(profile) {
   const createdAtDate =
     typeof profile.createdAt?.toDate === 'function' ? profile.createdAt.toDate() : new Date(0);
 
@@ -39,6 +40,10 @@ function serializeProfile(profile) {
   };
   if (typeof profile.bio === 'string' && profile.bio.length > 0) {
     base.bio = profile.bio;
+  }
+  const { followersCount } = /** @type {{ followersCount?: unknown }} */ (profile);
+  if (typeof followersCount === 'number') {
+    base.followersCount = followersCount;
   }
   return base;
 }

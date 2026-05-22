@@ -59,6 +59,11 @@ export default function MemberPageScreen({ runtime, bioEditor, dashboardTabs }) 
           <Link href="/member/favorites">我的收藏</Link>
         </p>
       )}
+      {user && (
+        <p>
+          <Link href="/member/following">我的追蹤跑友</Link>
+        </p>
+      )}
       {bioEditor}
       {dashboardTabs}
     </div>

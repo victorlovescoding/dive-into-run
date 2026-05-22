@@ -1,0 +1,111 @@
+.container {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.25;
+  color: #202124;
+}
+
+.count {
+  margin: 0 0 3px;
+  color: #5f6368;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.rowList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.runnerLink {
+  min-width: 0;
+}
+
+.unfollowButton {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #fff;
+  color: #3c4043;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.unfollowButton:hover:not(:disabled) {
+  border-color: #c5221f;
+  color: #c5221f;
+}
+
+.unfollowButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.loading,
+.empty {
+  padding: 36px 0;
+  text-align: center;
+  color: #80868b;
+}
+
+.error {
+  margin: 8px 0;
+  padding: 16px;
+  border-radius: 8px;
+  background: #fce8e6;
+  color: #c5221f;
+}
+
+@media (max-width: 767px) {
+  .container {
+    padding: 20px 12px 40px;
+  }
+
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .unfollowButton {
+    width: 100%;
+  }
+}

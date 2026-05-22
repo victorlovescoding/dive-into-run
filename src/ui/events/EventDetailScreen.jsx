@@ -7,6 +7,7 @@ import CommentSection from '@/components/CommentSection';
 import EventCardMenu from '@/components/EventCardMenu';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import EventEditForm from '@/components/EventEditForm';
+import FollowButton from '@/components/FollowButton';
 import ShareButton from '@/components/ShareButton';
 import UserLink from '@/components/UserLink';
 import { formatDateTime, formatPace } from './event-formatters';
@@ -40,6 +41,7 @@ export default function EventDetailScreen({ id, runtime }) {
     isDeletingEvent,
     isFavoriteEvent,
     isTogglingFavoriteEvent,
+    hostFollowControl,
     statusText,
     hasRoute,
     routePolylines,
@@ -153,6 +155,14 @@ export default function EventDetailScreen({ id, runtime }) {
                     photoURL={event.hostPhotoURL}
                     size={28}
                   />
+                  {hostFollowControl?.isVisible && (
+                    <FollowButton
+                      isFollowing={hostFollowControl.isFollowing}
+                      isPending={hostFollowControl.isPending}
+                      label={hostFollowControl.label}
+                      onToggle={hostFollowControl.onToggle}
+                    />
+                  )}
                 </div>
               </div>
 

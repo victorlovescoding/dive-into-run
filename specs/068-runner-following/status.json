@@ -1,0 +1,2072 @@
+{
+  "schemaVersion": 3,
+  "feature": "runner-following",
+  "branch": "068-runner-following",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-068-runner-following",
+  "phase": "Authorization expanded pending commit",
+  "activeTask": null,
+  "activeWave": null,
+  "authorizationBoundary": {
+    "edit": true,
+    "commit": true,
+    "push": true,
+    "pullRequest": true,
+    "ciWatch": false,
+    "merge": false,
+    "localMainSync": false,
+    "deployFirestoreRules": true
+  },
+  "currentHead": {
+    "branch": "068-runner-following",
+    "commit": "7ad004ee405b8485adeb9ca7ae5f19cd77cddb54",
+    "capturedAt": "2026-05-22T11:38:27+08:00",
+    "summary": "Checked before authorized closeout commit; cleanup completed, no commit/stage/push performed yet."
+  },
+  "remoteHead": {
+    "remote": "origin",
+    "branch": "main",
+    "commit": "d77bcbab497e749dcb37fd282636e2d9b855f61e",
+    "capturedAt": "2026-05-22T08:40:51+08:00",
+    "summary": "Checked during T501 Integration Reviewer PASS; HEAD...origin/main left/right count was 0 13."
+  },
+  "completedTasks": [
+    "T001",
+    "T002",
+    "T003",
+    "T101",
+    "T201",
+    "T202",
+    "T251",
+    "T301",
+    "T401",
+    "T501"
+  ],
+  "tasks": [
+    {
+      "id": "T001",
+      "title": "Spec Artifact Reviewer Gate",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-spec",
+      "engineer": "Spec Artifact Engineer",
+      "reviewer": "Spec Artifact Reviewer",
+      "scope": [
+        "Seed and review the durable Superpowers workflow artifacts for runner following."
+      ],
+      "nonScope": [
+        "No production code.",
+        "No executable tests.",
+        "No Firestore rules changes.",
+        "No package, config, script, or lockfile changes.",
+        "No commits, pushes, pull requests, CI watching, merges, local main sync, or rules deploy."
+      ],
+      "ownedFiles": [
+        "specs/068-runner-following/spec.md",
+        "specs/068-runner-following/plan.md",
+        "specs/068-runner-following/tasks.md",
+        "specs/068-runner-following/handoff.md",
+        "specs/068-runner-following/status.json"
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-profiles.md",
+        "docs/superpowers/task-contract.md",
+        "docs/superpowers/status.schema.json"
+      ],
+      "dependencies": [
+        "Spec artifacts seeded."
+      ],
+      "engineerInstructions": [
+        "Modify only owned files.",
+        "Keep this as spec-stage workflow state only."
+      ],
+      "acceptanceCriteria": [
+        "Product decisions are recorded in spec.md.",
+        "Authorization and release boundary are explicit.",
+        "status.json, tasks.md, and handoff.md agree."
+      ],
+      "verification": [
+        {
+          "command": "git diff --check",
+          "expectedSignal": "exit 0; no whitespace errors",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-05-21T23:16:42+08:00"
+          }
+        },
+        {
+          "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/068-runner-following/status.json','utf8'))\"",
+          "expectedSignal": "exit 0; status.json parses",
+          "lastRun": {
+            "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/068-runner-following/status.json','utf8'))\"",
+            "exitCode": 0,
+            "summary": "status.json parsed successfully.",
+            "verifiedAt": "2026-05-21T23:16:42+08:00"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touched only owned files.",
+        "Verification passed.",
+        "Rules deploy state was required, not changed, and not deployed."
+      ],
+      "reviewerRejectCriteria": [
+        "Any non-owned file changed.",
+        "Verification failed or was stale.",
+        "Artifacts contradicted the approved product scope or authorization boundary."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec Artifact Reviewer",
+        "summary": "No findings. Artifacts were internally consistent for user spec review.",
+        "decidedAt": "2026-05-21T23:16:42+08:00"
+      },
+      "evidence": {
+        "engineerReport": "Spec artifact seed completed.",
+        "reviewerReport": "review_passed at 2026-05-21T23:16:42+08:00.",
+        "commandOutputSummary": [
+          "git diff --check: exit 0; no whitespace errors.",
+          "node -e JSON parse status check: exit 0; status.json parsed successfully."
+        ],
+        "changedFilesSummary": [
+          "specs/068-runner-following/spec.md: product spec and authorization.",
+          "specs/068-runner-following/plan.md: spec-stage planning stub.",
+          "specs/068-runner-following/tasks.md: Reviewer gate and guard.",
+          "specs/068-runner-following/handoff.md: resume state and next action.",
+          "specs/068-runner-following/status.json: machine-readable v3 state."
+        ]
+      }
+    },
+    {
+      "id": "T002",
+      "title": "Planner Implementation Plan Reviewer Gate",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-planner-review",
+      "engineer": "Planner",
+      "reviewer": "Planner Reviewer",
+      "scope": [
+        "Update spec.md authorization for approved implementation edits.",
+        "Replace plan.md with the implementation plan under specs/068-runner-following/.",
+        "Replace tasks.md with a full task board following docs/superpowers/task-contract.md.",
+        "Update status.json schemaVersion 3 with tasks mirroring tasks.md.",
+        "Update handoff.md to planning complete pending Planner Reviewer check."
+      ],
+      "nonScope": [
+        "No production code.",
+        "No executable tests.",
+        "No Firestore rules changes.",
+        "No package, script, config, lockfile, deployment, commit, push, pull request, CI watch, merge, local main sync, or rules deploy.",
+        "No product scope beyond approved spec.md."
+      ],
+      "ownedFiles": [
+        "specs/068-runner-following/spec.md",
+        "specs/068-runner-following/plan.md",
+        "specs/068-runner-following/tasks.md",
+        "specs/068-runner-following/handoff.md",
+        "specs/068-runner-following/status.json"
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-profiles.md",
+        "docs/superpowers/task-contract.md",
+        "docs/superpowers/status.schema.json",
+        ".codex/rules/coding-rules.md",
+        ".codex/rules/code-style.md",
+        ".codex/rules/testing-standards.md",
+        ".codex/rules/e2e-commands.md",
+        ".codex/rules/sensors.md",
+        ".codex/references/quality-gates.md",
+        ".codex/references/review-standards.md",
+        ".codex/references/testing-handbook.md",
+        "specs/068-runner-following/spec.md",
+        "specs/068-runner-following/plan.md",
+        "specs/068-runner-following/tasks.md",
+        "specs/068-runner-following/handoff.md",
+        "specs/068-runner-following/status.json",
+        "firestore.rules",
+        "playwright.emulator.config.mjs",
+        "package.json",
+        "Scoped source and test files cited in plan.md."
+      ],
+      "dependencies": [
+        "T001 completed.",
+        "User approved spec and authorized edit=true only on 2026-05-21."
+      ],
+      "engineerInstructions": [
+        "Include member/dashboard 我的追蹤跑友 following management as a separate serialized implementation slice because user confirmed it is v1 scope.",
+        "Keep rules deploy status required and not deployed.",
+        "Set T002 active and requiring Reviewer check; leave implementation tasks blocked by T002.",
+        "Keep future implementation tasks serial unless owned files are fully disjoint."
+      ],
+      "acceptanceCriteria": [
+        "AC-T002.1: spec.md records approval by user on 2026-05-21 and one-time edit=true authorization only.",
+        "AC-T002.2: plan.md includes architecture, exact files and responsibilities, data flow, testing strategy, risk analysis, stop conditions, and final integration gate.",
+        "AC-T002.3: tasks.md includes dependency graph, waves, member following management slice, owned files, read-only context, acceptance criteria, exact verification commands, browser evidence requirements, Reviewer PASS and REJECT criteria, and evidence slots.",
+        "AC-T002.4: status.json is schemaVersion 3 and mirrors the task board.",
+        "AC-T002.5: handoff.md says planning is complete and Planner Reviewer check is required before Engineer dispatch.",
+        "AC-T002.6: rulesDeployStatus.state remains required, with required=true, changed=false, no evidence, and deployedCommit=null."
+      ],
+      "verification": [
+        {
+          "command": "git diff --check",
+          "expectedSignal": "exit 0; no whitespace errors",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-05-21T23:45:22+08:00"
+          }
+        },
+        {
+          "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/068-runner-following/status.json','utf8'))\"",
+          "expectedSignal": "exit 0; status.json parsed successfully",
+          "lastRun": {
+            "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/068-runner-following/status.json','utf8'))\"",
+            "exitCode": 0,
+            "summary": "status.json parsed successfully.",
+            "verifiedAt": "2026-05-21T23:45:22+08:00"
+          }
+        },
+        {
+          "command": "rg -n \"TBD|TODO|<[^>]+>|placeholder|待定|稍後\" specs/068-runner-following",
+          "expectedSignal": "exit 0 only when matches are the required verification command self-references; no product or workflow filler text",
+          "lastRun": {
+            "command": "rg -n \"TBD|TODO|<[^>]+>|placeholder|待定|稍後\" specs/068-runner-following",
+            "exitCode": 0,
+            "summary": "Matched only required verification command self-references in handoff.md, tasks.md, and status.json.",
+            "verifiedAt": "2026-05-21T23:45:22+08:00"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only T002 owned files.",
+        "Verification commands pass with expected signal.",
+        "plan.md, tasks.md, status.json, and handoff.md agree on current state.",
+        "Implementation tasks are dependency-ordered and no same-wave owned files overlap.",
+        "Member/dashboard 我的追蹤跑友 is included as v1 scope in its own serialized task slice.",
+        "Rules deploy claims remain required, not changed, and not deployed."
+      ],
+      "reviewerRejectCriteria": [
+        "Any non-owned file changed.",
+        "Any verification command fails without a legitimate documented self-reference signal.",
+        "Task states drift across tasks.md, status.json, and handoff.md.",
+        "Plan authorizes commit, push, PR, CI watch, merge, local main sync, or rules deploy.",
+        "Plan contradicts product scope in spec.md."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Planner Reviewer",
+        "summary": "No findings. Plan/task graph includes member/dashboard following management in v1, workflow commands are validator-safe, and tasks/status/handoff are synced.",
+        "decidedAt": "2026-05-21T23:56:58+08:00"
+      },
+      "evidence": {
+        "engineerReport": "Planner updated the five workflow artifacts for the member following scope correction and requires Planner Reviewer check before any Engineer dispatch.",
+        "reviewerReport": "review_passed at 2026-05-21T23:56:58+08:00; no findings.",
+        "commandOutputSummary": [
+          "git diff --check: exit 0; no whitespace errors.",
+          "node -e JSON parse command: exit 0; status.json parsed successfully.",
+          "rg filler scan: exit 0; matched only the required verification command self-references in handoff.md, tasks.md, and status.json.",
+          "npm run workflow:validate: exit 0; 7 status files valid.",
+          "npm run workflow:check: exit 0; 7 status files synced."
+        ],
+        "changedFilesSummary": [
+          "specs/068-runner-following/spec.md: authorization and member following scope corrected.",
+          "specs/068-runner-following/plan.md: implementation plan.",
+          "specs/068-runner-following/tasks.md: task board.",
+          "specs/068-runner-following/handoff.md: next-session state.",
+          "specs/068-runner-following/status.json: schemaVersion 3 task mirror."
+        ]
+      }
+    },
+    {
+      "id": "T003",
+      "title": "Following Count Plan Revision Reviewer Gate",
+      "state": "completed",
+      "attempt": 2,
+      "wave": "wave-planner-review",
+      "engineer": "Planner / workflow-doc Engineer",
+      "reviewer": "Planner Reviewer",
+      "scope": [
+        "Revise the workflow artifacts so v1 no longer requires client-maintained users/{uid}.followingCount.",
+        "Preserve user-facing public follower/following counts and lists.",
+        "Return T101 to attempt 3 with a corrected foundation contract."
+      ],
+      "nonScope": [
+        "No production code.",
+        "No executable tests outside specs/068-runner-following/.",
+        "No Firestore rules/source/test implementation edits.",
+        "No package, config, lockfile, deployment, commit, push, pull request, CI watch, merge, local main sync, or rules deploy.",
+        "No product scope changes beyond the approved following-count derivation."
+      ],
+      "ownedFiles": [
+        "specs/068-runner-following/spec.md",
+        "specs/068-runner-following/plan.md",
+        "specs/068-runner-following/tasks.md",
+        "specs/068-runner-following/handoff.md",
+        "specs/068-runner-following/status.json"
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-profiles.md",
+        "docs/superpowers/task-contract.md",
+        "docs/superpowers/status.schema.json",
+        "specs/068-runner-following/spec.md",
+        "specs/068-runner-following/plan.md",
+        "specs/068-runner-following/tasks.md",
+        "specs/068-runner-following/handoff.md",
+        "specs/068-runner-following/status.json"
+      ],
+      "dependencies": [
+        "T101 attempt 2 blocker recorded.",
+        "User approved deriving followingCount from users/{uid}/following."
+      ],
+      "engineerInstructions": [
+        "Update spec.md so followersCount may stay denormalized on users/{uid}, but following count is derived from users/{uid}/following and is not a client-writable users/{uid}.followingCount field in v1.",
+        "Update plan.md data flow so follow/unfollow transactions write mirrored docs and only target users/{targetUid}.followersCount; following count is obtained from the following list, aggregate, or read model.",
+        "Update T101 so attempt 3 expects standalone followingCount user-doc writes to be denied or removed, repo/use-cases to derive following count, and no client write to users/{viewerUid}.followingCount.",
+        "Keep T201, T251, and T301 user-facing compatible while noting they consume derived following counts/lists where needed.",
+        "Keep rulesDeployStatus required, changed=true, evidence empty, and not deployed."
+      ],
+      "acceptanceCriteria": [
+        "AC-T003.1: User-facing follower/following counts and lists remain in scope.",
+        "AC-T003.2: users/{uid}.followingCount is no longer required or allowed as a client-maintained v1 field.",
+        "AC-T003.3: T101 has corrected implementation and verification instructions for attempt 3, but is not ready until T003 Reviewer PASS and coordinator sync.",
+        "AC-T003.4: Current next action is Planner Reviewer check for T003 attempt 2, then T101 attempt 3 dispatch only after T003 is synced to completed.",
+        "AC-T003.5: No production code, executable tests, rules, config, lockfile, or package files are edited by this revision."
+      ],
+      "verification": [
+        {
+          "command": "git diff --check",
+          "expectedSignal": "exit 0; no whitespace errors",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-05-22T01:48:11+08:00"
+          }
+        },
+        {
+          "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/068-runner-following/status.json','utf8'))\"",
+          "expectedSignal": "exit 0; status.json parsed successfully",
+          "lastRun": {
+            "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/068-runner-following/status.json','utf8'))\"",
+            "exitCode": 0,
+            "summary": "status.json parsed successfully.",
+            "verifiedAt": "2026-05-22T01:48:11+08:00"
+          }
+        },
+        {
+          "command": "npm run workflow:validate",
+          "expectedSignal": "exit 0; status files valid",
+          "lastRun": {
+            "command": "npm run workflow:validate",
+            "exitCode": 0,
+            "summary": "Seven status files valid.",
+            "verifiedAt": "2026-05-22T01:48:11+08:00"
+          }
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "exit 0; status files synced",
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "Seven status files synced.",
+            "verifiedAt": "2026-05-22T01:48:11+08:00"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only the five owned workflow artifact files.",
+        "spec.md, plan.md, tasks.md, status.json, and handoff.md agree that following count is derived and not client-written to users/{uid}.",
+        "T101 attempt 3 instructions require denial/removal of standalone followingCount updates and no client write to users/{viewerUid}.followingCount.",
+        "T201, T251, and T301 retain user-facing public counts/lists and member/event behavior while consuming derived following count/list data.",
+        "rulesDeployStatus remains required, changed=true, not deployed, and deployFirestoreRules=false.",
+        "Verification commands pass with expected signals."
+      ],
+      "reviewerRejectCriteria": [
+        "Any non-owned file changed.",
+        "Any artifact still requires client-maintained users/{uid}.followingCount.",
+        "T101 remains blocked by the old followingCount plan flaw.",
+        "Workflow state drifts across tasks.md, status.json, and handoff.md.",
+        "Verification is missing, stale, or fails."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Planner Reviewer",
+        "summary": "Previous gate issue fixed. T101 is not dispatch-ready before T003 completion, T101 dependency now includes T003, product/count revision remains correct, and workflow state is synced.",
+        "decidedAt": "2026-05-22T01:51:00+08:00"
+      },
+      "evidence": {
+        "engineerReport": "Plan revision completed for derived following count and submitted for Planner Reviewer check. Attempt 2 fixes the workflow state drift from T003 attempt 1 by keeping T101 non-ready until T003 Reviewer PASS and coordinator sync.",
+        "reviewerReport": "T003 attempt 1 review_rejected: T101 was marked ready before T003 Reviewer PASS, and T101 dependencies only named T002 instead of the T003 review gate. Product/count revision accepted. T003 attempt 2 review_passed at 2026-05-22T01:51:00+08:00: previous gate issue fixed, T101 dependency now includes T003, product/count revision remains correct, and workflow state is synced.",
+        "commandOutputSummary": [
+          "git diff --check: exit 0; no whitespace errors.",
+          "node -e JSON parse command: exit 0; status.json parsed successfully.",
+          "npm run workflow:validate: exit 0; 7 status files valid.",
+          "npm run workflow:check: exit 0; 7 status files synced."
+        ],
+        "changedFilesSummary": [
+          "specs/068-runner-following/spec.md: data model corrected to derive following count.",
+          "specs/068-runner-following/plan.md: data flow, tests, and risks corrected.",
+          "specs/068-runner-following/tasks.md: T003 added and T101 attempt 3 contract corrected.",
+          "specs/068-runner-following/handoff.md: next action updated.",
+          "specs/068-runner-following/status.json: schemaVersion 3 mirror updated."
+        ]
+      }
+    },
+    {
+      "id": "T101",
+      "title": "Data, Rules, Service, And Notification Foundation",
+      "state": "completed",
+      "attempt": 4,
+      "wave": "wave-foundation",
+      "engineer": "Foundation Engineer",
+      "reviewer": "Foundation Reviewer",
+      "scope": [
+        "Implement follow graph Firestore rules, repo transaction API, service normalization, runtime use-cases, target followersCount updates, derived following-count reads, and follow notification type/routing.",
+        "Add focused tests for rules, service, runtime use-cases, and notification link behavior."
+      ],
+      "nonScope": [
+        "No profile UI, event UI, E2E, config, package, lockfile, migration, or rules deploy.",
+        "No private account, follow request, block, discovery, or feed behavior."
+      ],
+      "ownedFiles": [
+        "firestore.rules",
+        "src/repo/client/firebase-follow-repo.js",
+        "src/service/follow-service.js",
+        "src/runtime/client/use-cases/follow-use-cases.js",
+        "src/service/notification-service.js",
+        "src/runtime/client/use-cases/notification-use-cases.js",
+        "src/lib/notification-helpers.js",
+        "tests/server/rules/users.rules.test.js",
+        "tests/server/rules/notifications.rules.test.js",
+        "tests/unit/service/follow-service.test.js",
+        "tests/unit/runtime/follow-use-cases.test.js",
+        "tests/unit/lib/notification-helpers.test.js"
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-contract.md",
+        ".codex/rules/coding-rules.md",
+        ".codex/rules/testing-standards.md",
+        ".codex/references/quality-gates.md",
+        ".codex/references/testing-handbook.md",
+        "specs/068-runner-following/spec.md",
+        "specs/068-runner-following/plan.md",
+        "src/repo/client/firebase-content-favorites-repo.js",
+        "src/runtime/client/use-cases/content-favorite-use-cases.js",
+        "src/repo/client/firebase-notifications-repo.js",
+        "tests/server/rules/_helpers/rules-test-env.js"
+      ],
+      "dependencies": [
+        "T002 completed.",
+        "T003 review_passed and coordinator-synced to completed."
+      ],
+      "engineerInstructions": [
+        "Keep or add failing tests for public follow list reads, unauthenticated write denial, self-follow denial, mirrored doc writes, target followersCount increments and decrements, denial of standalone users/{viewerUid}.followingCount writes, idempotent repeated follow, unfollow/refollow notification behavior, and runner_followed notification link.",
+        "Implement the smallest foundation code to pass those tests.",
+        "Use transaction semantics for mirrored docs and target followersCount.",
+        "Do not write users/{viewerUid}.followingCount from the client transaction, repo, service, or runtime use-case. Derive following count from users/{viewerUid}/following via list size, aggregate, or read model.",
+        "Add runner_followed notification type without weakening existing notification rules.",
+        "Leave workflow rulesDeployStatus changes to coordinator state sync after review."
+      ],
+      "acceptanceCriteria": [
+        "Authenticated non-self user can follow and unfollow.",
+        "Unauthenticated users can read public followers/following lists and cannot write.",
+        "Self-follow is denied by rules and use-case validation.",
+        "Mirrored docs and target public followersCount update consistently.",
+        "Viewer following count is derived from users/{viewerUid}/following; no client write to users/{viewerUid}.followingCount remains.",
+        "Repeated follow while already following is idempotent and creates no duplicate notification.",
+        "Unfollow then refollow creates a new notification.",
+        "runner_followed notification text is exactly X 已開始追蹤你。",
+        "Notification click routing opens /users/{actorUid}."
+      ],
+      "verification": [
+        {
+          "command": "npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js",
+          "expectedSignal": "RED includes standalone followingCount write denial before fix, then GREEN exit 0",
+          "lastRun": {
+            "command": "npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js",
+            "exitCode": 0,
+            "summary": "30 passed.",
+            "verifiedAt": "2026-05-22T00:19:39+08:00"
+          }
+        },
+        {
+          "command": "npx vitest run --project=browser tests/unit/service/follow-service.test.js tests/unit/runtime/follow-use-cases.test.js tests/unit/lib/notification-helpers.test.js",
+          "expectedSignal": "GREEN exit 0 after repo/use-cases remove client followingCount writes and expose derived following count",
+          "lastRun": {
+            "command": "npx vitest run --project=browser tests/unit/service/follow-service.test.js tests/unit/runtime/follow-use-cases.test.js tests/unit/lib/notification-helpers.test.js",
+            "exitCode": 0,
+            "summary": "26 passed.",
+            "verifiedAt": "2026-05-22T00:19:39+08:00"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed-file lint passed.",
+            "verifiedAt": "2026-05-22T00:19:39+08:00"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type-check passed.",
+            "verifiedAt": "2026-05-22T00:19:39+08:00"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "RED failures are valid and GREEN commands pass.",
+        "Rules do not permit unauthenticated writes or self-follow.",
+        "Rules deny standalone or client-maintained users/{uid}.followingCount writes.",
+        "Follow repo/use-case writes mirrored docs and only target users/{targetUid}.followersCount.",
+        "Notification allowlist adds only the required follow type.",
+        "No package or lockfile changes."
+      ],
+      "reviewerRejectCriteria": [
+        "Client code still writes users/{viewerUid}.followingCount.",
+        "Rules still allow standalone or client-maintained users/{uid}.followingCount.",
+        "Target followersCount or mirrored writes can happen without the paired mirror path.",
+        "Repeated follow can create duplicate notification.",
+        "Rules allow non-owner follow writes, self-follow, or broad user document updates.",
+        "Tests mock internal layers contrary to repo test policy.",
+        "Verification is missing or stale."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Foundation Reviewer",
+        "summary": "Attempt 4 passed. Create-path count injection is fixed, rules reject followersCount/followingCount on user create, standalone count writes are denied, follow/unfollow remains paired with mirror docs and target followersCount, and client/runtime no longer writes viewer followingCount.",
+        "decidedAt": "2026-05-22T02:15:12+08:00"
+      },
+      "evidence": {
+        "engineerReport": "Attempt 2 BLOCKED at 2026-05-22T01:32:05+08:00. Engineer added the bounded standalone followingCount exploit regression; RED is valid because users/viewer { followingCount: 1 } currently succeeds. Firestore rules cannot safely prove a paired users/{viewer}/following/{targetUid} write from the users/{viewer} rule path because there is no concrete targetUid and rules cannot scan arbitrary changed subcollection documents. Attempt 3 dispatched at 2026-05-22T01:53:15+08:00 after T003 Planner Reviewer PASS and coordinator sync. Attempt 3 DONE at 2026-05-22T02:01:04+08:00: removed client-maintained users/{uid}.followingCount, kept standalone followingCount exploit regression, changed transaction to mirrored docs plus only target followersCount, and added derived following count support from users/{uid}/following. Attempt 4 dispatched at 2026-05-22T02:08:00+08:00 to add create-path count injection RED coverage and tighten user create rules. Attempt 4 DONE at 2026-05-22T02:10:48+08:00: added create-path count injection regression and tightened user create rules so followersCount and followingCount are rejected in client create payloads while preserving existing profile fields.",
+        "reviewerReport": "Attempt 1 review_rejected at 2026-05-22T00:27:19+08:00. Blocking security/data integrity issue: firestore.rules allows authenticated users to update their own followingCount by +1/-1 without paired following mirror writes. Attempt 3 review_rejected at 2026-05-22T02:06:13+08:00: firestore.rules still allowed authenticated users to create their own users/{uid} document with arbitrary followingCount and followersCount values. Attempt 4 review_passed at 2026-05-22T02:15:12+08:00: create-path count injection fixed; foundation accepted.",
+        "commandOutputSummary": [
+          "RED npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js: exit 1; new rules assertions failed as expected.",
+          "RED npx vitest run --project=browser tests/unit/service/follow-service.test.js tests/unit/runtime/follow-use-cases.test.js tests/unit/lib/notification-helpers.test.js: exit 1; follow stubs and notification route/message failed as expected.",
+          "RED npm run test:server -- tests/server/rules/users.rules.test.js: exit 1; count mutation assertion exposed weak path.",
+          "GREEN npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js: exit 0; 30 passed.",
+          "GREEN npx vitest run --project=browser tests/unit/service/follow-service.test.js tests/unit/runtime/follow-use-cases.test.js tests/unit/lib/notification-helpers.test.js: exit 0; 26 passed.",
+          "npm run lint:changed: exit 0.",
+          "npm run type-check:changed: exit 0.",
+          "git diff --check: exit 0.",
+          "Attempt 2 RED npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js: exit 1; new bounded standalone followingCount regression failed because the write currently succeeds.",
+          "Attempt 2 npx vitest run --project=browser tests/unit/service/follow-service.test.js tests/unit/runtime/follow-use-cases.test.js tests/unit/lib/notification-helpers.test.js: exit 0; 26 passed.",
+          "Attempt 2 npm run lint:changed: exit 0.",
+          "Attempt 2 npm run type-check:changed: exit 0.",
+          "Attempt 2 git diff --check: exit 0.",
+          "Attempt 3 RED npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js: exit 1; standalone { followingCount: 1 } regression failed because the write still succeeded before the fix.",
+          "Attempt 3 GREEN npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js: exit 0; 30 passed.",
+          "Attempt 3 GREEN npx vitest run --project=browser tests/unit/service/follow-service.test.js tests/unit/runtime/follow-use-cases.test.js tests/unit/lib/notification-helpers.test.js: exit 0; 28 passed.",
+          "Attempt 3 npm run lint:changed: exit 0.",
+          "Attempt 3 npm run type-check:changed: exit 0.",
+          "Attempt 3 git diff --check: exit 0.",
+          "Reviewer attempt 3 git diff --check: exit 0.",
+          "Reviewer attempt 3 npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js: exit 0; 30 passed.",
+          "Reviewer attempt 3 npx vitest run --project=browser tests/unit/service/follow-service.test.js tests/unit/runtime/follow-use-cases.test.js tests/unit/lib/notification-helpers.test.js: exit 0; 28 passed.",
+          "Reviewer attempt 3 npm run lint:changed: exit 0.",
+          "Reviewer attempt 3 npm run type-check:changed: exit 0.",
+          "Attempt 4 RED npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js: exit 1; creating users/{uid} with followingCount/followersCount 999 incorrectly succeeded.",
+          "Attempt 4 GREEN npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js: exit 0; 31 passed.",
+          "Attempt 4 npx vitest run --project=browser tests/unit/service/follow-service.test.js tests/unit/runtime/follow-use-cases.test.js tests/unit/lib/notification-helpers.test.js: exit 0; 28 passed.",
+          "Attempt 4 npm run lint:changed: exit 0.",
+          "Attempt 4 npm run type-check:changed: exit 0.",
+          "Attempt 4 git diff --check: exit 0.",
+          "Reviewer attempt 4 git diff --check: exit 0.",
+          "Reviewer attempt 4 npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js: exit 0; 31 passed.",
+          "Reviewer attempt 4 npx vitest run --project=browser tests/unit/service/follow-service.test.js tests/unit/runtime/follow-use-cases.test.js tests/unit/lib/notification-helpers.test.js: exit 0; 28 passed.",
+          "Reviewer attempt 4 npm run lint:changed: exit 0.",
+          "Reviewer attempt 4 npm run type-check:changed: exit 0."
+        ],
+        "changedFilesSummary": [
+          "firestore.rules: public follow-list reads, authenticated mirrored follow writes, count constraints, runner_followed notification allowlist.",
+          "src/repo/client/firebase-follow-repo.js: follow/unfollow transaction API.",
+          "src/service/follow-service.js: follow data normalization and validation.",
+          "src/runtime/client/use-cases/follow-use-cases.js: follow use-cases and notification-on-transition behavior.",
+          "src/service/notification-service.js: runner_followed notification type/message support.",
+          "src/runtime/client/use-cases/notification-use-cases.js: follow notification creation helper.",
+          "src/lib/notification-helpers.js: route runner_followed notifications to follower profiles.",
+          "tests/server/rules/users.rules.test.js: follow graph/count security rules coverage.",
+          "tests/server/rules/notifications.rules.test.js: runner_followed notification rules coverage.",
+          "tests/unit/service/follow-service.test.js: follow service contract coverage.",
+          "tests/unit/runtime/follow-use-cases.test.js: use-case idempotency, notification, and validation coverage.",
+          "tests/unit/lib/notification-helpers.test.js: follower profile notification route coverage.",
+          "Reviewer rejection: firestore.rules isValidFollowingCountUpdate allowed standalone bounded count drift; tests/server/rules/users.rules.test.js missed bounded standalone followingCount exploit regression.",
+          "Attempt 2: tests/server/rules/users.rules.test.js added the bounded standalone followingCount exploit regression.",
+          "Attempt 2 blocker: client-maintained users/{uid}.followingCount is not safely enforceable under Firestore Rules with the approved mirrored subcollection model.",
+          "User approved resolving this by deriving following count from users/{uid}/following instead of storing client-written followingCount on users/{uid}.",
+          "Attempt 3 plan revision: T101 must not be dispatched or marked ready until T003 Planner Reviewer PASS is coordinator-synced to completed.",
+          "Attempt 3 contract: Foundation Engineer must remove client-maintained users/{viewerUid}.followingCount, keep standalone followingCount denial coverage, and derive following count from users/{viewerUid}/following.",
+          "Attempt 3 dispatch: Foundation Engineer re-dispatched at 2026-05-22T01:53:15+08:00 after T003 Planner Reviewer PASS and coordinator sync.",
+          "Attempt 3 implementation: firestore.rules removed the client-maintained followingCount rule path; follow/unfollow validates mirrored docs and target followersCount.",
+          "Attempt 3 implementation: firebase-follow-repo transaction no longer updates viewer user doc and exposes derived following-count support.",
+          "Attempt 3 implementation: follow-use-cases exposes or consumes derived following count and preserves idempotent notification behavior.",
+          "Attempt 3 implementation: focused tests updated for standalone followingCount denial and derived count behavior.",
+          "Reviewer attempt 3 rejection: firestore.rules user create path still allowed arbitrary followingCount/followersCount injection.",
+          "Reviewer attempt 3 rejection: tests/server/rules/users.rules.test.js was missing a create-path count injection regression.",
+          "Attempt 4 dispatch: Foundation Engineer re-dispatched at 2026-05-22T02:08:00+08:00 to add create-path count injection RED coverage and tighten user create rules.",
+          "Attempt 4 implementation: tests/server/rules/users.rules.test.js added count-injection create regression.",
+          "Attempt 4 implementation: firestore.rules added isValidUserCreate(userId) so client-created user docs may keep existing profile fields but reject followersCount and followingCount.",
+          "Reviewer attempt 4 PASS: T101 foundation accepted.",
+          "Reviewer attempt 4 residual risk: Firestore rules require later deploy authorization/evidence.",
+          "Reviewer attempt 4 residual risk: following count is derived from users/{uid}/following, so later UI slices must consume that path consistently."
+        ]
+      }
+    },
+    {
+      "id": "T201",
+      "title": "Profile Follow Runtime And UI",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-profile",
+      "engineer": "Profile Engineer",
+      "reviewer": "Profile Reviewer",
+      "scope": [
+        "Add profile follow/unfollow controls, clickable public counts, followers/following modal lists, optimistic pending state, and rollback toast.",
+        "Add shared FollowButton used later by event surfaces."
+      ],
+      "nonScope": [
+        "No event host follow controls.",
+        "No member following route or member/dashboard page edits; T251 owns 我的追蹤跑友.",
+        "No follow buttons inside modal rows, participants, comments, or posts.",
+        "No rules, repo foundation, E2E config, package, lockfile, or rules deploy."
+      ],
+      "ownedFiles": [
+        "src/components/FollowButton.jsx",
+        "src/components/FollowButton.module.css",
+        "src/runtime/hooks/useProfileRuntime.js",
+        "src/app/users/[uid]/ProfileClient.jsx",
+        "src/app/users/[uid]/ProfileStats.jsx",
+        "src/app/users/[uid]/FollowListModal.jsx",
+        "src/app/users/[uid]/PublicProfile.module.css",
+        "src/ui/users/ProfileScreen.jsx",
+        "tests/unit/runtime/useProfileRuntime.test.jsx",
+        "tests/integration/profile/ProfileClient.test.jsx",
+        "tests/integration/profile/ProfileStats.test.jsx",
+        "tests/integration/profile/ProfileHeader.test.jsx"
+      ],
+      "readOnlyContext": [
+        "specs/068-runner-following/spec.md",
+        "specs/068-runner-following/plan.md",
+        "src/runtime/client/use-cases/follow-use-cases.js",
+        "src/app/users/[uid]/ProfileHeader.jsx",
+        "src/app/users/[uid]/ProfileEventList.jsx",
+        "src/ui/users/ProfileScreen.jsx",
+        "src/components/UserLink.jsx",
+        "tests/_helpers/profile-fixtures.js"
+      ],
+      "dependencies": [
+        "T101 completed."
+      ],
+      "engineerInstructions": [
+        "Write failing tests for signed-out no button with visible counts/lists, signed-in non-self follow and unfollow, self profile hidden button, pending disabled label, rollback toast, and modal rows linking to profiles without inline follow buttons.",
+        "Implement profile runtime state and render-only UI using follow-use-cases.",
+        "Read follower count from public profile data and following count from the derived following-list count/read model exposed by T101; do not depend on users/{uid}.followingCount.",
+        "Keep UI/component effects free of data fetching; external synchronization belongs in runtime hook effects.",
+        "Use accessible buttons for counts and modal close controls."
+      ],
+      "acceptanceCriteria": [
+        "Signed-out visitors see followers/following counts and modal lists, but no follow button.",
+        "Following count display uses derived users/{uid}/following data while preserving the same user-facing count behavior.",
+        "Signed-in non-self viewers can follow and unfollow from profile pages.",
+        "Self profile hides follow controls.",
+        "Pending state disables the follow button and communicates operation state.",
+        "Failed follow/unfollow rolls back optimistic state and shows toast.",
+        "Follower/following modal rows link to /users/{uid} and contain no follow buttons."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser tests/unit/runtime/useProfileRuntime.test.jsx tests/integration/profile/ProfileClient.test.jsx tests/integration/profile/ProfileStats.test.jsx tests/integration/profile/ProfileHeader.test.jsx",
+          "expectedSignal": "RED before implementation; exit nonzero for new assertions, then GREEN exit 0",
+          "lastRun": {
+            "command": "npx vitest run --project=browser tests/unit/runtime/useProfileRuntime.test.jsx tests/integration/profile/ProfileClient.test.jsx tests/integration/profile/ProfileStats.test.jsx tests/integration/profile/ProfileHeader.test.jsx",
+            "exitCode": 0,
+            "summary": "Profile Engineer GREEN after UI-label fix: 4 files / 35 tests passed.",
+            "verifiedAt": "2026-05-22T03:02:04+08:00"
+          }
+        },
+        {
+          "command": "npm run audit:use-effect-data-fetching",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run audit:use-effect-data-fetching",
+            "exitCode": 0,
+            "summary": "Profile Engineer audit passed.",
+            "verifiedAt": "2026-05-22T03:02:04+08:00"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Profile Engineer changed-file lint passed; React version warning only.",
+            "verifiedAt": "2026-05-22T03:02:04+08:00"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Profile Engineer changed-file type-check passed.",
+            "verifiedAt": "2026-05-22T03:02:04+08:00"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Profile UI satisfies signed-out, signed-in, self, pending, rollback, and modal-row restrictions.",
+        "Shared FollowButton is render-only and has no data-fetch effect.",
+        "Browser evidence is complete.",
+        "Verification commands pass."
+      ],
+      "reviewerRejectCriteria": [
+        "Follow button appears for signed-out users, self profile, or modal rows.",
+        "Optimistic rollback is absent or count state can drift visibly after failure.",
+        "UI imports repo/service/Firebase directly instead of using runtime.",
+        "Browser evidence is missing for meaningful UI changes."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Profile Reviewer",
+        "summary": "Acceptance met. Signed-out/self follow controls are gated, following count is derived via runtime use-case not user.followingCount, follow/unfollow optimistic path rolls back with toast on failure, modal rows link to /users/{uid} with no row follow buttons, and browser evidence asserts signed-out modal, signed-in follow/unfollow, self hidden control, and mobile screenshot.",
+        "decidedAt": "2026-05-22T03:10:44+08:00"
+      },
+      "evidence": {
+        "engineerReport": "Profile Engineer dispatched at 2026-05-22T02:19:20+08:00 and reported engineer_done at 2026-05-22T03:02:04+08:00. Root cause for browser evidence failure: follow write succeeded, but followed-state UI label was 取消追蹤 while evidence expected exact 追蹤中. Fix kept to T201-owned files: profile runtime now uses exact 追蹤中 for followed and follow-pending states; tests were updated for that contract. Browser evidence was rerun successfully after emulator state reset.",
+        "reviewerReport": "Profile Reviewer reported review_passed at 2026-05-22T03:10:44+08:00. Diff checked: T201 owned files only; T101 and workflow diffs ignored per scope. Findings: none blocking. Residual risk: no dedicated failed-unfollow rollback test; source path is shared and inspected. Residual risk: followingCount may briefly show 0 before async derived count resolves because loading state is not surfaced.",
+        "commandOutputSummary": [
+          "RED npx vitest run --project=browser tests/unit/runtime/useProfileRuntime.test.jsx tests/integration/profile/ProfileClient.test.jsx tests/integration/profile/ProfileStats.test.jsx tests/integration/profile/ProfileHeader.test.jsx: exit 1 before implementation with 11 expected new assertion failures.",
+          "GREEN npx vitest run --project=browser tests/unit/runtime/useProfileRuntime.test.jsx tests/integration/profile/ProfileClient.test.jsx tests/integration/profile/ProfileStats.test.jsx tests/integration/profile/ProfileHeader.test.jsx: exit 0, 4 files / 35 tests passed.",
+          "npm run audit:use-effect-data-fetching: exit 0.",
+          "npm run lint:changed: exit 0, React version warning only.",
+          "npm run type-check:changed: exit 0.",
+          "Reviewer npx vitest run --project=browser tests/unit/runtime/useProfileRuntime.test.jsx tests/integration/profile/ProfileClient.test.jsx tests/integration/profile/ProfileStats.test.jsx tests/integration/profile/ProfileHeader.test.jsx: exit 0, 4 files / 35 tests passed.",
+          "Reviewer npm run audit:use-effect-data-fetching: exit 0.",
+          "Reviewer npm run lint:changed: exit 0, React version warning only.",
+          "Reviewer npm run type-check:changed: exit 0.",
+          "Reviewer node /private/tmp/t201-profile-evidence.mjs: sandbox attempt exit 1 due Chromium MachPort permission; escalated rerun exit 0 with expected emulator warnings and aborted Firestore long-poll requests.",
+          "/private/tmp/t201-profile-evidence.mjs: exit 0 after UI-label fix and emulator follow-state reset.",
+          "Browser screenshots: /private/tmp/t201-profile-browser-evidence-emulator/signed-out-target-desktop.png, /private/tmp/t201-profile-browser-evidence-emulator/signed-out-following-modal-desktop.png, /private/tmp/t201-profile-browser-evidence-emulator/signed-in-target-before-follow-desktop.png, /private/tmp/t201-profile-browser-evidence-emulator/signed-in-target-after-follow-desktop.png, /private/tmp/t201-profile-browser-evidence-emulator/signed-in-target-after-unfollow-desktop.png, /private/tmp/t201-profile-browser-evidence-emulator/signed-in-self-hidden-follow-desktop.png, /private/tmp/t201-profile-browser-evidence-emulator/signed-out-target-mobile.png.",
+          "Console/network residual: expected emulator warnings plus aborted Firestore long-poll requests during browser close."
+        ],
+        "changedFilesSummary": [
+          "src/components/FollowButton.jsx and src/components/FollowButton.module.css: shared render-only follow button.",
+          "src/runtime/hooks/useProfileRuntime.js: profile follow state, derived following count, modal list state, optimistic follow/unfollow with rollback toast.",
+          "src/app/users/[uid]/ProfileClient.jsx, src/app/users/[uid]/ProfileStats.jsx, src/app/users/[uid]/FollowListModal.jsx, and src/app/users/[uid]/PublicProfile.module.css: profile follow UI, clickable counts, modal rows with profile links only.",
+          "src/ui/users/ProfileScreen.jsx: render-only follow control integration.",
+          "tests/unit/runtime/useProfileRuntime.test.jsx, tests/integration/profile/ProfileClient.test.jsx, and tests/integration/profile/ProfileStats.test.jsx: profile follow behavior coverage."
+        ]
+      }
+    },
+    {
+      "id": "T202",
+      "title": "Profile Page Count Serialization Fix",
+      "state": "completed",
+      "attempt": 2,
+      "wave": "wave-profile-fix",
+      "engineer": "Profile Serialization Engineer",
+      "reviewer": "Profile Serialization Reviewer",
+      "scope": [
+        "Fix the full Firestore -> service mapper -> profile page -> client serialization path so Firestore users/{uid}.followersCount reaches PublicProfile, ProfileClient, and useProfileRuntime initial profile data.",
+        "Preserve the attempt 1 page serializer regression coverage and add focused service mapper coverage for mapping Firestore followersCount into PublicProfile.",
+        "Coordinate one narrow T401 lint unblocker in tests/e2e/runner-following.spec.js for the existing no-empty-pattern failure only."
+      ],
+      "nonScope": [
+        "No E2E seed, Playwright config, or Playwright behavior edits; T401 owns those. The only allowed E2E-file change is the lint-only no-empty-pattern cleanup in tests/e2e/runner-following.spec.js.",
+        "No broad profile UI redesign, event/member follow changes, notification changes, Firestore rules changes, package changes, lockfile changes, deploy, commit, push, pull request, CI watch, merge, or local main sync.",
+        "Do not reintroduce or depend on users/{uid}.followingCount; following count remains derived from users/{uid}/following."
+      ],
+      "ownedFiles": [
+        "src/service/profile-mapper.js",
+        "src/app/users/[uid]/page.jsx",
+        "tests/unit/service/profile-mapper.test.js",
+        "tests/integration/profile/ProfilePage.test.jsx",
+        "tests/e2e/runner-following.spec.js"
+      ],
+      "readOnlyContext": [
+        "specs/068-runner-following/spec.md",
+        "specs/068-runner-following/plan.md",
+        "specs/068-runner-following/tasks.md",
+        "src/app/users/[uid]/ProfileClient.jsx",
+        "src/runtime/hooks/useProfileRuntime.js",
+        "tests/integration/profile/ProfileClient.test.jsx",
+        "tests/integration/profile/ProfileStats.test.jsx",
+        "tests/_helpers/profile-fixtures.js",
+        "tests/e2e/_setup/068-runner-following-global-setup.js"
+      ],
+      "dependencies": [
+        "T201 completed.",
+        "T401 production blocker recorded."
+      ],
+      "engineerInstructions": [
+        "Treat attempt 1 as blocked/rework, not complete: the page serializer regression passed, but the full service mapper path is still incomplete and npm run lint:changed is blocked by a T401-owned lint error.",
+        "RED/GREEN a focused service mapper regression proving Firestore followersCount maps into PublicProfile. Use tests/unit/service/profile-mapper.test.js as the new focused test file because no existing mapper test file is present.",
+        "Keep the attempt 1 page serializer regression and preserve numeric profile.followersCount through serializeProfile().",
+        "Keep followingCount out of serialized user-doc data and preserve the derived following-count read model from T101/T201.",
+        "If the page helper is not directly testable, expose the smallest pure export from src/app/users/[uid]/page.jsx needed for this regression while keeping route behavior unchanged.",
+        "In tests/e2e/runner-following.spec.js, fix only the no-empty-pattern lint violation at the existing T401 line; do not change Playwright assertions, setup assumptions, or E2E behavior.",
+        "After T202 passes Reviewer, coordinator may return T401 to ready for E2E rerun."
+      ],
+      "acceptanceCriteria": [
+        "Firestore followersCount maps into PublicProfile through src/service/profile-mapper.js.",
+        "Seeded target user data with followersCount: 1 can reach profile runtime initial state and render as 1 位追蹤者, not normalized to 0.",
+        "Public profile following count remains derived from the following list/read model and does not rely on users/{uid}.followingCount.",
+        "Regression coverage fails before the serialization fix and passes after.",
+        "npm run lint:changed is unblocked without changing T401 E2E behavior.",
+        "Diff touches only the expanded T202 owned files."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser tests/unit/service/profile-mapper.test.js tests/integration/profile/ProfilePage.test.jsx tests/integration/profile/ProfileClient.test.jsx",
+          "expectedSignal": "RED before mapper implementation for missing followersCount; GREEN exit 0 after fix",
+          "lastRun": {
+            "command": "npx vitest run --project=browser tests/unit/service/profile-mapper.test.js tests/integration/profile/ProfilePage.test.jsx tests/integration/profile/ProfileClient.test.jsx",
+            "exitCode": 0,
+            "summary": "T202 attempt 2 GREEN: 3 files / 15 tests passed.",
+            "verifiedAt": "2026-05-22T07:38:41+08:00"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "T202 attempt 2 changed-file lint passed.",
+            "verifiedAt": "2026-05-22T07:38:41+08:00"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "T202 attempt 2 changed-file type-check passed.",
+            "verifiedAt": "2026-05-22T07:38:41+08:00"
+          }
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "T202 attempt 2 no whitespace errors.",
+            "verifiedAt": "2026-05-22T07:38:41+08:00"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only the expanded T202 owned files.",
+        "Service mapper regression proves Firestore followersCount maps into PublicProfile.",
+        "Regression coverage proves followersCount survives profile page serialization into initial profile data.",
+        "No path reads or writes users/{uid}.followingCount.",
+        "tests/e2e/runner-following.spec.js change is lint-only and does not alter E2E assertions or behavior.",
+        "Verification commands pass."
+      ],
+      "reviewerRejectCriteria": [
+        "The fix changes E2E seed/config/behavior, event/member surfaces, rules, repo, unrelated services, or unrelated profile UI files.",
+        "followingCount is reintroduced as serialized user-doc data.",
+        "Regression coverage does not fail before the fix or does not cover the service mapper and profile page serialization paths.",
+        "Verification is missing or stale."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Profile Serialization Reviewer",
+        "summary": "No blocking findings. Diff checked numeric-only followersCount mapping in src/service/profile-mapper.js, numeric-only followersCount serialization in src/app/users/[uid]/page.jsx, focused mapper/page tests, and lint-only tests/e2e/runner-following.spec.js afterEach cleanup. Verification commands passed. Non-T202 dirty files were ignored per scope; tests/e2e/runner-following.spec.js is untracked as a T401 file so git cannot prove pre/post T202 delta directly, but current line 145 matches lint cleanup. Accidental main-workspace untracked profile-mapper test remains an open incident.",
+        "decidedAt": "2026-05-22T07:48:24+08:00"
+      },
+      "evidence": {
+        "engineerReport": "T202 attempt 2 Profile Serialization Rework Engineer DONE in the target worktree. Mapper now includes optional numeric followersCount in PublicProfile and maps it only when Firestore data is a number. followingCount remains omitted. Attempt 1 page serialization is preserved: numeric followersCount crosses RSC serialization and followingCount is not serialized. E2E lint-only cleanup changed test.afterEach(({}, testInfo) => ...) to test.afterEach((_, testInfo) => ...); no E2E assertions or behavior changed. Engineer accidentally created an untracked copy at /Users/chentzuyu/Desktop/dive-into-run/tests/unit/service/profile-mapper.test.js before correcting to the target worktree; deletion was blocked by the local safety hook and cleanup requires explicit user approval or separate cleanup authorization.",
+        "reviewerReport": "T202 attempt 2 Profile Serialization Reviewer review_passed at 2026-05-22T07:48:24+08:00 with no blocking findings. Diff checked: src/service/profile-mapper.js maps numeric-only followersCount and no followingCount; src/app/users/[uid]/page.jsx serializes numeric-only followersCount and passes it to ProfileClient; tests/unit/service/profile-mapper.test.js maps numeric count and omits followingCount; tests/integration/profile/ProfilePage.test.jsx preserves followersCount and omits followingCount; tests/e2e/runner-following.spec.js contains afterEach((_, testInfo) => ...) lint cleanup. Commands: npx vitest run --project=browser tests/unit/service/profile-mapper.test.js tests/integration/profile/ProfilePage.test.jsx tests/integration/profile/ProfileClient.test.jsx exit 0 with 3 files / 15 tests passed; npm run lint:changed exit 0; npm run type-check:changed exit 0; git diff --check exit 0. Residual: non-T202 dirty files ignored per scope; tests/e2e/runner-following.spec.js is untracked as a T401 file, so git cannot prove pre/post T202 delta directly, but current line 145 matches lint cleanup. Incident validated: /Users/chentzuyu/Desktop/dive-into-run/tests/unit/service/profile-mapper.test.js exists as untracked in main workspace; open incident remains, no cleanup done.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser tests/integration/profile/ProfilePage.test.jsx: exit 1 in RED; serialized profile missing followersCount: 1.",
+          "npx vitest run --project=browser tests/integration/profile/ProfilePage.test.jsx: exit 0 in GREEN; 1 passed.",
+          "npx vitest run --project=browser tests/integration/profile/ProfilePage.test.jsx tests/integration/profile/ProfileClient.test.jsx: exit 0; 13 passed.",
+          "npm run type-check:changed: exit 0.",
+          "git diff --check: exit 0.",
+          "npm run lint:changed: exit 1 due tests/e2e/runner-following.spec.js:145 no-empty-pattern.",
+          "npx vitest run --project=browser tests/unit/service/profile-mapper.test.js tests/integration/profile/ProfilePage.test.jsx tests/integration/profile/ProfileClient.test.jsx: exit 1 in RED; mapper result missed followersCount: 12 in profile-mapper test.",
+          "npx vitest run --project=browser tests/unit/service/profile-mapper.test.js tests/integration/profile/ProfilePage.test.jsx tests/integration/profile/ProfileClient.test.jsx: exit 0 in GREEN; 3 files / 15 tests passed.",
+          "npm run lint:changed: exit 0.",
+          "npm run type-check:changed: exit 0.",
+          "git diff --check: exit 0."
+        ],
+        "changedFilesSummary": [
+          "Attempt 1 changed src/app/users/[uid]/page.jsx to preserve numeric profile.followersCount in serializeProfile().",
+          "Attempt 1 changed tests/integration/profile/ProfilePage.test.jsx to cover page serialization and exported serializeProfile() only for the focused regression.",
+          "Attempt 2 changed src/service/profile-mapper.js to map numeric Firestore followersCount into PublicProfile.",
+          "Attempt 2 changed tests/unit/service/profile-mapper.test.js for the mapper regression.",
+          "Attempt 2 changed tests/e2e/runner-following.spec.js only for the lint-only test.afterEach((_, testInfo) => ...) cleanup.",
+          "Residual incident: accidental untracked copy remains at /Users/chentzuyu/Desktop/dive-into-run/tests/unit/service/profile-mapper.test.js; cleanup needs explicit user approval or separate cleanup authorization."
+        ]
+      }
+    },
+    {
+      "id": "T251",
+      "title": "Member Following Management Surface",
+      "state": "completed",
+      "attempt": 2,
+      "wave": "wave-member",
+      "engineer": "Member Following Engineer",
+      "reviewer": "Member Following Reviewer",
+      "scope": [
+        "Add a signed-in member/dashboard surface for the viewer's own following list labeled 我的追蹤跑友.",
+        "Add followed runner rows with avatar/name links to public profiles.",
+        "Add row-level unfollow only if it stays consistent with the current member favorites remove/undo list-management pattern.",
+        "Add member page entry link for signed-in users."
+      ],
+      "nonScope": [
+        "No public profile modal changes.",
+        "No event host follow controls.",
+        "No inline follow-back, recommendations, discovery, private accounts, follow requests, or following feed.",
+        "No rules, E2E config, package, lockfile, or rules deploy."
+      ],
+      "ownedFiles": [
+        "src/app/member/page.jsx",
+        "src/app/member/following/page.jsx",
+        "src/runtime/hooks/useMemberFollowingRuntime.js",
+        "src/ui/member/MemberPageScreen.jsx",
+        "src/ui/member/MemberFollowingScreen.jsx",
+        "src/ui/member/MemberFollowingScreen.module.css",
+        "tests/unit/runtime/useMemberFollowingRuntime.test.jsx",
+        "tests/integration/member/MemberFollowingPage.test.jsx",
+        "tests/integration/member/MemberFavoritesPage.test.jsx"
+      ],
+      "readOnlyContext": [
+        "specs/068-runner-following/spec.md",
+        "specs/068-runner-following/plan.md",
+        "src/app/member/favorites/page.jsx",
+        "src/runtime/hooks/useMemberFavoritesRuntime.js",
+        "src/ui/member/MemberFavoritesScreen.jsx",
+        "src/ui/member/MemberFavoritesScreen.module.css",
+        "src/runtime/client/use-cases/follow-use-cases.js",
+        "src/components/UserLink.jsx",
+        "tests/integration/member/MemberFavoritesPage.test.jsx"
+      ],
+      "dependencies": [
+        "T201 completed."
+      ],
+      "engineerInstructions": [
+        "Write tests that member page exposes a signed-in 我的追蹤跑友 entry link, signed-out users do not see or cannot use that member surface, the following page lists followed runners with avatar/name profile links, and row-level unfollow removes a runner optimistically with rollback toast on failure.",
+        "Implement a thin /member/following route, runtime hook, and render-only screen following the current member favorites page pattern.",
+        "Attempt 2 fix: move the member dashboard 我的追蹤跑友 entry out of src/app/member/page.jsx and render it beside 我的收藏 in src/ui/member/MemberPageScreen.jsx; keep the app route/page layer composition-only.",
+        "Consume the viewer's following list and derived count from T101; do not read or write users/{viewerUid}.followingCount.",
+        "Prefer the existing member favorites remove/undo ergonomics for unfollow if the follow use-case supports restoring via follow; otherwise provide unfollow with rollback on failure and no undo.",
+        "Keep the public follower/following modal row behavior unchanged: modal rows link only and do not contain follow/unfollow controls."
+      ],
+      "acceptanceCriteria": [
+        "Signed-in users can open 我的追蹤跑友 from the member area.",
+        "The member dashboard entry is rendered by src/ui/member/MemberPageScreen.jsx beside 我的收藏, not directly by src/app/member/page.jsx.",
+        "Signed-out users cannot access the member following management surface.",
+        "The member following list shows followed runner rows with avatar/name links to /users/{uid}.",
+        "Row-level unfollow is available only when implemented consistently with member list management patterns and uses the same follow use-case path.",
+        "Unfollow failure restores the row and shows an error toast."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser tests/unit/runtime/useMemberFollowingRuntime.test.jsx tests/integration/member/MemberFollowingPage.test.jsx tests/integration/member/MemberFavoritesPage.test.jsx",
+          "expectedSignal": "RED before implementation; exit nonzero for new assertions, then GREEN exit 0",
+          "lastRun": {
+            "command": "npx vitest run --project=browser tests/unit/runtime/useMemberFollowingRuntime.test.jsx tests/integration/member/MemberFollowingPage.test.jsx tests/integration/member/MemberFavoritesPage.test.jsx",
+            "exitCode": 0,
+            "summary": "T251 attempt 2 Reviewer: 3 files / 12 tests passed.",
+            "verifiedAt": "2026-05-22T04:18:11+08:00"
+          }
+        },
+        {
+          "command": "npm run audit:use-effect-data-fetching",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run audit:use-effect-data-fetching",
+            "exitCode": 0,
+            "summary": "T251 attempt 2 Reviewer: 0 findings.",
+            "verifiedAt": "2026-05-22T04:18:11+08:00"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "T251 attempt 2 Reviewer changed-file lint passed; React version warning only.",
+            "verifiedAt": "2026-05-22T04:18:11+08:00"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "T251 attempt 2 Reviewer changed-file type-check passed.",
+            "verifiedAt": "2026-05-22T04:18:11+08:00"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Member following route follows current member favorites route/runtime/screen separation.",
+        "The member dashboard entry lives in src/ui/member/MemberPageScreen.jsx beside 我的收藏, while src/app/member/page.jsx remains composition-only.",
+        "Signed-out access is guarded.",
+        "Runner rows link to profiles and do not add follow-back or discovery behavior.",
+        "Unfollow action uses shared follow use-cases and has rollback/error handling.",
+        "Browser evidence is complete.",
+        "Verification commands pass."
+      ],
+      "reviewerRejectCriteria": [
+        "Member route is accessible as a management surface to signed-out users.",
+        "我的追蹤跑友 remains directly implemented in src/app/member/page.jsx instead of the render-only member screen.",
+        "Rows add inline follow-back, recommendations, or non-v1 social graph actions.",
+        "UI imports repo/service/Firebase directly instead of using runtime/use-cases.",
+        "Unfollow can leave stale UI on failure.",
+        "Browser evidence is missing for meaningful UI changes."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Member Following Reviewer",
+        "summary": "T251 attempt 2 passed with no findings. Diff checked: src/app/member/page.jsx remains thin route/composition only with no 我的追蹤跑友 route-level UI link; src/ui/member/MemberPageScreen.jsx renders 我的追蹤跑友 beside 我的收藏. Acceptance checked: signed-in entry, signed-out guard, profile links, shared unfollowRunner path, optimistic remove, rollback, and error toast are all present.",
+        "decidedAt": "2026-05-22T04:18:11+08:00"
+      },
+      "evidence": {
+        "engineerReport": "T251 attempt 1 Member Following Engineer dispatched at 2026-05-22T03:12:51+08:00 and reported DONE at 2026-05-22T03:51:07+08:00. Browser evidence also reported DONE. Member entry, /member/following route/runtime/UI, guarded signed-out access, profile-linked rows, and shared-use-case unfollow with rollback/error handling were completed. T251 attempt 2 Fix Engineer report recorded at 2026-05-22T04:09:52+08:00: DONE. Changed files: src/ui/member/MemberPageScreen.jsx. /member/following 的 我的追蹤跑友 entry 已移到 render-only src/ui/member/MemberPageScreen.jsx，緊鄰既有 我的收藏。src/app/member/page.jsx 回到 thin route；final diff 中已無 route-level UI link。Signed-out 仍不會看到 member management links. Browser evidence: sandbox run exit 1 because localhost fetch was blocked; escalated rerun exit 0 DONE; result JSON /private/tmp/t251-member-following-browser-evidence-attempt2/t251-browser-evidence-results.json; screenshots dir /private/tmp/t251-member-following-browser-evidence-attempt2/; signals memberEntryLinkHref=/member/following, signed-out guard text, desktop/mobile rows before/after unfollow; residual local emulator / Next image LCP warnings and aborted long-poll/RSC requests, with no HTTP errors.",
+        "reviewerReport": "T251 attempt 1 review_rejected at 2026-05-22T04:00:50+08:00. Finding: src/app/member/page.jsx put the 我的追蹤跑友 UI link directly in the route/composition layer; attempt 2 fix expectation was to move the following entry beside 我的收藏 in src/ui/member/MemberPageScreen.jsx and keep src/app/member/page.jsx composition-only. T251 attempt 2 review_passed at 2026-05-22T04:18:11+08:00 with no findings. Diff checked: src/app/member/page.jsx remains thin route/composition only with no 我的追蹤跑友 route-level UI link; src/ui/member/MemberPageScreen.jsx renders 我的追蹤跑友 beside 我的收藏. Acceptance checked: signed-in entry, signed-out guard, profile links, shared unfollowRunner path, optimistic remove, rollback, and error toast are all present. Commands: npx vitest member following/favorites suite exit 0 with 3 files / 12 tests passed; audit:use-effect-data-fetching exit 0 with 0 findings; lint:changed exit 0 with React version warning only; type-check:changed exit 0; jq browser evidence JSON exit 0 with status DONE, expected desktop/mobile signals present, and no HTTP errors; sips screenshot dimension check exit 0 with 8 screenshots at expected desktop/mobile dimensions. Residual risk: browser evidence was validated, not rerun; branch is behind origin/main by 3 commits and worktree contains T101/T201 diffs, ignored per scope; browser evidence still has emulator/LCP warnings and aborted long-poll/RSC requests, but no HTTP errors.",
+        "commandOutputSummary": [
+          "RED npx vitest run --project=browser tests/unit/runtime/useMemberFollowingRuntime.test.jsx tests/integration/member/MemberFollowingPage.test.jsx tests/integration/member/MemberFavoritesPage.test.jsx: exit 1; failures covered missing 我的追蹤跑友 member entry, following screen heading/guard/rows, runtime state/unfollow behavior.",
+          "GREEN npx vitest run --project=browser tests/unit/runtime/useMemberFollowingRuntime.test.jsx tests/integration/member/MemberFollowingPage.test.jsx tests/integration/member/MemberFavoritesPage.test.jsx: exit 0; 3 files / 12 tests passed.",
+          "npm run audit:use-effect-data-fetching: exit 0; 0 findings.",
+          "npm run lint:changed: exit 0.",
+          "npm run type-check:changed: exit 0.",
+          "Reviewer npx vitest run --project=browser tests/unit/runtime/useMemberFollowingRuntime.test.jsx tests/integration/member/MemberFollowingPage.test.jsx tests/integration/member/MemberFavoritesPage.test.jsx: exit 0; 3 files / 12 tests passed.",
+          "Reviewer npm run audit:use-effect-data-fetching: exit 0; 0 findings.",
+          "Reviewer npm run lint:changed: exit 0; React eslint settings warning only.",
+          "Reviewer npm run type-check:changed: exit 0.",
+          "Reviewer browser evidence JSON/screenshots validation via jq/file: exit 0.",
+          "Browser git status --short --branch: exit 0.",
+          "Browser sandbox localhost curl probes 3001/8080/9099/9199: exit 7; escalated probes verified services.",
+          "Browser Firebase emulator start attempt: exit 1 because emulator ports were already occupied.",
+          "Browser auth sign-in probe: exit 0; HTTP 200; uid 796E9eCnaA6Hd4qTAKuE9RHDTDA5.",
+          "Browser Playwright evidence script first run: exit 1 due temp-script locator strictness against Next route announcer.",
+          "Browser corrected temp script rerun: exit 0.",
+          "Browser evidence paths: /private/tmp/t251-member-following-browser-evidence/t251-browser-evidence-results.json; /private/tmp/t251-member-following-browser-evidence/signed-out-member-following-desktop-1440x900.png; /private/tmp/t251-member-following-browser-evidence/signed-in-member-desktop-1440x900.png; /private/tmp/t251-member-following-browser-evidence/signed-in-member-following-before-unfollow-desktop-1440x900.png; /private/tmp/t251-member-following-browser-evidence/signed-in-member-following-after-unfollow-desktop-1440x900.png; /private/tmp/t251-member-following-browser-evidence/signed-out-member-following-mobile-390x844.png; /private/tmp/t251-member-following-browser-evidence/signed-in-member-mobile-390x844.png; /private/tmp/t251-member-following-browser-evidence/signed-in-member-following-before-unfollow-mobile-390x844.png; /private/tmp/t251-member-following-browser-evidence/signed-in-member-following-after-unfollow-mobile-390x844.png.",
+          "Browser expected/actual: /member signed-in 我的追蹤跑友 link present with href /member/following on desktop/mobile; navigation landed on /member/following; /member/following signed-in heading visible; rows t251-runner-a and t251-runner-b link to /users/t251-runner-a and /users/t251-runner-b; unfollow changed rows 2 -> 1 and T251 Runner Alpha disappeared; signed-out direct /member/following showed 請先登入以管理追蹤跑友 with management rows 0 and unfollow buttons 0.",
+          "Browser residual: console warnings were Connecting to Firebase Emulators... and Next image LCP warning for /default-avatar.png; failed requests were Firestore Listen/channel net::ERR_ABORTED and /member/following?_rsc=zzibr net::ERR_ABORTED; HTTP >=400 responses: 0.",
+          "Browser evidence subagent edited, staged, committed, and pushed no repo files.",
+          "Attempt 2 npx vitest run --project=browser tests/unit/runtime/useMemberFollowingRuntime.test.jsx tests/integration/member/MemberFollowingPage.test.jsx tests/integration/member/MemberFavoritesPage.test.jsx: exit 0; 3 files / 12 tests passed.",
+          "Attempt 2 npm run audit:use-effect-data-fetching: exit 0; 0 findings.",
+          "Attempt 2 npm run lint:changed: exit 0; React version warning only.",
+          "Attempt 2 npm run type-check:changed: exit 0.",
+          "Reviewer attempt 2 npx vitest run --project=browser tests/unit/runtime/useMemberFollowingRuntime.test.jsx tests/integration/member/MemberFollowingPage.test.jsx tests/integration/member/MemberFavoritesPage.test.jsx: exit 0; 3 files / 12 tests passed.",
+          "Reviewer attempt 2 npm run audit:use-effect-data-fetching: exit 0; 0 findings.",
+          "Reviewer attempt 2 npm run lint:changed: exit 0; React version warning only.",
+          "Reviewer attempt 2 npm run type-check:changed: exit 0.",
+          "Reviewer attempt 2 jq . /private/tmp/t251-member-following-browser-evidence-attempt2/t251-browser-evidence-results.json: exit 0; status DONE, expected desktop/mobile signals present, no HTTP errors.",
+          "Reviewer attempt 2 sips -g pixelWidth -g pixelHeight /private/tmp/t251-member-following-browser-evidence-attempt2/*.png: exit 0; 8 screenshots with expected desktop/mobile dimensions.",
+          "Attempt 2 browser evidence sandbox run: exit 1; localhost fetch blocked.",
+          "Attempt 2 browser evidence escalated rerun: exit 0; DONE; result JSON /private/tmp/t251-member-following-browser-evidence-attempt2/t251-browser-evidence-results.json; screenshots dir /private/tmp/t251-member-following-browser-evidence-attempt2/; signals memberEntryLinkHref=/member/following, signed-out guard text, desktop/mobile rows before/after unfollow; residual local emulator / Next image LCP warnings and aborted long-poll/RSC requests; no HTTP errors."
+        ],
+        "changedFilesSummary": [
+          "src/app/member/page.jsx: attempt 1 had the signed-in member entry link for 我的追蹤跑友; attempt 2 final diff has no route-level UI link and the file is back to a thin route.",
+          "src/app/member/following/page.jsx: thin member following route.",
+          "src/runtime/hooks/useMemberFollowingRuntime.js: member following runtime state and unfollow behavior.",
+          "src/ui/member/MemberPageScreen.jsx: attempt 2 owns the member dashboard 我的追蹤跑友 entry beside 我的收藏.",
+          "src/ui/member/MemberFollowingScreen.jsx: render-only following management screen.",
+          "src/ui/member/MemberFollowingScreen.module.css: following screen styles.",
+          "tests/unit/runtime/useMemberFollowingRuntime.test.jsx: runtime state/unfollow coverage.",
+          "tests/integration/member/MemberFollowingPage.test.jsx: route/screen guard, rows, links, and unfollow coverage.",
+          "tests/integration/member/MemberFavoritesPage.test.jsx: member entry coverage.",
+          "Reviewer rejection: src/app/member/page.jsx currently owns UI link placement that belongs in src/ui/member/MemberPageScreen.jsx.",
+          "Attempt 2 final changed file: src/ui/member/MemberPageScreen.jsx.",
+          "Attempt 2 signed-out behavior: member management links remain hidden for signed-out users.",
+          "Reviewer PASS checked src/app/member/page.jsx stayed route/composition-only and src/ui/member/MemberPageScreen.jsx owns the member dashboard 我的追蹤跑友 entry beside 我的收藏."
+        ]
+      }
+    },
+    {
+      "id": "T301",
+      "title": "Event Host Follow Entrypoints",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-events",
+      "engineer": "Events Engineer",
+      "reviewer": "Events Reviewer",
+      "scope": [
+        "Add follow/unfollow controls beside event list host and event detail host for signed-in non-self users.",
+        "Preserve no follow controls in event comments and participants list rows."
+      ],
+      "nonScope": [
+        "No profile modal changes.",
+        "No post poster follow buttons.",
+        "No member following management changes.",
+        "No rules, E2E config, package, lockfile, or rules deploy."
+      ],
+      "ownedFiles": [
+        "src/runtime/hooks/useEventsPageRuntime.js",
+        "src/ui/events/EventsListSection.jsx",
+        "src/ui/events/EventsPageScreen.module.css",
+        "src/runtime/hooks/useEventDetailRuntime.js",
+        "src/ui/events/EventDetailScreen.jsx",
+        "src/ui/events/EventDetailScreen.module.css",
+        "tests/unit/runtime/useEventsPageRuntime.test.jsx",
+        "tests/unit/runtime/useEventDetailRuntime.test.jsx",
+        "tests/integration/events/EventHostFollow.test.jsx",
+        "tests/integration/events/ParticipantsModal.test.jsx"
+      ],
+      "readOnlyContext": [
+        "specs/068-runner-following/spec.md",
+        "src/components/FollowButton.jsx",
+        "src/runtime/client/use-cases/follow-use-cases.js",
+        "src/components/UserLink.jsx",
+        "src/components/CommentSection.jsx",
+        "src/ui/events/ParticipantsModal.jsx",
+        "tests/integration/events/EventsPage.test.jsx",
+        "tests/integration/events/EventDetailClient-delete-race.test.jsx"
+      ],
+      "dependencies": [
+        "T251 completed."
+      ],
+      "engineerInstructions": [
+        "Write failing tests for signed-in non-self host follow/unfollow on event list and detail, signed-out hidden controls, self-hosted hidden controls, participants rows profile links only, and comments remaining without follow controls.",
+        "Batch follow-status reads for visible hosts on events page and single host state on event detail.",
+        "Consume follow state and any count/list metadata through T101 follow use-cases; do not depend on users/{uid}.followingCount.",
+        "Reuse FollowButton and follow-use-cases; do not duplicate follow transaction logic.",
+        "Keep host UserLink intact so participants and hosts remain navigable to profile pages."
+      ],
+      "acceptanceCriteria": [
+        "Event list host row exposes follow/unfollow only for signed-in non-self users.",
+        "Event detail host row exposes follow/unfollow only for signed-in non-self users.",
+        "Self-hosted event surfaces hide the follow button.",
+        "Signed-out event surfaces hide follow buttons.",
+        "Participants modal rows still link to profiles and contain no follow buttons.",
+        "Comments remain free of follow controls."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser tests/unit/runtime/useEventsPageRuntime.test.jsx tests/unit/runtime/useEventDetailRuntime.test.jsx tests/integration/events/EventHostFollow.test.jsx tests/integration/events/ParticipantsModal.test.jsx",
+          "expectedSignal": "RED before implementation; exit nonzero for new assertions, then GREEN exit 0",
+          "lastRun": {
+            "command": "npx vitest run --project=browser tests/unit/runtime/useEventsPageRuntime.test.jsx tests/unit/runtime/useEventDetailRuntime.test.jsx tests/integration/events/EventHostFollow.test.jsx tests/integration/events/ParticipantsModal.test.jsx",
+            "exitCode": 0,
+            "summary": "T301 Events Reviewer: 4 files / 38 tests passed.",
+            "verifiedAt": "2026-05-22T06:42:20+08:00"
+          }
+        },
+        {
+          "command": "npm run audit:use-effect-data-fetching",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run audit:use-effect-data-fetching",
+            "exitCode": 0,
+            "summary": "T301 Events Reviewer audit passed.",
+            "verifiedAt": "2026-05-22T06:42:20+08:00"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "T301 Events Reviewer changed-file lint passed; existing React settings warning only.",
+            "verifiedAt": "2026-05-22T06:42:20+08:00"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "T301 Events Reviewer changed-file type-check passed.",
+            "verifiedAt": "2026-05-22T06:42:20+08:00"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Event UI uses shared follow runtime/use-case path.",
+        "Forbidden surfaces stay free of follow buttons.",
+        "Browser evidence is complete.",
+        "Verification commands pass."
+      ],
+      "reviewerRejectCriteria": [
+        "Follow button appears for signed-out users, self-hosted events, participants rows, comments, or posts.",
+        "Event page causes duplicate per-card writes or duplicated mutation logic outside follow use-cases.",
+        "Browser evidence is missing.",
+        "Verification is missing or stale."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Events Reviewer",
+        "summary": "No findings. Diff checked T301 owned files only, including new tests/integration/events/EventHostFollow.test.jsx. Shared read-only verification covered src/components/FollowButton.jsx and src/runtime/client/use-cases/follow-use-cases.js. No post files matched in the changed file list. Browser evidence JSON/screenshots/logs were inspected with no app HTTP 4xx/5xx found; screenshot sample matched list/detail/participants/signed-out coverage.",
+        "decidedAt": "2026-05-22T06:42:20+08:00"
+      },
+      "evidence": {
+        "engineerReport": "Events Engineer dispatched at 2026-05-22T04:24:35+08:00 and reported DONE. Previous T301 partial diff existed; replacement engineer worked with it and did not revert. Clean RED unavailable because replacement inherited partial diff where tests and implementation already existed; no reverse revert was performed. Forbidden surfaces: participants/comments no follow buttons; posts untouched. Browser evidence covered desktop 1440x900 and mobile 390x844 for signed-out hidden controls, signed-in non-self list/detail follow/unfollow, self-hosted hidden control, participants profile links only, and comments profile link. Console warnings only Connecting to Firebase Emulators...; no app HTTP 4xx/5xx observed in Next logs; Firestore emulator Listen/Write net::ERR_ABORTED was recorded during page navigation/context close while assertions still passed. Engineer changed no workflow files and performed no staging, commit, push, or PR.",
+        "reviewerReport": "Events Reviewer reported review_passed at 2026-05-22T06:42:20+08:00 with no findings. Diff checked T301 owned files only, including new tests/integration/events/EventHostFollow.test.jsx. Shared read-only verification covered src/components/FollowButton.jsx and src/runtime/client/use-cases/follow-use-cases.js. No post files matched in the changed file list. Commands: npx vitest event host/follow suite exit 0 with 4 files / 38 tests passed; audit:use-effect-data-fetching exit 0; lint:changed exit 0 with existing React settings warning only; type-check:changed exit 0; git diff --check -- <T301 files> exit 0. Browser evidence JSON, screenshots, and logs were inspected; no app HTTP 4xx/5xx found. Screenshot sample matched list, detail, participants, and signed-out coverage. Residual risk: browser flow was validated from existing evidence, not rerun. Explorer subagent could not start because thread limit was reached, so review was completed by the Reviewer directly.",
+        "commandOutputSummary": [
+          "RED evidence: clean RED unavailable because replacement inherited partial diff where tests and implementation already existed; no reverse revert was performed.",
+          "npx vitest run --project=browser tests/unit/runtime/useEventsPageRuntime.test.jsx tests/unit/runtime/useEventDetailRuntime.test.jsx tests/integration/events/EventHostFollow.test.jsx tests/integration/events/ParticipantsModal.test.jsx: exit 0, 4 files / 38 tests passed.",
+          "npm run audit:use-effect-data-fetching: exit 0.",
+          "npm run lint:changed: exit 0, existing React settings warning.",
+          "npm run type-check:changed: exit 0.",
+          "Reviewer npx vitest run --project=browser tests/unit/runtime/useEventsPageRuntime.test.jsx tests/unit/runtime/useEventDetailRuntime.test.jsx tests/integration/events/EventHostFollow.test.jsx tests/integration/events/ParticipantsModal.test.jsx: exit 0, 4 files / 38 tests passed.",
+          "Reviewer npm run audit:use-effect-data-fetching: exit 0.",
+          "Reviewer npm run lint:changed: exit 0, existing React settings warning only.",
+          "Reviewer npm run type-check:changed: exit 0.",
+          "Reviewer git diff --check -- <T301 files>: exit 0.",
+          "Browser evidence JSON: /private/tmp/t301-event-host-follow-browser-evidence/browser-evidence.json.",
+          "Browser screenshots: /private/tmp/t301-event-host-follow-browser-evidence/*.png.",
+          "Browser coverage: desktop 1440x900 and mobile 390x844; /events signed-out hidden controls; signed-in non-self list follow/unfollow; signed-in non-self detail follow/unfollow; self-hosted hidden control; participants profile links only / no follow buttons; comments profile link / no follow buttons.",
+          "Browser residual: console warnings only Connecting to Firebase Emulators...; no app HTTP 4xx/5xx observed in Next logs; Firestore emulator Listen/Write net::ERR_ABORTED during page navigation/context close, assertions still passed."
+        ],
+        "changedFilesSummary": [
+          "src/runtime/hooks/useEventsPageRuntime.js",
+          "src/ui/events/EventsListSection.jsx",
+          "src/ui/events/EventsPageScreen.module.css",
+          "src/runtime/hooks/useEventDetailRuntime.js",
+          "src/ui/events/EventDetailScreen.jsx",
+          "src/ui/events/EventDetailScreen.module.css",
+          "tests/unit/runtime/useEventsPageRuntime.test.jsx",
+          "tests/unit/runtime/useEventDetailRuntime.test.jsx",
+          "tests/integration/events/ParticipantsModal.test.jsx",
+          "tests/integration/events/EventHostFollow.test.jsx: new/untracked"
+        ]
+      }
+    },
+    {
+      "id": "T401",
+      "title": "E2E, Emulator Seed, And Browser Evidence",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-e2e",
+      "engineer": "E2E Engineer",
+      "reviewer": "E2E Reviewer",
+      "scope": [
+        "Add runner-following emulator seed and Playwright E2E flow.",
+        "Add Playwright feature mapping if the new seed uses E2E_FEATURE=068-runner-following.",
+        "Capture browser evidence for profile, member following, and event journeys after implementation."
+      ],
+      "nonScope": [
+        "No production implementation beyond fixing issues exposed by E2E without coordinator approval.",
+        "No package, lockfile, rules deploy, commit, push, pull request, CI watch, merge, or local main sync."
+      ],
+      "ownedFiles": [
+        "tests/e2e/_setup/068-runner-following-global-setup.js",
+        "tests/e2e/runner-following.spec.js",
+        "playwright.emulator.config.mjs"
+      ],
+      "readOnlyContext": [
+        "specs/068-runner-following/spec.md",
+        ".codex/rules/e2e-commands.md",
+        ".codex/references/testing-handbook.md",
+        "tests/e2e/_setup/014-notification-system-global-setup.js",
+        "tests/e2e/notification-flow.spec.js",
+        "tests/_helpers/e2e-helpers.js"
+      ],
+      "dependencies": [
+        "T301 completed.",
+        "T202 completed after Reviewer PASS and coordinator sync."
+      ],
+      "engineerInstructions": [
+        "Write E2E assertions for signed-out profile count/list reads with no follow button, signed-in profile follow/unfollow, member 我的追蹤跑友 list and unfollow, event list host follow, event detail host follow, follow notification navigation to follower profile, and no forbidden follow controls.",
+        "Implement seed/config only inside owned files; if production behavior fails, report blocker instead of editing production files from this task.",
+        "T401 Reviewer PASS recorded; T501 is ready for final integration gate dispatch.",
+        "Use Playwright role/text locators and web-first assertions.",
+        "Do not use fixed sleeps or page.waitForTimeout."
+      ],
+      "acceptanceCriteria": [
+        "E2E seed creates viewer, target, host/event data, member following data, follow graph state, and notification state needed for deterministic tests.",
+        "E2E_FEATURE=068-runner-following npm run test:e2e:emulator selects the new setup and spec.",
+        "Playwright tests cover the critical journeys and forbidden surfaces from spec.md.",
+        "Browser evidence records manual UI inspection signals for profile, member following, event list, and event detail."
+      ],
+      "verification": [
+        {
+          "command": "npm run audit:playwright-official-only",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run audit:playwright-official-only",
+            "exitCode": 0,
+            "summary": "T401 Reviewer PASS: Playwright official import audit passed with 0 findings.",
+            "verifiedAt": "2026-05-22T08:10:16+08:00"
+          }
+        },
+        {
+          "command": "firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\"",
+          "expectedSignal": "exit 0; 4 passed",
+          "lastRun": {
+            "command": "firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\"",
+            "exitCode": 0,
+            "summary": "T401 Reviewer PASS: 4 passed.",
+            "verifiedAt": "2026-05-22T08:10:16+08:00"
+          }
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "T401 Reviewer PASS: no whitespace errors.",
+            "verifiedAt": "2026-05-22T08:10:16+08:00"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "E2E uses official Playwright imports and no fixed sleeps.",
+        "Feature mapping is narrow to 068-runner-following.",
+        "Browser evidence and E2E command support the claims."
+      ],
+      "reviewerRejectCriteria": [
+        "E2E is flaky by construction, uses fixed sleeps, or depends on unseeded state.",
+        "Config change affects unrelated E2E features.",
+        "Browser evidence is missing.",
+        "Engineer edited production files from this E2E task."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "E2E Reviewer",
+        "summary": "No findings. Diff checked tests/e2e/_setup/068-runner-following-global-setup.js, tests/e2e/runner-following.spec.js, and playwright.emulator.config.mjs. Commands passed: npm run audit:playwright-official-only exit 0 with 0 findings; firebase emulators:exec E2E command exit 0 with 4 passed; git diff --check exit 0. Browser evidence JSON was DONE with failure null, 13 signals, and empty appHttpErrors; 13 PNG screenshots were present; test-results/.last-run.json status was passed. Residual risk: Next multiple lockfiles warning remains; Firestore channel/RSC navigation net::ERR_ABORTED had empty HTTP errors and green E2E; event list self-host follow control check is whole-page button count, acceptable but weaker.",
+        "decidedAt": "2026-05-22T08:10:16+08:00"
+      },
+      "evidence": {
+        "engineerReport": "T401 E2E Engineer reported DONE. Changed T401 owned file this resume round: tests/e2e/runner-following.spec.js. Existing T401 owned files from earlier: tests/e2e/_setup/068-runner-following-global-setup.js, tests/e2e/runner-following.spec.js, and playwright.emulator.config.mjs. Change summary: fixed Playwright hook fixture parameter; avoided waitForText / route announcer strict locator collision; fixed participants dialog locator because the actual dialog exists but has no accessible name. E2E coverage passed: signed-out profile counts/list no follow button, signed-in profile follow/unfollow, member 我的追蹤跑友 list/unfollow, event list/detail host follow, follow notification navigation, and forbidden controls absent. Evidence: /private/tmp/t401-runner-following-e2e-evidence/browser-evidence.json, /private/tmp/t401-runner-following-e2e-evidence/*.png, and test-results/.last-run.json shows passed. Process cleanup: no manual kill; Firebase emulators shutdown via emulators:exec. Residual risk: Next multiple lockfiles warning; browser evidence has common emulator/navigation net::ERR_ABORTED; httpErrors / appHttpErrors empty. No stage, commit, push, or PR.",
+        "reviewerReport": "T401 E2E Reviewer review_passed at 2026-05-22T08:10:16+08:00; findings: none. Diff checked: tests/e2e/_setup/068-runner-following-global-setup.js, tests/e2e/runner-following.spec.js, and playwright.emulator.config.mjs. Commands: npm run audit:playwright-official-only exit 0 with 0 findings; firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\" exit 0 with 4 passed; git diff --check exit 0. Evidence: /private/tmp/t401-runner-following-e2e-evidence/browser-evidence.json status DONE, failure null, 13 signals, appHttpErrors empty; 13 PNG screenshots present with sampled profile, notification, member following, event list/detail/participants coverage; test-results/.last-run.json status passed. Residual risk: Next multiple lockfiles warning remains; browser evidence has Firestore channel/RSC navigation net::ERR_ABORTED but HTTP errors are empty and E2E is green; event list self-host follow control check is whole-page button count, not scoped card, acceptable but weaker. Previous blocker evidence remains recorded: Workflow State Engineer recorded T401 as blocked at 2026-05-22T07:07:53+08:00, then resolved the blocker at 2026-05-22T07:48:24+08:00 after T202 review_passed and coordinator sync.",
+        "commandOutputSummary": [
+          "npm run audit:playwright-official-only: exit 0.",
+          "firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\": exit 0; 4 passed.",
+          "git diff --check: exit 0.",
+          "Reviewer npm run audit:playwright-official-only: exit 0; 0 findings.",
+          "Reviewer firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\": exit 0; 4 passed.",
+          "Reviewer git diff --check: exit 0.",
+          "Browser evidence: /private/tmp/t401-runner-following-e2e-evidence/browser-evidence.json and /private/tmp/t401-runner-following-e2e-evidence/*.png.",
+          "Browser evidence JSON status DONE, failure null, 13 signals, and appHttpErrors empty.",
+          "13 PNG screenshots present; sampled profile, notification, member following, event list/detail/participants.",
+          "test-results/.last-run.json status passed."
+        ],
+        "changedFilesSummary": [
+          "This resume round changed T401 owned file: tests/e2e/runner-following.spec.js.",
+          "Existing T401 owned files from earlier: tests/e2e/_setup/068-runner-following-global-setup.js, tests/e2e/runner-following.spec.js, and playwright.emulator.config.mjs."
+        ]
+      }
+    },
+    {
+      "id": "T501",
+      "title": "Final Integration Gate",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-integration",
+      "engineer": "Verifier",
+      "reviewer": "Integration Reviewer",
+      "scope": [
+        "Verify all reviewed implementation slices together.",
+        "Confirm workflow state sync and release boundary.",
+        "Record final evidence in workflow state files if Main dispatches a state-sync edit."
+      ],
+      "nonScope": [
+        "No production feature work unless a previous task is reopened.",
+        "No commit, push, pull request, CI watch, merge, local main sync, rules deploy, package, lockfile, dependency, or migration."
+      ],
+      "ownedFiles": [
+        "specs/068-runner-following/tasks.md",
+        "specs/068-runner-following/handoff.md",
+        "specs/068-runner-following/status.json"
+      ],
+      "readOnlyContext": [
+        "specs/068-runner-following/spec.md",
+        "specs/068-runner-following/plan.md",
+        "git status --short --branch",
+        "Reviewed Engineer and Reviewer reports for T101, T201, T202, T251, T301, and T401."
+      ],
+      "dependencies": [
+        "T401 completed."
+      ],
+      "engineerInstructions": [
+        "Run final commands as one command per evidence entry.",
+        "Verify no workflow state drift.",
+        "Keep rules deploy status explicit: required, not deployed unless separately authorized and evidenced.",
+        "Stop if any implementation task lacks Reviewer PASS."
+      ],
+      "acceptanceCriteria": [
+        "All implementation tasks are completed after review_passed.",
+        "Final verification commands pass.",
+        "Browser evidence exists for all UI surfaces.",
+        "rulesDeployStatus accurately reflects rules release state and does not imply deploy.",
+        "Authorization boundary remains edit=true only unless user explicitly expands it."
+      ],
+      "verification": [
+        {
+          "command": "git diff --check",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "T501 final integration retry: no whitespace errors.",
+            "verifiedAt": "2026-05-22T08:30:01+08:00"
+          }
+        },
+        {
+          "command": "npm run workflow:validate",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run workflow:validate",
+            "exitCode": 0,
+            "summary": "T501 final integration retry: seven status files valid.",
+            "verifiedAt": "2026-05-22T08:30:01+08:00"
+          }
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "T501 final integration retry: seven status files synced.",
+            "verifiedAt": "2026-05-22T08:30:01+08:00"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "T501 final integration retry: changed-file lint passed.",
+            "verifiedAt": "2026-05-22T08:30:01+08:00"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "T501 final integration retry: no type errors in changed files.",
+            "verifiedAt": "2026-05-22T08:30:01+08:00"
+          }
+        },
+        {
+          "command": "npm run test:branch",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run test:branch",
+            "exitCode": 0,
+            "summary": "T501 final integration retry: browser vitest 8 files / 81 tests passed; server vitest 6 files / 96 tests passed.",
+            "verifiedAt": "2026-05-22T08:30:01+08:00"
+          }
+        },
+        {
+          "command": "npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js",
+            "exitCode": 0,
+            "summary": "T501 final integration retry: 2 files / 31 tests passed.",
+            "verifiedAt": "2026-05-22T08:30:01+08:00"
+          }
+        },
+        {
+          "command": "npm run audit:use-effect-data-fetching",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run audit:use-effect-data-fetching",
+            "exitCode": 0,
+            "summary": "T501 final integration retry: 0 findings.",
+            "verifiedAt": "2026-05-22T08:30:01+08:00"
+          }
+        },
+        {
+          "command": "npm run audit:playwright-official-only",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run audit:playwright-official-only",
+            "exitCode": 0,
+            "summary": "T501 final integration retry: 0 findings.",
+            "verifiedAt": "2026-05-22T08:30:01+08:00"
+          }
+        },
+        {
+          "command": "firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\"",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\"",
+            "exitCode": 0,
+            "summary": "T501 final integration retry: Playwright emulator E2E 4 passed.",
+            "verifiedAt": "2026-05-22T08:30:01+08:00"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "All dependencies completed and reviewed.",
+        "Final commands pass.",
+        "Workflow state files agree.",
+        "Rules deploy status is honest and release risk is explicit."
+      ],
+      "reviewerRejectCriteria": [
+        "Any task is missing Reviewer PASS.",
+        "Any final command fails.",
+        "Browser evidence is missing for UI changes.",
+        "Workflow state drift exists.",
+        "Summary implies deployed rules or deployed product behavior without deploy evidence."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Integration Reviewer",
+        "summary": "No blocking findings. Checked status/tasks/handoff alignment, final verification evidence, browser evidence directories, branch/staging/worktree state, and authorization boundaries.",
+        "decidedAt": "2026-05-22T08:40:51+08:00"
+      },
+      "evidence": {
+        "engineerReport": "T501 Final Integration Verifier retry engineer_done at 2026-05-22T08:30:01+08:00. All required final integration commands passed, browser evidence artifact directories exist, and no production/test implementation code was changed by this verifier. Integration Reviewer later returned review_passed and coordinator state sync marked T501 completed.",
+        "reviewerReport": "Integration Reviewer review_passed at 2026-05-22T08:40:51+08:00; findings: none blocking. Evidence checked: status.json had T501 active and engineer_done; T101/T201/T202/T251/T301/T401 were all completed with review_passed; tasks.md recorded final evidence and all final verification rows exit 0; handoff.md had T501 pending Integration Reviewer plus explicit rules deploy/open incident boundaries; browser evidence dirs existed for T201/T251/T301/T401. Residual risks: Firestore/storage rules deploy required but not authorized/deployed; main-workspace untracked file incident remains open; branch is behind origin/main by 13; no commit/push/PR/CI watch/merge/local main sync/rules deploy/staging/deploy was authorized or performed.",
+        "commandOutputSummary": [
+          "git diff --check: exit 0; no whitespace errors.",
+          "npm run workflow:validate: exit 0; seven status files valid.",
+          "npm run workflow:check: exit 0; seven status files synced.",
+          "npm run lint:changed: exit 0; changed-file lint passed.",
+          "npm run type-check:changed: exit 0; no type errors in changed files.",
+          "npm run test:branch: exit 0; browser vitest 8 files / 81 tests passed; server vitest 6 files / 96 tests passed.",
+          "npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js: exit 0; 2 files / 31 tests passed.",
+          "npm run audit:use-effect-data-fetching: exit 0; 0 findings.",
+          "npm run audit:playwright-official-only: exit 0; 0 findings.",
+          "firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\": exit 0; 4 passed.",
+          "ls /private/tmp/t201-profile-browser-evidence-emulator /private/tmp/t251-member-following-browser-evidence-attempt2 /private/tmp/t301-event-host-follow-browser-evidence /private/tmp/t401-runner-following-e2e-evidence: exit 0; browser evidence artifact directories exist.",
+          "Integration Reviewer git diff --check: exit 0.",
+          "Integration Reviewer npm run workflow:validate: exit 0.",
+          "Integration Reviewer npm run workflow:check: exit 0.",
+          "Integration Reviewer ls -d /private/tmp/t201-profile-browser-evidence-emulator /private/tmp/t251-member-following-browser-evidence-attempt2 /private/tmp/t301-event-host-follow-browser-evidence /private/tmp/t401-runner-following-e2e-evidence: exit 0; browser evidence directories exist.",
+          "Integration Reviewer git rev-list --left-right --count HEAD...origin/main: exit 0; output 0 13.",
+          "Integration Reviewer git diff --name-only --cached: exit 0; empty.",
+          "Integration Reviewer git status --short --branch: exit 0; branch behind origin/main by 13 with dirty/untracked worktree as expected."
+        ],
+        "changedFilesSummary": [
+          "Workflow state only: specs/068-runner-following/tasks.md, specs/068-runner-following/handoff.md, and specs/068-runner-following/status.json record T501 completed state and Integration Reviewer PASS evidence.",
+          "No production/test implementation code, package, lockfile, dependency, migration, staging, commit, push, PR, CI watch, merge, local main sync, rules deploy, or deploy action was performed."
+        ]
+      }
+    }
+  ],
+  "blocked": false,
+  "blockedReason": null,
+  "lastVerification": [
+    {
+      "command": "npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js",
+      "exitCode": 1,
+      "summary": "Attempt 4 RED: creating users/{uid} with followingCount/followersCount 999 incorrectly succeeded before the fix.",
+      "verifiedAt": "2026-05-22T02:10:48+08:00"
+    },
+    {
+      "command": "npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js",
+      "exitCode": 0,
+      "summary": "Reviewer attempt 4: 31 passed.",
+      "verifiedAt": "2026-05-22T02:15:12+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser tests/unit/service/follow-service.test.js tests/unit/runtime/follow-use-cases.test.js tests/unit/lib/notification-helpers.test.js",
+      "exitCode": 0,
+      "summary": "Reviewer attempt 4: 28 passed.",
+      "verifiedAt": "2026-05-22T02:15:12+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "Reviewer attempt 4 changed-file lint passed.",
+      "verifiedAt": "2026-05-22T02:15:12+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "Reviewer attempt 4 changed-file type-check passed.",
+      "verifiedAt": "2026-05-22T02:15:12+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "Reviewer attempt 4 no whitespace errors.",
+      "verifiedAt": "2026-05-22T02:15:12+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser tests/unit/runtime/useProfileRuntime.test.jsx tests/integration/profile/ProfileClient.test.jsx tests/integration/profile/ProfileStats.test.jsx tests/integration/profile/ProfileHeader.test.jsx",
+      "exitCode": 0,
+      "summary": "T201 Profile Engineer GREEN after UI-label fix: 4 files / 35 tests passed.",
+      "verifiedAt": "2026-05-22T03:02:04+08:00"
+    },
+    {
+      "command": "npm run audit:use-effect-data-fetching",
+      "exitCode": 0,
+      "summary": "T201 Profile Engineer audit passed.",
+      "verifiedAt": "2026-05-22T03:02:04+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T201 Profile Engineer changed-file lint passed; React version warning only.",
+      "verifiedAt": "2026-05-22T03:02:04+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T201 Profile Engineer changed-file type-check passed.",
+      "verifiedAt": "2026-05-22T03:02:04+08:00"
+    },
+    {
+      "command": "/private/tmp/t201-profile-evidence.mjs",
+      "exitCode": 0,
+      "summary": "T201 browser evidence passed after UI-label fix and emulator follow-state reset.",
+      "verifiedAt": "2026-05-22T03:02:04+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser tests/unit/runtime/useProfileRuntime.test.jsx tests/integration/profile/ProfileClient.test.jsx tests/integration/profile/ProfileStats.test.jsx tests/integration/profile/ProfileHeader.test.jsx",
+      "exitCode": 0,
+      "summary": "T201 Profile Reviewer: 4 files / 35 tests passed.",
+      "verifiedAt": "2026-05-22T03:10:44+08:00"
+    },
+    {
+      "command": "npm run audit:use-effect-data-fetching",
+      "exitCode": 0,
+      "summary": "T201 Profile Reviewer audit passed.",
+      "verifiedAt": "2026-05-22T03:10:44+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T201 Profile Reviewer changed-file lint passed; React version warning only.",
+      "verifiedAt": "2026-05-22T03:10:44+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T201 Profile Reviewer changed-file type-check passed.",
+      "verifiedAt": "2026-05-22T03:10:44+08:00"
+    },
+    {
+      "command": "node /private/tmp/t201-profile-evidence.mjs",
+      "exitCode": 0,
+      "summary": "T201 Profile Reviewer escalated browser evidence rerun passed; sandbox attempt had failed with Chromium MachPort permission.",
+      "verifiedAt": "2026-05-22T03:10:44+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser tests/unit/runtime/useMemberFollowingRuntime.test.jsx tests/integration/member/MemberFollowingPage.test.jsx tests/integration/member/MemberFavoritesPage.test.jsx",
+      "exitCode": 1,
+      "summary": "T251 RED failures covered missing 我的追蹤跑友 member entry, following screen heading/guard/rows, runtime state/unfollow behavior.",
+      "verifiedAt": "2026-05-22T03:51:07+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser tests/unit/runtime/useMemberFollowingRuntime.test.jsx tests/integration/member/MemberFollowingPage.test.jsx tests/integration/member/MemberFavoritesPage.test.jsx",
+      "exitCode": 0,
+      "summary": "T251 GREEN: 3 files / 12 tests passed.",
+      "verifiedAt": "2026-05-22T03:51:07+08:00"
+    },
+    {
+      "command": "npm run audit:use-effect-data-fetching",
+      "exitCode": 0,
+      "summary": "T251 audit passed with 0 findings.",
+      "verifiedAt": "2026-05-22T03:51:07+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T251 changed-file lint passed.",
+      "verifiedAt": "2026-05-22T03:51:07+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T251 changed-file type-check passed.",
+      "verifiedAt": "2026-05-22T03:51:07+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser tests/unit/runtime/useMemberFollowingRuntime.test.jsx tests/integration/member/MemberFollowingPage.test.jsx tests/integration/member/MemberFavoritesPage.test.jsx",
+      "exitCode": 0,
+      "summary": "T251 Reviewer: 3 files / 12 tests passed.",
+      "verifiedAt": "2026-05-22T04:00:50+08:00"
+    },
+    {
+      "command": "npm run audit:use-effect-data-fetching",
+      "exitCode": 0,
+      "summary": "T251 Reviewer audit passed with 0 findings.",
+      "verifiedAt": "2026-05-22T04:00:50+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T251 Reviewer changed-file lint passed; React eslint settings warning only.",
+      "verifiedAt": "2026-05-22T04:00:50+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T251 Reviewer changed-file type-check passed.",
+      "verifiedAt": "2026-05-22T04:00:50+08:00"
+    },
+    {
+      "command": "browser evidence JSON/screenshots validation via jq/file",
+      "exitCode": 0,
+      "summary": "T251 Reviewer validated browser evidence JSON and screenshots.",
+      "verifiedAt": "2026-05-22T04:00:50+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser tests/unit/runtime/useMemberFollowingRuntime.test.jsx tests/integration/member/MemberFollowingPage.test.jsx tests/integration/member/MemberFavoritesPage.test.jsx",
+      "exitCode": 0,
+      "summary": "T251 attempt 2 Fix Engineer: 3 files / 12 tests passed.",
+      "verifiedAt": "2026-05-22T04:09:52+08:00"
+    },
+    {
+      "command": "npm run audit:use-effect-data-fetching",
+      "exitCode": 0,
+      "summary": "T251 attempt 2 Fix Engineer: 0 findings.",
+      "verifiedAt": "2026-05-22T04:09:52+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T251 attempt 2 Fix Engineer changed-file lint passed; React version warning only.",
+      "verifiedAt": "2026-05-22T04:09:52+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T251 attempt 2 Fix Engineer changed-file type-check passed.",
+      "verifiedAt": "2026-05-22T04:09:52+08:00"
+    },
+    {
+      "command": "T251 attempt 2 browser evidence sandbox run",
+      "exitCode": 1,
+      "summary": "localhost fetch blocked.",
+      "verifiedAt": "2026-05-22T04:09:52+08:00"
+    },
+    {
+      "command": "T251 attempt 2 browser evidence escalated rerun",
+      "exitCode": 0,
+      "summary": "DONE; result JSON /private/tmp/t251-member-following-browser-evidence-attempt2/t251-browser-evidence-results.json; screenshots dir /private/tmp/t251-member-following-browser-evidence-attempt2/; signals memberEntryLinkHref=/member/following, signed-out guard text, desktop/mobile rows before/after unfollow; residual local emulator / Next image LCP warnings and aborted long-poll/RSC requests; no HTTP errors.",
+      "verifiedAt": "2026-05-22T04:09:52+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser tests/unit/runtime/useMemberFollowingRuntime.test.jsx tests/integration/member/MemberFollowingPage.test.jsx tests/integration/member/MemberFavoritesPage.test.jsx",
+      "exitCode": 0,
+      "summary": "T251 attempt 2 Reviewer: 3 files / 12 tests passed.",
+      "verifiedAt": "2026-05-22T04:18:11+08:00"
+    },
+    {
+      "command": "npm run audit:use-effect-data-fetching",
+      "exitCode": 0,
+      "summary": "T251 attempt 2 Reviewer: 0 findings.",
+      "verifiedAt": "2026-05-22T04:18:11+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T251 attempt 2 Reviewer changed-file lint passed; React version warning only.",
+      "verifiedAt": "2026-05-22T04:18:11+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T251 attempt 2 Reviewer changed-file type-check passed.",
+      "verifiedAt": "2026-05-22T04:18:11+08:00"
+    },
+    {
+      "command": "jq . /private/tmp/t251-member-following-browser-evidence-attempt2/t251-browser-evidence-results.json",
+      "exitCode": 0,
+      "summary": "T251 attempt 2 Reviewer: status DONE, expected desktop/mobile signals present, no HTTP errors.",
+      "verifiedAt": "2026-05-22T04:18:11+08:00"
+    },
+    {
+      "command": "sips -g pixelWidth -g pixelHeight /private/tmp/t251-member-following-browser-evidence-attempt2/*.png",
+      "exitCode": 0,
+      "summary": "T251 attempt 2 Reviewer: 8 screenshots with expected desktop/mobile dimensions.",
+      "verifiedAt": "2026-05-22T04:18:11+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser tests/unit/runtime/useEventsPageRuntime.test.jsx tests/unit/runtime/useEventDetailRuntime.test.jsx tests/integration/events/EventHostFollow.test.jsx tests/integration/events/ParticipantsModal.test.jsx",
+      "exitCode": 0,
+      "summary": "T301 Events Engineer GREEN: 4 files / 38 tests passed. Clean RED unavailable because replacement inherited partial diff where tests and implementation already existed; no reverse revert was performed.",
+      "verifiedAt": "2026-05-22T06:32:25+08:00"
+    },
+    {
+      "command": "npm run audit:use-effect-data-fetching",
+      "exitCode": 0,
+      "summary": "T301 Events Engineer audit passed.",
+      "verifiedAt": "2026-05-22T06:32:25+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T301 Events Engineer changed-file lint passed; existing React settings warning only.",
+      "verifiedAt": "2026-05-22T06:32:25+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T301 Events Engineer changed-file type-check passed.",
+      "verifiedAt": "2026-05-22T06:32:25+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser tests/unit/runtime/useEventsPageRuntime.test.jsx tests/unit/runtime/useEventDetailRuntime.test.jsx tests/integration/events/EventHostFollow.test.jsx tests/integration/events/ParticipantsModal.test.jsx",
+      "exitCode": 0,
+      "summary": "T301 Events Reviewer: 4 files / 38 tests passed.",
+      "verifiedAt": "2026-05-22T06:42:20+08:00"
+    },
+    {
+      "command": "npm run audit:use-effect-data-fetching",
+      "exitCode": 0,
+      "summary": "T301 Events Reviewer audit passed.",
+      "verifiedAt": "2026-05-22T06:42:20+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T301 Events Reviewer changed-file lint passed; existing React settings warning only.",
+      "verifiedAt": "2026-05-22T06:42:20+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T301 Events Reviewer changed-file type-check passed.",
+      "verifiedAt": "2026-05-22T06:42:20+08:00"
+    },
+    {
+      "command": "git diff --check -- <T301 files>",
+      "exitCode": 0,
+      "summary": "T301 Events Reviewer checked T301 owned files; no whitespace errors.",
+      "verifiedAt": "2026-05-22T06:42:20+08:00"
+    },
+    {
+      "command": "browser evidence JSON/screenshots/logs inspection",
+      "exitCode": 0,
+      "summary": "T301 Events Reviewer inspected existing evidence; no app HTTP 4xx/5xx found and screenshots matched list/detail/participants/signed-out coverage.",
+      "verifiedAt": "2026-05-22T06:42:20+08:00"
+    },
+    {
+      "command": "npm run audit:playwright-official-only",
+      "exitCode": 0,
+      "summary": "T401 Verification Debugger: Playwright import audit passed.",
+      "verifiedAt": "2026-05-22T07:07:53+08:00"
+    },
+    {
+      "command": "firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\"",
+      "exitCode": 1,
+      "summary": "T401 Verification Debugger reached UI assertion at tests/e2e/runner-following.spec.js:179; expected 1 位追蹤者, actual profile page snapshot showed 0 位追蹤者, 1 位追蹤中; 1 failed, 3 did not run.",
+      "verifiedAt": "2026-05-22T07:07:53+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "T401 Verification Debugger: no whitespace errors.",
+      "verifiedAt": "2026-05-22T07:07:53+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser tests/unit/service/profile-mapper.test.js tests/integration/profile/ProfilePage.test.jsx tests/integration/profile/ProfileClient.test.jsx",
+      "exitCode": 1,
+      "summary": "T202 attempt 2 RED: mapper result missed followersCount: 12 in profile-mapper test.",
+      "verifiedAt": "2026-05-22T07:38:41+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser tests/unit/service/profile-mapper.test.js tests/integration/profile/ProfilePage.test.jsx tests/integration/profile/ProfileClient.test.jsx",
+      "exitCode": 0,
+      "summary": "T202 attempt 2 GREEN: 3 files / 15 tests passed.",
+      "verifiedAt": "2026-05-22T07:38:41+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T202 attempt 2 changed-file lint passed.",
+      "verifiedAt": "2026-05-22T07:38:41+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T202 attempt 2 changed-file type-check passed.",
+      "verifiedAt": "2026-05-22T07:38:41+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "T202 attempt 2 no whitespace errors.",
+      "verifiedAt": "2026-05-22T07:38:41+08:00"
+    },
+    {
+      "command": "npm run audit:playwright-official-only",
+      "exitCode": 0,
+      "summary": "T401 E2E Engineer DONE: Playwright official import audit passed.",
+      "verifiedAt": "2026-05-22T08:01:47+08:00"
+    },
+    {
+      "command": "firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\"",
+      "exitCode": 0,
+      "summary": "T401 E2E Engineer DONE: 4 passed.",
+      "verifiedAt": "2026-05-22T08:01:47+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "T401 E2E Engineer DONE: no whitespace errors.",
+      "verifiedAt": "2026-05-22T08:01:47+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "T501 final integration retry: no whitespace errors.",
+      "verifiedAt": "2026-05-22T08:30:01+08:00"
+    },
+    {
+      "command": "npm run workflow:validate",
+      "exitCode": 0,
+      "summary": "T501 final integration retry: seven status files valid.",
+      "verifiedAt": "2026-05-22T08:30:01+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "T501 final integration retry: seven status files synced.",
+      "verifiedAt": "2026-05-22T08:30:01+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T501 final integration retry: changed-file lint passed.",
+      "verifiedAt": "2026-05-22T08:30:01+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T501 final integration retry: no type errors in changed files.",
+      "verifiedAt": "2026-05-22T08:30:01+08:00"
+    },
+    {
+      "command": "npm run test:branch",
+      "exitCode": 0,
+      "summary": "T501 final integration retry: browser vitest 8 files / 81 tests passed; server vitest 6 files / 96 tests passed.",
+      "verifiedAt": "2026-05-22T08:30:01+08:00"
+    },
+    {
+      "command": "npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js",
+      "exitCode": 0,
+      "summary": "T501 final integration retry: 2 files / 31 tests passed.",
+      "verifiedAt": "2026-05-22T08:30:01+08:00"
+    },
+    {
+      "command": "npm run audit:use-effect-data-fetching",
+      "exitCode": 0,
+      "summary": "T501 final integration retry: 0 findings.",
+      "verifiedAt": "2026-05-22T08:30:01+08:00"
+    },
+    {
+      "command": "npm run audit:playwright-official-only",
+      "exitCode": 0,
+      "summary": "T501 final integration retry: 0 findings.",
+      "verifiedAt": "2026-05-22T08:30:01+08:00"
+    },
+    {
+      "command": "firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\"",
+      "exitCode": 0,
+      "summary": "T501 final integration retry: Playwright emulator E2E 4 passed.",
+      "verifiedAt": "2026-05-22T08:30:01+08:00"
+    },
+    {
+      "command": "ls /private/tmp/t201-profile-browser-evidence-emulator /private/tmp/t251-member-following-browser-evidence-attempt2 /private/tmp/t301-event-host-follow-browser-evidence /private/tmp/t401-runner-following-e2e-evidence",
+      "exitCode": 0,
+      "summary": "T501 final integration retry: T201, T251 attempt 2, T301, and T401 browser evidence artifact directories exist.",
+      "verifiedAt": "2026-05-22T08:30:01+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "Integration Reviewer PASS: no whitespace errors.",
+      "verifiedAt": "2026-05-22T08:40:51+08:00"
+    },
+    {
+      "command": "npm run workflow:validate",
+      "exitCode": 0,
+      "summary": "Integration Reviewer PASS: workflow state valid.",
+      "verifiedAt": "2026-05-22T08:40:51+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "Integration Reviewer PASS: workflow state synced.",
+      "verifiedAt": "2026-05-22T08:40:51+08:00"
+    },
+    {
+      "command": "ls -d /private/tmp/t201-profile-browser-evidence-emulator /private/tmp/t251-member-following-browser-evidence-attempt2 /private/tmp/t301-event-host-follow-browser-evidence /private/tmp/t401-runner-following-e2e-evidence",
+      "exitCode": 0,
+      "summary": "Integration Reviewer PASS: T201, T251 attempt 2, T301, and T401 browser evidence directories exist.",
+      "verifiedAt": "2026-05-22T08:40:51+08:00"
+    },
+    {
+      "command": "git rev-list --left-right --count HEAD...origin/main",
+      "exitCode": 0,
+      "summary": "Integration Reviewer PASS: output 0 13; branch behind origin/main by 13.",
+      "verifiedAt": "2026-05-22T08:40:51+08:00"
+    },
+    {
+      "command": "git diff --name-only --cached",
+      "exitCode": 0,
+      "summary": "Integration Reviewer PASS: empty; nothing staged.",
+      "verifiedAt": "2026-05-22T08:40:51+08:00"
+    },
+    {
+      "command": "git status --short --branch",
+      "exitCode": 0,
+      "summary": "Integration Reviewer PASS: branch behind origin/main by 13; dirty/untracked worktree as expected.",
+      "verifiedAt": "2026-05-22T08:40:51+08:00"
+    }
+  ],
+  "lastVerifiedCommit": null,
+  "phaseCommits": [],
+  "rulesDeployStatus": {
+    "state": "required",
+    "required": true,
+    "changed": true,
+    "evidence": [],
+    "deployedCommit": null
+  },
+  "incidents": [
+    {
+      "id": "INC-T401-profile-serialization-followers-count",
+      "state": "resolved",
+      "summary": "Resolved by T202 review_passed and coordinator sync for the Firestore followersCount -> PublicProfile mapper path, preserved page serialization, and coordinated lint-only no-empty-pattern cleanup in tests/e2e/runner-following.spec.js. Previous blocker evidence remains recorded; T401 later reran E2E successfully and completed after Reviewer PASS.",
+      "openedAt": "2026-05-22T07:07:53+08:00",
+      "closedAt": "2026-05-22T07:48:24+08:00"
+    },
+    {
+      "id": "INC-T202-main-workspace-untracked-profile-mapper-test",
+      "state": "resolved",
+      "summary": "Resolved during authorized closeout cleanup. The main workspace file /Users/chentzuyu/Desktop/dive-into-run/tests/unit/service/profile-mapper.test.js was verified untracked, diff-q matched the feature worktree test file, and git clean -f -- tests/unit/service/profile-mapper.test.js removed only that exact file. Follow-up status showed no remaining entry for that path.",
+      "openedAt": "2026-05-22T07:38:41+08:00",
+      "closedAt": "2026-05-22T11:38:27+08:00"
+    },
+    {
+      "id": "INC-T501-lint-no-void",
+      "state": "resolved",
+      "summary": "Resolved by T401 lint fix before the T501 retry; T501 final integration retry reran npm run lint:changed with exit 0, all required final verification commands passed, and T501 completed after Integration Reviewer PASS.",
+      "openedAt": "2026-05-22T08:17:47+08:00",
+      "closedAt": "2026-05-22T08:30:01+08:00"
+    }
+  ],
+  "updatedAt": "2026-05-22T11:38:27+08:00"
+}

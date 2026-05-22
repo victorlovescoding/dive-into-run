@@ -140,12 +140,77 @@ function installEventDetailFavoriteFirestore({ id, event, favoriteEventIds = [] 
   });
 }
 
+/**
+ * 安裝活動詳情、收藏、主揪 follow 狀態的 Firestore stubs。
+ * @param {object} options - stub 設定。
+ * @param {string} options.id - 活動 ID。
+ * @param {import('@/service/event-service').EventData} options.event - 活動資料。
+ * @param {string[]} [options.followedHostUids] - 已追蹤的主揪 UID。
+ */
+function installEventDetailHostFollowFirestore({ id, event, followedHostUids = [] }) {
+  installEventDetailFavoriteFirestore({ id, event });
+  const followedHosts = new Set(followedHostUids.map(String));
+
+  eventDetailRuntimeBoundaryMocks.mockGetDoc.mockImplementation(async (ref) => {
+    const path = String(ref?.path ?? '');
+    if (path === `events/${id}`) {
+      return createDocSnapshot(id, event);
+    }
+    if (path === `events/${id}/participants/u1`) {
+      return createDocSnapshot('u1', null);
+    }
+    if (path === `users/u1/favoriteEvents/${id}`) {
+      return createDocSnapshot(id, null);
+    }
+    const followMatch = path.match(/^users\/u1\/following\/([^/]+)$/);
+    if (followMatch) {
+      const targetUid = followMatch[1];
+      return createDocSnapshot(
+        targetUid,
+        followedHosts.has(targetUid) ? { targetUid, createdAt: 'followed-at' } : null,
+      );
+    }
+    return createDocSnapshot(String(ref?.id ?? 'missing'), null);
+  });
+}
+
+/**
+ * 建立可執行 follow/unfollow transaction callback 的 Firestore transaction mock。
+ * @param {object} options - transaction 初始狀態。
+ * @param {string} options.followerUid - 追蹤者 UID。
+ * @param {string} options.targetUid - 被追蹤主揪 UID。
+ * @param {boolean} [options.initiallyFollowing] - 初始是否已追蹤。
+ * @returns {(db: unknown, callback: (tx: object) => Promise<{ following: boolean }>) => Promise<{ following: boolean }>} runTransaction mock implementation。
+ */
+function createFollowTransactionDispatcher({ followerUid, targetUid, initiallyFollowing = false }) {
+  let isFollowing = initiallyFollowing;
+
+  return async (_db, callback) => {
+    const transaction = {
+      get: vi.fn(async (ref) => {
+        const path = String(ref?.path ?? '');
+        if (path === `users/${followerUid}/following/${targetUid}`) {
+          return { exists: () => isFollowing, data: () => ({ targetUid }) };
+        }
+        return { exists: () => true, data: () => ({ followersCount: isFollowing ? 1 : 0 }) };
+      }),
+      set: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    };
+    const result = await callback(transaction);
+    isFollowing = result.following;
+    return result;
+  };
+}
+
 describe('useEventDetailRuntime', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockShowToast.mockReset();
     mockSetDoc.mockResolvedValue(undefined);
     mockDeleteDoc.mockResolvedValue(undefined);
+    eventDetailRuntimeBoundaryMocks.mockAddDoc.mockResolvedValue({ id: 'notification-1' });
     resetEventDetailRuntimeBoundaryMocks();
   });
 
@@ -286,6 +351,104 @@ describe('useEventDetailRuntime', () => {
       expect(result.current.loading).toBe(false);
       expect(result.current.isFavoriteEvent).toBe(true);
     });
+  });
+
+  it('loads host follow state for a signed-in non-self detail host', async () => {
+    const id = 'follow-detail';
+    const event = createRuntimeEvent({ id, hostUid: 'host-detail', hostName: 'Detail Host' });
+    installEventDetailHostFollowFirestore({
+      id,
+      event,
+      followedHostUids: ['host-detail'],
+    });
+
+    const { result } = await renderEventDetailRuntimeHook({ id });
+
+    await waitFor(() => {
+      expect(result.current.hostFollowControl).toMatchObject({
+        isVisible: true,
+        isFollowing: true,
+        isPending: false,
+        label: '追蹤中',
+      });
+    });
+    expect(eventDetailRuntimeBoundaryMocks.mockGetDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'users/u1/following/host-detail' }),
+    );
+  });
+
+  it('hides detail host follow state for signed-out and self-hosted events', async () => {
+    const signedOutId = 'follow-signed-out';
+    const signedOutEvent = createRuntimeEvent({
+      id: signedOutId,
+      hostUid: 'host-signed-out',
+      hostName: 'Signed Out Host',
+    });
+    installEventDetailHostFollowFirestore({ id: signedOutId, event: signedOutEvent });
+
+    const { result: signedOutResult, unmount } = await renderEventDetailRuntimeHook({
+      id: signedOutId,
+      user: null,
+    });
+
+    await waitFor(() => {
+      expect(signedOutResult.current.loading).toBe(false);
+    });
+    expect(signedOutResult.current.hostFollowControl).toMatchObject({ isVisible: false });
+
+    unmount();
+
+    const selfHostedId = 'follow-self';
+    const selfHostedEvent = createRuntimeEvent({
+      id: selfHostedId,
+      hostUid: 'u1',
+      hostName: 'Alice',
+    });
+    installEventDetailHostFollowFirestore({ id: selfHostedId, event: selfHostedEvent });
+
+    const { result: selfHostedResult } = await renderEventDetailRuntimeHook({ id: selfHostedId });
+
+    await waitFor(() => {
+      expect(selfHostedResult.current.loading).toBe(false);
+    });
+    expect(selfHostedResult.current.hostFollowControl).toMatchObject({ isVisible: false });
+  });
+
+  it('toggles detail host follow state through the shared follow use-cases', async () => {
+    const id = 'follow-toggle';
+    const event = createRuntimeEvent({ id, hostUid: 'host-toggle', hostName: 'Toggle Host' });
+    installEventDetailHostFollowFirestore({ id, event });
+    eventDetailRuntimeBoundaryMocks.mockRunTransaction.mockImplementation(
+      createFollowTransactionDispatcher({ followerUid: 'u1', targetUid: 'host-toggle' }),
+    );
+
+    const { result, showToast } = await renderEventDetailRuntimeHook({ id });
+
+    await waitFor(() => {
+      expect(result.current.hostFollowControl).toMatchObject({
+        isVisible: true,
+        isFollowing: false,
+      });
+    });
+
+    await act(async () => {
+      await result.current.hostFollowControl.onToggle();
+    });
+
+    expect(result.current.hostFollowControl).toMatchObject({
+      isFollowing: true,
+      isPending: false,
+      label: '追蹤中',
+    });
+    expect(eventDetailRuntimeBoundaryMocks.mockRunTransaction).toHaveBeenCalled();
+    expect(eventDetailRuntimeBoundaryMocks.mockAddDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'notifications' }),
+      expect.objectContaining({
+        recipientUid: 'host-toggle',
+        type: 'runner_followed',
+      }),
+    );
+    expect(showToast).toHaveBeenLastCalledWith('已開始追蹤', 'success');
   });
 
   it('adds an event favorite from the detail runtime', async () => {

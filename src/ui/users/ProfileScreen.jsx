@@ -8,11 +8,22 @@ import styles from './ProfileScreen.module.css';
  * @param {object} props - Component props。
  * @param {object} props.runtime - profile runtime boundary。
  * @param {import('react').ReactNode} props.header - profile header slot。
+ * @param {import('react').ReactNode} [props.followControl] - follow button slot。
  * @param {import('react').ReactNode} props.statsSection - profile stats slot。
+ * @param {string | null} [props.toastMessage] - follow mutation toast。
+ * @param {import('react').ReactNode} [props.modal] - modal slot。
  * @param {import('react').ReactNode} props.eventList - profile event list slot。
  * @returns {import('react').ReactElement} profile UI。
  */
-export default function ProfileScreen({ runtime, header, statsSection, eventList }) {
+export default function ProfileScreen({
+  runtime,
+  header,
+  followControl = null,
+  statsSection,
+  toastMessage = null,
+  modal = null,
+  eventList,
+}) {
   return (
     <main className={styles.container}>
       {runtime.isSelf && (
@@ -24,12 +35,19 @@ export default function ProfileScreen({ runtime, header, statsSection, eventList
         </aside>
       )}
       {header}
+      {followControl}
+      {toastMessage && (
+        <p className={styles.errorText} role="alert">
+          {toastMessage}
+        </p>
+      )}
       {runtime.isStatsLoading && <p className={styles.loadingText}>載入中...</p>}
       {runtime.statsError && !runtime.isStatsLoading && (
         <p className={styles.errorText}>{runtime.statsError}</p>
       )}
       {statsSection}
       {eventList}
+      {modal}
     </main>
   );
 }

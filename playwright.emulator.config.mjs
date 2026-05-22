@@ -45,6 +45,7 @@ const featureSpecMatches = {
   '019-posts-ui-refactor': ['posts-ui.spec.js'],
   '028': ['strava-oauth-flow.spec.js'],
   '046-quality-gates': ['quality-gates/axe-interactive-emulator.spec.js'],
+  '068-runner-following': ['runner-following.spec.js'],
 };
 const firebaseClientEnv = {
   NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'fake-api-key',

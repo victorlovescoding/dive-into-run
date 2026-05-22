@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable max-lines -- Existing page runtime orchestration exceeds the project file-length cap. */
+
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getRemainingSeats } from '@/service/event-service';
@@ -10,6 +12,11 @@ import {
   getFavoritedTargetIds,
   removeContentFavorite,
 } from '@/runtime/client/use-cases/content-favorite-use-cases';
+import {
+  followRunner,
+  getRunnerFollowStatus,
+  unfollowRunner,
+} from '@/runtime/client/use-cases/follow-use-cases';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 import useEventsFilter from '@/runtime/hooks/useEventsFilter';
@@ -43,6 +50,47 @@ const mergeEventsById = (current, incoming) => {
 };
 
 /**
+ * 建立 follow use-case 需要的 actor profile。
+ * @param {{ uid: string, name?: string | null, displayName?: string | null, email?: string | null, photoURL?: string | null }} user - Auth user。
+ * @returns {{ uid: string, name: string, photoURL: string }} Follow actor。
+ */
+function toFollowActor(user) {
+  const fallbackName = user.email ? user.email.split('@')[0] : '跑友';
+  return {
+    uid: user.uid,
+    name: user.name || user.displayName || fallbackName,
+    photoURL: user.photoURL || '',
+  };
+}
+
+/**
+ * 建立活動主揪 target profile。
+ * @param {object} event - 活動資料。
+ * @param {string} event.hostUid - 主揪 UID。
+ * @param {string} [event.hostName] - 主揪名稱。
+ * @param {string} [event.hostPhotoURL] - 主揪頭像。
+ * @returns {{ uid: string, name: string, photoURL: string }} Follow target。
+ */
+function toHostFollowTarget(event) {
+  return {
+    uid: String(event.hostUid || ''),
+    name: event.hostName || '跑友',
+    photoURL: event.hostPhotoURL || '',
+  };
+}
+
+/**
+ * 依 follow 狀態建立按鈕 label。
+ * @param {boolean} isFollowing - 是否追蹤中。
+ * @param {boolean} isPending - 是否等待 mutation。
+ * @returns {string} Follow button label。
+ */
+function buildFollowLabel(isFollowing, isPending) {
+  if (isPending && !isFollowing) return '取消中...';
+  return isFollowing ? '追蹤中' : '追蹤';
+}
+
+/**
  * events page runtime orchestration。
  * @returns {object} events page runtime state and handlers。
  */
@@ -55,6 +103,8 @@ export default function useEventsPageRuntime() {
   const [loadMoreError, setLoadMoreError] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [favoriteEventIds, setFavoriteEventIds] = useState(() => new Set());
+  const [hostFollowStatusByUid, setHostFollowStatusByUid] = useState(() => ({}));
+  const [hostFollowPendingByUid, setHostFollowPendingByUid] = useState(() => ({}));
   const sentinelRef = useRef(null);
   const isMountedRef = useRef(false);
 
@@ -169,6 +219,20 @@ export default function useEventsPageRuntime() {
     [events],
   );
   const visibleEventIdKey = visibleEventIds.join('\n');
+  const visibleFollowableHostUids = useMemo(() => {
+    const currentUid = user?.uid;
+    if (!currentUid) return [];
+
+    const uids = new Set();
+    events.forEach((event) => {
+      const hostUid = String(event?.hostUid || '').trim();
+      if (hostUid && hostUid !== currentUid) {
+        uids.add(hostUid);
+      }
+    });
+    return Array.from(uids);
+  }, [events, user?.uid]);
+  const visibleFollowableHostUidKey = visibleFollowableHostUids.join('\n');
 
   useEffect(() => {
     const uid = user?.uid;
@@ -203,6 +267,45 @@ export default function useEventsPageRuntime() {
       cancelled = true;
     };
   }, [user?.uid, visibleEventIdKey, visibleEventIds]);
+
+  useEffect(() => {
+    const followerUid = user?.uid;
+    if (!followerUid || visibleFollowableHostUids.length === 0) {
+      setHostFollowStatusByUid({});
+      setHostFollowPendingByUid({});
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    /** 依目前可見主揪 UID 批次同步追蹤狀態。 */
+    async function refreshHostFollowState() {
+      try {
+        const entries = await Promise.all(
+          visibleFollowableHostUids.map(async (targetUid) => [
+            targetUid,
+            await getRunnerFollowStatus({ followerUid, targetUid }),
+          ]),
+        );
+
+        if (!cancelled && isMountedRef.current) {
+          setHostFollowStatusByUid(
+            Object.fromEntries(entries.map(([targetUid, isFollowing]) => [targetUid, isFollowing])),
+          );
+        }
+      } catch (error) {
+        if (!cancelled && isMountedRef.current) {
+          console.error('載入活動主揪追蹤狀態失敗:', error);
+          setHostFollowStatusByUid({});
+        }
+      }
+    }
+
+    refreshHostFollowState();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid, visibleFollowableHostUidKey, visibleFollowableHostUids]);
 
   const createCtx = useMemo(
     () => ({
@@ -272,6 +375,96 @@ export default function useEventsPageRuntime() {
     [favoriteEventIds, showToast, user?.uid],
   );
 
+  const handleToggleHostFollow = useCallback(
+    async (event) => {
+      const currentUser = user;
+      const targetUid = String(event?.hostUid || '').trim();
+      if (!currentUser?.uid) {
+        showToast('請先登入才能追蹤', 'info');
+        return;
+      }
+      if (!targetUid || targetUid === currentUser.uid || hostFollowPendingByUid[targetUid]) {
+        return;
+      }
+
+      const wasFollowing = Boolean(hostFollowStatusByUid[targetUid]);
+      const nextFollowing = !wasFollowing;
+
+      setHostFollowPendingByUid((previous) => ({ ...previous, [targetUid]: true }));
+      setHostFollowStatusByUid((previous) => ({ ...previous, [targetUid]: nextFollowing }));
+
+      try {
+        const result = nextFollowing
+          ? await followRunner({
+              follower: toFollowActor(currentUser),
+              target: toHostFollowTarget(event),
+            })
+          : await unfollowRunner({ followerUid: currentUser.uid, targetUid });
+
+        setHostFollowStatusByUid((previous) => ({
+          ...previous,
+          [targetUid]: result.following,
+        }));
+        showToast(nextFollowing ? '已開始追蹤' : '已取消追蹤', 'success');
+      } catch (error) {
+        console.error('切換活動主揪追蹤狀態失敗:', error);
+        setHostFollowStatusByUid((previous) => ({ ...previous, [targetUid]: wasFollowing }));
+        showToast(
+          nextFollowing ? '追蹤失敗，請稍後再試。' : '取消追蹤失敗，請稍後再試。',
+          'error',
+        );
+      } finally {
+        if (isMountedRef.current) {
+          setHostFollowPendingByUid((previous) => ({ ...previous, [targetUid]: false }));
+        }
+      }
+    },
+    [hostFollowPendingByUid, hostFollowStatusByUid, showToast, user],
+  );
+
+  const hostFollowStateByUid = useMemo(() => {
+    if (!user?.uid) return {};
+
+    return Object.fromEntries(
+      visibleFollowableHostUids.map((targetUid) => {
+        const isFollowing = Boolean(hostFollowStatusByUid[targetUid]);
+        const isPending = Boolean(hostFollowPendingByUid[targetUid]);
+        return [
+          targetUid,
+          {
+            isVisible: true,
+            isFollowing,
+            isPending,
+            label: buildFollowLabel(isFollowing, isPending),
+          },
+        ];
+      }),
+    );
+  }, [
+    hostFollowPendingByUid,
+    hostFollowStatusByUid,
+    user?.uid,
+    visibleFollowableHostUids,
+  ]);
+
+  const eventsWithHostFollowControls = useMemo(
+    () =>
+      events.map((event) => {
+        const hostUid = String(event?.hostUid || '').trim();
+        const followState = hostFollowStateByUid[hostUid];
+        if (!followState) return event;
+
+        return {
+          ...event,
+          hostFollowControl: {
+            ...followState,
+            onToggle: () => handleToggleHostFollow(event),
+          },
+        };
+      }),
+    [events, handleToggleHostFollow, hostFollowStateByUid],
+  );
+
   const loadMore = useCallback(async () => {
     if (isFormOpen || mutationState.isCreating) return;
     if (!hasMore || !cursor || isLoadingEvents || isLoadingMore) return;
@@ -316,7 +509,7 @@ export default function useEventsPageRuntime() {
 
   return {
     user,
-    events,
+    events: eventsWithHostFollowControls,
     hostName,
     isFormOpen,
     showMap,
@@ -331,6 +524,7 @@ export default function useEventsPageRuntime() {
     loadMoreError,
     hasMore,
     favoriteEventIds,
+    hostFollowStateByUid,
     sentinelRef,
     selectedDistrictOptions,
     getRemainingSeats,
@@ -341,6 +535,7 @@ export default function useEventsPageRuntime() {
     handleDisableRoutePlanning,
     handleToggleCreateRunForm,
     handleToggleFavoriteEvent,
+    handleToggleHostFollow,
     handleCloseCreateForm,
     loadMore,
     ...filterState,

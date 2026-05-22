@@ -123,6 +123,31 @@ export async function notifyPostNewComment(postId, postTitle, postAuthorUid, com
 }
 
 /**
+ * 透過 runtime 層建立「跑友開始追蹤你」通知。
+ * @param {string} recipientUid - 被追蹤的使用者 UID。
+ * @param {Actor} actor - 追蹤者。
+ * @returns {Promise<void>} Resolves after notification creation.
+ */
+export async function notifyRunnerFollowed(recipientUid, actor) {
+  if (actor.uid === recipientUid) return;
+
+  const message = buildNotificationMessage('runner_followed', actor.name);
+  await addNotificationDocument(
+    buildNotificationDoc({
+      recipientUid,
+      type: 'runner_followed',
+      entityType: 'user',
+      entityId: actor.uid,
+      entityTitle: actor.name,
+      commentId: null,
+      message,
+      actor,
+      createdAtValue: serverTimestamp(),
+    }),
+  );
+}
+
+/**
  * 查詢 comments subcollection 中所有不重複的 authorUid。
  * @param {import('firebase/firestore').CollectionReference} commentsRef - comments collection reference。
  * @returns {Promise<string[]>} 不重複的 authorUid 陣列。
