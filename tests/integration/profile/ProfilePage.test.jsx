@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { serializeProfile } from '@/app/users/[uid]/page';
+import serializeProfile from '@/app/users/[uid]/profile-serialization';
 import { createPublicProfileTimestampFixture as createProfile } from '../../_helpers/profile-fixtures';
 
 vi.mock('firebase-admin', () => {
