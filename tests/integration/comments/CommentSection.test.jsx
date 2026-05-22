@@ -283,6 +283,33 @@ function mockWriteBatchOnce(commitResult = Promise.resolve()) {
 /** @type {((entries: Array<{ isIntersecting: boolean }>) => void) | null} */
 let intersectionCallback = null;
 
+/**
+ * 等待 IntersectionObserver effect 安裝 callback。
+ * @returns {Promise<(entries: Array<{ isIntersecting: boolean }>) => void>} Observer callback。
+ */
+async function waitForIntersectionCallback() {
+  await waitFor(() => {
+    expect(intersectionCallback).not.toBeNull();
+  });
+
+  if (!intersectionCallback) {
+    throw new Error('IntersectionObserver callback was not installed');
+  }
+
+  return intersectionCallback;
+}
+
+/**
+ * 觸發 infinite-scroll sentinel 進入 viewport。
+ */
+async function intersectSentinel() {
+  const callback = await waitForIntersectionCallback();
+
+  await act(async () => {
+    callback([{ isIntersecting: true }]);
+  });
+}
+
 /* ==========================================================================
    Test Suites
    ========================================================================== */
@@ -321,6 +348,11 @@ describe('Integration: CommentSection', () => {
   });
 
   afterEach(() => {
+    mockedGetDocs.mockReset();
+    mockedAddDoc.mockReset();
+    mockedRunTransaction.mockReset();
+    mockedWriteBatch.mockReset();
+    mockedUseSearchParams.mockReset();
     vi.clearAllMocks();
     vi.useRealTimers();
   });
@@ -394,9 +426,7 @@ describe('Integration: CommentSection', () => {
       await screen.findAllByRole('listitem');
 
       // Simulate scroll to sentinel
-      if (intersectionCallback) {
-        intersectionCallback([{ isIntersecting: true }]);
-      }
+      await intersectSentinel();
 
       // Assert
       await waitFor(() => {
@@ -417,9 +447,7 @@ describe('Integration: CommentSection', () => {
       renderWithAuth(<CommentSection eventId="e1" />, { user: createMockUser() });
 
       await screen.findAllByRole('listitem');
-      if (intersectionCallback) {
-        intersectionCallback([{ isIntersecting: true }]);
-      }
+      await intersectSentinel();
 
       // Assert
       await waitFor(() => {

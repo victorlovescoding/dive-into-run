@@ -5,16 +5,21 @@
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-068-runner-following`
 - Branch: `068-runner-following`
 - Profile: P4
-- Current phase: closeout-e2e-mapping-committed-awaiting-push-ci-rerun-merge-sync.
-- Active task: T603.
-- Active task state: blocked/ready. T603 previously completed push, draft PR,
-  and Firestore rules deploy through the earlier authorized boundary; CI fix
-  commit `8005a316126d79d75072ee8f55042f41887b33cd` resolved the page export
-  build failure, and E2E mapping commit
-  `804d614e14ff9b49951b3fbbffa395efe412df2e` is now verified local HEAD and
-  awaits push plus GitHub CI rerun/watch authorization.
-- Active wave: `wave-closeout-continuation`.
-- Latest reviewer decision: T602 attempt 3 `review_passed` recorded at
+- Current phase: ci-failure-test-isolation-fix-recorded.
+- Active task: none.
+- Active task state: none. T604 recorded the completed CI-failure test
+  isolation fix after Reviewer PASS and Verifier PASS. Test Isolation Engineer
+  changed only `tests/integration/comments/CommentSection.test.jsx`. Root
+  cause: observer callback readiness race in the `CommentSection.test.jsx`
+  infinite-scroll test; `getDocs.mockResolvedValueOnce` queue could leak
+  because `vi.clearAllMocks()` does not reset once implementations; CI
+  annotations matched shifted Firestore mock queue. T604 itself performed no
+  commit, push, PR creation, CI watch, merge, local main sync, deploy, product
+  code edit, CI config edit, package/lockfile edit, or rules edit.
+- Active wave: none.
+- Latest reviewer decision: T604 `review_passed` recorded at
+  `2026-05-22T16:47:18+08:00`; no findings. Prior T602 attempt 3
+  `review_passed` recorded at
   `2026-05-22T13:38:29+08:00`; no findings. T602 attempt 3 Engineer DONE
   changed only `scripts/check-superpowers-state.js`. Reviewer evidence:
   `node --check scripts/check-superpowers-state.js` exit 0,
@@ -41,22 +46,19 @@
   `tests/e2e/runner-following.spec.js` in the `lastVerifiedCommit..HEAD`
   range; this state sync accounts for `e09ce15`.
 - Latest engineer decision: T602 Workflow Checker Engineer attempt 3 DONE.
-- Latest closeout decision: T603 is blocked/ready after local E2E mapping
-  commit `804d614e14ff9b49951b3fbbffa395efe412df2e` (`Map runner following E2E
-  setup`). The mapping fix resolves the workflow check drift caused by
-  `scripts/run-all-e2e.sh` lacking setup feature mapping for
-  `068-runner-following`; `bash scripts/run-all-e2e.sh --list` maps it to
-  `tests/e2e/_setup/068-runner-following-global-setup.js` and
-  `tests/e2e/runner-following.spec.js`. Earlier CI fix commit
+- Latest closeout decision: T604 completed the CI-failure test isolation
+  state sync. T603 had been blocked/debugging after pushed head
+  `4bdf4b393c6d22f324ce723c528678279d3463be`. CI fix commit
   `8005a316126d79d75072ee8f55042f41887b33cd` (`Fix profile serialization
-  export`) resolved the GitHub Actions build failure caused by
-  `src/app/users/[uid]/page.jsx` exporting invalid `serializeProfile`.
-  Mapping commit evidence before this state sync: `bash -n
-  scripts/run-all-e2e.sh` exit 0, `bash scripts/run-all-e2e.sh --list` exit 0,
-  `npm run workflow:validate` exit 0, `npm run workflow:check` exit 1 due
-  `lastVerifiedCommit` drift on `scripts/run-all-e2e.sh`, and
-  `git diff --check` exit 0. The E2E mapping commit is not pushed in this
-  state sync.
+  export`) resolved the prior page export build failure, and E2E mapping commit
+  `804d614e14ff9b49951b3fbbffa395efe412df2e` (`Map runner following E2E
+  setup`) was included in pushed head `4bdf4b3`. Latest PR #104 CI run
+  `26274732434` completed/failure in the Vitest coverage step with
+  `tests/integration/comments/CommentSection.test.jsx` annotations; `e2e`
+  completed/skipped because it needs `ci`. Local focused CommentSection, full
+  browser coverage, and same-wrapper coverage verification passed at `4bdf4b3`.
+  The completed fix is recorded from subagent evidence; `ciWatch`, merge, and
+  local main sync remain unauthorized.
 - Previous closeout decision: T603 completed after Release Manager state-only
   commit `cf8a5095ea91df97e0644dd40d2ea59e838c99ec` (`Record runner following
   closeout state`) was pushed to `origin/068-runner-following`; draft PR 104
@@ -65,14 +67,14 @@
   deployed with `firebase deploy --only firestore:rules --project dive-into-run`.
   CI watch, merge, and local main sync were not authorized and were not
   performed.
-- Completed tasks: T001, T002, T003, T101, T201, T202, T251, T301, T401, T501, T601, T602.
+- Completed tasks: T001, T002, T003, T101, T201, T202, T251, T301, T401, T501, T601, T602, T604.
 - Ready implementation task: none.
 - In-progress implementation task: none.
 - Engineer-done task pending review: none.
-- Blocked task: T603.
-- Blocked reason: E2E mapping commit `804d614` is verified local HEAD and
-  awaits push plus GitHub CI rerun/watch authorization. Merge and local main
-  sync remain unperformed because they were not authorized in this state sync.
+- Blocked task: none recorded by T604.
+- Blocked reason: none. T604 records local Verifier PASS for the CI-failure
+  test isolation fix; no CI watch was performed, so this does not claim GitHub
+  CI green.
 - Incidents:
   - `INC-T401-profile-serialization-followers-count` resolved by T202
     Reviewer PASS and coordinator sync; retained as blocker evidence after
@@ -109,15 +111,15 @@
 
 - Current head:
   - branch: `068-runner-following`
-  - commit: `804d614e14ff9b49951b3fbbffa395efe412df2e`
-  - capturedAt: `2026-05-22T15:21:14+08:00`
+  - commit: `4bdf4b393c6d22f324ce723c528678279d3463be`
+  - capturedAt: `2026-05-22T16:06:29+08:00`
 - Remote head:
   - remote: `origin`
   - branch: `068-runner-following`
-  - commit: `9188cabfe011319831ff50cbc872d6e6be939c5a`
-  - capturedAt: `2026-05-22T15:21:14+08:00`
-- Last verified commit: `804d614e14ff9b49951b3fbbffa395efe412df2e` for the
-  local E2E mapping commit. It is not pushed in this state sync.
+  - commit: `4bdf4b393c6d22f324ce723c528678279d3463be`
+  - capturedAt: `2026-05-22T16:06:29+08:00`
+- Last verified commit: `4bdf4b393c6d22f324ce723c528678279d3463be` for the
+  local same-wrapper coverage run.
 - Phase commits: `closeout_commit` ->
   `e09ce15daea61b7e316873422c96107806b0c4e5` (`Finish runner following
   closeout`), committed at `2026-05-22T13:46:49+08:00`; `closeout_state_push_pr_rules_deploy` ->
@@ -126,13 +128,15 @@
   `8005a316126d79d75072ee8f55042f41887b33cd` (`Fix profile serialization
   export`), previously local-only before the mapping fix; `e2e_mapping_commit` ->
   `804d614e14ff9b49951b3fbbffa395efe412df2e` (`Map runner following E2E
-  setup`), local ahead 1 and not pushed.
+  setup`), followed by state commit
+  `4bdf4b393c6d22f324ce723c528678279d3463be` (`Record runner following E2E
+  mapping state`) now pushed to `origin/068-runner-following`.
 - Rules deploy status: deployed; required=true, changed=true,
   deployedCommit=`cf8a5095ea91df97e0644dd40d2ea59e838c99ec`; evidence command
   `firebase deploy --only firestore:rules --project dive-into-run` succeeded
   for project `dive-into-run`, target `firestore:rules`, rules file
   `firestore.rules`, released to `cloud.firestore`.
-- Branch relation: `## 068-runner-following...origin/068-runner-following [ahead 1]`.
+- Branch relation: `## 068-runner-following...origin/068-runner-following`.
 - Do not imply CI green, merge, local main sync, hosting/functions/storage
   deploy, or rules-backed production behavior beyond the Firestore rules
   release evidence above.
@@ -151,11 +155,11 @@
 
 ## Next Action
 
-No further action is authorized in this state sync. Next human/dispatcher
-decision is whether to push E2E mapping commit `804d614`, watch/rerun CI, mark
-the draft PR ready if appropriate, merge, and local main sync. Do not claim CI
-green, merge, local main sync, hosting/functions/storage deploy, or worktree
-deletion.
+T604 recorded the completed CI-failure test isolation fix and local Verifier
+PASS. Next dispatcher action is closeout decision only after explicit
+authorization for the next boundary. Do not claim GitHub CI green, rerun/watch
+CI, commit, push, merge, local main sync, hosting/functions/storage deploy, or
+worktree deletion without explicit authorization.
 
 ## Task Graph Summary
 
@@ -172,21 +176,37 @@ T401 completed, depends on T301 and T202 completed; Reviewer PASS recorded
 T501 completed, depends on T401; Integration Reviewer PASS recorded
 T601 completed; owns tests/e2e/runner-following.spec.js; Reviewer PASS recorded
 T602 completed attempt 3; attempts 1 and 2 Reviewer REJECT recorded; attempt 3 Reviewer PASS recorded
-T603 blocked/ready after local E2E mapping commit 804d614; state-only commit cf8a509 was pushed, draft PR 104 was created, Firestore rules were deployed earlier, and CI fix commit 8005a31 resolved the page export build failure; E2E mapping commit awaits push and GitHub CI rerun/watch authorization; merge and local main sync were not authorized/performed
+T603 blocked/debugging after pushed head 4bdf4b3; state-only commit cf8a509 was pushed, draft PR 104 was created, Firestore rules were deployed earlier, CI fix commit 8005a31 resolved the page export build failure, E2E mapping commit 804d614 was included in pushed state commit 4bdf4b3, PR #104 CI run 26274732434 failed in Vitest coverage, e2e was skipped because it needs ci, local same-wrapper coverage passed at 4bdf4b3, and ciWatch/merge/local main sync remain unauthorized
+T604 completed; Test Isolation Engineer changed only tests/integration/comments/CommentSection.test.jsx; root cause was observer callback readiness race plus getDocs.mockResolvedValueOnce queue leakage because vi.clearAllMocks() does not reset once implementations, matching shifted Firestore mock queue CI annotations; Reviewer PASS with no findings; Verifier evidence passed; no commit/push/PR/CI watch/merge/local main sync/deploy was performed by this CI-fix task
 ```
 
 ## Latest Verification
 
 | Command | Exit | Evidence |
 | --- | --- | --- |
-| `git status --short --branch` | 0 | E2E mapping workflow sync: branch is `## 068-runner-following...origin/068-runner-following [ahead 1]` with only `status.json`, `tasks.md`, and `handoff.md` modified. |
-| `git log -1 --format=%H%x20%s` | 0 | E2E mapping workflow sync: HEAD is `804d614e14ff9b49951b3fbbffa395efe412df2e Map runner following E2E setup`. |
-| `git rev-parse origin/068-runner-following` | 0 | E2E mapping workflow sync: remote tracking branch remains `9188cabfe011319831ff50cbc872d6e6be939c5a`. |
-| `git rev-list --left-right --count HEAD...origin/068-runner-following` | 0 | E2E mapping workflow sync: output `1 0`; local branch is ahead one commit and not behind remote. |
+| `git status --short --branch` | 0 | T604 Verifier: dirty files are specs state files and `tests/integration/comments/CommentSection.test.jsx`. |
+| `git diff --name-only` | 0 | T604 Verifier: same changed files. |
+| `npx vitest run --project=browser tests/integration/comments/CommentSection.test.jsx` | 0 | T604 Verifier: 1 file / 33 tests passed. |
+| `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --coverage"` | 0 | T604 Verifier: 187 files / 1674 tests passed; coverage statements 90.92%, branches 79.81%, functions 93.6%, lines 93.04%. |
+| `npm run lint:changed` | 0 | T604 Verifier: passed with only existing React version warning. |
+| `npm run type-check:changed` | 0 | T604 Verifier: no changed-file type errors. |
+| `git diff --check` | 0 | T604 Verifier: no whitespace errors. |
+| `node -e "JSON.parse(require('fs').readFileSync('specs/068-runner-following/status.json','utf8'))"` | 0 | Workflow State Engineer final verification: `status.json` parsed successfully. |
+| `npm run workflow:validate` | 0 | Workflow State Engineer final verification: `WORKFLOW STATE: 9 status file(s) valid`. |
+| `npm run workflow:check` | 0 | Workflow State Engineer final verification: `SUPERPOWERS CHECK: 9 status file(s) synced`. |
+| `node scripts/check-superpowers-state.js specs/068-runner-following/status.json` | 0 | Workflow State Engineer final verification: `SUPERPOWERS CHECK: 1 status file(s) synced`. |
+| `git diff --check` | 0 | Workflow State Engineer final verification: no whitespace errors. |
+| `git status --short --branch` | 0 | T603 CI-failure sync: branch is `## 068-runner-following...origin/068-runner-following` with only workflow state files modified. |
+| `git rev-parse HEAD` | 0 | T603 CI-failure sync: HEAD is `4bdf4b393c6d22f324ce723c528678279d3463be`. |
+| `git rev-parse origin/068-runner-following` | 0 | T603 CI-failure sync: remote tracking branch is `4bdf4b393c6d22f324ce723c528678279d3463be`. |
 | `npm run workflow:validate` | 0 | E2E mapping workflow sync: `WORKFLOW STATE: 9 status file(s) valid`. |
 | `npm run workflow:check` | 0 | E2E mapping workflow sync: `SUPERPOWERS CHECK: 9 status file(s) synced`. |
 | `node scripts/check-superpowers-state.js specs/068-runner-following/status.json` | 0 | E2E mapping workflow sync: `SUPERPOWERS CHECK: 1 status file(s) synced`. |
 | `git diff --check` | 0 | E2E mapping workflow sync: no whitespace errors. |
+| `curl -sS https://api.github.com/repos/victorlovescoding/dive-into-run/commits/4bdf4b3/check-runs` | 0 | Latest pushed head `4bdf4b3` check-runs show `ci` completed/failure, `e2e` completed/skipped, firestore rules gate success, and quality budgets success. |
+| `npx vitest run --project=browser tests/integration/comments/CommentSection.test.jsx` | 0 | Local focused CommentSection reproduction passed: 1 file, 33 tests. |
+| `npx vitest run --coverage --project=browser` | 0 | Local full browser coverage passed: 179 files, 1552 tests. |
+| `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --coverage"` | 0 | Local CI-wrapper coverage passed at head `4bdf4b3`: 187 files, 1674 tests. |
 | `git status --short --branch` | 0 | CI fix workflow sync: branch is `## 068-runner-following...origin/068-runner-following [ahead 1]` with only `status.json`, `tasks.md`, and `handoff.md` modified. |
 | `npm run workflow:validate` | 0 | CI fix workflow sync: `WORKFLOW STATE: 9 status file(s) valid`. |
 | `npm run workflow:check` | 0 | CI fix workflow sync: `SUPERPOWERS CHECK: 9 status file(s) synced`. |
