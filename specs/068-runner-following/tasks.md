@@ -29,7 +29,7 @@ T401 completed, depends on T301 and T202 completed; Reviewer PASS recorded
 T501 completed, depends on T401; Integration Reviewer PASS recorded
 T601 completed, depends on T501 and recovery closeout blocker report; Reviewer PASS recorded
 T602 completed attempt 3, depends on T501 and recovery closeout blocker report; attempts 1 and 2 Reviewer REJECT recorded; attempt 3 Reviewer PASS recorded
-T603 blocked/ready, depends on T602 completed after attempt 3 Reviewer PASS; state-only commit cf8a509 pushed, draft PR 104 created, Firestore rules deployed, and CI fix commit 8005a31 is verified local HEAD; next release steps are push, CI rerun/watch authorization, merge authorization, and local main sync authorization
+T603 blocked/ready, depends on T602 completed after attempt 3 Reviewer PASS; state-only commit cf8a509 pushed, draft PR 104 created, Firestore rules deployed, CI fix commit 8005a31 resolved the page export build failure, and E2E mapping commit 804d614 is verified local HEAD; next release steps are push, GitHub CI rerun/watch authorization, merge authorization, and local main sync authorization
 ```
 
 ## Waves
@@ -46,7 +46,7 @@ T603 blocked/ready, depends on T602 completed after attempt 3 Reviewer PASS; sta
 | `wave-e2e` | T401 | Serialized because it may touch Playwright config and emulator setup; completed after Reviewer PASS. |
 | `wave-integration` | T501 | Final integration gate completed after Integration Reviewer PASS. |
 | `wave-closeout-blockers` | T601, T602 | T601 completed after Reviewer PASS. T602 completed attempt 3 after Reviewer PASS; keep it separate because it touches global workflow tooling. |
-| `wave-closeout-continuation` | T603 | Blocked/ready after CI fix commit 8005a31: prior state-only commit cf8a509 was pushed, draft PR 104 was created, and Firestore rules were deployed. CI fix commit is local ahead 1 and awaits push plus CI rerun; merge and local main sync are not authorized/performed. |
+| `wave-closeout-continuation` | T603 | Blocked/ready after E2E mapping commit 804d614: prior state-only commit cf8a509 was pushed, draft PR 104 was created, Firestore rules were deployed, and CI fix commit 8005a31 resolved the page export build failure. E2E mapping commit is local ahead 1 and awaits push plus GitHub CI rerun/watch authorization; merge and local main sync are not authorized/performed. |
 
 ## Tasks
 
@@ -1922,12 +1922,13 @@ Evidence:
 Scope:
 
 - Continue release closeout only after T601 and T602 are reviewed.
-- Record closeout commit `e09ce15daea61b7e316873422c96107806b0c4e5` and CI
-  fix commit `8005a316126d79d75072ee8f55042f41887b33cd` as verified local
-  commits so workflow state no longer treats their files as post-verified drift.
+- Record closeout commit `e09ce15daea61b7e316873422c96107806b0c4e5`, CI fix
+  commit `8005a316126d79d75072ee8f55042f41887b33cd`, and E2E mapping commit
+  `804d614e14ff9b49951b3fbbffa395efe412df2e` as verified local commits so
+  workflow state no longer treats their files as post-verified drift.
 - Recheck accidental main-workspace file cleanup state and record whether any incident remains.
 - Preserve prior push, draft PR, and Firestore rules deploy evidence; record
-  that CI fix commit `8005a31` still awaits push and CI rerun.
+  that E2E mapping commit `804d614` still awaits push and CI rerun.
 - Update workflow state with exact closeout evidence.
 
 Non-scope:
@@ -1962,13 +1963,17 @@ Engineer instructions:
   `cf8a5095ea91df97e0644dd40d2ea59e838c99ec` (`Record runner following
   closeout state`).
 - CI fix commit `8005a316126d79d75072ee8f55042f41887b33cd` (`Fix profile
-  serialization export`) is local HEAD and resolves the GitHub Actions build
-  failure caused by `page.jsx` exporting invalid `serializeProfile`.
+  serialization export`) resolved the GitHub Actions build failure caused by
+  `page.jsx` exporting invalid `serializeProfile`.
+- E2E mapping commit `804d614e14ff9b49951b3fbbffa395efe412df2e` (`Map runner
+  following E2E setup`) is local HEAD and resolves the workflow check drift
+  caused by `scripts/run-all-e2e.sh` lacking setup feature mapping for
+  `068-runner-following`.
 - Branch `068-runner-following` was pushed to `origin/068-runner-following`;
   final pushed status was `## 068-runner-following...origin/068-runner-following`.
-- After CI fix commit `8005a31`, branch is ahead of
-  `origin/068-runner-following` by 1; push and CI rerun are the next release
-  steps.
+- After E2E mapping commit `804d614`, branch is ahead of
+  `origin/068-runner-following` by 1; push and GitHub CI rerun/watch
+  authorization are the next release steps.
 - Draft PR 104 was created at
   <https://github.com/victorlovescoding/dive-into-run/pull/104> with title
   `Add runner following` and draft=true.
@@ -1982,14 +1987,16 @@ Engineer instructions:
 Acceptance criteria:
 
 - T601 and T602 are reviewed and completed after Reviewer PASS.
-- No unreviewed dirty source/test diff remains after CI fix commit `8005a31`.
+- No unreviewed dirty source/test diff remains after E2E mapping commit
+  `804d614`.
 - Branch relation and current head are freshly recorded.
 - `lastVerifiedCommit` and `phaseCommits` account for closeout commit
-  `e09ce15daea61b7e316873422c96107806b0c4e5` and CI fix commit
-  `8005a316126d79d75072ee8f55042f41887b33cd`.
+  `e09ce15daea61b7e316873422c96107806b0c4e5`, CI fix commit
+  `8005a316126d79d75072ee8f55042f41887b33cd`, and E2E mapping commit
+  `804d614e14ff9b49951b3fbbffa395efe412df2e`.
 - Commit, push, draft PR creation, and Firestore rules deploy each have
   explicit evidence and stayed inside authorization.
-- CI fix commit `8005a31` is not claimed as pushed, CI-green, merged, or
+- E2E mapping commit `804d614` is not claimed as pushed, CI-green, merged, or
   local-main-synced.
 - T603 remains blocked/ready for push, CI rerun, merge authorization, and local
   main sync authorization.
@@ -1999,6 +2006,9 @@ Verification commands and expected signal:
 | Command | Expected signal |
 | --- | --- |
 | `git status --short --branch` | branch state and dirty/staged state are explicit |
+| `git log -1 --format=%H%x20%s` | HEAD is `804d614e14ff9b49951b3fbbffa395efe412df2e Map runner following E2E setup` |
+| `git rev-parse origin/068-runner-following` | remote tracking branch remains at `9188cabfe011319831ff50cbc872d6e6be939c5a` |
+| `git rev-list --left-right --count HEAD...origin/068-runner-following` | output `1 0`; local branch is ahead one commit and not behind remote |
 | `git diff --check` | exit 0 |
 | `npm run workflow:validate` | exit 0 |
 | `npm run workflow:check` | exit 0 |
@@ -2009,6 +2019,12 @@ Latest run:
 - `git status --short --branch`: exit 0; branch is
   `## 068-runner-following...origin/068-runner-following [ahead 1]` with only
   `status.json`, `tasks.md`, and `handoff.md` modified.
+- `git log -1 --format=%H%x20%s`: exit 0;
+  `804d614e14ff9b49951b3fbbffa395efe412df2e Map runner following E2E setup`.
+- `git rev-parse origin/068-runner-following`: exit 0;
+  `9188cabfe011319831ff50cbc872d6e6be939c5a`.
+- `git rev-list --left-right --count HEAD...origin/068-runner-following`:
+  exit 0; `1 0`, so local HEAD is ahead one commit and not behind remote.
 - `npm run workflow:validate`: exit 0; `WORKFLOW STATE: 9 status file(s) valid`.
 - `npm run workflow:check`: exit 0; `SUPERPOWERS CHECK: 9 status file(s) synced`.
 - `node scripts/check-superpowers-state.js specs/068-runner-following/status.json`:
@@ -2025,7 +2041,7 @@ Reviewer PASS criteria:
 - Explicit-file staging is used.
 - PR/rules-deploy state is truthful and does not imply CI green, merge, or
   local main sync.
-- CI fix commit `8005a31` remains blocked/ready for push and CI rerun.
+- E2E mapping commit `804d614` remains blocked/ready for push and CI rerun.
 
 Reviewer REJECT criteria:
 
@@ -2040,9 +2056,13 @@ Evidence:
   pushed state-only commit `cf8a5095ea91df97e0644dd40d2ea59e838c99ec`,
   created draft PR 104, and deployed Firestore rules. CI fix commit
   `8005a316126d79d75072ee8f55042f41887b33cd` (`Fix profile serialization
-  export`) is now verified local HEAD and resolves the invalid page module
-  `serializeProfile` export build failure. The CI fix commit is not pushed in
-  this state sync; next release steps are push, CI rerun/watch authorization,
+  export`) resolved the invalid page module `serializeProfile` export build
+  failure. E2E mapping commit
+  `804d614e14ff9b49951b3fbbffa395efe412df2e` (`Map runner following E2E
+  setup`) is now verified local HEAD and resolves
+  `scripts/run-all-e2e.sh` missing setup feature mapping for
+  `068-runner-following`. The E2E mapping commit is not pushed in this state
+  sync; next release steps are push, GitHub CI rerun/watch authorization,
   merge authorization, and local main sync authorization.
 - Reviewer report: CI fix Reviewer passed before this workflow state sync.
   This sync records state only; no push, new GitHub CI green, merge, local main
@@ -2076,6 +2096,16 @@ Evidence:
     `npm run workflow:validate` exit 0, `npm run workflow:check` exit 1 due
     `lastVerifiedCommit` drift on the three CI fix files, and
     `git diff --check` exit 0.
+  - E2E mapping commit `804d614e14ff9b49951b3fbbffa395efe412df2e` added
+    `scripts/run-all-e2e.sh` mapping for `068-runner-following` to
+    `tests/e2e/_setup/068-runner-following-global-setup.js` and
+    `tests/e2e/runner-following.spec.js`.
+  - Post-E2E-mapping commit evidence: `bash -n scripts/run-all-e2e.sh` exit
+    0, `bash scripts/run-all-e2e.sh --list` exit 0 with
+    `068-runner-following` mapped to the runner-following setup/spec files,
+    `npm run workflow:validate` exit 0, `npm run workflow:check` exit 1 due
+    `lastVerifiedCommit` drift on `scripts/run-all-e2e.sh`, and
+    `git diff --check` exit 0.
   - Draft PR 104 created:
     <https://github.com/victorlovescoding/dive-into-run/pull/104>; title
     `Add runner following`; draft=true.
@@ -2087,5 +2117,6 @@ Evidence:
   - Workflow state only: `status.json`, `tasks.md`, and `handoff.md` now
     account for pushed state-only commit
     `cf8a5095ea91df97e0644dd40d2ea59e838c99ec`, draft PR 104, deployed
-    Firestore rules, and local CI fix commit
-    `8005a316126d79d75072ee8f55042f41887b33cd` awaiting push/CI rerun.
+    Firestore rules, local CI fix commit
+    `8005a316126d79d75072ee8f55042f41887b33cd`, and local E2E mapping commit
+    `804d614e14ff9b49951b3fbbffa395efe412df2e` awaiting push/CI rerun.

@@ -5,12 +5,14 @@
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-068-runner-following`
 - Branch: `068-runner-following`
 - Profile: P4
-- Current phase: closeout-ci-fix-committed-awaiting-push-ci-rerun-merge-sync.
+- Current phase: closeout-e2e-mapping-committed-awaiting-push-ci-rerun-merge-sync.
 - Active task: T603.
 - Active task state: blocked/ready. T603 previously completed push, draft PR,
   and Firestore rules deploy through the earlier authorized boundary; CI fix
-  commit `8005a316126d79d75072ee8f55042f41887b33cd` is now verified local HEAD
-  and awaits push plus CI rerun.
+  commit `8005a316126d79d75072ee8f55042f41887b33cd` resolved the page export
+  build failure, and E2E mapping commit
+  `804d614e14ff9b49951b3fbbffa395efe412df2e` is now verified local HEAD and
+  awaits push plus GitHub CI rerun/watch authorization.
 - Active wave: `wave-closeout-continuation`.
 - Latest reviewer decision: T602 attempt 3 `review_passed` recorded at
   `2026-05-22T13:38:29+08:00`; no findings. T602 attempt 3 Engineer DONE
@@ -39,17 +41,22 @@
   `tests/e2e/runner-following.spec.js` in the `lastVerifiedCommit..HEAD`
   range; this state sync accounts for `e09ce15`.
 - Latest engineer decision: T602 Workflow Checker Engineer attempt 3 DONE.
-- Latest closeout decision: T603 is blocked/ready after local CI fix commit
+- Latest closeout decision: T603 is blocked/ready after local E2E mapping
+  commit `804d614e14ff9b49951b3fbbffa395efe412df2e` (`Map runner following E2E
+  setup`). The mapping fix resolves the workflow check drift caused by
+  `scripts/run-all-e2e.sh` lacking setup feature mapping for
+  `068-runner-following`; `bash scripts/run-all-e2e.sh --list` maps it to
+  `tests/e2e/_setup/068-runner-following-global-setup.js` and
+  `tests/e2e/runner-following.spec.js`. Earlier CI fix commit
   `8005a316126d79d75072ee8f55042f41887b33cd` (`Fix profile serialization
-  export`). The fix resolves the GitHub Actions build failure caused by
+  export`) resolved the GitHub Actions build failure caused by
   `src/app/users/[uid]/page.jsx` exporting invalid `serializeProfile`.
-  Pre-commit fix evidence: RED `npm run build` reproduced the original failure;
-  after the fix `npm run build`, `npm run test:branch`, `npm run lint:changed`,
-  `npm run type-check:changed`, and `git diff --check` all exited 0. Post-fix
-  commit evidence: `npm run build` exit 0, `npm run workflow:validate` exit 0,
-  `npm run workflow:check` exit 1 from `lastVerifiedCommit` drift on the three
-  CI fix files, and `git diff --check` exit 0. The CI fix commit is not pushed
-  in this state sync.
+  Mapping commit evidence before this state sync: `bash -n
+  scripts/run-all-e2e.sh` exit 0, `bash scripts/run-all-e2e.sh --list` exit 0,
+  `npm run workflow:validate` exit 0, `npm run workflow:check` exit 1 due
+  `lastVerifiedCommit` drift on `scripts/run-all-e2e.sh`, and
+  `git diff --check` exit 0. The E2E mapping commit is not pushed in this
+  state sync.
 - Previous closeout decision: T603 completed after Release Manager state-only
   commit `cf8a5095ea91df97e0644dd40d2ea59e838c99ec` (`Record runner following
   closeout state`) was pushed to `origin/068-runner-following`; draft PR 104
@@ -63,9 +70,9 @@
 - In-progress implementation task: none.
 - Engineer-done task pending review: none.
 - Blocked task: T603.
-- Blocked reason: CI fix commit `8005a31` is verified local HEAD and awaits
-  push plus GitHub CI rerun. CI watch, merge, and local main sync remain
-  unperformed because they were not authorized in this state sync.
+- Blocked reason: E2E mapping commit `804d614` is verified local HEAD and
+  awaits push plus GitHub CI rerun/watch authorization. Merge and local main
+  sync remain unperformed because they were not authorized in this state sync.
 - Incidents:
   - `INC-T401-profile-serialization-followers-count` resolved by T202
     Reviewer PASS and coordinator sync; retained as blocker evidence after
@@ -102,22 +109,24 @@
 
 - Current head:
   - branch: `068-runner-following`
-  - commit: `8005a316126d79d75072ee8f55042f41887b33cd`
-  - capturedAt: `2026-05-22T14:46:39+08:00`
+  - commit: `804d614e14ff9b49951b3fbbffa395efe412df2e`
+  - capturedAt: `2026-05-22T15:21:14+08:00`
 - Remote head:
   - remote: `origin`
   - branch: `068-runner-following`
-  - commit: `4f27037331fdfc2dd5dd51ab2eafa00a9fef040b`
-  - capturedAt: `2026-05-22T14:55:07+08:00`
-- Last verified commit: `8005a316126d79d75072ee8f55042f41887b33cd` for the
-  local CI fix commit. It is not pushed in this state sync.
+  - commit: `9188cabfe011319831ff50cbc872d6e6be939c5a`
+  - capturedAt: `2026-05-22T15:21:14+08:00`
+- Last verified commit: `804d614e14ff9b49951b3fbbffa395efe412df2e` for the
+  local E2E mapping commit. It is not pushed in this state sync.
 - Phase commits: `closeout_commit` ->
   `e09ce15daea61b7e316873422c96107806b0c4e5` (`Finish runner following
   closeout`), committed at `2026-05-22T13:46:49+08:00`; `closeout_state_push_pr_rules_deploy` ->
   `cf8a5095ea91df97e0644dd40d2ea59e838c99ec` (`Record runner following
   closeout state`), pushed to `origin/068-runner-following`; `ci_fix_commit` ->
   `8005a316126d79d75072ee8f55042f41887b33cd` (`Fix profile serialization
-  export`), local ahead 1 and not pushed.
+  export`), previously local-only before the mapping fix; `e2e_mapping_commit` ->
+  `804d614e14ff9b49951b3fbbffa395efe412df2e` (`Map runner following E2E
+  setup`), local ahead 1 and not pushed.
 - Rules deploy status: deployed; required=true, changed=true,
   deployedCommit=`cf8a5095ea91df97e0644dd40d2ea59e838c99ec`; evidence command
   `firebase deploy --only firestore:rules --project dive-into-run` succeeded
@@ -143,8 +152,8 @@
 ## Next Action
 
 No further action is authorized in this state sync. Next human/dispatcher
-decision is whether to push CI fix commit `8005a31`, watch/rerun CI, mark the
-draft PR ready if appropriate, merge, and local main sync. Do not claim CI
+decision is whether to push E2E mapping commit `804d614`, watch/rerun CI, mark
+the draft PR ready if appropriate, merge, and local main sync. Do not claim CI
 green, merge, local main sync, hosting/functions/storage deploy, or worktree
 deletion.
 
@@ -163,13 +172,21 @@ T401 completed, depends on T301 and T202 completed; Reviewer PASS recorded
 T501 completed, depends on T401; Integration Reviewer PASS recorded
 T601 completed; owns tests/e2e/runner-following.spec.js; Reviewer PASS recorded
 T602 completed attempt 3; attempts 1 and 2 Reviewer REJECT recorded; attempt 3 Reviewer PASS recorded
-T603 blocked/ready after local CI fix commit 8005a31; state-only commit cf8a509 was pushed, draft PR 104 was created, and Firestore rules were deployed earlier; CI fix commit awaits push and CI rerun; merge and local main sync were not authorized/performed
+T603 blocked/ready after local E2E mapping commit 804d614; state-only commit cf8a509 was pushed, draft PR 104 was created, Firestore rules were deployed earlier, and CI fix commit 8005a31 resolved the page export build failure; E2E mapping commit awaits push and GitHub CI rerun/watch authorization; merge and local main sync were not authorized/performed
 ```
 
 ## Latest Verification
 
 | Command | Exit | Evidence |
 | --- | --- | --- |
+| `git status --short --branch` | 0 | E2E mapping workflow sync: branch is `## 068-runner-following...origin/068-runner-following [ahead 1]` with only `status.json`, `tasks.md`, and `handoff.md` modified. |
+| `git log -1 --format=%H%x20%s` | 0 | E2E mapping workflow sync: HEAD is `804d614e14ff9b49951b3fbbffa395efe412df2e Map runner following E2E setup`. |
+| `git rev-parse origin/068-runner-following` | 0 | E2E mapping workflow sync: remote tracking branch remains `9188cabfe011319831ff50cbc872d6e6be939c5a`. |
+| `git rev-list --left-right --count HEAD...origin/068-runner-following` | 0 | E2E mapping workflow sync: output `1 0`; local branch is ahead one commit and not behind remote. |
+| `npm run workflow:validate` | 0 | E2E mapping workflow sync: `WORKFLOW STATE: 9 status file(s) valid`. |
+| `npm run workflow:check` | 0 | E2E mapping workflow sync: `SUPERPOWERS CHECK: 9 status file(s) synced`. |
+| `node scripts/check-superpowers-state.js specs/068-runner-following/status.json` | 0 | E2E mapping workflow sync: `SUPERPOWERS CHECK: 1 status file(s) synced`. |
+| `git diff --check` | 0 | E2E mapping workflow sync: no whitespace errors. |
 | `git status --short --branch` | 0 | CI fix workflow sync: branch is `## 068-runner-following...origin/068-runner-following [ahead 1]` with only `status.json`, `tasks.md`, and `handoff.md` modified. |
 | `npm run workflow:validate` | 0 | CI fix workflow sync: `WORKFLOW STATE: 9 status file(s) valid`. |
 | `npm run workflow:check` | 0 | CI fix workflow sync: `SUPERPOWERS CHECK: 9 status file(s) synced`. |

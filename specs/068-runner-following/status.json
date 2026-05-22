@@ -3,7 +3,7 @@
   "feature": "runner-following",
   "branch": "068-runner-following",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-068-runner-following",
-  "phase": "closeout-ci-fix-committed-awaiting-push-ci-rerun-merge-sync",
+  "phase": "closeout-e2e-mapping-committed-awaiting-push-ci-rerun-merge-sync",
   "activeTask": "T603",
   "activeWave": "wave-closeout-continuation",
   "authorizationBoundary": {
@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "068-runner-following",
-    "commit": "8005a316126d79d75072ee8f55042f41887b33cd",
-    "capturedAt": "2026-05-22T14:46:39+08:00",
-    "summary": "CI fix commit 8005a31 Fix profile serialization export is local HEAD; git status shows ## 068-runner-following...origin/068-runner-following [ahead 1]."
+    "commit": "804d614e14ff9b49951b3fbbffa395efe412df2e",
+    "capturedAt": "2026-05-22T15:21:14+08:00",
+    "summary": "E2E mapping commit 804d614 Map runner following E2E setup is local HEAD; git status shows ## 068-runner-following...origin/068-runner-following [ahead 1]."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "068-runner-following",
-    "commit": "4f27037331fdfc2dd5dd51ab2eafa00a9fef040b",
-    "capturedAt": "2026-05-22T14:55:07+08:00",
-    "summary": "origin/068-runner-following resolves to 4f27037331fdfc2dd5dd51ab2eafa00a9fef040b; local HEAD 8005a31 is ahead 1 and has not been pushed in this state sync."
+    "commit": "9188cabfe011319831ff50cbc872d6e6be939c5a",
+    "capturedAt": "2026-05-22T15:21:14+08:00",
+    "summary": "origin/068-runner-following resolves to 9188cabfe011319831ff50cbc872d6e6be939c5a; local HEAD 804d614 is ahead 1 and has not been pushed in this state sync."
   },
   "completedTasks": [
     "T001",
@@ -1899,9 +1899,9 @@
       "reviewer": "Release Reviewer",
       "scope": [
         "Continue release closeout only after T601 and T602 are reviewed.",
-        "Record closeout commit e09ce15daea61b7e316873422c96107806b0c4e5 and CI fix commit 8005a316126d79d75072ee8f55042f41887b33cd as verified local commits so workflow state no longer treats their files as post-verified drift.",
+        "Record closeout commit e09ce15daea61b7e316873422c96107806b0c4e5, CI fix commit 8005a316126d79d75072ee8f55042f41887b33cd, and E2E mapping commit 804d614e14ff9b49951b3fbbffa395efe412df2e as verified local commits so workflow state no longer treats their files as post-verified drift.",
         "Recheck accidental main-workspace file cleanup state and record whether any incident remains.",
-        "Preserve prior push, draft PR, and Firestore rules deploy evidence; record that CI fix commit 8005a31 still awaits push and CI rerun.",
+        "Preserve prior push, draft PR, and Firestore rules deploy evidence; record that E2E mapping commit 804d614 still awaits push and CI rerun.",
         "Update workflow state with exact closeout evidence."
       ],
       "nonScope": [
@@ -1929,20 +1929,21 @@
       "engineerInstructions": [
         "T601 and T602 are completed with Reviewer PASS; closeout commit e09ce15daea61b7e316873422c96107806b0c4e5 exists and is the latest verified local closeout commit.",
         "Release Manager continuation committed and pushed state-only commit cf8a5095ea91df97e0644dd40d2ea59e838c99ec (Record runner following closeout state).",
-        "CI fix commit 8005a316126d79d75072ee8f55042f41887b33cd (Fix profile serialization export) is local HEAD and resolves the GitHub Actions build failure caused by page.jsx exporting invalid serializeProfile.",
+        "CI fix commit 8005a316126d79d75072ee8f55042f41887b33cd (Fix profile serialization export) resolved the earlier GitHub Actions build failure caused by page.jsx exporting invalid serializeProfile.",
+        "E2E mapping commit 804d614e14ff9b49951b3fbbffa395efe412df2e (Map runner following E2E setup) is local HEAD and resolves the workflow:check drift caused by scripts/run-all-e2e.sh lacking setup feature mapping for 068-runner-following.",
         "Branch 068-runner-following was pushed to origin/068-runner-following; final pushed status was ## 068-runner-following...origin/068-runner-following.",
-        "After CI fix commit 8005a31, branch is ahead of origin/068-runner-following by 1; push and CI rerun are the next release steps.",
+        "After E2E mapping commit 804d614, branch is ahead of origin/068-runner-following by 1; push and GitHub CI rerun/watch authorization are the next release steps.",
         "Draft PR 104 was created at https://github.com/victorlovescoding/dive-into-run/pull/104 with title Add runner following.",
         "Firestore rules were deployed with firebase deploy --only firestore:rules --project dive-into-run; firestore.rules compiled and released to cloud.firestore.",
         "CI watch, merge, and local main sync were not authorized and were not performed."
       ],
       "acceptanceCriteria": [
         "T601 and T602 are reviewed and completed after Reviewer PASS.",
-        "No unreviewed dirty source/test diff remains after CI fix commit 8005a31.",
+        "No unreviewed dirty source/test diff remains after E2E mapping commit 804d614.",
         "Branch relation and current head are freshly recorded.",
-        "lastVerifiedCommit and phaseCommits account for closeout commit e09ce15daea61b7e316873422c96107806b0c4e5 and CI fix commit 8005a316126d79d75072ee8f55042f41887b33cd.",
+        "lastVerifiedCommit and phaseCommits account for closeout commit e09ce15daea61b7e316873422c96107806b0c4e5, CI fix commit 8005a316126d79d75072ee8f55042f41887b33cd, and E2E mapping commit 804d614e14ff9b49951b3fbbffa395efe412df2e.",
         "Commit, push, draft PR creation, and Firestore rules deploy each have explicit evidence and stayed inside authorization.",
-        "CI fix commit 8005a31 is not claimed as pushed, CI-green, merged, or local-main-synced.",
+        "E2E mapping commit 804d614 is not claimed as pushed, CI-green, merged, or local-main-synced.",
         "T603 remains blocked/ready for push, CI rerun, merge authorization, and local main sync authorization."
       ],
       "verification": [
@@ -1952,8 +1953,38 @@
           "lastRun": {
             "command": "git status --short --branch",
             "exitCode": 0,
-            "summary": "CI fix workflow sync: ## 068-runner-following...origin/068-runner-following [ahead 1] with only status.json, tasks.md, and handoff.md modified.",
-            "verifiedAt": "2026-05-22T14:50:41+08:00"
+            "summary": "E2E mapping workflow sync: ## 068-runner-following...origin/068-runner-following [ahead 1] with only status.json, tasks.md, and handoff.md modified.",
+            "verifiedAt": "2026-05-22T15:24:00+08:00"
+          }
+        },
+        {
+          "command": "git log -1 --format=%H%x20%s",
+          "expectedSignal": "HEAD is 804d614e14ff9b49951b3fbbffa395efe412df2e Map runner following E2E setup",
+          "lastRun": {
+            "command": "git log -1 --format=%H%x20%s",
+            "exitCode": 0,
+            "summary": "804d614e14ff9b49951b3fbbffa395efe412df2e Map runner following E2E setup.",
+            "verifiedAt": "2026-05-22T15:24:00+08:00"
+          }
+        },
+        {
+          "command": "git rev-parse origin/068-runner-following",
+          "expectedSignal": "remote tracking branch remains at 9188cabfe011319831ff50cbc872d6e6be939c5a",
+          "lastRun": {
+            "command": "git rev-parse origin/068-runner-following",
+            "exitCode": 0,
+            "summary": "origin/068-runner-following is 9188cabfe011319831ff50cbc872d6e6be939c5a.",
+            "verifiedAt": "2026-05-22T15:24:00+08:00"
+          }
+        },
+        {
+          "command": "git rev-list --left-right --count HEAD...origin/068-runner-following",
+          "expectedSignal": "local branch is ahead 1 and behind 0",
+          "lastRun": {
+            "command": "git rev-list --left-right --count HEAD...origin/068-runner-following",
+            "exitCode": 0,
+            "summary": "Output 1 0; local HEAD 804d614 is ahead of origin/068-runner-following by one commit.",
+            "verifiedAt": "2026-05-22T15:24:00+08:00"
           }
         },
         {
@@ -1963,7 +1994,7 @@
             "command": "git diff --check",
             "exitCode": 0,
             "summary": "No whitespace errors.",
-            "verifiedAt": "2026-05-22T14:50:41+08:00"
+            "verifiedAt": "2026-05-22T15:24:00+08:00"
           }
         },
         {
@@ -1973,7 +2004,7 @@
             "command": "npm run workflow:validate",
             "exitCode": 0,
             "summary": "WORKFLOW STATE: 9 status file(s) valid.",
-            "verifiedAt": "2026-05-22T14:50:41+08:00"
+            "verifiedAt": "2026-05-22T15:24:00+08:00"
           }
         },
         {
@@ -1983,7 +2014,7 @@
             "command": "npm run workflow:check",
             "exitCode": 0,
             "summary": "SUPERPOWERS CHECK: 9 status file(s) synced.",
-            "verifiedAt": "2026-05-22T14:50:41+08:00"
+            "verifiedAt": "2026-05-22T15:24:00+08:00"
           }
         },
         {
@@ -1993,7 +2024,7 @@
             "command": "node scripts/check-superpowers-state.js specs/068-runner-following/status.json",
             "exitCode": 0,
             "summary": "SUPERPOWERS CHECK: 1 status file(s) synced.",
-            "verifiedAt": "2026-05-22T14:50:41+08:00"
+            "verifiedAt": "2026-05-22T15:24:00+08:00"
           }
         }
       ],
@@ -2001,7 +2032,7 @@
         "Closeout actions only use reviewed diffs.",
         "Explicit-file staging is used.",
         "PR/rules-deploy state is truthful and does not imply CI green, merge, or local main sync.",
-        "CI fix commit 8005a31 remains blocked/ready for push and CI rerun."
+        "E2E mapping commit 804d614 remains blocked/ready for push and CI rerun."
       ],
       "reviewerRejectCriteria": [
         "Any unreviewed implementation/tooling diff is staged or committed.",
@@ -2010,7 +2041,7 @@
       ],
       "reviewerDecision": null,
       "evidence": {
-        "engineerReport": "BLOCKED/READY. Release Manager previously committed and pushed state-only commit cf8a5095ea91df97e0644dd40d2ea59e838c99ec, created draft PR 104, and deployed Firestore rules. CI fix commit 8005a316126d79d75072ee8f55042f41887b33cd (Fix profile serialization export) is now verified local HEAD and resolves the invalid page.jsx serializeProfile export build failure. The CI fix commit is not pushed in this state sync; next release steps are push, CI rerun/watch authorization, merge authorization, and local main sync authorization.",
+        "engineerReport": "BLOCKED/READY. Release Manager previously committed and pushed state-only commit cf8a5095ea91df97e0644dd40d2ea59e838c99ec, created draft PR 104, and deployed Firestore rules. CI fix commit 8005a316126d79d75072ee8f55042f41887b33cd (Fix profile serialization export) resolved the invalid page.jsx serializeProfile export build failure. E2E mapping commit 804d614e14ff9b49951b3fbbffa395efe412df2e (Map runner following E2E setup) is now verified local HEAD and resolves scripts/run-all-e2e.sh missing setup feature mapping for 068-runner-following. The E2E mapping commit is not pushed in this state sync; next release steps are push, GitHub CI rerun/watch authorization, merge authorization, and local main sync authorization.",
         "reviewerReport": "CI fix Reviewer passed before this workflow state sync. This sync records state only; no push, new GitHub CI green, merge, local main sync, hosting/functions/storage deploy, or rules-backed production behavior beyond prior Firestore rules release is claimed.",
         "commandOutputSummary": [
           "Release Manager closeout commit e09ce15daea61b7e316873422c96107806b0c4e5 included scripts/check-superpowers-state.js, specs/068-runner-following/handoff.md, specs/068-runner-following/status.json, specs/068-runner-following/tasks.md, and tests/e2e/runner-following.spec.js.",
@@ -2019,17 +2050,19 @@
           "GitHub Actions failed because src/app/users/[uid]/page.jsx exported invalid serializeProfile from a page module.",
           "CI fix commit 8005a316126d79d75072ee8f55042f41887b33cd moved the helper out of the page module; Engineer evidence before commit: npm run build RED reproduced the original failure, then npm run build exit 0, npm run test:branch exit 0, npm run lint:changed exit 0, npm run type-check:changed exit 0, and git diff --check exit 0 after the fix.",
           "Post-CI-fix commit evidence: npm run build exit 0, npm run workflow:validate exit 0, npm run workflow:check exit 1 due lastVerifiedCommit drift on the three CI fix files, and git diff --check exit 0.",
+          "E2E mapping commit 804d614e14ff9b49951b3fbbffa395efe412df2e added scripts/run-all-e2e.sh mapping for 068-runner-following to tests/e2e/_setup/068-runner-following-global-setup.js and tests/e2e/runner-following.spec.js.",
+          "Post-E2E-mapping commit evidence: bash -n scripts/run-all-e2e.sh exit 0, bash scripts/run-all-e2e.sh --list exit 0 with 068-runner-following mapped to the runner-following setup/spec files, npm run workflow:validate exit 0, npm run workflow:check exit 1 due lastVerifiedCommit drift on scripts/run-all-e2e.sh, and git diff --check exit 0.",
           "Draft PR 104 created: https://github.com/victorlovescoding/dive-into-run/pull/104; title Add runner following; draft true.",
           "Firestore rules deploy command succeeded: firebase deploy --only firestore:rules --project dive-into-run; project dive-into-run; target firestore:rules; rules file firestore.rules; rules compiled and released to cloud.firestore."
         ],
         "changedFilesSummary": [
-          "Workflow state only: status.json, tasks.md, and handoff.md now account for pushed state-only commit cf8a5095ea91df97e0644dd40d2ea59e838c99ec, draft PR 104, deployed Firestore rules, and local CI fix commit 8005a316126d79d75072ee8f55042f41887b33cd awaiting push/CI rerun."
+          "Workflow state only: status.json, tasks.md, and handoff.md now account for pushed state-only commit cf8a5095ea91df97e0644dd40d2ea59e838c99ec, draft PR 104, deployed Firestore rules, local CI fix commit 8005a316126d79d75072ee8f55042f41887b33cd, and local E2E mapping commit 804d614e14ff9b49951b3fbbffa395efe412df2e awaiting push/CI rerun."
         ]
       }
     }
   ],
   "blocked": true,
-  "blockedReason": "CI fix commit 8005a31 is verified local HEAD and awaits push plus GitHub CI rerun; CI watch, merge, and local main sync are not authorized in this state sync.",
+  "blockedReason": "E2E mapping commit 804d614 is verified local HEAD and awaits push plus GitHub CI rerun/watch authorization; merge and local main sync are not authorized in this state sync.",
   "lastVerification": [
     {
       "command": "npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js",
@@ -2864,9 +2897,57 @@
       "exitCode": 0,
       "summary": "CI fix workflow sync: no whitespace errors.",
       "verifiedAt": "2026-05-22T14:50:41+08:00"
+    },
+    {
+      "command": "git status --short --branch",
+      "exitCode": 0,
+      "summary": "E2E mapping workflow sync: branch is ## 068-runner-following...origin/068-runner-following [ahead 1] with only status.json, tasks.md, and handoff.md modified.",
+      "verifiedAt": "2026-05-22T15:24:00+08:00"
+    },
+    {
+      "command": "git log -1 --format=%H%x20%s",
+      "exitCode": 0,
+      "summary": "HEAD is 804d614e14ff9b49951b3fbbffa395efe412df2e Map runner following E2E setup.",
+      "verifiedAt": "2026-05-22T15:24:00+08:00"
+    },
+    {
+      "command": "git rev-parse origin/068-runner-following",
+      "exitCode": 0,
+      "summary": "origin/068-runner-following is 9188cabfe011319831ff50cbc872d6e6be939c5a.",
+      "verifiedAt": "2026-05-22T15:24:00+08:00"
+    },
+    {
+      "command": "git rev-list --left-right --count HEAD...origin/068-runner-following",
+      "exitCode": 0,
+      "summary": "Output 1 0; local branch is ahead one commit and not behind origin/068-runner-following.",
+      "verifiedAt": "2026-05-22T15:24:00+08:00"
+    },
+    {
+      "command": "npm run workflow:validate",
+      "exitCode": 0,
+      "summary": "E2E mapping workflow sync: WORKFLOW STATE: 9 status file(s) valid.",
+      "verifiedAt": "2026-05-22T15:24:00+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "E2E mapping workflow sync: SUPERPOWERS CHECK: 9 status file(s) synced.",
+      "verifiedAt": "2026-05-22T15:24:00+08:00"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/068-runner-following/status.json",
+      "exitCode": 0,
+      "summary": "E2E mapping workflow sync: SUPERPOWERS CHECK: 1 status file(s) synced.",
+      "verifiedAt": "2026-05-22T15:24:00+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "E2E mapping workflow sync: no whitespace errors.",
+      "verifiedAt": "2026-05-22T15:24:00+08:00"
     }
   ],
-  "lastVerifiedCommit": "8005a316126d79d75072ee8f55042f41887b33cd",
+  "lastVerifiedCommit": "804d614e14ff9b49951b3fbbffa395efe412df2e",
   "phaseCommits": [
     {
       "phase": "closeout_commit",
@@ -2885,6 +2966,12 @@
       "commit": "8005a316126d79d75072ee8f55042f41887b33cd",
       "summary": "Fix profile serialization export; local HEAD only, not pushed in this state sync.",
       "committedAt": "2026-05-22T14:41:03+08:00"
+    },
+    {
+      "phase": "e2e_mapping_commit",
+      "commit": "804d614e14ff9b49951b3fbbffa395efe412df2e",
+      "summary": "Map runner following E2E setup; local HEAD only, not pushed in this state sync.",
+      "committedAt": "2026-05-22T15:21:14+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -2924,5 +3011,5 @@
       "closedAt": "2026-05-22T08:30:01+08:00"
     }
   ],
-  "updatedAt": "2026-05-22T14:50:41+08:00"
+  "updatedAt": "2026-05-22T15:24:00+08:00"
 }
