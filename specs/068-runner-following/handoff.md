@@ -5,12 +5,13 @@
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-068-runner-following`
 - Branch: `068-runner-following`
 - Profile: P4
-- Current phase: closeout-pr-created-rules-deployed-awaiting-unauthorized-ci-merge-sync.
-- Active task: none.
-- Active task state: none. T603 completed through the authorized boundary:
-  state-only commit `cf8a5095ea91df97e0644dd40d2ea59e838c99ec` was pushed,
-  draft PR 104 was created, and Firestore rules were deployed.
-- Active wave: none.
+- Current phase: closeout-ci-fix-committed-awaiting-push-ci-rerun-merge-sync.
+- Active task: T603.
+- Active task state: blocked/ready. T603 previously completed push, draft PR,
+  and Firestore rules deploy through the earlier authorized boundary; CI fix
+  commit `8005a316126d79d75072ee8f55042f41887b33cd` is now verified local HEAD
+  and awaits push plus CI rerun.
+- Active wave: `wave-closeout-continuation`.
 - Latest reviewer decision: T602 attempt 3 `review_passed` recorded at
   `2026-05-22T13:38:29+08:00`; no findings. T602 attempt 3 Engineer DONE
   changed only `scripts/check-superpowers-state.js`. Reviewer evidence:
@@ -38,7 +39,18 @@
   `tests/e2e/runner-following.spec.js` in the `lastVerifiedCommit..HEAD`
   range; this state sync accounts for `e09ce15`.
 - Latest engineer decision: T602 Workflow Checker Engineer attempt 3 DONE.
-- Latest closeout decision: T603 completed after Release Manager state-only
+- Latest closeout decision: T603 is blocked/ready after local CI fix commit
+  `8005a316126d79d75072ee8f55042f41887b33cd` (`Fix profile serialization
+  export`). The fix resolves the GitHub Actions build failure caused by
+  `src/app/users/[uid]/page.jsx` exporting invalid `serializeProfile`.
+  Pre-commit fix evidence: RED `npm run build` reproduced the original failure;
+  after the fix `npm run build`, `npm run test:branch`, `npm run lint:changed`,
+  `npm run type-check:changed`, and `git diff --check` all exited 0. Post-fix
+  commit evidence: `npm run build` exit 0, `npm run workflow:validate` exit 0,
+  `npm run workflow:check` exit 1 from `lastVerifiedCommit` drift on the three
+  CI fix files, and `git diff --check` exit 0. The CI fix commit is not pushed
+  in this state sync.
+- Previous closeout decision: T603 completed after Release Manager state-only
   commit `cf8a5095ea91df97e0644dd40d2ea59e838c99ec` (`Record runner following
   closeout state`) was pushed to `origin/068-runner-following`; draft PR 104
   was created at <https://github.com/victorlovescoding/dive-into-run/pull/104>
@@ -46,13 +58,14 @@
   deployed with `firebase deploy --only firestore:rules --project dive-into-run`.
   CI watch, merge, and local main sync were not authorized and were not
   performed.
-- Completed tasks: T001, T002, T003, T101, T201, T202, T251, T301, T401, T501, T601, T602, T603.
+- Completed tasks: T001, T002, T003, T101, T201, T202, T251, T301, T401, T501, T601, T602.
 - Ready implementation task: none.
 - In-progress implementation task: none.
 - Engineer-done task pending review: none.
-- Blocked task: none.
-- Blocked reason: none within the authorized boundary. CI watch, merge, and
-  local main sync remain unperformed because they were not authorized.
+- Blocked task: T603.
+- Blocked reason: CI fix commit `8005a31` is verified local HEAD and awaits
+  push plus GitHub CI rerun. CI watch, merge, and local main sync remain
+  unperformed because they were not authorized in this state sync.
 - Incidents:
   - `INC-T401-profile-serialization-followers-count` resolved by T202
     Reviewer PASS and coordinator sync; retained as blocker evidence after
@@ -89,27 +102,28 @@
 
 - Current head:
   - branch: `068-runner-following`
-  - commit: `cf8a5095ea91df97e0644dd40d2ea59e838c99ec`
-  - capturedAt: `2026-05-22T14:07:11+08:00`
+  - commit: `8005a316126d79d75072ee8f55042f41887b33cd`
+  - capturedAt: `2026-05-22T14:46:39+08:00`
 - Remote head:
   - remote: `origin`
   - branch: `068-runner-following`
-  - commit: `cf8a5095ea91df97e0644dd40d2ea59e838c99ec`
-  - capturedAt: `2026-05-22T14:07:11+08:00`
-- Last verified commit: `cf8a5095ea91df97e0644dd40d2ea59e838c99ec` for the
-  state-only closeout evidence commit pushed to `origin/068-runner-following`.
+  - commit: `4f27037331fdfc2dd5dd51ab2eafa00a9fef040b`
+  - capturedAt: `2026-05-22T14:55:07+08:00`
+- Last verified commit: `8005a316126d79d75072ee8f55042f41887b33cd` for the
+  local CI fix commit. It is not pushed in this state sync.
 - Phase commits: `closeout_commit` ->
   `e09ce15daea61b7e316873422c96107806b0c4e5` (`Finish runner following
   closeout`), committed at `2026-05-22T13:46:49+08:00`; `closeout_state_push_pr_rules_deploy` ->
   `cf8a5095ea91df97e0644dd40d2ea59e838c99ec` (`Record runner following
-  closeout state`), pushed to `origin/068-runner-following`.
+  closeout state`), pushed to `origin/068-runner-following`; `ci_fix_commit` ->
+  `8005a316126d79d75072ee8f55042f41887b33cd` (`Fix profile serialization
+  export`), local ahead 1 and not pushed.
 - Rules deploy status: deployed; required=true, changed=true,
   deployedCommit=`cf8a5095ea91df97e0644dd40d2ea59e838c99ec`; evidence command
   `firebase deploy --only firestore:rules --project dive-into-run` succeeded
   for project `dive-into-run`, target `firestore:rules`, rules file
   `firestore.rules`, released to `cloud.firestore`.
-- Branch relation: final pushed status was
-  `## 068-runner-following...origin/068-runner-following`.
+- Branch relation: `## 068-runner-following...origin/068-runner-following [ahead 1]`.
 - Do not imply CI green, merge, local main sync, hosting/functions/storage
   deploy, or rules-backed production behavior beyond the Firestore rules
   release evidence above.
@@ -129,9 +143,10 @@
 ## Next Action
 
 No further action is authorized in this state sync. Next human/dispatcher
-decision is whether to authorize CI watch, merge, and local main sync. Do not
-claim CI green, merge, local main sync, hosting/functions/storage deploy, or
-worktree deletion.
+decision is whether to push CI fix commit `8005a31`, watch/rerun CI, mark the
+draft PR ready if appropriate, merge, and local main sync. Do not claim CI
+green, merge, local main sync, hosting/functions/storage deploy, or worktree
+deletion.
 
 ## Task Graph Summary
 
@@ -148,13 +163,18 @@ T401 completed, depends on T301 and T202 completed; Reviewer PASS recorded
 T501 completed, depends on T401; Integration Reviewer PASS recorded
 T601 completed; owns tests/e2e/runner-following.spec.js; Reviewer PASS recorded
 T602 completed attempt 3; attempts 1 and 2 Reviewer REJECT recorded; attempt 3 Reviewer PASS recorded
-T603 completed after state-only commit cf8a509 was pushed, draft PR 104 was created, and Firestore rules were deployed; CI watch, merge, and local main sync were not authorized/performed
+T603 blocked/ready after local CI fix commit 8005a31; state-only commit cf8a509 was pushed, draft PR 104 was created, and Firestore rules were deployed earlier; CI fix commit awaits push and CI rerun; merge and local main sync were not authorized/performed
 ```
 
 ## Latest Verification
 
 | Command | Exit | Evidence |
 | --- | --- | --- |
+| `git status --short --branch` | 0 | CI fix workflow sync: branch is `## 068-runner-following...origin/068-runner-following [ahead 1]` with only `status.json`, `tasks.md`, and `handoff.md` modified. |
+| `npm run workflow:validate` | 0 | CI fix workflow sync: `WORKFLOW STATE: 9 status file(s) valid`. |
+| `npm run workflow:check` | 0 | CI fix workflow sync: `SUPERPOWERS CHECK: 9 status file(s) synced`. |
+| `node scripts/check-superpowers-state.js specs/068-runner-following/status.json` | 0 | CI fix workflow sync: `SUPERPOWERS CHECK: 1 status file(s) synced`. |
+| `git diff --check` | 0 | CI fix workflow sync: no whitespace errors. |
 | `git status --short --branch` | 0 | T603 state sync: branch is `## 068-runner-following...origin/068-runner-following` with only workflow state files modified. |
 | `npm run workflow:validate` | 0 | T603 state sync: `WORKFLOW STATE: 9 status file(s) valid`. |
 | `npm run workflow:check` | 0 | T603 state sync: `SUPERPOWERS CHECK: 9 status file(s) synced`. |

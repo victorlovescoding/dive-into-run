@@ -29,7 +29,7 @@ T401 completed, depends on T301 and T202 completed; Reviewer PASS recorded
 T501 completed, depends on T401; Integration Reviewer PASS recorded
 T601 completed, depends on T501 and recovery closeout blocker report; Reviewer PASS recorded
 T602 completed attempt 3, depends on T501 and recovery closeout blocker report; attempts 1 and 2 Reviewer REJECT recorded; attempt 3 Reviewer PASS recorded
-T603 completed, depends on T602 completed after attempt 3 Reviewer PASS; state-only commit cf8a509 pushed, draft PR 104 created, and Firestore rules deployed; CI watch, merge, and local main sync were not authorized/performed
+T603 blocked/ready, depends on T602 completed after attempt 3 Reviewer PASS; state-only commit cf8a509 pushed, draft PR 104 created, Firestore rules deployed, and CI fix commit 8005a31 is verified local HEAD; next release steps are push, CI rerun/watch authorization, merge authorization, and local main sync authorization
 ```
 
 ## Waves
@@ -46,7 +46,7 @@ T603 completed, depends on T602 completed after attempt 3 Reviewer PASS; state-o
 | `wave-e2e` | T401 | Serialized because it may touch Playwright config and emulator setup; completed after Reviewer PASS. |
 | `wave-integration` | T501 | Final integration gate completed after Integration Reviewer PASS. |
 | `wave-closeout-blockers` | T601, T602 | T601 completed after Reviewer PASS. T602 completed attempt 3 after Reviewer PASS; keep it separate because it touches global workflow tooling. |
-| `wave-closeout-continuation` | T603 | Completed through the authorized boundary: state-only commit cf8a509 pushed, draft PR 104 created, and Firestore rules deployed. CI watch, merge, and local main sync were not authorized/performed. |
+| `wave-closeout-continuation` | T603 | Blocked/ready after CI fix commit 8005a31: prior state-only commit cf8a509 was pushed, draft PR 104 was created, and Firestore rules were deployed. CI fix commit is local ahead 1 and awaits push plus CI rerun; merge and local main sync are not authorized/performed. |
 
 ## Tasks
 
@@ -1911,7 +1911,7 @@ Evidence:
 
 ### T603 - Closeout Continuation After T601/T602
 
-- **State**: `completed`
+- **State**: `blocked`
 - **Attempt**: 1
 - **Wave**: `wave-closeout-continuation`
 - **Engineer**: Release Manager
@@ -1922,18 +1922,21 @@ Evidence:
 Scope:
 
 - Continue release closeout only after T601 and T602 are reviewed.
-- Record closeout commit `e09ce15daea61b7e316873422c96107806b0c4e5` as the
-  latest verified closeout commit so workflow state no longer treats already
-  committed T601/T602 files as post-verified drift.
+- Record closeout commit `e09ce15daea61b7e316873422c96107806b0c4e5` and CI
+  fix commit `8005a316126d79d75072ee8f55042f41887b33cd` as verified local
+  commits so workflow state no longer treats their files as post-verified drift.
 - Recheck accidental main-workspace file cleanup state and record whether any incident remains.
-- Stage explicit reviewed files only, create amend or new commit depending on reviewed diff, push the feature branch, create a draft PR, and deploy Firestore rules only if Firebase project/auth are unambiguous.
+- Preserve prior push, draft PR, and Firestore rules deploy evidence; record
+  that CI fix commit `8005a31` still awaits push and CI rerun.
 - Update workflow state with exact closeout evidence.
 
 Non-scope:
 
 - No new feature implementation.
 - No unreviewed E2E/tooling diff.
-- No CI watch, merge, local main sync, worktree deletion, non-Firestore deploy, package, lockfile, dependency, migration, or guessed Firebase project.
+- No CI watch, merge, local main sync, worktree deletion, non-Firestore deploy,
+  package, lockfile, dependency, migration, push, staging, commit, or guessed
+  Firebase project in this state sync.
 
 Owned files:
 
@@ -1958,8 +1961,14 @@ Engineer instructions:
 - Release Manager continuation committed and pushed state-only commit
   `cf8a5095ea91df97e0644dd40d2ea59e838c99ec` (`Record runner following
   closeout state`).
+- CI fix commit `8005a316126d79d75072ee8f55042f41887b33cd` (`Fix profile
+  serialization export`) is local HEAD and resolves the GitHub Actions build
+  failure caused by `page.jsx` exporting invalid `serializeProfile`.
 - Branch `068-runner-following` was pushed to `origin/068-runner-following`;
   final pushed status was `## 068-runner-following...origin/068-runner-following`.
+- After CI fix commit `8005a31`, branch is ahead of
+  `origin/068-runner-following` by 1; push and CI rerun are the next release
+  steps.
 - Draft PR 104 was created at
   <https://github.com/victorlovescoding/dive-into-run/pull/104> with title
   `Add runner following` and draft=true.
@@ -1973,13 +1982,17 @@ Engineer instructions:
 Acceptance criteria:
 
 - T601 and T602 are reviewed and completed after Reviewer PASS.
-- No unreviewed dirty diff remains.
+- No unreviewed dirty source/test diff remains after CI fix commit `8005a31`.
 - Branch relation and current head are freshly recorded.
 - `lastVerifiedCommit` and `phaseCommits` account for closeout commit
-  `e09ce15daea61b7e316873422c96107806b0c4e5`.
+  `e09ce15daea61b7e316873422c96107806b0c4e5` and CI fix commit
+  `8005a316126d79d75072ee8f55042f41887b33cd`.
 - Commit, push, draft PR creation, and Firestore rules deploy each have
   explicit evidence and stayed inside authorization.
-- CI watch, merge, and local main sync are clearly not claimed.
+- CI fix commit `8005a31` is not claimed as pushed, CI-green, merged, or
+  local-main-synced.
+- T603 remains blocked/ready for push, CI rerun, merge authorization, and local
+  main sync authorization.
 
 Verification commands and expected signal:
 
@@ -1991,6 +2004,17 @@ Verification commands and expected signal:
 | `npm run workflow:check` | exit 0 |
 | `node scripts/check-superpowers-state.js specs/068-runner-following/status.json` | exit 0 |
 
+Latest run:
+
+- `git status --short --branch`: exit 0; branch is
+  `## 068-runner-following...origin/068-runner-following [ahead 1]` with only
+  `status.json`, `tasks.md`, and `handoff.md` modified.
+- `npm run workflow:validate`: exit 0; `WORKFLOW STATE: 9 status file(s) valid`.
+- `npm run workflow:check`: exit 0; `SUPERPOWERS CHECK: 9 status file(s) synced`.
+- `node scripts/check-superpowers-state.js specs/068-runner-following/status.json`:
+  exit 0; `SUPERPOWERS CHECK: 1 status file(s) synced`.
+- `git diff --check`: exit 0; no whitespace errors.
+
 Browser evidence requirement:
 
 - Not applicable unless T601 changes user-visible E2E evidence requirements.
@@ -1999,27 +2023,31 @@ Reviewer PASS criteria:
 
 - Closeout actions only use reviewed diffs.
 - Explicit-file staging is used.
-- PR/rules-deploy state is truthful and does not imply CI/merge/local main sync.
+- PR/rules-deploy state is truthful and does not imply CI green, merge, or
+  local main sync.
+- CI fix commit `8005a31` remains blocked/ready for push and CI rerun.
 
 Reviewer REJECT criteria:
 
 - Any unreviewed implementation/tooling diff is staged or committed.
 - Workflow state drifts.
-- Rules deploy, PR, merge, or local sync claims exceed evidence or authorization.
+- Rules deploy, PR, push, CI green, merge, or local sync claims exceed evidence
+  or authorization.
 
 Evidence:
 
-- Engineer report: DONE. Release Manager committed and pushed state-only commit
-  `cf8a5095ea91df97e0644dd40d2ea59e838c99ec` (`Record runner following
-  closeout state`), pushed branch `068-runner-following` to
-  `origin/068-runner-following`, created draft PR 104 at
-  <https://github.com/victorlovescoding/dive-into-run/pull/104> with title
-  `Add runner following`, and deployed Firestore rules with
-  `firebase deploy --only firestore:rules --project dive-into-run`.
-- Reviewer report: Reviewer check not performed in this Engineer state-sync
-  boundary. State evidence recorded only; no CI green, merge, local main sync,
-  hosting/functions/storage deploy, or rules-backed production behavior beyond
-  Firestore rules release is claimed.
+- Engineer report: BLOCKED/READY. Release Manager previously committed and
+  pushed state-only commit `cf8a5095ea91df97e0644dd40d2ea59e838c99ec`,
+  created draft PR 104, and deployed Firestore rules. CI fix commit
+  `8005a316126d79d75072ee8f55042f41887b33cd` (`Fix profile serialization
+  export`) is now verified local HEAD and resolves the invalid page module
+  `serializeProfile` export build failure. The CI fix commit is not pushed in
+  this state sync; next release steps are push, CI rerun/watch authorization,
+  merge authorization, and local main sync authorization.
+- Reviewer report: CI fix Reviewer passed before this workflow state sync.
+  This sync records state only; no push, new GitHub CI green, merge, local main
+  sync, hosting/functions/storage deploy, or rules-backed production behavior
+  beyond prior Firestore rules release is claimed.
 - Command output summary:
   - Release Manager closeout commit
     `e09ce15daea61b7e316873422c96107806b0c4e5` included
@@ -2036,6 +2064,18 @@ Evidence:
   - Release Manager state-only commit
     `cf8a5095ea91df97e0644dd40d2ea59e838c99ec` (`Record runner following
     closeout state`) was pushed to `origin/068-runner-following`.
+  - GitHub Actions failed because `src/app/users/[uid]/page.jsx` exported
+    invalid `serializeProfile` from a page module.
+  - CI fix commit `8005a316126d79d75072ee8f55042f41887b33cd` moved the helper
+    out of the page module; Engineer evidence before commit: `npm run build`
+    RED reproduced the original failure, then `npm run build` exit 0,
+    `npm run test:branch` exit 0, `npm run lint:changed` exit 0,
+    `npm run type-check:changed` exit 0, and `git diff --check` exit 0 after
+    the fix.
+  - Post-CI-fix commit evidence: `npm run build` exit 0,
+    `npm run workflow:validate` exit 0, `npm run workflow:check` exit 1 due
+    `lastVerifiedCommit` drift on the three CI fix files, and
+    `git diff --check` exit 0.
   - Draft PR 104 created:
     <https://github.com/victorlovescoding/dive-into-run/pull/104>; title
     `Add runner following`; draft=true.
@@ -2046,5 +2086,6 @@ Evidence:
 - Changed files summary:
   - Workflow state only: `status.json`, `tasks.md`, and `handoff.md` now
     account for pushed state-only commit
-    `cf8a5095ea91df97e0644dd40d2ea59e838c99ec`, draft PR 104, and deployed
-    Firestore rules.
+    `cf8a5095ea91df97e0644dd40d2ea59e838c99ec`, draft PR 104, deployed
+    Firestore rules, and local CI fix commit
+    `8005a316126d79d75072ee8f55042f41887b33cd` awaiting push/CI rerun.
