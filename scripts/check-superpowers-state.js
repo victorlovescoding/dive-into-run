@@ -322,6 +322,74 @@ function isCloseoutishV3(status) {
 }
 
 /**
+ * Checks whether a status currentHead snapshot matches this detached HEAD.
+ * @param {Record<string, unknown>} status - Parsed status object.
+ * @param {string} statusBranch - Normalized status branch.
+ * @returns {boolean} Whether the snapshot identifies this HEAD and branch.
+ */
+function matchesCurrentHeadSnapshot(status, statusBranch) {
+  if (!isPlainObject(status.currentHead)) {
+    return false;
+  }
+
+  if (
+    status.currentHead.branch !== statusBranch
+    || !isNonBlankString(status.currentHead.commit)
+  ) {
+    return false;
+  }
+
+  try {
+    return readGit(['rev-parse', 'HEAD']) === status.currentHead.commit.trim();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Checks whether a local branch points at HEAD.
+ * @param {string} branch - Branch name.
+ * @returns {boolean} Whether the branch points at HEAD.
+ */
+function branchPointsAtHead(branch) {
+  try {
+    return readGit(['branch', '--format=%(refname:short)', '--points-at', 'HEAD'])
+      .split('\n')
+      .map((line) => line.trim())
+      .includes(branch);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Checks whether a v3 status file belongs to the currently checked branch.
+ * @param {Record<string, unknown>} status - Parsed status object.
+ * @returns {boolean} Whether the status branch matches current git context.
+ */
+function isCurrentBranchStatus(status) {
+  if (!isNonBlankString(status.branch)) {
+    return false;
+  }
+
+  const statusBranch = status.branch.trim();
+
+  try {
+    const currentBranch = readGit(['branch', '--show-current']);
+    if (isNonBlankString(currentBranch)) {
+      return currentBranch === statusBranch;
+    }
+  } catch {
+    return false;
+  }
+
+  // Detached HEAD has no current branch name. Same-worktree metadata is not
+  // enough: historical status files can keep stale worktree paths.
+  return matchesCurrentHeadSnapshot(status, statusBranch)
+    || branchPointsAtHead(statusBranch);
+}
+
+/**
  * Gets a commit ref from a phase commit entry.
  * @param {unknown} entry - Phase commit entry.
  * @returns {string|null} Commit ref.
@@ -504,7 +572,8 @@ function checkV3Semantics(statusFile, status) {
   }
 
   const touchedRulesFiles = getTouchedFiles(status).filter((filePath) => RULES_FILES.has(filePath));
-  if (touchedRulesFiles.length > 0) {
+  // Current branch rules changes must not make unrelated historical status files fail.
+  if (touchedRulesFiles.length > 0 && isCurrentBranchStatus(status)) {
     if (!isPlainObject(status.rulesDeployStatus)) {
       errors.push(`v3 rules changes require rulesDeployStatus for: ${touchedRulesFiles.join(', ')}`);
     } else {

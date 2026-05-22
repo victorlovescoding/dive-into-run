@@ -5,38 +5,38 @@
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-068-runner-following`
 - Branch: `068-runner-following`
 - Profile: P4
-- Current phase: Authorization expanded pending commit.
-- Active task: none.
-- Active task state: none; all planned tasks are completed.
-- Active wave: none.
-- Latest reviewer decision: T501 `review_passed` at
-  `2026-05-22T08:40:51+08:00`; findings: none blocking. Evidence checked:
-  T501 was active and `engineer_done`, T101/T201/T202/T251/T301/T401 were all
-  completed with `review_passed`, final verification rows were exit 0,
-  handoff release boundaries were explicit, and browser evidence dirs existed
-  for T201/T251/T301/T401. Reviewer commands passed:
-  `git diff --check`, `npm run workflow:validate`,
-  `npm run workflow:check`,
-  `ls -d /private/tmp/t201-profile-browser-evidence-emulator /private/tmp/t251-member-following-browser-evidence-attempt2 /private/tmp/t301-event-host-follow-browser-evidence /private/tmp/t401-runner-following-e2e-evidence`,
-  `git rev-list --left-right --count HEAD...origin/main` output `0 13`,
-  `git diff --name-only --cached` empty, and
-  `git status --short --branch` showed branch behind `origin/main` by 13 with
-  dirty/untracked worktree as expected.
-- Latest engineer decision: T401 E2E Engineer DONE. This resume round changed
-  `tests/e2e/runner-following.spec.js`. Existing T401 owned files are
-  `tests/e2e/_setup/068-runner-following-global-setup.js`,
-  `tests/e2e/runner-following.spec.js`, and
-  `playwright.emulator.config.mjs`. Fixes: Playwright hook fixture parameter,
-  `waitForText` / route announcer strict locator collision, and participants
-  dialog locator for an unnamed dialog.
-- Latest engineer decision: T501 Final Integration Verifier retry reported
-  `engineer_done` at `2026-05-22T08:30:01+08:00`; all required final
-  verification commands passed. T501 is completed after Integration Reviewer
-  PASS.
-- Latest blocker decision: none for T501; prior `INC-T501-lint-no-void` is
-  resolved by the T401 lint fix and this retry's `npm run lint:changed` exit 0.
-- Completed tasks: T001, T002, T003, T101, T201, T202, T251, T301, T401, T501.
-- Ready implementation task: none.
+- Current phase: closeout-continuation-ready.
+- Active task: T603.
+- Active task state: ready; dispatch T603 Release Manager next only within the
+  explicit closeout authorization boundary.
+- Active wave: `wave-closeout-continuation`.
+- Latest reviewer decision: T602 attempt 3 `review_passed` recorded at
+  `2026-05-22T13:38:29+08:00`; no findings. T602 attempt 3 Engineer DONE
+  changed only `scripts/check-superpowers-state.js`. Reviewer evidence:
+  `node --check scripts/check-superpowers-state.js` exit 0,
+  `npm run workflow:validate` exit 0 with
+  `WORKFLOW STATE: 9 status file(s) valid`, `npm run workflow:check` exit 0
+  with `SUPERPOWERS CHECK: 9 status file(s) synced`, and
+  `node scripts/check-superpowers-state.js specs/068-runner-following/status.json`
+  exit 0 with `SUPERPOWERS CHECK: 1 status file(s) synced`. `/private/tmp`
+  probes passed expected signals: named/current invalid failed exit 1,
+  named/non-current historical passed exit 0, detached current/active invalid
+  failed exit 1, detached non-current different-worktree passed exit 0, and
+  detached non-current same-worktree passed exit 0. T601 `review_passed` at
+  `2026-05-22T12:37:10+08:00`; T601 strengthened the event-detail navigation
+  assertion in `tests/e2e/runner-following.spec.js` and remains limited to the
+  E2E test file.
+- Latest closeout recovery finding: HEAD is
+  `37dda22eeb9f664add8cf926cde0a5b9de6291ff` (`Add runner following`);
+  `git rev-list --left-right --count HEAD...origin/main` now reports `1 0`,
+  so the branch is ahead 1 and not behind local `origin/main`. There is no
+  rebase/merge in progress and nothing staged.
+- Latest engineer decision: T602 Workflow Checker Engineer attempt 3 DONE.
+- Latest blocker decision: T602 attempt 3 Reviewer PASS unblocks closeout
+  continuation. Release boundaries still require the existing explicit closeout
+  authorization and exact-file staging.
+- Completed tasks: T001, T002, T003, T101, T201, T202, T251, T301, T401, T501, T601, T602.
+- Ready implementation task: T603.
 - In-progress implementation task: none.
 - Engineer-done task pending review: none.
 - Blocked task: none.
@@ -46,10 +46,11 @@
     Reviewer PASS and coordinator sync; retained as blocker evidence after
     T401 E2E rerun and Reviewer PASS.
   - `INC-T202-main-workspace-untracked-profile-mapper-test` resolved during
-    authorized closeout cleanup. The file was verified untracked in the main
-    workspace, `diff -q` matched the feature worktree test file, and
-    `git clean -f -- tests/unit/service/profile-mapper.test.js` removed only
-    that exact path. Follow-up status showed no remaining entry for the file.
+    authorized closeout cleanup. Recovery rechecked
+    `/Users/chentzuyu/Desktop/dive-into-run/tests/unit/service/profile-mapper.test.js`:
+    `git -C /Users/chentzuyu/Desktop/dive-into-run status --short -- tests/unit/service/profile-mapper.test.js`
+    returned no entry and `test -e` exited 1, so the accidental file is still
+    absent.
   - `INC-T501-lint-no-void` resolved. T401 lint fix removed the `no-void`
     blocker; this T501 retry reran `npm run lint:changed` with exit 0 and
     completed after Integration Reviewer PASS.
@@ -76,18 +77,19 @@
 
 - Current head:
   - branch: `068-runner-following`
-  - commit: `7ad004ee405b8485adeb9ca7ae5f19cd77cddb54`
-  - capturedAt: `2026-05-22T11:38:27+08:00`
+  - commit: `37dda22eeb9f664add8cf926cde0a5b9de6291ff`
+  - capturedAt: `2026-05-22T12:20:32+08:00`
 - Remote head:
   - remote: `origin`
   - branch: `main`
   - commit: `d77bcbab497e749dcb37fd282636e2d9b855f61e`
-  - capturedAt: `2026-05-22T08:40:51+08:00`
-- Last verified commit: null.
+  - capturedAt: `2026-05-22T12:20:32+08:00`
+- Last verified commit: `37dda22eeb9f664add8cf926cde0a5b9de6291ff` for the committed feature head only; dirty post-commit diffs still block release.
 - Phase commits: none.
 - Rules deploy status: required; required=true, changed=true, evidence empty, deployedCommit=null.
-- Branch relation: `068-runner-following` is behind `origin/main` by 13 commits
-  (`git rev-list --left-right --count HEAD...origin/main` -> `0 13`).
+- Branch relation: `068-runner-following` is ahead of local `origin/main` by 1
+  and behind by 0 (`git rev-list --left-right --count HEAD...origin/main` ->
+  `1 0`).
 - Do not imply deployed rules or rules-backed production behavior.
 
 ## Read Order
@@ -104,11 +106,11 @@
 
 ## Next Action
 
-Proceed within the authorized boundary: explicit-file staging, commit, fetch
-and rebase onto `origin/main` if needed, rerun closeout verification, push,
-create a draft PR, and deploy only Firestore rules if the Firebase project and
-auth are unambiguous. Do not watch CI, merge, sync local `main`, delete the
-worktree, or deploy any non-Firestore target.
+Dispatch T603 Release Manager next. T603 may continue closeout only within the
+existing authorization boundary: edit, commit, push, pullRequest, and
+deployFirestoreRules are authorized; ciWatch, merge, localMainSync, worktree
+deletion, non-Firestore deploy, and guessed Firebase project are not
+authorized. Stage explicit reviewed file paths only.
 
 ## Task Graph Summary
 
@@ -123,12 +125,67 @@ T251 completed attempt 2, depends on T201
 T301 completed, depends on T251
 T401 completed, depends on T301 and T202 completed; Reviewer PASS recorded
 T501 completed, depends on T401; Integration Reviewer PASS recorded
+T601 completed; owns tests/e2e/runner-following.spec.js; Reviewer PASS recorded
+T602 completed attempt 3; attempts 1 and 2 Reviewer REJECT recorded; attempt 3 Reviewer PASS recorded
+T603 ready, depends on T602 completed after attempt 3 Reviewer PASS
 ```
 
 ## Latest Verification
 
 | Command | Exit | Evidence |
 | --- | --- | --- |
+| `node --check scripts/check-superpowers-state.js` | 0 | T602 attempt 3 Reviewer PASS: syntax check passed. |
+| `npm run workflow:validate` | 0 | T602 attempt 3 Reviewer PASS: `WORKFLOW STATE: 9 status file(s) valid`. |
+| `npm run workflow:check` | 0 | T602 attempt 3 Reviewer PASS: `SUPERPOWERS CHECK: 9 status file(s) synced`. |
+| `node scripts/check-superpowers-state.js specs/068-runner-following/status.json` | 0 | T602 attempt 3 Reviewer PASS: `SUPERPOWERS CHECK: 1 status file(s) synced`. |
+| `temp invalid named current rulesDeployStatus probe` | 1 | T602 attempt 3 Reviewer PASS: `/private/tmp` named/current invalid failed as expected. |
+| `temp invalid named non-current rulesDeployStatus probe` | 0 | T602 attempt 3 Reviewer PASS: `/private/tmp` named/non-current historical passed. |
+| `temp invalid detached current rulesDeployStatus probe` | 1 | T602 attempt 3 Reviewer PASS: `/private/tmp` detached current/active invalid failed as expected. |
+| `temp invalid detached non-current different-worktree rulesDeployStatus probe` | 0 | T602 attempt 3 Reviewer PASS: `/private/tmp` detached non-current different-worktree passed. |
+| `temp invalid detached non-current same-worktree rulesDeployStatus probe` | 0 | T602 attempt 3 Reviewer PASS: `/private/tmp` detached non-current same-worktree passed. |
+| `git diff --check` | 0 | T602 attempt 3 Reviewer PASS: no whitespace errors. |
+| `npm run workflow:validate` | 0 | T602 attempt 2 Reviewer REJECT notification: workflow validation passed. |
+| `npm run workflow:check` | 0 | T602 attempt 2 Reviewer REJECT notification: workflow check passed before stale same-worktree historical false-positive was identified. |
+| `node scripts/check-superpowers-state.js specs/068-runner-following/status.json` | 0 | T602 attempt 2 Reviewer REJECT notification: active runner-following status passed. |
+| `git diff --check` | 0 | T602 attempt 2 Reviewer REJECT notification: no whitespace errors. |
+| `temp invalid named current rulesDeployStatus probe` | 1 | T602 attempt 2 Reviewer REJECT notification: named current invalid failed as expected. |
+| `temp invalid named non-current rulesDeployStatus probe` | 0 | T602 attempt 2 Reviewer REJECT notification: named non-current invalid passed. |
+| `temp invalid detached current rulesDeployStatus probe` | 1 | T602 attempt 2 Reviewer REJECT notification: detached current invalid failed as expected. |
+| `temp invalid detached non-current different-worktree rulesDeployStatus probe` | 0 | T602 attempt 2 Reviewer REJECT notification: detached non-current different-worktree invalid passed. |
+| `temp invalid detached non-current same-worktree rulesDeployStatus probe` | 1 | T602 attempt 2 Reviewer REJECT notification: BUG, detached non-current same-worktree historical status failed with rules errors; expected exit 0. |
+| `npm run workflow:validate` | 0 | T602 Reviewer REJECT notification: workflow validation passed before detached-HEAD weakness was identified. |
+| `npm run workflow:check` | 0 | T602 Reviewer REJECT notification: named-branch workflow check passed, but detached-HEAD active enforcement was later shown weak. |
+| `node scripts/check-superpowers-state.js specs/068-runner-following/status.json` | 0 | T602 Reviewer REJECT notification: valid active runner-following status passed. |
+| `temp invalid current-branch rulesDeployStatus probe` | 1 | T602 Reviewer REJECT notification: named current-branch invalid status failed as intended. |
+| `temp invalid non-current rulesDeployStatus probe` | 0 | T602 Reviewer REJECT notification: non-current historical invalid status passed as intended to avoid false positives. |
+| `temp invalid detached-HEAD active rulesDeployStatus probe` | 0 | T602 Reviewer REJECT notification: BUG, detached active runner-following invalid status exited 0 while `firestore.rules` was touched; expected exit 1. |
+| `git diff --check` | 0 | T602 Reviewer REJECT notification: no whitespace errors. |
+| `npm run workflow:validate` | 0 | T602 Engineer: 9 status files valid. |
+| `npm run workflow:check` | 0 | T602 Engineer: 9 status files synced with branch-scoped rulesDeployStatus enforcement. |
+| `node scripts/check-superpowers-state.js specs/068-runner-following/status.json` | 0 | T602 Engineer: active runner-following status synced. |
+| `node scripts/check-superpowers-state.js specs/homepage-landing/status.json` | 0 | T602 Engineer: unrelated historical status tolerated on non-current branch. |
+| `node scripts/check-superpowers-state.js specs/weather-taiwan-md-map/status.json` | 0 | T602 Engineer: unrelated historical status tolerated on non-current branch. |
+| `HEAD checker workflow check` | 1 | T602 Engineer: old checker fails only on unrelated `homepage-landing` / `weather-taiwan-md-map` rulesDeployStatus errors. |
+| `temp invalid current-branch rulesDeployStatus probe` | 1 | T602 Engineer: current branch status still rejects invalid `rulesDeployStatus` when rules files are touched. |
+| `git diff --check` | 0 | T602 Engineer: no whitespace errors. |
+| `npm run audit:playwright-official-only` | 0 | T601 Engineer/Reviewer: Playwright official import audit passed. |
+| `npm run lint:changed` | 0 | T601 Engineer/Reviewer: changed-file lint passed after keeping the fixture alias cleanup. |
+| `git diff --check` | 0 | T601 Engineer/Reviewer: no whitespace errors. |
+| `firebase emulators:exec --only auth,firestore,storage --project=demo-test "FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator"` | 0 | T601 Engineer/Reviewer: runner-following E2E emulator run passed 4 tests. |
+| `node -e "JSON.parse(require('fs').readFileSync('specs/068-runner-following/status.json','utf8'))"` | 0 | Workflow State Engineer post-edit: `status.json` parsed successfully. |
+| `git diff --check` | 0 | Workflow State Engineer post-edit: no whitespace errors. |
+| `npm run workflow:validate` | 0 | Workflow State Engineer post-edit: 9 status files valid. |
+| `npm run workflow:check` | 0 | Workflow State Engineer post-edit with current dirty checker: 9 status files synced. |
+| `git rev-parse HEAD` | 0 | Recovery state check: `37dda22eeb9f664add8cf926cde0a5b9de6291ff`. |
+| `git rev-list --left-right --count HEAD...origin/main` | 0 | Recovery state check: output `1 0`; branch ahead 1, not behind local `origin/main`. |
+| `git diff -- tests/e2e/runner-following.spec.js` | 0 | Recovery state check: dirty E2E diff changed post-click URL assertion to `href` plus click plus existing text; T601 must review/fix. |
+| `git diff -- scripts/check-superpowers-state.js` | 0 | Recovery state check: dirty checker scopes rulesDeployStatus errors to current branch; T602 must review/fix. |
+| `git -C /Users/chentzuyu/Desktop/dive-into-run status --short -- tests/unit/service/profile-mapper.test.js` | 0 | Recovery state check: no entry for accidental main-workspace file. |
+| `test -e /Users/chentzuyu/Desktop/dive-into-run/tests/unit/service/profile-mapper.test.js` | 1 | Recovery state check: accidental main-workspace file is absent. |
+| `npm run workflow:validate` | 0 | Recovery verification before this state update: workflow files valid. |
+| `npm run workflow:check` | 0 | Recovery verification with current dirty checker: workflow files synced. |
+| `git diff --check` | 0 | Recovery verification before this state update: no whitespace errors. |
+| `HEAD checker workflow check` | 1 | Recovery verification: HEAD checker fails on unrelated `homepage-landing` / `weather-taiwan-md-map` rulesDeployStatus errors, confirming dirty checker affects result. |
 | `git diff --check` | 0 | Integration Reviewer PASS: no whitespace errors. |
 | `npm run workflow:validate` | 0 | Integration Reviewer PASS: workflow state valid. |
 | `npm run workflow:check` | 0 | Integration Reviewer PASS: workflow state synced. |

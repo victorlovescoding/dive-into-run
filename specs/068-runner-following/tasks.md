@@ -26,6 +26,9 @@ T251 completed attempt 2, depends on T201
 T301 completed, depends on T251
 T401 completed, depends on T301 and T202 completed; Reviewer PASS recorded
 T501 completed, depends on T401; Integration Reviewer PASS recorded
+T601 completed, depends on T501 and recovery closeout blocker report; Reviewer PASS recorded
+T602 completed attempt 3, depends on T501 and recovery closeout blocker report; attempts 1 and 2 Reviewer REJECT recorded; attempt 3 Reviewer PASS recorded
+T603 ready, depends on T602 completed after attempt 3 Reviewer PASS; T601 completed
 ```
 
 ## Waves
@@ -41,6 +44,8 @@ T501 completed, depends on T401; Integration Reviewer PASS recorded
 | `wave-events` | T301 | Serialized because it consumes shared follow state and touches event runtime/UI. |
 | `wave-e2e` | T401 | Serialized because it may touch Playwright config and emulator setup; completed after Reviewer PASS. |
 | `wave-integration` | T501 | Final integration gate completed after Integration Reviewer PASS. |
+| `wave-closeout-blockers` | T601, T602 | T601 completed after Reviewer PASS. T602 completed attempt 3 after Reviewer PASS; keep it separate because it touches global workflow tooling. |
+| `wave-closeout-continuation` | T603 | Ready after T602 attempt 3 Reviewer PASS and coordinator sync; release closeout actions remain separate authorization boundaries. |
 
 ## Tasks
 
@@ -1627,3 +1632,369 @@ Evidence:
     `specs/068-runner-following/handoff.md`, and
     `specs/068-runner-following/status.json` record T501 completed state and
     Integration Reviewer PASS evidence.
+
+### T601 - E2E Navigation Assertion Restore/Review
+
+- **State**: `completed`
+- **Attempt**: 1
+- **Wave**: `wave-closeout-blockers`
+- **Engineer**: E2E Navigation Fix Engineer
+- **Reviewer**: E2E Navigation Reviewer
+- **Dependencies**: T501 completed; Recovery Release Manager reported closeout blocked by dirty post-commit E2E diff.
+- **Authorization boundary**: edit=yes, commit=no, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.
+
+Scope:
+
+- Keep the lint-compliant Playwright hook fix in `tests/e2e/runner-following.spec.js`.
+- Restore or strengthen the event detail navigation assertion so the test proves navigation to `/events/runner-following-event`, not only that a link had the right `href` before click and existing page text was visible after click.
+- Rerun the focused E2E/audit/lint/diff commands needed to prove the assertion remains deterministic.
+
+Non-scope:
+
+- No production implementation changes.
+- No workflow checker/tooling changes.
+- No package, lockfile, rules deploy, commit, push, pull request, CI watch, merge, or local main sync.
+- Do not weaken E2E coverage or replace URL/navigation proof with only text visibility.
+
+Owned files:
+
+- `tests/e2e/runner-following.spec.js`
+
+Read-only context:
+
+- `specs/068-runner-following/spec.md`
+- `specs/068-runner-following/tasks.md`
+- `specs/068-runner-following/handoff.md`
+- `.codex/rules/e2e-commands.md`
+- `.codex/references/testing-handbook.md`
+- `tests/e2e/_setup/068-runner-following-global-setup.js`
+- `playwright.emulator.config.mjs`
+
+Engineer instructions:
+
+- Start from the current dirty diff in `tests/e2e/runner-following.spec.js`.
+- Preserve the lint-safe hook parameter cleanup.
+- Replace the weak event link click/assertion sequence with a real post-click navigation assertion for `/events/runner-following-event`, using Playwright web-first assertions.
+- If the stronger assertion is flaky, report the root cause and stop instead of hiding it.
+
+Acceptance criteria:
+
+- The E2E test proves the event link click navigates to `/events/runner-following-event`.
+- The dirty diff in `tests/e2e/runner-following.spec.js` is reviewed as intentional or corrected.
+- No non-owned file is edited by T601.
+- T601 can be completed after Reviewer PASS is recorded.
+
+Verification commands and expected signal:
+
+| Command | Expected signal |
+| --- | --- |
+| `npm run audit:playwright-official-only` | exit 0 |
+| `firebase emulators:exec --only auth,firestore,storage --project=demo-test "FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator"` | exit 0; runner-following E2E passes |
+| `npm run lint:changed` | exit 0 |
+| `git diff --check` | exit 0 |
+
+Browser evidence requirement:
+
+- Not required unless the Engineer changes covered behavior beyond the assertion; use existing T401 browser evidence as read-only context only.
+
+Reviewer PASS criteria:
+
+- Diff touches only `tests/e2e/runner-following.spec.js`.
+- The event detail click has a post-click URL/navigation assertion for `/events/runner-following-event`.
+- Commands pass and do not rely on fixed sleeps.
+- Reviewer agrees that the hook lint cleanup is behavior-neutral.
+
+Reviewer REJECT criteria:
+
+- Navigation proof remains only `href` plus text visibility.
+- Any non-owned file changes.
+- Any verification command fails without a documented blocker.
+- E2E coverage is weakened or made order/flakiness-prone.
+
+Evidence:
+
+- Engineer report: DONE. Strengthened the navigation assertion in `tests/e2e/runner-following.spec.js` around line 338 with `await expect(page).toHaveURL(/\/events\/runner-following-event(?:[?#]|$)/);`, while keeping the href contract and lint-compliant fixture alias.
+- Reviewer report: `review_passed` at `2026-05-22T12:37:10+08:00`. Diff strengthens assertion only, has no `waitForTimeout` or fixed sleeps, `git diff --check` exit 0, `npm run audit:playwright-official-only` exit 0, `npm run lint:changed` exit 0, and E2E emulator evidence is adequate.
+- Command output summary:
+  - `npm run audit:playwright-official-only`: exit 0.
+  - `npm run lint:changed`: exit 0.
+  - `git diff --check`: exit 0.
+  - `firebase emulators:exec --only auth,firestore,storage --project=demo-test "FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator"`: exit 0; 4 passed.
+- Changed files summary:
+  - `tests/e2e/runner-following.spec.js`: post-click URL assertion now proves navigation to `/events/runner-following-event`; href contract and lint-compliant fixture alias are retained.
+
+### T602 - Workflow Checker Compatibility Review/Fix
+
+- **State**: `completed`
+- **Attempt**: 3
+- **Wave**: `wave-closeout-blockers`
+- **Engineer**: Workflow Checker Engineer
+- **Reviewer**: Workflow Checker Reviewer
+- **Dependencies**: T501 completed; Recovery Release Manager reported dirty checker makes `npm run workflow:check` pass while HEAD checker fails on unrelated historical statuses; T602 attempts 1 and 2 `review_rejected`; attempt 3 `review_passed`.
+- **Authorization boundary**: edit=yes, commit=no, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.
+
+Scope:
+
+- Decide whether the current dirty `scripts/check-superpowers-state.js` change is needed and valid for unrelated historical status files.
+- If valid, add or validate behavior without weakening current branch spec sync and record precise evidence.
+- If not valid, use Engineer-owned cleanup to remove the dirty checker change and report the remaining global workflow-check blocker.
+
+Non-scope:
+
+- No production feature implementation changes.
+- No E2E assertion changes; T601 owns `tests/e2e/runner-following.spec.js`.
+- No package, lockfile, rules deploy, commit, push, pull request, CI watch, merge, or local main sync.
+- Do not silently include global tooling behavior in release without Reviewer PASS.
+
+Owned files:
+
+- `scripts/check-superpowers-state.js`
+- `specs/068-runner-following/tasks.md`
+- `specs/068-runner-following/handoff.md`
+- `specs/068-runner-following/status.json`
+
+Read-only context:
+
+- `docs/superpowers/workflow.md`
+- `docs/superpowers/task-profiles.md`
+- `docs/superpowers/status.schema.json`
+- `scripts/validate-workflow-state.js`
+- Historical status files that currently fail HEAD checker, including `homepage-landing` and `weather-taiwan-md-map` status files.
+
+Engineer instructions:
+
+- Treat this as global workflow tooling, not as part of runner-following product implementation.
+- Remove or constrain the `status.worktree === cwd` detached fallback; do not
+  accept same-worktree status by itself or OR it with stronger HEAD/branch
+  evidence.
+- Preserve strict rulesDeployStatus checks for active detached status only when
+  stronger evidence exists, such as `status.branch` matching a local branch at
+  HEAD or `status.currentHead` matching the current HEAD.
+- Preserve false-positive avoidance for non-current historical statuses such as
+  `homepage-landing`, `weather-taiwan-md-map`, and stale same-worktree
+  historical status with mismatched branch/head.
+- Add or prove temp probes for named current invalid failing, named non-current
+  invalid passing, detached current invalid failing, detached non-current
+  different-worktree passing, and detached non-current same-worktree historical
+  passing.
+- Record evidence in workflow state only after the implementation diff is reviewed.
+
+Acceptance criteria:
+
+- Active detached rulesDeployStatus enforcement requires stronger branch/head
+  evidence and does not rely on `status.worktree === cwd` alone.
+- Non-current historical status files still avoid false-positive rulesDeployStatus
+  failures when current branch rules files are touched, including stale
+  same-worktree historical status with mismatched branch/head.
+- Temp probes prove named current invalid fails, named non-current invalid
+  passes, detached current invalid fails, detached non-current different-worktree
+  passes, and detached non-current same-worktree historical passes.
+- No T601-owned E2E file is edited.
+- Closeout continuation becomes ready after T602 attempt 3 Reviewer PASS is recorded and coordinator-synced.
+
+Verification commands and expected signal:
+
+| Command | Expected signal |
+| --- | --- |
+| `npm run workflow:validate` | exit 0 |
+| `npm run workflow:check` | exit 0; active runner-following status stays enforced while unrelated historical statuses do not false-positive |
+| `node scripts/check-superpowers-state.js specs/068-runner-following/status.json` | exit 0 for active runner-following status with valid rulesDeployStatus |
+| `node --check scripts/check-superpowers-state.js` | exit 0 |
+| `temp invalid named current rulesDeployStatus probe` | exit 1; current named branch status rejects invalid rulesDeployStatus when rules files are touched |
+| `temp invalid named non-current rulesDeployStatus probe` | exit 0; non-current historical status avoids false-positive rulesDeployStatus enforcement |
+| `temp invalid detached current rulesDeployStatus probe` | exit 1; detached current status rejects invalid rulesDeployStatus with stronger branch/head evidence |
+| `temp invalid detached non-current different-worktree rulesDeployStatus probe` | exit 0; detached historical status with different worktree avoids false-positive rulesDeployStatus enforcement |
+| `temp invalid detached non-current same-worktree rulesDeployStatus probe` | exit 0; stale same-worktree historical status with mismatched branch/head avoids false-positive rulesDeployStatus enforcement |
+| `git diff --check` | exit 0 |
+
+Browser evidence requirement:
+
+- Not applicable.
+
+Reviewer PASS criteria:
+
+- Diff touches only T602 owned files.
+- Reviewer agrees the checker behavior does not accept `status.worktree === cwd`
+  by itself as active status evidence.
+- Reviewer agrees active detached enforcement requires stronger branch/head
+  evidence while stale same-worktree historical status passes.
+- Workflow-state evidence is precise about named current, named non-current,
+  detached current, detached non-current different-worktree, and detached
+  non-current same-worktree probes.
+- Workflow-state evidence remains truthful that T603 is blocked until T602
+  attempt 3 PASS.
+
+Reviewer REJECT criteria:
+
+- The change hides active branch or active `status.branch` rules-deploy requirements.
+- Detached HEAD or worktree-like execution can skip rulesDeployStatus enforcement
+  for a truly active feature status.
+- Same-worktree historical status with mismatched branch/head fails only because
+  `status.worktree === cwd` was treated as active evidence.
+- The change is included only to make closeout pass without a workflow-policy rationale.
+- Any non-owned file changes.
+- Verification is missing or ambiguous.
+
+Evidence:
+
+- Engineer report: attempt 1 DONE kept the branch-scoped checker change, but
+  Reviewer rejected it because active-branch rulesDeployStatus enforcement can
+  be skipped when `git branch --show-current` is empty in detached HEAD.
+- Engineer report: attempt 2 DONE constrained detached active detection, but
+  Reviewer rejected it because the detached fallback still accepted
+  `status.worktree === cwd` by itself and ORed it with stronger branch/head
+  evidence.
+- Engineer report: attempt 3 DONE changed only
+  `scripts/check-superpowers-state.js`.
+- Reviewer report: T602 attempt 1 `review_rejected` recorded at
+  `2026-05-22T13:00:19+08:00`. Blocking finding:
+  `scripts/check-superpowers-state.js` uses `git branch --show-current`; when
+  detached HEAD this is empty, so rulesDeployStatus enforcement is skipped when
+  current branch is empty. A temp detached-HEAD probe proved an active
+  `068-runner-following` status with invalid rulesDeployStatus exited 0 while
+  `firestore.rules` was touched, weakening active-branch enforcement outside
+  named-branch checkouts. Non-blocking: intended local named-branch behavior
+  works; current-branch invalid temp status exits 1 and non-current invalid temp
+  status exits 0. Attempt 2 expectation: robustly identify active
+  branch/status.branch in detached HEAD/worktree scenarios while preserving
+  non-current historical false-positive avoidance, and prove current invalid
+  fails, non-current invalid passes, detached active invalid fails.
+- Reviewer report: T602 attempt 2 `review_rejected` recorded at
+  `2026-05-22T13:21:38+08:00`. Blocking finding:
+  detached fallback is overbroad. `scripts/check-superpowers-state.js` accepts
+  `status.worktree === cwd` by itself and ORs it with stronger HEAD/branch
+  evidence. In a detached temp clone, historical status with
+  `branch="historical-branch"`, mismatched `currentHead`, no local branch at
+  HEAD, but stale/same `worktree` failed with rules errors. This is a
+  non-current historical false-positive. Attempt 3 expectation: remove or
+  constrain `status.worktree === cwd` fallback; active detached enforcement
+  should require stronger evidence such as status branch/local branch at
+  HEAD/currentHead match, while historical same-worktree mismatched branch/head
+  passes.
+- Reviewer report: T602 attempt 3 `review_passed` recorded at
+  `2026-05-22T13:38:29+08:00`; no findings.
+- Command output summary:
+  - Reviewer notification `npm run workflow:validate`: exit 0.
+  - Reviewer notification `npm run workflow:check`: exit 0 under the named-branch checkout before the detached-HEAD weakness was exposed.
+  - Reviewer notification `node scripts/check-superpowers-state.js specs/068-runner-following/status.json`: exit 0 for valid active runner-following status.
+  - Reviewer notification `temp invalid current-branch rulesDeployStatus probe`: exit 1; named current branch enforcement works.
+  - Reviewer notification `temp invalid non-current rulesDeployStatus probe`: exit 0; non-current historical status false-positive avoidance works.
+  - Reviewer notification `temp invalid detached-HEAD active rulesDeployStatus probe`: exit 0; BUG, expected exit 1 because active `status.branch` enforcement was skipped when `git branch --show-current` was empty.
+  - Reviewer notification `git diff --check`: exit 0.
+  - Attempt 2 Reviewer notification `npm run workflow:validate`: exit 0.
+  - Attempt 2 Reviewer notification `npm run workflow:check`: exit 0.
+  - Attempt 2 Reviewer notification `node scripts/check-superpowers-state.js specs/068-runner-following/status.json`: exit 0.
+  - Attempt 2 Reviewer notification `git diff --check`: exit 0.
+  - Attempt 2 Reviewer notification `temp invalid named current rulesDeployStatus probe`: exit 1 as expected.
+  - Attempt 2 Reviewer notification `temp invalid named non-current rulesDeployStatus probe`: exit 0.
+  - Attempt 2 Reviewer notification `temp invalid detached current rulesDeployStatus probe`: exit 1 as expected.
+  - Attempt 2 Reviewer notification `temp invalid detached non-current different-worktree rulesDeployStatus probe`: exit 0.
+  - Attempt 2 Reviewer notification `temp invalid detached non-current same-worktree rulesDeployStatus probe`: exit 1; BUG, expected exit 0 because stale same-worktree historical status must not be treated as active.
+  - Attempt 3 Reviewer PASS `node --check scripts/check-superpowers-state.js`: exit 0.
+  - Attempt 3 Reviewer PASS `npm run workflow:validate`: exit 0; `WORKFLOW STATE: 9 status file(s) valid`.
+  - Attempt 3 Reviewer PASS `npm run workflow:check`: exit 0; `SUPERPOWERS CHECK: 9 status file(s) synced`.
+  - Attempt 3 Reviewer PASS `node scripts/check-superpowers-state.js specs/068-runner-following/status.json`: exit 0; `SUPERPOWERS CHECK: 1 status file(s) synced`.
+  - Attempt 3 Reviewer PASS `/private/tmp` named/current invalid rulesDeployStatus probe: exit 1.
+  - Attempt 3 Reviewer PASS `/private/tmp` named/non-current historical invalid rulesDeployStatus probe: exit 0.
+  - Attempt 3 Reviewer PASS `/private/tmp` detached current/active invalid rulesDeployStatus probe: exit 1.
+  - Attempt 3 Reviewer PASS `/private/tmp` detached non-current different-worktree invalid rulesDeployStatus probe: exit 0.
+  - Attempt 3 Reviewer PASS `/private/tmp` detached non-current same-worktree invalid rulesDeployStatus probe: exit 0.
+  - Attempt 3 Reviewer PASS `git diff --check`: exit 0.
+- Changed files summary:
+  - `scripts/check-superpowers-state.js`: T602 attempt 3 Engineer DONE changed
+    only this implementation file.
+  - `specs/068-runner-following/tasks.md`,
+    `specs/068-runner-following/handoff.md`, and
+    `specs/068-runner-following/status.json`: workflow state sync marks T602
+    completed/review_passed and unblocks T603.
+
+### T603 - Closeout Continuation After T601/T602
+
+- **State**: `ready`
+- **Attempt**: 1
+- **Wave**: `wave-closeout-continuation`
+- **Engineer**: Release Manager
+- **Reviewer**: Release Reviewer
+- **Dependencies**: T601 completed after Reviewer PASS; T602 completed after attempt 3 Reviewer PASS and coordinator sync.
+- **Authorization boundary**: edit=yes, commit=yes, push=yes, pullRequest=yes, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=yes.
+
+Scope:
+
+- Continue release closeout only after T601 and T602 are reviewed.
+- Recheck accidental main-workspace file cleanup state and record whether any incident remains.
+- Stage explicit reviewed files only, create amend or new commit depending on reviewed diff, push the feature branch, create a draft PR, and deploy Firestore rules only if Firebase project/auth are unambiguous.
+- Update workflow state with exact closeout evidence.
+
+Non-scope:
+
+- No new feature implementation.
+- No unreviewed E2E/tooling diff.
+- No CI watch, merge, local main sync, worktree deletion, non-Firestore deploy, package, lockfile, dependency, migration, or guessed Firebase project.
+
+Owned files:
+
+- `specs/068-runner-following/tasks.md`
+- `specs/068-runner-following/handoff.md`
+- `specs/068-runner-following/status.json`
+
+Read-only context:
+
+- `git status --short --branch`
+- `git diff --name-only`
+- T601 and T602 Engineer/Reviewer evidence.
+- `specs/068-runner-following/tasks.md`
+- `specs/068-runner-following/handoff.md`
+- `specs/068-runner-following/status.json`
+
+Engineer instructions:
+
+- T601 and T602 are completed with Reviewer PASS; T603 is ready for closeout
+  continuation within its authorization boundary.
+- Stage concrete file paths only; never use `git add .`, `git add -A`, or `git add --all`.
+- Choose amend versus new commit based on the reviewed diff and repository history.
+- Keep rules deploy state `required` until deploy evidence is recorded.
+
+Acceptance criteria:
+
+- T601 and T602 are reviewed and completed after Reviewer PASS.
+- No unreviewed dirty diff remains.
+- Branch relation and current head are freshly recorded.
+- If commit/push/PR/rules deploy happen, each action has explicit command evidence and stays inside authorization.
+
+Verification commands and expected signal:
+
+| Command | Expected signal |
+| --- | --- |
+| `git status --short --branch` | branch state and dirty/staged state are explicit |
+| `git diff --check` | exit 0 |
+| `npm run workflow:validate` | exit 0 |
+| `npm run workflow:check` | exit 0 |
+
+Browser evidence requirement:
+
+- Not applicable unless T601 changes user-visible E2E evidence requirements.
+
+Reviewer PASS criteria:
+
+- Closeout actions only use reviewed diffs.
+- Explicit-file staging is used.
+- PR/rules-deploy state is truthful and does not imply CI/merge/local main sync.
+
+Reviewer REJECT criteria:
+
+- Any unreviewed implementation/tooling diff is staged or committed.
+- Workflow state drifts.
+- Rules deploy, PR, merge, or local sync claims exceed evidence or authorization.
+
+Evidence:
+
+- Engineer report: ready; T602 attempt 3 has Reviewer PASS and
+  coordinator-synced completed state.
+- Reviewer report: T603 is unblocked by T602 attempt 3 `review_passed`; no
+  T603 closeout action has run yet.
+- Command output summary:
+  - Ready after T602 attempt 3 Reviewer PASS and workflow state sync; T603
+    verification remains pending until dispatch.
+- Changed files summary:
+  - No T603 closeout changes yet; workflow state now marks T603
+    ready/unblocked.

@@ -335,9 +335,11 @@ test.describe('Runner following — event host surfaces and forbidden controls',
 
     await page.getByRole('button', { name: /^追蹤中$/ }).click();
     await expect(page.getByRole('button', { name: /^追蹤$/ })).toBeVisible();
-    await page.getByRole('link', { name: EVENT_TITLE }).click();
-    await expect(page).toHaveURL(/\/events\/runner-following-event/);
-    await expect(page.getByRole('main').getByText(EVENT_TITLE)).toBeVisible();
+    const eventLink = page.getByRole('link', { name: EVENT_TITLE });
+    await expect(eventLink).toHaveAttribute('href', '/events/runner-following-event');
+    await eventLink.click();
+    await expect(page).toHaveURL(/\/events\/runner-following-event(?:[?#]|$)/);
+    await expect(page.getByRole('main').getByText(EVENT_TITLE)).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole('link', { name: HOST_NAME })).toHaveAttribute(
       'href',
       '/users/host-runner',

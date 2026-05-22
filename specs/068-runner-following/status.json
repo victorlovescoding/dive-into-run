@@ -3,9 +3,9 @@
   "feature": "runner-following",
   "branch": "068-runner-following",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-068-runner-following",
-  "phase": "Authorization expanded pending commit",
-  "activeTask": null,
-  "activeWave": null,
+  "phase": "closeout-continuation-ready",
+  "activeTask": "T603",
+  "activeWave": "wave-closeout-continuation",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "068-runner-following",
-    "commit": "7ad004ee405b8485adeb9ca7ae5f19cd77cddb54",
-    "capturedAt": "2026-05-22T11:38:27+08:00",
-    "summary": "Checked before authorized closeout commit; cleanup completed, no commit/stage/push performed yet."
+    "commit": "37dda22eeb9f664add8cf926cde0a5b9de6291ff",
+    "capturedAt": "2026-05-22T12:20:32+08:00",
+    "summary": "Recovery closeout state check: HEAD 37dda22 Add runner following; branch is ahead 1 and behind 0 relative to local origin/main; no staged files and no rebase/merge in progress."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "d77bcbab497e749dcb37fd282636e2d9b855f61e",
-    "capturedAt": "2026-05-22T08:40:51+08:00",
-    "summary": "Checked during T501 Integration Reviewer PASS; HEAD...origin/main left/right count was 0 13."
+    "capturedAt": "2026-05-22T12:20:32+08:00",
+    "summary": "Local origin/main at d77bcbab; git rev-list --left-right --count HEAD...origin/main returned 1 0."
   },
   "completedTasks": [
     "T001",
@@ -39,7 +39,9 @@
     "T251",
     "T301",
     "T401",
-    "T501"
+    "T501",
+    "T601",
+    "T602"
   ],
   "tasks": [
     {
@@ -1568,6 +1570,416 @@
           "No production/test implementation code, package, lockfile, dependency, migration, staging, commit, push, PR, CI watch, merge, local main sync, rules deploy, or deploy action was performed."
         ]
       }
+    },
+    {
+      "id": "T601",
+      "title": "E2E Navigation Assertion Restore/Review",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-closeout-blockers",
+      "engineer": "E2E Navigation Fix Engineer",
+      "reviewer": "E2E Navigation Reviewer",
+      "scope": [
+        "Keep the lint-compliant Playwright hook fix in tests/e2e/runner-following.spec.js.",
+        "Restore or strengthen the event detail navigation assertion so the test proves navigation to /events/runner-following-event, not only link href plus existing text.",
+        "Rerun focused E2E, Playwright audit, lint, and diff checks needed to prove determinism."
+      ],
+      "nonScope": [
+        "No production implementation changes.",
+        "No workflow checker or tooling changes.",
+        "No package, lockfile, rules deploy, commit, push, pull request, CI watch, merge, or local main sync.",
+        "Do not weaken E2E coverage or replace URL/navigation proof with only text visibility."
+      ],
+      "ownedFiles": [
+        "tests/e2e/runner-following.spec.js"
+      ],
+      "readOnlyContext": [
+        "specs/068-runner-following/spec.md",
+        "specs/068-runner-following/tasks.md",
+        "specs/068-runner-following/handoff.md",
+        ".codex/rules/e2e-commands.md",
+        ".codex/references/testing-handbook.md",
+        "tests/e2e/_setup/068-runner-following-global-setup.js",
+        "playwright.emulator.config.mjs"
+      ],
+      "dependencies": [
+        "T501 completed.",
+        "Recovery Release Manager reported closeout blocked by dirty post-commit E2E diff."
+      ],
+      "engineerInstructions": [
+        "Start from the current dirty diff in tests/e2e/runner-following.spec.js.",
+        "Preserve the lint-safe hook parameter cleanup.",
+        "Replace the weak event link click/assertion sequence with a real post-click navigation assertion for /events/runner-following-event, using Playwright web-first assertions.",
+        "If the stronger assertion is flaky, report the root cause and stop instead of hiding it."
+      ],
+      "acceptanceCriteria": [
+        "The E2E test proves the event link click navigates to /events/runner-following-event.",
+        "The dirty diff in tests/e2e/runner-following.spec.js is reviewed as intentional or corrected.",
+        "No non-owned file is edited by T601.",
+        "T601 can be completed after Reviewer PASS is recorded."
+      ],
+      "verification": [
+        {
+          "command": "npm run audit:playwright-official-only",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run audit:playwright-official-only",
+            "exitCode": 0,
+            "summary": "T601 Engineer/Reviewer: Playwright official import audit passed.",
+            "verifiedAt": "2026-05-22T12:37:10+08:00"
+          }
+        },
+        {
+          "command": "firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\"",
+          "expectedSignal": "exit 0; runner-following E2E passes",
+          "lastRun": {
+            "command": "firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\"",
+            "exitCode": 0,
+            "summary": "T601 Engineer/Reviewer: runner-following E2E emulator run passed 4 tests.",
+            "verifiedAt": "2026-05-22T12:37:10+08:00"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "T601 Engineer/Reviewer: changed-file lint passed after keeping the fixture alias cleanup.",
+            "verifiedAt": "2026-05-22T12:37:10+08:00"
+          }
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "T601 Engineer/Reviewer: no whitespace errors.",
+            "verifiedAt": "2026-05-22T12:37:10+08:00"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only tests/e2e/runner-following.spec.js.",
+        "The event detail click has a post-click URL/navigation assertion for /events/runner-following-event.",
+        "Commands pass and do not rely on fixed sleeps.",
+        "Reviewer agrees that the hook lint cleanup is behavior-neutral."
+      ],
+      "reviewerRejectCriteria": [
+        "Navigation proof remains only href plus text visibility.",
+        "Any non-owned file changes.",
+        "Any verification command fails without a documented blocker.",
+        "E2E coverage is weakened or made order/flakiness-prone."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "E2E Navigation Reviewer",
+        "summary": "Diff strengthens the event detail navigation assertion only; no waitForTimeout or fixed sleeps; audit, lint, diff check, and E2E emulator evidence all passed.",
+        "decidedAt": "2026-05-22T12:37:10+08:00"
+      },
+      "evidence": {
+        "engineerReport": "DONE. Strengthened navigation assertion in tests/e2e/runner-following.spec.js around line 338 with await expect(page).toHaveURL(/\\/events\\/runner-following-event(?:[?#]|$)/);, while keeping the href contract and lint-compliant fixture alias.",
+        "reviewerReport": "review_passed at 2026-05-22T12:37:10+08:00. Diff strengthens assertion only, has no waitForTimeout or fixed sleeps, git diff --check exit 0, npm run audit:playwright-official-only exit 0, npm run lint:changed exit 0, and E2E emulator evidence is adequate.",
+        "commandOutputSummary": [
+          "npm run audit:playwright-official-only: exit 0.",
+          "npm run lint:changed: exit 0.",
+          "git diff --check: exit 0.",
+          "firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\": exit 0; 4 passed."
+        ],
+        "changedFilesSummary": [
+          "tests/e2e/runner-following.spec.js: post-click URL assertion now proves navigation to /events/runner-following-event; href contract and lint-compliant fixture alias are retained."
+        ]
+      }
+    },
+    {
+      "id": "T602",
+      "title": "Workflow Checker Compatibility Review/Fix",
+      "state": "completed",
+      "attempt": 3,
+      "wave": "wave-closeout-blockers",
+      "engineer": "Workflow Checker Engineer",
+      "reviewer": "Workflow Checker Reviewer",
+      "scope": [
+        "Decide whether the current dirty scripts/check-superpowers-state.js change is needed and valid for unrelated historical status files.",
+        "If valid, add or validate behavior without weakening current branch spec sync and record precise evidence.",
+        "If not valid, use Engineer-owned cleanup to remove the dirty checker change and report the remaining global workflow-check blocker."
+      ],
+      "nonScope": [
+        "No production feature implementation changes.",
+        "No E2E assertion changes; T601 owns tests/e2e/runner-following.spec.js.",
+        "No package, lockfile, rules deploy, commit, push, pull request, CI watch, merge, or local main sync.",
+        "Do not silently include global tooling behavior in release without Reviewer PASS."
+      ],
+      "ownedFiles": [
+        "scripts/check-superpowers-state.js",
+        "specs/068-runner-following/tasks.md",
+        "specs/068-runner-following/handoff.md",
+        "specs/068-runner-following/status.json"
+      ],
+      "readOnlyContext": [
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-profiles.md",
+        "docs/superpowers/status.schema.json",
+        "scripts/validate-workflow-state.js",
+        "Historical status files that currently fail HEAD checker, including homepage-landing and weather-taiwan-md-map status files."
+      ],
+      "dependencies": [
+        "T501 completed.",
+        "Recovery Release Manager reported dirty checker makes npm run workflow:check pass while HEAD checker fails on unrelated historical statuses.",
+        "T602 attempts 1 and 2 review_rejected; attempt 3 review_passed and is coordinator-synced."
+      ],
+      "engineerInstructions": [
+        "Treat this as global workflow tooling, not as part of runner-following product implementation.",
+        "Remove or constrain the status.worktree === cwd detached fallback; do not accept same-worktree status by itself or OR it with stronger HEAD/branch evidence.",
+        "Preserve strict rulesDeployStatus checks for active detached status only when stronger evidence exists, such as status.branch matching a local branch at HEAD or status.currentHead matching the current HEAD.",
+        "Preserve false-positive avoidance for non-current historical statuses such as homepage-landing, weather-taiwan-md-map, and stale same-worktree historical status with mismatched branch/head.",
+        "Add or prove temp probes for named current invalid failing, named non-current invalid passing, detached current invalid failing, detached non-current different-worktree passing, and detached non-current same-worktree historical passing.",
+        "Record evidence in workflow state only after the implementation diff is reviewed."
+      ],
+      "acceptanceCriteria": [
+        "Active detached rulesDeployStatus enforcement requires stronger branch/head evidence and does not rely on status.worktree === cwd alone.",
+        "Non-current historical status files still avoid false-positive rulesDeployStatus failures when current branch rules files are touched, including stale same-worktree historical status with mismatched branch/head.",
+        "Temp probes prove named current invalid fails, named non-current invalid passes, detached current invalid fails, detached non-current different-worktree passes, and detached non-current same-worktree historical passes.",
+        "No T601-owned E2E file is edited.",
+        "Closeout continuation becomes ready after T602 attempt 3 Reviewer PASS is recorded and coordinator-synced."
+      ],
+      "verification": [
+        {
+          "command": "node --check scripts/check-superpowers-state.js",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "node --check scripts/check-superpowers-state.js",
+            "exitCode": 0,
+            "summary": "T602 attempt 3 Reviewer PASS: syntax check passed.",
+            "verifiedAt": "2026-05-22T13:38:29+08:00"
+          }
+        },
+        {
+          "command": "npm run workflow:validate",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run workflow:validate",
+            "exitCode": 0,
+            "summary": "T602 attempt 3 Reviewer PASS: WORKFLOW STATE: 9 status file(s) valid.",
+            "verifiedAt": "2026-05-22T13:38:29+08:00"
+          }
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "exit 0; active runner-following status stays enforced while unrelated historical statuses do not false-positive",
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "T602 attempt 3 Reviewer PASS: SUPERPOWERS CHECK: 9 status file(s) synced.",
+            "verifiedAt": "2026-05-22T13:38:29+08:00"
+          }
+        },
+        {
+          "command": "node scripts/check-superpowers-state.js specs/068-runner-following/status.json",
+          "expectedSignal": "exit 0 for active runner-following status with valid rulesDeployStatus",
+          "lastRun": {
+            "command": "node scripts/check-superpowers-state.js specs/068-runner-following/status.json",
+            "exitCode": 0,
+            "summary": "T602 attempt 3 Reviewer PASS: SUPERPOWERS CHECK: 1 status file(s) synced.",
+            "verifiedAt": "2026-05-22T13:38:29+08:00"
+          }
+        },
+        {
+          "command": "temp invalid named current rulesDeployStatus probe",
+          "expectedSignal": "exit 1; current named branch status rejects invalid rulesDeployStatus when rules files are touched",
+          "lastRun": {
+            "command": "temp invalid named current rulesDeployStatus probe",
+            "exitCode": 1,
+            "summary": "T602 attempt 3 Reviewer PASS: /private/tmp named/current invalid rulesDeployStatus probe failed as expected.",
+            "verifiedAt": "2026-05-22T13:38:29+08:00"
+          }
+        },
+        {
+          "command": "temp invalid named non-current rulesDeployStatus probe",
+          "expectedSignal": "exit 0; non-current historical status avoids false-positive rulesDeployStatus enforcement",
+          "lastRun": {
+            "command": "temp invalid named non-current rulesDeployStatus probe",
+            "exitCode": 0,
+            "summary": "T602 attempt 3 Reviewer PASS: /private/tmp named/non-current historical invalid rulesDeployStatus probe passed.",
+            "verifiedAt": "2026-05-22T13:38:29+08:00"
+          }
+        },
+        {
+          "command": "temp invalid detached current rulesDeployStatus probe",
+          "expectedSignal": "exit 1; detached current status rejects invalid rulesDeployStatus with stronger branch/head evidence",
+          "lastRun": {
+            "command": "temp invalid detached current rulesDeployStatus probe",
+            "exitCode": 1,
+            "summary": "T602 attempt 3 Reviewer PASS: /private/tmp detached current/active invalid rulesDeployStatus probe failed as expected.",
+            "verifiedAt": "2026-05-22T13:38:29+08:00"
+          }
+        },
+        {
+          "command": "temp invalid detached non-current different-worktree rulesDeployStatus probe",
+          "expectedSignal": "exit 0; detached historical status with different worktree avoids false-positive rulesDeployStatus enforcement",
+          "lastRun": {
+            "command": "temp invalid detached non-current different-worktree rulesDeployStatus probe",
+            "exitCode": 0,
+            "summary": "T602 attempt 3 Reviewer PASS: /private/tmp detached non-current different-worktree invalid rulesDeployStatus probe passed.",
+            "verifiedAt": "2026-05-22T13:38:29+08:00"
+          }
+        },
+        {
+          "command": "temp invalid detached non-current same-worktree rulesDeployStatus probe",
+          "expectedSignal": "exit 0; stale same-worktree historical status with mismatched branch/head avoids false-positive rulesDeployStatus enforcement",
+          "lastRun": {
+            "command": "temp invalid detached non-current same-worktree rulesDeployStatus probe",
+            "exitCode": 0,
+            "summary": "T602 attempt 3 Reviewer PASS: /private/tmp detached non-current same-worktree invalid rulesDeployStatus probe passed.",
+            "verifiedAt": "2026-05-22T13:38:29+08:00"
+          }
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "T602 attempt 3 Reviewer PASS: no whitespace errors.",
+            "verifiedAt": "2026-05-22T13:38:29+08:00"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only T602 owned files.",
+        "Reviewer agrees the checker behavior does not accept status.worktree === cwd by itself as active status evidence.",
+        "Reviewer agrees active detached enforcement requires stronger branch/head evidence while stale same-worktree historical status passes.",
+        "Workflow-state evidence is precise about named current, named non-current, detached current, detached non-current different-worktree, and detached non-current same-worktree probes.",
+        "Workflow-state evidence remains truthful that T603 is blocked until T602 attempt 3 PASS."
+      ],
+      "reviewerRejectCriteria": [
+        "The change hides active branch or active status.branch rules-deploy requirements.",
+        "Detached HEAD or worktree-like execution can skip rulesDeployStatus enforcement for a truly active feature status.",
+        "Same-worktree historical status with mismatched branch/head fails only because status.worktree === cwd was treated as active evidence.",
+        "The change is included only to make closeout pass without a workflow-policy rationale.",
+        "Any non-owned file changes.",
+        "Verification is missing or ambiguous."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Workflow Checker Reviewer",
+        "summary": "No findings. Attempt 3 changed only scripts/check-superpowers-state.js, removed the overbroad same-worktree detached fallback risk, preserved active rulesDeployStatus enforcement, and preserved non-current historical false-positive avoidance across named and detached probes.",
+        "decidedAt": "2026-05-22T13:38:29+08:00"
+      },
+      "evidence": {
+        "engineerReport": "Attempt 1 DONE kept the branch-scoped checker change, but Reviewer rejected it because active-branch rulesDeployStatus enforcement can be skipped when git branch --show-current is empty in detached HEAD. Attempt 2 DONE constrained detached active detection, but Reviewer rejected it because the detached fallback still accepted status.worktree === cwd by itself and ORed it with stronger branch/head evidence. Attempt 3 DONE changed only scripts/check-superpowers-state.js.",
+        "reviewerReport": "T602 attempt 1 review_rejected recorded at 2026-05-22T13:00:19+08:00. T602 attempt 2 review_rejected recorded at 2026-05-22T13:21:38+08:00 for overbroad same-worktree detached fallback. T602 attempt 3 review_passed recorded at 2026-05-22T13:38:29+08:00; no findings.",
+        "commandOutputSummary": [
+          "Attempt 1 and attempt 2 rejection evidence is preserved in prior workflow history.",
+          "Attempt 3 Reviewer PASS node --check scripts/check-superpowers-state.js: exit 0.",
+          "Attempt 3 Reviewer PASS npm run workflow:validate: exit 0; WORKFLOW STATE: 9 status file(s) valid.",
+          "Attempt 3 Reviewer PASS npm run workflow:check: exit 0; SUPERPOWERS CHECK: 9 status file(s) synced.",
+          "Attempt 3 Reviewer PASS node scripts/check-superpowers-state.js specs/068-runner-following/status.json: exit 0; SUPERPOWERS CHECK: 1 status file(s) synced.",
+          "Attempt 3 Reviewer PASS /private/tmp named/current invalid rulesDeployStatus probe: exit 1.",
+          "Attempt 3 Reviewer PASS /private/tmp named/non-current historical invalid rulesDeployStatus probe: exit 0.",
+          "Attempt 3 Reviewer PASS /private/tmp detached current/active invalid rulesDeployStatus probe: exit 1.",
+          "Attempt 3 Reviewer PASS /private/tmp detached non-current different-worktree invalid rulesDeployStatus probe: exit 0.",
+          "Attempt 3 Reviewer PASS /private/tmp detached non-current same-worktree invalid rulesDeployStatus probe: exit 0.",
+          "Attempt 3 Reviewer PASS git diff --check: exit 0."
+        ],
+        "changedFilesSummary": [
+          "scripts/check-superpowers-state.js: T602 attempt 3 Engineer DONE changed only this implementation file.",
+          "specs/068-runner-following/tasks.md, specs/068-runner-following/handoff.md, specs/068-runner-following/status.json: coordinator workflow state sync marks T602 completed/review_passed and unblocks T603."
+        ]
+      }
+    },
+    {
+      "id": "T603",
+      "title": "Closeout Continuation After T601/T602",
+      "state": "ready",
+      "attempt": 1,
+      "wave": "wave-closeout-continuation",
+      "engineer": "Release Manager",
+      "reviewer": "Release Reviewer",
+      "scope": [
+        "Continue release closeout only after T601 and T602 are reviewed.",
+        "Recheck accidental main-workspace file cleanup state and record whether any incident remains.",
+        "Stage explicit reviewed files only, create amend or new commit depending on reviewed diff, push the feature branch, create a draft PR, and deploy Firestore rules only if Firebase project/auth are unambiguous.",
+        "Update workflow state with exact closeout evidence."
+      ],
+      "nonScope": [
+        "No new feature implementation.",
+        "No unreviewed E2E or tooling diff.",
+        "No CI watch, merge, local main sync, worktree deletion, non-Firestore deploy, package, lockfile, dependency, migration, or guessed Firebase project."
+      ],
+      "ownedFiles": [
+        "specs/068-runner-following/tasks.md",
+        "specs/068-runner-following/handoff.md",
+        "specs/068-runner-following/status.json"
+      ],
+      "readOnlyContext": [
+        "git status --short --branch",
+        "git diff --name-only",
+        "T601 and T602 Engineer/Reviewer evidence.",
+        "specs/068-runner-following/tasks.md",
+        "specs/068-runner-following/handoff.md",
+        "specs/068-runner-following/status.json"
+      ],
+      "dependencies": [
+        "T601 completed after Reviewer PASS.",
+        "T602 completed after attempt 3 Reviewer PASS and coordinator sync."
+      ],
+      "engineerInstructions": [
+        "T601 and T602 are completed with Reviewer PASS; T603 is ready for closeout continuation within its authorization boundary.",
+        "Stage concrete file paths only; never use broad git staging commands.",
+        "Choose amend versus new commit based on the reviewed diff and repository history.",
+        "Keep rules deploy state required until deploy evidence is recorded."
+      ],
+      "acceptanceCriteria": [
+        "T601 and T602 are reviewed and completed after Reviewer PASS.",
+        "No unreviewed dirty diff remains.",
+        "Branch relation and current head are freshly recorded.",
+        "If commit, push, PR, or rules deploy happen, each action has explicit command evidence and stays inside authorization."
+      ],
+      "verification": [
+        {
+          "command": "git status --short --branch",
+          "expectedSignal": "branch state and dirty/staged state are explicit",
+          "lastRun": null
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "exit 0",
+          "lastRun": null
+        },
+        {
+          "command": "npm run workflow:validate",
+          "expectedSignal": "exit 0",
+          "lastRun": null
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "exit 0",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Closeout actions only use reviewed diffs.",
+        "Explicit-file staging is used.",
+        "PR/rules-deploy state is truthful and does not imply CI, merge, or local main sync."
+      ],
+      "reviewerRejectCriteria": [
+        "Any unreviewed implementation/tooling diff is staged or committed.",
+        "Workflow state drifts.",
+        "Rules deploy, PR, merge, or local sync claims exceed evidence or authorization."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": "ready; T602 attempt 3 has Reviewer PASS and coordinator-synced completed state.",
+        "reviewerReport": "T603 is unblocked by T602 attempt 3 review_passed; no T603 closeout action has run yet.",
+        "commandOutputSummary": [
+          "Ready after T602 attempt 3 Reviewer PASS and workflow state sync; T603 verification remains pending until dispatch."
+        ],
+        "changedFilesSummary": [
+          "No T603 closeout changes yet; workflow state now marks T603 ready/unblocked."
+        ]
+      }
     }
   ],
   "blocked": false,
@@ -2034,9 +2446,321 @@
       "exitCode": 0,
       "summary": "Integration Reviewer PASS: branch behind origin/main by 13; dirty/untracked worktree as expected.",
       "verifiedAt": "2026-05-22T08:40:51+08:00"
+    },
+    {
+      "command": "git rev-parse HEAD",
+      "exitCode": 0,
+      "summary": "Recovery state check: 37dda22eeb9f664add8cf926cde0a5b9de6291ff.",
+      "verifiedAt": "2026-05-22T12:20:32+08:00"
+    },
+    {
+      "command": "git rev-list --left-right --count HEAD...origin/main",
+      "exitCode": 0,
+      "summary": "Recovery state check: output 1 0; branch ahead 1 and behind 0 relative to local origin/main.",
+      "verifiedAt": "2026-05-22T12:20:32+08:00"
+    },
+    {
+      "command": "git diff -- tests/e2e/runner-following.spec.js",
+      "exitCode": 0,
+      "summary": "Recovery state check: dirty E2E diff replaced post-click URL assertion with href plus click plus existing text; T601 must review/fix.",
+      "verifiedAt": "2026-05-22T12:20:32+08:00"
+    },
+    {
+      "command": "git diff -- scripts/check-superpowers-state.js",
+      "exitCode": 0,
+      "summary": "Recovery state check: dirty checker scopes rulesDeployStatus checks to current branch; T602 must review/fix.",
+      "verifiedAt": "2026-05-22T12:20:32+08:00"
+    },
+    {
+      "command": "git -C /Users/chentzuyu/Desktop/dive-into-run status --short -- tests/unit/service/profile-mapper.test.js",
+      "exitCode": 0,
+      "summary": "Recovery state check: no entry for accidental main-workspace file.",
+      "verifiedAt": "2026-05-22T12:20:32+08:00"
+    },
+    {
+      "command": "test -e /Users/chentzuyu/Desktop/dive-into-run/tests/unit/service/profile-mapper.test.js",
+      "exitCode": 1,
+      "summary": "Recovery state check: accidental main-workspace file is absent.",
+      "verifiedAt": "2026-05-22T12:20:32+08:00"
+    },
+    {
+      "command": "npm run workflow:validate",
+      "exitCode": 0,
+      "summary": "Recovery verification before closeout-blocked state update: workflow files valid.",
+      "verifiedAt": "2026-05-22T12:20:32+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "Recovery verification with current dirty checker before closeout-blocked state update: workflow files synced.",
+      "verifiedAt": "2026-05-22T12:20:32+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "Recovery verification before closeout-blocked state update: no whitespace errors.",
+      "verifiedAt": "2026-05-22T12:20:32+08:00"
+    },
+    {
+      "command": "HEAD checker workflow check",
+      "exitCode": 1,
+      "summary": "Recovery verification: HEAD checker fails on unrelated homepage-landing and weather-taiwan-md-map rulesDeployStatus errors, confirming dirty checker affects result.",
+      "verifiedAt": "2026-05-22T12:20:32+08:00"
+    },
+    {
+      "command": "node -e \"JSON.parse(require(fs).readFileSync(specs/068-runner-following/status.json,utf8))\"",
+      "exitCode": 0,
+      "summary": "Workflow State Engineer post-edit: status.json parsed successfully.",
+      "verifiedAt": "2026-05-22T12:28:05+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "Workflow State Engineer post-edit: no whitespace errors.",
+      "verifiedAt": "2026-05-22T12:28:05+08:00"
+    },
+    {
+      "command": "npm run workflow:validate",
+      "exitCode": 0,
+      "summary": "Workflow State Engineer post-edit: 9 status files valid.",
+      "verifiedAt": "2026-05-22T12:28:05+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "Workflow State Engineer post-edit with current dirty checker: 9 status files synced.",
+      "verifiedAt": "2026-05-22T12:28:05+08:00"
+    },
+    {
+      "command": "npm run audit:playwright-official-only",
+      "exitCode": 0,
+      "summary": "T601 Engineer/Reviewer: Playwright official import audit passed.",
+      "verifiedAt": "2026-05-22T12:37:10+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T601 Engineer/Reviewer: changed-file lint passed after keeping the fixture alias cleanup.",
+      "verifiedAt": "2026-05-22T12:37:10+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "T601 Engineer/Reviewer: no whitespace errors.",
+      "verifiedAt": "2026-05-22T12:37:10+08:00"
+    },
+    {
+      "command": "firebase emulators:exec --only auth,firestore,storage --project=demo-test \"FIREBASE_PROJECT_ID=demo-test GCLOUD_PROJECT=demo-test NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-test E2E_FEATURE=068-runner-following npm run test:e2e:emulator\"",
+      "exitCode": 0,
+      "summary": "T601 Engineer/Reviewer: runner-following E2E emulator run passed 4 tests.",
+      "verifiedAt": "2026-05-22T12:37:10+08:00"
+    },
+    {
+      "command": "npm run workflow:validate",
+      "exitCode": 0,
+      "summary": "T602 Engineer: 9 status files valid.",
+      "verifiedAt": "2026-05-22T12:45:24+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "T602 Engineer: 9 status files synced with branch-scoped rulesDeployStatus enforcement.",
+      "verifiedAt": "2026-05-22T12:45:24+08:00"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/068-runner-following/status.json",
+      "exitCode": 0,
+      "summary": "T602 Engineer: active runner-following status synced.",
+      "verifiedAt": "2026-05-22T12:45:24+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "T602 Engineer: no whitespace errors.",
+      "verifiedAt": "2026-05-22T12:45:24+08:00"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/homepage-landing/status.json",
+      "exitCode": 0,
+      "summary": "T602 Engineer: unrelated historical homepage-landing status tolerated on non-current branch.",
+      "verifiedAt": "2026-05-22T12:45:24+08:00"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/weather-taiwan-md-map/status.json",
+      "exitCode": 0,
+      "summary": "T602 Engineer: unrelated historical weather-taiwan-md-map status tolerated on non-current branch.",
+      "verifiedAt": "2026-05-22T12:45:24+08:00"
+    },
+    {
+      "command": "HEAD checker workflow check",
+      "exitCode": 1,
+      "summary": "T602 Engineer: old checker fails only on unrelated homepage-landing and weather-taiwan-md-map rulesDeployStatus errors.",
+      "verifiedAt": "2026-05-22T12:45:24+08:00"
+    },
+    {
+      "command": "temp invalid current-branch rulesDeployStatus probe",
+      "exitCode": 1,
+      "summary": "T602 Engineer: current branch status still rejects invalid rulesDeployStatus when rules files are touched.",
+      "verifiedAt": "2026-05-22T12:45:24+08:00"
+    },
+    {
+      "command": "npm run workflow:validate",
+      "exitCode": 0,
+      "summary": "T602 Reviewer PASS: 9 status files valid.",
+      "verifiedAt": "2026-05-22T12:49:37+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "T602 Reviewer PASS: 9 status files synced, including homepage-landing and weather-taiwan-md-map.",
+      "verifiedAt": "2026-05-22T12:49:37+08:00"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/068-runner-following/status.json",
+      "exitCode": 0,
+      "summary": "T602 Reviewer PASS: active runner-following status synced.",
+      "verifiedAt": "2026-05-22T12:49:37+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "T602 Reviewer PASS: no whitespace errors.",
+      "verifiedAt": "2026-05-22T12:49:37+08:00"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/homepage-landing/status.json",
+      "exitCode": 0,
+      "summary": "T602 Reviewer PASS: unrelated historical homepage-landing status tolerated on non-current branch.",
+      "verifiedAt": "2026-05-22T12:49:37+08:00"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/weather-taiwan-md-map/status.json",
+      "exitCode": 0,
+      "summary": "T602 Reviewer PASS: unrelated historical weather-taiwan-md-map status tolerated on non-current branch.",
+      "verifiedAt": "2026-05-22T12:49:37+08:00"
+    },
+    {
+      "command": "git status --short --branch",
+      "exitCode": 0,
+      "summary": "T602 Reviewer PASS: dirty files are the four T602-owned files plus pre-existing T601 tests/e2e/runner-following.spec.js.",
+      "verifiedAt": "2026-05-22T12:49:37+08:00"
+    },
+    {
+      "command": "npm run workflow:validate",
+      "exitCode": 0,
+      "summary": "T602 attempt 2 Reviewer REJECT notification: workflow validation passed.",
+      "verifiedAt": "2026-05-22T13:21:38+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "T602 attempt 2 Reviewer REJECT notification: workflow check passed before stale same-worktree historical false-positive was identified.",
+      "verifiedAt": "2026-05-22T13:21:38+08:00"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/068-runner-following/status.json",
+      "exitCode": 0,
+      "summary": "T602 attempt 2 Reviewer REJECT notification: active runner-following status passed.",
+      "verifiedAt": "2026-05-22T13:21:38+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "T602 attempt 2 Reviewer REJECT notification: no whitespace errors.",
+      "verifiedAt": "2026-05-22T13:21:38+08:00"
+    },
+    {
+      "command": "temp invalid named current rulesDeployStatus probe",
+      "exitCode": 1,
+      "summary": "T602 attempt 2 Reviewer REJECT notification: named current invalid failed as expected.",
+      "verifiedAt": "2026-05-22T13:21:38+08:00"
+    },
+    {
+      "command": "temp invalid named non-current rulesDeployStatus probe",
+      "exitCode": 0,
+      "summary": "T602 attempt 2 Reviewer REJECT notification: named non-current invalid passed.",
+      "verifiedAt": "2026-05-22T13:21:38+08:00"
+    },
+    {
+      "command": "temp invalid detached current rulesDeployStatus probe",
+      "exitCode": 1,
+      "summary": "T602 attempt 2 Reviewer REJECT notification: detached current invalid failed as expected.",
+      "verifiedAt": "2026-05-22T13:21:38+08:00"
+    },
+    {
+      "command": "temp invalid detached non-current different-worktree rulesDeployStatus probe",
+      "exitCode": 0,
+      "summary": "T602 attempt 2 Reviewer REJECT notification: detached non-current different-worktree invalid passed.",
+      "verifiedAt": "2026-05-22T13:21:38+08:00"
+    },
+    {
+      "command": "temp invalid detached non-current same-worktree rulesDeployStatus probe",
+      "exitCode": 1,
+      "summary": "T602 attempt 2 Reviewer REJECT notification: BUG, detached non-current same-worktree historical status failed with rules errors; expected exit 0.",
+      "verifiedAt": "2026-05-22T13:21:38+08:00"
+    },
+    {
+      "command": "node --check scripts/check-superpowers-state.js",
+      "exitCode": 0,
+      "summary": "T602 attempt 3 Reviewer PASS: syntax check passed.",
+      "verifiedAt": "2026-05-22T13:38:29+08:00"
+    },
+    {
+      "command": "npm run workflow:validate",
+      "exitCode": 0,
+      "summary": "T602 attempt 3 Reviewer PASS: WORKFLOW STATE: 9 status file(s) valid.",
+      "verifiedAt": "2026-05-22T13:38:29+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "T602 attempt 3 Reviewer PASS: SUPERPOWERS CHECK: 9 status file(s) synced.",
+      "verifiedAt": "2026-05-22T13:38:29+08:00"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/068-runner-following/status.json",
+      "exitCode": 0,
+      "summary": "T602 attempt 3 Reviewer PASS: SUPERPOWERS CHECK: 1 status file(s) synced.",
+      "verifiedAt": "2026-05-22T13:38:29+08:00"
+    },
+    {
+      "command": "temp invalid named current rulesDeployStatus probe",
+      "exitCode": 1,
+      "summary": "T602 attempt 3 Reviewer PASS: /private/tmp named/current invalid rulesDeployStatus probe failed as expected.",
+      "verifiedAt": "2026-05-22T13:38:29+08:00"
+    },
+    {
+      "command": "temp invalid named non-current rulesDeployStatus probe",
+      "exitCode": 0,
+      "summary": "T602 attempt 3 Reviewer PASS: /private/tmp named/non-current historical invalid rulesDeployStatus probe passed.",
+      "verifiedAt": "2026-05-22T13:38:29+08:00"
+    },
+    {
+      "command": "temp invalid detached current rulesDeployStatus probe",
+      "exitCode": 1,
+      "summary": "T602 attempt 3 Reviewer PASS: /private/tmp detached current/active invalid rulesDeployStatus probe failed as expected.",
+      "verifiedAt": "2026-05-22T13:38:29+08:00"
+    },
+    {
+      "command": "temp invalid detached non-current different-worktree rulesDeployStatus probe",
+      "exitCode": 0,
+      "summary": "T602 attempt 3 Reviewer PASS: /private/tmp detached non-current different-worktree invalid rulesDeployStatus probe passed.",
+      "verifiedAt": "2026-05-22T13:38:29+08:00"
+    },
+    {
+      "command": "temp invalid detached non-current same-worktree rulesDeployStatus probe",
+      "exitCode": 0,
+      "summary": "T602 attempt 3 Reviewer PASS: /private/tmp detached non-current same-worktree invalid rulesDeployStatus probe passed.",
+      "verifiedAt": "2026-05-22T13:38:29+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "T602 attempt 3 Reviewer PASS: no whitespace errors.",
+      "verifiedAt": "2026-05-22T13:38:29+08:00"
     }
   ],
-  "lastVerifiedCommit": null,
+  "lastVerifiedCommit": "37dda22eeb9f664add8cf926cde0a5b9de6291ff",
   "phaseCommits": [],
   "rulesDeployStatus": {
     "state": "required",
@@ -2056,7 +2780,7 @@
     {
       "id": "INC-T202-main-workspace-untracked-profile-mapper-test",
       "state": "resolved",
-      "summary": "Resolved during authorized closeout cleanup. The main workspace file /Users/chentzuyu/Desktop/dive-into-run/tests/unit/service/profile-mapper.test.js was verified untracked, diff-q matched the feature worktree test file, and git clean -f -- tests/unit/service/profile-mapper.test.js removed only that exact file. Follow-up status showed no remaining entry for that path.",
+      "summary": "Resolved during authorized closeout cleanup. The main workspace file /Users/chentzuyu/Desktop/dive-into-run/tests/unit/service/profile-mapper.test.js was verified untracked and removed earlier; recovery rechecked status output had no entry and test -e exited 1, so the file remains absent.",
       "openedAt": "2026-05-22T07:38:41+08:00",
       "closedAt": "2026-05-22T11:38:27+08:00"
     },
@@ -2068,5 +2792,5 @@
       "closedAt": "2026-05-22T08:30:01+08:00"
     }
   ],
-  "updatedAt": "2026-05-22T11:38:27+08:00"
+  "updatedAt": "2026-05-22T13:21:38+08:00"
 }
