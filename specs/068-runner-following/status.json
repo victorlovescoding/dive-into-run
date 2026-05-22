@@ -3,7 +3,7 @@
   "feature": "runner-following",
   "branch": "068-runner-following",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-068-runner-following",
-  "phase": "closeout-continuation-ready",
+  "phase": "closeout-blocked-before-push",
   "activeTask": "T603",
   "activeWave": "wave-closeout-continuation",
   "authorizationBoundary": {
@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "068-runner-following",
-    "commit": "37dda22eeb9f664add8cf926cde0a5b9de6291ff",
-    "capturedAt": "2026-05-22T12:20:32+08:00",
-    "summary": "Recovery closeout state check: HEAD 37dda22 Add runner following; branch is ahead 1 and behind 0 relative to local origin/main; no staged files and no rebase/merge in progress."
+    "commit": "e09ce15daea61b7e316873422c96107806b0c4e5",
+    "capturedAt": "2026-05-22T13:51:29+08:00",
+    "summary": "Post-commit workflow drift sync: HEAD e09ce15 Finish runner following closeout; branch is ahead 2 and behind 0 relative to local origin/main; no staged files and no rebase/merge in progress before this workflow-state-only update."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "d77bcbab497e749dcb37fd282636e2d9b855f61e",
     "capturedAt": "2026-05-22T12:20:32+08:00",
-    "summary": "Local origin/main at d77bcbab; git rev-list --left-right --count HEAD...origin/main returned 1 0."
+    "summary": "Local origin/main at d77bcbab; git rev-list --left-right --count HEAD...origin/main returned 2 0, so the branch is ahead 2 and behind 0."
   },
   "completedTasks": [
     "T001",
@@ -1892,13 +1892,14 @@
     {
       "id": "T603",
       "title": "Closeout Continuation After T601/T602",
-      "state": "ready",
+      "state": "in_progress",
       "attempt": 1,
       "wave": "wave-closeout-continuation",
       "engineer": "Release Manager",
       "reviewer": "Release Reviewer",
       "scope": [
         "Continue release closeout only after T601 and T602 are reviewed.",
+        "Record closeout commit e09ce15daea61b7e316873422c96107806b0c4e5 as the latest verified closeout commit so workflow state no longer treats already-committed T601/T602 files as post-verified drift.",
         "Recheck accidental main-workspace file cleanup state and record whether any incident remains.",
         "Stage explicit reviewed files only, create amend or new commit depending on reviewed diff, push the feature branch, create a draft PR, and deploy Firestore rules only if Firebase project/auth are unambiguous.",
         "Update workflow state with exact closeout evidence."
@@ -1926,7 +1927,8 @@
         "T602 completed after attempt 3 Reviewer PASS and coordinator sync."
       ],
       "engineerInstructions": [
-        "T601 and T602 are completed with Reviewer PASS; T603 is ready for closeout continuation within its authorization boundary.",
+        "T601 and T602 are completed with Reviewer PASS; closeout commit e09ce15daea61b7e316873422c96107806b0c4e5 exists and is the latest verified local closeout commit.",
+        "T603 is blocked-before-push until a continuation performs push, draft PR creation, and Firestore rules deploy if Firebase project/auth are unambiguous.",
         "Stage concrete file paths only; never use broad git staging commands.",
         "Choose amend versus new commit based on the reviewed diff and repository history.",
         "Keep rules deploy state required until deploy evidence is recorded."
@@ -1935,6 +1937,7 @@
         "T601 and T602 are reviewed and completed after Reviewer PASS.",
         "No unreviewed dirty diff remains.",
         "Branch relation and current head are freshly recorded.",
+        "lastVerifiedCommit and phaseCommits account for closeout commit e09ce15daea61b7e316873422c96107806b0c4e5.",
         "If commit, push, PR, or rules deploy happen, each action has explicit command evidence and stays inside authorization."
       ],
       "verification": [
@@ -1971,19 +1974,20 @@
       ],
       "reviewerDecision": null,
       "evidence": {
-        "engineerReport": "ready; T602 attempt 3 has Reviewer PASS and coordinator-synced completed state.",
-        "reviewerReport": "T603 is unblocked by T602 attempt 3 review_passed; no T603 closeout action has run yet.",
+        "engineerReport": "in_progress / blocked-before-push. Release Manager created closeout commit e09ce15daea61b7e316873422c96107806b0c4e5 (Finish runner following closeout) with reviewed T601/T602/workflow files. This workflow-state sync updates lastVerifiedCommit and phaseCommits so workflow:check no longer treats committed T601/T602 files as post-verified drift. Push, draft PR, and Firestore rules deploy have not run.",
+        "reviewerReport": "T603 remains awaiting continuation after closeout commit e09ce15daea61b7e316873422c96107806b0c4e5; push, draft PR, and Firestore rules deploy are still pending.",
         "commandOutputSummary": [
-          "Ready after T602 attempt 3 Reviewer PASS and workflow state sync; T603 verification remains pending until dispatch."
+          "Release Manager closeout commit e09ce15daea61b7e316873422c96107806b0c4e5 included scripts/check-superpowers-state.js, specs/068-runner-following/handoff.md, specs/068-runner-following/status.json, specs/068-runner-following/tasks.md, and tests/e2e/runner-following.spec.js.",
+          "Post-commit npm run workflow:check failed because status.json still pointed lastVerifiedCommit at 37dda22eeb9f664add8cf926cde0a5b9de6291ff, leaving tests/e2e/runner-following.spec.js in the lastVerifiedCommit..HEAD range."
         ],
         "changedFilesSummary": [
-          "No T603 closeout changes yet; workflow state now marks T603 ready/unblocked."
+          "Workflow state only: status.json, tasks.md, and handoff.md now account for closeout commit e09ce15daea61b7e316873422c96107806b0c4e5 and mark T603 in_progress / blocked-before-push."
         ]
       }
     }
   ],
-  "blocked": false,
-  "blockedReason": null,
+  "blocked": true,
+  "blockedReason": "T603 has local closeout commit e09ce15daea61b7e316873422c96107806b0c4e5 but is blocked-before-push; push, draft PR, and Firestore rules deploy have not run.",
   "lastVerification": [
     {
       "command": "npm run test:server -- tests/server/rules/users.rules.test.js tests/server/rules/notifications.rules.test.js",
@@ -2760,8 +2764,15 @@
       "verifiedAt": "2026-05-22T13:38:29+08:00"
     }
   ],
-  "lastVerifiedCommit": "37dda22eeb9f664add8cf926cde0a5b9de6291ff",
-  "phaseCommits": [],
+  "lastVerifiedCommit": "e09ce15daea61b7e316873422c96107806b0c4e5",
+  "phaseCommits": [
+    {
+      "phase": "closeout_commit",
+      "commit": "e09ce15daea61b7e316873422c96107806b0c4e5",
+      "summary": "Finish runner following closeout local commit after T601/T602 Reviewer PASS; push, draft PR, and Firestore rules deploy remain pending.",
+      "committedAt": "2026-05-22T13:46:49+08:00"
+    }
+  ],
   "rulesDeployStatus": {
     "state": "required",
     "required": true,
@@ -2792,5 +2803,5 @@
       "closedAt": "2026-05-22T08:30:01+08:00"
     }
   ],
-  "updatedAt": "2026-05-22T13:21:38+08:00"
+  "updatedAt": "2026-05-22T13:51:29+08:00"
 }

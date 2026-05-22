@@ -5,10 +5,12 @@
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-068-runner-following`
 - Branch: `068-runner-following`
 - Profile: P4
-- Current phase: closeout-continuation-ready.
+- Current phase: closeout-blocked-before-push.
 - Active task: T603.
-- Active task state: ready; dispatch T603 Release Manager next only within the
-  explicit closeout authorization boundary.
+- Active task state: in_progress / blocked-before-push. Closeout commit
+  `e09ce15daea61b7e316873422c96107806b0c4e5` exists locally; continuation
+  still needs push, draft PR creation, and Firestore rules deploy if Firebase
+  project/auth are unambiguous.
 - Active wave: `wave-closeout-continuation`.
 - Latest reviewer decision: T602 attempt 3 `review_passed` recorded at
   `2026-05-22T13:38:29+08:00`; no findings. T602 attempt 3 Engineer DONE
@@ -27,20 +29,27 @@
   assertion in `tests/e2e/runner-following.spec.js` and remains limited to the
   E2E test file.
 - Latest closeout recovery finding: HEAD is
-  `37dda22eeb9f664add8cf926cde0a5b9de6291ff` (`Add runner following`);
-  `git rev-list --left-right --count HEAD...origin/main` now reports `1 0`,
-  so the branch is ahead 1 and not behind local `origin/main`. There is no
-  rebase/merge in progress and nothing staged.
+  `e09ce15daea61b7e316873422c96107806b0c4e5` (`Finish runner following
+  closeout`); `git rev-list --left-right --count HEAD...origin/main` reports
+  `2 0`, so the branch is ahead 2 and not behind local `origin/main`. There
+  was no rebase/merge in progress and nothing staged before this
+  workflow-state-only update. Post-commit `npm run workflow:check` failed
+  because `lastVerifiedCommit` still pointed at
+  `37dda22eeb9f664add8cf926cde0a5b9de6291ff`, leaving
+  `tests/e2e/runner-following.spec.js` in the `lastVerifiedCommit..HEAD`
+  range; this state sync accounts for `e09ce15`.
 - Latest engineer decision: T602 Workflow Checker Engineer attempt 3 DONE.
-- Latest blocker decision: T602 attempt 3 Reviewer PASS unblocks closeout
-  continuation. Release boundaries still require the existing explicit closeout
-  authorization and exact-file staging.
+- Latest blocker decision: T603 is blocked-before-push after closeout commit
+  `e09ce15daea61b7e316873422c96107806b0c4e5`; push, draft PR, and Firestore
+  rules deploy are still pending. Release boundaries still require the
+  existing explicit closeout authorization and exact-file staging.
 - Completed tasks: T001, T002, T003, T101, T201, T202, T251, T301, T401, T501, T601, T602.
-- Ready implementation task: T603.
-- In-progress implementation task: none.
+- Ready implementation task: none.
+- In-progress implementation task: T603.
 - Engineer-done task pending review: none.
-- Blocked task: none.
-- Blocked reason: none.
+- Blocked task: T603.
+- Blocked reason: local closeout commit `e09ce15daea61b7e316873422c96107806b0c4e5`
+  exists, but push, draft PR, and Firestore rules deploy have not run.
 - Incidents:
   - `INC-T401-profile-serialization-followers-count` resolved by T202
     Reviewer PASS and coordinator sync; retained as blocker evidence after
@@ -77,19 +86,23 @@
 
 - Current head:
   - branch: `068-runner-following`
-  - commit: `37dda22eeb9f664add8cf926cde0a5b9de6291ff`
-  - capturedAt: `2026-05-22T12:20:32+08:00`
+  - commit: `e09ce15daea61b7e316873422c96107806b0c4e5`
+  - capturedAt: `2026-05-22T13:51:29+08:00`
 - Remote head:
   - remote: `origin`
   - branch: `main`
   - commit: `d77bcbab497e749dcb37fd282636e2d9b855f61e`
   - capturedAt: `2026-05-22T12:20:32+08:00`
-- Last verified commit: `37dda22eeb9f664add8cf926cde0a5b9de6291ff` for the committed feature head only; dirty post-commit diffs still block release.
-- Phase commits: none.
+- Last verified commit: `e09ce15daea61b7e316873422c96107806b0c4e5` for the
+  local closeout commit. Push, draft PR, and Firestore rules deploy still
+  block release continuation.
+- Phase commits: `closeout_commit` ->
+  `e09ce15daea61b7e316873422c96107806b0c4e5` (`Finish runner following
+  closeout`), committed at `2026-05-22T13:46:49+08:00`.
 - Rules deploy status: required; required=true, changed=true, evidence empty, deployedCommit=null.
-- Branch relation: `068-runner-following` is ahead of local `origin/main` by 1
+- Branch relation: `068-runner-following` is ahead of local `origin/main` by 2
   and behind by 0 (`git rev-list --left-right --count HEAD...origin/main` ->
-  `1 0`).
+  `2 0`).
 - Do not imply deployed rules or rules-backed production behavior.
 
 ## Read Order
@@ -106,11 +119,12 @@
 
 ## Next Action
 
-Dispatch T603 Release Manager next. T603 may continue closeout only within the
-existing authorization boundary: edit, commit, push, pullRequest, and
-deployFirestoreRules are authorized; ciWatch, merge, localMainSync, worktree
-deletion, non-Firestore deploy, and guessed Firebase project are not
-authorized. Stage explicit reviewed file paths only.
+Continue T603 closeout from blocked-before-push. Push the feature branch,
+create a draft PR, and deploy Firestore rules only if Firebase project/auth are
+unambiguous. Stay within the existing authorization boundary: edit, commit,
+push, pullRequest, and deployFirestoreRules are authorized; ciWatch, merge,
+localMainSync, worktree deletion, non-Firestore deploy, and guessed Firebase
+project are not authorized. Stage explicit reviewed file paths only.
 
 ## Task Graph Summary
 
@@ -127,7 +141,7 @@ T401 completed, depends on T301 and T202 completed; Reviewer PASS recorded
 T501 completed, depends on T401; Integration Reviewer PASS recorded
 T601 completed; owns tests/e2e/runner-following.spec.js; Reviewer PASS recorded
 T602 completed attempt 3; attempts 1 and 2 Reviewer REJECT recorded; attempt 3 Reviewer PASS recorded
-T603 ready, depends on T602 completed after attempt 3 Reviewer PASS
+T603 in_progress / blocked-before-push after closeout commit e09ce15; push, draft PR, and Firestore rules deploy remain pending
 ```
 
 ## Latest Verification

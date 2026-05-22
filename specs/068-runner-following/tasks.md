@@ -28,7 +28,7 @@ T401 completed, depends on T301 and T202 completed; Reviewer PASS recorded
 T501 completed, depends on T401; Integration Reviewer PASS recorded
 T601 completed, depends on T501 and recovery closeout blocker report; Reviewer PASS recorded
 T602 completed attempt 3, depends on T501 and recovery closeout blocker report; attempts 1 and 2 Reviewer REJECT recorded; attempt 3 Reviewer PASS recorded
-T603 ready, depends on T602 completed after attempt 3 Reviewer PASS; T601 completed
+T603 in_progress / blocked-before-push, depends on T602 completed after attempt 3 Reviewer PASS; closeout commit e09ce15 created; push, draft PR, and Firestore rules deploy remain pending
 ```
 
 ## Waves
@@ -45,7 +45,7 @@ T603 ready, depends on T602 completed after attempt 3 Reviewer PASS; T601 comple
 | `wave-e2e` | T401 | Serialized because it may touch Playwright config and emulator setup; completed after Reviewer PASS. |
 | `wave-integration` | T501 | Final integration gate completed after Integration Reviewer PASS. |
 | `wave-closeout-blockers` | T601, T602 | T601 completed after Reviewer PASS. T602 completed attempt 3 after Reviewer PASS; keep it separate because it touches global workflow tooling. |
-| `wave-closeout-continuation` | T603 | Ready after T602 attempt 3 Reviewer PASS and coordinator sync; release closeout actions remain separate authorization boundaries. |
+| `wave-closeout-continuation` | T603 | In progress / blocked-before-push after closeout commit e09ce15; push, draft PR, and Firestore rules deploy remain separate pending authorization-bound closeout actions. |
 
 ## Tasks
 
@@ -1910,7 +1910,7 @@ Evidence:
 
 ### T603 - Closeout Continuation After T601/T602
 
-- **State**: `ready`
+- **State**: `in_progress`
 - **Attempt**: 1
 - **Wave**: `wave-closeout-continuation`
 - **Engineer**: Release Manager
@@ -1921,6 +1921,9 @@ Evidence:
 Scope:
 
 - Continue release closeout only after T601 and T602 are reviewed.
+- Record closeout commit `e09ce15daea61b7e316873422c96107806b0c4e5` as the
+  latest verified closeout commit so workflow state no longer treats already
+  committed T601/T602 files as post-verified drift.
 - Recheck accidental main-workspace file cleanup state and record whether any incident remains.
 - Stage explicit reviewed files only, create amend or new commit depending on reviewed diff, push the feature branch, create a draft PR, and deploy Firestore rules only if Firebase project/auth are unambiguous.
 - Update workflow state with exact closeout evidence.
@@ -1948,8 +1951,12 @@ Read-only context:
 
 Engineer instructions:
 
-- T601 and T602 are completed with Reviewer PASS; T603 is ready for closeout
-  continuation within its authorization boundary.
+- T601 and T602 are completed with Reviewer PASS; closeout commit
+  `e09ce15daea61b7e316873422c96107806b0c4e5` exists and is the latest
+  verified local closeout commit.
+- T603 is blocked-before-push until a continuation performs push, draft PR
+  creation, and Firestore rules deploy if Firebase project/auth are
+  unambiguous.
 - Stage concrete file paths only; never use `git add .`, `git add -A`, or `git add --all`.
 - Choose amend versus new commit based on the reviewed diff and repository history.
 - Keep rules deploy state `required` until deploy evidence is recorded.
@@ -1959,6 +1966,8 @@ Acceptance criteria:
 - T601 and T602 are reviewed and completed after Reviewer PASS.
 - No unreviewed dirty diff remains.
 - Branch relation and current head are freshly recorded.
+- `lastVerifiedCommit` and `phaseCommits` account for closeout commit
+  `e09ce15daea61b7e316873422c96107806b0c4e5`.
 - If commit/push/PR/rules deploy happen, each action has explicit command evidence and stays inside authorization.
 
 Verification commands and expected signal:
@@ -1988,13 +1997,29 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: ready; T602 attempt 3 has Reviewer PASS and
-  coordinator-synced completed state.
-- Reviewer report: T603 is unblocked by T602 attempt 3 `review_passed`; no
-  T603 closeout action has run yet.
+- Engineer report: in_progress / blocked-before-push. Release Manager created
+  closeout commit `e09ce15daea61b7e316873422c96107806b0c4e5` (`Finish runner
+  following closeout`) with reviewed T601/T602/workflow files. This workflow
+  state sync updates `lastVerifiedCommit` and `phaseCommits` so
+  `workflow:check` no longer treats committed T601/T602 files as
+  post-verified drift. Push, draft PR, and Firestore rules deploy have not run.
+- Reviewer report: T603 remains awaiting continuation after closeout commit
+  `e09ce15daea61b7e316873422c96107806b0c4e5`; push, draft PR, and Firestore
+  rules deploy are still pending.
 - Command output summary:
-  - Ready after T602 attempt 3 Reviewer PASS and workflow state sync; T603
-    verification remains pending until dispatch.
+  - Release Manager closeout commit
+    `e09ce15daea61b7e316873422c96107806b0c4e5` included
+    `scripts/check-superpowers-state.js`,
+    `specs/068-runner-following/handoff.md`,
+    `specs/068-runner-following/status.json`,
+    `specs/068-runner-following/tasks.md`, and
+    `tests/e2e/runner-following.spec.js`.
+  - Post-commit `npm run workflow:check` failed because `status.json` still
+    pointed `lastVerifiedCommit` at
+    `37dda22eeb9f664add8cf926cde0a5b9de6291ff`, leaving
+    `tests/e2e/runner-following.spec.js` in the `lastVerifiedCommit..HEAD`
+    range.
 - Changed files summary:
-  - No T603 closeout changes yet; workflow state now marks T603
-    ready/unblocked.
+  - Workflow state only: `status.json`, `tasks.md`, and `handoff.md` now
+    account for closeout commit `e09ce15daea61b7e316873422c96107806b0c4e5` and
+    mark T603 in_progress / blocked-before-push.
