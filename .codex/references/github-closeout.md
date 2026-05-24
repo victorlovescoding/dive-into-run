@@ -12,7 +12,7 @@ This is the current Git/PR/CI closeout SOP for this repo.
 - In multi-worktree flows, use `git -C <absolute-path> ...`; do not rely on
   implicit `cd` state across commands.
 - Push feature branches with `git push -u origin HEAD`.
-- Required checks are `ci` and `e2e`; both must be completed and successful.
+- Required GitHub checks must be completed and successful.
 - Merge on GitHub after required checks pass.
 - After merge, prune and fast-forward local `main`.
 
@@ -27,12 +27,11 @@ git -C /Users/chentzuyu/Desktop/dive-into-run switch -c <type>/<description>
 git -C /Users/chentzuyu/Desktop/dive-into-run push -u origin HEAD
 ```
 
-Open the PR, then wait until both required checks are complete and green:
+Open the PR, then wait until required checks are complete and green:
 
-- `ci`
-- `e2e`
+- GitHub branch protection required checks
 
-Merge on GitHub only after both checks are successful. Do not use a local
+Merge on GitHub only after required checks are successful. Do not use a local
 feature-branch merge into `main` as the default closeout path.
 
 After the GitHub merge:
@@ -68,17 +67,14 @@ PR check `ci` failed:
    breakage, missing secret, external service outage, or required scope
    expansion.
 
-PR check `e2e` failed:
+Unexpected test-related PR check appears:
 
-1. Inspect the trace/log and classify as product regression, test bug, or
-   likely flake.
-2. For likely flake, rerun the failed job once using the GitHub UI or approved
-   Actions command and record the run ID.
-3. For reproducible failure, run the focused Playwright/emulator command
-   locally, fix owned scope, rerun `npm run audit:playwright-official-only` and
-   the focused E2E gate, then push.
-4. Stop and ask after a second failure with the same symptom, any auth/data
-   dependency uncertainty, or when fixing requires non-owned files.
+1. Inspect which workflow created the check.
+2. Confirm whether branch protection still requires a removed check name.
+3. Fix the workflow or branch-protection configuration before merging.
+4. Stop and ask if the check comes from an external integration or cannot be
+   reconciled from repository configuration.
+
 
 Merge conflict or stale branch:
 

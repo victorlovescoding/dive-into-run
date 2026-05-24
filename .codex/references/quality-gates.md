@@ -32,8 +32,7 @@ The `ci` job keeps non-test gates: doc freshness, workflow checks, lint,
 useEffect data-fetch audit, type-check, dependency cruiser, spellcheck, and
 build.
 
-The `e2e` job name remains present for branch protection compatibility, but it
-only reports that the E2E gate is disabled.
+No E2E job is present in CI during the testless reset.
 
 The Firestore Rules Gate workflow remains present, but its test execution is
 disabled during the testless reset.

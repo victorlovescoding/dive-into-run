@@ -65,10 +65,3 @@ jobs:
 
       - name: Build
         run: npm run build
-
-  e2e:
-    needs: ci
-    runs-on: ubuntu-latest
-    steps:
-      - name: E2E gate disabled
-        run: echo "E2E test gate disabled for testless reset."

@@ -474,7 +474,7 @@ Closeout default after explicit authorization for each boundary:
 3. Commit reviewed changes.
 4. Push the feature branch.
 5. Open PR.
-6. Wait for required `ci` and `e2e` checks to complete successfully.
+6. Wait for required GitHub checks to complete successfully.
 7. Merge PR on GitHub when green.
 8. Fast-forward local `main` to `origin/main`.
 

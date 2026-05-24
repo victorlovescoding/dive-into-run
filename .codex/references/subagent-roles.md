@@ -192,7 +192,7 @@ local `main` only after:
 - Explicit authorization for the exact boundary being crossed.
 
 Closeout remains branch/worktree -> reviewed diff -> fresh verification ->
-commit -> push -> PR -> required `ci` and `e2e` green -> GitHub merge -> local
+commit -> push -> PR -> required GitHub checks green -> GitHub merge -> local
 `main` fast-forward when authorized.
 
 ## Future Custom Subagent Definitions

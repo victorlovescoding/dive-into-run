@@ -33,7 +33,7 @@ no Codex-native source exists.
 - Main agent coordinates; repo-changing implementation goes Engineer-first.
 - Non-read-only repo-changing work needs Reviewer check before completion.
 - Fresh verification evidence is required before claiming work is done.
-- Default closeout is feature branch push -> PR -> required `ci` and `e2e`
+- Default closeout is feature branch push -> PR -> required GitHub checks
   green -> GitHub merge -> local `main` fast-forward.
 - Local `main` merge is only an explicit user-requested fallback.
 - Commit messages must not include `Co-Authored-By`.
