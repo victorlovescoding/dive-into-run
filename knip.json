@@ -10,12 +10,10 @@
     "src/app/**/{page,layout,loading,error,not-found,route}.js",
     "src/app/**/{page,layout,loading,error,not-found,route}.jsx",
     "src/middleware.{js,mjs}",
-    "scripts/**/*.{js,mjs}",
-    "tests/**/*.{js,jsx,mjs}"
+    "scripts/**/*.{js,mjs}"
   ],
   "project": [
     "src/**/*.{js,jsx,mjs}",
-    "tests/**/*.{js,jsx,mjs}",
     "scripts/**/*.{js,mjs}",
     "specs/**/*.{js,jsx,mjs}",
     "*.config.mjs",
@@ -46,12 +44,10 @@
         "src/app/**/{page,layout,loading,error,not-found,route}.js",
         "src/app/**/{page,layout,loading,error,not-found,route}.jsx",
         "src/middleware.{js,mjs}",
-        "scripts/**/*.{js,mjs}",
-        "tests/**/*.{js,jsx,mjs}"
+        "scripts/**/*.{js,mjs}"
       ],
       "project": [
         "src/**/*.{js,jsx,mjs}",
-        "tests/**/*.{js,jsx,mjs}",
         "scripts/**/*.{js,mjs}",
         "specs/**/*.{js,jsx,mjs}",
         "*.config.mjs",
@@ -64,8 +60,7 @@
         "node_modules/**",
         "playwright-report/**",
         "reports/**",
-        "test-results/**",
-        "tests/e2e/_setup/**"
+        "test-results/**"
       ],
       "ignoreDependencies": [
         "@types/*",

@@ -1,2 +1,2 @@
-# Fast gate only. E2E runs in CI (.github/workflows/ci.yml `e2e` job).
-npm run test:branch
+# Test gates are temporarily disabled for the testless reset.
+exit 0

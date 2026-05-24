@@ -44,8 +44,8 @@ no Codex-native source exists.
 
 - Coding/style gates: `.codex/rules/coding-rules.md` and
   `.codex/rules/code-style.md`.
-- Tests: `.codex/rules/testing-standards.md`; E2E commands:
-  `.codex/rules/e2e-commands.md`.
+- Tests are temporarily removed for the testless reset. Test commands and
+  test-related gates are disabled until a replacement suite is introduced.
 - Verification sensors and pre-commit expectations: `.codex/rules/sensors.md`.
 - Communication details: `.codex/references/communication-style.md`.
 - Quality, review, troubleshooting, and closeout:
@@ -74,14 +74,14 @@ no Codex-native source exists.
 - Backend: Firebase v9+ / Firestore. Firebase access goes through canonical
   `src/repo/` and `src/service/` layers; `src/lib/firebase-*` is compatibility
   facade only.
-- Tests: Vitest for unit/integration jsdom; Playwright for Chromium E2E.
+- Tests: temporarily removed for the testless reset.
 - Path alias: `@/` -> `./src/`.
 - Dependency direction is forward-only:
   Types -> Config -> Repo -> Service -> Runtime -> UI.
 - App Router files in `src/app/` stay thin. Render-only screens live in
   `src/ui/`; state/use-cases live in `src/runtime/`.
-- Executable tests live under `tests/`; `specs/` is for feature planning
-  artifacts only.
+- No executable test tree is present during the testless reset; `specs/` remains
+  for feature planning artifacts only.
 
 ## Agent Workflow Boundaries
 
@@ -121,10 +121,10 @@ npm run dev                 # local Next.js dev server
 npm run build               # production build
 npm run lint:changed        # lint changed files
 npm run type-check:changed  # changed-file type-check report
-npm run test                # browser/jsdom Vitest
-npm run test:server         # server Vitest via Firebase emulators
-npm run test:branch         # branch-scoped test gate
-npm run test:e2e:branch     # branch-scoped Playwright gate
+npm run test                # disabled during testless reset
+npm run test:server         # disabled during testless reset
+npm run test:branch         # disabled during testless reset
+npm run test:e2e:branch     # disabled during testless reset
 npm run depcruise           # dependency direction check
 ```
 
