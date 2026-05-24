@@ -2,7 +2,6 @@
 paths:
   - 'src/**/*.{js,jsx}'
   - 'specs/**/*.{js,jsx}'
-  - 'tests/**/*.{js,jsx}'
 ---
 
 # Code Style Quick Reference

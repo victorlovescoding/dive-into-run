@@ -20,7 +20,9 @@ active workflow state and are not resume entrypoints.
 - Use a Planner subagent to slice repo-changing work before dispatch.
 - Require Engineer + Reviewer pairing for every independently deliverable task slice.
 - Route repo-changing edits through Engineer subagents first, including development, bugfix, refactor, testing, and docs work.
-- Preserve repo conventions: `AGENTS.md` is the entry map, `specs/` stores planning artifacts, and executable tests live under `tests/`.
+- Preserve repo conventions: `AGENTS.md` is the entry map and `specs/` stores
+  planning artifacts. Executable tests are temporarily removed during the
+  testless reset.
 
 ## Task Profile Routing
 
