@@ -105,7 +105,7 @@ PR/CI closeout.
 | New dependency, lockfile update, security-sensitive package change | Any/R4 -> P4 | Worktree | Full five-file set | Required | Required | Install/build/test gates from plan plus dependency/security rationale | Commit/PR/CI; ask before broad dependency change |
 | Review-comment fix on an existing PR | Usually C1-C2/R1-R3 -> P1-P3 | Existing PR branch/worktree; create worktree if dirty or parallel work exists | No new `specs/` unless the PR already uses them | Required | Required | Reproduce reviewer concern and rerun affected gate | Push PR branch; wait for required checks |
 | Hotfix | Usually C1-C3/R2-R4 | Fresh branch/worktree from updated `main`; never direct-to-`main` | P1/P2 no `specs/`; R4 uses P4 | Required | Required | Minimal reproduction plus the smallest high-signal regression gate | PR/CI/merge; ask before bypassing normal closeout |
-| New product feature or multi-session program | C4 or feature default -> P4 | Worktree | Full `specs/<feature>/` five-file set | Required per task slice | Required per task slice | Plan-defined gates, integration gate after waves | Commit phases, PR, required `ci` + `e2e`, GitHub merge |
+| New product feature or multi-session program | C4 or feature default -> P4 | Worktree | Full `specs/<feature>/` five-file set | Required per task slice | Required per task slice | Plan-defined gates, integration gate after waves | Commit phases, PR, required GitHub checks, GitHub merge |
 
 ## Specs Artifact Policy
 
@@ -207,7 +207,7 @@ Lightweight profiles do not bypass repo safety rules:
 - Verification evidence is one command per entry. Do not combine commands with
   `&&` or `;`.
 - Respect owned files, non-scope, and user changes.
-- Keep branch/worktree, commit, push feature branch, PR, required `ci` + `e2e`
+- Keep branch/worktree, commit, push feature branch, PR, required GitHub checks
   green, GitHub merge, and local `main` fast-forward expectations from
   `AGENTS.md`.
 - Run fresh verification before claiming completion.
