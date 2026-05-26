@@ -2,7 +2,7 @@
 
 > Agent-facing HOW decision framework for this repo.
 > 這不是 coding standards 文件；具體 rules 與 gates 請看 `.codex/rules/*` 和 `.codex/references/quality-gates.md`。
-> Workflow、Engineer + Reviewer、lifecycle 請看 `docs/superpowers/workflow.md`；durable debt tracker 請看 `docs/TECH_DEBT.md`。
+> Workflow、Engineer + Reviewer、lifecycle 請看 `docs/superpowers/workflow.md`。
 
 當 agent 需要在多個合理做法之間取捨、review tradeoff、或判斷 refactor 時該保留什麼，用這份文件決定 HOW。
 
@@ -12,7 +12,7 @@
 
 ## 2. Spec First, Then Plan
 
-先分清 WHAT/WHY，再決定 HOW。先確認產品意圖，再讓 plan 決定資料流、檔案責任、測試策略、風險與停損條件。
+先分清 WHAT/WHY，再決定 HOW。先確認產品意圖，再讓 plan 決定資料流、檔案責任、驗證策略、風險與停損條件。
 
 ## 3. Small Task Slices, Paired Review
 
@@ -20,17 +20,17 @@
 
 ## 4. Evidence Before Claims
 
-不要只靠意圖宣稱 fixed、complete、safe 或 passing。任何完成宣告都需要 fresh evidence：diff inspection、targeted checks、相關測試或 CI。
+不要只靠意圖宣稱 fixed、complete、safe 或 passing。任何完成宣告都需要 fresh evidence：diff inspection、targeted checks、相關驗證或 CI。
 
 短回饋迴圈是好事：早點找出落差、快速修正、讓工作貼近證據。但這不代表可以繞過 pre-commit、protected branch、PR workflow、Reviewer PASS、fresh verification 或 CI。
 
 ## 5. Mechanical Enforcement Over Documentation
 
-文件只能引導；可重複執行的防線才可靠。若一條規則重要到應該反覆阻擋壞改動，優先做成 lint、dependency-cruiser、test、script 或 CI。
+文件只能引導；可重複執行的防線才可靠。若一條規則重要到應該反覆阻擋壞改動，優先做成 lint、dependency-cruiser、script、workflow 或 CI。
 
 ## 6. Boundaries Are Product Infrastructure
 
-Layer boundaries、test buckets、runtime ownership、compatibility facades 都是產品基礎建設。除非 plan 明確改架構，否則 refactor 時要保留這些邊界。
+Layer boundaries、verification boundaries、runtime ownership、compatibility facades 都是產品基礎建設。除非 plan 明確改架構，否則 refactor 時要保留這些邊界。
 
 ## 7. Context Is Scarce
 

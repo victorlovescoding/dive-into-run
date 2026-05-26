@@ -9,8 +9,8 @@ closeout.
 
 Use this before execution for bugfix, maintenance, refactor, docs, and feature
 work. If classification is unclear, choose the higher profile or stop and ask.
-Chinese requests such as 開發, 實作, 修, 修正, 修 bug, 重構, 補測試, 改文件,
-and 更新文件 count as repo-changing intent when they target this repo. Intent
+Chinese requests such as 開發, 實作, 修, 修正, 修 bug, 重構, 改文件, and
+更新文件 count as repo-changing intent when they target this repo. Intent
 detection only routes the workflow; it is not edit authorization.
 
 ## Classification
@@ -32,7 +32,7 @@ small.
 | C0 | Read-only inspection, no repo change. |
 | C1 | Single-file change or one small function/component. |
 | C2 | Same domain or same layer, usually 2-5 files. |
-| C3 | Cross-layer change, shared helper/config/test architecture, or multiple domains. |
+| C3 | Cross-layer change, shared helper/config architecture, or multiple domains. |
 | C4 | New feature, long-running work, multi-session work, or multi-task program. |
 
 ## Risk
@@ -41,8 +41,8 @@ small.
 | ----- | ------- |
 | R0 | No runtime risk: docs-only, read-only, formatting with no behavior change. |
 | R1 | Low-risk UI, copy, style, or non-core behavior. |
-| R2 | Normal product behavior: hook, service, repo logic, or regression coverage needed. |
-| R3 | Auth, Firebase, server behavior, E2E flow, race condition, flaky test, shared infra, or data-flow change. |
+| R2 | Normal product behavior: hook, service, repo logic, or regression risk. |
+| R3 | Auth, Firebase, server behavior, critical user flow, race condition, shared infra, or data-flow change. |
 | R4 | Schema, security rules, migration, data deletion, permissions, secrets, new dependency, or irreversible operation. |
 
 ## Profiles
@@ -51,7 +51,7 @@ small.
 | ------- | ---- | ---------------- |
 | P0 | Read-only | Inspect, answer, or report. No edits; read-only subagent is allowed and usually needs no Reviewer. |
 | P1 | Quick Fix | Narrow Engineer edit, focused verification, compact Reviewer check, concise final evidence. |
-| P2 | Standard Bugfix/Maintenance | Focused plan in conversation or task brief, Engineer-owned edit, targeted test/verification, Reviewer check. |
+| P2 | Standard Bugfix/Maintenance | Focused plan in conversation or task brief, Engineer-owned edit, targeted verification, Reviewer check. |
 | P3 | High-risk Fix/Refactor | Explicit task contract, owned files, targeted Engineer/Reviewer pass, compact durable artifact only when work crosses sessions. |
 | P4 | Full Feature/Program | Full Superpowers feature workflow and durable five-file artifact set under `specs/<feature>/`. |
 
@@ -99,10 +99,9 @@ PR/CI closeout.
 | Read-only analysis, triage, or explanation | C0/R0 -> P0 | None | None | Optional read-only research subagent | Not required | Evidence from inspected files, commands, or links | Answer only; no commit |
 | Docs-only typo, wording, or small reference fix | C1/R0 -> P1 | Branch; worktree if current workspace is occupied | No `specs/`; conversation/task brief evidence | Required for repo-changing edit | Required compact check | `git diff --check` plus focused docs/link check when relevant | Commit/PR/CI if tracked repo change |
 | Docs-only workflow policy or durable process doc | C2-C3/R1-R3 -> P2/P3 | Branch for P2, worktree for P3 | P2 no `specs/`; P3 compact task contract only when session continuity needs it | Required | Required | Changed docs matrix, local link/workflow checks if workflow-critical | Commit/PR/CI; do not skip because it is "just docs" |
-| Test-only change | C1-C3/R1-R3 -> P1-P3 | Branch or worktree by profile; worktree for E2E/emulator or flaky cleanup | No `specs/` for P1/P2; compact P3 artifact if multi-agent | Required | Required | Target test, `lint:changed`, `type-check:changed`, relevant audits | Commit/PR/CI |
 | CI-only or workflow automation script | C2-C3/R2-R3 -> P2/P3 | Branch or worktree by profile; worktree when it can block other work | No full five-file set unless multi-session program | Required | Required | Script self-check, affected workflow command, `lint:changed`, `type-check:changed` | Commit/PR/CI; watch required checks |
 | Dependency metadata or package script change, no install | C1-C2/R2 | Branch; worktree if shared workspace | No `specs/` by default | Required | Required | `npm run <changed-script>`, `lint:changed`, `type-check:changed`; stop if lockfile changes unexpectedly | Commit/PR/CI |
-| New dependency, lockfile update, security-sensitive package change | Any/R4 -> P4 | Worktree | Full five-file set | Required | Required | Install/build/test gates from plan plus dependency/security rationale | Commit/PR/CI; ask before broad dependency change |
+| New dependency, lockfile update, security-sensitive package change | Any/R4 -> P4 | Worktree | Full five-file set | Required | Required | Install/build gates from plan plus dependency/security rationale | Commit/PR/CI; ask before broad dependency change |
 | Review-comment fix on an existing PR | Usually C1-C2/R1-R3 -> P1-P3 | Existing PR branch/worktree; create worktree if dirty or parallel work exists | No new `specs/` unless the PR already uses them | Required | Required | Reproduce reviewer concern and rerun affected gate | Push PR branch; wait for required checks |
 | Hotfix | Usually C1-C3/R2-R4 | Fresh branch/worktree from updated `main`; never direct-to-`main` | P1/P2 no `specs/`; R4 uses P4 | Required | Required | Minimal reproduction plus the smallest high-signal regression gate | PR/CI/merge; ask before bypassing normal closeout |
 | New product feature or multi-session program | C4 or feature default -> P4 | Worktree | Full `specs/<feature>/` five-file set | Required per task slice | Required per task slice | Plan-defined gates, integration gate after waves | Commit phases, PR, required GitHub checks, GitHub merge |
@@ -154,14 +153,13 @@ default to a branch; P3/P4 default to a worktree.
 | ------- | -------------- |
 | P0 | No branch, no worktree. |
 | P1 | Branch by default; upgrade to worktree if the workspace is dirty or has an active branch/task. |
-| P2 | Branch by default; upgrade to worktree for multi-file scope, long tests, dirty workspace, active branch/task, or unmerged PR. |
+| P2 | Branch by default; upgrade to worktree for multi-file scope, long verification, dirty workspace, active branch/task, or unmerged PR. |
 | P3 | Worktree by default. |
 | P4 | Always worktree. |
 
 Upgrade to a worktree for cross-session work, multi-agent work, long
-verification, dev server, emulator, E2E, dirty workspace, active feature
-branch, running task, unmerged PR, or when `main` must stay clean for lookup,
-hotfix, or comparison.
+verification, dev server, dirty workspace, active feature branch, running task,
+unmerged PR, or when `main` must stay clean for lookup, hotfix, or comparison.
 
 If the current workspace already has another active feature branch, dirty tree,
 running task, or unmerged PR, new repo-changing work uses a worktree even if it
@@ -177,7 +175,7 @@ Lightweight profiles do not bypass repo safety rules:
 - For P1/P2/P3 repo changes, lightweight means less artifact weight, not
   main-agent self-editing.
 - The main agent defaults to dispatcher/coordinator; actual development,
-  bugfix, refactor, testing, docs, workflow docs, ADR, `.codex/**`, scripts,
+  bugfix, refactor, docs, workflow docs, ADR, `.codex/**`, scripts,
   config, and other repo edits go first to an Engineer subagent.
 - The main agent may read only control-plane context, task-local diffs, changed
   file lists, and exact evidence lines. Broad domain or source exploration must
@@ -219,9 +217,9 @@ Lightweight profiles do not bypass repo safety rules:
 | Scenario | Classification | Profile | Notes |
 | -------- | -------------- | ------- | ----- |
 | Fix a typo or update docs wording | C1/R0 | P1 | No full feature artifact set; Engineer edit plus compact Reviewer check; verify with focused search or docs check. |
-| Single-file UI display bug | C1/R1 | P1 | Target the component and run the smallest relevant UI/unit check when available. |
-| Service regression with coverage | C2/R2 | P2 | Add or update focused regression coverage; no automatic feature five-file set. |
-| Firebase listener flaky behavior | C3/R3 | P3 | Needs explicit task contract, Engineer/Reviewer gate, and targeted emulator or E2E evidence. |
+| Single-file UI display bug | C1/R1 | P1 | Target the component and run the smallest focused verification gate when available. |
+| Service regression | C2/R2 | P2 | Use focused verification evidence; no automatic feature five-file set. |
+| Firebase listener race condition | C3/R3 | P3 | Needs explicit task contract, Engineer/Reviewer gate, and targeted reproduction evidence. |
 | New product feature | C4/R2 or higher | P4 | New features default to full feature workflow and durable artifacts. |
 
 If a task mentions schema, rules, migration, permissions, secrets, dependency

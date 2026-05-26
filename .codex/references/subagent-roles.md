@@ -13,9 +13,9 @@ Use it when choosing subagent roles, assigning stage leads, deciding whether
 parallel lanes are safe, or writing a dispatch brief.
 
 Chinese and English repo-changing phrases, including develop, implement, fix,
-refactor, test, document, 開發, 實作, 修, 修正, 修 bug, 重構, 補測試, 改文件,
-and 更新文件, trigger workflow routing. Triggering routing does not grant edit
-authorization; writable roles still need an explicit authorization boundary.
+refactor, document, 開發, 實作, 修, 修正, 修 bug, 重構, 改文件, and 更新文件,
+trigger workflow routing. Triggering routing does not grant edit authorization;
+writable roles still need an explicit authorization boundary.
 
 ## Precedence
 
@@ -58,7 +58,6 @@ Use these labels in specs, plans, and dispatch briefs:
 - UX/UI: interaction, visual behavior, and user-facing acceptance.
 - Feasibility Engineer: viability, unknowns, and spike-worthy risks.
 - Architect: boundaries, data flow, dependency direction, and system shape.
-- Test Strategist: risk-based coverage and verification selection.
 - Security/Rules: permissions, secrets, rules, and irreversible operations.
 - Performance/Quality Gate: performance, reliability, and quality gates.
 - Docs/Workflow: durable process docs, state, and agent instructions.
@@ -71,7 +70,7 @@ implementation.
 | Stage | Lead | Required support |
 | ----- | ---- | ---------------- |
 | Spec | Main | P4 always includes PM/Requirements, UX/UI, and Feasibility advisors. |
-| Plan | Planner | P3/P4 include Architect and Test Strategist; P1/P2 stay lighter by profile. Single clear P1/P2 slices may use an inline minimum task brief; unclear or multi-slice P1/P2 work uses Planner. |
+| Plan | Planner | P3/P4 include Architect; P1/P2 stay lighter by profile. Single clear P1/P2 slices may use an inline minimum task brief; unclear or multi-slice P1/P2 work uses Planner. |
 | Implementation | Main/Dispatcher | Engineers and paired Reviewers by task lane. |
 | Debug | Debugger | Engineer may fix only after Debugger root cause and authorization. |
 | Verification | Verifier | Fresh command evidence before completion, commit, push, PR, merge, or sync claims. |
@@ -91,9 +90,9 @@ Engineer-first edits, Reviewer checks, and fresh evidence.
 | ------- | ---------------- |
 | P0 | Main plus zero or one Explorer. No writes. |
 | P1 | Main, one Generalist Engineer, one Reviewer. Debugger only for unclear failure. Verifier usually optional unless closing out. |
-| P2 | Main, one Generalist Engineer, one Reviewer. Add Test Strategist when test surface needs it. Verifier recommended before commit or PR. |
-| P3 | Main, Architect advisor, Planner, Test Strategist, one Engineer/Reviewer pair. Debugger mandatory on any failure. Verifier mandatory. Release Manager only for closeout. |
-| P4 | Main, PM/Requirements, UX/UI, Feasibility advisor, Architect, Planner, Test Strategist, one to three Engineer/Reviewer lanes, Debugger on failure, Verifier, and Release Manager. |
+| P2 | Main, one Generalist Engineer, one Reviewer. Verifier recommended before commit or PR. |
+| P3 | Main, Architect advisor, Planner, one Engineer/Reviewer pair. Debugger mandatory on any failure. Verifier mandatory. Release Manager only for closeout. |
+| P4 | Main, PM/Requirements, UX/UI, Feasibility advisor, Architect, Planner, one to three Engineer/Reviewer lanes, Debugger on failure, Verifier, and Release Manager. |
 
 Implementation uses a mixed Engineer model:
 
@@ -108,7 +107,7 @@ Every repo-changing Engineer lane gets its own Reviewer.
 
 Default to one primary Reviewer. Add a secondary Reviewer only for high-risk
 specialized surfaces, such as auth, Firebase rules, schema/migration, secrets,
-E2E infrastructure, shared workflow policy, or dependency changes.
+shared workflow policy, or dependency changes.
 
 Reviewer decisions are limited to:
 

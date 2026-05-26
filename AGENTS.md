@@ -4,9 +4,9 @@
 
 Codex agents use this file as the repo entry map, not a complete manual.
 
-`AGENTS.md` is the Codex source of truth. `CLAUDE.md` and `.claude/**` are
-legacy provenance only; read them only for migration/debugging history or when
-no Codex-native source exists.
+`AGENTS.md` is the Codex source of truth. `.claude/**` is legacy provenance
+only; read it only for migration/debugging history or when no Codex-native
+source exists.
 
 ## Startup Contract
 
@@ -17,9 +17,9 @@ no Codex-native source exists.
 - Load only task-relevant context. Do not expand every linked doc at startup.
 - Keep `AGENTS.md` as the entry map; open referenced docs only when they match
   the current task.
-- For repo-changing requests such as develop, implement, fix, refactor, test,
-  document, 開發, 實作, 修, 修正, 修 bug, 重構, 補測試, 改文件, or
-  更新文件, read `docs/superpowers/workflow.md` before planning,
+- For repo-changing requests such as develop, implement, fix, refactor,
+  document, 開發, 實作, 修, 修正, 修 bug, 重構, 改文件, or 更新文件,
+  read `docs/superpowers/workflow.md` before planning,
   dispatching, or editing. This detects repo-changing intent only; it is not
   edit authorization, and edits still require explicit confirmation.
 - When choosing profile, artifacts, branch/worktree, or authorization boundary,
@@ -44,8 +44,6 @@ no Codex-native source exists.
 
 - Coding/style gates: `.codex/rules/coding-rules.md` and
   `.codex/rules/code-style.md`.
-- Tests are temporarily removed for the testless reset. Test commands and
-  test-related gates are disabled until a replacement suite is introduced.
 - Verification sensors and pre-commit expectations: `.codex/rules/sensors.md`.
 - Communication details: `.codex/references/communication-style.md`.
 - Quality, review, troubleshooting, and closeout:
@@ -74,15 +72,11 @@ no Codex-native source exists.
 - Backend: Firebase v9+ / Firestore. Firebase access goes through canonical
   `src/repo/` and `src/service/` layers; `src/lib/firebase-*` is compatibility
   facade only.
-- Tests: temporarily removed for the testless reset.
 - Path alias: `@/` -> `./src/`.
 - Dependency direction is forward-only:
   Types -> Config -> Repo -> Service -> Runtime -> UI.
 - App Router files in `src/app/` stay thin. Render-only screens live in
   `src/ui/`; state/use-cases live in `src/runtime/`.
-- No executable test tree is present during the testless reset; `specs/` remains
-  for feature planning artifacts only.
-
 ## Agent Workflow Boundaries
 
 - Superpowers lifecycle and task profile details live in
@@ -121,10 +115,6 @@ npm run dev                 # local Next.js dev server
 npm run build               # production build
 npm run lint:changed        # lint changed files
 npm run type-check:changed  # changed-file type-check report
-npm run test                # disabled during testless reset
-npm run test:server         # disabled during testless reset
-npm run test:branch         # disabled during testless reset
-npm run test:e2e:branch     # disabled during testless reset
 npm run depcruise           # dependency direction check
 ```
 

@@ -17,9 +17,9 @@ This is the canonical contract for one independently deliverable task slice in
 - Reviewer: checks the task-local diff, reruns relevant verification, and
   records `review_passed`, `review_rejected`, or `blocked`.
 
-The main agent must not edit production code, executable tests, docs, workflow
-docs, ADRs, `.codex/**`, scripts, config, or other repo-changing files for
-implementation tasks. It may edit workflow state only to record dispatch,
+The main agent must not edit production code, docs, workflow docs, ADRs,
+`.codex/**`, scripts, config, or other repo-changing files for implementation
+tasks. It may edit workflow state only to record dispatch,
 `review_passed`, `review_rejected`, a real blocker, or closeout evidence.
 It also must not self-slice repo-changing work; it validates Planner output and
 dispatches from that contract.

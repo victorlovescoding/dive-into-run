@@ -10,26 +10,26 @@
 Bare pipelines can hide the command that actually failed:
 
 ```bash
-npm run test:coverage | tail -20
+npm run build | tail -20
 echo "$?"
 ```
 
 `$?` reports the final command in the pipeline (`tail`), not necessarily the
-test command.
+build command.
 
 Use one of these instead when the exit code matters:
 
 ```bash
-npm run test:coverage > /tmp/out.txt 2>&1
+npm run build > /tmp/out.txt 2>&1
 exit_code=$?
 tail -20 /tmp/out.txt
 echo "exit: $exit_code"
 
-npm run test:coverage | tail -20
+npm run build | tail -20
 echo "exit: ${PIPESTATUS[0]}"
 
 set -o pipefail
-npm run test:coverage | tail -20
+npm run build | tail -20
 ```
 
 ## 2. Re-read After External File Changes
@@ -41,7 +41,6 @@ Common triggers:
 
 - `npm install` / `npm uninstall` changing `package.json` or lockfiles
 - formatters or linters with `--write` / `--fix`
-- snapshot tests writing `__snapshots__`
 - Git operations such as pull, checkout, stash pop, or rebase
 - codegen and migration scripts
 
@@ -70,13 +69,13 @@ state before and after the diagnostic.
 ```bash
 git stash list
 git stash push -u -m "debug-<reason>"
-npx vitest run <file>
+npm run build
 git stash list
 git stash pop
 git stash list
 ```
 
-If the test command is interrupted, the second `git stash list` prevents an
+If the diagnostic command is interrupted, the second `git stash list` prevents an
 unnoticed orphan stash.
 
 ## 5. Phantom TS2307 From Direct tsc

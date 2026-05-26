@@ -5,8 +5,7 @@
 
 This is a small reviewer reference. It defines what a Reviewer must check before
 recording PASS or REJECT for a task slice. It does not replace the mechanical
-gates in `.codex/references/quality-gates.md` or the testing guidance in
-`.codex/references/testing-handbook.md`.
+gates in `.codex/references/quality-gates.md`.
 
 ## Reviewer Scope
 
@@ -20,9 +19,7 @@ Reviewer checks must cover:
   behavior outside the approved scope.
 - The changed files follow the repo architecture, import boundaries, and
   commit-blocking rules summarized in `.codex/references/quality-gates.md`.
-- Tests or verification are appropriate for the risk. When executable tests are
-  changed or added, use `.codex/references/testing-handbook.md` for the relevant
-  unit, integration, server, or E2E patterns.
+- Verification is appropriate for the risk.
 - The Engineer report lists changed files, commands run, exit codes, evidence,
   and known risks.
 
@@ -33,8 +30,7 @@ Report findings in this order:
 1. Correctness or data-loss risk.
 2. Security, privacy, permission, or secret-handling risk.
 3. Architecture, layer-boundary, or forbidden import violation.
-4. Test gap, invalid test, flaky pattern, or missing verification for the changed
-   behavior.
+4. Missing or invalid verification for the changed behavior.
 5. Maintainability issue that materially increases future change risk.
 6. Documentation or naming issue that makes the accepted behavior ambiguous.
 
@@ -73,8 +69,8 @@ Before PASS, confirm:
 - The diff is limited to the task-owned files or the task explicitly allows the
   wider edit.
 - Acceptance criteria in `tasks.md` are met.
-- No production behavior, tests, docs, or workflow requirements were added
-  outside the approved MVP.
+- No production behavior, docs, or workflow requirements were added outside the
+  approved MVP.
 - Required metadata and references are present when the task is documentation
   work.
 - Source-of-truth, index, status, or review docs do not introduce soft semantic
@@ -84,6 +80,4 @@ Before PASS, confirm:
   claims that are outside deterministic contracts.
 - Relevant quality gates from `.codex/references/quality-gates.md` are not
   violated by the diff.
-- Relevant testing patterns from `.codex/references/testing-handbook.md` are
-  followed when tests are in scope.
 - Engineer evidence includes files, commands, exit codes, and risks.

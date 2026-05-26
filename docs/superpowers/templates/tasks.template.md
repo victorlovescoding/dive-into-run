@@ -5,8 +5,8 @@
 - This file is the human-readable task source of truth for `specs/<feature>/`.
 - On resume, read `AGENTS.md`, `docs/superpowers/workflow.md`, `handoff.md`, this file, and `status.json` before dispatching work.
 - Main agent is control plane only. Repo-changing edits belong to Engineer
-  subagents, including code, executable tests, docs, workflow docs, ADRs,
-  `.codex/**`, scripts, and config.
+  subagents, including code, docs, workflow docs, ADRs, `.codex/**`, scripts,
+  and config.
 - Planner subagent slices repo-changing work. Main validates Planner output and
   dispatches; it does not self-slice repo-changing work.
 - If this file, `status.json`, and `handoff.md` disagree, reconcile or block
@@ -109,9 +109,9 @@ Reviewer PASS criteria:
 
 - Diff touches only owned files.
 - Required verification commands pass and match the expected signal.
-- Acceptance criteria are covered by tests, docs evidence, or explicit
-  rationale.
-- Layer, testing, and workflow rules remain satisfied.
+- Acceptance criteria are covered by verification evidence, docs evidence, or
+  explicit rationale.
+- Layer and workflow rules remain satisfied.
 - Behavior or docs changes stay inside scope and non-scope is untouched.
 - Rules deploy claims, if any, are backed by `rulesDeployStatus.state=deployed`
   and deploy evidence.
@@ -121,7 +121,7 @@ Reviewer REJECT criteria:
 - Diff touches non-owned files without prior coordinator approval.
 - Verification is missing, stale, failed, or not the required command.
 - Acceptance criteria are unmet or unsupported by evidence.
-- Layer, testing, or workflow rules are violated.
+- Layer or workflow rules are violated.
 - Behavior or docs changed outside scope or inside non-scope.
 - Final evidence implies deployed rules or deployed product behavior without
   `rulesDeployStatus.state=deployed` and deploy evidence.
