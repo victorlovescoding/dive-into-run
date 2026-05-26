@@ -1,6 +1,6 @@
 ---
 name: dive-workflow-router
-description: Use when a user shows repo-changing intent in English or Chinese, including develop, implement, fix, refactor, test, document, 開發, 實作, 修, 修正, 修 bug, 重構, 補測試, 改文件, or 更新文件. Reminds agents to route through this repo's workflow before planning, dispatching, or editing.
+description: Use when a user shows repo-changing intent in English or Chinese, including develop, implement, fix, refactor, document, 開發, 實作, 修, 修正, 修 bug, 重構, 改文件, or 更新文件. Reminds agents to route through this repo's workflow before planning, dispatching, or editing.
 ---
 
 # Dive Workflow Router

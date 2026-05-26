@@ -67,15 +67,6 @@ PR check `ci` failed:
    breakage, missing secret, external service outage, or required scope
    expansion.
 
-Unexpected test-related PR check appears:
-
-1. Inspect which workflow created the check.
-2. Confirm whether branch protection still requires a removed check name.
-3. Fix the workflow or branch-protection configuration before merging.
-4. Stop and ask if the check comes from an external integration or cannot be
-   reconciled from repository configuration.
-
-
 Merge conflict or stale branch:
 
 1. Fetch `origin/main` and inspect conflicts before editing.

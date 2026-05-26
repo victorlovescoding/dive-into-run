@@ -1,7 +1,7 @@
 # Quality Gates Reference
 
 > Last-Verified: 2026-05-24
-> Agent-only. Current gate posture during the testless reset.
+> Agent-only. Current gate posture.
 
 ## Active Local Gates
 
@@ -15,27 +15,10 @@ Pre-commit currently runs:
 6. `npm run workflow:links`
 7. `npm run audit:use-effect-data-fetching`
 
-Test-related gates are disabled:
-
-- browser/server Vitest
-- coverage
-- branch test routing
-- Playwright E2E
-- mock-boundary audit
-- flaky-pattern audit
-- Playwright official-only audit
-- Firestore rules test workflow
-
 ## Active CI Gates
 
-The `ci` job keeps non-test gates: doc freshness, workflow checks, lint,
-useEffect data-fetch audit, type-check, dependency cruiser, spellcheck, and
-build.
-
-No E2E job is present in CI during the testless reset.
-
-The Firestore Rules Gate workflow remains present, but its test execution is
-disabled during the testless reset.
+The `ci` job includes doc freshness, workflow checks, lint, useEffect
+data-fetch audit, type-check, dependency cruiser, spellcheck, and build.
 
 ## Dangerous Command Guard
 

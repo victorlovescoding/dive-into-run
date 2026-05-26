@@ -124,7 +124,6 @@ docs/
 ├── FRONTEND.md
 ├── PLANS.md
 ├── PRODUCT_SENSE.md
-├── QUALITY_SCORE.md
 ├── RELIABILITY.md
 └── SECURITY.md
 ```

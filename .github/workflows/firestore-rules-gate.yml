@@ -10,5 +10,5 @@ jobs:
   firestore-rules-gate:
     runs-on: ubuntu-latest
     steps:
-      - name: Firestore rules test gate disabled
-        run: echo "Firestore rules test gate disabled for testless reset."
+      - name: Firestore rules gate placeholder
+        run: echo "Firestore rules gate placeholder is intentionally inactive."

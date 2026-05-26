@@ -8,9 +8,7 @@ tracked_docs=(
   "AGENTS.md"
   "docs/superpowers/workflow.md"
   ".codex/references/quality-gates.md"
-  ".codex/references/testing-handbook.md"
   ".codex/references/review-standards.md"
-  "docs/QUALITY_SCORE.md"
 )
 
 if [[ -n "${DOC_FRESHNESS_ROOT:-}" ]]; then

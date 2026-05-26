@@ -19,15 +19,14 @@ active workflow state and are not resume entrypoints.
 - Put feature state on disk so compacted or fresh sessions can resume from files, not transcript memory.
 - Use a Planner subagent to slice repo-changing work before dispatch.
 - Require Engineer + Reviewer pairing for every independently deliverable task slice.
-- Route repo-changing edits through Engineer subagents first, including development, bugfix, refactor, testing, and docs work.
+- Route repo-changing edits through Engineer subagents first, including development, bugfix, refactor, and docs work.
 - Preserve repo conventions: `AGENTS.md` is the entry map and `specs/` stores
-  planning artifacts. Executable tests are temporarily removed during the
-  testless reset.
+  planning artifacts.
 
 ## Task Profile Routing
 
-When the user asks to develop, implement, fix, refactor, test, document, 開發,
-實作, 修, 修正, 修 bug, 重構, 補測試, 改文件, 更新文件, or otherwise make
+When the user asks to develop, implement, fix, refactor, document, 開發,
+實作, 修, 修正, 修 bug, 重構, 改文件, 更新文件, or otherwise make
 repo-changing work, read this workflow before planning, dispatching, or
 editing. These phrases indicate repo-changing intent only; intent detection is
 not edit authorization, and edits still require explicit user confirmation.
@@ -42,7 +41,7 @@ Use Complexity C0-C4 and Risk R0-R4, then select Profile P0-P4 by the higher
 score. Any R4 task escalates directly to P4. If classification is unclear,
 choose the higher profile or stop and ask.
 
-Bugfix, maintenance, refactor, testing, docs, and other repo-changing work do
+Bugfix, maintenance, refactor, docs, and other repo-changing work do
 not automatically use the full feature five-file set. P1/P2 work uses the
 smallest explicit scope and fresh verification that proves the change. P3 work
 uses an explicit task contract; keep durable artifacts compact unless the task
@@ -93,7 +92,7 @@ under `specs/065-saved-content-favorites` for branch
 | File | Purpose |
 | ---- | ------- |
 | `spec.md` | Product intent, user scenarios, requirements, success criteria. No implementation details unless needed to avoid ambiguity. |
-| `plan.md` | Technical approach, file responsibilities, data flow, testing strategy, risk analysis. |
+| `plan.md` | Technical approach, file responsibilities, data flow, verification strategy, risk analysis. |
 | `tasks.md` | Human-readable task board with Engineer/Reviewer pairs, dependencies, acceptance criteria, verification commands, and commit checkpoints. |
 | `handoff.md` | Live brief for the next session: current state, next read order, latest verification, blockers, and pitfalls. |
 | `status.json` | Machine-readable dispatcher state matching `docs/superpowers/status.schema.json`. New state uses schemaVersion 3. |
@@ -145,7 +144,7 @@ legacy artifacts remain provenance, not current global rules.
    - User approval of the spec plus explicit start authorization unlocks the automated phases below.
 4. `writing-plans`
    - Produce `specs/<feature>/plan.md` and seed task slices.
-   - Plans must be decision-complete: exact paths, commands, testing expectations, and stop conditions.
+   - Plans must be decision-complete: exact paths, commands, verification expectations, and stop conditions.
    - Cross-feature architecture or workflow decisions must check `docs/decisions/INDEX.md` and the relevant ADRs first.
    - New long-term cross-feature decisions should create or update an ADR.
 5. Planner subagent
@@ -158,8 +157,8 @@ legacy artifacts remain provenance, not current global rules.
      become prerequisite tasks.
 6. `subagent-driven-development`
    - Main agent dispatches fresh task-local subagents.
-   - Engineer owns implementation for one task slice, including docs-only and
-     test-only repo changes.
+   - Engineer owns implementation for one task slice, including docs-only repo
+     changes.
    - Reviewer verifies the same non-read-only repo-changing slice before the
      task can be marked complete.
 7. `verification-before-completion`
@@ -208,14 +207,14 @@ Staff by task profile:
 
 - P0: Main plus zero or one Explorer.
 - P1: Main, one Engineer, one Reviewer; Debugger only for unclear failure.
-- P2: Main, one Engineer, one Reviewer; add Test Strategist when needed;
-  Verifier recommended before commit or PR.
-- P3: Main, Architect advisor, Planner, Test Strategist, one
-  Engineer/Reviewer pair; Debugger mandatory on any failure; Verifier
-  mandatory; Release Manager only for closeout.
+- P2: Main, one Engineer, one Reviewer; Verifier recommended before commit or
+  PR.
+- P3: Main, Architect advisor, Planner, one Engineer/Reviewer pair; Debugger
+  mandatory on any failure; Verifier mandatory; Release Manager only for
+  closeout.
 - P4: Main, PM/Requirements, UX/UI, Feasibility advisor, Architect, Planner,
-  Test Strategist, one to three Engineer/Reviewer lanes, Debugger on failure,
-  Verifier, and Release Manager.
+  one to three Engineer/Reviewer lanes, Debugger on failure, Verifier, and
+  Release Manager.
 
 Default to one Engineer/Reviewer pair. Same-wave parallel lanes are allowed
 only with completely disjoint owned files, one Reviewer per Engineer lane, no
@@ -268,8 +267,8 @@ The main agent must not:
   control-plane operation.
 - Replace Engineer or Reviewer investigation with its own investigation.
 - Directly implement, review, debug, or refactor repo-changing work.
-- Directly edit production code, executable tests, docs, workflow docs, ADRs,
-  `.codex/**`, scripts, config, or other repo files during repo-changing tasks;
+- Directly edit production code, docs, workflow docs, ADRs, `.codex/**`,
+  scripts, config, or other repo files during repo-changing tasks;
   actual edits go first to an Engineer subagent. Workflow state updates listed
   above are the narrow exception.
 - Expand an Engineer write set after dispatch without an explicit plan update.
@@ -425,21 +424,18 @@ Recommended maximum in a shared worktree is two to three Engineer/Reviewer pairs
 Shared helper, config, lockfile, or workflow state writes must serialize, or be
 split into prerequisite tasks that complete before dependent waves.
 
-## Testing And Debugging Rules
+## Debugging And Browser Evidence
 
-- Before writing tests or fixing bugs, Engineer must read the blocking rules and
-  the relevant routed section of `.codex/references/testing-handbook.md`; do
-  not eager-load the whole handbook when the task only needs one test type.
-- Behavior changes follow TDD: RED -> GREEN -> REFACTOR.
-- Unit, integration, server, or E2E coverage is selected by behavior and risk; do not add every test type mechanically.
-- Test failures and unexpected behavior trigger `systematic-debugging`: reproduce, inspect evidence, find root cause, then fix.
-- Do not add flaky patterns, forbidden internal mocks, sleeps, `fireEvent`, `container.querySelector`, inline disables, or `@ts-ignore`.
+- Unexpected behavior triggers `systematic-debugging`: reproduce, inspect
+  evidence, find root cause, then fix.
+- Do not add forbidden internal mocks, sleeps, inline disables, or
+  `@ts-ignore`.
 - UI task slices must include browser evidence using the sensor in
   `.codex/rules/sensors.md`. Prefer Chrome DevTools MCP when callable; fallback
   to the Codex Chrome plugin or available Browser surface and record the tool.
 - Browser evidence is required for UI conformance but does not replace
-  Playwright, Vitest, CI, or Reviewer checks, and cannot be used by the main
-  agent for self-review.
+  required verification gates or Reviewer checks, and cannot be used by the
+  main agent for self-review.
 
 ## Stop Conditions
 
@@ -455,7 +451,8 @@ Stop and ask the user when any of these occurs:
   `deployed` with deploy evidence.
 - The task requires forbidden scope, a new dependency, or a broad refactor.
 - The same task is rejected by Reviewer twice without a clear fix path.
-- CI or tests fail for a non-flaky reason that points to a flawed plan or pre-existing system problem.
+- CI or verification fails for a reason that points to a flawed plan or
+  pre-existing system problem.
 - PR conflict, remote merge block, or destructive cleanup is required.
 
 ## Commit And Closeout Policy

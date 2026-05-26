@@ -15,12 +15,11 @@
 | ---- | ------ | -------------- |
 | `<path>` | Create/Modify | <responsibility> |
 
-## Testing Strategy
+## Verification Strategy
 
-- Required reference before test work: `.codex/references/testing-handbook.md`
-- RED target: <test file / behavior>
-- GREEN target: <production behavior>
-- Regression coverage: <unit/integration/server/e2e decision and reason>
+- Required local gates: <commands and expected signals>
+- Behavior or document evidence target: <observable proof>
+- Regression risk and mitigation: <risk and verification rationale>
 
 ## Workflow State
 
