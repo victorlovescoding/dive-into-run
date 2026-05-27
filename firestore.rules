@@ -20,7 +20,40 @@ service cloud.firestore {
     }
 
     function protectedUserProfileFields() {
-      return ['followersCount', 'followingCount', 'privacy'];
+      return [
+        'followersCount',
+        'followingCount',
+        'privacy',
+        'accountStatus',
+        'deletionRequestedAt',
+        'deletionScheduledFor'
+      ];
+    }
+
+    function protectedUserProfileCreateFields() {
+      return [
+        'followersCount',
+        'followingCount',
+        'privacy',
+        'deletionRequestedAt',
+        'deletionScheduledFor'
+      ];
+    }
+
+    function accountDeletionManagedFields() {
+      return [
+        'accountDeletionHidden',
+        'accountDeletionHiddenAt',
+        'accountDeletionHiddenBy',
+        'accountDeletionRequestUid',
+        'cancelledByAccountDeletion',
+        'cancelledAt',
+        'actorDeleted'
+      ];
+    }
+
+    function accountDeletionNotificationFields() {
+      return ['accountDeletionRequestUid', 'accountDeletionReason', 'actorDeleted'];
     }
 
     match /users/{userId} {
@@ -29,7 +62,11 @@ service cloud.firestore {
 
       allow create: if isSignedIn()
         && request.auth.uid == userId
-        && !request.resource.data.keys().hasAny(protectedUserProfileFields());
+        && !request.resource.data.keys().hasAny(protectedUserProfileCreateFields())
+        && (
+          !request.resource.data.keys().hasAny(['accountStatus'])
+          || request.resource.data.accountStatus == 'active'
+        );
 
       // 限制本人寫入；只有當「這次更新實際動到 bio 欄位」才驗證 bio
       // 的型別與長度。這避免既有 over-length bio 在 rules 上線後被鎖死，
@@ -79,6 +116,7 @@ service cloud.firestore {
 
       allow create: if isSignedIn()
         && request.resource.data.authorUid == request.auth.uid
+        && !request.resource.data.keys().hasAny(accountDeletionManagedFields())
         && request.resource.data.title is string
         && request.resource.data.title.size() <= 120
         && request.resource.data.content is string
@@ -86,7 +124,11 @@ service cloud.firestore {
 
       // 作者可更新任何欄位；非作者只能更新 commentsCount / likesCount（transaction 用）
       allow update: if isSignedIn() && (
-        request.auth.uid == resource.data.authorUid
+        (
+          request.auth.uid == resource.data.authorUid
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(accountDeletionManagedFields())
+        )
         || (
           request.resource.data.diff(resource.data).changedKeys()
             .hasOnly(['commentsCount', 'likesCount'])
@@ -133,11 +175,14 @@ service cloud.firestore {
 
       allow create: if isSignedIn()
         && request.resource.data.authorUid == request.auth.uid
+        && !request.resource.data.keys().hasAny(accountDeletionManagedFields())
         && request.resource.data.comment is string
         && request.resource.data.comment.size() <= 500;
 
       allow update: if isSignedIn()
-        && request.auth.uid == resource.data.authorUid;
+        && request.auth.uid == resource.data.authorUid
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(accountDeletionManagedFields());
 
       // 留言作者刪自己留言，或文章作者 deletePost cascade
       allow delete: if isSignedIn() && (
@@ -181,6 +226,7 @@ service cloud.firestore {
 
       allow create: if isSignedIn()
         && request.resource.data.hostUid == request.auth.uid
+        && !request.resource.data.keys().hasAny(accountDeletionManagedFields())
         && request.resource.data.title is string
         && request.resource.data.title.size() <= 120
         && request.resource.data.time is timestamp
@@ -195,6 +241,8 @@ service cloud.firestore {
       // 主揪：可更新任何欄位（但 maxParticipants 不可低於目前報名人數）；非主揪：只能更新名額相關欄位
       allow update: if (
         isSignedIn() && request.auth.uid == resource.data.hostUid
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(accountDeletionManagedFields())
         && (!request.resource.data.keys().hasAny(['maxParticipants'])
             || !('participantsCount' in resource.data)
             || request.resource.data.maxParticipants >= resource.data.participantsCount)
@@ -218,6 +266,7 @@ service cloud.firestore {
           && request.auth.uid == uid
           && request.resource.data.uid == uid
           && request.resource.data.eventId == eventId
+          && !request.resource.data.keys().hasAny(accountDeletionManagedFields())
           && request.resource.data.name is string
           && request.resource.data.photoURL is string;
 
@@ -239,11 +288,14 @@ service cloud.firestore {
 
         allow create: if isSignedIn()
           && request.resource.data.authorUid == request.auth.uid
+          && !request.resource.data.keys().hasAny(accountDeletionManagedFields())
           && request.resource.data.content is string
           && request.resource.data.content.size() <= 500;
 
         allow update: if isSignedIn()
-          && request.auth.uid == resource.data.authorUid;
+          && request.auth.uid == resource.data.authorUid
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(accountDeletionManagedFields());
 
         // 留言作者刪自己留言，或主揪 deleteEvent cascade
         allow delete: if isSignedIn() && (
@@ -279,6 +331,7 @@ service cloud.firestore {
       // 任何登入者可建立通知（recipientUid 不能是自己）
       allow create: if isSignedIn()
         && request.resource.data.recipientUid is string
+        && !request.resource.data.keys().hasAny(accountDeletionNotificationFields())
         && request.resource.data.recipientUid != request.auth.uid
         && request.resource.data.actorUid == request.auth.uid
         && request.resource.data.type in [
@@ -300,6 +353,10 @@ service cloud.firestore {
 
       // 不允許刪除
       allow delete: if false;
+    }
+
+    match /accountDeletionRequests/{uid} {
+      allow read, write: if false;
     }
   }
 }

@@ -9,9 +9,15 @@ import Link from 'next/link';
  * @param {object} props.runtime - member runtime boundary。
  * @param {import('react').ReactNode} props.bioEditor - bio editor slot。
  * @param {import('react').ReactNode} props.dashboardTabs - dashboard tabs slot。
+ * @param {import('react').ReactNode} props.accountDeletionDangerZone - account deletion slot。
  * @returns {import('react').ReactElement} member page UI。
  */
-export default function MemberPageScreen({ runtime, bioEditor, dashboardTabs }) {
+export default function MemberPageScreen({
+  runtime,
+  bioEditor,
+  dashboardTabs,
+  accountDeletionDangerZone,
+}) {
   const {
     user,
     name,
@@ -61,6 +67,7 @@ export default function MemberPageScreen({ runtime, bioEditor, dashboardTabs }) 
       )}
       {bioEditor}
       {dashboardTabs}
+      {accountDeletionDangerZone}
     </div>
   );
 }

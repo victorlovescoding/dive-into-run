@@ -7,6 +7,8 @@
  * @typedef {import('@/repo/client/firebase-member-repo').ParentTitleRecord} ParentTitleRecord
  */
 
+import { isAccountDeletionHidden } from '@/config/account-deletion';
+
 /**
  * @typedef {object} MyEventItem
  * @property {string} id - 活動 ID。
@@ -109,15 +111,17 @@ export function sliceMyEventsFromCache(prevResult, pageSize) {
  * @returns {FetchMyEventsResult} Sorted first page plus cache payload.
  */
 export function buildMyEventsPage(eventDocuments, hostedIdsList, pageSize) {
-  const allEvents = eventDocuments.map((document) => {
-    const { data } = document;
+  const allEvents = eventDocuments
+    .filter((document) => !isAccountDeletionHidden(document.data))
+    .map((document) => {
+      const { data } = document;
 
-    return /** @type {MyEventItem} */ ({
-      id: document.id,
-      ...data,
-      participantsCount: data.participantsCount ?? 0,
+      return /** @type {MyEventItem} */ ({
+        id: document.id,
+        ...data,
+        participantsCount: data.participantsCount ?? 0,
+      });
     });
-  });
 
   allEvents.sort((eventA, eventB) => eventB.time.seconds - eventA.time.seconds);
 
@@ -137,13 +141,15 @@ export function buildMyEventsPage(eventDocuments, hostedIdsList, pageSize) {
  */
 export function buildMyPostsPage(postDocuments, lastDoc) {
   return {
-    items: postDocuments.map(
-      (document) =>
-        /** @type {Post} */ ({
-          id: document.id,
-          ...document.data,
-        }),
-    ),
+    items: postDocuments
+      .filter((document) => !isAccountDeletionHidden(document.data))
+      .map(
+        (document) =>
+          /** @type {Post} */ ({
+            id: document.id,
+            ...document.data,
+          }),
+      ),
     lastDoc,
   };
 }
@@ -154,18 +160,20 @@ export function buildMyPostsPage(postDocuments, lastDoc) {
  * @returns {MyCommentItem[]} Comment items with normalized text and empty titles.
  */
 export function buildRawMyCommentItems(commentDocuments) {
-  return commentDocuments.map((document) => {
-    const text = document.source === 'post' ? document.data.comment : document.data.content;
+  return commentDocuments
+    .filter((document) => !isAccountDeletionHidden(document.data))
+    .map((document) => {
+      const text = document.source === 'post' ? document.data.comment : document.data.content;
 
-    return /** @type {MyCommentItem} */ ({
-      id: document.id,
-      source: document.source,
-      parentId: document.parentId,
-      text: /** @type {string} */ (text ?? ''),
-      createdAt: /** @type {import('firebase/firestore').Timestamp} */ (document.data.createdAt),
-      parentTitle: '',
+      return /** @type {MyCommentItem} */ ({
+        id: document.id,
+        source: document.source,
+        parentId: document.parentId,
+        text: /** @type {string} */ (text ?? ''),
+        createdAt: /** @type {import('firebase/firestore').Timestamp} */ (document.data.createdAt),
+        parentTitle: '',
+      });
     });
-  });
 }
 
 /**

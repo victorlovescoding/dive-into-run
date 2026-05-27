@@ -1,0 +1,658 @@
+{
+  "schemaVersion": 3,
+  "feature": "account-deletion",
+  "branch": "073-account-deletion",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-073-account-deletion",
+  "phase": "verified",
+  "activeTask": null,
+  "activeWave": null,
+  "authorizationBoundary": {
+    "edit": true,
+    "commit": true,
+    "push": true,
+    "pullRequest": true,
+    "ciWatch": true,
+    "merge": true,
+    "localMainSync": true,
+    "deployFirestoreRules": true
+  },
+  "currentHead": {
+    "branch": "073-account-deletion",
+    "commit": "7b2e651c77161bdd533ca64dab1c729885982421",
+    "capturedAt": "2026-05-27T16:39:20Z",
+    "summary": "Clean feature worktree created from origin/main before account deletion edits."
+  },
+  "remoteHead": {
+    "remote": "origin",
+    "branch": "main",
+    "commit": "7b2e651c77161bdd533ca64dab1c729885982421",
+    "capturedAt": "2026-05-27T16:39:20Z",
+    "summary": "origin/main at feature start."
+  },
+  "completedTasks": [
+    "T001",
+    "T002",
+    "T003",
+    "T004",
+    "T005",
+    "T006"
+  ],
+  "tasks": [
+    {
+      "id": "T001",
+      "title": "Workflow State And Constants",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-1",
+      "engineer": "Codex Engineer",
+      "reviewer": "Codex Reviewer",
+      "scope": [
+        "Create P4 workflow files.",
+        "Add shared account deletion constants."
+      ],
+      "nonScope": [
+        "Commit, push, PR, CI watch, merge, local main sync, or deploy."
+      ],
+      "ownedFiles": [
+        "specs/account-deletion/spec.md",
+        "specs/account-deletion/plan.md",
+        "specs/account-deletion/tasks.md",
+        "specs/account-deletion/handoff.md",
+        "specs/account-deletion/status.json",
+        "src/config/account-deletion.js"
+      ],
+      "readOnlyContext": [
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-profiles.md",
+        "docs/superpowers/status.schema.json"
+      ],
+      "dependencies": [],
+      "engineerInstructions": [
+        "Keep workflow state consistent with the user-approved plan.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T001.1: P4 files exist under specs/account-deletion.",
+        "AC-T001.2: Authorization boundary records edit-only scope.",
+        "AC-T001.3: No unit-test or TDD requirement is introduced."
+      ],
+      "verification": [
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "exit 0",
+          "lastRun": null
+        }
+      ],
+      "evidence": {
+        "engineerReport": "Initial engineer implementation reported workflow state and constants complete, but no reviewerDecision was recorded. Reconciled by T006 to engineer_done awaiting Reviewer.",
+        "reviewerReport": "Integrated Reviewer PASS covered the full account deletion dirty diff after T006 attempt 2; no Critical, Important, or Minor findings remained.",
+        "commandOutputSummary": [
+          "Previous reported gate evidence existed in handoff/status, but is not treated as Reviewer PASS."
+        ],
+        "changedFilesSummary": [
+          "specs/account-deletion/* workflow files",
+          "src/config/account-deletion.js"
+        ]
+      },
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Required verification commands pass and match the expected signal.",
+        "Acceptance criteria are covered by verification evidence, docs evidence, or explicit rationale.",
+        "Layer and workflow rules remain satisfied.",
+        "Behavior or docs changes stay inside scope and non-scope is untouched."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Acceptance criteria are unmet or unsupported by evidence.",
+        "Layer or workflow rules are violated.",
+        "Behavior or docs changed outside scope or inside non-scope."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Codex Reviewer",
+        "summary": "Integrated Reviewer PASS covered the full account deletion dirty diff after T006 attempt 2; no Critical, Important, or Minor findings remained.",
+        "decidedAt": "2026-05-27T18:14:25Z"
+      }
+    },
+    {
+      "id": "T002",
+      "title": "Server Account Deletion Lifecycle",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-2",
+      "engineer": "Codex Engineer",
+      "reviewer": "Codex Reviewer",
+      "scope": [
+        "Add API route and server use-case/repo logic for GET, POST, DELETE.",
+        "Implement reversible request-time hiding/cancellation/anonymization metadata.",
+        "Implement finalizer cleanup helper callable from Functions and local emulator checks."
+      ],
+      "nonScope": [
+        "Commit, push, PR, CI watch, merge, local main sync, or deploy.",
+        "Unit tests or TDD for v1."
+      ],
+      "ownedFiles": [
+        "src/app/api/account/deletion/route.js",
+        "src/runtime/server/use-cases/account-deletion-server-use-cases.js",
+        "src/repo/server/account-deletion-server-repo.js",
+        "src/config/server/firebase-admin-app.js"
+      ],
+      "readOnlyContext": [
+        "specs/account-deletion/spec.md",
+        "specs/account-deletion/plan.md",
+        "docs/superpowers/task-contract.md"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Keep server logic in repo/server and runtime/server boundaries.",
+        "Modify only owned files unless coordinator approves a follow-up task."
+      ],
+      "acceptanceCriteria": [
+        "AC-T002.1: Authenticated GET, POST, DELETE server path exists.",
+        "AC-T002.2: Request, cancel, and finalizer primitives record reversible metadata for v1.",
+        "AC-T002.3: Side-effect failure cannot leave user state inconsistent without recorded recovery behavior."
+      ],
+      "verification": [
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0 with no changed-file type errors",
+          "lastRun": null
+        }
+      ],
+      "evidence": {
+        "engineerReport": "Initial engineer implementation reported server lifecycle complete. T006 is addressing the pending-user side-effect consistency risk before Reviewer review.",
+        "reviewerReport": "Integrated Reviewer PASS covered the full account deletion dirty diff after T006 attempt 2; no Critical, Important, or Minor findings remained.",
+        "commandOutputSummary": [
+          "Previous type-check evidence was reported, but current T006 must rerun required gates."
+        ],
+        "changedFilesSummary": [
+          "src/app/api/account/deletion/route.js",
+          "src/runtime/server/use-cases/account-deletion-server-use-cases.js",
+          "src/repo/server/account-deletion-server-repo.js",
+          "src/config/server/firebase-admin-app.js"
+        ]
+      },
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Required verification commands pass and match the expected signal.",
+        "Acceptance criteria are covered by verification evidence, docs evidence, or explicit rationale.",
+        "Layer and workflow rules remain satisfied.",
+        "Behavior or docs changes stay inside scope and non-scope is untouched."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Acceptance criteria are unmet or unsupported by evidence.",
+        "Layer or workflow rules are violated.",
+        "Behavior or docs changed outside scope or inside non-scope."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Codex Reviewer",
+        "summary": "Integrated Reviewer PASS covered the full account deletion dirty diff after T006 attempt 2; no Critical, Important, or Minor findings remained.",
+        "decidedAt": "2026-05-27T18:14:25Z"
+      }
+    },
+    {
+      "id": "T003",
+      "title": "Member UI And Pending Gate",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-3",
+      "engineer": "Codex Engineer",
+      "reviewer": "Codex Reviewer",
+      "scope": [
+        "Add Google reauth and client deletion API calls.",
+        "Add /member Danger Zone UI and confirmation modal.",
+        "Add root pending-deletion gate with cancel and sign-out actions."
+      ],
+      "nonScope": [
+        "Commit, push, PR, CI watch, merge, local main sync, or deploy.",
+        "Unit tests or TDD for v1."
+      ],
+      "ownedFiles": [
+        "src/repo/client/firebase-auth-repo.js",
+        "src/service/auth-service.js",
+        "src/runtime/client/use-cases/auth-use-cases.js",
+        "src/runtime/client/use-cases/account-deletion-use-cases.js",
+        "src/runtime/hooks/useMemberPageRuntime.js",
+        "src/runtime/providers/AccountDeletionGate.jsx",
+        "src/runtime/providers/AccountDeletionGate.module.css",
+        "src/app/layout.jsx",
+        "src/app/member/page.jsx",
+        "src/ui/member/MemberPageScreen.jsx",
+        "src/ui/member/AccountDeletionDangerZone.jsx",
+        "src/ui/member/AccountDeletionDangerZone.module.css"
+      ],
+      "readOnlyContext": [
+        "specs/account-deletion/spec.md",
+        "specs/account-deletion/plan.md"
+      ],
+      "dependencies": [
+        "T002"
+      ],
+      "engineerInstructions": [
+        "Keep app route files thin and UI render-only where applicable.",
+        "Modify only owned files unless coordinator approves a follow-up task."
+      ],
+      "acceptanceCriteria": [
+        "AC-T003.1: /member exposes Danger Zone request flow for signed-in users.",
+        "AC-T003.2: Pending-deletion users see the root pending gate with cancel/sign-out actions.",
+        "AC-T003.3: Reauth support uses Firebase client auth APIs."
+      ],
+      "verification": [
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": null
+        }
+      ],
+      "evidence": {
+        "engineerReport": "Initial engineer implementation reported UI and pending gate complete; awaiting Reviewer after T006 follow-up.",
+        "reviewerReport": "Integrated Reviewer PASS covered the full account deletion dirty diff after T006 attempt 2; no Critical, Important, or Minor findings remained.",
+        "commandOutputSummary": [
+          "Previous lint evidence was reported, but current T006 must rerun required gates."
+        ],
+        "changedFilesSummary": [
+          "client auth/use-case/runtime/provider/member UI files for account deletion"
+        ]
+      },
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Required verification commands pass and match the expected signal.",
+        "Acceptance criteria are covered by verification evidence, docs evidence, or explicit rationale.",
+        "Layer and workflow rules remain satisfied.",
+        "Behavior or docs changes stay inside scope and non-scope is untouched."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Acceptance criteria are unmet or unsupported by evidence.",
+        "Layer or workflow rules are violated.",
+        "Behavior or docs changed outside scope or inside non-scope."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Codex Reviewer",
+        "summary": "Integrated Reviewer PASS covered the full account deletion dirty diff after T006 attempt 2; no Critical, Important, or Minor findings remained.",
+        "decidedAt": "2026-05-27T18:14:25Z"
+      }
+    },
+    {
+      "id": "T004",
+      "title": "Public Filtering And Rules",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-4",
+      "engineer": "Codex Engineer",
+      "reviewer": "Codex Reviewer",
+      "scope": [
+        "Hide pending-deletion profiles and account-deletion-hidden posts, comments, events, and hosted-event lists.",
+        "Protect server-owned deletion fields and account deletion request docs in Firestore rules."
+      ],
+      "nonScope": [
+        "Commit, push, PR, CI watch, merge, local main sync, or deploy.",
+        "Unit tests or TDD for v1."
+      ],
+      "ownedFiles": [
+        "src/service/profile-mapper.js",
+        "src/service/profile-server-service.js",
+        "src/service/profile-service.js",
+        "src/service/member-dashboard-service.js",
+        "src/service/post-service.js",
+        "src/service/event-service.js",
+        "firestore.rules",
+        "storage.rules"
+      ],
+      "readOnlyContext": [
+        "specs/account-deletion/spec.md",
+        "specs/account-deletion/plan.md",
+        "firestore.rules",
+        "storage.rules"
+      ],
+      "dependencies": [
+        "T003"
+      ],
+      "engineerInstructions": [
+        "Verify storage.rules is either changed or explicitly documented as not applicable.",
+        "Record any v1 pagination residual risk instead of silently treating it as exact."
+      ],
+      "acceptanceCriteria": [
+        "AC-T004.1: Public reads hide pending-deletion owned profiles/content.",
+        "AC-T004.2: Firestore rules protect server-owned deletion fields and request docs.",
+        "AC-T004.3: storage.rules applicability is documented honestly.",
+        "AC-T004.4: In-memory filtering pagination precision is either fixed or recorded as a v1 residual risk."
+      ],
+      "verification": [
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0 with no changed-file type errors",
+          "lastRun": null
+        }
+      ],
+      "evidence": {
+        "engineerReport": "Initial engineer implementation reported filtering/rules complete. T006 is reconciling storage.rules applicability and pagination residual-risk documentation.",
+        "reviewerReport": "Integrated Reviewer PASS covered the full account deletion dirty diff after T006 attempt 2; no Critical, Important, or Minor findings remained.",
+        "commandOutputSummary": [
+          "Previous type-check evidence was reported, but current T006 must rerun required gates."
+        ],
+        "changedFilesSummary": [
+          "profile/post/event service filtering files",
+          "firestore.rules"
+        ]
+      },
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Required verification commands pass and match the expected signal.",
+        "Acceptance criteria are covered by verification evidence, docs evidence, or explicit rationale.",
+        "Layer and workflow rules remain satisfied.",
+        "Behavior or docs changes stay inside scope and non-scope is untouched."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Acceptance criteria are unmet or unsupported by evidence.",
+        "Layer or workflow rules are violated.",
+        "Behavior or docs changed outside scope or inside non-scope."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Codex Reviewer",
+        "summary": "Integrated Reviewer PASS covered the full account deletion dirty diff after T006 attempt 2; no Critical, Important, or Minor findings remained.",
+        "decidedAt": "2026-05-27T18:14:25Z"
+      }
+    },
+    {
+      "id": "T005",
+      "title": "Scheduled Finalizer And Verification",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-5",
+      "engineer": "Codex Engineer",
+      "reviewer": "Codex Reviewer",
+      "scope": [
+        "Wire firebase-functions/v2/scheduler finalizer in functions/index.js.",
+        "Run authenticated emulator walkthrough and required repo gates.",
+        "Record evidence in handoff.md and status.json."
+      ],
+      "nonScope": [
+        "Commit, push, PR, CI watch, merge, local main sync, or deploy.",
+        "Unit tests or TDD for v1."
+      ],
+      "ownedFiles": [
+        "functions/index.js",
+        "specs/account-deletion/handoff.md",
+        "specs/account-deletion/status.json"
+      ],
+      "readOnlyContext": [
+        "specs/account-deletion/spec.md",
+        "specs/account-deletion/plan.md"
+      ],
+      "dependencies": [
+        "T004"
+      ],
+      "engineerInstructions": [
+        "Record local emulator evidence only; do not imply production deployment.",
+        "Modify only owned files unless coordinator approves a follow-up task."
+      ],
+      "acceptanceCriteria": [
+        "AC-T005.1: Scheduled finalizer entrypoint is wired.",
+        "AC-T005.2: Local authenticated emulator walkthrough evidence is recorded.",
+        "AC-T005.3: Production deploy remains explicitly unauthorized."
+      ],
+      "verification": [
+        {
+          "command": "npm run build",
+          "expectedSignal": "exit 0",
+          "lastRun": null
+        },
+        {
+          "command": "firebase emulators:exec --only auth,firestore,storage,functions --project dive-into-run \"npm run test:account-deletion:emulator\"",
+          "expectedSignal": "exit 0 and authenticated flow evidence",
+          "lastRun": null
+        }
+      ],
+      "evidence": {
+        "engineerReport": "Initial engineer implementation reported scheduled finalizer and emulator walkthrough complete; awaiting Reviewer after T006 follow-up.",
+        "reviewerReport": "Integrated Reviewer PASS covered the full account deletion dirty diff after T006 attempt 2; no Critical, Important, or Minor findings remained.",
+        "commandOutputSummary": [
+          "Previous build/emulator evidence was reported, but current T006 must rerun available required gates."
+        ],
+        "changedFilesSummary": [
+          "functions/index.js",
+          "specs/account-deletion/handoff.md",
+          "specs/account-deletion/status.json"
+        ]
+      },
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Required verification commands pass and match the expected signal.",
+        "Acceptance criteria are covered by verification evidence, docs evidence, or explicit rationale.",
+        "Layer and workflow rules remain satisfied.",
+        "Behavior or docs changes stay inside scope and non-scope is untouched."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Acceptance criteria are unmet or unsupported by evidence.",
+        "Layer or workflow rules are violated.",
+        "Behavior or docs changed outside scope or inside non-scope."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Codex Reviewer",
+        "summary": "Integrated Reviewer PASS covered the full account deletion dirty diff after T006 attempt 2; no Critical, Important, or Minor findings remained.",
+        "decidedAt": "2026-05-27T18:14:25Z"
+      }
+    },
+    {
+      "id": "T006",
+      "title": "Workflow Reconciliation And Consistency Follow-up",
+      "state": "completed",
+      "attempt": 2,
+      "wave": "wave-6",
+      "engineer": "Codex Engineer",
+      "reviewer": "Codex Reviewer",
+      "scope": [
+        "Record T006 attempt 1 review_rejected honestly before code edits.",
+        "Fix rollback/finalizer behavior so failed rollback requests cannot later finalize and delete active users.",
+        "Fix account deletion finalizer cleanup so post comment history subcollections are deleted like event comment history.",
+        "Run required local verification without commit, stage, push, PR, deploy, or unit-test/TDD expansion."
+      ],
+      "nonScope": [
+        "No commit, stage, push, PR, CI watch, merge, local main sync, deploy, or production rules/functions deployment.",
+        "No unit tests or TDD for v1 unless explicitly reauthorized after BLOCKED.",
+        "No broad account deletion redesign or unrelated cleanup."
+      ],
+      "ownedFiles": [
+        "src/repo/server/account-deletion-server-repo.js",
+        "functions/index.js",
+        "specs/account-deletion/tasks.md",
+        "specs/account-deletion/status.json",
+        "specs/account-deletion/handoff.md",
+        "specs/account-deletion/plan.md"
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-profiles.md",
+        ".codex/references/subagent-roles.md",
+        "docs/superpowers/task-contract.md",
+        "specs/account-deletion/spec.md",
+        "specs/account-deletion/plan.md",
+        "specs/account-deletion/tasks.md",
+        "specs/account-deletion/handoff.md",
+        "specs/account-deletion/status.json"
+      ],
+      "dependencies": [
+        "T001",
+        "T002",
+        "T003",
+        "T004",
+        "T005"
+      ],
+      "engineerInstructions": [
+        "Attempt 2 starts from Reviewer rejection; do not revert unrelated worktree changes.",
+        "Keep fixes minimal and inside owned files.",
+        "Do not record review_passed or completed without Reviewer decision.",
+        "Report command exit codes and residual risks."
+      ],
+      "acceptanceCriteria": [
+        "AC-T006.2.1: Attempt 1 review_rejected and attempt 2 state are recorded in tasks.md, status.json, and handoff.md before code edits.",
+        "AC-T006.2.2: Side-effect rollback prevents failed requests from being selected or finalized later.",
+        "AC-T006.2.3: Account deletion cleanup deletes post comment history subcollections before deleting post comments.",
+        "AC-T006.2.4: Required local verification is rerun within the authorization boundary."
+      ],
+      "verification": [
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed files linted successfully; React settings warning only.",
+            "verifiedAt": "2026-05-27T18:09:40Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0 with no changed-file type errors",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type check reported no errors.",
+            "verifiedAt": "2026-05-27T18:09:40Z"
+          }
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "9 status files valid and synced after attempt 2 evidence write.",
+            "verifiedAt": "2026-05-27T18:10:58Z"
+          }
+        }
+      ],
+      "evidence": {
+        "engineerReport": "Attempt 2 recorded T006 attempt 1 review_rejected first, then fixed both Reviewer-blocking defects. Rollback now removes scheduledFor, sets finalizationBlocked=true and failureStage=request_side_effects, and finalizer eligibility requires pending/finalizing or failed with finalizeStartedAt and no finalizationBlocked marker. Finalizer failed retries remain possible only for failures that reached finalization. Post deletion now uses the same comments-with-history cleanup helper as event deletion in both repo/server and functions/index.js.",
+        "reviewerReport": "review_passed: T006 attempt 2 resolves the prior rollback/finalizer eligibility bug and post comment history cleanup gap. Workflow state records attempt 1 rejection and attempt 2 engineer_done without fake PASS/completed state. Fresh lint, changed-file type check, workflow check, and syntax checks passed.",
+        "commandOutputSummary": [
+          "npm run lint:changed: exit 0; React settings warning only.",
+          "npm run type-check:changed: exit 0; No type errors in changed files.",
+          "npm run workflow:check: exit 0; 9 status files valid and synced after attempt 2 evidence write.",
+          "node --check functions/index.js: exit 0.",
+          "node --check src/repo/server/account-deletion-server-repo.js: exit 0."
+        ],
+        "changedFilesSummary": [
+          "src/repo/server/account-deletion-server-repo.js: rollback request no longer remains due/finalizable; finalizer skips non-finalizable failed requests; post comments delete history subcollections.",
+          "functions/index.js: finalizer mirrors non-finalizable failed-request guard and post comment history cleanup.",
+          "specs/account-deletion/status.json: T006 attempt 1 rejection and attempt 2 engineer_done evidence recorded.",
+          "specs/account-deletion/tasks.md: T006 attempt 2 task contract and verification evidence recorded.",
+          "specs/account-deletion/handoff.md: attempt 2 changes and residual state recorded."
+        ]
+      },
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Required verification commands pass and match the expected signal.",
+        "Acceptance criteria are covered by verification evidence, docs evidence, or explicit rationale.",
+        "Layer and workflow rules remain satisfied.",
+        "Behavior or docs changes stay inside scope and non-scope is untouched."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Acceptance criteria are unmet or unsupported by evidence.",
+        "Layer or workflow rules are violated.",
+        "Behavior or docs changed outside scope or inside non-scope."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Codex Reviewer",
+        "summary": "T006 attempt 2 resolves the prior rollback/finalizer eligibility bug and post comment history cleanup gap. Workflow state records attempt 1 rejection and attempt 2 engineer_done without fake PASS/completed state. Fresh lint, changed-file type check, workflow check, and syntax checks passed.",
+        "decidedAt": "2026-05-27T18:14:25Z"
+      }
+    }
+  ],
+  "blocked": false,
+  "blockedReason": null,
+  "lastVerifiedCommit": null,
+  "phaseCommits": [],
+  "rulesDeployStatus": {
+    "state": "pending",
+    "required": true,
+    "changed": true,
+    "evidence": [],
+    "deployedCommit": null
+  },
+  "incidents": [
+    {
+      "id": "INC-WORKFLOW-DRIFT-20260527",
+      "state": "mitigated",
+      "summary": "tasks.md claimed T001-T005 completed while status.json only carried T001 detail and no reviewerDecision. T006 reconciles state to engineer_done/in_progress without Reviewer PASS.",
+      "openedAt": "2026-05-27T17:49:26Z",
+      "closedAt": "2026-05-27T17:49:26Z"
+    }
+  ],
+  "lastVerification": [
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "Changed files linted successfully; React settings warning only.",
+      "verifiedAt": "2026-05-27T18:27:43Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "Changed-file type check reported no errors.",
+      "verifiedAt": "2026-05-27T18:27:43Z"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "9 status files valid and synced after Reviewer PASS state sync.",
+      "verifiedAt": "2026-05-27T18:27:43Z"
+    },
+    {
+      "command": "npm run workflow:links",
+      "exitCode": 0,
+      "summary": "37 local workflow links scanned and all local references exist.",
+      "verifiedAt": "2026-05-27T18:27:43Z"
+    },
+    {
+      "command": "npm run depcruise",
+      "exitCode": 0,
+      "summary": "No dependency violations found; Node MODULE_TYPELESS_PACKAGE_JSON warning from historical spec script only.",
+      "verifiedAt": "2026-05-27T18:27:43Z"
+    },
+    {
+      "command": "node --check functions/index.js",
+      "exitCode": 0,
+      "summary": "Functions finalizer syntax check passed.",
+      "verifiedAt": "2026-05-27T18:27:43Z"
+    },
+    {
+      "command": "node --check src/repo/server/account-deletion-server-repo.js",
+      "exitCode": 0,
+      "summary": "Server account deletion repo syntax check passed.",
+      "verifiedAt": "2026-05-27T18:27:43Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "summary": "Next production build completed successfully.",
+      "verifiedAt": "2026-05-27T18:27:43Z"
+    },
+    {
+      "command": "firebase emulators:exec --only auth,firestore,storage,functions --project dive-into-run \"node account-deletion-emulator-check.mjs\"",
+      "exitCode": 0,
+      "summary": "Authenticated emulator flow passed: request, pending gate, cancel, finalizer deletion, post comment history cleanup, blocked failed-request skip, and same-email new account.",
+      "verifiedAt": "2026-05-27T18:27:43Z"
+    }
+  ],
+  "updatedAt": "2026-05-27T18:27:43Z"
+}
