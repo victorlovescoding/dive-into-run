@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import BookmarkButton from '@/components/BookmarkButton';
 import UserLink from '@/components/UserLink';
@@ -161,13 +161,44 @@ function CommentMeta({ postId, count, truncate }) {
  * @param {string} props.postId - 文章 ID。
  * @param {boolean} props.isOpen - 選單是否展開。
  * @param {(postId: string, e: import('react').MouseEvent) => void} props.onToggleMenu - 切換選單。
+ * @param {() => void} props.onCloseMenu - 關閉選單。
  * @param {(postId: string) => void} props.onEdit - 編輯回呼。
  * @param {(postId: string) => void} props.onDelete - 刪除回呼。
  * @returns {import('react').ReactElement} 選單元件。
  */
-function OwnerMenu({ postId, isOpen, onToggleMenu, onEdit, onDelete }) {
+function OwnerMenu({ postId, isOpen, onToggleMenu, onCloseMenu, onEdit, onDelete }) {
+  const menuRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    /** @param {MouseEvent} event - document mousedown event. */
+    function handleMouseDown(event) {
+      const { target } = event;
+      if (!(target instanceof Node)) return;
+      if (menuRef.current && !menuRef.current.contains(target)) {
+        onCloseMenu();
+      }
+    }
+
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, [isOpen, onCloseMenu]);
+
+  /** 關閉選單並進入編輯流程。 */
+  function handleEdit() {
+    onCloseMenu();
+    onEdit(postId);
+  }
+
+  /** 關閉選單並進入刪除流程。 */
+  function handleDelete() {
+    onCloseMenu();
+    onDelete(postId);
+  }
+
   return (
-    <div className={styles.menuWrapper}>
+    <div ref={menuRef} className={styles.menuWrapper}>
       <button
         type="button"
         className={styles.menuButton}
@@ -185,7 +216,7 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onEdit, onDelete }) {
               type="button"
               role="menuitem"
               className={styles.menuItem}
-              onClick={() => onEdit(postId)}
+              onClick={handleEdit}
             >
               編輯
             </button>
@@ -195,7 +226,7 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onEdit, onDelete }) {
               type="button"
               role="menuitem"
               className={styles.menuItem}
-              onClick={() => onDelete(postId)}
+              onClick={handleDelete}
             >
               刪除
             </button>
@@ -212,11 +243,12 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onEdit, onDelete }) {
  * @property {boolean} [truncate] - 是否啟用內容截斷（列表頁 true，詳文頁 false），預設 true。
  * @property {string} [openMenuPostId] - 目前展開選單的文章 ID。
  * @property {(postId: string, e: import('react').MouseEvent) => void} [onToggleMenu] - 切換選單回呼。
+ * @property {() => void} [onCloseMenu] - 關閉目前展開的作者選單。
  * @property {(postId: string) => void} [onEdit] - 編輯回呼。
  * @property {(postId: string) => void} [onDelete] - 刪除回呼。
  * @property {(postId: string) => void} [onLike] - 按讚回呼。
  * @property {(postId: string) => void | Promise<void>} [onToggleFavorite] - 收藏切換回呼。
- * @property {import('react').ReactNode} [children] - 額外內容（詳文頁用，如 ShareButton）。
+ * @property {import('react').ReactNode} [children] - 額外 meta action（詳文頁用，如分享/複製）。
  * @property {import('react').Key} [key] - React reconciler 專用 key；非元件內部使用的 prop，
  *   但為了讓 JSDoc-based `checkJs` 不誤報 "Property 'key' does not exist on type 'PostCardProps'"，
  *   需明確列出。後續若改用 `React.ComponentProps` / `React.PropsWithChildren` 可移除。
@@ -232,6 +264,7 @@ export default function PostCard({
   truncate = true,
   openMenuPostId,
   onToggleMenu,
+  onCloseMenu,
   onEdit,
   onDelete,
   onLike,
@@ -278,6 +311,7 @@ export default function PostCard({
             name={displayName}
             photoURL={post.authorImgURL}
             size={36}
+            className={styles.authorLink}
           />
           {timeText && (
             <>
@@ -286,11 +320,12 @@ export default function PostCard({
             </>
           )}
         </div>
-        {post.isAuthor && onToggleMenu && onEdit && onDelete && (
+        {post.isAuthor && onToggleMenu && onCloseMenu && onEdit && onDelete && (
           <OwnerMenu
             postId={post.id}
             isOpen={isMenuOpen}
             onToggleMenu={onToggleMenu}
+            onCloseMenu={onCloseMenu}
             onEdit={onEdit}
             onDelete={onDelete}
           />
@@ -331,16 +366,17 @@ export default function PostCard({
 
           <CommentMeta postId={post.id} count={post.commentsCount} truncate={truncate} />
         </div>
-        <BookmarkButton
-          isActive={!!post.isFavorited}
-          label="收藏文章"
-          activeLabel="取消收藏文章"
-          className={styles.bookmarkButton}
-          onClick={() => onToggleFavorite?.(post.id)}
-        />
+        <div className={styles.metaTrailingActions}>
+          <BookmarkButton
+            isActive={!!post.isFavorited}
+            label="收藏文章"
+            activeLabel="取消收藏文章"
+            className={styles.bookmarkButton}
+            onClick={() => onToggleFavorite?.(post.id)}
+          />
+          {children}
+        </div>
       </div>
-
-      {children}
     </article>
   );
 }

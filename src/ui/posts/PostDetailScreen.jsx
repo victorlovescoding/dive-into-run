@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import CommentCard from '@/components/CommentCard';
@@ -8,6 +9,169 @@ import PostCard from '@/components/PostCard';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import ShareButton from '@/components/ShareButton';
 import styles from './PostDetailScreen.module.css';
+
+/**
+ * 判斷 ShareButton 是否會走原生分享路徑。
+ * 條件需與 ShareButton 內部的 native-share 分支一致，避免桌面環境顯示重複複製入口。
+ * @returns {boolean} 支援原生分享且主要 pointer 為 coarse 時回傳 true。
+ */
+function supportsShareButtonNativeShare() {
+  return (
+    typeof navigator !== 'undefined' &&
+    typeof navigator.share === 'function' &&
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(pointer: coarse)').matches
+  );
+}
+
+/**
+ * 原生分享支援度在此頁只需 snapshot；提供給 useSyncExternalStore。
+ * @returns {() => void} no-op unsubscribe。
+ */
+function subscribeToShareSupport() {
+  return () => {};
+}
+
+/**
+ * Server snapshot 固定為 false，避免 hydration 期間產生不一致 markup。
+ * @returns {boolean} server 端不渲染原生分享按鈕。
+ */
+function getServerShareSupportSnapshot() {
+  return false;
+}
+
+/**
+ * 用 textarea fallback 同步複製文字。
+ * @param {string} text - 要複製的文字。
+ * @returns {boolean} 複製是否成功。
+ */
+function copyViaTextarea(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  try {
+    textarea.select();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Clipboard API fallback for non-secure contexts
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
+/**
+ * 優先用 Clipboard API 複製網址，失敗時使用 textarea fallback。
+ * @param {string} url - 要複製的文章網址。
+ * @returns {Promise<boolean>} 複製成功時回傳 true。
+ */
+async function copyPostUrl(url) {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+      return true;
+    }
+  } catch {
+    return copyViaTextarea(url);
+  }
+  return copyViaTextarea(url);
+}
+
+/**
+ * 重疊方塊複製 icon。
+ * @returns {import('react').ReactElement} SVG icon。
+ */
+function CopyIcon() {
+  return (
+    <svg className={styles.copyIcon} viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="8" y="8" width="11" height="11" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+/**
+ * 複製成功 check icon。
+ * @returns {import('react').ReactElement} SVG icon。
+ */
+function CheckIcon() {
+  return (
+    <svg className={styles.copyIcon} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+/**
+ * 文章詳情頁專用複製連結按鈕。
+ * @param {object} props - 元件 props。
+ * @param {string} props.url - 要複製的文章網址。
+ * @returns {import('react').ReactElement} 複製連結按鈕。
+ */
+function CopyLinkButton({ url }) {
+  const [copied, setCopied] = useState(false);
+  const resetTimeoutRef = useRef(/** @type {number | null} */ (null));
+
+  useEffect(() => () => {
+    if (resetTimeoutRef.current !== null) {
+      window.clearTimeout(resetTimeoutRef.current);
+    }
+  }, []);
+
+  const handleCopy = useCallback(async () => {
+    const didCopy = await copyPostUrl(url);
+    if (!didCopy) return;
+
+    setCopied(true);
+    if (resetTimeoutRef.current !== null) {
+      window.clearTimeout(resetTimeoutRef.current);
+    }
+    resetTimeoutRef.current = window.setTimeout(() => {
+      setCopied(false);
+      resetTimeoutRef.current = null;
+    }, 2000);
+  }, [url]);
+
+  const label = copied ? '已複製連結' : '複製連結';
+  const icon = copied ? <CheckIcon /> : <CopyIcon />;
+
+  return (
+    <button
+      type="button"
+      className={`${styles.copyLinkButton}${copied ? ` ${styles.copyLinkButtonCopied}` : ''}`}
+      onClick={handleCopy}
+      aria-label={label}
+      title={label}
+    >
+      {icon}
+    </button>
+  );
+}
+
+/**
+ * 文章詳情頁 meta row 右側複製 / 分享群組。
+ * @param {object} props - 元件 props。
+ * @param {string} props.title - 分享標題。
+ * @param {string} props.url - 文章網址。
+ * @returns {import('react').ReactElement} 文章動作群組。
+ */
+function PostDetailActions({ title, url }) {
+  const canNativeShare = useSyncExternalStore(
+    subscribeToShareSupport,
+    supportsShareButtonNativeShare,
+    getServerShareSupportSnapshot,
+  );
+
+  return (
+    <div className={styles.postActionGroup}>
+      <CopyLinkButton url={url} />
+      {canNativeShare && <ShareButton title={title} url={url} />}
+    </div>
+  );
+}
 
 /**
  * 將 post-detail runtime 留言物件映射為 CommentCard 期望的格式。
@@ -62,6 +226,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     setTitle,
     setContent,
     handleToggleMenu,
+    handleCloseMenu,
     handleOpenEdit,
     handleSubmitPost,
     handleDeletePost,
@@ -99,12 +264,13 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
             truncate={false}
             openMenuPostId={openMenuPostId}
             onToggleMenu={handleToggleMenu}
+            onCloseMenu={handleCloseMenu}
             onEdit={handleOpenEdit}
             onDelete={handleDeletePost}
             onLike={handleToggleLike}
             onToggleFavorite={handleToggleFavoritePost}
           >
-            <ShareButton title={post.title} url={shareUrl} />
+            <PostDetailActions title={post.title} url={shareUrl} />
           </PostCard>
 
           <section className={styles.commentsSection}>
