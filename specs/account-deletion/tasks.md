@@ -64,6 +64,8 @@ Verification commands and observed signal:
 | `node --check src/repo/server/account-deletion-server-repo.js` | exit 0 |
 | `npm run build` | exit 0 |
 | `firebase emulators:exec --only auth,firestore,storage,functions --project dive-into-run "node account-deletion-emulator-check.mjs"` | exit 0; authenticated flow verified request, pending gate, cancel, finalizer cleanup, blocked failed-request skip, and same-email new account |
+| `firebase functions:artifacts:setpolicy --location us-central1 --days 1 --force --project dive-into-run` | exit 0; cleanup policy set for us-central1 function images older than 1 day |
+| `firebase deploy --only firestore:rules,functions --project dive-into-run` | exit 0; Firestore rules released and `finalizeAccountDeletions(us-central1)` present |
 
 Reviewer result:
 

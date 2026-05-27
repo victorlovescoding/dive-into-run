@@ -3,7 +3,7 @@
   "feature": "account-deletion",
   "branch": "073-account-deletion",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-073-account-deletion",
-  "phase": "verified",
+  "phase": "deployed",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -583,11 +583,24 @@
   "lastVerifiedCommit": null,
   "phaseCommits": [],
   "rulesDeployStatus": {
-    "state": "pending",
+    "state": "deployed",
     "required": true,
     "changed": true,
-    "evidence": [],
-    "deployedCommit": null
+    "evidence": [
+      {
+        "command": "firebase functions:artifacts:setpolicy --location us-central1 --days 1 --force --project dive-into-run",
+        "exitCode": 0,
+        "summary": "Set us-central1 gcf-artifacts cleanup policy to delete function container images older than 1 day.",
+        "verifiedAt": "2026-05-27T18:42:53Z"
+      },
+      {
+        "command": "firebase deploy --only firestore:rules,functions --project dive-into-run",
+        "exitCode": 0,
+        "summary": "Firestore rules released; finalizeAccountDeletions(us-central1) function present and unchanged on final deploy after prior successful create.",
+        "verifiedAt": "2026-05-27T18:42:53Z"
+      }
+    ],
+    "deployedCommit": "94c1979b653a6e2e8164a6ab2957b40d8bb1745d"
   },
   "incidents": [
     {
@@ -654,5 +667,5 @@
       "verifiedAt": "2026-05-27T18:27:43Z"
     }
   ],
-  "updatedAt": "2026-05-27T18:27:43Z"
+  "updatedAt": "2026-05-27T18:42:53Z"
 }

@@ -52,7 +52,7 @@ Add a server-owned account deletion workflow with thin app routes, client UI in 
 - Remote head snapshot: captured in `status.json.remoteHead` before implementation.
 - Last verified commit policy: update only after fresh verification passes.
 - Phase commit checkpoints: none authorized in this session.
-- Rules deploy status: pending for Firestore rules/functions release; deploy authorized for closeout. `storage.rules` is not changed in v1.
+- Rules deploy status: deployed for Firestore rules/functions release at commit `94c1979b653a6e2e8164a6ab2957b40d8bb1745d`. `storage.rules` is not changed in v1.
 - Incident handling: any failed finalizer, failing repo gate, or unverified authenticated flow blocks completion.
 
 ## Release Boundary

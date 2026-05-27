@@ -5,7 +5,7 @@
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-073-account-deletion`
 - Branch: `073-account-deletion` (local status showed behind `origin/main` by 2; pull/rebase is not authorized in this task).
 - Active task: none; T001-T006 are completed after integrated Reviewer PASS.
-- Current phase: verified; reviewed implementation and fresh local verification are complete.
+- Current phase: deployed; reviewed implementation, fresh local verification, Firestore rules deploy, Functions deploy, and cleanup policy setup are complete.
 - Authorization: edit, local verification, stage, commit, push, PR, CI watch, GitHub merge, Firebase deploy, and local main sync.
 - T006 attempt 1 Reviewer decision: `review_rejected` at 2026-05-27T18:04:39Z.
 - T006 attempt 2 Reviewer decision: `review_passed` at 2026-05-27T18:14:25Z.
@@ -28,10 +28,12 @@
 - `node --check src/repo/server/account-deletion-server-repo.js`: exit 0.
 - `npm run build`: exit 0.
 - `firebase emulators:exec --only auth,firestore,storage,functions --project dive-into-run "node account-deletion-emulator-check.mjs"`: exit 0. Temporary script was copied from `/private/tmp/account-deletion-emulator-check.mjs` into the worktree for module resolution, then removed after the run. Evidence included request, pending gate, cancel, finalizer deletion, post comment history cleanup, finalizer skip for `finalizationBlocked` failed rollback request, and same-email new account.
+- `firebase functions:artifacts:setpolicy --location us-central1 --days 1 --force --project dive-into-run`: exit 0. Set cleanup policy for `projects/dive-into-run/locations/us-central1/repositories/gcf-artifacts` to delete images older than 1 day.
+- `firebase deploy --only firestore:rules,functions --project dive-into-run`: exit 0. Firestore rules released; `finalizeAccountDeletions(us-central1)` present and unchanged on final deploy after prior successful create.
 
 ## Blockers
 
-- None for reviewed local implementation and local verification.
+- None for reviewed local implementation, local verification, and Firebase deploy.
 - Production Firebase deploy, CI watch, and GitHub merge are authorized for closeout.
 
 ## Pitfalls
