@@ -14,7 +14,7 @@
     "ciWatch": true,
     "merge": true,
     "localMainSync": true,
-    "deployFirestoreRules": false
+    "deployFirestoreRules": true
   },
   "currentHead": {
     "branch": "069-homepage-landing",
@@ -648,13 +648,13 @@
     }
   ],
   "rulesDeployStatus": {
-    "state": "pending",
+    "state": "deployed",
     "required": true,
     "changed": true,
     "evidence": [
-      "Branch 071-runner-follow-mvp changes firestore.rules; deploy is pending explicit user authorization."
+      "2026-05-27 firebase deploy --only firestore:rules --project=dive-into-run: exit 0; firestore.rules compiled and released to cloud.firestore."
     ],
-    "deployedCommit": null
+    "deployedCommit": "8120cd8"
   },
   "incidents": [],
   "lastVerification": [

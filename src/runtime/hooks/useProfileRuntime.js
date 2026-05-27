@@ -102,10 +102,18 @@ export default function useProfileRuntime(user) {
     emptyText: '',
   });
   const followStatusRequestSeqRef = useRef(0);
+  const followMutationRequestSeqRef = useRef(0);
+  const followMutationActiveRef = useRef(false);
+  const latestFollowIdentityRef = useRef({
+    viewerUid: /** @type {string | null} */ (null),
+    profileUid: '',
+  });
   const followModalRequestSeqRef = useRef(0);
   const { user: currentUser } = useContext(AuthContext);
+  const currentUserUid = currentUser?.uid ?? null;
+  latestFollowIdentityRef.current = { viewerUid: currentUserUid, profileUid: user.uid };
   const isSelf = isViewingOwnProfile(currentUser, user.uid);
-  const canFollow = Boolean(currentUser) && !isSelf;
+  const canFollow = Boolean(currentUserUid) && !isSelf;
 
   useEffect(() => {
     let cancelled = false;
@@ -139,7 +147,8 @@ export default function useProfileRuntime(user) {
     const requestId = followStatusRequestSeqRef.current + 1;
     followStatusRequestSeqRef.current = requestId;
 
-    if (!currentUser || currentUser.uid === user.uid) {
+    if (!currentUserUid || currentUserUid === user.uid) {
+      followMutationActiveRef.current = false;
       setIsFollowing(false);
       setFollowError(null);
       setIsFollowLoading(false);
@@ -148,9 +157,13 @@ export default function useProfileRuntime(user) {
       };
     }
 
-    getRunnerFollowStatus({ viewerUid: currentUser.uid, targetUid: user.uid })
+    getRunnerFollowStatus({ viewerUid: currentUserUid, targetUid: user.uid })
       .then((result) => {
-        if (!cancelled && followStatusRequestSeqRef.current === requestId) {
+        if (
+          !cancelled
+          && followStatusRequestSeqRef.current === requestId
+          && !followMutationActiveRef.current
+        ) {
           setIsFollowing(result);
           setFollowError(null);
         }
@@ -165,7 +178,13 @@ export default function useProfileRuntime(user) {
     return () => {
       cancelled = true;
     };
-  }, [currentUser, user.uid]);
+  }, [currentUserUid, user.uid]);
+
+  useEffect(() => {
+    followMutationRequestSeqRef.current += 1;
+    followMutationActiveRef.current = false;
+    setIsFollowLoading(false);
+  }, [currentUserUid, user.uid]);
 
   /**
    * Follows or unfollows the profile owner for the current signed-in user.
@@ -181,8 +200,11 @@ export default function useProfileRuntime(user) {
       return;
     }
 
-    const requestId = followStatusRequestSeqRef.current + 1;
-    followStatusRequestSeqRef.current = requestId;
+    followStatusRequestSeqRef.current += 1;
+    const requestId = followMutationRequestSeqRef.current + 1;
+    followMutationRequestSeqRef.current = requestId;
+    followMutationActiveRef.current = true;
+    const mutationIdentity = { viewerUid: currentUser.uid, profileUid: user.uid };
     setIsFollowLoading(true);
     setFollowError(null);
 
@@ -191,17 +213,30 @@ export default function useProfileRuntime(user) {
         ? await unfollowRunner({ currentUser, targetUid: user.uid })
         : await followRunner({ currentUser, targetUid: user.uid });
 
-      if (followStatusRequestSeqRef.current !== requestId) return;
+      if (
+        followMutationRequestSeqRef.current !== requestId
+        || latestFollowIdentityRef.current.viewerUid !== mutationIdentity.viewerUid
+        || latestFollowIdentityRef.current.profileUid !== mutationIdentity.profileUid
+      ) return;
       setIsFollowing(result.isFollowing);
       setStats((current) =>
         current ? { ...current, followersCount: result.followersCount } : current,
       );
     } catch (error) {
-      if (followStatusRequestSeqRef.current !== requestId) return;
+      if (
+        followMutationRequestSeqRef.current !== requestId
+        || latestFollowIdentityRef.current.viewerUid !== mutationIdentity.viewerUid
+        || latestFollowIdentityRef.current.profileUid !== mutationIdentity.profileUid
+      ) return;
       console.error('[useProfileRuntime] toggle follow failed:', error);
       setFollowError(isFollowing ? '取消追蹤失敗' : '追蹤失敗');
     } finally {
-      if (followStatusRequestSeqRef.current === requestId) {
+      if (
+        followMutationRequestSeqRef.current === requestId
+        && latestFollowIdentityRef.current.viewerUid === mutationIdentity.viewerUid
+        && latestFollowIdentityRef.current.profileUid === mutationIdentity.profileUid
+      ) {
+        followMutationActiveRef.current = false;
         setIsFollowLoading(false);
       }
     }
