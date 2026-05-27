@@ -10,9 +10,10 @@ import styles from './ProfileScreen.module.css';
  * @param {import('react').ReactNode} props.header - profile header slot。
  * @param {import('react').ReactNode} props.statsSection - profile stats slot。
  * @param {import('react').ReactNode} props.eventList - profile event list slot。
+ * @param {import('react').ReactNode} props.followModal - follower/following modal slot。
  * @returns {import('react').ReactElement} profile UI。
  */
-export default function ProfileScreen({ runtime, header, statsSection, eventList }) {
+export default function ProfileScreen({ runtime, header, statsSection, eventList, followModal }) {
   return (
     <main className={styles.container}>
       {runtime.isSelf && (
@@ -23,13 +24,16 @@ export default function ProfileScreen({ runtime, header, statsSection, eventList
           </Link>
         </aside>
       )}
-      {header}
-      {runtime.isStatsLoading && <p className={styles.loadingText}>載入中...</p>}
-      {runtime.statsError && !runtime.isStatsLoading && (
-        <p className={styles.errorText}>{runtime.statsError}</p>
-      )}
-      {statsSection}
+      <section className={styles.summaryCard} aria-label="公開檔案摘要">
+        {header}
+        {runtime.isStatsLoading && <p className={styles.loadingText}>載入中...</p>}
+        {runtime.statsError && !runtime.isStatsLoading && (
+          <p className={styles.errorText}>{runtime.statsError}</p>
+        )}
+        {statsSection}
+      </section>
       {eventList}
+      {followModal}
     </main>
   );
 }

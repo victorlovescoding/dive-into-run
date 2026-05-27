@@ -48,11 +48,7 @@
   display: flex;
   align-items: center;
   gap: 20px;
-  padding: 24px;
-  background: #fff;
-  border: 1px solid #e0e3e7;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 0;
 }
 
 .avatarWrapper {
@@ -86,6 +82,15 @@
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  flex: 1 1 auto;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
 }
 
 .name {
@@ -93,6 +98,47 @@
   font-weight: 700;
   color: #202124;
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.followButton {
+  flex: 0 0 auto;
+  min-width: 86px;
+  padding: 8px 14px;
+  border: 1px solid #1967d2;
+  border-radius: 8px;
+  background: #1967d2;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.followButton:hover:not(:disabled) {
+  background: #174ea6;
+  border-color: #174ea6;
+}
+
+.followButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.followingButton {
+  background: #fff;
+  color: #1967d2;
+}
+
+.followingButton:hover:not(:disabled) {
+  background: #e8f0fe;
+  color: #174ea6;
+}
+
+.followError {
+  margin: 2px 0 0;
+  color: #c5221f;
+  font-size: 0.8125rem;
 }
 
 .bio {
@@ -112,17 +158,13 @@
 /* --- Stats -------------------------------------------------------------- */
 
 .stats {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-  padding: 16px;
-  background: #fff;
-  border: 1px solid #e0e3e7;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 0;
 }
 
 .statItem {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -130,12 +172,28 @@
   padding: 12px 8px;
   border-radius: 8px;
   background: #f8f9fa;
+  border: 1px solid transparent;
+  min-width: 0;
+  text-align: center;
+}
+
+.statButton {
+  width: 100%;
+  font: inherit;
+  cursor: pointer;
+}
+
+.statButton:hover {
+  border-color: #a8c7fa;
+  background: #eef4ff;
 }
 
 .statValue {
   font-size: 1.5rem;
   font-weight: 700;
   color: #1967d2;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .statLabel {
@@ -206,16 +264,22 @@
     flex-direction: column;
     text-align: center;
     align-items: center;
-    padding: 20px;
   }
 
   .headerText {
     align-items: center;
+    width: 100%;
+  }
+
+  .nameRow {
+    width: 100%;
+    flex-direction: column;
+    justify-content: center;
   }
 
   .stats {
     gap: 8px;
-    padding: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .statValue {

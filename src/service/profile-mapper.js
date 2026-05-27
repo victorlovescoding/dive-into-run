@@ -12,7 +12,22 @@
  * @property {string} photoURL - 頭像 URL，可能為空字串。
  * @property {string} [bio] - 個人簡介（0–150 字），未設定時 undefined。
  * @property {import('firebase/firestore').Timestamp} createdAt - 加入平台日期。
+ * @property {number} followersCount - 粉絲數，舊資料缺值時為 0。
+ * @property {number} followingCount - 追蹤中數，舊資料缺值時為 0。
+ * @property {'public' | string} privacy - 隱私狀態，缺值時視為 public。
  */
+
+/**
+ * Reads a non-negative integer counter with legacy-doc fallback.
+ * @param {unknown} value - Counter candidate.
+ * @returns {number} Non-negative integer counter.
+ */
+function toNonNegativeCounter(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return 0;
+  }
+  return Math.floor(value);
+}
 
 /**
  * 將 Firestore document data 正規化成共享的 `PublicProfile` shape。
@@ -27,6 +42,9 @@ function toPublicProfile(uid, data) {
     name: /** @type {string} */ (data.name ?? ''),
     photoURL: /** @type {string} */ (data.photoURL ?? ''),
     createdAt: /** @type {import('firebase/firestore').Timestamp} */ (data.createdAt),
+    followersCount: toNonNegativeCounter(data.followersCount),
+    followingCount: toNonNegativeCounter(data.followingCount),
+    privacy: typeof data.privacy === 'string' ? data.privacy : 'public',
   };
 
   if (typeof data.bio === 'string' && data.bio.length > 0) {

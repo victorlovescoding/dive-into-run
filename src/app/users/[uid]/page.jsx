@@ -13,6 +13,9 @@ import ProfileClient from './ProfileClient';
  * @property {string} photoURL - 頭像 URL。
  * @property {string} [bio] - 個人簡介。
  * @property {Date} createdAt - 加入日期（序列化後的 Date 實例）。
+ * @property {number} followersCount - 粉絲數。
+ * @property {number} followingCount - 追蹤中數。
+ * @property {string} privacy - 隱私狀態。
  */
 
 /**
@@ -36,6 +39,9 @@ function serializeProfile(profile) {
     name: profile.name,
     photoURL: profile.photoURL,
     createdAt: createdAtDate,
+    followersCount: profile.followersCount,
+    followingCount: profile.followingCount,
+    privacy: profile.privacy,
   };
   if (typeof profile.bio === 'string' && profile.bio.length > 0) {
     base.bio = profile.bio;

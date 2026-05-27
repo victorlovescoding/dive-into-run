@@ -14,7 +14,7 @@
     "ciWatch": true,
     "merge": true,
     "localMainSync": true,
-    "deployFirestoreRules": false
+    "deployFirestoreRules": true
   },
   "currentHead": {
     "branch": "069-homepage-landing",
@@ -648,11 +648,13 @@
     }
   ],
   "rulesDeployStatus": {
-    "state": "not_applicable",
-    "required": false,
-    "changed": false,
-    "evidence": [],
-    "deployedCommit": null
+    "state": "deployed",
+    "required": true,
+    "changed": true,
+    "evidence": [
+      "2026-05-27 firebase deploy --only firestore:rules --project=dive-into-run: exit 0; firestore.rules compiled and released to cloud.firestore."
+    ],
+    "deployedCommit": "8120cd8"
   },
   "incidents": [],
   "lastVerification": [

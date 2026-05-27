@@ -14,7 +14,7 @@
     "ciWatch": false,
     "merge": false,
     "localMainSync": false,
-    "deployFirestoreRules": false
+    "deployFirestoreRules": true
   },
   "currentHead": {
     "branch": "067-weather-taiwan-md-map",
@@ -572,11 +572,13 @@
     }
   ],
   "rulesDeployStatus": {
-    "state": "not_applicable",
-    "required": false,
-    "changed": false,
-    "evidence": [],
-    "deployedCommit": null
+    "state": "deployed",
+    "required": true,
+    "changed": true,
+    "evidence": [
+      "2026-05-27 firebase deploy --only firestore:rules --project=dive-into-run: exit 0; firestore.rules compiled and released to cloud.firestore."
+    ],
+    "deployedCommit": "8120cd8"
   },
   "incidents": [
     {
