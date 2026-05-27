@@ -13,6 +13,7 @@ import styles from '@/app/posts/posts.module.css';
  * @param {Array<object>} props.posts - 文章列表。
  * @param {string} props.openMenuPostId - 目前展開選單的文章 ID。
  * @param {(postId: string, event: import('react').MouseEvent) => void} props.onToggleMenu - 切換選單。
+ * @param {() => void} props.onCloseMenu - 關閉目前展開的選單。
  * @param {(postId?: string) => void} props.onEdit - 開啟新增/編輯 modal。
  * @param {(postId: string) => void | Promise<void>} props.onDelete - 刪除文章。
  * @param {(postId: string) => void | Promise<void>} props.onLike - 按讚文章。
@@ -24,6 +25,7 @@ function renderPostList({
   posts,
   openMenuPostId,
   onToggleMenu,
+  onCloseMenu,
   onEdit,
   onDelete,
   onLike,
@@ -43,6 +45,7 @@ function renderPostList({
       post={post}
       openMenuPostId={openMenuPostId}
       onToggleMenu={onToggleMenu}
+      onCloseMenu={onCloseMenu}
       onEdit={onEdit}
       onDelete={onDelete}
       onLike={onLike}
@@ -77,6 +80,7 @@ export default function PostsPageScreen({ runtime }) {
     handleComposeButton,
     handlePressLike,
     handleToggleOwnerMenu,
+    handleCloseOwnerMenu,
     handleDeletePost,
     handleSubmitPost,
     handleToggleFavoritePost,
@@ -92,6 +96,7 @@ export default function PostsPageScreen({ runtime }) {
         posts,
         openMenuPostId,
         onToggleMenu: handleToggleOwnerMenu,
+        onCloseMenu: handleCloseOwnerMenu,
         onEdit: handleComposeButton,
         onDelete: handleDeletePost,
         onLike: handlePressLike,

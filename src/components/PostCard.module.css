@@ -19,6 +19,14 @@
   gap: 8px;
 }
 
+.authorLink img {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .authorName {
   max-width: 150px;
   overflow: hidden;
@@ -47,10 +55,6 @@
 .titleLink {
   text-decoration: none;
   color: inherit;
-}
-
-.titleLink:hover {
-  text-decoration: underline;
 }
 
 .titleLink:focus-visible {
@@ -101,8 +105,16 @@
   min-width: 0;
 }
 
-.bookmarkButton {
+.metaTrailingActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   margin-left: auto;
+  flex-shrink: 0;
+}
+
+.bookmarkButton {
+  margin-left: 0;
 }
 
 .metaButton {

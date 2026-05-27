@@ -215,6 +215,11 @@ export default function usePostDetailRuntime(postId) {
     setOpenMenuPostId((prev) => (prev === menuTargetId ? '' : menuTargetId));
   }, []);
 
+  /** 關閉目前展開的作者操作選單。 */
+  const handleCloseMenu = useCallback(() => {
+    setOpenMenuPostId('');
+  }, []);
+
   const handleDeletePost = useCallback(
     async (targetPostId) => {
       // eslint-disable-next-line no-alert -- 刪除確認使用原生對話框
@@ -323,6 +328,7 @@ export default function usePostDetailRuntime(postId) {
     setTitle,
     setContent,
     handleToggleMenu,
+    handleCloseMenu,
     handleOpenEdit,
     handleSubmitPost,
     handleDeletePost,

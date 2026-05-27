@@ -249,6 +249,11 @@ export default function usePostsPageRuntime() {
     setOpenMenuPostId((currentPostId) => (currentPostId === postId ? '' : postId));
   }, []);
 
+  /** 關閉目前展開的作者操作選單。 */
+  const handleCloseOwnerMenu = useCallback(() => {
+    setOpenMenuPostId('');
+  }, []);
+
   /**
    * 刪除文章。
    * @param {string} postId - 文章 ID。
@@ -341,6 +346,7 @@ export default function usePostsPageRuntime() {
     handlePressLike,
     handleToggleFavoritePost,
     handleToggleOwnerMenu,
+    handleCloseOwnerMenu,
     handleDeletePost,
     handleSubmitPost,
   };
