@@ -1,0 +1,614 @@
+{
+  "schemaVersion": 3,
+  "feature": "074-post-composer-draft-confirm",
+  "branch": "074-post-composer-draft-confirm",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-074-post-composer-draft-confirm",
+  "phase": "plan",
+  "activeTask": null,
+  "activeWave": null,
+  "authorizationBoundary": {
+    "edit": true,
+    "commit": false,
+    "push": false,
+    "pullRequest": false,
+    "ciWatch": false,
+    "merge": false,
+    "localMainSync": false,
+    "deployFirestoreRules": false
+  },
+  "currentHead": {
+    "branch": "074-post-composer-draft-confirm",
+    "commit": "3f536fa42fb0e13c7425a6b6c651149889617d95",
+    "capturedAt": "2026-05-27T18:13:04Z",
+    "summary": "Add post composer draft confirm spec"
+  },
+  "remoteHead": {
+    "remote": "origin",
+    "branch": "main",
+    "commit": "08cc3b402c6b9d2c68d4c4986ae9c079a31592a0",
+    "capturedAt": "2026-05-27T18:13:04Z",
+    "summary": "tracking ref origin/main"
+  },
+  "completedTasks": [],
+  "tasks": [
+    {
+      "id": "T001",
+      "title": "Storage Helper And Tests",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-1",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Add a browser localStorage helper for post composer drafts.",
+        "Add helper unit tests before implementation.",
+        "Keep side effects in the repo/client layer."
+      ],
+      "nonScope": [
+        "Do not modify runtime hooks, UI components, CSS, Firestore, security rules, package metadata, or workflow state.",
+        "Do not add dependencies.",
+        "Do not create Firestore-backed drafts or autosave."
+      ],
+      "ownedFiles": [
+        "src/repo/client/post-composer-draft-storage-repo.js",
+        "src/repo/client/post-composer-draft-storage-repo.test.js"
+      ],
+      "readOnlyContext": [
+        "specs/074-post-composer-draft-confirm/spec.md",
+        "src/repo/client/weather-location-storage-repo.js",
+        "vitest.config.mjs",
+        "vitest.setup.jsx"
+      ],
+      "dependencies": [],
+      "engineerInstructions": [
+        "Create src/repo/client/post-composer-draft-storage-repo.test.js first with tests for key formats, payload shape, valid load, target isolation, invalid cleanup, expired cleanup, and storage exceptions.",
+        "Implement src/repo/client/post-composer-draft-storage-repo.js exporting POST_COMPOSER_DRAFT_MAX_AGE_MS, getPostComposerDraftKey, savePostComposerDraft, loadPostComposerDraft, and removePostComposerDraft.",
+        "Use ISO-8601 updatedAt strings from now.toISOString().",
+        "Treat null or undefined postId as create mode.",
+        "Missing uid returns null from key/load and performs no write/remove.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T001.1: Draft keys exactly match the spec key formats.",
+        "AC-T001.2: Draft payloads include exactly title, content, and updatedAt.",
+        "AC-T001.3: Draft load removes and ignores invalid, unparsable, or expired drafts.",
+        "AC-T001.4: Remove operations affect only the current uid/target key.",
+        "AC-T001.5: Storage unavailable errors do not throw."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser src/repo/client/post-composer-draft-storage-repo.test.js",
+          "expectedSignal": "exit 0 and all helper tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0 with no lint errors for changed files",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0 with no type-check errors for changed files",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Required verification commands pass and match the expected signal.",
+        "Tests were written before implementation or Engineer reports a TDD-equivalent fail/pass sequence.",
+        "Acceptance criteria are covered by test assertions.",
+        "No runtime, UI, package metadata, Firestore, or rules files changed."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Key strings, payload shape, TTL cleanup, invalid cleanup, or target isolation is wrong.",
+        "Storage exceptions can propagate to runtime."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T002",
+      "title": "ComposeModal Shared Close Guard And Confirmation UI",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-2",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Route X, Escape, and backdrop through one shared close request callback.",
+        "Render a custom centered confirmation dialog surface inside the existing composer dialog.",
+        "Add component tests for close routing and action ordering."
+      ],
+      "nonScope": [
+        "Do not modify runtime hooks, screens, repo helper, Firestore, security rules, package metadata, or workflow state.",
+        "Do not implement localStorage reads/writes in the component."
+      ],
+      "ownedFiles": [
+        "src/components/ComposeModal.jsx",
+        "src/components/ComposeModal.module.css",
+        "src/components/ComposeModal.test.jsx"
+      ],
+      "readOnlyContext": [
+        "specs/074-post-composer-draft-confirm/spec.md",
+        "src/ui/posts/PostsPageScreen.jsx",
+        "src/ui/posts/PostDetailScreen.jsx",
+        "vitest.config.mjs",
+        "vitest.setup.jsx"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Add optional ComposeModal props: onRequestClose, isDraftConfirmOpen, onSaveDraft, onContinueEditing, and onDiscardDraft with safe defaults.",
+        "Replace X direct close, Escape cancel handling, and backdrop direct close with calls to onRequestClose.",
+        "Render confirmation only when isDraftConfirmOpen is true.",
+        "Use exact title 要儲存這篇草稿嗎？ and body 下次開啟文章編輯器時，可以繼續編輯目前內容。",
+        "Render actions in order: 存草稿, 繼續編輯, 不儲存並關閉.",
+        "Map actions respectively to onSaveDraft, onContinueEditing, and onDiscardDraft.",
+        "Style the confirmation with existing composer visual language.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T002.1: X, Escape, and backdrop all call the same close request prop.",
+        "AC-T002.2: The native dialog does not close directly from those triggers when the parent chooses to show confirmation.",
+        "AC-T002.3: Confirmation copy and action order exactly match the spec.",
+        "AC-T002.4: Each confirmation action calls only its corresponding handler.",
+        "AC-T002.5: Existing submit button dirty/disabled behavior remains intact."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser src/components/ComposeModal.test.jsx",
+          "expectedSignal": "exit 0 and component tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0 with no lint errors for changed files",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0 with no type-check errors for changed files",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Required verification commands pass and match the expected signal.",
+        "No localStorage or runtime target logic was added to the component.",
+        "Confirmation UI is custom in-app UI, not window.confirm.",
+        "Layer rules remain satisfied."
+      ],
+      "reviewerRejectCriteria": [
+        "Any close trigger bypasses onRequestClose.",
+        "Action order, copy, or handler mapping is wrong.",
+        "Component directly reads/writes localStorage.",
+        "Native dialog closes before runtime can decide."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T003",
+      "title": "Posts Feed Composer Draft Runtime",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-3",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Wire create/edit draft restore, save, continue, discard, success cleanup, and failed-submit preservation for /posts.",
+        "Pass draft-confirm props from PostsPageScreen to ComposeModal.",
+        "Add runtime tests for feed composer behavior."
+      ],
+      "nonScope": [
+        "Do not modify post detail runtime/screen, ComposeModal, repo helper, Firestore, security rules, package metadata, or workflow state.",
+        "Do not implement autosave."
+      ],
+      "ownedFiles": [
+        "src/runtime/hooks/usePostsPageRuntime.js",
+        "src/runtime/hooks/usePostsPageRuntime.test.jsx",
+        "src/ui/posts/PostsPageScreen.jsx"
+      ],
+      "readOnlyContext": [
+        "specs/074-post-composer-draft-confirm/spec.md",
+        "src/repo/client/post-composer-draft-storage-repo.js",
+        "src/components/ComposeModal.jsx",
+        "src/runtime/hooks/usePostsPageRuntimeHelpers.js",
+        "src/runtime/client/use-cases/post-use-cases.js",
+        "src/runtime/providers/AuthProvider.jsx",
+        "src/runtime/providers/ToastProvider.jsx",
+        "vitest.config.mjs",
+        "vitest.setup.jsx"
+      ],
+      "dependencies": [
+        "T001",
+        "T002"
+      ],
+      "engineerInstructions": [
+        "Add isDraftConfirmOpen state to the feed runtime.",
+        "Load create drafts with postId null and edit drafts with the target post id when opening the composer.",
+        "Show toast 已恢復草稿 after applying a restored draft.",
+        "Implement handleRequestComposerClose, handleSaveComposerDraft, handleContinueEditingDraft, and handleDiscardComposerDraft.",
+        "On successful create/update, remove only the current target draft and then close/reset.",
+        "On failed create/update, keep composer open, keep title/content, and do not remove draft.",
+        "Return draft-confirm state and handlers from the runtime and pass them through PostsPageScreen to ComposeModal.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T003.1: Opening create composer restores only post-composer:draft:create:<uid> and shows 已恢復草稿.",
+        "AC-T003.2: Opening edit composer for post A restores only post-composer:draft:edit:<uid>:<postAId>.",
+        "AC-T003.3: Edit draft restore preserves original post title/content for dirty comparison.",
+        "AC-T003.4: X/Escape/backdrop close requests with unsaved feed composer content open confirmation.",
+        "AC-T003.5: 存草稿 saves current feed composer target and closes the composer.",
+        "AC-T003.6: 繼續編輯 keeps the composer open and does not write/remove draft.",
+        "AC-T003.7: 不儲存並關閉 removes only the current target draft and closes the composer.",
+        "AC-T003.8: Successful create/update removes only current target draft.",
+        "AC-T003.9: Failed create/update keeps composer open and preserves draft storage."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx",
+          "expectedSignal": "exit 0 and feed runtime tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0 with no lint errors for changed files",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0 with no type-check errors for changed files",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Required verification commands pass and match the expected signal.",
+        "Draft helper imports flow from repo/client into runtime only.",
+        "Failed submit path keeps composer open and does not remove draft.",
+        "No post detail files, Firestore, rules, package metadata, or shared helper files changed."
+      ],
+      "reviewerRejectCriteria": [
+        "Create/edit keys are mixed.",
+        "Post A action can read, overwrite, or remove post B draft.",
+        "Failed submit closes or resets the composer.",
+        "PostsPageScreen does not pass the new props to ComposeModal.",
+        "Any write expands outside owned files."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T004",
+      "title": "Post Detail Composer Draft Runtime",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-3",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Wire edit draft restore, save, continue, discard, success cleanup, and failed-update preservation for /posts/[id].",
+        "Pass draft-confirm props from PostDetailScreen to ComposeModal.",
+        "Add runtime tests for detail composer behavior."
+      ],
+      "nonScope": [
+        "Do not modify posts feed runtime/screen, ComposeModal, repo helper, Firestore, security rules, package metadata, or workflow state.",
+        "Do not add create-composer behavior to post detail."
+      ],
+      "ownedFiles": [
+        "src/runtime/hooks/usePostDetailRuntime.js",
+        "src/runtime/hooks/usePostDetailRuntime.test.jsx",
+        "src/ui/posts/PostDetailScreen.jsx"
+      ],
+      "readOnlyContext": [
+        "specs/074-post-composer-draft-confirm/spec.md",
+        "src/repo/client/post-composer-draft-storage-repo.js",
+        "src/components/ComposeModal.jsx",
+        "src/runtime/client/use-cases/post-use-cases.js",
+        "src/runtime/providers/AuthProvider.jsx",
+        "src/runtime/providers/ToastProvider.jsx",
+        "src/ui/posts/PostDetailScreen.jsx",
+        "vitest.config.mjs",
+        "vitest.setup.jsx"
+      ],
+      "dependencies": [
+        "T001",
+        "T002"
+      ],
+      "engineerInstructions": [
+        "Add isDraftConfirmOpen state to the detail runtime.",
+        "Load edit drafts with user uid and target post id when opening the editor.",
+        "Show toast 已恢復草稿 after applying a restored draft.",
+        "Implement handleRequestComposerClose, handleSaveComposerDraft, handleContinueEditingDraft, and handleDiscardComposerDraft.",
+        "On successful update, remove only the current edit target draft and then close/reset.",
+        "On failed update, keep composer open, keep title/content, and do not remove draft.",
+        "Return draft-confirm state and handlers from the runtime and pass them through PostDetailScreen to ComposeModal.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T004.1: Opening edit composer restores only post-composer:draft:edit:<uid>:<postId> and shows 已恢復草稿.",
+        "AC-T004.2: Restored edit draft preserves original post title/content for dirty comparison.",
+        "AC-T004.3: X/Escape/backdrop close requests with unsaved detail edit content open confirmation.",
+        "AC-T004.4: 存草稿 saves current detail edit target and closes the composer.",
+        "AC-T004.5: 繼續編輯 keeps the composer open and does not write/remove draft.",
+        "AC-T004.6: 不儲存並關閉 removes only the current edit target draft and closes the composer.",
+        "AC-T004.7: Successful update removes only current edit target draft.",
+        "AC-T004.8: Failed update keeps composer open and preserves draft storage."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx",
+          "expectedSignal": "exit 0 and detail runtime tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0 with no lint errors for changed files",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0 with no type-check errors for changed files",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Required verification commands pass and match the expected signal.",
+        "Failed update path keeps composer open and does not remove draft.",
+        "No posts feed files, Firestore, rules, package metadata, or shared helper files changed."
+      ],
+      "reviewerRejectCriteria": [
+        "Detail edit reads/removes create draft or another post's edit draft.",
+        "Failed update closes or resets the composer.",
+        "PostDetailScreen does not pass the new props to ComposeModal.",
+        "Any write expands outside owned files."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T005",
+      "title": "Final Integration And Workflow Gate",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-4",
+      "engineer": "Verifier",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Verify the integrated feature after T001-T004 are completed.",
+        "Update only workflow state if coordinator later authorizes state sync after reviewed implementation."
+      ],
+      "nonScope": [
+        "Do not modify production source, tests, package metadata, Firestore, security rules, or unrelated docs in this gate.",
+        "Do not commit, push, create PR, watch CI, merge, sync local main, or deploy rules."
+      ],
+      "ownedFiles": [
+        "specs/074-post-composer-draft-confirm/tasks.md",
+        "specs/074-post-composer-draft-confirm/handoff.md",
+        "specs/074-post-composer-draft-confirm/status.json"
+      ],
+      "readOnlyContext": [
+        "specs/074-post-composer-draft-confirm/spec.md",
+        "specs/074-post-composer-draft-confirm/plan.md",
+        "specs/074-post-composer-draft-confirm/tasks.md",
+        "specs/074-post-composer-draft-confirm/status.json",
+        "src/repo/client/post-composer-draft-storage-repo.js",
+        "src/components/ComposeModal.jsx",
+        "src/runtime/hooks/usePostsPageRuntime.js",
+        "src/runtime/hooks/usePostDetailRuntime.js",
+        "src/ui/posts/PostsPageScreen.jsx",
+        "src/ui/posts/PostDetailScreen.jsx"
+      ],
+      "dependencies": [
+        "T001",
+        "T002",
+        "T003",
+        "T004"
+      ],
+      "engineerInstructions": [
+        "Run every verification command one at a time and record exit codes.",
+        "Capture browser evidence for create/edit close guard, save, continue, discard, restore toast, target isolation, and submit cleanup.",
+        "Confirm changed files stay inside planned source/test/workflow surfaces.",
+        "Confirm no Firestore rules, Storage rules, package metadata, lockfile, dependency, server route, or unrelated docs changed.",
+        "Modify workflow state only if coordinator explicitly authorizes state sync."
+      ],
+      "acceptanceCriteria": [
+        "AC-T005.1: All task-specific tests from T001-T004 pass.",
+        "AC-T005.2: lint:changed, type-check:changed, and depcruise pass.",
+        "AC-T005.3: Browser/manual evidence covers create, edit, X, Escape, backdrop, save draft, continue editing, discard, restore toast, two edit target isolation, and successful submit cleanup.",
+        "AC-T005.4: Diff contains no schema, rules, dependency, package metadata, server route, or unrelated doc changes.",
+        "AC-T005.5: rulesDeployStatus.state remains not_applicable."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser src/repo/client/post-composer-draft-storage-repo.test.js",
+          "expectedSignal": "exit 0 and helper tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser src/components/ComposeModal.test.jsx",
+          "expectedSignal": "exit 0 and component tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx",
+          "expectedSignal": "exit 0 and feed runtime tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx",
+          "expectedSignal": "exit 0 and detail runtime tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0 with no lint errors for changed files",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0 with no type-check errors for changed files",
+          "lastRun": null
+        },
+        {
+          "command": "npm run depcruise",
+          "expectedSignal": "exit 0 with no dependency direction violations",
+          "lastRun": null
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "exit 0 with no whitespace errors",
+          "lastRun": null
+        },
+        {
+          "command": "git diff --name-only",
+          "expectedSignal": "output contains only planned files and authorized workflow state",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff and command evidence support all acceptance criteria.",
+        "Browser/manual evidence includes the required dialog screenshot and target-isolation notes.",
+        "No non-scope files changed.",
+        "State files match if workflow sync was authorized."
+      ],
+      "reviewerRejectCriteria": [
+        "Any required command is missing or failed.",
+        "Browser/manual evidence is missing for close triggers or target isolation.",
+        "Diff includes schema, rules, package metadata, lockfile, server route, dependency, or unrelated doc changes.",
+        "State files drift after authorized workflow sync."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    }
+  ],
+  "blocked": false,
+  "blockedReason": null,
+  "lastVerifiedCommit": null,
+  "phaseCommits": [
+    {
+      "phase": "spec",
+      "ref": "3f536fa42fb0e13c7425a6b6c651149889617d95",
+      "summary": "Add post composer draft confirm spec"
+    }
+  ],
+  "rulesDeployStatus": {
+    "state": "not_applicable",
+    "required": false,
+    "changed": false,
+    "evidence": [],
+    "deployedCommit": null
+  },
+  "incidents": [],
+  "lastVerification": [
+    {
+      "command": "sed -n '1,260p' AGENTS.md",
+      "exitCode": 0,
+      "summary": "Confirmed startup contract, P4 artifact expectations, Engineer-first rule, one-command evidence rule, and authorization boundaries.",
+      "verifiedAt": "2026-05-27T18:13:04Z"
+    },
+    {
+      "command": "sed -n '1,260p' docs/superpowers/workflow.md",
+      "exitCode": 0,
+      "summary": "Confirmed P4 feature requires five-file artifact set under specs/<feature>/.",
+      "verifiedAt": "2026-05-27T18:13:04Z"
+    },
+    {
+      "command": "sed -n '1,320p' docs/superpowers/task-profiles.md",
+      "exitCode": 0,
+      "summary": "Confirmed new feature routes to P4, worktree required, and rules deploy boundary is separate.",
+      "verifiedAt": "2026-05-27T18:13:04Z"
+    },
+    {
+      "command": "sed -n '1,320p' docs/superpowers/task-contract.md",
+      "exitCode": 0,
+      "summary": "Confirmed task fields, lifecycle, status schema v3, and Reviewer gate.",
+      "verifiedAt": "2026-05-27T18:13:04Z"
+    },
+    {
+      "command": "sed -n '1,260p' specs/074-post-composer-draft-confirm/spec.md",
+      "exitCode": 0,
+      "summary": "Confirmed approved spec excludes schema, rules, server behavior, dependencies, and autosave.",
+      "verifiedAt": "2026-05-27T18:13:04Z"
+    },
+    {
+      "command": "rg --files -g '*test*' -g '*spec*' -g '!specs/**'",
+      "exitCode": 0,
+      "summary": "Found Vitest configs but no existing tests directory or source tests in this checkout.",
+      "verifiedAt": "2026-05-27T18:13:04Z"
+    },
+    {
+      "command": "nl -ba src/components/ComposeModal.jsx | sed -n '1,180p'",
+      "exitCode": 0,
+      "summary": "Confirmed X, backdrop, and Escape close handling lives in ComposeModal.",
+      "verifiedAt": "2026-05-27T18:13:04Z"
+    },
+    {
+      "command": "nl -ba src/runtime/hooks/usePostsPageRuntime.js | sed -n '140,350p'",
+      "exitCode": 0,
+      "summary": "Confirmed posts feed open/submit/reset surfaces and failed-submit close/reset risk.",
+      "verifiedAt": "2026-05-27T18:13:04Z"
+    },
+    {
+      "command": "nl -ba src/runtime/hooks/usePostDetailRuntime.js | sed -n '160,230p'",
+      "exitCode": 0,
+      "summary": "Confirmed detail edit open/submit/reset surfaces and failed-update close/reset risk.",
+      "verifiedAt": "2026-05-27T18:13:04Z"
+    },
+    {
+      "command": "node scripts/validate-workflow-state.js specs/074-post-composer-draft-confirm/status.json",
+      "exitCode": 0,
+      "summary": "Validated this feature status.json against schemaVersion 3.",
+      "verifiedAt": "2026-05-27T18:21:54Z"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/074-post-composer-draft-confirm/status.json",
+      "exitCode": 0,
+      "summary": "Confirmed this feature status.json is valid and synced.",
+      "verifiedAt": "2026-05-27T18:21:54Z"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "No whitespace errors reported by Git diff check.",
+      "verifiedAt": "2026-05-27T18:21:54Z"
+    },
+    {
+      "command": "git status --short --untracked-files=all",
+      "exitCode": 0,
+      "summary": "Only four untracked owned planning files are present for feature 074.",
+      "verifiedAt": "2026-05-27T18:21:54Z"
+    }
+  ],
+  "updatedAt": "2026-05-27T18:21:54Z"
+}
