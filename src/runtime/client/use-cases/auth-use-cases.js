@@ -8,7 +8,7 @@ import {
 /**
  * 啟動 auth/profile 的 runtime orchestration。
  * @param {object} params - callbacks。
- * @param {(user: { uid: string, name: string | null, email: string | null, photoURL: string | null, bio: string | null, getIdToken: () => Promise<string> } | null) => void} params.setUser - 更新使用者。
+ * @param {(user: { uid: string, name: string | null, email: string | null, photoURL: string | null, bio: string | null, accountStatus: string, deletionScheduledFor: unknown, getIdToken: (forceRefresh?: boolean) => Promise<string> } | null) => void} params.setUser - 更新使用者。
  * @param {(loading: boolean) => void} params.setLoading - 更新 loading 狀態。
  * @param {(error: unknown) => void} [params.onError] - 錯誤回呼。
  * @returns {() => void} 退訂函式。

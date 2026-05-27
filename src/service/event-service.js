@@ -1,5 +1,6 @@
 import polyline from '@mapbox/polyline';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
+import { isAccountDeletionHidden } from '@/config/account-deletion';
 
 export { EVENT_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
 
@@ -211,12 +212,23 @@ export function toEventData(snapshot) {
 }
 
 /**
+ * 判斷活動或活動參與資料是否可公開顯示。
+ * @param {Record<string, unknown> | null | undefined} data - Firestore data.
+ * @returns {boolean} true when visible.
+ */
+export function isPublicEventRecordVisible(data) {
+  return !isAccountDeletionHidden(data);
+}
+
+/**
  * 將多筆 Firestore snapshot 正規化成 event array。
  * @param {Array<{ id: string, data: () => object }>} snapshots - Firestore 文件快照列表。
  * @returns {EventData[]} event array。
  */
 export function toEventDataList(snapshots) {
-  return snapshots.map((snapshot) => toEventData(snapshot));
+  return snapshots
+    .filter((snapshot) => isPublicEventRecordVisible(snapshot.data()))
+    .map((snapshot) => toEventData(snapshot));
 }
 
 /**

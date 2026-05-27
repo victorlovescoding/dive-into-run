@@ -5,6 +5,11 @@
  * entry points return the same shape.
  */
 
+import {
+  ACCOUNT_DELETION_STATUS_ACTIVE,
+  isPendingDeletionAccount,
+} from '@/config/account-deletion';
+
 /**
  * @typedef {object} PublicProfile
  * @property {string} uid - 使用者 UID（= Firestore document ID）。
@@ -15,6 +20,7 @@
  * @property {number} followersCount - 粉絲數，舊資料缺值時為 0。
  * @property {number} followingCount - 追蹤中數，舊資料缺值時為 0。
  * @property {'public' | string} privacy - 隱私狀態，缺值時視為 public。
+ * @property {string} accountStatus - 帳號狀態。
  */
 
 /**
@@ -45,6 +51,10 @@ function toPublicProfile(uid, data) {
     followersCount: toNonNegativeCounter(data.followersCount),
     followingCount: toNonNegativeCounter(data.followingCount),
     privacy: typeof data.privacy === 'string' ? data.privacy : 'public',
+    accountStatus:
+      typeof data.accountStatus === 'string'
+        ? data.accountStatus
+        : ACCOUNT_DELETION_STATUS_ACTIVE,
   };
 
   if (typeof data.bio === 'string' && data.bio.length > 0) {
@@ -54,5 +64,16 @@ function toPublicProfile(uid, data) {
   return profile;
 }
 
-export { toPublicProfile };
+/**
+ * Checks whether a profile should be visible publicly.
+ * @param {Record<string, unknown> | null | undefined} data - Profile document data.
+ * @returns {boolean} Whether public profile routes should expose it.
+ */
+function isPublicProfileVisible(data) {
+  const accountStatus =
+    typeof data?.accountStatus === 'string' ? data.accountStatus : undefined;
+  return !isPendingDeletionAccount(accountStatus);
+}
+
+export { isPublicProfileVisible, toPublicProfile };
 export default toPublicProfile;

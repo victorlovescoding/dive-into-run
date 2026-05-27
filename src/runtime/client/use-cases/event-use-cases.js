@@ -4,6 +4,7 @@ import {
   buildJoinEventPlan,
   buildLeaveEventPlan,
   filterEventsByDistanceAndSeats,
+  isPublicEventRecordVisible,
   prepareEventUpdateFields,
   sanitizeCreateEventExtra,
   toEventData,
@@ -76,7 +77,11 @@ export async function fetchEventById(eventId) {
   if (!eventId) return null;
 
   const snapshot = await fetchEventDocument(eventId);
-  return snapshot ? toEventData(snapshot) : null;
+  if (!snapshot || !isPublicEventRecordVisible(snapshot.data())) {
+    return null;
+  }
+
+  return toEventData(snapshot);
 }
 
 /**
@@ -145,10 +150,12 @@ export async function fetchParticipants(eventId, limitCount = 50) {
   if (!eventId) throw new Error('fetchParticipants: eventId is required');
 
   const docs = await fetchParticipantDocuments(eventId, limitCount);
-  return docs.map((snapshot) => ({
-    id: snapshot.id,
-    ...snapshot.data(),
-  }));
+  return docs
+    .filter((snapshot) => isPublicEventRecordVisible(snapshot.data()))
+    .map((snapshot) => ({
+      id: snapshot.id,
+      ...snapshot.data(),
+    }));
 }
 
 /**

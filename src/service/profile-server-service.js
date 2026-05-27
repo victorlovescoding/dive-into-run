@@ -1,5 +1,5 @@
 import getUserProfileDocument from '@/repo/server/firebase-profile-server-repo';
-import { toPublicProfile } from '@/service/profile-mapper';
+import { isPublicProfileVisible, toPublicProfile } from '@/service/profile-mapper';
 
 /**
  * @typedef {import('@/service/profile-mapper').PublicProfile} PublicProfile
@@ -19,6 +19,7 @@ async function getUserProfileServer(uid) {
 
   const userData = await getUserProfileDocument(uid);
   if (!userData) return null;
+  if (!isPublicProfileVisible(userData)) return null;
 
   return toPublicProfile(uid, userData);
 }

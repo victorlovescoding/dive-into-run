@@ -5,9 +5,11 @@ import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 import { updateUserName, updateUserPhotoURL } from '@/repo/client/firebase-users-repo';
 import { uploadUserAvatar } from '@/runtime/client/use-cases/avatar-upload-use-cases';
+import { requestAccountDeletion } from '@/runtime/client/use-cases/account-deletion-use-cases';
 
 const AVATAR_UPLOAD_ERROR_MESSAGE = '上傳大頭貼失敗，請稍後再試';
 const NAME_UPDATE_ERROR_MESSAGE = '更新名稱失敗，請稍後再試';
+const ACCOUNT_DELETION_ERROR_MESSAGE = '刪除帳號申請失敗，請稍後再試';
 
 /**
  * member page runtime orchestration。
@@ -17,6 +19,9 @@ export default function useMemberPageRuntime() {
   const { user, loading } = useContext(AuthContext);
   const { showToast } = useToast();
   const [name, setName] = useState('');
+  const [accountDeletionModalOpen, setAccountDeletionModalOpen] = useState(false);
+  const [accountDeletionSubmitting, setAccountDeletionSubmitting] = useState(false);
+  const [accountDeletionError, setAccountDeletionError] = useState(null);
   const inputFileRef = useRef(null);
 
   useEffect(() => {
@@ -82,6 +87,37 @@ export default function useMemberPageRuntime() {
     [loading, name, showToast, user],
   );
 
+  const openAccountDeletionModal = useCallback(() => {
+    setAccountDeletionError(null);
+    setAccountDeletionModalOpen(true);
+  }, []);
+
+  const closeAccountDeletionModal = useCallback(() => {
+    if (accountDeletionSubmitting) return;
+    setAccountDeletionModalOpen(false);
+    setAccountDeletionError(null);
+  }, [accountDeletionSubmitting]);
+
+  const confirmAccountDeletion = useCallback(async () => {
+    if (!user || accountDeletionSubmitting) return;
+
+    setAccountDeletionSubmitting(true);
+    setAccountDeletionError(null);
+
+    try {
+      await requestAccountDeletion(user);
+      setAccountDeletionModalOpen(false);
+      showToast('帳號已排程刪除，30 天內可以取消', 'success');
+    } catch (error) {
+      console.error(error);
+      const message = error instanceof Error ? error.message : ACCOUNT_DELETION_ERROR_MESSAGE;
+      setAccountDeletionError(message || ACCOUNT_DELETION_ERROR_MESSAGE);
+      showToast(ACCOUNT_DELETION_ERROR_MESSAGE, 'error');
+    } finally {
+      setAccountDeletionSubmitting(false);
+    }
+  }, [accountDeletionSubmitting, showToast, user]);
+
   return {
     user,
     loading,
@@ -91,5 +127,13 @@ export default function useMemberPageRuntime() {
     triggerFilePicker,
     onAvatarFileChange,
     onSubmitNewName,
+    accountDeletion: {
+      modalOpen: accountDeletionModalOpen,
+      submitting: accountDeletionSubmitting,
+      error: accountDeletionError,
+      openModal: openAccountDeletionModal,
+      closeModal: closeAccountDeletionModal,
+      confirmDeletion: confirmAccountDeletion,
+    },
   };
 }

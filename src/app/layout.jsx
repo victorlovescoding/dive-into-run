@@ -3,6 +3,7 @@ import { Geist, Geist_Mono as GeistMono } from 'next/font/google';
 import Navbar from '@/components/Navbar/Navbar';
 import NotificationToast from '@/components/Notifications/NotificationToast';
 import ToastContainer from '@/components/ToastContainer';
+import AccountDeletionGate from '@/runtime/providers/AccountDeletionGate';
 import { AuthProvider, NotificationProvider, ToastProvider } from '@/runtime/providers';
 import './globals.css';
 import 'leaflet/dist/leaflet.css';
@@ -41,8 +42,10 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <ToastProvider>
             <NotificationProvider>
-              <Navbar />
-              {children}
+              <AccountDeletionGate>
+                <Navbar />
+                {children}
+              </AccountDeletionGate>
               <NotificationToast />
               <ToastContainer />
             </NotificationProvider>

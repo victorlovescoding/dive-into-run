@@ -1,3 +1,5 @@
+import { isAccountDeletionHidden } from '@/config/account-deletion';
+
 export { POST_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
 
 /**
@@ -165,12 +167,23 @@ export function toPostData(snapshot) {
 }
 
 /**
+ * 判斷文章或留言是否可公開顯示。
+ * @param {Record<string, unknown> | null | undefined} data - Firestore data.
+ * @returns {boolean} true when visible.
+ */
+export function isPublicPostRecordVisible(data) {
+  return !isAccountDeletionHidden(data);
+}
+
+/**
  * 將多筆 Firestore snapshot 正規化成 post array。
  * @param {Array<{ id: string, data: () => object }>} snapshots - Firestore 文件快照列表。
  * @returns {Post[]} post array。
  */
 export function toPostDataList(snapshots) {
-  return snapshots.map((snapshot) => toPostData(snapshot));
+  return snapshots
+    .filter((snapshot) => isPublicPostRecordVisible(snapshot.data()))
+    .map((snapshot) => toPostData(snapshot));
 }
 
 /**
@@ -191,5 +204,7 @@ export function toCommentData(snapshot) {
  * @returns {Comment[]} comment array。
  */
 export function toCommentDataList(snapshots) {
-  return snapshots.map((snapshot) => toCommentData(snapshot));
+  return snapshots
+    .filter((snapshot) => isPublicPostRecordVisible(snapshot.data()))
+    .map((snapshot) => toCommentData(snapshot));
 }

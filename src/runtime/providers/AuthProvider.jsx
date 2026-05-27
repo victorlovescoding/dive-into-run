@@ -5,7 +5,7 @@ import watchAuthUserSession from '@/runtime/client/use-cases/auth-use-cases';
 
 /**
  * @typedef {object} AuthContextValue
- * @property {{ uid: string, name: string | null, email: string | null, photoURL: string | null, bio: string | null, getIdToken: () => Promise<string> } | null} user - 當前登入使用者。
+ * @property {{ uid: string, name: string | null, email: string | null, photoURL: string | null, bio: string | null, accountStatus: string, deletionScheduledFor: unknown, getIdToken: (forceRefresh?: boolean) => Promise<string> } | null} user - 當前登入使用者。
  * @property {(user: AuthContextValue['user']) => void} setUser - 設定使用者。
  * @property {boolean} loading - 驗證狀態載入中。
  */

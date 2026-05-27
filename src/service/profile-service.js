@@ -12,7 +12,8 @@
  * @property {boolean} hasMore - 是否還有下一頁可載入。
  */
 
-import { toPublicProfile } from '@/service/profile-mapper';
+import { isPublicProfileVisible, toPublicProfile } from '@/service/profile-mapper';
+import { isPublicEventRecordVisible } from '@/service/event-service';
 import {
   fetchHostedCount,
   fetchHostedEventDocumentsPage,
@@ -31,6 +32,7 @@ export async function getUserProfile(uid) {
 
   const data = await fetchUserProfileDocument(uid);
   if (!data) return null;
+  if (!isPublicProfileVisible(data)) return null;
 
   return toPublicProfile(uid, data);
 }
@@ -48,6 +50,16 @@ export async function getProfileStats(uid) {
     fetchJoinedCount(uid),
     fetchUserProfileDocument(uid),
   ]);
+  if (profileData && !isPublicProfileVisible(profileData)) {
+    return {
+      hostedCount: 0,
+      joinedCount: 0,
+      followersCount: 0,
+      followingCount: 0,
+      totalDistanceKm: null,
+    };
+  }
+
   const profile = profileData ? toPublicProfile(uid, profileData) : null;
   return {
     hostedCount,
@@ -76,8 +88,9 @@ export async function getHostedEvents(uid, options = {}) {
     return { items: [], lastDoc: null, hasMore: false };
   }
 
-  const hasMore = docs.length > pageSize;
-  const visibleDocs = hasMore ? docs.slice(0, pageSize) : docs;
+  const filteredDocs = docs.filter((d) => isPublicEventRecordVisible(d.data()));
+  const hasMore = filteredDocs.length > pageSize;
+  const visibleDocs = hasMore ? filteredDocs.slice(0, pageSize) : filteredDocs;
   const items = /** @type {import('@/service/event-service').EventData[]} */ (
     visibleDocs.map((d) => ({
       id: d.id,

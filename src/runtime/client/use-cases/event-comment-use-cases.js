@@ -4,6 +4,7 @@ import {
   buildAddCommentPayload,
   buildAddedComment,
   buildUpdateCommentPayload,
+  isPublicEventCommentVisible,
   toCommentData,
   toCommentHistoryEntry,
 } from '@/service/event-comment-service';
@@ -33,7 +34,9 @@ export async function fetchComments(eventId, options = {}) {
 
   const { docs, lastDoc } = await fetchEventCommentPage(eventId, options);
   return {
-    comments: docs.map((snapshot) => toCommentData(snapshot)),
+    comments: docs
+      .filter((snapshot) => isPublicEventCommentVisible(snapshot.data()))
+      .map((snapshot) => toCommentData(snapshot)),
     lastDoc,
   };
 }
@@ -50,7 +53,11 @@ export async function getCommentById(eventId, commentId) {
   }
 
   const snapshot = await fetchEventCommentDocument(eventId, commentId);
-  return snapshot.exists() ? toCommentData(snapshot) : null;
+  if (!snapshot.exists() || !isPublicEventCommentVisible(snapshot.data())) {
+    return null;
+  }
+
+  return toCommentData(snapshot);
 }
 
 /**

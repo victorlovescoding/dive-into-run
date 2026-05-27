@@ -1,4 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
+import { isAccountDeletionHidden } from '@/config/account-deletion';
 
 /**
  * @typedef {object} CommentData
@@ -136,6 +137,15 @@ export function toCommentData(snapshot) {
     id: snapshot.id,
     ...snapshot.data(),
   });
+}
+
+/**
+ * 判斷活動留言是否可公開顯示。
+ * @param {Record<string, unknown> | null | undefined} data - Firestore data.
+ * @returns {boolean} true when visible.
+ */
+export function isPublicEventCommentVisible(data) {
+  return !isAccountDeletionHidden(data);
 }
 
 /**

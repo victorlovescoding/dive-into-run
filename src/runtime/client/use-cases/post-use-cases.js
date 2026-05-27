@@ -3,6 +3,7 @@ import {
   buildAddCommentPayload,
   buildCreatePostPayload,
   buildUpdatePostPayload,
+  isPublicPostRecordVisible,
   toCommentData,
   toCommentDataList,
   toPostData,
@@ -130,6 +131,9 @@ export async function getPostDetail(id) {
     console.warn('No such document!');
     return null;
   }
+  if (!isPublicPostRecordVisible(snapshot.data())) {
+    return null;
+  }
   return toPostData(snapshot);
 }
 
@@ -169,7 +173,11 @@ export async function getMoreComments(id, last) {
  */
 export async function getCommentById(postId, commentId) {
   const snapshot = await fetchCommentDocument(postId, commentId);
-  return snapshot ? toCommentData(snapshot) : null;
+  if (!snapshot || !isPublicPostRecordVisible(snapshot.data())) {
+    return null;
+  }
+
+  return toCommentData(snapshot);
 }
 
 /**
