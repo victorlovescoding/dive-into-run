@@ -53,14 +53,16 @@ function getAvatarInitial(name) {
  * 3. XSS — React 自動轉義字串，bio 內含 `<script>` 會以文字呈現而非 DOM 節點。
  * @param {object} props - 元件屬性。
  * @param {ProfileHeaderUser} props.user - 公開檔案資料。
+ * @param {{ canFollow: boolean, isFollowing: boolean, isFollowLoading: boolean, followError: string | null, onToggleFollow: () => Promise<void> }} props.runtime - Follow runtime state。
  * @returns {import('react').ReactElement} 頁首卡片。
  */
-export default function ProfileHeader({ user }) {
+export default function ProfileHeader({ user, runtime }) {
   const { name, photoURL, bio, createdAt } = user;
   const hasAvatar = typeof photoURL === 'string' && photoURL.length > 0;
   const hasBio = typeof bio === 'string' && bio.length > 0;
   const joinDateLabel = formatJoinDate(createdAt);
   const avatarInitial = getAvatarInitial(name);
+  const followLabel = runtime.isFollowing ? '追蹤中' : '追蹤';
 
   return (
     <header className={styles.header}>
@@ -74,13 +76,26 @@ export default function ProfileHeader({ user }) {
         )}
       </div>
       <div className={styles.headerText}>
-        <h1 className={styles.name}>{name}</h1>
+        <div className={styles.nameRow}>
+          <h1 className={styles.name}>{name}</h1>
+          {runtime.canFollow && (
+            <button
+              type="button"
+              className={`${styles.followButton} ${runtime.isFollowing ? styles.followingButton : ''}`}
+              onClick={runtime.onToggleFollow}
+              disabled={runtime.isFollowLoading}
+            >
+              {runtime.isFollowLoading ? '處理中' : followLabel}
+            </button>
+          )}
+        </div>
         {hasBio && (
           <p data-testid="profile-bio" className={styles.bio}>
             {bio}
           </p>
         )}
         <p className={styles.joinDate}>{joinDateLabel}</p>
+        {runtime.followError && <p className={styles.followError}>{runtime.followError}</p>}
       </div>
     </header>
   );

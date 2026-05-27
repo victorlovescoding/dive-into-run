@@ -648,10 +648,12 @@
     }
   ],
   "rulesDeployStatus": {
-    "state": "not_applicable",
-    "required": false,
-    "changed": false,
-    "evidence": [],
+    "state": "pending",
+    "required": true,
+    "changed": true,
+    "evidence": [
+      "Branch 071-runner-follow-mvp changes firestore.rules; deploy is pending explicit user authorization."
+    ],
     "deployedCommit": null
   },
   "incidents": [],

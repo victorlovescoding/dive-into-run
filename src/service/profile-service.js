@@ -3,6 +3,8 @@
  * @typedef {object} ProfileStats
  * @property {number} hostedCount - 主辦活動數量。
  * @property {number} joinedCount - 參加活動數量（透過 collectionGroup 計算）。
+ * @property {number} followersCount - 粉絲數。
+ * @property {number} followingCount - 追蹤中數。
  * @property {number | null} totalDistanceKm - 累計跑步公里數。
  * @typedef {object} HostedEventsPage
  * @property {import('@/service/event-service').EventData[]} items - 活動列表。
@@ -41,11 +43,19 @@ export async function getUserProfile(uid) {
 export async function getProfileStats(uid) {
   if (!uid) throw new Error('uid is required');
 
-  const [hostedCount, joinedCount] = await Promise.all([
+  const [hostedCount, joinedCount, profileData] = await Promise.all([
     fetchHostedCount(uid),
     fetchJoinedCount(uid),
+    fetchUserProfileDocument(uid),
   ]);
-  return { hostedCount, joinedCount, totalDistanceKm: null };
+  const profile = profileData ? toPublicProfile(uid, profileData) : null;
+  return {
+    hostedCount,
+    joinedCount,
+    followersCount: profile?.followersCount ?? 0,
+    followingCount: profile?.followingCount ?? 0,
+    totalDistanceKm: null,
+  };
 }
 
 /**
