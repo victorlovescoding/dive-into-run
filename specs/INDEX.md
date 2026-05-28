@@ -31,6 +31,7 @@
 | `018-posts-input-validation` | Posts | Task-complete | 文章輸入驗證防線 | `spec.md`, `plan.md`, `tasks.md` | `016`, `020` |
 | `019-posts-ui-refactor` | Posts | Ready to merge | 文章列表 UI 重設計 | `spec.md`, `plan.md`, `tasks.md`, `code-review.md` | `016`, `018`, `020` |
 | `020-post-edit-dirty-check` | Posts | Completed? | 編輯 dirty check 與 trim | `spec.md`, `plan.md`, `tasks.md`, `code-review.md` | `018`, `019` |
+| `post-comment-soft-delete-retention` | Posts/Notifications | Active | 文章與留言 soft delete、90 天保留、自動清理與跟帖通知資格 | `spec.md` | `014`, `015`, `017`, `fix/post-detail-deleted-guard` |
 | `021-layered-dependency-architecture` | Architecture | Completed? | 六層分層與邊界成形 | `tasks.md`, `plan.md`, `handoff.md`, article analysis | - |
 | `022-file-size-limits` | Quality | Completed? | 檔案上限拆分全數打勾 | `tasks.md` | `021` |
 | `fix/post-detail-deleted-guard` | Quality | Active | 刪文 race 防護規格已核准 | `spec.md` | Posts |

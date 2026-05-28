@@ -10,7 +10,7 @@ import {
   startAfter,
   doc,
 } from 'firebase/firestore';
-import { db } from '@/config/client/firebase-client';
+import { auth, db } from '@/config/client/firebase-client';
 
 /**
  * @typedef {import('firebase/firestore').QueryDocumentSnapshot} QueryDocumentSnapshot
@@ -21,6 +21,7 @@ import { db } from '@/config/client/firebase-client';
  * @typedef {object} MemberFirestoreDocument
  * @property {string} id - Firestore document ID.
  * @property {Record<string, unknown>} data - Raw Firestore payload.
+ * @property {QueryDocumentSnapshot} [cursor] - Original Firestore snapshot cursor.
  */
 
 /**
@@ -28,7 +29,9 @@ import { db } from '@/config/client/firebase-client';
  * @property {string} id - Comment document ID.
  * @property {'post' | 'event'} source - Parent collection source.
  * @property {string} parentId - Parent post/event ID.
+ * @property {string | null} [parentTitle] - Parent title returned by the server API.
  * @property {Record<string, unknown>} data - Raw comment payload.
+ * @property {QueryDocumentSnapshot | string} [cursor] - Original Firestore snapshot cursor or server cursor token.
  */
 
 /**
@@ -112,6 +115,7 @@ export async function fetchPostDocumentsPageByAuthorUid(uid, options = {}) {
     documents: snap.docs.map((document) => ({
       id: document.id,
       data: /** @type {Record<string, unknown>} */ (document.data() ?? {}),
+      cursor: document,
     })),
     lastDoc: snap.docs.length === pageSize ? snap.docs[snap.docs.length - 1] : null,
   };
@@ -122,39 +126,40 @@ export async function fetchPostDocumentsPageByAuthorUid(uid, options = {}) {
  * Firestore path traversal stays in repo so upper layers receive a normalized source/parent identity.
  * @param {string} uid - Target user uid.
  * @param {object} [options] - Paging options.
- * @param {QueryDocumentSnapshot | null} [options.afterDoc] - Firestore cursor from previous page.
+ * @param {QueryDocumentSnapshot | string | null} [options.afterDoc] - Cursor from previous page.
  * @param {number} [options.pageSize] - Number of items per page.
- * @returns {Promise<{ documents: MemberCommentDocument[], lastDoc: QueryDocumentSnapshot | null }>} Normalized comment docs plus next cursor.
+ * @returns {Promise<{ documents: MemberCommentDocument[], lastDoc: QueryDocumentSnapshot | string | null }>} Normalized comment docs plus next cursor.
  */
 export async function fetchCommentDocumentsPageByAuthorUid(uid, options = {}) {
   const { afterDoc = null, pageSize = 5 } = options;
+  const { currentUser } = auth;
 
-  /** @type {QueryConstraint[]} */
-  const constraints = [
-    where('authorUid', '==', uid),
-    orderBy('createdAt', 'desc'),
-    limit(pageSize),
-  ];
-
-  if (afterDoc) {
-    constraints.push(startAfter(afterDoc));
+  if (!currentUser || currentUser.uid !== uid) {
+    throw new Error('Member comments request requires the signed-in user');
   }
 
-  const snap = await getDocs(query(collectionGroup(db, 'comments'), ...constraints));
+  const params = new URLSearchParams();
+  params.set('pageSize', String(pageSize));
+
+  if (afterDoc) {
+    params.set('cursor', String(afterDoc));
+  }
+
+  const idToken = await currentUser.getIdToken();
+  const response = await fetch(`/api/member/comments?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  const body = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      typeof body.error === 'string' ? body.error : 'Member comments request failed',
+    );
+  }
 
   return {
-    documents: snap.docs.map((document) => {
-      const parentDoc = document.ref.parent.parent;
-      const parentCollection = parentDoc?.parent?.id;
-
-      return {
-        id: document.id,
-        source: parentCollection === 'posts' ? 'post' : 'event',
-        parentId: parentDoc?.id ?? '',
-        data: /** @type {Record<string, unknown>} */ (document.data() ?? {}),
-      };
-    }),
-    lastDoc: snap.docs.length === pageSize ? snap.docs[snap.docs.length - 1] : null,
+    documents: Array.isArray(body.documents) ? body.documents : [],
+    lastDoc: typeof body.lastDoc === 'string' ? body.lastDoc : null,
   };
 }
 

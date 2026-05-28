@@ -80,6 +80,7 @@ export default function usePostComments({
   const bottomRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const isMountedRef = useRef(false);
   const editingCommentId = commentEditing?.id ?? null;
+  const userUid = user?.uid ?? null;
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -91,13 +92,13 @@ export default function usePostComments({
   const highlightedCommentId = searchParams.get('commentId');
 
   const actor = useMemo(() => {
-    if (!user?.uid) return null;
+    if (!userUid) return null;
     return {
-      uid: user.uid,
+      uid: userUid,
       name: user.name || '',
       photoURL: user.photoURL || '',
     };
-  }, [user]);
+  }, [user, userUid]);
 
   /**
    * 由父層（loadPostDetail）設定初始留言與 cursor。
@@ -105,10 +106,10 @@ export default function usePostComments({
    */
   const setInitialComments = useCallback(
     (data) => {
-      setComments(hydrateComments(data.comments, user?.uid));
+      setComments(hydrateComments(data.comments, userUid));
       setNextCursor(data.nextCursor);
     },
-    [user?.uid],
+    [userUid],
   );
 
   usePostCommentsInfiniteScroll({
@@ -116,7 +117,7 @@ export default function usePostComments({
     nextCursor,
     isLoadingNext,
     postId,
-    userUid: user?.uid,
+    userUid,
     commentsLength: comments.length,
     isMountedRef,
     setIsLoadingNext,
@@ -148,11 +149,16 @@ export default function usePostComments({
    */
   const handleDeleteComment = useCallback(
     async (commentId) => {
+      if (!userUid) {
+        showToast('請先登入才能刪除留言', 'error');
+        return;
+      }
+
       // eslint-disable-next-line no-alert -- 刪除確認使用原生對話框
       if (!window.confirm('確定要刪除留言？')) return;
 
       try {
-        await deleteComment(postId, commentId);
+        await deleteComment(postId, commentId, userUid);
 
         if (editingCommentId === commentId) {
           setCommentEditing(null);
@@ -174,7 +180,7 @@ export default function usePostComments({
         console.error(deleteError);
       }
     },
-    [editingCommentId, postId, setOpenMenuPostId, setPostDetail, showToast],
+    [editingCommentId, postId, setOpenMenuPostId, setPostDetail, showToast, userUid],
   );
 
   /**
