@@ -152,8 +152,13 @@ export default function useEventDetailRuntime(id) {
   useEffect(() => {
     const uid = user?.uid;
     if (!uid || !id) {
-      setIsFavoriteEvent(false);
-      return undefined;
+      let cancelled = false;
+      queueMicrotask(() => {
+        if (!cancelled) setIsFavoriteEvent(false);
+      });
+      return () => {
+        cancelled = true;
+      };
     }
 
     let cancelled = false;
@@ -267,7 +272,7 @@ export default function useEventDetailRuntime(id) {
     isUpdating,
     deletingEventId,
     isDeletingEvent,
-    isFavoriteEvent,
+    isFavoriteEvent: user?.uid && id ? isFavoriteEvent : false,
     isTogglingFavoriteEvent,
     statusText,
     hasRoute,

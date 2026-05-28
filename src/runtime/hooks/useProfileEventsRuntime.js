@@ -75,8 +75,11 @@ export default function useProfileEventsRuntime(uid) {
     if (!uid) return undefined;
 
     let cancelled = false;
-    setIsInitialLoading(true);
-    setInitialError(null);
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setIsInitialLoading(true);
+      setInitialError(null);
+    });
 
     getHostedEvents(uid, {})
       .then((page) => {

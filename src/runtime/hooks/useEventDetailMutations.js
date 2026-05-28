@@ -158,7 +158,7 @@ export default function useEventDetailMutations({
         }
       }
     },
-    [actor, editingEvent, event?.title, isMountedRef, setEvent, showToast],
+    [actor, editingEvent, event, isMountedRef, setEvent, showToast],
   );
 
   const handleDeleteEventRequest = useCallback(
@@ -217,7 +217,7 @@ export default function useEventDetailMutations({
         }
       }
     },
-    [actor, event?.title, isMountedRef, router, setError, setEvent, showToast],
+    [actor, event, isMountedRef, router, setError, setEvent, showToast],
   );
 
   const handleCommentAdded = useCallback(

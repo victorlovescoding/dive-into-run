@@ -219,6 +219,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     originalTitle,
     originalContent,
     isSubmitting,
+    isDraftConfirmOpen,
     isLoadingNext,
     openMenuPostId,
     dialogRef,
@@ -228,6 +229,10 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     handleToggleMenu,
     handleCloseMenu,
     handleOpenEdit,
+    handleRequestComposerClose,
+    handleSaveComposerDraft,
+    handleContinueEditingDraft,
+    handleDiscardComposerDraft,
     handleSubmitPost,
     handleDeletePost,
     handleToggleLike,
@@ -325,6 +330,11 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
             originalTitle={originalTitle}
             originalContent={originalContent}
             isSubmitting={isSubmitting}
+            onRequestClose={handleRequestComposerClose}
+            isDraftConfirmOpen={isDraftConfirmOpen}
+            onSaveDraft={handleSaveComposerDraft}
+            onContinueEditing={handleContinueEditingDraft}
+            onDiscardDraft={handleDiscardComposerDraft}
           />
 
           {isLoadingNext && <PostCardSkeleton count={1} />}

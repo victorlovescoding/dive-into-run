@@ -36,11 +36,25 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState(/** @type {string | null} */ (null));
   const [loadMoreError, setLoadMoreError] = useState(/** @type {string | null} */ (null));
+  const [prevResult, setPrevResult] = useState(/** @type {FetchResult | null} */ (null));
 
   const sentinelRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const initializedRef = useRef(false);
   const prevResultRef = useRef(/** @type {FetchResult | null} */ (null));
   const isLoadingMoreRef = useRef(false);
+  const mountedRef = useRef(false);
+  const loadMoreRequestSeqRef = useRef(0);
+  const retryRequestSeqRef = useRef(0);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      loadMoreRequestSeqRef.current += 1;
+      retryRequestSeqRef.current += 1;
+      isLoadingMoreRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!uid || !isActive || initializedRef.current) return undefined;
@@ -57,6 +71,7 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
         initializedRef.current = true;
         setItems(result.items);
         prevResultRef.current = result;
+        setPrevResult(result);
         setHasMore(result.items.length >= pageSize);
       } catch (err) {
         if (cancelled) return;
@@ -75,6 +90,8 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
 
   const loadMore = useCallback(async () => {
     if (isLoadingMoreRef.current || !hasMore || !uid) return;
+    const requestId = loadMoreRequestSeqRef.current + 1;
+    loadMoreRequestSeqRef.current = requestId;
     isLoadingMoreRef.current = true;
     setIsLoadingMore(true);
     setLoadMoreError(null);
@@ -83,15 +100,20 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
         prevResult: prevResultRef.current,
         pageSize,
       });
+      if (!mountedRef.current || loadMoreRequestSeqRef.current !== requestId) return;
       setItems((prev) => [...prev, ...result.items]);
       prevResultRef.current = result;
+      setPrevResult(result);
       setHasMore(result.items.length >= pageSize);
     } catch (err) {
+      if (!mountedRef.current || loadMoreRequestSeqRef.current !== requestId) return;
       console.error('[DashboardTab] load more failed:', err);
       setLoadMoreError('載入更多失敗');
     } finally {
-      isLoadingMoreRef.current = false;
-      setIsLoadingMore(false);
+      if (loadMoreRequestSeqRef.current === requestId) {
+        isLoadingMoreRef.current = false;
+        if (mountedRef.current) setIsLoadingMore(false);
+      }
     }
   }, [uid, hasMore, fetchFn, pageSize]);
 
@@ -112,21 +134,28 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
 
   const retry = useCallback(() => {
     if (!uid) return;
+    const requestId = retryRequestSeqRef.current + 1;
+    retryRequestSeqRef.current = requestId;
     setError(null);
     setIsLoading(true);
     fetchFn(uid, { prevResult: null, pageSize })
       .then((/** @type {FetchResult} */ result) => {
+        if (!mountedRef.current || retryRequestSeqRef.current !== requestId) return;
         initializedRef.current = true;
         setItems(result.items);
         prevResultRef.current = result;
+        setPrevResult(result);
         setHasMore(result.items.length >= pageSize);
       })
       .catch((err) => {
+        if (!mountedRef.current || retryRequestSeqRef.current !== requestId) return;
         console.error('[DashboardTab] retry failed:', err);
         setError('載入失敗');
       })
       .finally(() => {
-        setIsLoading(false);
+        if (mountedRef.current && retryRequestSeqRef.current === requestId) {
+          setIsLoading(false);
+        }
       });
   }, [uid, fetchFn, pageSize]);
 
@@ -145,6 +174,6 @@ export default function useDashboardTab(uid, fetchFn, pageSize, isActive) {
     loadMoreError,
     retryLoadMore,
     sentinelRef,
-    prevResult: prevResultRef.current,
+    prevResult,
   };
 }

@@ -1,17 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import styles from './ComposeModal.module.css';
-
-/**
- * 判斷表單是否有內容。
- * @param {string} title - 標題值。
- * @param {string} content - 內容值。
- * @returns {boolean} 有任一欄位有內容時回傳 true。
- */
-function hasContent(title, content) {
-  return title.trim() !== '' || content.trim() !== '';
-}
 
 /**
  * 依編輯/送出中狀態決定送出按鈕文字。
@@ -39,6 +29,11 @@ function getSubmitText(isEditing, isSubmitting) {
  * @param {string} [props.originalTitle] - 編輯模式下做為 dirty 比較基準的原始標題；非編輯模式可省略。
  * @param {string} [props.originalContent] - 編輯模式下做為 dirty 比較基準的原始內文；非編輯模式可省略。
  * @param {boolean} [props.isSubmitting] - 送出請求是否進行中，用於停用按鈕並切換 label。
+ * @param {() => void} [props.onRequestClose] - 使用者要求關閉 composer 時呼叫。
+ * @param {boolean} [props.isDraftConfirmOpen] - 是否顯示草稿確認面板。
+ * @param {() => void} [props.onSaveDraft] - 點擊「存草稿」時呼叫。
+ * @param {() => void} [props.onContinueEditing] - 點擊「繼續編輯」時呼叫。
+ * @param {() => void} [props.onDiscardDraft] - 點擊「不儲存並關閉」時呼叫。
  * @returns {import('react').ReactElement} Modal 元件。
  */
 export default function ComposeModal({
@@ -52,19 +47,12 @@ export default function ComposeModal({
   originalTitle,
   originalContent,
   isSubmitting,
+  onRequestClose = () => dialogRef.current?.close(),
+  isDraftConfirmOpen = false,
+  onSaveDraft = () => {},
+  onContinueEditing = () => {},
+  onDiscardDraft = () => {},
 }) {
-  // -- Refs (讓 useEffect 內的 listener 讀到最新值，避免每次 keystroke 重新註冊) --
-
-  const titleRef = useRef(title);
-  const contentRef = useRef(content);
-
-  useEffect(() => {
-    titleRef.current = title;
-  }, [title]);
-  useEffect(() => {
-    contentRef.current = content;
-  }, [content]);
-
   // -- Effects --
 
   useEffect(() => {
@@ -73,31 +61,32 @@ export default function ComposeModal({
 
     /** @param {MouseEvent} e - native click 事件。 */
     function handleBackdropClick(e) {
+      if (e.target !== dialog) return;
+
       const rect = dialog.getBoundingClientRect();
       const clickedOutside =
         e.clientX < rect.left ||
         e.clientX > rect.right ||
         e.clientY < rect.top ||
         e.clientY > rect.bottom;
-      if (clickedOutside && !hasContent(titleRef.current, contentRef.current)) {
-        dialog.close();
+      if (clickedOutside) {
+        onRequestClose();
       }
     }
 
     dialog.addEventListener('click', handleBackdropClick);
     return () => dialog.removeEventListener('click', handleBackdropClick);
-  }, [dialogRef]);
+  }, [dialogRef, onRequestClose]);
 
   // -- Handlers --
 
   /**
-   * Escape 按下時，有內容則阻止關閉。
+   * Escape 按下時交由外部 close guard 決定是否關閉。
    * @param {import('react').SyntheticEvent<HTMLDialogElement>} e - cancel 事件。
    */
   function handleCancel(e) {
-    if (hasContent(title, content)) {
-      e.preventDefault();
-    }
+    e.preventDefault();
+    onRequestClose();
   }
 
   // -- Derived values --
@@ -118,7 +107,8 @@ export default function ComposeModal({
           type="button"
           className={styles.closeButton}
           aria-label="關閉"
-          onClick={() => dialogRef.current?.close()}
+          disabled={isDraftConfirmOpen}
+          onClick={() => onRequestClose()}
         >
           ✕
         </button>
@@ -129,18 +119,65 @@ export default function ComposeModal({
           className={styles.titleInput}
           placeholder="標題"
           value={title}
+          disabled={isDraftConfirmOpen}
           onChange={(e) => onTitleChange(e.target.value)}
         />
         <textarea
           className={styles.contentTextarea}
           placeholder="分享你的想法..."
           value={content}
+          disabled={isDraftConfirmOpen}
           onChange={(e) => onContentChange(e.target.value)}
         />
-        <button type="submit" className={styles.submitButton} disabled={submitDisabled}>
+        <button
+          type="submit"
+          className={styles.submitButton}
+          disabled={isDraftConfirmOpen || submitDisabled}
+        >
           {submitText}
         </button>
       </form>
+      {isDraftConfirmOpen && (
+        <div className={styles.confirmOverlay}>
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="compose-draft-confirm-title"
+            aria-describedby="compose-draft-confirm-body"
+            className={styles.confirmDialog}
+          >
+            <h3 id="compose-draft-confirm-title" className={styles.confirmTitle}>
+              要儲存這篇草稿嗎？
+            </h3>
+            <p id="compose-draft-confirm-body" className={styles.confirmBody}>
+              下次開啟文章編輯器時，可以繼續編輯目前內容。
+            </p>
+            <div className={styles.confirmActions}>
+              <button
+                type="button"
+                className={`${styles.confirmButton} ${styles.confirmPrimary}`}
+                onClick={() => onSaveDraft()}
+              >
+                存草稿
+              </button>
+              <button
+                type="button"
+                className={`${styles.confirmButton} ${styles.confirmSecondary}`}
+                onClick={() => onContinueEditing()}
+              >
+                繼續編輯
+              </button>
+              <button
+                type="button"
+                className={`${styles.confirmButton} ${styles.confirmDanger}`}
+                onClick={() => onDiscardDraft()}
+              >
+                不儲存並關閉
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </dialog>
   );
 }

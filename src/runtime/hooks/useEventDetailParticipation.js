@@ -89,7 +89,13 @@ export default function useEventDetailParticipation({
   }, [id, isMountedRef]);
 
   useEffect(() => {
-    refreshParticipants();
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) refreshParticipants();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [refreshParticipants]);
 
   useEffect(() => {
@@ -260,7 +266,7 @@ export default function useEventDetailParticipation({
     if (remainingSeats <= 0) return 'full';
     if (isDeadlinePassed(event)) return 'deadline_passed';
     return 'can_join';
-  }, [event, isJoined, remainingSeats, user?.uid]);
+  }, [event, isJoined, remainingSeats, user]);
 
   return {
     participants,

@@ -173,8 +173,9 @@ export default function useEventsPageRuntime() {
   useEffect(() => {
     const uid = user?.uid;
     if (!uid || visibleEventIds.length === 0) {
-      setFavoriteEventIds(new Set());
-      return undefined;
+      let cancelled = false;
+      queueMicrotask(() => { if (!cancelled) setFavoriteEventIds(new Set()); });
+      return () => { cancelled = true; };
     }
 
     let cancelled = false;
@@ -330,7 +331,7 @@ export default function useEventsPageRuntime() {
     isLoadingMore,
     loadMoreError,
     hasMore,
-    favoriteEventIds,
+    favoriteEventIds: user?.uid && visibleEventIds.length > 0 ? favoriteEventIds : new Set(),
     sentinelRef,
     selectedDistrictOptions,
     getRemainingSeats,
