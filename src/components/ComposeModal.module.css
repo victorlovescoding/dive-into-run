@@ -52,6 +52,15 @@
   background: #f0f0f0;
 }
 
+.closeButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.closeButton:disabled:hover {
+  background: none;
+}
+
 .form {
   padding: 20px;
   display: flex;
@@ -112,4 +121,85 @@
 .submitButton:disabled:hover,
 .submitButton[aria-disabled='true']:hover {
   background: #e5e7eb;
+}
+
+.confirmOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(17, 24, 39, 0.18);
+}
+
+.confirmDialog {
+  box-sizing: border-box;
+  width: min(360px, 100%);
+  padding: 18px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(17, 24, 39, 0.2);
+}
+
+.confirmTitle {
+  margin: 0;
+  color: #1a1a1a;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.confirmBody {
+  margin: 8px 0 0;
+  color: #4b5563;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.confirmActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.confirmButton {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirmPrimary {
+  color: #fff;
+  background: #673ab7;
+}
+
+.confirmPrimary:hover {
+  background: #5e35b1;
+}
+
+.confirmSecondary {
+  color: #374151;
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+.confirmSecondary:hover {
+  background: #e5e7eb;
+}
+
+.confirmDanger {
+  color: #b91c1c;
+  background: #fff1f2;
+  border-color: #fecdd3;
+}
+
+.confirmDanger:hover {
+  background: #ffe4e6;
 }

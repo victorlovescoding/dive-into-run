@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- Existing detail runtime exceeds the shared limit after scoped draft lifecycle wiring. */
 'use client';
 
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -18,6 +19,11 @@ import {
   getFavoritedTargetIds,
   removeContentFavorite,
 } from '@/runtime/client/use-cases/content-favorite-use-cases';
+import {
+  loadPostComposerDraft,
+  removePostComposerDraft,
+  savePostComposerDraft,
+} from '@/repo/client/post-composer-draft-storage-repo';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 import usePostComments from '@/runtime/hooks/usePostComments';
@@ -44,6 +50,7 @@ export default function usePostDetailRuntime(postId) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openMenuPostId, setOpenMenuPostId] = useState('');
   const [editingPostId, setEditingPostId] = useState(null);
+  const [isDraftConfirmOpen, setIsDraftConfirmOpen] = useState(false);
 
   const dialogRef = useRef(/** @type {HTMLDialogElement | null} */ (null));
   const isMountedRef = useRef(false);
@@ -159,20 +166,78 @@ export default function usePostDetailRuntime(postId) {
     };
   }, [postId, setInitialComments, user?.uid]);
 
+  const closeAndResetComposer = useCallback(() => {
+    setTitle('');
+    setContent('');
+    setOriginalTitle('');
+    setOriginalContent('');
+    setEditingPostId(null);
+    setIsDraftConfirmOpen(false);
+    dialogRef.current?.close();
+  }, []);
+
   const handleOpenEdit = useCallback(
     (targetId) => {
       if (!postDetail) return;
       if (targetId) {
-        setTitle(postDetail.title);
-        setContent(postDetail.content);
+        let nextTitle = postDetail.title;
+        let nextContent = postDetail.content;
+
+        if (user?.uid) {
+          const draft = loadPostComposerDraft({ uid: user.uid, postId: targetId });
+          if (draft) {
+            nextTitle = draft.title;
+            nextContent = draft.content;
+            showToast('已恢復草稿');
+          }
+        }
+
+        setTitle(nextTitle);
+        setContent(nextContent);
         setOriginalTitle(postDetail.title);
         setOriginalContent(postDetail.content);
         setEditingPostId(targetId);
       }
+      setIsDraftConfirmOpen(false);
       dialogRef.current?.showModal();
     },
-    [postDetail],
+    [postDetail, showToast, user],
   );
+
+  const handleRequestComposerClose = useCallback(() => {
+    const hasChanges =
+      title.trim() !== originalTitle.trim() || content.trim() !== originalContent.trim();
+
+    if (!hasChanges) {
+      closeAndResetComposer();
+      return;
+    }
+
+    setIsDraftConfirmOpen(true);
+  }, [closeAndResetComposer, content, originalContent, originalTitle, title]);
+
+  const handleSaveComposerDraft = useCallback(() => {
+    if (user?.uid && editingPostId) {
+      savePostComposerDraft({
+        uid: user.uid,
+        postId: editingPostId,
+        title,
+        content,
+      });
+    }
+    closeAndResetComposer();
+  }, [closeAndResetComposer, content, editingPostId, title, user]);
+
+  const handleContinueEditingDraft = useCallback(() => {
+    setIsDraftConfirmOpen(false);
+  }, []);
+
+  const handleDiscardComposerDraft = useCallback(() => {
+    if (user?.uid && editingPostId) {
+      removePostComposerDraft({ uid: user.uid, postId: editingPostId });
+    }
+    closeAndResetComposer();
+  }, [closeAndResetComposer, editingPostId, user]);
 
   const handleSubmitPost = useCallback(
     async (event) => {
@@ -188,10 +253,14 @@ export default function usePostDetailRuntime(postId) {
         setIsSubmitting(true);
         if (editingPostId) {
           await updatePost(editingPostId, { title, content });
+          if (user?.uid) {
+            removePostComposerDraft({ uid: user.uid, postId: editingPostId });
+          }
           setPostDetail((prev) =>
             prev ? { ...prev, title: title.trim(), content: content.trim() } : prev,
           );
           showToast('更新文章成功');
+          closeAndResetComposer();
         }
       } catch (submitError) {
         console.error('Post update error:', submitError);
@@ -199,15 +268,8 @@ export default function usePostDetailRuntime(postId) {
       } finally {
         setIsSubmitting(false);
       }
-
-      setTitle('');
-      setContent('');
-      setOriginalTitle('');
-      setOriginalContent('');
-      setEditingPostId(null);
-      dialogRef.current?.close();
     },
-    [content, editingPostId, showToast, title],
+    [closeAndResetComposer, content, editingPostId, showToast, title, user],
   );
 
   const handleToggleMenu = useCallback((menuTargetId, event) => {
@@ -269,7 +331,7 @@ export default function usePostDetailRuntime(postId) {
           : prev,
       );
     }
-  }, [postDetail, postId, user?.uid]);
+  }, [postDetail, postId, user]);
 
   const handleToggleFavoritePost = useCallback(async () => {
     if (!user?.uid || !postDetail) {
@@ -305,7 +367,7 @@ export default function usePostDetailRuntime(postId) {
         'error',
       );
     }
-  }, [postDetail, postId, showToast, user?.uid]);
+  }, [postDetail, postId, showToast, user]);
 
   return {
     user,
@@ -321,6 +383,7 @@ export default function usePostDetailRuntime(postId) {
     originalTitle,
     originalContent,
     isSubmitting,
+    isDraftConfirmOpen,
     isLoadingNext,
     openMenuPostId,
     dialogRef,
@@ -330,6 +393,10 @@ export default function usePostDetailRuntime(postId) {
     handleToggleMenu,
     handleCloseMenu,
     handleOpenEdit,
+    handleRequestComposerClose,
+    handleSaveComposerDraft,
+    handleContinueEditingDraft,
+    handleDiscardComposerDraft,
     handleSubmitPost,
     handleDeletePost,
     handleToggleLike,

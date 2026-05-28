@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- Posts feed runtime owns feed and composer orchestration. */
 'use client';
 
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
@@ -27,6 +28,11 @@ import {
   removePostById,
   replaceEditedPost,
 } from '@/runtime/hooks/usePostsPageRuntimeHelpers';
+import {
+  loadPostComposerDraft,
+  removePostComposerDraft,
+  savePostComposerDraft,
+} from '@/repo/client/post-composer-draft-storage-repo';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 
@@ -54,6 +60,7 @@ export default function usePostsPageRuntime() {
   const [openMenuPostId, setOpenMenuPostId] = useState('');
   const [nextCursor, setNextCursor] = useState(null);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
+  const [isDraftConfirmOpen, setIsDraftConfirmOpen] = useState(false);
 
   const dialogRef = useRef(/** @type {HTMLDialogElement | null} */ (null));
   const bottomRef = useRef(/** @type {HTMLDivElement | null} */ (null));
@@ -72,6 +79,25 @@ export default function usePostsPageRuntime() {
     setOriginalContent(draft.originalContent);
     setEditingPostId(draft.editingPostId);
   }, []);
+
+  /** 關閉 composer 並清空目前表單狀態。 */
+  const closeAndResetComposer = useCallback(() => {
+    applyComposerDraft(createComposerDraft(null));
+    setIsDraftConfirmOpen(false);
+    dialogRef.current?.close();
+  }, [applyComposerDraft]);
+
+  /**
+   * 取得目前 composer local draft target。
+   * @returns {{ uid: string | null, postId: string | null }} Draft target。
+   */
+  const getCurrentComposerDraftTarget = useCallback(
+    () => ({
+      uid: userUid,
+      postId: editingPostId ?? null,
+    }),
+    [editingPostId, userUid],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -161,12 +187,74 @@ export default function usePostsPageRuntime() {
         showToast('文章不存在，無法編輯', 'error');
         return;
       }
-      applyComposerDraft(createComposerDraft(targetPost));
+
+      const baseDraft = createComposerDraft(targetPost);
+      const savedDraft = userUid
+        ? loadPostComposerDraft({ uid: userUid, postId: targetPost?.id ?? null })
+        : null;
+      const nextDraft = savedDraft
+        ? {
+            ...baseDraft,
+            title: savedDraft.title,
+            content: savedDraft.content,
+          }
+        : baseDraft;
+
+      applyComposerDraft(nextDraft);
+      if (savedDraft) {
+        showToast('已恢復草稿');
+      }
+      setIsDraftConfirmOpen(false);
       setOpenMenuPostId('');
       dialogRef.current?.showModal();
     },
-    [applyComposerDraft, posts, showToast],
+    [applyComposerDraft, posts, showToast, userUid],
   );
+
+  /** 使用者要求關閉 composer 時，依 dirty 狀態決定關閉或顯示草稿確認。 */
+  const handleRequestComposerClose = useCallback(() => {
+    const hasUnsavedCreateContent =
+      !editingPostId && (title.trim() !== '' || content.trim() !== '');
+    const hasUnsavedEditContent =
+      !!editingPostId &&
+      (title.trim() !== originalTitle.trim() || content.trim() !== originalContent.trim());
+
+    if (!hasUnsavedCreateContent && !hasUnsavedEditContent) {
+      closeAndResetComposer();
+      return;
+    }
+
+    setIsDraftConfirmOpen(true);
+  }, [
+    closeAndResetComposer,
+    content,
+    editingPostId,
+    originalContent,
+    originalTitle,
+    title,
+  ]);
+
+  /** 儲存目前 composer 內容為 local draft，並關閉 composer。 */
+  const handleSaveComposerDraft = useCallback(() => {
+    const target = getCurrentComposerDraftTarget();
+    savePostComposerDraft({
+      ...target,
+      title,
+      content,
+    });
+    closeAndResetComposer();
+  }, [closeAndResetComposer, content, getCurrentComposerDraftTarget, title]);
+
+  /** 關閉草稿確認並回到 composer。 */
+  const handleContinueEditingDraft = useCallback(() => {
+    setIsDraftConfirmOpen(false);
+  }, []);
+
+  /** 移除目前 composer target 的 local draft，並關閉 composer。 */
+  const handleDiscardComposerDraft = useCallback(() => {
+    removePostComposerDraft(getCurrentComposerDraftTarget());
+    closeAndResetComposer();
+  }, [closeAndResetComposer, getCurrentComposerDraftTarget]);
 
   /**
    * 切換文章按讚，失敗時 rollback。
@@ -292,13 +380,18 @@ export default function usePostsPageRuntime() {
         return;
       }
 
+      const draftTarget = getCurrentComposerDraftTarget();
+
       try {
         setIsSubmitting(true);
 
         if (editingPostId) {
           await updatePost(editingPostId, { title, content });
+          removePostComposerDraft(draftTarget);
           setPosts((previousPosts) => replaceEditedPost(previousPosts, editingPostId, title, content));
           showToast('更新文章成功');
+          closeAndResetComposer();
+          return;
         } else {
           if (!user) return;
 
@@ -309,9 +402,11 @@ export default function usePostsPageRuntime() {
           }
 
           const [hydratedPost] = hydratePosts([createdPost], user.uid ?? null);
+          removePostComposerDraft(draftTarget);
           setPosts((previousPosts) => prependPost(previousPosts, hydratedPost));
           window.scrollTo({ top: 0, behavior: 'smooth' });
           showToast('發佈文章成功');
+          closeAndResetComposer();
         }
       } catch (error) {
         console.error('Post submit error:', error);
@@ -319,11 +414,16 @@ export default function usePostsPageRuntime() {
       } finally {
         setIsSubmitting(false);
       }
-
-      applyComposerDraft(createComposerDraft(null));
-      dialogRef.current?.close();
     },
-    [applyComposerDraft, content, editingPostId, showToast, title, user],
+    [
+      closeAndResetComposer,
+      content,
+      editingPostId,
+      getCurrentComposerDraftTarget,
+      showToast,
+      title,
+      user,
+    ],
   );
 
   return {
@@ -338,6 +438,7 @@ export default function usePostsPageRuntime() {
     posts,
     openMenuPostId,
     isLoadingNext,
+    isDraftConfirmOpen,
     dialogRef,
     bottomRef,
     setTitle,
@@ -349,5 +450,9 @@ export default function usePostsPageRuntime() {
     handleCloseOwnerMenu,
     handleDeletePost,
     handleSubmitPost,
+    handleRequestComposerClose,
+    handleSaveComposerDraft,
+    handleContinueEditingDraft,
+    handleDiscardComposerDraft,
   };
 }

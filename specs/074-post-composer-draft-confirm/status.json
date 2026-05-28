@@ -3,38 +3,45 @@
   "feature": "074-post-composer-draft-confirm",
   "branch": "074-post-composer-draft-confirm",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-074-post-composer-draft-confirm",
-  "phase": "plan",
+  "phase": "implementation",
   "activeTask": null,
-  "activeWave": null,
+  "activeWave": "wave-4",
   "authorizationBoundary": {
     "edit": true,
-    "commit": false,
-    "push": false,
-    "pullRequest": false,
-    "ciWatch": false,
-    "merge": false,
-    "localMainSync": false,
-    "deployFirestoreRules": false
+    "commit": true,
+    "push": true,
+    "pullRequest": true,
+    "ciWatch": true,
+    "merge": true,
+    "localMainSync": true,
+    "deployFirestoreRules": true
   },
   "currentHead": {
     "branch": "074-post-composer-draft-confirm",
-    "commit": "3f536fa42fb0e13c7425a6b6c651149889617d95",
-    "capturedAt": "2026-05-27T18:13:04Z",
-    "summary": "Add post composer draft confirm spec"
+    "commit": "6e5857899955ea95f4a6acef22b1ac83a0748513",
+    "capturedAt": "2026-05-27T18:31:08Z",
+    "summary": "Add post composer draft plan"
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "08cc3b402c6b9d2c68d4c4986ae9c079a31592a0",
-    "capturedAt": "2026-05-27T18:13:04Z",
-    "summary": "tracking ref origin/main"
+    "commit": "56764050292e182f4fc4ee92ec2e80a7efde9252",
+    "capturedAt": "2026-05-27T22:34:02Z",
+    "summary": "Merge pull request #111 from victorlovescoding/073-account-deletion"
   },
-  "completedTasks": [],
+  "completedTasks": [
+    "T001",
+    "T002",
+    "T003",
+    "T004",
+    "T005",
+    "T006"
+  ],
   "tasks": [
     {
       "id": "T001",
       "title": "Storage Helper And Tests",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-1",
       "engineer": "Engineer",
@@ -105,18 +112,30 @@
         "Key strings, payload shape, TTL cleanup, invalid cleanup, or target isolation is wrong.",
         "Storage exceptions can propagate to runtime."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec compliance reviewer and code quality reviewer",
+        "summary": "T001 passed spec compliance and code quality review after fixing safe localStorage accessor handling.",
+        "decidedAt": "2026-05-27T18:49:00Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE after one quality-review fix loop. Added post composer draft storage helper and tests, including regression coverage for throwing global localStorage accessor.",
+        "reviewerReport": "Spec compliance reviewer passed with no findings. Code quality reviewer first rejected unsafe default-parameter localStorage access, then re-review passed with no findings.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser src/repo/client/post-composer-draft-storage-repo.test.js: exit 0, 13 tests passed.",
+          "npm run lint:changed: exit 0, existing React settings warning only.",
+          "npm run type-check:changed: exit 0, no type errors in changed files."
+        ],
+        "changedFilesSummary": [
+          "src/repo/client/post-composer-draft-storage-repo.js: added scoped post composer draft localStorage helper with safe storage access, TTL, invalid cleanup, and target-specific removal.",
+          "src/repo/client/post-composer-draft-storage-repo.test.js: added helper tests for key formats, payload shape, valid load, target isolation, invalid/expired cleanup, operation errors, and throwing global localStorage accessor."
+        ]
       }
     },
     {
       "id": "T002",
       "title": "ComposeModal Shared Close Guard And Confirmation UI",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-2",
       "engineer": "Engineer",
@@ -192,18 +211,31 @@
         "Component directly reads/writes localStorage.",
         "Native dialog closes before runtime can decide."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec compliance reviewer and code quality reviewer",
+        "summary": "T002 passed spec compliance and code quality review after fixing bubbled confirm clicks and disabling background controls while confirmation is open.",
+        "decidedAt": "2026-05-27T22:34:02Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE after one quality-review fix loop. Added ComposeModal close guard props, centered draft confirmation UI, disabled background controls while confirmation is open, and component regression tests.",
+        "reviewerReport": "Spec compliance reviewer passed. Code quality reviewer first rejected bubbled confirm clicks and background operability; re-reviews passed with no findings.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser src/components/ComposeModal.test.jsx: exit 0, 6 tests passed.",
+          "npm run lint:changed: exit 0, existing React settings warning only.",
+          "npm run type-check:changed: exit 0, no type errors in changed files."
+        ],
+        "changedFilesSummary": [
+          "src/components/ComposeModal.jsx: routed X, Escape, and backdrop through onRequestClose; added custom draft confirmation UI and disabled background controls while it is open.",
+          "src/components/ComposeModal.module.css: added centered confirmation dialog styles and disabled close-button styling.",
+          "src/components/ComposeModal.test.jsx: added close guard, confirmation action, bubbled click, disabled background control, and submit dirty/disabled behavior tests."
+        ]
       }
     },
     {
       "id": "T003",
       "title": "Posts Feed Composer Draft Runtime",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-3",
       "engineer": "Engineer",
@@ -289,18 +321,31 @@
         "PostsPageScreen does not pass the new props to ComposeModal.",
         "Any write expands outside owned files."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec compliance reviewer and code quality reviewer",
+        "summary": "T003 passed spec compliance and code quality review for posts feed create/edit draft restore, close guard, target-scoped save/discard, success cleanup, and failed-submit preservation.",
+        "decidedAt": "2026-05-27T22:52:03Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE_WITH_CONCERNS. Added posts feed runtime draft confirm behavior and tests; concerns limited to broad file-level max-lines disables in already-large owned runtime/test files.",
+        "reviewerReport": "Spec compliance reviewer passed with no findings. Code quality reviewer passed with no blockers and noted max-lines disables as follow-up debt, not a T003 blocker.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx: exit 0, 11 tests passed.",
+          "npm run lint:changed: exit 0, existing React settings warning only.",
+          "npm run type-check:changed: exit 0, no type errors in changed files."
+        ],
+        "changedFilesSummary": [
+          "src/runtime/hooks/usePostsPageRuntime.js: added create/edit draft restore, target-scoped confirm actions, failed-submit preservation, and success cleanup.",
+          "src/runtime/hooks/usePostsPageRuntime.test.jsx: added feed runtime tests for create/edit restore isolation, close guard, confirm actions, submit cleanup, and failed-submit preservation.",
+          "src/ui/posts/PostsPageScreen.jsx: passed draft confirmation state and handlers to ComposeModal."
+        ]
       }
     },
     {
       "id": "T004",
       "title": "Post Detail Composer Draft Runtime",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-3",
       "engineer": "Engineer",
@@ -383,18 +428,31 @@
         "PostDetailScreen does not pass the new props to ComposeModal.",
         "Any write expands outside owned files."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec compliance reviewer and code quality reviewer",
+        "summary": "T004 passed spec compliance and code quality review for post detail edit draft restore, close guard, target-scoped save/discard, success cleanup, and failed-update preservation.",
+        "decidedAt": "2026-05-27T22:52:03Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE_WITH_CONCERNS. Added post detail runtime draft confirm behavior and tests; concerns limited to broad file-level max-lines disables in already-large owned runtime/test files.",
+        "reviewerReport": "Spec compliance reviewer passed with no findings. Code quality reviewer passed with no blockers and noted max-lines disables as follow-up debt, not a T004 blocker.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx: exit 0, 7 tests passed.",
+          "npm run lint:changed: exit 0 after T003/T004 integration, existing React settings warning only.",
+          "npm run type-check:changed: exit 0 after T003/T004 integration, no type errors in changed files."
+        ],
+        "changedFilesSummary": [
+          "src/runtime/hooks/usePostDetailRuntime.js: added edit draft restore, target-scoped confirm actions, failed-update preservation, and success cleanup.",
+          "src/runtime/hooks/usePostDetailRuntime.test.jsx: added detail runtime tests for edit restore isolation, close guard, confirm actions, submit cleanup, and failed-update preservation.",
+          "src/ui/posts/PostDetailScreen.jsx: passed draft confirmation state and handlers to ComposeModal."
+        ]
       }
     },
     {
       "id": "T005",
       "title": "Final Integration And Workflow Gate",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-4",
       "engineer": "Verifier",
@@ -503,12 +561,122 @@
         "Diff includes schema, rules, package metadata, lockfile, server route, dependency, or unrelated doc changes.",
         "State files drift after authorized workflow sync."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Final T005 integration reviewer",
+        "summary": "T005 passed final integration and workflow review. Recorded tests, lint, type-check, depcruise, diff checks, browser evidence, changed-file scope, and workflow state sync satisfy the feature acceptance criteria.",
+        "decidedAt": "2026-05-27T23:18:46Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "T005 verification completed in the worktree. Required focused tests, UI prop-wiring tests, lint, changed-file type-check, depcruise, diff whitespace check, and changed-file scope checks passed. Browser evidence was captured against Firebase Auth/Firestore/Storage emulators and Next dev server on localhost:3002.",
+        "reviewerReport": "Final T005 reviewer passed. Evidence covered focused tests, UI wiring tests, lint, type-check, depcruise, diff checks, browser check screenshot, changed-file scope, no rules/package/server/unrelated changes, runtime tests without UI imports, UI-layer prop coverage, and workflow state validation/sync.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser src/repo/client/post-composer-draft-storage-repo.test.js: exit 0, 13 tests passed.",
+          "npx vitest run --project=browser src/components/ComposeModal.test.jsx: exit 0, 6 tests passed.",
+          "npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx: exit 0, 10 tests passed after moving screen wiring coverage to UI test.",
+          "npx vitest run --project=browser src/ui/posts/PostsPageScreen.test.jsx: exit 0, 1 test passed.",
+          "npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx: exit 0, 6 tests passed after moving screen wiring coverage to UI test.",
+          "npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx: exit 0, 1 test passed.",
+          "npm run lint:changed: exit 0, existing React settings warning only.",
+          "npm run type-check:changed: exit 0, no type errors in changed files.",
+          "npm run depcruise: exit 0, no dependency violations found; existing MODULE_TYPELESS_PACKAGE_JSON warning only.",
+          "git diff --check: exit 0, no whitespace errors.",
+          "git status --short --untracked-files=all: exit 0, changed files limited to planned source/test files and authorized workflow state.",
+          "git diff --name-only: exit 0, tracked changed files limited to planned source files and workflow state.",
+          "git ls-files --others --exclude-standard: exit 0, untracked files limited to planned new source/test files.",
+          "node /private/tmp/post-draft-browser-check.mjs: exit 0, emulator browser check passed for X, Escape, backdrop, save draft, continue editing, discard, restore toast, A/B edit draft isolation, and successful update cleanup; screenshot saved to /private/tmp/post-draft-browser-check.png."
+        ],
+        "changedFilesSummary": [
+          "Production source: ComposeModal close guard/confirmation UI, posts feed runtime/screen draft integration, post detail runtime/screen draft integration, and localStorage draft helper.",
+          "Tests: helper tests, ComposeModal tests, posts feed runtime tests, post detail runtime tests, and UI-layer screen prop wiring tests.",
+          "Workflow state: feature 074 tasks, handoff, and status were updated with dispatch, review, and verification evidence.",
+          "No Firestore rules, Storage rules, package metadata, lockfile, dependency, server route, or unrelated docs changed."
+        ]
+      }
+    },
+    {
+      "id": "T006",
+      "title": "Clean Close Regression Tests",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "release-follow-up",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Add regression coverage for clean create, unchanged feed edit, and unchanged detail edit composer close requests."
+      ],
+      "nonScope": [
+        "Do not modify production code, ComposeModal, UI screen tests, workflow state beyond coordinator sync, package metadata, Firestore/storage rules, or config."
+      ],
+      "ownedFiles": [
+        "src/runtime/hooks/usePostsPageRuntime.test.jsx",
+        "src/runtime/hooks/usePostDetailRuntime.test.jsx"
+      ],
+      "readOnlyContext": [
+        "specs/074-post-composer-draft-confirm/spec.md",
+        "specs/074-post-composer-draft-confirm/tasks.md",
+        "src/runtime/hooks/usePostsPageRuntime.js",
+        "src/runtime/hooks/usePostDetailRuntime.js"
+      ],
+      "dependencies": [
+        "T005"
+      ],
+      "engineerInstructions": [
+        "Add hook-level regression tests proving clean create and unchanged edit close requests close/reset without opening draft confirmation.",
+        "Modify only the owned test files."
+      ],
+      "acceptanceCriteria": [
+        "AC-T006.1: /posts clean create close leaves isDraftConfirmOpen false, resets composer state, and closes the dialog once.",
+        "AC-T006.2: /posts unchanged edit close leaves isDraftConfirmOpen false, resets composer state, and closes the dialog once.",
+        "AC-T006.3: /posts/[id] unchanged edit close leaves isDraftConfirmOpen false, resets composer state, and closes the dialog once.",
+        "AC-T006.4: No production code changes are introduced."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx",
+          "expectedSignal": "exit 0 and posts runtime tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx",
+          "expectedSignal": "exit 0 and detail runtime tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "git diff -- src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx",
+          "expectedSignal": "diff only adds requested regression tests in owned files",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned test files for the T006 unstaged change.",
+        "Focused runtime tests pass.",
+        "No production files changed by T006."
+      ],
+      "reviewerRejectCriteria": [
+        "Production code or non-owned files changed for T006.",
+        "Clean or unchanged close behavior is not asserted.",
+        "Focused tests are missing or failed."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T006 clean-close regression reviewer",
+        "summary": "T006 passed review. The diff adds three hook-level regression tests for clean create, unchanged feed edit, and unchanged detail edit close paths, with no production changes.",
+        "decidedAt": "2026-05-28T05:07:58Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE. Added three clean-close regression tests in the posts and detail runtime hook test files.",
+        "reviewerReport": "review_passed. Diff only adds requested tests in owned files; focused runtime tests passed; no production files changed by T006.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx: exit 0, 12 tests passed.",
+          "npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx: exit 0, 7 tests passed.",
+          "git diff -- src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx: exit 0, diff only adds the three requested tests.",
+          "git diff --name-status: exit 0, unstaged T006 diff only touched the two owned test files."
+        ],
+        "changedFilesSummary": [
+          "src/runtime/hooks/usePostsPageRuntime.test.jsx: added clean create and unchanged feed edit close regression tests.",
+          "src/runtime/hooks/usePostDetailRuntime.test.jsx: added unchanged detail edit close regression test."
+        ]
       }
     }
   ],
@@ -520,10 +688,15 @@
       "phase": "spec",
       "ref": "3f536fa42fb0e13c7425a6b6c651149889617d95",
       "summary": "Add post composer draft confirm spec"
+    },
+    {
+      "phase": "plan",
+      "ref": "6e5857899955ea95f4a6acef22b1ac83a0748513",
+      "summary": "Add post composer draft plan"
     }
   ],
   "rulesDeployStatus": {
-    "state": "not_applicable",
+    "state": "pending",
     "required": false,
     "changed": false,
     "evidence": [],
@@ -608,7 +781,253 @@
       "exitCode": 0,
       "summary": "Only four untracked owned planning files are present for feature 074.",
       "verifiedAt": "2026-05-27T18:21:54Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/repo/client/post-composer-draft-storage-repo.test.js",
+      "exitCode": 0,
+      "summary": "T001 helper tests passed with 13 tests.",
+      "verifiedAt": "2026-05-27T18:49:00Z"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T001 changed files lint passed; existing React settings warning only.",
+      "verifiedAt": "2026-05-27T18:49:00Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T001 changed files type-check passed with no errors.",
+      "verifiedAt": "2026-05-27T18:49:00Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/components/ComposeModal.test.jsx",
+      "exitCode": 0,
+      "summary": "T002 component tests passed with 6 tests.",
+      "verifiedAt": "2026-05-27T22:34:02Z"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T002 changed files lint passed; existing React settings warning only.",
+      "verifiedAt": "2026-05-27T22:34:02Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T002 changed files type-check passed with no errors.",
+      "verifiedAt": "2026-05-27T22:34:02Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/repo/client/post-composer-draft-storage-repo.test.js",
+      "exitCode": 0,
+      "summary": "T005 helper tests passed with 13 tests.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/components/ComposeModal.test.jsx",
+      "exitCode": 0,
+      "summary": "T005 ComposeModal tests passed with 6 tests.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx",
+      "exitCode": 0,
+      "summary": "T005 posts runtime tests passed with 10 tests.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/ui/posts/PostsPageScreen.test.jsx",
+      "exitCode": 0,
+      "summary": "T005 posts screen prop wiring test passed with 1 test.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx",
+      "exitCode": 0,
+      "summary": "T005 post detail runtime tests passed with 6 tests.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx",
+      "exitCode": 0,
+      "summary": "T005 post detail screen prop wiring test passed with 1 test.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "T005 changed-file lint passed; existing React settings warning only.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T005 changed-file type-check passed with no errors.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "npm run depcruise",
+      "exitCode": 0,
+      "summary": "T005 dependency direction check passed with no violations; existing MODULE_TYPELESS_PACKAGE_JSON warning only.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "T005 whitespace check passed with no diff whitespace errors.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "git status --short --untracked-files=all",
+      "exitCode": 0,
+      "summary": "T005 changed-file scope contains only planned source/test files and authorized workflow state.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "git diff --name-only",
+      "exitCode": 0,
+      "summary": "T005 tracked diff contains only planned source files and workflow state.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "git ls-files --others --exclude-standard",
+      "exitCode": 0,
+      "summary": "T005 untracked files are limited to planned new helper/test files and UI screen tests.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "node /private/tmp/post-draft-browser-check.mjs",
+      "exitCode": 0,
+      "summary": "Emulator browser check passed for create/edit close guard via X, Escape, and backdrop; save draft, continue editing, discard, restore toast, A/B edit draft isolation, and successful update cleanup. Screenshot: /private/tmp/post-draft-browser-check.png.",
+      "verifiedAt": "2026-05-27T23:14:22Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx",
+      "exitCode": 0,
+      "summary": "T006 posts runtime regression tests passed with 12 tests, including clean create and unchanged edit close paths.",
+      "verifiedAt": "2026-05-28T05:07:58Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx",
+      "exitCode": 0,
+      "summary": "T006 detail runtime regression tests passed with 7 tests, including unchanged edit close path.",
+      "verifiedAt": "2026-05-28T05:07:58Z"
+    },
+    {
+      "command": "git diff -- src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx",
+      "exitCode": 0,
+      "summary": "T006 unstaged diff only added three requested clean-close regression tests in owned files.",
+      "verifiedAt": "2026-05-28T05:07:58Z"
+    },
+    {
+      "command": "git diff --name-status",
+      "exitCode": 0,
+      "summary": "T006 reviewer confirmed the unstaged diff touched only the two owned runtime hook test files.",
+      "verifiedAt": "2026-05-28T05:07:58Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/repo/client/post-composer-draft-storage-repo.test.js",
+      "exitCode": 0,
+      "summary": "Release verification helper tests passed with 13 tests.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/components/ComposeModal.test.jsx",
+      "exitCode": 0,
+      "summary": "Release verification ComposeModal tests passed with 6 tests.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx",
+      "exitCode": 0,
+      "summary": "Release verification posts runtime tests passed with 12 tests.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/ui/posts/PostsPageScreen.test.jsx",
+      "exitCode": 0,
+      "summary": "Release verification posts screen wiring test passed with 1 test.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx",
+      "exitCode": 0,
+      "summary": "Release verification detail runtime tests passed with 7 tests.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx",
+      "exitCode": 0,
+      "summary": "Release verification detail screen wiring test passed with 1 test.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "Release verification changed-file lint passed; existing React settings warning only.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "Release verification changed-file type-check passed with no errors.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "npm run depcruise",
+      "exitCode": 0,
+      "summary": "Release verification dependency direction check passed with no violations; existing MODULE_TYPELESS_PACKAGE_JSON warning only.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "git diff --cached --check",
+      "exitCode": 0,
+      "summary": "Release verification cached diff whitespace check passed.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "git status --short --untracked-files=all",
+      "exitCode": 0,
+      "summary": "Release verification found only planned staged source, test, and workflow files.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "git diff --cached --name-only",
+      "exitCode": 0,
+      "summary": "Release verification cached changed-file list contains only planned feature files and workflow state.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "git diff --name-only",
+      "exitCode": 0,
+      "summary": "Release verification found no unstaged tracked diff.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "git ls-files --others --exclude-standard",
+      "exitCode": 0,
+      "summary": "Release verification found no untracked files.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "git diff --cached --exit-code -- firestore.rules storage.rules firestore.indexes.json firebase.json package.json package-lock.json functions/package.json functions/package-lock.json",
+      "exitCode": 0,
+      "summary": "Release verification confirmed no Firestore rules, Storage rules, Firebase config, package metadata, or lockfile diff.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "node scripts/validate-workflow-state.js specs/074-post-composer-draft-confirm/status.json",
+      "exitCode": 0,
+      "summary": "Release verification status.json validates against schemaVersion 3.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/074-post-composer-draft-confirm/status.json",
+      "exitCode": 0,
+      "summary": "Release verification workflow state is synced.",
+      "verifiedAt": "2026-05-28T05:13:00Z"
     }
   ],
-  "updatedAt": "2026-05-27T18:21:54Z"
+  "updatedAt": "2026-05-28T05:13:00Z"
 }

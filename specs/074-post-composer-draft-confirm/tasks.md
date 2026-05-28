@@ -45,13 +45,13 @@
 
 ### T001 - Storage Helper And Tests
 
-- **State**: `todo`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-1`
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: `storage-helper`
-- **Last verified commit**: none
+- **Last verified commit**: uncommitted T001 diff verified in worktree
 - **Authorization boundary**: edit=yes, commit=no, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: not_applicable
 - **Incidents**: none
@@ -170,23 +170,131 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending until dispatch.
-- Reviewer report: pending until dispatch.
-- Command output summary: pending until dispatch.
-- Changed files summary: pending until dispatch.
+- Engineer report:
+  - Status: DONE after one quality-review fix loop.
+  - Files changed:
+    - `src/repo/client/post-composer-draft-storage-repo.js`
+    - `src/repo/client/post-composer-draft-storage-repo.test.js`
+  - TDD evidence: RED failed on missing helper import, then GREEN passed 13 helper tests after implementation and regression fix.
+- Reviewer report:
+  - Spec compliance reviewer: `review_passed`, no findings.
+  - Code quality reviewer: first `review_rejected` for unsafe `globalThis.localStorage` default-parameter lookup; re-review `review_passed`, no findings.
+- Command output summary:
+  - `npx vitest run --project=browser src/repo/client/post-composer-draft-storage-repo.test.js`: exit 0, 13 tests passed.
+  - `npm run lint:changed`: exit 0, existing React settings warning only.
+  - `npm run type-check:changed`: exit 0, no type errors in changed files.
+- Changed files summary:
+  - `src/repo/client/post-composer-draft-storage-repo.js`
+    - Added scoped post composer draft localStorage helper with safe storage access, TTL, invalid cleanup, and target-specific removal.
+  - `src/repo/client/post-composer-draft-storage-repo.test.js`
+    - Added helper tests for key formats, payload shape, valid load, target isolation, invalid/expired cleanup, operation errors, and throwing global localStorage accessor.
 - Phase commits: none.
 - Rules deploy status: state `not_applicable`, evidence none.
 - Incidents: none.
 
+### T006 - Clean Close Regression Tests
+
+- **State**: `completed`
+- **Attempt**: 1
+- **Wave**: `release-follow-up`
+- **Engineer**: Engineer
+- **Reviewer**: Reviewer
+- **Commit checkpoint**: `clean-close-regression-tests`
+- **Last verified commit**: uncommitted T006 diff verified in worktree
+- **Authorization boundary**: edit=yes, commit=yes, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, localMainSync=yes, deployFirestoreRules=yes
+- **Rules deploy status**: pending; no rules files changed, but user explicitly authorized and requested Firestore/storage rules deploy during closeout
+- **Incidents**: none
+
+Scope:
+
+- Add regression coverage for clean create, unchanged feed edit, and unchanged detail edit composer close requests.
+- Keep the slice test-only.
+
+Non-scope:
+
+- Do not modify production code, `ComposeModal`, UI screen tests, workflow state beyond coordinator sync, package metadata, Firestore/storage rules, or config.
+
+Owned files:
+
+- `src/runtime/hooks/usePostsPageRuntime.test.jsx`
+- `src/runtime/hooks/usePostDetailRuntime.test.jsx`
+
+Read-only context:
+
+- `specs/074-post-composer-draft-confirm/spec.md`
+- `specs/074-post-composer-draft-confirm/tasks.md`
+- `src/runtime/hooks/usePostsPageRuntime.js`
+- `src/runtime/hooks/usePostDetailRuntime.js`
+
+Dependencies:
+
+- T005 completed
+
+Browser evidence:
+
+- not applicable; this is hook-level regression coverage for runtime close-guard branching.
+
+Acceptance criteria:
+
+- AC-T006.1: `/posts` clean create close leaves `isDraftConfirmOpen` false, resets composer state, and closes the dialog once.
+- AC-T006.2: `/posts` unchanged edit close leaves `isDraftConfirmOpen` false, resets composer state, and closes the dialog once.
+- AC-T006.3: `/posts/[id]` unchanged edit close leaves `isDraftConfirmOpen` false, resets composer state, and closes the dialog once.
+- AC-T006.4: No production code changes are introduced.
+
+Verification commands and expected signal:
+
+| Command | Expected signal |
+| ------- | --------------- |
+| `npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx` | exit 0 and posts runtime tests pass |
+| `npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx` | exit 0 and detail runtime tests pass |
+| `git diff -- src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx` | diff only adds requested regression tests in owned files |
+
+Reviewer PASS criteria:
+
+- Diff touches only owned test files for the T006 change.
+- Focused runtime tests pass.
+- No production files changed by T006.
+
+Reviewer REJECT criteria:
+
+- Production code or non-owned files changed for T006.
+- Clean or unchanged close behavior is not asserted.
+- Focused tests are missing or failed.
+
+Evidence:
+
+- Engineer report:
+  - Status: DONE.
+  - Files changed:
+    - `src/runtime/hooks/usePostsPageRuntime.test.jsx`
+    - `src/runtime/hooks/usePostDetailRuntime.test.jsx`
+  - Added three hook-level regression tests for clean create, unchanged feed edit, and unchanged detail edit close paths.
+- Reviewer report:
+  - T006 clean-close regression reviewer: `review_passed`.
+  - Diff only adds requested tests in owned files; focused runtime tests passed; no production files changed by T006.
+- Command output summary:
+  - `npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx`: exit 0, 12 tests passed.
+  - `npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx`: exit 0, 7 tests passed.
+  - `git diff -- src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx`: exit 0, diff only adds three requested tests.
+  - `git diff --name-status`: exit 0, unstaged T006 diff only touched the two owned runtime hook test files.
+- Changed files summary:
+  - `src/runtime/hooks/usePostsPageRuntime.test.jsx`
+    - Added clean create and unchanged feed edit close regression tests.
+  - `src/runtime/hooks/usePostDetailRuntime.test.jsx`
+    - Added unchanged detail edit close regression test.
+- Phase commits: none.
+- Rules deploy status: pending; no Firestore/storage rules files changed, deploy still authorized/requested for closeout.
+- Incidents: none.
+
 ### T002 - ComposeModal Shared Close Guard And Confirmation UI
 
-- **State**: `todo`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-2`
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: `compose-modal-close-guard`
-- **Last verified commit**: none
+- **Last verified commit**: uncommitted T002 diff verified in worktree
 - **Authorization boundary**: edit=yes, commit=no, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: not_applicable
 - **Incidents**: none
@@ -284,23 +392,40 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending until dispatch.
-- Reviewer report: pending until dispatch.
-- Command output summary: pending until dispatch.
-- Changed files summary: pending until dispatch.
+- Engineer report:
+  - Status: DONE after one quality-review fix loop.
+  - Files changed:
+    - `src/components/ComposeModal.jsx`
+    - `src/components/ComposeModal.module.css`
+    - `src/components/ComposeModal.test.jsx`
+  - TDD evidence: RED failed on missing close guard/confirmation behavior; GREEN passed 6 component tests after implementation and regression fix.
+- Reviewer report:
+  - Spec compliance reviewer: `review_passed`, no findings.
+  - Code quality reviewer: first `review_rejected` for bubbled confirm clicks and background form operability; re-review `review_passed`, no findings.
+- Command output summary:
+  - `npx vitest run --project=browser src/components/ComposeModal.test.jsx`: exit 0, 6 tests passed.
+  - `npm run lint:changed`: exit 0, existing React settings warning only.
+  - `npm run type-check:changed`: exit 0, no type errors in changed files.
+- Changed files summary:
+  - `src/components/ComposeModal.jsx`
+    - Routed X, Escape, and backdrop through `onRequestClose`; added custom draft confirmation UI and disabled background controls while it is open.
+  - `src/components/ComposeModal.module.css`
+    - Added centered confirmation dialog styles and disabled close-button styling.
+  - `src/components/ComposeModal.test.jsx`
+    - Added close guard, confirmation action, bubbled click, disabled background control, and submit dirty/disabled behavior tests.
 - Phase commits: none.
 - Rules deploy status: state `not_applicable`, evidence none.
 - Incidents: none.
 
 ### T003 - Posts Feed Composer Draft Runtime
 
-- **State**: `todo`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-3`
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: `posts-feed-draft-runtime`
-- **Last verified commit**: none
+- **Last verified commit**: uncommitted T003 diff verified in worktree
 - **Authorization boundary**: edit=yes, commit=no, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: not_applicable
 - **Incidents**: none
@@ -430,23 +555,41 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending until dispatch.
-- Reviewer report: pending until dispatch.
-- Command output summary: pending until dispatch.
-- Changed files summary: pending until dispatch.
+- Engineer report:
+  - Status: DONE_WITH_CONCERNS.
+  - Files changed:
+    - `src/runtime/hooks/usePostsPageRuntime.js`
+    - `src/runtime/hooks/usePostsPageRuntime.test.jsx`
+    - `src/ui/posts/PostsPageScreen.jsx`
+  - TDD evidence: RED showed missing draft restore, close handlers, submit cleanup/preservation, and screen prop wiring; GREEN passed 11 feed runtime/screen tests.
+  - Concern: file-level `max-lines` disables were added in owned runtime/test files because this slice did not include helper extraction.
+- Reviewer report:
+  - Spec compliance reviewer: `review_passed`, no findings.
+  - Code quality reviewer: `review_passed`, no blockers; max-lines disables noted as follow-up debt.
+- Command output summary:
+  - `npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx`: exit 0, 11 tests passed.
+  - `npm run lint:changed`: exit 0, existing React settings warning only.
+  - `npm run type-check:changed`: exit 0, no type errors in changed files.
+- Changed files summary:
+  - `src/runtime/hooks/usePostsPageRuntime.js`
+    - Added create/edit draft restore, target-scoped confirm actions, failed-submit preservation, and success cleanup.
+  - `src/runtime/hooks/usePostsPageRuntime.test.jsx`
+    - Added feed runtime tests for create/edit restore isolation, close guard, confirm actions, submit cleanup, and failed-submit preservation.
+  - `src/ui/posts/PostsPageScreen.jsx`
+    - Passed draft confirmation state and handlers to `ComposeModal`.
 - Phase commits: none.
 - Rules deploy status: state `not_applicable`, evidence none.
 - Incidents: none.
 
 ### T004 - Post Detail Composer Draft Runtime
 
-- **State**: `todo`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-3`
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: `post-detail-draft-runtime`
-- **Last verified commit**: none
+- **Last verified commit**: uncommitted T004 diff verified in worktree
 - **Authorization boundary**: edit=yes, commit=no, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: not_applicable
 - **Incidents**: none
@@ -567,23 +710,41 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending until dispatch.
-- Reviewer report: pending until dispatch.
-- Command output summary: pending until dispatch.
-- Changed files summary: pending until dispatch.
+- Engineer report:
+  - Status: DONE_WITH_CONCERNS.
+  - Files changed:
+    - `src/runtime/hooks/usePostDetailRuntime.js`
+    - `src/runtime/hooks/usePostDetailRuntime.test.jsx`
+    - `src/ui/posts/PostDetailScreen.jsx`
+  - TDD evidence: RED showed missing draft restore, close handlers, submit cleanup/preservation, and screen prop wiring; GREEN passed 7 detail runtime/screen tests.
+  - Concern: file-level `max-lines` disables were added in owned runtime/test files because this slice did not include helper extraction.
+- Reviewer report:
+  - Spec compliance reviewer: `review_passed`, no findings.
+  - Code quality reviewer: `review_passed`, no blockers; max-lines disables noted as follow-up debt.
+- Command output summary:
+  - `npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx`: exit 0, 7 tests passed.
+  - `npm run lint:changed`: exit 0 after T003/T004 integration, existing React settings warning only.
+  - `npm run type-check:changed`: exit 0 after T003/T004 integration, no type errors in changed files.
+- Changed files summary:
+  - `src/runtime/hooks/usePostDetailRuntime.js`
+    - Added edit draft restore, target-scoped confirm actions, failed-update preservation, and success cleanup.
+  - `src/runtime/hooks/usePostDetailRuntime.test.jsx`
+    - Added detail runtime tests for edit restore isolation, close guard, confirm actions, submit cleanup, and failed-update preservation.
+  - `src/ui/posts/PostDetailScreen.jsx`
+    - Passed draft confirmation state and handlers to `ComposeModal`.
 - Phase commits: none.
 - Rules deploy status: state `not_applicable`, evidence none.
 - Incidents: none.
 
 ### T005 - Final Integration And Workflow Gate
 
-- **State**: `todo`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-4`
 - **Engineer**: Verifier
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: `integration-gate`
-- **Last verified commit**: none
+- **Last verified commit**: uncommitted implementation diff verified in worktree
 - **Authorization boundary**: edit=yes, commit=no, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: not_applicable
 - **Incidents**: none
@@ -688,10 +849,47 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending until dispatch.
-- Reviewer report: pending until dispatch.
-- Command output summary: pending until dispatch.
-- Changed files summary: pending until dispatch.
+- Engineer report:
+  - Status: verification complete, reviewer pending.
+  - Required focused tests, UI prop-wiring tests, lint, changed-file type-check, depcruise, diff whitespace check, and changed-file scope checks passed.
+  - Browser evidence was captured against Firebase Auth/Firestore/Storage emulators and Next dev server on `http://localhost:3002`.
+  - The depcruise fix moved screen prop-wiring tests from runtime-layer test files into UI-layer screen test files.
+- Reviewer report:
+  - Final T005 reviewer: `review_passed`.
+  - Evidence covered focused tests, UI wiring tests, lint, type-check, depcruise, diff checks, browser check screenshot, changed-file scope, no rules/package/server/unrelated changes, runtime tests without UI imports, UI-layer prop coverage, and workflow state validation/sync.
+  - Earlier depcruise-fix reviewer concern was about cumulative T001-T004/workflow diffs in the shared worktree, not a structural failure; runtime tests no longer import `@/ui/**` and UI-layer tests preserve screen-to-`ComposeModal` prop coverage.
+- Command output summary:
+  - `npx vitest run --project=browser src/repo/client/post-composer-draft-storage-repo.test.js`: exit 0, 13 tests passed.
+  - `npx vitest run --project=browser src/components/ComposeModal.test.jsx`: exit 0, 6 tests passed.
+  - `npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx`: exit 0, 10 tests passed after moving screen wiring coverage to UI test.
+  - `npx vitest run --project=browser src/ui/posts/PostsPageScreen.test.jsx`: exit 0, 1 test passed.
+  - `npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx`: exit 0, 6 tests passed after moving screen wiring coverage to UI test.
+  - `npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx`: exit 0, 1 test passed.
+  - `npm run lint:changed`: exit 0, existing React settings warning only.
+  - `npm run type-check:changed`: exit 0, no type errors in changed files.
+  - `npm run depcruise`: exit 0, no dependency violations found; existing `MODULE_TYPELESS_PACKAGE_JSON` warning only.
+  - `git diff --check`: exit 0, no whitespace errors.
+  - `git status --short --untracked-files=all`: exit 0, changed files limited to planned source/test files and authorized workflow state.
+  - `git diff --name-only`: exit 0, tracked changed files limited to planned source files and workflow state.
+  - `git ls-files --others --exclude-standard`: exit 0, untracked files limited to planned new source/test files.
+  - `node /private/tmp/post-draft-browser-check.mjs`: exit 0, emulator browser check passed.
+- Browser evidence:
+  - Signed in through Firebase Auth emulator.
+  - X close showed the custom confirm for dirty create content.
+  - `繼續編輯` kept the create composer content.
+  - Escape showed the same custom confirm.
+  - `存草稿` persisted `post-composer:draft:create:<uid>`.
+  - Reopening create composer restored draft content and showed toast `已恢復草稿`.
+  - `不儲存並關閉` removed only the current create draft and closed.
+  - Article A and Article B edit drafts were saved under separate edit targets and restored independently.
+  - Backdrop close showed the same custom confirm for dirty edit content.
+  - Successful update closed composer and removed the active edit draft.
+  - Screenshot: `/private/tmp/post-draft-browser-check.png`.
+- Changed files summary:
+  - Production source: `ComposeModal` close guard/confirmation UI, posts feed runtime/screen draft integration, post detail runtime/screen draft integration, and localStorage draft helper.
+  - Tests: helper tests, `ComposeModal` tests, posts feed runtime tests, post detail runtime tests, and UI-layer screen prop wiring tests.
+  - Workflow state: feature 074 tasks, handoff, and status were updated with dispatch, review, and verification evidence.
+  - No Firestore rules, Storage rules, package metadata, lockfile, dependency, server route, or unrelated docs changed.
 - Phase commits: none.
 - Rules deploy status: state `not_applicable`, evidence none.
 - Incidents: none.

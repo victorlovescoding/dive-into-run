@@ -73,6 +73,7 @@ export default function PostsPageScreen({ runtime }) {
     posts,
     openMenuPostId,
     isLoadingNext,
+    isDraftConfirmOpen,
     dialogRef,
     bottomRef,
     setTitle,
@@ -84,6 +85,10 @@ export default function PostsPageScreen({ runtime }) {
     handleDeletePost,
     handleSubmitPost,
     handleToggleFavoritePost,
+    handleRequestComposerClose,
+    handleSaveComposerDraft,
+    handleContinueEditingDraft,
+    handleDiscardComposerDraft,
   } = runtime;
 
   return (
@@ -117,6 +122,11 @@ export default function PostsPageScreen({ runtime }) {
         originalTitle={originalTitle}
         originalContent={originalContent}
         isSubmitting={isSubmitting}
+        onRequestClose={handleRequestComposerClose}
+        isDraftConfirmOpen={isDraftConfirmOpen}
+        onSaveDraft={handleSaveComposerDraft}
+        onContinueEditing={handleContinueEditingDraft}
+        onDiscardDraft={handleDiscardComposerDraft}
       />
     </div>
   );
