@@ -2,14 +2,26 @@
 
 ## Current State
 
-- Worktree: `/Users/chentzuyu/Desktop/dive-into-run-073-account-deletion`
-- Branch: `073-account-deletion` (local status showed behind `origin/main` by 2; pull/rebase is not authorized in this task).
-- Active task: none; T001-T006 are completed after integrated Reviewer PASS.
-- Current phase: deployed; reviewed implementation, fresh local verification, Firestore rules deploy, Functions deploy, and cleanup policy setup are complete.
-- Authorization: edit, local verification, stage, commit, push, PR, CI watch, GitHub merge, Firebase deploy, and local main sync.
+- Worktree: `/Users/chentzuyu/Desktop/dive-into-run-075-account-deletion-index-error`
+- Branch: `075-account-deletion-index-error`
+- Active task: none; T001-T007 are completed after Reviewer PASS.
+- Current phase: reviewed follow-up. Local config/test fix exists, changed-file lint passes, focused server Vitest passes when run with the server/firestore setup contract env variables, and Reviewer attempt 2 passed with no findings.
+- Authorization for T007: edit=yes, commit=yes; push, PR, CI watch, merge, local main sync, and Firebase deploy=no. No commit was performed by this Engineer.
 - T006 attempt 1 Reviewer decision: `review_rejected` at 2026-05-27T18:04:39Z.
 - T006 attempt 2 Reviewer decision: `review_passed` at 2026-05-27T18:14:25Z.
-- Verification decision: no unit tests and no TDD for v1; use local gates and emulator walkthrough only when authorized/available.
+- T007 attempt 1 Reviewer decision: `review_rejected` only because workflow state incorrectly recorded `commit=false` despite user commit authorization; no implementation defect was reported.
+- T007 attempt 2 Reviewer decision: `review_passed`; no findings.
+- Verification decision: T007 explicitly uses a focused Vitest static regression test for the production missing-index incident.
+
+## T007 Follow-up
+
+- Root cause: `adminDb.collectionGroup('comments').where('authorUid', '==', uid)` needs a `comments.authorUid` collection-group ASC single-field index.
+- Production signal: manual Chrome flow for `Crawler Mr. / mrcrawler987@gmail.com` returned to `/member` after `重新驗證並刪除`, did not enter the pending deletion gate, console showed `Error: Account deletion request failed`, and Next dev terminal showed Firestore `failed-precondition` missing `COLLECTION_GROUP_ASC` index for `comments.authorUid` with `POST /api/account/deletion 500`.
+- Local fix: `firestore.indexes.json` now has `collectionGroup=comments`, `fieldPath=authorUid`, index `{ order: ASCENDING, queryScope: COLLECTION_GROUP }`.
+- Regression test: `tests/server/firestore/firestore-indexes.test.js` parses `firestore.indexes.json` as JSON and asserts the exact field override. It was moved from `tests/unit/config` to resolve ESLint project-service scope without touching `tsconfig.json` or `eslint.config.mjs`.
+- Verification contract: the server/firestore directory requires `FIRESTORE_EMULATOR_HOST` and `FIREBASE_AUTH_EMULATOR_HOST`, even for this static test.
+- Review state: authorization boundary is corrected to commit=yes and T007 passed Reviewer attempt 2.
+- Firebase deploy: not done. Firestore index deploy remains pending/not authorized for T007.
 
 ## Attempt 2 Changes
 
@@ -18,6 +30,17 @@
 - Reviewer PASS found no Critical, Important, or Minor findings after attempt 2.
 
 ## Latest Verification
+
+- `npx vitest run tests/unit/config/firestore-indexes.test.js` before index change: exit 1; expected RED assertion because `fieldOverrides` did not contain `comments.authorUid`.
+- `npx vitest run tests/unit/config/firestore-indexes.test.js` after index change: exit 0; 1 test passed.
+- `node --check tests/server/firestore/firestore-indexes.test.js`: exit 0.
+- `npx vitest run tests/server/firestore/firestore-indexes.test.js` without env: historical exit 1; `vitest.setup.server.js` requires `FIRESTORE_EMULATOR_HOST` and `FIREBASE_AUTH_EMULATOR_HOST` before importing tests.
+- `FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 npx vitest run tests/server/firestore/firestore-indexes.test.js`: exit 0; 1 test passed.
+- `npm run lint:changed`: exit 0; React settings warning only.
+- `npm run type-check:changed`: exit 0; no changed-file type errors.
+- `npm run workflow:check`: exit 0; 12 status files valid and synced after T007 `engineer_done` state and accepted env verification were recorded.
+
+## Previous T006 Verification
 
 - `npm run lint:changed`: exit 0; React settings warning only.
 - `npm run type-check:changed`: exit 0; no changed-file type errors.
@@ -33,12 +56,14 @@
 
 ## Blockers
 
-- None for reviewed local implementation, local verification, and Firebase deploy.
-- Production Firebase deploy, CI watch, and GitHub merge are authorized for closeout.
+- None for reviewed local config/test changes.
+- The earlier `tests/unit/config` lint blocker is resolved by moving the test to `tests/server/firestore`; do not modify `tsconfig.json` or `eslint.config.mjs`.
+- The earlier server Vitest env blocker is resolved by using the required env vars on the focused command.
+- Firestore index deploy remains pending and not authorized. Do not run `firebase deploy --only firestore:indexes` without explicit release authorization.
 
 ## Pitfalls
 
 - Do not imply GitHub merge, CI status, or deploy status without separate evidence.
-- Do not add unit tests for this v1.
+- T007 is the exception to the v1 no-unit-tests note: it intentionally adds a focused static Vitest regression for Firestore index config.
 - Record CI, merge, and deploy evidence before claiming release completion.
 - Do not mark tasks `completed` from Engineer evidence alone; canonical lifecycle requires Reviewer PASS first.

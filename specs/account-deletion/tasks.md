@@ -10,10 +10,12 @@
 
 ## Current State
 
-- Active task: none; T001-T006 are completed after integrated Reviewer PASS.
+- Active task: none; T001-T007 are completed after Reviewer PASS.
 - T006 attempt 1 Reviewer decision: `review_rejected` at 2026-05-27T18:04:39Z.
 - T006 attempt 2 Reviewer decision: `review_passed` at 2026-05-27T18:14:25Z.
-- `completedTasks`: T001, T002, T003, T004, T005, T006.
+- `completedTasks`: T001, T002, T003, T004, T005, T006, T007.
+- T007 attempt 1 resolved both blockers: the earlier `tests/unit/config` lint blocker was resolved by moving the test to `tests/server/firestore`, and the focused server Vitest blocker was resolved by using the server/firestore setup contract with emulator env variables.
+- T007 attempt 1 Reviewer decision: `review_rejected` only because workflow state incorrectly recorded `commit=false` despite user commit authorization; no implementation defect was reported. Attempt 2 Reviewer decision: `review_passed`; no findings.
 - T001-T005 are completed by integrated Reviewer PASS over the full account deletion dirty diff after T006 attempt 2.
 
 ## Task Summary
@@ -26,6 +28,71 @@
 | T004 | `completed` | `review_passed` | Covered by integrated Reviewer PASS after T006 attempt 2. |
 | T005 | `completed` | `review_passed` | Covered by integrated Reviewer PASS after T006 attempt 2. |
 | T006 | `completed` | `review_passed` | Attempt 1 rejected; attempt 2 fixed both rejection defects and passed Reviewer. |
+| T007 | `completed` | `review_passed` | Local index config/test fix reviewed; focused server Vitest passes with required emulator env; auth boundary corrected to commit=yes; Firebase index deploy remains pending/not authorized. |
+
+## T007 - Firestore Comments Author Index Follow-up
+
+- **State**: `completed`
+- **Attempt**: 1
+- **Wave**: `wave-7`
+- **Engineer**: Codex Engineer
+- **Reviewer**: Codex Reviewer; attempt 2 `review_passed` with no findings.
+- **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Index deploy status**: pending/not authorized. No Firebase index, rules, or functions deploy was run.
+
+Scope:
+
+- Fix the Firestore missing-index root cause for `adminDb.collectionGroup('comments').where('authorUid', '==', uid)`.
+- Add the `comments.authorUid` single-field collection-group ASC field override to `firestore.indexes.json`.
+- Add a focused Vitest static regression test at `tests/server/firestore/firestore-indexes.test.js` that parses `firestore.indexes.json` as JSON and asserts the exact field override.
+- Record the production incident/root cause, T007 authorization boundary, blocker, and pending index deploy state.
+
+Non-scope:
+
+- No API route error handling, OAuth/provider selection, frontend UI/toast, account deletion repo query-shape, rules, functions, migration, retention/finalizer behavior, dependency, push, PR, CI watch, merge, local main sync, or Firebase deploy changes.
+- Do not modify unrelated untracked `specs/account-deletion-index-error/*` scratch files.
+
+Production incident/root cause:
+
+- Manual Chrome flow selected `Crawler Mr. / mrcrawler987@gmail.com` twice after pressing `重新驗證並刪除`.
+- App returned to `/member`, did not enter the pending deletion gate, and console showed `Error: Account deletion request failed`.
+- Next dev terminal showed `FirebaseError: [code=failed-precondition]: The query requires a COLLECTION_GROUP_ASC index for collection comments and field authorUid` plus `POST /api/account/deletion 500`.
+- Backend query needing the index: `adminDb.collectionGroup('comments').where('authorUid', '==', uid)`.
+
+Attempt 1 evidence:
+
+- Added `firestore.indexes.json` field override: `collectionGroup=comments`, `fieldPath=authorUid`, index `{ order: ASCENDING, queryScope: COLLECTION_GROUP }`.
+- Preserved existing composite indexes and existing field overrides, including `comments.deletedPurgeAt`.
+- Initially added `tests/unit/config/firestore-indexes.test.js`; it used `JSON.parse` and `toContainEqual`, not string grep.
+- Continued attempt 1 by moving the test to `tests/server/firestore/firestore-indexes.test.js`, resolving the TypeScript ESLint project-service scope blocker without touching `tsconfig.json` or `eslint.config.mjs`.
+- Added JSDoc required by the lint rules.
+- Preserved the history that `npx vitest run tests/server/firestore/firestore-indexes.test.js` without env failed because `vitest.setup.server.js` requires Firebase Emulator env before importing tests.
+- Accepted verification uses the server/firestore setup contract: set `FIRESTORE_EMULATOR_HOST=localhost:8080` and `FIREBASE_AUTH_EMULATOR_HOST=localhost:9099` on the focused Vitest command.
+- Installed local `node_modules` with `npm install` because this worktree initially lacked Vitest dependencies; lockfile was not changed.
+- Reviewer attempt 1 rejected only because workflow state recorded `commit=false` despite user commit authorization. This continuation corrects the boundary to `commit=yes`; no commit was performed by this Engineer.
+
+Verification commands and observed signal:
+
+| Command | Observed signal |
+| ------- | --------------- |
+| `npx vitest run tests/unit/config/firestore-indexes.test.js` before index change | exit 1; expected RED assertion: `fieldOverrides` lacked `comments.authorUid` and only showed existing overrides. |
+| `npx vitest run tests/unit/config/firestore-indexes.test.js` after index change | exit 0; 1 test passed. |
+| `node --check tests/server/firestore/firestore-indexes.test.js` | exit 0. |
+| `npx vitest run tests/server/firestore/firestore-indexes.test.js` without env | historical exit 1; `vitest.setup.server.js` requires `FIRESTORE_EMULATOR_HOST` and `FIREBASE_AUTH_EMULATOR_HOST` before importing tests. |
+| `FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 npx vitest run tests/server/firestore/firestore-indexes.test.js` | exit 0; 1 test passed. |
+| `npm run lint:changed` | exit 0; React settings warning only. |
+| `npm run type-check:changed` | exit 0; no changed-file type errors. |
+| `npm run workflow:check` | exit 0; 12 status files valid and synced after T007 `engineer_done` state and accepted env verification were recorded. |
+
+Blocker history:
+
+- The previous `npm run lint:changed` blocker is resolved by moving the test to `tests/server/firestore`.
+- The second focused Vitest blocker is resolved by running the accepted command with `FIRESTORE_EMULATOR_HOST` and `FIREBASE_AUTH_EMULATOR_HOST`, matching the server/firestore test directory setup contract.
+- No current implementation blocker remains. Reviewer attempt 2 passed with no findings.
+
+Reviewer result:
+
+- `review_passed`: T007 adds the exact `comments.authorUid` collection-group ASC index override, preserves existing index config, adds a semantic JSON-parsing regression test, and keeps Firebase index deploy explicitly pending/not authorized.
 
 ## T006 - Attempt 2 Follow-up
 
