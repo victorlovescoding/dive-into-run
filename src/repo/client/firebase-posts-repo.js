@@ -12,12 +12,18 @@ import {
   increment,
   collectionGroup,
   where,
-  writeBatch,
   startAfter,
   documentId,
   serverTimestamp,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/config/client/firebase-client';
+import {
+  POST_DELETE_RETENTION_DAYS,
+  addDays,
+  buildSoftDeletePayload,
+  isSoftDeletedRecord,
+} from '@/repo/post-soft-delete';
 import { POST_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
 
 /**
@@ -256,7 +262,9 @@ export async function addCommentDocument(postId, payload) {
 
   await runTransaction(db, async (transaction) => {
     const postSnap = await transaction.get(postRef);
-    if (!postSnap.exists()) throw new Error('Post not found');
+    if (!postSnap.exists() || isSoftDeletedRecord(postSnap.data())) {
+      throw new Error('Post not found');
+    }
 
     transaction.set(newCommentRef, payload);
     transaction.update(postRef, { commentsCount: increment(1) });
@@ -280,17 +288,31 @@ export async function updateCommentDocument(postId, commentId, payload) {
  * 刪除留言並同步扣減留言數。
  * @param {string} postId - 文章 ID。
  * @param {string} commentId - 留言 ID。
+ * @param {string} actorUid - 執行刪除的使用者 UID。
  * @returns {Promise<void>}
  */
-export async function deleteCommentDocument(postId, commentId) {
+export async function deleteCommentDocument(postId, commentId, actorUid) {
   const postRef = doc(db, 'posts', String(postId));
   const commentRef = doc(db, 'posts', String(postId), 'comments', String(commentId));
 
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(commentRef);
     if (!snap.exists()) return;
-    tx.delete(commentRef);
-    tx.update(postRef, { commentsCount: increment(-1) });
+    if (isSoftDeletedRecord(snap.data())) return;
+
+    const deletedAt = new Date();
+    const payload = buildSoftDeletePayload({
+      actorUid,
+      deletedAtValue: serverTimestamp(),
+      purgeAtValue: Timestamp.fromDate(addDays(deletedAt, POST_DELETE_RETENTION_DAYS)),
+    });
+    const postSnap = await tx.get(postRef);
+    const currentCount = postSnap.exists() ? Number(postSnap.data().commentsCount ?? 0) : 0;
+
+    tx.update(commentRef, payload);
+    if (postSnap.exists()) {
+      tx.update(postRef, { commentsCount: Math.max(0, currentCount - 1) });
+    }
   });
 }
 
@@ -327,7 +349,7 @@ export async function fetchLikedPost(uid, postId) {
 }
 
 /**
- * 刪除文章及其所有 likes、comments subcollection。
+ * 軟刪除文章，保留 likes、comments subcollection 供後續 purge。
  * @param {string} postId - 文章 ID。
  * @returns {Promise<{ ok: boolean }>} 刪除結果。
  */
@@ -337,17 +359,19 @@ export async function deletePostTree(postId) {
   const pid = String(postId);
   const postRef = doc(db, 'posts', pid);
 
-  const snap = await getDoc(postRef);
-  if (!snap.exists()) throw new Error(POST_NOT_FOUND_MESSAGE);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(postRef);
+    if (!snap.exists()) throw new Error(POST_NOT_FOUND_MESSAGE);
+    if (isSoftDeletedRecord(snap.data())) return;
 
-  const likesSnap = await getDocs(collection(db, 'posts', pid, 'likes'));
-  const commentsSnap = await getDocs(collection(db, 'posts', pid, 'comments'));
+    const deletedAt = new Date();
+    const payload = buildSoftDeletePayload({
+      actorUid: snap.data().authorUid,
+      deletedAtValue: serverTimestamp(),
+      purgeAtValue: Timestamp.fromDate(addDays(deletedAt, POST_DELETE_RETENTION_DAYS)),
+    });
+    tx.update(postRef, payload);
+  });
 
-  const batch = writeBatch(db);
-  likesSnap.docs.forEach((d) => batch.delete(d.ref));
-  commentsSnap.docs.forEach((d) => batch.delete(d.ref));
-  batch.delete(postRef);
-
-  await batch.commit();
   return { ok: true };
 }

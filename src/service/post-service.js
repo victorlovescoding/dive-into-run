@@ -1,6 +1,13 @@
 import { isAccountDeletionHidden } from '@/config/account-deletion';
+import { isSoftDeletedRecord } from '@/repo/post-soft-delete';
 
 export { POST_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
+export {
+  POST_DELETE_RETENTION_DAYS,
+  addDays,
+  buildSoftDeletePayload,
+  isSoftDeletedRecord,
+} from '@/repo/post-soft-delete';
 
 /**
  * @typedef {object} Post
@@ -13,6 +20,9 @@ export { POST_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
  * @property {import('firebase/firestore').Timestamp} [postAt] - 發文時間。
  * @property {number} [likesCount] - 按讚數。
  * @property {number} [commentsCount] - 留言數。
+ * @property {import('firebase/firestore').Timestamp} [deletedAt] - 軟刪除時間。
+ * @property {string} [deletedByUid] - 執行軟刪除的使用者 UID。
+ * @property {import('firebase/firestore').Timestamp} [deletedPurgeAt] - 可永久刪除時間。
  */
 
 /**
@@ -23,6 +33,9 @@ export { POST_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
  * @property {string} [authorImgURL] - 留言者大頭貼 URL。
  * @property {string} comment - 留言內容。
  * @property {import('firebase/firestore').Timestamp} [createdAt] - 留言時間。
+ * @property {import('firebase/firestore').Timestamp} [deletedAt] - 軟刪除時間。
+ * @property {string} [deletedByUid] - 執行軟刪除的使用者 UID。
+ * @property {import('firebase/firestore').Timestamp} [deletedPurgeAt] - 可永久刪除時間。
  */
 
 /** @type {number} 文章標題最大長度。 */
@@ -30,6 +43,15 @@ export const POST_TITLE_MAX_LENGTH = 50;
 
 /** @type {number} 文章內容最大長度。 */
 export const POST_CONTENT_MAX_LENGTH = 10000;
+
+/**
+ * 判斷資料是否仍為可見 active 狀態。
+ * @param {Record<string, unknown> | null | undefined} record - Firestore 正規化資料。
+ * @returns {boolean} 沒有軟刪除欄位時為 true。
+ */
+export function isActiveRecord(record) {
+  return !isAccountDeletionHidden(record) && !isSoftDeletedRecord(record);
+}
 
 /**
  * 驗證文章輸入是否合規。
@@ -172,7 +194,7 @@ export function toPostData(snapshot) {
  * @returns {boolean} true when visible.
  */
 export function isPublicPostRecordVisible(data) {
-  return !isAccountDeletionHidden(data);
+  return isActiveRecord(data);
 }
 
 /**
@@ -181,9 +203,7 @@ export function isPublicPostRecordVisible(data) {
  * @returns {Post[]} post array。
  */
 export function toPostDataList(snapshots) {
-  return snapshots
-    .filter((snapshot) => isPublicPostRecordVisible(snapshot.data()))
-    .map((snapshot) => toPostData(snapshot));
+  return snapshots.map((snapshot) => toPostData(snapshot));
 }
 
 /**
@@ -204,7 +224,5 @@ export function toCommentData(snapshot) {
  * @returns {Comment[]} comment array。
  */
 export function toCommentDataList(snapshots) {
-  return snapshots
-    .filter((snapshot) => isPublicPostRecordVisible(snapshot.data()))
-    .map((snapshot) => toCommentData(snapshot));
+  return snapshots.map((snapshot) => toCommentData(snapshot));
 }

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
  * @typedef {object} FetchResult
  * @property {object[]} items - 回傳的資料項目。
  * @property {number | null} [nextCursor] - offset-based cursor（用於 fetchMyEvents）。
- * @property {import('firebase/firestore').QueryDocumentSnapshot | null} [lastDoc] - Firestore document cursor（用於 fetchMyPosts / fetchMyComments）。
+ * @property {import('firebase/firestore').QueryDocumentSnapshot | string | null} [lastDoc] - Page cursor（Firestore snapshot 或 opaque server cursor）。
  */
 
 /**

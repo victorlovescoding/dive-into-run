@@ -1,3 +1,6 @@
+import { isAccountDeletionHidden } from '@/config/account-deletion';
+import { isActiveRecord } from '@/service/post-service';
+
 /**
  * @typedef {import('firebase/firestore').QueryDocumentSnapshot} QueryDocumentSnapshot
  * @typedef {import('@/service/post-service').Post} Post
@@ -6,8 +9,6 @@
  * @typedef {import('@/repo/client/firebase-member-repo').ParentTitleLookup} ParentTitleLookup
  * @typedef {import('@/repo/client/firebase-member-repo').ParentTitleRecord} ParentTitleRecord
  */
-
-import { isAccountDeletionHidden } from '@/config/account-deletion';
 
 /**
  * @typedef {object} MyEventItem
@@ -28,7 +29,7 @@ import { isAccountDeletionHidden } from '@/config/account-deletion';
  * @property {string} parentId - 所屬文章或活動 ID。
  * @property {string} parentTitle - 所屬文章或活動標題。
  * @property {string} text - 留言內容（正規化）。
- * @property {import('firebase/firestore').Timestamp} createdAt - 留言時間。
+ * @property {import('firebase/firestore').Timestamp | string} createdAt - 留言時間。
  */
 
 /**
@@ -55,13 +56,13 @@ import { isAccountDeletionHidden } from '@/config/account-deletion';
 /**
  * @typedef {object} FetchMyPostsResult
  * @property {Post[]} items - Current page of posts.
- * @property {QueryDocumentSnapshot | null} lastDoc - Firestore cursor for subsequent pages.
+ * @property {QueryDocumentSnapshot | string | null} lastDoc - Cursor for subsequent pages.
  */
 
 /**
  * @typedef {object} FetchMyCommentsResult
  * @property {MyCommentItem[]} items - Current page of comments.
- * @property {QueryDocumentSnapshot | null} lastDoc - Firestore cursor for subsequent pages.
+ * @property {QueryDocumentSnapshot | string | null} lastDoc - Cursor for subsequent pages.
  * @property {Map<string, string>} titleCache - Cached parent titles.
  */
 
@@ -136,19 +137,18 @@ export function buildMyEventsPage(eventDocuments, hostedIdsList, pageSize) {
 /**
  * Maps repo-level post documents to the public dashboard post result.
  * @param {MemberFirestoreDocument[]} postDocuments - Raw post documents from repo.
- * @param {QueryDocumentSnapshot | null} lastDoc - Firestore cursor from repo.
+ * @param {QueryDocumentSnapshot | string | null} lastDoc - Cursor from repo.
  * @returns {FetchMyPostsResult} Normalized post page.
  */
 export function buildMyPostsPage(postDocuments, lastDoc) {
   return {
     items: postDocuments
-      .filter((document) => !isAccountDeletionHidden(document.data))
-      .map(
-        (document) =>
-          /** @type {Post} */ ({
-            id: document.id,
-            ...document.data,
-          }),
+      .filter((document) => isActiveRecord(document.data))
+      .map((document) =>
+        /** @type {Post} */ ({
+          id: document.id,
+          ...document.data,
+        }),
       ),
     lastDoc,
   };
@@ -160,20 +160,20 @@ export function buildMyPostsPage(postDocuments, lastDoc) {
  * @returns {MyCommentItem[]} Comment items with normalized text and empty titles.
  */
 export function buildRawMyCommentItems(commentDocuments) {
-  return commentDocuments
-    .filter((document) => !isAccountDeletionHidden(document.data))
-    .map((document) => {
-      const text = document.source === 'post' ? document.data.comment : document.data.content;
+  return commentDocuments.filter((document) => isActiveRecord(document.data)).map((document) => {
+    const text = document.source === 'post' ? document.data.comment : document.data.content;
 
-      return /** @type {MyCommentItem} */ ({
-        id: document.id,
-        source: document.source,
-        parentId: document.parentId,
-        text: /** @type {string} */ (text ?? ''),
-        createdAt: /** @type {import('firebase/firestore').Timestamp} */ (document.data.createdAt),
-        parentTitle: '',
-      });
+    return /** @type {MyCommentItem} */ ({
+      id: document.id,
+      source: document.source,
+      parentId: document.parentId,
+      text: /** @type {string} */ (text ?? ''),
+      createdAt: /** @type {import('firebase/firestore').Timestamp | string} */ (
+        document.data.createdAt
+      ),
+      parentTitle: document.parentTitle ?? '',
     });
+  });
 }
 
 /**
@@ -188,6 +188,11 @@ export function collectMissingCommentParentRefs(commentItems, titleCache) {
   const missingRefs = new Map();
 
   commentItems.forEach((item) => {
+    if (item.parentTitle) {
+      titleCache.set(item.parentId, item.parentTitle);
+      return;
+    }
+
     if (!titleCache.has(item.parentId) && !missingRefs.has(item.parentId)) {
       missingRefs.set(item.parentId, {
         parentId: item.parentId,
@@ -216,7 +221,7 @@ export function mergeCommentTitleCache(titleCache, parentTitleRecords) {
 /**
  * Finalizes the public dashboard comments page by attaching parent titles from cache.
  * @param {MyCommentItem[]} commentItems - Comment items for the current page.
- * @param {QueryDocumentSnapshot | null} lastDoc - Firestore cursor from repo.
+ * @param {QueryDocumentSnapshot | string | null} lastDoc - Cursor from repo.
  * @param {Map<string, string>} titleCache - Shared parent title cache.
  * @returns {FetchMyCommentsResult} Finalized comments page.
  */
@@ -224,7 +229,7 @@ export function buildMyCommentsPage(commentItems, lastDoc, titleCache) {
   return {
     items: commentItems.map((item) => ({
       ...item,
-      parentTitle: titleCache.get(item.parentId) ?? '(已刪除)',
+      parentTitle: titleCache.get(item.parentId) ?? item.parentTitle ?? '(已刪除)',
     })),
     lastDoc,
     titleCache,

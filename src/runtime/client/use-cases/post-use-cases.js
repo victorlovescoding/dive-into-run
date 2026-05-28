@@ -3,7 +3,7 @@ import {
   buildAddCommentPayload,
   buildCreatePostPayload,
   buildUpdatePostPayload,
-  isPublicPostRecordVisible,
+  isActiveRecord,
   toCommentData,
   toCommentDataList,
   toPostData,
@@ -39,7 +39,48 @@ export {
 /**
  * @typedef {import('@/service/post-service').Post} Post
  * @typedef {import('@/service/post-service').Comment} Comment
+ * @typedef {import('firebase/firestore').QueryDocumentSnapshot} QueryDocumentSnapshot
  */
+
+const POST_PAGE_SIZE = 10;
+
+/**
+ * 以 raw cursor 補齊 active record，避免 deleted docs 卡住分頁。
+ * @template T
+ * @param {object} root0 - 參數物件。
+ * @param {QueryDocumentSnapshot[]} root0.initialDocs - 第一頁 raw docs。
+ * @param {number} root0.pageSize - raw page size。
+ * @param {(docs: QueryDocumentSnapshot[]) => T[]} root0.toRecords - raw docs 轉資料。
+ * @param {(cursor: T) => Promise<{ docs: QueryDocumentSnapshot[] }>} root0.fetchNextPage - 取下一頁。
+ * @returns {Promise<T[]>} active records。
+ */
+async function collectActiveRecords({ initialDocs, pageSize, toRecords, fetchNextPage }) {
+  /**
+   * @param {QueryDocumentSnapshot[]} rawDocs - Current raw page.
+   * @param {T[]} activeRecords - Active records collected so far.
+   * @returns {Promise<T[]>} Active records.
+   */
+  async function collect(rawDocs, activeRecords) {
+    if (rawDocs.length === 0) return activeRecords.slice(0, pageSize);
+
+    const records = toRecords(rawDocs);
+    const activePageRecords = records.filter((record) =>
+      isActiveRecord(/** @type {Record<string, unknown>} */ (record)),
+    );
+    const nextActiveRecords = [...activeRecords, ...activePageRecords];
+
+    if (nextActiveRecords.length >= pageSize || rawDocs.length < pageSize) {
+      return nextActiveRecords.slice(0, pageSize);
+    }
+
+    const rawCursor = records[records.length - 1];
+    if (!rawCursor) return nextActiveRecords.slice(0, pageSize);
+    const nextPage = await fetchNextPage(rawCursor);
+    return collect(nextPage.docs, nextActiveRecords);
+  }
+
+  return collect(initialDocs, []);
+}
 
 /**
  * 建立文章。
@@ -77,8 +118,17 @@ export async function updatePost(editingPostId, { title, content }) {
  * @returns {Promise<Post[]>} 最新文章陣列。
  */
 export async function getLatestPosts() {
-  const { docs } = await fetchLatestPostDocuments(10);
-  return toPostDataList(docs);
+  const { docs } = await fetchLatestPostDocuments(POST_PAGE_SIZE);
+  return collectActiveRecords({
+    initialDocs: docs,
+    pageSize: POST_PAGE_SIZE,
+    toRecords: toPostDataList,
+    fetchNextPage: (cursor) =>
+      fetchNextPostDocuments(
+        /** @type {Post & { postAt: import('firebase/firestore').Timestamp }} */ (cursor),
+        POST_PAGE_SIZE,
+      ),
+  });
 }
 
 /**
@@ -92,9 +142,18 @@ export async function getMorePosts(last) {
     /** @type {import('@/service/post-service').Post & { postAt: import('firebase/firestore').Timestamp }} */ (
       last
     ),
-    10,
+    POST_PAGE_SIZE,
   );
-  return toPostDataList(docs);
+  return collectActiveRecords({
+    initialDocs: docs,
+    pageSize: POST_PAGE_SIZE,
+    toRecords: toPostDataList,
+    fetchNextPage: (cursor) =>
+      fetchNextPostDocuments(
+        /** @type {Post & { postAt: import('firebase/firestore').Timestamp }} */ (cursor),
+        POST_PAGE_SIZE,
+      ),
+  });
 }
 
 /**
@@ -104,7 +163,16 @@ export async function getMorePosts(last) {
  */
 export async function getPostsBySearch(searchTerm) {
   const docs = await fetchPostDocumentsBySearch(searchTerm);
-  return toPostDataList(docs);
+  return collectActiveRecords({
+    initialDocs: docs,
+    pageSize: POST_PAGE_SIZE,
+    toRecords: toPostDataList,
+    fetchNextPage: (cursor) =>
+      fetchNextPostDocumentsBySearch(
+        searchTerm,
+        /** @type {Post & { title: string }} */ (cursor),
+      ),
+  });
 }
 
 /**
@@ -116,7 +184,16 @@ export async function getPostsBySearch(searchTerm) {
 export async function getMorePostsBySearch(searchTerm, last) {
   if (!last) return [];
   const { docs } = await fetchNextPostDocumentsBySearch(searchTerm, last);
-  return toPostDataList(docs);
+  return collectActiveRecords({
+    initialDocs: docs,
+    pageSize: POST_PAGE_SIZE,
+    toRecords: toPostDataList,
+    fetchNextPage: (cursor) =>
+      fetchNextPostDocumentsBySearch(
+        searchTerm,
+        /** @type {Post & { title: string }} */ (cursor),
+      ),
+  });
 }
 
 /**
@@ -131,10 +208,8 @@ export async function getPostDetail(id) {
     console.warn('No such document!');
     return null;
   }
-  if (!isPublicPostRecordVisible(snapshot.data())) {
-    return null;
-  }
-  return toPostData(snapshot);
+  const post = toPostData(snapshot);
+  return isActiveRecord(post) ? post : null;
 }
 
 /**
@@ -145,7 +220,17 @@ export async function getPostDetail(id) {
  */
 export async function getLatestComments(id, numberOfComments) {
   const { docs } = await fetchLatestCommentDocuments(id, numberOfComments);
-  return toCommentDataList(docs);
+  return collectActiveRecords({
+    initialDocs: docs,
+    pageSize: numberOfComments,
+    toRecords: toCommentDataList,
+    fetchNextPage: (cursor) =>
+      fetchNextCommentDocuments(
+        id,
+        /** @type {Comment & { createdAt: import('firebase/firestore').Timestamp }} */ (cursor),
+        numberOfComments,
+      ),
+  });
 }
 
 /**
@@ -162,7 +247,17 @@ export async function getMoreComments(id, last) {
     ),
     10,
   );
-  return toCommentDataList(docs);
+  return collectActiveRecords({
+    initialDocs: docs,
+    pageSize: POST_PAGE_SIZE,
+    toRecords: toCommentDataList,
+    fetchNextPage: (cursor) =>
+      fetchNextCommentDocuments(
+        id,
+        /** @type {Comment & { createdAt: import('firebase/firestore').Timestamp }} */ (cursor),
+        POST_PAGE_SIZE,
+      ),
+  });
 }
 
 /**
@@ -173,11 +268,9 @@ export async function getMoreComments(id, last) {
  */
 export async function getCommentById(postId, commentId) {
   const snapshot = await fetchCommentDocument(postId, commentId);
-  if (!snapshot || !isPublicPostRecordVisible(snapshot.data())) {
-    return null;
-  }
-
-  return toCommentData(snapshot);
+  if (!snapshot) return null;
+  const comment = toCommentData(snapshot);
+  return isActiveRecord(comment) ? comment : null;
 }
 
 /**
@@ -229,10 +322,12 @@ export async function updateComment(postId, commentId, { comment }) {
  * 刪除留言並同步扣減留言數。
  * @param {string} postId - 文章 ID。
  * @param {string} commentId - 留言 ID。
+ * @param {string | null | undefined} actorUid - 執行刪除的使用者 UID；缺少時視為 no-op。
  * @returns {Promise<void>}
  */
-export async function deleteComment(postId, commentId) {
-  await deleteCommentDocument(postId, commentId);
+export async function deleteComment(postId, commentId, actorUid) {
+  if (!actorUid) return;
+  await deleteCommentDocument(postId, commentId, actorUid);
 }
 
 /**
@@ -261,7 +356,7 @@ export async function hasUserLikedPost(uid, postId) {
 }
 
 /**
- * 刪除文章及其所有 likes、comments subcollection（cascade delete）。
+ * 軟刪除文章，保留 likes、comments subcollection 供 retention/purge 流程處理。
  * @param {string} postId - 文章 ID。
  * @returns {Promise<{ ok: boolean }>} 刪除結果。
  */

@@ -85,6 +85,11 @@
         { "order": "ASCENDING", "queryScope": "COLLECTION" },
         { "order": "DESCENDING", "queryScope": "COLLECTION" }
       ]
+    },
+    {
+      "collectionGroup": "comments",
+      "fieldPath": "deletedPurgeAt",
+      "indexes": [{ "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" }]
     }
   ]
 }
