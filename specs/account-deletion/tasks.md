@@ -16,6 +16,7 @@
 - `completedTasks`: T001, T002, T003, T004, T005, T006, T007.
 - T007 attempt 1 resolved both blockers: the earlier `tests/unit/config` lint blocker was resolved by moving the test to `tests/server/firestore`, and the focused server Vitest blocker was resolved by using the server/firestore setup contract with emulator env variables.
 - T007 attempt 1 Reviewer decision: `review_rejected` only because workflow state incorrectly recorded `commit=false` despite user commit authorization; no implementation defect was reported. Attempt 2 Reviewer decision: `review_passed`; no findings.
+- T007 Firestore index deploy: `firebase deploy --only firestore:indexes --project dive-into-run` exited 0 at 2026-05-28T11:49:32Z; Firebase CLI reported indexes in `firestore.indexes.json` deployed successfully for the `(default)` database. No rules/functions deploy was run.
 - T001-T005 are completed by integrated Reviewer PASS over the full account deletion dirty diff after T006 attempt 2.
 
 ## Task Summary
@@ -28,7 +29,7 @@
 | T004 | `completed` | `review_passed` | Covered by integrated Reviewer PASS after T006 attempt 2. |
 | T005 | `completed` | `review_passed` | Covered by integrated Reviewer PASS after T006 attempt 2. |
 | T006 | `completed` | `review_passed` | Attempt 1 rejected; attempt 2 fixed both rejection defects and passed Reviewer. |
-| T007 | `completed` | `review_passed` | Local index config/test fix reviewed; focused server Vitest passes with required emulator env; auth boundary corrected to commit=yes; Firebase index deploy remains pending/not authorized. |
+| T007 | `completed` | `review_passed` | Local index config/test fix reviewed; focused server Vitest passes with required emulator env; auth boundary corrected; Firebase index deploy completed during release closeout. |
 
 ## T007 - Firestore Comments Author Index Follow-up
 
@@ -37,15 +38,15 @@
 - **Wave**: `wave-7`
 - **Engineer**: Codex Engineer
 - **Reviewer**: Codex Reviewer; attempt 2 `review_passed` with no findings.
-- **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
-- **Index deploy status**: pending/not authorized. No Firebase index, rules, or functions deploy was run.
+- **Authorization boundary**: edit=yes, commit=yes, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, localMainSync=yes, Firebase deploy authorization=yes for `firestore:indexes` only; no rules/functions deploy was run.
+- **Index deploy status**: deployed. `firebase deploy --only firestore:indexes --project dive-into-run` exited 0 at 2026-05-28T11:49:32Z and reported the `(default)` database indexes deployed successfully.
 
 Scope:
 
 - Fix the Firestore missing-index root cause for `adminDb.collectionGroup('comments').where('authorUid', '==', uid)`.
 - Add the `comments.authorUid` single-field collection-group ASC field override to `firestore.indexes.json`.
 - Add a focused Vitest static regression test at `tests/server/firestore/firestore-indexes.test.js` that parses `firestore.indexes.json` as JSON and asserts the exact field override.
-- Record the production incident/root cause, T007 authorization boundary, blocker, and pending index deploy state.
+- Record the production incident/root cause, T007 authorization boundary, blocker history, and index deploy evidence.
 
 Non-scope:
 
@@ -83,16 +84,17 @@ Verification commands and observed signal:
 | `npm run lint:changed` | exit 0; React settings warning only. |
 | `npm run type-check:changed` | exit 0; no changed-file type errors. |
 | `npm run workflow:check` | exit 0; 12 status files valid and synced after T007 `engineer_done` state and accepted env verification were recorded. |
+| `firebase deploy --only firestore:indexes --project dive-into-run` | exit 0; Firebase CLI reported indexes in `firestore.indexes.json` deployed successfully for the `(default)` database; rules were compiled only and no rules/functions deploy was run. |
 
 Blocker history:
 
 - The previous `npm run lint:changed` blocker is resolved by moving the test to `tests/server/firestore`.
 - The second focused Vitest blocker is resolved by running the accepted command with `FIRESTORE_EMULATOR_HOST` and `FIREBASE_AUTH_EMULATOR_HOST`, matching the server/firestore test directory setup contract.
-- No current implementation blocker remains. Reviewer attempt 2 passed with no findings.
+- No current implementation blocker remains. Reviewer attempt 2 passed with no findings. Firestore index deploy completed during release closeout.
 
 Reviewer result:
 
-- `review_passed`: T007 adds the exact `comments.authorUid` collection-group ASC index override, preserves existing index config, adds a semantic JSON-parsing regression test, and keeps Firebase index deploy explicitly pending/not authorized.
+- `review_passed`: T007 adds the exact `comments.authorUid` collection-group ASC index override, preserves existing index config, adds a semantic JSON-parsing regression test, and kept Firebase index deploy pending until explicit release closeout authorization. The index deploy has since completed successfully.
 
 ## T006 - Attempt 2 Follow-up
 

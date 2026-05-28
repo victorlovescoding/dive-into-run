@@ -5,8 +5,8 @@
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-075-account-deletion-index-error`
 - Branch: `075-account-deletion-index-error`
 - Active task: none; T001-T007 are completed after Reviewer PASS.
-- Current phase: reviewed follow-up. Local config/test fix exists, changed-file lint passes, focused server Vitest passes when run with the server/firestore setup contract env variables, and Reviewer attempt 2 passed with no findings.
-- Authorization for T007: edit=yes, commit=yes; push, PR, CI watch, merge, local main sync, and Firebase deploy=no. No commit was performed by this Engineer.
+- Current phase: reviewed follow-up in release closeout. Local config/test fix exists, changed-file lint passes, focused server Vitest passes when run with the server/firestore setup contract env variables, Reviewer attempt 2 passed with no findings, and Firestore index deploy completed.
+- Authorization for release closeout: edit=yes, commit=yes, push=yes, PR=yes, CI watch=yes, merge=yes, local main sync=yes, Firebase deploy authorization=yes for `firestore:indexes` only. No rules/functions deploy was run for T007.
 - T006 attempt 1 Reviewer decision: `review_rejected` at 2026-05-27T18:04:39Z.
 - T006 attempt 2 Reviewer decision: `review_passed` at 2026-05-27T18:14:25Z.
 - T007 attempt 1 Reviewer decision: `review_rejected` only because workflow state incorrectly recorded `commit=false` despite user commit authorization; no implementation defect was reported.
@@ -21,7 +21,7 @@
 - Regression test: `tests/server/firestore/firestore-indexes.test.js` parses `firestore.indexes.json` as JSON and asserts the exact field override. It was moved from `tests/unit/config` to resolve ESLint project-service scope without touching `tsconfig.json` or `eslint.config.mjs`.
 - Verification contract: the server/firestore directory requires `FIRESTORE_EMULATOR_HOST` and `FIREBASE_AUTH_EMULATOR_HOST`, even for this static test.
 - Review state: authorization boundary is corrected to commit=yes and T007 passed Reviewer attempt 2.
-- Firebase deploy: not done. Firestore index deploy remains pending/not authorized for T007.
+- Firebase deploy: `firebase deploy --only firestore:indexes --project dive-into-run` exited 0 at 2026-05-28T11:49:32Z; Firebase CLI reported indexes in `firestore.indexes.json` deployed successfully for the `(default)` database. Rules were compiled only; no rules/functions deploy was run.
 
 ## Attempt 2 Changes
 
@@ -39,6 +39,7 @@
 - `npm run lint:changed`: exit 0; React settings warning only.
 - `npm run type-check:changed`: exit 0; no changed-file type errors.
 - `npm run workflow:check`: exit 0; 12 status files valid and synced after T007 `engineer_done` state and accepted env verification were recorded.
+- `firebase deploy --only firestore:indexes --project dive-into-run`: exit 0; Firebase CLI reported indexes in `firestore.indexes.json` deployed successfully for the `(default)` database; rules were compiled only and no rules/functions deploy was run.
 
 ## Previous T006 Verification
 
@@ -59,7 +60,7 @@
 - None for reviewed local config/test changes.
 - The earlier `tests/unit/config` lint blocker is resolved by moving the test to `tests/server/firestore`; do not modify `tsconfig.json` or `eslint.config.mjs`.
 - The earlier server Vitest env blocker is resolved by using the required env vars on the focused command.
-- Firestore index deploy remains pending and not authorized. Do not run `firebase deploy --only firestore:indexes` without explicit release authorization.
+- Firestore index deploy is complete for the T007 fix commit. Browser account deletion was not re-run after deploy because it is destructive.
 
 ## Pitfalls
 
