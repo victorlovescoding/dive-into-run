@@ -20,6 +20,33 @@ import {
  * @typedef {'checking' | 'joined' | 'notJoined'} MembershipStatus
  */
 
+const MEMBERSHIP_LOOKUP_TIMEOUT_MS = 5000;
+
+/**
+ * @template T
+ * @param {Promise<T>} promise - 要加上等待上限的 Promise。
+ * @param {number} timeoutMs - timeout 毫秒數。
+ * @returns {Promise<T>} 原 Promise 結果，或在超時後 reject。
+ */
+function withTimeout(promise, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error('membership lookup timed out'));
+    }, timeoutMs);
+
+    promise.then(
+      (value) => {
+        clearTimeout(timeoutId);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      },
+    );
+  });
+}
+
 /**
  * @typedef {object} UseEventParticipationParams
  * @property {{ uid?: string, name?: string, email?: string, photoURL?: string } | null} user - 當前登入使用者。
@@ -60,6 +87,8 @@ export default function useEventParticipation({
 
   useEffect(() => {
     let cancelled = false;
+    const isLookupCurrent = (lookupUserUid) =>
+      !cancelled && isMountedRef.current && membershipUserUidRef.current === lookupUserUid;
 
     if (!user?.uid) {
       membershipCheckedRef.current = new Set();
@@ -94,8 +123,10 @@ export default function useEventParticipation({
       };
     }
 
+    const lookupUserUid = user.uid;
+
     queueMicrotask(() => {
-      if (cancelled) return;
+      if (!isLookupCurrent(lookupUserUid)) return;
       setMembershipStatusByEventId((previous) => {
         const next = { ...previous };
         uncheckedIds.forEach((eventId) => {
@@ -113,11 +144,14 @@ export default function useEventParticipation({
         for (let index = 0; index < batches.length; index += 1) {
           const batch = batches[index];
           // eslint-disable-next-line no-await-in-loop
-          const joined = await fetchMyJoinedEventsForIds(user.uid, batch);
+          const joined = await withTimeout(
+            fetchMyJoinedEventsForIds(lookupUserUid, batch),
+            MEMBERSHIP_LOOKUP_TIMEOUT_MS,
+          );
           joined.forEach((eventId) => joinedEventIds.add(eventId));
         }
 
-        if (cancelled) {
+        if (!isLookupCurrent(lookupUserUid)) {
           return;
         }
 
@@ -144,7 +178,7 @@ export default function useEventParticipation({
         uncheckedIds.forEach((eventId) => membershipCheckedRef.current.add(eventId));
       } catch (error) {
         console.error('查詢已參加活動失敗:', error);
-        if (cancelled || !isMountedRef.current) {
+        if (!isLookupCurrent(lookupUserUid)) {
           return;
         }
 

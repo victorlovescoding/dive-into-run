@@ -139,7 +139,7 @@ export default function EventsListSection({
             isCreating={isCreating}
             isFormOpen={isFormOpen}
             myJoinedEventIds={myJoinedEventIds}
-            membershipStatus={membershipStatusByEventId[String(event.id)] || 'checking'}
+            membershipStatus={membershipStatusByEventId[String(event.id)]}
           />
         </div>
       </div>
