@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-074-post-composer-draft-confirm`
 - Branch: `074-post-composer-draft-confirm`
-- Current head: `78ffd7db0ca3809e0b02ee101d435ed93ba750b5` (`Fix React hook lint baseline`)
+- Current head: `f6c89e69338050787baefe0865feb47a55f6675f` (`Record post composer rebase state`)
 - Remote head: `origin/main` at `56764050292e182f4fc4ee92ec2e80a7efde9252`
 - Authorization boundary:
   - edit: yes, implementation edits authorized for task dispatch
@@ -18,15 +18,16 @@
   - deployFirestoreRules: yes
 - Current phase: implementation
 - Active task: none
-- Active wave: rebase-integration
+- Active wave: release-closeout
 - Latest reviewer decision: T008 `review_passed`
-- Last verified commit: none
+- Last verified commit: `f6c89e69338050787baefe0865feb47a55f6675f`
 - Phase commits:
   - spec: `d6fbab31b5fc48fd8061591726f9927b01c9f121` (`Add post composer draft confirm spec`)
   - plan: `b5e5cdd7e9cc67f31cce9832fca1fbaf1b0a065d` (`Add post composer draft plan`)
   - implementation: `9931cc1425e51b009d61cc4504a4132cdd0c3a8e` (`Add post composer draft recovery`)
   - lint-baseline: `78ffd7db0ca3809e0b02ee101d435ed93ba750b5` (`Fix React hook lint baseline`)
-- Rules deploy status: `pending`; no rules files changed, but user explicitly authorized/requested Firestore/storage rules deploy during closeout
+  - rebase-state: `f6c89e69338050787baefe0865feb47a55f6675f` (`Record post composer rebase state`)
+- Rules deploy status: `deployed`; Firestore and Storage rules released to Firebase project `dive-into-run` at verified commit `f6c89e69338050787baefe0865feb47a55f6675f`
 - Incidents: none
 - Blocked: no
 - Blocked reason: none
@@ -45,7 +46,7 @@
 
 ## Next Action
 
-Implementation, T005 integration review, T006 clean-close regression review, T007 full-lint blocker remediation review, and T008 rebase type-check mock fix review are complete. Next action is to commit T008/workflow state, run fresh CI-equivalent verification, push, open PR, watch CI, merge, fast-forward local `main`, and deploy Firestore/storage rules as authorized/requested.
+Implementation, T005 integration review, T006 clean-close regression review, T007 full-lint blocker remediation review, T008 rebase type-check mock fix review, final local verification, and Firestore/Storage rules deploy are complete. Next action is to commit deploy evidence, push, open PR, watch CI, merge, and fast-forward local `main`.
 
 ## Latest Verification
 
@@ -120,21 +121,33 @@ Implementation, T005 integration review, T006 clean-close regression review, T00
 | `npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx` | 0 | T008 detail runtime focused tests passed with 7 tests. |
 | `npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx` | 0 | T008 posts runtime focused tests passed with 12 tests. |
 | `git diff -- src/runtime/hooks/usePostDetailRuntime.test.jsx src/runtime/hooks/usePostsPageRuntime.test.jsx` | 0 | T008 diff is limited to adding account deletion fields to two runtime hook test user mocks. |
+| `npx vitest run --project=browser src/repo/client/post-composer-draft-storage-repo.test.js src/components/ComposeModal.test.jsx src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx src/ui/posts/PostsPageScreen.test.jsx src/ui/posts/PostDetailScreen.test.jsx` | 0 | Final focused 074 test suite passed: 6 files, 40 tests. |
+| `npm run doc:freshness` | 0 | Doc freshness check passed for 4 files. |
+| `npm run workflow:check` | 0 | Workflow state check passed: 10 status files valid and synced. |
+| `npm run workflow:links` | 0 | Local workflow links check passed: 37 files scanned, all local references exist. |
+| `git diff --check` | 0 | Whitespace diff check passed with no findings. |
+| `npm run lint -- --max-warnings 0` | 0 | Full ESLint gate passed with no lint errors; existing React settings warning only. |
+| `npm run audit:use-effect-data-fetching` | 0 | Use-effect data fetching audit passed with 0 findings. |
+| `npm run type-check` | 0 | Full TypeScript checkJs gate passed with no type errors. |
+| `npm run spellcheck` | 0 | CSpell checked 245 files with 0 issues. |
+| `npm run depcruise` | 0 | Dependency cruiser passed with no violations across 1236 modules; existing `MODULE_TYPELESS_PACKAGE_JSON` warning only. |
+| `npm run build` | 0 | Next.js production build completed successfully; existing Firebase/protobuf and ESLint config warnings only. |
+| `firebase deploy --only firestore:rules,storage --project dive-into-run --non-interactive` | 0 | Firestore and Storage rules deployed successfully to Firebase project `dive-into-run`. |
 
 ## Closeout Checklist
 
-- [ ] `tasks.md` task states match `status.json`.
-- [ ] Active task and active wave match `status.json`.
-- [ ] Latest reviewer decision is recorded in `tasks.md` and `status.json`.
-- [ ] `lastVerification` has one entry per command.
-- [ ] `lastVerifiedCommit`, `currentHead`, `remoteHead`, and `phaseCommits` reflect the latest verified state.
+- [x] `tasks.md` task states match `status.json`.
+- [x] Active task and active wave match `status.json`.
+- [x] Latest reviewer decision is recorded in `tasks.md` and `status.json`.
+- [x] `lastVerification` has one entry per command.
+- [x] `lastVerifiedCommit`, `currentHead`, `remoteHead`, and `phaseCommits` reflect the latest verified state.
 - [x] `authorizationBoundary.deployFirestoreRules` is recorded and treated as separate from `edit`, `commit`, `push`, `pullRequest`, `ciWatch`, `merge`, and `localMainSync`.
-- [ ] `rulesDeployStatus` matches the rules release state after the authorized deploy command records evidence.
-- [ ] Final summary does not imply deployed rules/product behavior unless `rulesDeployStatus.state` is `deployed` with deploy evidence.
-- [ ] PR/CI/merge notes explicitly carry release risk if rules are in a non-deployed state such as `required`, `pending`, or `blocked`.
-- [ ] Open `incidents` are resolved, mitigated with an explicit carry-forward, or block closeout.
-- [ ] Changed files are intentionally in scope.
-- [ ] Blockers are resolved or explicitly carried forward.
+- [x] `rulesDeployStatus` matches the rules release state after the authorized deploy command records evidence.
+- [x] Final summary does not imply deployed rules/product behavior unless `rulesDeployStatus.state` is `deployed` with deploy evidence.
+- [x] PR/CI/merge notes have no non-deployed rules risk to carry because rules are deployed.
+- [x] Open `incidents` are resolved, mitigated with an explicit carry-forward, or block closeout.
+- [x] Changed files are intentionally in scope.
+- [x] Blockers are resolved or explicitly carried forward.
 
 ## Blockers
 
@@ -147,4 +160,4 @@ Implementation, T005 integration review, T006 clean-close regression review, T00
 - Do not use `window.confirm`; the spec requires a custom centered confirmation dialog.
 - Do not remove all user drafts. Remove only the current composer target key.
 - Do not treat local browser verification as deployed product behavior.
-- Do not claim Firestore/storage rules are deployed until a deploy command succeeds and `rulesDeployStatus` records deploy evidence.
+- Firestore/storage rules deploy is complete; keep final claims tied to the recorded deploy command and `rulesDeployStatus` evidence.

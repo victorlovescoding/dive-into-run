@@ -5,7 +5,7 @@
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-074-post-composer-draft-confirm",
   "phase": "implementation",
   "activeTask": null,
-  "activeWave": "rebase-integration",
+  "activeWave": "release-closeout",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "074-post-composer-draft-confirm",
-    "commit": "78ffd7db0ca3809e0b02ee101d435ed93ba750b5",
-    "capturedAt": "2026-05-28T05:44:37Z",
-    "summary": "Fix React hook lint baseline"
+    "commit": "f6c89e69338050787baefe0865feb47a55f6675f",
+    "capturedAt": "2026-05-28T06:02:37Z",
+    "summary": "Record post composer rebase state"
   },
   "remoteHead": {
     "remote": "origin",
@@ -864,7 +864,7 @@
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": null,
+  "lastVerifiedCommit": "f6c89e69338050787baefe0865feb47a55f6675f",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -885,14 +885,26 @@
       "phase": "lint-baseline",
       "ref": "78ffd7db0ca3809e0b02ee101d435ed93ba750b5",
       "summary": "Fix React hook lint baseline"
+    },
+    {
+      "phase": "rebase-state",
+      "ref": "f6c89e69338050787baefe0865feb47a55f6675f",
+      "summary": "Record post composer rebase state"
     }
   ],
   "rulesDeployStatus": {
-    "state": "pending",
-    "required": false,
+    "state": "deployed",
+    "required": true,
     "changed": false,
-    "evidence": [],
-    "deployedCommit": null
+    "evidence": [
+      {
+        "command": "firebase deploy --only firestore:rules,storage --project dive-into-run --non-interactive",
+        "exitCode": 0,
+        "summary": "Firestore and Storage rules compiled successfully and were released to Firebase project dive-into-run; latest rule versions were already up to date before release.",
+        "verifiedAt": "2026-05-28T06:02:37Z"
+      }
+    ],
+    "deployedCommit": "f6c89e69338050787baefe0865feb47a55f6675f"
   },
   "incidents": [],
   "lastVerification": [
@@ -1273,7 +1285,79 @@
       "exitCode": 0,
       "summary": "T008 diff is limited to adding account deletion fields to two runtime hook test user mocks.",
       "verifiedAt": "2026-05-28T05:49:51Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/repo/client/post-composer-draft-storage-repo.test.js src/components/ComposeModal.test.jsx src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx src/ui/posts/PostsPageScreen.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
+      "exitCode": 0,
+      "summary": "Final focused 074 test suite passed: 6 files, 40 tests.",
+      "verifiedAt": "2026-05-28T06:02:37Z"
+    },
+    {
+      "command": "npm run doc:freshness",
+      "exitCode": 0,
+      "summary": "Doc freshness check passed for 4 files.",
+      "verifiedAt": "2026-05-28T06:02:37Z"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "Workflow state check passed: 10 status files valid and synced.",
+      "verifiedAt": "2026-05-28T06:02:37Z"
+    },
+    {
+      "command": "npm run workflow:links",
+      "exitCode": 0,
+      "summary": "Local workflow links check passed: 37 files scanned, all local references exist.",
+      "verifiedAt": "2026-05-28T06:02:37Z"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "Whitespace diff check passed with no findings.",
+      "verifiedAt": "2026-05-28T06:02:37Z"
+    },
+    {
+      "command": "npm run lint -- --max-warnings 0",
+      "exitCode": 0,
+      "summary": "Full ESLint gate passed with no lint errors; existing React settings warning only.",
+      "verifiedAt": "2026-05-28T06:02:37Z"
+    },
+    {
+      "command": "npm run audit:use-effect-data-fetching",
+      "exitCode": 0,
+      "summary": "Use-effect data fetching audit passed with 0 findings.",
+      "verifiedAt": "2026-05-28T06:02:37Z"
+    },
+    {
+      "command": "npm run type-check",
+      "exitCode": 0,
+      "summary": "Full TypeScript checkJs gate passed with no type errors.",
+      "verifiedAt": "2026-05-28T06:02:37Z"
+    },
+    {
+      "command": "npm run spellcheck",
+      "exitCode": 0,
+      "summary": "CSpell checked 245 files with 0 issues.",
+      "verifiedAt": "2026-05-28T06:02:37Z"
+    },
+    {
+      "command": "npm run depcruise",
+      "exitCode": 0,
+      "summary": "Dependency cruiser passed with no violations across 1236 modules; existing MODULE_TYPELESS_PACKAGE_JSON warning only.",
+      "verifiedAt": "2026-05-28T06:02:37Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "summary": "Next.js production build completed successfully; existing Firebase/protobuf and ESLint config warnings only.",
+      "verifiedAt": "2026-05-28T06:02:37Z"
+    },
+    {
+      "command": "firebase deploy --only firestore:rules,storage --project dive-into-run --non-interactive",
+      "exitCode": 0,
+      "summary": "Firestore and Storage rules deployed successfully to Firebase project dive-into-run.",
+      "verifiedAt": "2026-05-28T06:02:37Z"
     }
   ],
-  "updatedAt": "2026-05-28T05:49:51Z"
+  "updatedAt": "2026-05-28T06:02:37Z"
 }

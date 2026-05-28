@@ -202,7 +202,7 @@ Evidence:
 - **Commit checkpoint**: `clean-close-regression-tests`
 - **Last verified commit**: uncommitted T006 diff verified in worktree
 - **Authorization boundary**: edit=yes, commit=yes, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, localMainSync=yes, deployFirestoreRules=yes
-- **Rules deploy status**: pending; no rules files changed, but user explicitly authorized and requested Firestore/storage rules deploy during closeout
+- **Rules deploy status**: deployed; Firestore and Storage rules released to Firebase project `dive-into-run`
 - **Incidents**: none
 
 Scope:
@@ -283,7 +283,7 @@ Evidence:
   - `src/runtime/hooks/usePostDetailRuntime.test.jsx`
     - Added unchanged detail edit close regression test.
 - Phase commits: none.
-- Rules deploy status: pending; no Firestore/storage rules files changed, deploy still authorized/requested for closeout.
+- Rules deploy status: deployed; Firestore and Storage rules released to Firebase project `dive-into-run` with deploy evidence recorded in `status.json`.
 - Incidents: none.
 
 ### T007 - Full Lint Baseline Remediation
@@ -296,7 +296,7 @@ Evidence:
 - **Commit checkpoint**: `react-hook-lint-baseline`
 - **Last verified commit**: uncommitted T007 diff verified in worktree
 - **Authorization boundary**: edit=yes, commit=yes, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, localMainSync=yes, deployFirestoreRules=yes
-- **Rules deploy status**: pending; no rules files changed
+- **Rules deploy status**: deployed; Firestore and Storage rules released to Firebase project `dive-into-run`
 - **Incidents**: none
 
 Scope:
@@ -356,7 +356,7 @@ Evidence:
 - Phase commits:
   - implementation: `9931cc1425e51b009d61cc4504a4132cdd0c3a8e` (`Add post composer draft recovery`)
   - lint-baseline: `78ffd7db0ca3809e0b02ee101d435ed93ba750b5` (`Fix React hook lint baseline`)
-- Rules deploy status: pending; no Firestore/storage rules files changed.
+- Rules deploy status: deployed; Firestore and Storage rules released to Firebase project `dive-into-run` with deploy evidence recorded in `status.json`.
 - Incidents: none.
 
 ### T008 - Rebase Type-Check Test Mock Fix
@@ -369,7 +369,7 @@ Evidence:
 - **Commit checkpoint**: `rebase-typecheck-mocks`
 - **Last verified commit**: uncommitted T008 diff verified in worktree
 - **Authorization boundary**: edit=yes, commit=yes, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, localMainSync=yes, deployFirestoreRules=yes
-- **Rules deploy status**: pending; no rules files changed
+- **Rules deploy status**: deployed; Firestore and Storage rules released to Firebase project `dive-into-run`
 - **Incidents**: none
 
 Scope:
@@ -412,8 +412,15 @@ Evidence:
 - Phase commits:
   - implementation: `9931cc1425e51b009d61cc4504a4132cdd0c3a8e` (`Add post composer draft recovery`)
   - lint-baseline: `78ffd7db0ca3809e0b02ee101d435ed93ba750b5` (`Fix React hook lint baseline`)
-- Rules deploy status: pending; no Firestore/storage rules files changed.
+  - rebase-state: `f6c89e69338050787baefe0865feb47a55f6675f` (`Record post composer rebase state`)
+- Rules deploy status: deployed; Firestore and Storage rules released to Firebase project `dive-into-run` with deploy evidence recorded in `status.json`.
 - Incidents: none.
+
+### Release Closeout Evidence
+
+- Final focused tests: `npx vitest run --project=browser src/repo/client/post-composer-draft-storage-repo.test.js src/components/ComposeModal.test.jsx src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx src/ui/posts/PostsPageScreen.test.jsx src/ui/posts/PostDetailScreen.test.jsx`: exit 0, 6 files and 40 tests passed.
+- Repo gates: `npm run doc:freshness`, `npm run workflow:check`, `npm run workflow:links`, `git diff --check`, `npm run lint -- --max-warnings 0`, `npm run audit:use-effect-data-fetching`, `npm run type-check`, `npm run spellcheck`, `npm run depcruise`, and `npm run build`: exit 0.
+- Rules deploy: `firebase deploy --only firestore:rules,storage --project dive-into-run --non-interactive`: exit 0; `firestore.rules` and `storage.rules` released to Firebase project `dive-into-run`.
 
 ### T002 - ComposeModal Shared Close Guard And Confirmation UI
 
