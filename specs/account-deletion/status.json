@@ -1,9 +1,9 @@
 {
   "schemaVersion": 3,
   "feature": "account-deletion",
-  "branch": "073-account-deletion",
-  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-073-account-deletion",
-  "phase": "deployed",
+  "branch": "075-account-deletion-index-error",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-075-account-deletion-index-error",
+  "phase": "reviewed",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -17,17 +17,17 @@
     "deployFirestoreRules": true
   },
   "currentHead": {
-    "branch": "073-account-deletion",
-    "commit": "7b2e651c77161bdd533ca64dab1c729885982421",
-    "capturedAt": "2026-05-27T16:39:20Z",
-    "summary": "Clean feature worktree created from origin/main before account deletion edits."
+    "branch": "075-account-deletion-index-error",
+    "commit": "171e1a68357d76eaffd7b6f6bb60452ad4624763",
+    "capturedAt": "2026-05-28T11:49:32Z",
+    "summary": "T007 config/test fix commit deployed to Firebase Firestore indexes before release closeout evidence commit."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "7b2e651c77161bdd533ca64dab1c729885982421",
-    "capturedAt": "2026-05-27T16:39:20Z",
-    "summary": "origin/main at feature start."
+    "commit": "3395a642f2db29b60602fc623828e38f136267f6",
+    "capturedAt": "2026-05-28T09:50:00Z",
+    "summary": "origin/main at T007 follow-up start; release closeout authorization was granted later for Firestore index deploy, push, PR, CI watch, merge, and local main sync."
   },
   "completedTasks": [
     "T001",
@@ -35,7 +35,8 @@
     "T003",
     "T004",
     "T005",
-    "T006"
+    "T006",
+    "T007"
   ],
   "tasks": [
     {
@@ -576,31 +577,205 @@
         "summary": "T006 attempt 2 resolves the prior rollback/finalizer eligibility bug and post comment history cleanup gap. Workflow state records attempt 1 rejection and attempt 2 engineer_done without fake PASS/completed state. Fresh lint, changed-file type check, workflow check, and syntax checks passed.",
         "decidedAt": "2026-05-27T18:14:25Z"
       }
+    },
+    {
+      "id": "T007",
+      "title": "Firestore Comments Author Index Follow-up",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-7",
+      "engineer": "Codex Engineer",
+      "reviewer": "Codex Reviewer",
+      "scope": [
+        "Add the missing comments.authorUid collection-group ASC field override required by the account deletion comments query.",
+        "Add a focused static Vitest regression test that parses firestore.indexes.json as JSON.",
+        "Record the production incident, root cause, T007 authorization boundary, and pending index deploy state."
+      ],
+      "nonScope": [
+        "No API route error handling, OAuth/provider selection, frontend UI/toast, repo query shape, rules, functions, migration, data retention/finalizer, dependency, push, PR, CI watch, merge, local main sync, or Firebase deploy changes.",
+        "Do not modify unrelated untracked specs/account-deletion-index-error scratch files."
+      ],
+      "ownedFiles": [
+        "firestore.indexes.json",
+        "tests/server/firestore/firestore-indexes.test.js",
+        "specs/account-deletion/tasks.md",
+        "specs/account-deletion/status.json",
+        "specs/account-deletion/handoff.md"
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-profiles.md",
+        "docs/superpowers/task-contract.md",
+        ".codex/rules/coding-rules.md",
+        ".codex/rules/code-style.md",
+        "firestore.indexes.json",
+        "src/repo/server/account-deletion-server-repo.js relevant query lines",
+        "specs/account-deletion/spec.md",
+        "specs/account-deletion/plan.md",
+        "specs/account-deletion/tasks.md",
+        "specs/account-deletion/status.json",
+        "specs/account-deletion/handoff.md",
+        "package.json",
+        "tests/unit/config if present",
+        "tests/server/firestore if present",
+        "vitest.config.mjs",
+        "vitest.setup.server.js",
+        "specs/account-deletion-index-error/* read-only scratch material"
+      ],
+      "dependencies": [
+        "T001",
+        "T002",
+        "T003",
+        "T004",
+        "T005",
+        "T006"
+      ],
+      "engineerInstructions": [
+        "Use TDD: write the static index test first and capture the expected failing signal before changing firestore.indexes.json.",
+        "Continue attempt 1 by moving the static regression test from tests/unit/config to tests/server/firestore.",
+        "Preserve existing composite indexes and field overrides.",
+        "Do not modify tsconfig.json, eslint.config.mjs, or vitest setup/config files.",
+        "Stop before any Firebase index/rules/functions deploy.",
+        "Stop if passing verification requires modifying files outside the owned file list."
+      ],
+      "acceptanceCriteria": [
+        "AC-T007.1: firestore.indexes.json remains valid JSON and includes comments.authorUid with ASCENDING COLLECTION_GROUP field override.",
+        "AC-T007.2: Existing indexes and field overrides are preserved.",
+        "AC-T007.3: Regression test parses JSON semantically instead of grepping strings.",
+        "AC-T007.4: Workflow state records the production incident/root cause, pre-closeout pending deploy state, and release closeout index deploy evidence.",
+        "AC-T007.5: Required verification passes or the blocker is recorded with evidence."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run tests/unit/config/firestore-indexes.test.js",
+          "expectedSignal": "pre-fix RED exits 1 because comments.authorUid field override is missing",
+          "lastRun": {
+            "command": "npx vitest run tests/unit/config/firestore-indexes.test.js",
+            "exitCode": 1,
+            "summary": "Expected RED captured: assertion failed because fieldOverrides contained participants.uid and comments.deletedPurgeAt but not comments.authorUid.",
+            "verifiedAt": "2026-05-28T09:45:45Z"
+          }
+        },
+        {
+          "command": "node --check tests/server/firestore/firestore-indexes.test.js",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "node --check tests/server/firestore/firestore-indexes.test.js",
+            "exitCode": 0,
+            "summary": "Moved server/firestore test file syntax check passed.",
+            "verifiedAt": "2026-05-28T09:56:47Z"
+          }
+        },
+        {
+          "command": "npx vitest run tests/server/firestore/firestore-indexes.test.js",
+          "expectedSignal": "exit 0 with 1 test passing when FIRESTORE_EMULATOR_HOST and FIREBASE_AUTH_EMULATOR_HOST are set",
+          "lastRun": {
+            "command": "FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 npx vitest run tests/server/firestore/firestore-indexes.test.js",
+            "exitCode": 0,
+            "summary": "Server/firestore static index test passed with required emulator env contract; 1 test passed.",
+            "verifiedAt": "2026-05-28T10:00:56Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed files linted successfully after moving test to tests/server/firestore and adding JSDoc; React settings warning only.",
+            "verifiedAt": "2026-05-28T10:00:56Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0 with no changed-file type errors",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type check reported no errors.",
+            "verifiedAt": "2026-05-28T10:00:56Z"
+          }
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "exit 0",
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "12 status files valid and synced after T007 engineer_done state and accepted env verification were recorded.",
+            "verifiedAt": "2026-05-28T10:02:15Z"
+          }
+        }
+      ],
+      "evidence": {
+        "engineerReport": "Continued T007 attempt 1 by moving the static Firestore index regression test from tests/unit/config to tests/server/firestore and adding JSDoc. The original lint blocker is resolved. The second blocker was resolved by using the existing server/firestore setup contract: run the focused Vitest command with FIRESTORE_EMULATOR_HOST and FIREBASE_AUTH_EMULATOR_HOST set. Reviewer rejected once only because workflow state incorrectly recorded commit=false despite user commit authorization. Authorization state is corrected to commit=true; no commit or Firebase deploy was performed by the Engineer.",
+        "reviewerReport": "Attempt 1 review_rejected: workflow state recorded commit=false, but user explicitly authorized commit. No implementation defect was reported. Attempt 2 review_passed: no findings; index/test implementation is correct, workflow authorization boundary is corrected, and Firestore index deploy remained pending until explicit release closeout authorization.",
+        "commandOutputSummary": [
+          "Reviewer attempt 1: review_rejected only because workflow state recorded commit=false despite user commit authorization.",
+          "Reviewer attempt 2: review_passed with no findings.",
+          "Pre-fix focused Vitest RED: exit 1 with missing comments.authorUid field override assertion.",
+          "Initial post-fix focused Vitest at tests/unit/config: exit 0, 1 test passed.",
+          "node --check tests/server/firestore/firestore-indexes.test.js: exit 0.",
+          "npx vitest run tests/server/firestore/firestore-indexes.test.js without env: historical exit 1; server setup requires Firebase Emulator env before importing tests.",
+          "FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 npx vitest run tests/server/firestore/firestore-indexes.test.js: exit 0; 1 test passed.",
+          "npm run lint:changed: exit 0; React settings warning only.",
+          "npm run type-check:changed: exit 0; no changed-file type errors.",
+          "npm run workflow:check: exit 0; 12 status files synced."
+        ],
+        "changedFilesSummary": [
+          "firestore.indexes.json: added comments.authorUid ASCENDING COLLECTION_GROUP field override while preserving existing index config.",
+          "tests/server/firestore/firestore-indexes.test.js: moved semantic JSON-parsing regression test into the server/firestore lint scope and added JSDoc.",
+          "specs/account-deletion workflow files: recorded T007 incident, corrected authorization boundary to commit=true, recorded deploy evidence after release authorization, and recorded Reviewer rejection history."
+        ]
+      },
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Required verification commands pass and match expected signals, including lint:changed.",
+        "Acceptance criteria are covered by verification evidence, docs evidence, or explicit rationale.",
+        "No Firebase deploy is performed during Engineer/Reviewer implementation; release closeout deploy evidence is recorded separately.",
+        "Behavior or docs changes stay inside scope and non-scope is untouched."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Acceptance criteria are unmet or unsupported by evidence.",
+        "Firebase deploy is attempted or index deploy is implied as complete.",
+        "Behavior or docs changed outside scope or inside non-scope."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Codex Reviewer",
+        "summary": "T007 adds the exact comments.authorUid ASC collection-group field override, preserves existing index config, adds a semantic JSON-parsing regression test, and kept Firestore index deploy pending until explicit release closeout authorization.",
+        "decidedAt": "2026-05-28T10:08:00Z"
+      }
     }
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": null,
-  "phaseCommits": [],
+  "lastVerifiedCommit": "171e1a68357d76eaffd7b6f6bb60452ad4624763",
+  "phaseCommits": [
+    {
+      "phase": "t007-local-fix",
+      "commit": "171e1a68357d76eaffd7b6f6bb60452ad4624763",
+      "summary": "Fix account deletion index",
+      "committedAt": "2026-05-28T18:09:38+08:00"
+    }
+  ],
   "rulesDeployStatus": {
     "state": "deployed",
     "required": true,
     "changed": true,
     "evidence": [
+      "T006 Firestore rules/functions deploy evidence is historical. T007 adds a Firestore index config change; only firestore:indexes was deployed during this release closeout.",
       {
-        "command": "firebase functions:artifacts:setpolicy --location us-central1 --days 1 --force --project dive-into-run",
+        "command": "firebase deploy --only firestore:indexes --project dive-into-run",
         "exitCode": 0,
-        "summary": "Set us-central1 gcf-artifacts cleanup policy to delete function container images older than 1 day.",
-        "verifiedAt": "2026-05-27T18:42:53Z"
-      },
-      {
-        "command": "firebase deploy --only firestore:rules,functions --project dive-into-run",
-        "exitCode": 0,
-        "summary": "Firestore rules released; finalizeAccountDeletions(us-central1) function present and unchanged on final deploy after prior successful create.",
-        "verifiedAt": "2026-05-27T18:42:53Z"
+        "summary": "Firebase CLI deployed indexes in firestore.indexes.json successfully for the (default) Firestore database; Firestore rules were compiled only and no rules/functions deploy was run.",
+        "verifiedAt": "2026-05-28T11:49:32Z"
       }
     ],
-    "deployedCommit": "94c1979b653a6e2e8164a6ab2957b40d8bb1745d"
+    "deployedCommit": "171e1a68357d76eaffd7b6f6bb60452ad4624763"
   },
   "incidents": [
     {
@@ -609,63 +784,58 @@
       "summary": "tasks.md claimed T001-T005 completed while status.json only carried T001 detail and no reviewerDecision. T006 reconciles state to engineer_done/in_progress without Reviewer PASS.",
       "openedAt": "2026-05-27T17:49:26Z",
       "closedAt": "2026-05-27T17:49:26Z"
+    },
+    {
+      "id": "INC-ACCOUNT-DELETION-COMMENTS-AUTHORUID-INDEX-20260528",
+      "state": "mitigated",
+      "summary": "Manual account deletion request for Crawler Mr. failed with Firestore failed-precondition missing COLLECTION_GROUP_ASC index for comments.authorUid. T007 added the local config fix and regression test, then Firebase firestore:indexes deploy succeeded for the deployed fix commit. Browser account deletion was not re-run after deploy because it is destructive.",
+      "openedAt": "2026-05-28T09:50:00Z",
+      "closedAt": "2026-05-28T11:49:32Z"
     }
   ],
   "lastVerification": [
     {
+      "command": "npx vitest run tests/unit/config/firestore-indexes.test.js",
+      "exitCode": 1,
+      "summary": "Expected RED captured: assertion failed because fieldOverrides contained participants.uid and comments.deletedPurgeAt but not comments.authorUid.",
+      "verifiedAt": "2026-05-28T09:45:45Z"
+    },
+    {
+      "command": "node --check tests/server/firestore/firestore-indexes.test.js",
+      "exitCode": 0,
+      "summary": "Moved server/firestore test file syntax check passed.",
+      "verifiedAt": "2026-05-28T09:56:47Z"
+    },
+    {
+      "command": "FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 npx vitest run tests/server/firestore/firestore-indexes.test.js",
+      "exitCode": 0,
+      "summary": "Server/firestore static index test passed with required emulator env contract; 1 test passed.",
+      "verifiedAt": "2026-05-28T10:00:56Z"
+    },
+    {
       "command": "npm run lint:changed",
       "exitCode": 0,
-      "summary": "Changed files linted successfully; React settings warning only.",
-      "verifiedAt": "2026-05-27T18:27:43Z"
+      "summary": "Changed files linted successfully after moving test to tests/server/firestore and adding JSDoc; React settings warning only.",
+      "verifiedAt": "2026-05-28T10:00:56Z"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
       "summary": "Changed-file type check reported no errors.",
-      "verifiedAt": "2026-05-27T18:27:43Z"
+      "verifiedAt": "2026-05-28T10:00:56Z"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
-      "summary": "9 status files valid and synced after Reviewer PASS state sync.",
-      "verifiedAt": "2026-05-27T18:27:43Z"
+      "summary": "12 status files valid and synced after T007 engineer_done state and accepted env verification were recorded.",
+      "verifiedAt": "2026-05-28T10:02:15Z"
     },
     {
-      "command": "npm run workflow:links",
+      "command": "firebase deploy --only firestore:indexes --project dive-into-run",
       "exitCode": 0,
-      "summary": "37 local workflow links scanned and all local references exist.",
-      "verifiedAt": "2026-05-27T18:27:43Z"
-    },
-    {
-      "command": "npm run depcruise",
-      "exitCode": 0,
-      "summary": "No dependency violations found; Node MODULE_TYPELESS_PACKAGE_JSON warning from historical spec script only.",
-      "verifiedAt": "2026-05-27T18:27:43Z"
-    },
-    {
-      "command": "node --check functions/index.js",
-      "exitCode": 0,
-      "summary": "Functions finalizer syntax check passed.",
-      "verifiedAt": "2026-05-27T18:27:43Z"
-    },
-    {
-      "command": "node --check src/repo/server/account-deletion-server-repo.js",
-      "exitCode": 0,
-      "summary": "Server account deletion repo syntax check passed.",
-      "verifiedAt": "2026-05-27T18:27:43Z"
-    },
-    {
-      "command": "npm run build",
-      "exitCode": 0,
-      "summary": "Next production build completed successfully.",
-      "verifiedAt": "2026-05-27T18:27:43Z"
-    },
-    {
-      "command": "firebase emulators:exec --only auth,firestore,storage,functions --project dive-into-run \"node account-deletion-emulator-check.mjs\"",
-      "exitCode": 0,
-      "summary": "Authenticated emulator flow passed: request, pending gate, cancel, finalizer deletion, post comment history cleanup, blocked failed-request skip, and same-email new account.",
-      "verifiedAt": "2026-05-27T18:27:43Z"
+      "summary": "Firebase CLI deployed indexes in firestore.indexes.json successfully for the (default) Firestore database; Firestore rules were compiled only and no rules/functions deploy was run.",
+      "verifiedAt": "2026-05-28T11:49:32Z"
     }
   ],
-  "updatedAt": "2026-05-27T18:42:53Z"
+  "updatedAt": "2026-05-28T11:49:32Z"
 }
