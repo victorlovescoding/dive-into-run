@@ -19,6 +19,26 @@ import { db } from '@/config/client/firebase-client';
  */
 
 /**
+ * Repo-safe soft-delete check based only on Firestore payload shape.
+ * @param {Record<string, unknown> | null | undefined} record - Raw document data.
+ * @returns {boolean} True when the document has no soft-delete marker.
+ */
+function isActiveNotificationSourceRecord(record) {
+  return !record || !Object.prototype.hasOwnProperty.call(record, 'deletedAt');
+}
+
+/**
+ * Returns a usable notification recipient UID.
+ * @param {unknown} uid - Raw author uid value.
+ * @returns {string | null} Trimmed non-empty uid, or null.
+ */
+function normalizeRecipientUid(uid) {
+  if (typeof uid !== 'string') return null;
+  const trimmed = uid.trim();
+  return trimmed ? trimmed : null;
+}
+
+/**
  * 新增單則通知文件。
  * @param {object} payload - Firestore payload。
  * @returns {Promise<import('firebase/firestore').DocumentReference>} 新文件參照。
@@ -60,7 +80,15 @@ export async function fetchDistinctCommentAuthors(commentsRef) {
  * @returns {Promise<string[]>} 不重複的 authorUid 陣列。
  */
 export async function fetchDistinctPostCommentAuthors(postId) {
-  return fetchDistinctCommentAuthors(collection(db, 'posts', postId, 'comments'));
+  const snapshot = await getDocs(collection(db, 'posts', postId, 'comments'));
+  const uids = snapshot.docs.flatMap((document) => {
+    const data = document.data();
+    if (!isActiveNotificationSourceRecord(data)) return [];
+
+    const uid = normalizeRecipientUid(data.authorUid);
+    return uid ? [uid] : [];
+  });
+  return [...new Set(uids)];
 }
 
 /**

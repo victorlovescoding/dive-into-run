@@ -1,0 +1,1046 @@
+{
+  "schemaVersion": 3,
+  "feature": "post-comment-soft-delete-retention",
+  "branch": "codex/post-comment-soft-delete-retention-spec",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run",
+  "phase": "local_verification",
+  "activeTask": null,
+  "activeWave": null,
+  "authorizationBoundary": {
+    "edit": true,
+    "commit": false,
+    "push": false,
+    "pullRequest": false,
+    "ciWatch": false,
+    "merge": false,
+    "localMainSync": false,
+    "deployFirestoreRules": false
+  },
+  "currentHead": {
+    "branch": "codex/post-comment-soft-delete-retention-spec",
+    "commit": "05dfc2270ef13109e6890ae897218fa654194352",
+    "capturedAt": "2026-05-28T07:35:00Z",
+    "summary": "Implement soft delete retention"
+  },
+  "remoteHead": {
+    "remote": "origin",
+    "branch": "main",
+    "commit": "08cc3b402c6b9d2c68d4c4986ae9c079a31592a0",
+    "capturedAt": "2026-05-27T18:25:24Z",
+    "summary": "origin/main at planning start"
+  },
+  "completedTasks": [
+    "T001",
+    "T002",
+    "T003",
+    "T004",
+    "T005",
+    "T006"
+  ],
+  "tasks": [
+    {
+      "id": "T001",
+      "title": "Soft Delete Domain Helpers",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-1",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Add post-service soft-delete helpers and tests."
+      ],
+      "nonScope": [
+        "Do not touch Firebase repo files, runtime hooks, Firestore rules, or Functions."
+      ],
+      "ownedFiles": [
+        "src/service/post-service.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js"
+      ],
+      "readOnlyContext": [
+        "specs/post-comment-soft-delete-retention/spec.md",
+        "src/runtime/client/use-cases/post-use-cases.js"
+      ],
+      "dependencies": [],
+      "engineerInstructions": [
+        "Add post-service soft-delete helpers and tests as described in tasks.md.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T001.1: Retention helper calculates exactly 90 days after delete time.",
+        "AC-T001.2: Legacy records without deletedAt are active.",
+        "AC-T001.3: Records with deletedAt are deleted."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js",
+          "expectedSignal": "Exit 0, soft-delete service tests pass.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "1 file passed, 4 tests passed.",
+            "verifiedAt": "2026-05-27T18:47:45Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed; existing React version settings warning only.",
+            "verifiedAt": "2026-05-27T18:47:45Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No type errors in changed files.",
+            "verifiedAt": "2026-05-27T18:47:45Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Tests fail before implementation or the Engineer provides valid RED evidence.",
+        "Helper names and payload fields match the spec.",
+        "No product behavior changes outside service helpers."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Acceptance criteria are unmet or unsupported by evidence.",
+        "Layer or workflow rules are violated.",
+        "Behavior or docs changed outside scope or inside non-scope."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec reviewer and code quality reviewer",
+        "summary": "Spec compliance and code quality reviews passed with no findings.",
+        "decidedAt": "2026-05-27T18:47:45Z"
+      },
+      "evidence": {
+        "engineerReport": "Implemented T001 soft-delete helpers, typedef fields, and spec-local service tests. Attempt 1 root test path failed lint because root tests/unit is outside tsconfig; attempt 2 moved the test under specs/post-comment-soft-delete-retention/tests.",
+        "reviewerReport": "Spec review passed with no spec-compliance issues. Code quality review passed with no findings.",
+        "commandOutputSummary": [
+          "RED: npx vitest run --project=browser tests/unit/service/post-service-soft-delete.test.js: exit 1 before helper exports existed.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js: exit 0, 1 file / 4 tests passed.",
+          "npm run lint:changed: exit 0, existing React version settings warning only.",
+          "npm run type-check:changed: exit 0."
+        ],
+        "changedFilesSummary": [
+          "src/service/post-service.js",
+          "specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js"
+        ]
+      }
+    },
+    {
+      "id": "T002",
+      "title": "Post And Comment Soft Delete Writes",
+      "state": "completed",
+      "attempt": 4,
+      "wave": "wave-2",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Convert post and post-comment delete behavior from hard delete to soft delete.",
+        "Hide soft-deleted posts/comments in post use cases."
+      ],
+      "nonScope": [
+        "Do not change notifications, member dashboard, favorites, rules, or Functions."
+      ],
+      "ownedFiles": [
+        "src/repo/client/firebase-posts-repo.js",
+        "src/runtime/client/use-cases/post-use-cases.js",
+        "src/runtime/hooks/usePostComments.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/runtime/post-soft-delete-use-cases.test.js"
+      ],
+      "readOnlyContext": [
+        "src/service/post-service.js",
+        "src/runtime/hooks/usePostDetailRuntime.js",
+        "src/runtime/hooks/usePostsPageRuntime.js",
+        "src/ui/posts/PostDetailScreen.jsx"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Implement soft-delete writes and active read filtering as described in tasks.md.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T002.1: Post delete updates only the post document with soft-delete fields.",
+        "AC-T002.2: Comment delete is idempotent and decrements once.",
+        "AC-T002.3: Deleted post detail reads return null.",
+        "AC-T002.4: Deleted comments are not returned to the post detail UI.",
+        "AC-T002.5: New comments under deleted posts are rejected."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/post-soft-delete-use-cases.test.js",
+          "expectedSignal": "Exit 0, post/comment soft-delete tests pass.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/post-soft-delete-use-cases.test.js",
+            "exitCode": 0,
+            "summary": "12 tests passed.",
+            "verifiedAt": "2026-05-27T22:39:34Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed; existing React settings warning only.",
+            "verifiedAt": "2026-05-27T22:39:34Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No type errors in changed files.",
+            "verifiedAt": "2026-05-27T22:39:34Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Comment delete cannot double-decrement commentsCount.",
+        "Post delete does not hard delete comments or likes.",
+        "Existing UI delete handlers still receive successful results and error paths."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Acceptance criteria are unmet or unsupported by evidence.",
+        "Layer or workflow rules are violated.",
+        "Behavior or docs changed outside scope or inside non-scope."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec reviewer and code quality reviewer",
+        "summary": "Spec and final code-quality reviews passed after resolving pagination, idempotency, actor UID, deleted lookup, cursor assertion, and stale JSDoc findings.",
+        "decidedAt": "2026-05-27T22:39:34Z"
+      },
+      "evidence": {
+        "engineerReport": "Implemented post/comment soft-delete writes, active read filtering, deleted parent comment rejection, raw-cursor pagination backfill, deleted comment lookup filtering, actor UID no-op guard, idempotent repeated post delete, and focused spec-local tests.",
+        "reviewerReport": "Final T002 Reviewer decisions: spec review passed with no findings; code-quality review passed after stale JSDoc correction.",
+        "commandOutputSummary": [
+          "RED: T002 focused Vitest initially failed because post/comment delete and read paths still used hard-delete or exposed deleted records.",
+          "RED: later regressions failed for pagination behind deleted raw pages, deleted comment lookup, missing actor delete work, and repeated post delete audit rewrites.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/post-soft-delete-use-cases.test.js: exit 0, 12 tests passed.",
+          "npm run lint:changed: exit 0, existing React settings warning only.",
+          "npm run type-check:changed: exit 0.",
+          "git diff --check -- T002 files: exit 0."
+        ],
+        "changedFilesSummary": [
+          "src/repo/client/firebase-posts-repo.js",
+          "src/runtime/client/use-cases/post-use-cases.js",
+          "src/runtime/hooks/usePostComments.js",
+          "specs/post-comment-soft-delete-retention/tests/unit/runtime/post-soft-delete-use-cases.test.js"
+        ]
+      }
+    },
+    {
+      "id": "T003",
+      "title": "Secondary Surfaces And Notifications",
+      "state": "completed",
+      "attempt": 2,
+      "wave": "wave-2",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Hide deleted post/comment records from dashboard/favorites surfaces.",
+        "Exclude deleted comments from post reply notification recipients."
+      ],
+      "nonScope": [
+        "Do not change post delete write behavior, Firestore rules, or Functions."
+      ],
+      "ownedFiles": [
+        "src/repo/client/firebase-member-repo.js",
+        "src/repo/client/firebase-notifications-repo.js",
+        "src/runtime/client/use-cases/member-dashboard-use-cases.js",
+        "src/service/member-dashboard-service.js",
+        "src/service/content-favorite-service.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/service/content-favorite-soft-delete.test.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js"
+      ],
+      "readOnlyContext": [
+        "src/runtime/client/use-cases/notification-use-cases.js",
+        "src/runtime/client/use-cases/member-dashboard-use-cases.js",
+        "src/runtime/client/use-cases/content-favorite-use-cases.js",
+        "src/lib/notification-helpers.js"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Implement deleted-record filtering for secondary surfaces and post reply notification eligibility as described in tasks.md.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T003.1: A user whose only post comment is deleted is not notified.",
+        "AC-T003.2: A user with another active post comment is still notified.",
+        "AC-T003.3: Member dashboard posts/comments omit deleted records.",
+        "AC-T003.4: Favorite rows treat deleted posts as missing targets."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "Passed as part of focused T003 tests.",
+            "verifiedAt": "2026-05-27T23:06:15Z"
+          }
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/content-favorite-soft-delete.test.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/content-favorite-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "Passed as part of focused T003 tests.",
+            "verifiedAt": "2026-05-27T23:06:15Z"
+          }
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+            "exitCode": 0,
+            "summary": "Passed as part of focused T003 tests.",
+            "verifiedAt": "2026-05-27T23:06:15Z"
+          }
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "Passed as part of focused T003 tests.",
+            "verifiedAt": "2026-05-27T23:06:15Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed; existing React version warning only.",
+            "verifiedAt": "2026-05-27T23:06:15Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No type errors in changed files.",
+            "verifiedAt": "2026-05-27T23:06:15Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Notification tests cover deleted-only and mixed active/deleted commenters.",
+        "Favorites behavior is limited to post targets."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Acceptance criteria are unmet or unsupported by evidence.",
+        "Layer or workflow rules are violated.",
+        "Behavior or docs changed outside scope or inside non-scope."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec reviewer and code quality reviewer",
+        "summary": "Spec and code-quality reviews passed after resolving dashboard pagination, dependency direction, and invalid author UID findings.",
+        "decidedAt": "2026-05-27T23:06:15Z"
+      },
+      "evidence": {
+        "engineerReport": "Implemented secondary-surface soft-delete filtering, post reply recipient filtering, deleted post favorite missing targets, dashboard active-page pagination through deleted raw records, repo-safe notification filtering, and invalid author UID filtering.",
+        "reviewerReport": "T003 spec review passed with no findings. Code-quality review passed after attempt 2; no code-quality issues found.",
+        "commandOutputSummary": [
+          "RED: member dashboard tests failed because deleted post/comment records were included.",
+          "RED: favorite test failed because soft-deleted post target was not missing.",
+          "RED: notification test failed because deleted-only commenter was notified.",
+          "RED: dashboard runtime tests failed because deleted raw records hid later active records.",
+          "RED: notification invalid author UID test failed because invalid UIDs created notification payloads.",
+          "Focused T003 Vitest tests: exit 0, 4 files / 9 tests passed.",
+          "npm run lint:changed: exit 0, existing React version warning only.",
+          "npm run type-check:changed: exit 0."
+        ],
+        "changedFilesSummary": [
+          "src/repo/client/firebase-member-repo.js",
+          "src/repo/client/firebase-notifications-repo.js",
+          "src/runtime/client/use-cases/member-dashboard-use-cases.js",
+          "src/service/member-dashboard-service.js",
+          "src/service/content-favorite-service.js",
+          "specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
+          "specs/post-comment-soft-delete-retention/tests/unit/service/content-favorite-soft-delete.test.js",
+          "specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+          "specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js"
+        ]
+      }
+    },
+    {
+      "id": "T004",
+      "title": "Firestore Rules For Deleted Posts",
+      "state": "completed",
+      "attempt": 5,
+      "wave": "wave-3",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Move member dashboard my comments off direct client collectionGroup comments.",
+        "Add /api/member/comments server route with Firebase ID token bearer auth.",
+        "Query own comments through Admin SDK and filter deleted comments plus comments under missing/deleted post parents.",
+        "Update Firestore rules so direct post comments obey active parent checks while broad client comments collection-group reads are rejected."
+      ],
+      "nonScope": [
+        "Do not deploy rules.",
+        "Do not change event direct comment behavior.",
+        "Do not backfill comments or copy parent delete state to children.",
+        "Do not change post delete O(1) behavior."
+      ],
+      "ownedFiles": [
+        "firestore.rules",
+        "tests/server/firestore/post-soft-delete-rules.test.js",
+        "src/app/api/member/comments/route.js",
+        "src/runtime/server/use-cases/member-comments-server-use-cases.js",
+        "src/repo/server/firebase-member-comments-server-repo.js",
+        "src/repo/client/firebase-member-repo.js",
+        "src/runtime/client/use-cases/member-dashboard-use-cases.js",
+        "src/service/member-dashboard-service.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+        "specs/post-comment-soft-delete-retention/tasks.md",
+        "specs/post-comment-soft-delete-retention/handoff.md",
+        "specs/post-comment-soft-delete-retention/status.json"
+      ],
+      "readOnlyContext": [
+        "src/runtime/server/use-cases/follow-server-use-cases.js",
+        "src/app/api/follows/[targetUid]/route.js",
+        "src/config/server/firebase-admin-app.js",
+        "firestore.indexes.json"
+      ],
+      "dependencies": [
+        "T002",
+        "T003"
+      ],
+      "engineerInstructions": [
+        "Keep direct posts/{postId}/comments/{commentId} rules tied to active parent post state.",
+        "Reject broad client collectionGroup comments reads.",
+        "Preserve direct event comment reads.",
+        "Add server/API boundary for dashboard comments using Authorization: Bearer Firebase ID token verification.",
+        "Server/Admin SDK may use collectionGroup comments for authorUid == uid and createdAt desc pagination.",
+        "Exclude comments with deletedAt; for post comments exclude missing or soft-deleted parent posts; keep existing event comment behavior.",
+        "Validate any cursor before Admin SDK reads: accepted cursor paths must be exactly posts/{postId}/comments/{commentId} or events/{eventId}/comments/{commentId}, and the cursor document must belong to the authenticated uid. Invalid cursors return 400.",
+        "Bound each server request with a raw comment scan budget and return a continuation cursor when the budget is spent before the visible page fills.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T004.1: Direct read/create/update/delete under soft-deleted post comments fail.",
+        "AC-T004.2: Direct active post comment owner/post-author soft-delete behavior still passes; non-owners fail.",
+        "AC-T004.3: Client collectionGroup comments dashboard-style query is no longer allowed.",
+        "AC-T004.4: Dashboard comments load through server API and exclude deleted comments plus comments under deleted posts.",
+        "AC-T004.5: Event direct comment reads remain allowed.",
+        "AC-T004.6: Workflow state records T004 as review-ready without any deployed rules claim; T006 is no longer blocked by the prior architecture flaw.",
+        "AC-T004.7: Invalid, non-comment, missing, or cross-user cursors cannot drive arbitrary Admin SDK reads and return a sane 400.",
+        "AC-T004.8: Server pagination has a per-request raw scan budget and returns a continuation cursor without skipping or duplicating later active comments."
+      ],
+      "verification": [
+        {
+          "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\"",
+          "expectedSignal": "Exit 0, rules tests pass.",
+          "lastRun": {
+            "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\"",
+            "exitCode": 0,
+            "summary": "1 file passed, 10 tests passed.",
+            "verifiedAt": "2026-05-28T05:49:34Z"
+          }
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+          "expectedSignal": "Exit 0, dashboard/API/server filtering tests pass.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+            "exitCode": 0,
+            "summary": "1 file passed, 10 tests passed.",
+            "verifiedAt": "2026-05-28T05:49:34Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed; existing React version warning only.",
+            "verifiedAt": "2026-05-28T05:49:34Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No type errors in changed files.",
+            "verifiedAt": "2026-05-28T05:49:34Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Rules tests use emulator and fail for forbidden access.",
+        "Client dashboard comments no longer directly query collectionGroup comments.",
+        "Server route requires bearer token auth and repo filters deleted comments and deleted post parents.",
+        "Cursor validation blocks arbitrary Admin SDK document reads and cross-user continuation.",
+        "Raw scan budget prevents unbounded deleted/missing-parent comment scans in a single server request.",
+        "No deployed-rules claim is made."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Acceptance criteria are unmet or unsupported by evidence.",
+        "Layer or workflow rules are violated.",
+        "Behavior or docs changed outside scope or inside non-scope."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec reviewer and code-quality/security reviewer",
+        "summary": "Spec compliance review passed, and code-quality/security re-review passed after attempt 5 cursor validation and raw scan budget fixes.",
+        "decidedAt": "2026-05-28T06:01:40Z"
+      },
+      "evidence": {
+        "engineerReport": "Resolved the T004 rules-only plan flaw by moving member dashboard comments to /api/member/comments. Attempt 5 addressed code-quality/security rejection by validating cursor paths and same-user cursor ownership before Admin SDK cursor reads, mapping invalid cursors to 400, and adding a per-request raw comment scan budget with continuation cursor.",
+        "reviewerReport": "Spec compliance review: review_passed. Code-quality/security re-review after attempt 5 rejection fix: review_passed. No deploy, commit, push, PR, CI watch, merge, or local main sync was performed.",
+        "commandOutputSummary": [
+          "Review rejection: attempt 4 accepted raw Firestore path cursors and had no raw scan budget.",
+          "RED: focused runtime test failed before src/repo/server/firebase-member-comments-server-repo.js existed.",
+          "RED attempt 5: cursor-security and raw-budget tests failed because fetchVisibleMemberCommentDocumentsPage() did not exist.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js: exit 0, 1 file / 10 tests passed.",
+          "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\": exit 0, 1 file / 10 tests passed.",
+          "npm run lint:changed: exit 0, existing React version warning only.",
+          "npm run type-check:changed: exit 0.",
+          "Spec compliance review: review_passed, no findings.",
+          "Code-quality/security re-review after attempt 5 rejection fix: review_passed, no blocking findings.",
+          "No Firestore rules, Firebase Functions, indexes, app, commit, push, PR, CI watch, merge, or local main sync was run."
+        ],
+        "changedFilesSummary": [
+          "firestore.rules",
+          "tests/server/firestore/post-soft-delete-rules.test.js",
+          "src/app/api/member/comments/route.js",
+          "src/runtime/server/use-cases/member-comments-server-use-cases.js",
+          "src/repo/server/firebase-member-comments-server-repo.js",
+          "src/repo/client/firebase-member-repo.js",
+          "src/runtime/client/use-cases/member-dashboard-use-cases.js",
+          "src/service/member-dashboard-service.js",
+          "specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+          "specs/post-comment-soft-delete-retention/tasks.md",
+          "specs/post-comment-soft-delete-retention/handoff.md",
+          "specs/post-comment-soft-delete-retention/status.json"
+        ]
+      }
+    },
+    {
+      "id": "T005",
+      "title": "Firebase Scheduled Purge",
+      "state": "completed",
+      "attempt": 5,
+      "wave": "wave-2",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Add Firebase scheduled purge function and deploy-contained purge core."
+      ],
+      "nonScope": [
+        "Do not deploy Functions.",
+        "Do not import root src modules from functions."
+      ],
+      "ownedFiles": [
+        "eslint.config.mjs",
+        "firestore.indexes.json",
+        "functions/index.js",
+        "functions/package-lock.json",
+        "functions/package.json",
+        "functions/post-retention-purge.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js"
+      ],
+      "readOnlyContext": [
+        "functions/package.json",
+        "firebase.json",
+        "src/config/server/firebase-admin-app.js"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Add Firebase scheduled purge function and purge core as described in tasks.md.",
+        "If lint:changed rejects functions/*.js because they are outside the ESLint project-service scope, add only a narrow functions/*.js allowDefaultProject entry while preserving existing allowlist entries.",
+        "Skip non-post comments collection-group rows such as event comments, require deletedAt on expired post and standalone comment snapshots before hard-delete, and use a Firebase-supported Functions Node runtime.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T005.1: Expired post tree purge deletes comments, likes, and post.",
+        "AC-T005.2: Expired standalone comment purge deletes the comment.",
+        "AC-T005.3: Re-running purge with missing docs is a no-op success.",
+        "AC-T005.4: Functions entry validates with node --check."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js",
+            "exitCode": 0,
+            "summary": "1 file passed, 9 tests passed.",
+            "verifiedAt": "2026-05-28T00:33:12Z"
+          }
+        },
+        {
+          "command": "node --check functions/index.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "node --check functions/index.js",
+            "exitCode": 0,
+            "summary": "Functions entry syntax valid.",
+            "verifiedAt": "2026-05-28T00:33:12Z"
+          }
+        },
+        {
+          "command": "node --check functions/post-retention-purge.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "node --check functions/post-retention-purge.js",
+            "exitCode": 0,
+            "summary": "Purge module syntax valid.",
+            "verifiedAt": "2026-05-28T00:33:12Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed; existing React version warning only.",
+            "verifiedAt": "2026-05-28T00:33:12Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "ESLint project-service config change is limited to functions/*.js and preserves existing allowlist entries.",
+        "No root @/ alias import appears under functions.",
+        "Purge tests cover batching and idempotency.",
+        "Purge tests cover skipping expired event comments and stale deletedPurgeAt records that lack deletedAt.",
+        "Functions package runtime is set to a Firebase-supported Node.js version and lockfile metadata is synced.",
+        "Firestore indexes include a collection-group single-field index for comments.deletedPurgeAt so the scheduled purge query can run after index deployment.",
+        "No deployed-functions claim is made."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Acceptance criteria are unmet or unsupported by evidence.",
+        "Layer or workflow rules are violated.",
+        "Behavior or docs changed outside scope or inside non-scope."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec reviewer and code quality/security reviewer",
+        "summary": "Spec and code-quality reviews passed after fixing runtime support, non-post collectionGroup safety, deletedAt guards, sequential batch commits, and the required comments.deletedPurgeAt collection-group index.",
+        "decidedAt": "2026-05-28T00:33:12Z"
+      },
+      "evidence": {
+        "engineerReport": "Implemented Firebase Functions v2 daily scheduled purge wrapper, deploy-contained purge core, fake-adapter tests, Node 22 Functions runtime metadata, collection-group purge index, and safety guards for non-post comments, stale deletedPurgeAt records, missing docs, and sequential batch failure ordering.",
+        "reviewerReport": "Final T005 spec review and code-quality/security review passed with no blocking findings. No Functions, rules, or index deploy was performed.",
+        "commandOutputSummary": [
+          "RED: focused purge test initially failed because functions/post-retention-purge.js was missing.",
+          "RED: npm run lint:changed failed because functions/index.js was outside ESLint project-service scope; resolved with narrow functions/*.js allowDefaultProject entry.",
+          "RED: regression tests caught unsupported Node 24 runtime, event comments being deleted, stale posts without deletedAt being purged, stale standalone comments without deletedAt being purged, later parent-post batch committing after child-batch failure, and missing comments.deletedPurgeAt collection-group index.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js: exit 0, 1 file / 9 tests passed.",
+          "node --check functions/index.js: exit 0.",
+          "node --check functions/post-retention-purge.js: exit 0.",
+          "npm run lint:changed: exit 0, existing React version warning only.",
+          "npm run type-check:changed: exit 0.",
+          "rg \"@/|src/|\\\\.\\\\./src\" functions/*.js: exit 1, no root source alias imports.",
+          "git diff --check -- T005 files: exit 0."
+        ],
+        "changedFilesSummary": [
+          "eslint.config.mjs",
+          "firestore.indexes.json",
+          "functions/index.js",
+          "functions/package-lock.json",
+          "functions/package.json",
+          "functions/post-retention-purge.js",
+          "specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js"
+        ]
+      }
+    },
+    {
+      "id": "T006",
+      "title": "Integration Gate And Workflow State",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-4",
+      "engineer": "Verifier",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Run final verification and sync workflow state."
+      ],
+      "nonScope": [
+        "Do not change product behavior except workflow evidence corrections.",
+        "Do not cross release boundaries without explicit user authorization."
+      ],
+      "ownedFiles": [
+        "specs/post-comment-soft-delete-retention/tasks.md",
+        "specs/post-comment-soft-delete-retention/handoff.md",
+        "specs/post-comment-soft-delete-retention/status.json"
+      ],
+      "readOnlyContext": [
+        "All changed files from T001 through T005.",
+        "docs/superpowers/status.schema.json",
+        "docs/superpowers/task-contract.md"
+      ],
+      "dependencies": [
+        "T001",
+        "T002",
+        "T003",
+        "T004",
+        "T005"
+      ],
+      "engineerInstructions": [
+        "Run final verification and sync workflow evidence as described in tasks.md.",
+        "Modify only the owned files above unless a verification correction is explicitly approved by the coordinator."
+      ],
+      "acceptanceCriteria": [
+        "AC-T006.1: Final local verification evidence is fresh.",
+        "AC-T006.2: Workflow state is valid and synced.",
+        "AC-T006.3: No release/deploy claim is made."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "1 file passed, 4 tests passed.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/post-soft-delete-use-cases.test.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/post-soft-delete-use-cases.test.js",
+            "exitCode": 0,
+            "summary": "1 file passed, 12 tests passed.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "1 file passed, 2 tests passed.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/content-favorite-soft-delete.test.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/content-favorite-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "1 file passed, 2 tests passed.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+            "exitCode": 0,
+            "summary": "1 file passed, 10 tests passed.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "1 file passed, 3 tests passed.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js",
+            "exitCode": 0,
+            "summary": "1 file passed, 9 tests passed.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        },
+        {
+          "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\"",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\"",
+            "exitCode": 0,
+            "summary": "1 file passed, 10 tests passed.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        },
+        {
+          "command": "node --check functions/index.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "node --check functions/index.js",
+            "exitCode": 0,
+            "summary": "Functions entry syntax valid.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        },
+        {
+          "command": "node --check functions/post-retention-purge.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "node --check functions/post-retention-purge.js",
+            "exitCode": 0,
+            "summary": "Purge module syntax valid.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed; existing React version warning only.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No type errors in changed files.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "9 status files valid and synced.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-05-28T06:01:40Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Evidence is fresh and tied to the current commit or working tree.",
+        "Workflow files agree.",
+        "No unauthorized release boundary is crossed."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Verification is missing, stale, failed, or not the required command.",
+        "Acceptance criteria are unmet or unsupported by evidence.",
+        "Layer or workflow rules are violated.",
+        "Behavior or docs changed outside scope or inside non-scope."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T006 final Reviewer",
+        "summary": "Workflow state is synced, final evidence is fresh and explicitly local-working-tree scoped, T004 completion is backed by required reviews, and no unauthorized release boundary was crossed.",
+        "decidedAt": "2026-05-28T06:09:10Z"
+      },
+      "evidence": {
+        "engineerReport": "Ran the full T006 final integration verification set, synced T004 to completed after two review_passed decisions, and updated T006 to engineer_done for Reviewer review. Verification covers the dirty local working tree; no commit-bound verification is claimed.",
+        "reviewerReport": "T006 final Reviewer passed. Reviewer reran npm run workflow:check and git diff --check, confirmed tasks.md/handoff.md/status.json agree, T006 evidence is fresh and local-working-tree scoped, rulesDeployStatus remains required with no deploy evidence, and no commit/push/PR/CI watch/merge/local sync/deploy boundary was crossed.",
+        "commandOutputSummary": [
+          "T004 spec compliance review: review_passed.",
+          "T004 code-quality/security re-review after attempt 5 rejection fix: review_passed.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js: exit 0, 1 file / 4 tests passed.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/post-soft-delete-use-cases.test.js: exit 0, 1 file / 12 tests passed.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js: exit 0, 1 file / 2 tests passed.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/content-favorite-soft-delete.test.js: exit 0, 1 file / 2 tests passed.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js: exit 0, 1 file / 10 tests passed.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js: exit 0, 1 file / 3 tests passed.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js: exit 0, 1 file / 9 tests passed.",
+          "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\": exit 0, 1 file / 10 tests passed.",
+          "node --check functions/index.js: exit 0.",
+          "node --check functions/post-retention-purge.js: exit 0.",
+          "npm run lint:changed: exit 0, existing React version warning only.",
+          "npm run type-check:changed: exit 0, no type errors in changed files.",
+          "npm run workflow:check: exit 0, 9 status files valid and synced.",
+          "git diff --check: exit 0.",
+          "T006 final Reviewer: review_passed. Reviewer reran npm run workflow:check exit 0 and git diff --check exit 0.",
+          "rulesDeployStatus.state remains required; no deploy evidence, deployedCommit, commit, push, PR, CI watch, merge, local main sync, Firestore rules deploy, or Firebase Functions deploy was performed."
+        ],
+        "changedFilesSummary": [
+          "specs/post-comment-soft-delete-retention/tasks.md",
+          "specs/post-comment-soft-delete-retention/handoff.md",
+          "specs/post-comment-soft-delete-retention/status.json"
+        ]
+      }
+    }
+  ],
+  "blocked": false,
+  "blockedReason": null,
+  "lastVerifiedCommit": null,
+  "phaseCommits": [
+    {
+      "phase": "spec",
+      "commit": "8b7e74b3c0fd3f9efc378b0d1f7a16ed5d92f6ef",
+      "summary": "Add soft delete retention spec"
+    },
+    {
+      "phase": "implementation",
+      "commit": "05dfc2270ef13109e6890ae897218fa654194352",
+      "summary": "Implement soft delete retention"
+    }
+  ],
+  "rulesDeployStatus": {
+    "state": "required",
+    "required": true,
+    "changed": true,
+    "evidence": [],
+    "deployedCommit": null
+  },
+  "incidents": [
+    {
+      "id": "T004-collection-group-parent-state",
+      "state": "resolved",
+      "summary": "Resolved by server-boundary redesign: broad client collectionGroup comments reads are rejected, and member dashboard comments load through /api/member/comments with Admin SDK parent filtering.",
+      "openedAt": "2026-05-27T23:31:33Z",
+      "closedAt": "2026-05-28T05:30:03Z"
+    }
+  ],
+  "lastVerification": [
+    {
+      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "1 file passed, 4 tests passed."
+    },
+    {
+      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/post-soft-delete-use-cases.test.js",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "1 file passed, 12 tests passed."
+    },
+    {
+      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "1 file passed, 2 tests passed."
+    },
+    {
+      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/content-favorite-soft-delete.test.js",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "1 file passed, 2 tests passed."
+    },
+    {
+      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "1 file passed, 10 tests passed."
+    },
+    {
+      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "1 file passed, 3 tests passed."
+    },
+    {
+      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "1 file passed, 9 tests passed."
+    },
+    {
+      "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\"",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "1 file passed, 10 tests passed."
+    },
+    {
+      "command": "node --check functions/index.js",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "Functions entry syntax valid."
+    },
+    {
+      "command": "node --check functions/post-retention-purge.js",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "Purge module syntax valid."
+    },
+    {
+      "command": "npm run lint:changed",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "Passed; existing React version warning only."
+    },
+    {
+      "command": "npm run type-check:changed",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "No type errors in changed files."
+    },
+    {
+      "command": "npm run workflow:check",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "9 status files valid and synced."
+    },
+    {
+      "command": "git diff --check",
+      "verifiedAt": "2026-05-28T06:01:40Z",
+      "exitCode": 0,
+      "summary": "No whitespace errors."
+    }
+  ],
+  "updatedAt": "2026-05-28T06:09:10Z"
+}

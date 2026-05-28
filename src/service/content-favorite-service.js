@@ -1,3 +1,5 @@
+import { isSoftDeletedRecord } from '@/service/post-service';
+
 export const FAVORITE_CONTENT_TYPES = Object.freeze({
   POST: 'post',
   EVENT: 'event',
@@ -152,10 +154,20 @@ export function buildFavoriteTargetItem({ type, favorite, targetSnapshot }) {
     };
   }
 
+  const targetData = targetSnapshot.data();
+
+  if (type === FAVORITE_CONTENT_TYPES.POST && isSoftDeletedRecord(targetData)) {
+    return {
+      ...base,
+      target: null,
+      missing: true,
+    };
+  }
+
   return {
     ...base,
     target: {
-      ...targetSnapshot.data(),
+      ...targetData,
       id: targetSnapshot.id,
     },
     missing: false,

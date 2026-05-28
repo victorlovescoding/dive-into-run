@@ -5,6 +5,7 @@ const { FieldValue, Timestamp, getFirestore } = require('firebase-admin/firestor
 const { getStorage } = require('firebase-admin/storage');
 const { logger, setGlobalOptions } = require('firebase-functions');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { purgeExpiredPostRetention: purgeExpiredPostRetentionCore } = require('./post-retention-purge');
 
 const DELETE_BATCH_LIMIT = 250;
 const FINALIZER_LIMIT = 5;
@@ -450,3 +451,25 @@ exports.finalizeAccountDeletions = onSchedule('every 24 hours', async () => {
   const result = await finalizeDueRequests();
   logger.info('Account deletion finalizer completed', result);
 });
+
+/**
+ * Run the scheduled post retention purge.
+ * @returns {Promise<void>} Resolves after purge work completes.
+ */
+async function runScheduledPostRetentionPurge() {
+  const counts = await purgeExpiredPostRetentionCore({
+    firestore: db,
+    logger,
+    now: Timestamp.now(),
+  });
+
+  logger.info('scheduled post retention purge finished', { counts });
+}
+
+exports.purgeExpiredPostRetention = onSchedule(
+  {
+    schedule: 'every day 03:00',
+    timeZone: 'Asia/Taipei',
+  },
+  runScheduledPostRetentionPurge,
+);

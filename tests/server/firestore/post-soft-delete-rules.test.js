@@ -1,0 +1,310 @@
+/* eslint @vitest/expect-expect: ["error", { "assertFunctionNames": ["expect", "assert", "assertSucceeds", "assertFails"] }] */
+import { readFileSync } from 'node:fs';
+import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
+import {
+  assertFails,
+  assertSucceeds,
+  initializeTestEnvironment,
+} from '@firebase/rules-unit-testing';
+import {
+  collectionGroup,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  serverTimestamp,
+  setDoc,
+  Timestamp,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
+
+const PROJECT_ID = 'demo-test';
+const RULES_PATH = 'firestore.rules';
+
+/** @type {import('@firebase/rules-unit-testing').RulesTestEnvironment} */
+let testEnv;
+
+beforeAll(async () => {
+  testEnv = await initializeTestEnvironment({
+    projectId: PROJECT_ID,
+    firestore: {
+      rules: readFileSync(RULES_PATH, 'utf8'),
+    },
+  });
+});
+
+afterAll(async () => {
+  await testEnv?.cleanup();
+});
+
+beforeEach(async () => {
+  await testEnv.clearFirestore();
+});
+
+/**
+ * Returns an authenticated Firestore test client.
+ * @param {string} uid - Authenticated uid.
+ * @returns {import('firebase/firestore').Firestore} Firestore client.
+ */
+function dbFor(uid) {
+  return testEnv.authenticatedContext(uid).firestore();
+}
+
+/**
+ * Seeds Firestore with security rules disabled.
+ * @param {(db: import('firebase/firestore').Firestore) => Promise<void>} seedFn - Seed callback.
+ * @returns {Promise<void>} Seed completion.
+ */
+async function seed(seedFn) {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await seedFn(context.firestore());
+  });
+}
+
+/**
+ * Builds the soft-delete payload sent by client runtime code.
+ * @param {string} actorUid - Acting user uid.
+ * @returns {{ deletedAt: import('firebase/firestore').FieldValue, deletedByUid: string, deletedPurgeAt: import('firebase/firestore').Timestamp }} Firestore update payload.
+ */
+function softDeletePayload(actorUid) {
+  return {
+    deletedAt: serverTimestamp(),
+    deletedByUid: actorUid,
+    deletedPurgeAt: Timestamp.fromDate(new Date('2026-08-26T00:00:00.000Z')),
+  };
+}
+
+/**
+ * Seeds a post and one child comment.
+ * @param {object} options - Seed options.
+ * @param {string} options.postId - Post id.
+ * @param {string} options.commentId - Comment id.
+ * @param {string} options.postAuthorUid - Parent post author uid.
+ * @param {string} options.commentAuthorUid - Child comment author uid.
+ * @param {boolean} [options.deletedPost] - Whether the parent post is soft-deleted.
+ * @returns {Promise<void>} Seed completion.
+ */
+async function seedPostWithComment({
+  postId,
+  commentId,
+  postAuthorUid,
+  commentAuthorUid,
+  deletedPost = false,
+}) {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, 'posts', postId), {
+      authorUid: postAuthorUid,
+      title: 'Morning run',
+      content: 'Easy miles',
+      commentsCount: 1,
+      likesCount: 0,
+      ...(deletedPost
+        ? {
+            deletedAt: Timestamp.fromDate(new Date('2026-05-28T00:00:00.000Z')),
+            deletedByUid: postAuthorUid,
+            deletedPurgeAt: Timestamp.fromDate(new Date('2026-08-26T00:00:00.000Z')),
+          }
+        : {}),
+    });
+    await setDoc(doc(adminDb, 'posts', postId, 'comments', commentId), {
+      authorUid: commentAuthorUid,
+      authorName: 'Commenter',
+      authorImgURL: '',
+      comment: 'Nice route',
+      createdAt: Timestamp.fromDate(new Date('2026-05-28T01:00:00.000Z')),
+    });
+  });
+}
+
+/**
+ * Seeds an event with one child comment.
+ * @param {object} options - Seed options.
+ * @param {string} options.eventId - Event id.
+ * @param {string} options.commentId - Comment id.
+ * @param {string} options.hostUid - Event host uid.
+ * @param {string} options.commentAuthorUid - Child comment author uid.
+ * @returns {Promise<void>} Seed completion.
+ */
+async function seedEventWithComment({ eventId, commentId, hostUid, commentAuthorUid }) {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, 'events', eventId), {
+      hostUid,
+      title: 'City run',
+      time: Timestamp.fromDate(new Date('2026-05-28T10:00:00.000Z')),
+      registrationDeadline: Timestamp.fromDate(new Date('2026-05-27T10:00:00.000Z')),
+      distanceKm: 5,
+      maxParticipants: 20,
+    });
+    await setDoc(doc(adminDb, 'events', eventId, 'comments', commentId), {
+      authorUid: commentAuthorUid,
+      authorName: 'Event Commenter',
+      authorImgURL: '',
+      content: 'See you there',
+      createdAt: Timestamp.fromDate(new Date('2026-05-28T02:00:00.000Z')),
+    });
+  });
+}
+
+describe('post/comment soft-delete Firestore rules', () => {
+  it('denies broad collectionGroup comment queries from client code', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
+      getDocs(query(collectionGroup(dbFor('comment-author'), 'comments'), where('authorUid', '==', 'comment-author'))),
+    );
+  });
+
+  it('allows direct event comment reads', async () => {
+    await seedEventWithComment({
+      eventId: 'event-1',
+      commentId: 'comment-1',
+      hostUid: 'event-host',
+      commentAuthorUid: 'event-comment-author',
+    });
+
+    await assertSucceeds(
+      getDoc(doc(dbFor('event-comment-author'), 'events', 'event-1', 'comments', 'comment-1')),
+    );
+  });
+
+  it('denies reading comments under a soft-deleted post', async () => {
+    await seedPostWithComment({
+      postId: 'deleted-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+      deletedPost: true,
+    });
+
+    await assertFails(
+      getDoc(doc(dbFor('comment-author'), 'posts', 'deleted-post', 'comments', 'comment-1')),
+    );
+  });
+
+  it('denies creating comments under a soft-deleted post', async () => {
+    await seedPostWithComment({
+      postId: 'deleted-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+      deletedPost: true,
+    });
+
+    await assertFails(
+      setDoc(doc(dbFor('new-commenter'), 'posts', 'deleted-post', 'comments', 'comment-2'), {
+        authorUid: 'new-commenter',
+        authorName: 'New Commenter',
+        authorImgURL: '',
+        comment: 'Blocked',
+        createdAt: serverTimestamp(),
+      }),
+    );
+  });
+
+  it('allows post authors to soft-delete only by adding retention fields', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertSucceeds(
+      updateDoc(doc(dbFor('post-author'), 'posts', 'active-post'), softDeletePayload('post-author')),
+    );
+  });
+
+  it('denies post soft-delete updates that also change existing post fields', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
+      updateDoc(doc(dbFor('post-author'), 'posts', 'active-post'), {
+        ...softDeletePayload('post-author'),
+        title: 'Changed while deleting',
+      }),
+    );
+  });
+
+  it('allows comment authors to soft-delete their comments under active posts', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertSucceeds(
+      updateDoc(
+        doc(dbFor('comment-author'), 'posts', 'active-post', 'comments', 'comment-1'),
+        softDeletePayload('comment-author'),
+      ),
+    );
+  });
+
+  it('allows post authors to soft-delete comments under active posts', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertSucceeds(
+      updateDoc(
+        doc(dbFor('post-author'), 'posts', 'active-post', 'comments', 'comment-1'),
+        softDeletePayload('post-author'),
+      ),
+    );
+  });
+
+  it('denies comment updates and deletes under soft-deleted posts', async () => {
+    await seedPostWithComment({
+      postId: 'deleted-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+      deletedPost: true,
+    });
+
+    await assertFails(
+      updateDoc(
+        doc(dbFor('comment-author'), 'posts', 'deleted-post', 'comments', 'comment-1'),
+        softDeletePayload('comment-author'),
+      ),
+    );
+    await assertFails(
+      deleteDoc(doc(dbFor('post-author'), 'posts', 'deleted-post', 'comments', 'comment-1')),
+    );
+  });
+
+  it('denies non-owners from soft-deleting posts or comments they do not own', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
+      updateDoc(doc(dbFor('intruder'), 'posts', 'active-post'), softDeletePayload('intruder')),
+    );
+    await assertFails(
+      updateDoc(
+        doc(dbFor('intruder'), 'posts', 'active-post', 'comments', 'comment-1'),
+        softDeletePayload('intruder'),
+      ),
+    );
+  });
+});
