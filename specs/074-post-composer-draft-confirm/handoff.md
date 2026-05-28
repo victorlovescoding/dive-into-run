@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-074-post-composer-draft-confirm`
 - Branch: `074-post-composer-draft-confirm`
-- Current head: `e716861e2f1e582fb4c5f118c950fa737d968efb` (`Add post composer draft recovery`)
+- Current head: `78ffd7db0ca3809e0b02ee101d435ed93ba750b5` (`Fix React hook lint baseline`)
 - Remote head: `origin/main` at `56764050292e182f4fc4ee92ec2e80a7efde9252`
 - Authorization boundary:
   - edit: yes, implementation edits authorized for task dispatch
@@ -18,13 +18,14 @@
   - deployFirestoreRules: yes
 - Current phase: implementation
 - Active task: none
-- Active wave: release-blocker
-- Latest reviewer decision: T007 `review_passed`
+- Active wave: rebase-integration
+- Latest reviewer decision: T008 `review_passed`
 - Last verified commit: none
 - Phase commits:
-  - spec: `3f536fa42fb0e13c7425a6b6c651149889617d95` (`Add post composer draft confirm spec`)
-  - plan: `6e5857899955ea95f4a6acef22b1ac83a0748513` (`Add post composer draft plan`)
-  - implementation: `e716861e2f1e582fb4c5f118c950fa737d968efb` (`Add post composer draft recovery`)
+  - spec: `d6fbab31b5fc48fd8061591726f9927b01c9f121` (`Add post composer draft confirm spec`)
+  - plan: `b5e5cdd7e9cc67f31cce9832fca1fbaf1b0a065d` (`Add post composer draft plan`)
+  - implementation: `9931cc1425e51b009d61cc4504a4132cdd0c3a8e` (`Add post composer draft recovery`)
+  - lint-baseline: `78ffd7db0ca3809e0b02ee101d435ed93ba750b5` (`Fix React hook lint baseline`)
 - Rules deploy status: `pending`; no rules files changed, but user explicitly authorized/requested Firestore/storage rules deploy during closeout
 - Incidents: none
 - Blocked: no
@@ -44,7 +45,7 @@
 
 ## Next Action
 
-Implementation, T005 integration review, T006 clean-close regression review, and T007 full-lint blocker remediation review are complete. Next action is to commit T007/workflow state, rebase onto latest `origin/main`, run fresh CI-equivalent verification, push, open PR, watch CI, merge, fast-forward local `main`, and deploy Firestore/storage rules as authorized/requested.
+Implementation, T005 integration review, T006 clean-close regression review, T007 full-lint blocker remediation review, and T008 rebase type-check mock fix review are complete. Next action is to commit T008/workflow state, run fresh CI-equivalent verification, push, open PR, watch CI, merge, fast-forward local `main`, and deploy Firestore/storage rules as authorized/requested.
 
 ## Latest Verification
 
@@ -115,6 +116,10 @@ Implementation, T005 integration review, T006 clean-close regression review, and
 | `npm run depcruise` | 0 | T007 dependency direction check passed with no violations; existing `MODULE_TYPELESS_PACKAGE_JSON` warning only. |
 | `git diff --name-only` | 0 | T007 unstaged diff was limited to the owned runtime hook/provider files. |
 | `git diff --cached --name-only` | 0 | T007 reviewer confirmed the existing staged 074 feature files were unchanged by the lint-baseline fixes. |
+| `npm run type-check` | 0 | T008 full type-check passed after adding account deletion status fields to 074 test user mocks. |
+| `npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx` | 0 | T008 detail runtime focused tests passed with 7 tests. |
+| `npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx` | 0 | T008 posts runtime focused tests passed with 12 tests. |
+| `git diff -- src/runtime/hooks/usePostDetailRuntime.test.jsx src/runtime/hooks/usePostsPageRuntime.test.jsx` | 0 | T008 diff is limited to adding account deletion fields to two runtime hook test user mocks. |
 
 ## Closeout Checklist
 

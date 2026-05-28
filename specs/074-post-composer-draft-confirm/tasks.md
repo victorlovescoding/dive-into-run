@@ -354,7 +354,64 @@ Evidence:
   - Fixed React hook lint issues for render-time ref access, set-state-in-effect, and preserve-manual-memoization.
   - No package metadata, eslint config, CI, Firebase rules, or 074 staged product files changed.
 - Phase commits:
-  - implementation: `e716861e2f1e582fb4c5f118c950fa737d968efb` (`Add post composer draft recovery`)
+  - implementation: `9931cc1425e51b009d61cc4504a4132cdd0c3a8e` (`Add post composer draft recovery`)
+  - lint-baseline: `78ffd7db0ca3809e0b02ee101d435ed93ba750b5` (`Fix React hook lint baseline`)
+- Rules deploy status: pending; no Firestore/storage rules files changed.
+- Incidents: none.
+
+### T008 - Rebase Type-Check Test Mock Fix
+
+- **State**: `completed`
+- **Attempt**: 1
+- **Wave**: `rebase-integration`
+- **Engineer**: Engineer
+- **Reviewer**: Reviewer
+- **Commit checkpoint**: `rebase-typecheck-mocks`
+- **Last verified commit**: uncommitted T008 diff verified in worktree
+- **Authorization boundary**: edit=yes, commit=yes, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, localMainSync=yes, deployFirestoreRules=yes
+- **Rules deploy status**: pending; no rules files changed
+- **Incidents**: none
+
+Scope:
+
+- Update 074 runtime hook test user mocks for the account-deletion user shape added on `origin/main`.
+
+Non-scope:
+
+- Do not modify production code, workflow config, package metadata, Firebase rules, or unrelated tests.
+
+Owned files:
+
+- `src/runtime/hooks/usePostDetailRuntime.test.jsx`
+- `src/runtime/hooks/usePostsPageRuntime.test.jsx`
+
+Acceptance criteria:
+
+- AC-T008.1: `npm run type-check` exits 0.
+- AC-T008.2: The two affected focused runtime hook tests pass.
+- AC-T008.3: Diff is limited to the two owned test files.
+
+Evidence:
+
+- Engineer report:
+  - Status: DONE.
+  - Added `ACCOUNT_DELETION_STATUS_ACTIVE` import plus `accountStatus` and `deletionScheduledFor` fields to the two affected runtime hook test user mocks.
+- Reviewer report:
+  - T008 rebase type-check reviewer: `review_passed`.
+  - Diff only updates the two test mocks; full type-check and both focused runtime tests passed.
+- Command output summary:
+  - `npm run type-check`: exit 0.
+  - `npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx`: exit 0, 7 tests passed.
+  - `npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx`: exit 0, 12 tests passed.
+  - `git diff -- src/runtime/hooks/usePostDetailRuntime.test.jsx src/runtime/hooks/usePostsPageRuntime.test.jsx`: exit 0, diff limited to the two owned test files.
+- Changed files summary:
+  - `src/runtime/hooks/usePostDetailRuntime.test.jsx`
+    - Added account deletion status fields to the `USER` test mock.
+  - `src/runtime/hooks/usePostsPageRuntime.test.jsx`
+    - Added account deletion status fields to the `signedInUser` test mock.
+- Phase commits:
+  - implementation: `9931cc1425e51b009d61cc4504a4132cdd0c3a8e` (`Add post composer draft recovery`)
+  - lint-baseline: `78ffd7db0ca3809e0b02ee101d435ed93ba750b5` (`Fix React hook lint baseline`)
 - Rules deploy status: pending; no Firestore/storage rules files changed.
 - Incidents: none.
 

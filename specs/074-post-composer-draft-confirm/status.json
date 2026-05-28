@@ -5,7 +5,7 @@
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-074-post-composer-draft-confirm",
   "phase": "implementation",
   "activeTask": null,
-  "activeWave": "release-blocker",
+  "activeWave": "rebase-integration",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "074-post-composer-draft-confirm",
-    "commit": "e716861e2f1e582fb4c5f118c950fa737d968efb",
-    "capturedAt": "2026-05-28T05:37:28Z",
-    "summary": "Add post composer draft recovery"
+    "commit": "78ffd7db0ca3809e0b02ee101d435ed93ba750b5",
+    "capturedAt": "2026-05-28T05:44:37Z",
+    "summary": "Fix React hook lint baseline"
   },
   "remoteHead": {
     "remote": "origin",
@@ -36,7 +36,8 @@
     "T004",
     "T005",
     "T006",
-    "T007"
+    "T007",
+    "T008"
   ],
   "tasks": [
     {
@@ -778,6 +779,87 @@
           "Second pass fixed stale follow identity guard, toast queue overwrite risk, and dashboard stale async state writes."
         ]
       }
+    },
+    {
+      "id": "T008",
+      "title": "Rebase Type-Check Test Mock Fix",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "rebase-integration",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Update 074 runtime hook test user mocks for the account-deletion user shape added on origin/main."
+      ],
+      "nonScope": [
+        "Do not modify production code, workflow config, package metadata, Firebase rules, or unrelated tests."
+      ],
+      "ownedFiles": [
+        "src/runtime/hooks/usePostDetailRuntime.test.jsx",
+        "src/runtime/hooks/usePostsPageRuntime.test.jsx"
+      ],
+      "readOnlyContext": [
+        "src/config/account-deletion.js",
+        "src/runtime/providers/AuthProvider.jsx"
+      ],
+      "dependencies": [
+        "T007"
+      ],
+      "engineerInstructions": [
+        "Add accountStatus and deletionScheduledFor fields to the two 074 test user mocks using existing account deletion constants."
+      ],
+      "acceptanceCriteria": [
+        "AC-T008.1: npm run type-check exits 0.",
+        "AC-T008.2: The two affected focused runtime hook tests pass.",
+        "AC-T008.3: Diff is limited to the two owned test files."
+      ],
+      "verification": [
+        {
+          "command": "npm run type-check",
+          "expectedSignal": "exit 0",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx",
+          "expectedSignal": "exit 0 and detail runtime tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx",
+          "expectedSignal": "exit 0 and posts runtime tests pass",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Type-check and focused tests pass.",
+        "Diff only updates the two test user mocks.",
+        "No production behavior changes."
+      ],
+      "reviewerRejectCriteria": [
+        "Type-check still fails.",
+        "Diff changes production code or unrelated files.",
+        "Mocks do not use the canonical account deletion status constant."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T008 rebase type-check reviewer",
+        "summary": "T008 passed review. The diff only adds the account deletion status fields to two 074 test user mocks, and type-check plus focused tests pass.",
+        "decidedAt": "2026-05-28T05:49:51Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE. Added ACCOUNT_DELETION_STATUS_ACTIVE import plus accountStatus and deletionScheduledFor fields to the two affected runtime hook test user mocks.",
+        "reviewerReport": "review_passed. Diff only updates the two test mocks; npm run type-check and both focused runtime tests passed.",
+        "commandOutputSummary": [
+          "npm run type-check: exit 0.",
+          "npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx: exit 0, 7 tests passed.",
+          "npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx: exit 0, 12 tests passed.",
+          "git diff -- src/runtime/hooks/usePostDetailRuntime.test.jsx src/runtime/hooks/usePostsPageRuntime.test.jsx: exit 0, diff limited to the two owned test files."
+        ],
+        "changedFilesSummary": [
+          "src/runtime/hooks/usePostDetailRuntime.test.jsx: added account deletion status fields to USER test mock.",
+          "src/runtime/hooks/usePostsPageRuntime.test.jsx: added account deletion status fields to signedInUser test mock."
+        ]
+      }
     }
   ],
   "blocked": false,
@@ -786,18 +868,23 @@
   "phaseCommits": [
     {
       "phase": "spec",
-      "ref": "3f536fa42fb0e13c7425a6b6c651149889617d95",
+      "ref": "d6fbab31b5fc48fd8061591726f9927b01c9f121",
       "summary": "Add post composer draft confirm spec"
     },
     {
       "phase": "plan",
-      "ref": "6e5857899955ea95f4a6acef22b1ac83a0748513",
+      "ref": "b5e5cdd7e9cc67f31cce9832fca1fbaf1b0a065d",
       "summary": "Add post composer draft plan"
     },
     {
       "phase": "implementation",
-      "ref": "e716861e2f1e582fb4c5f118c950fa737d968efb",
+      "ref": "9931cc1425e51b009d61cc4504a4132cdd0c3a8e",
       "summary": "Add post composer draft recovery"
+    },
+    {
+      "phase": "lint-baseline",
+      "ref": "78ffd7db0ca3809e0b02ee101d435ed93ba750b5",
+      "summary": "Fix React hook lint baseline"
     }
   ],
   "rulesDeployStatus": {
@@ -1162,7 +1249,31 @@
       "exitCode": 0,
       "summary": "T007 reviewer confirmed the existing staged 074 feature files were unchanged by the lint-baseline fixes.",
       "verifiedAt": "2026-05-28T05:37:28Z"
+    },
+    {
+      "command": "npm run type-check",
+      "exitCode": 0,
+      "summary": "T008 full type-check passed after adding account deletion status fields to 074 test user mocks.",
+      "verifiedAt": "2026-05-28T05:49:51Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/runtime/hooks/usePostDetailRuntime.test.jsx",
+      "exitCode": 0,
+      "summary": "T008 detail runtime focused tests passed with 7 tests.",
+      "verifiedAt": "2026-05-28T05:49:51Z"
+    },
+    {
+      "command": "npx vitest run --project=browser src/runtime/hooks/usePostsPageRuntime.test.jsx",
+      "exitCode": 0,
+      "summary": "T008 posts runtime focused tests passed with 12 tests.",
+      "verifiedAt": "2026-05-28T05:49:51Z"
+    },
+    {
+      "command": "git diff -- src/runtime/hooks/usePostDetailRuntime.test.jsx src/runtime/hooks/usePostsPageRuntime.test.jsx",
+      "exitCode": 0,
+      "summary": "T008 diff is limited to adding account deletion fields to two runtime hook test user mocks.",
+      "verifiedAt": "2026-05-28T05:49:51Z"
     }
   ],
-  "updatedAt": "2026-05-28T05:37:28Z"
+  "updatedAt": "2026-05-28T05:49:51Z"
 }

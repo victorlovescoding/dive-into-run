@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- Draft behavior matrix covers all target and submit paths. */
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { ACCOUNT_DELETION_STATUS_ACTIVE } from '@/config/account-deletion';
 import { getPostComposerDraftKey } from '@/repo/client/post-composer-draft-storage-repo';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { ToastContext } from '@/runtime/providers/ToastProvider';
@@ -69,6 +70,8 @@ const signedInUser = {
   email: 'runner@example.com',
   photoURL: null,
   bio: null,
+  accountStatus: ACCOUNT_DELETION_STATUS_ACTIVE,
+  deletionScheduledFor: null,
   getIdToken: vi.fn(),
 };
 
