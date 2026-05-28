@@ -5,7 +5,7 @@
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-074-post-composer-draft-confirm",
   "phase": "implementation",
   "activeTask": null,
-  "activeWave": "wave-4",
+  "activeWave": "release-blocker",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "074-post-composer-draft-confirm",
-    "commit": "6e5857899955ea95f4a6acef22b1ac83a0748513",
-    "capturedAt": "2026-05-27T18:31:08Z",
-    "summary": "Add post composer draft plan"
+    "commit": "e716861e2f1e582fb4c5f118c950fa737d968efb",
+    "capturedAt": "2026-05-28T05:37:28Z",
+    "summary": "Add post composer draft recovery"
   },
   "remoteHead": {
     "remote": "origin",
@@ -35,7 +35,8 @@
     "T003",
     "T004",
     "T005",
-    "T006"
+    "T006",
+    "T007"
   ],
   "tasks": [
     {
@@ -678,6 +679,105 @@
           "src/runtime/hooks/usePostDetailRuntime.test.jsx: added unchanged detail edit close regression test."
         ]
       }
+    },
+    {
+      "id": "T007",
+      "title": "Full Lint Baseline Remediation",
+      "state": "completed",
+      "attempt": 2,
+      "wave": "release-blocker",
+      "engineer": "Engineer/Debugger",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Fix existing React hook lint errors that blocked local pre-commit and CI full lint.",
+        "Keep changes limited to the owned runtime hook/provider files reported by full lint."
+      ],
+      "nonScope": [
+        "Do not change package metadata, eslint config, CI, Firestore/storage rules, 074 product behavior, or staged feature files."
+      ],
+      "ownedFiles": [
+        "src/runtime/hooks/useDashboardTab.js",
+        "src/runtime/hooks/useEventDetailMutations.js",
+        "src/runtime/hooks/useEventDetailParticipation.js",
+        "src/runtime/hooks/useEventDetailRuntime.js",
+        "src/runtime/hooks/useEventParticipation.js",
+        "src/runtime/hooks/useEventsPageRuntime.js",
+        "src/runtime/hooks/useMemberPageRuntime.js",
+        "src/runtime/hooks/useProfileEventsRuntime.js",
+        "src/runtime/hooks/useProfileRuntime.js",
+        "src/runtime/hooks/useStravaActivities.js",
+        "src/runtime/hooks/useStravaSync.js",
+        "src/runtime/providers/NotificationProvider.jsx"
+      ],
+      "readOnlyContext": [
+        ".github/workflows/ci.yml",
+        ".husky/pre-commit",
+        "eslint.config.mjs",
+        "package.json"
+      ],
+      "dependencies": [
+        "T006"
+      ],
+      "engineerInstructions": [
+        "Diagnose the full lint failure before fixing.",
+        "Fix React hook lint errors without broad eslint disables or config changes.",
+        "Address reviewer rejection for stale follow identity, toast queue overwrite, and dashboard stale async writes."
+      ],
+      "acceptanceCriteria": [
+        "AC-T007.1: npm run lint -- --max-warnings 0 exits 0.",
+        "AC-T007.2: npm run type-check:changed exits 0.",
+        "AC-T007.3: npm run depcruise exits 0.",
+        "AC-T007.4: Diff is limited to the owned runtime hook/provider files and adds no broad lint suppressions.",
+        "AC-T007.5: Reviewer rejection findings are fixed without obvious stale-closure or state-after-unmount regressions."
+      ],
+      "verification": [
+        {
+          "command": "npm run lint -- --max-warnings 0",
+          "expectedSignal": "exit 0 with no lint errors",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0 with no changed-file type errors",
+          "lastRun": null
+        },
+        {
+          "command": "npm run depcruise",
+          "expectedSignal": "exit 0 with no dependency violations",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Full lint, changed-file type-check, and depcruise pass.",
+        "No package, config, workflow, rules, or non-owned files changed.",
+        "Previous rejection findings are resolved."
+      ],
+      "reviewerRejectCriteria": [
+        "Any full lint error remains.",
+        "Diff uses broad suppressions or changes config instead of fixing code.",
+        "Fix introduces stale identity, queue overwrite, or state-after-unmount risk."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T007 lint-baseline reviewer",
+        "summary": "T007 passed re-review after fixing the stale follow identity window, toast queue overwrite risk, and dashboard stale async state writes.",
+        "decidedAt": "2026-05-28T05:37:28Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE after one review rejection fix loop. Fixed full-lint React hook baseline errors in owned runtime hook/provider files.",
+        "reviewerReport": "review_passed. Full lint, type-check:changed, and depcruise passed; previous rejection findings were fixed; no package/config/rules changes found.",
+        "commandOutputSummary": [
+          "npm run lint -- --max-warnings 0: exit 0.",
+          "npm run type-check:changed: exit 0.",
+          "npm run depcruise: exit 0, existing MODULE_TYPELESS_PACKAGE_JSON warning only.",
+          "git diff --name-only: exit 0, unstaged T007 diff limited to owned runtime hook/provider files.",
+          "git diff --cached --name-only: exit 0, staged 074 feature files were unchanged by T007."
+        ],
+        "changedFilesSummary": [
+          "Fixed React hook lint issues for render-time ref access, set-state-in-effect, and preserve-manual-memoization.",
+          "Second pass fixed stale follow identity guard, toast queue overwrite risk, and dashboard stale async state writes."
+        ]
+      }
     }
   ],
   "blocked": false,
@@ -693,6 +793,11 @@
       "phase": "plan",
       "ref": "6e5857899955ea95f4a6acef22b1ac83a0748513",
       "summary": "Add post composer draft plan"
+    },
+    {
+      "phase": "implementation",
+      "ref": "e716861e2f1e582fb4c5f118c950fa737d968efb",
+      "summary": "Add post composer draft recovery"
     }
   ],
   "rulesDeployStatus": {
@@ -1027,7 +1132,37 @@
       "exitCode": 0,
       "summary": "Release verification workflow state is synced.",
       "verifiedAt": "2026-05-28T05:13:00Z"
+    },
+    {
+      "command": "npm run lint -- --max-warnings 0",
+      "exitCode": 0,
+      "summary": "T007 full lint baseline remediation passed full lint with no errors.",
+      "verifiedAt": "2026-05-28T05:37:28Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "T007 changed-file type-check passed with no errors.",
+      "verifiedAt": "2026-05-28T05:37:28Z"
+    },
+    {
+      "command": "npm run depcruise",
+      "exitCode": 0,
+      "summary": "T007 dependency direction check passed with no violations; existing MODULE_TYPELESS_PACKAGE_JSON warning only.",
+      "verifiedAt": "2026-05-28T05:37:28Z"
+    },
+    {
+      "command": "git diff --name-only",
+      "exitCode": 0,
+      "summary": "T007 unstaged diff was limited to the owned runtime hook/provider files.",
+      "verifiedAt": "2026-05-28T05:37:28Z"
+    },
+    {
+      "command": "git diff --cached --name-only",
+      "exitCode": 0,
+      "summary": "T007 reviewer confirmed the existing staged 074 feature files were unchanged by the lint-baseline fixes.",
+      "verifiedAt": "2026-05-28T05:37:28Z"
     }
   ],
-  "updatedAt": "2026-05-28T05:13:00Z"
+  "updatedAt": "2026-05-28T05:37:28Z"
 }

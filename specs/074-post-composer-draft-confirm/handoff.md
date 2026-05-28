@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-074-post-composer-draft-confirm`
 - Branch: `074-post-composer-draft-confirm`
-- Current head: `6e5857899955ea95f4a6acef22b1ac83a0748513` (`Add post composer draft plan`)
+- Current head: `e716861e2f1e582fb4c5f118c950fa737d968efb` (`Add post composer draft recovery`)
 - Remote head: `origin/main` at `56764050292e182f4fc4ee92ec2e80a7efde9252`
 - Authorization boundary:
   - edit: yes, implementation edits authorized for task dispatch
@@ -18,12 +18,13 @@
   - deployFirestoreRules: yes
 - Current phase: implementation
 - Active task: none
-- Active wave: release-follow-up
-- Latest reviewer decision: T006 `review_passed`
+- Active wave: release-blocker
+- Latest reviewer decision: T007 `review_passed`
 - Last verified commit: none
 - Phase commits:
   - spec: `3f536fa42fb0e13c7425a6b6c651149889617d95` (`Add post composer draft confirm spec`)
   - plan: `6e5857899955ea95f4a6acef22b1ac83a0748513` (`Add post composer draft plan`)
+  - implementation: `e716861e2f1e582fb4c5f118c950fa737d968efb` (`Add post composer draft recovery`)
 - Rules deploy status: `pending`; no rules files changed, but user explicitly authorized/requested Firestore/storage rules deploy during closeout
 - Incidents: none
 - Blocked: no
@@ -43,7 +44,7 @@
 
 ## Next Action
 
-Implementation, T005 integration review, and T006 clean-close regression review are complete. Next action is release closeout: stage the reviewed T006/workflow state updates, run fresh verification, commit, push, open PR, watch CI, merge, fast-forward local `main`, and deploy Firestore/storage rules as authorized/requested.
+Implementation, T005 integration review, T006 clean-close regression review, and T007 full-lint blocker remediation review are complete. Next action is to commit T007/workflow state, rebase onto latest `origin/main`, run fresh CI-equivalent verification, push, open PR, watch CI, merge, fast-forward local `main`, and deploy Firestore/storage rules as authorized/requested.
 
 ## Latest Verification
 
@@ -109,6 +110,11 @@ Implementation, T005 integration review, and T006 clean-close regression review 
 | `git diff --cached --exit-code -- firestore.rules storage.rules firestore.indexes.json firebase.json package.json package-lock.json functions/package.json functions/package-lock.json` | 0 | Release verification confirmed no Firestore rules, Storage rules, Firebase config, package metadata, or lockfile diff. |
 | `node scripts/validate-workflow-state.js specs/074-post-composer-draft-confirm/status.json` | 0 | Release verification status file validates against schemaVersion 3. |
 | `node scripts/check-superpowers-state.js specs/074-post-composer-draft-confirm/status.json` | 0 | Release verification workflow state is synced. |
+| `npm run lint -- --max-warnings 0` | 0 | T007 full lint baseline remediation passed full lint with no errors. |
+| `npm run type-check:changed` | 0 | T007 changed-file type-check passed with no errors. |
+| `npm run depcruise` | 0 | T007 dependency direction check passed with no violations; existing `MODULE_TYPELESS_PACKAGE_JSON` warning only. |
+| `git diff --name-only` | 0 | T007 unstaged diff was limited to the owned runtime hook/provider files. |
+| `git diff --cached --name-only` | 0 | T007 reviewer confirmed the existing staged 074 feature files were unchanged by the lint-baseline fixes. |
 
 ## Closeout Checklist
 

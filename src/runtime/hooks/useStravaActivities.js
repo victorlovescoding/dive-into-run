@@ -35,18 +35,27 @@ export default function useStravaActivities() {
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!user) {
-      setActivities([]);
-      setIsLoading(false);
-      setError(null);
-      setCursor(null);
-      setHasMore(true);
-      return undefined;
+      queueMicrotask(() => {
+        if (cancelled) return;
+        setActivities([]);
+        setIsLoading(false);
+        setError(null);
+        setCursor(null);
+        setHasMore(true);
+      });
+      return () => {
+        cancelled = true;
+      };
     }
 
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setIsLoading(true);
+      setError(null);
+    });
 
     getStravaActivities(user.uid, PAGE_SIZE)
       .then((result) => {

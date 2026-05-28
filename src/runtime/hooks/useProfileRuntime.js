@@ -1,6 +1,6 @@
 'use client';
 
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { getProfileStats } from '@/service/profile-service';
 import { getFollowListEmptyText } from '@/service/follow-service';
@@ -84,6 +84,8 @@ function buildInitialStats(user) {
  * @returns {{ profileUid: string, headerUser: ProfileRuntimeUser & { createdAt: { toDate: () => Date } }, stats: ProfileStatsData | null, isStatsLoading: boolean, statsError: string | null, isSelf: boolean, canFollow: boolean, isFollowing: boolean, isFollowLoading: boolean, followError: string | null, onToggleFollow: () => Promise<void>, followModal: { type: FollowListType | null, title: string, rows: FollowListRow[], loading: boolean, loadingMore: boolean, error: string | null, hasMore: boolean, emptyText: string }, openFollowModal: (type: FollowListType) => Promise<void>, closeFollowModal: () => void, loadMoreFollowModal: () => Promise<void> }} profile runtime state。
  */
 export default function useProfileRuntime(user) {
+  const { user: currentUser } = useContext(AuthContext);
+  const currentUserUid = currentUser?.uid ?? null;
   const [stats, setStats] = useState(/** @type {ProfileStatsData | null} */ (buildInitialStats(user)));
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState(/** @type {string | null} */ (null));
@@ -105,19 +107,22 @@ export default function useProfileRuntime(user) {
   const followMutationRequestSeqRef = useRef(0);
   const followMutationActiveRef = useRef(false);
   const latestFollowIdentityRef = useRef({
-    viewerUid: /** @type {string | null} */ (null),
-    profileUid: '',
+    viewerUid: /** @type {string | null} */ (currentUserUid),
+    profileUid: user.uid,
   });
   const followModalRequestSeqRef = useRef(0);
-  const { user: currentUser } = useContext(AuthContext);
-  const currentUserUid = currentUser?.uid ?? null;
-  latestFollowIdentityRef.current = { viewerUid: currentUserUid, profileUid: user.uid };
   const isSelf = isViewingOwnProfile(currentUser, user.uid);
   const canFollow = Boolean(currentUserUid) && !isSelf;
 
+  useLayoutEffect(() => {
+    latestFollowIdentityRef.current = { viewerUid: currentUserUid, profileUid: user.uid };
+  }, [currentUserUid, user.uid]);
+
   useEffect(() => {
     let cancelled = false;
-    setIsStatsLoading(true);
+    queueMicrotask(() => {
+      if (!cancelled) setIsStatsLoading(true);
+    });
 
     getProfileStats(user.uid)
       .then((result) => {
@@ -149,9 +154,12 @@ export default function useProfileRuntime(user) {
 
     if (!currentUserUid || currentUserUid === user.uid) {
       followMutationActiveRef.current = false;
-      setIsFollowing(false);
-      setFollowError(null);
-      setIsFollowLoading(false);
+      queueMicrotask(() => {
+        if (cancelled) return;
+        setIsFollowing(false);
+        setFollowError(null);
+        setIsFollowLoading(false);
+      });
       return () => {
         cancelled = true;
       };
@@ -181,9 +189,15 @@ export default function useProfileRuntime(user) {
   }, [currentUserUid, user.uid]);
 
   useEffect(() => {
+    let cancelled = false;
     followMutationRequestSeqRef.current += 1;
     followMutationActiveRef.current = false;
-    setIsFollowLoading(false);
+    queueMicrotask(() => {
+      if (!cancelled) setIsFollowLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [currentUserUid, user.uid]);
 
   /**
@@ -356,9 +370,9 @@ export default function useProfileRuntime(user) {
     statsError,
     isSelf,
     canFollow,
-    isFollowing,
-    isFollowLoading,
-    followError,
+    isFollowing: canFollow ? isFollowing : false,
+    isFollowLoading: canFollow ? isFollowLoading : false,
+    followError: canFollow ? followError : null,
     onToggleFollow,
     followModal,
     openFollowModal,

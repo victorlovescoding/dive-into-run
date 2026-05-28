@@ -72,12 +72,11 @@ export default function NotificationProvider({ children }) {
   const [extraUnreadNotifications, setExtraUnreadNotifications] = useState(
     /** @type {import('@/service/notification-service').NotificationItem[]} */ ([]),
   );
-  const [toastQueue, setToastQueue] = useState(
-    /** @type {{ id: string, message: string }[]} */ ([]),
-  );
-  const [currentToast, setCurrentToast] = useState(
-    /** @type {{ id: string, message: string } | null} */ (null),
-  );
+  const [toastState, setToastState] = useState(() => ({
+    queue: /** @type {{ id: string, message: string }[]} */ ([]),
+    current: /** @type {{ id: string, message: string } | null} */ (null),
+  }));
+  const currentToast = toastState.current;
 
   const { user } = useContext(AuthContext);
   const toastCtx = useContext(ToastContext);
@@ -86,7 +85,10 @@ export default function NotificationProvider({ children }) {
   const bellButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const isPanelOpenRef = useRef(false);
   const showToastRef = useRef(showToast);
-  showToastRef.current = showToast;
+
+  useEffect(() => {
+    showToastRef.current = showToast;
+  }, [showToast]);
 
   useEffect(() => {
     isPanelOpenRef.current = isPanelOpen;
@@ -131,7 +133,10 @@ export default function NotificationProvider({ children }) {
           id: n.id || String(Date.now()),
           message: n.message,
         }));
-        setToastQueue((prev) => [...prev, ...toasts]);
+        setToastState((prev) => ({
+          ...prev,
+          queue: [...prev.queue, ...toasts],
+        }));
       },
     );
 
@@ -155,18 +160,30 @@ export default function NotificationProvider({ children }) {
   }, [user]);
 
   useEffect(() => {
-    if (currentToast || toastQueue.length === 0) return;
+    if (currentToast || toastState.queue.length === 0) return undefined;
 
-    const [next, ...rest] = toastQueue;
-    setCurrentToast(next);
-    setToastQueue(rest);
-  }, [currentToast, toastQueue]);
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setToastState((prev) => {
+        if (prev.current || prev.queue.length === 0) return prev;
+        const [next, ...queue] = prev.queue;
+        return { current: next, queue };
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentToast, toastState.queue.length]);
 
   useEffect(() => {
     if (!currentToast) return undefined;
 
+    const toastId = currentToast.id;
     const timer = setTimeout(() => {
-      setCurrentToast(null);
+      setToastState((prev) =>
+        prev.current?.id === toastId ? { ...prev, current: null } : prev,
+      );
     }, 5000);
 
     return () => clearTimeout(timer);

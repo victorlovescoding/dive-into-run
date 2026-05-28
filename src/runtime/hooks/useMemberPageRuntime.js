@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useRef, useState } from 'react';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 import { updateUserName, updateUserPhotoURL } from '@/repo/client/firebase-users-repo';
@@ -18,24 +18,28 @@ const ACCOUNT_DELETION_ERROR_MESSAGE = '刪除帳號申請失敗，請稍後再�
 export default function useMemberPageRuntime() {
   const { user, loading } = useContext(AuthContext);
   const { showToast } = useToast();
-  const [name, setName] = useState('');
+  const userName = user?.name ?? '';
+  const [nameDraft, setNameDraft] = useState(() => ({
+    sourceName: userName,
+    value: userName,
+  }));
+  const name = nameDraft.sourceName === userName ? nameDraft.value : userName;
   const [accountDeletionModalOpen, setAccountDeletionModalOpen] = useState(false);
   const [accountDeletionSubmitting, setAccountDeletionSubmitting] = useState(false);
   const [accountDeletionError, setAccountDeletionError] = useState(null);
   const inputFileRef = useRef(null);
-
-  useEffect(() => {
-    setName(user?.name ?? '');
-  }, [user?.name]);
 
   const onNameChange = useCallback(
     /**
      * @param {import('react').ChangeEvent<HTMLInputElement>} event - name input 變更事件。
      */
     (event) => {
-      setName(event.target.value);
+      setNameDraft({
+        sourceName: userName,
+        value: event.target.value,
+      });
     },
-    [],
+    [userName],
   );
 
   const triggerFilePicker = useCallback(() => {

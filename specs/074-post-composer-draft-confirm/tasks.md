@@ -286,6 +286,78 @@ Evidence:
 - Rules deploy status: pending; no Firestore/storage rules files changed, deploy still authorized/requested for closeout.
 - Incidents: none.
 
+### T007 - Full Lint Baseline Remediation
+
+- **State**: `completed`
+- **Attempt**: 2
+- **Wave**: `release-blocker`
+- **Engineer**: Engineer/Debugger
+- **Reviewer**: Reviewer
+- **Commit checkpoint**: `react-hook-lint-baseline`
+- **Last verified commit**: uncommitted T007 diff verified in worktree
+- **Authorization boundary**: edit=yes, commit=yes, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, localMainSync=yes, deployFirestoreRules=yes
+- **Rules deploy status**: pending; no rules files changed
+- **Incidents**: none
+
+Scope:
+
+- Fix existing React hook lint errors that blocked local pre-commit and CI full lint.
+- Keep changes limited to the owned runtime hook/provider files reported by full lint.
+
+Non-scope:
+
+- Do not change package metadata, eslint config, CI, Firestore/storage rules, 074 product behavior, or staged feature files.
+
+Owned files:
+
+- `src/runtime/hooks/useDashboardTab.js`
+- `src/runtime/hooks/useEventDetailMutations.js`
+- `src/runtime/hooks/useEventDetailParticipation.js`
+- `src/runtime/hooks/useEventDetailRuntime.js`
+- `src/runtime/hooks/useEventParticipation.js`
+- `src/runtime/hooks/useEventsPageRuntime.js`
+- `src/runtime/hooks/useMemberPageRuntime.js`
+- `src/runtime/hooks/useProfileEventsRuntime.js`
+- `src/runtime/hooks/useProfileRuntime.js`
+- `src/runtime/hooks/useStravaActivities.js`
+- `src/runtime/hooks/useStravaSync.js`
+- `src/runtime/providers/NotificationProvider.jsx`
+
+Dependencies:
+
+- T006 completed
+
+Acceptance criteria:
+
+- AC-T007.1: `npm run lint -- --max-warnings 0` exits 0.
+- AC-T007.2: `npm run type-check:changed` exits 0.
+- AC-T007.3: `npm run depcruise` exits 0.
+- AC-T007.4: Diff is limited to owned runtime hook/provider files and adds no broad lint suppressions.
+- AC-T007.5: Reviewer rejection findings are fixed without obvious stale-closure or state-after-unmount regressions.
+
+Evidence:
+
+- Engineer report:
+  - Status: DONE after one review rejection fix loop.
+  - Fixed full-lint React hook baseline errors in owned runtime hook/provider files.
+  - Second pass fixed stale follow identity guard, toast queue overwrite risk, and dashboard stale async state writes.
+- Reviewer report:
+  - T007 lint-baseline reviewer: `review_passed`.
+  - Full lint, changed-file type-check, and depcruise passed; previous rejection findings were fixed; no package/config/rules changes found.
+- Command output summary:
+  - `npm run lint -- --max-warnings 0`: exit 0.
+  - `npm run type-check:changed`: exit 0.
+  - `npm run depcruise`: exit 0, existing `MODULE_TYPELESS_PACKAGE_JSON` warning only.
+  - `git diff --name-only`: exit 0, unstaged T007 diff limited to owned runtime hook/provider files.
+  - `git diff --cached --name-only`: exit 0, staged 074 feature files were unchanged by T007.
+- Changed files summary:
+  - Fixed React hook lint issues for render-time ref access, set-state-in-effect, and preserve-manual-memoization.
+  - No package metadata, eslint config, CI, Firebase rules, or 074 staged product files changed.
+- Phase commits:
+  - implementation: `e716861e2f1e582fb4c5f118c950fa737d968efb` (`Add post composer draft recovery`)
+- Rules deploy status: pending; no Firestore/storage rules files changed.
+- Incidents: none.
+
 ### T002 - ComposeModal Shared Close Guard And Confirmation UI
 
 - **State**: `completed`

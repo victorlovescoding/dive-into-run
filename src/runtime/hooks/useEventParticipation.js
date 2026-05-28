@@ -54,38 +54,55 @@ export default function useEventParticipation({
   const [pendingByEventId, setPendingByEventId] = useState({});
   const [myJoinedEventIds, setMyJoinedEventIds] = useState(() => new Set());
   const [membershipStatusByEventId, setMembershipStatusByEventId] = useState({});
+  const [membershipUserUid, setMembershipUserUid] = useState(/** @type {string | null} */ (null));
   const membershipCheckedRef = useRef(new Set());
   const membershipUserUidRef = useRef(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!user?.uid) {
-      setMyJoinedEventIds(new Set());
-      setMembershipStatusByEventId({});
       membershipCheckedRef.current = new Set();
       membershipUserUidRef.current = null;
-      return undefined;
+      queueMicrotask(() => {
+        if (cancelled) return;
+        setMyJoinedEventIds(new Set());
+        setMembershipStatusByEventId({});
+        setMembershipUserUid(null);
+      });
+      return () => {
+        cancelled = true;
+      };
     }
 
     if (membershipUserUidRef.current !== user.uid) {
-      setMyJoinedEventIds(new Set());
-      setMembershipStatusByEventId({});
       membershipCheckedRef.current = new Set();
       membershipUserUidRef.current = user.uid;
+      queueMicrotask(() => {
+        if (cancelled) return;
+        setMyJoinedEventIds(new Set());
+        setMembershipStatusByEventId({});
+        setMembershipUserUid(user.uid);
+      });
     }
 
     const eventIds = events.map((event) => event?.id).filter(Boolean).map(String);
     const uncheckedIds = eventIds.filter((eventId) => !membershipCheckedRef.current.has(eventId));
     if (uncheckedIds.length === 0) {
-      return undefined;
+      return () => {
+        cancelled = true;
+      };
     }
 
-    let cancelled = false;
-    setMembershipStatusByEventId((previous) => {
-      const next = { ...previous };
-      uncheckedIds.forEach((eventId) => {
-        next[eventId] = 'checking';
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setMembershipStatusByEventId((previous) => {
+        const next = { ...previous };
+        uncheckedIds.forEach((eventId) => {
+          next[eventId] = 'checking';
+        });
+        return next;
       });
-      return next;
     });
 
     (async () => {
@@ -319,7 +336,7 @@ export default function useEventParticipation({
   );
 
   const canExposeMembershipState = Boolean(user?.uid)
-    && membershipUserUidRef.current === user.uid;
+    && membershipUserUid === user.uid;
 
   return {
     pendingByEventId,

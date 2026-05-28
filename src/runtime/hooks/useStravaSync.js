@@ -29,18 +29,17 @@ function calcRemaining(lastSyncAt) {
 export default function useStravaSync(lastSyncAt) {
   const { user } = useContext(AuthContext);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [cooldownRemaining, setCooldownRemaining] = useState(() => calcRemaining(lastSyncAt));
+  const [, setCooldownTick] = useState(0);
   const [error, setError] = useState(/** @type {string | null} */ (null));
   const isSyncingRef = useRef(false);
+  const cooldownRemaining = calcRemaining(lastSyncAt);
 
   useEffect(() => {
-    setCooldownRemaining(calcRemaining(lastSyncAt));
-
     if (!lastSyncAt) return undefined;
 
     const interval = setInterval(() => {
       const remaining = calcRemaining(lastSyncAt);
-      setCooldownRemaining(remaining);
+      setCooldownTick((current) => current + 1);
       if (remaining <= 0) {
         clearInterval(interval);
       }
