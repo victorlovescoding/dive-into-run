@@ -301,7 +301,7 @@ Verification:
 - Status schema: v3.
 - Current head snapshot: captured from local branch
   `codex/post-comment-soft-delete-retention-spec` at the rebased
-  implementation commit `2757e3402b57eaa53e465bbec034a61fc81b55a1`.
+  implementation commit `5f311c30e12088db9361745a345bccb414d3da49`.
 - Remote head snapshot: captured from `origin/main` at
   `08cc3b402c6b9d2c68d4c4986ae9c079a31592a0`.
 - Last verified commit policy: update `lastVerifiedCommit` only after the final

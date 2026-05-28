@@ -18,8 +18,8 @@
   },
   "currentHead": {
     "branch": "codex/post-comment-soft-delete-retention-spec",
-    "commit": "2757e3402b57eaa53e465bbec034a61fc81b55a1",
-    "capturedAt": "2026-05-28T07:47:39Z",
+    "commit": "5f311c30e12088db9361745a345bccb414d3da49",
+    "capturedAt": "2026-05-28T07:55:21Z",
     "summary": "Implement soft delete retention"
   },
   "remoteHead": {
@@ -936,7 +936,7 @@
     },
     {
       "phase": "implementation",
-      "commit": "2757e3402b57eaa53e465bbec034a61fc81b55a1",
+      "commit": "5f311c30e12088db9361745a345bccb414d3da49",
       "summary": "Implement soft delete retention"
     }
   ],
