@@ -6,17 +6,17 @@
 - Feature slug: `event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Branch: `078-event-host-join-notification`.
-- Current head before T2 completion commit: `e1a15b05797b77e97200531eb1f8678ae352253a`.
+- Current head before T3 dispatch-state update: `98a54b38a0a3de78e0a9594a8a143a21fc0b632a` (`Add event host join use case`).
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T18:35:51Z`.
-- Current branch state before T2 completion commit: ahead 8 and behind `origin/main` by 0; branch has reviewed T2 source/test changes plus this workflow-state sync ready for an atomic T2 commit.
+- Captured at: `2026-05-29T18:43:44Z`.
+- Current branch state before T3 dispatch-state update: ahead 9 and behind `origin/main` by 0; branch was clean after the T2 implementation commit.
 - Profile: P4 new product feature.
-- Current phase: implementation; T1 and T2 completed, T2 reviewed PASS, and active task advanced to T3.
+- Current phase: implementation; T1 and T2 completed, T2 reviewed PASS, T2 implementation committed, and T3 is dispatched/in progress.
 - Active task: T3.
 - Active wave: 3.
-- Latest reviewer decision: T2 `review_passed` by T2 Spec Reviewer and T2 Code Quality Reviewer.
-- Last verified commit: `e1a15b05797b77e97200531eb1f8678ae352253a`.
-- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`.
+- Latest reviewer decision: T2 `review_passed` by T2 Spec Reviewer and T2 Code Quality Reviewer; T3 is dispatched/in progress.
+- Last verified commit: `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`.
+- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`.
 - Rules deploy status: required later; not changed in Planner stage, not deployed, deploy authorized for the planned rules deploy step/release boundary.
 - Incidents: none.
 - Blocked: no.
@@ -48,23 +48,19 @@
 
 ## Next Action
 
-Dispatch T3 Join Entrypoint Integration Engineer after coordinator pre-dispatch clean-state/reviewed-scope checks and T2 commit.
+T3 Join Entrypoint Integration Engineer implementation.
 
-T1 is committed as `468d9bd57846f00fa3bec966e88b4be1001375f1`. T2 Engineer plus T2 Spec Reviewer and T2 Code Quality Reviewer are PASS, with T2 source/test changes and this workflow-state sync ready for an atomic T2 commit. Push, pull request, CI watch, merge, and local main sync remain unauthorized.
+T1 is committed as `468d9bd57846f00fa3bec966e88b4be1001375f1`. T2 is committed as `98a54b38a0a3de78e0a9594a8a143a21fc0b632a` after T2 Engineer plus T2 Spec Reviewer and T2 Code Quality Reviewer PASS. T3 is dispatched/in progress with owned files `src/runtime/hooks/useEventDetailParticipation.js`, `src/runtime/hooks/useEventParticipation.js`, `src/runtime/hooks/useEventDetailParticipation.test.jsx`, and `src/runtime/hooks/useEventParticipation.test.jsx`. Push, pull request, CI watch, merge, and local main sync remain unauthorized.
 
 ## Latest Verification
 
 | Command | Exit | Signal |
 | --- | ---: | --- |
-| `git log -1 --format=%H%x09%s` | 0 | HEAD before the T2 completion commit is `e1a15b05797b77e97200531eb1f8678ae352253a` with subject `Record notification T2 dispatch`. |
-| `git rev-list --left-right --count HEAD...origin/main` | 0 | `8 0`. |
-| `npx vitest run --project browser src/runtime/client/use-cases/notification-use-cases.test.js` | 0 | T2 focused browser Vitest passed: 1 file, 10 tests. |
-| `npm run lint:changed` | 0 | Changed-file lint passed with only the existing React version warning. |
-| `npm run type-check:changed` | 0 | No changed-file type errors. |
-| `node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json` | 0 | `status.json` schemaVersion 3 validates after the T2 completion-state sync. |
-| `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow companion files are synced after the T2 completion-state sync. |
-| `git diff --check` | 0 | No whitespace errors after the T2 completion-state sync. |
-| `git status --short --branch --untracked-files=all` | 0 | Post-sync status shows branch ahead 8 with T2 source/test changes plus owned workflow-state files modified; no rules changes. |
+| `git log -1 --format=%H%x09%s` | 0 | Current HEAD is `98a54b38a0a3de78e0a9594a8a143a21fc0b632a` with subject `Add event host join use case`. |
+| `git status --short --branch --untracked-files=all` | 0 | Branch `078-event-host-join-notification...origin/main [ahead 9]`; clean before the T3 dispatch-state update. |
+| `git rev-list --left-right --count HEAD...origin/main` | 0 | `9 0`. |
+| `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced after the T2 commit and before T3 dispatch. |
+| `rg -n "joinEvent\\(" src --glob '*.{js,jsx}'` | 0 | Current join entrypoints are `src/runtime/client/use-cases/event-use-cases.js:114`, `src/runtime/hooks/useEventDetailParticipation.js:155`, and `src/runtime/hooks/useEventParticipation.js:236`. |
 
 ## Closeout Checklist
 
@@ -79,7 +75,7 @@ T1 is committed as `468d9bd57846f00fa3bec966e88b4be1001375f1`. T2 Engineer plus 
 - [x] Coordinator runs a fresh clean-state check and join-entrypoint search before T1 dispatch.
 - [x] T1 Engineer and Reviewers completed T1.
 - [x] T2 Engineer and Reviewers completed T2.
-- [ ] Engineer and Reviewer pairs execute T3 through T5; T3 is next after T2 commit and pre-dispatch checks.
+- [ ] Engineer and Reviewer pairs execute T3 through T5; T3 is dispatched/in progress after T2 commit and pre-dispatch checks.
 - [ ] Verifier runs final integration gates.
 - [ ] Coordinator commits only if still authorized after Reviewer PASS and fresh verification.
 - [ ] Push, pull request, CI watch, merge, and local main sync remain blocked unless separately authorized.
@@ -98,7 +94,7 @@ T1 is committed as `468d9bd57846f00fa3bec966e88b4be1001375f1`. T2 Engineer plus 
 ## Blockers
 
 - No current workflow-state blocker.
-- T1 is committed. T2 is reviewed PASS and ready for an atomic T2 commit with this workflow-state sync.
+- T1 and T2 are committed. T3 is dispatched/in progress.
 
 ## Pitfalls
 

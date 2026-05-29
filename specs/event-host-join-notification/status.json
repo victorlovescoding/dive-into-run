@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "078-event-host-join-notification",
-    "commit": "e1a15b05797b77e97200531eb1f8678ae352253a",
-    "capturedAt": "2026-05-29T18:35:51Z",
-    "summary": "T2 Engineer plus spec and code-quality Reviewer PASS are recorded; current branch is ahead 8 and behind origin/main by 0 before the T2 completion commit. Active task advances to T3."
+    "commit": "98a54b38a0a3de78e0a9594a8a143a21fc0b632a",
+    "capturedAt": "2026-05-29T18:43:44Z",
+    "summary": "T2 implementation is committed as Add event host join use case; current branch is ahead 9 and behind origin/main by 0 before T3 dispatch-state update. Active task T3 is dispatched and in progress."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "a9ec0d5a2c839764823f274723b0b806123b3965",
-    "capturedAt": "2026-05-29T18:35:51Z",
-    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 8 and behind this ref by 0."
+    "capturedAt": "2026-05-29T18:43:44Z",
+    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 9 and behind this ref by 0."
   },
   "completedTasks": [
     "T1",
@@ -270,7 +270,7 @@
     {
       "id": "T3",
       "title": "Join entrypoint integration",
-      "state": "todo",
+      "state": "in_progress",
       "attempt": 1,
       "wave": 3,
       "engineer": "Runtime Join Engineer",
@@ -567,59 +567,35 @@
     {
       "command": "git log -1 --format=%H%x09%s",
       "exitCode": 0,
-      "summary": "HEAD before the T2 completion commit is e1a15b05797b77e97200531eb1f8678ae352253a with subject Record notification T2 dispatch.",
-      "verifiedAt": "2026-05-29T18:35:51Z"
+      "summary": "Current HEAD is 98a54b38a0a3de78e0a9594a8a143a21fc0b632a with subject Add event host join use case.",
+      "verifiedAt": "2026-05-29T18:43:44Z"
     },
     {
       "command": "git rev-list --left-right --count HEAD...origin/main",
       "exitCode": 0,
-      "summary": "Branch divergence before the T2 completion commit was 8 ahead and 0 behind origin/main.",
-      "verifiedAt": "2026-05-29T18:35:51Z"
-    },
-    {
-      "command": "npx vitest run --project browser src/runtime/client/use-cases/notification-use-cases.test.js",
-      "exitCode": 0,
-      "summary": "T2 focused browser Vitest passed: 1 file, 10 tests.",
-      "verifiedAt": "2026-05-29T18:35:51Z"
-    },
-    {
-      "command": "npm run lint:changed",
-      "exitCode": 0,
-      "summary": "Changed-file lint passed with only the existing React version warning.",
-      "verifiedAt": "2026-05-29T18:35:51Z"
-    },
-    {
-      "command": "npm run type-check:changed",
-      "exitCode": 0,
-      "summary": "Changed-file type check exited 0 with no changed-file type errors.",
-      "verifiedAt": "2026-05-29T18:35:51Z"
-    },
-    {
-      "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
-      "exitCode": 0,
-      "summary": "status.json schemaVersion 3 validates after the T2 completion-state sync.",
-      "verifiedAt": "2026-05-29T18:35:51Z"
-    },
-    {
-      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
-      "exitCode": 0,
-      "summary": "Workflow companion files are synced after the T2 completion-state sync.",
-      "verifiedAt": "2026-05-29T18:35:51Z"
-    },
-    {
-      "command": "git diff --check",
-      "exitCode": 0,
-      "summary": "No whitespace errors after the T2 completion-state sync.",
-      "verifiedAt": "2026-05-29T18:35:51Z"
+      "summary": "Branch divergence before the T3 dispatch-state update was 9 ahead and 0 behind origin/main.",
+      "verifiedAt": "2026-05-29T18:43:44Z"
     },
     {
       "command": "git status --short --branch --untracked-files=all",
       "exitCode": 0,
-      "summary": "Post-sync status shows branch ahead 8 with T2 source/test changes plus owned workflow-state files modified; no rules changes.",
-      "verifiedAt": "2026-05-29T18:35:51Z"
+      "summary": "Branch 078-event-host-join-notification...origin/main was ahead 9 with clean status before the T3 dispatch-state update.",
+      "verifiedAt": "2026-05-29T18:43:44Z"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "Workflow state synced after the T2 commit and before T3 dispatch.",
+      "verifiedAt": "2026-05-29T18:43:44Z"
+    },
+    {
+      "command": "rg -n \"joinEvent\\\\(\" src --glob '*.{js,jsx}'",
+      "exitCode": 0,
+      "summary": "Current join entrypoints are src/runtime/client/use-cases/event-use-cases.js:114, src/runtime/hooks/useEventDetailParticipation.js:155, and src/runtime/hooks/useEventParticipation.js:236.",
+      "verifiedAt": "2026-05-29T18:43:44Z"
     }
   ],
-  "lastVerifiedCommit": "e1a15b05797b77e97200531eb1f8678ae352253a",
+  "lastVerifiedCommit": "98a54b38a0a3de78e0a9594a8a143a21fc0b632a",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -662,6 +638,12 @@
       "commit": "e1a15b05797b77e97200531eb1f8678ae352253a",
       "summary": "Record notification T2 dispatch.",
       "committedAt": "2026-05-29T18:35:51Z"
+    },
+    {
+      "phase": "t2_implementation",
+      "commit": "98a54b38a0a3de78e0a9594a8a143a21fc0b632a",
+      "summary": "Add event host join use case.",
+      "committedAt": "2026-05-29T18:43:44Z"
     }
   ],
   "rulesDeployStatus": {
@@ -672,5 +654,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-05-29T18:35:51Z"
+  "updatedAt": "2026-05-29T18:43:44Z"
 }

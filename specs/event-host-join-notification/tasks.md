@@ -17,17 +17,17 @@
 - Branch: `078-event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Profile: P4 new product feature.
-- Current phase: implementation; T1 and T2 completed, T2 reviewed PASS, and active task advanced to T3.
+- Current phase: implementation; T1 and T2 completed, T2 reviewed PASS, T2 implementation committed, and T3 is dispatched/in progress.
 - Active task: T3.
 - Active wave: 3.
-- Current head before T2 completion commit: `e1a15b05797b77e97200531eb1f8678ae352253a`.
+- Current head before T3 dispatch-state update: `98a54b38a0a3de78e0a9594a8a143a21fc0b632a` (`Add event host join use case`).
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T18:35:51Z`.
-- Current branch state before T2 completion commit: ahead 8 and behind `origin/main` by 0; branch has reviewed T2 source/test changes plus this workflow-state sync ready for an atomic T2 commit.
-- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`.
-- Latest reviewer decision: T2 `review_passed` by T2 Spec Reviewer and T2 Code Quality Reviewer.
-- Latest branch-state sync: T2 completion-state sync used the fresh coordinator evidence below; active task is T3.
-- Next action: dispatch T3 Join Entrypoint Integration Engineer after coordinator pre-dispatch clean-state/reviewed-scope checks and T2 commit.
+- Captured at: `2026-05-29T18:43:44Z`.
+- Current branch state before T3 dispatch-state update: ahead 9 and behind `origin/main` by 0; branch was clean after the T2 implementation commit.
+- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`.
+- Latest reviewer decision: T2 `review_passed` by T2 Spec Reviewer and T2 Code Quality Reviewer; T3 is dispatched/in progress.
+- Latest branch-state sync: T3 dispatch-state sync used the fresh coordinator evidence below; active task is T3.
+- Next action: T3 Join Entrypoint Integration Engineer implementation.
 
 ## Plan Review Evidence
 
@@ -49,6 +49,16 @@
 | `node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json` | 0 | status valid. |
 | `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced. |
 | `git diff --check` | 0 | No whitespace errors. |
+
+## T3 Dispatch-State Evidence
+
+| Command | Exit | Signal |
+| --- | ---: | --- |
+| `git log -1 --format=%H%x09%s` | 0 | Current HEAD is `98a54b38a0a3de78e0a9594a8a143a21fc0b632a` with subject `Add event host join use case`. |
+| `git status --short --branch --untracked-files=all` | 0 | Branch `078-event-host-join-notification...origin/main [ahead 9]`; clean before the T3 dispatch-state update. |
+| `git rev-list --left-right --count HEAD...origin/main` | 0 | `9 0`. |
+| `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced after the T2 commit and before T3 dispatch. |
+| `rg -n "joinEvent\\(" src --glob '*.{js,jsx}'` | 0 | Current join entrypoints are `src/runtime/client/use-cases/event-use-cases.js:114`, `src/runtime/hooks/useEventDetailParticipation.js:155`, and `src/runtime/hooks/useEventParticipation.js:236`. |
 
 ## Authorization Boundary
 
@@ -89,7 +99,7 @@ The required fresh clean-state check and join-entrypoint search were completed b
 - Wave 0: Gate G0, coordinator-owned, no source edits; branch gate satisfied as of `2026-05-29T17:38:51Z`, and the fresh clean-state check and join-entrypoint search completed before T1 dispatch.
 - Wave 1: T1 notification type, message, and link primitives. Completed after Engineer plus spec and code-quality Reviewer PASS.
 - Wave 2: T2 host-join notification use case. Completed after Engineer plus spec and code-quality Reviewer PASS.
-- Wave 3: T3 join-entrypoint integration. Active next wave after T2 commit and pre-dispatch checks.
+- Wave 3: T3 join-entrypoint integration. Dispatched/in progress after T2 commit and pre-dispatch checks.
 - Wave 4: T4 Firestore rules allowlist and rules tests.
 - Wave 5: T5 final integration verification and workflow state sync.
 
@@ -395,12 +405,20 @@ Reviewer scope notes:
 
 ## Task T3: Join Entrypoint Integration
 
-- State: `todo`
+- State: `in_progress`
 - Attempt: 1
 - Wave: 3
 - Engineer: Runtime Join Engineer
 - Reviewer: Runtime Join Reviewer
 - Dependencies: T2 `review_passed`.
+
+### Dispatch Evidence
+
+- `git log -1 --format=%H%x09%s` exit 0: current HEAD is `98a54b38a0a3de78e0a9594a8a143a21fc0b632a` with subject `Add event host join use case`.
+- `git status --short --branch --untracked-files=all` exit 0: branch `078-event-host-join-notification...origin/main [ahead 9]`, clean before this T3 dispatch-state update.
+- `git rev-list --left-right --count HEAD...origin/main` exit 0: `9 0`.
+- `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` exit 0: workflow state synced after the T2 commit and before T3 dispatch.
+- `rg -n "joinEvent\\(" src --glob '*.{js,jsx}'` exit 0: current join entrypoints are `src/runtime/client/use-cases/event-use-cases.js:114`, `src/runtime/hooks/useEventDetailParticipation.js:155`, and `src/runtime/hooks/useEventParticipation.js:236`.
 
 ### Owned Files
 
