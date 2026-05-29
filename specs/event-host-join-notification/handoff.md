@@ -6,18 +6,18 @@
 - Feature slug: `event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Branch: `078-event-host-join-notification`.
-- Current head before T3 implementation commit: `01e803132f2374c41df4efa51ba8c700d0810055` (`Record notification T3 dispatch`).
+- Current head after T3 implementation commit: `0b66da0088417d3bb6becdefeab76ef7c06c1fae` (`Notify hosts when runners join events`).
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T19:00:38Z`.
-- Current branch state before T3 implementation commit: ahead 10 and behind `origin/main` by 0.
-- Current dirty reviewed scope: modified `src/runtime/hooks/useEventDetailParticipation.js` and `src/runtime/hooks/useEventParticipation.js`; untracked `src/runtime/hooks/useEventDetailParticipation.test.jsx` and `src/runtime/hooks/useEventParticipation.test.jsx`.
+- Captured at: `2026-05-29T19:07:14Z`.
+- Current branch state before T4 dispatch-state update: `078-event-host-join-notification...origin/main [ahead 11]`, clean; divergence `11 0` (ahead 11, behind 0).
+- Current dirty reviewed scope: none; worktree clean before T4 dispatch-state update.
 - Profile: P4 new product feature.
-- Current phase: implementation; T1, T2, and T3 completed, T3 reviewed PASS, and T3 implementation is ready for coordinator commit.
+- Current phase: implementation; T1, T2, and T3 completed, T3 reviewed PASS, T3 implementation committed, and T4 dispatched/in progress.
 - Active task: T4.
 - Active wave: 4.
-- Latest reviewer decision: T3 `review_passed` by T3 Spec Reviewer and T3 Code Quality Reviewer.
-- Last verified commit: `01e803132f2374c41df4efa51ba8c700d0810055`.
-- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`; T3 dispatch commit `01e803132f2374c41df4efa51ba8c700d0810055`.
+- Latest reviewer decision: T3 `review_passed` by T3 Spec Reviewer and T3 Code Quality Reviewer; T4 is dispatched/in progress.
+- Last verified commit: `0b66da0088417d3bb6becdefeab76ef7c06c1fae`.
+- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`; T3 dispatch commit `01e803132f2374c41df4efa51ba8c700d0810055`; T3 implementation commit `0b66da0088417d3bb6becdefeab76ef7c06c1fae`.
 - Rules deploy status: required later; not changed in Planner stage, not deployed, deploy authorized for the planned rules deploy step/release boundary.
 - Incidents: none.
 - Blocked: no.
@@ -49,18 +49,18 @@
 
 ## Next Action
 
-Dispatch T4 Firestore Rules Allowlist and Rules Tests Engineer after coordinator pre-dispatch checks and T3 commit.
+T4 Security Rules Engineer implementation.
 
-T1 is committed as `468d9bd57846f00fa3bec966e88b4be1001375f1`. T2 is committed as `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`. T3 completed after Runtime Join Engineer plus T3 Spec Reviewer and T3 Code Quality Reviewer PASS, and is ready for coordinator commit. T4/T5 are not completed. Push, pull request, CI watch, merge, and local main sync remain unauthorized.
+T1 is committed as `468d9bd57846f00fa3bec966e88b4be1001375f1`. T2 is committed as `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`. T3 is committed as `0b66da0088417d3bb6becdefeab76ef7c06c1fae` after Runtime Join Engineer plus T3 Spec Reviewer and T3 Code Quality Reviewer PASS. T4 is dispatched/in progress; T5 is not completed. Push, pull request, CI watch, merge, and local main sync remain unauthorized.
 
 ## Latest Verification
 
 | Command | Exit | Signal |
 | --- | ---: | --- |
-| `npx vitest run --project browser src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx` | 0 | T3 focused browser Vitest passed: 2 files, 14 tests. |
-| `npm run lint:changed` | 0 | Changed-file lint passed with only the existing React version warning. |
-| `npm run type-check:changed` | 0 | No changed-file type errors. |
-| `git status --short --branch --untracked-files=all` | 0 | Branch ahead 10 and behind 0; modified `src/runtime/hooks/useEventDetailParticipation.js` and `src/runtime/hooks/useEventParticipation.js`; untracked `src/runtime/hooks/useEventDetailParticipation.test.jsx` and `src/runtime/hooks/useEventParticipation.test.jsx`. |
+| `git log -1 --format=%H%x09%s` | 0 | Current HEAD is `0b66da0088417d3bb6becdefeab76ef7c06c1fae` with subject `Notify hosts when runners join events`. |
+| `git status --short --branch --untracked-files=all` | 0 | Branch `078-event-host-join-notification...origin/main [ahead 11]`; clean before the T4 dispatch-state update. |
+| `git rev-list --left-right --count HEAD...origin/main` | 0 | `11 0`. |
+| `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced after the T3 commit and before T4 dispatch. |
 
 ## Closeout Checklist
 
@@ -76,7 +76,8 @@ T1 is committed as `468d9bd57846f00fa3bec966e88b4be1001375f1`. T2 is committed a
 - [x] T1 Engineer and Reviewers completed T1.
 - [x] T2 Engineer and Reviewers completed T2.
 - [x] T3 Engineer and Reviewers completed T3.
-- [ ] Engineer and Reviewer pairs execute T4 through T5.
+- [ ] T4 Security Rules Engineer completes implementation and Reviewer PASS.
+- [ ] Engineer and Reviewer pairs execute T5.
 - [ ] Verifier runs final integration gates.
 - [ ] Coordinator commits only if still authorized after Reviewer PASS and fresh verification.
 - [ ] Push, pull request, CI watch, merge, and local main sync remain blocked unless separately authorized.
@@ -104,7 +105,7 @@ T1 is committed as `468d9bd57846f00fa3bec966e88b4be1001375f1`. T2 is committed a
 ## Blockers
 
 - No current workflow-state blocker.
-- T1 and T2 are committed. T3 is complete and ready for coordinator commit. T4 is next after coordinator pre-dispatch checks and T3 commit.
+- T1, T2, and T3 are committed. T4 is dispatched/in progress. T5 remains pending.
 
 ## Pitfalls
 

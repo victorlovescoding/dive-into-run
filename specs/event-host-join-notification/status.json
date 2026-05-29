@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "078-event-host-join-notification",
-    "commit": "01e803132f2374c41df4efa51ba8c700d0810055",
-    "capturedAt": "2026-05-29T19:00:38Z",
-    "summary": "Current HEAD before T3 implementation commit is Record notification T3 dispatch; current branch is ahead 10 and behind origin/main by 0. T3 is completed after Engineer plus spec and code-quality Reviewer PASS. Active task advances to T4."
+    "commit": "0b66da0088417d3bb6becdefeab76ef7c06c1fae",
+    "capturedAt": "2026-05-29T19:07:14Z",
+    "summary": "Current HEAD after the T3 implementation commit is Notify hosts when runners join events; current branch is ahead 11 and behind origin/main by 0. T3 is committed after Engineer plus spec and code-quality Reviewer PASS. T4 is dispatched and in progress."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "a9ec0d5a2c839764823f274723b0b806123b3965",
-    "capturedAt": "2026-05-29T19:00:38Z",
-    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 10 and behind this ref by 0."
+    "capturedAt": "2026-05-29T19:07:14Z",
+    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 11 and behind this ref by 0."
   },
   "completedTasks": [
     "T1",
@@ -391,7 +391,7 @@
     {
       "id": "T4",
       "title": "Firestore rules allowlist and rules tests",
-      "state": "todo",
+      "state": "in_progress",
       "attempt": 1,
       "wave": 4,
       "engineer": "Security Rules Engineer",
@@ -421,7 +421,9 @@
         "specs/event-host-join-notification/plan.md"
       ],
       "dependencies": [
-        "T1 review_passed"
+        "T1 review_passed",
+        "T3 implementation committed as 0b66da0088417d3bb6becdefeab76ef7c06c1fae",
+        "T4 dispatch-state check passed at 2026-05-29T19:07:14Z"
       ],
       "engineerInstructions": [
         "Write failing notification rules tests with rules-unit-testing.",
@@ -597,37 +599,31 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npx vitest run --project browser src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx",
+      "command": "git log -1 --format=%H%x09%s",
       "exitCode": 0,
-      "summary": "T3 focused browser Vitest passed: 2 files, 14 tests.",
-      "verifiedAt": "2026-05-29T19:00:38Z"
-    },
-    {
-      "command": "npm run lint:changed",
-      "exitCode": 0,
-      "summary": "Changed-file lint passed with only the existing React version warning.",
-      "verifiedAt": "2026-05-29T19:00:38Z"
-    },
-    {
-      "command": "npm run type-check:changed",
-      "exitCode": 0,
-      "summary": "Changed-file type check exited 0 with no changed-file type errors.",
-      "verifiedAt": "2026-05-29T19:00:38Z"
+      "summary": "Current HEAD is 0b66da0088417d3bb6becdefeab76ef7c06c1fae with subject Notify hosts when runners join events.",
+      "verifiedAt": "2026-05-29T19:07:14Z"
     },
     {
       "command": "git status --short --branch --untracked-files=all",
       "exitCode": 0,
-      "summary": "Branch 078-event-host-join-notification...origin/main is ahead 10 and behind 0; modified T3 hook files and untracked T3 hook test files match reviewed scope.",
-      "verifiedAt": "2026-05-29T19:00:38Z"
+      "summary": "Branch 078-event-host-join-notification...origin/main is ahead 11 and clean before the T4 dispatch-state update.",
+      "verifiedAt": "2026-05-29T19:07:14Z"
     },
     {
       "command": "git rev-list --left-right --count HEAD...origin/main",
       "exitCode": 0,
-      "summary": "Branch divergence before the T3 implementation commit was 10 ahead and 0 behind origin/main.",
-      "verifiedAt": "2026-05-29T19:00:38Z"
+      "summary": "Branch divergence before the T4 dispatch-state update was 11 ahead and 0 behind origin/main.",
+      "verifiedAt": "2026-05-29T19:07:14Z"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "Workflow state synced after the T3 commit and before T4 dispatch.",
+      "verifiedAt": "2026-05-29T19:07:14Z"
     }
   ],
-  "lastVerifiedCommit": "01e803132f2374c41df4efa51ba8c700d0810055",
+  "lastVerifiedCommit": "0b66da0088417d3bb6becdefeab76ef7c06c1fae",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -682,6 +678,12 @@
       "commit": "01e803132f2374c41df4efa51ba8c700d0810055",
       "summary": "Record notification T3 dispatch.",
       "committedAt": "2026-05-29T19:00:38Z"
+    },
+    {
+      "phase": "t3_implementation",
+      "commit": "0b66da0088417d3bb6becdefeab76ef7c06c1fae",
+      "summary": "Notify hosts when runners join events.",
+      "committedAt": "2026-05-29T19:07:14Z"
     }
   ],
   "rulesDeployStatus": {
@@ -692,5 +694,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-05-29T19:00:38Z"
+  "updatedAt": "2026-05-29T19:07:14Z"
 }

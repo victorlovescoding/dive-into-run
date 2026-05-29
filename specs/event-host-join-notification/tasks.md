@@ -17,18 +17,18 @@
 - Branch: `078-event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Profile: P4 new product feature.
-- Current phase: implementation; T1, T2, and T3 completed, T3 reviewed PASS, and T3 implementation is ready for coordinator commit.
+- Current phase: implementation; T1, T2, and T3 completed, T3 reviewed PASS, T3 implementation committed, and T4 dispatched/in progress.
 - Active task: T4.
 - Active wave: 4.
-- Current head before T3 implementation commit: `01e803132f2374c41df4efa51ba8c700d0810055` (`Record notification T3 dispatch`).
+- Current head after T3 implementation commit: `0b66da0088417d3bb6becdefeab76ef7c06c1fae` (`Notify hosts when runners join events`).
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T19:00:38Z`.
-- Current branch state before T3 implementation commit: ahead 10 and behind `origin/main` by 0.
-- Current dirty reviewed scope: modified `src/runtime/hooks/useEventDetailParticipation.js` and `src/runtime/hooks/useEventParticipation.js`; untracked `src/runtime/hooks/useEventDetailParticipation.test.jsx` and `src/runtime/hooks/useEventParticipation.test.jsx`.
-- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`; T3 dispatch commit `01e803132f2374c41df4efa51ba8c700d0810055`.
-- Latest reviewer decision: T3 `review_passed` by T3 Spec Reviewer and T3 Code Quality Reviewer.
-- Latest branch-state sync: T3 completion workflow-state sync records Engineer plus spec and code-quality Reviewer PASS; active task advances to T4.
-- Next action: dispatch T4 Firestore Rules Allowlist and Rules Tests Engineer after coordinator pre-dispatch checks and T3 commit.
+- Captured at: `2026-05-29T19:07:14Z`.
+- Current branch state before T4 dispatch-state update: `078-event-host-join-notification...origin/main [ahead 11]`, clean; divergence `11 0` (ahead 11, behind 0).
+- Current dirty reviewed scope: none; worktree clean before T4 dispatch-state update.
+- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`; T3 dispatch commit `01e803132f2374c41df4efa51ba8c700d0810055`; T3 implementation commit `0b66da0088417d3bb6becdefeab76ef7c06c1fae`.
+- Latest reviewer decision: T3 `review_passed` by T3 Spec Reviewer and T3 Code Quality Reviewer; T4 is dispatched/in progress.
+- Latest branch-state sync: workflow state synced after the T3 implementation commit and before T4 dispatch.
+- Next action: T4 Security Rules Engineer implementation.
 
 ## Plan Review Evidence
 
@@ -60,6 +60,15 @@
 | `git rev-list --left-right --count HEAD...origin/main` | 0 | `9 0`. |
 | `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced after the T2 commit and before T3 dispatch. |
 | `rg -n "joinEvent\\(" src --glob '*.{js,jsx}'` | 0 | Current join entrypoints are `src/runtime/client/use-cases/event-use-cases.js:114`, `src/runtime/hooks/useEventDetailParticipation.js:155`, and `src/runtime/hooks/useEventParticipation.js:236`. |
+
+## T4 Dispatch-State Evidence
+
+| Command | Exit | Signal |
+| --- | ---: | --- |
+| `git log -1 --format=%H%x09%s` | 0 | Current HEAD is `0b66da0088417d3bb6becdefeab76ef7c06c1fae` with subject `Notify hosts when runners join events`. |
+| `git status --short --branch --untracked-files=all` | 0 | Branch `078-event-host-join-notification...origin/main [ahead 11]`; clean before the T4 dispatch-state update. |
+| `git rev-list --left-right --count HEAD...origin/main` | 0 | `11 0`. |
+| `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced after the T3 commit and before T4 dispatch. |
 
 ## T3 Completion Evidence
 
@@ -115,7 +124,7 @@ The required fresh clean-state check and join-entrypoint search were completed b
 - Wave 1: T1 notification type, message, and link primitives. Completed after Engineer plus spec and code-quality Reviewer PASS.
 - Wave 2: T2 host-join notification use case. Completed after Engineer plus spec and code-quality Reviewer PASS.
 - Wave 3: T3 join-entrypoint integration. Completed after Engineer plus spec and code-quality Reviewer PASS.
-- Wave 4: T4 Firestore rules allowlist and rules tests. Next task after coordinator pre-dispatch checks and T3 commit.
+- Wave 4: T4 Firestore rules allowlist and rules tests. Dispatched/in progress after T3 commit and coordinator pre-dispatch checks.
 - Wave 5: T5 final integration verification and workflow state sync.
 
 All waves are serialized. T1 is foundational. T2 depends on T1. T3 depends on T2. T4 depends on T1. T5 depends on T2, T3, and T4 Reviewer PASS.
@@ -542,12 +551,19 @@ Reviewer scope notes:
 
 ## Task T4: Firestore Rules Allowlist and Rules Tests
 
-- State: `todo`
+- State: `in_progress`
 - Attempt: 1
 - Wave: 4
 - Engineer: Security Rules Engineer
 - Reviewer: Security Rules Reviewer
-- Dependencies: T1 `review_passed`.
+- Dependencies: T1 `review_passed`; T3 implementation commit `0b66da0088417d3bb6becdefeab76ef7c06c1fae`; T4 dispatch-state check passed at `2026-05-29T19:07:14Z`.
+
+### Dispatch Evidence
+
+- `git log -1 --format=%H%x09%s` exit 0: current HEAD is `0b66da0088417d3bb6becdefeab76ef7c06c1fae` with subject `Notify hosts when runners join events`.
+- `git status --short --branch --untracked-files=all` exit 0: branch `078-event-host-join-notification...origin/main [ahead 11]`, clean before the T4 dispatch-state update.
+- `git rev-list --left-right --count HEAD...origin/main` exit 0: `11 0`.
+- `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` exit 0: workflow state synced after the T3 commit and before T4 dispatch.
 
 ### Owned Files
 
