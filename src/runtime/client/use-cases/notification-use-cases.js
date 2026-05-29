@@ -95,6 +95,38 @@ export async function notifyEventCancelled(eventId, eventTitle, participantsOrAc
 }
 
 /**
+ * 透過 runtime 層建立「有人報名活動」通知給主揪。
+ * @param {string} eventId - 活動 ID。
+ * @param {string} eventTitle - 活動標題。
+ * @param {string | null | undefined} hostUid - 主揪人 UID。
+ * @param {Actor} actor - 報名活動的使用者。
+ * @returns {Promise<void>}
+ */
+export async function notifyEventHostJoined(eventId, eventTitle, hostUid, actor) {
+  const normalizedHostUid = typeof hostUid === 'string' ? hostUid.trim() : '';
+  const normalizedActorUid = typeof actor?.uid === 'string' ? actor.uid.trim() : '';
+  if (!normalizedHostUid || !normalizedActorUid || normalizedActorUid === normalizedHostUid) return;
+
+  const message = buildNotificationMessage('event_host_joined', eventTitle, actor);
+  await addNotificationDocument(
+    buildNotificationDoc({
+      recipientUid: normalizedHostUid,
+      type: 'event_host_joined',
+      entityType: 'event',
+      entityId: eventId,
+      entityTitle: eventTitle,
+      commentId: null,
+      message,
+      actor: {
+        ...actor,
+        uid: normalizedActorUid,
+      },
+      createdAtValue: serverTimestamp(),
+    }),
+  );
+}
+
+/**
  * 透過 runtime 層建立「文章有新留言」通知給文章作者。
  * @param {string} postId - 文章 ID。
  * @param {string} postTitle - 文章標題。

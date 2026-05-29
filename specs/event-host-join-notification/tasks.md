@@ -17,17 +17,17 @@
 - Branch: `078-event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Profile: P4 new product feature.
-- Current phase: implementation; T1 committed and T2 dispatched/in progress.
-- Active task: T2.
-- Active wave: 2.
-- Current head: `468d9bd57846f00fa3bec966e88b4be1001375f1`.
+- Current phase: implementation; T1 and T2 completed, T2 reviewed PASS, and active task advanced to T3.
+- Active task: T3.
+- Active wave: 3.
+- Current head before T2 completion commit: `e1a15b05797b77e97200531eb1f8678ae352253a`.
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T18:09:21Z`.
-- Current branch state: ahead 7 and behind `origin/main` by 0; branch was clean after the T1 commit and before this workflow-state sync.
-- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`.
-- Latest reviewer decision: T1 `review_passed` by T1 Spec and Code Quality Reviewers; T2 is dispatched and in progress.
-- Latest branch-state sync: post-T1 commit sync used the fresh coordinator evidence below; active task is T2.
-- Next action: wait for T2 Engineer report.
+- Captured at: `2026-05-29T18:35:51Z`.
+- Current branch state before T2 completion commit: ahead 8 and behind `origin/main` by 0; branch has reviewed T2 source/test changes plus this workflow-state sync ready for an atomic T2 commit.
+- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`.
+- Latest reviewer decision: T2 `review_passed` by T2 Spec Reviewer and T2 Code Quality Reviewer.
+- Latest branch-state sync: T2 completion-state sync used the fresh coordinator evidence below; active task is T3.
+- Next action: dispatch T3 Join Entrypoint Integration Engineer after coordinator pre-dispatch clean-state/reviewed-scope checks and T2 commit.
 
 ## Plan Review Evidence
 
@@ -88,8 +88,8 @@ The required fresh clean-state check and join-entrypoint search were completed b
 
 - Wave 0: Gate G0, coordinator-owned, no source edits; branch gate satisfied as of `2026-05-29T17:38:51Z`, and the fresh clean-state check and join-entrypoint search completed before T1 dispatch.
 - Wave 1: T1 notification type, message, and link primitives. Completed after Engineer plus spec and code-quality Reviewer PASS.
-- Wave 2: T2 host-join notification use case.
-- Wave 3: T3 join-entrypoint integration.
+- Wave 2: T2 host-join notification use case. Completed after Engineer plus spec and code-quality Reviewer PASS.
+- Wave 3: T3 join-entrypoint integration. Active next wave after T2 commit and pre-dispatch checks.
 - Wave 4: T4 Firestore rules allowlist and rules tests.
 - Wave 5: T5 final integration verification and workflow state sync.
 
@@ -256,7 +256,7 @@ Residual risk: T1 only provides notification type, message, link primitives, and
 
 ## Task T2: Host-Join Notification Runtime Use Case
 
-- State: `in_progress`
+- State: `completed`
 - Attempt: 1
 - Wave: 2
 - Engineer: Notification Runtime Engineer
@@ -301,8 +301,8 @@ Residual risk: T1 only provides notification type, message, link primitives, and
 
 ### Engineer Steps
 
-- [ ] Write `src/runtime/client/use-cases/notification-use-cases.test.js` that mocks `@/repo/client/firebase-notifications-repo`, `firebase/firestore`, and imports `notifyEventHostJoined`.
-- [ ] Include this write test:
+- [x] Write `src/runtime/client/use-cases/notification-use-cases.test.js` that mocks `@/repo/client/firebase-notifications-repo`, `firebase/firestore`, and imports `notifyEventHostJoined`.
+- [x] Include this write test:
 
 ```js
 test('writes one event_host_joined notification to the event host', async () => {
@@ -329,11 +329,11 @@ test('writes one event_host_joined notification to the event host', async () => 
 });
 ```
 
-- [ ] Include self-notification and missing host skip tests.
-- [ ] Run the focused test and confirm it fails before implementation because the export is missing.
-- [ ] Implement `notifyEventHostJoined` in `src/runtime/client/use-cases/notification-use-cases.js`.
-- [ ] Rerun focused tests until they pass.
-- [ ] Run changed lint and type-check.
+- [x] Include self-notification and missing host skip tests, plus blank actor uid skip coverage.
+- [x] Run the focused test and confirm it fails before implementation because the export is missing.
+- [x] Implement `notifyEventHostJoined` in `src/runtime/client/use-cases/notification-use-cases.js`.
+- [x] Rerun focused tests until they pass.
+- [x] Run changed lint and type-check.
 
 ### Verification
 
@@ -348,6 +348,35 @@ test('writes one event_host_joined notification to the event host', async () => 
 ### Browser Evidence
 
 Not applicable. No UI rendering changes are allowed in this task.
+
+
+### Completion Evidence
+
+- Engineer report: Notification Runtime Engineer completed T2 inside owned files only: `src/runtime/client/use-cases/notification-use-cases.js` and `src/runtime/client/use-cases/notification-use-cases.test.js`.
+- Added `notifyEventHostJoined` runtime use case.
+- Behavior: trims host uid and actor uid; missing or blank host or actor uid skips no-write; normalized host/actor uid self-check skips self-notification; writes normalized `actorUid`; writes via `addNotificationDocument(buildNotificationDoc(...))`; uses `serverTimestamp()`.
+- Non-scope preserved: no hook integration, Firestore rules, participant reads, UI/package/workflow changes by Engineer.
+- TDD RED: focused Vitest failed because `notifyEventHostJoined` was missing; after reviewer fix, new actor UID skip tests failed because blank UID wrote and empty/null/undefined UID threw.
+- Spec review: PASS with no findings.
+- Code-quality review: PASS with no blocking findings. Previous rejected issues were fixed: blank actor uid no longer writes, and JSDoc host uid contract permits null/undefined.
+- Residual risk: blank actor name still fail-fast via T1 service helper, matching existing service tests and not a T2 blocker.
+
+| Command | Exit | Signal |
+| --- | ---: | --- |
+| `npx vitest run --project browser src/runtime/client/use-cases/notification-use-cases.test.js` | 0 | T2 focused browser Vitest passed: 1 file, 10 tests. |
+| `npm run lint:changed` | 0 | Changed-file lint passed with only the existing React version warning. |
+| `npm run type-check:changed` | 0 | No changed-file type errors. |
+
+Changed files summary:
+
+- Modified `src/runtime/client/use-cases/notification-use-cases.js`.
+- Added `src/runtime/client/use-cases/notification-use-cases.test.js`.
+- No source or test files outside the T2 owned file set were changed by the T2 Engineer.
+
+Reviewer scope notes:
+
+- Verified a single `event_host_joined` host notification via existing helpers.
+- Verified actor fields, `entityType: event`, `commentId: null`, `read: false`, self skip, missing host skip, blank actor uid skip, and no T3/T4 scope creep.
 
 ### Reviewer PASS Criteria
 

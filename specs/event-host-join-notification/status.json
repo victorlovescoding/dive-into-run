@@ -4,8 +4,8 @@
   "branch": "078-event-host-join-notification",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification",
   "phase": "implementation",
-  "activeTask": "T2",
-  "activeWave": 2,
+  "activeTask": "T3",
+  "activeWave": 3,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,19 +18,20 @@
   },
   "currentHead": {
     "branch": "078-event-host-join-notification",
-    "commit": "468d9bd57846f00fa3bec966e88b4be1001375f1",
-    "capturedAt": "2026-05-29T18:09:21Z",
-    "summary": "T1 is committed; current branch is ahead 7 and behind origin/main by 0. T2 is dispatched and in progress."
+    "commit": "e1a15b05797b77e97200531eb1f8678ae352253a",
+    "capturedAt": "2026-05-29T18:35:51Z",
+    "summary": "T2 Engineer plus spec and code-quality Reviewer PASS are recorded; current branch is ahead 8 and behind origin/main by 0 before the T2 completion commit. Active task advances to T3."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "a9ec0d5a2c839764823f274723b0b806123b3965",
-    "capturedAt": "2026-05-29T18:09:21Z",
-    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 7 and behind this ref by 0."
+    "capturedAt": "2026-05-29T18:35:51Z",
+    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 8 and behind this ref by 0."
   },
   "completedTasks": [
-    "T1"
+    "T1",
+    "T2"
   ],
   "tasks": [
     {
@@ -155,7 +156,7 @@
     {
       "id": "T2",
       "title": "Host join notification runtime use case",
-      "state": "in_progress",
+      "state": "completed",
       "attempt": 1,
       "wave": 2,
       "engineer": "Notification Runtime Engineer",
@@ -203,17 +204,32 @@
         {
           "command": "npx vitest run --project browser src/runtime/client/use-cases/notification-use-cases.test.js",
           "expectedSignal": "Before implementation the command fails because notifyEventHostJoined is not exported. After implementation the command passes.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project browser src/runtime/client/use-cases/notification-use-cases.test.js",
+            "exitCode": 0,
+            "summary": "Focused T2 browser Vitest suite passed: 1 file, 10 tests.",
+            "verifiedAt": "2026-05-29T18:35:51Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Pass with no lint errors in changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed-file lint passed with only the existing React version warning.",
+            "verifiedAt": "2026-05-29T18:35:51Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Pass or report no changed-file type errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type check exited 0 with no changed-file type errors.",
+            "verifiedAt": "2026-05-29T18:35:51Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -229,12 +245,26 @@
         "Client time is used for createdAt.",
         "Verification is missing or stale."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T2 Spec Reviewer and T2 Code Quality Reviewer",
+        "summary": "Spec Reviewer reported no findings. Code Quality Reviewer reported no blocking findings after previous issues were fixed: blank actor uid no longer writes and the JSDoc host uid contract permits null/undefined. Residual risk: blank actor name still fail-fast via the T1 service helper, matching existing service tests and not a T2 blocker.",
+        "decidedAt": "2026-05-29T18:35:51Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "Notification Runtime Engineer changed only src/runtime/client/use-cases/notification-use-cases.js and src/runtime/client/use-cases/notification-use-cases.test.js. Added notifyEventHostJoined runtime use case. It trims host uid and actor uid; skips no-write for missing or blank host or actor uid; skips self-notification after normalized host/actor uid comparison; writes normalized actorUid; writes via addNotificationDocument(buildNotificationDoc(...)); uses serverTimestamp(); and did not add hook integration, Firestore rules, participant reads, UI/package/workflow changes.",
+        "reviewerReport": "T2 Spec Reviewer passed with no findings, verifying a single event_host_joined host notification via existing helpers, actor fields, entityType event, commentId null, read false, skip self/missing host/blank actor uid, and no T3/T4 scope creep. T2 Code Quality Reviewer passed with no blocking findings, verifying previous rejected issues fixed: blank actor uid no longer writes and JSDoc host uid contract permits null/undefined. Residual risk: blank actor name still fail-fast via T1 service helper, matching existing service tests and not a T2 blocker.",
+        "commandOutputSummary": [
+          "TDD RED: focused Vitest failed because notifyEventHostJoined was missing; after reviewer fix, new actor UID skip tests failed because blank UID wrote and empty/null/undefined UID threw.",
+          "npx vitest run --project browser src/runtime/client/use-cases/notification-use-cases.test.js exit 0: 1 file, 10 tests passed.",
+          "npm run lint:changed exit 0: passed with only the existing React version warning.",
+          "npm run type-check:changed exit 0: no changed-file type errors."
+        ],
+        "changedFilesSummary": [
+          "Modified src/runtime/client/use-cases/notification-use-cases.js.",
+          "Added src/runtime/client/use-cases/notification-use-cases.test.js.",
+          "No hook integration, Firestore rules, participant reads, UI/package/workflow changes by Engineer."
+        ]
       }
     },
     {
@@ -537,53 +567,59 @@
     {
       "command": "git log -1 --format=%H%x09%s",
       "exitCode": 0,
-      "summary": "HEAD is T1 implementation commit 468d9bd57846f00fa3bec966e88b4be1001375f1 with subject Add event host join notification type.",
-      "verifiedAt": "2026-05-29T18:09:21Z"
-    },
-    {
-      "command": "git status --short --branch --untracked-files=all",
-      "exitCode": 0,
-      "summary": "Pre-sync dispatch gate was clean: branch 078-event-host-join-notification...origin/main was ahead 7 with no changed files.",
-      "verifiedAt": "2026-05-29T18:09:21Z"
+      "summary": "HEAD before the T2 completion commit is e1a15b05797b77e97200531eb1f8678ae352253a with subject Record notification T2 dispatch.",
+      "verifiedAt": "2026-05-29T18:35:51Z"
     },
     {
       "command": "git rev-list --left-right --count HEAD...origin/main",
       "exitCode": 0,
-      "summary": "Branch divergence was 7 ahead and 0 behind origin/main.",
-      "verifiedAt": "2026-05-29T18:09:21Z"
+      "summary": "Branch divergence before the T2 completion commit was 8 ahead and 0 behind origin/main.",
+      "verifiedAt": "2026-05-29T18:35:51Z"
     },
     {
-      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+      "command": "npx vitest run --project browser src/runtime/client/use-cases/notification-use-cases.test.js",
       "exitCode": 0,
-      "summary": "Workflow state was synced before this T2 dispatch-state update.",
-      "verifiedAt": "2026-05-29T18:09:21Z"
+      "summary": "T2 focused browser Vitest passed: 1 file, 10 tests.",
+      "verifiedAt": "2026-05-29T18:35:51Z"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "Changed-file lint passed with only the existing React version warning.",
+      "verifiedAt": "2026-05-29T18:35:51Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "Changed-file type check exited 0 with no changed-file type errors.",
+      "verifiedAt": "2026-05-29T18:35:51Z"
     },
     {
       "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
       "exitCode": 0,
-      "summary": "status.json schemaVersion 3 validates after the T2 dispatch-state update.",
-      "verifiedAt": "2026-05-29T18:09:21Z"
+      "summary": "status.json schemaVersion 3 validates after the T2 completion-state sync.",
+      "verifiedAt": "2026-05-29T18:35:51Z"
     },
     {
       "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
       "exitCode": 0,
-      "summary": "Workflow companion files are synced after the T2 dispatch-state update.",
-      "verifiedAt": "2026-05-29T18:09:21Z"
+      "summary": "Workflow companion files are synced after the T2 completion-state sync.",
+      "verifiedAt": "2026-05-29T18:35:51Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
-      "summary": "No whitespace errors after the T2 dispatch-state update.",
-      "verifiedAt": "2026-05-29T18:09:21Z"
+      "summary": "No whitespace errors after the T2 completion-state sync.",
+      "verifiedAt": "2026-05-29T18:35:51Z"
     },
     {
       "command": "git status --short --branch --untracked-files=all",
       "exitCode": 0,
-      "summary": "Post-sync status shows branch ahead 7 with only owned workflow-state files modified: handoff.md, status.json, and tasks.md.",
-      "verifiedAt": "2026-05-29T18:09:21Z"
+      "summary": "Post-sync status shows branch ahead 8 with T2 source/test changes plus owned workflow-state files modified; no rules changes.",
+      "verifiedAt": "2026-05-29T18:35:51Z"
     }
   ],
-  "lastVerifiedCommit": "468d9bd57846f00fa3bec966e88b4be1001375f1",
+  "lastVerifiedCommit": "e1a15b05797b77e97200531eb1f8678ae352253a",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -620,6 +656,12 @@
       "commit": "468d9bd57846f00fa3bec966e88b4be1001375f1",
       "summary": "Add event host join notification type.",
       "committedAt": "2026-05-29T18:09:21Z"
+    },
+    {
+      "phase": "t2_dispatch",
+      "commit": "e1a15b05797b77e97200531eb1f8678ae352253a",
+      "summary": "Record notification T2 dispatch.",
+      "committedAt": "2026-05-29T18:35:51Z"
     }
   ],
   "rulesDeployStatus": {
@@ -630,5 +672,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-05-29T18:09:21Z"
+  "updatedAt": "2026-05-29T18:35:51Z"
 }
