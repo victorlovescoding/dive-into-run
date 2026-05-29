@@ -4,8 +4,8 @@
   "branch": "078-event-host-join-notification",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification",
   "phase": "implementation",
-  "activeTask": null,
-  "activeWave": null,
+  "activeTask": "T2",
+  "activeWave": 2,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "078-event-host-join-notification",
-    "commit": "759c4780b8a9d4234d094b9655be7f55f226b53f",
-    "capturedAt": "2026-05-29T18:02:19Z",
-    "summary": "Current branch is ahead 6 and behind origin/main by 0; T1 is completed after Engineer plus spec and code-quality Reviewer PASS and is ready for the T1 commit."
+    "commit": "468d9bd57846f00fa3bec966e88b4be1001375f1",
+    "capturedAt": "2026-05-29T18:09:21Z",
+    "summary": "T1 is committed; current branch is ahead 7 and behind origin/main by 0. T2 is dispatched and in progress."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "a9ec0d5a2c839764823f274723b0b806123b3965",
-    "capturedAt": "2026-05-29T18:02:19Z",
-    "summary": "Local origin/main snapshot used for the T1 completion sync; current branch is ahead 6 and behind this ref by 0."
+    "capturedAt": "2026-05-29T18:09:21Z",
+    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 7 and behind this ref by 0."
   },
   "completedTasks": [
     "T1"
@@ -155,7 +155,7 @@
     {
       "id": "T2",
       "title": "Host join notification runtime use case",
-      "state": "todo",
+      "state": "in_progress",
       "attempt": 1,
       "wave": 2,
       "engineer": "Notification Runtime Engineer",
@@ -535,43 +535,55 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npx vitest run --project browser src/service/notification-service.test.js src/lib/notification-helpers.test.js",
+      "command": "git log -1 --format=%H%x09%s",
       "exitCode": 0,
-      "summary": "Focused T1 browser Vitest suite passed: 2 files, 5 tests.",
-      "verifiedAt": "2026-05-29T18:02:19Z"
-    },
-    {
-      "command": "npm run lint:changed",
-      "exitCode": 0,
-      "summary": "Changed-file lint passed; output included only the existing React version warning.",
-      "verifiedAt": "2026-05-29T18:02:19Z"
-    },
-    {
-      "command": "npm run type-check:changed",
-      "exitCode": 0,
-      "summary": "Changed-file type check reported: No type errors in changed files.",
-      "verifiedAt": "2026-05-29T18:02:19Z"
+      "summary": "HEAD is T1 implementation commit 468d9bd57846f00fa3bec966e88b4be1001375f1 with subject Add event host join notification type.",
+      "verifiedAt": "2026-05-29T18:09:21Z"
     },
     {
       "command": "git status --short --branch --untracked-files=all",
       "exitCode": 0,
-      "summary": "Branch 078-event-host-join-notification...origin/main is ahead 6; only T1 owned source/test files were changed or untracked before workflow-state sync.",
-      "verifiedAt": "2026-05-29T18:02:19Z"
+      "summary": "Pre-sync dispatch gate was clean: branch 078-event-host-join-notification...origin/main was ahead 7 with no changed files.",
+      "verifiedAt": "2026-05-29T18:09:21Z"
     },
     {
-      "command": "git diff --name-status",
+      "command": "git rev-list --left-right --count HEAD...origin/main",
       "exitCode": 0,
-      "summary": "Tracked diff contained only modified src/lib/notification-helpers.js and src/service/notification-service.js because T1 tests were untracked.",
-      "verifiedAt": "2026-05-29T18:02:19Z"
+      "summary": "Branch divergence was 7 ahead and 0 behind origin/main.",
+      "verifiedAt": "2026-05-29T18:09:21Z"
     },
     {
-      "command": "git ls-files --others --exclude-standard",
+      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
       "exitCode": 0,
-      "summary": "Untracked files were src/lib/notification-helpers.test.js and src/service/notification-service.test.js.",
-      "verifiedAt": "2026-05-29T18:02:19Z"
+      "summary": "Workflow state was synced before this T2 dispatch-state update.",
+      "verifiedAt": "2026-05-29T18:09:21Z"
+    },
+    {
+      "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "status.json schemaVersion 3 validates after the T2 dispatch-state update.",
+      "verifiedAt": "2026-05-29T18:09:21Z"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "Workflow companion files are synced after the T2 dispatch-state update.",
+      "verifiedAt": "2026-05-29T18:09:21Z"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "No whitespace errors after the T2 dispatch-state update.",
+      "verifiedAt": "2026-05-29T18:09:21Z"
+    },
+    {
+      "command": "git status --short --branch --untracked-files=all",
+      "exitCode": 0,
+      "summary": "Post-sync status shows branch ahead 7 with only owned workflow-state files modified: handoff.md, status.json, and tasks.md.",
+      "verifiedAt": "2026-05-29T18:09:21Z"
     }
   ],
-  "lastVerifiedCommit": null,
+  "lastVerifiedCommit": "468d9bd57846f00fa3bec966e88b4be1001375f1",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -602,6 +614,12 @@
       "commit": "759c4780b8a9d4234d094b9655be7f55f226b53f",
       "summary": "Recorded notification T1 dispatch.",
       "committedAt": "2026-05-29T17:42:18Z"
+    },
+    {
+      "phase": "t1_implementation",
+      "commit": "468d9bd57846f00fa3bec966e88b4be1001375f1",
+      "summary": "Add event host join notification type.",
+      "committedAt": "2026-05-29T18:09:21Z"
     }
   ],
   "rulesDeployStatus": {
@@ -612,5 +630,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-05-29T18:02:19Z"
+  "updatedAt": "2026-05-29T18:09:21Z"
 }

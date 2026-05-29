@@ -17,17 +17,17 @@
 - Branch: `078-event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Profile: P4 new product feature.
-- Current phase: implementation; T1 completed after Engineer plus spec and code-quality Reviewer PASS.
-- Active task: none.
-- Active wave: none.
-- Current head: `759c4780b8a9d4234d094b9655be7f55f226b53f`.
+- Current phase: implementation; T1 committed and T2 dispatched/in progress.
+- Active task: T2.
+- Active wave: 2.
+- Current head: `468d9bd57846f00fa3bec966e88b4be1001375f1`.
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T18:02:19Z`.
-- Current branch state: ahead 6 and behind `origin/main` by 0; only reviewed T1 owned source/test files were changed or untracked before this workflow-state sync.
-- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`.
-- Latest reviewer decision: `review_passed` by T1 Spec and Code Quality Reviewers at `2026-05-29T18:02:19Z`; spec compliance passed after fix, code quality rejected fail-fast actor handling, the Engineer fix was accepted, and re-review passed.
-- Latest branch-state sync: T1 completion sync used the fresh coordinator evidence below; no active task remains.
-- Next action: T1 commit, then T2 dispatch after clean state.
+- Captured at: `2026-05-29T18:09:21Z`.
+- Current branch state: ahead 7 and behind `origin/main` by 0; branch was clean after the T1 commit and before this workflow-state sync.
+- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`.
+- Latest reviewer decision: T1 `review_passed` by T1 Spec and Code Quality Reviewers; T2 is dispatched and in progress.
+- Latest branch-state sync: post-T1 commit sync used the fresh coordinator evidence below; active task is T2.
+- Next action: wait for T2 Engineer report.
 
 ## Plan Review Evidence
 
@@ -256,12 +256,19 @@ Residual risk: T1 only provides notification type, message, link primitives, and
 
 ## Task T2: Host-Join Notification Runtime Use Case
 
-- State: `todo`
+- State: `in_progress`
 - Attempt: 1
 - Wave: 2
 - Engineer: Notification Runtime Engineer
 - Reviewer: Notification Runtime Reviewer
 - Dependencies: T1 `review_passed`.
+
+### Dispatch Evidence
+
+- `git status --short --branch --untracked-files=all` exit 0: branch `078-event-host-join-notification...origin/main [ahead 7]`, no modified or untracked files after the T1 commit and before this workflow-state sync.
+- `git rev-list --left-right --count HEAD...origin/main` exit 0: `7 0`.
+- `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` exit 0: workflow state synced before this T2 dispatch-state update.
+- Dependency satisfied: T1 is completed, committed as `468d9bd57846f00fa3bec966e88b4be1001375f1`, and remains `review_passed`.
 
 ### Owned Files
 
