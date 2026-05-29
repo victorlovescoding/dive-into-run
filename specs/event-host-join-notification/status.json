@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 3,
+  "feature": "event-host-join-notification",
+  "branch": "078-event-host-join-notification",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification",
+  "phase": "spec_review_passed",
+  "activeTask": null,
+  "activeWave": null,
+  "authorizationBoundary": {
+    "edit": true,
+    "commit": true,
+    "push": false,
+    "pullRequest": false,
+    "ciWatch": false,
+    "merge": false,
+    "localMainSync": false,
+    "deployFirestoreRules": false
+  },
+  "currentHead": {
+    "branch": "078-event-host-join-notification",
+    "commit": "cc2c4874cc5c1af78167a8d6fb1f590194491461",
+    "capturedAt": "2026-05-29T16:16:42Z",
+    "summary": "Local branch head captured for spec artifact creation."
+  },
+  "remoteHead": {
+    "remote": "origin",
+    "branch": "main",
+    "commit": "cc2c4874cc5c1af78167a8d6fb1f590194491461",
+    "capturedAt": "2026-05-29T16:16:42Z",
+    "summary": "Remote origin/main head captured for spec artifact creation."
+  },
+  "completedTasks": [],
+  "tasks": [],
+  "blocked": false,
+  "blockedReason": null,
+  "lastVerification": [
+    {
+      "command": "git status --short --branch --untracked-files=all",
+      "exitCode": 0,
+      "summary": "On branch 078-event-host-join-notification tracking origin/main; exactly five owned spec workflow files are untracked: handoff.md, plan.md, spec.md, status.json, and tasks.md.",
+      "verifiedAt": "2026-05-29T16:26:01Z"
+    },
+    {
+      "command": "git diff --name-status",
+      "exitCode": 0,
+      "summary": "No tracked diff before staging; new files are untracked only.",
+      "verifiedAt": "2026-05-29T16:26:01Z"
+    },
+    {
+      "command": "git ls-files --others --exclude-standard",
+      "exitCode": 0,
+      "summary": "Untracked files are limited to the five owned spec workflow files under specs/event-host-join-notification/.",
+      "verifiedAt": "2026-05-29T16:26:01Z"
+    },
+    {
+      "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "status schemaVersion 3 validates.",
+      "verifiedAt": "2026-05-29T16:26:01Z"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "Workflow companion files are synced.",
+      "verifiedAt": "2026-05-29T16:26:01Z"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "No whitespace errors.",
+      "verifiedAt": "2026-05-29T16:26:01Z"
+    },
+    {
+      "command": "rg -n 'TBD|TODO|<[^>]+>|push: yes|pullRequest: yes|ciWatch: yes|merge: yes|localMainSync: yes|deployFirestoreRules: yes|\"state\": \"deployed\"|email.*in scope|push notifications.*in scope|FCM.*in scope|Cloud Function.*in scope' specs/event-host-join-notification",
+      "exitCode": 1,
+      "summary": "No placeholders, unauthorized release claims, or forbidden notification channels matched.",
+      "verifiedAt": "2026-05-29T16:26:01Z"
+    },
+    {
+      "command": "rg -n '[ \\t]$' specs/event-host-join-notification",
+      "exitCode": 1,
+      "summary": "No trailing whitespace matched.",
+      "verifiedAt": "2026-05-29T16:26:01Z"
+    }
+  ],
+  "lastVerifiedCommit": null,
+  "phaseCommits": [],
+  "rulesDeployStatus": {
+    "state": "required",
+    "required": true,
+    "changed": false,
+    "evidence": [],
+    "deployedCommit": null
+  },
+  "incidents": [],
+  "updatedAt": "2026-05-29T16:26:01Z"
+}
