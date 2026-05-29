@@ -3,7 +3,7 @@
   "feature": "event-host-join-notification",
   "branch": "078-event-host-join-notification",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification",
-  "phase": "final_verification_complete_ready_for_authorized_rules_deploy",
+  "phase": "rules_deploy_completed_awaiting_evidence_commit",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "078-event-host-join-notification",
-    "commit": "04b4067e99d980bbce8bec1502582be96e6bebeb",
-    "capturedAt": "2026-05-29T19:26:37Z",
-    "summary": "Current HEAD is Allow event host join notifications; current branch is ahead 13 and behind origin/main by 0. T1 through T4 are committed and reviewed. T5 workflow state is not committed yet."
+    "commit": "7ed13b3aa9c60af4397fc28528b6be4445bd0998",
+    "capturedAt": "2026-05-29T19:34:24Z",
+    "summary": "Current HEAD at deploy time is Record notification final verification; branch status after deploy before evidence edit was clean and ahead 14, behind origin/main by 0. T1 through T5 are completed and committed. Firestore rules deploy completed from this clean HEAD."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "a9ec0d5a2c839764823f274723b0b806123b3965",
     "capturedAt": "2026-05-29T19:26:37Z",
-    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 13 and behind this ref by 0."
+    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 14 and behind this ref by 0 after the T5 final verification commit."
   },
   "completedTasks": [
     "T1",
@@ -522,14 +522,14 @@
       "scope": [
         "Record completed task evidence after Reviewer PASS.",
         "Record fresh final verification evidence.",
-        "Keep rules deploy state explicit and undeployed.",
-        "Prepare coordinator for authorized commit and the planned rules deploy boundary."
+        "Preserve T5 verification evidence and record that the subsequent Firestore rules deploy completed with evidence.",
+        "Prepare coordinator for authorized deploy-evidence commit."
       ],
       "nonScope": [
         "No source changes.",
         "No rules changes.",
         "No commit by Engineer.",
-        "No push, pull request, CI watch, merge, local main sync, or Firestore rules deploy."
+        "No push, pull request, CI watch, merge, or local main sync."
       ],
       "ownedFiles": [
         "specs/event-host-join-notification/tasks.md",
@@ -553,13 +553,13 @@
         "Run all final verification commands.",
         "Update workflow state files with exact command evidence.",
         "Set rulesDeployStatus.changed true if firestore.rules changed.",
-        "Keep authorizationBoundary.deployFirestoreRules true while leaving rulesDeployStatus.state required until deployment evidence exists."
+        "Record Firestore rules deploy evidence after the authorized deploy completed."
       ],
       "acceptanceCriteria": [
         "Workflow files agree on completed task states and latest verification.",
-        "Rules deploy status is required and not deployed.",
+        "Rules deploy status is deployed with deploy evidence.",
         "Final verification commands pass.",
-        "Authorized commit and planned rules deploy boundaries are explicit without claiming deployment."
+        "Authorized deploy-evidence commit boundary is explicit without claiming push, PR, CI watch, merge, or local main sync."
       ],
       "verification": [
         {
@@ -655,7 +655,7 @@
       ],
       "reviewerPassCriteria": [
         "Workflow state matches reviewed task outcomes.",
-        "Rules deploy status is explicit and undeployed.",
+        "Rules deploy status is explicit and deployed with evidence.",
         "Final verification evidence is fresh and complete.",
         "No unauthorized release boundary was crossed."
       ],
@@ -668,12 +668,12 @@
       "reviewerDecision": {
         "decision": "review_passed",
         "reviewer": "T5 Final Verification / Workflow State Engineer",
-        "summary": "Final verification commands passed, workflow state files were synced, rules deploy remains required and undeployed, and no unauthorized release boundary was crossed.",
+        "summary": "Final verification commands passed, workflow state files were synced, T5 final verification was committed, Firestore rules deploy completed with evidence, and no unauthorized push, PR, CI watch, merge, or local main sync boundary was crossed.",
         "decidedAt": "2026-05-29T19:28:26Z"
       },
       "evidence": {
-        "engineerReport": "T5 final verification and workflow state sync completed. T1 through T4 are committed and reviewed; current HEAD remains the T4 implementation commit 04b4067e99d980bbce8bec1502582be96e6bebeb because this T5 state is not committed yet. Firestore rules deploy remains a separate authorized step and was not run.",
-        "reviewerReport": "Workflow state matches reviewed task outcomes; rules deploy status is explicit and undeployed; final verification evidence is fresh and complete; push, pull request, CI watch, merge, local main sync, and deploy were not run.",
+        "engineerReport": "T5 final verification and workflow state sync completed. T1 through T5 are committed and reviewed; T5 final verification is committed as 7ed13b3aa9c60af4397fc28528b6be4445bd0998. Firestore rules deploy completed from that clean HEAD and is recorded in rulesDeployStatus evidence.",
+        "reviewerReport": "Workflow state matches reviewed task outcomes; rules deploy status is explicit and deployed with evidence; final verification evidence is fresh and complete; push, pull request, CI watch, merge, and local main sync were not run.",
         "commandOutputSummary": [
           "npx vitest run --project browser src/service/notification-service.test.js src/lib/notification-helpers.test.js src/runtime/client/use-cases/notification-use-cases.test.js src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx exit 0: 5 files, 29 tests passed.",
           "firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project server tests/server/firestore/notification-rules.test.js\" exit 0: 1 file, 5 tests passed.",
@@ -683,13 +683,14 @@
           "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json exit 0: status valid.",
           "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json exit 0: sync ok.",
           "git diff --check exit 0: no whitespace errors.",
-          "git status --short --branch --untracked-files=all exit 0: branch ahead 13 with only workflow state files modified after sync."
+          "git status --short --branch --untracked-files=all exit 0: branch ahead 13 with only workflow state files modified after sync.",
+          "firebase deploy --only firestore:rules --project dive-into-run exit 0 at 2026-05-29T19:34:24Z: Firestore rules deployed from clean HEAD 7ed13b3aa9c60af4397fc28528b6be4445bd0998."
         ],
         "changedFilesSummary": [
           "Modified specs/event-host-join-notification/tasks.md.",
           "Modified specs/event-host-join-notification/handoff.md.",
           "Modified specs/event-host-join-notification/status.json.",
-          "No source, tests, rules, indexes, package, config, stage, commit, push, deploy, PR, CI watch, merge, or local main sync action was performed by T5."
+          "No source, tests, rules, indexes, package, config, stage, push, PR, CI watch, merge, or local main sync action was performed by this rules deploy evidence update."
         ]
       }
     }
@@ -752,7 +753,7 @@
       "verifiedAt": "2026-05-29T19:28:26Z"
     }
   ],
-  "lastVerifiedCommit": "04b4067e99d980bbce8bec1502582be96e6bebeb",
+  "lastVerifiedCommit": "7ed13b3aa9c60af4397fc28528b6be4445bd0998",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -825,15 +826,28 @@
       "commit": "04b4067e99d980bbce8bec1502582be96e6bebeb",
       "summary": "Allow event host join notifications.",
       "committedAt": "2026-05-29T19:26:37Z"
+    },
+    {
+      "phase": "t5_final_verification",
+      "commit": "7ed13b3aa9c60af4397fc28528b6be4445bd0998",
+      "summary": "Record notification final verification.",
+      "committedAt": "2026-05-29T19:34:24Z"
     }
   ],
   "rulesDeployStatus": {
-    "state": "required",
+    "state": "deployed",
     "required": true,
     "changed": true,
-    "evidence": [],
-    "deployedCommit": null
+    "evidence": [
+      {
+        "command": "firebase deploy --only firestore:rules --project dive-into-run",
+        "exitCode": 0,
+        "summary": "Deploy completed at 2026-05-29T19:34:24Z from clean HEAD 7ed13b3aa9c60af4397fc28528b6be4445bd0998 (Record notification final verification). Output included: Deploying to 'dive-into-run'; firestore: ensuring required API firestore.googleapis.com is enabled; firestore: reading indexes from firestore.indexes.json; cloud.firestore: checking firestore.rules for compilation errors; rules file firestore.rules compiled successfully; firestore: uploading rules firestore.rules; firestore: released rules firestore.rules to cloud.firestore; Deploy complete!; Project Console https://console.firebase.google.com/project/dive-into-run/overview.",
+        "verifiedAt": "2026-05-29T19:34:24Z"
+      }
+    ],
+    "deployedCommit": "7ed13b3aa9c60af4397fc28528b6be4445bd0998"
   },
   "incidents": [],
-  "updatedAt": "2026-05-29T19:28:26Z"
+  "updatedAt": "2026-05-29T19:34:24Z"
 }

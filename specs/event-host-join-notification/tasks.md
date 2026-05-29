@@ -17,18 +17,18 @@
 - Branch: `078-event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Profile: P4 new product feature.
-- Current phase: final verification complete; ready for coordinator T5 state commit, then authorized Firestore rules deploy.
+- Current phase: Firestore rules deploy evidence recorded after T5 final verification; awaiting coordinator commit, then separate authorization for any push, PR, CI watch, merge, or local main sync.
 - Active task: none; T5 is completed.
 - Active wave: none.
-- Current HEAD: `04b4067e99d980bbce8bec1502582be96e6bebeb` (`Allow event host join notifications`).
+- Current HEAD at deploy time: `7ed13b3aa9c60af4397fc28528b6be4445bd0998` (`Record notification final verification`).
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T19:26:37Z`.
-- Current branch state before T5 state commit: `078-event-host-join-notification...origin/main [ahead 13]`; divergence `13 0` (ahead 13, behind 0).
-- Current dirty reviewed scope: workflow state files only after T5 sync.
-- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`; T3 dispatch commit `01e803132f2374c41df4efa51ba8c700d0810055`; T3 implementation commit `0b66da0088417d3bb6becdefeab76ef7c06c1fae`; T4 dispatch commit `e6ad1b4295c98a86eab7324a682dbca7fb75e941`; T4 implementation commit `04b4067e99d980bbce8bec1502582be96e6bebeb`.
+- Captured at: `2026-05-29T19:34:24Z`.
+- Branch status after deploy before evidence edit: clean, `078-event-host-join-notification...origin/main [ahead 14]`; divergence `14 0` (ahead 14, behind 0).
+- Current dirty reviewed scope: workflow state files only for rules deploy evidence.
+- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`; T3 dispatch commit `01e803132f2374c41df4efa51ba8c700d0810055`; T3 implementation commit `0b66da0088417d3bb6becdefeab76ef7c06c1fae`; T4 dispatch commit `e6ad1b4295c98a86eab7324a682dbca7fb75e941`; T4 implementation commit `04b4067e99d980bbce8bec1502582be96e6bebeb`; T5 final verification commit `7ed13b3aa9c60af4397fc28528b6be4445bd0998`.
 - Latest reviewer decision: T5 `review_passed` by T5 Final Verification / Workflow State Engineer.
-- Latest branch-state sync: final verification and workflow state sync completed after T4 implementation commit; T5 state remains uncommitted.
-- Next action: coordinator commits T5 state, then runs authorized Firestore rules deploy and records deploy evidence.
+- Latest branch-state sync: final verification committed at `7ed13b3aa9c60af4397fc28528b6be4445bd0998`; Firestore rules deploy completed from that clean HEAD.
+- Next action: coordinator commits this rules deploy evidence, then await separate authorization for push, PR, CI watch, merge, or local main sync if desired.
 
 ## Plan Review Evidence
 
@@ -84,6 +84,14 @@
 | `git diff --check` | 0 | No whitespace errors. |
 | `git status --short --branch --untracked-files=all` | 0 | Branch `078-event-host-join-notification...origin/main [ahead 13]`; only workflow state files modified after T5 sync. |
 
+## Firestore Rules Deploy Evidence
+
+| Command | Exit | Signal |
+| --- | ---: | --- |
+| `firebase deploy --only firestore:rules --project dive-into-run` | 0 | Deploy completed at `2026-05-29T19:34:24Z` from clean HEAD `7ed13b3aa9c60af4397fc28528b6be4445bd0998` (`Record notification final verification`). Output included: `Deploying to 'dive-into-run'`; `firestore: ensuring required API firestore.googleapis.com is enabled`; `firestore: reading indexes from firestore.indexes.json`; `cloud.firestore: checking firestore.rules for compilation errors`; `rules file firestore.rules compiled successfully`; `firestore: uploading rules firestore.rules`; `firestore: released rules firestore.rules to cloud.firestore`; `Deploy complete!`; Project Console `https://console.firebase.google.com/project/dive-into-run/overview`. |
+
+Branch status after deploy before evidence edit: clean, `078-event-host-join-notification...origin/main [ahead 14]`.
+
 ## T3 Completion Evidence
 
 - Engineer changed only T3 owned files: `src/runtime/hooks/useEventDetailParticipation.js`, `src/runtime/hooks/useEventParticipation.js`, `src/runtime/hooks/useEventDetailParticipation.test.jsx`, and `src/runtime/hooks/useEventParticipation.test.jsx`.
@@ -112,11 +120,12 @@
 ## Rules Release State
 
 - Firestore rules work is required for this feature and T4 changed `firestore.rules`.
-- `rulesDeployStatus.state` remains `required`.
+- `rulesDeployStatus.state` is `deployed`.
 - `rulesDeployStatus.required` remains `true`.
 - `rulesDeployStatus.changed` is `true` because T4 changed `firestore.rules`.
-- `rulesDeployStatus.deployedCommit` remains `null` and deploy evidence remains empty.
-- Firestore rules deploy is authorized for the planned rules deploy step/release boundary, but rules have not been deployed yet.
+- `rulesDeployStatus.deployedCommit` is `7ed13b3aa9c60af4397fc28528b6be4445bd0998`.
+- Deploy evidence records `firebase deploy --only firestore:rules --project dive-into-run`, exit 0, timestamp `2026-05-29T19:34:24Z`, and the concise deploy output summary.
+- Firestore rules deploy completed; push, PR, CI watch, merge, and local main sync remain unauthorized and not done.
 
 ## Pre-Implementation Gate G0
 
@@ -138,7 +147,7 @@ The required fresh clean-state check and join-entrypoint search were completed b
 - Wave 1: T1 notification type, message, and link primitives. Completed after Engineer plus spec and code-quality Reviewer PASS.
 - Wave 2: T2 host-join notification use case. Completed after Engineer plus spec and code-quality Reviewer PASS.
 - Wave 3: T3 join-entrypoint integration. Completed after Engineer plus spec and code-quality Reviewer PASS.
-- Wave 4: T4 Firestore rules allowlist and rules tests. Completed after Engineer plus spec and security/code-quality Reviewer PASS; reviewed implementation is not yet committed.
+- Wave 4: T4 Firestore rules allowlist and rules tests. Completed after Engineer plus spec and security/code-quality Reviewer PASS; implementation is committed.
 - Wave 5: T5 final integration verification and workflow state sync.
 
 All waves are serialized. T1 is foundational. T2 depends on T1. T3 depends on T2. T4 depends on T1. T5 depends on T2, T3, and T4 Reviewer PASS.
@@ -715,16 +724,15 @@ Not applicable. This is a rules-only task.
 - Record completed task evidence after Reviewer PASS.
 - Record fresh final verification evidence.
 - Set `rulesDeployStatus.changed` to `true` if `firestore.rules` changed.
-- Keep `rulesDeployStatus.state` as `required`.
-- Keep deploy authorization recorded as true, without deploying Firestore rules in T5.
-- Prepare coordinator for an authorized commit and the planned rules deploy boundary.
+- Preserve T5 verification evidence and record that the subsequent Firestore rules deploy completed with evidence.
+- Prepare coordinator for an authorized deploy-evidence commit.
 
 ### Non-Scope
 
 - No source changes.
 - No rules changes.
 - No commit by Engineer.
-- No push, pull request, CI watch, merge, local main sync, or Firestore rules deploy.
+- No push, pull request, CI watch, merge, or local main sync.
 
 ### Engineer Steps
 
@@ -732,8 +740,8 @@ Not applicable. This is a rules-only task.
 - [x] Run every final verification command listed below.
 - [x] Update workflow state files with exact command, exit code, and expected signal summaries.
 - [x] Update `rulesDeployStatus.changed` to match whether `firestore.rules` is in the reviewed diff.
-- [x] Keep `authorizationBoundary.deployFirestoreRules` true while leaving `rulesDeployStatus.state` as `required` until deployment evidence exists.
-- [x] Keep next action as coordinator T5 state commit, then authorized Firestore rules deploy and deploy evidence recording.
+- [x] Record Firestore rules deploy evidence after the authorized deploy completed.
+- [x] Keep next action as coordinator deploy-evidence commit, then separate authorization for push, PR, CI watch, merge, or local main sync if desired.
 
 ### Verification
 
@@ -763,10 +771,10 @@ Not applicable unless UI files were modified after an approved plan update.
 ### Completion Evidence
 
 - T5 final verification and workflow state sync completed.
-- Current HEAD and last verified commit remain `04b4067e99d980bbce8bec1502582be96e6bebeb` (`Allow event host join notifications`) because this T5 state is not committed yet.
+- T5 final verification is committed as `7ed13b3aa9c60af4397fc28528b6be4445bd0998` (`Record notification final verification`).
 - T1, T2, T3, T4, and T5 are completed in workflow state.
-- `rulesDeployStatus.state` remains `required`; `required` is `true`; `changed` is `true`; `deployedCommit` is `null`; deploy evidence is empty.
-- No Firestore rules deploy, push, pull request, CI watch, merge, local main sync, stage, or commit was run by T5.
+- `rulesDeployStatus.state` is `deployed`; `required` is `true`; `changed` is `true`; `deployedCommit` is `7ed13b3aa9c60af4397fc28528b6be4445bd0998`; deploy evidence records command, exit 0, timestamp, and output summary.
+- No push, pull request, CI watch, merge, local main sync, stage, or commit was run by this deploy-evidence update.
 
 | Command | Exit | Signal |
 | --- | ---: | --- |
@@ -796,4 +804,4 @@ Not applicable unless UI files were modified after an approved plan update.
 
 ## Final Closeout Boundary
 
-After T5 Reviewer PASS and coordinator verification, the current authorization permits coordinator commit and the planned Firestore rules deploy step. It does not permit push, pull request creation, CI watch, merge, or local main sync.
+After T5 Reviewer PASS and coordinator verification, the T5 final verification state was committed as `7ed13b3aa9c60af4397fc28528b6be4445bd0998`; Firestore rules deploy completed from that clean HEAD. The current authorization permits coordinator commit of this deploy evidence only. It does not permit push, pull request creation, CI watch, merge, or local main sync.
