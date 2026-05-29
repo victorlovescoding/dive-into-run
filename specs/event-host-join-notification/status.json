@@ -3,7 +3,7 @@
   "feature": "event-host-join-notification",
   "branch": "078-event-host-join-notification",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification",
-  "phase": "plan_review_passed",
+  "phase": "implementation_authorized_branch_blocked",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -14,20 +14,20 @@
     "ciWatch": false,
     "merge": false,
     "localMainSync": false,
-    "deployFirestoreRules": false
+    "deployFirestoreRules": true
   },
   "currentHead": {
     "branch": "078-event-host-join-notification",
-    "commit": "48a4c3c30dbafce1587d3c3d77910b31ad086e60",
-    "capturedAt": "2026-05-29T16:58:59Z",
-    "summary": "Current branch is rebased onto origin/main and is ahead 2/behind 0."
+    "commit": "7e1a79048a6cd6ccaee4a454fd208a2e0790029e",
+    "capturedAt": "2026-05-29T17:23:11Z",
+    "summary": "Current branch is ahead 3 and behind origin/main by 3; pre-implementation dispatch is blocked until reconciled."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "57aeaa0c4143c3c1224698f7a45dcebb9dacc719",
-    "capturedAt": "2026-05-29T16:58:59Z",
-    "summary": "Remote origin/main head fetched before successful rebase."
+    "commit": "a9ec0d5a2c839764823f274723b0b806123b3965",
+    "capturedAt": "2026-05-29T17:23:11Z",
+    "summary": "Local origin/main snapshot used for the branch-block check; current branch is behind this ref by 3."
   },
   "completedTasks": [],
   "tasks": [
@@ -65,7 +65,7 @@
         "src/components/Notifications/NotificationPanel.jsx"
       ],
       "dependencies": [
-        "Gate G0 branch reconciliation check is satisfied."
+        "Gate G0 is currently unsatisfied because the branch is ahead 3 and behind origin/main by 3; coordinator must reconcile before dispatch."
       ],
       "engineerInstructions": [
         "Write failing tests for event_host_joined message and event detail link.",
@@ -390,7 +390,7 @@
         "Record completed task evidence after Reviewer PASS.",
         "Record fresh final verification evidence.",
         "Keep rules deploy state explicit and undeployed.",
-        "Prepare coordinator for authorized commit only."
+        "Prepare coordinator for authorized commit and the planned rules deploy boundary."
       ],
       "nonScope": [
         "No source changes.",
@@ -420,13 +420,13 @@
         "Run all final verification commands.",
         "Update workflow state files with exact command evidence.",
         "Set rulesDeployStatus.changed true if firestore.rules changed.",
-        "Keep authorizationBoundary.deployFirestoreRules false."
+        "Keep authorizationBoundary.deployFirestoreRules true while leaving rulesDeployStatus.state required until deployment evidence exists."
       ],
       "acceptanceCriteria": [
         "Workflow files agree on completed task states and latest verification.",
         "Rules deploy status is required and not deployed.",
         "Final verification commands pass.",
-        "Only authorized commit boundary is prepared."
+        "Authorized commit and planned rules deploy boundaries are explicit without claiming deployment."
       ],
       "verification": [
         {
@@ -496,56 +496,38 @@
       }
     }
   ],
-  "blocked": false,
-  "blockedReason": null,
+  "blocked": true,
+  "blockedReason": "Pre-implementation branch gate is unsatisfied because live git status reports the branch ahead 3 and behind origin/main by 3. Source-edit dispatch is blocked until coordinator reconciles with latest origin/main and updates state.",
   "lastVerification": [
-    {
-      "command": "git fetch origin main",
-      "exitCode": 0,
-      "summary": "Fetched origin/main.",
-      "verifiedAt": "2026-05-29T16:58:59Z"
-    },
-    {
-      "command": "git rebase origin/main",
-      "exitCode": 0,
-      "summary": "Rebase succeeded.",
-      "verifiedAt": "2026-05-29T16:58:59Z"
-    },
     {
       "command": "git status --short --branch --untracked-files=all",
       "exitCode": 0,
-      "summary": "Branch is ahead 2 and not behind origin/main; only workflow state files are modified after sync.",
-      "verifiedAt": "2026-05-29T16:58:59Z"
+      "summary": "Branch is ahead 3 and behind 3; only specs/event-host-join-notification/handoff.md, specs/event-host-join-notification/status.json, and specs/event-host-join-notification/tasks.md are modified.",
+      "verifiedAt": "2026-05-29T17:23:11Z"
     },
     {
-      "command": "git rev-list --left-right --count HEAD...origin/main",
+      "command": "git diff --name-status HEAD",
       "exitCode": 0,
-      "summary": "Output: 2 0.",
-      "verifiedAt": "2026-05-29T16:58:59Z"
-    },
-    {
-      "command": "git log --oneline --decorate --max-count=5 HEAD",
-      "exitCode": 0,
-      "summary": "HEAD is plan commit 48a4c3c, followed by spec commit 07f982d, followed by origin/main 57aeaa0.",
-      "verifiedAt": "2026-05-29T16:58:59Z"
-    },
-    {
-      "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
-      "exitCode": 0,
-      "summary": "status.json is valid.",
-      "verifiedAt": "2026-05-29T16:58:59Z"
-    },
-    {
-      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
-      "exitCode": 0,
-      "summary": "Workflow state is synced.",
-      "verifiedAt": "2026-05-29T16:58:59Z"
+      "summary": "Only specs/event-host-join-notification/handoff.md, specs/event-host-join-notification/status.json, and specs/event-host-join-notification/tasks.md are modified.",
+      "verifiedAt": "2026-05-29T17:23:11Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-05-29T16:58:59Z"
+      "verifiedAt": "2026-05-29T17:23:11Z"
+    },
+    {
+      "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "status.json is valid.",
+      "verifiedAt": "2026-05-29T17:23:11Z"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "Workflow state is synced.",
+      "verifiedAt": "2026-05-29T17:23:11Z"
     }
   ],
   "lastVerifiedCommit": null,
@@ -571,5 +553,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-05-29T16:58:59Z"
+  "updatedAt": "2026-05-29T17:23:11Z"
 }

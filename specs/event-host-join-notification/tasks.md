@@ -17,16 +17,17 @@
 - Branch: `078-event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Profile: P4 new product feature.
-- Current phase: plan review passed; post-rebase branch gate satisfied.
+- Current phase: implementation authorized; pre-implementation branch gate blocked.
 - Active task: none.
 - Active wave: none.
-- Current head: `48a4c3c30dbafce1587d3c3d77910b31ad086e60`.
-- Remote head: `57aeaa0c4143c3c1224698f7a45dcebb9dacc719` from `origin/main`.
-- Captured at: `2026-05-29T16:58:59Z`.
-- Branch state after rebase: ahead 2 and behind `origin/main` by 0.
+- Current head: `7e1a79048a6cd6ccaee4a454fd208a2e0790029e`.
+- Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
+- Captured at: `2026-05-29T17:23:11Z`.
+- Current branch state: ahead 3 and behind `origin/main` by 3.
 - Phase commits: spec commit `07f982d023bd107747670bf0398d62176f53a5f7`; plan commit `48a4c3c30dbafce1587d3c3d77910b31ad086e60`.
 - Latest reviewer decision: `review_passed` by Plan Reviewer at `2026-05-29T16:45:00Z`; Plan matches approved spec, uses serialized Engineer/Reviewer slices, includes branch reconciliation gate, and has no findings.
-- Next action: get user plan/source-edit approval if required by the current boundary, then dispatch T1 after fresh clean-state check and join-entrypoint search.
+- Latest branch-state review rejection: live git status reports ahead 3 and behind 3 while workflow state still recorded the prior post-rebase gate as current.
+- Next action: coordinator must reconcile with latest `origin/main`, update workflow state, rerun validation, and only then dispatch T1.
 
 ## Plan Review Evidence
 
@@ -34,31 +35,28 @@
 - Reviewer: Plan Reviewer
 - Decided at: `2026-05-29T16:45:00Z`
 - Summary: Plan matches approved spec, uses serialized Engineer/Reviewer slices, includes branch reconciliation gate, and has no findings.
-- Verification evidence: synced to `status.json.lastVerification` and `handoff.md` latest verification.
+- Verification evidence: historical plan-review evidence has been superseded by the current branch-block evidence in `status.json.lastVerification` and `handoff.md` latest verification.
 
-## Post-Rebase Workflow State Sync Evidence
+## Branch Block Workflow State Sync Evidence
 
 | Command | Exit | Signal |
 | --- | ---: | --- |
-| `git fetch origin main` | 0 | Fetched origin/main. |
-| `git rebase origin/main` | 0 | Rebase succeeded. |
-| `git status --short --branch --untracked-files=all` | 0 | Branch ahead 2 and not behind; only workflow state files modified after sync. |
-| `git rev-list --left-right --count HEAD...origin/main` | 0 | Output: `2 0`. |
-| `git log --oneline --decorate --max-count=5 HEAD` | 0 | HEAD at plan commit `48a4c3c`, then spec commit `07f982d`, then `origin/main` `57aeaa0`. |
+| `git status --short --branch --untracked-files=all` | 0 | Branch ahead 3 and behind 3; only `handoff.md`, `status.json`, and `tasks.md` are modified. |
+| `git diff --name-status HEAD` | 0 | Only `specs/event-host-join-notification/handoff.md`, `specs/event-host-join-notification/status.json`, and `specs/event-host-join-notification/tasks.md` are modified. |
+| `git diff --check` | 0 | No whitespace errors. |
 | `node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json` | 0 | status valid. |
 | `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced. |
-| `git diff --check` | 0 | No whitespace errors. |
 
 ## Authorization Boundary
 
-- edit: yes, for the owned workflow planning files in this Planner stage; future implementation edits require explicit user authorization.
-- commit: yes, after Reviewer PASS and coordinator verification; main agent will commit, not the Engineer.
+- edit: yes, implementation edits are authorized within dispatched task owned files.
+- commit: yes, after Reviewer PASS and fresh verification; main agent will commit, not the Engineer.
 - push: no.
 - pullRequest: no.
 - ciWatch: no.
 - merge: no.
 - localMainSync: no.
-- deployFirestoreRules: no.
+- deployFirestoreRules: yes, for the planned rules deploy step/release boundary after rules work is reviewed and verified.
 
 ## Rules Release State
 
@@ -67,7 +65,7 @@
 - `rulesDeployStatus.state` remains `required`.
 - `rulesDeployStatus.required` remains `true`.
 - `rulesDeployStatus.changed` remains `false` until an implementation task actually changes `firestore.rules`.
-- Firestore rules deploy is not authorized.
+- Firestore rules deploy is authorized for the planned rules deploy step/release boundary, but rules have not been changed or deployed yet.
 
 ## Pre-Implementation Gate G0
 
@@ -79,13 +77,13 @@ git status --short --branch --untracked-files=all
 
 Expected signal before source dispatch: output must not report the branch as behind `origin/main` and must not show unreviewed non-workflow changes.
 
-As of the `2026-05-29T16:58:59Z` post-rebase check, the branch is ahead 2 and behind `origin/main` by 0, so the pre-implementation branch gate is satisfied. Before dispatching T1, coordinator still must get explicit source-edit authorization if required by the current boundary, run a fresh clean-state check, run the join-entrypoint search, and update normal task state for dispatch.
+As of the prior `2026-05-29T16:58:59Z` post-rebase check, the branch gate was satisfied. As of the current `2026-05-29T17:23:11Z` check, the branch is ahead 3 and behind `origin/main` by 3, so the pre-implementation branch gate is unsatisfied and T1 source-edit dispatch is blocked.
 
-If a fresh check later reports behind `origin/main`, source dispatch is blocked. Coordinator must reconcile with the latest `origin/main` using an explicitly authorized method, update `status.json` head snapshots, rerun workflow state validation, and only then dispatch implementation.
+Coordinator must reconcile with the latest `origin/main` using an explicitly authorized method, update `status.json` head snapshots, rerun workflow state validation, and only then dispatch implementation.
 
 ## Dependency Graph and Waves
 
-- Wave 0: Gate G0, coordinator-owned, no source edits.
+- Wave 0: Gate G0, coordinator-owned, no source edits; currently blocked because the branch is behind `origin/main` by 3.
 - Wave 1: T1 notification type, message, and link primitives.
 - Wave 2: T2 host-join notification use case.
 - Wave 3: T3 join-entrypoint integration.
@@ -101,7 +99,7 @@ All waves are serialized. T1 is foundational. T2 depends on T1. T3 depends on T2
 - Wave: 1
 - Engineer: Notification Service Engineer
 - Reviewer: Notification Service Reviewer
-- Dependencies: Gate G0 satisfied.
+- Dependencies: Gate G0 must be reconciled and satisfied after the current ahead 3/behind 3 branch block clears.
 
 ### Owned Files
 
@@ -537,8 +535,8 @@ Not applicable. This is a rules-only task.
 - Record fresh final verification evidence.
 - Set `rulesDeployStatus.changed` to `true` if `firestore.rules` changed.
 - Keep `rulesDeployStatus.state` as `required`.
-- Keep deploy authorization false.
-- Prepare coordinator for an authorized commit only.
+- Keep deploy authorization recorded as true, without deploying Firestore rules in T5.
+- Prepare coordinator for an authorized commit and the planned rules deploy boundary.
 
 ### Non-Scope
 
@@ -553,7 +551,7 @@ Not applicable. This is a rules-only task.
 - [ ] Run every final verification command listed below.
 - [ ] Update workflow state files with exact command, exit code, and expected signal summaries.
 - [ ] Update `rulesDeployStatus.changed` to match whether `firestore.rules` is in the reviewed diff.
-- [ ] Keep `authorizationBoundary.deployFirestoreRules` false.
+- [ ] Keep `authorizationBoundary.deployFirestoreRules` true while leaving `rulesDeployStatus.state` as `required` until deployment evidence exists.
 - [ ] Keep next action as coordinator review, user review, and commit boundary if still authorized.
 
 ### Verification
@@ -597,4 +595,4 @@ Not applicable unless UI files were modified after an approved plan update.
 
 ## Final Closeout Boundary
 
-After T5 Reviewer PASS and coordinator verification, the current authorization permits a commit only. It does not permit push, pull request creation, CI watch, merge, local main sync, or Firestore rules deploy.
+After T5 Reviewer PASS and coordinator verification, the current authorization permits commit and the planned Firestore rules deploy step. It does not permit push, pull request creation, CI watch, merge, or local main sync.
