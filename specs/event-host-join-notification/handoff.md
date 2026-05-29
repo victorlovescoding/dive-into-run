@@ -6,14 +6,14 @@
 - Feature slug: `event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Branch: `078-event-host-join-notification`.
-- Current head: `866aac79599098916ba9359c4a50da06e5797b97`.
+- Current head: `c82236149d3c4346bb4cda1f03de2566a18d8175`.
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T17:29:29Z`.
-- Current branch state: ahead 4 and behind `origin/main` by 0 after rebase.
+- Captured at: `2026-05-29T17:38:51Z`.
+- Current branch state: ahead 5 and behind `origin/main` by 0 after latest branch gate.
 - Profile: P4 new product feature.
-- Current phase: implementation authorized; branch gate satisfied; no active task yet.
-- Active task: none.
-- Active wave: none.
+- Current phase: implementation; T1 dispatched and in progress.
+- Active task: T1.
+- Active wave: 1.
 - Latest reviewer decision: `review_passed` by Plan Reviewer at `2026-05-29T16:45:00Z`; Plan matches approved spec, uses serialized Engineer/Reviewer slices, includes branch reconciliation gate, and has no findings.
 - Last verified commit: none.
 - Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`.
@@ -48,9 +48,9 @@
 
 ## Next Action
 
-Coordinator must run a fresh clean-state check and join-entrypoint search immediately before T1 dispatch.
+T1 Engineer is dispatched; wait for T1 Engineer report.
 
-The pre-implementation branch gate is satisfied as of the `2026-05-29T17:29:29Z` post-second-rebase check: the branch is ahead 4 and behind `origin/main` by 0. Implementation edits remain authorized by boundary, but no source-edit Engineer has started and the coordinator still must run the fresh clean-state check and join-entrypoint search immediately before T1 dispatch.
+The pre-T1 branch gate is satisfied as of the `2026-05-29T17:38:51Z` check: the branch is ahead 5 and behind `origin/main` by 0. Implementation edits remain authorized by boundary, and the fresh clean-state check plus join-entrypoint search completed before T1 dispatch.
 
 ## Latest Verification
 
@@ -64,6 +64,14 @@ The pre-implementation branch gate is satisfied as of the `2026-05-29T17:29:29Z`
 | `node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json` | 0 | status valid. |
 | `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced. |
 | `git diff --check` | 0 | No whitespace errors. |
+| `git status --short --branch --untracked-files=all` | 0 | Pre-T1 branch gate: branch `078-event-host-join-notification...origin/main [ahead 5]`, no modified files. |
+| `git rev-list --left-right --count HEAD...origin/main` | 0 | `5 0`. |
+| `rg -n "joinEvent\\(" src --glob '*.{js,jsx}'` | 0 | Join entrypoints are only `src/runtime/client/use-cases/event-use-cases.js:114`, `src/runtime/hooks/useEventParticipation.js:236`, and `src/runtime/hooks/useEventDetailParticipation.js:155`. |
+| `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced before T1 dispatch. |
+| `node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json` | 0 | status valid after T1 dispatch state update. |
+| `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced after T1 dispatch state update. |
+| `git diff --check` | 0 | No whitespace errors after T1 dispatch state update. |
+| `git status --short --branch --untracked-files=all` | 0 | Branch ahead 5 and behind 0; only workflow state files are modified after T1 dispatch state update. |
 
 ## Closeout Checklist
 
@@ -75,8 +83,8 @@ The pre-implementation branch gate is satisfied as of the `2026-05-29T17:29:29Z`
 - [x] Reviewer reviews the plan-ready workflow files.
 - [x] User authorizes implementation.
 - [x] Coordinator reconciled branch with latest `origin/main`; branch gate is satisfied as of the `2026-05-29T17:29:29Z` post-second-rebase check.
-- [ ] Coordinator runs a fresh clean-state check and join-entrypoint search before T1 dispatch.
-- [ ] Engineer and Reviewer pairs execute T1 through T5.
+- [x] Coordinator runs a fresh clean-state check and join-entrypoint search before T1 dispatch.
+- [ ] Engineer and Reviewer pairs execute T1 through T5; T1 Engineer is currently dispatched.
 - [ ] Verifier runs final integration gates.
 - [ ] Coordinator commits only if still authorized after Reviewer PASS and fresh verification.
 - [ ] Push, pull request, CI watch, merge, and local main sync remain blocked unless separately authorized.
@@ -84,7 +92,7 @@ The pre-implementation branch gate is satisfied as of the `2026-05-29T17:29:29Z`
 ## Blockers
 
 - No current workflow-state blocker.
-- Coordinator must still run a fresh clean-state check and join-entrypoint search immediately before dispatching T1.
+- T1 is in progress; wait for T1 Engineer report.
 
 ## Pitfalls
 

@@ -17,17 +17,17 @@
 - Branch: `078-event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Profile: P4 new product feature.
-- Current phase: implementation authorized; branch gate satisfied; no active task yet.
-- Active task: none.
-- Active wave: none.
-- Current head: `866aac79599098916ba9359c4a50da06e5797b97`.
+- Current phase: implementation; T1 dispatched and in progress.
+- Active task: T1.
+- Active wave: 1.
+- Current head: `c82236149d3c4346bb4cda1f03de2566a18d8175`.
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T17:29:29Z`.
-- Current branch state: ahead 4 and behind `origin/main` by 0 after rebase.
+- Captured at: `2026-05-29T17:38:51Z`.
+- Current branch state: ahead 5 and behind `origin/main` by 0 after latest branch gate.
 - Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`.
 - Latest reviewer decision: `review_passed` by Plan Reviewer at `2026-05-29T16:45:00Z`; Plan matches approved spec, uses serialized Engineer/Reviewer slices, includes branch reconciliation gate, and has no findings.
-- Latest branch-state sync: branch gate is satisfied as of `2026-05-29T17:29:29Z`; no active task is started yet.
-- Next action: coordinator must run a fresh clean-state check and join-entrypoint search immediately before T1 dispatch.
+- Latest branch-state sync: branch gate is satisfied as of `2026-05-29T17:38:51Z`; T1 is dispatched.
+- Next action: wait for T1 Engineer report.
 
 ## Plan Review Evidence
 
@@ -80,13 +80,13 @@ git status --short --branch --untracked-files=all
 
 Expected signal before source dispatch: output must not report the branch as behind `origin/main` and must not show unreviewed non-workflow changes.
 
-As of the `2026-05-29T17:29:29Z` post-second-rebase check, the branch gate is satisfied: the branch is ahead 4 and behind `origin/main` by 0.
+As of the `2026-05-29T17:38:51Z` pre-T1 dispatch check, the branch gate is satisfied: the branch is ahead 5 and behind `origin/main` by 0.
 
-Coordinator still must run a fresh clean-state check and join-entrypoint search immediately before T1 dispatch.
+The required fresh clean-state check and join-entrypoint search were completed before T1 dispatch.
 
 ## Dependency Graph and Waves
 
-- Wave 0: Gate G0, coordinator-owned, no source edits; branch gate satisfied as of `2026-05-29T17:29:29Z`, pending the fresh clean-state check and join-entrypoint search immediately before T1 dispatch.
+- Wave 0: Gate G0, coordinator-owned, no source edits; branch gate satisfied as of `2026-05-29T17:38:51Z`, and the fresh clean-state check and join-entrypoint search completed before T1 dispatch.
 - Wave 1: T1 notification type, message, and link primitives.
 - Wave 2: T2 host-join notification use case.
 - Wave 3: T3 join-entrypoint integration.
@@ -97,12 +97,19 @@ All waves are serialized. T1 is foundational. T2 depends on T1. T3 depends on T2
 
 ## Task T1: Notification Type, Message, and Link Primitives
 
-- State: `todo`
+- State: `in_progress`
 - Attempt: 1
 - Wave: 1
 - Engineer: Notification Service Engineer
 - Reviewer: Notification Service Reviewer
-- Dependencies: Gate G0 branch state is satisfied as of `2026-05-29T17:29:29Z`; coordinator must run a fresh clean-state check and join-entrypoint search immediately before dispatch.
+- Dependencies: Gate G0 branch state is satisfied as of `2026-05-29T17:38:51Z`; the fresh clean-state check and join-entrypoint search completed before dispatch.
+
+### Dispatch Evidence
+
+- `git status --short --branch --untracked-files=all` exit 0: branch `078-event-host-join-notification...origin/main [ahead 5]`, no modified files.
+- `git rev-list --left-right --count HEAD...origin/main` exit 0: `5 0`.
+- `rg -n "joinEvent\\(" src --glob '*.{js,jsx}'` exit 0: join entrypoints remain `src/runtime/client/use-cases/event-use-cases.js:114`, `src/runtime/hooks/useEventParticipation.js:236`, and `src/runtime/hooks/useEventDetailParticipation.js:155`.
+- `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` exit 0: workflow state synced before dispatch.
 
 ### Owned Files
 
