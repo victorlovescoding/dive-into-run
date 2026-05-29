@@ -4,8 +4,8 @@
   "branch": "078-event-host-join-notification",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification",
   "phase": "implementation",
-  "activeTask": "T4",
-  "activeWave": 4,
+  "activeTask": "T5",
+  "activeWave": 5,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,21 +18,22 @@
   },
   "currentHead": {
     "branch": "078-event-host-join-notification",
-    "commit": "0b66da0088417d3bb6becdefeab76ef7c06c1fae",
-    "capturedAt": "2026-05-29T19:07:14Z",
-    "summary": "Current HEAD after the T3 implementation commit is Notify hosts when runners join events; current branch is ahead 11 and behind origin/main by 0. T3 is committed after Engineer plus spec and code-quality Reviewer PASS. T4 is dispatched and in progress."
+    "commit": "e6ad1b4295c98a86eab7324a682dbca7fb75e941",
+    "capturedAt": "2026-05-29T19:18:20Z",
+    "summary": "Current HEAD before the T4 implementation commit is Record notification T4 dispatch; current branch is ahead 12 and behind origin/main by 0. T4 implementation is reviewed after Engineer plus spec and security/code-quality Reviewer PASS but is not yet committed. Dirty reviewed scope is modified firestore.rules and untracked tests/server/firestore/notification-rules.test.js."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "a9ec0d5a2c839764823f274723b0b806123b3965",
-    "capturedAt": "2026-05-29T19:07:14Z",
-    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 11 and behind this ref by 0."
+    "capturedAt": "2026-05-29T19:18:20Z",
+    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 12 and behind this ref by 0."
   },
   "completedTasks": [
     "T1",
     "T2",
-    "T3"
+    "T3",
+    "T4"
   ],
   "tasks": [
     {
@@ -391,7 +392,7 @@
     {
       "id": "T4",
       "title": "Firestore rules allowlist and rules tests",
-      "state": "in_progress",
+      "state": "completed",
       "attempt": 1,
       "wave": 4,
       "engineer": "Security Rules Engineer",
@@ -441,19 +442,34 @@
       ],
       "verification": [
         {
-          "command": "firebase emulators:exec --only firestore --project demo-test \"npx vitest run --project server tests/server/firestore/notification-rules.test.js\"",
-          "expectedSignal": "Before implementation valid event_host_joined create is rejected by type allowlist. After implementation the command passes.",
-          "lastRun": null
+          "command": "firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project server tests/server/firestore/notification-rules.test.js\"",
+          "expectedSignal": "Before implementation valid event_host_joined create is rejected by type allowlist. After implementation the command passes. The original --only firestore command exits before tests load because the harness requires FIRESTORE_EMULATOR_HOST and FIREBASE_AUTH_EMULATOR_HOST; that is not a product or rules failure.",
+          "lastRun": {
+            "command": "firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project server tests/server/firestore/notification-rules.test.js\"",
+            "exitCode": 0,
+            "summary": "Focused T4 server Vitest rules suite passed: 1 file, 5 tests.",
+            "verifiedAt": "2026-05-29T19:18:20Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Pass with no lint errors in changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed-file lint passed with only the existing React version warning.",
+            "verifiedAt": "2026-05-29T19:18:20Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Pass or report no changed-file type errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type check exited 0 with no changed-file type errors.",
+            "verifiedAt": "2026-05-29T19:18:20Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -469,12 +485,29 @@
         "firestore.indexes.json is changed without a proven query need.",
         "The task claims rules are deployed."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T4 Spec Reviewer and T4 Security/Code Quality Reviewer",
+        "summary": "Spec Reviewer reported no findings: only allowlist addition at firestore rules around notification create type, full test covers valid create and required rejection cases, auth+firestore emulator command passed, original firestore-only command fails before tests due to harness env requirement, and no deploy. Security/Code Quality Reviewer reported no blocking findings: rules context keeps existing create constraints and read/update/delete unchanged, notification schema broader fields remain existing repo posture and are not broadened by T4, and no deploy.",
+        "decidedAt": "2026-05-29T19:18:20Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "Security Rules Engineer changed only firestore.rules and tests/server/firestore/notification-rules.test.js. Added event_host_joined to the notification create type allowlist only; preserved signed-in actor, non-self recipient, actorUid auth uid, read false, and createdAt request.time; no read/update/delete broadening; no index/source/workflow/config/docs changes by Engineer; no deploy. Tests cover valid actor-to-host create succeeds, self-notification rejects, wrong actor uid rejects, client timestamp rejects, and read true rejects.",
+        "reviewerReport": "T4 Spec Reviewer passed with no findings, verifying only allowlist addition at firestore rules around notification create type, full test covers valid create and required rejection cases, auth+firestore emulator command passed, original firestore-only command fails before tests due to harness env requirement, and no deploy. T4 Security/Code Quality Reviewer passed with no blocking findings, verifying rules context keeps existing create constraints and read/update/delete unchanged, notification schema broader fields remain existing repo posture and are not broadened by T4, and no deploy.",
+        "commandOutputSummary": [
+          "RED: firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project server tests/server/firestore/notification-rules.test.js\" exit 1: valid create failed PERMISSION_DENIED while 4 rejection tests passed.",
+          "GREEN: firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project server tests/server/firestore/notification-rules.test.js\" exit 0: 1 file, 5 tests passed.",
+          "npm run lint:changed exit 0: passed with only the existing React version warning.",
+          "npm run type-check:changed exit 0: no changed-file type errors.",
+          "Original firebase emulators:exec --only firestore command exits before tests load because the repo harness requires FIRESTORE_EMULATOR_HOST and FIREBASE_AUTH_EMULATOR_HOST; not a product or rules failure."
+        ],
+        "changedFilesSummary": [
+          "Modified firestore.rules.",
+          "Added tests/server/firestore/notification-rules.test.js.",
+          "No read/update/delete rule broadening.",
+          "No index/source/workflow/config/docs changes by Engineer.",
+          "No Firestore rules deploy."
+        ]
       }
     },
     {
@@ -534,7 +567,7 @@
           "lastRun": null
         },
         {
-          "command": "firebase emulators:exec --only firestore --project demo-test \"npx vitest run --project server tests/server/firestore/notification-rules.test.js\"",
+          "command": "firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project server tests/server/firestore/notification-rules.test.js\"",
           "expectedSignal": "Pass.",
           "lastRun": null
         },
@@ -601,29 +634,41 @@
     {
       "command": "git log -1 --format=%H%x09%s",
       "exitCode": 0,
-      "summary": "Current HEAD is 0b66da0088417d3bb6becdefeab76ef7c06c1fae with subject Notify hosts when runners join events.",
-      "verifiedAt": "2026-05-29T19:07:14Z"
+      "summary": "Current HEAD is e6ad1b4295c98a86eab7324a682dbca7fb75e941 with subject Record notification T4 dispatch.",
+      "verifiedAt": "2026-05-29T19:18:20Z"
     },
     {
       "command": "git status --short --branch --untracked-files=all",
       "exitCode": 0,
-      "summary": "Branch 078-event-host-join-notification...origin/main is ahead 11 and clean before the T4 dispatch-state update.",
-      "verifiedAt": "2026-05-29T19:07:14Z"
+      "summary": "Branch 078-event-host-join-notification...origin/main is ahead 12; dirty reviewed scope is modified firestore.rules and untracked tests/server/firestore/notification-rules.test.js.",
+      "verifiedAt": "2026-05-29T19:18:20Z"
     },
     {
       "command": "git rev-list --left-right --count HEAD...origin/main",
       "exitCode": 0,
-      "summary": "Branch divergence before the T4 dispatch-state update was 11 ahead and 0 behind origin/main.",
-      "verifiedAt": "2026-05-29T19:07:14Z"
+      "summary": "Branch divergence before the T4 implementation commit was 12 ahead and 0 behind origin/main.",
+      "verifiedAt": "2026-05-29T19:18:20Z"
     },
     {
-      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+      "command": "firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project server tests/server/firestore/notification-rules.test.js\"",
       "exitCode": 0,
-      "summary": "Workflow state synced after the T3 commit and before T4 dispatch.",
-      "verifiedAt": "2026-05-29T19:07:14Z"
+      "summary": "T4 GREEN: server Vitest passed, 1 file, 5 tests.",
+      "verifiedAt": "2026-05-29T19:18:20Z"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "Changed-file lint passed with only the existing React version warning.",
+      "verifiedAt": "2026-05-29T19:18:20Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "No changed-file type errors.",
+      "verifiedAt": "2026-05-29T19:18:20Z"
     }
   ],
-  "lastVerifiedCommit": "0b66da0088417d3bb6becdefeab76ef7c06c1fae",
+  "lastVerifiedCommit": "e6ad1b4295c98a86eab7324a682dbca7fb75e941",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -684,15 +729,21 @@
       "commit": "0b66da0088417d3bb6becdefeab76ef7c06c1fae",
       "summary": "Notify hosts when runners join events.",
       "committedAt": "2026-05-29T19:07:14Z"
+    },
+    {
+      "phase": "t4_dispatch",
+      "commit": "e6ad1b4295c98a86eab7324a682dbca7fb75e941",
+      "summary": "Record notification T4 dispatch.",
+      "committedAt": "2026-05-29T19:18:20Z"
     }
   ],
   "rulesDeployStatus": {
     "state": "required",
     "required": true,
-    "changed": false,
+    "changed": true,
     "evidence": [],
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-05-29T19:07:14Z"
+  "updatedAt": "2026-05-29T19:18:20Z"
 }
