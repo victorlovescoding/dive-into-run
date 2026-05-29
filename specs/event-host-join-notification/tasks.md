@@ -17,17 +17,17 @@
 - Branch: `078-event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Profile: P4 new product feature.
-- Current phase: implementation authorized; pre-implementation branch gate blocked.
+- Current phase: implementation authorized; branch gate satisfied; no active task yet.
 - Active task: none.
 - Active wave: none.
-- Current head: `7e1a79048a6cd6ccaee4a454fd208a2e0790029e`.
+- Current head: `866aac79599098916ba9359c4a50da06e5797b97`.
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T17:23:11Z`.
-- Current branch state: ahead 3 and behind `origin/main` by 3.
-- Phase commits: spec commit `07f982d023bd107747670bf0398d62176f53a5f7`; plan commit `48a4c3c30dbafce1587d3c3d77910b31ad086e60`.
+- Captured at: `2026-05-29T17:29:29Z`.
+- Current branch state: ahead 4 and behind `origin/main` by 0 after rebase.
+- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`.
 - Latest reviewer decision: `review_passed` by Plan Reviewer at `2026-05-29T16:45:00Z`; Plan matches approved spec, uses serialized Engineer/Reviewer slices, includes branch reconciliation gate, and has no findings.
-- Latest branch-state review rejection: live git status reports ahead 3 and behind 3 while workflow state still recorded the prior post-rebase gate as current.
-- Next action: coordinator must reconcile with latest `origin/main`, update workflow state, rerun validation, and only then dispatch T1.
+- Latest branch-state sync: branch gate is satisfied as of `2026-05-29T17:29:29Z`; no active task is started yet.
+- Next action: coordinator must run a fresh clean-state check and join-entrypoint search immediately before T1 dispatch.
 
 ## Plan Review Evidence
 
@@ -35,17 +35,20 @@
 - Reviewer: Plan Reviewer
 - Decided at: `2026-05-29T16:45:00Z`
 - Summary: Plan matches approved spec, uses serialized Engineer/Reviewer slices, includes branch reconciliation gate, and has no findings.
-- Verification evidence: historical plan-review evidence has been superseded by the current branch-block evidence in `status.json.lastVerification` and `handoff.md` latest verification.
+- Verification evidence: historical plan-review evidence has been superseded by the current post-second-rebase workflow sync evidence in `status.json.lastVerification` and `handoff.md` latest verification.
 
-## Branch Block Workflow State Sync Evidence
+## Post-Second-Rebase Workflow State Sync Evidence
 
 | Command | Exit | Signal |
 | --- | ---: | --- |
-| `git status --short --branch --untracked-files=all` | 0 | Branch ahead 3 and behind 3; only `handoff.md`, `status.json`, and `tasks.md` are modified. |
-| `git diff --name-status HEAD` | 0 | Only `specs/event-host-join-notification/handoff.md`, `specs/event-host-join-notification/status.json`, and `specs/event-host-join-notification/tasks.md` are modified. |
-| `git diff --check` | 0 | No whitespace errors. |
+| `git fetch origin main` | 0 | Fetched `origin/main` before the second rebase. |
+| `git rebase origin/main` | 0 | Rebase onto `origin/main` succeeded. |
+| `git status --short --branch --untracked-files=all` | 0 | Branch ahead 4 and behind 0; only workflow state files are modified after sync. |
+| `git rev-list --left-right --count HEAD...origin/main` | 0 | `4 0`. |
+| `git log --oneline --decorate --max-count=6 HEAD` | 0 | Top commits are `866aac7`, `44c11ca`, `472bebc`, `45d25c0`, then `origin/main` `a9ec0d5`. |
 | `node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json` | 0 | status valid. |
 | `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced. |
+| `git diff --check` | 0 | No whitespace errors. |
 
 ## Authorization Boundary
 
@@ -77,13 +80,13 @@ git status --short --branch --untracked-files=all
 
 Expected signal before source dispatch: output must not report the branch as behind `origin/main` and must not show unreviewed non-workflow changes.
 
-As of the prior `2026-05-29T16:58:59Z` post-rebase check, the branch gate was satisfied. As of the current `2026-05-29T17:23:11Z` check, the branch is ahead 3 and behind `origin/main` by 3, so the pre-implementation branch gate is unsatisfied and T1 source-edit dispatch is blocked.
+As of the `2026-05-29T17:29:29Z` post-second-rebase check, the branch gate is satisfied: the branch is ahead 4 and behind `origin/main` by 0.
 
-Coordinator must reconcile with the latest `origin/main` using an explicitly authorized method, update `status.json` head snapshots, rerun workflow state validation, and only then dispatch implementation.
+Coordinator still must run a fresh clean-state check and join-entrypoint search immediately before T1 dispatch.
 
 ## Dependency Graph and Waves
 
-- Wave 0: Gate G0, coordinator-owned, no source edits; currently blocked because the branch is behind `origin/main` by 3.
+- Wave 0: Gate G0, coordinator-owned, no source edits; branch gate satisfied as of `2026-05-29T17:29:29Z`, pending the fresh clean-state check and join-entrypoint search immediately before T1 dispatch.
 - Wave 1: T1 notification type, message, and link primitives.
 - Wave 2: T2 host-join notification use case.
 - Wave 3: T3 join-entrypoint integration.
@@ -99,7 +102,7 @@ All waves are serialized. T1 is foundational. T2 depends on T1. T3 depends on T2
 - Wave: 1
 - Engineer: Notification Service Engineer
 - Reviewer: Notification Service Reviewer
-- Dependencies: Gate G0 must be reconciled and satisfied after the current ahead 3/behind 3 branch block clears.
+- Dependencies: Gate G0 branch state is satisfied as of `2026-05-29T17:29:29Z`; coordinator must run a fresh clean-state check and join-entrypoint search immediately before dispatch.
 
 ### Owned Files
 
