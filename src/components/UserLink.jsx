@@ -63,7 +63,14 @@ export default function UserLink({
   return (
     <Link href={`/users/${uid}`} className={linkClassName} aria-label={name}>
       {showAvatar && (
-        <Image src={avatarSrc} alt={name} width={size} height={size} className={styles.avatar} />
+        <Image
+          src={avatarSrc}
+          alt={name}
+          width={size}
+          height={size}
+          className={styles.avatar}
+          style={{ width: size, height: size }}
+        />
       )}
       {showName && <span className={styles.name}>{name}</span>}
     </Link>
