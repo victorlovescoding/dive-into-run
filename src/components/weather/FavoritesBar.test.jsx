@@ -18,10 +18,10 @@ vi.mock('@/runtime/client/use-cases/weather-location-use-cases', () => ({
 }));
 
 const FAVORITE = {
-  id: 'taipei-xinyi',
+  id: 'taipei-test',
   countyCode: 'TPE',
   countyName: '臺北市',
-  townshipCode: 'TPE-Xinyi',
+  townshipCode: 'TPE-Test',
   townshipName: '信義區',
   displaySuffix: null,
 };
