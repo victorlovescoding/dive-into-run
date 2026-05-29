@@ -4,8 +4,8 @@
   "branch": "078-event-host-join-notification",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification",
   "phase": "implementation",
-  "activeTask": "T3",
-  "activeWave": 3,
+  "activeTask": "T4",
+  "activeWave": 4,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,20 +18,21 @@
   },
   "currentHead": {
     "branch": "078-event-host-join-notification",
-    "commit": "98a54b38a0a3de78e0a9594a8a143a21fc0b632a",
-    "capturedAt": "2026-05-29T18:43:44Z",
-    "summary": "T2 implementation is committed as Add event host join use case; current branch is ahead 9 and behind origin/main by 0 before T3 dispatch-state update. Active task T3 is dispatched and in progress."
+    "commit": "01e803132f2374c41df4efa51ba8c700d0810055",
+    "capturedAt": "2026-05-29T19:00:38Z",
+    "summary": "Current HEAD before T3 implementation commit is Record notification T3 dispatch; current branch is ahead 10 and behind origin/main by 0. T3 is completed after Engineer plus spec and code-quality Reviewer PASS. Active task advances to T4."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "a9ec0d5a2c839764823f274723b0b806123b3965",
-    "capturedAt": "2026-05-29T18:43:44Z",
-    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 9 and behind this ref by 0."
+    "capturedAt": "2026-05-29T19:00:38Z",
+    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 10 and behind this ref by 0."
   },
   "completedTasks": [
     "T1",
-    "T2"
+    "T2",
+    "T3"
   ],
   "tasks": [
     {
@@ -270,7 +271,7 @@
     {
       "id": "T3",
       "title": "Join entrypoint integration",
-      "state": "in_progress",
+      "state": "completed",
       "attempt": 1,
       "wave": 3,
       "engineer": "Runtime Join Engineer",
@@ -322,17 +323,32 @@
         {
           "command": "npx vitest run --project browser src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx",
           "expectedSignal": "Before implementation the command fails because joined paths do not notify. After implementation the command passes.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project browser src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx",
+            "exitCode": 0,
+            "summary": "Focused T3 browser Vitest suite passed: 2 files, 14 tests.",
+            "verifiedAt": "2026-05-29T19:00:38Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Pass with no lint errors in changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed-file lint passed with only the existing React version warning.",
+            "verifiedAt": "2026-05-29T19:00:38Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Pass or report no changed-file type errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type check exited 0 with no changed-file type errors.",
+            "verifiedAt": "2026-05-29T19:00:38Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -348,12 +364,28 @@
         "A non-new join outcome notifies.",
         "Existing local counters or membership state regress."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T3 Spec Reviewer and T3 Code Quality Reviewer",
+        "summary": "Spec Reviewer reported no blocking findings and verified only hook/test files changed, notifier calls are limited to joined branches, leave paths do not notify, required outcome tests exist, and focused Vitest/lint/type-check passed. Code Quality Reviewer passed after the previous rejection was fixed: leave handlers are invoked and assert no notification, rejection tests assert local joined state remains updated, and no T3 quality blockers remain.",
+        "decidedAt": "2026-05-29T19:00:38Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "Runtime Join Engineer changed only src/runtime/hooks/useEventDetailParticipation.js, src/runtime/hooks/useEventParticipation.js, src/runtime/hooks/useEventDetailParticipation.test.jsx, and src/runtime/hooks/useEventParticipation.test.jsx. Detail and list join handlers call notifyEventHostJoined(eventId, event.title || '', event.hostUid, payload) only after joinEvent returns ok: true and status: joined; no notify for already_joined, full, failed result, leave path, or host self-join; notification rejection is caught/logged with console.error('建立主揪報名通知失敗:', error) and remains non-blocking/invisible; local joined state/counters remain updated.",
+        "reviewerReport": "T3 Spec Reviewer passed with no blocking findings, verifying only hook/test files changed/untracked, notifier imported/called only inside joined branch for both entrypoints, leave paths have no notification call, tests cover success payload/already_joined/full/failed/leave/host self-join/rejection for both entrypoints, focused Vitest 14 passed, and lint/type-check passed. T3 Code Quality Reviewer passed after the previous rejection was fixed: leave handlers are invoked and assert no notification; notification rejection tests assert local joined state remains updated; no remaining T3 quality blockers.",
+        "commandOutputSummary": [
+          "TDD RED: initial focused T3 test run failed with 4 failures because notifier calls and rejection log were missing. After the code-quality rejection fix, a new state assertion initially failed in the list rejection test because the test helper awaited membership lookup; the test helper was fixed, with product code unchanged in that fix.",
+          "npx vitest run --project browser src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx exit 0: 2 files, 14 tests passed.",
+          "npm run lint:changed exit 0: passed with only the existing React version warning.",
+          "npm run type-check:changed exit 0: no changed-file type errors."
+        ],
+        "changedFilesSummary": [
+          "Modified src/runtime/hooks/useEventDetailParticipation.js.",
+          "Modified src/runtime/hooks/useEventParticipation.js.",
+          "Added src/runtime/hooks/useEventDetailParticipation.test.jsx.",
+          "Added src/runtime/hooks/useEventParticipation.test.jsx.",
+          "No source or test files outside the T3 owned file set were reported by fresh coordinator status."
+        ]
       }
     },
     {
@@ -565,37 +597,37 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "git log -1 --format=%H%x09%s",
+      "command": "npx vitest run --project browser src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx",
       "exitCode": 0,
-      "summary": "Current HEAD is 98a54b38a0a3de78e0a9594a8a143a21fc0b632a with subject Add event host join use case.",
-      "verifiedAt": "2026-05-29T18:43:44Z"
+      "summary": "T3 focused browser Vitest passed: 2 files, 14 tests.",
+      "verifiedAt": "2026-05-29T19:00:38Z"
     },
     {
-      "command": "git rev-list --left-right --count HEAD...origin/main",
+      "command": "npm run lint:changed",
       "exitCode": 0,
-      "summary": "Branch divergence before the T3 dispatch-state update was 9 ahead and 0 behind origin/main.",
-      "verifiedAt": "2026-05-29T18:43:44Z"
+      "summary": "Changed-file lint passed with only the existing React version warning.",
+      "verifiedAt": "2026-05-29T19:00:38Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "Changed-file type check exited 0 with no changed-file type errors.",
+      "verifiedAt": "2026-05-29T19:00:38Z"
     },
     {
       "command": "git status --short --branch --untracked-files=all",
       "exitCode": 0,
-      "summary": "Branch 078-event-host-join-notification...origin/main was ahead 9 with clean status before the T3 dispatch-state update.",
-      "verifiedAt": "2026-05-29T18:43:44Z"
+      "summary": "Branch 078-event-host-join-notification...origin/main is ahead 10 and behind 0; modified T3 hook files and untracked T3 hook test files match reviewed scope.",
+      "verifiedAt": "2026-05-29T19:00:38Z"
     },
     {
-      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+      "command": "git rev-list --left-right --count HEAD...origin/main",
       "exitCode": 0,
-      "summary": "Workflow state synced after the T2 commit and before T3 dispatch.",
-      "verifiedAt": "2026-05-29T18:43:44Z"
-    },
-    {
-      "command": "rg -n \"joinEvent\\\\(\" src --glob '*.{js,jsx}'",
-      "exitCode": 0,
-      "summary": "Current join entrypoints are src/runtime/client/use-cases/event-use-cases.js:114, src/runtime/hooks/useEventDetailParticipation.js:155, and src/runtime/hooks/useEventParticipation.js:236.",
-      "verifiedAt": "2026-05-29T18:43:44Z"
+      "summary": "Branch divergence before the T3 implementation commit was 10 ahead and 0 behind origin/main.",
+      "verifiedAt": "2026-05-29T19:00:38Z"
     }
   ],
-  "lastVerifiedCommit": "98a54b38a0a3de78e0a9594a8a143a21fc0b632a",
+  "lastVerifiedCommit": "01e803132f2374c41df4efa51ba8c700d0810055",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -644,6 +676,12 @@
       "commit": "98a54b38a0a3de78e0a9594a8a143a21fc0b632a",
       "summary": "Add event host join use case.",
       "committedAt": "2026-05-29T18:43:44Z"
+    },
+    {
+      "phase": "t3_dispatch",
+      "commit": "01e803132f2374c41df4efa51ba8c700d0810055",
+      "summary": "Record notification T3 dispatch.",
+      "committedAt": "2026-05-29T19:00:38Z"
     }
   ],
   "rulesDeployStatus": {
@@ -654,5 +692,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-05-29T18:43:44Z"
+  "updatedAt": "2026-05-29T19:00:38Z"
 }

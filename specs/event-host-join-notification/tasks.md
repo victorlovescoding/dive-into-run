@@ -17,17 +17,18 @@
 - Branch: `078-event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Profile: P4 new product feature.
-- Current phase: implementation; T1 and T2 completed, T2 reviewed PASS, T2 implementation committed, and T3 is dispatched/in progress.
-- Active task: T3.
-- Active wave: 3.
-- Current head before T3 dispatch-state update: `98a54b38a0a3de78e0a9594a8a143a21fc0b632a` (`Add event host join use case`).
+- Current phase: implementation; T1, T2, and T3 completed, T3 reviewed PASS, and T3 implementation is ready for coordinator commit.
+- Active task: T4.
+- Active wave: 4.
+- Current head before T3 implementation commit: `01e803132f2374c41df4efa51ba8c700d0810055` (`Record notification T3 dispatch`).
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T18:43:44Z`.
-- Current branch state before T3 dispatch-state update: ahead 9 and behind `origin/main` by 0; branch was clean after the T2 implementation commit.
-- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`.
-- Latest reviewer decision: T2 `review_passed` by T2 Spec Reviewer and T2 Code Quality Reviewer; T3 is dispatched/in progress.
-- Latest branch-state sync: T3 dispatch-state sync used the fresh coordinator evidence below; active task is T3.
-- Next action: T3 Join Entrypoint Integration Engineer implementation.
+- Captured at: `2026-05-29T19:00:38Z`.
+- Current branch state before T3 implementation commit: ahead 10 and behind `origin/main` by 0.
+- Current dirty reviewed scope: modified `src/runtime/hooks/useEventDetailParticipation.js` and `src/runtime/hooks/useEventParticipation.js`; untracked `src/runtime/hooks/useEventDetailParticipation.test.jsx` and `src/runtime/hooks/useEventParticipation.test.jsx`.
+- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`; T3 dispatch commit `01e803132f2374c41df4efa51ba8c700d0810055`.
+- Latest reviewer decision: T3 `review_passed` by T3 Spec Reviewer and T3 Code Quality Reviewer.
+- Latest branch-state sync: T3 completion workflow-state sync records Engineer plus spec and code-quality Reviewer PASS; active task advances to T4.
+- Next action: dispatch T4 Firestore Rules Allowlist and Rules Tests Engineer after coordinator pre-dispatch checks and T3 commit.
 
 ## Plan Review Evidence
 
@@ -59,6 +60,20 @@
 | `git rev-list --left-right --count HEAD...origin/main` | 0 | `9 0`. |
 | `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced after the T2 commit and before T3 dispatch. |
 | `rg -n "joinEvent\\(" src --glob '*.{js,jsx}'` | 0 | Current join entrypoints are `src/runtime/client/use-cases/event-use-cases.js:114`, `src/runtime/hooks/useEventDetailParticipation.js:155`, and `src/runtime/hooks/useEventParticipation.js:236`. |
+
+## T3 Completion Evidence
+
+- Engineer changed only T3 owned files: `src/runtime/hooks/useEventDetailParticipation.js`, `src/runtime/hooks/useEventParticipation.js`, `src/runtime/hooks/useEventDetailParticipation.test.jsx`, and `src/runtime/hooks/useEventParticipation.test.jsx`.
+- Behavior: detail and list join handlers call `notifyEventHostJoined(eventId, event.title || '', event.hostUid, payload)` only after `joinEvent` returns `ok: true` and `status: 'joined'`; no notify for `already_joined`, `full`, failed result, leave path, or host self-join; notification rejection is caught/logged with `console.error('建立主揪報名通知失敗:', error)` and remains non-blocking/invisible; local joined state/counters remain updated.
+- RED: initial focused T3 test run failed with 4 failures because notifier calls and rejection log were missing. After the code-quality rejection fix, a new state assertion initially failed in the list rejection test because the test helper awaited membership lookup; the test helper was fixed, with product code unchanged in that fix.
+- Spec Reviewer decision: `review_passed`, no blocking findings. Verified only hook/test files changed/untracked, notifier imported/called only inside joined branch for both entrypoints, leave paths have no notification call, tests cover success payload/already_joined/full/failed/leave/host self-join/rejection for both entrypoints, focused Vitest 14 passed, and lint/type-check passed.
+- Code Quality Reviewer decision: `review_passed`. Previous rejection fixed; leave handlers are invoked and assert no notification; notification rejection tests assert local joined state remains updated; no remaining T3 quality blockers.
+
+| Command | Exit | Signal |
+| --- | ---: | --- |
+| `npx vitest run --project browser src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx` | 0 | T3 focused browser Vitest passed: 2 files, 14 tests. |
+| `npm run lint:changed` | 0 | Changed-file lint passed with only the existing React version warning. |
+| `npm run type-check:changed` | 0 | No changed-file type errors. |
 
 ## Authorization Boundary
 
@@ -99,8 +114,8 @@ The required fresh clean-state check and join-entrypoint search were completed b
 - Wave 0: Gate G0, coordinator-owned, no source edits; branch gate satisfied as of `2026-05-29T17:38:51Z`, and the fresh clean-state check and join-entrypoint search completed before T1 dispatch.
 - Wave 1: T1 notification type, message, and link primitives. Completed after Engineer plus spec and code-quality Reviewer PASS.
 - Wave 2: T2 host-join notification use case. Completed after Engineer plus spec and code-quality Reviewer PASS.
-- Wave 3: T3 join-entrypoint integration. Dispatched/in progress after T2 commit and pre-dispatch checks.
-- Wave 4: T4 Firestore rules allowlist and rules tests.
+- Wave 3: T3 join-entrypoint integration. Completed after Engineer plus spec and code-quality Reviewer PASS.
+- Wave 4: T4 Firestore rules allowlist and rules tests. Next task after coordinator pre-dispatch checks and T3 commit.
 - Wave 5: T5 final integration verification and workflow state sync.
 
 All waves are serialized. T1 is foundational. T2 depends on T1. T3 depends on T2. T4 depends on T1. T5 depends on T2, T3, and T4 Reviewer PASS.
@@ -405,7 +420,7 @@ Reviewer scope notes:
 
 ## Task T3: Join Entrypoint Integration
 
-- State: `in_progress`
+- State: `completed`
 - Attempt: 1
 - Wave: 3
 - Engineer: Runtime Join Engineer
@@ -454,20 +469,20 @@ Reviewer scope notes:
 
 ### Engineer Steps
 
-- [ ] Write `src/runtime/hooks/useEventDetailParticipation.test.jsx` with mocked event use cases and notification use case.
-- [ ] Include a detail success test that calls `handleJoin` and expects:
+- [x] Write `src/runtime/hooks/useEventDetailParticipation.test.jsx` with mocked event use cases and notification use case.
+- [x] Include a detail success test that calls `handleJoin` and expects:
   - `joinEvent` called with event id and user payload.
   - `notifyEventHostJoined` called once with event id, title, host uid, and actor payload.
   - `showToast` called with `報名成功`.
-- [ ] Include detail negative tests for `already_joined`, `full`, failed result, host self-join, and rejected notification promise.
-- [ ] Write `src/runtime/hooks/useEventParticipation.test.jsx` with the same outcome matrix for `handleJoinClick`.
-- [ ] Run the focused hook tests and confirm they fail before implementation because notifier calls are missing.
-- [ ] Import `notifyEventHostJoined` in both hooks.
-- [ ] In each `status === 'joined'` branch, call the notifier without awaiting it and attach `.catch`.
-- [ ] Confirm `already_joined` still sets joined state and success toast without notifying.
-- [ ] Confirm rejected notification write logs to `console.error` and does not create an error toast.
-- [ ] Rerun focused hook tests until they pass.
-- [ ] Run changed lint and type-check.
+- [x] Include detail negative tests for `already_joined`, `full`, failed result, host self-join, and rejected notification promise.
+- [x] Write `src/runtime/hooks/useEventParticipation.test.jsx` with the same outcome matrix for `handleJoinClick`.
+- [x] Run the focused hook tests and confirm they fail before implementation because notifier calls are missing.
+- [x] Import `notifyEventHostJoined` in both hooks.
+- [x] In each `status === 'joined'` branch, call the notifier without awaiting it and attach `.catch`.
+- [x] Confirm `already_joined` still sets joined state and success toast without notifying.
+- [x] Confirm rejected notification write logs to `console.error` and does not create an error toast.
+- [x] Rerun focused hook tests until they pass.
+- [x] Run changed lint and type-check.
 
 ### Verification
 
@@ -482,6 +497,33 @@ Reviewer scope notes:
 ### Browser Evidence
 
 Not applicable. Hook behavior is covered by Vitest. If an Engineer modifies UI files, stop and request a plan update with Browser evidence.
+
+### Completion Evidence
+
+- Engineer report: Runtime Join Engineer changed only `src/runtime/hooks/useEventDetailParticipation.js`, `src/runtime/hooks/useEventParticipation.js`, `src/runtime/hooks/useEventDetailParticipation.test.jsx`, and `src/runtime/hooks/useEventParticipation.test.jsx`.
+- Behavior: detail and list join handlers call `notifyEventHostJoined(eventId, event.title || '', event.hostUid, payload)` only after `joinEvent` returns `ok: true` and `status: 'joined'`; no notify for `already_joined`, `full`, failed result, leave path, or host self-join; notification rejection is caught/logged with `console.error('建立主揪報名通知失敗:', error)` and remains non-blocking/invisible; local joined state/counters remain updated.
+- TDD RED: initial focused T3 test run failed with 4 failures because notifier calls and rejection log were missing. After the code-quality rejection fix, a new state assertion initially failed in the list rejection test because the test helper awaited membership lookup; the test helper was fixed, with product code unchanged in that fix.
+- Spec review: PASS with no blocking findings.
+- Code-quality review: PASS. Previous rejection fixed; leave handlers are invoked and assert no notification; notification rejection tests assert local joined state remains updated; no remaining T3 quality blockers.
+
+| Command | Exit | Signal |
+| --- | ---: | --- |
+| `npx vitest run --project browser src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx` | 0 | T3 focused browser Vitest passed: 2 files, 14 tests. |
+| `npm run lint:changed` | 0 | Changed-file lint passed with only the existing React version warning. |
+| `npm run type-check:changed` | 0 | No changed-file type errors. |
+
+Changed files summary:
+
+- Modified `src/runtime/hooks/useEventDetailParticipation.js`.
+- Modified `src/runtime/hooks/useEventParticipation.js`.
+- Added `src/runtime/hooks/useEventDetailParticipation.test.jsx`.
+- Added `src/runtime/hooks/useEventParticipation.test.jsx`.
+- No source or test files outside the T3 owned file set were reported by fresh coordinator status.
+
+Reviewer scope notes:
+
+- Spec Reviewer verified only hook/test files changed/untracked, notifier imported/called only inside joined branch for both entrypoints, leave paths have no notification call, tests cover success payload/already_joined/full/failed/leave/host self-join/rejection for both entrypoints, focused Vitest 14 passed, and lint/type-check passed.
+- Code Quality Reviewer verified the previous rejection was fixed; leave handlers are invoked and assert no notification; notification rejection tests assert local joined state remains updated.
 
 ### Reviewer PASS Criteria
 

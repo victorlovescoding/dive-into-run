@@ -8,6 +8,7 @@ import {
   joinEvent,
   leaveEvent,
 } from '@/runtime/client/use-cases/event-use-cases';
+import { notifyEventHostJoined } from '@/runtime/client/use-cases/notification-use-cases';
 /**
  * @typedef {import('@/service/event-service').EventData} EventData
  */
@@ -257,6 +258,12 @@ export default function useEventParticipation({
                   participantsCount: participantsCount + 1,
                 };
               }),
+            );
+
+            notifyEventHostJoined(eventId, event.title || '', event.hostUid, payload).catch(
+              (notifyError) => {
+                console.error('建立主揪報名通知失敗:', notifyError);
+              },
             );
           }
 
