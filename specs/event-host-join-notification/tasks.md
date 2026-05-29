@@ -17,14 +17,16 @@
 - Branch: `078-event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Profile: P4 new product feature.
-- Current phase: plan review passed.
+- Current phase: plan review passed; post-rebase branch gate satisfied.
 - Active task: none.
 - Active wave: none.
-- Current head: `7de82865957fe600d0fa84b98709615eb4ea19f0`.
-- Remote head: `0d974c3bc783f9785305c3e14a8886b720c0a52f` from `origin/main`.
-- Branch state at planning: ahead 1 and behind `origin/main` by 2.
+- Current head: `48a4c3c30dbafce1587d3c3d77910b31ad086e60`.
+- Remote head: `57aeaa0c4143c3c1224698f7a45dcebb9dacc719` from `origin/main`.
+- Captured at: `2026-05-29T16:58:59Z`.
+- Branch state after rebase: ahead 2 and behind `origin/main` by 0.
+- Phase commits: spec commit `07f982d023bd107747670bf0398d62176f53a5f7`; plan commit `48a4c3c30dbafce1587d3c3d77910b31ad086e60`.
 - Latest reviewer decision: `review_passed` by Plan Reviewer at `2026-05-29T16:45:00Z`; Plan matches approved spec, uses serialized Engineer/Reviewer slices, includes branch reconciliation gate, and has no findings.
-- Next action: commit the reviewed implementation plan if the commit boundary is still authorized, then get user confirmation before source-edit dispatch or branch reconciliation.
+- Next action: get user plan/source-edit approval if required by the current boundary, then dispatch T1 after fresh clean-state check and join-entrypoint search.
 
 ## Plan Review Evidence
 
@@ -33,6 +35,19 @@
 - Decided at: `2026-05-29T16:45:00Z`
 - Summary: Plan matches approved spec, uses serialized Engineer/Reviewer slices, includes branch reconciliation gate, and has no findings.
 - Verification evidence: synced to `status.json.lastVerification` and `handoff.md` latest verification.
+
+## Post-Rebase Workflow State Sync Evidence
+
+| Command | Exit | Signal |
+| --- | ---: | --- |
+| `git fetch origin main` | 0 | Fetched origin/main. |
+| `git rebase origin/main` | 0 | Rebase succeeded. |
+| `git status --short --branch --untracked-files=all` | 0 | Branch ahead 2 and not behind; only workflow state files modified after sync. |
+| `git rev-list --left-right --count HEAD...origin/main` | 0 | Output: `2 0`. |
+| `git log --oneline --decorate --max-count=5 HEAD` | 0 | HEAD at plan commit `48a4c3c`, then spec commit `07f982d`, then `origin/main` `57aeaa0`. |
+| `node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json` | 0 | status valid. |
+| `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced. |
+| `git diff --check` | 0 | No whitespace errors. |
 
 ## Authorization Boundary
 
@@ -62,9 +77,11 @@ Before dispatching Task T1 or any task with source, test, or rules owned files, 
 git status --short --branch --untracked-files=all
 ```
 
-Expected signal before source dispatch: output must not report the branch as behind `origin/main`.
+Expected signal before source dispatch: output must not report the branch as behind `origin/main` and must not show unreviewed non-workflow changes.
 
-If the branch still reports behind `origin/main`, source dispatch is blocked. Coordinator must reconcile with the latest `origin/main` using an explicitly authorized method, update `status.json` head snapshots, rerun workflow state validation, and only then dispatch implementation. This Planner did not rebase or reconcile the branch.
+As of the `2026-05-29T16:58:59Z` post-rebase check, the branch is ahead 2 and behind `origin/main` by 0, so the pre-implementation branch gate is satisfied. Before dispatching T1, coordinator still must get explicit source-edit authorization if required by the current boundary, run a fresh clean-state check, run the join-entrypoint search, and update normal task state for dispatch.
+
+If a fresh check later reports behind `origin/main`, source dispatch is blocked. Coordinator must reconcile with the latest `origin/main` using an explicitly authorized method, update `status.json` head snapshots, rerun workflow state validation, and only then dispatch implementation.
 
 ## Dependency Graph and Waves
 

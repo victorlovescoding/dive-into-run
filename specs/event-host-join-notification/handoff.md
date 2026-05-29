@@ -6,17 +6,17 @@
 - Feature slug: `event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Branch: `078-event-host-join-notification`.
-- Current head: `7de82865957fe600d0fa84b98709615eb4ea19f0`.
-- Remote head: `0d974c3bc783f9785305c3e14a8886b720c0a52f` from `origin/main`.
-- Captured at: `2026-05-29T16:45:00Z`.
-- Branch state at planning: ahead 1 and behind `origin/main` by 2.
+- Current head: `48a4c3c30dbafce1587d3c3d77910b31ad086e60`.
+- Remote head: `57aeaa0c4143c3c1224698f7a45dcebb9dacc719` from `origin/main`.
+- Captured at: `2026-05-29T16:58:59Z`.
+- Branch state after rebase: ahead 2 and behind `origin/main` by 0.
 - Profile: P4 new product feature.
 - Current phase: plan review passed.
 - Active task: none.
 - Active wave: none.
 - Latest reviewer decision: `review_passed` by Plan Reviewer at `2026-05-29T16:45:00Z`; Plan matches approved spec, uses serialized Engineer/Reviewer slices, includes branch reconciliation gate, and has no findings.
 - Last verified commit: none.
-- Phase commits: spec commit `7de82865957fe600d0fa84b98709615eb4ea19f0`.
+- Phase commits: spec commit `07f982d023bd107747670bf0398d62176f53a5f7`; plan commit `48a4c3c30dbafce1587d3c3d77910b31ad086e60`.
 - Rules deploy status: required later; not changed in Planner stage, not deployed, not authorized.
 - Incidents: none.
 - Blocked: no.
@@ -48,21 +48,22 @@
 
 ## Next Action
 
-Coordinator should commit the reviewed implementation plan if the commit boundary is still authorized.
+Coordinator should get user plan/source-edit approval if required by the current boundary, then dispatch T1 after a fresh clean-state check and join-entrypoint search.
 
-After the plan commit, coordinator must get user confirmation before source-edit dispatch. Before dispatching Task T1 or any source-edit task, coordinator must run `git status --short --branch --untracked-files=all`; if the branch still reports behind `origin/main`, coordinator must reconcile with latest `origin/main` under explicit authorization and update workflow state before dispatch.
+The pre-implementation branch gate is satisfied as of the `2026-05-29T16:58:59Z` rebase check because the branch is ahead 2 and behind `origin/main` by 0. Implementation edits still require explicit user authorization, normal dispatch, and task state updates before any source-edit Engineer starts.
 
 ## Latest Verification
 
 | Command | Exit | Signal |
 | --- | ---: | --- |
-| `git status --short --branch --untracked-files=all` | 0 | Only four owned planning files modified; branch ahead 1 and behind 2. |
-| `git diff --name-status HEAD` | 0 | Modified files limited to `plan.md`, `tasks.md`, `handoff.md`, and `status.json`. |
-| `git diff --check` | 0 | No whitespace errors. |
+| `git fetch origin main` | 0 | Fetched origin/main. |
+| `git rebase origin/main` | 0 | Rebase succeeded. |
+| `git status --short --branch --untracked-files=all` | 0 | Branch ahead 2 and not behind; only workflow state files modified after sync. |
+| `git rev-list --left-right --count HEAD...origin/main` | 0 | Output: `2 0`. |
+| `git log --oneline --decorate --max-count=5 HEAD` | 0 | HEAD at plan commit `48a4c3c`, then spec commit `07f982d`, then `origin/main` `57aeaa0`. |
 | `node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json` | 0 | status valid. |
 | `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced. |
-| `rg -n 'TBD|TODO|<[^>]+>' specs/event-host-join-notification/plan.md specs/event-host-join-notification/tasks.md specs/event-host-join-notification/handoff.md specs/event-host-join-notification/status.json` | 1 | No placeholders matched. |
-| `rg -n "joinEvent\\(" src --glob '*.{js,jsx}'` | 0 | Only the use-case export and two planned runtime join handlers found. |
+| `git diff --check` | 0 | No whitespace errors. |
 
 ## Closeout Checklist
 
@@ -73,7 +74,8 @@ After the plan commit, coordinator must get user confirmation before source-edit
 - [x] `rulesDeployStatus.state` is `required`, `required` is true, and `changed` is false in Planner stage.
 - [x] Reviewer reviews the plan-ready workflow files.
 - [ ] User authorizes implementation.
-- [ ] Coordinator reconciles branch with latest `origin/main` if still behind before source-edit dispatch.
+- [x] Coordinator reconciled branch with latest `origin/main`; branch gate satisfied as of the post-rebase check.
+- [ ] Coordinator runs a fresh clean-state check and join-entrypoint search before T1 dispatch.
 - [ ] Engineer and Reviewer pairs execute T1 through T5.
 - [ ] Verifier runs final integration gates.
 - [ ] Coordinator commits only if still authorized after Reviewer PASS and fresh verification.
@@ -81,8 +83,8 @@ After the plan commit, coordinator must get user confirmation before source-edit
 
 ## Blockers
 
-- No blocker for plan review.
-- Source-edit dispatch is gated on branch reconciliation if `git status --short --branch --untracked-files=all` still reports behind `origin/main`.
+- No blocker for plan review or post-rebase branch state.
+- Source-edit dispatch is gated on explicit implementation authorization, fresh clean-state check, join-entrypoint search, and normal task dispatch/state updates.
 
 ## Pitfalls
 
@@ -91,4 +93,4 @@ After the plan commit, coordinator must get user confirmation before source-edit
 - Do not let notification failure roll back a successful join or show a failure toast to the joining user.
 - Do not place canonical implementation in `src/lib`.
 - Do not claim Firestore rules or product behavior are deployed until `rulesDeployStatus.state` is `deployed` with evidence.
-- Do not dispatch source-edit Engineers while branch state is still behind `origin/main`.
+- Do not dispatch source-edit Engineers without a fresh clean-state check and join-entrypoint search; if branch state is behind `origin/main` again, reconcile before dispatch.

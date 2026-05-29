@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "078-event-host-join-notification",
-    "commit": "7de82865957fe600d0fa84b98709615eb4ea19f0",
-    "capturedAt": "2026-05-29T16:40:43Z",
-    "summary": "Local branch head captured for plan-ready state. Branch is ahead 1 and behind origin/main by 2."
+    "commit": "48a4c3c30dbafce1587d3c3d77910b31ad086e60",
+    "capturedAt": "2026-05-29T16:58:59Z",
+    "summary": "Current branch is rebased onto origin/main and is ahead 2/behind 0."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "0d974c3bc783f9785305c3e14a8886b720c0a52f",
-    "capturedAt": "2026-05-29T16:40:43Z",
-    "summary": "Remote origin/main head captured for plan-ready state."
+    "commit": "57aeaa0c4143c3c1224698f7a45dcebb9dacc719",
+    "capturedAt": "2026-05-29T16:58:59Z",
+    "summary": "Remote origin/main head fetched before successful rebase."
   },
   "completedTasks": [],
   "tasks": [
@@ -500,55 +500,67 @@
   "blockedReason": null,
   "lastVerification": [
     {
+      "command": "git fetch origin main",
+      "exitCode": 0,
+      "summary": "Fetched origin/main.",
+      "verifiedAt": "2026-05-29T16:58:59Z"
+    },
+    {
+      "command": "git rebase origin/main",
+      "exitCode": 0,
+      "summary": "Rebase succeeded.",
+      "verifiedAt": "2026-05-29T16:58:59Z"
+    },
+    {
       "command": "git status --short --branch --untracked-files=all",
       "exitCode": 0,
-      "summary": "Only four owned planning files were modified; branch is ahead 1 and behind origin/main by 2.",
-      "verifiedAt": "2026-05-29T16:45:00Z"
+      "summary": "Branch is ahead 2 and not behind origin/main; only workflow state files are modified after sync.",
+      "verifiedAt": "2026-05-29T16:58:59Z"
     },
     {
-      "command": "git diff --name-status HEAD",
+      "command": "git rev-list --left-right --count HEAD...origin/main",
       "exitCode": 0,
-      "summary": "Modified files were limited to plan.md, tasks.md, handoff.md, and status.json.",
-      "verifiedAt": "2026-05-29T16:45:00Z"
+      "summary": "Output: 2 0.",
+      "verifiedAt": "2026-05-29T16:58:59Z"
     },
     {
-      "command": "git diff --check",
+      "command": "git log --oneline --decorate --max-count=5 HEAD",
       "exitCode": 0,
-      "summary": "No whitespace errors.",
-      "verifiedAt": "2026-05-29T16:45:00Z"
+      "summary": "HEAD is plan commit 48a4c3c, followed by spec commit 07f982d, followed by origin/main 57aeaa0.",
+      "verifiedAt": "2026-05-29T16:58:59Z"
     },
     {
       "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
       "exitCode": 0,
       "summary": "status.json is valid.",
-      "verifiedAt": "2026-05-29T16:45:00Z"
+      "verifiedAt": "2026-05-29T16:58:59Z"
     },
     {
       "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
       "exitCode": 0,
       "summary": "Workflow state is synced.",
-      "verifiedAt": "2026-05-29T16:45:00Z"
+      "verifiedAt": "2026-05-29T16:58:59Z"
     },
     {
-      "command": "rg -n 'TBD|TODO|<[^>]+>' specs/event-host-join-notification/plan.md specs/event-host-join-notification/tasks.md specs/event-host-join-notification/handoff.md specs/event-host-join-notification/status.json",
-      "exitCode": 1,
-      "summary": "No placeholders matched.",
-      "verifiedAt": "2026-05-29T16:45:00Z"
-    },
-    {
-      "command": "rg -n \"joinEvent\\\\(\" src --glob '*.{js,jsx}'",
+      "command": "git diff --check",
       "exitCode": 0,
-      "summary": "Only the use-case export and two planned runtime join handlers were found.",
-      "verifiedAt": "2026-05-29T16:45:00Z"
+      "summary": "No whitespace errors.",
+      "verifiedAt": "2026-05-29T16:58:59Z"
     }
   ],
   "lastVerifiedCommit": null,
   "phaseCommits": [
     {
       "phase": "spec",
-      "commit": "7de82865957fe600d0fa84b98709615eb4ea19f0",
-      "summary": "Approved event host join notification spec artifacts.",
-      "committedAt": "2026-05-30T00:32:35+08:00"
+      "commit": "07f982d023bd107747670bf0398d62176f53a5f7",
+      "summary": "Approved event host join notification spec artifacts after rebase.",
+      "committedAt": "2026-05-29T16:58:59Z"
+    },
+    {
+      "phase": "plan",
+      "commit": "48a4c3c30dbafce1587d3c3d77910b31ad086e60",
+      "summary": "Reviewed event host join notification implementation plan after rebase.",
+      "committedAt": "2026-05-29T16:58:59Z"
     }
   ],
   "rulesDeployStatus": {
@@ -559,5 +571,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-05-29T16:45:00Z"
+  "updatedAt": "2026-05-29T16:58:59Z"
 }
