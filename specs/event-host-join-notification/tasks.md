@@ -17,18 +17,18 @@
 - Branch: `078-event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Profile: P4 new product feature.
-- Current phase: implementation; T1, T2, T3, and T4 completed after Engineer plus spec and security/code-quality Reviewer PASS. T4 implementation is reviewed but not yet committed.
-- Active task: T5.
-- Active wave: 5.
-- Current HEAD before T4 implementation commit: `e6ad1b4295c98a86eab7324a682dbca7fb75e941` (`Record notification T4 dispatch`).
+- Current phase: final verification complete; ready for coordinator T5 state commit, then authorized Firestore rules deploy.
+- Active task: none; T5 is completed.
+- Active wave: none.
+- Current HEAD: `04b4067e99d980bbce8bec1502582be96e6bebeb` (`Allow event host join notifications`).
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T19:18:20Z`.
-- Current branch state before T4 implementation commit: `078-event-host-join-notification...origin/main [ahead 12]`; divergence `12 0` (ahead 12, behind 0).
-- Current dirty reviewed scope: modified `firestore.rules`; untracked `tests/server/firestore/notification-rules.test.js`.
-- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`; T3 dispatch commit `01e803132f2374c41df4efa51ba8c700d0810055`; T3 implementation commit `0b66da0088417d3bb6becdefeab76ef7c06c1fae`; T4 dispatch commit `e6ad1b4295c98a86eab7324a682dbca7fb75e941`.
-- Latest reviewer decision: T4 `review_passed` by T4 Spec Reviewer and T4 Security/Code Quality Reviewer.
-- Latest branch-state sync: workflow state synced after T4 Engineer and Reviewer PASS; T4 implementation remains uncommitted.
-- Next action: T5 final verification and workflow state sync after coordinator commits T4.
+- Captured at: `2026-05-29T19:26:37Z`.
+- Current branch state before T5 state commit: `078-event-host-join-notification...origin/main [ahead 13]`; divergence `13 0` (ahead 13, behind 0).
+- Current dirty reviewed scope: workflow state files only after T5 sync.
+- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`; T3 dispatch commit `01e803132f2374c41df4efa51ba8c700d0810055`; T3 implementation commit `0b66da0088417d3bb6becdefeab76ef7c06c1fae`; T4 dispatch commit `e6ad1b4295c98a86eab7324a682dbca7fb75e941`; T4 implementation commit `04b4067e99d980bbce8bec1502582be96e6bebeb`.
+- Latest reviewer decision: T5 `review_passed` by T5 Final Verification / Workflow State Engineer.
+- Latest branch-state sync: final verification and workflow state sync completed after T4 implementation commit; T5 state remains uncommitted.
+- Next action: coordinator commits T5 state, then runs authorized Firestore rules deploy and records deploy evidence.
 
 ## Plan Review Evidence
 
@@ -69,6 +69,20 @@
 | `git status --short --branch --untracked-files=all` | 0 | Branch `078-event-host-join-notification...origin/main [ahead 11]`; clean before the T4 dispatch-state update. |
 | `git rev-list --left-right --count HEAD...origin/main` | 0 | `11 0`. |
 | `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow state synced after the T3 commit and before T4 dispatch. |
+
+## T5 Final Verification Evidence
+
+| Command | Exit | Signal |
+| --- | ---: | --- |
+| `npx vitest run --project browser src/service/notification-service.test.js src/lib/notification-helpers.test.js src/runtime/client/use-cases/notification-use-cases.test.js src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx` | 0 | Final browser Vitest integration suite passed: 5 files, 29 tests. |
+| `firebase emulators:exec --only auth,firestore --project demo-test "npx vitest run --project server tests/server/firestore/notification-rules.test.js"` | 0 | Final auth+firestore emulator rules suite passed: 1 file, 5 tests. |
+| `npm run lint:changed` | 0 | Changed-file lint exited 0; no changed JS files to lint. |
+| `npm run type-check:changed` | 0 | Changed-file type check exited 0; no changed JS files to check. |
+| `npm run depcruise` | 0 | No dependency violations found across 1293 modules and 3029 dependencies; existing `MODULE_TYPELESS_PACKAGE_JSON` warning emitted for `specs/021-layered-dependency-architecture/test-bucket-policy.js`. |
+| `node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json` | 0 | `status.json` validated successfully. |
+| `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow companion files are synced. |
+| `git diff --check` | 0 | No whitespace errors. |
+| `git status --short --branch --untracked-files=all` | 0 | Branch `078-event-host-join-notification...origin/main [ahead 13]`; only workflow state files modified after T5 sync. |
 
 ## T3 Completion Evidence
 
@@ -675,7 +689,7 @@ Not applicable. This is a rules-only task.
 
 ## Task T5: Final Integration Verification and Workflow State Sync
 
-- State: `todo`
+- State: `completed`
 - Attempt: 1
 - Wave: 5
 - Engineer: Workflow State Engineer
@@ -714,12 +728,12 @@ Not applicable. This is a rules-only task.
 
 ### Engineer Steps
 
-- [ ] Confirm T1 through T4 are `review_passed`.
-- [ ] Run every final verification command listed below.
-- [ ] Update workflow state files with exact command, exit code, and expected signal summaries.
-- [ ] Update `rulesDeployStatus.changed` to match whether `firestore.rules` is in the reviewed diff.
-- [ ] Keep `authorizationBoundary.deployFirestoreRules` true while leaving `rulesDeployStatus.state` as `required` until deployment evidence exists.
-- [ ] Keep next action as coordinator review, user review, and commit boundary if still authorized.
+- [x] Confirm T1 through T4 are `review_passed`.
+- [x] Run every final verification command listed below.
+- [x] Update workflow state files with exact command, exit code, and expected signal summaries.
+- [x] Update `rulesDeployStatus.changed` to match whether `firestore.rules` is in the reviewed diff.
+- [x] Keep `authorizationBoundary.deployFirestoreRules` true while leaving `rulesDeployStatus.state` as `required` until deployment evidence exists.
+- [x] Keep next action as coordinator T5 state commit, then authorized Firestore rules deploy and deploy evidence recording.
 
 ### Verification
 
@@ -746,6 +760,26 @@ Not applicable. This is a rules-only task.
 
 Not applicable unless UI files were modified after an approved plan update.
 
+### Completion Evidence
+
+- T5 final verification and workflow state sync completed.
+- Current HEAD and last verified commit remain `04b4067e99d980bbce8bec1502582be96e6bebeb` (`Allow event host join notifications`) because this T5 state is not committed yet.
+- T1, T2, T3, T4, and T5 are completed in workflow state.
+- `rulesDeployStatus.state` remains `required`; `required` is `true`; `changed` is `true`; `deployedCommit` is `null`; deploy evidence is empty.
+- No Firestore rules deploy, push, pull request, CI watch, merge, local main sync, stage, or commit was run by T5.
+
+| Command | Exit | Signal |
+| --- | ---: | --- |
+| `npx vitest run --project browser src/service/notification-service.test.js src/lib/notification-helpers.test.js src/runtime/client/use-cases/notification-use-cases.test.js src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx` | 0 | Final browser Vitest integration suite passed: 5 files, 29 tests. |
+| `firebase emulators:exec --only auth,firestore --project demo-test "npx vitest run --project server tests/server/firestore/notification-rules.test.js"` | 0 | Final auth+firestore emulator rules suite passed: 1 file, 5 tests. |
+| `npm run lint:changed` | 0 | Changed-file lint exited 0; no changed JS files to lint. |
+| `npm run type-check:changed` | 0 | Changed-file type check exited 0; no changed JS files to check. |
+| `npm run depcruise` | 0 | No dependency violations found across 1293 modules and 3029 dependencies; existing `MODULE_TYPELESS_PACKAGE_JSON` warning emitted. |
+| `node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json` | 0 | `status.json` validated successfully. |
+| `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow companion files are synced. |
+| `git diff --check` | 0 | No whitespace errors. |
+| `git status --short --branch --untracked-files=all` | 0 | Branch `078-event-host-join-notification...origin/main [ahead 13]`; only workflow state files modified after T5 sync. |
+
 ### Reviewer PASS Criteria
 
 - Workflow state matches reviewed task outcomes.
@@ -762,4 +796,4 @@ Not applicable unless UI files were modified after an approved plan update.
 
 ## Final Closeout Boundary
 
-After T5 Reviewer PASS and coordinator verification, the current authorization permits commit and the planned Firestore rules deploy step. It does not permit push, pull request creation, CI watch, merge, or local main sync.
+After T5 Reviewer PASS and coordinator verification, the current authorization permits coordinator commit and the planned Firestore rules deploy step. It does not permit push, pull request creation, CI watch, merge, or local main sync.

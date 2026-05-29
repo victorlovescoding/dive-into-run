@@ -6,18 +6,18 @@
 - Feature slug: `event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Branch: `078-event-host-join-notification`.
-- Current HEAD before T4 implementation commit: `e6ad1b4295c98a86eab7324a682dbca7fb75e941` (`Record notification T4 dispatch`).
+- Current HEAD: `04b4067e99d980bbce8bec1502582be96e6bebeb` (`Allow event host join notifications`).
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T19:18:20Z`.
-- Current branch state before T4 implementation commit: `078-event-host-join-notification...origin/main [ahead 12]`; divergence `12 0` (ahead 12, behind 0).
-- Current dirty reviewed scope: modified `firestore.rules`; untracked `tests/server/firestore/notification-rules.test.js`.
+- Captured at: `2026-05-29T19:26:37Z`.
+- Current branch state before T5 state commit: `078-event-host-join-notification...origin/main [ahead 13]`; divergence `13 0` (ahead 13, behind 0).
+- Current dirty reviewed scope: workflow state files only after T5 sync.
 - Profile: P4 new product feature.
-- Current phase: implementation; T1, T2, T3, and T4 completed after Engineer plus spec and security/code-quality Reviewer PASS. T4 implementation is reviewed but not yet committed.
-- Active task: T5.
-- Active wave: 5.
-- Latest reviewer decision: T4 `review_passed` by T4 Spec Reviewer and T4 Security/Code Quality Reviewer.
-- Last verified commit: `e6ad1b4295c98a86eab7324a682dbca7fb75e941`.
-- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`; T3 dispatch commit `01e803132f2374c41df4efa51ba8c700d0810055`; T3 implementation commit `0b66da0088417d3bb6becdefeab76ef7c06c1fae`; T4 dispatch commit `e6ad1b4295c98a86eab7324a682dbca7fb75e941`.
+- Current phase: final verification complete; ready for coordinator T5 state commit, then authorized Firestore rules deploy.
+- Active task: none; T5 is completed.
+- Active wave: none.
+- Latest reviewer decision: T5 `review_passed` by T5 Final Verification / Workflow State Engineer.
+- Last verified commit: `04b4067e99d980bbce8bec1502582be96e6bebeb`.
+- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`; T1 implementation commit `468d9bd57846f00fa3bec966e88b4be1001375f1`; T2 dispatch commit `e1a15b05797b77e97200531eb1f8678ae352253a`; T2 implementation commit `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`; T3 dispatch commit `01e803132f2374c41df4efa51ba8c700d0810055`; T3 implementation commit `0b66da0088417d3bb6becdefeab76ef7c06c1fae`; T4 dispatch commit `e6ad1b4295c98a86eab7324a682dbca7fb75e941`; T4 implementation commit `04b4067e99d980bbce8bec1502582be96e6bebeb`.
 - Rules deploy status: required and changed by T4; not deployed; deployed commit is null and evidence is empty; deploy authorized for the planned rules deploy step/release boundary.
 - Incidents: none.
 - Blocked: no.
@@ -49,20 +49,23 @@
 
 ## Next Action
 
-T5 final verification and workflow state sync after coordinator commits T4.
+Coordinator commits T5 workflow state, then runs the authorized Firestore rules deploy step and records deploy evidence.
 
-T1 is committed as `468d9bd57846f00fa3bec966e88b4be1001375f1`. T2 is committed as `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`. T3 is committed as `0b66da0088417d3bb6becdefeab76ef7c06c1fae`. Current HEAD before the T4 implementation commit is `e6ad1b4295c98a86eab7324a682dbca7fb75e941`. T4 is completed after Security Rules Engineer plus T4 Spec Reviewer and T4 Security/Code Quality Reviewer PASS, but the T4 implementation is not yet committed. T5 is not completed. Push, pull request, CI watch, merge, and local main sync remain unauthorized.
+T1 is committed as `468d9bd57846f00fa3bec966e88b4be1001375f1`. T2 is committed as `98a54b38a0a3de78e0a9594a8a143a21fc0b632a`. T3 is committed as `0b66da0088417d3bb6becdefeab76ef7c06c1fae`. T4 is committed as `04b4067e99d980bbce8bec1502582be96e6bebeb`. T5 is completed in workflow state but not yet committed. Push, pull request, CI watch, merge, and local main sync remain unauthorized. Firestore rules deploy is authorized as a separate next step but has not been run.
 
 ## Latest Verification
 
 | Command | Exit | Signal |
 | --- | ---: | --- |
-| `git log -1 --format=%H%x09%s` | 0 | Current HEAD is `e6ad1b4295c98a86eab7324a682dbca7fb75e941` with subject `Record notification T4 dispatch`. |
-| `git status --short --branch --untracked-files=all` | 0 | Branch `078-event-host-join-notification...origin/main [ahead 12]`; dirty reviewed scope is modified `firestore.rules` and untracked `tests/server/firestore/notification-rules.test.js`. |
-| `git rev-list --left-right --count HEAD...origin/main` | 0 | `12 0`. |
-| `firebase emulators:exec --only auth,firestore --project demo-test "npx vitest run --project server tests/server/firestore/notification-rules.test.js"` | 0 | T4 GREEN: server Vitest passed, 1 file, 5 tests. |
-| `npm run lint:changed` | 0 | Changed-file lint passed with only the existing React version warning. |
-| `npm run type-check:changed` | 0 | No changed-file type errors. |
+| `npx vitest run --project browser src/service/notification-service.test.js src/lib/notification-helpers.test.js src/runtime/client/use-cases/notification-use-cases.test.js src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx` | 0 | Final browser Vitest integration suite passed: 5 files, 29 tests. |
+| `firebase emulators:exec --only auth,firestore --project demo-test "npx vitest run --project server tests/server/firestore/notification-rules.test.js"` | 0 | Final auth+firestore emulator rules suite passed: 1 file, 5 tests. |
+| `npm run lint:changed` | 0 | Changed-file lint exited 0; no changed JS files to lint. |
+| `npm run type-check:changed` | 0 | Changed-file type check exited 0; no changed JS files to check. |
+| `npm run depcruise` | 0 | No dependency violations found across 1293 modules and 3029 dependencies; existing `MODULE_TYPELESS_PACKAGE_JSON` warning emitted. |
+| `node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json` | 0 | `status.json` validated successfully. |
+| `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Workflow companion files are synced. |
+| `git diff --check` | 0 | No whitespace errors. |
+| `git status --short --branch --untracked-files=all` | 0 | Branch `078-event-host-join-notification...origin/main [ahead 13]`; only workflow state files modified after T5 sync. |
 
 ## Closeout Checklist
 
@@ -79,10 +82,10 @@ T1 is committed as `468d9bd57846f00fa3bec966e88b4be1001375f1`. T2 is committed a
 - [x] T2 Engineer and Reviewers completed T2.
 - [x] T3 Engineer and Reviewers completed T3.
 - [x] T4 Security Rules Engineer completes implementation and Reviewer PASS.
-- [ ] Engineer and Reviewer pairs execute T5.
-- [ ] Verifier runs final integration gates.
-- [ ] Coordinator commits only if still authorized after Reviewer PASS and fresh verification.
-- [ ] Push, pull request, CI watch, merge, and local main sync remain blocked unless separately authorized.
+- [x] Engineer and Reviewer pairs execute T5.
+- [x] Verifier runs final integration gates.
+- [ ] Coordinator commits T5 state if still authorized after Reviewer PASS and fresh verification.
+- [x] Push, pull request, CI watch, merge, and local main sync remain blocked unless separately authorized.
 
 ## T2 Completion Evidence
 
@@ -120,7 +123,7 @@ T1 is committed as `468d9bd57846f00fa3bec966e88b4be1001375f1`. T2 is committed a
 ## Blockers
 
 - No current workflow-state blocker.
-- T1, T2, and T3 are committed. T4 is completed and reviewed but not yet committed. T5 remains pending.
+- T1, T2, T3, and T4 are committed. T5 is completed in workflow state but not yet committed. Firestore rules deploy remains required, authorized as a separate next step, and not yet run.
 
 ## Pitfalls
 
