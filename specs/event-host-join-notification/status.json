@@ -3,7 +3,7 @@
   "feature": "event-host-join-notification",
   "branch": "078-event-host-join-notification",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification",
-  "phase": "spec_review_passed",
+  "phase": "plan_review_passed",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,73 +18,539 @@
   },
   "currentHead": {
     "branch": "078-event-host-join-notification",
-    "commit": "cc2c4874cc5c1af78167a8d6fb1f590194491461",
-    "capturedAt": "2026-05-29T16:16:42Z",
-    "summary": "Local branch head captured for spec artifact creation."
+    "commit": "7de82865957fe600d0fa84b98709615eb4ea19f0",
+    "capturedAt": "2026-05-29T16:40:43Z",
+    "summary": "Local branch head captured for plan-ready state. Branch is ahead 1 and behind origin/main by 2."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "cc2c4874cc5c1af78167a8d6fb1f590194491461",
-    "capturedAt": "2026-05-29T16:16:42Z",
-    "summary": "Remote origin/main head captured for spec artifact creation."
+    "commit": "0d974c3bc783f9785305c3e14a8886b720c0a52f",
+    "capturedAt": "2026-05-29T16:40:43Z",
+    "summary": "Remote origin/main head captured for plan-ready state."
   },
   "completedTasks": [],
-  "tasks": [],
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Notification type, message, and link primitives",
+      "state": "todo",
+      "attempt": 1,
+      "wave": 1,
+      "engineer": "Notification Service Engineer",
+      "reviewer": "Notification Service Reviewer",
+      "scope": [
+        "Add event_host_joined to canonical notification type definitions.",
+        "Extend buildNotificationMessage with optional actor support.",
+        "Add host join message tests and event link test."
+      ],
+      "nonScope": [
+        "No notification writes.",
+        "No hook integration.",
+        "No Firestore rules changes.",
+        "No UI rendering changes."
+      ],
+      "ownedFiles": [
+        "src/service/notification-service.js",
+        "src/lib/notification-helpers.js",
+        "src/service/notification-service.test.js",
+        "src/lib/notification-helpers.test.js"
+      ],
+      "readOnlyContext": [
+        "specs/event-host-join-notification/spec.md",
+        "specs/event-host-join-notification/plan.md",
+        "docs/decisions/ADR-001-six-layer-forward-only-architecture.md",
+        "docs/decisions/ADR-002-lib-compatibility-facade.md",
+        "src/runtime/client/use-cases/notification-use-cases.js",
+        "src/components/Notifications/NotificationPanel.jsx"
+      ],
+      "dependencies": [
+        "Gate G0 branch reconciliation check is satisfied."
+      ],
+      "engineerInstructions": [
+        "Write failing tests for event_host_joined message and event detail link.",
+        "Add event_host_joined to src/service/notification-service.js NotificationType.",
+        "Update MESSAGE_BUILDERS and buildNotificationMessage to support optional actor while preserving existing title-only calls.",
+        "Update src/lib/notification-helpers.js typedef union only.",
+        "Run focused tests, lint changed files, and type-check changed files."
+      ],
+      "acceptanceCriteria": [
+        "buildNotificationMessage returns 小明 報名了你的活動「週末晨跑」 for event_host_joined with actor name 小明.",
+        "Existing event_modified message remains unchanged.",
+        "getNotificationLink returns /events/event-1 for event_host_joined.",
+        "Canonical message logic remains in src/service/notification-service.js."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project browser src/service/notification-service.test.js src/lib/notification-helpers.test.js",
+          "expectedSignal": "Before implementation the service test fails because event_host_joined has no message builder. After implementation the command passes.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Pass with no lint errors in changed files.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Pass or report no changed-file type errors.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Existing message formats are preserved.",
+        "Actor-aware message is implemented in the service layer.",
+        "Verification evidence is fresh and passes after implementation."
+      ],
+      "reviewerRejectCriteria": [
+        "Canonical logic is moved into src/lib.",
+        "Existing messages change unexpectedly.",
+        "Actor name is omitted when provided.",
+        "Verification is missing or stale."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T2",
+      "title": "Host join notification runtime use case",
+      "state": "todo",
+      "attempt": 1,
+      "wave": 2,
+      "engineer": "Notification Runtime Engineer",
+      "reviewer": "Notification Runtime Reviewer",
+      "scope": [
+        "Add notifyEventHostJoined runtime use case.",
+        "Write one host notification for non-host joins.",
+        "Skip self-notification and missing host uid."
+      ],
+      "nonScope": [
+        "No hook integration.",
+        "No Firestore rules changes.",
+        "No participant reads.",
+        "No UI changes."
+      ],
+      "ownedFiles": [
+        "src/runtime/client/use-cases/notification-use-cases.js",
+        "src/runtime/client/use-cases/notification-use-cases.test.js"
+      ],
+      "readOnlyContext": [
+        "src/service/notification-service.js",
+        "src/repo/client/firebase-notifications-repo.js",
+        "src/runtime/client/use-cases/event-use-cases.js",
+        "specs/event-host-join-notification/spec.md",
+        "specs/event-host-join-notification/plan.md"
+      ],
+      "dependencies": [
+        "T1 review_passed"
+      ],
+      "engineerInstructions": [
+        "Write failing tests for notifyEventHostJoined export, payload shape, self-notification skip, and missing host skip.",
+        "Implement notifyEventHostJoined in notification-use-cases.js.",
+        "Use addNotificationDocument, buildNotificationDoc, buildNotificationMessage, and serverTimestamp.",
+        "Do not fetch event or participant data.",
+        "Run focused tests, lint changed files, and type-check changed files."
+      ],
+      "acceptanceCriteria": [
+        "Use case writes a single event_host_joined notification to hostUid.",
+        "Payload message includes actor name and event title.",
+        "actor uid equal to host uid writes no notification.",
+        "Empty host uid writes no notification.",
+        "createdAt uses serverTimestamp."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project browser src/runtime/client/use-cases/notification-use-cases.test.js",
+          "expectedSignal": "Before implementation the command fails because notifyEventHostJoined is not exported. After implementation the command passes.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Pass with no lint errors in changed files.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Pass or report no changed-file type errors.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Use case writes through addNotificationDocument.",
+        "Use case skips self-notification.",
+        "No event transaction or participant read is introduced.",
+        "Verification evidence is fresh and passes after implementation."
+      ],
+      "reviewerRejectCriteria": [
+        "Notification write is placed inside event join transaction code.",
+        "Self-notification can be written.",
+        "Client time is used for createdAt.",
+        "Verification is missing or stale."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T3",
+      "title": "Join entrypoint integration",
+      "state": "todo",
+      "attempt": 1,
+      "wave": 3,
+      "engineer": "Runtime Join Engineer",
+      "reviewer": "Runtime Join Reviewer",
+      "scope": [
+        "Trigger notifyEventHostJoined from event detail join handler.",
+        "Trigger notifyEventHostJoined from events list join handler.",
+        "Keep notification failure non-blocking and invisible to joining user."
+      ],
+      "nonScope": [
+        "No service transaction changes.",
+        "No repo changes.",
+        "No notification use-case changes.",
+        "No Firestore rules changes.",
+        "No UI component changes."
+      ],
+      "ownedFiles": [
+        "src/runtime/hooks/useEventDetailParticipation.js",
+        "src/runtime/hooks/useEventParticipation.js",
+        "src/runtime/hooks/useEventDetailParticipation.test.jsx",
+        "src/runtime/hooks/useEventParticipation.test.jsx"
+      ],
+      "readOnlyContext": [
+        "src/runtime/client/use-cases/event-use-cases.js",
+        "src/runtime/client/use-cases/notification-use-cases.js",
+        "src/service/event-service.js",
+        "src/ui/events/EventDetailScreen.jsx",
+        "src/ui/events/EventsPageScreen.jsx",
+        "specs/event-host-join-notification/spec.md",
+        "specs/event-host-join-notification/plan.md"
+      ],
+      "dependencies": [
+        "T2 review_passed"
+      ],
+      "engineerInstructions": [
+        "Write failing hook tests for joined, already_joined, full, failed, host self-join, and notification rejection outcomes.",
+        "Import notifyEventHostJoined in both join hooks.",
+        "Call notifier only inside result.status === joined branches.",
+        "Start notifier without awaiting it and catch errors with console.error.",
+        "Run focused hook tests, lint changed files, and type-check changed files."
+      ],
+      "acceptanceCriteria": [
+        "Detail join newly created participant calls notifyEventHostJoined once.",
+        "List join newly created participant calls notifyEventHostJoined once.",
+        "already_joined, full, failed, host self-join, and leave paths do not notify.",
+        "Rejected notification promise does not create an error toast or roll back local success state."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project browser src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx",
+          "expectedSignal": "Before implementation the command fails because joined paths do not notify. After implementation the command passes.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Pass with no lint errors in changed files.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Pass or report no changed-file type errors.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Both current join entrypoints notify only for newly created participant results.",
+        "Notification failure cannot change user-facing join success.",
+        "Existing join state updates remain intact.",
+        "Verification evidence is fresh and passes after implementation."
+      ],
+      "reviewerRejectCriteria": [
+        "Notification is awaited in a way that blocks join success.",
+        "Notification failure shows a joining-user error toast.",
+        "A non-new join outcome notifies.",
+        "Existing local counters or membership state regress."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T4",
+      "title": "Firestore rules allowlist and rules tests",
+      "state": "todo",
+      "attempt": 1,
+      "wave": 4,
+      "engineer": "Security Rules Engineer",
+      "reviewer": "Security Rules Reviewer",
+      "scope": [
+        "Add event_host_joined to Firestore notification type allowlist.",
+        "Add rules tests for allowed host join notification create.",
+        "Add rules tests for self-notification, wrong actor, wrong timestamp, and invalid read state rejection."
+      ],
+      "nonScope": [
+        "No source code changes.",
+        "No index changes.",
+        "No rules deploy.",
+        "No broad notification schema rewrite."
+      ],
+      "ownedFiles": [
+        "firestore.rules",
+        "tests/server/firestore/notification-rules.test.js"
+      ],
+      "readOnlyContext": [
+        "tests/server/firestore/post-soft-delete-rules.test.js",
+        "firestore.indexes.json",
+        "src/runtime/client/use-cases/notification-use-cases.js",
+        "specs/014-notification-system/data-model.md",
+        "specs/015-comment-notifications/data-model.md",
+        "specs/event-host-join-notification/spec.md",
+        "specs/event-host-join-notification/plan.md"
+      ],
+      "dependencies": [
+        "T1 review_passed"
+      ],
+      "engineerInstructions": [
+        "Write failing notification rules tests with rules-unit-testing.",
+        "Add event_host_joined to the notification type allowlist only.",
+        "Preserve recipient, actor uid, read false, and request time checks.",
+        "Do not run or claim rules deploy.",
+        "Run rules test through the Firestore emulator, lint changed files, and type-check changed files."
+      ],
+      "acceptanceCriteria": [
+        "Authenticated actor can create event_host_joined notification for a different host recipient.",
+        "Self-notification is rejected.",
+        "actorUid different from auth uid is rejected.",
+        "Client supplied timestamp is rejected.",
+        "read true on create is rejected."
+      ],
+      "verification": [
+        {
+          "command": "firebase emulators:exec --only firestore --project demo-test \"npx vitest run --project server tests/server/firestore/notification-rules.test.js\"",
+          "expectedSignal": "Before implementation valid event_host_joined create is rejected by type allowlist. After implementation the command passes.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Pass with no lint errors in changed files.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Pass or report no changed-file type errors.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Rules add only the new notification type.",
+        "Required rejection cases are tested.",
+        "No rules deploy command was run.",
+        "Verification evidence is fresh and passes after implementation."
+      ],
+      "reviewerRejectCriteria": [
+        "Rules broaden read, update, or delete access.",
+        "Rules tests miss a required rejection case.",
+        "firestore.indexes.json is changed without a proven query need.",
+        "The task claims rules are deployed."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T5",
+      "title": "Final integration verification and workflow state sync",
+      "state": "todo",
+      "attempt": 1,
+      "wave": 5,
+      "engineer": "Workflow State Engineer",
+      "reviewer": "Workflow State Reviewer",
+      "scope": [
+        "Record completed task evidence after Reviewer PASS.",
+        "Record fresh final verification evidence.",
+        "Keep rules deploy state explicit and undeployed.",
+        "Prepare coordinator for authorized commit only."
+      ],
+      "nonScope": [
+        "No source changes.",
+        "No rules changes.",
+        "No commit by Engineer.",
+        "No push, pull request, CI watch, merge, local main sync, or Firestore rules deploy."
+      ],
+      "ownedFiles": [
+        "specs/event-host-join-notification/tasks.md",
+        "specs/event-host-join-notification/handoff.md",
+        "specs/event-host-join-notification/status.json"
+      ],
+      "readOnlyContext": [
+        "Task-local diffs from T1, T2, T3, and T4.",
+        "Exact Engineer and Reviewer reports from T1, T2, T3, and T4.",
+        "docs/superpowers/task-contract.md",
+        "docs/superpowers/status.schema.json",
+        ".codex/references/subagent-roles.md"
+      ],
+      "dependencies": [
+        "T2 review_passed",
+        "T3 review_passed",
+        "T4 review_passed"
+      ],
+      "engineerInstructions": [
+        "Confirm T1 through T4 are review_passed.",
+        "Run all final verification commands.",
+        "Update workflow state files with exact command evidence.",
+        "Set rulesDeployStatus.changed true if firestore.rules changed.",
+        "Keep authorizationBoundary.deployFirestoreRules false."
+      ],
+      "acceptanceCriteria": [
+        "Workflow files agree on completed task states and latest verification.",
+        "Rules deploy status is required and not deployed.",
+        "Final verification commands pass.",
+        "Only authorized commit boundary is prepared."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project browser src/service/notification-service.test.js src/lib/notification-helpers.test.js src/runtime/client/use-cases/notification-use-cases.test.js src/runtime/hooks/useEventDetailParticipation.test.jsx src/runtime/hooks/useEventParticipation.test.jsx",
+          "expectedSignal": "Pass.",
+          "lastRun": null
+        },
+        {
+          "command": "firebase emulators:exec --only firestore --project demo-test \"npx vitest run --project server tests/server/firestore/notification-rules.test.js\"",
+          "expectedSignal": "Pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Pass with no lint errors in changed files.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Pass or report no changed-file type errors.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run depcruise",
+          "expectedSignal": "Pass with no forbidden layer dependency.",
+          "lastRun": null
+        },
+        {
+          "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
+          "expectedSignal": "status.json schemaVersion 3 validates.",
+          "lastRun": null
+        },
+        {
+          "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+          "expectedSignal": "Workflow companion files are synced.",
+          "lastRun": null
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "No whitespace errors.",
+          "lastRun": null
+        },
+        {
+          "command": "git status --short --branch --untracked-files=all",
+          "expectedSignal": "Branch state and changed files match reviewed scope.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Workflow state matches reviewed task outcomes.",
+        "Rules deploy status is explicit and undeployed.",
+        "Final verification evidence is fresh and complete.",
+        "No unauthorized release boundary was crossed."
+      ],
+      "reviewerRejectCriteria": [
+        "Workflow files drift from status.",
+        "Rules deploy status claims deployed without evidence.",
+        "Final verification is incomplete.",
+        "Changed files include unreviewed or non-owned files."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    }
+  ],
   "blocked": false,
   "blockedReason": null,
   "lastVerification": [
     {
       "command": "git status --short --branch --untracked-files=all",
       "exitCode": 0,
-      "summary": "On branch 078-event-host-join-notification tracking origin/main; exactly five owned spec workflow files are untracked: handoff.md, plan.md, spec.md, status.json, and tasks.md.",
-      "verifiedAt": "2026-05-29T16:26:01Z"
+      "summary": "Only four owned planning files were modified; branch is ahead 1 and behind origin/main by 2.",
+      "verifiedAt": "2026-05-29T16:45:00Z"
     },
     {
-      "command": "git diff --name-status",
+      "command": "git diff --name-status HEAD",
       "exitCode": 0,
-      "summary": "No tracked diff before staging; new files are untracked only.",
-      "verifiedAt": "2026-05-29T16:26:01Z"
-    },
-    {
-      "command": "git ls-files --others --exclude-standard",
-      "exitCode": 0,
-      "summary": "Untracked files are limited to the five owned spec workflow files under specs/event-host-join-notification/.",
-      "verifiedAt": "2026-05-29T16:26:01Z"
-    },
-    {
-      "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
-      "exitCode": 0,
-      "summary": "status schemaVersion 3 validates.",
-      "verifiedAt": "2026-05-29T16:26:01Z"
-    },
-    {
-      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
-      "exitCode": 0,
-      "summary": "Workflow companion files are synced.",
-      "verifiedAt": "2026-05-29T16:26:01Z"
+      "summary": "Modified files were limited to plan.md, tasks.md, handoff.md, and status.json.",
+      "verifiedAt": "2026-05-29T16:45:00Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-05-29T16:26:01Z"
+      "verifiedAt": "2026-05-29T16:45:00Z"
     },
     {
-      "command": "rg -n 'TBD|TODO|<[^>]+>|push: yes|pullRequest: yes|ciWatch: yes|merge: yes|localMainSync: yes|deployFirestoreRules: yes|\"state\": \"deployed\"|email.*in scope|push notifications.*in scope|FCM.*in scope|Cloud Function.*in scope' specs/event-host-join-notification",
-      "exitCode": 1,
-      "summary": "No placeholders, unauthorized release claims, or forbidden notification channels matched.",
-      "verifiedAt": "2026-05-29T16:26:01Z"
+      "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "status.json is valid.",
+      "verifiedAt": "2026-05-29T16:45:00Z"
     },
     {
-      "command": "rg -n '[ \\t]$' specs/event-host-join-notification",
+      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "Workflow state is synced.",
+      "verifiedAt": "2026-05-29T16:45:00Z"
+    },
+    {
+      "command": "rg -n 'TBD|TODO|<[^>]+>' specs/event-host-join-notification/plan.md specs/event-host-join-notification/tasks.md specs/event-host-join-notification/handoff.md specs/event-host-join-notification/status.json",
       "exitCode": 1,
-      "summary": "No trailing whitespace matched.",
-      "verifiedAt": "2026-05-29T16:26:01Z"
+      "summary": "No placeholders matched.",
+      "verifiedAt": "2026-05-29T16:45:00Z"
+    },
+    {
+      "command": "rg -n \"joinEvent\\\\(\" src --glob '*.{js,jsx}'",
+      "exitCode": 0,
+      "summary": "Only the use-case export and two planned runtime join handlers were found.",
+      "verifiedAt": "2026-05-29T16:45:00Z"
     }
   ],
   "lastVerifiedCommit": null,
-  "phaseCommits": [],
+  "phaseCommits": [
+    {
+      "phase": "spec",
+      "commit": "7de82865957fe600d0fa84b98709615eb4ea19f0",
+      "summary": "Approved event host join notification spec artifacts.",
+      "committedAt": "2026-05-30T00:32:35+08:00"
+    }
+  ],
   "rulesDeployStatus": {
     "state": "required",
     "required": true,
@@ -93,5 +559,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-05-29T16:26:01Z"
+  "updatedAt": "2026-05-29T16:45:00Z"
 }
