@@ -32,15 +32,16 @@ function codePointLength(value) {
 /**
  * 判斷目前的 bio 字串是否可以送出儲存。
  *
- * 規則：(1) code point 長度 ≤ 150 (2) 不在儲存中。空字串允許儲存（用於
- * 清除既有 bio）。
+ * 規則：(1) code point 長度 ≤ 150 (2) 不在儲存中 (3) trim 後與基準值不同。
+ * 空字串允許儲存（用於清除既有 bio）。
  * @param {string} value - 目前 textarea 內的字串。
+ * @param {string} baselineValue - 最近一次成功儲存或初始載入的 bio。
  * @param {BioEditorStatus} status - 元件目前儲存狀態。
  * @returns {boolean} 是否可以儲存。
  */
-function canSave(value, status) {
+function canSave(value, baselineValue, status) {
   if (status === 'saving') return false;
-  return codePointLength(value) <= BIO_MAX_LENGTH;
+  return codePointLength(value) <= BIO_MAX_LENGTH && value.trim() !== baselineValue.trim();
 }
 
 /**
@@ -55,12 +56,14 @@ function canSave(value, status) {
  */
 export default function BioEditor({ uid, initialBio = '' }) {
   const [bio, setBio] = useState(initialBio);
+  const [baselineBio, setBaselineBio] = useState(initialBio);
   const [status, setStatus] = useState(/** @type {BioEditorStatus} */ ('idle'));
   const [errorMessage, setErrorMessage] = useState('');
 
   const charCount = codePointLength(bio);
   const isOverLimit = charCount > BIO_MAX_LENGTH;
-  const saveDisabled = !canSave(bio, status);
+  const isUnchanged = bio.trim() === baselineBio.trim();
+  const saveDisabled = !canSave(bio, baselineBio, status);
 
   /**
    * 處理 textarea 變更，同步本地 state 並重置先前的成功/錯誤訊息。
@@ -74,8 +77,9 @@ export default function BioEditor({ uid, initialBio = '' }) {
     }
   }
 
-  /** 觸發儲存流程。超過 150 字直接擋下，不呼叫 service。 */
+  /** 觸發儲存流程。未變更或超過 150 字直接擋下，不呼叫 service。 */
   async function onSave() {
+    if (status === 'saving' || isUnchanged) return;
     if (isOverLimit) {
       setStatus('error');
       setErrorMessage(`簡介不得超過 ${BIO_MAX_LENGTH} 字`);
@@ -85,6 +89,7 @@ export default function BioEditor({ uid, initialBio = '' }) {
     setErrorMessage('');
     try {
       await updateUserBio(uid, bio);
+      setBaselineBio(bio);
       setStatus('success');
     } catch (err) {
       console.error(err);
