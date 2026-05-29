@@ -17,17 +17,17 @@
 - Branch: `078-event-host-join-notification`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification`.
 - Profile: P4 new product feature.
-- Current phase: implementation; T1 dispatched and in progress.
-- Active task: T1.
-- Active wave: 1.
-- Current head: `c82236149d3c4346bb4cda1f03de2566a18d8175`.
+- Current phase: implementation; T1 completed after Engineer plus spec and code-quality Reviewer PASS.
+- Active task: none.
+- Active wave: none.
+- Current head: `759c4780b8a9d4234d094b9655be7f55f226b53f`.
 - Remote head: `a9ec0d5a2c839764823f274723b0b806123b3965` from local `origin/main`.
-- Captured at: `2026-05-29T17:38:51Z`.
-- Current branch state: ahead 5 and behind `origin/main` by 0 after latest branch gate.
-- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`.
-- Latest reviewer decision: `review_passed` by Plan Reviewer at `2026-05-29T16:45:00Z`; Plan matches approved spec, uses serialized Engineer/Reviewer slices, includes branch reconciliation gate, and has no findings.
-- Latest branch-state sync: branch gate is satisfied as of `2026-05-29T17:38:51Z`; T1 is dispatched.
-- Next action: wait for T1 Engineer report.
+- Captured at: `2026-05-29T18:02:19Z`.
+- Current branch state: ahead 6 and behind `origin/main` by 0; only reviewed T1 owned source/test files were changed or untracked before this workflow-state sync.
+- Phase commits: spec commit `45d25c055f34828db904ffd1ec205873eb47004a`; plan commit `472bebc3fa05b8deaceee4388afe30304816401a`; post-second-rebase state commit `44c11ca0d033203d8afbbca969b70fdeae438371`; implementation authorization commit `866aac79599098916ba9359c4a50da06e5797b97`; T1 dispatch commit `759c4780b8a9d4234d094b9655be7f55f226b53f`.
+- Latest reviewer decision: `review_passed` by T1 Spec and Code Quality Reviewers at `2026-05-29T18:02:19Z`; spec compliance passed after fix, code quality rejected fail-fast actor handling, the Engineer fix was accepted, and re-review passed.
+- Latest branch-state sync: T1 completion sync used the fresh coordinator evidence below; no active task remains.
+- Next action: T1 commit, then T2 dispatch after clean state.
 
 ## Plan Review Evidence
 
@@ -87,7 +87,7 @@ The required fresh clean-state check and join-entrypoint search were completed b
 ## Dependency Graph and Waves
 
 - Wave 0: Gate G0, coordinator-owned, no source edits; branch gate satisfied as of `2026-05-29T17:38:51Z`, and the fresh clean-state check and join-entrypoint search completed before T1 dispatch.
-- Wave 1: T1 notification type, message, and link primitives.
+- Wave 1: T1 notification type, message, and link primitives. Completed after Engineer plus spec and code-quality Reviewer PASS.
 - Wave 2: T2 host-join notification use case.
 - Wave 3: T3 join-entrypoint integration.
 - Wave 4: T4 Firestore rules allowlist and rules tests.
@@ -97,7 +97,7 @@ All waves are serialized. T1 is foundational. T2 depends on T1. T3 depends on T2
 
 ## Task T1: Notification Type, Message, and Link Primitives
 
-- State: `in_progress`
+- State: `completed`
 - Attempt: 1
 - Wave: 1
 - Engineer: Notification Service Engineer
@@ -146,7 +146,7 @@ All waves are serialized. T1 is foundational. T2 depends on T1. T3 depends on T2
 
 ### Engineer Steps
 
-- [ ] Write `src/service/notification-service.test.js` with these assertions:
+- [x] Write `src/service/notification-service.test.js` with these assertions:
 
 ```js
 import { describe, expect, test } from 'vitest';
@@ -171,7 +171,7 @@ describe('notification service host join messages', () => {
 });
 ```
 
-- [ ] Write `src/lib/notification-helpers.test.js` with this assertion:
+- [x] Write `src/lib/notification-helpers.test.js` with this assertion:
 
 ```js
 import { describe, expect, test } from 'vitest';
@@ -190,15 +190,15 @@ describe('notification helper links', () => {
 });
 ```
 
-- [ ] Run the focused tests and confirm the service test fails before implementation.
-- [ ] Update `src/service/notification-service.js`:
+- [x] Run the focused tests and confirm the service test fails before implementation.
+- [x] Update `src/service/notification-service.js`:
   - Add `event_host_joined` to the `NotificationType` typedef.
   - Change `MESSAGE_BUILDERS` type to accept optional actor.
   - Add `event_host_joined: (title, actor) => ...`.
   - Change `buildNotificationMessage(type, entityTitle, actor)` to pass actor to the selected builder.
-- [ ] Update `src/lib/notification-helpers.js` typedef union with `event_host_joined`.
-- [ ] Rerun focused tests until they pass.
-- [ ] Run changed lint and type-check.
+- [x] Update `src/lib/notification-helpers.js` typedef union with `event_host_joined`.
+- [x] Rerun focused tests until they pass.
+- [x] Run changed lint and type-check.
 
 ### Verification
 
@@ -213,6 +213,31 @@ describe('notification helper links', () => {
 ### Browser Evidence
 
 Not applicable. No UI rendering changes are allowed in this task.
+
+### Completion Evidence
+
+- Engineer report: Notification Service Engineer completed T1 inside owned files, adding `event_host_joined` notification primitives, optional actor message support, helper typedef/link coverage, and focused tests while preserving existing message compatibility.
+- Spec review: PASS after fix.
+- Code-quality review: initial rejection for fail-fast actor handling; Engineer fix accepted; re-review PASS.
+
+| Command | Exit | Signal |
+| --- | ---: | --- |
+| `npx vitest run --project browser src/service/notification-service.test.js src/lib/notification-helpers.test.js` | 0 | T1 focused browser Vitest passed: 2 files, 5 tests. |
+| `npm run lint:changed` | 0 | Changed-file lint passed with only the existing React version warning. |
+| `npm run type-check:changed` | 0 | `No type errors in changed files.` |
+| `git status --short --branch --untracked-files=all` | 0 | Branch `078-event-host-join-notification...origin/main [ahead 6]`; only T1 owned source/test files were changed or untracked before workflow-state sync. |
+| `git diff --name-status` | 0 | Tracked diff contained only modified `src/lib/notification-helpers.js` and `src/service/notification-service.js`; T1 tests were untracked. |
+| `git ls-files --others --exclude-standard` | 0 | Untracked files were `src/lib/notification-helpers.test.js` and `src/service/notification-service.test.js`. |
+
+Changed files summary:
+
+- Modified `src/service/notification-service.js`.
+- Modified `src/lib/notification-helpers.js`.
+- Added untracked `src/service/notification-service.test.js`.
+- Added untracked `src/lib/notification-helpers.test.js`.
+- No source or test files outside the T1 owned file set were reported by fresh coordinator status.
+
+Residual risk: T1 only provides notification type, message, link primitives, and focused tests. Runtime notification write integration, join entrypoint integration, and Firestore rules coverage remain in T2 through T4.
 
 ### Reviewer PASS Criteria
 

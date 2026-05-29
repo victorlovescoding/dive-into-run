@@ -4,8 +4,8 @@
   "branch": "078-event-host-join-notification",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification",
   "phase": "implementation",
-  "activeTask": "T1",
-  "activeWave": 1,
+  "activeTask": null,
+  "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,23 +18,25 @@
   },
   "currentHead": {
     "branch": "078-event-host-join-notification",
-    "commit": "c82236149d3c4346bb4cda1f03de2566a18d8175",
-    "capturedAt": "2026-05-29T17:38:51Z",
-    "summary": "Current branch is ahead 5 and behind origin/main by 0 after latest branch gate; T1 is dispatched and in progress."
+    "commit": "759c4780b8a9d4234d094b9655be7f55f226b53f",
+    "capturedAt": "2026-05-29T18:02:19Z",
+    "summary": "Current branch is ahead 6 and behind origin/main by 0; T1 is completed after Engineer plus spec and code-quality Reviewer PASS and is ready for the T1 commit."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "a9ec0d5a2c839764823f274723b0b806123b3965",
-    "capturedAt": "2026-05-29T17:38:51Z",
-    "summary": "Local origin/main snapshot used for the pre-T1 branch gate; current branch is ahead 5 and behind this ref by 0."
+    "capturedAt": "2026-05-29T18:02:19Z",
+    "summary": "Local origin/main snapshot used for the T1 completion sync; current branch is ahead 6 and behind this ref by 0."
   },
-  "completedTasks": [],
+  "completedTasks": [
+    "T1"
+  ],
   "tasks": [
     {
       "id": "T1",
       "title": "Notification type, message, and link primitives",
-      "state": "in_progress",
+      "state": "completed",
       "attempt": 1,
       "wave": 1,
       "engineer": "Notification Service Engineer",
@@ -84,17 +86,32 @@
         {
           "command": "npx vitest run --project browser src/service/notification-service.test.js src/lib/notification-helpers.test.js",
           "expectedSignal": "Before implementation the service test fails because event_host_joined has no message builder. After implementation the command passes.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project browser src/service/notification-service.test.js src/lib/notification-helpers.test.js",
+            "exitCode": 0,
+            "summary": "Focused T1 browser Vitest suite passed: 2 files, 5 tests.",
+            "verifiedAt": "2026-05-29T18:02:19Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Pass with no lint errors in changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed-file lint passed; output included only the existing React version warning.",
+            "verifiedAt": "2026-05-29T18:02:19Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Pass or report no changed-file type errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type check reported: No type errors in changed files.",
+            "verifiedAt": "2026-05-29T18:02:19Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -109,12 +126,30 @@
         "Actor name is omitted when provided.",
         "Verification is missing or stale."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T1 Spec and Code Quality Reviewers",
+        "summary": "T1 spec compliance Reviewer passed after the fix. T1 code-quality Reviewer initially rejected the fail-fast actor handling, the Engineer fix was accepted, and the re-review passed.",
+        "decidedAt": "2026-05-29T18:02:19Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "Notification Service Engineer completed T1 inside the owned files, adding event_host_joined notification primitives, optional actor message support, helper typedef/link coverage, and focused tests while preserving existing message compatibility.",
+        "reviewerReport": "T1 spec compliance Reviewer passed after the fix. T1 code-quality Reviewer rejected fail-fast actor handling, the Engineer corrected it, and code-quality re-review passed.",
+        "commandOutputSummary": [
+          "npx vitest run --project browser src/service/notification-service.test.js src/lib/notification-helpers.test.js exit 0: 2 files, 5 tests passed.",
+          "npm run lint:changed exit 0: passed with only the existing React version warning.",
+          "npm run type-check:changed exit 0: No type errors in changed files.",
+          "git status --short --branch --untracked-files=all exit 0: only T1 owned source/test files changed or untracked.",
+          "git diff --name-status exit 0: tracked diff contains the two modified T1 source files; tests are untracked.",
+          "git ls-files --others --exclude-standard exit 0: two T1 test files are untracked."
+        ],
+        "changedFilesSummary": [
+          "Modified src/service/notification-service.js.",
+          "Modified src/lib/notification-helpers.js.",
+          "Added src/service/notification-service.test.js as an untracked T1 test file.",
+          "Added src/lib/notification-helpers.test.js as an untracked T1 test file.",
+          "No source or test files outside the T1 owned file set were reported by fresh coordinator status."
+        ]
       }
     },
     {
@@ -500,52 +535,40 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "git status --short --branch --untracked-files=all",
+      "command": "npx vitest run --project browser src/service/notification-service.test.js src/lib/notification-helpers.test.js",
       "exitCode": 0,
-      "summary": "Pre-T1 branch gate reported branch 078-event-host-join-notification...origin/main [ahead 5] with no modified files.",
-      "verifiedAt": "2026-05-29T17:38:51Z"
+      "summary": "Focused T1 browser Vitest suite passed: 2 files, 5 tests.",
+      "verifiedAt": "2026-05-29T18:02:19Z"
     },
     {
-      "command": "git rev-list --left-right --count HEAD...origin/main",
+      "command": "npm run lint:changed",
       "exitCode": 0,
-      "summary": "Reported 5 0.",
-      "verifiedAt": "2026-05-29T17:38:51Z"
+      "summary": "Changed-file lint passed; output included only the existing React version warning.",
+      "verifiedAt": "2026-05-29T18:02:19Z"
     },
     {
-      "command": "rg -n \"joinEvent\\(\" src --glob '*.{js,jsx}'",
+      "command": "npm run type-check:changed",
       "exitCode": 0,
-      "summary": "Found only src/runtime/client/use-cases/event-use-cases.js:114, src/runtime/hooks/useEventParticipation.js:236, and src/runtime/hooks/useEventDetailParticipation.js:155.",
-      "verifiedAt": "2026-05-29T17:38:51Z"
-    },
-    {
-      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
-      "exitCode": 0,
-      "summary": "Workflow state was synced before T1 dispatch.",
-      "verifiedAt": "2026-05-29T17:38:51Z"
-    },
-    {
-      "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
-      "exitCode": 0,
-      "summary": "status.json validates after T1 dispatch state update.",
-      "verifiedAt": "2026-05-29T17:40:55Z"
-    },
-    {
-      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
-      "exitCode": 0,
-      "summary": "Workflow state sync passes after T1 dispatch state update.",
-      "verifiedAt": "2026-05-29T17:40:55Z"
-    },
-    {
-      "command": "git diff --check",
-      "exitCode": 0,
-      "summary": "No whitespace errors after T1 dispatch state update.",
-      "verifiedAt": "2026-05-29T17:40:55Z"
+      "summary": "Changed-file type check reported: No type errors in changed files.",
+      "verifiedAt": "2026-05-29T18:02:19Z"
     },
     {
       "command": "git status --short --branch --untracked-files=all",
       "exitCode": 0,
-      "summary": "Branch is ahead 5 and behind 0; only specs/event-host-join-notification/handoff.md, specs/event-host-join-notification/status.json, and specs/event-host-join-notification/tasks.md are modified after T1 dispatch state update.",
-      "verifiedAt": "2026-05-29T17:40:55Z"
+      "summary": "Branch 078-event-host-join-notification...origin/main is ahead 6; only T1 owned source/test files were changed or untracked before workflow-state sync.",
+      "verifiedAt": "2026-05-29T18:02:19Z"
+    },
+    {
+      "command": "git diff --name-status",
+      "exitCode": 0,
+      "summary": "Tracked diff contained only modified src/lib/notification-helpers.js and src/service/notification-service.js because T1 tests were untracked.",
+      "verifiedAt": "2026-05-29T18:02:19Z"
+    },
+    {
+      "command": "git ls-files --others --exclude-standard",
+      "exitCode": 0,
+      "summary": "Untracked files were src/lib/notification-helpers.test.js and src/service/notification-service.test.js.",
+      "verifiedAt": "2026-05-29T18:02:19Z"
     }
   ],
   "lastVerifiedCommit": null,
@@ -573,6 +596,12 @@
       "commit": "866aac79599098916ba9359c4a50da06e5797b97",
       "summary": "Recorded notification implementation authorization on the current post-rebase head.",
       "committedAt": "2026-05-29T17:29:29Z"
+    },
+    {
+      "phase": "t1_dispatch",
+      "commit": "759c4780b8a9d4234d094b9655be7f55f226b53f",
+      "summary": "Recorded notification T1 dispatch.",
+      "committedAt": "2026-05-29T17:42:18Z"
     }
   ],
   "rulesDeployStatus": {
@@ -583,5 +612,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-05-29T17:40:55Z"
+  "updatedAt": "2026-05-29T18:02:19Z"
 }
