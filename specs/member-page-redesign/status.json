@@ -3,9 +3,9 @@
   "feature": "member-page-redesign",
   "branch": "082-member-page-redesign",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-082-member-page-redesign",
-  "phase": "plan",
-  "activeTask": null,
-  "activeWave": null,
+  "phase": "implementation",
+  "activeTask": "T001",
+  "activeWave": "wave-1",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,23 +18,23 @@
   },
   "currentHead": {
     "branch": "082-member-page-redesign",
-    "commit": "ffad6f391690990f9369817da3db865f32199233",
-    "capturedAt": "2026-05-30T15:09:44Z",
-    "summary": "local HEAD before plan artifact commit"
+    "commit": "cf4a65e75dce300a032763cd3b5fe1873578923c",
+    "capturedAt": "2026-05-30T15:22:38Z",
+    "summary": "plan artifacts committed before implementation dispatch"
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "4c5b45b1fbf5b62ded2da57dd178133532a90b9f",
-    "capturedAt": "2026-05-30T15:09:44Z",
-    "summary": "origin/main at plan artifact creation"
+    "capturedAt": "2026-05-30T15:22:38Z",
+    "summary": "origin/main at implementation dispatch authorization"
   },
   "completedTasks": [],
   "tasks": [
     {
       "id": "T001",
       "title": "Member Page Shell And Profile Controls",
-      "state": "todo",
+      "state": "in_progress",
       "attempt": 1,
       "wave": "wave-1",
       "engineer": "Engineer subagent, render/CSS task",
@@ -67,7 +67,7 @@
         "src/ui/users/ProfileScreen.module.css"
       ],
       "dependencies": [
-        "Explicit user authorization for product-code implementation"
+        "Satisfied: explicit user authorization for product-code implementation through Engineer/Reviewer subagents is recorded by the coordinator before T001 dispatch."
       ],
       "engineerInstructions": [
         "Add a CSS module import to `MemberPageScreen.jsx` and keep the component render-only.",
@@ -397,7 +397,14 @@
   "blocked": false,
   "blockedReason": null,
   "lastVerifiedCommit": null,
-  "phaseCommits": [],
+  "phaseCommits": [
+    {
+      "phase": "plan",
+      "commit": "cf4a65e75dce300a032763cd3b5fe1873578923c",
+      "summary": "plan artifacts committed before implementation dispatch",
+      "committedAt": "2026-05-30T15:22:38Z"
+    }
+  ],
   "rulesDeployStatus": {
     "state": "not_applicable",
     "required": false,
@@ -411,20 +418,20 @@
       "command": "node scripts/validate-workflow-state.js specs/member-page-redesign/status.json",
       "exitCode": 0,
       "summary": "specs/member-page-redesign/status.json: ok; WORKFLOW STATE: 1 status file(s) valid",
-      "verifiedAt": "2026-05-30T15:17:29Z"
+      "verifiedAt": "2026-05-30T15:25:28Z"
     },
     {
       "command": "node scripts/check-superpowers-state.js specs/member-page-redesign/status.json",
       "exitCode": 0,
       "summary": "specs/member-page-redesign/status.json: sync ok; SUPERPOWERS CHECK: 1 status file(s) synced",
-      "verifiedAt": "2026-05-30T15:17:29Z"
+      "verifiedAt": "2026-05-30T15:25:28Z"
     },
     {
-      "command": "git diff --check -- specs/member-page-redesign/plan.md specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json",
+      "command": "git diff --check -- specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-05-30T15:17:29Z"
+      "verifiedAt": "2026-05-30T15:25:28Z"
     }
   ],
-  "updatedAt": "2026-05-30T15:17:29Z"
+  "updatedAt": "2026-05-30T15:25:28Z"
 }

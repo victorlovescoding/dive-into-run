@@ -5,23 +5,23 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-082-member-page-redesign`
 - Branch: `082-member-page-redesign`
-- Current head: `ffad6f391690990f9369817da3db865f32199233` (`Add member page redesign spec`)
+- Current head: `cf4a65e75dce300a032763cd3b5fe1873578923c` (`plan artifacts committed before implementation dispatch`)
 - Remote head: `origin/main` at `4c5b45b1fbf5b62ded2da57dd178133532a90b9f`
 - Authorization boundary:
-  - edit: true for plan/workflow artifacts only
-  - commit: true for plan/workflow artifacts only
+  - edit: true for product implementation tasks through Engineer/Reviewer subagents
+  - commit: true for authorized workflow/product implementation commits when appropriate
   - push: false
   - pullRequest: false
   - ciWatch: false
   - merge: false
   - localMainSync: false
   - deployFirestoreRules: false
-- Current phase: `plan`
-- Active task: none
-- Active wave: none
+- Current phase: `implementation`
+- Active task: `T001`
+- Active wave: `wave-1`
 - Latest reviewer decision: none
 - Last verified commit: none
-- Phase commits: none recorded in workflow state
+- Phase commits: plan commit `cf4a65e75dce300a032763cd3b5fe1873578923c`
 - Rules deploy status: `not_applicable`, required=false, changed=false
 - Incidents: none
 - Blocked: no
@@ -41,9 +41,9 @@
 
 ## Next Action
 
-Coordinator must obtain explicit product-code implementation authorization from the user. After that, update `status.json`, `tasks.md`, and `handoff.md` to mark T001 ready, then dispatch an Engineer subagent for T001 with the owned files and stop conditions from `tasks.md`.
+Dispatch an Engineer subagent for T001 using the owned files, read-only context, acceptance criteria, verification commands, and stop conditions from `tasks.md`.
 
-Do not dispatch T001 under the current plan-stage boundary; current edit and commit authorization covers only these workflow artifacts.
+Do not dispatch any product task outside the T001 owned files. Push, PR creation, CI watch, merge, local `main` sync, and Firestore/storage rules deploy remain unauthorized.
 
 ## Latest Verification
 
@@ -51,15 +51,15 @@ Do not dispatch T001 under the current plan-stage boundary; current edit and com
 | ------- | ---- | -------- |
 | `node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` | 0 | `specs/member-page-redesign/status.json: ok`; `WORKFLOW STATE: 1 status file(s) valid`. |
 | `node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` | 0 | `specs/member-page-redesign/status.json: sync ok`; `SUPERPOWERS CHECK: 1 status file(s) synced`. |
-| `git diff --check -- specs/member-page-redesign/plan.md specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` | 0 | No whitespace errors. |
+| `git diff --check -- specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` | 0 | No whitespace errors. |
 
 ## Closeout Checklist
 
-- [ ] Product-code implementation authorization is obtained before T001 dispatch.
-- [ ] `tasks.md` task states match `status.json`.
-- [ ] Active task and active wave match `status.json`.
+- [x] Product-code implementation authorization is obtained before T001 dispatch.
+- [x] `tasks.md` task states match `status.json`.
+- [x] Active task and active wave match `status.json`.
 - [ ] Latest reviewer decision is recorded in `tasks.md` and `status.json` after each review.
-- [ ] `lastVerification` has one entry per command.
+- [x] `lastVerification` has one entry per command.
 - [ ] `lastVerifiedCommit`, `currentHead`, `remoteHead`, and `phaseCommits` reflect the latest verified state.
 - [ ] `authorizationBoundary.deployFirestoreRules` is recorded and treated as separate from `edit`, `commit`, `push`, `pullRequest`, `ciWatch`, `merge`, and `localMainSync`.
 - [ ] `rulesDeployStatus` remains `not_applicable` unless rules unexpectedly enter scope, which is a stop condition.
@@ -71,11 +71,11 @@ Do not dispatch T001 under the current plan-stage boundary; current edit and com
 
 ## Blockers
 
-- Product-code implementation is not authorized yet. Required decision: user explicitly authorizes implementation edit boundary before T001 dispatch.
+- None.
 
 ## Pitfalls
 
-- `edit=true` and `commit=true` currently apply only to plan/workflow artifacts, not product code.
+- `edit=true` and `commit=true` now cover product implementation only through Engineer/Reviewer subagents; they still do not authorize push, PR creation, CI watch, merge, local `main` sync, or rules deploy.
 - `/member/favorites` stays as-is; only the exact `我的收藏` link is in scope.
 - Removing `這是會員頁面` must not introduce a replacement page title.
 - Nav is outside page scope and must not be added inside `MemberPageScreen`.

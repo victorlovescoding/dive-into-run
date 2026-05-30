@@ -5,7 +5,7 @@
 - This file is the human-readable task source of truth for `specs/member-page-redesign/`.
 - On resume, read `AGENTS.md`, `docs/superpowers/workflow.md`, `specs/member-page-redesign/handoff.md`, this file, `specs/member-page-redesign/status.json`, `specs/member-page-redesign/spec.md`, and `specs/member-page-redesign/plan.md` before dispatching work.
 - Main agent is control plane only. Repo-changing product edits belong to Engineer subagents. Reviewer subagents check every non-read-only task slice before completion.
-- Current plan-stage authorization allows editing, staging, and committing only these workflow artifacts. Product-code implementation requires explicit fresh user authorization before T001 dispatch.
+- Current implementation authorization allows product implementation edits through Engineer/Reviewer subagents and commit when appropriate. It does not authorize push, PR creation, CI watch, merge, local `main` sync, or Firestore/storage rules deploy.
 - If this file, `status.json`, and `handoff.md` disagree, reconcile or block before dispatch, commit, push, PR, merge, or local `main` sync.
 - A task can become `completed` only after `review_passed` and coordinator state sync.
 - Command evidence is one command per entry. Do not combine commands with `&&` or `;`.
@@ -23,7 +23,7 @@
 ## Planner Output
 
 - Dependency graph:
-  - Explicit product-code implementation authorization precedes T001.
+  - Explicit product-code implementation authorization precedes T001 and is satisfied by user authorization evidence before implementation dispatch.
   - T001 precedes T002.
   - T001 precedes T003.
   - T002 and T003 precede T004.
@@ -62,14 +62,14 @@
 
 ### T001 - Member Page Shell And Profile Controls
 
-- **State**: `todo`
+- **State**: `in_progress`
 - **Attempt**: 1
 - **Wave**: `wave-1`
 - **Engineer**: Engineer subagent, render/CSS task
 - **Reviewer**: Reviewer subagent, UI behavior and boundary check
 - **Commit checkpoint**: no per-task commit until Reviewer PASS and coordinator approval
 - **Last verified commit**: none
-- **Authorization boundary**: plan artifacts edit=yes, commit=yes; product implementation edit=no until fresh user authorization; push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Authorization boundary**: product implementation tasks through Engineer/Reviewer subagents edit=yes, commit=yes; push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: not_applicable, not required, unchanged
 - **Incidents**: none
 
@@ -113,7 +113,7 @@ Read-only context:
 
 Dependencies:
 
-- Explicit user authorization for product-code implementation.
+- Satisfied: explicit user authorization for product-code implementation through Engineer/Reviewer subagents is recorded by the coordinator before T001 dispatch.
 
 Browser evidence:
 
@@ -187,7 +187,7 @@ Evidence:
 - **Reviewer**: Reviewer subagent, behavior-preservation check
 - **Commit checkpoint**: no per-task commit until Reviewer PASS and coordinator approval
 - **Last verified commit**: none
-- **Authorization boundary**: plan artifacts edit=yes, commit=yes; product implementation edit=no until fresh user authorization; push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Authorization boundary**: product implementation tasks through Engineer/Reviewer subagents edit=yes, commit=yes; push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: not_applicable, not required, unchanged
 - **Incidents**: none
 
@@ -286,7 +286,7 @@ Evidence:
 - **Reviewer**: Reviewer subagent, ARIA and keyboard behavior check
 - **Commit checkpoint**: no per-task commit until Reviewer PASS and coordinator approval
 - **Last verified commit**: none
-- **Authorization boundary**: plan artifacts edit=yes, commit=yes; product implementation edit=no until fresh user authorization; push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Authorization boundary**: product implementation tasks through Engineer/Reviewer subagents edit=yes, commit=yes; push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: not_applicable, not required, unchanged
 - **Incidents**: none
 
@@ -394,7 +394,7 @@ Evidence:
 - **Reviewer**: Reviewer subagent, final integration gate check
 - **Commit checkpoint**: implementation phase commit only after all prior tasks are `completed`, T004 passes review, and coordinator has commit authorization
 - **Last verified commit**: none
-- **Authorization boundary**: plan artifacts edit=yes, commit=yes; product implementation edit=no until fresh user authorization; push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Authorization boundary**: product implementation tasks through Engineer/Reviewer subagents edit=yes, commit=yes; push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: not_applicable, not required, unchanged
 - **Incidents**: none
 
