@@ -1,0 +1,430 @@
+{
+  "schemaVersion": 3,
+  "feature": "member-page-redesign",
+  "branch": "082-member-page-redesign",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-082-member-page-redesign",
+  "phase": "plan",
+  "activeTask": null,
+  "activeWave": null,
+  "authorizationBoundary": {
+    "edit": true,
+    "commit": true,
+    "push": false,
+    "pullRequest": false,
+    "ciWatch": false,
+    "merge": false,
+    "localMainSync": false,
+    "deployFirestoreRules": false
+  },
+  "currentHead": {
+    "branch": "082-member-page-redesign",
+    "commit": "ffad6f391690990f9369817da3db865f32199233",
+    "capturedAt": "2026-05-30T15:09:44Z",
+    "summary": "local HEAD before plan artifact commit"
+  },
+  "remoteHead": {
+    "remote": "origin",
+    "branch": "main",
+    "commit": "4c5b45b1fbf5b62ded2da57dd178133532a90b9f",
+    "capturedAt": "2026-05-30T15:09:44Z",
+    "summary": "origin/main at plan artifact creation"
+  },
+  "completedTasks": [],
+  "tasks": [
+    {
+      "id": "T001",
+      "title": "Member Page Shell And Profile Controls",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-1",
+      "engineer": "Engineer subagent, render/CSS task",
+      "reviewer": "Reviewer subagent, UI behavior and boundary check",
+      "scope": [
+        "Remove visible text `這是會員頁面` without replacing it with another page title.",
+        "Implement the `/member` workspace shell, profile/account controls, desktop two-column layout, and mobile source order.",
+        "Preserve avatar input/ref/click wiring, display-name form wiring, public profile link, and exact `我的收藏` link."
+      ],
+      "nonScope": [
+        "No edits to `src/app/member/page.jsx`, Bio editor, Dashboard tabs, Danger Zone, runtime, service, repo, rules, dependencies, or `/member/favorites`.",
+        "No in-page Nav, marketing hero, decorative scene, large page title, footer CTA, floating decorative card composition, or duplicated interactive slots."
+      ],
+      "ownedFiles": [
+        "src/ui/member/MemberPageScreen.jsx",
+        "src/ui/member/MemberPageScreen.module.css"
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-profiles.md",
+        "specs/member-page-redesign/spec.md",
+        "specs/member-page-redesign/plan.md",
+        "src/app/member/page.jsx",
+        "src/runtime/hooks/useMemberPageRuntime.js",
+        "src/app/member/BioEditor.jsx",
+        "src/ui/member/AccountDeletionDangerZone.jsx",
+        "src/components/DashboardTabs.jsx",
+        "src/ui/home/HomePage.module.css",
+        "src/ui/users/ProfileScreen.module.css"
+      ],
+      "dependencies": [
+        "Explicit user authorization for product-code implementation"
+      ],
+      "engineerInstructions": [
+        "Add a CSS module import to `MemberPageScreen.jsx` and keep the component render-only.",
+        "Use one markup instance for profile controls, Bio slot, dashboard slot, and Danger Zone slot.",
+        "Gate public profile and favorites links on `user?.uid` and preserve destinations.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T001.1: `/member` no longer renders visible text `這是會員頁面`.",
+        "AC-T001.2: No Nav is added inside the page.",
+        "AC-T001.3: Desktop layout has profile/account controls, Bio, and Danger Zone left; dashboard tabs right.",
+        "AC-T001.4: Mobile order is profile/account controls, Bio, dashboard tabs, Danger Zone.",
+        "AC-T001.5: Avatar click, hidden file input, display-name form, public profile link, and exact `我的收藏` link preserve current wiring and visibility rules.",
+        "AC-T001.6: Utility-light visual style uses approved homepage cues without copying homepage hero/decorative/CTA patterns.",
+        "AC-T001.7: Long display names, emails, links, and button labels do not overlap adjacent controls."
+      ],
+      "verification": [
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0 with no changed-file lint errors.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 with no changed-file type errors.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run depcruise",
+          "expectedSignal": "Exit 0 with no dependency-direction violations after adding the CSS module import.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Required verification commands pass and match the expected signal, or browser evidence is explicitly deferred to T004 with a reason.",
+        "Runtime handlers and slot composition remain render-only.",
+        "Responsive order is achieved without duplicate interactive Danger Zone or dashboard markup.",
+        "Behavior and visual scope stay inside `/member`."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "`這是會員頁面` remains visible or is replaced by another page title.",
+        "Avatar upload, display-name form, public profile link, or `我的收藏` link wiring changes behavior.",
+        "Nav, marketing hero, decorative scene, or floating-card composition appears inside `/member`.",
+        "Runtime/service/repo behavior changes."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T002",
+      "title": "Bio Editor And Danger Zone Styling Alignment",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-2",
+      "engineer": "Engineer subagent, CSS-only task",
+      "reviewer": "Reviewer subagent, behavior-preservation check",
+      "scope": [
+        "Align Bio editor styling with member workspace tokens, 8px cards, thin borders, focus-visible states, and stable controls.",
+        "Align Danger Zone styling with the utility-light workspace while preserving destructive emphasis.",
+        "Improve modal fit and mobile button wrapping without behavior changes."
+      ],
+      "nonScope": [
+        "No edits to `BioEditor.jsx` or `AccountDeletionDangerZone.jsx`.",
+        "No changes to Bio labels, count, save states, code-point counting, service calls, Danger Zone copy, modal actions, reauth, deletion API flow, or runtime state.",
+        "No edits to MemberPageScreen or dashboard files."
+      ],
+      "ownedFiles": [
+        "src/app/member/BioEditor.module.css",
+        "src/ui/member/AccountDeletionDangerZone.module.css"
+      ],
+      "readOnlyContext": [
+        "specs/member-page-redesign/spec.md",
+        "specs/member-page-redesign/plan.md",
+        "src/app/member/BioEditor.jsx",
+        "src/ui/member/AccountDeletionDangerZone.jsx",
+        "src/ui/member/MemberPageScreen.module.css",
+        "src/ui/home/HomePage.module.css"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Make CSS-only changes.",
+        "Consume inherited member CSS variables from T001 with fallback values.",
+        "Add or refine `:focus-visible` states for textarea and buttons.",
+        "Keep mobile button rows and modal content readable without overflow.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T002.1: Bio editor keeps all current labels, count, save states, success, and error behavior.",
+        "AC-T002.2: Bio editor visually matches the member workspace without card nesting or layout shift from status messages.",
+        "AC-T002.3: Danger Zone keeps current copy, modal semantics, actions, disabled states, and error display.",
+        "AC-T002.4: Danger Zone destructive styling is clear but restrained.",
+        "AC-T002.5: Mobile button rows and modal content wrap cleanly without overlapping text."
+      ],
+      "verification": [
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0 with no changed-file lint errors.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 with no changed-file type errors.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned CSS module files.",
+        "No JSX, runtime, service, repo, rules, or dependency files changed.",
+        "Required verification commands pass and match the expected signal.",
+        "Browser or reviewer inspection confirms Bio and Danger Zone behavior surfaces remain present and readable.",
+        "Mobile modal and action row fit within the viewport."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Behavior component files change without coordinator approval.",
+        "Bio state text, count, button labels, error/success behavior, or Danger Zone copy/actions change.",
+        "CSS creates nested-card appearance, overlapping text, or unstable control dimensions."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T003",
+      "title": "Dashboard Tabs And Responsive Panel Fit",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-2",
+      "engineer": "Engineer subagent, render/CSS dashboard task",
+      "reviewer": "Reviewer subagent, ARIA and keyboard behavior check",
+      "scope": [
+        "Refine dashboard tab and panel presentation for desktop right column and mobile single column.",
+        "Preserve tab labels, click selection, keyboard behavior, ARIA roles, inactive-panel handling, sentinel, and dashboard panel states.",
+        "Preserve card data, links, badges, metadata, and text content by leaving dashboard card components untouched."
+      ],
+      "nonScope": [
+        "No edits to `DashboardTabs.jsx`, runtime hooks, member dashboard services, card components, card CSS, pagination logic, or fetch behavior.",
+        "No edits to MemberPageScreen, Bio, or Danger Zone files.",
+        "If card CSS is needed, stop and request a coordinator-approved owned-file update."
+      ],
+      "ownedFiles": [
+        "src/ui/member/DashboardTabsScreen.jsx",
+        "src/components/DashboardTabs.module.css"
+      ],
+      "readOnlyContext": [
+        "specs/member-page-redesign/spec.md",
+        "specs/member-page-redesign/plan.md",
+        "src/components/DashboardTabs.jsx",
+        "src/ui/member/DashboardTabsScreen.jsx",
+        "src/components/DashboardTabs.module.css",
+        "src/runtime/hooks/useDashboardTabsRuntime.js",
+        "src/runtime/hooks/useDashboardTab.js",
+        "src/ui/member/MemberPageScreen.module.css",
+        "src/ui/home/HomePage.module.css"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Prefer CSS changes; change JSX only for render-only wrappers or class names.",
+        "Keep existing `onClick`, `onKeyDown`, `tabIndex`, roles, IDs, and ARIA attributes intact.",
+        "Keep the sentinel div bound to `sentinelRef` mounted inside the active non-empty panel after rendered items.",
+        "Style loading, error, empty, load-more, retry, and end states consistently with member tokens.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T003.1: Dashboard tab labels and keyboard/click behavior remain equivalent.",
+        "AC-T003.2: ARIA roles and relationships remain intact.",
+        "AC-T003.3: Loading, first-load error with retry, empty, load-more loading, load-more error with retry, sentinel, and `已顯示全部` states remain rendered through the same runtime data.",
+        "AC-T003.4: Activity, post, and comment card data, links, badges, metadata, and text content remain untouched.",
+        "AC-T003.5: Dashboard fits desktop right column and mobile column without overlapping labels, buttons, or status text."
+      ],
+      "verification": [
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0 with no changed-file lint errors.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 with no changed-file type errors.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run depcruise",
+          "expectedSignal": "Exit 0 with no dependency-direction violations if `DashboardTabsScreen.jsx` imports change.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Runtime hooks, services, DashboardTabs entry, and card components remain unchanged.",
+        "Required verification commands pass and match the expected signal.",
+        "Reviewer verifies keyboard behavior or receives credible browser evidence for ArrowLeft, ArrowRight, Home, and End.",
+        "Sentinel and all panel states remain represented in the active panel."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "ARIA/tab behavior regresses or keyboard behavior is unsupported by evidence.",
+        "Card data, links, badges, counts, pagination, or retry behavior changes.",
+        "CSS causes tab labels or panel content to overlap at desktop or mobile widths.",
+        "Engineer edits unowned card/runtime/service files."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T004",
+      "title": "Integration Verification And Workflow Evidence",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-3",
+      "engineer": "Verifier subagent, integration evidence task",
+      "reviewer": "Reviewer subagent, final integration gate check",
+      "scope": [
+        "Run final automated gates and browser QA for the integrated `/member` redesign.",
+        "Record evidence in workflow state files after implementation tasks pass review.",
+        "Confirm no product behavior outside `/member`, `/member/favorites`, rules, schema, dependencies, runtime/service/repo logic, or deploy behavior changed."
+      ],
+      "nonScope": [
+        "Do not edit product code by default.",
+        "Do not fix implementation findings inside T004 without a coordinator-approved owned-file update.",
+        "Do not push, open a PR, watch CI, merge, sync local `main`, or deploy rules."
+      ],
+      "ownedFiles": [
+        "specs/member-page-redesign/tasks.md",
+        "specs/member-page-redesign/handoff.md",
+        "specs/member-page-redesign/status.json"
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-profiles.md",
+        "docs/superpowers/task-contract.md",
+        "specs/member-page-redesign/spec.md",
+        "specs/member-page-redesign/plan.md",
+        "specs/member-page-redesign/tasks.md",
+        "specs/member-page-redesign/handoff.md",
+        "specs/member-page-redesign/status.json",
+        "Task-local diffs and exact Engineer/Reviewer evidence for T001, T002, and T003"
+      ],
+      "dependencies": [
+        "T002",
+        "T003"
+      ],
+      "engineerInstructions": [
+        "Run each verification command separately and record exit code, expected signal, and actual signal.",
+        "Use in-app Browser or Playwright for `/member` desktop and mobile evidence.",
+        "Do not execute account deletion confirmation during QA.",
+        "If browser QA finds a product defect, record it and return to the coordinator for a targeted task update.",
+        "Update only workflow evidence fields in the owned files."
+      ],
+      "acceptanceCriteria": [
+        "AC-T004.1: All automated gates pass or any failure is proven unrelated and explicitly carried as a blocker.",
+        "AC-T004.2: Browser evidence covers desktop and mobile `/member` layout and required interactions.",
+        "AC-T004.3: Tasks, status, and handoff agree on active task, active wave, task states, authorization boundary, rules deploy status, incidents, and latest verification.",
+        "AC-T004.4: No release summary claims deployed rules, deployed functions, or production product behavior.",
+        "AC-T004.5: No unreviewed product-code changes remain after integration verification."
+      ],
+      "verification": [
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0 with no changed-file lint errors.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 with no changed-file type errors.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run depcruise",
+          "expectedSignal": "Exit 0 with no dependency-direction violations after integrated render/CSS changes.",
+          "lastRun": null
+        },
+        {
+          "command": "node scripts/validate-workflow-state.js specs/member-page-redesign/status.json",
+          "expectedSignal": "Exit 0 and `WORKFLOW STATE: 1 status file(s) valid`.",
+          "lastRun": null
+        },
+        {
+          "command": "node scripts/check-superpowers-state.js specs/member-page-redesign/status.json",
+          "expectedSignal": "Exit 0 and `SUPERPOWERS CHECK: 1 status file(s) synced`.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "T001, T002, and T003 have `review_passed` before T004 completion.",
+        "Required command evidence and browser evidence are fresh and one command per row.",
+        "Workflow state files agree and validate.",
+        "No product-code fixes are smuggled into T004.",
+        "Rules deploy state remains not_applicable and no deploy claim is made."
+      ],
+      "reviewerRejectCriteria": [
+        "Any automated or browser evidence is missing, stale, or contradicts acceptance criteria.",
+        "Tasks/status/handoff drift.",
+        "T004 modifies product code without a coordinator-approved task update.",
+        "Browser QA finds missing functionality, overlapping UI, duplicated Nav, duplicated interactive sections, or behavior regressions."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    }
+  ],
+  "blocked": false,
+  "blockedReason": null,
+  "lastVerifiedCommit": null,
+  "phaseCommits": [],
+  "rulesDeployStatus": {
+    "state": "not_applicable",
+    "required": false,
+    "changed": false,
+    "evidence": [],
+    "deployedCommit": null
+  },
+  "incidents": [],
+  "lastVerification": [
+    {
+      "command": "node scripts/validate-workflow-state.js specs/member-page-redesign/status.json",
+      "exitCode": 0,
+      "summary": "specs/member-page-redesign/status.json: ok; WORKFLOW STATE: 1 status file(s) valid",
+      "verifiedAt": "2026-05-30T15:17:29Z"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/member-page-redesign/status.json",
+      "exitCode": 0,
+      "summary": "specs/member-page-redesign/status.json: sync ok; SUPERPOWERS CHECK: 1 status file(s) synced",
+      "verifiedAt": "2026-05-30T15:17:29Z"
+    },
+    {
+      "command": "git diff --check -- specs/member-page-redesign/plan.md specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json",
+      "exitCode": 0,
+      "summary": "No whitespace errors.",
+      "verifiedAt": "2026-05-30T15:17:29Z"
+    }
+  ],
+  "updatedAt": "2026-05-30T15:17:29Z"
+}
