@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { getWeatherIconUrl } from '@/runtime/client/use-cases/weather-location-use-cases';
 import styles from './weather.module.css';
+import { getWeatherMetricAdvice } from './weather-standards';
 
 /** @typedef {import('@/types/weather-types').TodayWeather} TodayWeather */
 /** @typedef {import('@/types/weather-types').TomorrowWeather} TomorrowWeather */
@@ -29,6 +30,65 @@ function getCurrentPeriod() {
 // #endregion
 
 // #region Sub-components
+
+const STANDARD_CONTROL_IDS = Object.freeze({
+  uv: 'weather-standard-popover-uv',
+  aqi: 'weather-standard-popover-aqi',
+});
+
+/**
+ * Simple today metric cell.
+ * @param {object} props - 元件屬性。
+ * @param {string} props.id - Stable test id suffix.
+ * @param {string} props.value - Display value.
+ * @param {string} props.label - Display label.
+ * @returns {import('react').JSX.Element} Metric cell.
+ */
+function MetricCell({ id, value, label }) {
+  return (
+    <div className={styles.metricItem} data-testid={`weather-metric-${id}`}>
+      <div className={styles.metricValue}>{value}</div>
+      <div className={styles.metricLabel}>{label}</div>
+    </div>
+  );
+}
+
+/**
+ * Enhanced UV/AQI metric cell with closed standards entry point.
+ * @param {object} props - 元件屬性。
+ * @param {'uv' | 'aqi'} props.metric - Standards metric key.
+ * @param {string} props.label - Display label.
+ * @param {number} props.value - Display value.
+ * @param {string} props.levelOrStatus - Official level/status from weather data.
+ * @param {string} props.infoButtonLabel - Accessible info button label.
+ * @returns {import('react').JSX.Element} Enhanced metric cell.
+ */
+function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButtonLabel }) {
+  const advice = getWeatherMetricAdvice(metric, levelOrStatus);
+
+  return (
+    <div className={styles.enhancedMetricItem} data-testid={`weather-metric-${metric}`}>
+      <div className={styles.enhancedMetricHeader}>
+        <div>
+          <div className={styles.metricValue}>{formatMetric(value)}</div>
+          <div className={styles.metricLabel}>{label}</div>
+        </div>
+        <button
+          type="button"
+          className={styles.metricInfoButton}
+          aria-label={infoButtonLabel}
+          aria-controls={STANDARD_CONTROL_IDS[metric]}
+          aria-expanded="false"
+        >
+          <span aria-hidden="true">i</span>
+        </button>
+      </div>
+      <div className={styles.metricStandardText}>{levelOrStatus}</div>
+      {advice ? <div className={styles.metricAdvice}>{advice}</div> : null}
+    </div>
+  );
+}
+
 /**
  * 今日四項天氣指標（降雨/濕度/UV/AQI）。
  * @param {object} props - 元件屬性。
@@ -39,22 +99,30 @@ function TodayMetrics({ today }) {
   const { rainProb, humidity, uv, aqi } = today;
   return (
     <div className={styles.metricsRow}>
-      <div className={styles.metricItem}>
-        <div className={styles.metricValue}>{formatMetric(rainProb, '%')}</div>
-        <div className={styles.metricLabel}>降雨</div>
-      </div>
-      <div className={styles.metricItem}>
-        <div className={styles.metricValue}>{formatMetric(humidity, '%')}</div>
-        <div className={styles.metricLabel}>濕度</div>
-      </div>
-      <div className={styles.metricItem}>
-        <div className={styles.metricValue}>{uv ? formatMetric(uv.value) : '\u2014'}</div>
-        <div className={styles.metricLabel}>紫外線</div>
-      </div>
-      <div className={styles.metricItem}>
-        <div className={styles.metricValue}>{aqi ? formatMetric(aqi.value) : '\u2014'}</div>
-        <div className={styles.metricLabel}>AQI</div>
-      </div>
+      <MetricCell id="rain" value={formatMetric(rainProb, '%')} label="降雨" />
+      <MetricCell id="humidity" value={formatMetric(humidity, '%')} label="濕度" />
+      {uv ? (
+        <WeatherStandardMetric
+          metric="uv"
+          label="紫外線"
+          value={uv.value}
+          levelOrStatus={uv.level}
+          infoButtonLabel="查看紫外線等級說明"
+        />
+      ) : (
+        <MetricCell id="uv" value={'\u2014'} label="紫外線" />
+      )}
+      {aqi ? (
+        <WeatherStandardMetric
+          metric="aqi"
+          label="AQI"
+          value={aqi.value}
+          levelOrStatus={aqi.status}
+          infoButtonLabel="查看 AQI 等級說明"
+        />
+      ) : (
+        <MetricCell id="aqi" value={'\u2014'} label="AQI" />
+      )}
     </div>
   );
 }
