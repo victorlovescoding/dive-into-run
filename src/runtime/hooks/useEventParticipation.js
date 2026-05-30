@@ -106,13 +106,14 @@ export default function useEventParticipation({
     }
 
     if (membershipUserUidRef.current !== user.uid) {
+      const nextMembershipUserUid = user.uid;
       membershipCheckedRef.current = new Set();
-      membershipUserUidRef.current = user.uid;
       queueMicrotask(() => {
         if (cancelled) return;
+        membershipUserUidRef.current = nextMembershipUserUid;
         setMyJoinedEventIds(new Set());
         setMembershipStatusByEventId({});
-        setMembershipUserUid(user.uid);
+        setMembershipUserUid(nextMembershipUserUid);
       });
     }
 
