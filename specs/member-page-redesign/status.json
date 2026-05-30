@@ -4,8 +4,8 @@
   "branch": "082-member-page-redesign",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-082-member-page-redesign",
   "phase": "implementation",
-  "activeTask": null,
-  "activeWave": null,
+  "activeTask": "T002",
+  "activeWave": "wave-2",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "082-member-page-redesign",
-    "commit": "6f67e3f760f96cedb8ba9be3c04e1c908c7dd14d",
-    "capturedAt": "2026-05-30T15:44:13Z",
-    "summary": "pre-T001 closeout head; final T001 commit SHA is reported by the commit subagent after commit creation"
+    "commit": "add4421c8e88d97721078d1390167da624c06156",
+    "capturedAt": "2026-05-30T16:30:40Z",
+    "summary": "workflow check branch scoping fix captured before T002 dispatch"
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "4c5b45b1fbf5b62ded2da57dd178133532a90b9f",
-    "capturedAt": "2026-05-30T15:44:13Z",
-    "summary": "origin/main at T001 closeout"
+    "capturedAt": "2026-05-30T15:53:18Z",
+    "summary": "origin/main captured before T002 dispatch"
   },
   "completedTasks": [
     "T001"
@@ -162,7 +162,7 @@
     {
       "id": "T002",
       "title": "Bio Editor And Danger Zone Styling Alignment",
-      "state": "todo",
+      "state": "in_progress",
       "attempt": 1,
       "wave": "wave-2",
       "engineer": "Engineer subagent, CSS-only task",
@@ -445,6 +445,18 @@
       "commit": "6f67e3f760f96cedb8ba9be3c04e1c908c7dd14d",
       "summary": "implementation dispatch/setup committed before T001 closeout",
       "committedAt": "2026-05-30T15:26:34Z"
+    },
+    {
+      "phase": "implementation",
+      "commit": "f58bc0129fe37111dde4a7df01d8e5dd033fc70d",
+      "summary": "T001 member page shell closeout commit before T002 dispatch",
+      "committedAt": "2026-05-30T15:48:41Z"
+    },
+    {
+      "phase": "implementation",
+      "commit": "add4421c8e88d97721078d1390167da624c06156",
+      "summary": "workflow check branch scoping fix before T002 dispatch",
+      "committedAt": "2026-05-30T16:28:27Z"
     }
   ],
   "rulesDeployStatus": {
@@ -457,41 +469,29 @@
   "incidents": [],
   "lastVerification": [
     {
-      "command": "npm run lint:changed",
-      "exitCode": 0,
-      "summary": "No changed-file lint errors; only React version warning.",
-      "verifiedAt": "2026-05-30T15:44:13Z"
-    },
-    {
-      "command": "npm run type-check:changed",
-      "exitCode": 0,
-      "summary": "No type errors in changed files.",
-      "verifiedAt": "2026-05-30T15:44:13Z"
-    },
-    {
-      "command": "npm run depcruise",
-      "exitCode": 0,
-      "summary": "No dependency-direction violations; Node MODULE_TYPELESS_PACKAGE_JSON warning only.",
-      "verifiedAt": "2026-05-30T15:44:13Z"
-    },
-    {
       "command": "node scripts/validate-workflow-state.js specs/member-page-redesign/status.json",
       "exitCode": 0,
       "summary": "specs/member-page-redesign/status.json: ok; WORKFLOW STATE: 1 status file(s) valid",
-      "verifiedAt": "2026-05-30T15:44:13Z"
+      "verifiedAt": "2026-05-30T16:30:40Z"
     },
     {
       "command": "node scripts/check-superpowers-state.js specs/member-page-redesign/status.json",
       "exitCode": 0,
       "summary": "specs/member-page-redesign/status.json: sync ok; SUPERPOWERS CHECK: 1 status file(s) synced",
-      "verifiedAt": "2026-05-30T15:44:13Z"
+      "verifiedAt": "2026-05-30T16:30:40Z"
     },
     {
-      "command": "git diff --check -- src/ui/member/MemberPageScreen.jsx src/ui/member/MemberPageScreen.module.css specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json",
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "WORKFLOW STATE: 13 status file(s) valid; SUPERPOWERS CHECK: 13 status file(s) synced",
+      "verifiedAt": "2026-05-30T16:30:40Z"
+    },
+    {
+      "command": "git diff --check -- specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-05-30T15:44:13Z"
+      "verifiedAt": "2026-05-30T16:30:40Z"
     }
   ],
-  "updatedAt": "2026-05-30T15:44:13Z"
+  "updatedAt": "2026-05-30T16:30:40Z"
 }

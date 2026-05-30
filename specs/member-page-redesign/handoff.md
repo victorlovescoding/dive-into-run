@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-082-member-page-redesign`
 - Branch: `082-member-page-redesign`
-- Current head: `6f67e3f760f96cedb8ba9be3c04e1c908c7dd14d` (`pre-T001 closeout head; final T001 commit SHA is reported by the commit subagent after commit creation`)
+- Current head: `add4421c8e88d97721078d1390167da624c06156` (`workflow check branch scoping fix captured before T002 dispatch`)
 - Remote head: `origin/main` at `4c5b45b1fbf5b62ded2da57dd178133532a90b9f`
 - Authorization boundary:
   - edit: true for product implementation tasks through Engineer/Reviewer subagents
@@ -17,11 +17,11 @@
   - localMainSync: false
   - deployFirestoreRules: false
 - Current phase: `implementation`
-- Active task: none
-- Active wave: none
+- Active task: `T002`
+- Active wave: `wave-2`
 - Latest reviewer decision: `review_passed` for T001; Spec reviewer and code quality reviewer both passed with no findings; browser QA is deferred to T004.
-- Last verified commit: none; final T001 commit SHA is created after this state update and reported by the commit subagent.
-- Phase commits: plan commit `cf4a65e75dce300a032763cd3b5fe1873578923c`; implementation setup commit `6f67e3f760f96cedb8ba9be3c04e1c908c7dd14d`; final T001 commit SHA reported after commit creation.
+- Last verified commit: none; T001 and workflow-check fix commits are captured in current head and phase commits, and final integration verification remains deferred to T004.
+- Phase commits: plan commit `cf4a65e75dce300a032763cd3b5fe1873578923c`; implementation setup commit `6f67e3f760f96cedb8ba9be3c04e1c908c7dd14d`; T001 shell commit `f58bc0129fe37111dde4a7df01d8e5dd033fc70d`; workflow check branch scoping fix commit `add4421c8e88d97721078d1390167da624c06156`.
 - Rules deploy status: `not_applicable`, required=false, changed=false
 - Incidents: none
 - Blocked: no
@@ -41,30 +41,27 @@
 
 ## Next Action
 
-After the T001 commit is created, dispatch the wave-2 Engineer lanes for T002 and T003 from `tasks.md`. T002 and T003 remain `todo` until the coordinator dispatches them.
+Dispatch the Engineer subagent for T002 CSS-only Bio/Danger styling, using the owned files from `tasks.md`. T003 and T004 remain `todo`.
 
-Do not dispatch any product task outside the T002/T003 owned files. Push, PR creation, CI watch, merge, local `main` sync, and Firestore/storage rules deploy remain unauthorized.
+Do not dispatch any product task outside the T002 owned files. Push, PR creation, CI watch, merge, local `main` sync, and Firestore/storage rules deploy remain unauthorized.
 
 ## Latest Verification
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `npm install` | 0 | `node_modules` was missing; install completed with no tracked lockfile/source changes. |
-| `npm run lint:changed` | 0 | No changed-file lint errors; only React version warning. |
-| `npm run type-check:changed` | 0 | No type errors in changed files. |
-| `npm run depcruise` | 0 | No dependency-direction violations; Node MODULE_TYPELESS_PACKAGE_JSON warning only. |
 | `node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` | 0 | `specs/member-page-redesign/status.json: ok`; `WORKFLOW STATE: 1 status file(s) valid`. |
 | `node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` | 0 | `specs/member-page-redesign/status.json: sync ok`; `SUPERPOWERS CHECK: 1 status file(s) synced`. |
-| `git diff --check -- src/ui/member/MemberPageScreen.jsx src/ui/member/MemberPageScreen.module.css specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` | 0 | No whitespace errors. |
+| `npm run workflow:check` | 0 | `WORKFLOW STATE: 13 status file(s) valid`; `SUPERPOWERS CHECK: 13 status file(s) synced`. |
+| `git diff --check -- specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` | 0 | No whitespace errors. |
 
 ## Closeout Checklist
 
 - [x] Product-code implementation authorization is obtained before T001 dispatch.
 - [x] T001 is completed in `tasks.md` and `status.json`.
-- [x] Active task and active wave are null in `status.json`.
+- [x] Active task and active wave are `T002` and `wave-2` in `status.json`.
 - [x] Latest reviewer decision is recorded in `tasks.md` and `status.json`.
 - [x] `lastVerification` has one entry per command.
-- [ ] Final T001 commit SHA is reported after commit creation; it is not embedded in the same commit to avoid a self-referential hash loop.
+- [x] Final T001 commit SHA is captured as `f58bc0129fe37111dde4a7df01d8e5dd033fc70d`.
 - [x] `authorizationBoundary.deployFirestoreRules` is recorded and treated as separate from `edit`, `commit`, `push`, `pullRequest`, `ciWatch`, `merge`, and `localMainSync`.
 - [x] `rulesDeployStatus` remains `not_applicable`.
 - [x] Final summary does not imply deployed rules, deployed functions, or production product behavior.
@@ -79,7 +76,7 @@ Do not dispatch any product task outside the T002/T003 owned files. Push, PR cre
 
 ## Pitfalls
 
-- T002 and T003 are next-wave tasks but are not dispatched yet.
+- T002 is active for Engineer dispatch; T003 remains todo and is not dispatched yet.
 - `edit=true` and `commit=true` now cover product implementation only through Engineer/Reviewer subagents; they still do not authorize push, PR creation, CI watch, merge, local `main` sync, or rules deploy.
 - `/member/favorites` stays as-is; only the exact `我的收藏` link is in scope.
 - Removing `這是會員頁面` must not introduce a replacement page title.
