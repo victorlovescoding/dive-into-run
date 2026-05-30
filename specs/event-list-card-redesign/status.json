@@ -1,0 +1,343 @@
+{
+  "schemaVersion": 3,
+  "feature": "event-list-card-redesign",
+  "branch": "081-event-list-card-redesign",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-081-event-list-card-redesign",
+  "phase": "plan_ready",
+  "activeTask": null,
+  "activeWave": null,
+  "authorizationBoundary": {
+    "edit": true,
+    "commit": true,
+    "push": false,
+    "pullRequest": false,
+    "ciWatch": false,
+    "merge": false,
+    "localMainSync": false,
+    "deployFirestoreRules": false
+  },
+  "currentHead": {
+    "branch": "081-event-list-card-redesign",
+    "commit": "474481ba29647d6edcb33b6519a57cfbb04772b3",
+    "capturedAt": "2026-05-30T15:02:47Z",
+    "summary": "Local branch head after approved spec commit; planning docs are uncommitted workspace changes."
+  },
+  "remoteHead": {
+    "remote": "origin",
+    "branch": "main",
+    "commit": "4c5b45b1fbf5b62ded2da57dd178133532a90b9f",
+    "capturedAt": "2026-05-30T15:02:47Z",
+    "summary": "Tracking remote for this worktree is origin/main; feature branch is ahead by the spec commit."
+  },
+  "completedTasks": [],
+  "tasks": [
+    {
+      "id": "T001",
+      "title": "Add Focused List Card Tests",
+      "state": "ready",
+      "attempt": 1,
+      "wave": "wave-1",
+      "engineer": "Engineer subagent",
+      "reviewer": "Reviewer subagent",
+      "scope": [
+        "Create a focused Testing Library test file for EventsListSection.",
+        "Cover current field rendering, formatter output, list state text, card background navigation, and nested control propagation.",
+        "The initial focused test run should fail only because the current component lacks the new card background navigation behavior or the new rendered structure."
+      ],
+      "nonScope": [
+        "Do not modify production files.",
+        "Do not modify shared components, runtime hooks, package files, configs, or existing tests.",
+        "Do not weaken or skip existing participation runtime coverage."
+      ],
+      "ownedFiles": [
+        "src/ui/events/EventsListSection.test.jsx"
+      ],
+      "readOnlyContext": [
+        "src/ui/events/EventsListSection.jsx",
+        "src/ui/events/event-formatters.js",
+        "src/components/BookmarkButton.jsx",
+        "src/components/EventActionButtons.jsx",
+        "src/components/EventCardMenu.jsx",
+        "src/components/UserLink.jsx",
+        "src/runtime/hooks/useEventParticipation.test.jsx",
+        "vitest.config.mjs",
+        "vitest.setup.jsx"
+      ],
+      "dependencies": [],
+      "engineerInstructions": [
+        "Create src/ui/events/EventsListSection.test.jsx.",
+        "Use Testing Library, userEvent, and Vitest.",
+        "Mock next/link as an anchor, next/navigation with a hoisted routerPushMock, and next/image using the existing UserLink test pattern.",
+        "Use stable future dates so deadline behavior is deterministic.",
+        "Assert field rendering, formatter output, all list state text, card background navigation, bookmark/menu/participation propagation, and disabled-looking participation states.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T001.1: The new test file compiles and targets EventsListSection.",
+        "AC-T001.2: The tests assert the approved card click exception and every nested-control exception.",
+        "AC-T001.3: The tests assert all existing list state texts remain rendered.",
+        "AC-T001.4: The focused test run fails against the pre-implementation component for the intended missing behavior or structure, not because of syntax, import, alias, or mock errors."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
+          "expectedSignal": "Exit 1 with the new card background navigation assertion failing against the old component, while imports and mocks load successfully.",
+          "lastRun": null
+        },
+        {
+          "command": "git diff --check -- src/ui/events/EventsListSection.test.jsx",
+          "expectedSignal": "Exit 0 with no whitespace errors.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only src/ui/events/EventsListSection.test.jsx.",
+        "Focused test failure is the intended product gap and not test infrastructure breakage.",
+        "Tests cover background click navigation, nested controls, field rendering, formatter output, and list states.",
+        "No production behavior changes are present."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files.",
+        "Tests miss bookmark, menu, participation, disabled-looking participation, or list state coverage.",
+        "Focused test run fails because of syntax, import, alias, or mocking defects.",
+        "Tests assert new product behavior outside the approved spec."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T002",
+      "title": "Implement Card Markup And Background Navigation",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-2",
+      "engineer": "Engineer subagent",
+      "reviewer": "Reviewer subagent",
+      "scope": [
+        "Modify EventsListSection.jsx to render the approved card architecture.",
+        "Add the card background click guard and router navigation to /events/{id}.",
+        "Preserve all existing props, handlers, list state text, formatter usage, and child components."
+      ],
+      "nonScope": [
+        "Do not modify CSS in this task.",
+        "Do not modify tests beyond the T001 file.",
+        "Do not modify BookmarkButton, EventActionButtons, EventCardMenu, UserLink, runtime hooks, services, event formatters, route definitions, or package files.",
+        "Do not change toasts, side effects, modal triggers, owner menu contents, bookmark aria labels, route formatting, date formatting, pace formatting, remaining-seat logic, or participation behavior."
+      ],
+      "ownedFiles": [
+        "src/ui/events/EventsListSection.jsx"
+      ],
+      "readOnlyContext": [
+        "src/ui/events/EventsListSection.test.jsx",
+        "src/ui/events/event-formatters.js",
+        "src/components/BookmarkButton.jsx",
+        "src/components/EventActionButtons.jsx",
+        "src/components/EventCardMenu.jsx",
+        "src/components/UserLink.jsx",
+        "src/runtime/hooks/useEventParticipation.js",
+        "src/runtime/hooks/useEventsPageRuntime.js"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Add use client at the top of EventsListSection.jsx.",
+        "Import useRouter from next/navigation.",
+        "Add CARD_NAVIGATION_SELECTOR and isInteractiveCardTarget(target).",
+        "Implement handleCardClick(eventId, clickEvent) to skip interactive descendants and call router.push(`/events/${eventId}`) for card background clicks.",
+        "Render top meta row, title/action cluster, six-field fact grid, and footer host/route/participation row.",
+        "Keep title Link, UserLink, BookmarkButton, EventCardMenu, EventActionButtons, formatDateTime, formatPace, renderRouteLabel, getRemainingSeats, and all handlers wired to their existing data.",
+        "Add data-testid={`event-card-${eventId}`} to the card container.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T002.1: The focused EventsListSection tests pass.",
+        "AC-T002.2: Clicking card background calls router.push('/events/{id}').",
+        "AC-T002.3: Title link and host link remain semantic links with the same hrefs.",
+        "AC-T002.4: Bookmark, menu trigger, edit, delete, join, leave, full, deadline, checking, retry, and filter controls do not trigger card background navigation.",
+        "AC-T002.5: The card still renders exactly the approved field set and formatter outputs.",
+        "AC-T002.6: Owner-only menu contents remain exactly edit and delete."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
+          "expectedSignal": "Exit 0 with all focused list card tests passing.",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser",
+          "expectedSignal": "Exit 0 with existing participation runtime tests passing.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0 with no changed-file lint errors.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 with no changed-file type-check errors.",
+          "lastRun": null
+        },
+        {
+          "command": "git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsListSection.test.jsx",
+          "expectedSignal": "Exit 0 with no whitespace errors.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only src/ui/events/EventsListSection.jsx and already-reviewed T001 test file remains unchanged unless the Reviewer accepts a narrow assertion correction.",
+        "All acceptance criteria are demonstrated by focused tests or direct diff evidence.",
+        "No shared component, runtime hook, service, route, formatter, package, or CSS file changes are present.",
+        "Click guard is target-based and protects nested interactive descendants."
+      ],
+      "reviewerRejectCriteria": [
+        "Card is implemented as a nested link around buttons or links.",
+        "Nested controls can trigger card background navigation.",
+        "Existing handlers, labels, fields, formatters, list state text, or child component props change without spec approval.",
+        "Diff expands beyond owned files.",
+        "Verification is missing, stale, or failing."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T003",
+      "title": "Implement Card Visual System And Browser Evidence",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-3",
+      "engineer": "Engineer subagent",
+      "reviewer": "Reviewer subagent",
+      "scope": [
+        "Modify EventsPageScreen.module.css to implement the approved list card and list state visual design.",
+        "Add responsive layout rules for the fact grid, title/action cluster, and bottom host/route/participation row.",
+        "Use only list-local selectors for participation button adjustments.",
+        "Capture browser evidence for /events desktop and mobile."
+      ],
+      "nonScope": [
+        "Do not modify JSX except through a coordinator-approved plan update.",
+        "Do not modify EventActionButtons.module.css, BookmarkButton.module.css, EventCardMenu.module.css, UserLink.module.css, event detail CSS, edit/create form CSS, runtime hooks, services, package files, or tests.",
+        "Do not change visible list text or product behavior."
+      ],
+      "ownedFiles": [
+        "src/ui/events/EventsPageScreen.module.css"
+      ],
+      "readOnlyContext": [
+        "src/ui/events/EventsListSection.jsx",
+        "src/ui/events/EventsListSection.test.jsx",
+        "src/components/BookmarkButton.module.css",
+        "src/components/EventActionButtons.module.css",
+        "src/components/EventCardMenu.module.css",
+        "src/components/UserLink.module.css",
+        ".codex/rules/sensors.md"
+      ],
+      "dependencies": [
+        "T002"
+      ],
+      "engineerInstructions": [
+        "Replace list card and list state styles in EventsPageScreen.module.css with the new list-local visual system.",
+        "Use responsive grid rules that produce three fact columns on desktop and one or two columns on smaller widths without overlap.",
+        "Use font-variant-numeric: tabular-nums or a monospace font stack only on numeric values and time/deadline values.",
+        "Set letter-spacing: 0 when a selector needs explicit letter spacing; do not add negative values.",
+        "Avoid generic eventCardTopActions button overrides that would restyle BookmarkButton.",
+        "Scope participation button layout under eventParticipationSlot.",
+        "Capture Browser or Chrome evidence for /events at 1440x900 and 390x844.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T003.1: Event cards visually match the warm white/deep green/muted green-gray direction with 8px radius, fine border, low shadow, and mono numeric facts.",
+        "AC-T003.2: State cards for loading, filtering, creating, empty, error, load-more, and end hint match the new list card language.",
+        "AC-T003.3: Desktop viewport shows a single-column event list and 3-column fact grid.",
+        "AC-T003.4: Mobile viewport shows 1-2 fact columns depending width, with no overlap in the action cluster or footer.",
+        "AC-T003.5: Route pill is visually beside host, not in the fact grid.",
+        "AC-T003.6: Bookmark icon/style is not restyled into a heart or global variant.",
+        "AC-T003.7: No negative letter spacing exists in the changed CSS."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
+          "expectedSignal": "Exit 0 with all focused list card tests passing.",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser",
+          "expectedSignal": "Exit 0 with existing participation runtime tests passing.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0 with no changed-file lint errors.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 with no changed-file type-check errors.",
+          "lastRun": null
+        },
+        {
+          "command": "rg -n \"letter-spacing[[:space:]]*:[[:space:]]*-\" src/ui/events/EventsPageScreen.module.css",
+          "expectedSignal": "Exit 1 with no matches.",
+          "lastRun": null
+        },
+        {
+          "command": "git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsPageScreen.module.css src/ui/events/EventsListSection.test.jsx",
+          "expectedSignal": "Exit 0 with no whitespace errors.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only src/ui/events/EventsPageScreen.module.css.",
+        "Browser evidence includes /events desktop and mobile screenshots, expected visual signals, console findings, and network findings.",
+        "Required local verification commands pass with the expected signals.",
+        "Visual changes stay list-local and do not modify shared component CSS.",
+        "Responsive layout has no overlap in title/action cluster, fact grid, or bottom row."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without coordinator approval.",
+        "Shared action, bookmark, menu, user-link, detail, edit, create, runtime, package, or route files change.",
+        "Browser evidence is missing or shows overlap, unreadable text, blank content, new console errors, or failed app requests.",
+        "Negative letter spacing is present.",
+        "Verification is missing, stale, or failing."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    }
+  ],
+  "blocked": false,
+  "blockedReason": null,
+  "lastVerifiedCommit": null,
+  "phaseCommits": [
+    {
+      "phase": "spec",
+      "commit": "474481ba29647d6edcb33b6519a57cfbb04772b3",
+      "summary": "Add event list card redesign spec",
+      "committedAt": "2026-05-30"
+    }
+  ],
+  "rulesDeployStatus": {
+    "state": "not_applicable",
+    "required": false,
+    "changed": false,
+    "evidence": [],
+    "deployedCommit": null
+  },
+  "incidents": [],
+  "lastVerification": [],
+  "updatedAt": "2026-05-30T15:02:47Z"
+}
