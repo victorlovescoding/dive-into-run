@@ -10,6 +10,10 @@ import {
 import { notifyEventHostJoined } from '@/runtime/client/use-cases/notification-use-cases';
 import useEventParticipation from './useEventParticipation';
 
+/**
+ * @typedef {import('@/service/event-service').EventData} EventData
+ */
+
 vi.mock('@/runtime/client/use-cases/event-use-cases', () => ({
   fetchMyJoinedEventsForIds: vi.fn(),
   joinEvent: vi.fn(),
@@ -32,10 +36,17 @@ const user = {
   photoURL: 'runner.png',
 };
 
+/** @type {EventData} */
 const event = {
   id: 'event-1',
   title: '週末晨跑',
   hostUid: 'host-1',
+  city: '台北市',
+  district: '大安區',
+  time: '2026-06-01T06:00:00.000Z',
+  registrationDeadline: '2026-05-31T12:00:00.000Z',
+  distanceKm: 5,
+  paceSec: 360,
   maxParticipants: 5,
   participantsCount: 1,
   remainingSeats: 4,
@@ -75,6 +86,33 @@ function renderParticipation(options = {}) {
   });
 
   return { ...view, showToast, isMountedRef };
+}
+
+function renderParticipationWithExternalEvents() {
+  const showToast = vi.fn();
+  const isMountedRef = { current: true };
+  /** @type {(updater: EventData[] | ((previous: EventData[]) => EventData[])) => void} */
+  const setEvents = vi.fn();
+
+  const view = renderHook(
+    /**
+     * @param {{ events: EventData[] }} props - Hook props with the externally controlled events list.
+     * @returns {ReturnType<typeof useEventParticipation>} Hook state and handlers.
+     */
+    ({ events }) =>
+      useEventParticipation({
+        user,
+        events,
+        isMountedRef,
+        setEvents,
+        showToast,
+      }),
+    {
+      initialProps: { events: [event] },
+    },
+  );
+
+  return { ...view, showToast, isMountedRef, setEvents };
 }
 
 async function joinFromList(view, eventRecord = event) {
@@ -208,5 +246,39 @@ describe('useEventParticipation host join notification', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('建立主揪報名通知失敗:', notifyError),
     );
     consoleErrorSpy.mockRestore();
+  });
+
+  test('exposes joined membership after list-page join when initial membership owner update is cancelled before rerender', async () => {
+    const originalQueueMicrotask = globalThis.queueMicrotask.bind(globalThis);
+    /** @type {(() => void) | null} */
+    let heldInitialOwnerUpdate = null;
+    const queueMicrotaskSpy = vi.spyOn(globalThis, 'queueMicrotask').mockImplementation((task) => {
+      if (!heldInitialOwnerUpdate) {
+        heldInitialOwnerUpdate = task;
+        return;
+      }
+      originalQueueMicrotask(task);
+    });
+
+    const view = renderParticipationWithExternalEvents();
+
+    view.rerender({ events: [{ ...event, title: '週末晨跑更新' }] });
+    if (!heldInitialOwnerUpdate) {
+      throw new Error('Expected initial membership owner update to be queued.');
+    }
+    heldInitialOwnerUpdate();
+    queueMicrotaskSpy.mockRestore();
+
+    await waitFor(() =>
+      expect(fetchMyJoinedEventsForIdsMock).toHaveBeenCalledWith('runner-1', ['event-1']),
+    );
+
+    await act(async () => {
+      await view.result.current.handleJoinClick(event, /** @type {any} */ (clickEvent));
+    });
+
+    expect(view.showToast).toHaveBeenCalledWith('報名成功');
+    expect(view.result.current.myJoinedEventIds.has('event-1')).toBe(true);
+    expect(view.result.current.membershipStatusByEventId['event-1']).toBe('joined');
   });
 });
