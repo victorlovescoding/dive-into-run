@@ -16,7 +16,7 @@
  */
 
 /**
- * @typedef {'event_modified'|'event_cancelled'|'post_new_comment'|'post_comment_reply'|'event_host_comment'|'event_participant_comment'|'event_comment_reply'} NotificationType
+ * @typedef {'event_modified'|'event_cancelled'|'post_new_comment'|'post_comment_reply'|'event_host_comment'|'event_participant_comment'|'event_comment_reply'|'event_host_joined'} NotificationType
  */
 
 const MINUTE_MS = 60 * 1000;

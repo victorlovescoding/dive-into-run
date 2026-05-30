@@ -23,10 +23,10 @@
  */
 
 /**
- * @typedef {'event_modified'|'event_cancelled'|'post_new_comment'|'post_comment_reply'|'event_host_comment'|'event_participant_comment'|'event_comment_reply'} NotificationType
+ * @typedef {'event_modified'|'event_cancelled'|'post_new_comment'|'post_comment_reply'|'event_host_comment'|'event_participant_comment'|'event_comment_reply'|'event_host_joined'} NotificationType
  */
 
-/** @type {Record<NotificationType, (title: string) => string>} */
+/** @type {Record<NotificationType, (title: string, actor?: Actor) => string>} */
 const MESSAGE_BUILDERS = {
   event_modified: (title) => `你所參加的『${title}』活動資訊有更動`,
   event_cancelled: (title) => `你所參加的『${title}』已取消`,
@@ -35,17 +35,25 @@ const MESSAGE_BUILDERS = {
   event_host_comment: (title) => `你主辦的活動『${title}』有一則新的留言`,
   event_participant_comment: (title) => `你參加的活動『${title}』有一則新的留言`,
   event_comment_reply: (title) => `你留言過的活動『${title}』有一則新的留言`,
+  event_host_joined: (title, actor) => {
+    const actorName = actor?.name?.trim();
+    if (!actorName) {
+      throw new Error('event_host_joined notification requires actor name');
+    }
+    return `${actorName} 報名了你的活動「${title}」`;
+  },
 };
 
 /**
  * 根據通知類型與實體標題組合通知訊息。
  * @param {NotificationType} type - 通知類型。
  * @param {string} entityTitle - 實體標題。
+ * @param {Actor} [actor] - 觸發者資訊。
  * @returns {string} 完整通知訊息。
  */
-export function buildNotificationMessage(type, entityTitle) {
+export function buildNotificationMessage(type, entityTitle, actor) {
   const builder = MESSAGE_BUILDERS[type];
-  return builder(entityTitle);
+  return builder(entityTitle, actor);
 }
 
 /**

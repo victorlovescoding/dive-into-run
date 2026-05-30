@@ -400,6 +400,7 @@ service cloud.firestore {
           'event_modified', 'event_cancelled', 'post_new_comment',
           'post_comment_reply', 'event_host_comment',
           'event_participant_comment', 'event_comment_reply',
+          'event_host_joined',
         ]
         && request.resource.data.read == false
         && request.resource.data.createdAt == request.time;
