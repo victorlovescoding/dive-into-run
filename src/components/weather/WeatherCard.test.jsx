@@ -57,6 +57,14 @@ const FULL_WEATHER = {
   },
 };
 
+const TOMORROW_UV_NULL_WEATHER = {
+  ...FULL_WEATHER,
+  tomorrow: {
+    ...FULL_WEATHER.tomorrow,
+    uv: null,
+  },
+};
+
 function renderWeatherCard(weather = FULL_WEATHER) {
   return render(<WeatherCard {...weather} />);
 }
@@ -89,7 +97,7 @@ describe('WeatherCard', () => {
       name: '查看紫外線等級說明',
     });
     expect(uvInfoButton).toHaveAttribute('aria-expanded', 'false');
-    expect(uvInfoButton).toHaveAttribute('aria-controls', 'weather-standard-popover-uv');
+    expect(uvInfoButton).toHaveAttribute('aria-controls', expect.stringMatching(/uv$/));
 
     expect(aqiMetric).not.toBeNull();
     expect(within(aqiMetric).getByText('AQI')).toBeInTheDocument();
@@ -101,11 +109,47 @@ describe('WeatherCard', () => {
       name: '查看 AQI 等級說明',
     });
     expect(aqiInfoButton).toHaveAttribute('aria-expanded', 'false');
-    expect(aqiInfoButton).toHaveAttribute('aria-controls', 'weather-standard-popover-aqi');
+    expect(aqiInfoButton).toHaveAttribute('aria-controls', expect.stringMatching(/aqi$/));
 
     const infoButtonCss = getCssBlock('metricInfoButton');
     expect(infoButtonCss).toContain('min-width: 44px;');
     expect(infoButtonCss).toContain('min-height: 44px;');
+  });
+
+  it('uses per-card standards control ids for multiple weather card instances', () => {
+    render(
+      <>
+        <WeatherCard {...FULL_WEATHER} />
+        <WeatherCard {...{ ...FULL_WEATHER, locationName: '臺北市 · 大安區' }} />
+      </>,
+    );
+
+    const uvInfoButtons = screen.getAllByRole('button', {
+      name: '查看紫外線等級說明',
+    });
+    const aqiInfoButtons = screen.getAllByRole('button', {
+      name: '查看 AQI 等級說明',
+    });
+
+    expect(uvInfoButtons[0]).toHaveAttribute('aria-controls');
+    expect(uvInfoButtons[1]).toHaveAttribute('aria-controls');
+    expect(aqiInfoButtons[0]).toHaveAttribute('aria-controls');
+    expect(aqiInfoButtons[1]).toHaveAttribute('aria-controls');
+    expect(uvInfoButtons[0].getAttribute('aria-controls')).not.toBe(
+      uvInfoButtons[1].getAttribute('aria-controls'),
+    );
+    expect(aqiInfoButtons[0].getAttribute('aria-controls')).not.toBe(
+      aqiInfoButtons[1].getAttribute('aria-controls'),
+    );
+  });
+
+  it('keeps the metrics grid container-aware for narrow weather cards', () => {
+    const weatherCardCss = getCssBlock('weatherCard');
+    const metricsRowCss = getCssBlock('metricsRow');
+
+    expect(weatherCardCss).toContain('container-type: inline-size;');
+    expect(metricsRowCss).toContain('grid-template-columns: repeat(2, minmax(0, 1fr));');
+    expect(WEATHER_STYLESHEET).toContain('@container (min-width: 520px)');
   });
 
   it('hides today UV level advice and info button when UV is null', () => {
@@ -121,10 +165,10 @@ describe('WeatherCard', () => {
 
     expect(within(uvMetric).getByText('紫外線')).toBeInTheDocument();
     expect(within(uvMetric).getByText('—')).toBeInTheDocument();
-    expect(screen.queryByText('過量級')).not.toBeInTheDocument();
-    expect(screen.queryByText('改清晨/傍晚，縮短曝曬')).not.toBeInTheDocument();
+    expect(within(uvMetric).queryByText('過量級')).not.toBeInTheDocument();
+    expect(within(uvMetric).queryByText('改清晨/傍晚，縮短曝曬')).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', {
+      within(uvMetric).queryByRole('button', {
         name: '查看紫外線等級說明',
       }),
     ).not.toBeInTheDocument();
@@ -143,22 +187,29 @@ describe('WeatherCard', () => {
 
     expect(within(aqiMetric).getByText('AQI')).toBeInTheDocument();
     expect(within(aqiMetric).getByText('—')).toBeInTheDocument();
-    expect(screen.queryByText('普通')).not.toBeInTheDocument();
-    expect(screen.queryByText('可正常跑，敏感者留意體感')).not.toBeInTheDocument();
+    expect(within(aqiMetric).queryByText('普通')).not.toBeInTheDocument();
+    expect(within(aqiMetric).queryByText('可正常跑，敏感者留意體感')).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', {
+      within(aqiMetric).queryByRole('button', {
         name: '查看 AQI 等級說明',
       }),
     ).not.toBeInTheDocument();
   });
 
   it('keeps tomorrow summary to UV only without standards entry points', () => {
-    renderWeatherCard();
+    const { rerender } = renderWeatherCard();
 
     const tomorrowSummary = screen.getByText('降雨 40% · 濕度 70% · UV 5 中量級');
 
     expect(tomorrowSummary).toHaveTextContent('UV 5 中量級');
     expect(tomorrowSummary).not.toHaveTextContent('AQI');
+    expect(screen.getAllByRole('button', { name: /等級說明/ })).toHaveLength(2);
+
+    rerender(<WeatherCard {...TOMORROW_UV_NULL_WEATHER} />);
+
+    const nullUvTomorrowSummary = screen.getByText('降雨 40% · 濕度 70% · UV —');
+    expect(nullUvTomorrowSummary).toHaveTextContent('UV —');
+    expect(nullUvTomorrowSummary).not.toHaveTextContent('AQI');
     expect(screen.getAllByRole('button', { name: /等級說明/ })).toHaveLength(2);
   });
 });

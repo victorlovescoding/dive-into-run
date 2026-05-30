@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import Image from 'next/image';
 import { getWeatherIconUrl } from '@/runtime/client/use-cases/weather-location-use-cases';
 import styles from './weather.module.css';
@@ -31,11 +32,6 @@ function getCurrentPeriod() {
 
 // #region Sub-components
 
-const STANDARD_CONTROL_IDS = Object.freeze({
-  uv: 'weather-standard-popover-uv',
-  aqi: 'weather-standard-popover-aqi',
-});
-
 /**
  * Simple today metric cell.
  * @param {object} props - 元件屬性。
@@ -61,9 +57,10 @@ function MetricCell({ id, value, label }) {
  * @param {number} props.value - Display value.
  * @param {string} props.levelOrStatus - Official level/status from weather data.
  * @param {string} props.infoButtonLabel - Accessible info button label.
+ * @param {string} props.controlId - Stable per-card controlled overlay id.
  * @returns {import('react').JSX.Element} Enhanced metric cell.
  */
-function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButtonLabel }) {
+function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButtonLabel, controlId }) {
   const advice = getWeatherMetricAdvice(metric, levelOrStatus);
 
   return (
@@ -77,7 +74,7 @@ function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButton
           type="button"
           className={styles.metricInfoButton}
           aria-label={infoButtonLabel}
-          aria-controls={STANDARD_CONTROL_IDS[metric]}
+          aria-controls={controlId}
           aria-expanded="false"
         >
           <span aria-hidden="true">i</span>
@@ -93,9 +90,10 @@ function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButton
  * 今日四項天氣指標（降雨/濕度/UV/AQI）。
  * @param {object} props - 元件屬性。
  * @param {TodayWeather} props.today - 今日天氣資料。
+ * @param {{ uv: string, aqi: string }} props.standardControlIds - Per-card overlay ids.
  * @returns {import('react').JSX.Element} 指標列。
  */
-function TodayMetrics({ today }) {
+function TodayMetrics({ today, standardControlIds }) {
   const { rainProb, humidity, uv, aqi } = today;
   return (
     <div className={styles.metricsRow}>
@@ -108,6 +106,7 @@ function TodayMetrics({ today }) {
           value={uv.value}
           levelOrStatus={uv.level}
           infoButtonLabel="查看紫外線等級說明"
+          controlId={standardControlIds.uv}
         />
       ) : (
         <MetricCell id="uv" value={'\u2014'} label="紫外線" />
@@ -119,6 +118,7 @@ function TodayMetrics({ today }) {
           value={aqi.value}
           levelOrStatus={aqi.status}
           infoButtonLabel="查看 AQI 等級說明"
+          controlId={standardControlIds.aqi}
         />
       ) : (
         <MetricCell id="aqi" value={'\u2014'} label="AQI" />
@@ -179,8 +179,13 @@ function TomorrowSection({ tomorrow }) {
  * @returns {import('react').JSX.Element} 天氣卡元件。
  */
 export default function WeatherCard({ locationName, today, tomorrow }) {
+  const standardControlIdBase = useId();
   const period = getCurrentPeriod();
   const iconUrl = getWeatherIconUrl(today.weatherCode, period);
+  const standardControlIds = {
+    uv: `${standardControlIdBase}-weather-standard-popover-uv`,
+    aqi: `${standardControlIdBase}-weather-standard-popover-aqi`,
+  };
 
   return (
     <div className={styles.weatherCard} style={{ position: 'relative' }}>
@@ -213,7 +218,7 @@ export default function WeatherCard({ locationName, today, tomorrow }) {
         </span>
       </div>
 
-      <TodayMetrics today={today} />
+      <TodayMetrics today={today} standardControlIds={standardControlIds} />
       <TomorrowSection tomorrow={tomorrow} />
     </div>
   );

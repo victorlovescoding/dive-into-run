@@ -92,6 +92,7 @@
   border-radius: 1rem;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(164, 195, 228, 0.15);
+  container-type: inline-size;
 }
 
 .temperature {
@@ -153,7 +154,7 @@
   margin-top: 1rem;
 }
 
-@media (min-width: 640px) {
+@container (min-width: 520px) {
   .metricsRow {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
