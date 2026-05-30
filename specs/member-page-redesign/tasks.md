@@ -62,13 +62,13 @@
 
 ### T001 - Member Page Shell And Profile Controls
 
-- **State**: `in_progress`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-1`
 - **Engineer**: Engineer subagent, render/CSS task
 - **Reviewer**: Reviewer subagent, UI behavior and boundary check
 - **Commit checkpoint**: no per-task commit until Reviewer PASS and coordinator approval
-- **Last verified commit**: none
+- **Last verified commit**: none; final T001 commit SHA is created after this state update and reported by the commit subagent.
 - **Authorization boundary**: product implementation tasks through Engineer/Reviewer subagents edit=yes, commit=yes; push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: not_applicable, not required, unchanged
 - **Incidents**: none
@@ -170,12 +170,25 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: not dispatched yet; record files changed, commands, exit codes, risks, and unverified items after implementation.
-- Reviewer report: not reviewed yet; record `review_passed`, `review_rejected`, or `blocked`, checked diff, commands, exit codes, and reason.
-- Command output summary: none yet.
-- Changed files summary: none yet.
-- Phase commits: none yet.
-- Rules deploy status: not_applicable.
+- Engineer report: DONE_WITH_CONCERNS originally due missing dependencies; after setup, implemented a render-only member workspace shell, removed visible `這是會員頁面`, added no title/Nav, arranged desktop left profile/Bio/Danger plus right dashboard, arranged mobile profile -> Bio -> dashboard -> Danger, and preserved avatar input/ref/change, display-name form, public profile link, and exact `我的收藏` link.
+- Reviewer decision: `review_passed`; Spec reviewer and code quality reviewer both passed with no findings; browser QA is deferred to T004.
+- Reviewer report: review_passed. Spec reviewer found no findings and accepted browser QA deferral to T004. Code quality reviewer found no findings and accepted browser QA deferral to T004.
+- Command output summary:
+  - Setup/verifier: `npm install` exit 0 because `node_modules` was missing; no tracked lockfile/source changes.
+  - `npm run lint:changed` exit 0; only React version warning.
+  - `npm run type-check:changed` exit 0; no type errors in changed files.
+  - `npm run depcruise` exit 0; no dependency violations; Node MODULE_TYPELESS_PACKAGE_JSON warning only.
+  - `node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` exit 0; `specs/member-page-redesign/status.json: ok`; `WORKFLOW STATE: 1 status file(s) valid`.
+  - `node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` exit 0; `specs/member-page-redesign/status.json: sync ok`; `SUPERPOWERS CHECK: 1 status file(s) synced`.
+  - `git diff --check -- src/ui/member/MemberPageScreen.jsx src/ui/member/MemberPageScreen.module.css specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` exit 0; no whitespace errors.
+- Changed files summary:
+  - `src/ui/member/MemberPageScreen.jsx`: renders the member workspace shell/profile controls with CSS module classes; removes visible `這是會員頁面`; preserves avatar input/ref/change, display-name form, public profile link, and exact `我的收藏` link.
+  - `src/ui/member/MemberPageScreen.module.css`: adds page-scoped warm off-white/deep green/yellow/blue tokens, 8px panels, desktop left/right grid, mobile profile/Bio/dashboard/Danger order, focus states, and wrapping/truncation safeguards.
+  - `specs/member-page-redesign/tasks.md`: records T001 completion, Engineer evidence, Reviewer PASS evidence, command summaries, and changed-file summary.
+  - `specs/member-page-redesign/handoff.md`: updates current state, latest reviewer decision, latest verification, and next action for wave-2 dispatch.
+  - `specs/member-page-redesign/status.json`: syncs machine-readable T001 completion, reviewer decision, evidence, completedTasks, active task/wave, and latest verification.
+- Phase commits: final T001 commit SHA is reported after commit creation; exact SHA is not embedded here to avoid a self-referential commit hash loop.
+- Rules deploy status: not_applicable, not required, unchanged.
 - Incidents: none.
 
 ### T002 - Bio Editor And Danger Zone Styling Alignment
