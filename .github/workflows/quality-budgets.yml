@@ -1,8 +1,6 @@
 name: Quality Budgets
 
 on:
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 env:
@@ -54,7 +52,7 @@ jobs:
       - name: Next bundle budget report
         run: npm run build:budget
         env:
-          # Public Firebase fallbacks keep pull_request reports usable when secrets are unavailable.
+          # Public Firebase fallbacks keep manual reports usable when secrets are unavailable.
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY || 'quality-budget-api-key' }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'quality-budget.firebaseapp.com' }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'quality-budget' }}

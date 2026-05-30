@@ -9,6 +9,8 @@ const CLOSED_INCIDENT_STATES = new Set(['closed', 'resolved']);
 const RULES_FILES = new Set(['firestore.rules', 'storage.rules']);
 const WORKFLOW_EVIDENCE_FILES = new Set([
   '.github/workflows/ci.yml',
+  '.github/workflows/firestore-rules-gate.yml',
+  '.github/workflows/quality-budgets.yml',
   'AGENTS.md',
   'docs/superpowers/status.schema.json',
   'scripts/validate-workflow-state.js',
