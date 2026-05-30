@@ -3,7 +3,7 @@
   "feature": "event-host-join-notification",
   "branch": "078-event-host-join-notification",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification",
-  "phase": "rules_deploy_completed_awaiting_evidence_commit",
+  "phase": "rules_deploy_evidence_recorded",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "083-weather-uv-aqi-standards-ui",
-    "commit": "23bea556666e76edda987400a37bd659c0f463ee",
-    "capturedAt": "2026-05-30T15:59:59Z",
-    "summary": "Workflow-state sync captured on the weather branch HEAD, feat: add weather standards helper. This records workflow-state guard coverage only; event-host product behavior was not reverified."
+    "commit": "a10dbc314b2bc57e8c64febbc7d6f8294e8178a4",
+    "capturedAt": "2026-05-30T16:25:17Z",
+    "summary": "Workflow-state blocker fix captured on the weather branch HEAD, fix: guard weather standard range matching. This records workflow-state checks only; event-host product behavior was not reverified."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "4c5b45b1fbf5b62ded2da57dd178133532a90b9f",
-    "capturedAt": "2026-05-30T15:59:59Z",
-    "summary": "Local origin/main snapshot during weather branch workflow-state sync; branch was ahead 3 and not reported behind origin/main."
+    "capturedAt": "2026-05-30T16:25:17Z",
+    "summary": "Local origin/main snapshot during weather branch workflow-state blocker fix; branch was ahead 5 and not reported behind origin/main."
   },
   "completedTasks": [
     "T1",
@@ -775,9 +775,33 @@
       "exitCode": 0,
       "summary": "No whitespace errors in status.json.",
       "verifiedAt": "2026-05-30T15:59:59Z"
+    },
+    {
+      "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "status.json validates after renaming the historical rules-deploy evidence phase out of the active closeout guard; no event-host product behavior was reverified.",
+      "verifiedAt": "2026-05-30T16:25:17Z"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "Workflow-state check passes after the historical notification status stopped applying closeout range checks to unrelated weather source commits.",
+      "verifiedAt": "2026-05-30T16:25:17Z"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "Repository workflow-state check passes with the event-host notification status recorded as historical rules-deploy evidence state.",
+      "verifiedAt": "2026-05-30T16:25:17Z"
+    },
+    {
+      "command": "git diff --check -- specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "No whitespace errors in status.json.",
+      "verifiedAt": "2026-05-30T16:25:17Z"
     }
   ],
-  "lastVerifiedCommit": "23bea556666e76edda987400a37bd659c0f463ee",
+  "lastVerifiedCommit": "a10dbc314b2bc57e8c64febbc7d6f8294e8178a4",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -873,5 +897,5 @@
     "deployedCommit": "7ed13b3aa9c60af4397fc28528b6be4445bd0998"
   },
   "incidents": [],
-  "updatedAt": "2026-05-30T15:59:59Z"
+  "updatedAt": "2026-05-30T16:25:17Z"
 }
