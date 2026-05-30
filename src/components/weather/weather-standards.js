@@ -93,11 +93,15 @@ const WEATHER_METRIC_ADVICE = Object.freeze({
 /**
  * Returns the official standard row containing the current metric value.
  * @param {string} metric - Weather metric key.
- * @param {number | null | undefined} value - Current metric value.
+ * @param {unknown} value - Current metric value.
  * @returns {WeatherStandardRow | null} Matching row, or null when unavailable.
  */
 export function getCurrentStandardRow(metric, value) {
-  if (value == null || (metric !== 'uv' && metric !== 'aqi')) {
+  if (metric !== 'uv' && metric !== 'aqi') {
+    return null;
+  }
+
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
     return null;
   }
 

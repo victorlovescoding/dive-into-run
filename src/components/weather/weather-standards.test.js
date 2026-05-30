@@ -94,6 +94,15 @@ describe('weather standards helper', () => {
     expect(getCurrentStandardRow('unknown', 50)).toBeNull();
   });
 
+  it('returns no current row for invalid numeric values and non-number inputs', () => {
+    expect(getCurrentStandardRow('uv', Number.NaN)).toBeNull();
+    expect(getCurrentStandardRow('aqi', Number.NaN)).toBeNull();
+    expect(getCurrentStandardRow('uv', -1)).toBeNull();
+    expect(getCurrentStandardRow('aqi', -1)).toBeNull();
+    expect(getCurrentStandardRow('aqi', 501)).toBeNull();
+    expect(getCurrentStandardRow('uv', JSON.parse('"2"'))).toBeNull();
+  });
+
   it('returns conservative one-line running advice without medical claims', () => {
     const advices = [
       getWeatherMetricAdvice('uv', '低量級'),
