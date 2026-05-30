@@ -80,6 +80,19 @@ function readGit(args) {
 }
 
 /**
+ * Gets the current git worktree root.
+ * @returns {string|null} Absolute worktree root, or null when unavailable.
+ */
+function getCurrentWorktree() {
+  try {
+    const worktree = readGit(['rev-parse', '--show-toplevel']);
+    return isNonBlankString(worktree) ? path.resolve(worktree.trim()) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Checks whether a git ref resolves to a commit.
  * @param {string} ref - Git ref.
  * @returns {boolean} Whether the ref resolves.
@@ -367,6 +380,33 @@ function isCloseoutishV3(status) {
 }
 
 /**
+ * Checks whether branch/worktree-scoped closeout guards apply to this status.
+ * @param {Record<string, unknown>} status - Parsed status object.
+ * @param {{currentBranch: string|null, currentWorktree: string|null, explicitStatusFiles: boolean}} context - Runtime git context.
+ * @returns {boolean} Whether branch/worktree-scoped guards apply.
+ */
+function isCurrentWorkflowState(status, context) {
+  const statusBranch = isNonBlankString(status.branch) ? status.branch.trim() : null;
+  const statusWorktree = isNonBlankString(status.worktree)
+    ? path.resolve(status.worktree.trim())
+    : null;
+
+  if (statusBranch && context.currentBranch && statusBranch === context.currentBranch) {
+    return true;
+  }
+
+  if (statusWorktree && context.currentWorktree && statusWorktree === context.currentWorktree) {
+    return true;
+  }
+
+  if (!context.currentBranch && context.explicitStatusFiles) {
+    return true;
+  }
+
+  return !statusBranch && !statusWorktree;
+}
+
+/**
  * Gets a commit ref from a phase commit entry.
  * @param {unknown} entry - Phase commit entry.
  * @returns {string|null} Commit ref.
@@ -502,15 +542,17 @@ function getTouchedFiles(status) {
  * Runs v3 semantic workflow guards.
  * @param {string} statusFile - Status file path.
  * @param {Record<string, unknown>} status - Parsed status object.
+ * @param {{currentBranch: string|null, currentWorktree: string|null, explicitStatusFiles: boolean}} context - Runtime git context.
  * @returns {string[]} Semantic errors.
  */
-function checkV3Semantics(statusFile, status) {
+function checkV3Semantics(statusFile, status, context) {
   if (status.schemaVersion !== 3) {
     return [];
   }
 
   const errors = [];
   const closeoutish = isCloseoutishV3(status);
+  const currentWorkflowState = isCurrentWorkflowState(status, context);
 
   if (closeoutish && !isNonBlankString(status.lastVerifiedCommit)) {
     errors.push('v3 closeout-ish phase requires non-blank lastVerifiedCommit');
@@ -536,7 +578,7 @@ function checkV3Semantics(statusFile, status) {
 
   if (
     closeoutish
-    && isCurrentBranchStatus(status)
+    && currentWorkflowState
     && isNonBlankString(status.lastVerifiedCommit)
     && commitExists(status.lastVerifiedCommit.trim())
   ) {
@@ -597,9 +639,10 @@ function mentionsTask(text, taskId) {
 /**
  * Validates companion files and conservative semantic sync.
  * @param {string} statusFile - Status file path.
+ * @param {{currentBranch: string|null, currentWorktree: string|null, explicitStatusFiles: boolean}} context - Runtime git context.
  * @returns {{errors: string[], activeTaskId: string|null, ownedFiles: string[]}} Check result.
  */
-function checkStatusSync(statusFile) {
+function checkStatusSync(statusFile, context) {
   const errors = [];
   const status = JSON.parse(readText(statusFile));
   const featureDir = path.dirname(statusFile);
@@ -637,7 +680,7 @@ function checkStatusSync(statusFile) {
     });
   }
 
-  checkV3Semantics(statusFile, status).forEach((error) => {
+  checkV3Semantics(statusFile, status, context).forEach((error) => {
     errors.push(error);
   });
 
@@ -712,7 +755,13 @@ function main() {
     return;
   }
 
-  const statusFiles = options.statusFiles.length > 0 ? options.statusFiles : discoverStatusFiles();
+  const explicitStatusFiles = options.statusFiles.length > 0;
+  const statusFiles = explicitStatusFiles ? options.statusFiles : discoverStatusFiles();
+  const context = {
+    currentBranch: getCurrentBranch(),
+    currentWorktree: getCurrentWorktree(),
+    explicitStatusFiles,
+  };
   runSchemaValidation(statusFiles);
 
   if (statusFiles.length === 0) {
@@ -721,7 +770,7 @@ function main() {
   }
 
   const results = statusFiles.map((statusFile) => {
-    const result = checkStatusSync(statusFile);
+    const result = checkStatusSync(statusFile, context);
     if (result.errors.length === 0) {
       process.stdout.write(`${statusFile}: sync ok\n`);
     } else {
