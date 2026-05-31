@@ -424,7 +424,7 @@ Evidence:
 
 ### T004 - Integration Verification And Workflow Evidence
 
-- **State**: `todo`
+- **State**: `in_progress`
 - **Attempt**: 1
 - **Wave**: `wave-3`
 - **Engineer**: Verifier subagent, integration evidence task

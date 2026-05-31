@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-082-member-page-redesign`
 - Branch: `082-member-page-redesign`
-- Current head: `d6748bef36cf404b63e7319351c5d717a0131594` (`Start member dashboard fit task`)
+- Current head: `fcda233aa41186a6cf98fb1b7d7a92c414cb2a6c` (`Fit member dashboard tabs layout`)
 - Remote head: `origin/main` at `4c5b45b1fbf5b62ded2da57dd178133532a90b9f`
 - Authorization boundary:
   - edit: true for product implementation tasks through Engineer/Reviewer subagents
@@ -17,11 +17,11 @@
   - localMainSync: false
   - deployFirestoreRules: false
 - Current phase: `implementation`
-- Active task: none
-- Active wave: none
+- Active task: `T004`
+- Active wave: `wave-3`
 - Latest reviewer decision: `review_passed` for T003; Spec reviewer confirmed only `DashboardTabs.module.css` was modified, runtime/JSX/hooks were untouched, and browser evidence is deferred to T004. Code quality reviewer passed the scoped maintainable CSS with token fallbacks, min-width/wrapping/focus states, no negative letter-spacing, and no viewport font scaling; browser evidence is deferred to T004.
-- Last verified commit: none; current head captures the pre-commit T003 closeout state, and final integration/browser verification remains deferred to T004.
-- Phase commits: plan commit `cf4a65e75dce300a032763cd3b5fe1873578923c`; implementation setup commit `6f67e3f760f96cedb8ba9be3c04e1c908c7dd14d`; T001 shell commit `f58bc0129fe37111dde4a7df01d8e5dd033fc70d`; workflow check branch scoping fix commit `add4421c8e88d97721078d1390167da624c06156`; T002 start commit `f19331e318f271ee8b02e8e88db683a641ffbed1`; T002 closeout commit `7ec7cc584801548ece85218cb4e3bb49898cc0ed`; T003 start commit `d6748bef36cf404b63e7319351c5d717a0131594`.
+- Last verified commit: none; current head captures the T003 closeout commit before T004 integration/browser verification.
+- Phase commits: plan commit `cf4a65e75dce300a032763cd3b5fe1873578923c`; implementation setup commit `6f67e3f760f96cedb8ba9be3c04e1c908c7dd14d`; T001 shell commit `f58bc0129fe37111dde4a7df01d8e5dd033fc70d`; workflow check branch scoping fix commit `add4421c8e88d97721078d1390167da624c06156`; T002 start commit `f19331e318f271ee8b02e8e88db683a641ffbed1`; T002 closeout commit `7ec7cc584801548ece85218cb4e3bb49898cc0ed`; T003 start commit `d6748bef36cf404b63e7319351c5d717a0131594`; T003 closeout commit `fcda233aa41186a6cf98fb1b7d7a92c414cb2a6c`.
 - Rules deploy status: `not_applicable`, required=false, changed=false
 - Incidents: none
 - Blocked: no
@@ -41,7 +41,7 @@
 
 ## Next Action
 
-Dispatch T004 integration verification. T003 is completed and T004 remains `todo`.
+Dispatch Verifier subagent for T004 integration verification/browser QA. T004 is active in `wave-3`; owned workflow files are the T004 owned files listed in `tasks.md`.
 
 Do not dispatch product-code fixes inside T004 without a coordinator-approved owned-file update. Push, PR creation, CI watch, merge, local `main` sync, and Firestore/storage rules deploy remain unauthorized.
 
@@ -63,7 +63,7 @@ Do not dispatch product-code fixes inside T004 without a coordinator-approved ow
 - [x] T001 is completed in `tasks.md` and `status.json`.
 - [x] T002 is completed in `tasks.md` and `status.json`.
 - [x] T003 is completed in `tasks.md` and `status.json`.
-- [x] Active task and active wave are null in `status.json` before T004 dispatch.
+- [x] Active task and active wave are set to `T004` and `wave-3` before Verifier dispatch.
 - [x] Latest reviewer decision is recorded in `tasks.md` and `status.json`.
 - [x] `lastVerification` has one entry per command.
 - [x] Final T001 commit SHA is captured as `f58bc0129fe37111dde4a7df01d8e5dd033fc70d`.
@@ -81,7 +81,7 @@ Do not dispatch product-code fixes inside T004 without a coordinator-approved ow
 
 ## Pitfalls
 
-- T003 is completed; T004 is the next integration verification dispatch.
+- T004 is active; dispatch Verifier for integration verification/browser QA using only the owned workflow files listed in `tasks.md`.
 - `edit=true` and `commit=true` now cover product implementation only through Engineer/Reviewer subagents; they still do not authorize push, PR creation, CI watch, merge, local `main` sync, or rules deploy.
 - `/member/favorites` stays as-is; only the exact `我的收藏` link is in scope.
 - Removing `這是會員頁面` must not introduce a replacement page title.

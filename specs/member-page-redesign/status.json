@@ -4,8 +4,8 @@
   "branch": "082-member-page-redesign",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-082-member-page-redesign",
   "phase": "implementation",
-  "activeTask": null,
-  "activeWave": null,
+  "activeTask": "T004",
+  "activeWave": "wave-3",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "082-member-page-redesign",
-    "commit": "d6748bef36cf404b63e7319351c5d717a0131594",
-    "capturedAt": "2026-05-31T13:53:56Z",
-    "summary": "Pre-commit HEAD captured before T003 dashboard tab closeout commit"
+    "commit": "fcda233aa41186a6cf98fb1b7d7a92c414cb2a6c",
+    "capturedAt": "2026-05-31T14:00:01Z",
+    "summary": "Current HEAD captured before T004 Verifier dispatch"
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "4c5b45b1fbf5b62ded2da57dd178133532a90b9f",
-    "capturedAt": "2026-05-31T13:53:56Z",
-    "summary": "origin/main captured before T003 closeout commit"
+    "capturedAt": "2026-05-31T14:00:01Z",
+    "summary": "origin/main captured before T004 Verifier dispatch"
   },
   "completedTasks": [
     "T001",
@@ -394,7 +394,7 @@
     {
       "id": "T004",
       "title": "Integration Verification And Workflow Evidence",
-      "state": "todo",
+      "state": "in_progress",
       "attempt": 1,
       "wave": "wave-3",
       "engineer": "Verifier subagent, integration evidence task",
@@ -538,6 +538,12 @@
       "commit": "d6748bef36cf404b63e7319351c5d717a0131594",
       "summary": "T003 dashboard fit task start commit before T003 closeout",
       "committedAt": "2026-05-31T13:38:32Z"
+    },
+    {
+      "phase": "implementation",
+      "commit": "fcda233aa41186a6cf98fb1b7d7a92c414cb2a6c",
+      "summary": "T003 dashboard tabs closeout commit before T004 dispatch",
+      "committedAt": "2026-05-31T13:56:45Z"
     }
   ],
   "rulesDeployStatus": {
@@ -592,5 +598,5 @@
       "verifiedAt": "2026-05-31T13:53:56Z"
     }
   ],
-  "updatedAt": "2026-05-31T13:53:56Z"
+  "updatedAt": "2026-05-31T14:00:01Z"
 }
