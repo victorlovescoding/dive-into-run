@@ -93,6 +93,42 @@ function getCurrentWorktree() {
 }
 
 /**
+ * Checks whether GitHub Actions branch metadata is safe to use.
+ * @returns {boolean} Whether the current environment is GitHub Actions.
+ */
+function isGitHubActions() {
+  return process.env.GITHUB_ACTIONS === 'true';
+}
+
+/**
+ * Checks whether GitHub ref metadata is a PR merge pseudo ref.
+ * @param {string} refName - GitHub ref value.
+ * @returns {boolean} Whether the value is a PR merge pseudo ref.
+ */
+function isGitHubPullMergeRef(refName) {
+  return /^\d+\/merge$/.test(refName)
+    || /^refs\/pull\/\d+\/merge$/.test(refName);
+}
+
+/**
+ * Normalizes GitHub Actions branch metadata when it looks like a real branch.
+ * @param {unknown} value - Environment variable value.
+ * @returns {string|null} Branch name, or null when unsafe.
+ */
+function normalizeGitHubActionsBranch(value) {
+  if (!isNonBlankString(value)) {
+    return null;
+  }
+
+  const branch = value.trim();
+  if (isGitHubPullMergeRef(branch)) {
+    return null;
+  }
+
+  return branch;
+}
+
+/**
  * Checks whether a git ref resolves to a commit.
  * @param {string} ref - Git ref.
  * @returns {boolean} Whether the ref resolves.
@@ -181,33 +217,18 @@ function getCurrentBranch() {
     // Detached or non-git contexts can still fall back to CI branch metadata.
   }
 
+  if (!isGitHubActions()) {
+    return null;
+  }
+
   for (const envName of ['GITHUB_HEAD_REF', 'GITHUB_REF_NAME']) {
-    if (isNonBlankString(process.env[envName])) {
-      return process.env[envName].trim();
+    const branch = normalizeGitHubActionsBranch(process.env[envName]);
+    if (branch) {
+      return branch;
     }
   }
 
   return null;
-}
-
-/**
- * Checks whether a status file describes the current branch context.
- * @param {Record<string, unknown>} status - Parsed status object.
- * @returns {boolean} Whether the status belongs to the current branch.
- */
-function isCurrentBranchStatus(status) {
-  const currentBranch = getCurrentBranch();
-  if (!isNonBlankString(currentBranch)) {
-    return false;
-  }
-
-  if (isNonBlankString(status.branch) && status.branch.trim() === currentBranch) {
-    return true;
-  }
-
-  return isPlainObject(status.currentHead)
-    && isNonBlankString(status.currentHead.branch)
-    && status.currentHead.branch.trim() === currentBranch;
 }
 
 /**

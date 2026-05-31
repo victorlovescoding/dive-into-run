@@ -32,15 +32,15 @@ function writeRepoFile(repoPath, filePath, text) {
 
 /**
  * Creates the minimal v3 status shape accepted by the workflow validator.
- * @param {{branch: string, lastVerifiedCommit: string}} options - Status inputs.
+ * @param {{branch: string, lastVerifiedCommit: string, worktree?: string}} options - Status inputs.
  * @returns {Record<string, unknown>} Status object.
  */
-function createCloseoutStatus({ branch, lastVerifiedCommit }) {
+function createCloseoutStatus({ branch, lastVerifiedCommit, worktree = '/tmp/historical-workflow' }) {
   return {
     schemaVersion: 3,
     feature: 'Historical workflow',
     branch,
-    worktree: '/tmp/historical-workflow',
+    worktree,
     phase: 'ready_for_pr',
     activeTask: null,
     activeWave: null,
@@ -123,6 +123,45 @@ function createHistoricalCloseoutFixture() {
   return { repoPath, statusPath };
 }
 
+/**
+ * Creates a detached-HEAD fixture with a closeout status and later product change.
+ * @param {{statusBranch?: string}} [options] - Fixture options.
+ * @returns {{repoPath: string, statusPath: string}} Fixture paths.
+ */
+function createDetachedCloseoutFixture({ statusBranch = 'current-feature' } = {}) {
+  const repoPath = mkdtempSync(join(tmpdir(), 'workflow-check-detached-'));
+  const scriptsPath = join(repoPath, 'scripts');
+  mkdirSync(scriptsPath, { recursive: true });
+  cpSync(validatorScript, join(scriptsPath, 'validate-workflow-state.js'));
+
+  git(repoPath, ['init', '--initial-branch=current-feature']);
+  git(repoPath, ['config', 'user.email', 'workflow-check@example.test']);
+  git(repoPath, ['config', 'user.name', 'Workflow Check Test']);
+
+  writeRepoFile(repoPath, 'src/baseline.js', 'export const baseline = true;\n');
+  git(repoPath, ['add', '.']);
+  git(repoPath, ['commit', '-m', 'Initial verified state']);
+  const verifiedCommit = git(repoPath, ['rev-parse', 'HEAD']);
+
+  const statusPath = 'specs/current/status.json';
+  writeRepoFile(repoPath, statusPath, `${JSON.stringify(createCloseoutStatus({
+    branch: statusBranch,
+    lastVerifiedCommit: verifiedCommit,
+    worktree: '/Users/runner/work/original-worktree',
+  }), null, 2)}\n`);
+  writeRepoFile(repoPath, 'specs/current/handoff.md', '# Current\n');
+  writeRepoFile(repoPath, 'specs/current/tasks.md', '# Current Tasks\n');
+  git(repoPath, ['add', '.']);
+  git(repoPath, ['commit', '-m', 'Record current closeout']);
+
+  writeRepoFile(repoPath, 'src/product-change.js', 'export const productChange = true;\n');
+  git(repoPath, ['add', '.']);
+  git(repoPath, ['commit', '-m', 'Add product change after verification']);
+  git(repoPath, ['checkout', '--detach', 'HEAD']);
+
+  return { repoPath, statusPath };
+}
+
 describe('check-superpowers-state', () => {
   it('does not apply the closeout product-change guard to historical statuses from another branch', () => {
     const { repoPath, statusPath } = createHistoricalCloseoutFixture();
@@ -133,6 +172,63 @@ describe('check-superpowers-state', () => {
     });
 
     expect(result.stderr).not.toContain('src/current-feature.js');
+    expect(result.stderr).not.toContain('non-workflow/evidence changes after lastVerifiedCommit');
+    expect(result.status).toBe(0);
+  });
+
+  it('uses GITHUB_HEAD_REF for detached GitHub PR discovery before pseudo merge refs', () => {
+    const { repoPath } = createDetachedCloseoutFixture();
+
+    const result = spawnSync(process.execPath, [checkerScript], {
+      cwd: repoPath,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        GITHUB_ACTIONS: 'true',
+        GITHUB_HEAD_REF: 'current-feature',
+        GITHUB_REF_NAME: '123/merge',
+      },
+    });
+
+    expect(result.stderr).toContain('src/product-change.js');
+    expect(result.stderr).toContain('non-workflow/evidence changes after lastVerifiedCommit');
+    expect(result.status).toBe(1);
+  });
+
+  it('ignores detached GitHub pseudo merge refs when no head ref is available', () => {
+    const { repoPath } = createDetachedCloseoutFixture({ statusBranch: '123/merge' });
+
+    const result = spawnSync(process.execPath, [checkerScript], {
+      cwd: repoPath,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        GITHUB_ACTIONS: 'true',
+        GITHUB_HEAD_REF: '',
+        GITHUB_REF_NAME: '123/merge',
+      },
+    });
+
+    expect(result.stderr).not.toContain('src/product-change.js');
+    expect(result.stderr).not.toContain('non-workflow/evidence changes after lastVerifiedCommit');
+    expect(result.status).toBe(0);
+  });
+
+  it('does not trust stale GitHub branch env outside GitHub Actions', () => {
+    const { repoPath } = createDetachedCloseoutFixture();
+
+    const result = spawnSync(process.execPath, [checkerScript], {
+      cwd: repoPath,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        GITHUB_ACTIONS: 'false',
+        GITHUB_HEAD_REF: 'current-feature',
+        GITHUB_REF_NAME: 'current-feature',
+      },
+    });
+
+    expect(result.stderr).not.toContain('src/product-change.js');
     expect(result.stderr).not.toContain('non-workflow/evidence changes after lastVerifiedCommit');
     expect(result.status).toBe(0);
   });
