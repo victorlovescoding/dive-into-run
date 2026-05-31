@@ -1,0 +1,702 @@
+{
+  "schemaVersion": 3,
+  "feature": "member-page-redesign",
+  "branch": "082-member-page-redesign",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-082-member-page-redesign",
+  "phase": "implementation",
+  "activeTask": null,
+  "activeWave": null,
+  "authorizationBoundary": {
+    "edit": true,
+    "commit": true,
+    "push": false,
+    "pullRequest": false,
+    "ciWatch": false,
+    "merge": false,
+    "localMainSync": false,
+    "deployFirestoreRules": false
+  },
+  "currentHead": {
+    "branch": "082-member-page-redesign",
+    "commit": "590455fcf4678e6e4a144766c9a2ee3c2e3ffd99",
+    "capturedAt": "2026-05-31T16:38:51Z",
+    "summary": "Rebased equivalent of the verified code head before the final workflow-state record commit; includes stale-base reconciliation and workflow-check detached branch fix"
+  },
+  "remoteHead": {
+    "remote": "origin",
+    "branch": "main",
+    "commit": "0b9a6bc0e1305f1e11f8994c258edc5549bf5dc3",
+    "capturedAt": "2026-05-31T16:38:51Z",
+    "summary": "origin/main captured by git fetch origin main for avatar-round base reconciliation"
+  },
+  "completedTasks": [
+    "T001",
+    "T002",
+    "T003",
+    "T004"
+  ],
+  "tasks": [
+    {
+      "id": "T001",
+      "title": "Member Page Shell And Profile Controls",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-1",
+      "engineer": "Engineer subagent, render/CSS task",
+      "reviewer": "Reviewer subagent, UI behavior and boundary check",
+      "scope": [
+        "Remove visible text `這是會員頁面` without replacing it with another page title.",
+        "Implement the `/member` workspace shell, profile/account controls, desktop two-column layout, and mobile source order.",
+        "Preserve avatar input/ref/click wiring, display-name form wiring, public profile link, and exact `我的收藏` link."
+      ],
+      "nonScope": [
+        "No edits to `src/app/member/page.jsx`, Bio editor, Dashboard tabs, Danger Zone, runtime, service, repo, rules, dependencies, or `/member/favorites`.",
+        "No in-page Nav, marketing hero, decorative scene, large page title, footer CTA, floating decorative card composition, or duplicated interactive slots."
+      ],
+      "ownedFiles": [
+        "src/ui/member/MemberPageScreen.jsx",
+        "src/ui/member/MemberPageScreen.module.css"
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-profiles.md",
+        "specs/member-page-redesign/spec.md",
+        "specs/member-page-redesign/plan.md",
+        "src/app/member/page.jsx",
+        "src/runtime/hooks/useMemberPageRuntime.js",
+        "src/app/member/BioEditor.jsx",
+        "src/ui/member/AccountDeletionDangerZone.jsx",
+        "src/components/DashboardTabs.jsx",
+        "src/ui/home/HomePage.module.css",
+        "src/ui/users/ProfileScreen.module.css"
+      ],
+      "dependencies": [
+        "Satisfied: explicit user authorization for product-code implementation through Engineer/Reviewer subagents is recorded by the coordinator before T001 dispatch."
+      ],
+      "engineerInstructions": [
+        "Add a CSS module import to `MemberPageScreen.jsx` and keep the component render-only.",
+        "Use one markup instance for profile controls, Bio slot, dashboard slot, and Danger Zone slot.",
+        "Gate public profile and favorites links on `user?.uid` and preserve destinations.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T001.1: `/member` no longer renders visible text `這是會員頁面`.",
+        "AC-T001.2: No Nav is added inside the page.",
+        "AC-T001.3: Desktop layout has profile/account controls, Bio, and Danger Zone left; dashboard tabs right.",
+        "AC-T001.4: Mobile order is profile/account controls, Bio, dashboard tabs, Danger Zone.",
+        "AC-T001.5: Avatar click, hidden file input, display-name form, public profile link, and exact `我的收藏` link preserve current wiring and visibility rules.",
+        "AC-T001.6: Utility-light visual style uses approved homepage cues without copying homepage hero/decorative/CTA patterns.",
+        "AC-T001.7: Long display names, emails, links, and button labels do not overlap adjacent controls."
+      ],
+      "verification": [
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0 with no changed-file lint errors.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No changed-file lint errors; only React version warning.",
+            "verifiedAt": "2026-05-30T15:44:13Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 with no changed-file type errors.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No type errors in changed files.",
+            "verifiedAt": "2026-05-30T15:44:13Z"
+          }
+        },
+        {
+          "command": "npm run depcruise",
+          "expectedSignal": "Exit 0 with no dependency-direction violations after adding the CSS module import.",
+          "lastRun": {
+            "command": "npm run depcruise",
+            "exitCode": 0,
+            "summary": "No dependency-direction violations; Node MODULE_TYPELESS_PACKAGE_JSON warning only.",
+            "verifiedAt": "2026-05-30T15:44:13Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Required verification commands pass and match the expected signal, or browser evidence is explicitly deferred to T004 with a reason.",
+        "Runtime handlers and slot composition remain render-only.",
+        "Responsive order is achieved without duplicate interactive Danger Zone or dashboard markup.",
+        "Behavior and visual scope stay inside `/member`."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "`這是會員頁面` remains visible or is replaced by another page title.",
+        "Avatar upload, display-name form, public profile link, or `我的收藏` link wiring changes behavior.",
+        "Nav, marketing hero, decorative scene, or floating-card composition appears inside `/member`.",
+        "Runtime/service/repo behavior changes."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec reviewer + Code quality reviewer",
+        "summary": "Spec reviewer and code quality reviewer both passed with no findings; browser QA is deferred to T004.",
+        "decidedAt": "2026-05-30T15:44:13Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE_WITH_CONCERNS originally due missing dependencies; after setup, implemented a render-only member workspace shell, removed visible `這是會員頁面`, added no title/Nav, arranged desktop left profile/Bio/Danger plus right dashboard, arranged mobile profile -> Bio -> dashboard -> Danger, and preserved avatar input/ref/change, display-name form, public profile link, and exact `我的收藏` link.",
+        "reviewerReport": "review_passed. Spec reviewer found no findings and accepted browser QA deferral to T004. Code quality reviewer found no findings and accepted browser QA deferral to T004.",
+        "commandOutputSummary": [
+          "Setup/verifier: `npm install` exit 0 because `node_modules` was missing; no tracked lockfile/source changes.",
+          "`npm run lint:changed` exit 0; only React version warning.",
+          "`npm run type-check:changed` exit 0; no type errors in changed files.",
+          "`npm run depcruise` exit 0; no dependency violations; Node MODULE_TYPELESS_PACKAGE_JSON warning only.",
+          "`node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` exit 0; `specs/member-page-redesign/status.json: ok`; `WORKFLOW STATE: 1 status file(s) valid`.",
+          "`node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` exit 0; `specs/member-page-redesign/status.json: sync ok`; `SUPERPOWERS CHECK: 1 status file(s) synced`.",
+          "`git diff --check -- src/ui/member/MemberPageScreen.jsx src/ui/member/MemberPageScreen.module.css specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` exit 0; no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "`src/ui/member/MemberPageScreen.jsx`: renders the member workspace shell/profile controls with CSS module classes; removes visible `這是會員頁面`; preserves avatar input/ref/change, display-name form, public profile link, and exact `我的收藏` link.",
+          "`src/ui/member/MemberPageScreen.module.css`: adds page-scoped warm off-white/deep green/yellow/blue tokens, 8px panels, desktop left/right grid, mobile profile/Bio/dashboard/Danger order, focus states, and wrapping/truncation safeguards.",
+          "`specs/member-page-redesign/tasks.md`: records T001 completion, Engineer evidence, Reviewer PASS evidence, command summaries, and changed-file summary.",
+          "`specs/member-page-redesign/handoff.md`: updates current state, latest reviewer decision, latest verification, and next action for wave-2 dispatch.",
+          "`specs/member-page-redesign/status.json`: syncs machine-readable T001 completion, reviewer decision, evidence, completedTasks, active task/wave, and latest verification."
+        ]
+      }
+    },
+    {
+      "id": "T002",
+      "title": "Bio Editor And Danger Zone Styling Alignment",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-2",
+      "engineer": "Engineer subagent, CSS-only task",
+      "reviewer": "Reviewer subagent, behavior-preservation check",
+      "scope": [
+        "Align Bio editor styling with member workspace tokens, 8px cards, thin borders, focus-visible states, and stable controls.",
+        "Align Danger Zone styling with the utility-light workspace while preserving destructive emphasis.",
+        "Improve modal fit and mobile button wrapping without behavior changes."
+      ],
+      "nonScope": [
+        "No edits to `BioEditor.jsx` or `AccountDeletionDangerZone.jsx`.",
+        "No changes to Bio labels, count, save states, code-point counting, service calls, Danger Zone copy, modal actions, reauth, deletion API flow, or runtime state.",
+        "No edits to MemberPageScreen or dashboard files."
+      ],
+      "ownedFiles": [
+        "src/app/member/BioEditor.module.css",
+        "src/ui/member/AccountDeletionDangerZone.module.css"
+      ],
+      "readOnlyContext": [
+        "specs/member-page-redesign/spec.md",
+        "specs/member-page-redesign/plan.md",
+        "src/app/member/BioEditor.jsx",
+        "src/ui/member/AccountDeletionDangerZone.jsx",
+        "src/ui/member/MemberPageScreen.module.css",
+        "src/ui/home/HomePage.module.css"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Make CSS-only changes.",
+        "Consume inherited member CSS variables from T001 with fallback values.",
+        "Add or refine `:focus-visible` states for textarea and buttons.",
+        "Keep mobile button rows and modal content readable without overflow.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T002.1: Bio editor keeps all current labels, count, save states, success, and error behavior.",
+        "AC-T002.2: Bio editor visually matches the member workspace without card nesting or layout shift from status messages.",
+        "AC-T002.3: Danger Zone keeps current copy, modal semantics, actions, disabled states, and error display.",
+        "AC-T002.4: Danger Zone destructive styling is clear but restrained.",
+        "AC-T002.5: Mobile button rows and modal content wrap cleanly without overlapping text."
+      ],
+      "verification": [
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0 with no changed-file lint errors.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No changed JS files to lint.",
+            "verifiedAt": "2026-05-31T13:30:11Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 with no changed-file type errors.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed JS files to check.",
+            "verifiedAt": "2026-05-31T13:30:11Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned CSS module files.",
+        "No JSX, runtime, service, repo, rules, or dependency files changed.",
+        "Required verification commands pass and match the expected signal.",
+        "Browser or reviewer inspection confirms Bio and Danger Zone behavior surfaces remain present and readable.",
+        "Mobile modal and action row fit within the viewport."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Behavior component files change without coordinator approval.",
+        "Bio state text, count, button labels, error/success behavior, or Danger Zone copy/actions change.",
+        "CSS creates nested-card appearance, overlapping text, or unstable control dimensions."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec reviewer + Code quality reviewer",
+        "summary": "Spec reviewer confirmed the diff only touches owned CSS, JSX/runtime are untouched, copy/actions are unchanged, and browser evidence is deferred to T004. Code quality reviewer passed scoped maintainable CSS with no global leakage; browser evidence is deferred to T004.",
+        "decidedAt": "2026-05-31T13:30:11Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE. CSS-only changes to BioEditor.module.css and AccountDeletionDangerZone.module.css. Bio editor consumes `--member-*` token fallbacks, uses 8px radius, thin border, no shadow, textarea/button `:focus-visible`, stable footer/button min-height/mobile wrapping, and reserved success/error line to avoid layout shift. Danger Zone uses restrained destructive styling, 44px min-height buttons, wrapping, modal max-height/overflow-y, and mobile full-width buttons.",
+        "reviewerReport": "review_passed. Spec reviewer confirmed the diff only touches owned CSS, JSX/runtime are untouched, copy/actions are unchanged, and browser evidence is deferred to T004. Code quality reviewer passed scoped maintainable CSS with no global leakage and accepted the focus-visible, button, modal, and wrapping choices; browser evidence is deferred to T004.",
+        "commandOutputSummary": [
+          "`npm run lint:changed` exit 0; no changed JS files to lint.",
+          "`npm run type-check:changed` exit 0; no changed JS files to check.",
+          "`node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` exit 0; `specs/member-page-redesign/status.json: ok`; `WORKFLOW STATE: 1 status file(s) valid`.",
+          "`node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` exit 0; `specs/member-page-redesign/status.json: sync ok`; `SUPERPOWERS CHECK: 1 status file(s) synced`.",
+          "`npm run workflow:check` exit 0; `WORKFLOW STATE: 13 status file(s) valid`; `SUPERPOWERS CHECK: 13 status file(s) synced`.",
+          "`git diff --check -- src/app/member/BioEditor.module.css src/ui/member/AccountDeletionDangerZone.module.css specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` exit 0; no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "`src/app/member/BioEditor.module.css`: aligns Bio editor with inherited member token fallbacks, 8px radius, thin border, no shadow, focus-visible states, stable footer/button sizing, mobile wrapping, and reserved success/error status space.",
+          "`src/ui/member/AccountDeletionDangerZone.module.css`: aligns Danger Zone with restrained destructive member styling, stable 44px buttons, wrapping, focus-visible states, scrollable modal, and mobile full-width actions.",
+          "`specs/member-page-redesign/tasks.md`: records T002 completion, Engineer evidence, Reviewer PASS evidence, command summaries, and changed-file summary.",
+          "`specs/member-page-redesign/handoff.md`: updates current state, latest reviewer decision, latest verification, and next action for T003 dispatch.",
+          "`specs/member-page-redesign/status.json`: syncs machine-readable T002 completion, reviewer decision, completedTasks, active task/wave, and latest verification."
+        ]
+      }
+    },
+    {
+      "id": "T003",
+      "title": "Dashboard Tabs And Responsive Panel Fit",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-2",
+      "engineer": "Engineer subagent, render/CSS dashboard task",
+      "reviewer": "Reviewer subagent, ARIA and keyboard behavior check",
+      "scope": [
+        "Refine dashboard tab and panel presentation for desktop right column and mobile single column.",
+        "Preserve tab labels, click selection, keyboard behavior, ARIA roles, inactive-panel handling, sentinel, and dashboard panel states.",
+        "Preserve card data, links, badges, metadata, and text content by leaving dashboard card components untouched."
+      ],
+      "nonScope": [
+        "No edits to `DashboardTabs.jsx`, runtime hooks, member dashboard services, card components, card CSS, pagination logic, or fetch behavior.",
+        "No edits to MemberPageScreen, Bio, or Danger Zone files.",
+        "If card CSS is needed, stop and request a coordinator-approved owned-file update."
+      ],
+      "ownedFiles": [
+        "src/ui/member/DashboardTabsScreen.jsx",
+        "src/components/DashboardTabs.module.css"
+      ],
+      "readOnlyContext": [
+        "specs/member-page-redesign/spec.md",
+        "specs/member-page-redesign/plan.md",
+        "src/components/DashboardTabs.jsx",
+        "src/ui/member/DashboardTabsScreen.jsx",
+        "src/components/DashboardTabs.module.css",
+        "src/runtime/hooks/useDashboardTabsRuntime.js",
+        "src/runtime/hooks/useDashboardTab.js",
+        "src/ui/member/MemberPageScreen.module.css",
+        "src/ui/home/HomePage.module.css"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Prefer CSS changes; change JSX only for render-only wrappers or class names.",
+        "Keep existing `onClick`, `onKeyDown`, `tabIndex`, roles, IDs, and ARIA attributes intact.",
+        "Keep the sentinel div bound to `sentinelRef` mounted inside the active non-empty panel after rendered items.",
+        "Style loading, error, empty, load-more, retry, and end states consistently with member tokens.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T003.1: Dashboard tab labels and keyboard/click behavior remain equivalent.",
+        "AC-T003.2: ARIA roles and relationships remain intact.",
+        "AC-T003.3: Loading, first-load error with retry, empty, load-more loading, load-more error with retry, sentinel, and `已顯示全部` states remain rendered through the same runtime data.",
+        "AC-T003.4: Activity, post, and comment card data, links, badges, metadata, and text content remain untouched.",
+        "AC-T003.5: Dashboard fits desktop right column and mobile column without overlapping labels, buttons, or status text."
+      ],
+      "verification": [
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0 with no changed-file lint errors.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No changed JS files to lint.",
+            "verifiedAt": "2026-05-31T13:53:56Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 with no changed-file type errors.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed JS files to check.",
+            "verifiedAt": "2026-05-31T13:53:56Z"
+          }
+        },
+        {
+          "command": "npm run depcruise",
+          "expectedSignal": "Exit 0 with no dependency-direction violations if `DashboardTabsScreen.jsx` imports change.",
+          "lastRun": {
+            "command": "npm run depcruise",
+            "exitCode": 0,
+            "summary": "No dependency violations; Node MODULE_TYPELESS_PACKAGE_JSON warning only.",
+            "verifiedAt": "2026-05-31T13:53:56Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Runtime hooks, services, DashboardTabs entry, and card components remain unchanged.",
+        "Required verification commands pass and match the expected signal.",
+        "Reviewer verifies keyboard behavior or receives credible browser evidence for ArrowLeft, ArrowRight, Home, and End.",
+        "Sentinel and all panel states remain represented in the active panel."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "ARIA/tab behavior regresses or keyboard behavior is unsupported by evidence.",
+        "Card data, links, badges, counts, pagination, or retry behavior changes.",
+        "CSS causes tab labels or panel content to overlap at desktop or mobile widths.",
+        "Engineer edits unowned card/runtime/service files."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec reviewer + Code quality reviewer",
+        "summary": "Spec reviewer confirmed only DashboardTabs.module.css was modified, runtime/JSX/hooks were untouched, and browser evidence is deferred to T004. Code quality reviewer passed scoped maintainable CSS with token fallbacks, min-width/wrapping/focus states, no negative letter-spacing, and no viewport font scaling; browser evidence is deferred to T004.",
+        "decidedAt": "2026-05-31T13:53:56Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE. CSS-only changes to DashboardTabs.module.css. Added stable 3-column tab bar, active/inactive/focus states, panel width constraints, and mobile padding/button fit. Loading, empty, error, retry, loading-more, and end-hint states use member token fallbacks plus wrap/min-width guards. DashboardTabsScreen.jsx, runtime hooks, card components, card data, and links were untouched.",
+        "reviewerReport": "review_passed. Spec reviewer confirmed only DashboardTabs.module.css was modified, runtime/JSX/hooks were untouched, and browser evidence is deferred to T004. Code quality reviewer passed scoped maintainable CSS with token fallbacks, min-width/wrapping/focus states, no negative letter-spacing, and no viewport font scaling; browser evidence is deferred to T004.",
+        "commandOutputSummary": [
+          "`npm run lint:changed` exit 0; no changed JS files to lint.",
+          "`npm run type-check:changed` exit 0; no changed JS files to check.",
+          "`npm run depcruise` exit 0; no dependency violations; Node MODULE_TYPELESS_PACKAGE_JSON warning only.",
+          "`node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` exit 0; `specs/member-page-redesign/status.json: ok`; `WORKFLOW STATE: 1 status file(s) valid`.",
+          "`node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` exit 0; `specs/member-page-redesign/status.json: sync ok`; `SUPERPOWERS CHECK: 1 status file(s) synced`.",
+          "`npm run workflow:check` exit 0; `WORKFLOW STATE: 13 status file(s) valid`; `SUPERPOWERS CHECK: 13 status file(s) synced`.",
+          "`git diff --check -- src/components/DashboardTabs.module.css specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` exit 0; no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "`src/components/DashboardTabs.module.css`: adds member token fallbacks, stable 3-column tabs, active/inactive/focus states, panel constraints, responsive padding, status-state styling, and wrap/min-width guards.",
+          "`specs/member-page-redesign/tasks.md`: records T003 completion, Engineer evidence, Reviewer PASS evidence, command summaries, and changed-file summary.",
+          "`specs/member-page-redesign/handoff.md`: updates current state, latest reviewer decision, latest verification, and next action for T004 dispatch.",
+          "`specs/member-page-redesign/status.json`: syncs machine-readable T003 completion, reviewer decision, completedTasks, active task/wave, and latest verification."
+        ]
+      }
+    },
+    {
+      "id": "T004",
+      "title": "Integration Verification And Workflow Evidence",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-3",
+      "engineer": "Verifier subagent, integration evidence task",
+      "reviewer": "Reviewer subagent, final integration gate check",
+      "scope": [
+        "Run final automated gates and browser QA for the integrated `/member` redesign.",
+        "Record evidence in workflow state files after implementation tasks pass review.",
+        "Confirm no product behavior outside `/member`, `/member/favorites`, rules, schema, dependencies, runtime/service/repo logic, or deploy behavior changed."
+      ],
+      "nonScope": [
+        "Do not edit product code by default.",
+        "Do not fix implementation findings inside T004 without a coordinator-approved owned-file update.",
+        "Do not push, open a PR, watch CI, merge, sync local `main`, or deploy rules."
+      ],
+      "ownedFiles": [
+        "specs/member-page-redesign/tasks.md",
+        "specs/member-page-redesign/handoff.md",
+        "specs/member-page-redesign/status.json"
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-profiles.md",
+        "docs/superpowers/task-contract.md",
+        "specs/member-page-redesign/spec.md",
+        "specs/member-page-redesign/plan.md",
+        "specs/member-page-redesign/tasks.md",
+        "specs/member-page-redesign/handoff.md",
+        "specs/member-page-redesign/status.json",
+        "Task-local diffs and exact Engineer/Reviewer evidence for T001, T002, and T003"
+      ],
+      "dependencies": [
+        "T002",
+        "T003"
+      ],
+      "engineerInstructions": [
+        "Run each verification command separately and record exit code, expected signal, and actual signal.",
+        "Use in-app Browser or Playwright for `/member` desktop and mobile evidence.",
+        "Do not execute account deletion confirmation during QA.",
+        "If browser QA finds a product defect, record it and return to the coordinator for a targeted task update.",
+        "Update only workflow evidence fields in the owned files."
+      ],
+      "acceptanceCriteria": [
+        "AC-T004.1: All automated gates pass or any failure is proven unrelated and explicitly carried as a blocker.",
+        "AC-T004.2: Browser evidence covers desktop and mobile `/member` layout and required interactions.",
+        "AC-T004.3: Tasks, status, and handoff agree on active task, active wave, task states, authorization boundary, rules deploy status, incidents, and latest verification.",
+        "AC-T004.4: No release summary claims deployed rules, deployed functions, or production product behavior.",
+        "AC-T004.5: No unreviewed product-code changes remain after integration verification."
+      ],
+      "verification": [
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0 with no changed-file lint errors.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No changed JS files to lint.",
+            "verifiedAt": "2026-05-31T14:41:45Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 with no changed-file type errors.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed JS files to check.",
+            "verifiedAt": "2026-05-31T14:41:45Z"
+          }
+        },
+        {
+          "command": "npm run depcruise",
+          "expectedSignal": "Exit 0 with no dependency-direction violations after integrated render/CSS changes.",
+          "lastRun": {
+            "command": "npm run depcruise",
+            "exitCode": 0,
+            "summary": "No dependency violations found across 1294 modules and 3030 dependencies. Node MODULE_TYPELESS_PACKAGE_JSON warning only.",
+            "verifiedAt": "2026-05-31T14:41:45Z"
+          }
+        },
+        {
+          "command": "node scripts/validate-workflow-state.js specs/member-page-redesign/status.json",
+          "expectedSignal": "Exit 0 and `WORKFLOW STATE: 1 status file(s) valid`.",
+          "lastRun": {
+            "command": "node scripts/validate-workflow-state.js specs/member-page-redesign/status.json",
+            "exitCode": 0,
+            "summary": "specs/member-page-redesign/status.json: ok. WORKFLOW STATE: 1 status file(s) valid.",
+            "verifiedAt": "2026-05-31T14:41:45Z"
+          }
+        },
+        {
+          "command": "node scripts/check-superpowers-state.js specs/member-page-redesign/status.json",
+          "expectedSignal": "Exit 0 and `SUPERPOWERS CHECK: 1 status file(s) synced`.",
+          "lastRun": {
+            "command": "node scripts/check-superpowers-state.js specs/member-page-redesign/status.json",
+            "exitCode": 0,
+            "summary": "specs/member-page-redesign/status.json: ok. WORKFLOW STATE: 1 status file(s) valid. specs/member-page-redesign/status.json: sync ok. SUPERPOWERS CHECK: 1 status file(s) synced.",
+            "verifiedAt": "2026-05-31T14:41:45Z"
+          }
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "Exit 0 with workflow state valid and synced.",
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "WORKFLOW STATE: 14 status file(s) valid. SUPERPOWERS CHECK: 14 status file(s) synced.",
+            "verifiedAt": "2026-05-31T14:41:45Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "T001, T002, and T003 have `review_passed` before T004 completion.",
+        "Required command evidence and browser evidence are fresh and one command per row.",
+        "Workflow state files agree and validate.",
+        "No product-code fixes are smuggled into T004.",
+        "Rules deploy state remains not_applicable and no deploy claim is made."
+      ],
+      "reviewerRejectCriteria": [
+        "Any automated or browser evidence is missing, stale, or contradicts acceptance criteria.",
+        "Tasks/status/handoff drift.",
+        "T004 modifies product code without a coordinator-approved task update.",
+        "Browser QA finds missing functionality, overlapping UI, duplicated Nav, duplicated interactive sections, or behavior regressions."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Final integration reviewer",
+        "summary": "Authenticated QA and workflow evidence passed. Desktop screenshot showed account/profile controls, Bio, and Danger Zone left with dashboard tabs right; mobile order was account/profile controls -> Bio -> dashboard tabs -> Danger Zone; no overlap, legacy title, duplicate Nav, or duplicate interactive sections were found. Destructive deletion confirmation and persistent Bio/display-name mutations were intentionally not executed.",
+        "decidedAt": "2026-05-31T14:49:36Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE. Ran Auth Emulator-backed authenticated Playwright QA against http://localhost:3083/member with emulator user UID njAUtSPQOenv1LspXh7Btn7CMkc5. Authenticated desktop and mobile QA covered profile/account controls, Bio, dashboard tabs, Danger Zone, /member/favorites link preservation, avatar file chooser, display-name save path, public profile link, Bio save state, dashboard click/keyboard behavior, and Danger Zone modal open/cancel. No product-code edits were made after final verification.",
+        "reviewerReport": "review_passed. The reviewer validated P1 stale-base close and P2 workflow-check close. Stale-base review confirmed branch ahead/not behind, origin/main as ancestor, no unrelated reverse-diffs, and workflow check passing. Workflow-check review confirmed attached branch is preferred, GitHub Actions-only fallback ordering, pseudo PR merge refs ignored, and schema/sync/rules/incident checks not globally skipped.",
+        "commandOutputSummary": [
+          "`git merge-base --is-ancestor origin/main HEAD` exit 0.",
+          "`git diff --name-status origin/main..HEAD` exit 0; changes limited to workflow scripts/specs and member UI/CSS.",
+          "`npx vitest run scripts/check-superpowers-state.test.js` exit 0; 4 tests passed.",
+          "`npm run workflow:check` exit 0; 14 status files valid/synced.",
+          "`npm run lint:branch` exit 0; React version warning only.",
+          "`npm run type-check:branch` exit 0; no branch-changed type errors.",
+          "`npm run depcruise` exit 0; no dependency violations; existing Node module type warning only.",
+          "`npm run build` exit 0; `/member` and `/member/favorites` static routes generated.",
+          "`git diff --check` exit 0.",
+          "Browser verifier at `http://localhost:3083` with Auth 9099, Firestore 8080, Storage 9199 and UID `njAUtSPQOenv1LspXh7Btn7CMkc5` passed desktop/mobile `/member` QA. Screenshots: `/tmp/member-page-redesign-browser-verifier-desktop-1440x1000.png` and `/tmp/member-page-redesign-browser-verifier-mobile-390x844.png`.",
+          "Formal authenticated QA had 0 console errors/warnings/page errors/request failures/>=400. Setup had emulator warnings and Firestore Listen aborts only.",
+          "Residual: emulator, not production; favorites page content was not deeply operated."
+        ],
+        "changedFilesSummary": [
+          "`specs/member-page-redesign/tasks.md`: records T004 authenticated QA, reviewer PASS, command summaries, and `completed` state.",
+          "`specs/member-page-redesign/handoff.md`: records all implementation tasks complete, latest reviewer decision, latest verification, and next coordinator closeout decision.",
+          "`specs/member-page-redesign/status.json`: syncs machine-readable T004 completion, reviewer decision, completedTasks, inactive task/wave, latest verification, closeout reviews, and residual risk summary."
+        ]
+      }
+    }
+  ],
+  "blocked": false,
+  "blockedReason": null,
+  "lastVerifiedCommit": "590455fcf4678e6e4a144766c9a2ee3c2e3ffd99",
+  "phaseCommits": [
+    {
+      "phase": "plan",
+      "commit": "3d0e3851e7844151923f146568c5a8a24520012c",
+      "summary": "plan artifacts rebased onto current origin/main before stale-base reconciliation",
+      "committedAt": "2026-05-31T15:09:18Z"
+    },
+    {
+      "phase": "implementation",
+      "commit": "4be9c93825b45b67cf7551b7a336149ecc362f62",
+      "summary": "implementation dispatch/setup rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:09:18Z"
+    },
+    {
+      "phase": "implementation",
+      "commit": "811db33e87488b5af7a2c38dafef8110f21d86c7",
+      "summary": "T001 member page shell closeout rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:09:18Z"
+    },
+    {
+      "phase": "implementation",
+      "commit": "176d8d11f68e586f1f53367da727a490660bb043",
+      "summary": "workflow check branch/worktree scoping fix rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
+    },
+    {
+      "phase": "implementation",
+      "commit": "427c28a3cc3459666a0b7acec1e511bbf0a45410",
+      "summary": "T002 styling task start rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
+    },
+    {
+      "phase": "implementation",
+      "commit": "22cc781ba301cb299fd04fec5c4d22fddf790b5f",
+      "summary": "T002 bio/danger styling closeout rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
+    },
+    {
+      "phase": "implementation",
+      "commit": "a095e3df651de680f08860792b728d1b9d5cf7e4",
+      "summary": "T003 dashboard fit task start rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
+    },
+    {
+      "phase": "implementation",
+      "commit": "e15de00a106712d91d84090b0d1873b77dd0f0d4",
+      "summary": "T003 dashboard tabs closeout rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
+    },
+    {
+      "phase": "verification",
+      "commit": "b742ca4cfe82a37881a2cadbe363f53d3592618b",
+      "summary": "T004 integration verification start rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
+    },
+    {
+      "phase": "verification",
+      "commit": "f9b8dfebdb6c0d81938c319dc94c058824285a4c",
+      "summary": "T004 workflow evidence commit after rebase onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
+    },
+    {
+      "phase": "verification",
+      "commit": "05ed4231614cd7dedfc621a5057a8f6343773797",
+      "summary": "P1 stale-base reconciliation state close; branch rebased on origin/main f29f40f609db433ec49116d28c86452936eb1129 and reviewer passed ancestor, ahead/not-behind, reverse-diff, and workflow-check evidence",
+      "committedAt": "2026-05-31T15:11:39Z"
+    },
+    {
+      "phase": "verification",
+      "commit": "590455fcf4678e6e4a144766c9a2ee3c2e3ffd99",
+      "summary": "P2 workflow check detached branch detection fix; reviewer passed attached-branch, GitHub Actions fallback, pseudo PR ref, and schema/sync/rules/incident coverage",
+      "committedAt": "2026-05-31T15:46:45Z"
+    }
+  ],
+  "rulesDeployStatus": {
+    "state": "not_applicable",
+    "required": false,
+    "changed": false,
+    "evidence": [],
+    "deployedCommit": null
+  },
+  "incidents": [],
+  "lastVerification": [
+    {
+      "command": "git status --short --branch",
+      "exitCode": 0,
+      "summary": "HEAD b4550b6e18d70563882f395309d5d133ce65349c, origin/main f29f40f609db433ec49116d28c86452936eb1129, clean branch ahead 13.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "git merge-base --is-ancestor origin/main HEAD",
+      "exitCode": 0,
+      "summary": "origin/main is an ancestor of HEAD.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "git diff --name-status origin/main..HEAD",
+      "exitCode": 0,
+      "summary": "Changes limited to workflow scripts/specs and member UI/CSS.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "npx vitest run scripts/check-superpowers-state.test.js",
+      "exitCode": 0,
+      "summary": "Focused workflow-check tests passed; 4 tests passed.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "WORKFLOW STATE: 14 status file(s) valid. SUPERPOWERS CHECK: 14 status file(s) synced.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "npm run lint:branch",
+      "exitCode": 0,
+      "summary": "No branch lint errors; React version warning only.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "npm run type-check:branch",
+      "exitCode": 0,
+      "summary": "No branch-changed type errors.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "npm run depcruise",
+      "exitCode": 0,
+      "summary": "No dependency violations; existing Node module type warning only.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "summary": "Build passed; `/member` and `/member/favorites` static routes generated.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "No whitespace errors.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    }
+  ],
+  "updatedAt": "2026-05-31T15:46:45Z"
+}

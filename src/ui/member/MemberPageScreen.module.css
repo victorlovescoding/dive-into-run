@@ -1,0 +1,276 @@
+.memberPage {
+  --member-bg: oklch(97.5% 0.013 87);
+  --member-surface: oklch(99.4% 0.004 95);
+  --member-surface-strong: oklch(100% 0 0);
+  --member-fg: oklch(21% 0.035 164);
+  --member-muted: oklch(45% 0.026 168);
+  --member-border: oklch(87% 0.019 118);
+  --member-border-strong: oklch(78% 0.03 154);
+  --member-green: oklch(34% 0.07 164);
+  --member-blue: oklch(57% 0.15 238);
+  --member-yellow: oklch(72% 0.14 72);
+  --member-shadow: color-mix(in oklch, var(--member-fg) 9%, transparent);
+  min-height: 100vh;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--member-yellow) 9%, var(--member-bg)) 0%,
+      var(--member-bg) 34%
+    ),
+    var(--member-bg);
+  color: var(--member-fg);
+  letter-spacing: 0;
+}
+
+.shell {
+  width: min(100%, 1180px);
+  margin-inline: auto;
+  padding: clamp(20px, 4vw, 40px) clamp(16px, 4vw, 32px) 56px;
+}
+
+.workspaceGrid {
+  display: grid;
+  grid-template-areas:
+    "profile"
+    "bio"
+    "dashboard"
+    "danger";
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.profilePanel {
+  display: flex;
+  grid-area: profile;
+  min-width: 0;
+  flex-direction: column;
+  gap: 18px;
+  padding: clamp(18px, 4vw, 24px);
+  border: 1px solid var(--member-border);
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--member-surface) 92%, white);
+  box-shadow: 0 12px 30px var(--member-shadow);
+}
+
+.bioSlot {
+  grid-area: bio;
+}
+
+.dashboardSlot {
+  grid-area: dashboard;
+}
+
+.dangerSlot {
+  grid-area: danger;
+}
+
+.bioSlot,
+.dashboardSlot,
+.dangerSlot {
+  min-width: 0;
+}
+
+.bioSlot > *,
+.dashboardSlot > *,
+.dangerSlot > * {
+  max-width: 100%;
+}
+
+.eyebrow,
+.label {
+  margin: 0;
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--member-green);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.profileHeader {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.avatarButton {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  flex: 0 0 auto;
+  padding: 2px;
+  place-items: center;
+  border: 1px solid color-mix(in oklch, var(--member-border-strong) 82%, white);
+  border-radius: 50%;
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--member-blue) 12%, white), white 52%),
+    var(--member-surface-strong);
+  cursor: pointer;
+}
+
+.avatarButton:hover {
+  border-color: var(--member-blue);
+}
+
+.avatarButton:focus-visible,
+.primaryAction:focus-visible,
+.secondaryLink:focus-visible,
+.nameInput:focus-visible {
+  outline: 3px solid color-mix(in oklch, var(--member-blue) 55%, white);
+  outline-offset: 3px;
+}
+
+.avatarImage {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: color-mix(in oklch, var(--member-green) 8%, white);
+}
+
+.identity {
+  min-width: 0;
+}
+
+.profileHeading {
+  margin: 0;
+  color: var(--member-fg);
+  font-size: 1.35rem;
+  font-weight: 780;
+  letter-spacing: 0;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.email {
+  margin: 6px 0 0;
+  color: var(--member-muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.nameForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.inputGroup {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.nameInput {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.72rem 0.8rem;
+  border: 1px solid var(--member-border);
+  border-radius: 8px;
+  background: var(--member-surface-strong);
+  color: var(--member-fg);
+  font: inherit;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+.nameInput::placeholder {
+  color: color-mix(in oklch, var(--member-muted) 72%, white);
+}
+
+.primaryAction,
+.secondaryLink {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.primaryAction {
+  padding: 0.72rem 1rem;
+  border: 1px solid color-mix(in oklch, var(--member-yellow) 84%, var(--member-fg));
+  background: var(--member-yellow);
+  color: var(--member-fg);
+  cursor: pointer;
+}
+
+.primaryAction:hover {
+  background: color-mix(in oklch, var(--member-yellow) 86%, white);
+}
+
+.accountLinks {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.secondaryLink {
+  max-width: 100%;
+  padding: 0.68rem 0.9rem;
+  border: 1px solid var(--member-border);
+  background: color-mix(in oklch, var(--member-blue) 5%, var(--member-surface-strong));
+  color: var(--member-green);
+}
+
+.secondaryLink:hover {
+  border-color: color-mix(in oklch, var(--member-blue) 62%, var(--member-border));
+  color: color-mix(in oklch, var(--member-blue) 72%, var(--member-green));
+}
+
+@media (min-width: 620px) {
+  .nameForm {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .primaryAction {
+    min-width: 112px;
+  }
+}
+
+@media (min-width: 940px) {
+  .workspaceGrid {
+    grid-template-areas:
+      "profile dashboard"
+      "bio dashboard"
+      "danger dashboard";
+    grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .dashboardSlot {
+    position: sticky;
+    top: 24px;
+  }
+}
+
+@media (max-width: 520px) {
+  .profileHeader {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .avatarButton {
+    width: 72px;
+    height: 72px;
+  }
+
+  .avatarImage {
+    width: 64px;
+    height: 64px;
+  }
+}

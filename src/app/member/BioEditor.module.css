@@ -3,99 +3,175 @@
    ========================================================================== */
 
 .bioEditor {
+  --bio-surface: var(--member-surface, oklch(99.4% 0.004 95));
+  --bio-surface-strong: var(--member-surface-strong, oklch(100% 0 0));
+  --bio-fg: var(--member-fg, oklch(21% 0.035 164));
+  --bio-muted: var(--member-muted, oklch(45% 0.026 168));
+  --bio-border: var(--member-border, oklch(87% 0.019 118));
+  --bio-green: var(--member-green, oklch(34% 0.07 164));
+  --bio-blue: var(--member-blue, oklch(57% 0.15 238));
+  --bio-yellow: var(--member-yellow, oklch(72% 0.14 72));
   display: flex;
+  position: relative;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  margin-top: 16px;
-  background: #fff;
-  border: 1px solid #e0e3e7;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  max-width: 600px;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px 18px calc(18px + 1.35em);
+  background: color-mix(in oklch, var(--bio-surface) 94%, white);
+  border: 1px solid var(--bio-border);
+  border-radius: 8px;
+  color: var(--bio-fg);
 }
 
 .heading {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #202124;
   margin: 0;
+  color: var(--bio-fg);
+  font-size: 1.05rem;
+  font-weight: 760;
+  letter-spacing: 0;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .label {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 0.875rem;
-  color: #3c4043;
+  min-width: 0;
+  gap: 8px;
+  color: var(--bio-green);
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
 }
 
 .textarea {
   width: 100%;
-  min-height: 96px;
-  padding: 10px 12px;
+  min-height: 112px;
+  padding: 12px;
+  box-sizing: border-box;
   font-size: 0.9375rem;
   font-family: inherit;
-  color: #202124;
-  background: #f8f9fa;
-  border: 1px solid #dadce0;
+  line-height: 1.55;
+  color: var(--bio-fg);
+  letter-spacing: 0;
+  background: var(--bio-surface-strong);
+  border: 1px solid var(--bio-border);
   border-radius: 8px;
   resize: vertical;
-  box-sizing: border-box;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
 }
 
-.textarea:focus {
+.textarea::placeholder {
+  color: color-mix(in oklch, var(--bio-muted) 72%, white);
+}
+
+.textarea:focus-visible {
   outline: none;
-  border-color: #1967d2;
-  background: #fff;
+  border-color: var(--bio-blue);
+  background: var(--bio-surface-strong);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--bio-blue) 24%, transparent);
 }
 
 .footer {
   display: flex;
+  min-height: 44px;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
 .charCount {
-  font-size: 0.8125rem;
-  color: #5f6368;
+  min-width: 4.5rem;
+  color: var(--bio-muted);
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
 }
 
 .charCountOver {
-  color: #c5221f;
-  font-weight: 600;
+  color: oklch(46% 0.16 28);
+  font-weight: 800;
 }
 
 .saveButton {
-  padding: 8px 16px;
+  display: inline-flex;
+  min-width: 118px;
+  min-height: 44px;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1rem;
+  border: 1px solid color-mix(in oklch, var(--bio-yellow) 84%, var(--bio-fg));
+  border-radius: 8px;
   font-size: 0.875rem;
-  font-weight: 600;
-  color: #fff;
-  background: #1967d2;
-  border: none;
-  border-radius: 6px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+  color: var(--bio-fg);
+  background: var(--bio-yellow);
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
 }
 
 .saveButton:hover:not(:disabled) {
-  background: #1557b0;
+  background: color-mix(in oklch, var(--bio-yellow) 86%, white);
+}
+
+.saveButton:focus-visible {
+  outline: 3px solid color-mix(in oklch, var(--bio-blue) 55%, white);
+  outline-offset: 3px;
 }
 
 .saveButton:disabled {
-  background: #9aa0a6;
+  border-color: color-mix(in oklch, var(--bio-border) 82%, white);
+  color: color-mix(in oklch, var(--bio-muted) 88%, white);
+  background: color-mix(in oklch, var(--bio-border) 52%, var(--bio-surface-strong));
   cursor: not-allowed;
 }
 
-.successMessage {
+.successMessage,
+.errorMessage {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  left: 18px;
+  min-height: 1.35em;
   font-size: 0.875rem;
-  color: #137333;
+  line-height: 1.45;
   margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.successMessage {
+  color: color-mix(in oklch, var(--bio-green) 86%, black);
 }
 
 .errorMessage {
-  font-size: 0.875rem;
-  color: #c5221f;
-  margin: 0;
+  color: oklch(46% 0.16 28);
+}
+
+@media (max-width: 420px) {
+  .bioEditor {
+    padding: 16px 16px calc(16px + 1.35em);
+  }
+
+  .footer {
+    align-items: stretch;
+  }
+
+  .saveButton {
+    width: 100%;
+  }
 }

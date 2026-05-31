@@ -1,97 +1,238 @@
 .container {
+  --dashboard-surface: var(--member-surface, oklch(99.4% 0.004 95));
+  --dashboard-surface-strong: var(--member-surface-strong, oklch(100% 0 0));
+  --dashboard-fg: var(--member-fg, oklch(21% 0.035 164));
+  --dashboard-muted: var(--member-muted, oklch(45% 0.026 168));
+  --dashboard-border: var(--member-border, oklch(87% 0.019 118));
+  --dashboard-border-strong: var(--member-border-strong, oklch(78% 0.03 154));
+  --dashboard-green: var(--member-green, oklch(34% 0.07 164));
+  --dashboard-blue: var(--member-blue, oklch(57% 0.15 238));
+  --dashboard-yellow: var(--member-yellow, oklch(72% 0.14 72));
+  --dashboard-danger: oklch(48% 0.16 30);
+  min-width: 0;
   width: 100%;
+  max-width: 100%;
+  color: var(--dashboard-fg);
+  letter-spacing: 0;
 }
 
 .tabBar {
-  display: flex;
-  gap: 0;
-  border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 16px;
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--dashboard-border);
+  border-radius: 8px 8px 0 0;
+  background: color-mix(in oklch, var(--dashboard-surface) 88%, white);
 }
 
 .tab,
 .tabActive {
-  padding: 10px 20px;
+  display: inline-flex;
+  min-width: 0;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.72rem 0.8rem;
   border: none;
-  background: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
   cursor: pointer;
-  font-size: 15px;
-  color: #5f6368;
-  border-bottom: 2px solid transparent;
+  color: var(--dashboard-muted);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-align: center;
   transition:
-    color 0.15s,
-    border-color 0.15s;
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.tab + .tab,
+.tab + .tabActive,
+.tabActive + .tab,
+.tabActive + .tabActive {
+  border-left: 1px solid color-mix(in oklch, var(--dashboard-border) 76%, transparent);
 }
 
 .tab:hover {
-  color: #202124;
+  background: color-mix(in oklch, var(--dashboard-blue) 6%, transparent);
+  color: var(--dashboard-fg);
 }
 
 .tabActive {
-  color: #1967d2;
-  font-weight: 700;
-  border-bottom-color: #1967d2;
+  border-bottom-color: var(--dashboard-blue);
+  background: color-mix(in oklch, var(--dashboard-blue) 9%, var(--dashboard-surface-strong));
+  color: var(--dashboard-green);
+  font-weight: 800;
+}
+
+.tab:focus-visible,
+.tabActive:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 3px solid color-mix(in oklch, var(--dashboard-blue) 58%, white);
+  outline-offset: -3px;
+}
+
+.container > [role="tabpanel"] {
+  min-width: 0;
+  max-width: 100%;
+  padding: 16px;
+  border: 1px solid var(--dashboard-border);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  background: color-mix(in oklch, var(--dashboard-surface) 92%, white);
 }
 
 .loading {
+  display: flex;
+  min-height: 132px;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 24px 16px;
+  border: 1px dashed var(--dashboard-border-strong);
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--dashboard-blue) 5%, var(--dashboard-surface-strong));
   text-align: center;
-  color: #5f6368;
-  padding: 32px 0;
+  color: var(--dashboard-muted);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .loadingMore {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 10px 12px;
   text-align: center;
-  color: #5f6368;
-  padding: 12px 0;
+  color: var(--dashboard-muted);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .error {
-  background: #fce8e6;
-  color: #c5221f;
-  padding: 16px;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid color-mix(in oklch, var(--dashboard-danger) 38%, white);
+  background: color-mix(in oklch, var(--dashboard-danger) 8%, var(--dashboard-surface-strong));
   border-radius: 8px;
-  margin: 8px 0;
+  color: var(--dashboard-danger);
+  line-height: 1.5;
+}
+
+.error p {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .error button {
-  margin-top: 8px;
-  padding: 6px 16px;
-  border: 1px solid #c5221f;
-  border-radius: 4px;
-  background: #fff;
-  color: #c5221f;
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid color-mix(in oklch, var(--dashboard-danger) 64%, var(--dashboard-border));
+  border-radius: 8px;
+  background: var(--dashboard-surface-strong);
+  color: var(--dashboard-danger);
   cursor: pointer;
-  font-size: 14px;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.error button:hover {
+  background: color-mix(in oklch, var(--dashboard-danger) 7%, white);
+}
+
+.error button:focus-visible {
+  outline: 3px solid color-mix(in oklch, var(--dashboard-danger) 38%, white);
+  outline-offset: 3px;
 }
 
 .empty {
+  display: flex;
+  min-height: 132px;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 24px 16px;
+  border: 1px dashed var(--dashboard-border);
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--dashboard-yellow) 7%, var(--dashboard-surface-strong));
   text-align: center;
-  color: #80868b;
-  padding: 40px 0;
+  color: var(--dashboard-muted);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .endHint {
+  min-height: 44px;
+  margin: 4px 0 0;
+  padding: 14px 12px 0;
+  border-top: 1px dashed var(--dashboard-border);
   text-align: center;
-  color: #80868b;
-  padding: 16px 0;
-  border-top: 1px dashed #dadce0;
-  margin-top: 8px;
+  color: var(--dashboard-muted);
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .cardList {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  min-width: 0;
+  max-width: 100%;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
-@media (max-width: 767px) {
+.cardList > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.cardList > div:empty {
+  min-height: 1px;
+}
+
+@media (max-width: 520px) {
   .tab,
   .tabActive {
-    padding: 8px 12px;
+    min-height: 44px;
+    padding: 0.62rem 0.48rem;
     font-size: 14px;
+  }
+
+  .container > [role="tabpanel"] {
+    padding: 12px;
   }
 
   .error {
     padding: 12px;
+  }
+
+  .error button {
+    width: 100%;
   }
 }
