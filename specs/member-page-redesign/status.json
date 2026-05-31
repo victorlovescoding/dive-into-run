@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "082-member-page-redesign",
-    "commit": "b4550b6e18d70563882f395309d5d133ce65349c",
-    "capturedAt": "2026-05-31T15:46:45Z",
-    "summary": "Verified code head before this final workflow-state record commit; includes stale-base reconciliation and workflow-check detached branch fix"
+    "commit": "590455fcf4678e6e4a144766c9a2ee3c2e3ffd99",
+    "capturedAt": "2026-05-31T16:38:51Z",
+    "summary": "Rebased equivalent of the verified code head before the final workflow-state record commit; includes stale-base reconciliation and workflow-check detached branch fix"
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "f29f40f609db433ec49116d28c86452936eb1129",
-    "capturedAt": "2026-05-31T15:11:39Z",
-    "summary": "origin/main captured by git fetch origin main for stale-base reconciliation"
+    "commit": "0b9a6bc0e1305f1e11f8994c258edc5549bf5dc3",
+    "capturedAt": "2026-05-31T16:38:51Z",
+    "summary": "origin/main captured by git fetch origin main for avatar-round base reconciliation"
   },
   "completedTasks": [
     "T001",
@@ -553,77 +553,77 @@
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "b4550b6e18d70563882f395309d5d133ce65349c",
+  "lastVerifiedCommit": "590455fcf4678e6e4a144766c9a2ee3c2e3ffd99",
   "phaseCommits": [
     {
       "phase": "plan",
-      "commit": "4ff4fc068cb2293c2193ab2457312c236c4d78ce",
+      "commit": "3d0e3851e7844151923f146568c5a8a24520012c",
       "summary": "plan artifacts rebased onto current origin/main before stale-base reconciliation",
       "committedAt": "2026-05-31T15:09:18Z"
     },
     {
       "phase": "implementation",
-      "commit": "50199c4d7c35b8286250fdc1b558c84f3b177e08",
+      "commit": "4be9c93825b45b67cf7551b7a336149ecc362f62",
       "summary": "implementation dispatch/setup rebased onto current origin/main",
       "committedAt": "2026-05-31T15:09:18Z"
     },
     {
       "phase": "implementation",
-      "commit": "b45cf6f2d266bd3c3ec73ee508c25975065720a5",
+      "commit": "811db33e87488b5af7a2c38dafef8110f21d86c7",
       "summary": "T001 member page shell closeout rebased onto current origin/main",
       "committedAt": "2026-05-31T15:09:18Z"
     },
     {
       "phase": "implementation",
-      "commit": "ef981ef5d9a1569ac2335f4900f09f1d4effdb29",
+      "commit": "176d8d11f68e586f1f53367da727a490660bb043",
       "summary": "workflow check branch/worktree scoping fix rebased onto current origin/main",
       "committedAt": "2026-05-31T15:10:31Z"
     },
     {
       "phase": "implementation",
-      "commit": "9010c19414059f8f0526a5172293e97b1c480782",
+      "commit": "427c28a3cc3459666a0b7acec1e511bbf0a45410",
       "summary": "T002 styling task start rebased onto current origin/main",
       "committedAt": "2026-05-31T15:10:31Z"
     },
     {
       "phase": "implementation",
-      "commit": "8111040f283ecb0063045f7a5412cf44b9a80e38",
+      "commit": "22cc781ba301cb299fd04fec5c4d22fddf790b5f",
       "summary": "T002 bio/danger styling closeout rebased onto current origin/main",
       "committedAt": "2026-05-31T15:10:31Z"
     },
     {
       "phase": "implementation",
-      "commit": "3141d2a9658224234fb41240e9455e15747a239a",
+      "commit": "a095e3df651de680f08860792b728d1b9d5cf7e4",
       "summary": "T003 dashboard fit task start rebased onto current origin/main",
       "committedAt": "2026-05-31T15:10:31Z"
     },
     {
       "phase": "implementation",
-      "commit": "e95abc412264a69296bf763283ab72acbac936a0",
+      "commit": "e15de00a106712d91d84090b0d1873b77dd0f0d4",
       "summary": "T003 dashboard tabs closeout rebased onto current origin/main",
       "committedAt": "2026-05-31T15:10:31Z"
     },
     {
       "phase": "verification",
-      "commit": "06b08e6cfcdcb64f9bd8c2243caa7a27991e34ac",
+      "commit": "b742ca4cfe82a37881a2cadbe363f53d3592618b",
       "summary": "T004 integration verification start rebased onto current origin/main",
       "committedAt": "2026-05-31T15:10:31Z"
     },
     {
       "phase": "verification",
-      "commit": "01018e48e782452ad3a247a7737c2217e867baaa",
+      "commit": "f9b8dfebdb6c0d81938c319dc94c058824285a4c",
       "summary": "T004 workflow evidence commit after rebase onto current origin/main",
       "committedAt": "2026-05-31T15:10:31Z"
     },
     {
       "phase": "verification",
-      "commit": "36c120336f0d5f631799a2b56ae83da65b2cde1c",
+      "commit": "05ed4231614cd7dedfc621a5057a8f6343773797",
       "summary": "P1 stale-base reconciliation state close; branch rebased on origin/main f29f40f609db433ec49116d28c86452936eb1129 and reviewer passed ancestor, ahead/not-behind, reverse-diff, and workflow-check evidence",
       "committedAt": "2026-05-31T15:11:39Z"
     },
     {
       "phase": "verification",
-      "commit": "b4550b6e18d70563882f395309d5d133ce65349c",
+      "commit": "590455fcf4678e6e4a144766c9a2ee3c2e3ffd99",
       "summary": "P2 workflow check detached branch detection fix; reviewer passed attached-branch, GitHub Actions fallback, pseudo PR ref, and schema/sync/rules/incident coverage",
       "committedAt": "2026-05-31T15:46:45Z"
     }

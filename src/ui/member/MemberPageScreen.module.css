@@ -104,7 +104,7 @@
   padding: 2px;
   place-items: center;
   border: 1px solid color-mix(in oklch, var(--member-border-strong) 82%, white);
-  border-radius: 8px;
+  border-radius: 50%;
   background:
     linear-gradient(135deg, color-mix(in oklch, var(--member-blue) 12%, white), white 52%),
     var(--member-surface-strong);
@@ -126,7 +126,7 @@
 .avatarImage {
   width: 68px;
   height: 68px;
-  border-radius: 7px;
+  border-radius: 50%;
   object-fit: cover;
   background: color-mix(in oklch, var(--member-green) 8%, white);
 }
