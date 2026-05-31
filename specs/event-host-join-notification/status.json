@@ -17,17 +17,17 @@
     "deployFirestoreRules": true
   },
   "currentHead": {
-    "branch": "083-weather-uv-aqi-standards-ui",
-    "commit": "a10dbc314b2bc57e8c64febbc7d6f8294e8178a4",
-    "capturedAt": "2026-05-30T16:25:17Z",
-    "summary": "Workflow-state blocker fix captured on the weather branch HEAD, fix: guard weather standard range matching. This records workflow-state checks only; event-host product behavior was not reverified."
+    "branch": "078-event-host-join-notification",
+    "commit": "aec6d2db70fdd006c458e6ede56f5bfcb34a1563",
+    "capturedAt": "2026-05-29T19:40:10Z",
+    "summary": "Event-host rules deploy evidence branch head. Event-host product behavior was last verified at 7ed13b3aa9c60af4397fc28528b6be4445bd0998."
   },
   "remoteHead": {
     "remote": "origin",
-    "branch": "main",
-    "commit": "4c5b45b1fbf5b62ded2da57dd178133532a90b9f",
-    "capturedAt": "2026-05-30T16:25:17Z",
-    "summary": "Local origin/main snapshot during weather branch workflow-state blocker fix; branch was ahead 5 and not reported behind origin/main."
+    "branch": "078-event-host-join-notification",
+    "commit": "aec6d2db70fdd006c458e6ede56f5bfcb34a1563",
+    "capturedAt": "2026-05-29T19:40:10Z",
+    "summary": "Remote event-host branch head containing the rules deploy evidence commit."
   },
   "completedTasks": [
     "T1",
@@ -801,7 +801,7 @@
       "verifiedAt": "2026-05-30T16:25:17Z"
     }
   ],
-  "lastVerifiedCommit": "a10dbc314b2bc57e8c64febbc7d6f8294e8178a4",
+  "lastVerifiedCommit": "7ed13b3aa9c60af4397fc28528b6be4445bd0998",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -897,5 +897,5 @@
     "deployedCommit": "7ed13b3aa9c60af4397fc28528b6be4445bd0998"
   },
   "incidents": [],
-  "updatedAt": "2026-05-30T16:25:17Z"
+  "updatedAt": "2026-05-31T16:01:22Z"
 }
