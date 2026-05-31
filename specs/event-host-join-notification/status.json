@@ -3,7 +3,7 @@
   "feature": "event-host-join-notification",
   "branch": "078-event-host-join-notification",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-078-event-host-join-notification",
-  "phase": "rules_deploy_completed_awaiting_evidence_commit",
+  "phase": "rules_deploy_evidence_recorded",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "078-event-host-join-notification",
-    "commit": "7ed13b3aa9c60af4397fc28528b6be4445bd0998",
-    "capturedAt": "2026-05-29T19:34:24Z",
-    "summary": "Current HEAD at deploy time is Record notification final verification; branch status after deploy before evidence edit was clean and ahead 14, behind origin/main by 0. T1 through T5 are completed and committed. Firestore rules deploy completed from this clean HEAD."
+    "commit": "aec6d2db70fdd006c458e6ede56f5bfcb34a1563",
+    "capturedAt": "2026-05-29T19:40:10Z",
+    "summary": "Event-host rules deploy evidence branch head. Event-host product behavior was last verified at 7ed13b3aa9c60af4397fc28528b6be4445bd0998."
   },
   "remoteHead": {
     "remote": "origin",
-    "branch": "main",
-    "commit": "a9ec0d5a2c839764823f274723b0b806123b3965",
-    "capturedAt": "2026-05-29T19:26:37Z",
-    "summary": "Local origin/main snapshot is unchanged; current branch is ahead 14 and behind this ref by 0 after the T5 final verification commit."
+    "branch": "078-event-host-join-notification",
+    "commit": "aec6d2db70fdd006c458e6ede56f5bfcb34a1563",
+    "capturedAt": "2026-05-29T19:40:10Z",
+    "summary": "Remote event-host branch head containing the rules deploy evidence commit."
   },
   "completedTasks": [
     "T1",
@@ -751,9 +751,57 @@
       "exitCode": 0,
       "summary": "Branch 078-event-host-join-notification...origin/main is ahead 13 with only workflow state files modified after T5 sync.",
       "verifiedAt": "2026-05-29T19:28:26Z"
+    },
+    {
+      "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "status.json validates after workflow-state sync.",
+      "verifiedAt": "2026-05-30T15:59:59Z"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "Closeout guard passes after lastVerifiedCommit was synced to the weather branch HEAD; no event-host product behavior was reverified.",
+      "verifiedAt": "2026-05-30T15:59:59Z"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "Repository workflow-state check passes with historical notification status synced to the weather branch HEAD.",
+      "verifiedAt": "2026-05-30T15:59:59Z"
+    },
+    {
+      "command": "git diff --check -- specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "No whitespace errors in status.json.",
+      "verifiedAt": "2026-05-30T15:59:59Z"
+    },
+    {
+      "command": "node scripts/validate-workflow-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "status.json validates after renaming the historical rules-deploy evidence phase out of the active closeout guard; no event-host product behavior was reverified.",
+      "verifiedAt": "2026-05-30T16:25:17Z"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "Workflow-state check passes after the historical notification status stopped applying closeout range checks to unrelated weather source commits.",
+      "verifiedAt": "2026-05-30T16:25:17Z"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "Repository workflow-state check passes with the event-host notification status recorded as historical rules-deploy evidence state.",
+      "verifiedAt": "2026-05-30T16:25:17Z"
+    },
+    {
+      "command": "git diff --check -- specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "No whitespace errors in status.json.",
+      "verifiedAt": "2026-05-30T16:25:17Z"
     }
   ],
-  "lastVerifiedCommit": "0c547e25fee8f61faa6b66c77803ba79dfd5e9f0",
+  "lastVerifiedCommit": "7ed13b3aa9c60af4397fc28528b6be4445bd0998",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -849,5 +897,5 @@
     "deployedCommit": "7ed13b3aa9c60af4397fc28528b6be4445bd0998"
   },
   "incidents": [],
-  "updatedAt": "2026-05-30T07:38:12Z"
+  "updatedAt": "2026-05-31T16:01:22Z"
 }
