@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "082-member-page-redesign",
-    "commit": "01018e48e782452ad3a247a7737c2217e867baaa",
-    "capturedAt": "2026-05-31T15:11:39Z",
-    "summary": "Rebased feature head on origin/main before stale-base reconciliation evidence edits"
+    "commit": "b4550b6e18d70563882f395309d5d133ce65349c",
+    "capturedAt": "2026-05-31T15:46:45Z",
+    "summary": "Verified code head before this final workflow-state record commit; includes stale-base reconciliation and workflow-check detached branch fix"
   },
   "remoteHead": {
     "remote": "origin",
@@ -527,33 +527,33 @@
         "decidedAt": "2026-05-31T14:49:36Z"
       },
       "evidence": {
-        "engineerReport": "DONE. Ran Auth Emulator-backed authenticated Playwright QA against http://localhost:3083/member with emulator user member-qa@example.test / UID 0T7EiBTyHymJjb8uDWUJZ0ZEdIRz. Authenticated desktop and mobile QA covered profile/account controls, Bio, dashboard tabs, Danger Zone, link destinations, avatar file chooser, display-name no-op safety, dashboard click/keyboard behavior, and Danger Zone modal open/cancel. The prior reviewer blocker for authenticated-only interactions is filled. No product-code edits were made.",
-        "reviewerReport": "review_passed. The reviewer validated the T004 workflow evidence diff, authenticated desktop/mobile QA artifacts, command evidence, and residual no-destructive QA boundary. No follow-up findings were reported.",
+        "engineerReport": "DONE. Ran Auth Emulator-backed authenticated Playwright QA against http://localhost:3083/member with emulator user UID njAUtSPQOenv1LspXh7Btn7CMkc5. Authenticated desktop and mobile QA covered profile/account controls, Bio, dashboard tabs, Danger Zone, /member/favorites link preservation, avatar file chooser, display-name save path, public profile link, Bio save state, dashboard click/keyboard behavior, and Danger Zone modal open/cancel. No product-code edits were made after final verification.",
+        "reviewerReport": "review_passed. The reviewer validated P1 stale-base close and P2 workflow-check close. Stale-base review confirmed branch ahead/not behind, origin/main as ancestor, no unrelated reverse-diffs, and workflow check passing. Workflow-check review confirmed attached branch is preferred, GitHub Actions-only fallback ordering, pseudo PR merge refs ignored, and schema/sync/rules/incident checks not globally skipped.",
         "commandOutputSummary": [
-          "`npm run lint:changed` exit 0. No changed JS files to lint.",
-          "`npm run type-check:changed` exit 0. No changed JS files to check.",
-          "`npm run depcruise` exit 0. No dependency violations found across 1294 modules and 3030 dependencies. Node MODULE_TYPELESS_PACKAGE_JSON warning only.",
-          "`curl -sS -X POST http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key` exit 0; Auth Emulator returned localId `0T7EiBTyHymJjb8uDWUJZ0ZEdIRz` for `member-qa@example.test`.",
-          "`node --input-type=module` authenticated Playwright QA script exit 0 after rerun outside the macOS sandbox. Desktop screenshot `/tmp/member-page-redesign-T004-auth-desktop-1440x1000.png`; mobile screenshot `/tmp/member-page-redesign-T004-auth-mobile-390x844.png`; confirmed auth UID `0T7EiBTyHymJjb8uDWUJZ0ZEdIRz`, required authenticated sections/interactions, link hrefs, layout geometry, no visible legacy title, `main nav` count 0, no horizontal overflow, and no duplicate interactive sections.",
-          "Formal authenticated QA phase had 0 console errors, 0 console warnings, 0 page errors, 0 request failures, and 0 >=400 responses. Setup phase had expected Firebase emulator warnings plus two Firestore Listen `net::ERR_ABORTED` request failures from the required sign-in reload; no setup page errors or >=400 responses.",
-          "`node --input-type=module` clean screenshot capture exit 0; overwrote required screenshot paths with product-only visual artifacts after hiding Firebase emulator and Next dev overlays via Playwright CSS injection only.",
-          "`node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` exit 0. `specs/member-page-redesign/status.json: ok`. `WORKFLOW STATE: 1 status file(s) valid`.",
-          "`node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` exit 0. `specs/member-page-redesign/status.json: ok`. `WORKFLOW STATE: 1 status file(s) valid`. `specs/member-page-redesign/status.json: sync ok`. `SUPERPOWERS CHECK: 1 status file(s) synced`.",
-          "`npm run workflow:check` exit 0. `WORKFLOW STATE: 14 status file(s) valid`. `SUPERPOWERS CHECK: 14 status file(s) synced`.",
-          "`git diff --name-only origin/main...HEAD` showed changes limited to member UI/CSS, workflow artifacts, and `scripts/check-superpowers-state.js`. No `/member/favorites`, runtime, service, repo, rules, schema, dependency manifest, or deployment files changed.",
-          "`git diff --check -- specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` exit 0. No whitespace errors."
+          "`git merge-base --is-ancestor origin/main HEAD` exit 0.",
+          "`git diff --name-status origin/main..HEAD` exit 0; changes limited to workflow scripts/specs and member UI/CSS.",
+          "`npx vitest run scripts/check-superpowers-state.test.js` exit 0; 4 tests passed.",
+          "`npm run workflow:check` exit 0; 14 status files valid/synced.",
+          "`npm run lint:branch` exit 0; React version warning only.",
+          "`npm run type-check:branch` exit 0; no branch-changed type errors.",
+          "`npm run depcruise` exit 0; no dependency violations; existing Node module type warning only.",
+          "`npm run build` exit 0; `/member` and `/member/favorites` static routes generated.",
+          "`git diff --check` exit 0.",
+          "Browser verifier at `http://localhost:3083` with Auth 9099, Firestore 8080, Storage 9199 and UID `njAUtSPQOenv1LspXh7Btn7CMkc5` passed desktop/mobile `/member` QA. Screenshots: `/tmp/member-page-redesign-browser-verifier-desktop-1440x1000.png` and `/tmp/member-page-redesign-browser-verifier-mobile-390x844.png`.",
+          "Formal authenticated QA had 0 console errors/warnings/page errors/request failures/>=400. Setup had emulator warnings and Firestore Listen aborts only.",
+          "Residual: emulator, not production; favorites page content was not deeply operated."
         ],
         "changedFilesSummary": [
           "`specs/member-page-redesign/tasks.md`: records T004 authenticated QA, reviewer PASS, command summaries, and `completed` state.",
           "`specs/member-page-redesign/handoff.md`: records all implementation tasks complete, latest reviewer decision, latest verification, and next coordinator closeout decision.",
-          "`specs/member-page-redesign/status.json`: syncs machine-readable T004 completion, reviewer decision, completedTasks, inactive task/wave, latest verification, and residual risk summary."
+          "`specs/member-page-redesign/status.json`: syncs machine-readable T004 completion, reviewer decision, completedTasks, inactive task/wave, latest verification, closeout reviews, and residual risk summary."
         ]
       }
     }
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "01018e48e782452ad3a247a7737c2217e867baaa",
+  "lastVerifiedCommit": "b4550b6e18d70563882f395309d5d133ce65349c",
   "phaseCommits": [
     {
       "phase": "plan",
@@ -614,6 +614,18 @@
       "commit": "01018e48e782452ad3a247a7737c2217e867baaa",
       "summary": "T004 workflow evidence commit after rebase onto current origin/main",
       "committedAt": "2026-05-31T15:10:31Z"
+    },
+    {
+      "phase": "verification",
+      "commit": "36c120336f0d5f631799a2b56ae83da65b2cde1c",
+      "summary": "P1 stale-base reconciliation state close; branch rebased on origin/main f29f40f609db433ec49116d28c86452936eb1129 and reviewer passed ancestor, ahead/not-behind, reverse-diff, and workflow-check evidence",
+      "committedAt": "2026-05-31T15:11:39Z"
+    },
+    {
+      "phase": "verification",
+      "commit": "b4550b6e18d70563882f395309d5d133ce65349c",
+      "summary": "P2 workflow check detached branch detection fix; reviewer passed attached-branch, GitHub Actions fallback, pseudo PR ref, and schema/sync/rules/incident coverage",
+      "committedAt": "2026-05-31T15:46:45Z"
     }
   ],
   "rulesDeployStatus": {
@@ -628,39 +640,63 @@
     {
       "command": "git status --short --branch",
       "exitCode": 0,
-      "summary": "Before reconcile: ## 082-member-page-redesign...origin/main [ahead 11, behind 5]. After rebase: ## 082-member-page-redesign...origin/main [ahead 11].",
-      "verifiedAt": "2026-05-31T15:11:39Z"
+      "summary": "HEAD b4550b6e18d70563882f395309d5d133ce65349c, origin/main f29f40f609db433ec49116d28c86452936eb1129, clean branch ahead 13.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
     },
     {
-      "command": "git fetch origin main",
+      "command": "git merge-base --is-ancestor origin/main HEAD",
       "exitCode": 0,
-      "summary": "Fetched origin/main; branch resolved to f29f40f609db433ec49116d28c86452936eb1129.",
-      "verifiedAt": "2026-05-31T15:11:39Z"
-    },
-    {
-      "command": "git rebase origin/main",
-      "exitCode": 1,
-      "summary": "Stopped on scripts/check-superpowers-state.js conflict while replaying workflow-check scoping commit; no product/design conflict.",
-      "verifiedAt": "2026-05-31T15:11:39Z"
-    },
-    {
-      "command": "/usr/bin/env GIT_EDITOR=true git rebase --continue",
-      "exitCode": 0,
-      "summary": "After conservative conflict resolution, rebase completed and updated refs/heads/082-member-page-redesign.",
-      "verifiedAt": "2026-05-31T15:11:39Z"
+      "summary": "origin/main is an ancestor of HEAD.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
     },
     {
       "command": "git diff --name-status origin/main..HEAD",
       "exitCode": 0,
-      "summary": "Branch diff is limited to scripts/check-superpowers-state.js, specs/member-page-redesign/*, and member UI/CSS files; no specs/event-list-card-redesign/* or src/ui/events/* reverse-diffs remain.",
-      "verifiedAt": "2026-05-31T15:11:39Z"
+      "summary": "Changes limited to workflow scripts/specs and member UI/CSS.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "npx vitest run scripts/check-superpowers-state.test.js",
+      "exitCode": 0,
+      "summary": "Focused workflow-check tests passed; 4 tests passed.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
       "summary": "WORKFLOW STATE: 14 status file(s) valid. SUPERPOWERS CHECK: 14 status file(s) synced.",
-      "verifiedAt": "2026-05-31T15:11:39Z"
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "npm run lint:branch",
+      "exitCode": 0,
+      "summary": "No branch lint errors; React version warning only.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "npm run type-check:branch",
+      "exitCode": 0,
+      "summary": "No branch-changed type errors.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "npm run depcruise",
+      "exitCode": 0,
+      "summary": "No dependency violations; existing Node module type warning only.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "summary": "Build passed; `/member` and `/member/favorites` static routes generated.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "No whitespace errors.",
+      "verifiedAt": "2026-05-31T15:46:45Z"
     }
   ],
-  "updatedAt": "2026-05-31T15:11:39Z"
+  "updatedAt": "2026-05-31T15:46:45Z"
 }
