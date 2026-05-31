@@ -430,7 +430,7 @@ Evidence:
 - **Engineer**: Verifier subagent, integration evidence task
 - **Reviewer**: Reviewer subagent, final integration gate check
 - **Commit checkpoint**: implementation phase commit only after all prior tasks are `completed`, T004 passes review, and coordinator has commit authorization
-- **Last verified commit**: `9f89a89f757e88bdd9fc054667b15ea7e0467085` covered by fresh T004 authenticated browser QA and automated gates before workflow evidence edits
+- **Last verified commit**: `01018e48e782452ad3a247a7737c2217e867baaa` is the rebased T004 workflow evidence commit before stale-base reconciliation state edits
 - **Authorization boundary**: product implementation tasks through Engineer/Reviewer subagents edit=yes, commit=yes; push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: not_applicable, not required, unchanged
 - **Incidents**: none
@@ -545,13 +545,13 @@ Evidence:
   - `node --input-type=module` clean screenshot capture exit 0; overwrote required screenshot paths with product-only visual artifacts after hiding Firebase emulator and Next dev overlays via Playwright CSS injection only.
   - `node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` exit 0. `specs/member-page-redesign/status.json: ok`. `WORKFLOW STATE: 1 status file(s) valid`.
   - `node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` exit 0. `specs/member-page-redesign/status.json: ok`. `WORKFLOW STATE: 1 status file(s) valid`. `specs/member-page-redesign/status.json: sync ok`. `SUPERPOWERS CHECK: 1 status file(s) synced`.
-  - `npm run workflow:check` exit 0. `WORKFLOW STATE: 13 status file(s) valid`. `SUPERPOWERS CHECK: 13 status file(s) synced`.
-  - `git diff --name-only origin/main...HEAD` showed changes limited to member UI/CSS, workflow artifacts, and `scripts/check-superpowers-state.js`. No `/member/favorites`, runtime, service, repo, rules, schema, dependency manifest, or deployment files changed.
+  - `npm run workflow:check` exit 0. `WORKFLOW STATE: 14 status file(s) valid`. `SUPERPOWERS CHECK: 14 status file(s) synced`.
+  - `git diff --name-status origin/main..HEAD` after stale-base rebase showed changes limited to member UI/CSS, `specs/member-page-redesign/*`, and `scripts/check-superpowers-state.js`; no `specs/event-list-card-redesign/*` or `src/ui/events/*` reverse-diffs remained.
   - `git diff --check -- specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` exit 0. No whitespace errors.
 - Changed files summary:
   - `specs/member-page-redesign/tasks.md`: records T004 authenticated QA, reviewer PASS, command summaries, and `completed` state.
   - `specs/member-page-redesign/handoff.md`: records all implementation tasks complete, latest reviewer decision, latest verification, and next coordinator closeout decision.
   - `specs/member-page-redesign/status.json`: syncs machine-readable T004 completion, reviewer decision, completedTasks, inactive task/wave, latest verification, and residual risk summary.
-- Phase commits: T004 start commit `9f89a89f757e88bdd9fc054667b15ea7e0467085` (`Start member integration verification`) existed before verifier evidence updates. Final T004 workflow evidence commit SHA is reported after commit creation; exact SHA is not embedded here to avoid a self-referential commit hash loop.
+- Phase commits: T004 start commit `06b08e6cfcdcb64f9bd8c2243caa7a27991e34ac` (`Start member integration verification`) and T004 workflow evidence commit `01018e48e782452ad3a247a7737c2217e867baaa` (`Record member redesign verification`) were rebased onto `origin/main` `f29f40f609db433ec49116d28c86452936eb1129`. The stale-base reconciliation state commit SHA is reported after commit creation; exact SHA is not embedded here to avoid a self-referential commit hash loop.
 - Rules deploy status: not_applicable.
 - Incidents: none.

@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "082-member-page-redesign",
-    "commit": "9f89a89f757e88bdd9fc054667b15ea7e0467085",
-    "capturedAt": "2026-05-31T14:37:16Z",
-    "summary": "Current HEAD covered by T004 authenticated browser QA and automated verification before workflow evidence edits"
+    "commit": "01018e48e782452ad3a247a7737c2217e867baaa",
+    "capturedAt": "2026-05-31T15:11:39Z",
+    "summary": "Rebased feature head on origin/main before stale-base reconciliation evidence edits"
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "4c5b45b1fbf5b62ded2da57dd178133532a90b9f",
-    "capturedAt": "2026-05-31T14:11:52Z",
-    "summary": "origin/main captured during T004 verification"
+    "commit": "f29f40f609db433ec49116d28c86452936eb1129",
+    "capturedAt": "2026-05-31T15:11:39Z",
+    "summary": "origin/main captured by git fetch origin main for stale-base reconciliation"
   },
   "completedTasks": [
     "T001",
@@ -502,7 +502,7 @@
           "lastRun": {
             "command": "npm run workflow:check",
             "exitCode": 0,
-            "summary": "WORKFLOW STATE: 13 status file(s) valid. SUPERPOWERS CHECK: 13 status file(s) synced.",
+            "summary": "WORKFLOW STATE: 14 status file(s) valid. SUPERPOWERS CHECK: 14 status file(s) synced.",
             "verifiedAt": "2026-05-31T14:41:45Z"
           }
         }
@@ -539,7 +539,7 @@
           "`node --input-type=module` clean screenshot capture exit 0; overwrote required screenshot paths with product-only visual artifacts after hiding Firebase emulator and Next dev overlays via Playwright CSS injection only.",
           "`node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` exit 0. `specs/member-page-redesign/status.json: ok`. `WORKFLOW STATE: 1 status file(s) valid`.",
           "`node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` exit 0. `specs/member-page-redesign/status.json: ok`. `WORKFLOW STATE: 1 status file(s) valid`. `specs/member-page-redesign/status.json: sync ok`. `SUPERPOWERS CHECK: 1 status file(s) synced`.",
-          "`npm run workflow:check` exit 0. `WORKFLOW STATE: 13 status file(s) valid`. `SUPERPOWERS CHECK: 13 status file(s) synced`.",
+          "`npm run workflow:check` exit 0. `WORKFLOW STATE: 14 status file(s) valid`. `SUPERPOWERS CHECK: 14 status file(s) synced`.",
           "`git diff --name-only origin/main...HEAD` showed changes limited to member UI/CSS, workflow artifacts, and `scripts/check-superpowers-state.js`. No `/member/favorites`, runtime, service, repo, rules, schema, dependency manifest, or deployment files changed.",
           "`git diff --check -- specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` exit 0. No whitespace errors."
         ],
@@ -553,61 +553,67 @@
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "9f89a89f757e88bdd9fc054667b15ea7e0467085",
+  "lastVerifiedCommit": "01018e48e782452ad3a247a7737c2217e867baaa",
   "phaseCommits": [
     {
       "phase": "plan",
-      "commit": "cf4a65e75dce300a032763cd3b5fe1873578923c",
-      "summary": "plan artifacts committed before implementation dispatch",
-      "committedAt": "2026-05-30T15:22:38Z"
+      "commit": "4ff4fc068cb2293c2193ab2457312c236c4d78ce",
+      "summary": "plan artifacts rebased onto current origin/main before stale-base reconciliation",
+      "committedAt": "2026-05-31T15:09:18Z"
     },
     {
       "phase": "implementation",
-      "commit": "6f67e3f760f96cedb8ba9be3c04e1c908c7dd14d",
-      "summary": "implementation dispatch/setup committed before T001 closeout",
-      "committedAt": "2026-05-30T15:26:34Z"
+      "commit": "50199c4d7c35b8286250fdc1b558c84f3b177e08",
+      "summary": "implementation dispatch/setup rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:09:18Z"
     },
     {
       "phase": "implementation",
-      "commit": "f58bc0129fe37111dde4a7df01d8e5dd033fc70d",
-      "summary": "T001 member page shell closeout commit before T002 dispatch",
-      "committedAt": "2026-05-30T15:48:41Z"
+      "commit": "b45cf6f2d266bd3c3ec73ee508c25975065720a5",
+      "summary": "T001 member page shell closeout rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:09:18Z"
     },
     {
       "phase": "implementation",
-      "commit": "add4421c8e88d97721078d1390167da624c06156",
-      "summary": "workflow check branch scoping fix before T002 dispatch",
-      "committedAt": "2026-05-30T16:28:27Z"
+      "commit": "ef981ef5d9a1569ac2335f4900f09f1d4effdb29",
+      "summary": "workflow check branch/worktree scoping fix rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
     },
     {
       "phase": "implementation",
-      "commit": "f19331e318f271ee8b02e8e88db683a641ffbed1",
-      "summary": "T002 styling task start commit before T002 closeout",
-      "committedAt": "2026-05-30T16:31:37Z"
+      "commit": "9010c19414059f8f0526a5172293e97b1c480782",
+      "summary": "T002 styling task start rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
     },
     {
       "phase": "implementation",
-      "commit": "7ec7cc584801548ece85218cb4e3bb49898cc0ed",
-      "summary": "T002 bio/danger styling closeout commit before T003 dispatch",
-      "committedAt": "2026-05-31T13:33:26Z"
+      "commit": "8111040f283ecb0063045f7a5412cf44b9a80e38",
+      "summary": "T002 bio/danger styling closeout rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
     },
     {
       "phase": "implementation",
-      "commit": "d6748bef36cf404b63e7319351c5d717a0131594",
-      "summary": "T003 dashboard fit task start commit before T003 closeout",
-      "committedAt": "2026-05-31T13:38:32Z"
+      "commit": "3141d2a9658224234fb41240e9455e15747a239a",
+      "summary": "T003 dashboard fit task start rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
     },
     {
       "phase": "implementation",
-      "commit": "fcda233aa41186a6cf98fb1b7d7a92c414cb2a6c",
-      "summary": "T003 dashboard tabs closeout commit before T004 dispatch",
-      "committedAt": "2026-05-31T13:56:45Z"
+      "commit": "e95abc412264a69296bf763283ab72acbac936a0",
+      "summary": "T003 dashboard tabs closeout rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
     },
     {
       "phase": "verification",
-      "commit": "9f89a89f757e88bdd9fc054667b15ea7e0467085",
-      "summary": "T004 integration verification start commit before verifier evidence update",
-      "committedAt": "2026-05-31T14:02:10Z"
+      "commit": "06b08e6cfcdcb64f9bd8c2243caa7a27991e34ac",
+      "summary": "T004 integration verification start rebased onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
+    },
+    {
+      "phase": "verification",
+      "commit": "01018e48e782452ad3a247a7737c2217e867baaa",
+      "summary": "T004 workflow evidence commit after rebase onto current origin/main",
+      "committedAt": "2026-05-31T15:10:31Z"
     }
   ],
   "rulesDeployStatus": {
@@ -620,47 +626,41 @@
   "incidents": [],
   "lastVerification": [
     {
-      "command": "npm run lint:changed",
+      "command": "git status --short --branch",
       "exitCode": 0,
-      "summary": "No changed JS files to lint.",
-      "verifiedAt": "2026-05-31T14:49:36Z"
+      "summary": "Before reconcile: ## 082-member-page-redesign...origin/main [ahead 11, behind 5]. After rebase: ## 082-member-page-redesign...origin/main [ahead 11].",
+      "verifiedAt": "2026-05-31T15:11:39Z"
     },
     {
-      "command": "npm run type-check:changed",
+      "command": "git fetch origin main",
       "exitCode": 0,
-      "summary": "No changed JS files to check.",
-      "verifiedAt": "2026-05-31T14:49:36Z"
+      "summary": "Fetched origin/main; branch resolved to f29f40f609db433ec49116d28c86452936eb1129.",
+      "verifiedAt": "2026-05-31T15:11:39Z"
     },
     {
-      "command": "npm run depcruise",
-      "exitCode": 0,
-      "summary": "No dependency violations found across 1294 modules and 3030 dependencies. Node MODULE_TYPELESS_PACKAGE_JSON warning only.",
-      "verifiedAt": "2026-05-31T14:49:36Z"
+      "command": "git rebase origin/main",
+      "exitCode": 1,
+      "summary": "Stopped on scripts/check-superpowers-state.js conflict while replaying workflow-check scoping commit; no product/design conflict.",
+      "verifiedAt": "2026-05-31T15:11:39Z"
     },
     {
-      "command": "node scripts/validate-workflow-state.js specs/member-page-redesign/status.json",
+      "command": "/usr/bin/env GIT_EDITOR=true git rebase --continue",
       "exitCode": 0,
-      "summary": "specs/member-page-redesign/status.json: ok. WORKFLOW STATE: 1 status file(s) valid.",
-      "verifiedAt": "2026-05-31T14:49:36Z"
+      "summary": "After conservative conflict resolution, rebase completed and updated refs/heads/082-member-page-redesign.",
+      "verifiedAt": "2026-05-31T15:11:39Z"
     },
     {
-      "command": "node scripts/check-superpowers-state.js specs/member-page-redesign/status.json",
+      "command": "git diff --name-status origin/main..HEAD",
       "exitCode": 0,
-      "summary": "specs/member-page-redesign/status.json: ok. WORKFLOW STATE: 1 status file(s) valid. specs/member-page-redesign/status.json: sync ok. SUPERPOWERS CHECK: 1 status file(s) synced.",
-      "verifiedAt": "2026-05-31T14:49:36Z"
+      "summary": "Branch diff is limited to scripts/check-superpowers-state.js, specs/member-page-redesign/*, and member UI/CSS files; no specs/event-list-card-redesign/* or src/ui/events/* reverse-diffs remain.",
+      "verifiedAt": "2026-05-31T15:11:39Z"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
-      "summary": "WORKFLOW STATE: 13 status file(s) valid. SUPERPOWERS CHECK: 13 status file(s) synced.",
-      "verifiedAt": "2026-05-31T14:49:36Z"
-    },
-    {
-      "command": "git diff --check -- specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json",
-      "exitCode": 0,
-      "summary": "No whitespace errors.",
-      "verifiedAt": "2026-05-31T14:49:36Z"
+      "summary": "WORKFLOW STATE: 14 status file(s) valid. SUPERPOWERS CHECK: 14 status file(s) synced.",
+      "verifiedAt": "2026-05-31T15:11:39Z"
     }
   ],
-  "updatedAt": "2026-05-31T14:49:36Z"
+  "updatedAt": "2026-05-31T15:11:39Z"
 }

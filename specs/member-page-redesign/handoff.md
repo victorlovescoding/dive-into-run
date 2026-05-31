@@ -5,8 +5,8 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-082-member-page-redesign`
 - Branch: `082-member-page-redesign`
-- Current head: `9f89a89f757e88bdd9fc054667b15ea7e0467085` (`Start member integration verification`)
-- Remote head: `origin/main` at `4c5b45b1fbf5b62ded2da57dd178133532a90b9f`
+- Current head: `01018e48e782452ad3a247a7737c2217e867baaa` (`Record member redesign verification`, rebased onto current `origin/main`)
+- Remote head: `origin/main` at `f29f40f609db433ec49116d28c86452936eb1129`
 - Authorization boundary:
   - edit: true for product implementation tasks through Engineer/Reviewer subagents and T004 workflow evidence files
   - commit: true for this reviewed T004 workflow evidence commit
@@ -16,13 +16,13 @@
   - merge: false
   - localMainSync: false
   - deployFirestoreRules: false
-- Current phase: `implementation`; all implementation tasks are complete and the next step is a coordinator closeout-boundary decision.
+- Current phase: `implementation`; all implementation tasks are complete, stale-base reconciliation is recorded, and the next step is a coordinator closeout-boundary decision.
 - Active task: null
 - Active wave: null
 - T004 state: `completed`
 - Latest reviewer decision: `review_passed` for T004. Final integration reviewer accepted authenticated QA and workflow evidence; desktop screenshot showed account/profile controls, Bio, and Danger Zone left with dashboard tabs right; mobile order was account/profile controls -> Bio -> dashboard tabs -> Danger Zone; no overlap, legacy title, duplicate Nav, or duplicate interactive sections were found. Destructive deletion confirmation and persistent Bio/display-name mutations were intentionally not executed.
-- Last verified commit: `9f89a89f757e88bdd9fc054667b15ea7e0467085`, covered by fresh T004 authenticated browser QA and automated gates before workflow evidence edits.
-- Phase commits: plan commit `cf4a65e75dce300a032763cd3b5fe1873578923c`; implementation setup commit `6f67e3f760f96cedb8ba9be3c04e1c908c7dd14d`; T001 shell commit `f58bc0129fe37111dde4a7df01d8e5dd033fc70d`; workflow check branch scoping fix commit `add4421c8e88d97721078d1390167da624c06156`; T002 start commit `f19331e318f271ee8b02e8e88db683a641ffbed1`; T002 closeout commit `7ec7cc584801548ece85218cb4e3bb49898cc0ed`; T003 start commit `d6748bef36cf404b63e7319351c5d717a0131594`; T003 closeout commit `fcda233aa41186a6cf98fb1b7d7a92c414cb2a6c`; T004 start commit `9f89a89f757e88bdd9fc054667b15ea7e0467085`.
+- Last verified commit: `01018e48e782452ad3a247a7737c2217e867baaa`, the rebased T004 workflow evidence commit before this stale-base reconciliation state update.
+- Phase commits: plan commit `4ff4fc068cb2293c2193ab2457312c236c4d78ce`; implementation setup commit `50199c4d7c35b8286250fdc1b558c84f3b177e08`; T001 shell commit `b45cf6f2d266bd3c3ec73ee508c25975065720a5`; workflow check branch scoping fix commit `ef981ef5d9a1569ac2335f4900f09f1d4effdb29`; T002 start commit `9010c19414059f8f0526a5172293e97b1c480782`; T002 closeout commit `8111040f283ecb0063045f7a5412cf44b9a80e38`; T003 start commit `3141d2a9658224234fb41240e9455e15747a239a`; T003 closeout commit `e95abc412264a69296bf763283ab72acbac936a0`; T004 start commit `06b08e6cfcdcb64f9bd8c2243caa7a27991e34ac`; T004 workflow evidence commit `01018e48e782452ad3a247a7737c2217e867baaa`.
 - Rules deploy status: `not_applicable`, required=false, changed=false
 - Incidents: none
 - Blocked: no
@@ -55,7 +55,12 @@ Do not dispatch product-code fixes inside T004 without a coordinator-approved ow
 | `npm run depcruise` | 0 | No dependency violations found across 1294 modules and 3030 dependencies. MODULE_TYPELESS_PACKAGE_JSON warning only. |
 | `node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` | 0 | `specs/member-page-redesign/status.json: ok`; `WORKFLOW STATE: 1 status file(s) valid`. |
 | `node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` | 0 | `specs/member-page-redesign/status.json: ok`; `WORKFLOW STATE: 1 status file(s) valid`; `specs/member-page-redesign/status.json: sync ok`; `SUPERPOWERS CHECK: 1 status file(s) synced`. |
-| `npm run workflow:check` | 0 | `WORKFLOW STATE: 13 status file(s) valid`; `SUPERPOWERS CHECK: 13 status file(s) synced`. |
+| `npm run workflow:check` | 0 | `WORKFLOW STATE: 14 status file(s) valid`; `SUPERPOWERS CHECK: 14 status file(s) synced`. |
+| `git status --short --branch` | 0 | Before reconcile: branch was ahead 11 and behind 5; after rebase: branch is ahead 11 with no behind count. |
+| `git fetch origin main` | 0 | `origin/main` resolved to `f29f40f609db433ec49116d28c86452936eb1129`. |
+| `git rebase origin/main` | 1 | Rebase stopped only on `scripts/check-superpowers-state.js` while replaying the workflow-check scoping commit; no product/design conflict. |
+| `/usr/bin/env GIT_EDITOR=true git rebase --continue` | 0 | Conservative conflict resolution completed the rebase and updated `refs/heads/082-member-page-redesign`. |
+| `git diff --name-status origin/main..HEAD` | 0 | Branch diff is limited to `scripts/check-superpowers-state.js`, `specs/member-page-redesign/*`, and member UI/CSS files; no `specs/event-list-card-redesign/*` or `src/ui/events/*` reverse-diffs remain. |
 | `git diff --check -- specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` | 0 | No whitespace errors. |
 
 ## Browser Evidence
