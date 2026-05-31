@@ -298,7 +298,7 @@ Evidence:
   - `specs/member-page-redesign/tasks.md`: records T002 completion, Engineer evidence, Reviewer PASS evidence, command summaries, and changed-file summary.
   - `specs/member-page-redesign/handoff.md`: updates current state, latest reviewer decision, latest verification, and next action for T003 dispatch.
   - `specs/member-page-redesign/status.json`: syncs machine-readable T002 completion, reviewer decision, completedTasks, active task/wave, and latest verification.
-- Phase commits: final T002 commit SHA is `7ec7cc584801548ece85218cb4e3bb49898cc0ed` (`Align member bio danger styling`).
+- Phase commits: final T002 commit SHA is `8111040f283ecb0063045f7a5412cf44b9a80e38` (`Align member bio danger styling`).
 - Rules deploy status: not_applicable.
 - Incidents: none.
 

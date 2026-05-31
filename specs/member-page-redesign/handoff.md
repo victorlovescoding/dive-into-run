@@ -82,7 +82,7 @@ Do not dispatch product-code fixes without a coordinator-approved owned-file upd
 - [x] Active task and active wave are set to `T004` and `wave-3` before Verifier dispatch.
 - [x] Latest reviewer decision is recorded in `tasks.md` and `status.json`.
 - [x] `lastVerification` has one entry per command.
-- [x] Final T001 commit SHA is captured as `f58bc0129fe37111dde4a7df01d8e5dd033fc70d`.
+- [x] Final T001 commit SHA is captured as `b45cf6f2d266bd3c3ec73ee508c25975065720a5`.
 - [x] `authorizationBoundary.deployFirestoreRules` is recorded and treated as separate from `edit`, `commit`, `push`, `pullRequest`, `ciWatch`, `merge`, and `localMainSync`.
 - [x] `rulesDeployStatus` remains `not_applicable`.
 - [x] Final summary does not imply deployed rules, deployed functions, or production product behavior.
