@@ -239,9 +239,8 @@
 .standardsPopover {
   position: absolute;
   top: calc(100% + 0.5rem);
-  right: 0;
   z-index: 30;
-  width: min(320px, calc(100vw - 2rem));
+  width: min(320px, calc(100cqw - 3rem));
   padding: 0.875rem;
   border: 1px solid rgba(91, 141, 184, 0.24);
   border-radius: 0.5rem;
@@ -249,6 +248,16 @@
   box-shadow: 0 12px 28px rgba(44, 62, 80, 0.18);
   color: var(--sky-text);
   text-align: left;
+}
+
+.standardsPopoverAlignStart {
+  left: 0;
+  right: auto;
+}
+
+.standardsPopoverAlignEnd {
+  right: 0;
+  left: auto;
 }
 
 .standardsPopoverHeader {

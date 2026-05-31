@@ -1,15 +1,8 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import Image from 'next/image';
 import { getWeatherIconUrl } from '@/runtime/client/use-cases/weather-location-use-cases';
 import styles from './weather.module.css';
-import {
-  AQI_STANDARD_ROWS,
-  AQI_STANDARD_SOURCE_URL,
-  UV_STANDARD_ROWS,
-  UV_STANDARD_SOURCE_URL,
-  getCurrentStandardRow,
-  getWeatherMetricAdvice,
-} from './weather-standards';
+import { AQI_STANDARD_ROWS, AQI_STANDARD_SOURCE_URL, UV_STANDARD_ROWS, UV_STANDARD_SOURCE_URL, getCurrentStandardRow, getWeatherMetricAdvice } from './weather-standards';
 
 /** @typedef {import('@/types/weather-types').TodayWeather} TodayWeather */
 /** @typedef {import('@/types/weather-types').TomorrowWeather} TomorrowWeather */
@@ -39,6 +32,15 @@ function formatMetric(value, suffix = '') {
 function getCurrentPeriod() {
   const hour = new Date().getHours();
   return hour >= 6 && hour < 18 ? 'day' : 'night';
+}
+
+/**
+ * Returns focus only while the original trigger is still mounted.
+ * @param {HTMLButtonElement | null} button - Trigger button to refocus.
+ * @returns {number} Timer id for cleanup.
+ */
+function scheduleFocusReturn(button) {
+  return window.setTimeout(() => { if (button?.isConnected) button.focus(); }, 0);
 }
 // #endregion
 
@@ -75,9 +77,11 @@ function WeatherStandardsPopover({ metric, value, controlId, overlayRef, onClose
   const config = STANDARD_POPOVER_CONFIG[metric];
   const currentRow = getCurrentStandardRow(metric, value);
   const titleId = `${controlId}-title`;
+  const alignClassName = metric === 'uv' ? styles.standardsPopoverAlignStart : styles.standardsPopoverAlignEnd;
+  const popoverClassName = `${styles.standardsPopover} ${alignClassName}`;
 
   return (
-    <div id={controlId} ref={overlayRef} role="region" aria-labelledby={titleId} className={styles.standardsPopover}>
+    <div id={controlId} ref={overlayRef} role="region" aria-labelledby={titleId} className={popoverClassName}>
       <div className={styles.standardsPopoverHeader}>
         <h3 id={titleId} className={styles.standardsPopoverTitle}>{config.title}</h3>
         <button type="button" className={styles.standardsCloseButton} aria-label={config.closeLabel} onClick={onClose}>
@@ -239,39 +243,51 @@ function TomorrowSection({ tomorrow }) {
  * @param {string} props.locationName - 地點全名。
  * @param {TodayWeather} props.today - 今日天氣。
  * @param {TomorrowWeather} props.tomorrow - 明日天氣。
+ * @param {boolean} [props.isMobileStandardsSheetMode] - Whether desktop popovers should stay closed for the mobile sheet lane.
  * @returns {import('react').JSX.Element} 天氣卡元件。
  */
-export default function WeatherCard({ locationName, today, tomorrow }) {
+export default function WeatherCard({ locationName, today, tomorrow, isMobileStandardsSheetMode = false }) {
   const standardControlIdBase = useId();
   const [activeStandardMetric, setActiveStandardMetric] = useState(/** @type {'uv' | 'aqi' | null} */ (null));
   const uvButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const aqiButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const standardOverlayRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const focusReturnTimeoutRef = useRef(/** @type {number | null} */ (null));
   const period = getCurrentPeriod();
   const iconUrl = getWeatherIconUrl(today.weatherCode, period);
   const standardControlIds = { uv: `${standardControlIdBase}-weather-standard-popover-uv`, aqi: `${standardControlIdBase}-weather-standard-popover-aqi` };
+  const activeDesktopStandardMetric = isMobileStandardsSheetMode ? null : activeStandardMetric;
+  const clearFocusReturnTimeout = useCallback(() => {
+    if (focusReturnTimeoutRef.current == null) return;
+    window.clearTimeout(focusReturnTimeoutRef.current); focusReturnTimeoutRef.current = null;
+  }, []);
+  /** @param {HTMLButtonElement | null} button - Trigger button to refocus. */
+  const queueFocusReturn = useCallback((button) => {
+    clearFocusReturnTimeout();
+    focusReturnTimeoutRef.current = scheduleFocusReturn(button);
+  }, [clearFocusReturnTimeout]);
   const closeStandardPopover = () => {
-    const triggerButton = activeStandardMetric === 'uv' ? uvButtonRef.current : aqiButtonRef.current;
+    const triggerButton = activeDesktopStandardMetric === 'uv' ? uvButtonRef.current : aqiButtonRef.current;
     setActiveStandardMetric(null);
-    window.setTimeout(() => triggerButton?.focus(), 0);
+    queueFocusReturn(triggerButton);
   };
   /** @param {'uv' | 'aqi'} metric - Standards metric to open or close. */
   const toggleStandardPopover = (metric) => {
-    if (activeStandardMetric === metric) {
-      closeStandardPopover();
-      return;
-    }
+    if (isMobileStandardsSheetMode) { setActiveStandardMetric(null); return; }
+    if (activeStandardMetric === metric) { closeStandardPopover(); return; }
 
     setActiveStandardMetric(metric);
   };
 
-  useEffect(() => {
-    if (!activeStandardMetric) return undefined;
+  useEffect(() => () => clearFocusReturnTimeout(), [clearFocusReturnTimeout]);
 
-    const triggerButton = activeStandardMetric === 'uv' ? uvButtonRef.current : aqiButtonRef.current;
+  useEffect(() => {
+    if (!activeDesktopStandardMetric) return undefined;
+
+    const triggerButton = activeDesktopStandardMetric === 'uv' ? uvButtonRef.current : aqiButtonRef.current;
     const closeFromDocument = () => {
       setActiveStandardMetric(null);
-      window.setTimeout(() => triggerButton?.focus(), 0);
+      queueFocusReturn(triggerButton);
     };
     /** @param {PointerEvent} event - Pointer event from the document. */
     const handlePointerDown = (event) => {
@@ -291,7 +307,7 @@ export default function WeatherCard({ locationName, today, tomorrow }) {
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown); document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeStandardMetric]);
+  }, [activeDesktopStandardMetric, queueFocusReturn]);
 
   return (
     <div className={styles.weatherCard} style={{ position: 'relative' }}>
@@ -317,7 +333,7 @@ export default function WeatherCard({ locationName, today, tomorrow }) {
         </span>
       </div>
 
-      <TodayMetrics today={today} standardControlIds={standardControlIds} activeStandardMetric={activeStandardMetric} uvButtonRef={uvButtonRef} aqiButtonRef={aqiButtonRef} standardOverlayRef={standardOverlayRef} onStandardToggle={toggleStandardPopover} onStandardClose={closeStandardPopover} />
+      <TodayMetrics today={today} standardControlIds={standardControlIds} activeStandardMetric={activeDesktopStandardMetric} uvButtonRef={uvButtonRef} aqiButtonRef={aqiButtonRef} standardOverlayRef={standardOverlayRef} onStandardToggle={toggleStandardPopover} onStandardClose={closeStandardPopover} />
       <TomorrowSection tomorrow={tomorrow} />
     </div>
   );
