@@ -87,6 +87,8 @@ describe('WeatherCard', () => {
     expect(aqiInfoButton).toHaveAttribute('aria-controls', expect.stringMatching(/aqi$/));
     expect(getCssBlock('metricInfoButton')).toContain('min-width: 44px;');
     expect(getCssBlock('metricInfoButton')).toContain('min-height: 44px;');
+    expect(getCssBlock('metricInfoGlyph')).toContain('inline-size: 32px;');
+    expect(getCssBlock('metricInfoGlyph')).toContain('block-size: 32px;');
   });
 
   it('uses per-card standards control ids for multiple weather card instances', () => {
