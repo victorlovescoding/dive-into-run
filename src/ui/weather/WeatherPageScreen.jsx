@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import BackToOverviewButton from '@/components/weather/BackToOverviewButton';
 import FavoriteButton from '@/components/weather/FavoriteButton';
 import FavoritesBar from '@/components/weather/FavoritesBar';
@@ -195,6 +195,29 @@ export default function WeatherPageScreen({ runtime }) {
     : 'overview';
   const isMobileWeatherSheetMode = useIsMobileWeatherSheetMode();
   const [isMobileStandardsSheetOpen, setIsMobileStandardsSheetOpen] = useState(false);
+  const pageContentRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const shouldInertPageContent = isMobileWeatherSheetMode && isMobileStandardsSheetOpen;
+  const pageContentClassName = [
+    styles.pageLayout,
+    shouldInertPageContent ? styles.pageContentSuppressed : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  useEffect(() => {
+    const pageContentElement = pageContentRef.current;
+    if (!pageContentElement) return undefined;
+
+    const inertElement = /** @type {HTMLDivElement & { inert?: boolean }} */ (pageContentElement);
+    inertElement.inert = shouldInertPageContent;
+    if (shouldInertPageContent) pageContentElement.setAttribute('inert', '');
+    else pageContentElement.removeAttribute('inert');
+
+    return () => {
+      inertElement.inert = false;
+      pageContentElement.removeAttribute('inert');
+    };
+  }, [shouldInertPageContent]);
 
   const weatherInformationContent = (
     <>
@@ -229,7 +252,12 @@ export default function WeatherPageScreen({ runtime }) {
 
   return (
     <div className={styles.weatherRoot}>
-      <div className={styles.pageLayout}>
+      <div
+        ref={pageContentRef}
+        className={pageContentClassName}
+        data-testid="weather-page-content"
+        aria-hidden={shouldInertPageContent ? 'true' : undefined}
+      >
         <WeatherInformationPanel
           key={selectedLocationPresentationKey}
           cardPanelRef={cardPanelRef}

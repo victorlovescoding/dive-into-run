@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import { getWeatherIconUrl } from '@/runtime/client/use-cases/weather-location-use-cases';
@@ -12,6 +12,7 @@ const STANDARD_POPOVER_CONFIG = {
   uv: { title: '紫外線等級', closeLabel: '關閉紫外線等級說明', sourceUrl: UV_STANDARD_SOURCE_URL, rows: UV_STANDARD_ROWS },
   aqi: { title: 'AQI 等級', closeLabel: '關閉 AQI 等級說明', sourceUrl: AQI_STANDARD_SOURCE_URL, rows: AQI_STANDARD_ROWS },
 };
+const FOCUSABLE_DIALOG_SELECTOR = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 // #region Helpers
 
@@ -38,10 +39,53 @@ function getCurrentPeriod() {
 /**
  * Returns focus only while the original trigger is still mounted.
  * @param {HTMLButtonElement | null} button - Trigger button to refocus.
+ * @param {HTMLElement | null} fallback - Stable fallback when the trigger unmounts.
  * @returns {number} Timer id for cleanup.
  */
-function scheduleFocusReturn(button) {
-  return window.setTimeout(() => { if (button?.isConnected) button.focus(); }, 0);
+function scheduleFocusReturn(button, fallback) {
+  return window.setTimeout(() => { const focusTarget = button?.isConnected ? button : fallback?.isConnected ? fallback : null; focusTarget?.focus(); }, 0);
+}
+
+/**
+ * @param {HTMLElement} dialog - Active modal dialog.
+ * @returns {HTMLElement[]} Tabbable controls inside the dialog.
+ */
+function getDialogFocusableElements(dialog) {
+  return /** @type {HTMLElement[]} */ (Array.from(dialog.querySelectorAll(FOCUSABLE_DIALOG_SELECTOR)).filter((element) => element instanceof HTMLElement && element.tabIndex >= 0));
+}
+
+/**
+ * @param {HTMLElement} dialog - Active modal dialog.
+ * @param {HTMLElement | null} preferredTarget - Preferred initial focus target.
+ * @returns {void}
+ */
+function focusDialogTarget(dialog, preferredTarget) {
+  (preferredTarget?.isConnected ? preferredTarget : getDialogFocusableElements(dialog)[0] ?? dialog).focus();
+}
+
+/**
+ * @param {KeyboardEvent} event - Keyboard event from the document.
+ * @param {HTMLElement} dialog - Active modal dialog.
+ * @returns {void}
+ */
+function trapDialogFocus(event, dialog) {
+  if (event.key !== 'Tab') return;
+
+  const focusableElements = getDialogFocusableElements(dialog);
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+  const { activeElement } = document;
+
+  if (focusableElements.length === 0 || !dialog.contains(activeElement)) {
+    event.preventDefault();
+    (event.shiftKey ? lastElement : firstElement)?.focus();
+    if (focusableElements.length === 0) dialog.focus();
+    return;
+  }
+
+  const nextElement = event.shiftKey && activeElement === firstElement ? lastElement : !event.shiftKey && activeElement === lastElement ? firstElement : null;
+  if (!nextElement) return;
+  event.preventDefault(); nextElement.focus();
 }
 // #endregion
 
@@ -148,8 +192,8 @@ function WeatherStandardsSheet({ metric, value, controlId, overlayRef, closeButt
 
   return createPortal(
     <div className={styles.standardsSheetLayer}>
-      <button type="button" className={styles.standardsSheetScrim} data-testid="standards-sheet-scrim" aria-label="關閉等級說明遮罩" onClick={onClose} />
-      <div id={controlId} ref={overlayRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className={styles.standardsSheet}>
+      <button type="button" tabIndex={-1} className={styles.standardsSheetScrim} data-testid="standards-sheet-scrim" aria-label="關閉等級說明遮罩" onClick={onClose} />
+      <div id={controlId} ref={overlayRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={styles.standardsSheet}>
         <WeatherStandardsContent metric={metric} value={value} titleId={titleId} closeButtonRef={closeButtonRef} onClose={onClose} />
       </div>
     </div>,
@@ -249,25 +293,17 @@ function TomorrowSection({ tomorrow }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <Image className={styles.weatherIcon} src={iconUrl} alt={tomorrow.weatherDesc} width={32} height={32} style={{ width: 32, height: 32 }} unoptimized />
         <span>{tomorrow.weatherDesc}</span>
-        <span className={styles.tempItem}>
-          <span aria-hidden="true">{'\u2600\uFE0F'}</span>
-          <span className="sr-only">早上</span> {morningTemp}°
-        </span>
-        <span className={styles.tempItem}>
-          <span aria-hidden="true">{'\uD83C\uDF19'}</span>
-          <span className="sr-only">晚上</span> {eveningTemp}°
-        </span>
+        <span className={styles.tempItem}><span aria-hidden="true">{'\u2600\uFE0F'}</span><span className="sr-only">早上</span> {morningTemp}°</span>
+        <span className={styles.tempItem}><span aria-hidden="true">{'\uD83C\uDF19'}</span><span className="sr-only">晚上</span> {eveningTemp}°</span>
       </div>
-      <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', opacity: 0.8 }}>
-        降雨 {formatMetric(rainProb, '%')} · 濕度 {formatMetric(humidity, '%')} · UV {uvText}
-      </div>
+      <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', opacity: 0.8 }}>降雨 {formatMetric(rainProb, '%')} · 濕度 {formatMetric(humidity, '%')} · UV {uvText}</div>
     </div>
   );
 }
 // #endregion
 
 /**
- * Weather card implementation keyed by standards mode from the public wrapper.
+ * Weather card implementation.
  * @param {object} props - 元件屬性。
  * @param {string} props.locationName - 地點全名。
  * @param {TodayWeather} props.today - 今日天氣。
@@ -279,18 +315,21 @@ function TomorrowSection({ tomorrow }) {
 function WeatherCardContent({ locationName, today, tomorrow, isMobileStandardsSheetMode = false, onStandardsSheetOpenChange }) {
   const standardControlIdBase = useId();
   const [activeStandardOverlay, setActiveStandardOverlay] = useState(
-    /** @type {{ metric: 'uv' | 'aqi' | null, mode: 'desktop' | 'mobile' | null }} */ ({ metric: null, mode: null }),
+    /** @type {{ metric: 'uv' | 'aqi' | null, mode: 'desktop' | 'mobile' | null, modeToken: object | null }} */ ({ metric: null, mode: null, modeToken: null }),
   );
+  const weatherCardRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const uvButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const aqiButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const standardOverlayRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const mobileCloseButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const focusReturnTimeoutRef = useRef(/** @type {number | null} */ (null));
+  const previousStandardsModeRef = useRef(isMobileStandardsSheetMode ? 'mobile' : 'desktop');
   const period = getCurrentPeriod();
   const iconUrl = getWeatherIconUrl(today.weatherCode, period);
   const standardControlIds = { uv: `${standardControlIdBase}-weather-standard-popover-uv`, aqi: `${standardControlIdBase}-weather-standard-popover-aqi` };
   const standardsMode = isMobileStandardsSheetMode ? 'mobile' : 'desktop';
-  const activeStandardMetric = activeStandardOverlay.mode === standardsMode ? activeStandardOverlay.metric : null;
+  const standardsModeToken = useMemo(() => ({ mode: standardsMode }), [standardsMode]);
+  const activeStandardMetric = activeStandardOverlay.modeToken === standardsModeToken ? activeStandardOverlay.metric : null;
   const activeDesktopStandardMetric = standardsMode === 'desktop' ? activeStandardMetric : null;
   const activeMobileStandardMetric = standardsMode === 'mobile' ? activeStandardMetric : null;
   const activeMobileStandardSheet = /** @type {{ metric: 'uv' | 'aqi', value: number, controlId: string } | null} */ (activeMobileStandardMetric === 'uv' && today.uv
@@ -305,25 +344,45 @@ function WeatherCardContent({ locationName, today, tomorrow, isMobileStandardsSh
   /** @param {HTMLButtonElement | null} button - Trigger button to refocus. */
   const queueFocusReturn = useCallback((button) => {
     clearFocusReturnTimeout();
-    focusReturnTimeoutRef.current = scheduleFocusReturn(button);
+    focusReturnTimeoutRef.current = scheduleFocusReturn(button, weatherCardRef.current);
   }, [clearFocusReturnTimeout]);
   const closeStandardsOverlay = useCallback(() => {
     const triggerButton = activeStandardMetric === 'uv'
       ? uvButtonRef.current
-      : activeStandardMetric === 'aqi'
-        ? aqiButtonRef.current
-        : null;
-    setActiveStandardOverlay({ metric: null, mode: null });
+        : activeStandardMetric === 'aqi'
+          ? aqiButtonRef.current
+          : null;
+    setActiveStandardOverlay({ metric: null, mode: null, modeToken: null });
+    if (activeMobileStandardMetric) onStandardsSheetOpenChange?.(false);
     queueFocusReturn(triggerButton);
-  }, [activeStandardMetric, queueFocusReturn]);
+  }, [activeMobileStandardMetric, activeStandardMetric, onStandardsSheetOpenChange, queueFocusReturn]);
   /** @param {'uv' | 'aqi'} metric - Standards metric to open or close. */
   const toggleStandardsOverlay = (metric) => {
     if (activeStandardMetric === metric) { closeStandardsOverlay(); return; }
 
-    setActiveStandardOverlay({ metric, mode: standardsMode });
+    setActiveStandardOverlay({ metric, mode: standardsMode, modeToken: standardsModeToken });
   };
 
   useEffect(() => () => clearFocusReturnTimeout(), [clearFocusReturnTimeout]);
+
+  useEffect(() => {
+    const previousStandardsMode = previousStandardsModeRef.current;
+    if (previousStandardsMode === standardsMode) return undefined;
+
+    previousStandardsModeRef.current = standardsMode;
+    const staleMetric = activeStandardOverlay.mode === previousStandardsMode ? activeStandardOverlay.metric : null;
+    if (!staleMetric) return undefined;
+
+    const triggerButton = staleMetric === 'uv' ? uvButtonRef.current : aqiButtonRef.current;
+    const closeTimerId = window.setTimeout(() => {
+      setActiveStandardOverlay((currentOverlay) => (
+        currentOverlay.mode === previousStandardsMode ? { metric: null, mode: null, modeToken: null } : currentOverlay
+      ));
+      queueFocusReturn(triggerButton);
+    }, 0);
+
+    return () => window.clearTimeout(closeTimerId);
+  }, [activeStandardOverlay.metric, activeStandardOverlay.mode, queueFocusReturn, standardsMode]);
 
   useEffect(() => {
     const isOpen = Boolean(activeMobileStandardMetric);
@@ -339,7 +398,7 @@ function WeatherCardContent({ locationName, today, tomorrow, isMobileStandardsSh
 
     const triggerButton = activeDesktopStandardMetric === 'uv' ? uvButtonRef.current : aqiButtonRef.current;
     const closeFromDocument = () => {
-      setActiveStandardOverlay({ metric: null, mode: null });
+      setActiveStandardOverlay({ metric: null, mode: null, modeToken: null });
       queueFocusReturn(triggerButton);
     };
     /** @param {PointerEvent} event - Pointer event from the document. */
@@ -366,11 +425,12 @@ function WeatherCardContent({ locationName, today, tomorrow, isMobileStandardsSh
     if (!activeMobileStandardMetric) return undefined;
 
     const focusTimerId = window.setTimeout(() => {
-      if (mobileCloseButtonRef.current?.isConnected) mobileCloseButtonRef.current.focus();
+      if (standardOverlayRef.current?.isConnected) focusDialogTarget(standardOverlayRef.current, mobileCloseButtonRef.current);
     }, 0);
     /** @param {KeyboardEvent} event - Keyboard event from the document. */
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') closeStandardsOverlay();
+      if (event.key === 'Escape') { closeStandardsOverlay(); return; }
+      if (standardOverlayRef.current) trapDialogFocus(event, standardOverlayRef.current);
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -381,27 +441,19 @@ function WeatherCardContent({ locationName, today, tomorrow, isMobileStandardsSh
   }, [activeMobileStandardMetric, closeStandardsOverlay]);
 
   return (
-    <div className={styles.weatherCard} style={{ position: 'relative' }}>
+    <div ref={weatherCardRef} className={styles.weatherCard} style={{ position: 'relative' }} tabIndex={-1}>
       <div className={styles.locationName}>{locationName}</div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.75rem' }}>
         <Image className={styles.weatherIcon} src={iconUrl} alt={today.weatherDesc} width={64} height={64} unoptimized />
-        <div className={styles.temperature} data-testid="current-temperature">
-          {today.currentTemp}°
-        </div>
+        <div className={styles.temperature} data-testid="current-temperature">{today.currentTemp}°</div>
       </div>
 
       <div className={styles.weatherDesc}>{today.weatherDesc}</div>
 
       <div className={styles.tempRange}>
-        <span className={styles.tempItem}>
-          <span aria-hidden="true">{'\u2600\uFE0F'}</span>
-          <span className="sr-only">早上</span> {today.morningTemp}°
-        </span>
-        <span className={styles.tempItem}>
-          <span aria-hidden="true">{'\uD83C\uDF19'}</span>
-          <span className="sr-only">晚上</span> {today.eveningTemp}°
-        </span>
+        <span className={styles.tempItem}><span aria-hidden="true">{'\u2600\uFE0F'}</span><span className="sr-only">早上</span> {today.morningTemp}°</span>
+        <span className={styles.tempItem}><span aria-hidden="true">{'\uD83C\uDF19'}</span><span className="sr-only">晚上</span> {today.eveningTemp}°</span>
       </div>
 
       <TodayMetrics today={today} standardControlIds={standardControlIds} activeStandardMetric={activeStandardMetric} uvButtonRef={uvButtonRef} aqiButtonRef={aqiButtonRef} standardOverlayRef={standardOverlayRef} onStandardToggle={toggleStandardsOverlay} onStandardClose={closeStandardsOverlay} shouldRenderDesktopPopover={Boolean(activeDesktopStandardMetric)} />
@@ -425,6 +477,5 @@ function WeatherCardContent({ locationName, today, tomorrow, isMobileStandardsSh
  */
 export default function WeatherCard(props) {
   const { isMobileStandardsSheetMode = false } = props;
-  const standardsModeKey = isMobileStandardsSheetMode ? 'mobile' : 'desktop';
-  return <WeatherCardContent key={standardsModeKey} {...props} isMobileStandardsSheetMode={isMobileStandardsSheetMode} />;
+  return <WeatherCardContent {...props} isMobileStandardsSheetMode={isMobileStandardsSheetMode} />;
 }

@@ -16,7 +16,7 @@ vi.mock('@/runtime/client/use-cases/weather-location-use-cases', () => ({
 
 vi.mock('@/components/weather/TaiwanMap', () => ({
   default: function MockTaiwanMap() {
-    return <div data-testid="taiwan-map" />;
+    return <button type="button" data-testid="taiwan-map">地圖控制</button>;
   },
 }));
 
@@ -120,6 +120,68 @@ describe('WeatherPageScreen', () => {
     expect(weatherSection).not.toHaveAttribute('aria-hidden');
     expect(weatherSheetContent).toBeVisible();
     expect(screen.getByRole('button', { name: '收合天氣資訊' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('keeps focus inside the mobile standards dialog and inerts page content', async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    renderWeatherPage();
+
+    await user.click(screen.getByRole('button', { name: '查看 AQI 等級說明' }));
+    const dialog = screen.getByRole('dialog', { name: 'AQI 等級' });
+    const pageContent = screen.getByTestId('weather-page-content');
+
+    expect(pageContent).toHaveAttribute('aria-hidden', 'true');
+    expect(pageContent).toHaveAttribute('inert');
+    expect(screen.getByTestId('standards-sheet-scrim')).toHaveAttribute('tabIndex', '-1');
+
+    const closeButton = within(dialog).getByRole('button', { name: '關閉 AQI 等級說明' });
+    const sourceLink = within(dialog).getByRole('link', { name: '官方來源' });
+    await waitFor(() => expect(closeButton).toHaveFocus());
+    await user.tab();
+    expect(sourceLink).toHaveFocus();
+    await user.tab();
+    expect(closeButton).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(sourceLink).toHaveFocus();
+    expect(screen.getByRole('button', { name: '全台總覽', hidden: true })).not.toHaveFocus();
+    expect(screen.getByTestId('taiwan-map')).not.toHaveFocus();
+    expect(screen.getByRole('button', { name: '收合天氣資訊', hidden: true })).not.toHaveFocus();
+  });
+
+  it('closes mobile standards sheet on desktop mode switch and restores focus', async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    renderWeatherPage();
+
+    await user.click(screen.getByRole('button', { name: '查看紫外線等級說明' }));
+    expect(screen.getByRole('dialog', { name: '紫外線等級' })).toBeInTheDocument();
+
+    setViewportWidth(1024);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: '紫外線等級' })).not.toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '查看紫外線等級說明' })).toHaveFocus();
+    });
+    expect(screen.getByTestId('weather-page-content')).not.toHaveAttribute('inert');
+  });
+
+  it('cleans modal portal and page inert state when unmounted while open', async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    const { unmount } = renderWeatherPage();
+
+    await user.click(screen.getByRole('button', { name: '查看 AQI 等級說明' }));
+    expect(screen.getByRole('dialog', { name: 'AQI 等級' })).toBeInTheDocument();
+    const pageContent = screen.getByTestId('weather-page-content');
+
+    unmount();
+
+    expect(screen.queryByRole('dialog', { name: 'AQI 等級' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('standards-sheet-scrim')).not.toBeInTheDocument();
+    expect(pageContent).not.toHaveAttribute('inert');
   });
 
   it('collapsed mobile weather sheet does not require opening standards from hidden content', async () => {
