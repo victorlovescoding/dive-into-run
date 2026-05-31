@@ -1,4 +1,8 @@
+'use client';
+
+import { useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import BookmarkButton from '@/components/BookmarkButton';
 import EventActionButtons from '@/components/EventActionButtons';
 import EventCardMenu from '@/components/EventCardMenu';
@@ -6,10 +10,34 @@ import UserLink from '@/components/UserLink';
 import { formatDateTime, formatPace, renderRouteLabel } from './event-formatters';
 import styles from './EventsPageScreen.module.css';
 
+const CARD_NAVIGATION_SELECTOR = [
+  'a',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  'label',
+  '[role="button"]',
+  '[role="menu"]',
+  '[role="menuitem"]',
+  '[data-card-navigation="ignore"]',
+].join(',');
+
+/**
+ * 判斷卡片點擊來源是否屬於既有互動元素，避免背景導覽攔截控制項。
+ * @param {EventTarget | null} target - 點擊事件來源。
+ * @returns {boolean} 是否應忽略卡片背景導覽。
+ */
+export function isInteractiveCardTarget(target) {
+  const element =
+    target instanceof Element ? target : target instanceof Node ? target.parentElement : null;
+  return Boolean(element?.closest(CARD_NAVIGATION_SELECTOR));
+}
+
 /**
  * @typedef {object} EventsListSectionProps
  * @property {object[]} events - 要顯示的活動列表。
- * @property {import('firebase/auth').User | null | undefined} user - 目前登入的使用者。
+ * @property {{ uid: string } | null | undefined} user - 目前登入的使用者。
  * @property {boolean} isLoadingEvents - 是否正在初次載入活動。
  * @property {boolean} isFiltering - 是否正在執行篩選。
  * @property {boolean} isCreating - 是否正在建立新活動。
@@ -66,104 +94,158 @@ export default function EventsListSection({
   onOpenFilter,
   loadMore,
 }) {
+  const router = useRouter();
+  const eventListRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const isEmptyEventsList = !isLoadingEvents && !isFiltering && events.length === 0;
   const emptyEventsMessage = isFilteredResults ? '沒有符合條件的活動' : '目前還沒有活動（先建立一筆看看）';
-  const eventCards = events.map((event) => (
-    <div key={event.id} className={styles.eventCardWrapper}>
-      <div className={styles.eventCard}>
-        <Link href={`/events/${event.id}`} className={styles.eventTitleLink}>
-          <div className={styles.eventTitle}>{event.title}</div>
-        </Link>
 
-        <div className={styles.eventMeta}>
-          <div>
-            時間：
-            {formatDateTime(event.time)}
+  /**
+   * 處理活動卡片背景點擊導覽；互動子元素維持自己的行為。
+   * @param {string} eventId - 活動 ID。
+   * @param {MouseEvent} clickEvent - 卡片點擊事件。
+   */
+  const handleCardClick = useCallback((eventId, clickEvent) => {
+    if (isInteractiveCardTarget(clickEvent.target)) return;
+    router.push(`/events/${eventId}`);
+  }, [router]);
+
+  useEffect(() => {
+    const eventList = eventListRef.current;
+    if (!eventList) return undefined;
+
+    /**
+     * 從列表層代理卡片背景點擊，避免讓卡片本身成為鍵盤焦點。
+     * @param {MouseEvent} clickEvent - 列表內的原生點擊事件。
+     */
+    function handleEventListClick(clickEvent) {
+      if (!(clickEvent.target instanceof Element)) return;
+
+      const eventCard = clickEvent.target.closest('[data-event-card-id]');
+      if (!(eventCard instanceof HTMLElement) || !eventList.contains(eventCard)) return;
+
+      const eventId = eventCard.dataset.eventCardId;
+      if (!eventId) return;
+
+      handleCardClick(eventId, clickEvent);
+    }
+
+    eventList.addEventListener('click', handleEventListClick);
+    return () => eventList.removeEventListener('click', handleEventListClick);
+  }, [handleCardClick]);
+
+  const eventCards = events.map((event) => {
+    const eventId = String(event.id);
+    const routeLabel = renderRouteLabel(event);
+
+    return (
+      <article
+        key={event.id}
+        className={styles.eventCard}
+        aria-label={`${event.title} 活動卡片`}
+        data-event-card-id={eventId}
+        data-testid={`event-card-${eventId}`}
+      >
+        <div className={styles.eventMetaRow}>
+          <div className={styles.eventMetaItem}>
+            <span className={styles.eventMetaLabel}>時間</span>
+            <span className={styles.eventMetaValue}>{formatDateTime(event.time)}</span>
           </div>
-          <div>
-            報名截止：
-            {formatDateTime(event.registrationDeadline)}
-          </div>
-          <div>
-            地點：
-            {event.city} {event.district}
-          </div>
-          <div>
-            集合：
-            {event.meetPlace}
+          <div className={styles.eventMetaItem}>
+            <span className={styles.eventMetaLabel}>報名截止</span>
+            <span className={styles.eventMetaValue}>
+              {formatDateTime(event.registrationDeadline)}
+            </span>
           </div>
         </div>
 
-        <div className={styles.eventMeta}>
-          <div>
-            距離：
-            {event.distanceKm} km
-          </div>
-          <div>
-            配速：
-            {formatPace(event.paceSec, event.pace)} /km
-          </div>
-          <div>
-            人數上限：
-            {event.maxParticipants}
-          </div>
-          <div>
-            剩餘名額：
-            {getRemainingSeats(event)}
-          </div>
-        </div>
+        <div className={styles.eventCardHeader}>
+          <Link href={`/events/${event.id}`} className={styles.eventTitleLink}>
+            <h3 className={styles.eventTitle}>{event.title}</h3>
+          </Link>
 
-        <div className={styles.eventMeta}>
-          <div className={styles.hostRow}>
-            <span>主揪：</span>
-            <UserLink
-              uid={event.hostUid}
-              name={event.hostName}
-              photoURL={event.hostPhotoURL}
-              size={24}
+          <div
+            className={styles.eventCardTopActions}
+            role="group"
+            aria-label={`${event.title} 操作`}
+          >
+            <BookmarkButton
+              isActive={favoriteEventIds.has(String(event.id))}
+              label={`收藏活動：${event.title}`}
+              activeLabel={`取消收藏活動：${event.title}`}
+              onClick={() => onToggleFavoriteEvent(String(event.id))}
+            />
+            <EventCardMenu
+              event={event}
+              currentUserUid={user?.uid || null}
+              onEdit={onEdit}
+              onDelete={onDelete}
             />
           </div>
-          <div>
-            路線：
-            {renderRouteLabel(event)}
+        </div>
+
+        <dl className={styles.eventFactGrid}>
+          <div className={styles.eventFact}>
+            <dt>地點</dt>
+            <dd>
+              {event.city} {event.district}
+            </dd>
+          </div>
+          <div className={styles.eventFact}>
+            <dt>集合</dt>
+            <dd>{event.meetPlace}</dd>
+          </div>
+          <div className={styles.eventFact}>
+            <dt>距離</dt>
+            <dd className={styles.eventNumericValue}>{event.distanceKm} km</dd>
+          </div>
+          <div className={styles.eventFact}>
+            <dt>配速</dt>
+            <dd className={styles.eventNumericValue}>{formatPace(event.paceSec, event.pace)} /km</dd>
+          </div>
+          <div className={styles.eventFact}>
+            <dt>人數上限</dt>
+            <dd className={styles.eventNumericValue}>{event.maxParticipants}</dd>
+          </div>
+          <div className={styles.eventFact}>
+            <dt>剩餘名額</dt>
+            <dd className={styles.eventNumericValue}>{getRemainingSeats(event)}</dd>
+          </div>
+        </dl>
+
+        <div className={styles.eventCardFooter}>
+          <div className={styles.eventHostRouteGroup}>
+            <div className={styles.hostRow}>
+              <span className={styles.eventMetaLabel}>主揪</span>
+              <UserLink
+                uid={event.hostUid}
+                name={event.hostName}
+                photoURL={event.hostPhotoURL}
+                size={24}
+              />
+            </div>
+            <span className={styles.routePill}>
+              路線：
+              {routeLabel}
+            </span>
+          </div>
+
+          <div className={styles.eventParticipationSlot} data-card-navigation="ignore">
+            <EventActionButtons
+              event={event}
+              user={user}
+              onJoin={onJoin}
+              onLeave={onLeave}
+              isPending={pendingByEventId[String(event.id)]}
+              isCreating={isCreating}
+              isFormOpen={isFormOpen}
+              myJoinedEventIds={myJoinedEventIds}
+              membershipStatus={membershipStatusByEventId[String(event.id)]}
+            />
           </div>
         </div>
-
-        <div className={styles.eventCardActions}>
-          <EventActionButtons
-            event={event}
-            user={user}
-            onJoin={onJoin}
-            onLeave={onLeave}
-            isPending={pendingByEventId[String(event.id)]}
-            isCreating={isCreating}
-            isFormOpen={isFormOpen}
-            myJoinedEventIds={myJoinedEventIds}
-            membershipStatus={membershipStatusByEventId[String(event.id)]}
-          />
-        </div>
-      </div>
-
-      <div
-        className={styles.eventCardTopActions}
-        role="group"
-        aria-label={`${event.title} 操作`}
-      >
-        <BookmarkButton
-          isActive={favoriteEventIds.has(String(event.id))}
-          label={`收藏活動：${event.title}`}
-          activeLabel={`取消收藏活動：${event.title}`}
-          onClick={() => onToggleFavoriteEvent(String(event.id))}
-        />
-        <EventCardMenu
-          event={event}
-          currentUserUid={user?.uid || null}
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
-      </div>
-    </div>
-  ));
+      </article>
+    );
+  });
 
   return (
     <div className={styles.eventsSection}>
@@ -220,7 +302,7 @@ export default function EventsListSection({
         </div>
       )}
 
-      <div className={styles.eventList}>
+      <div ref={eventListRef} className={styles.eventList}>
         {isEmptyEventsList ? (
           <div className={styles.emptyHint}>{emptyEventsMessage}</div>
         ) : (
