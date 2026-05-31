@@ -59,6 +59,12 @@ function expectInsideHorizontally(innerElement, outerElement) {
   expect(Math.ceil(innerRect.right)).toBeLessThanOrEqual(Math.ceil(outerRect.right));
 }
 
+function expectMetricInfoButtonSizing(infoButton) {
+  const glyph = within(infoButton).getByText('i'); const buttonBox = infoButton.getBoundingClientRect(); const glyphBox = glyph.getBoundingClientRect();
+  expect(glyph).toBeInstanceOf(HTMLSpanElement); expect(glyph).toHaveClass('metricInfoGlyph'); expect(buttonBox.width || Number.parseFloat(/min-width: ([\d.]+)px;/.exec(getCssBlock('metricInfoButton'))?.[1] ?? '0')).toBeGreaterThanOrEqual(44);
+  expect(buttonBox.height || Number.parseFloat(/min-height: ([\d.]+)px;/.exec(getCssBlock('metricInfoButton'))?.[1] ?? '0')).toBeGreaterThanOrEqual(44); expect(Math.round(glyphBox.width || Number.parseFloat(/inline-size: ([\d.]+)px;/.exec(getCssBlock('metricInfoGlyph'))?.[1] ?? '0'))).toBe(32); expect(Math.round(glyphBox.height || Number.parseFloat(/block-size: ([\d.]+)px;/.exec(getCssBlock('metricInfoGlyph'))?.[1] ?? '0'))).toBe(32);
+}
+
 describe('WeatherCard', () => {
   it('renders enhanced today UV and AQI metrics when values exist', () => {
     renderWeatherCard();
@@ -76,6 +82,7 @@ describe('WeatherCard', () => {
     const uvInfoButton = within(uvMetric).getByRole('button', { name: '查看紫外線等級說明' });
     expect(uvInfoButton).toHaveAttribute('aria-expanded', 'false');
     expect(uvInfoButton).toHaveAttribute('aria-controls', expect.stringMatching(/uv$/));
+    expectMetricInfoButtonSizing(uvInfoButton);
 
     expect(within(aqiMetric).getByText('AQI')).toBeInTheDocument();
     expect(within(aqiMetric).getByText('67')).toBeInTheDocument();
@@ -84,11 +91,7 @@ describe('WeatherCard', () => {
 
     const aqiInfoButton = within(aqiMetric).getByRole('button', { name: '查看 AQI 等級說明' });
     expect(aqiInfoButton).toHaveAttribute('aria-expanded', 'false');
-    expect(aqiInfoButton).toHaveAttribute('aria-controls', expect.stringMatching(/aqi$/));
-    expect(getCssBlock('metricInfoButton')).toContain('min-width: 44px;');
-    expect(getCssBlock('metricInfoButton')).toContain('min-height: 44px;');
-    expect(getCssBlock('metricInfoGlyph')).toContain('inline-size: 32px;');
-    expect(getCssBlock('metricInfoGlyph')).toContain('block-size: 32px;');
+    expect(aqiInfoButton).toHaveAttribute('aria-controls', expect.stringMatching(/aqi$/)); expectMetricInfoButtonSizing(aqiInfoButton);
   });
 
   it('uses per-card standards control ids for multiple weather card instances', () => {
