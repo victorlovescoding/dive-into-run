@@ -178,6 +178,7 @@
 }
 
 .enhancedMetricItem {
+  position: relative;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -233,6 +234,101 @@
   line-height: 1.35;
   opacity: 0.78;
   overflow-wrap: anywhere;
+}
+
+.standardsPopover {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 30;
+  width: min(320px, calc(100vw - 2rem));
+  padding: 0.875rem;
+  border: 1px solid rgba(91, 141, 184, 0.24);
+  border-radius: 0.5rem;
+  background: var(--map-sheet-bg);
+  box-shadow: 0 12px 28px rgba(44, 62, 80, 0.18);
+  color: var(--sky-text);
+  text-align: left;
+}
+
+.standardsPopoverHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.standardsPopoverTitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.25;
+}
+
+.standardsCloseButton {
+  min-height: 36px;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid rgba(91, 141, 184, 0.3);
+  border-radius: 0.375rem;
+  background: var(--sky-white);
+  color: var(--sky-accent);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.standardsCloseButton:hover {
+  background: var(--sky-light);
+}
+
+.standardsCloseButton:focus-visible {
+  outline: 3px solid rgba(91, 141, 184, 0.38);
+  outline-offset: 2px;
+}
+
+.standardsSourceNote {
+  margin: 0.5rem 0 0.625rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: rgba(44, 62, 80, 0.76);
+}
+
+.standardsSourceNote a {
+  color: var(--sky-accent);
+  font-weight: 700;
+}
+
+.standardsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.standardsTable th,
+.standardsTable td {
+  padding: 0.375rem 0.25rem;
+  border-top: 1px solid rgba(91, 141, 184, 0.16);
+  vertical-align: top;
+}
+
+.standardsTable th {
+  color: var(--sky-accent);
+  font-weight: 700;
+}
+
+.standardsCurrentRow {
+  background: rgba(240, 184, 93, 0.18);
+  font-weight: 700;
+}
+
+.currentRowMarker {
+  display: inline-block;
+  padding: 0.125rem 0.375rem;
+  border-radius: 999px;
+  background: rgba(73, 111, 114, 0.12);
+  color: var(--map-selected);
+  font-size: 0.6875rem;
+  font-weight: 700;
 }
 
 /* === Morning/Evening temps === */

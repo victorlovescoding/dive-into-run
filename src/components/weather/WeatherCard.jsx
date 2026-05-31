@@ -1,11 +1,23 @@
-import { useId } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import Image from 'next/image';
 import { getWeatherIconUrl } from '@/runtime/client/use-cases/weather-location-use-cases';
 import styles from './weather.module.css';
-import { getWeatherMetricAdvice } from './weather-standards';
+import {
+  AQI_STANDARD_ROWS,
+  AQI_STANDARD_SOURCE_URL,
+  UV_STANDARD_ROWS,
+  UV_STANDARD_SOURCE_URL,
+  getCurrentStandardRow,
+  getWeatherMetricAdvice,
+} from './weather-standards';
 
 /** @typedef {import('@/types/weather-types').TodayWeather} TodayWeather */
 /** @typedef {import('@/types/weather-types').TomorrowWeather} TomorrowWeather */
+
+const STANDARD_POPOVER_CONFIG = {
+  uv: { title: '紫外線等級', closeLabel: '關閉紫外線等級說明', sourceUrl: UV_STANDARD_SOURCE_URL, rows: UV_STANDARD_ROWS },
+  aqi: { title: 'AQI 等級', closeLabel: '關閉 AQI 等級說明', sourceUrl: AQI_STANDARD_SOURCE_URL, rows: AQI_STANDARD_ROWS },
+};
 
 // #region Helpers
 
@@ -50,6 +62,51 @@ function MetricCell({ id, value, label }) {
 }
 
 /**
+ * Desktop standards popover containing the official rows for one metric.
+ * @param {object} props - 元件屬性。
+ * @param {'uv' | 'aqi'} props.metric - Standards metric key.
+ * @param {number} props.value - Current metric value for row highlighting.
+ * @param {string} props.controlId - Overlay id controlled by the info button.
+ * @param {import('react').RefObject<HTMLDivElement | null>} props.overlayRef - Active overlay ref.
+ * @param {() => void} props.onClose - Close handler.
+ * @returns {import('react').JSX.Element} Standards popover.
+ */
+function WeatherStandardsPopover({ metric, value, controlId, overlayRef, onClose }) {
+  const config = STANDARD_POPOVER_CONFIG[metric];
+  const currentRow = getCurrentStandardRow(metric, value);
+  const titleId = `${controlId}-title`;
+
+  return (
+    <div id={controlId} ref={overlayRef} role="region" aria-labelledby={titleId} className={styles.standardsPopover}>
+      <div className={styles.standardsPopoverHeader}>
+        <h3 id={titleId} className={styles.standardsPopoverTitle}>{config.title}</h3>
+        <button type="button" className={styles.standardsCloseButton} aria-label={config.closeLabel} onClick={onClose}>
+          關閉
+        </button>
+      </div>
+      <p className={styles.standardsSourceNote}>
+        官方級距：
+        <a href={config.sourceUrl} target="_blank" rel="noreferrer">官方來源</a>
+      </p>
+      <table className={styles.standardsTable}>
+        <thead>
+          <tr><th scope="col">數值</th><th scope="col">等級</th><th scope="col">狀態</th></tr>
+        </thead>
+        <tbody>
+          {config.rows.map((row) => (
+            <tr key={row.id} className={row.id === currentRow?.id ? styles.standardsCurrentRow : undefined}>
+              <td>{row.rangeLabel}</td>
+              <td>{row.label}</td>
+              <td>{row.id === currentRow?.id ? <span className={styles.currentRowMarker}>目前</span> : null}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
  * Enhanced UV/AQI metric cell with closed standards entry point.
  * @param {object} props - 元件屬性。
  * @param {'uv' | 'aqi'} props.metric - Standards metric key.
@@ -58,9 +115,14 @@ function MetricCell({ id, value, label }) {
  * @param {string} props.levelOrStatus - Official level/status from weather data.
  * @param {string} props.infoButtonLabel - Accessible info button label.
  * @param {string} props.controlId - Stable per-card controlled overlay id.
+ * @param {boolean} props.isOpen - Whether this metric's popover is open.
+ * @param {import('react').RefObject<HTMLButtonElement | null>} props.buttonRef - Trigger ref.
+ * @param {import('react').RefObject<HTMLDivElement | null>} props.overlayRef - Active overlay ref.
+ * @param {() => void} props.onToggle - Toggle handler.
+ * @param {() => void} props.onClose - Close handler.
  * @returns {import('react').JSX.Element} Enhanced metric cell.
  */
-function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButtonLabel, controlId }) {
+function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButtonLabel, controlId, isOpen, buttonRef, overlayRef, onToggle, onClose }) {
   const advice = getWeatherMetricAdvice(metric, levelOrStatus);
 
   return (
@@ -70,18 +132,15 @@ function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButton
           <div className={styles.metricValue}>{formatMetric(value)}</div>
           <div className={styles.metricLabel}>{label}</div>
         </div>
-        <button
-          type="button"
-          className={styles.metricInfoButton}
-          aria-label={infoButtonLabel}
-          aria-controls={controlId}
-          aria-expanded="false"
-        >
+        <button ref={buttonRef} type="button" className={styles.metricInfoButton} aria-label={infoButtonLabel} aria-controls={controlId} aria-expanded={isOpen} onClick={onToggle}>
           <span aria-hidden="true">i</span>
         </button>
       </div>
       <div className={styles.metricStandardText}>{levelOrStatus}</div>
       {advice ? <div className={styles.metricAdvice}>{advice}</div> : null}
+      {isOpen ? (
+        <WeatherStandardsPopover metric={metric} value={value} controlId={controlId} overlayRef={overlayRef} onClose={onClose} />
+      ) : null}
     </div>
   );
 }
@@ -91,9 +150,15 @@ function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButton
  * @param {object} props - 元件屬性。
  * @param {TodayWeather} props.today - 今日天氣資料。
  * @param {{ uv: string, aqi: string }} props.standardControlIds - Per-card overlay ids.
+ * @param {'uv' | 'aqi' | null} props.activeStandardMetric - Open metric key.
+ * @param {import('react').RefObject<HTMLButtonElement | null>} props.uvButtonRef - UV trigger ref.
+ * @param {import('react').RefObject<HTMLButtonElement | null>} props.aqiButtonRef - AQI trigger ref.
+ * @param {import('react').RefObject<HTMLDivElement | null>} props.standardOverlayRef - Active overlay ref.
+ * @param {(metric: 'uv' | 'aqi') => void} props.onStandardToggle - Toggle handler.
+ * @param {() => void} props.onStandardClose - Close handler.
  * @returns {import('react').JSX.Element} 指標列。
  */
-function TodayMetrics({ today, standardControlIds }) {
+function TodayMetrics({ today, standardControlIds, activeStandardMetric, uvButtonRef, aqiButtonRef, standardOverlayRef, onStandardToggle, onStandardClose }) {
   const { rainProb, humidity, uv, aqi } = today;
   return (
     <div className={styles.metricsRow}>
@@ -107,6 +172,9 @@ function TodayMetrics({ today, standardControlIds }) {
           levelOrStatus={uv.level}
           infoButtonLabel="查看紫外線等級說明"
           controlId={standardControlIds.uv}
+          isOpen={activeStandardMetric === 'uv'} buttonRef={uvButtonRef} overlayRef={standardOverlayRef}
+          onToggle={() => onStandardToggle('uv')}
+          onClose={onStandardClose}
         />
       ) : (
         <MetricCell id="uv" value={'\u2014'} label="紫外線" />
@@ -119,6 +187,9 @@ function TodayMetrics({ today, standardControlIds }) {
           levelOrStatus={aqi.status}
           infoButtonLabel="查看 AQI 等級說明"
           controlId={standardControlIds.aqi}
+          isOpen={activeStandardMetric === 'aqi'} buttonRef={aqiButtonRef} overlayRef={standardOverlayRef}
+          onToggle={() => onStandardToggle('aqi')}
+          onClose={onStandardClose}
         />
       ) : (
         <MetricCell id="aqi" value={'\u2014'} label="AQI" />
@@ -143,15 +214,7 @@ function TomorrowSection({ tomorrow }) {
     <div className={styles.tomorrowSection}>
       <div className={styles.tomorrowTitle}>明日</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <Image
-          className={styles.weatherIcon}
-          src={iconUrl}
-          alt={tomorrow.weatherDesc}
-          width={32}
-          height={32}
-          style={{ width: 32, height: 32 }}
-          unoptimized
-        />
+        <Image className={styles.weatherIcon} src={iconUrl} alt={tomorrow.weatherDesc} width={32} height={32} style={{ width: 32, height: 32 }} unoptimized />
         <span>{tomorrow.weatherDesc}</span>
         <span className={styles.tempItem}>
           <span aria-hidden="true">{'\u2600\uFE0F'}</span>
@@ -180,26 +243,62 @@ function TomorrowSection({ tomorrow }) {
  */
 export default function WeatherCard({ locationName, today, tomorrow }) {
   const standardControlIdBase = useId();
+  const [activeStandardMetric, setActiveStandardMetric] = useState(/** @type {'uv' | 'aqi' | null} */ (null));
+  const uvButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
+  const aqiButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
+  const standardOverlayRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const period = getCurrentPeriod();
   const iconUrl = getWeatherIconUrl(today.weatherCode, period);
-  const standardControlIds = {
-    uv: `${standardControlIdBase}-weather-standard-popover-uv`,
-    aqi: `${standardControlIdBase}-weather-standard-popover-aqi`,
+  const standardControlIds = { uv: `${standardControlIdBase}-weather-standard-popover-uv`, aqi: `${standardControlIdBase}-weather-standard-popover-aqi` };
+  const closeStandardPopover = () => {
+    const triggerButton = activeStandardMetric === 'uv' ? uvButtonRef.current : aqiButtonRef.current;
+    setActiveStandardMetric(null);
+    window.setTimeout(() => triggerButton?.focus(), 0);
   };
+  /** @param {'uv' | 'aqi'} metric - Standards metric to open or close. */
+  const toggleStandardPopover = (metric) => {
+    if (activeStandardMetric === metric) {
+      closeStandardPopover();
+      return;
+    }
+
+    setActiveStandardMetric(metric);
+  };
+
+  useEffect(() => {
+    if (!activeStandardMetric) return undefined;
+
+    const triggerButton = activeStandardMetric === 'uv' ? uvButtonRef.current : aqiButtonRef.current;
+    const closeFromDocument = () => {
+      setActiveStandardMetric(null);
+      window.setTimeout(() => triggerButton?.focus(), 0);
+    };
+    /** @param {PointerEvent} event - Pointer event from the document. */
+    const handlePointerDown = (event) => {
+      const { target } = event;
+      if (!(target instanceof Node)) return;
+      if (standardOverlayRef.current?.contains(target)) return;
+      if (uvButtonRef.current?.contains(target) || aqiButtonRef.current?.contains(target)) return;
+      closeFromDocument();
+    };
+    /** @param {KeyboardEvent} event - Keyboard event from the document. */
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') closeFromDocument();
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown); document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeStandardMetric]);
 
   return (
     <div className={styles.weatherCard} style={{ position: 'relative' }}>
       <div className={styles.locationName}>{locationName}</div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.75rem' }}>
-        <Image
-          className={styles.weatherIcon}
-          src={iconUrl}
-          alt={today.weatherDesc}
-          width={64}
-          height={64}
-          unoptimized
-        />
+        <Image className={styles.weatherIcon} src={iconUrl} alt={today.weatherDesc} width={64} height={64} unoptimized />
         <div className={styles.temperature} data-testid="current-temperature">
           {today.currentTemp}°
         </div>
@@ -218,7 +317,7 @@ export default function WeatherCard({ locationName, today, tomorrow }) {
         </span>
       </div>
 
-      <TodayMetrics today={today} standardControlIds={standardControlIds} />
+      <TodayMetrics today={today} standardControlIds={standardControlIds} activeStandardMetric={activeStandardMetric} uvButtonRef={uvButtonRef} aqiButtonRef={aqiButtonRef} standardOverlayRef={standardOverlayRef} onStandardToggle={toggleStandardPopover} onStandardClose={closeStandardPopover} />
       <TomorrowSection tomorrow={tomorrow} />
     </div>
   );

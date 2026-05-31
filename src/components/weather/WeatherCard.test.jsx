@@ -1,6 +1,7 @@
 /* eslint-disable jsdoc/require-jsdoc -- Focused UI regression test uses local mock data. */
 import { readFileSync } from 'node:fs';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import WeatherCard from './WeatherCard';
 
@@ -65,12 +66,16 @@ const TOMORROW_UV_NULL_WEATHER = {
   },
 };
 
-function renderWeatherCard(weather = FULL_WEATHER) {
-  return render(<WeatherCard {...weather} />);
+function renderWeatherCard(weather = FULL_WEATHER, props = {}) {
+  return render(<WeatherCard {...weather} {...props} />);
 }
 
 function getMetricCell(metric) {
   return screen.getByTestId(`weather-metric-${metric}`);
+}
+
+function getRowByRange(overlay, rangeLabel) {
+  return within(overlay).getByText(rangeLabel).closest('tr');
 }
 
 describe('WeatherCard', () => {
@@ -211,5 +216,122 @@ describe('WeatherCard', () => {
     expect(nullUvTomorrowSummary).toHaveTextContent('UV —');
     expect(nullUvTomorrowSummary).not.toHaveTextContent('AQI');
     expect(screen.getAllByRole('button', { name: /等級說明/ })).toHaveLength(2);
+  });
+
+  it('opens a UV desktop popover with official rows source link and current marker', async () => {
+    const user = userEvent.setup();
+    renderWeatherCard(FULL_WEATHER, { isMobileStandardsSheetMode: false });
+
+    const uvInfoButton = screen.getByRole('button', { name: '查看紫外線等級說明' });
+    await user.click(uvInfoButton);
+
+    const overlay = screen.getByRole('region', { name: '紫外線等級' });
+    const sourceLink = within(overlay).getByRole('link', { name: '官方來源' });
+
+    expect(uvInfoButton).toHaveAttribute('aria-expanded', 'true');
+    expect(uvInfoButton).toHaveAttribute('aria-controls', overlay.id);
+    expect(sourceLink).toHaveAttribute(
+      'href',
+      'https://opendata.cwa.gov.tw/opendatadoc/insrtuction/CWA_Data_Standard.pdf',
+    );
+    expect(within(overlay).getByText('0-2')).toBeInTheDocument();
+    expect(within(overlay).getByText('3-5')).toBeInTheDocument();
+    expect(within(overlay).getByText('6-7')).toBeInTheDocument();
+    expect(within(overlay).getByText('8-10')).toBeInTheDocument();
+    expect(within(overlay).getByText('11+')).toBeInTheDocument();
+    expect(within(overlay).getAllByText('目前')).toHaveLength(1);
+    expect(getRowByRange(overlay, '8-10')).toHaveTextContent('目前');
+    expect(overlay).not.toHaveTextContent('改清晨/傍晚');
+    expect(overlay).not.toHaveTextContent('跑步適合度');
+    expect(overlay).not.toHaveTextContent('訓練強度');
+    expect(overlay).not.toHaveTextContent('PM2.5');
+  });
+
+  it('switches from UV to AQI desktop popover and keeps only one overlay open', async () => {
+    const user = userEvent.setup();
+    renderWeatherCard(FULL_WEATHER, { isMobileStandardsSheetMode: false });
+
+    await user.click(screen.getByRole('button', { name: '查看紫外線等級說明' }));
+    await user.click(screen.getByRole('button', { name: '查看 AQI 等級說明' }));
+
+    const overlay = screen.getByRole('region', { name: 'AQI 等級' });
+
+    expect(screen.queryByRole('region', { name: '紫外線等級' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('region', { name: /等級/ })).toHaveLength(1);
+    expect(within(overlay).getByText('0-50')).toBeInTheDocument();
+    expect(within(overlay).getByText('51-100')).toBeInTheDocument();
+    expect(within(overlay).getByText('101-150')).toBeInTheDocument();
+    expect(within(overlay).getByText('151-200')).toBeInTheDocument();
+    expect(within(overlay).getByText('201-300')).toBeInTheDocument();
+    expect(within(overlay).getByText('301-400')).toBeInTheDocument();
+    expect(within(overlay).getByText('401-500')).toBeInTheDocument();
+  });
+
+  it('highlights only the matching split AQI hazard row', async () => {
+    const user = userEvent.setup();
+    renderWeatherCard(
+      {
+        ...FULL_WEATHER,
+        today: {
+          ...FULL_WEATHER.today,
+          aqi: {
+            value: 450,
+            status: '危害',
+          },
+        },
+      },
+      { isMobileStandardsSheetMode: false },
+    );
+
+    await user.click(screen.getByRole('button', { name: '查看 AQI 等級說明' }));
+
+    const overlay = screen.getByRole('region', { name: 'AQI 等級' });
+    const lowerHazardRow = getRowByRange(overlay, '301-400');
+    const upperHazardRow = getRowByRange(overlay, '401-500');
+
+    expect(lowerHazardRow).toHaveTextContent('危害');
+    expect(upperHazardRow).toHaveTextContent('危害');
+    expect(within(overlay).getAllByText('目前')).toHaveLength(1);
+    expect(lowerHazardRow).not.toHaveTextContent('目前');
+    expect(upperHazardRow).toHaveTextContent('目前');
+  });
+
+  it('closes the desktop popover with same button outside click Escape and close button', async () => {
+    async function expectUvClose(action) {
+      const user = userEvent.setup();
+      const { unmount } = renderWeatherCard(FULL_WEATHER, {
+        isMobileStandardsSheetMode: false,
+      });
+      const uvInfoButton = screen.getByRole('button', { name: '查看紫外線等級說明' });
+
+      await user.click(uvInfoButton);
+      expect(screen.getByRole('region', { name: '紫外線等級' })).toBeInTheDocument();
+
+      await action({ user, uvInfoButton });
+
+      expect(screen.queryByRole('region', { name: '紫外線等級' })).not.toBeInTheDocument();
+      expect(uvInfoButton).toHaveAttribute('aria-expanded', 'false');
+      unmount();
+    }
+
+    await expectUvClose(({ user, uvInfoButton }) => user.click(uvInfoButton));
+    await expectUvClose(({ user }) => user.click(document.body));
+    await expectUvClose(({ user }) => user.keyboard('{Escape}'));
+    await expectUvClose(({ user }) =>
+      user.click(screen.getByRole('button', { name: '關閉紫外線等級說明' })),
+    );
+  });
+
+  it('returns focus to the triggering info button after desktop popover close', async () => {
+    const user = userEvent.setup();
+    renderWeatherCard(FULL_WEATHER, { isMobileStandardsSheetMode: false });
+
+    const aqiInfoButton = screen.getByRole('button', { name: '查看 AQI 等級說明' });
+    await user.click(aqiInfoButton);
+    await user.click(screen.getByRole('button', { name: '關閉 AQI 等級說明' }));
+
+    await waitFor(() => {
+      expect(aqiInfoButton).toHaveFocus();
+    });
   });
 });
