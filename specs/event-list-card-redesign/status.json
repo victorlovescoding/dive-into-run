@@ -3,12 +3,12 @@
   "feature": "event-list-card-redesign",
   "branch": "081-event-list-card-redesign",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-081-event-list-card-redesign",
-  "phase": "verified_pending_commit",
+  "phase": "implementation_committed_workflow_fix_reviewed",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
-    "commit": true,
+    "commit": false,
     "push": false,
     "pullRequest": false,
     "ciWatch": false,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "081-event-list-card-redesign",
-    "commit": "4c4be5bc93b40bf8d907250cc8d5e0968cb919cd",
-    "capturedAt": "2026-05-31T13:44:55Z",
-    "summary": "Local branch head remains the approved plan commit; T001, T002, and T003 reviewed implementation plus final verifier workflow state are uncommitted workspace changes. Final verifier PASS is recorded and the implementation is ready for the authorized Release Manager commit. lastVerifiedCommit remains null until the implementation commit is created."
+    "commit": "aa4b9a8de9903d5e682087b05437dd837f5857e8",
+    "capturedAt": "2026-05-31T13:47:58Z",
+    "summary": "Implementation commit aa4b9a8de9903d5e682087b05437dd837f5857e8 records the reviewed and verified event list card redesign. Push, PR, CI watch, merge, local main sync, and rules deploy remain unauthorized."
   },
   "remoteHead": {
     "remote": "origin",
@@ -32,7 +32,8 @@
   "completedTasks": [
     "T001",
     "T002",
-    "T003"
+    "T003",
+    "T004"
   ],
   "tasks": [
     {
@@ -442,11 +443,188 @@
           "No forbidden shared component, runtime, package, route, or additional product path changes were accepted for T003."
         ]
       }
+    },
+    {
+      "id": "T004",
+      "title": "Fix Workflow Checker Historical Closeout Guard",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-4",
+      "engineer": "T004 Engineer subagent",
+      "reviewer": "T004 Spec Compliance Reviewer and T004 Code Quality Reviewer subagents",
+      "scope": [
+        "Use TDD to fix scripts/check-superpowers-state.js so historical closeout-ish status files do not apply the lastVerifiedCommit..HEAD evidence guard against moving repo HEAD.",
+        "Add or update the checker test/fixture surface required to reproduce the false positive and prove the durable fix.",
+        "Update this feature's workflow state files with T004 evidence after the checker fix."
+      ],
+      "nonScope": [
+        "Do not modify activity/event list card product code.",
+        "Do not mutate old historical status files as a workaround.",
+        "Do not stage, commit, push, create a PR, watch CI, merge, or sync local main.",
+        "Do not change package files, dependencies, rules, migrations, secrets, or deployment behavior."
+      ],
+      "ownedFiles": [
+        "scripts/check-superpowers-state.js",
+        "scripts/check-superpowers-state.test.js",
+        "specs/event-list-card-redesign/tasks.md",
+        "specs/event-list-card-redesign/status.json",
+        "specs/event-list-card-redesign/handoff.md"
+      ],
+      "readOnlyContext": [
+        "scripts/validate-workflow-state.js",
+        "docs/superpowers/status.schema.json",
+        "docs/superpowers/task-contract.md",
+        "specs/event-host-join-notification/status.json",
+        "package.json",
+        "vitest.config.mjs"
+      ],
+      "dependencies": [
+        "T003",
+        "Implementation commit aa4b9a8de9903d5e682087b05437dd837f5857e8"
+      ],
+      "engineerInstructions": [
+        "First add a focused regression test that fails against the current checker false positive.",
+        "Model a historical closeout-ish status whose currentHead.commit is behind moving repo HEAD, with later product changes unrelated to that historical status.",
+        "Fix scripts/check-superpowers-state.js so closeout-ish historical statuses use their captured head boundary when available instead of comparing lastVerifiedCommit to moving repo HEAD.",
+        "Keep the closeout guard active for current statuses and for statuses without a usable captured head.",
+        "Do not mutate specs/event-host-join-notification/status.json or any other historical status as a workaround.",
+        "Update only this feature's workflow state files for T004 evidence after the fix."
+      ],
+      "acceptanceCriteria": [
+        "AC-T004.1: A focused regression test proves the historical closeout-ish false positive before the fix and passes after the fix.",
+        "AC-T004.2: npm run workflow:check no longer reports this feature's product files against specs/event-host-join-notification/status.json.",
+        "AC-T004.3: Current closeout-ish status protection remains in place for real post-verification non-workflow/evidence changes.",
+        "AC-T004.4: T004 changes stay inside owned files and do not alter product behavior."
+      ],
+      "verification": [
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "Exit 0; 13 status files synced and historical closeout status no longer false-positives on unrelated later product files.",
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "Workflow sync check passed: 13 status files synced.",
+            "verifiedAt": "2026-05-31T14:17:05Z"
+          }
+        },
+        {
+          "command": "npm run workflow:validate",
+          "expectedSignal": "Exit 0 with 13 workflow status files schema-valid.",
+          "lastRun": {
+            "command": "npm run workflow:validate",
+            "exitCode": 0,
+            "summary": "Workflow schema validation passed: 13 status files valid.",
+            "verifiedAt": "2026-05-31T14:17:05Z"
+          }
+        },
+        {
+          "command": "npx vitest run scripts/check-superpowers-state.test.js --project browser",
+          "expectedSignal": "Exit 0 with the checker regression test passing.",
+          "lastRun": {
+            "command": "npx vitest run scripts/check-superpowers-state.test.js --project browser",
+            "exitCode": 0,
+            "summary": "Checker regression test passed: 1 test passed.",
+            "verifiedAt": "2026-05-31T14:17:05Z"
+          }
+        },
+        {
+          "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
+          "expectedSignal": "Exit 0 with focused list card tests still passing.",
+          "lastRun": {
+            "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
+            "exitCode": 0,
+            "summary": "Focused list card tests passed: 7 tests passed.",
+            "verifiedAt": "2026-05-31T14:17:05Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0 with no changed-file lint errors; existing React warning only.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed-file lint completed with the existing React version settings warning only.",
+            "verifiedAt": "2026-05-31T14:17:05Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 with no changed-file type-check errors.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type check passed with no type errors.",
+            "verifiedAt": "2026-05-31T14:17:05Z"
+          }
+        },
+        {
+          "command": "git diff --check -- scripts/check-superpowers-state.js scripts/check-superpowers-state.test.js",
+          "expectedSignal": "Exit 0 with no whitespace errors in T004 script files.",
+          "lastRun": {
+            "command": "git diff --check -- scripts/check-superpowers-state.js scripts/check-superpowers-state.test.js",
+            "exitCode": 0,
+            "summary": "No whitespace errors in T004 script files.",
+            "verifiedAt": "2026-05-31T14:17:05Z"
+          }
+        },
+        {
+          "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+          "expectedSignal": "Exit 0; historical status no longer false-positives on unrelated later product files.",
+          "lastRun": {
+            "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+            "exitCode": 0,
+            "summary": "Historical event-host-join-notification status check passed without false-positive product changes.",
+            "verifiedAt": "2026-05-31T14:17:05Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only T004 owned files.",
+        "Regression test fails against the old checker behavior or clearly encodes the old false-positive case, and passes with the fix.",
+        "npm run workflow:validate and npm run workflow:check pass after the fix.",
+        "The fix uses captured historical status head information instead of weakening closeout guards globally.",
+        "No historical status mutation workaround, product code change, package change, or release boundary action is present."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff modifies product code, package files, old historical statuses, rules, migrations, or non-owned files.",
+        "The fix disables the closeout-ish guard instead of bounding it correctly.",
+        "Tests are missing, stale, or do not cover the historical-status false positive.",
+        "npm run workflow:check still fails with the known historical status false positive after the fix.",
+        "Any stage, commit, push, PR, CI watch, merge, or local main sync action is attempted."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T004 Spec Compliance Reviewer and T004 Code Quality Reviewer subagents",
+        "summary": "Both reviewers passed T004. Spec Compliance validated workflow check, validation, checker regression, historical status direct check, lint, type-check, and diff-check exit 0; Code Quality validated checker regression, workflow check, lint, and type-check exit 0. Historical status files were not mutated, the moving HEAD guard is current-branch gated, and the regression covers a historical closeout status with unrelated later product files.",
+        "decidedAt": "2026-05-31T14:25:57Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE; T004 Engineer changed scripts/check-superpowers-state.js and added scripts/check-superpowers-state.test.js for the durable checker regression. Root cause: the closeout-ish guard compared each historical status lastVerifiedCommit..HEAD, so unrelated current branch product files were treated as post-verification changes for old specs. Fix policy: keep global schema/sync/semantic checks for every status, but run the moving-HEAD product-change guard only when a status belongs to the current branch (status.branch, currentHead.branch, or GitHub env fallback).",
+        "reviewerReport": "review_passed; T004 Spec Compliance Reviewer passed after validating npm run workflow:check exit 0, npm run workflow:validate exit 0, npx vitest run scripts/check-superpowers-state.test.js --project browser exit 0, direct event-host status checker run exit 0, npm run lint:changed exit 0, npm run type-check:changed exit 0, and diff-check exit 0. Evidence: historical status files were not mutated; the moving HEAD closeout guard is gated to the current branch; the regression covers a historical closeout status with unrelated later product files. T004 Code Quality Reviewer also returned review_passed after validating the checker regression, workflow check, lint, and type-check. Residual risks: scripts/check-superpowers-state.test.js is untracked and must be staged by the Release Manager; the new test covers the historical skip path, not an explicit same-branch negative path; other v3 semantic guards remain active.",
+        "commandOutputSummary": [
+          "TDD red: server-project temporary test path failed as expected with `v3 closeout-ish phase has non-workflow/evidence changes after lastVerifiedCommit: src/current-feature.js`; regression moved to scripts/check-superpowers-state.test.js because of the ESLint project-service allowlist.",
+          "npm run workflow:check: exit 0; 13 status files synced.",
+          "npm run workflow:validate: exit 0; 13 status files valid.",
+          "npx vitest run scripts/check-superpowers-state.test.js --project browser: exit 0; 1 test passed.",
+          "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser: exit 0; 7 tests passed.",
+          "npm run lint:changed: exit 0; existing React warning only.",
+          "npm run type-check:changed: exit 0.",
+          "git diff --check -- scripts/check-superpowers-state.js scripts/check-superpowers-state.test.js: exit 0.",
+          "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json: exit 0.",
+          "T004 Spec Compliance Reviewer: review_passed; workflow:check, workflow:validate, checker regression vitest, event-host status direct check, lint:changed, type-check:changed, and diff-check all exited 0.",
+          "T004 Code Quality Reviewer: review_passed; checker regression vitest, workflow:check, lint:changed, and type-check:changed all exited 0."
+        ],
+        "changedFilesSummary": [
+          "scripts/check-superpowers-state.js modified.",
+          "scripts/check-superpowers-state.test.js added.",
+          "Existing workflow state files were left untouched by the Engineer and updated by this coordinator pass after T004 review PASS."
+        ]
+      }
     }
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": null,
+  "lastVerifiedCommit": "aa4b9a8de9903d5e682087b05437dd837f5857e8",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -459,6 +637,12 @@
       "commit": "4c4be5bc93b40bf8d907250cc8d5e0968cb919cd",
       "summary": "Add event list card implementation plan",
       "committedAt": "2026-05-30"
+    },
+    {
+      "phase": "implementation",
+      "commit": "aa4b9a8de9903d5e682087b05437dd837f5857e8",
+      "summary": "Implement event list card redesign",
+      "committedAt": "2026-05-31"
     }
   ],
   "rulesDeployStatus": {
@@ -468,80 +652,64 @@
     "evidence": [],
     "deployedCommit": null
   },
-  "incidents": [],
+  "incidents": [
+    {
+      "id": "workflow-check-historical-closeout-guard",
+      "state": "closed",
+      "summary": "Closed after T004 review_passed: historical closeout-ish statuses no longer apply the moving HEAD product-change guard to unrelated later branch files; checker fix remains pending Release Manager staging/commit.",
+      "openedAt": "2026-05-31T14:00:57Z",
+      "closedAt": "2026-05-31T14:25:57Z"
+    }
+  ],
   "lastVerification": [
     {
-      "command": "git status --short --branch",
+      "command": "npm run workflow:check",
       "exitCode": 0,
-      "summary": "Branch 081-event-list-card-redesign ahead 2; only expected modified workflow/product files and untracked src/ui/events/EventsListSection.test.jsx were present; no staged changes.",
-      "verifiedAt": "2026-05-31T13:44:55Z"
-    },
-    {
-      "command": "git diff --name-status",
-      "exitCode": 0,
-      "summary": "Tracked changes were only specs/event-list-card-redesign/handoff.md, specs/event-list-card-redesign/status.json, specs/event-list-card-redesign/tasks.md, src/ui/events/EventsListSection.jsx, and src/ui/events/EventsPageScreen.module.css.",
-      "verifiedAt": "2026-05-31T13:44:55Z"
-    },
-    {
-      "command": "git ls-files --others --exclude-standard src/ui/events/EventsListSection.test.jsx",
-      "exitCode": 0,
-      "summary": "Untracked test file present: src/ui/events/EventsListSection.test.jsx.",
-      "verifiedAt": "2026-05-31T13:44:55Z"
-    },
-    {
-      "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
-      "exitCode": 0,
-      "summary": "Focused list card tests passed: 1 test file passed, 7 tests passed.",
-      "verifiedAt": "2026-05-31T13:44:55Z"
-    },
-    {
-      "command": "npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser",
-      "exitCode": 0,
-      "summary": "Existing participation runtime tests passed: 1 test file passed, 8 tests passed.",
-      "verifiedAt": "2026-05-31T13:44:55Z"
-    },
-    {
-      "command": "npm run lint:changed",
-      "exitCode": 0,
-      "summary": "Changed-file lint completed with the existing React version settings warning only.",
-      "verifiedAt": "2026-05-31T13:44:55Z"
-    },
-    {
-      "command": "npm run type-check:changed",
-      "exitCode": 0,
-      "summary": "Changed-file type check passed with no type errors.",
-      "verifiedAt": "2026-05-31T13:44:55Z"
+      "summary": "Workflow sync check passed: 13 status files synced.",
+      "verifiedAt": "2026-05-31T14:17:05Z"
     },
     {
       "command": "npm run workflow:validate",
       "exitCode": 0,
       "summary": "Workflow schema validation passed: 13 status files valid.",
-      "verifiedAt": "2026-05-31T13:44:55Z"
+      "verifiedAt": "2026-05-31T14:17:05Z"
     },
     {
-      "command": "npm run workflow:check",
+      "command": "npx vitest run scripts/check-superpowers-state.test.js --project browser",
       "exitCode": 0,
-      "summary": "Workflow sync check passed: 13 status files synced.",
-      "verifiedAt": "2026-05-31T13:44:55Z"
+      "summary": "Checker regression test passed: 1 test passed.",
+      "verifiedAt": "2026-05-31T14:17:05Z"
     },
     {
-      "command": "rg -n \"letter-spacing[[:space:]]*:[[:space:]]*-\" src/ui/events/EventsPageScreen.module.css",
-      "exitCode": 1,
-      "summary": "No negative letter-spacing matches in EventsPageScreen.module.css.",
-      "verifiedAt": "2026-05-31T13:44:55Z"
-    },
-    {
-      "command": "git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsPageScreen.module.css src/ui/events/EventsListSection.test.jsx specs/event-list-card-redesign/tasks.md specs/event-list-card-redesign/status.json specs/event-list-card-redesign/handoff.md",
+      "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
       "exitCode": 0,
-      "summary": "No whitespace errors in implementation files or workflow state files.",
-      "verifiedAt": "2026-05-31T13:44:55Z"
+      "summary": "Focused list card tests passed: 7 tests passed.",
+      "verifiedAt": "2026-05-31T14:17:05Z"
     },
     {
-      "command": "stat -f \"%z %N\" /private/tmp/dive-into-run-081-events-desktop-1440x900.png /private/tmp/dive-into-run-081-events-mobile-390x844.png /private/tmp/dive-into-run-081-events-mobile-390x844-footer.png /private/tmp/dive-into-run-081-events-empty-state-1440x900.png",
+      "command": "npm run lint:changed",
       "exitCode": 0,
-      "summary": "All screenshot artifacts existed and were non-empty: 68888, 30199, 28459, and 25415 bytes.",
-      "verifiedAt": "2026-05-31T13:44:55Z"
+      "summary": "Changed-file lint completed with the existing React version settings warning only.",
+      "verifiedAt": "2026-05-31T14:17:05Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "Changed-file type check passed with no type errors.",
+      "verifiedAt": "2026-05-31T14:17:05Z"
+    },
+    {
+      "command": "git diff --check -- scripts/check-superpowers-state.js scripts/check-superpowers-state.test.js",
+      "exitCode": 0,
+      "summary": "No whitespace errors in T004 script files.",
+      "verifiedAt": "2026-05-31T14:17:05Z"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json",
+      "exitCode": 0,
+      "summary": "Historical event-host-join-notification status check passed without false-positive product changes.",
+      "verifiedAt": "2026-05-31T14:17:05Z"
     }
   ],
-  "updatedAt": "2026-05-31T13:44:55Z"
+  "updatedAt": "2026-05-31T14:25:57Z"
 }

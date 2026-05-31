@@ -23,11 +23,12 @@
 ## Planner Output
 
 - Dependency graph:
-  - `T001 -> T002 -> T003`
+  - `T001 -> T002 -> T003 -> T004`
 - Parallel waves:
   - `wave-1`: `T001`
   - `wave-2`: `T002`
   - `wave-3`: `T003`
+  - `wave-4`: `T004`
 - Final integration gate after T003:
   - `npx vitest run src/ui/events/EventsListSection.test.jsx --project browser`: exit 0.
   - `npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser`: exit 0.
@@ -35,6 +36,11 @@
   - `npm run type-check:changed`: exit 0.
   - `git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsPageScreen.module.css src/ui/events/EventsListSection.test.jsx`: exit 0.
   - Browser evidence for `/events` at `1440x900` and `390x844`: screenshots recorded, no new console errors, no failed app requests, no card/control overlap.
+- Workflow checker gate after T004:
+  - `npx vitest run scripts/check-superpowers-state.test.js --project browser`: exit 0.
+  - `npm run workflow:validate`: exit 0.
+  - `npm run workflow:check`: exit 0 after the checker fix.
+  - `git diff --check -- scripts/check-superpowers-state.js scripts/check-superpowers-state.test.js specs/event-list-card-redesign/tasks.md specs/event-list-card-redesign/status.json specs/event-list-card-redesign/handoff.md`: exit 0.
 
 ## Tasks
 
@@ -433,13 +439,132 @@ Evidence:
   - `src/ui/events/EventsPageScreen.module.css` modified by T003 Engineer for CSS-only card visual system.
   - No forbidden shared component, runtime, package, route, or additional product path changes were accepted for T003.
 
+### T004 - Fix Workflow Checker Historical Closeout Guard
+
+- **State**: `completed`
+- **Attempt**: 1
+- **Wave**: `wave-4`
+- **Engineer**: T004 Engineer subagent
+- **Reviewer**: T004 Spec Compliance Reviewer and T004 Code Quality Reviewer subagents
+- **Commit checkpoint**: none; no stage, commit, push, PR, merge, or local main sync is authorized
+- **Last verified commit**: `aa4b9a8de9903d5e682087b05437dd837f5857e8` for the already-committed product implementation; T004 checker fix is reviewed and pending final verifier/release-manager commit
+- **Authorization boundary**: edit=yes for the T004 owned files only, commit=no, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Rules deploy status**: not_applicable
+- **Incidents**: `workflow-check-historical-closeout-guard` closed after T004 review PASS; checker fix remains pending commit
+
+Scope:
+
+- Use TDD to fix `scripts/check-superpowers-state.js` so historical closeout-ish status files do not apply the `lastVerifiedCommit..HEAD` evidence guard against moving repo `HEAD`.
+- Add or update the existing checker test/fixture surface required to reproduce the false positive and prove the durable fix.
+- Update this feature's workflow state files with T004 evidence after the checker fix.
+
+Non-scope:
+
+- Do not modify activity/event list card product code.
+- Do not mutate old historical status files as a workaround.
+- Do not stage, commit, push, create a PR, watch CI, merge, or sync local `main`.
+- Do not change package files, dependencies, rules, migrations, secrets, or deployment behavior.
+
+Owned files:
+
+- `scripts/check-superpowers-state.js`
+- `scripts/check-superpowers-state.test.js`
+- `specs/event-list-card-redesign/tasks.md`
+- `specs/event-list-card-redesign/status.json`
+- `specs/event-list-card-redesign/handoff.md`
+
+Read-only context:
+
+- `scripts/validate-workflow-state.js`
+- `docs/superpowers/status.schema.json`
+- `docs/superpowers/task-contract.md`
+- `specs/event-host-join-notification/status.json`
+- `package.json`
+- `vitest.config.mjs`
+
+Dependencies:
+
+- `T003`
+- Implementation commit `aa4b9a8de9903d5e682087b05437dd837f5857e8`
+
+Browser evidence:
+
+- not applicable for this workflow checker task
+
+Engineer instructions:
+
+- First add a focused regression test that fails against the current checker false positive.
+- Model a historical closeout-ish status whose `currentHead.commit` is behind moving repo `HEAD`, with later product changes unrelated to that historical status.
+- Fix `scripts/check-superpowers-state.js` so closeout-ish historical statuses use their captured head boundary when available instead of comparing `lastVerifiedCommit` to moving repo `HEAD`.
+- Keep the closeout guard active for current statuses and for statuses without a usable captured head.
+- Do not mutate `specs/event-host-join-notification/status.json` or any other historical status as a workaround.
+- Update only this feature's workflow state files for T004 evidence after the fix.
+
+Acceptance criteria:
+
+- AC-T004.1: A focused regression test proves the historical closeout-ish false positive before the fix and passes after the fix.
+- AC-T004.2: `npm run workflow:check` no longer reports this feature's product files against `specs/event-host-join-notification/status.json`.
+- AC-T004.3: Current closeout-ish status protection remains in place for real post-verification non-workflow/evidence changes.
+- AC-T004.4: T004 changes stay inside owned files and do not alter product behavior.
+
+Verification commands and expected signal:
+
+| Command | Expected signal |
+| ------- | --------------- |
+| `npm run workflow:check` | Exit 0; 13 status files synced and historical closeout status no longer false-positives on unrelated later product files. |
+| `npm run workflow:validate` | Exit 0 with 13 workflow status files schema-valid. |
+| `npx vitest run scripts/check-superpowers-state.test.js --project browser` | Exit 0 with the checker regression test passing. |
+| `npx vitest run src/ui/events/EventsListSection.test.jsx --project browser` | Exit 0 with focused list card tests still passing. |
+| `npm run lint:changed` | Exit 0 with no changed-file lint errors; existing React warning only. |
+| `npm run type-check:changed` | Exit 0 with no changed-file type-check errors. |
+| `git diff --check -- scripts/check-superpowers-state.js scripts/check-superpowers-state.test.js` | Exit 0 with no whitespace errors in T004 script files. |
+| `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | Exit 0; historical status no longer false-positives on unrelated later product files. |
+
+Reviewer PASS criteria:
+
+- Diff touches only T004 owned files.
+- Regression test fails against the old checker behavior or clearly encodes the old false-positive case, and passes with the fix.
+- `npm run workflow:validate` and `npm run workflow:check` pass after the fix.
+- The fix uses captured historical status head information instead of weakening closeout guards globally.
+- No historical status mutation workaround, product code change, package change, or release boundary action is present.
+
+Reviewer REJECT criteria:
+
+- Diff modifies product code, package files, old historical statuses, rules, migrations, or non-owned files.
+- The fix disables the closeout-ish guard instead of bounding it correctly.
+- Tests are missing, stale, or do not cover the historical-status false positive.
+- `npm run workflow:check` still fails with the known historical status false positive after the fix.
+- Any stage, commit, push, PR, CI watch, merge, or local `main` sync action is attempted.
+
+Evidence:
+
+- Engineer report: `DONE`; T004 Engineer changed `scripts/check-superpowers-state.js` and added `scripts/check-superpowers-state.test.js` for the durable checker regression. Root cause: the closeout-ish guard compared each historical status `lastVerifiedCommit..HEAD`, so unrelated current branch product files were treated as post-verification changes for old specs. Fix policy: keep global schema/sync/semantic checks for every status, but run the moving-HEAD product-change guard only when a status belongs to the current branch (`status.branch`, `currentHead.branch`, or GitHub env fallback).
+- Reviewer report: `review_passed`; T004 Spec Compliance Reviewer passed after validating `npm run workflow:check` exit 0, `npm run workflow:validate` exit 0, `npx vitest run scripts/check-superpowers-state.test.js --project browser` exit 0, direct `specs/event-host-join-notification/status.json` checker run exit 0, `npm run lint:changed` exit 0, `npm run type-check:changed` exit 0, and diff-check exit 0. Evidence: historical status files were not mutated, the moving `HEAD` closeout guard is gated to the current branch, and the regression covers a historical closeout status with unrelated later product files. T004 Code Quality Reviewer also returned `review_passed` after validating the checker regression, workflow check, lint, and type-check.
+- Residual risk: no stage, commit, push, PR, merge, or local main sync has run; `scripts/check-superpowers-state.test.js` is still untracked and must be staged by the Release Manager with the T004 checker fix. The regression covers the historical skip path, not an explicit same-branch negative path; other v3 semantic guards remain active.
+- Command output summary:
+  - TDD red: server-project temporary test path failed as expected with `v3 closeout-ish phase has non-workflow/evidence changes after lastVerifiedCommit: src/current-feature.js`; regression moved to `scripts/check-superpowers-state.test.js` because of the ESLint project-service allowlist.
+  - `npm run workflow:check`: exit 0; 13 status files synced.
+  - `npm run workflow:validate`: exit 0; 13 status files valid.
+  - `npx vitest run scripts/check-superpowers-state.test.js --project browser`: exit 0; 1 test passed.
+  - `npx vitest run src/ui/events/EventsListSection.test.jsx --project browser`: exit 0; 7 tests passed.
+  - `npm run lint:changed`: exit 0; existing React warning only.
+  - `npm run type-check:changed`: exit 0.
+  - `git diff --check -- scripts/check-superpowers-state.js scripts/check-superpowers-state.test.js`: exit 0.
+  - `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json`: exit 0.
+  - T004 Spec Compliance Reviewer: `review_passed`; workflow check, validation, checker regression, historical status direct check, lint, type-check, and diff-check all exit 0.
+  - T004 Code Quality Reviewer: `review_passed`; checker regression, workflow check, lint, and type-check all exit 0.
+- Changed files summary:
+  - `scripts/check-superpowers-state.js` modified.
+  - `scripts/check-superpowers-state.test.js` added.
+  - Existing workflow state files were left untouched by the Engineer and are being updated by this coordinator pass.
+
 ## Final Verifier Evidence Before Implementation Commit
 
-- **Phase**: `verified_pending_commit`
+- **Phase**: `implementation_committed`
 - **Verified at**: 2026-05-31T13:44:55Z
-- **Verifier decision**: PASS; reviewed implementation is ready for the authorized Release Manager commit.
+- **Verifier decision**: PASS; reviewed implementation was committed as `aa4b9a8de9903d5e682087b05437dd837f5857e8` (`Implement event list card redesign`).
 - **Residual risks accepted**: loading/filtering/creating/error/load-more/end-hint visual states were not each forced in-browser; pending spinner wrapping is lightly covered; page-level mobile create CTA overlap is outside this feature slice.
-- **Authorization boundary remains**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.
+- **Authorization boundary at verifier time**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |

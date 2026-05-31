@@ -5,30 +5,31 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-081-event-list-card-redesign`
 - Branch: `081-event-list-card-redesign`
-- Current head: `4c4be5bc93b40bf8d907250cc8d5e0968cb919cd` (`Add event list card implementation plan`)
+- Current head: `aa4b9a8de9903d5e682087b05437dd837f5857e8` (`Implement event list card redesign`)
 - Remote head: `origin/main` at `4c5b45b1fbf5b62ded2da57dd178133532a90b9f`
 - Authorization boundary:
-  - edit: true for future Engineer subagent implementation in the planned owned files
-  - commit: true for a later Release Manager after Reviewer PASS, Verifier PASS, and clean workflow state
+  - edit: true for this coordinator workflow-state recording only; further implementation edits require a new dispatch
+  - commit: false
   - push: false
   - pullRequest: false
   - ciWatch: false
   - merge: false
   - localMainSync: false
   - deployFirestoreRules: false
-- Current phase: verified_pending_commit
-- Task states: T001 `completed`; T002 `completed`; T003 `completed`
+- Current phase: implementation_committed_workflow_fix_reviewed
+- Task states: T001 `completed`; T002 `completed`; T003 `completed`; T004 `completed`
 - Active task: none
 - Active wave: none
-- Latest reviewer decision: T003 `review_passed`
-- Last verified commit: none
+- Latest reviewer decision: T004 `review_passed`
+- Last verified commit: `aa4b9a8de9903d5e682087b05437dd837f5857e8`
 - Phase commits:
   - spec: `474481ba29647d6edcb33b6519a57cfbb04772b3` (`Add event list card redesign spec`)
   - plan: `4c4be5bc93b40bf8d907250cc8d5e0968cb919cd` (`Add event list card implementation plan`)
+  - implementation: `aa4b9a8de9903d5e682087b05437dd837f5857e8` (`Implement event list card redesign`)
 - Rules deploy status: not_applicable
-- Incidents: none
+- Incidents: `workflow-check-historical-closeout-guard` closed at 2026-05-31T14:25:57Z
 - Blocked: no
-- Blocked reason: none
+- Blocked reason: none. The checker blocker is resolved by T004 review PASS; the checker fix is still pending final verifier/release-manager commit.
 
 ## Read Order
 
@@ -44,11 +45,34 @@
 
 ## Next Action
 
-Release Manager may stage exactly the six reviewed files and create the authorized implementation commit. Do not push, open a PR, watch CI, merge, sync local `main`, deploy rules, or make product edits.
+Next action is final Verifier / Release Manager commit preparation for the reviewed T004 checker fix and workflow-state sync. Current authorization still forbids stage, commit, push, PR creation, CI watch, merge, and local `main` sync; Release Manager must confirm or receive commit authorization before staging concrete files.
 
-## Latest Verification
+## Current Workflow State Checks
 
-Final verifier PASS was recorded on 2026-05-31T13:44:55Z. T003 Engineer reported `DONE_WITH_CONCERNS` after changing `src/ui/events/EventsPageScreen.module.css` for the CSS-only card visual system. T003 Spec Compliance Reviewer and T003 Code Quality Reviewer both returned `review_passed`; all implementation tasks are completed and the reviewed implementation is ready for the authorized commit.
+T004 Engineer checks and Reviewer decisions are recorded. Both T004 Spec Compliance Reviewer and T004 Code Quality Reviewer returned `review_passed`.
+
+| Command | Exit | Evidence |
+| ------- | ---- | -------- |
+| `npm run workflow:check` | 0 | Workflow sync check passed: 13 status files synced. |
+| `npm run workflow:validate` | 0 | Workflow schema validation passed: 13 status files valid. |
+| `npx vitest run scripts/check-superpowers-state.test.js --project browser` | 0 | Checker regression test passed: 1 test passed. |
+| `npx vitest run src/ui/events/EventsListSection.test.jsx --project browser` | 0 | Focused list card tests passed: 7 tests passed. |
+| `npm run lint:changed` | 0 | Changed-file lint completed with the existing React version settings warning only. |
+| `npm run type-check:changed` | 0 | Changed-file type check passed with no type errors. |
+| `git diff --check -- scripts/check-superpowers-state.js scripts/check-superpowers-state.test.js` | 0 | No whitespace errors in T004 script files. |
+| `node scripts/check-superpowers-state.js specs/event-host-join-notification/status.json` | 0 | Historical status check passed without false-positive product changes. |
+
+TDD red evidence: server-project temporary test path failed as expected with `v3 closeout-ish phase has non-workflow/evidence changes after lastVerifiedCommit: src/current-feature.js`; regression moved to `scripts/check-superpowers-state.test.js` because of the ESLint project-service allowlist.
+
+Reviewer evidence: Spec Compliance validated workflow check, validation, checker regression, historical status direct check, lint, type-check, and diff-check exit 0. Code Quality validated checker regression, workflow check, lint, and type-check exit 0. Historical status files were not mutated; the moving `HEAD` guard is gated to the current branch; the regression covers historical closeout status with unrelated later product files.
+
+Residual risks: `scripts/check-superpowers-state.test.js` is untracked and must be staged by the Release Manager with the T004 checker fix. The new test covers the historical skip path, not an explicit same-branch negative path; other v3 semantic guards remain active.
+
+## Latest Product Verification
+
+Final verifier PASS was recorded on 2026-05-31T13:44:55Z and implementation commit `aa4b9a8de9903d5e682087b05437dd837f5857e8` was created. T003 Engineer reported `DONE_WITH_CONCERNS` after changing `src/ui/events/EventsPageScreen.module.css` for the CSS-only card visual system. T003 Spec Compliance Reviewer and T003 Code Quality Reviewer both returned `review_passed`; product implementation tasks are completed.
+
+Post-commit blocker: Release Manager attempted state sync after commit. `npm run workflow:check` failed because `scripts/check-superpowers-state.js` applied the closeout-ish `lastVerifiedCommit..HEAD` guard for historical `specs/event-host-join-notification/status.json` against moving repo `HEAD`, so it saw this feature's product files. T004 Engineer fixed the checker and both T004 Reviewers passed the fix. Product code does not need changes.
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
@@ -76,16 +100,16 @@ Reviewer boundary result: no forbidden shared path changes.
 ## Closeout Checklist
 
 - [x] `tasks.md` task states match `status.json`.
-- [x] Active task and active wave are cleared and match `status.json`.
+- [x] Active task and active wave are null and match `status.json`.
 - [x] Latest reviewer decision is recorded in `tasks.md` and `status.json`.
 - [x] `lastVerification` has one entry per command when implementation verification begins.
-- [x] `lastVerifiedCommit` remains null until final verifier/commit; `currentHead`, `remoteHead`, and `phaseCommits` reflect the reviewed-but-not-committed state.
+- [x] `lastVerifiedCommit`, `currentHead`, and `phaseCommits` record implementation commit `aa4b9a8de9903d5e682087b05437dd837f5857e8`.
 - [x] `authorizationBoundary.deployFirestoreRules` is recorded and treated as separate from `edit`, `commit`, `push`, `pullRequest`, `ciWatch`, `merge`, and `localMainSync`.
 - [x] `rulesDeployStatus` remains `not_applicable` because implementation did not touch rules.
 - [x] Final summary does not imply deployed rules or deployed product behavior.
-- [x] Open incidents are resolved, mitigated with explicit carry-forward, or block closeout.
+- [x] Incident `workflow-check-historical-closeout-guard` is closed after T004 review PASS; fix is pending Release Manager commit.
 - [x] Changed files are intentionally in scope for the reviewed implementation state.
-- [x] Blockers are resolved or explicitly carried forward.
+- [x] Blockers are cleared; residual risks are explicitly carried forward to final verifier/release manager.
 
 ## Blockers
 

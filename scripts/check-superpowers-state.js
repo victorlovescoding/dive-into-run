@@ -155,6 +155,49 @@ function isWorkflowEvidencePath(filePath) {
 }
 
 /**
+ * Gets the current branch name from git or CI metadata.
+ * @returns {string|null} Current branch name.
+ */
+function getCurrentBranch() {
+  try {
+    const branch = readGit(['branch', '--show-current']);
+    if (isNonBlankString(branch)) {
+      return branch;
+    }
+  } catch {
+    // Detached or non-git contexts can still fall back to CI branch metadata.
+  }
+
+  for (const envName of ['GITHUB_HEAD_REF', 'GITHUB_REF_NAME']) {
+    if (isNonBlankString(process.env[envName])) {
+      return process.env[envName].trim();
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Checks whether a status file describes the current branch context.
+ * @param {Record<string, unknown>} status - Parsed status object.
+ * @returns {boolean} Whether the status belongs to the current branch.
+ */
+function isCurrentBranchStatus(status) {
+  const currentBranch = getCurrentBranch();
+  if (!isNonBlankString(currentBranch)) {
+    return false;
+  }
+
+  if (isNonBlankString(status.branch) && status.branch.trim() === currentBranch) {
+    return true;
+  }
+
+  return isPlainObject(status.currentHead)
+    && isNonBlankString(status.currentHead.branch)
+    && status.currentHead.branch.trim() === currentBranch;
+}
+
+/**
  * Discovers first-level specs status files.
  * @returns {string[]} Status file paths.
  */
@@ -493,6 +536,7 @@ function checkV3Semantics(statusFile, status) {
 
   if (
     closeoutish
+    && isCurrentBranchStatus(status)
     && isNonBlankString(status.lastVerifiedCommit)
     && commitExists(status.lastVerifiedCommit.trim())
   ) {
