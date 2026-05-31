@@ -48,9 +48,17 @@ function useIsMobileWeatherSheetMode() {
  * @param {'idle' | 'loading' | 'success' | 'error'} props.weatherState - 目前天氣狀態。
  * @param {import('@/types/weather-types').WeatherInfo | null} props.weatherData - 天氣資料。
  * @param {() => void | Promise<void>} props.onRetry - 重試 handler。
+ * @param {boolean} props.isMobileStandardsSheetMode - Whether WeatherCard should render standards as a mobile sheet。
+ * @param {(isOpen: boolean) => void} props.onStandardsSheetOpenChange - Standards sheet open-state callback。
  * @returns {import('react').ReactElement | null} 天氣卡片內容。
  */
-function renderWeatherCard({ weatherState, weatherData, onRetry }) {
+function renderWeatherCard({
+  weatherState,
+  weatherData,
+  onRetry,
+  isMobileStandardsSheetMode,
+  onStandardsSheetOpenChange,
+}) {
   if (weatherState === 'idle') return <WeatherCardEmpty />;
   if (weatherState === 'loading') return <WeatherCardSkeleton />;
   if (weatherState === 'error') return <WeatherCardError onRetry={onRetry} />;
@@ -60,6 +68,8 @@ function renderWeatherCard({ weatherState, weatherData, onRetry }) {
         locationName={weatherData.locationName}
         today={weatherData.today}
         tomorrow={weatherData.tomorrow}
+        isMobileStandardsSheetMode={isMobileStandardsSheetMode}
+        onStandardsSheetOpenChange={onStandardsSheetOpenChange}
       />
     );
   }
@@ -88,6 +98,7 @@ function getSelectedLocationLabel(selectedLocation, weatherData) {
  * @param {string} props.selectedLocationKey - Selected location identity。
  * @param {string} props.selectedLocationLabel - Selected location display label。
  * @param {boolean} props.isMobileWeatherSheetMode - Whether mobile sheet controls are enabled。
+ * @param {boolean} props.isMobileStandardsSheetOpen - Whether the standards modal sheet is active。
  * @param {import('react').ReactNode} props.children - Weather information content。
  * @returns {import('react').ReactElement} Weather information panel。
  */
@@ -96,21 +107,29 @@ function WeatherInformationPanel({
   selectedLocationKey,
   selectedLocationLabel,
   isMobileWeatherSheetMode,
+  isMobileStandardsSheetOpen,
   children,
 }) {
   const weatherSheetContentId = useId();
   const [isWeatherSheetCollapsed, setIsWeatherSheetCollapsed] = useState(false);
   const isMobileWeatherSheetCollapsed = isMobileWeatherSheetMode && isWeatherSheetCollapsed;
+  const shouldSuppressWeatherSheet = isMobileWeatherSheetMode && isMobileStandardsSheetOpen;
   const weatherSheetClassName = [
     styles.cardPanel,
     styles.weatherSheet,
     isMobileWeatherSheetCollapsed ? styles.weatherSheetCollapsed : '',
+    shouldSuppressWeatherSheet ? styles.weatherSheetSuppressed : '',
   ]
     .filter(Boolean)
     .join(' ');
 
   return (
-    <section ref={cardPanelRef} className={weatherSheetClassName} aria-label="天氣資訊">
+    <section
+      ref={cardPanelRef}
+      className={weatherSheetClassName}
+      aria-label="天氣資訊"
+      aria-hidden={shouldSuppressWeatherSheet ? 'true' : undefined}
+    >
       {selectedLocationKey && isMobileWeatherSheetMode && (
         <button
           type="button"
@@ -175,6 +194,7 @@ export default function WeatherPageScreen({ runtime }) {
     ? `${selectedLocationKey}:${selectedLocationLabel}`
     : 'overview';
   const isMobileWeatherSheetMode = useIsMobileWeatherSheetMode();
+  const [isMobileStandardsSheetOpen, setIsMobileStandardsSheetOpen] = useState(false);
 
   const weatherInformationContent = (
     <>
@@ -189,7 +209,13 @@ export default function WeatherPageScreen({ runtime }) {
       )}
 
       <div style={{ position: 'relative' }}>
-        {renderWeatherCard({ weatherState, weatherData, onRetry: handleRetry })}
+        {renderWeatherCard({
+          weatherState,
+          weatherData,
+          onRetry: handleRetry,
+          isMobileStandardsSheetMode: isMobileWeatherSheetMode,
+          onStandardsSheetOpenChange: setIsMobileStandardsSheetOpen,
+        })}
         {weatherState === 'success' && selectedLocation && (
           <FavoriteButton
             isFavorited={isFavorited}
@@ -210,6 +236,7 @@ export default function WeatherPageScreen({ runtime }) {
           selectedLocationKey={selectedLocationKey}
           selectedLocationLabel={selectedLocationLabel}
           isMobileWeatherSheetMode={isMobileWeatherSheetMode}
+          isMobileStandardsSheetOpen={isMobileStandardsSheetOpen}
         >
           {weatherInformationContent}
         </WeatherInformationPanel>

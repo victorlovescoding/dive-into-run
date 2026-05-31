@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import Image from 'next/image';
+import { createPortal } from 'react-dom';
 import { getWeatherIconUrl } from '@/runtime/client/use-cases/weather-location-use-cases';
 import styles from './weather.module.css';
 import { AQI_STANDARD_ROWS, AQI_STANDARD_SOURCE_URL, UV_STANDARD_ROWS, UV_STANDARD_SOURCE_URL, getCurrentStandardRow, getWeatherMetricAdvice } from './weather-standards';
@@ -64,27 +65,24 @@ function MetricCell({ id, value, label }) {
 }
 
 /**
- * Desktop standards popover containing the official rows for one metric.
+ * Standards content shared by desktop popover and mobile sheet.
  * @param {object} props - 元件屬性。
  * @param {'uv' | 'aqi'} props.metric - Standards metric key.
  * @param {number} props.value - Current metric value for row highlighting.
- * @param {string} props.controlId - Overlay id controlled by the info button.
- * @param {import('react').RefObject<HTMLDivElement | null>} props.overlayRef - Active overlay ref.
+ * @param {string} props.titleId - Standards title id.
+ * @param {import('react').RefObject<HTMLButtonElement | null>} [props.closeButtonRef] - Close button ref.
  * @param {() => void} props.onClose - Close handler.
- * @returns {import('react').JSX.Element} Standards popover.
+ * @returns {import('react').JSX.Element} Standards content.
  */
-function WeatherStandardsPopover({ metric, value, controlId, overlayRef, onClose }) {
+function WeatherStandardsContent({ metric, value, titleId, closeButtonRef, onClose }) {
   const config = STANDARD_POPOVER_CONFIG[metric];
   const currentRow = getCurrentStandardRow(metric, value);
-  const titleId = `${controlId}-title`;
-  const alignClassName = metric === 'uv' ? styles.standardsPopoverAlignStart : styles.standardsPopoverAlignEnd;
-  const popoverClassName = `${styles.standardsPopover} ${alignClassName}`;
 
   return (
-    <div id={controlId} ref={overlayRef} role="region" aria-labelledby={titleId} className={popoverClassName}>
+    <>
       <div className={styles.standardsPopoverHeader}>
         <h3 id={titleId} className={styles.standardsPopoverTitle}>{config.title}</h3>
-        <button type="button" className={styles.standardsCloseButton} aria-label={config.closeLabel} onClick={onClose}>
+        <button ref={closeButtonRef} type="button" className={styles.standardsCloseButton} aria-label={config.closeLabel} onClick={onClose}>
           關閉
         </button>
       </div>
@@ -106,7 +104,56 @@ function WeatherStandardsPopover({ metric, value, controlId, overlayRef, onClose
           ))}
         </tbody>
       </table>
+    </>
+  );
+}
+
+/**
+ * Desktop standards popover containing the official rows for one metric.
+ * @param {object} props - 元件屬性。
+ * @param {'uv' | 'aqi'} props.metric - Standards metric key.
+ * @param {number} props.value - Current metric value for row highlighting.
+ * @param {string} props.controlId - Overlay id controlled by the info button.
+ * @param {import('react').RefObject<HTMLDivElement | null>} props.overlayRef - Active overlay ref.
+ * @param {() => void} props.onClose - Close handler.
+ * @returns {import('react').JSX.Element} Standards popover.
+ */
+function WeatherStandardsPopover({ metric, value, controlId, overlayRef, onClose }) {
+  const titleId = `${controlId}-title`;
+  const alignClassName = metric === 'uv' ? styles.standardsPopoverAlignStart : styles.standardsPopoverAlignEnd;
+  const popoverClassName = `${styles.standardsPopover} ${alignClassName}`;
+
+  return (
+    <div id={controlId} ref={overlayRef} role="region" aria-labelledby={titleId} className={popoverClassName}>
+      <WeatherStandardsContent metric={metric} value={value} titleId={titleId} onClose={onClose} />
     </div>
+  );
+}
+
+/**
+ * Mobile modal standards bottom sheet rendered outside the weather sheet layer.
+ * @param {object} props - 元件屬性。
+ * @param {'uv' | 'aqi'} props.metric - Standards metric key.
+ * @param {number} props.value - Current metric value for row highlighting.
+ * @param {string} props.controlId - Overlay id controlled by the info button.
+ * @param {import('react').RefObject<HTMLDivElement | null>} props.overlayRef - Active overlay ref.
+ * @param {import('react').RefObject<HTMLButtonElement | null>} props.closeButtonRef - Close button ref.
+ * @param {() => void} props.onClose - Close handler.
+ * @returns {import('react').ReactPortal | null} Standards sheet portal.
+ */
+function WeatherStandardsSheet({ metric, value, controlId, overlayRef, closeButtonRef, onClose }) {
+  if (typeof document === 'undefined') return null;
+
+  const titleId = `${controlId}-title`;
+
+  return createPortal(
+    <div className={styles.standardsSheetLayer}>
+      <button type="button" className={styles.standardsSheetScrim} data-testid="standards-sheet-scrim" aria-label="關閉等級說明遮罩" onClick={onClose} />
+      <div id={controlId} ref={overlayRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className={styles.standardsSheet}>
+        <WeatherStandardsContent metric={metric} value={value} titleId={titleId} closeButtonRef={closeButtonRef} onClose={onClose} />
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -124,9 +171,10 @@ function WeatherStandardsPopover({ metric, value, controlId, overlayRef, onClose
  * @param {import('react').RefObject<HTMLDivElement | null>} props.overlayRef - Active overlay ref.
  * @param {() => void} props.onToggle - Toggle handler.
  * @param {() => void} props.onClose - Close handler.
+ * @param {boolean} props.shouldRenderDesktopPopover - Whether the open state should render a desktop popover.
  * @returns {import('react').JSX.Element} Enhanced metric cell.
  */
-function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButtonLabel, controlId, isOpen, buttonRef, overlayRef, onToggle, onClose }) {
+function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButtonLabel, controlId, isOpen, buttonRef, overlayRef, onToggle, onClose, shouldRenderDesktopPopover }) {
   const advice = getWeatherMetricAdvice(metric, levelOrStatus);
 
   return (
@@ -142,7 +190,7 @@ function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButton
       </div>
       <div className={styles.metricStandardText}>{levelOrStatus}</div>
       {advice ? <div className={styles.metricAdvice}>{advice}</div> : null}
-      {isOpen ? (
+      {isOpen && shouldRenderDesktopPopover ? (
         <WeatherStandardsPopover metric={metric} value={value} controlId={controlId} overlayRef={overlayRef} onClose={onClose} />
       ) : null}
     </div>
@@ -160,41 +208,22 @@ function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButton
  * @param {import('react').RefObject<HTMLDivElement | null>} props.standardOverlayRef - Active overlay ref.
  * @param {(metric: 'uv' | 'aqi') => void} props.onStandardToggle - Toggle handler.
  * @param {() => void} props.onStandardClose - Close handler.
+ * @param {boolean} props.shouldRenderDesktopPopover - Whether open metrics should render desktop popovers.
  * @returns {import('react').JSX.Element} 指標列。
  */
-function TodayMetrics({ today, standardControlIds, activeStandardMetric, uvButtonRef, aqiButtonRef, standardOverlayRef, onStandardToggle, onStandardClose }) {
+function TodayMetrics({ today, standardControlIds, activeStandardMetric, uvButtonRef, aqiButtonRef, standardOverlayRef, onStandardToggle, onStandardClose, shouldRenderDesktopPopover }) {
   const { rainProb, humidity, uv, aqi } = today;
   return (
     <div className={styles.metricsRow}>
       <MetricCell id="rain" value={formatMetric(rainProb, '%')} label="降雨" />
       <MetricCell id="humidity" value={formatMetric(humidity, '%')} label="濕度" />
       {uv ? (
-        <WeatherStandardMetric
-          metric="uv"
-          label="紫外線"
-          value={uv.value}
-          levelOrStatus={uv.level}
-          infoButtonLabel="查看紫外線等級說明"
-          controlId={standardControlIds.uv}
-          isOpen={activeStandardMetric === 'uv'} buttonRef={uvButtonRef} overlayRef={standardOverlayRef}
-          onToggle={() => onStandardToggle('uv')}
-          onClose={onStandardClose}
-        />
+        <WeatherStandardMetric metric="uv" label="紫外線" value={uv.value} levelOrStatus={uv.level} infoButtonLabel="查看紫外線等級說明" controlId={standardControlIds.uv} isOpen={activeStandardMetric === 'uv'} buttonRef={uvButtonRef} overlayRef={standardOverlayRef} onToggle={() => onStandardToggle('uv')} onClose={onStandardClose} shouldRenderDesktopPopover={shouldRenderDesktopPopover} />
       ) : (
         <MetricCell id="uv" value={'\u2014'} label="紫外線" />
       )}
       {aqi ? (
-        <WeatherStandardMetric
-          metric="aqi"
-          label="AQI"
-          value={aqi.value}
-          levelOrStatus={aqi.status}
-          infoButtonLabel="查看 AQI 等級說明"
-          controlId={standardControlIds.aqi}
-          isOpen={activeStandardMetric === 'aqi'} buttonRef={aqiButtonRef} overlayRef={standardOverlayRef}
-          onToggle={() => onStandardToggle('aqi')}
-          onClose={onStandardClose}
-        />
+        <WeatherStandardMetric metric="aqi" label="AQI" value={aqi.value} levelOrStatus={aqi.status} infoButtonLabel="查看 AQI 等級說明" controlId={standardControlIds.aqi} isOpen={activeStandardMetric === 'aqi'} buttonRef={aqiButtonRef} overlayRef={standardOverlayRef} onToggle={() => onStandardToggle('aqi')} onClose={onStandardClose} shouldRenderDesktopPopover={shouldRenderDesktopPopover} />
       ) : (
         <MetricCell id="aqi" value={'\u2014'} label="AQI" />
       )}
@@ -238,25 +267,37 @@ function TomorrowSection({ tomorrow }) {
 // #endregion
 
 /**
- * 天氣資訊卡 — 顯示今日完整天氣 + 明日摘要。
+ * Weather card implementation keyed by standards mode from the public wrapper.
  * @param {object} props - 元件屬性。
  * @param {string} props.locationName - 地點全名。
  * @param {TodayWeather} props.today - 今日天氣。
  * @param {TomorrowWeather} props.tomorrow - 明日天氣。
  * @param {boolean} [props.isMobileStandardsSheetMode] - Whether desktop popovers should stay closed for the mobile sheet lane.
+ * @param {(isOpen: boolean) => void} [props.onStandardsSheetOpenChange] - Mobile standards sheet open-state callback.
  * @returns {import('react').JSX.Element} 天氣卡元件。
  */
-export default function WeatherCard({ locationName, today, tomorrow, isMobileStandardsSheetMode = false }) {
+function WeatherCardContent({ locationName, today, tomorrow, isMobileStandardsSheetMode = false, onStandardsSheetOpenChange }) {
   const standardControlIdBase = useId();
-  const [activeStandardMetric, setActiveStandardMetric] = useState(/** @type {'uv' | 'aqi' | null} */ (null));
+  const [activeStandardOverlay, setActiveStandardOverlay] = useState(
+    /** @type {{ metric: 'uv' | 'aqi' | null, mode: 'desktop' | 'mobile' | null }} */ ({ metric: null, mode: null }),
+  );
   const uvButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const aqiButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const standardOverlayRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const mobileCloseButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const focusReturnTimeoutRef = useRef(/** @type {number | null} */ (null));
   const period = getCurrentPeriod();
   const iconUrl = getWeatherIconUrl(today.weatherCode, period);
   const standardControlIds = { uv: `${standardControlIdBase}-weather-standard-popover-uv`, aqi: `${standardControlIdBase}-weather-standard-popover-aqi` };
-  const activeDesktopStandardMetric = isMobileStandardsSheetMode ? null : activeStandardMetric;
+  const standardsMode = isMobileStandardsSheetMode ? 'mobile' : 'desktop';
+  const activeStandardMetric = activeStandardOverlay.mode === standardsMode ? activeStandardOverlay.metric : null;
+  const activeDesktopStandardMetric = standardsMode === 'desktop' ? activeStandardMetric : null;
+  const activeMobileStandardMetric = standardsMode === 'mobile' ? activeStandardMetric : null;
+  const activeMobileStandardSheet = /** @type {{ metric: 'uv' | 'aqi', value: number, controlId: string } | null} */ (activeMobileStandardMetric === 'uv' && today.uv
+    ? { metric: 'uv', value: today.uv.value, controlId: standardControlIds.uv }
+    : activeMobileStandardMetric === 'aqi' && today.aqi
+      ? { metric: 'aqi', value: today.aqi.value, controlId: standardControlIds.aqi }
+      : null);
   const clearFocusReturnTimeout = useCallback(() => {
     if (focusReturnTimeoutRef.current == null) return;
     window.clearTimeout(focusReturnTimeoutRef.current); focusReturnTimeoutRef.current = null;
@@ -266,27 +307,39 @@ export default function WeatherCard({ locationName, today, tomorrow, isMobileSta
     clearFocusReturnTimeout();
     focusReturnTimeoutRef.current = scheduleFocusReturn(button);
   }, [clearFocusReturnTimeout]);
-  const closeStandardPopover = () => {
-    const triggerButton = activeDesktopStandardMetric === 'uv' ? uvButtonRef.current : aqiButtonRef.current;
-    setActiveStandardMetric(null);
+  const closeStandardsOverlay = useCallback(() => {
+    const triggerButton = activeStandardMetric === 'uv'
+      ? uvButtonRef.current
+      : activeStandardMetric === 'aqi'
+        ? aqiButtonRef.current
+        : null;
+    setActiveStandardOverlay({ metric: null, mode: null });
     queueFocusReturn(triggerButton);
-  };
+  }, [activeStandardMetric, queueFocusReturn]);
   /** @param {'uv' | 'aqi'} metric - Standards metric to open or close. */
-  const toggleStandardPopover = (metric) => {
-    if (isMobileStandardsSheetMode) { setActiveStandardMetric(null); return; }
-    if (activeStandardMetric === metric) { closeStandardPopover(); return; }
+  const toggleStandardsOverlay = (metric) => {
+    if (activeStandardMetric === metric) { closeStandardsOverlay(); return; }
 
-    setActiveStandardMetric(metric);
+    setActiveStandardOverlay({ metric, mode: standardsMode });
   };
 
   useEffect(() => () => clearFocusReturnTimeout(), [clearFocusReturnTimeout]);
+
+  useEffect(() => {
+    const isOpen = Boolean(activeMobileStandardMetric);
+    onStandardsSheetOpenChange?.(isOpen);
+
+    return () => {
+      if (isOpen) onStandardsSheetOpenChange?.(false);
+    };
+  }, [activeMobileStandardMetric, onStandardsSheetOpenChange]);
 
   useEffect(() => {
     if (!activeDesktopStandardMetric) return undefined;
 
     const triggerButton = activeDesktopStandardMetric === 'uv' ? uvButtonRef.current : aqiButtonRef.current;
     const closeFromDocument = () => {
-      setActiveStandardMetric(null);
+      setActiveStandardOverlay({ metric: null, mode: null });
       queueFocusReturn(triggerButton);
     };
     /** @param {PointerEvent} event - Pointer event from the document. */
@@ -308,6 +361,24 @@ export default function WeatherCard({ locationName, today, tomorrow, isMobileSta
       document.removeEventListener('pointerdown', handlePointerDown); document.removeEventListener('keydown', handleKeyDown);
     };
   }, [activeDesktopStandardMetric, queueFocusReturn]);
+
+  useEffect(() => {
+    if (!activeMobileStandardMetric) return undefined;
+
+    const focusTimerId = window.setTimeout(() => {
+      if (mobileCloseButtonRef.current?.isConnected) mobileCloseButtonRef.current.focus();
+    }, 0);
+    /** @param {KeyboardEvent} event - Keyboard event from the document. */
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') closeStandardsOverlay();
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.clearTimeout(focusTimerId);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeMobileStandardMetric, closeStandardsOverlay]);
 
   return (
     <div className={styles.weatherCard} style={{ position: 'relative' }}>
@@ -333,8 +404,27 @@ export default function WeatherCard({ locationName, today, tomorrow, isMobileSta
         </span>
       </div>
 
-      <TodayMetrics today={today} standardControlIds={standardControlIds} activeStandardMetric={activeDesktopStandardMetric} uvButtonRef={uvButtonRef} aqiButtonRef={aqiButtonRef} standardOverlayRef={standardOverlayRef} onStandardToggle={toggleStandardPopover} onStandardClose={closeStandardPopover} />
+      <TodayMetrics today={today} standardControlIds={standardControlIds} activeStandardMetric={activeStandardMetric} uvButtonRef={uvButtonRef} aqiButtonRef={aqiButtonRef} standardOverlayRef={standardOverlayRef} onStandardToggle={toggleStandardsOverlay} onStandardClose={closeStandardsOverlay} shouldRenderDesktopPopover={Boolean(activeDesktopStandardMetric)} />
       <TomorrowSection tomorrow={tomorrow} />
+      {activeMobileStandardSheet ? (
+        <WeatherStandardsSheet metric={activeMobileStandardSheet.metric} value={activeMobileStandardSheet.value} controlId={activeMobileStandardSheet.controlId} overlayRef={standardOverlayRef} closeButtonRef={mobileCloseButtonRef} onClose={closeStandardsOverlay} />
+      ) : null}
     </div>
   );
+}
+
+/**
+ * 天氣資訊卡 — 顯示今日完整天氣 + 明日摘要。
+ * @param {object} props - 元件屬性。
+ * @param {string} props.locationName - 地點全名。
+ * @param {TodayWeather} props.today - 今日天氣。
+ * @param {TomorrowWeather} props.tomorrow - 明日天氣。
+ * @param {boolean} [props.isMobileStandardsSheetMode] - Whether standards open as a mobile sheet.
+ * @param {(isOpen: boolean) => void} [props.onStandardsSheetOpenChange] - Mobile standards sheet open-state callback.
+ * @returns {import('react').JSX.Element} 天氣卡元件。
+ */
+export default function WeatherCard(props) {
+  const { isMobileStandardsSheetMode = false } = props;
+  const standardsModeKey = isMobileStandardsSheetMode ? 'mobile' : 'desktop';
+  return <WeatherCardContent key={standardsModeKey} {...props} isMobileStandardsSheetMode={isMobileStandardsSheetMode} />;
 }

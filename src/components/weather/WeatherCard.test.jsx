@@ -202,7 +202,72 @@ describe('WeatherCard', () => {
     await user.click(uvInfoButton);
 
     expect(screen.queryByRole('region', { name: '紫外線等級' })).not.toBeInTheDocument();
-    expect(uvInfoButton).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('dialog', { name: '紫外線等級' })).toBeInTheDocument();
+    expect(uvInfoButton).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('renders standards content as a modal bottom sheet in mobile mode', async () => {
+    const user = userEvent.setup();
+    renderWeatherCard(FULL_WEATHER, { isMobileStandardsSheetMode: true });
+
+    const uvInfoButton = screen.getByRole('button', { name: '查看紫外線等級說明' });
+    await user.click(uvInfoButton);
+
+    const dialog = screen.getByRole('dialog', { name: '紫外線等級' });
+    const sourceLink = within(dialog).getByRole('link', { name: '官方來源' });
+
+    expect(screen.queryByRole('region', { name: '紫外線等級' })).not.toBeInTheDocument();
+    expect(uvInfoButton).toHaveAttribute('aria-expanded', 'true');
+    expect(uvInfoButton).toHaveAttribute('aria-controls', dialog.id);
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(sourceLink).toHaveAttribute('href', 'https://opendata.cwa.gov.tw/opendatadoc/insrtuction/CWA_Data_Standard.pdf');
+    expect(within(dialog).getByText('8-10')).toBeInTheDocument();
+    expect(getRowByRange(dialog, '8-10')).toHaveTextContent('目前');
+  });
+
+  it('closes mobile standards sheet with scrim Escape and close button', async () => {
+    async function expectMobileClose(action) {
+      const user = userEvent.setup();
+      const onStandardsSheetOpenChange = vi.fn();
+      const { unmount } = renderWeatherCard(FULL_WEATHER, { isMobileStandardsSheetMode: true, onStandardsSheetOpenChange });
+      const aqiInfoButton = screen.getByRole('button', { name: '查看 AQI 等級說明' });
+
+      await user.click(aqiInfoButton);
+      const dialog = screen.getByRole('dialog', { name: 'AQI 等級' });
+      expect(dialog).toBeInTheDocument();
+      expect(onStandardsSheetOpenChange).toHaveBeenLastCalledWith(true);
+
+      await user.click(dialog);
+      expect(screen.getByRole('dialog', { name: 'AQI 等級' })).toBeInTheDocument();
+
+      await action({ user });
+
+      expect(screen.queryByRole('dialog', { name: 'AQI 等級' })).not.toBeInTheDocument();
+      expect(aqiInfoButton).toHaveAttribute('aria-expanded', 'false');
+      await waitFor(() => expect(aqiInfoButton).toHaveFocus());
+      expect(onStandardsSheetOpenChange).toHaveBeenLastCalledWith(false);
+      unmount();
+    }
+
+    await expectMobileClose(({ user }) => user.click(screen.getByTestId('standards-sheet-scrim')));
+    await expectMobileClose(({ user }) => user.keyboard('{Escape}'));
+    await expectMobileClose(({ user }) => user.click(screen.getByRole('button', { name: '關閉 AQI 等級說明' })));
+  });
+
+  it('clears desktop popover state when switching standards sheet modes', async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderWeatherCard(FULL_WEATHER, { isMobileStandardsSheetMode: false });
+
+    await user.click(screen.getByRole('button', { name: '查看紫外線等級說明' }));
+    expect(screen.getByRole('region', { name: '紫外線等級' })).toBeInTheDocument();
+
+    rerender(<WeatherCard {...FULL_WEATHER} isMobileStandardsSheetMode />);
+    expect(screen.queryByRole('region', { name: '紫外線等級' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: '紫外線等級' })).not.toBeInTheDocument();
+
+    rerender(<WeatherCard {...FULL_WEATHER} isMobileStandardsSheetMode={false} />);
+    expect(screen.queryByRole('region', { name: '紫外線等級' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '查看紫外線等級說明' })).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('switches from UV to AQI desktop popover and keeps only one overlay open', async () => {
@@ -286,9 +351,7 @@ describe('WeatherCard', () => {
       // eslint-disable-next-line testing-library/prefer-user-event -- Close must be synchronous before unmount to cover detached focus cleanup.
       fireEvent.click(screen.getByRole('button', { name: '關閉 AQI 等級說明' }));
       unmount();
-      await new Promise((resolve) => {
-        window.setTimeout(resolve, 10);
-      });
+      await new Promise((resolve) => { window.setTimeout(resolve, 10); });
 
       expect(focusConnectionStates).not.toContain(false);
     } finally {
