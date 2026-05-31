@@ -40,11 +40,11 @@
 
 ### T001 - Add Focused List Card Tests
 
-- **State**: `ready`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-1`
-- **Engineer**: Engineer subagent
-- **Reviewer**: Reviewer subagent
+- **Engineer**: T001 Engineer subagent (`DONE_WITH_CONCERNS`)
+- **Reviewer**: T001 Spec Compliance Reviewer and T001 Code Quality Reviewer subagents
 - **Commit checkpoint**: no Engineer commit; Release Manager may commit reviewed implementation later because `authorizationBoundary.commit=true`
 - **Last verified commit**: none
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
@@ -173,18 +173,30 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: not recorded yet
-- Reviewer report: not recorded yet
-- Command output summary: none
-- Changed files summary: none
+- Engineer report: `DONE_WITH_CONCERNS`; created `src/ui/events/EventsListSection.test.jsx` for focused list card coverage. Concerns: Engineer initially created the file in the parent repo, then copied it into this worktree and deleted the mistaken parent-repo file; no tracked residue reported. `node_modules` was installed in this worktree; `package.json` and `package-lock.json` stayed clean.
+- Reviewer report: `review_passed`; T001 Spec Compliance Reviewer and T001 Code Quality Reviewer both passed. Spec Compliance confirmed the diff boundary, untracked T001 test file, expected red focused test, and whitespace check. Code Quality reviewed `src/ui/events/EventsListSection.test.jsx` lines 1-324, confirmed the expected red test signal, whitespace check, dirty state shape, and no staged changes.
+- Residual risk: T001 intentionally leaves one red focused test for T002.
+- Command output summary:
+  - `npm install`: exit 0; local dependencies installed, package files stayed clean.
+  - `git status --short --branch`: exit 0; dirty workflow state plus untracked `src/ui/events/EventsListSection.test.jsx`.
+  - `git diff --name-status`: exit 0; tracked changes were workflow files only.
+  - `git ls-files --others --exclude-standard src/ui/events/EventsListSection.test.jsx`: exit 0; confirmed the untracked T001 test file.
+  - `nl -ba src/ui/events/EventsListSection.test.jsx`: exit 0; Code Quality Reviewer inspected lines 1-324.
+  - `npx vitest run src/ui/events/EventsListSection.test.jsx --project browser`: exit 1; expected red result, 7 tests, 1 failed and 6 passed, failing only on missing `data-testid="event-card-event-1"` / background navigation at line 216.
+  - `git diff --check -- src/ui/events/EventsListSection.test.jsx`: exit 0; no whitespace errors.
+  - `git diff --cached --name-status`: exit 0; no staged changes.
+- Changed files summary:
+  - `src/ui/events/EventsListSection.test.jsx` added.
+  - No product files, package files, configs, or existing tests reported changed for T001.
+  - Tracked dirty files were workflow state files only.
 
 ### T002 - Implement Card Markup And Background Navigation
 
-- **State**: `todo`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-2`
-- **Engineer**: Engineer subagent
-- **Reviewer**: Reviewer subagent
+- **Engineer**: T002 Engineer subagent; narrow test lint fix subagent for T001 test lint unblocker
+- **Reviewer**: T002 Spec Compliance Reviewer and T002 Code Quality Reviewer subagents
 - **Commit checkpoint**: no Engineer commit; Release Manager may commit reviewed implementation later because `authorizationBoundary.commit=true`
 - **Last verified commit**: none
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
@@ -277,18 +289,28 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: not recorded yet
-- Reviewer report: not recorded yet
-- Command output summary: none
-- Changed files summary: none
+- Engineer report: `engineer_done`; T002 Engineer changed `src/ui/events/EventsListSection.jsx` for the approved card markup and background navigation behavior. Core T002 tests passed, then `npm run lint:changed` was blocked by a T001 test lint issue. A narrow test lint fix subagent updated `src/ui/events/EventsListSection.test.jsx`; fresh T002 verification now passes.
+- Reviewer report: `review_passed`; T002 Spec Compliance Reviewer passed with no findings after validating `EventsListSection` test exit 0 (7 passed), `useEventParticipation` test exit 0 (8 passed), `npm run lint:changed` exit 0 with the React-version warning only, `npm run type-check:changed` exit 0, and `git diff --check` exit 0. T002 Code Quality Reviewer passed with no findings after validating `EventsListSection` test exit 0, `npm run lint:changed` exit 0 warning only, and `npm run type-check:changed` exit 0.
+- Residual risk: browser visual evidence is deferred to T003; no manual browser/screen-reader verification beyond the browser-project test.
+- Command output summary:
+  - `npx vitest run src/ui/events/EventsListSection.test.jsx --project browser`: exit 0; 1 test file passed, 7 tests passed.
+  - `npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser`: exit 0; 1 test file passed, 8 tests passed.
+  - `npm run lint:changed`: exit 0; changed-file lint completed with the existing React version settings warning only.
+  - `npm run type-check:changed`: exit 0; no type errors in changed files.
+  - `git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsListSection.test.jsx`: exit 0; no whitespace errors.
+  - `git status --short --branch`: exit 0; branch `081-event-list-card-redesign` ahead 2, with modified workflow state files, modified `src/ui/events/EventsListSection.jsx`, and untracked `src/ui/events/EventsListSection.test.jsx`.
+- Changed files summary:
+  - `src/ui/events/EventsListSection.jsx` modified by T002 Engineer for card markup and background navigation.
+  - `src/ui/events/EventsListSection.test.jsx` updated by the narrow test lint fix subagent and remains untracked in this worktree.
+  - Workflow state files updated by coordinator after fresh verification: `specs/event-list-card-redesign/tasks.md`, `specs/event-list-card-redesign/status.json`, and `specs/event-list-card-redesign/handoff.md`.
 
 ### T003 - Implement Card Visual System And Browser Evidence
 
-- **State**: `todo`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-3`
-- **Engineer**: Engineer subagent
-- **Reviewer**: Reviewer subagent
+- **Engineer**: T003 Engineer subagent (`DONE_WITH_CONCERNS`)
+- **Reviewer**: T003 Spec Compliance Reviewer and T003 Code Quality Reviewer subagents
 - **Commit checkpoint**: reviewed implementation batch commit after T003 plus Verifier PASS, if Release Manager is dispatched
 - **Last verified commit**: none
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
@@ -388,7 +410,48 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: not recorded yet
-- Reviewer report: not recorded yet
-- Command output summary: none
-- Changed files summary: none
+- Engineer report: `DONE_WITH_CONCERNS`; T003 Engineer changed `src/ui/events/EventsPageScreen.module.css` for a CSS-only card visual system: warm white cards, deep green title/accent, muted green-gray support text, 8px radius, fine borders, low shadow, tabular/mono numeric facts, responsive fact grid, footer host/route/participation wrapping, and matching empty/status/error/load-more/end card language.
+- Reviewer report: `review_passed`; T003 Spec Compliance Reviewer passed after validating `EventsListSection` test exit 0 (7 passed), `useEventParticipation` test exit 0 (8 passed), `npm run lint:changed` exit 0, `npm run type-check:changed` exit 0, negative letter-spacing search exit 1 with no matches, `git diff --check` exit 0, non-empty screenshots, and no forbidden shared path changes. T003 Code Quality Reviewer passed with no blocking findings after validating `EventsListSection` test exit 0, `npm run lint:changed` exit 0, `npm run type-check:changed` exit 0, and negative letter-spacing search exit 1.
+- Residual risk accepted: loading/filtering/creating/error/load-more/end-hint visual states were not each forced in-browser; they share updated `.statusRow` / `.errorCard` / list-state CSS and existing tests preserve text/roles. Pending spinner wrapping is lightly covered. Page-level mobile create CTA overlap is outside T003 scope.
+- Browser evidence:
+  - Used `http://localhost:3001/events` because port 3000 was occupied by parent repo.
+  - Dev server `npm run dev -- --port 3001` reached Ready and was stopped; `lsof` on 3001 after stop exit 1.
+  - Console errors: 0.
+  - Failed resource/app-network diagnostics: 0.
+  - Screenshots: `/private/tmp/dive-into-run-081-events-desktop-1440x900.png`, `/private/tmp/dive-into-run-081-events-mobile-390x844.png`, `/private/tmp/dive-into-run-081-events-mobile-390x844-footer.png`, `/private/tmp/dive-into-run-081-events-empty-state-1440x900.png`; reviewer confirmed screenshot artifacts were non-empty.
+  - Observed: desktop card count 5; desktop fact grid 3 columns; mobile fact grid 1 column at 390px; card background `rgb(255,253,248)`, title `rgb(23,74,55)`, radius 8px, low green shadow; title/actions overlap false; footer overlap false; route pill in host/route group; empty filtered state matched warm style.
+- Command output summary:
+  - `npx vitest run src/ui/events/EventsListSection.test.jsx --project browser`: exit 0; 1 test file passed, 7 tests passed.
+  - `npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser`: exit 0; 1 test file passed, 8 tests passed.
+  - `npm run lint:changed`: exit 0; changed-file lint completed with the existing React-version warning only.
+  - `npm run type-check:changed`: exit 0; no type errors in changed files.
+  - `rg -n "letter-spacing[[:space:]]*:[[:space:]]*-" src/ui/events/EventsPageScreen.module.css`: exit 1; no matches.
+  - `git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsPageScreen.module.css src/ui/events/EventsListSection.test.jsx`: exit 0; no whitespace errors.
+  - T003 Spec Compliance Reviewer: `review_passed`; no forbidden shared path changes.
+  - T003 Code Quality Reviewer: `review_passed`; no blocking findings.
+- Changed files summary:
+  - `src/ui/events/EventsPageScreen.module.css` modified by T003 Engineer for CSS-only card visual system.
+  - No forbidden shared component, runtime, package, route, or additional product path changes were accepted for T003.
+
+## Final Verifier Evidence Before Implementation Commit
+
+- **Phase**: `verified_pending_commit`
+- **Verified at**: 2026-05-31T13:44:55Z
+- **Verifier decision**: PASS; reviewed implementation is ready for the authorized Release Manager commit.
+- **Residual risks accepted**: loading/filtering/creating/error/load-more/end-hint visual states were not each forced in-browser; pending spinner wrapping is lightly covered; page-level mobile create CTA overlap is outside this feature slice.
+- **Authorization boundary remains**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.
+
+| Command | Exit | Evidence |
+| ------- | ---- | -------- |
+| `git status --short --branch` | 0 | Branch `081-event-list-card-redesign` ahead 2; only expected modified workflow/product files and untracked `src/ui/events/EventsListSection.test.jsx`; no staged changes. |
+| `git diff --name-status` | 0 | Tracked changes only in `specs/event-list-card-redesign/handoff.md`, `specs/event-list-card-redesign/status.json`, `specs/event-list-card-redesign/tasks.md`, `src/ui/events/EventsListSection.jsx`, and `src/ui/events/EventsPageScreen.module.css`. |
+| `git ls-files --others --exclude-standard src/ui/events/EventsListSection.test.jsx` | 0 | Untracked test file present. |
+| `npx vitest run src/ui/events/EventsListSection.test.jsx --project browser` | 0 | Focused list card tests passed: 1 test file passed, 7 tests passed. |
+| `npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser` | 0 | Existing participation runtime tests passed: 1 test file passed, 8 tests passed. |
+| `npm run lint:changed` | 0 | Changed-file lint completed with the existing React version settings warning only. |
+| `npm run type-check:changed` | 0 | Changed-file type check passed with no type errors. |
+| `npm run workflow:validate` | 0 | Workflow schema validation passed: 13 status files valid. |
+| `npm run workflow:check` | 0 | Workflow sync check passed: 13 status files synced. |
+| `rg -n "letter-spacing[[:space:]]*:[[:space:]]*-" src/ui/events/EventsPageScreen.module.css` | 1 | No negative letter-spacing matches. |
+| `git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsPageScreen.module.css src/ui/events/EventsListSection.test.jsx specs/event-list-card-redesign/tasks.md specs/event-list-card-redesign/status.json specs/event-list-card-redesign/handoff.md` | 0 | No whitespace errors in implementation files or workflow state files. |
+| `stat -f "%z %N" /private/tmp/dive-into-run-081-events-desktop-1440x900.png /private/tmp/dive-into-run-081-events-mobile-390x844.png /private/tmp/dive-into-run-081-events-mobile-390x844-footer.png /private/tmp/dive-into-run-081-events-empty-state-1440x900.png` | 0 | All screenshot artifacts existed and were non-empty: 68888, 30199, 28459, and 25415 bytes. |

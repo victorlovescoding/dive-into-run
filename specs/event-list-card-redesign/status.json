@@ -3,7 +3,7 @@
   "feature": "event-list-card-redesign",
   "branch": "081-event-list-card-redesign",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-081-event-list-card-redesign",
-  "phase": "plan_ready",
+  "phase": "verified_pending_commit",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,27 +18,31 @@
   },
   "currentHead": {
     "branch": "081-event-list-card-redesign",
-    "commit": "474481ba29647d6edcb33b6519a57cfbb04772b3",
-    "capturedAt": "2026-05-30T15:02:47Z",
-    "summary": "Local branch head after approved spec commit; planning docs are uncommitted workspace changes."
+    "commit": "4c4be5bc93b40bf8d907250cc8d5e0968cb919cd",
+    "capturedAt": "2026-05-31T13:44:55Z",
+    "summary": "Local branch head remains the approved plan commit; T001, T002, and T003 reviewed implementation plus final verifier workflow state are uncommitted workspace changes. Final verifier PASS is recorded and the implementation is ready for the authorized Release Manager commit. lastVerifiedCommit remains null until the implementation commit is created."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "4c5b45b1fbf5b62ded2da57dd178133532a90b9f",
     "capturedAt": "2026-05-30T15:02:47Z",
-    "summary": "Tracking remote for this worktree is origin/main; feature branch is ahead by the spec commit."
+    "summary": "Tracking remote for this worktree is origin/main; feature branch is ahead by the spec and plan commits."
   },
-  "completedTasks": [],
+  "completedTasks": [
+    "T001",
+    "T002",
+    "T003"
+  ],
   "tasks": [
     {
       "id": "T001",
       "title": "Add Focused List Card Tests",
-      "state": "ready",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-1",
-      "engineer": "Engineer subagent",
-      "reviewer": "Reviewer subagent",
+      "engineer": "T001 Engineer subagent (DONE_WITH_CONCERNS)",
+      "reviewer": "T001 Spec Compliance Reviewer and T001 Code Quality Reviewer subagents",
       "scope": [
         "Create a focused Testing Library test file for EventsListSection.",
         "Cover current field rendering, formatter output, list state text, card background navigation, and nested control propagation.",
@@ -82,12 +86,22 @@
         {
           "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
           "expectedSignal": "Exit 1 with the new card background navigation assertion failing against the old component, while imports and mocks load successfully.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
+            "exitCode": 1,
+            "summary": "Expected red T001 signal: 7 tests, 1 failed and 6 passed, failing only on missing data-testid=\"event-card-event-1\" / background navigation at line 216.",
+            "verifiedAt": "2026-05-30T15:44:30Z"
+          }
         },
         {
           "command": "git diff --check -- src/ui/events/EventsListSection.test.jsx",
           "expectedSignal": "Exit 0 with no whitespace errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "git diff --check -- src/ui/events/EventsListSection.test.jsx",
+            "exitCode": 0,
+            "summary": "No whitespace errors in the T001 test file.",
+            "verifiedAt": "2026-05-30T15:44:30Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -102,22 +116,40 @@
         "Focused test run fails because of syntax, import, alias, or mocking defects.",
         "Tests assert new product behavior outside the approved spec."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T001 Spec Compliance Reviewer and T001 Code Quality Reviewer subagents",
+        "summary": "Both reviewers passed T001. The remaining red focused test is the approved carry-forward for T002.",
+        "decidedAt": "2026-05-30T15:44:30Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE_WITH_CONCERNS; created src/ui/events/EventsListSection.test.jsx for focused list card coverage. Concerns: Engineer initially created the file in the parent repo, then copied it into this worktree and deleted the mistaken parent-repo file; no tracked residue reported. node_modules was installed in this worktree; package.json and package-lock.json stayed clean.",
+        "reviewerReport": "review_passed; T001 Spec Compliance Reviewer and T001 Code Quality Reviewer both passed. Spec Compliance confirmed the diff boundary, untracked T001 test file, expected red focused test, and whitespace check. Code Quality reviewed src/ui/events/EventsListSection.test.jsx lines 1-324, confirmed the expected red test signal, whitespace check, dirty state shape, and no staged changes. Residual risk: T001 intentionally leaves one red focused test for T002.",
+        "commandOutputSummary": [
+          "npm install: exit 0; local dependencies installed, package files stayed clean.",
+          "git status --short --branch: exit 0; dirty workflow state plus untracked src/ui/events/EventsListSection.test.jsx.",
+          "git diff --name-status: exit 0; tracked changes were workflow files only.",
+          "git ls-files --others --exclude-standard src/ui/events/EventsListSection.test.jsx: exit 0; confirmed the untracked T001 test file.",
+          "nl -ba src/ui/events/EventsListSection.test.jsx: exit 0; Code Quality Reviewer inspected lines 1-324.",
+          "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser: exit 1; expected red result, 7 tests, 1 failed and 6 passed, failing only on missing data-testid=\"event-card-event-1\" / background navigation at line 216.",
+          "git diff --check -- src/ui/events/EventsListSection.test.jsx: exit 0; no whitespace errors.",
+          "git diff --cached --name-status: exit 0; no staged changes."
+        ],
+        "changedFilesSummary": [
+          "src/ui/events/EventsListSection.test.jsx added.",
+          "No product files, package files, configs, or existing tests reported changed for T001.",
+          "Tracked dirty files were workflow state files only."
+        ]
       }
     },
     {
       "id": "T002",
       "title": "Implement Card Markup And Background Navigation",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-2",
-      "engineer": "Engineer subagent",
-      "reviewer": "Reviewer subagent",
+      "engineer": "T002 Engineer subagent; narrow test lint fix subagent for T001 test lint unblocker",
+      "reviewer": "T002 Spec Compliance Reviewer and T002 Code Quality Reviewer subagents",
       "scope": [
         "Modify EventsListSection.jsx to render the approved card architecture.",
         "Add the card background click guard and router navigation to /events/{id}.",
@@ -167,27 +199,52 @@
         {
           "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
           "expectedSignal": "Exit 0 with all focused list card tests passing.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
+            "exitCode": 0,
+            "summary": "Focused list card tests passed: 1 test file passed, 7 tests passed.",
+            "verifiedAt": "2026-05-30T16:05:47Z"
+          }
         },
         {
           "command": "npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser",
           "expectedSignal": "Exit 0 with existing participation runtime tests passing.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser",
+            "exitCode": 0,
+            "summary": "Existing participation runtime tests passed: 1 test file passed, 8 tests passed.",
+            "verifiedAt": "2026-05-30T16:05:47Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0 with no changed-file lint errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed-file lint completed with the existing React version settings warning only.",
+            "verifiedAt": "2026-05-30T16:05:47Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0 with no changed-file type-check errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type check passed with no type errors.",
+            "verifiedAt": "2026-05-30T16:05:47Z"
+          }
         },
         {
           "command": "git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsListSection.test.jsx",
           "expectedSignal": "Exit 0 with no whitespace errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsListSection.test.jsx",
+            "exitCode": 0,
+            "summary": "No whitespace errors in the T002 product file or T001 test file.",
+            "verifiedAt": "2026-05-30T16:05:47Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -203,22 +260,38 @@
         "Diff expands beyond owned files.",
         "Verification is missing, stale, or failing."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T002 Spec Compliance Reviewer and T002 Code Quality Reviewer subagents",
+        "summary": "Both reviewers passed T002 with no findings. Browser visual evidence is deferred to T003, and no manual browser/screen-reader verification was performed beyond the browser-project test.",
+        "decidedAt": "2026-05-30T16:14:49Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "engineer_done; T002 Engineer changed src/ui/events/EventsListSection.jsx for the approved card markup and background navigation behavior. Core T002 tests passed, then npm run lint:changed was blocked by a T001 test lint issue. A narrow test lint fix subagent updated src/ui/events/EventsListSection.test.jsx; fresh T002 verification now passes.",
+        "reviewerReport": "review_passed; T002 Spec Compliance Reviewer passed with no findings after validating EventsListSection test exit 0 (7 passed), useEventParticipation test exit 0 (8 passed), npm run lint:changed exit 0 with the React-version warning only, npm run type-check:changed exit 0, and git diff --check exit 0. T002 Code Quality Reviewer passed with no findings after validating EventsListSection test exit 0, npm run lint:changed exit 0 warning only, and npm run type-check:changed exit 0. Residual risk: browser visual evidence is deferred to T003; no manual browser/screen-reader verification beyond the browser-project test.",
+        "commandOutputSummary": [
+          "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser: exit 0; 1 test file passed, 7 tests passed.",
+          "npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser: exit 0; 1 test file passed, 8 tests passed.",
+          "npm run lint:changed: exit 0; changed-file lint completed with the existing React version settings warning only.",
+          "npm run type-check:changed: exit 0; no type errors in changed files.",
+          "git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsListSection.test.jsx: exit 0; no whitespace errors.",
+          "git status --short --branch: exit 0; branch 081-event-list-card-redesign ahead 2, with modified workflow state files, modified src/ui/events/EventsListSection.jsx, and untracked src/ui/events/EventsListSection.test.jsx."
+        ],
+        "changedFilesSummary": [
+          "src/ui/events/EventsListSection.jsx modified by T002 Engineer for card markup and background navigation.",
+          "src/ui/events/EventsListSection.test.jsx updated by the narrow test lint fix subagent and remains untracked in this worktree.",
+          "Workflow state files updated by coordinator after fresh verification: specs/event-list-card-redesign/tasks.md, specs/event-list-card-redesign/status.json, and specs/event-list-card-redesign/handoff.md."
+        ]
       }
     },
     {
       "id": "T003",
       "title": "Implement Card Visual System And Browser Evidence",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-3",
-      "engineer": "Engineer subagent",
-      "reviewer": "Reviewer subagent",
+      "engineer": "T003 Engineer subagent (DONE_WITH_CONCERNS)",
+      "reviewer": "T003 Spec Compliance Reviewer and T003 Code Quality Reviewer subagents",
       "scope": [
         "Modify EventsPageScreen.module.css to implement the approved list card and list state visual design.",
         "Add responsive layout rules for the fact grid, title/action cluster, and bottom host/route/participation row.",
@@ -268,32 +341,62 @@
         {
           "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
           "expectedSignal": "Exit 0 with all focused list card tests passing.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
+            "exitCode": 0,
+            "summary": "Focused list card tests passed: 1 test file passed, 7 tests passed.",
+            "verifiedAt": "2026-05-30T16:35:10Z"
+          }
         },
         {
           "command": "npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser",
           "expectedSignal": "Exit 0 with existing participation runtime tests passing.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser",
+            "exitCode": 0,
+            "summary": "Existing participation runtime tests passed: 1 test file passed, 8 tests passed.",
+            "verifiedAt": "2026-05-30T16:35:10Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0 with no changed-file lint errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed-file lint completed with the existing React-version warning only.",
+            "verifiedAt": "2026-05-30T16:35:10Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0 with no changed-file type-check errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type check passed with no type errors.",
+            "verifiedAt": "2026-05-30T16:35:10Z"
+          }
         },
         {
           "command": "rg -n \"letter-spacing[[:space:]]*:[[:space:]]*-\" src/ui/events/EventsPageScreen.module.css",
           "expectedSignal": "Exit 1 with no matches.",
-          "lastRun": null
+          "lastRun": {
+            "command": "rg -n \"letter-spacing[[:space:]]*:[[:space:]]*-\" src/ui/events/EventsPageScreen.module.css",
+            "exitCode": 1,
+            "summary": "No negative letter-spacing matches in EventsPageScreen.module.css.",
+            "verifiedAt": "2026-05-30T16:35:10Z"
+          }
         },
         {
           "command": "git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsPageScreen.module.css src/ui/events/EventsListSection.test.jsx",
           "expectedSignal": "Exit 0 with no whitespace errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsPageScreen.module.css src/ui/events/EventsListSection.test.jsx",
+            "exitCode": 0,
+            "summary": "No whitespace errors in the T002/T003 product files or T001 test file.",
+            "verifiedAt": "2026-05-30T16:35:10Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -310,12 +413,34 @@
         "Negative letter spacing is present.",
         "Verification is missing, stale, or failing."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T003 Spec Compliance Reviewer and T003 Code Quality Reviewer subagents",
+        "summary": "Both reviewers passed T003. Spec Compliance validated focused and participation tests, lint, type-check, negative letter-spacing search, diff-check, non-empty screenshots, and no forbidden shared path changes. Code Quality found no blocking issues and accepted the residual visual-state risks.",
+        "decidedAt": "2026-05-31T13:32:06Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE_WITH_CONCERNS; T003 Engineer changed src/ui/events/EventsPageScreen.module.css for a CSS-only card visual system: warm white cards, deep green title/accent, muted green-gray support text, 8px radius, fine borders, low shadow, tabular/mono numeric facts, responsive fact grid, footer host/route/participation wrapping, and matching empty/status/error/load-more/end card language. Concern: browser directly exercised cards and filtered empty state. Loading/filtering/creating/error/load-more visual states were not individually forced in-browser; they share updated .statusRow / .errorCard / list-state CSS and existing tests preserve text/roles.",
+        "reviewerReport": "review_passed; T003 Spec Compliance Reviewer passed after validating EventsListSection test exit 0 (7 passed), useEventParticipation test exit 0 (8 passed), npm run lint:changed exit 0, npm run type-check:changed exit 0, negative letter-spacing search exit 1 with no matches, git diff --check exit 0, non-empty screenshots, and no forbidden shared path changes. T003 Code Quality Reviewer passed with no blocking findings after validating EventsListSection test exit 0, npm run lint:changed exit 0, npm run type-check:changed exit 0, and negative letter-spacing search exit 1. Residual risk accepted: loading/filtering/creating/error/load-more/end-hint visual states were not each forced in-browser; pending spinner wrapping is lightly covered; page-level mobile create CTA overlap is outside T003 scope.",
+        "commandOutputSummary": [
+          "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser: exit 0; 1 test file passed, 7 tests passed.",
+          "npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser: exit 0; 1 test file passed, 8 tests passed.",
+          "npm run lint:changed: exit 0; changed-file lint completed with the existing React-version warning only.",
+          "npm run type-check:changed: exit 0; no type errors in changed files.",
+          "rg -n \"letter-spacing[[:space:]]*:[[:space:]]*-\" src/ui/events/EventsPageScreen.module.css: exit 1; no matches.",
+          "git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsPageScreen.module.css src/ui/events/EventsListSection.test.jsx: exit 0; no whitespace errors.",
+          "Browser target: used http://localhost:3001/events because port 3000 was occupied by parent repo.",
+          "Browser server: npm run dev -- --port 3001 reached Ready and was stopped; lsof on 3001 after stop exit 1.",
+          "Browser diagnostics: console errors 0; failed resource/app-network diagnostics 0.",
+          "Browser screenshots: /private/tmp/dive-into-run-081-events-desktop-1440x900.png, /private/tmp/dive-into-run-081-events-mobile-390x844.png, /private/tmp/dive-into-run-081-events-mobile-390x844-footer.png, /private/tmp/dive-into-run-081-events-empty-state-1440x900.png.",
+          "Browser observations: desktop card count 5; desktop fact grid 3 columns; mobile fact grid 1 column at 390px; card background rgb(255,253,248), title rgb(23,74,55), radius 8px, low green shadow; title/actions overlap false; footer overlap false; route pill in host/route group; empty filtered state matched warm style.",
+          "T003 Spec Compliance Reviewer: review_passed; screenshots were non-empty and no forbidden shared path changes were present.",
+          "T003 Code Quality Reviewer: review_passed; no blocking findings."
+        ],
+        "changedFilesSummary": [
+          "src/ui/events/EventsPageScreen.module.css modified by T003 Engineer for CSS-only card visual system.",
+          "No forbidden shared component, runtime, package, route, or additional product path changes were accepted for T003."
+        ]
       }
     }
   ],
@@ -328,6 +453,12 @@
       "commit": "474481ba29647d6edcb33b6519a57cfbb04772b3",
       "summary": "Add event list card redesign spec",
       "committedAt": "2026-05-30"
+    },
+    {
+      "phase": "plan",
+      "commit": "4c4be5bc93b40bf8d907250cc8d5e0968cb919cd",
+      "summary": "Add event list card implementation plan",
+      "committedAt": "2026-05-30"
     }
   ],
   "rulesDeployStatus": {
@@ -338,6 +469,79 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "lastVerification": [],
-  "updatedAt": "2026-05-30T15:02:47Z"
+  "lastVerification": [
+    {
+      "command": "git status --short --branch",
+      "exitCode": 0,
+      "summary": "Branch 081-event-list-card-redesign ahead 2; only expected modified workflow/product files and untracked src/ui/events/EventsListSection.test.jsx were present; no staged changes.",
+      "verifiedAt": "2026-05-31T13:44:55Z"
+    },
+    {
+      "command": "git diff --name-status",
+      "exitCode": 0,
+      "summary": "Tracked changes were only specs/event-list-card-redesign/handoff.md, specs/event-list-card-redesign/status.json, specs/event-list-card-redesign/tasks.md, src/ui/events/EventsListSection.jsx, and src/ui/events/EventsPageScreen.module.css.",
+      "verifiedAt": "2026-05-31T13:44:55Z"
+    },
+    {
+      "command": "git ls-files --others --exclude-standard src/ui/events/EventsListSection.test.jsx",
+      "exitCode": 0,
+      "summary": "Untracked test file present: src/ui/events/EventsListSection.test.jsx.",
+      "verifiedAt": "2026-05-31T13:44:55Z"
+    },
+    {
+      "command": "npx vitest run src/ui/events/EventsListSection.test.jsx --project browser",
+      "exitCode": 0,
+      "summary": "Focused list card tests passed: 1 test file passed, 7 tests passed.",
+      "verifiedAt": "2026-05-31T13:44:55Z"
+    },
+    {
+      "command": "npx vitest run src/runtime/hooks/useEventParticipation.test.jsx --project browser",
+      "exitCode": 0,
+      "summary": "Existing participation runtime tests passed: 1 test file passed, 8 tests passed.",
+      "verifiedAt": "2026-05-31T13:44:55Z"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "Changed-file lint completed with the existing React version settings warning only.",
+      "verifiedAt": "2026-05-31T13:44:55Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "Changed-file type check passed with no type errors.",
+      "verifiedAt": "2026-05-31T13:44:55Z"
+    },
+    {
+      "command": "npm run workflow:validate",
+      "exitCode": 0,
+      "summary": "Workflow schema validation passed: 13 status files valid.",
+      "verifiedAt": "2026-05-31T13:44:55Z"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "Workflow sync check passed: 13 status files synced.",
+      "verifiedAt": "2026-05-31T13:44:55Z"
+    },
+    {
+      "command": "rg -n \"letter-spacing[[:space:]]*:[[:space:]]*-\" src/ui/events/EventsPageScreen.module.css",
+      "exitCode": 1,
+      "summary": "No negative letter-spacing matches in EventsPageScreen.module.css.",
+      "verifiedAt": "2026-05-31T13:44:55Z"
+    },
+    {
+      "command": "git diff --check -- src/ui/events/EventsListSection.jsx src/ui/events/EventsPageScreen.module.css src/ui/events/EventsListSection.test.jsx specs/event-list-card-redesign/tasks.md specs/event-list-card-redesign/status.json specs/event-list-card-redesign/handoff.md",
+      "exitCode": 0,
+      "summary": "No whitespace errors in implementation files or workflow state files.",
+      "verifiedAt": "2026-05-31T13:44:55Z"
+    },
+    {
+      "command": "stat -f \"%z %N\" /private/tmp/dive-into-run-081-events-desktop-1440x900.png /private/tmp/dive-into-run-081-events-mobile-390x844.png /private/tmp/dive-into-run-081-events-mobile-390x844-footer.png /private/tmp/dive-into-run-081-events-empty-state-1440x900.png",
+      "exitCode": 0,
+      "summary": "All screenshot artifacts existed and were non-empty: 68888, 30199, 28459, and 25415 bytes.",
+      "verifiedAt": "2026-05-31T13:44:55Z"
+    }
+  ],
+  "updatedAt": "2026-05-31T13:44:55Z"
 }

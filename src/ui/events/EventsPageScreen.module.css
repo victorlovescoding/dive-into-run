@@ -283,22 +283,16 @@
 /* --- 活動列表區（events list） --- */
 
 .eventsSection {
-  width: 65vw;
-  max-width: 1400px;
-  margin: 16px auto 0;
-}
-
-@media (min-width: 1024px) {
-  .eventsSection {
-    width: 70vw;
-  }
+  width: min(100%, 1040px);
+  margin: 20px auto 0;
 }
 
 .eventsTitle {
   margin: 12px 0;
   font-size: 1.25rem;
-  font-weight: 600;
-  color: #202124;
+  font-weight: 700;
+  color: #173f32;
+  letter-spacing: 0;
 }
 
 /* --- 篩選按鈕（漏斗 icon） --- */
@@ -667,19 +661,20 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 13px 14px;
+  border: 1px solid #dce8df;
   border-radius: 8px;
-  background: #f8f9fa;
-  border: 1px solid #e0e3e7;
-  color: #202124;
-  margin-bottom: 10px;
+  background: #fffdf8;
+  color: #50675e;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(24, 64, 49, 0.05);
 }
 
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid #dadce0;
-  border-top-color: #673ab7;
+  border: 2px solid #d8e5dc;
+  border-top-color: #174a37;
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
 }
@@ -690,79 +685,231 @@
   }
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* 失敗字卡 */
 .errorCard {
-  padding: 12px 14px;
+  padding: 13px 14px;
+  border: 1px solid #efc9bd;
   border-radius: 8px;
-  background: #fce8e6;
-  border: 1px solid #f28b82;
-  color: #c5221f;
-  margin-bottom: 10px;
-  font-weight: 600;
+  background: #fff8f4;
+  color: #9d2f1f;
+  margin-bottom: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(105, 44, 28, 0.05);
 }
 
 /* 卡片列表 */
 .eventList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.eventCardWrapper {
-  position: relative; /* eventCardMenuWrapper 的 absolute 定位基準 */
+  gap: 14px;
 }
 
 .eventCard {
-  background: #fff;
+  background: #fffdf8;
   border-radius: 8px;
-  border: 1px solid #e0e3e7;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  padding: 14px;
+  border: 1px solid #dce8df;
+  box-shadow: 0 6px 18px rgba(24, 64, 49, 0.07);
+  padding: 18px;
   text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
-.eventLink {
-  text-decoration: none;
-  color: inherit;
+.eventCard:hover {
+  border-color: #b8d2c1;
+  box-shadow: 0 10px 24px rgba(24, 64, 49, 0.1);
+  transform: translateY(-1px);
+}
+
+.eventCard:focus-within {
+  border-color: #7ea992;
+  box-shadow:
+    0 0 0 3px rgba(23, 74, 55, 0.12),
+    0 8px 22px rgba(24, 64, 49, 0.08);
+}
+
+.eventMetaRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e1ebe4;
+  border-radius: 8px;
+  background: #f7faf5;
+}
+
+.eventMetaItem {
+  min-width: 0;
+}
+
+.eventMetaLabel {
+  display: block;
+  margin-bottom: 3px;
+  color: #6a7f76;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.eventMetaValue {
+  display: block;
+  color: #1f4f3d;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.eventCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 16px;
 }
 
 .eventTitleLink {
-  text-decoration: none;
-  color: inherit;
   display: block;
-  min-height: 40px;
-  margin-right: 96px;
+  flex: 1 1 18rem;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
 }
 
 .eventTitleLink:hover .eventTitle {
-  color: #673ab7;
+  color: #0f3a2b;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.eventTitleLink:focus-visible {
+  outline: 2px solid #174a37;
+  outline-offset: 4px;
+  border-radius: 6px;
 }
 
 .eventTitle {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #202124;
-  margin-bottom: 8px;
+  margin: 0;
+  color: #174a37;
+  font-size: 1.28rem;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
-.eventMeta {
+.eventFactGrid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 4px;
-  color: #3c4043;
-  font-size: 0.95rem;
-  margin-top: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0 0;
+}
+
+.eventFact {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #e4eee7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.eventFact dt {
+  margin: 0 0 4px;
+  color: #70847b;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.eventFact dd {
+  margin: 0;
+  color: #263d35;
+  font-size: 0.96rem;
+  font-weight: 650;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.eventNumericValue {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.eventCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e5eee8;
+}
+
+.eventHostRouteGroup {
+  display: flex;
+  align-items: center;
+  flex: 1 1 20rem;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  min-width: 0;
+}
+
+.routePill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid #cfe1d5;
+  border-radius: 999px;
+  background: #f1f7f3;
+  color: #255641;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.eventParticipationSlot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.eventParticipationSlot button {
+  max-width: 100%;
+  min-width: max-content;
+}
+
+.eventParticipationSlot > div {
+  color: #6a7f76;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.eventParticipationSlot :global(.spinnerLabel) {
+  white-space: nowrap;
 }
 
 @media (min-width: 768px) {
-  .eventMeta {
-    grid-template-columns: 1fr 1fr 1fr;
+  .eventFactGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -777,45 +924,94 @@
 }
 
 .emptyHint {
-  padding: 12px 14px;
+  padding: 20px 18px;
   border-radius: 8px;
-  background: #fff;
-  border: 1px dashed #dadce0;
-  color: #5f6368;
+  background: #fffdf8;
+  border: 1px dashed #bfd6c7;
+  color: #5e7369;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(24, 64, 49, 0.04);
 }
 
 /* --- 無限滾動：底部載入區 --- */
 
 .loadMoreArea {
-  margin-top: 10px;
+  margin-top: 14px;
 }
 
 .retryButton {
   margin-left: 10px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid #f28b82;
-  background: #fff;
-  color: #c5221f;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid #d9a391;
+  background: #fffdf8;
+  color: #9d2f1f;
   font-weight: 700;
   cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .retryButton:hover {
-  background: rgba(197, 34, 31, 0.06);
+  border-color: #bd7661;
+  background: #fff4ed;
 }
 
 .endHint {
-  padding: 12px 14px;
+  padding: 14px;
   border-radius: 8px;
-  background: #fff;
-  border: 1px dashed #dadce0;
-  color: #5f6368;
+  background: #fffdf8;
+  border: 1px dashed #bfd6c7;
+  color: #5e7369;
+  font-weight: 700;
   text-align: center;
+  box-shadow: 0 2px 8px rgba(24, 64, 49, 0.04);
 }
 
 .sentinel {
   height: 1px;
+}
+
+@media (max-width: 720px) {
+  .eventCardHeader,
+  .eventCardFooter {
+    align-items: stretch;
+  }
+
+  .eventCardTopActions {
+    margin-left: auto;
+  }
+
+  .eventHostRouteGroup {
+    flex-basis: 100%;
+  }
+
+  .eventParticipationSlot {
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .eventCard {
+    padding: 14px;
+  }
+
+  .eventMetaRow,
+  .eventFactGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .eventTitle {
+    font-size: 1.12rem;
+  }
+
+  .eventParticipationSlot,
+  .eventParticipationSlot button {
+    width: 100%;
+  }
 }
 
 /* Participants Overlay */
@@ -897,7 +1093,10 @@
 .hostRow {
   display: flex;
   align-items: center;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  min-width: 0;
+  color: #5e7369;
 }
 
 .participantStatus {
@@ -972,13 +1171,11 @@
 
 /* 卡片右上角收藏與主揪選單 */
 .eventCardTopActions {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 10;
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
   gap: 8px;
+  min-height: 40px;
 }
 
 /* 編輯表單 overlay */
