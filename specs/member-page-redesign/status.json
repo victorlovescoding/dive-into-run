@@ -4,8 +4,8 @@
   "branch": "082-member-page-redesign",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-082-member-page-redesign",
   "phase": "implementation",
-  "activeTask": "T004",
-  "activeWave": "wave-3",
+  "activeTask": null,
+  "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,21 +18,22 @@
   },
   "currentHead": {
     "branch": "082-member-page-redesign",
-    "commit": "fcda233aa41186a6cf98fb1b7d7a92c414cb2a6c",
-    "capturedAt": "2026-05-31T14:00:01Z",
-    "summary": "Current HEAD captured before T004 Verifier dispatch"
+    "commit": "9f89a89f757e88bdd9fc054667b15ea7e0467085",
+    "capturedAt": "2026-05-31T14:37:16Z",
+    "summary": "Current HEAD covered by T004 authenticated browser QA and automated verification before workflow evidence edits"
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "4c5b45b1fbf5b62ded2da57dd178133532a90b9f",
-    "capturedAt": "2026-05-31T14:00:01Z",
-    "summary": "origin/main captured before T004 Verifier dispatch"
+    "capturedAt": "2026-05-31T14:11:52Z",
+    "summary": "origin/main captured during T004 verification"
   },
   "completedTasks": [
     "T001",
     "T002",
-    "T003"
+    "T003",
+    "T004"
   ],
   "tasks": [
     {
@@ -394,7 +395,7 @@
     {
       "id": "T004",
       "title": "Integration Verification And Workflow Evidence",
-      "state": "in_progress",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-3",
       "engineer": "Verifier subagent, integration evidence task",
@@ -448,27 +449,62 @@
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0 with no changed-file lint errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No changed JS files to lint.",
+            "verifiedAt": "2026-05-31T14:41:45Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0 with no changed-file type errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed JS files to check.",
+            "verifiedAt": "2026-05-31T14:41:45Z"
+          }
         },
         {
           "command": "npm run depcruise",
           "expectedSignal": "Exit 0 with no dependency-direction violations after integrated render/CSS changes.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run depcruise",
+            "exitCode": 0,
+            "summary": "No dependency violations found across 1294 modules and 3030 dependencies. Node MODULE_TYPELESS_PACKAGE_JSON warning only.",
+            "verifiedAt": "2026-05-31T14:41:45Z"
+          }
         },
         {
           "command": "node scripts/validate-workflow-state.js specs/member-page-redesign/status.json",
           "expectedSignal": "Exit 0 and `WORKFLOW STATE: 1 status file(s) valid`.",
-          "lastRun": null
+          "lastRun": {
+            "command": "node scripts/validate-workflow-state.js specs/member-page-redesign/status.json",
+            "exitCode": 0,
+            "summary": "specs/member-page-redesign/status.json: ok. WORKFLOW STATE: 1 status file(s) valid.",
+            "verifiedAt": "2026-05-31T14:41:45Z"
+          }
         },
         {
           "command": "node scripts/check-superpowers-state.js specs/member-page-redesign/status.json",
           "expectedSignal": "Exit 0 and `SUPERPOWERS CHECK: 1 status file(s) synced`.",
-          "lastRun": null
+          "lastRun": {
+            "command": "node scripts/check-superpowers-state.js specs/member-page-redesign/status.json",
+            "exitCode": 0,
+            "summary": "specs/member-page-redesign/status.json: ok. WORKFLOW STATE: 1 status file(s) valid. specs/member-page-redesign/status.json: sync ok. SUPERPOWERS CHECK: 1 status file(s) synced.",
+            "verifiedAt": "2026-05-31T14:41:45Z"
+          }
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "Exit 0 with workflow state valid and synced.",
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "WORKFLOW STATE: 13 status file(s) valid. SUPERPOWERS CHECK: 13 status file(s) synced.",
+            "verifiedAt": "2026-05-31T14:41:45Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -484,18 +520,40 @@
         "T004 modifies product code without a coordinator-approved task update.",
         "Browser QA finds missing functionality, overlapping UI, duplicated Nav, duplicated interactive sections, or behavior regressions."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Final integration reviewer",
+        "summary": "Authenticated QA and workflow evidence passed. Desktop screenshot showed account/profile controls, Bio, and Danger Zone left with dashboard tabs right; mobile order was account/profile controls -> Bio -> dashboard tabs -> Danger Zone; no overlap, legacy title, duplicate Nav, or duplicate interactive sections were found. Destructive deletion confirmation and persistent Bio/display-name mutations were intentionally not executed.",
+        "decidedAt": "2026-05-31T14:49:36Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE. Ran Auth Emulator-backed authenticated Playwright QA against http://localhost:3083/member with emulator user member-qa@example.test / UID 0T7EiBTyHymJjb8uDWUJZ0ZEdIRz. Authenticated desktop and mobile QA covered profile/account controls, Bio, dashboard tabs, Danger Zone, link destinations, avatar file chooser, display-name no-op safety, dashboard click/keyboard behavior, and Danger Zone modal open/cancel. The prior reviewer blocker for authenticated-only interactions is filled. No product-code edits were made.",
+        "reviewerReport": "review_passed. The reviewer validated the T004 workflow evidence diff, authenticated desktop/mobile QA artifacts, command evidence, and residual no-destructive QA boundary. No follow-up findings were reported.",
+        "commandOutputSummary": [
+          "`npm run lint:changed` exit 0. No changed JS files to lint.",
+          "`npm run type-check:changed` exit 0. No changed JS files to check.",
+          "`npm run depcruise` exit 0. No dependency violations found across 1294 modules and 3030 dependencies. Node MODULE_TYPELESS_PACKAGE_JSON warning only.",
+          "`curl -sS -X POST http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key` exit 0; Auth Emulator returned localId `0T7EiBTyHymJjb8uDWUJZ0ZEdIRz` for `member-qa@example.test`.",
+          "`node --input-type=module` authenticated Playwright QA script exit 0 after rerun outside the macOS sandbox. Desktop screenshot `/tmp/member-page-redesign-T004-auth-desktop-1440x1000.png`; mobile screenshot `/tmp/member-page-redesign-T004-auth-mobile-390x844.png`; confirmed auth UID `0T7EiBTyHymJjb8uDWUJZ0ZEdIRz`, required authenticated sections/interactions, link hrefs, layout geometry, no visible legacy title, `main nav` count 0, no horizontal overflow, and no duplicate interactive sections.",
+          "Formal authenticated QA phase had 0 console errors, 0 console warnings, 0 page errors, 0 request failures, and 0 >=400 responses. Setup phase had expected Firebase emulator warnings plus two Firestore Listen `net::ERR_ABORTED` request failures from the required sign-in reload; no setup page errors or >=400 responses.",
+          "`node --input-type=module` clean screenshot capture exit 0; overwrote required screenshot paths with product-only visual artifacts after hiding Firebase emulator and Next dev overlays via Playwright CSS injection only.",
+          "`node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` exit 0. `specs/member-page-redesign/status.json: ok`. `WORKFLOW STATE: 1 status file(s) valid`.",
+          "`node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` exit 0. `specs/member-page-redesign/status.json: ok`. `WORKFLOW STATE: 1 status file(s) valid`. `specs/member-page-redesign/status.json: sync ok`. `SUPERPOWERS CHECK: 1 status file(s) synced`.",
+          "`npm run workflow:check` exit 0. `WORKFLOW STATE: 13 status file(s) valid`. `SUPERPOWERS CHECK: 13 status file(s) synced`.",
+          "`git diff --name-only origin/main...HEAD` showed changes limited to member UI/CSS, workflow artifacts, and `scripts/check-superpowers-state.js`. No `/member/favorites`, runtime, service, repo, rules, schema, dependency manifest, or deployment files changed.",
+          "`git diff --check -- specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` exit 0. No whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "`specs/member-page-redesign/tasks.md`: records T004 authenticated QA, reviewer PASS, command summaries, and `completed` state.",
+          "`specs/member-page-redesign/handoff.md`: records all implementation tasks complete, latest reviewer decision, latest verification, and next coordinator closeout decision.",
+          "`specs/member-page-redesign/status.json`: syncs machine-readable T004 completion, reviewer decision, completedTasks, inactive task/wave, latest verification, and residual risk summary."
+        ]
       }
     }
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": null,
+  "lastVerifiedCommit": "9f89a89f757e88bdd9fc054667b15ea7e0467085",
   "phaseCommits": [
     {
       "phase": "plan",
@@ -544,6 +602,12 @@
       "commit": "fcda233aa41186a6cf98fb1b7d7a92c414cb2a6c",
       "summary": "T003 dashboard tabs closeout commit before T004 dispatch",
       "committedAt": "2026-05-31T13:56:45Z"
+    },
+    {
+      "phase": "verification",
+      "commit": "9f89a89f757e88bdd9fc054667b15ea7e0467085",
+      "summary": "T004 integration verification start commit before verifier evidence update",
+      "committedAt": "2026-05-31T14:02:10Z"
     }
   ],
   "rulesDeployStatus": {
@@ -559,44 +623,44 @@
       "command": "npm run lint:changed",
       "exitCode": 0,
       "summary": "No changed JS files to lint.",
-      "verifiedAt": "2026-05-31T13:53:56Z"
+      "verifiedAt": "2026-05-31T14:49:36Z"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
       "summary": "No changed JS files to check.",
-      "verifiedAt": "2026-05-31T13:53:56Z"
+      "verifiedAt": "2026-05-31T14:49:36Z"
     },
     {
       "command": "npm run depcruise",
       "exitCode": 0,
-      "summary": "No dependency violations; Node MODULE_TYPELESS_PACKAGE_JSON warning only.",
-      "verifiedAt": "2026-05-31T13:53:56Z"
+      "summary": "No dependency violations found across 1294 modules and 3030 dependencies. Node MODULE_TYPELESS_PACKAGE_JSON warning only.",
+      "verifiedAt": "2026-05-31T14:49:36Z"
     },
     {
       "command": "node scripts/validate-workflow-state.js specs/member-page-redesign/status.json",
       "exitCode": 0,
-      "summary": "specs/member-page-redesign/status.json: ok; WORKFLOW STATE: 1 status file(s) valid",
-      "verifiedAt": "2026-05-31T13:53:56Z"
+      "summary": "specs/member-page-redesign/status.json: ok. WORKFLOW STATE: 1 status file(s) valid.",
+      "verifiedAt": "2026-05-31T14:49:36Z"
     },
     {
       "command": "node scripts/check-superpowers-state.js specs/member-page-redesign/status.json",
       "exitCode": 0,
-      "summary": "specs/member-page-redesign/status.json: sync ok; SUPERPOWERS CHECK: 1 status file(s) synced",
-      "verifiedAt": "2026-05-31T13:53:56Z"
+      "summary": "specs/member-page-redesign/status.json: ok. WORKFLOW STATE: 1 status file(s) valid. specs/member-page-redesign/status.json: sync ok. SUPERPOWERS CHECK: 1 status file(s) synced.",
+      "verifiedAt": "2026-05-31T14:49:36Z"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
-      "summary": "WORKFLOW STATE: 13 status file(s) valid; SUPERPOWERS CHECK: 13 status file(s) synced",
-      "verifiedAt": "2026-05-31T13:53:56Z"
+      "summary": "WORKFLOW STATE: 13 status file(s) valid. SUPERPOWERS CHECK: 13 status file(s) synced.",
+      "verifiedAt": "2026-05-31T14:49:36Z"
     },
     {
-      "command": "git diff --check -- src/components/DashboardTabs.module.css specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json",
+      "command": "git diff --check -- specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-05-31T13:53:56Z"
+      "verifiedAt": "2026-05-31T14:49:36Z"
     }
   ],
-  "updatedAt": "2026-05-31T14:00:01Z"
+  "updatedAt": "2026-05-31T14:49:36Z"
 }

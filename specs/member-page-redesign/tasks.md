@@ -424,13 +424,13 @@ Evidence:
 
 ### T004 - Integration Verification And Workflow Evidence
 
-- **State**: `in_progress`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-3`
 - **Engineer**: Verifier subagent, integration evidence task
 - **Reviewer**: Reviewer subagent, final integration gate check
 - **Commit checkpoint**: implementation phase commit only after all prior tasks are `completed`, T004 passes review, and coordinator has commit authorization
-- **Last verified commit**: none
+- **Last verified commit**: `9f89a89f757e88bdd9fc054667b15ea7e0467085` covered by fresh T004 authenticated browser QA and automated gates before workflow evidence edits
 - **Authorization boundary**: product implementation tasks through Engineer/Reviewer subagents edit=yes, commit=yes; push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: not_applicable, not required, unchanged
 - **Incidents**: none
@@ -475,13 +475,19 @@ Dependencies:
 Browser evidence:
 
 - Required.
-- Start or reuse a local dev server for `/member`; if no server is running, use `npm run dev` as a long-running session and report the local URL.
-- Desktop viewport: 1440 by 1000.
-- Mobile viewport: 390 by 844.
-- Required journey: load `/member`, inspect layout/order, click avatar to confirm file chooser trigger, verify public profile and `我的收藏` links, submit display-name no-op/disabled condition when possible without changing data, switch dashboard tabs by click and keyboard, inspect loading/empty/error states when reproducible, open and close Danger Zone modal without confirming deletion.
-- Expected signal: no overlapping text, no missing functionality, two-column desktop, single-column mobile, no Nav duplicated inside page, no visible `這是會員頁面`, and no production deletion action executed.
-- Suggested screenshot artifacts: `/tmp/member-page-redesign-T004-desktop-1440x1000.png` and `/tmp/member-page-redesign-T004-mobile-390x844.png`.
-- Browser report must include console errors, network failures, and any unverified states.
+- Firebase emulators: `firebase emulators:start --only auth,firestore,storage --project=demo-test`, running during QA at Auth `127.0.0.1:9099`, Firestore `127.0.0.1:8080`, and Storage `127.0.0.1:9199`; stopped before final report.
+- Dev server: `npm run dev -- --port 3083`, running during QA at `http://localhost:3083`; stopped before final report.
+- Auth setup: Auth Emulator REST `accounts:signUp` created `member-qa@example.test`; authenticated browser QA used emulator-only `window.testFirebaseHelpers.signIn`; confirmed `window.testFirebaseHelpers.auth.currentUser.uid` was `0T7EiBTyHymJjb8uDWUJZ0ZEdIRz`.
+- Tool: Playwright headless Chromium, rerun with sandbox escalation for localhost/Chromium access. The first combined run passed functional checks but mixed forced-reload Firestore WebChannel aborts into the error bucket, so the final run separated sign-in/reload setup findings from formal authenticated QA findings.
+- Desktop viewport: 1440 by 1000. Screenshot: `/tmp/member-page-redesign-T004-auth-desktop-1440x1000.png`.
+- Mobile viewport: 390 by 844. Screenshot: `/tmp/member-page-redesign-T004-auth-mobile-390x844.png`.
+- Screenshot note: final visual artifacts hide only Firebase Auth Emulator and Next dev overlays via Playwright-injected CSS so non-product fixed overlays do not obscure the product layout; no repo/product code was changed.
+- Expected authenticated signal observed: HTTP 200, profile/account controls, Bio editor, dashboard tabs, and Danger Zone rendered on desktop and mobile; no visible `這是會員頁面`; `main nav` count 0; no horizontal overflow; no duplicated profile/Bio/tablist/Danger instances; no overlapping product text observed in final screenshots.
+- Layout signal observed: desktop geometry placed profile/Bio/Danger left of dashboard; mobile geometry ordered profile -> Bio -> dashboard tabs -> Danger Zone.
+- Link signal observed: `查看我的公開檔案` href `/users/0T7EiBTyHymJjb8uDWUJZ0ZEdIRz`; exact `我的收藏` href `/member/favorites`.
+- Interaction signal observed: avatar button emitted a Playwright `filechooser` event and one hidden `input[type=file][accept="image/*"]` existed; display-name empty submit was a safe no-op with URL stable and no new QA errors; Bio textarea/count/save controls rendered with `0/150` and unchanged empty save disabled; dashboard tab clicks selected `我的文章` and `我的留言`; keyboard Home/ArrowRight/End/ArrowLeft selected and focused `我的活動`/`我的文章`/`我的留言`/`我的文章`; Danger Zone modal opened and canceled.
+- Console/network findings: formal authenticated QA phase had 0 console errors, 0 console warnings, 0 page errors, 0 request failures, and 0 >=400 responses. Setup phase had expected `Connecting to Firebase Emulators...` warnings and two Firestore Listen `net::ERR_ABORTED` request failures caused by the required sign-in `location.reload()` boundary; no setup page errors or >=400 responses.
+- Intentionally not executed: final `重新驗證並刪除` confirmation was observed but not clicked; Bio mutation was not attempted; display-name persistent mutation was avoided by using the existing no-op/disabled-safe empty condition. These are non-blocking because the required render and safe/no-destructive interaction coverage passed.
 
 Engineer instructions:
 
@@ -507,6 +513,7 @@ Verification commands and expected signal:
 | `npm run depcruise` | Exit 0 with no dependency-direction violations after integrated render/CSS changes. |
 | `node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` | Exit 0 and `WORKFLOW STATE: 1 status file(s) valid`. |
 | `node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` | Exit 0 and `SUPERPOWERS CHECK: 1 status file(s) synced`. |
+| `npm run workflow:check` | Exit 0 with workflow state valid and synced. |
 
 Reviewer PASS criteria:
 
@@ -525,10 +532,26 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: not dispatched yet; record files changed, commands, exit codes, browser artifacts, risks, and unverified items after verification.
-- Reviewer report: not reviewed yet; record `review_passed`, `review_rejected`, or `blocked`, checked diff, commands, exit codes, and reason.
-- Command output summary: none yet.
-- Changed files summary: none yet.
-- Phase commits: none yet.
+- Engineer report: DONE. Ran Auth Emulator-backed authenticated Playwright QA against `http://localhost:3083/member` with emulator user `member-qa@example.test` / UID `0T7EiBTyHymJjb8uDWUJZ0ZEdIRz`. Authenticated desktop and mobile QA covered profile/account controls, Bio, dashboard tabs, Danger Zone, link destinations, avatar file chooser, display-name no-op safety, dashboard click/keyboard behavior, and Danger Zone modal open/cancel. The prior reviewer blocker for authenticated-only interactions is filled. No product-code edits were made.
+- Reviewer decision: `review_passed`; final integration reviewer accepted authenticated QA and workflow evidence. Desktop screenshot shows account/profile controls, Bio, and Danger Zone in the left column with dashboard tabs on the right; mobile order is account/profile controls -> Bio -> dashboard tabs -> Danger Zone. No overlap, legacy title, duplicate Nav, or duplicate interactive sections were found. Destructive deletion confirmation and persistent Bio/display-name mutations were intentionally not executed.
+- Reviewer report: review_passed. The reviewer validated the T004 workflow evidence diff, authenticated desktop/mobile QA artifacts, command evidence, and residual no-destructive QA boundary. No follow-up findings were reported.
+- Command output summary:
+  - `npm run lint:changed` exit 0. No changed JS files to lint.
+  - `npm run type-check:changed` exit 0. No changed JS files to check.
+  - `npm run depcruise` exit 0. No dependency violations found across 1294 modules and 3030 dependencies. Node MODULE_TYPELESS_PACKAGE_JSON warning only.
+  - `curl -sS -X POST http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key` exit 0; Auth Emulator returned localId `0T7EiBTyHymJjb8uDWUJZ0ZEdIRz` for `member-qa@example.test`.
+  - `node --input-type=module` authenticated Playwright QA script exit 0 after rerun outside the macOS sandbox. Desktop screenshot `/tmp/member-page-redesign-T004-auth-desktop-1440x1000.png`; mobile screenshot `/tmp/member-page-redesign-T004-auth-mobile-390x844.png`; confirmed auth UID `0T7EiBTyHymJjb8uDWUJZ0ZEdIRz`, required authenticated sections/interactions, link hrefs, layout geometry, no visible legacy title, `main nav` count 0, no horizontal overflow, and no duplicate interactive sections.
+  - Formal authenticated QA phase had 0 console errors, 0 console warnings, 0 page errors, 0 request failures, and 0 >=400 responses. Setup phase had expected Firebase emulator warnings plus two Firestore Listen `net::ERR_ABORTED` request failures from the required sign-in reload; no setup page errors or >=400 responses.
+  - `node --input-type=module` clean screenshot capture exit 0; overwrote required screenshot paths with product-only visual artifacts after hiding Firebase emulator and Next dev overlays via Playwright CSS injection only.
+  - `node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` exit 0. `specs/member-page-redesign/status.json: ok`. `WORKFLOW STATE: 1 status file(s) valid`.
+  - `node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` exit 0. `specs/member-page-redesign/status.json: ok`. `WORKFLOW STATE: 1 status file(s) valid`. `specs/member-page-redesign/status.json: sync ok`. `SUPERPOWERS CHECK: 1 status file(s) synced`.
+  - `npm run workflow:check` exit 0. `WORKFLOW STATE: 13 status file(s) valid`. `SUPERPOWERS CHECK: 13 status file(s) synced`.
+  - `git diff --name-only origin/main...HEAD` showed changes limited to member UI/CSS, workflow artifacts, and `scripts/check-superpowers-state.js`. No `/member/favorites`, runtime, service, repo, rules, schema, dependency manifest, or deployment files changed.
+  - `git diff --check -- specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` exit 0. No whitespace errors.
+- Changed files summary:
+  - `specs/member-page-redesign/tasks.md`: records T004 authenticated QA, reviewer PASS, command summaries, and `completed` state.
+  - `specs/member-page-redesign/handoff.md`: records all implementation tasks complete, latest reviewer decision, latest verification, and next coordinator closeout decision.
+  - `specs/member-page-redesign/status.json`: syncs machine-readable T004 completion, reviewer decision, completedTasks, inactive task/wave, latest verification, and residual risk summary.
+- Phase commits: T004 start commit `9f89a89f757e88bdd9fc054667b15ea7e0467085` (`Start member integration verification`) existed before verifier evidence updates. Final T004 workflow evidence commit SHA is reported after commit creation; exact SHA is not embedded here to avoid a self-referential commit hash loop.
 - Rules deploy status: not_applicable.
 - Incidents: none.
