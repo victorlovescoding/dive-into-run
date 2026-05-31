@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-082-member-page-redesign`
 - Branch: `082-member-page-redesign`
-- Current head: `7ec7cc584801548ece85218cb4e3bb49898cc0ed` (`Align member bio danger styling`)
+- Current head: `d6748bef36cf404b63e7319351c5d717a0131594` (`Start member dashboard fit task`)
 - Remote head: `origin/main` at `4c5b45b1fbf5b62ded2da57dd178133532a90b9f`
 - Authorization boundary:
   - edit: true for product implementation tasks through Engineer/Reviewer subagents
@@ -17,11 +17,11 @@
   - localMainSync: false
   - deployFirestoreRules: false
 - Current phase: `implementation`
-- Active task: `T003`
-- Active wave: `wave-2`
-- Latest reviewer decision: `review_passed` for T002; Spec reviewer confirmed the diff only touches owned CSS, JSX/runtime are untouched, copy/actions are unchanged, and browser evidence is deferred to T004. Code quality reviewer passed the scoped maintainable CSS with no global leakage; browser evidence is deferred to T004.
-- Last verified commit: none; current head captures the completed T002 commit before T003 dispatch, and final integration/browser verification remains deferred to T004.
-- Phase commits: plan commit `cf4a65e75dce300a032763cd3b5fe1873578923c`; implementation setup commit `6f67e3f760f96cedb8ba9be3c04e1c908c7dd14d`; T001 shell commit `f58bc0129fe37111dde4a7df01d8e5dd033fc70d`; workflow check branch scoping fix commit `add4421c8e88d97721078d1390167da624c06156`; T002 start commit `f19331e318f271ee8b02e8e88db683a641ffbed1`; T002 closeout commit `7ec7cc584801548ece85218cb4e3bb49898cc0ed`.
+- Active task: none
+- Active wave: none
+- Latest reviewer decision: `review_passed` for T003; Spec reviewer confirmed only `DashboardTabs.module.css` was modified, runtime/JSX/hooks were untouched, and browser evidence is deferred to T004. Code quality reviewer passed the scoped maintainable CSS with token fallbacks, min-width/wrapping/focus states, no negative letter-spacing, and no viewport font scaling; browser evidence is deferred to T004.
+- Last verified commit: none; current head captures the pre-commit T003 closeout state, and final integration/browser verification remains deferred to T004.
+- Phase commits: plan commit `cf4a65e75dce300a032763cd3b5fe1873578923c`; implementation setup commit `6f67e3f760f96cedb8ba9be3c04e1c908c7dd14d`; T001 shell commit `f58bc0129fe37111dde4a7df01d8e5dd033fc70d`; workflow check branch scoping fix commit `add4421c8e88d97721078d1390167da624c06156`; T002 start commit `f19331e318f271ee8b02e8e88db683a641ffbed1`; T002 closeout commit `7ec7cc584801548ece85218cb4e3bb49898cc0ed`; T003 start commit `d6748bef36cf404b63e7319351c5d717a0131594`.
 - Rules deploy status: `not_applicable`, required=false, changed=false
 - Incidents: none
 - Blocked: no
@@ -41,9 +41,9 @@
 
 ## Next Action
 
-Dispatch the Engineer subagent for active T003 dashboard tab/responsive panel fit, using the owned files from `tasks.md`. T004 remains `todo`.
+Dispatch T004 integration verification. T003 is completed and T004 remains `todo`.
 
-Do not dispatch any product task outside the T003 owned files. Push, PR creation, CI watch, merge, local `main` sync, and Firestore/storage rules deploy remain unauthorized.
+Do not dispatch product-code fixes inside T004 without a coordinator-approved owned-file update. Push, PR creation, CI watch, merge, local `main` sync, and Firestore/storage rules deploy remain unauthorized.
 
 ## Latest Verification
 
@@ -51,17 +51,19 @@ Do not dispatch any product task outside the T003 owned files. Push, PR creation
 | ------- | ---- | -------- |
 | `npm run lint:changed` | 0 | No changed JS files to lint. |
 | `npm run type-check:changed` | 0 | No changed JS files to check. |
+| `npm run depcruise` | 0 | No dependency violations; MODULE_TYPELESS_PACKAGE_JSON warning only. |
 | `node scripts/validate-workflow-state.js specs/member-page-redesign/status.json` | 0 | `specs/member-page-redesign/status.json: ok`; `WORKFLOW STATE: 1 status file(s) valid`. |
 | `node scripts/check-superpowers-state.js specs/member-page-redesign/status.json` | 0 | `specs/member-page-redesign/status.json: sync ok`; `SUPERPOWERS CHECK: 1 status file(s) synced`. |
 | `npm run workflow:check` | 0 | `WORKFLOW STATE: 13 status file(s) valid`; `SUPERPOWERS CHECK: 13 status file(s) synced`. |
-| `git diff --check -- src/app/member/BioEditor.module.css src/ui/member/AccountDeletionDangerZone.module.css specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` | 0 | No whitespace errors. |
+| `git diff --check -- src/components/DashboardTabs.module.css specs/member-page-redesign/tasks.md specs/member-page-redesign/handoff.md specs/member-page-redesign/status.json` | 0 | No whitespace errors. |
 
 ## Closeout Checklist
 
 - [x] Product-code implementation authorization is obtained before T001 dispatch.
 - [x] T001 is completed in `tasks.md` and `status.json`.
 - [x] T002 is completed in `tasks.md` and `status.json`.
-- [x] Active task and active wave are `T003` / `wave-2` in `status.json` before Engineer dispatch.
+- [x] T003 is completed in `tasks.md` and `status.json`.
+- [x] Active task and active wave are null in `status.json` before T004 dispatch.
 - [x] Latest reviewer decision is recorded in `tasks.md` and `status.json`.
 - [x] `lastVerification` has one entry per command.
 - [x] Final T001 commit SHA is captured as `f58bc0129fe37111dde4a7df01d8e5dd033fc70d`.
@@ -70,8 +72,8 @@ Do not dispatch any product task outside the T003 owned files. Push, PR creation
 - [x] Final summary does not imply deployed rules, deployed functions, or production product behavior.
 - [x] Open incidents are resolved, mitigated with an explicit carry-forward, or block closeout.
 - [x] Changed files are intentionally in scope and reviewed.
-- [ ] Browser evidence covers `/member` desktop and mobile after implementation; deferred to T004 by both T002 reviewers.
-- [x] Required local gates pass after T002 implementation.
+- [ ] Browser evidence covers `/member` desktop and mobile after implementation; deferred to T004 by T001/T002/T003 reviewers.
+- [x] Required local gates pass after T003 implementation.
 
 ## Blockers
 
@@ -79,7 +81,7 @@ Do not dispatch any product task outside the T003 owned files. Push, PR creation
 
 ## Pitfalls
 
-- T002 is completed; T003 is active/in_progress and is the next Engineer dispatch.
+- T003 is completed; T004 is the next integration verification dispatch.
 - `edit=true` and `commit=true` now cover product implementation only through Engineer/Reviewer subagents; they still do not authorize push, PR creation, CI watch, merge, local `main` sync, or rules deploy.
 - `/member/favorites` stays as-is; only the exact `我的收藏` link is in scope.
 - Removing `這是會員頁面` must not introduce a replacement page title.
