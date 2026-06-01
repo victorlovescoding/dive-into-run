@@ -54,7 +54,7 @@
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: plan or implementation phase commit after Reviewer PASS and coordinator approval.
-- **Last verified commit**: pending T001 commit
+- **Last verified commit**: `d8c2578f027f4d9fe11f6b21c31e5c16d61757f6`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -163,7 +163,7 @@ Evidence:
 
 ### T002 - Event Delete Writes And Event Read Filtering
 
-- **State**: `todo`
+- **State**: `in_progress`
 - **Attempt**: 1
 - **Wave**: `wave-2`
 - **Engineer**: Engineer

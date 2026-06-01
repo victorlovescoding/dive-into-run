@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `bdce30921dba11c8c4556b98836da32dbe16e1f5`
+- Current head: `d8c2578f027f4d9fe11f6b21c31e5c16d61757f6`
 - Remote head: `origin/main` at `19434854fd36911879a36406efda80d1b5056dc1`
 - Authorization boundary:
   - edit: yes
@@ -17,15 +17,16 @@
   - localMainSync: no
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
-- Current phase: planning
-- Active task: none
-- Active wave: none
+- Current phase: implementation
+- Active task: T002
+- Active wave: wave-2
 - Latest reviewer decision: T001 spec compliance and code-quality reviews
   `review_passed` on 2026-06-02T01:04:39+08:00.
-- Last verified commit: none
+- Last verified commit: `d8c2578f027f4d9fe11f6b21c31e5c16d61757f6`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
   - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
+  - T001: `d8c2578f027f4d9fe11f6b21c31e5c16d61757f6`
 - Rules deploy status: required, required=true, changed=false, deployedCommit=null
 - Incidents: none
 - Blocked: no
@@ -44,8 +45,8 @@
 
 ## Next Action
 
-Coordinator commits T001 implementation and workflow state, then dispatches
-T002 `Event Delete Writes And Event Read Filtering`.
+Coordinator dispatches T002 `Event Delete Writes And Event Read Filtering` to
+an Engineer subagent.
 
 ## Task Graph
 
@@ -71,7 +72,7 @@ separate coordinator-created worktrees with disjoint owned files.
 | `npm run lint:changed` | 0 | Passed with existing React version warning only. |
 | `npm run type-check:changed` | 0 | No changed-file type errors. |
 
-No implementation verification has run yet.
+T002 implementation verification has not run yet.
 
 ## Closeout Checklist
 

@@ -3,9 +3,9 @@
   "feature": "event-soft-delete-retention",
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
-  "phase": "planning",
-  "activeTask": null,
-  "activeWave": null,
+  "phase": "implementation",
+  "activeTask": "T002",
+  "activeWave": "wave-2",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "bdce30921dba11c8c4556b98836da32dbe16e1f5",
-    "capturedAt": "2026-06-02T00:54:55+08:00",
-    "summary": "Local feature branch head while T001 implementation diff is unstaged."
+    "commit": "d8c2578f027f4d9fe11f6b21c31e5c16d61757f6",
+    "capturedAt": "2026-06-02T01:09:06+08:00",
+    "summary": "T001 implementation committed; T002 dispatch state is being recorded."
   },
   "remoteHead": {
     "remote": "origin",
@@ -163,7 +163,7 @@
     {
       "id": "T002",
       "title": "Event Delete Writes And Event Read Filtering",
-      "state": "todo",
+      "state": "in_progress",
       "attempt": 1,
       "wave": "wave-2",
       "engineer": "Engineer",
@@ -733,7 +733,7 @@
       "verifiedAt": "2026-06-02T00:29:32+08:00"
     }
   ],
-  "lastVerifiedCommit": null,
+  "lastVerifiedCommit": "d8c2578f027f4d9fe11f6b21c31e5c16d61757f6",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -746,6 +746,12 @@
       "commit": "13347d19506c1c4e721ab3322ed40f92a4a1c92a",
       "summary": "Reviewed event retention implementation plan, rebased onto origin/main.",
       "committedAt": "2026-06-02T00:44:58+08:00"
+    },
+    {
+      "phase": "T001",
+      "commit": "d8c2578f027f4d9fe11f6b21c31e5c16d61757f6",
+      "summary": "Add event retention helpers.",
+      "committedAt": "2026-06-02T01:09:06+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -756,5 +762,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-06-02T01:04:39+08:00"
+  "updatedAt": "2026-06-02T01:09:06+08:00"
 }
