@@ -48,7 +48,7 @@
 
 ### T001 - Shared Soft-Delete Helpers And Event Typedefs
 
-- **State**: `ready`
+- **State**: `in_progress`
 - **Attempt**: 1
 - **Wave**: `wave-1`
 - **Engineer**: Engineer

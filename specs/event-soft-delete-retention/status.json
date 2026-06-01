@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "planning",
-  "activeTask": null,
-  "activeWave": null,
+  "activeTask": "T001",
+  "activeWave": "wave-1",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "13347d19506c1c4e721ab3322ed40f92a4a1c92a",
-    "capturedAt": "2026-06-02T00:44:58+08:00",
-    "summary": "Local feature branch head after rebase onto current origin/main."
+    "commit": "1bde5a9de360f74f97f0123258997756b35f7243",
+    "capturedAt": "2026-06-02T00:46:49+08:00",
+    "summary": "Local feature branch head before dispatching T001."
   },
   "remoteHead": {
     "remote": "origin",
@@ -34,7 +34,7 @@
     {
       "id": "T001",
       "title": "Shared Soft-Delete Helpers And Event Typedefs",
-      "state": "ready",
+      "state": "in_progress",
       "attempt": 1,
       "wave": "wave-1",
       "engineer": "Engineer",
@@ -693,5 +693,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-06-02T00:44:58+08:00"
+  "updatedAt": "2026-06-02T00:46:49+08:00"
 }

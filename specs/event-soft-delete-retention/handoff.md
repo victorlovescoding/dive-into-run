@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
+- Current head: `1bde5a9de360f74f97f0123258997756b35f7243`
 - Remote head: `origin/main` at `19434854fd36911879a36406efda80d1b5056dc1`
 - Authorization boundary:
   - edit: yes
@@ -18,8 +18,8 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: planning
-- Active task: none
-- Active wave: none
+- Active task: T001 `Shared Soft-Delete Helpers And Event Typedefs`
+- Active wave: `wave-1`
 - Latest reviewer decision: `review_passed` for planning artifacts on
   2026-06-02T00:29:32+08:00
 - Last verified commit: none
@@ -44,9 +44,8 @@
 
 ## Next Action
 
-Coordinator validates workflow state, then dispatches T001
-`Shared Soft-Delete Helpers And Event Typedefs` to an Engineer in this worktree.
-T001 is ready because it has no task dependencies.
+Coordinator dispatches T001 `Shared Soft-Delete Helpers And Event Typedefs` to
+an Engineer in this worktree. T001 is in progress and has no task dependencies.
 
 ## Task Graph
 
