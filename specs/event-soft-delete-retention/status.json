@@ -1,0 +1,691 @@
+{
+  "schemaVersion": 3,
+  "feature": "event-soft-delete-retention",
+  "branch": "085-event-soft-delete-retention",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
+  "phase": "planning",
+  "activeTask": null,
+  "activeWave": null,
+  "authorizationBoundary": {
+    "edit": true,
+    "commit": true,
+    "push": false,
+    "pullRequest": false,
+    "ciWatch": false,
+    "merge": false,
+    "localMainSync": false,
+    "deployFirestoreRules": false
+  },
+  "currentHead": {
+    "branch": "085-event-soft-delete-retention",
+    "commit": "bec1394b8a296697e713b2bbaee216748bb78755",
+    "capturedAt": "2026-06-01T23:52:59+08:00",
+    "summary": "Local feature branch head after approved spec commit."
+  },
+  "remoteHead": {
+    "remote": "origin",
+    "branch": "main",
+    "commit": "471cebe404e83b8984a3bca0d11dd69e29cc364d",
+    "capturedAt": "2026-06-01T23:52:59+08:00",
+    "summary": "Remote base head for origin/main."
+  },
+  "completedTasks": [],
+  "tasks": [
+    {
+      "id": "T001",
+      "title": "Shared Soft-Delete Helpers And Event Typedefs",
+      "state": "ready",
+      "attempt": 1,
+      "wave": "wave-1",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Create shared 90-day retention helpers.",
+        "Preserve existing post helper exports.",
+        "Add event and event-comment retention typedef fields."
+      ],
+      "nonScope": [
+        "No event delete behavior changes.",
+        "No event comment delete behavior changes.",
+        "No rules, purge, notification, favorite, member, or UI changes.",
+        "No restore UI or restore API behavior."
+      ],
+      "ownedFiles": [
+        "src/repo/soft-delete-retention.js",
+        "src/repo/post-soft-delete.js",
+        "src/service/event-service.js",
+        "src/service/event-comment-service.js",
+        "specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js"
+      ],
+      "readOnlyContext": [
+        "specs/event-soft-delete-retention/spec.md",
+        "src/repo/post-soft-delete.js",
+        "src/service/post-service.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js"
+      ],
+      "dependencies": [],
+      "engineerInstructions": [
+        "Add a shared retention constant set to 90 days.",
+        "Add a helper that builds deletedAt, deletedByUid, and deletedPurgeAt.",
+        "Add active and deleted predicates based on own property deletedAt.",
+        "Keep existing post soft-delete imports working through src/repo/post-soft-delete.js.",
+        "Extend event and event-comment JSDoc typedefs with optional retention fields.",
+        "Add focused helper tests for 90-day math, legacy active records, and timestamp-sentinel deleted records.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T001.1: Shared helper calculates deletedPurgeAt exactly 90 days after delete time.",
+        "AC-T001.2: Existing post helper exports remain compatible.",
+        "AC-T001.3: Event and event-comment typedefs include optional deletedAt, deletedByUid, and deletedPurgeAt.",
+        "AC-T001.4: Active predicate treats records without deletedAt as active and records with deletedAt as deleted."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js",
+          "expectedSignal": "Exit 0, helper tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js",
+          "expectedSignal": "Exit 0, existing post helper regression tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Existing post helper exports remain available.",
+        "Helper names, retention fields, and 90-day math match the spec.",
+        "No product behavior changes are introduced outside helper and typedef scope."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without coordinator approval.",
+        "Post helper compatibility breaks.",
+        "Tests or type checks are missing, stale, or failing.",
+        "Helper semantics drift from the approved field names or 90-day retention."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T002",
+      "title": "Event Delete Writes And Event Read Filtering",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-2",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Convert event delete from hard delete to event-document soft delete.",
+        "Hide soft-deleted events from event list and event detail reads.",
+        "Avoid participant and comment loading for a soft-deleted event detail."
+      ],
+      "nonScope": [
+        "No event comment delete behavior changes.",
+        "No member, favorite, notification, rules, purge, or index changes.",
+        "No event child collection mutation during user-action event delete.",
+        "No restore UI or restore API behavior."
+      ],
+      "ownedFiles": [
+        "src/repo/client/firebase-events-repo.js",
+        "src/runtime/client/use-cases/event-use-cases.js",
+        "src/runtime/hooks/useEventsPageRuntime.js",
+        "src/runtime/hooks/useEventDetailRuntime.js",
+        "src/runtime/hooks/useEventDetailMutations.js",
+        "src/service/event-service.js",
+        "specs/event-soft-delete-retention/tests/unit/service/event-service-soft-delete.test.js",
+        "specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js"
+      ],
+      "readOnlyContext": [
+        "specs/event-soft-delete-retention/spec.md",
+        "src/repo/soft-delete-retention.js",
+        "src/runtime/events/event-detail-participation-runtime-helpers.js",
+        "src/ui/events/EventDetailScreen.jsx",
+        "src/ui/events/EventsListSection.jsx"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Replace event hard delete with an update to events/{eventId} only.",
+        "Write deletedAt, deletedByUid, and deletedPurgeAt with the shared helper.",
+        "Preserve the existing actor authorization path for event delete.",
+        "Return success for repeated delete of an already soft-deleted event.",
+        "Filter soft-deleted events out of event list results.",
+        "Return the same missing/deleted detail state for a soft-deleted event.",
+        "Prevent participant and comment loading after a soft-deleted event detail read.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T002.1: Event delete updates only events/{eventId}.",
+        "AC-T002.2: Participants, comments, and comment history are untouched at event delete time.",
+        "AC-T002.3: Repeated event delete is idempotent.",
+        "AC-T002.4: Event list and event detail hide soft-deleted events.",
+        "AC-T002.5: Soft-deleted event detail does not render or load participants or comments."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-service-soft-delete.test.js",
+          "expectedSignal": "Exit 0, event filtering tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js",
+          "expectedSignal": "Exit 0, event delete and read tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Event delete has no child collection writes.",
+        "Existing host or authorized actor semantics are preserved.",
+        "Detail route cannot load participant or comment data after a deleted event result."
+      ],
+      "reviewerRejectCriteria": [
+        "Event delete hard-deletes or mutates child collections.",
+        "Repeated delete can throw a user-visible error for an already deleted event.",
+        "Event list or detail filtering is missing or untested.",
+        "Verification is missing, stale, failed, or not the required command."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T003",
+      "title": "Event Comment Delete Writes And Pagination Filtering",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-2",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Convert event comment delete from hard delete to comment-document soft delete.",
+        "Hide deleted event comments from event detail comment pages.",
+        "Backfill event comment pagination around deleted raw records."
+      ],
+      "nonScope": [
+        "No event delete behavior changes.",
+        "No notification recipient discovery, member surface, favorite surface, rules, purge, or index changes.",
+        "No event comment history mutation at user-action delete time.",
+        "No restore UI or restore API behavior."
+      ],
+      "ownedFiles": [
+        "src/repo/client/firebase-event-comments-repo.js",
+        "src/runtime/client/use-cases/event-comment-use-cases.js",
+        "src/service/event-comment-service.js",
+        "specs/event-soft-delete-retention/tests/unit/service/event-comment-service-soft-delete.test.js",
+        "specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js"
+      ],
+      "readOnlyContext": [
+        "specs/event-soft-delete-retention/spec.md",
+        "src/repo/soft-delete-retention.js",
+        "src/runtime/hooks/useEventDetailRuntime.js",
+        "src/ui/events/EventDetailScreen.jsx"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Replace event comment hard delete with an update to events/{eventId}/comments/{commentId} only.",
+        "Write deletedAt, deletedByUid, and deletedPurgeAt with the shared helper.",
+        "Preserve the existing actor authorization path for event comment delete.",
+        "Return success for repeated delete of an already soft-deleted comment.",
+        "Leave the comment history subcollection untouched.",
+        "Filter deleted comments from latest and more-comments results.",
+        "Backfill pagination by fetching additional raw pages until the visible page fills, the raw cursor ends, or the existing page limit contract is satisfied.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T003.1: Event comment delete updates only the comment document.",
+        "AC-T003.2: Event comment history is retained at delete time.",
+        "AC-T003.3: Repeated comment delete is idempotent.",
+        "AC-T003.4: Deleted comments are hidden from event detail comments.",
+        "AC-T003.5: Pagination returns full visible pages when enough active comments exist after deleted raw records are skipped."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-comment-service-soft-delete.test.js",
+          "expectedSignal": "Exit 0, event comment filtering tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js",
+          "expectedSignal": "Exit 0, event comment delete and pagination tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Event comment delete has no history writes or deletes.",
+        "Pagination test proves backfill past deleted raw records.",
+        "Repeated delete cannot create duplicate retention mutation side effects."
+      ],
+      "reviewerRejectCriteria": [
+        "Event comment delete hard-deletes a comment or history record.",
+        "Pagination only filters the current raw page and can under-fill despite later active comments.",
+        "Authorization semantics drift from existing event comment delete behavior.",
+        "Verification is missing, stale, failed, or not the required command."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T004",
+      "title": "Secondary Surfaces And Notifications",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-2",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Hide soft-deleted events from member event surfaces and favorite target hydration.",
+        "Hide soft-deleted event or comment targets from notification-linked reads.",
+        "Exclude deleted event comments from event comment notification recipient discovery."
+      ],
+      "nonScope": [
+        "No event delete writes, event comment delete writes, rules, purge, or index changes.",
+        "No post/comment retention behavior changes.",
+        "No restore UI or restore API behavior."
+      ],
+      "ownedFiles": [
+        "src/repo/client/firebase-member-repo.js",
+        "src/repo/client/firebase-content-favorites-repo.js",
+        "src/repo/client/firebase-notifications-repo.js",
+        "src/runtime/client/use-cases/member-dashboard-use-cases.js",
+        "src/runtime/client/use-cases/content-favorite-use-cases.js",
+        "src/runtime/client/use-cases/notification-use-cases.js",
+        "src/service/member-dashboard-service.js",
+        "src/service/content-favorite-service.js",
+        "src/service/notification-service.js",
+        "specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js",
+        "specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js"
+      ],
+      "readOnlyContext": [
+        "specs/event-soft-delete-retention/spec.md",
+        "src/service/event-service.js",
+        "src/service/event-comment-service.js",
+        "src/lib/notification-helpers.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Filter deleted events from member event surfaces.",
+        "Backfill member pagination if deleted raw event records would otherwise hide later active events.",
+        "Treat favorite rows whose event target is soft-deleted as missing.",
+        "Skip notification-linked event reads when the event is soft-deleted.",
+        "Skip notification-linked event comment reads when the comment is soft-deleted.",
+        "Ignore soft-deleted event comments while discovering prior commenters for event comment notifications.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T004.1: Member surfaces do not show soft-deleted events.",
+        "AC-T004.2: Event favorite target hydration treats deleted events as missing.",
+        "AC-T004.3: Notification-linked reads do not expose deleted events or deleted event comments.",
+        "AC-T004.4: Notification recipient discovery ignores deleted event comments.",
+        "AC-T004.5: Existing post/comment notification retention behavior remains unchanged."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js",
+          "expectedSignal": "Exit 0, member and favorite filtering tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js",
+          "expectedSignal": "Exit 0, notification soft-delete tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js",
+          "expectedSignal": "Exit 0, post notification regression tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Event secondary surface filtering is covered by tests.",
+        "Notification tests cover deleted-only and mixed active/deleted event commenters.",
+        "Post notification behavior remains covered by regression verification."
+      ],
+      "reviewerRejectCriteria": [
+        "Deleted event targets remain visible through member, favorites, or notification-linked reads.",
+        "Notification recipient discovery counts deleted event comments.",
+        "Post/comment notification behavior changes without explicit spec approval.",
+        "Verification is missing, stale, failed, or not the required command."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T005",
+      "title": "Firestore Rules For Event Retention",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-3",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Reject client hard deletes for events and event comments.",
+        "Allow only authorized event and event-comment soft-delete updates.",
+        "Block client child writes under a soft-deleted event."
+      ],
+      "nonScope": [
+        "No Firestore rules deploy.",
+        "No Functions purge behavior changes.",
+        "No post/comment rules changes except shared helper naming required by event rules implementation.",
+        "No Firestore index changes.",
+        "No restore UI or restore API behavior."
+      ],
+      "ownedFiles": [
+        "firestore.rules",
+        "tests/server/firestore/event-soft-delete-rules.test.js"
+      ],
+      "readOnlyContext": [
+        "specs/event-soft-delete-retention/spec.md",
+        "tests/server/firestore/post-soft-delete-rules.test.js",
+        "tests/server/firestore/notification-rules.test.js",
+        "firestore.indexes.json"
+      ],
+      "dependencies": [
+        "T002",
+        "T003",
+        "T004"
+      ],
+      "engineerInstructions": [
+        "Reject delete requests on events/{eventId}.",
+        "Reject delete requests on events/{eventId}/comments/{commentId}.",
+        "Allow event soft-delete updates only for the same actor set that can delete events today.",
+        "Allow event comment soft-delete updates only for the same actor set that can delete event comments today.",
+        "Require deletedByUid to match request.auth.uid.",
+        "Require deletedAt and deletedPurgeAt to be timestamp values.",
+        "Require the update to change only deletedAt, deletedByUid, and deletedPurgeAt.",
+        "Reject missing retention fields, wrong actor uid, invalid timestamp types, and unrelated data changes.",
+        "Reject new comments, participant mutations, and other client child writes under a soft-deleted event.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T005.1: Client hard delete of an event is rejected.",
+        "AC-T005.2: Client hard delete of an event comment is rejected.",
+        "AC-T005.3: Authorized valid event soft delete is allowed.",
+        "AC-T005.4: Authorized valid event comment soft delete is allowed.",
+        "AC-T005.5: Forged soft-delete updates are rejected.",
+        "AC-T005.6: Client child writes under a soft-deleted event are rejected.",
+        "AC-T005.7: No rules deploy is performed or claimed."
+      ],
+      "verification": [
+        {
+          "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js\"",
+          "expectedSignal": "Exit 0, event soft-delete rules tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Emulator tests prove hard-delete rejection and valid soft-delete allowance.",
+        "Forged update tests cover wrong actor, missing fields, invalid timestamp values, and unrelated field changes.",
+        "No deployed-rules claim is made."
+      ],
+      "reviewerRejectCriteria": [
+        "Client hard delete remains possible for events or event comments.",
+        "Rules allow mutation outside the three retention fields.",
+        "Rules block legitimate authorized soft delete under the approved actor set.",
+        "Verification is missing, stale, failed, or not the required command."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T006",
+      "title": "Firebase Event Retention Purge And Integration Gates",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-4",
+      "engineer": "Engineer for Functions purge; Coordinator for workflow-state final sync after Reviewer PASS",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Add Firebase scheduled purge core and wrapper for event retention.",
+        "Hard-delete expired soft-deleted event trees.",
+        "Hard-delete expired standalone event comments only when the parent event is active.",
+        "Run final integration gates and let the coordinator sync workflow state after Reviewer PASS."
+      ],
+      "nonScope": [
+        "No Firebase Functions deploy.",
+        "No Firestore rules deploy.",
+        "No Strava, runs, imported activity, or post/comment purge behavior changes except shared low-level helpers that preserve existing post semantics.",
+        "No index changes unless verification proves the exact requirement.",
+        "No push, PR, CI watch, merge, or local main sync.",
+        "No restore UI or restore API behavior."
+      ],
+      "ownedFiles": [
+        "functions/index.js",
+        "functions/event-retention-purge.js",
+        "firestore.indexes.json",
+        "specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js",
+        "specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js",
+        "specs/event-soft-delete-retention/tasks.md",
+        "specs/event-soft-delete-retention/handoff.md",
+        "specs/event-soft-delete-retention/status.json"
+      ],
+      "readOnlyContext": [
+        "specs/event-soft-delete-retention/spec.md",
+        "functions/post-retention-purge.js",
+        "functions/index.js",
+        "functions/package.json",
+        "firestore.indexes.json",
+        "docs/superpowers/status.schema.json",
+        "docs/superpowers/task-contract.md",
+        "specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js"
+      ],
+      "dependencies": [
+        "T005"
+      ],
+      "engineerInstructions": [
+        "Keep purge logic deploy-contained under functions/ and do not import root src/ modules or the root alias.",
+        "Use the existing scheduled Functions pattern from functions/index.js.",
+        "Register a scheduled event-retention wrapper and keep it delegating to the event purge core.",
+        "Query expired soft-deleted events by deletedPurgeAt at or before the run time.",
+        "For each expired event, hard-delete participants, comments, each comment history subcollection, and the event document in bounded batches.",
+        "For standalone expired event comments, hard-delete the comment and history only when the parent event is active.",
+        "If the parent event is soft-deleted, skip the standalone comment so the later event tree purge owns it.",
+        "Treat missing documents and already-purged children as no-op success.",
+        "Log counts for purged events, event comments, participants, history records, and skipped records.",
+        "Keep existing post/comment purge tests passing.",
+        "Modify firestore.indexes.json only when verification reports a required index, and record the evidence.",
+        "Engineer modifies only Functions, index, and purge test files; coordinator updates workflow-state files after Reviewer PASS and final gate evidence."
+      ],
+      "acceptanceCriteria": [
+        "AC-T006.1: Expired soft-deleted event tree purge deletes the event, participants, comments, and comment history.",
+        "AC-T006.2: Expired standalone deleted event comment under an active parent is purged with history.",
+        "AC-T006.3: Expired standalone deleted event comment under a soft-deleted parent is skipped.",
+        "AC-T006.4: Purge is idempotent and bounded below Firestore batch write limits.",
+        "AC-T006.5: Existing post/comment purge behavior remains stable.",
+        "AC-T006.6: Scheduled function wrapper is registered and delegates to the event purge core.",
+        "AC-T006.7: Purge result/logging exposes counts for purged events, event comments, participants, history records, and skipped or no-op records.",
+        "AC-T006.8: Functions syntax checks pass.",
+        "AC-T006.9: Final workflow state sync records evidence without deploy claims."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js",
+          "expectedSignal": "Exit 0, event purge tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js",
+          "expectedSignal": "Exit 0, existing post purge regression tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js",
+          "expectedSignal": "Exit 0, scheduled wrapper registration and delegation tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "node --check functions/index.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        },
+        {
+          "command": "node --check functions/event-retention-purge.js",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "Exit 0, workflow state valid and synced.",
+          "lastRun": null
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "Exit 0, no whitespace errors.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Functions code stays inside the deploy-included functions/ boundary.",
+        "Purge tests cover event tree purge, standalone active-parent comment purge, soft-deleted-parent skip, batching, and idempotency.",
+        "Scheduled wrapper registration and delegation are covered by verification.",
+        "Purge count logging covers purged events, event comments, participants, history records, and skipped or no-op records.",
+        "Existing post purge regression passes.",
+        "Index changes, if any, include evidence that verification required them.",
+        "Workflow files agree after coordinator sync.",
+        "No deployed-rules, deployed-functions, pushed, PR, CI, merge, or local main sync claim is made."
+      ],
+      "reviewerRejectCriteria": [
+        "Event purge can delete standalone comments under a soft-deleted parent before parent tree purge.",
+        "Purge imports root src/ modules or relies on the root alias.",
+        "Batch writes can exceed Firestore limits.",
+        "Existing post purge behavior regresses.",
+        "Workflow state drifts or verification is missing, stale, failed, or not the required command."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    }
+  ],
+  "blocked": false,
+  "blockedReason": null,
+  "lastVerification": [
+    {
+      "command": "git diff --check -- specs/event-soft-delete-retention",
+      "exitCode": 0,
+      "summary": "Planning artifacts have no whitespace errors.",
+      "verifiedAt": "2026-06-02T00:29:32+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
+      "verifiedAt": "2026-06-02T00:29:32+08:00"
+    }
+  ],
+  "lastVerifiedCommit": null,
+  "phaseCommits": [
+    {
+      "phase": "spec",
+      "commit": "bec1394b8a296697e713b2bbaee216748bb78755",
+      "summary": "Approved event soft-delete retention spec.",
+      "committedAt": "2026-06-01T23:52:59+08:00"
+    }
+  ],
+  "rulesDeployStatus": {
+    "state": "required",
+    "required": true,
+    "changed": false,
+    "evidence": [],
+    "deployedCommit": null
+  },
+  "incidents": [],
+  "updatedAt": "2026-06-02T00:29:32+08:00"
+}
