@@ -1,8 +1,8 @@
 import { getPostDetail } from '@/lib/firebase-posts';
 import { buildPostOgDescription } from '@/lib/og-helpers';
+import { formatPageTitle, PAGE_TITLES, SITE_NAME } from '@/runtime/site-metadata';
 import PostDetailClient from './PostDetailClient';
 
-const FALLBACK_TITLE = 'Dive Into Run';
 const OG_IMAGE_PATH = '/og-default.png';
 
 /**
@@ -15,7 +15,8 @@ export async function generateMetadata({ params }) {
   const { id } = await params;
   const post = await getPostDetail(id);
 
-  const title = post?.title || FALLBACK_TITLE;
+  const title = formatPageTitle(post?.title || PAGE_TITLES.post);
+  const socialTitle = post?.title || SITE_NAME;
   const description = buildPostOgDescription(post);
   const url = `/posts/${id}`;
 
@@ -23,14 +24,14 @@ export async function generateMetadata({ params }) {
     title,
     description,
     openGraph: {
-      title,
+      title: socialTitle,
       description,
       images: [OG_IMAGE_PATH],
       url,
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: socialTitle,
       description,
       images: [OG_IMAGE_PATH],
     },

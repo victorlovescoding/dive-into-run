@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { formatPageTitle, PAGE_TITLES } from '@/runtime/site-metadata';
 import { getUserProfileServer } from '@/service/profile-server-service';
 import ProfileClient from './ProfileClient';
 
@@ -65,12 +66,12 @@ export async function generateMetadata({ params }) {
 
   if (!profile) {
     return {
-      title: '找不到使用者 — Dive into Run',
+      title: formatPageTitle(PAGE_TITLES.userNotFound),
       description: '找不到此使用者的公開檔案。',
     };
   }
 
-  const title = `${profile.name || '使用者'} — Dive into Run`;
+  const title = formatPageTitle(profile.name || PAGE_TITLES.user);
   const description = profile.bio || `${profile.name || '使用者'} 的跑步檔案`;
   const images = profile.photoURL ? [{ url: profile.photoURL }] : [];
 

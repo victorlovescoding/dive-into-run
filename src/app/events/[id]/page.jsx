@@ -1,8 +1,8 @@
 import { fetchEventById } from '@/lib/firebase-events';
 import { buildEventOgDescription } from '@/lib/og-helpers';
+import { formatPageTitle, PAGE_TITLES, SITE_NAME } from '@/runtime/site-metadata';
 import EventDetailClient from './eventDetailClient';
 
-const FALLBACK_TITLE = 'Dive Into Run';
 const OG_IMAGE_PATH = '/og-default.png';
 
 /**
@@ -15,7 +15,8 @@ export async function generateMetadata({ params }) {
   const { id } = await params;
   const event = await fetchEventById(id);
 
-  const title = event?.title || FALLBACK_TITLE;
+  const title = formatPageTitle(event?.title || PAGE_TITLES.event);
+  const socialTitle = event?.title || SITE_NAME;
   const description = buildEventOgDescription(event);
   const url = `/events/${id}`;
 
@@ -23,14 +24,14 @@ export async function generateMetadata({ params }) {
     title,
     description,
     openGraph: {
-      title,
+      title: socialTitle,
       description,
       images: [OG_IMAGE_PATH],
       url,
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: socialTitle,
       description,
       images: [OG_IMAGE_PATH],
     },

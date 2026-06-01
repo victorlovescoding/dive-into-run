@@ -1,4 +1,5 @@
 import { Fraunces } from 'next/font/google';
+import { formatPageTitle, PAGE_TITLES } from '@/runtime/site-metadata';
 
 const fraunces = Fraunces({
   subsets: ['latin'],
@@ -8,7 +9,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata = {
-  title: '天氣 | Dive Into Run',
+  title: formatPageTitle(PAGE_TITLES.weather),
   description: '跑步前查看天氣預報，選擇最佳跑步時段。',
 };
 
