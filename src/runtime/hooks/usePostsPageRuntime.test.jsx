@@ -604,3 +604,66 @@ describe('usePostsPageRuntime composer draft flow', () => {
     expect(dialog.close).not.toHaveBeenCalled();
   });
 });
+
+describe('usePostsPageRuntime guest interaction guards', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    const storage = createMemoryStorage();
+    Object.defineProperty(window, 'localStorage', {
+      value: storage,
+      configurable: true,
+    });
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: storage,
+      configurable: true,
+    });
+    window.scrollTo = vi.fn();
+    navigationMock.searchParams.get.mockReturnValue(null);
+  });
+
+  test('toasts and skips mutation when a guest likes an existing post', async () => {
+    const showToast = vi.fn();
+    const view = await renderRuntime({
+      user: null,
+      showToast,
+      posts: [{ ...postA, liked: false, likesCount: 2 }],
+    });
+
+    await act(async () => {
+      await view.result.current.handlePressLike(postA.id);
+    });
+
+    expect(showToast).toHaveBeenCalledWith('請先登入才能按讚', 'info');
+    expect(postUseCasesMock.toggleLikePost).not.toHaveBeenCalled();
+    expect(view.result.current.posts).toEqual([
+      expect.objectContaining({
+        id: postA.id,
+        liked: false,
+        likesCount: 2,
+      }),
+    ]);
+  });
+
+  test('toasts and skips mutation when a guest favorites an existing post', async () => {
+    const showToast = vi.fn();
+    const view = await renderRuntime({
+      user: null,
+      showToast,
+      posts: [{ ...postA, isFavorited: false }],
+    });
+
+    await act(async () => {
+      await view.result.current.handleToggleFavoritePost(postA.id);
+    });
+
+    expect(showToast).toHaveBeenCalledWith('請先登入才能收藏', 'info');
+    expect(favoriteUseCasesMock.addContentFavorite).not.toHaveBeenCalled();
+    expect(favoriteUseCasesMock.removeContentFavorite).not.toHaveBeenCalled();
+    expect(view.result.current.posts).toEqual([
+      expect.objectContaining({
+        id: postA.id,
+        isFavorited: false,
+      }),
+    ]);
+  });
+});
