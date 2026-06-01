@@ -48,13 +48,13 @@
 
 ### T001 - Shared Soft-Delete Helpers And Event Typedefs
 
-- **State**: `in_progress`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-1`
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: plan or implementation phase commit after Reviewer PASS and coordinator approval.
-- **Last verified commit**: none
+- **Last verified commit**: pending T001 commit
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -143,10 +143,23 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: none yet.
-- Reviewer report: none yet.
-- Command output summary: none yet.
-- Changed files summary: none yet.
+- Engineer report: DONE. Added shared retention helpers, preserved post helper
+  exports, added event/event-comment retention typedef fields, and added
+  helper tests.
+- Reviewer report: spec compliance review `review_passed`; code-quality review
+  `review_passed`; no blocking findings.
+- Command output summary:
+  - `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js`: RED exit 1 before helper existed, failed to resolve `@/repo/soft-delete-retention`.
+  - `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js`: GREEN exit 0, 5 tests passed.
+  - `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js`: exit 0, 4 tests passed.
+  - `npm run lint:changed`: exit 0, existing React version warning only.
+  - `npm run type-check:changed`: exit 0, no changed-file type errors.
+- Changed files summary:
+  - `src/repo/soft-delete-retention.js`: created shared soft-delete retention helpers.
+  - `src/repo/post-soft-delete.js`: preserved post helper exports through shared helper re-exports.
+  - `src/service/event-service.js`: added optional event retention typedef fields.
+  - `src/service/event-comment-service.js`: added optional event comment retention typedef fields.
+  - `specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js`: added helper and post compatibility coverage.
 
 ### T002 - Event Delete Writes And Event Read Filtering
 

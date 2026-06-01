@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "planning",
-  "activeTask": "T001",
-  "activeWave": "wave-1",
+  "activeTask": null,
+  "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "1bde5a9de360f74f97f0123258997756b35f7243",
-    "capturedAt": "2026-06-02T00:46:49+08:00",
-    "summary": "Local feature branch head before dispatching T001."
+    "commit": "bdce30921dba11c8c4556b98836da32dbe16e1f5",
+    "capturedAt": "2026-06-02T00:54:55+08:00",
+    "summary": "Local feature branch head while T001 implementation diff is unstaged."
   },
   "remoteHead": {
     "remote": "origin",
@@ -29,12 +29,14 @@
     "capturedAt": "2026-06-02T00:44:58+08:00",
     "summary": "Remote base head for origin/main after fetch and rebase."
   },
-  "completedTasks": [],
+  "completedTasks": [
+    "T001"
+  ],
   "tasks": [
     {
       "id": "T001",
       "title": "Shared Soft-Delete Helpers And Event Typedefs",
-      "state": "in_progress",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-1",
       "engineer": "Engineer",
@@ -83,22 +85,42 @@
         {
           "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js",
           "expectedSignal": "Exit 0, helper tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js",
+            "exitCode": 0,
+            "summary": "5 tests passed.",
+            "verifiedAt": "2026-06-02T01:04:39+08:00"
+          }
         },
         {
           "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js",
           "expectedSignal": "Exit 0, existing post helper regression tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "4 tests passed.",
+            "verifiedAt": "2026-06-02T01:04:39+08:00"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed with existing React version warning only.",
+            "verifiedAt": "2026-06-02T01:04:39+08:00"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-02T01:04:39+08:00"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -113,12 +135,29 @@
         "Tests or type checks are missing, stale, or failing.",
         "Helper semantics drift from the approved field names or 90-day retention."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec compliance reviewer and code quality reviewer",
+        "summary": "T001 spec compliance and code quality reviews passed with no blocking findings.",
+        "decidedAt": "2026-06-02T01:04:39+08:00"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE. Added shared retention helpers, preserved post helper exports, added event/event-comment retention typedef fields, and added helper tests.",
+        "reviewerReport": "Spec compliance review passed; code-quality review passed; no blocking findings.",
+        "commandOutputSummary": [
+          "RED: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js: exit 1 before helper existed, failed to resolve @/repo/soft-delete-retention.",
+          "GREEN: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js: exit 0, 5 tests passed.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js: exit 0, 4 tests passed.",
+          "npm run lint:changed: exit 0, existing React version warning only.",
+          "npm run type-check:changed: exit 0, no changed-file type errors."
+        ],
+        "changedFilesSummary": [
+          "src/repo/soft-delete-retention.js: created shared soft-delete retention helpers.",
+          "src/repo/post-soft-delete.js: preserved post helper exports through shared helper re-exports.",
+          "src/service/event-service.js: added optional event retention typedef fields.",
+          "src/service/event-comment-service.js: added optional event comment retention typedef fields.",
+          "specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js: added helper and post compatibility coverage."
+        ]
       }
     },
     {
@@ -658,6 +697,30 @@
   "blockedReason": null,
   "lastVerification": [
     {
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js",
+      "exitCode": 0,
+      "summary": "5 tests passed.",
+      "verifiedAt": "2026-06-02T01:04:39+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js",
+      "exitCode": 0,
+      "summary": "4 tests passed.",
+      "verifiedAt": "2026-06-02T01:04:39+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "Passed with existing React version warning only.",
+      "verifiedAt": "2026-06-02T01:04:39+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "No changed-file type errors.",
+      "verifiedAt": "2026-06-02T01:04:39+08:00"
+    },
+    {
       "command": "git diff --check -- specs/event-soft-delete-retention",
       "exitCode": 0,
       "summary": "Planning artifacts have no whitespace errors.",
@@ -693,5 +756,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-06-02T00:46:49+08:00"
+  "updatedAt": "2026-06-02T01:04:39+08:00"
 }

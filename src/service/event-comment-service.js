@@ -11,6 +11,9 @@ import { isAccountDeletionHidden } from '@/config/account-deletion';
  * @property {import('firebase/firestore').Timestamp} createdAt - 建立時間。
  * @property {import('firebase/firestore').Timestamp | null} updatedAt - 最後編輯時間。
  * @property {boolean} isEdited - 是否曾被編輯。
+ * @property {import('firebase/firestore').Timestamp} [deletedAt] - 軟刪除時間。
+ * @property {string} [deletedByUid] - 執行軟刪除的使用者 UID。
+ * @property {import('firebase/firestore').Timestamp} [deletedPurgeAt] - 可永久刪除時間。
  */
 
 /**
