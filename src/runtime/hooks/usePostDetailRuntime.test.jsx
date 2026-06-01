@@ -111,9 +111,9 @@ function createWrapper(user = USER) {
   };
 }
 
-async function renderDetailRuntime() {
+async function renderDetailRuntime(user = USER) {
   const view = renderHook(() => usePostDetailRuntime('post-1'), {
-    wrapper: createWrapper(),
+    wrapper: createWrapper(user),
   });
 
   await waitFor(() => expect(view.result.current.post?.id).toBe('post-1'));
@@ -372,5 +372,39 @@ describe('usePostDetailRuntime detail edit drafts', () => {
     expect(result.current.content).toBe('Unsaved content');
     expect(mocks.showToast).toHaveBeenCalledWith('更新文章失敗，請稍後再試', 'error');
     expect(dialog.close).not.toHaveBeenCalled();
+  });
+});
+
+describe('usePostDetailRuntime guest interaction guards', () => {
+  it('toasts and skips mutation when a guest likes a loaded post', async () => {
+    const { result } = await renderDetailRuntime(null);
+
+    await act(async () => {
+      await result.current.handleToggleLike();
+    });
+
+    expect(mocks.showToast).toHaveBeenCalledWith('請先登入才能按讚', 'info');
+    expect(mocks.toggleLikePost).not.toHaveBeenCalled();
+    expect(result.current.post).toMatchObject({
+      id: 'post-1',
+      liked: false,
+      likesCount: 0,
+    });
+  });
+
+  it('toasts and skips mutation when a guest favorites a loaded post', async () => {
+    const { result } = await renderDetailRuntime(null);
+
+    await act(async () => {
+      await result.current.handleToggleFavoritePost();
+    });
+
+    expect(mocks.showToast).toHaveBeenCalledWith('請先登入才能收藏', 'info');
+    expect(mocks.addContentFavorite).not.toHaveBeenCalled();
+    expect(mocks.removeContentFavorite).not.toHaveBeenCalled();
+    expect(result.current.post).toMatchObject({
+      id: 'post-1',
+      isFavorited: false,
+    });
   });
 });

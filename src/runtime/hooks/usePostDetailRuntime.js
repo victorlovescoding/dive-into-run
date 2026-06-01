@@ -305,7 +305,12 @@ export default function usePostDetailRuntime(postId) {
   );
 
   const handleToggleLike = useCallback(async () => {
-    if (!user?.uid || !postDetail) return;
+    if (!postDetail) return;
+
+    if (!user?.uid) {
+      showToast('請先登入才能按讚', 'info');
+      return;
+    }
 
     const prevLiked = !!postDetail.liked;
     const prevCount = Number(postDetail.likesCount ?? 0);
@@ -331,7 +336,7 @@ export default function usePostDetailRuntime(postId) {
           : prev,
       );
     }
-  }, [postDetail, postId, user]);
+  }, [postDetail, postId, showToast, user]);
 
   const handleToggleFavoritePost = useCallback(async () => {
     if (!user?.uid || !postDetail) {

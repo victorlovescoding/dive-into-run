@@ -262,10 +262,13 @@ export default function usePostsPageRuntime() {
    */
   const handlePressLike = useCallback(
     async (postId) => {
-      if (!userUid) return;
-
       const targetPost = posts.find((postItem) => postItem.id === postId);
       if (!targetPost) return;
+
+      if (!userUid) {
+        showToast('請先登入才能按讚', 'info');
+        return;
+      }
 
       const previousLiked = !!targetPost.liked;
       const previousCount = Number(targetPost.likesCount ?? 0);
@@ -278,7 +281,7 @@ export default function usePostsPageRuntime() {
 
       setPosts((previousPosts) => applyPostLikeState(previousPosts, postId, previousLiked, previousCount));
     },
-    [posts, userUid],
+    [posts, showToast, userUid],
   );
 
   /**

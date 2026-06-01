@@ -191,7 +191,13 @@ export default function usePostComments({
     async (event) => {
       event.preventDefault();
 
-      if (!comment.trim() || !user?.uid || !postDetail) return;
+      const trimmedComment = comment.trim();
+      if (!trimmedComment || !postDetail) return;
+
+      if (!user?.uid) {
+        showToast('請先登入才能留言', 'info');
+        return;
+      }
 
       if (!commentEditing) {
         const rawComment = comment;
@@ -238,7 +244,7 @@ export default function usePostComments({
         return;
       }
 
-      const newText = comment.trim();
+      const newText = trimmedComment;
       const prevText =
         comments.find((commentItem) => commentItem.id === commentEditing.id)?.comment ?? '';
 
