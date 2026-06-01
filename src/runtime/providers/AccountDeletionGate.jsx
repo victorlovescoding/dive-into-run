@@ -67,9 +67,24 @@ export default function AccountDeletionGate({ children }) {
 
   if (loading) {
     return (
-      <main className={styles.shell} role="status" aria-live="polite">
-        <section className={styles.panel}>
-          <p className={styles.copy}>載入帳號狀態...</p>
+      <main
+        className={`${styles.shell} ${styles.loadingShell}`}
+        role="status"
+        aria-live="polite"
+        aria-label="正在確認帳號狀態"
+      >
+        <section className={`${styles.panel} ${styles.loadingPanel}`}>
+          <div className={styles.loaderWrap}>
+            <div className={styles.trackLoader} aria-hidden="true">
+              <span className={styles.puTrack} />
+              <span className={styles.runnerDot} data-testid="account-gate-runner-dot" />
+            </div>
+            <div className={styles.loadingDots} aria-hidden="true">
+              <span data-testid="account-gate-pulse-dot" />
+              <span data-testid="account-gate-pulse-dot" />
+              <span data-testid="account-gate-pulse-dot" />
+            </div>
+          </div>
         </section>
       </main>
     );
