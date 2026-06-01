@@ -5,8 +5,8 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `bec1394b8a296697e713b2bbaee216748bb78755`
-- Remote head: `origin/main` at `471cebe404e83b8984a3bca0d11dd69e29cc364d`
+- Current head: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
+- Remote head: `origin/main` at `19434854fd36911879a36406efda80d1b5056dc1`
 - Authorization boundary:
   - edit: yes
   - commit: yes
@@ -24,7 +24,8 @@
   2026-06-02T00:29:32+08:00
 - Last verified commit: none
 - Phase commits:
-  - spec: `bec1394b8a296697e713b2bbaee216748bb78755`
+  - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
+  - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
 - Rules deploy status: required, required=true, changed=false, deployedCommit=null
 - Incidents: none
 - Blocked: no

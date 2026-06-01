@@ -131,11 +131,11 @@ Active predicate:
 
 - Status schema: v3.
 - Current head snapshot: branch `085-event-soft-delete-retention`, commit
-  `bec1394b8a296697e713b2bbaee216748bb78755`, captured
-  `2026-06-01T23:52:59+08:00`.
+  `13347d19506c1c4e721ab3322ed40f92a4a1c92a`, captured
+  `2026-06-02T00:44:58+08:00` after rebase onto current `origin/main`.
 - Remote head snapshot: `origin/main`, commit
-  `471cebe404e83b8984a3bca0d11dd69e29cc364d`, captured
-  `2026-06-01T23:52:59+08:00`.
+  `19434854fd36911879a36406efda80d1b5056dc1`, captured
+  `2026-06-02T00:44:58+08:00`.
 - Phase commit checkpoints: `spec`, then later `plan`,
   `implementation`, and `verification` if those commits are actually created.
 - `lastVerifiedCommit` remains `null` until fresh verification covers a commit.

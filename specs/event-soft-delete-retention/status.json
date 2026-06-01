@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "bec1394b8a296697e713b2bbaee216748bb78755",
-    "capturedAt": "2026-06-01T23:52:59+08:00",
-    "summary": "Local feature branch head after approved spec commit."
+    "commit": "13347d19506c1c4e721ab3322ed40f92a4a1c92a",
+    "capturedAt": "2026-06-02T00:44:58+08:00",
+    "summary": "Local feature branch head after rebase onto current origin/main."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "471cebe404e83b8984a3bca0d11dd69e29cc364d",
-    "capturedAt": "2026-06-01T23:52:59+08:00",
-    "summary": "Remote base head for origin/main."
+    "commit": "19434854fd36911879a36406efda80d1b5056dc1",
+    "capturedAt": "2026-06-02T00:44:58+08:00",
+    "summary": "Remote base head for origin/main after fetch and rebase."
   },
   "completedTasks": [],
   "tasks": [
@@ -674,9 +674,15 @@
   "phaseCommits": [
     {
       "phase": "spec",
-      "commit": "bec1394b8a296697e713b2bbaee216748bb78755",
-      "summary": "Approved event soft-delete retention spec.",
-      "committedAt": "2026-06-01T23:52:59+08:00"
+      "commit": "8c3d5e797935186d8db27af6e80e042b9508ae3c",
+      "summary": "Approved event soft-delete retention spec, rebased onto origin/main.",
+      "committedAt": "2026-06-02T00:44:58+08:00"
+    },
+    {
+      "phase": "plan",
+      "commit": "13347d19506c1c4e721ab3322ed40f92a4a1c92a",
+      "summary": "Reviewed event retention implementation plan, rebased onto origin/main.",
+      "committedAt": "2026-06-02T00:44:58+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -687,5 +693,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-06-02T00:29:32+08:00"
+  "updatedAt": "2026-06-02T00:44:58+08:00"
 }
