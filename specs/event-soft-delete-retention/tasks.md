@@ -1007,7 +1007,7 @@ Evidence:
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation or verification
-- **Last verified commit**: pending T008 implementation commit
+- **Last verified commit**: `020cd585cc06d90984364445408d7efeae13adcc`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: final review found Firestore rules allowed arbitrary

@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `d6ecc8f2a058f18e896734fa5885d3d626b62b27`
+- Current head: `020cd585cc06d90984364445408d7efeae13adcc`
 - Remote head: `origin/main` at `f641655b6b7f5fe48058ad43d59a5cdc147cdebf`
 - Authorization boundary:
   - edit: yes
@@ -23,7 +23,7 @@
 - Latest reviewer decision: T008 reviewer `review_passed`; no Critical or
   Important findings after rules enforce exact 90-day retention and product
   payloads use one concrete delete timestamp.
-- Last verified commit: `d6ecc8f2a058f18e896734fa5885d3d626b62b27`
+- Last verified commit: `020cd585cc06d90984364445408d7efeae13adcc`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
   - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
@@ -38,6 +38,8 @@
   - T007-dispatch: `e7afa8f2a85b525d38c23eca57c2411ec3695356`
   - T007: `1d221d626e24983436f1645ab664438a9885ca5f`
   - T007-state: `d6ecc8f2a058f18e896734fa5885d3d626b62b27`
+  - T008-dispatch: `500bbee7e2803814f0a2821862e3788ff5593a95`
+  - T008: `020cd585cc06d90984364445408d7efeae13adcc`
 - Rules deploy status: required, required=true, changed=true, deployedCommit=null
 - Incidents: T002 stale active detail cancellation notification carry-forward is
   mitigated and documented.
@@ -57,11 +59,10 @@
 
 ## Next Action
 
-Coordinator runs workflow gates, commits the reviewed T008 implementation plus
-synchronized workflow state, then records the resulting T008 commit SHA in a
-follow-up workflow-state commit. Do not push, open a PR, watch CI, merge, sync
-local `main`, deploy Firestore rules, or deploy Firebase Functions without
-separate explicit authorization.
+Coordinator runs workflow gates, commits this T008 workflow-state sync, then
+requests final read-only review of the full feature branch. Do not push, open a
+PR, watch CI, merge, sync local `main`, deploy Firestore rules, or deploy
+Firebase Functions without separate explicit authorization.
 
 ## Task Graph
 

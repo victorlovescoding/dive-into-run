@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "d6ecc8f2a058f18e896734fa5885d3d626b62b27",
-    "capturedAt": "2026-06-03T00:21:11+08:00",
-    "summary": "T008 rules-enforced retention window fix reviewed and verified in the working tree; pending implementation commit."
+    "commit": "020cd585cc06d90984364445408d7efeae13adcc",
+    "capturedAt": "2026-06-03T00:47:05+08:00",
+    "summary": "T008 implementation committed; recording workflow-state sync before final review."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "f641655b6b7f5fe48058ad43d59a5cdc147cdebf",
     "capturedAt": "2026-06-03T00:21:11+08:00",
-    "summary": "Current origin/main while branch is ahead 20 and behind 1; rebase remains a later closeout concern."
+    "summary": "Current origin/main while branch is ahead 22 and behind 1; rebase remains a later closeout concern."
   },
   "completedTasks": [
     "T001",
@@ -1311,7 +1311,7 @@
       "verifiedAt": "2026-06-03T00:45:05+08:00"
     }
   ],
-  "lastVerifiedCommit": "d6ecc8f2a058f18e896734fa5885d3d626b62b27",
+  "lastVerifiedCommit": "020cd585cc06d90984364445408d7efeae13adcc",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -1390,6 +1390,18 @@
       "commit": "d6ecc8f2a058f18e896734fa5885d3d626b62b27",
       "summary": "Record event member comments state.",
       "committedAt": "2026-06-02T23:58:27+08:00"
+    },
+    {
+      "phase": "T008-dispatch",
+      "commit": "500bbee7e2803814f0a2821862e3788ff5593a95",
+      "summary": "Start event retention rules fix.",
+      "committedAt": "2026-06-03T00:21:11+08:00"
+    },
+    {
+      "phase": "T008",
+      "commit": "020cd585cc06d90984364445408d7efeae13adcc",
+      "summary": "Enforce retention window rules.",
+      "committedAt": "2026-06-03T00:47:05+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -1409,5 +1421,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-03T00:45:05+08:00"
+  "updatedAt": "2026-06-03T00:47:05+08:00"
 }
