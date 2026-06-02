@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "implementation",
-  "activeTask": "T006",
-  "activeWave": "wave-4",
+  "activeTask": null,
+  "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,23 +18,24 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "d139cba324b4aa6cb668b40e265ad56203868aa6",
-    "capturedAt": "2026-06-02T22:42:10+08:00",
-    "summary": "T005 implementation committed; dispatching T006."
+    "commit": "c0da97a5c97161d7202dcecbad9e08f3d77cc1a5",
+    "capturedAt": "2026-06-02T23:16:12+08:00",
+    "summary": "T006 implementation reviewed and verified in the working tree; pending implementation commit."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "f641655b6b7f5fe48058ad43d59a5cdc147cdebf",
-    "capturedAt": "2026-06-02T22:42:10+08:00",
-    "summary": "Current origin/main while branch is ahead 14 and behind 1; rebase remains a later closeout concern."
+    "capturedAt": "2026-06-02T23:16:12+08:00",
+    "summary": "Current origin/main while branch is ahead 15 and behind 1; rebase remains a later closeout concern."
   },
   "completedTasks": [
     "T001",
     "T002",
     "T003",
     "T004",
-    "T005"
+    "T005",
+    "T006"
   ],
   "tasks": [
     {
@@ -715,7 +716,7 @@
     {
       "id": "T006",
       "title": "Firebase Event Retention Purge And Integration Gates",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-4",
       "engineer": "Engineer for Functions purge; Coordinator for workflow-state final sync after Reviewer PASS",
@@ -786,47 +787,92 @@
         {
           "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js",
           "expectedSignal": "Exit 0, event purge tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 5 tests passed.",
+            "verifiedAt": "2026-06-02T23:15:22+08:00"
+          }
         },
         {
           "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js",
           "expectedSignal": "Exit 0, existing post purge regression tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 9 tests passed.",
+            "verifiedAt": "2026-06-02T23:15:29+08:00"
+          }
         },
         {
           "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js",
           "expectedSignal": "Exit 0, scheduled wrapper registration and delegation tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 2 tests passed.",
+            "verifiedAt": "2026-06-02T23:15:34+08:00"
+          }
         },
         {
           "command": "node --check functions/index.js",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "node --check functions/index.js",
+            "exitCode": 0,
+            "summary": "Syntax check passed.",
+            "verifiedAt": "2026-06-02T23:15:40+08:00"
+          }
         },
         {
           "command": "node --check functions/event-retention-purge.js",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "node --check functions/event-retention-purge.js",
+            "exitCode": 0,
+            "summary": "Syntax check passed.",
+            "verifiedAt": "2026-06-02T23:15:40+08:00"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed with existing React version warning only.",
+            "verifiedAt": "2026-06-02T23:15:49+08:00"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-02T23:15:54+08:00"
+          }
         },
         {
           "command": "npm run workflow:check",
           "expectedSignal": "Exit 0, workflow state valid and synced.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
+            "verifiedAt": "2026-06-02T23:16:30+08:00"
+          }
         },
         {
           "command": "git diff --check",
           "expectedSignal": "Exit 0, no whitespace errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-02T23:15:58+08:00"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -847,12 +893,35 @@
         "Existing post purge behavior regresses.",
         "Workflow state drifts or verification is missing, stale, failed, or not the required command."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec compliance reviewer and code-quality re-reviewer",
+        "summary": "T006 spec compliance and code-quality re-review passed with no blocking findings; duplicate collection-group counting regression is covered and fixed.",
+        "decidedAt": "2026-06-02T23:15:00+08:00"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE. Added deploy-contained event retention purge core, scheduled wrapper registration, purge/schedule tests, and duplicate collection-group counting fix; no index change was required.",
+        "reviewerReport": "Spec compliance review passed; code-quality re-review passed with no Critical, Important, or Minor findings after the duplicate collection-group counting fix.",
+        "commandOutputSummary": [
+          "RED: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js: exit 1 before the new purge file existed.",
+          "RED: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js: exit 1 for duplicate collection-group counting before the fix.",
+          "GREEN: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js: exit 0, 5 tests passed.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js: exit 0, 9 tests passed.",
+          "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js: exit 0, 2 tests passed.",
+          "node --check functions/index.js: exit 0.",
+          "node --check functions/event-retention-purge.js: exit 0.",
+          "npm run lint:changed: exit 0, existing React version warning only.",
+          "npm run type-check:changed: exit 0, no changed-file type errors.",
+          "npm run workflow:check: exit 0, 15 status files valid and synced.",
+          "git diff --check: exit 0, no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "functions/event-retention-purge.js: added event tree purge, standalone active-parent event comment purge, soft-deleted-parent skip, bounded batches, count aggregation, and duplicate collection-group suppression.",
+          "functions/index.js: registered the scheduled event retention purge wrapper.",
+          "specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js: added purge behavior, batching, idempotency, post regression, and duplicate collection-group coverage.",
+          "specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js: added scheduled wrapper registration and delegation coverage.",
+          "firestore.indexes.json: unchanged; existing comments collection-group deletedPurgeAt index is reused and no event index evidence was produced."
+        ]
       }
     }
   ],
@@ -860,37 +929,61 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js\"",
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js",
       "exitCode": 0,
-      "summary": "1 file, 8 tests passed.",
-      "verifiedAt": "2026-06-02T22:38:39+08:00"
+      "summary": "1 file, 5 tests passed.",
+      "verifiedAt": "2026-06-02T23:15:22+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js",
+      "exitCode": 0,
+      "summary": "1 file, 9 tests passed.",
+      "verifiedAt": "2026-06-02T23:15:29+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js",
+      "exitCode": 0,
+      "summary": "1 file, 2 tests passed.",
+      "verifiedAt": "2026-06-02T23:15:34+08:00"
+    },
+    {
+      "command": "node --check functions/index.js",
+      "exitCode": 0,
+      "summary": "Syntax check passed.",
+      "verifiedAt": "2026-06-02T23:15:40+08:00"
+    },
+    {
+      "command": "node --check functions/event-retention-purge.js",
+      "exitCode": 0,
+      "summary": "Syntax check passed.",
+      "verifiedAt": "2026-06-02T23:15:40+08:00"
     },
     {
       "command": "npm run lint:changed",
       "exitCode": 0,
       "summary": "Passed with existing React version warning only.",
-      "verifiedAt": "2026-06-02T22:38:39+08:00"
+      "verifiedAt": "2026-06-02T23:15:49+08:00"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
       "summary": "No changed-file type errors.",
-      "verifiedAt": "2026-06-02T22:38:39+08:00"
+      "verifiedAt": "2026-06-02T23:15:54+08:00"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-02T22:38:39+08:00"
+      "verifiedAt": "2026-06-02T23:15:58+08:00"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
-      "summary": "15 status files valid and synced after the workflow-check rules scope fix.",
-      "verifiedAt": "2026-06-02T22:38:39+08:00"
+      "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
+      "verifiedAt": "2026-06-02T23:16:30+08:00"
     }
   ],
-  "lastVerifiedCommit": "d139cba324b4aa6cb668b40e265ad56203868aa6",
+  "lastVerifiedCommit": "c0da97a5c97161d7202dcecbad9e08f3d77cc1a5",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -958,5 +1051,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-02T22:42:10+08:00"
+  "updatedAt": "2026-06-02T23:16:12+08:00"
 }

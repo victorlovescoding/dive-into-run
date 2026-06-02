@@ -683,13 +683,13 @@ Evidence:
 
 ### T006 - Firebase Event Retention Purge And Integration Gates
 
-- **State**: `in_progress`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-4`
 - **Engineer**: Engineer for Functions purge; Coordinator for workflow-state final sync after Reviewer PASS.
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation or verification
-- **Last verified commit**: none
+- **Last verified commit**: pending T006 implementation commit
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -828,10 +828,33 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: none yet.
-- Reviewer report: none yet.
-- Command output summary: none yet.
-- Changed files summary: none yet.
+- Engineer report: DONE. Added the deploy-contained event retention purge core,
+  registered the scheduled wrapper, added purge/schedule unit tests, fixed the
+  duplicate collection-group counting regression, and left indexes unchanged
+  because verification did not require a new index.
+- Reviewer report: spec compliance review `review_passed`; code-quality
+  re-review `review_passed`; no Critical, Important, or Minor findings after
+  the duplicate collection-group counting fix.
+- Command output summary:
+  - `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js`: RED exit 1 before the new purge file existed.
+  - `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js`: RED exit 1 for the duplicate collection-group regression before the counting fix.
+  - `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js`: GREEN exit 0, 5 tests passed.
+  - `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js`: exit 0, 9 tests passed.
+  - `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js`: exit 0, 2 tests passed.
+  - `node --check functions/index.js`: exit 0.
+  - `node --check functions/event-retention-purge.js`: exit 0.
+  - `npm run lint:changed`: exit 0, existing React version warning only.
+  - `npm run type-check:changed`: exit 0, no changed-file type errors.
+  - `git diff --check`: exit 0, no whitespace errors.
+- Changed files summary:
+  - `functions/event-retention-purge.js`: added event tree purge, standalone
+    active-parent event comment purge, soft-deleted-parent skip, 499-write
+    batches, count aggregation, and duplicate collection-group suppression.
+  - `functions/index.js`: registered the scheduled event retention purge wrapper.
+  - `specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js`: added purge behavior, batching, idempotency, post regression, and duplicate collection-group coverage.
+  - `specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js`: added scheduled wrapper registration and delegation coverage.
+  - `firestore.indexes.json`: unchanged; existing comments collection-group
+    `deletedPurgeAt` index is reused and no event index evidence was produced.
 
 ## Final Integration
 

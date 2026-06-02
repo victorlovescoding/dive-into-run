@@ -5,6 +5,7 @@ const { FieldValue, Timestamp, getFirestore } = require('firebase-admin/firestor
 const { getStorage } = require('firebase-admin/storage');
 const { logger, setGlobalOptions } = require('firebase-functions');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { purgeExpiredEventRetention: purgeExpiredEventRetentionCore } = require('./event-retention-purge');
 const { purgeExpiredPostRetention: purgeExpiredPostRetentionCore } = require('./post-retention-purge');
 
 const DELETE_BATCH_LIMIT = 250;
@@ -472,4 +473,26 @@ exports.purgeExpiredPostRetention = onSchedule(
     timeZone: 'Asia/Taipei',
   },
   runScheduledPostRetentionPurge,
+);
+
+/**
+ * Run the scheduled event retention purge.
+ * @returns {Promise<void>} Resolves after purge work completes.
+ */
+async function runScheduledEventRetentionPurge() {
+  const counts = await purgeExpiredEventRetentionCore({
+    firestore: db,
+    logger,
+    now: Timestamp.now(),
+  });
+
+  logger.info('scheduled event retention purge finished', { counts });
+}
+
+exports.purgeExpiredEventRetention = onSchedule(
+  {
+    schedule: 'every day 03:30',
+    timeZone: 'Asia/Taipei',
+  },
+  runScheduledEventRetentionPurge,
 );

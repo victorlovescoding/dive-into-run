@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `d139cba324b4aa6cb668b40e265ad56203868aa6`
+- Current head: `c0da97a5c97161d7202dcecbad9e08f3d77cc1a5`
 - Remote head: `origin/main` at `f641655b6b7f5fe48058ad43d59a5cdc147cdebf`
 - Authorization boundary:
   - edit: yes
@@ -18,11 +18,12 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: implementation
-- Active task: T006
-- Active wave: wave-4
-- Latest reviewer decision: T005 final spec compliance and code-quality reviews
-  `review_passed` on 2026-06-02T12:15:39+08:00.
-- Last verified commit: `d139cba324b4aa6cb668b40e265ad56203868aa6`
+- Active task: none
+- Active wave: none
+- Latest reviewer decision: T006 spec compliance review and code-quality
+  re-review `review_passed`; no blocking findings after the duplicate
+  collection-group counting fix.
+- Last verified commit: `c0da97a5c97161d7202dcecbad9e08f3d77cc1a5`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
   - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
@@ -51,8 +52,11 @@
 
 ## Next Action
 
-Coordinator commits this T006 dispatch state, then dispatches the T006 Engineer
-subagent.
+Coordinator runs final workflow gates, commits the reviewed T006
+implementation plus synchronized workflow state, then records the resulting
+T006 commit SHA in a follow-up workflow-state commit. Do not push, open a PR,
+watch CI, merge, sync local `main`, deploy Firestore rules, or deploy Firebase
+Functions without separate explicit authorization.
 
 ## Task Graph
 
@@ -71,56 +75,41 @@ separate coordinator-created worktrees with disjoint owned files.
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `git diff --check -- specs/event-soft-delete-retention` | 0 | Planning artifacts have no whitespace errors. |
-| `npm run workflow:check` | 0 | 15 status files valid and synced, including `event-soft-delete-retention/status.json`. |
-| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js` | 0 | 5 tests passed. |
-| `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js` | 0 | 4 tests passed. |
-| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-service-soft-delete.test.js` | 0 | 1 file, 2 tests passed. |
-| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js` | 0 | 1 file, 18 tests passed. |
-| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-comment-service-soft-delete.test.js` | 0 | 1 file, 3 tests passed. |
-| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js` | 0 | 1 file, 8 tests passed. |
-| `npm run workflow:check` | 0 | 15 status files valid and synced, including `event-soft-delete-retention/status.json`. |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js` | 0 | 1 file, 5 tests passed. |
+| `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js` | 0 | 1 file, 9 tests passed. |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js` | 0 | 1 file, 2 tests passed. |
+| `node --check functions/index.js` | 0 | Syntax check passed. |
+| `node --check functions/event-retention-purge.js` | 0 | Syntax check passed. |
 | `npm run lint:changed` | 0 | Passed with existing React version warning only. |
 | `npm run type-check:changed` | 0 | No changed-file type errors. |
-| `git diff --check` | 0 | No whitespace errors. |
-| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js` | 0 | 1 file, 2 tests passed. |
-| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js` | 0 | 1 file, 4 tests passed. |
-| `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js` | 0 | 1 file, 3 tests passed. |
-| `npm run lint:changed` | 0 | Passed with existing React version warning only. |
-| `npm run type-check:changed` | 0 | No changed-file type errors. |
-| `git diff --check` | 0 | No whitespace errors. |
 | `npm run workflow:check` | 0 | 15 status files valid and synced, including `event-soft-delete-retention/status.json`. |
-| `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js"` | 0 | 1 file, 8 tests passed. |
-| `npm run lint:changed` | 0 | Passed with existing React version warning only. |
-| `npm run type-check:changed` | 0 | No changed-file type errors. |
 | `git diff --check` | 0 | No whitespace errors. |
-| `npm run workflow:check` | 0 | 15 status files valid and synced after the workflow-check rules scope fix. |
 
-T005 implementation is reviewed, verified, and committed. Firestore rules
-changed locally but have not been deployed. T006 dispatch state is being
-committed before Engineer handoff.
+T006 implementation is reviewed and verified in the working tree. Firestore
+rules changed locally in T005 but have not been deployed. Firebase Functions
+changed locally in T006 but have not been deployed.
 
 ## Closeout Checklist
 
-- [ ] `tasks.md` task states match `status.json`.
-- [ ] Active task and active wave match `status.json`.
-- [ ] Latest reviewer decision is recorded in `tasks.md` and `status.json`.
-- [ ] `lastVerification` has one entry per command.
+- [x] `tasks.md` task states match `status.json`.
+- [x] Active task and active wave match `status.json`.
+- [x] Latest reviewer decision is recorded in `tasks.md` and `status.json`.
+- [x] `lastVerification` has one entry per command.
 - [ ] `lastVerifiedCommit`, `currentHead`, `remoteHead`, and `phaseCommits`
       reflect the latest verified state.
-- [ ] `authorizationBoundary.deployFirestoreRules` is recorded and treated as
+- [x] `authorizationBoundary.deployFirestoreRules` is recorded and treated as
       separate from edit, commit, push, PR, CI watch, merge, and local main sync.
-- [ ] Firebase Functions deploy remains separate and unauthorized until the user
+- [x] Firebase Functions deploy remains separate and unauthorized until the user
       explicitly authorizes it.
-- [ ] `rulesDeployStatus` matches the rules release state.
-- [ ] Final summary does not imply deployed rules, deployed Functions, or
+- [x] `rulesDeployStatus` matches the rules release state.
+- [x] Final summary does not imply deployed rules, deployed Functions, or
       deployed product behavior without deploy evidence.
 - [ ] PR, CI, and merge notes carry release risk if rules or Functions are not
       deployed.
 - [ ] Open incidents are resolved, mitigated with explicit carry-forward, or
       block closeout.
-- [ ] Changed files are intentionally in scope.
-- [ ] Blockers are resolved or explicitly carried forward.
+- [x] Changed files are intentionally in scope.
+- [x] Blockers are resolved or explicitly carried forward.
 
 ## Blockers
 
