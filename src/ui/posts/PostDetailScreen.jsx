@@ -1,9 +1,11 @@
+/* eslint-disable max-lines -- Detail screen owns post body, comments, composer, and modal wiring. */
 'use client';
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import CommentCard from '@/components/CommentCard';
+import CommentEditModal from '@/components/CommentEditModal';
 import ComposeModal from '@/components/ComposeModal';
 import PostCard from '@/components/PostCard';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
@@ -214,6 +216,9 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     comments,
     highlightedCommentId,
     comment,
+    editingComment: runtimeEditingComment,
+    isUpdating: runtimeIsCommentUpdating,
+    updateError: runtimeCommentUpdateError,
     title,
     content,
     originalTitle,
@@ -238,10 +243,68 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     handleToggleLike,
     handleToggleFavoritePost,
     handleEditComment,
+    handleEditSave,
+    handleEditCancel,
     handleDeleteComment,
     handleSubmitComment,
     handleCommentChange,
   } = runtime;
+
+  const [localEditingComment, setLocalEditingComment] = useState(null);
+  const [localIsUpdating, setLocalIsUpdating] = useState(false);
+  const [localUpdateError, setLocalUpdateError] = useState(null);
+
+  const activeEditingComment = runtimeEditingComment ?? localEditingComment;
+  const activeIsUpdating = runtimeEditingComment ? !!runtimeIsCommentUpdating : localIsUpdating;
+  const activeUpdateError = runtimeEditingComment
+    ? runtimeCommentUpdateError ?? null
+    : localUpdateError;
+
+  const handleOpenCommentEdit = useCallback(
+    (currentComment) => {
+      setLocalEditingComment(currentComment);
+      setLocalUpdateError(null);
+      handleEditComment(currentComment.id);
+    },
+    [handleEditComment],
+  );
+
+  const handleSaveCommentEdit = useCallback(
+    async (newContent) => {
+      if (!activeEditingComment) return;
+
+      if (handleEditSave) {
+        const didSave = await handleEditSave(newContent);
+        if (didSave !== false) {
+          setLocalEditingComment(null);
+          setLocalUpdateError(null);
+        }
+        return;
+      }
+
+      setLocalIsUpdating(true);
+      setLocalUpdateError(null);
+      try {
+        const didSave = await handleEditComment(activeEditingComment.id, newContent);
+        if (didSave === false) {
+          setLocalUpdateError('更新失敗，請再試一次');
+          return;
+        }
+        setLocalEditingComment(null);
+      } catch {
+        setLocalUpdateError('更新失敗，請再試一次');
+      } finally {
+        setLocalIsUpdating(false);
+      }
+    },
+    [activeEditingComment, handleEditComment, handleEditSave],
+  );
+
+  const handleCancelCommentEdit = useCallback(() => {
+    handleEditCancel?.();
+    setLocalEditingComment(null);
+    setLocalUpdateError(null);
+  }, [handleEditCancel]);
 
   return (
     <div className={styles.detailContainer}>
@@ -287,7 +350,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
                 isOwner={!!commentItem.isAuthor}
                 isHighlighted={commentItem.id === highlightedCommentId}
                 onEdit={(currentComment) => {
-                  handleEditComment(currentComment.id);
+                  handleOpenCommentEdit(currentComment);
                 }}
                 onDelete={(currentComment) => {
                   handleDeleteComment(currentComment.id);
@@ -318,6 +381,16 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
               送出
             </button>
           </form>
+
+          {activeEditingComment && (
+            <CommentEditModal
+              comment={activeEditingComment}
+              isUpdating={activeIsUpdating}
+              updateError={activeUpdateError}
+              onSave={handleSaveCommentEdit}
+              onCancel={handleCancelCommentEdit}
+            />
+          )}
 
           <ComposeModal
             dialogRef={dialogRef}

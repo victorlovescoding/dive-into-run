@@ -55,6 +55,15 @@ const postDetail = {
   commentsCount: 0,
 };
 
+const existingComment = {
+  id: 'comment-1',
+  authorUid: 'user-1',
+  authorName: 'Runner',
+  authorImgURL: '',
+  comment: 'Original post comment',
+  createdAt: null,
+};
+
 /**
  * 建立 hook 測試 wrapper。
  * @param {(message: string, type?: 'success' | 'error' | 'info') => void} showToast - Toast spy。
@@ -116,9 +125,21 @@ function commentChangeEvent(value) {
   return /** @type {Event} */ (/** @type {unknown} */ ({ target: { value } }));
 }
 
+/**
+ * 設定 hook 初始留言資料。
+ * @param {ReturnType<typeof renderCommentsRuntime>} view - Hook render result。
+ * @param {Array<object>} comments - 初始留言。
+ */
+function seedComments(view, comments = [existingComment]) {
+  act(() => {
+    view.result.current.setInitialComments({ comments, nextCursor: null });
+  });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   navigationMock.searchParams.get.mockReturnValue(null);
+  postUseCasesMock.updateComment.mockResolvedValue(undefined);
 });
 
 describe('usePostComments guest interaction guards', () => {
@@ -140,5 +161,93 @@ describe('usePostComments guest interaction guards', () => {
     expect(notificationUseCasesMock.notifyPostCommentReply).not.toHaveBeenCalled();
     expect(view.setPostDetail).not.toHaveBeenCalled();
     expect(view.result.current.comment).toBe(' 留言內容 ');
+  });
+});
+
+describe('usePostComments edit modal behavior', () => {
+  test('opens edit modal state without copying text into the bottom input', () => {
+    const view = renderCommentsRuntime();
+    seedComments(view);
+
+    act(() => {
+      view.result.current.handleCommentChange(commentChangeEvent('bottom draft'));
+    });
+    act(() => {
+      view.result.current.handleEditComment('comment-1');
+    });
+
+    expect(view.result.current.comment).toBe('bottom draft');
+    expect(view.result.current.editingComment).toMatchObject({
+      id: 'comment-1',
+      comment: 'Original post comment',
+    });
+  });
+
+  test('saves edited post comments with the exact trimmed payload and closes the modal', async () => {
+    const view = renderCommentsRuntime();
+    seedComments(view);
+
+    act(() => {
+      view.result.current.handleCommentChange(commentChangeEvent('bottom draft'));
+    });
+    act(() => {
+      view.result.current.handleEditComment('comment-1');
+    });
+    await act(async () => {
+      await view.result.current.handleEditSave(' Updated post comment ');
+    });
+
+    expect(postUseCasesMock.updateComment).toHaveBeenLastCalledWith('post-1', 'comment-1', {
+      comment: 'Updated post comment',
+    });
+    expect(view.result.current.comments[0]).toMatchObject({
+      comment: 'Updated post comment',
+    });
+    expect(view.result.current.comment).toBe('bottom draft');
+    expect(view.result.current.editingComment).toBeNull();
+    expect(view.result.current.updateError).toBeNull();
+  });
+
+  test('rolls back local post comment text and keeps the modal open after save failure', async () => {
+    postUseCasesMock.updateComment.mockRejectedValueOnce(new Error('failed'));
+    const view = renderCommentsRuntime();
+    seedComments(view);
+
+    act(() => {
+      view.result.current.handleEditComment('comment-1');
+    });
+    await act(async () => {
+      await view.result.current.handleEditSave('Failed post comment');
+    });
+
+    expect(view.result.current.comments[0]).toMatchObject({
+      comment: 'Original post comment',
+    });
+    expect(view.result.current.editingComment).toMatchObject({
+      id: 'comment-1',
+    });
+    expect(view.result.current.updateError).toBe('更新失敗，請再試一次');
+  });
+
+  test('cancel closes edit modal state without changing input or comments', () => {
+    const view = renderCommentsRuntime();
+    seedComments(view);
+
+    act(() => {
+      view.result.current.handleCommentChange(commentChangeEvent('bottom draft'));
+    });
+    act(() => {
+      view.result.current.handleEditComment('comment-1');
+    });
+    act(() => {
+      view.result.current.handleEditCancel();
+    });
+
+    expect(view.result.current.comment).toBe('bottom draft');
+    expect(view.result.current.comments[0]).toMatchObject({
+      comment: 'Original post comment',
+    });
+    expect(view.result.current.editingComment).toBeNull();
+    expect(view.result.current.updateError).toBeNull();
   });
 });
