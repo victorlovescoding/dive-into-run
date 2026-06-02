@@ -279,6 +279,8 @@ Evidence:
   - `npm run lint:changed`: exit 0, existing React version warning only.
   - `npm run type-check:changed`: exit 0, no changed-file type errors.
   - `git diff --check`: exit 0, no whitespace errors.
+  - `npm run workflow:check`: exit 0, 15 status files valid and synced after
+    the workflow-check rules scope fix.
   - `npm run workflow:check`: exit 0, 15 status files valid and synced.
 - Changed files summary:
   - `src/repo/client/firebase-events-repo.js`: soft-deletes event docs with host actor validation and blocks tombstone join/leave/update transaction writes.
@@ -554,13 +556,13 @@ Evidence:
 
 ### T005 - Firestore Rules For Event Retention
 
-- **State**: `in_progress`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-3`
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation
-- **Last verified commit**: none
+- **Last verified commit**: pending T005 commit
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -656,10 +658,28 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: none yet.
-- Reviewer report: none yet.
-- Command output summary: none yet.
-- Changed files summary: none yet.
+- Engineer report: DONE. Added event retention Firestore rules, rules
+  regression tests, and a follow-up fix for global likes wildcard writes under
+  soft-deleted event trees.
+- Reviewer report: initial spec review failed on a global likes wildcard bypass;
+  Engineer fixed it. Final spec re-review and code-quality review passed with
+  no blocking findings.
+- Command output summary:
+  - RED: `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js"`: exit 1 before initial implementation, 5 of 7 tests failed.
+  - RED: `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js"`: exit 1 after adding likes bypass coverage, 1 of 8 tests failed because `events/{eventId}/likes/{uid}` was still allowed under a soft-deleted event.
+  - `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js"`: exit 0, 8 tests passed.
+  - `npm run lint:changed`: exit 0, existing React version warning only.
+  - `npm run type-check:changed`: exit 0, no changed-file type errors.
+  - `git diff --check`: exit 0, no whitespace errors.
+- Changed files summary:
+  - `firestore.rules`: rejects event and event comment hard deletes, allows
+    authorized retention-field-only soft deletes, blocks child writes under
+    soft-deleted events, and closes the global likes wildcard write bypass
+    while preserving scoped post likes.
+  - `tests/server/firestore/event-soft-delete-rules.test.js`: covers
+    hard-delete rejection, authorized soft-delete allowance, forged
+    soft-delete rejection, child-write rejection under deleted events, likes
+    wildcard bypass regression, and active-event/post-like preservation.
 
 ### T006 - Firebase Event Retention Purge And Integration Gates
 

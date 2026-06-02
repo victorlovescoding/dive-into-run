@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "implementation",
-  "activeTask": "T005",
-  "activeWave": "wave-3",
+  "activeTask": null,
+  "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "1ebfcb472f65c7d9621287692dda9855b9157f12",
-    "capturedAt": "2026-06-02T11:48:25+08:00",
-    "summary": "T004 implementation committed; dispatching T005."
+    "commit": "cb0176d0764158f15ecfbda0799ebec438924dca",
+    "capturedAt": "2026-06-02T22:38:39+08:00",
+    "summary": "Workflow-check scope fix committed; T005 implementation diff is reviewed and ready for commit."
   },
   "remoteHead": {
     "remote": "origin",
@@ -33,7 +33,8 @@
     "T001",
     "T002",
     "T003",
-    "T004"
+    "T004",
+    "T005"
   ],
   "tasks": [
     {
@@ -590,7 +591,7 @@
     {
       "id": "T005",
       "title": "Firestore Rules For Event Retention",
-      "state": "in_progress",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-3",
       "engineer": "Engineer",
@@ -647,17 +648,32 @@
         {
           "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js\"",
           "expectedSignal": "Exit 0, event soft-delete rules tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js\"",
+            "exitCode": 0,
+            "summary": "1 file, 8 tests passed.",
+            "verifiedAt": "2026-06-02T22:38:39+08:00"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed with existing React version warning only.",
+            "verifiedAt": "2026-06-02T22:38:39+08:00"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-02T22:38:39+08:00"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -672,12 +688,28 @@
         "Rules block legitimate authorized soft delete under the approved actor set.",
         "Verification is missing, stale, failed, or not the required command."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec compliance reviewer and code quality reviewer",
+        "summary": "T005 final spec compliance and code-quality reviews passed after fixing the global likes wildcard bypass.",
+        "decidedAt": "2026-06-02T12:15:39+08:00"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE. Added event retention Firestore rules, rules regression tests, and a follow-up fix for global likes wildcard writes under soft-deleted event trees.",
+        "reviewerReport": "Initial spec review failed on a global likes wildcard bypass; Engineer fixed it. Final spec re-review and code-quality review passed with no blocking findings.",
+        "commandOutputSummary": [
+          "RED: firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js\": exit 1 before initial implementation, 5 of 7 tests failed.",
+          "RED: firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js\": exit 1 after adding likes bypass coverage, 1 of 8 tests failed because events/{eventId}/likes/{uid} was still allowed under a soft-deleted event.",
+          "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js\": exit 0, 8 tests passed.",
+          "npm run lint:changed: exit 0, existing React version warning only.",
+          "npm run type-check:changed: exit 0, no changed-file type errors.",
+          "git diff --check: exit 0, no whitespace errors.",
+          "npm run workflow:check: exit 0, 15 status files valid and synced after the workflow-check rules scope fix."
+        ],
+        "changedFilesSummary": [
+          "firestore.rules: rejects event and event comment hard deletes, allows authorized retention-field-only soft deletes, blocks child writes under soft-deleted events, and closes the global likes wildcard write bypass while preserving scoped post likes.",
+          "tests/server/firestore/event-soft-delete-rules.test.js: covers hard-delete rejection, authorized soft-delete allowance, forged soft-delete rejection, child-write rejection under deleted events, likes wildcard bypass regression, and active-event/post-like preservation."
+        ]
       }
     },
     {
@@ -828,49 +860,37 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js",
+      "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js\"",
       "exitCode": 0,
-      "summary": "1 file, 2 tests passed.",
-      "verifiedAt": "2026-06-02T11:43:10+08:00"
-    },
-    {
-      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js",
-      "exitCode": 0,
-      "summary": "1 file, 4 tests passed.",
-      "verifiedAt": "2026-06-02T11:43:10+08:00"
-    },
-    {
-      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js",
-      "exitCode": 0,
-      "summary": "1 file, 3 tests passed.",
-      "verifiedAt": "2026-06-02T11:43:10+08:00"
+      "summary": "1 file, 8 tests passed.",
+      "verifiedAt": "2026-06-02T22:38:39+08:00"
     },
     {
       "command": "npm run lint:changed",
       "exitCode": 0,
       "summary": "Passed with existing React version warning only.",
-      "verifiedAt": "2026-06-02T11:43:10+08:00"
+      "verifiedAt": "2026-06-02T22:38:39+08:00"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
       "summary": "No changed-file type errors.",
-      "verifiedAt": "2026-06-02T11:43:10+08:00"
+      "verifiedAt": "2026-06-02T22:38:39+08:00"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-02T11:43:10+08:00"
+      "verifiedAt": "2026-06-02T22:38:39+08:00"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
-      "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
-      "verifiedAt": "2026-06-02T11:45:38+08:00"
+      "summary": "15 status files valid and synced after the workflow-check rules scope fix.",
+      "verifiedAt": "2026-06-02T22:38:39+08:00"
     }
   ],
-  "lastVerifiedCommit": "1ebfcb472f65c7d9621287692dda9855b9157f12",
+  "lastVerifiedCommit": "cb0176d0764158f15ecfbda0799ebec438924dca",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -907,13 +927,21 @@
       "commit": "1ebfcb472f65c7d9621287692dda9855b9157f12",
       "summary": "Add event secondary soft delete.",
       "committedAt": "2026-06-02T11:48:25+08:00"
+    },
+    {
+      "phase": "workflow-check-fix",
+      "commit": "cb0176d0764158f15ecfbda0799ebec438924dca",
+      "summary": "Fix workflow rules status scope.",
+      "committedAt": "2026-06-02T22:38:39+08:00"
     }
   ],
   "rulesDeployStatus": {
     "state": "required",
     "required": true,
-    "changed": false,
-    "evidence": [],
+    "changed": true,
+    "evidence": [
+      "T005 changed firestore.rules locally; deployFirestoreRules is not authorized and no rules deploy was performed."
+    ],
     "deployedCommit": null
   },
   "incidents": [
@@ -924,5 +952,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-02T11:48:25+08:00"
+  "updatedAt": "2026-06-02T22:38:39+08:00"
 }

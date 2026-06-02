@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `1ebfcb472f65c7d9621287692dda9855b9157f12`
+- Current head: `cb0176d0764158f15ecfbda0799ebec438924dca`
 - Remote head: `origin/main` at `19434854fd36911879a36406efda80d1b5056dc1`
 - Authorization boundary:
   - edit: yes
@@ -18,11 +18,11 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: implementation
-- Active task: T005
-- Active wave: wave-3
-- Latest reviewer decision: T004 final spec compliance and code-quality reviews
-  `review_passed` on 2026-06-02T11:43:10+08:00.
-- Last verified commit: `1ebfcb472f65c7d9621287692dda9855b9157f12`
+- Active task: none
+- Active wave: none
+- Latest reviewer decision: T005 final spec compliance and code-quality reviews
+  `review_passed` on 2026-06-02T12:15:39+08:00.
+- Last verified commit: `cb0176d0764158f15ecfbda0799ebec438924dca`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
   - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
@@ -30,7 +30,8 @@
   - T002: `46e8cbf9b1c7959285a2534090a48b8bef87dab3`
   - T003: `2b746382a1f9958f056a1c950a1d10bcf29231f2`
   - T004: `1ebfcb472f65c7d9621287692dda9855b9157f12`
-- Rules deploy status: required, required=true, changed=false, deployedCommit=null
+  - workflow-check-fix: `cb0176d0764158f15ecfbda0799ebec438924dca`
+- Rules deploy status: required, required=true, changed=true, deployedCommit=null
 - Incidents: T002 stale active detail cancellation notification carry-forward is
   mitigated and documented.
 - Blocked: no
@@ -49,8 +50,8 @@
 
 ## Next Action
 
-Coordinator commits this T005 dispatch state, then dispatches the T005 Engineer
-subagent.
+Coordinator commits T005 implementation and workflow state, then records the
+T005 phase commit before dispatching T006.
 
 ## Task Graph
 
@@ -88,9 +89,14 @@ separate coordinator-created worktrees with disjoint owned files.
 | `npm run type-check:changed` | 0 | No changed-file type errors. |
 | `git diff --check` | 0 | No whitespace errors. |
 | `npm run workflow:check` | 0 | 15 status files valid and synced, including `event-soft-delete-retention/status.json`. |
+| `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js"` | 0 | 1 file, 8 tests passed. |
+| `npm run lint:changed` | 0 | Passed with existing React version warning only. |
+| `npm run type-check:changed` | 0 | No changed-file type errors. |
+| `git diff --check` | 0 | No whitespace errors. |
+| `npm run workflow:check` | 0 | 15 status files valid and synced after the workflow-check rules scope fix. |
 
-T004 implementation is reviewed, verified, and committed. T005 dispatch state is
-being committed before Engineer handoff.
+T005 implementation is reviewed and verified in the working tree; the T005 phase
+commit is pending. Firestore rules changed locally but have not been deployed.
 
 ## Closeout Checklist
 
