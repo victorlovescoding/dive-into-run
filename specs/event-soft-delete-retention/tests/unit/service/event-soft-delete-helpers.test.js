@@ -40,6 +40,21 @@ describe('event soft delete retention helpers', () => {
     });
   });
 
+  it('builds retention fields from one concrete delete timestamp', () => {
+    const deletedAt = new Date('2026-05-28T03:04:05.006Z');
+
+    expect(
+      buildSoftDeletePayload({
+        actorUid: 'user-1',
+        deletedAt,
+      }),
+    ).toEqual({
+      deletedAt,
+      deletedByUid: 'user-1',
+      deletedPurgeAt: new Date('2026-08-26T03:04:05.006Z'),
+    });
+  });
+
   it('treats legacy records without deletedAt as active', () => {
     const legacyEvent = { id: 'event-1', title: 'Morning run' };
 
@@ -66,6 +81,16 @@ describe('event soft delete retention helpers', () => {
     expect(addDays(deletedAt, POST_DELETE_RETENTION_DAYS)).toEqual(
       new Date('2026-08-26T03:04:05.006Z'),
     );
+    expect(
+      buildPostSoftDeletePayload({
+        actorUid: 'post-user',
+        deletedAt,
+      }),
+    ).toEqual({
+      deletedAt,
+      deletedByUid: 'post-user',
+      deletedPurgeAt: new Date('2026-08-26T03:04:05.006Z'),
+    });
     expect(
       buildPostSoftDeletePayload({
         actorUid: 'post-user',

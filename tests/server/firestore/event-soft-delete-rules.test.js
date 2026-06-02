@@ -17,6 +17,8 @@ import {
 
 const PROJECT_ID = 'demo-test';
 const RULES_PATH = 'firestore.rules';
+const RETENTION_DAYS = 90;
+const RETENTION_MS = RETENTION_DAYS * 24 * 60 * 60 * 1000;
 
 /** @type {import('@firebase/rules-unit-testing').RulesTestEnvironment} */
 let testEnv;
@@ -59,25 +61,48 @@ async function seed(seedFn) {
 }
 
 /**
+ * Calculates a Firestore Timestamp offset by whole days.
+ * @param {import('firebase/firestore').Timestamp} timestamp - Base timestamp.
+ * @param {number} days - Number of days to add.
+ * @returns {import('firebase/firestore').Timestamp} Offset timestamp.
+ */
+function addDaysToTimestamp(timestamp, days) {
+  return Timestamp.fromMillis(timestamp.toMillis() + days * 24 * 60 * 60 * 1000);
+}
+
+/**
+ * Builds a stale but exact retention payload.
+ * @returns {import('firebase/firestore').Timestamp} Backdated delete timestamp.
+ */
+function staleDeletedAt() {
+  return Timestamp.fromMillis(Date.now() - 10 * 60 * 1000);
+}
+
+/**
  * Builds the soft-delete payload sent by client runtime code.
  * @param {string} actorUid - Acting user uid.
  * @param {Partial<{
- *   deletedAt: import('firebase/firestore').FieldValue | import('firebase/firestore').Timestamp | string,
+ *   deletedAt: import('firebase/firestore').Timestamp | string,
  *   deletedByUid: string,
  *   deletedPurgeAt: import('firebase/firestore').Timestamp | string,
  * }>} [overrides] - Field overrides.
  * @returns {{
- *   deletedAt: import('firebase/firestore').FieldValue | import('firebase/firestore').Timestamp | string,
+ *   deletedAt: import('firebase/firestore').Timestamp | string,
  *   deletedByUid: string,
  *   deletedPurgeAt: import('firebase/firestore').Timestamp | string,
  * }} Firestore update payload.
  */
 function softDeletePayload(actorUid, overrides = {}) {
+  const deletedAt = overrides.deletedAt ?? Timestamp.now();
+  const deletedPurgeAt = overrides.deletedPurgeAt
+    ?? (deletedAt instanceof Timestamp
+      ? addDaysToTimestamp(deletedAt, RETENTION_DAYS)
+      : addDaysToTimestamp(Timestamp.now(), RETENTION_DAYS));
+
   return {
-    deletedAt: serverTimestamp(),
-    deletedByUid: actorUid,
-    deletedPurgeAt: Timestamp.fromDate(new Date('2026-08-26T00:00:00.000Z')),
-    ...overrides,
+    deletedAt,
+    deletedByUid: overrides.deletedByUid ?? actorUid,
+    deletedPurgeAt,
   };
 }
 
@@ -150,7 +175,7 @@ describe('event soft-delete Firestore rules', () => {
     );
   });
 
-  it('allows authorized event and event-comment soft-delete updates', async () => {
+  it('allows exact 90-day authorized event and event-comment soft-delete updates', async () => {
     await seedEventTree({
       eventId: 'event-1',
       commentId: 'comment-1',
@@ -167,6 +192,88 @@ describe('event soft-delete Firestore rules', () => {
     );
     await assertSucceeds(
       updateDoc(doc(dbFor('event-host'), 'events', 'event-1'), softDeletePayload('event-host')),
+    );
+  });
+
+  it('denies event soft-delete updates with an early purge window', async () => {
+    await seedEventTree({
+      eventId: 'event-1',
+      commentId: 'comment-1',
+      hostUid: 'event-host',
+      participantUid: 'runner-1',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const deletedAt = Timestamp.now();
+
+    await assertFails(
+      updateDoc(
+        doc(dbFor('event-host'), 'events', 'event-1'),
+        softDeletePayload('event-host', {
+          deletedAt,
+          deletedPurgeAt: Timestamp.fromMillis(deletedAt.toMillis() + RETENTION_MS - 1),
+        }),
+      ),
+    );
+  });
+
+  it('denies event comment soft-delete updates with an early purge window', async () => {
+    await seedEventTree({
+      eventId: 'event-1',
+      commentId: 'comment-1',
+      hostUid: 'event-host',
+      participantUid: 'runner-1',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const deletedAt = Timestamp.now();
+
+    await assertFails(
+      updateDoc(
+        doc(dbFor('comment-author'), 'events', 'event-1', 'comments', 'comment-1'),
+        softDeletePayload('comment-author', {
+          deletedAt,
+          deletedPurgeAt: addDaysToTimestamp(deletedAt, 1),
+        }),
+      ),
+    );
+  });
+
+  it('denies backdated event soft-delete updates with an exact purge window', async () => {
+    await seedEventTree({
+      eventId: 'event-1',
+      commentId: 'comment-1',
+      hostUid: 'event-host',
+      participantUid: 'runner-1',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const deletedAt = staleDeletedAt();
+
+    await assertFails(
+      updateDoc(
+        doc(dbFor('event-host'), 'events', 'event-1'),
+        softDeletePayload('event-host', { deletedAt }),
+      ),
+    );
+  });
+
+  it('denies backdated event comment soft-delete updates with an exact purge window', async () => {
+    await seedEventTree({
+      eventId: 'event-1',
+      commentId: 'comment-1',
+      hostUid: 'event-host',
+      participantUid: 'runner-1',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const deletedAt = staleDeletedAt();
+
+    await assertFails(
+      updateDoc(
+        doc(dbFor('comment-author'), 'events', 'event-1', 'comments', 'comment-1'),
+        softDeletePayload('comment-author', { deletedAt }),
+      ),
     );
   });
 

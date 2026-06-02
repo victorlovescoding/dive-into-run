@@ -18,11 +18,11 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: implementation
-- Active task: T008
-- Active wave: final-review-fix
-- Latest reviewer decision: final feature reviewer `changes_requested` because
-  Firestore rules did not enforce the 90-day retention window; payload explorer
-  found rules_plus_src_helper is required for product-path compatibility.
+- Active task: none
+- Active wave: none
+- Latest reviewer decision: T008 reviewer `review_passed`; no Critical or
+  Important findings after rules enforce exact 90-day retention and product
+  payloads use one concrete delete timestamp.
 - Last verified commit: `d6ecc8f2a058f18e896734fa5885d3d626b62b27`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
@@ -57,11 +57,11 @@
 
 ## Next Action
 
-Coordinator commits this T008 dispatch state, then dispatches the T008 Engineer
-subagent to enforce the 90-day retention window in rules and align product
-soft-delete payloads with stricter rules. Do not push, open a PR, watch CI,
-merge, sync local `main`, deploy Firestore rules, or deploy Firebase Functions
-without separate explicit authorization.
+Coordinator runs workflow gates, commits the reviewed T008 implementation plus
+synchronized workflow state, then records the resulting T008 commit SHA in a
+follow-up workflow-state commit. Do not push, open a PR, watch CI, merge, sync
+local `main`, deploy Firestore rules, or deploy Firebase Functions without
+separate explicit authorization.
 
 ## Task Graph
 
@@ -82,9 +82,8 @@ separate coordinator-created worktrees with disjoint owned files.
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js` | 0 | 1 file, 3 tests passed. |
-| `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js` | 0 | 1 file, 2 tests passed. |
-| `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js` | 0 | 1 file, 10 tests passed. |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js` | 0 | 1 file, 6 tests passed. |
+| `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js"` | 0 | 2 files, 26 tests passed. |
 | `npm run lint:changed` | 0 | Passed with existing React version warning only. |
 | `npm run type-check:changed` | 0 | No changed-file type errors. |
 | `npm run workflow:check` | 0 | 15 status files valid and synced, including `event-soft-delete-retention/status.json`. |
@@ -103,6 +102,9 @@ Final feature review requested changes again after T007 because Firestore rules
 did not enforce that `deletedPurgeAt` is exactly 90 days after `deletedAt`.
 Payload investigation found product paths must also stop mixing
 `serverTimestamp()` `deletedAt` with client-computed `deletedPurgeAt`.
+T008 fixed this by enforcing exact 90-day retention plus request-time skew in
+rules and using one concrete delete timestamp in event, event comment, post,
+and post comment soft-delete payloads.
 
 ## Closeout Checklist
 
@@ -124,13 +126,11 @@ Payload investigation found product paths must also stop mixing
 - [ ] Open incidents are resolved, mitigated with explicit carry-forward, or
       block closeout.
 - [x] Changed files are intentionally in scope.
-- [ ] Blockers are resolved or explicitly carried forward.
+- [x] Blockers are resolved or explicitly carried forward.
 
 ## Blockers
 
-- Final review requested T008: Firestore rules must enforce the 90-day
-  retention window, and product soft-delete payloads must be compatible with
-  those stricter rules.
+- None.
 
 ## Pitfalls
 

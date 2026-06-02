@@ -24,12 +24,26 @@ export function getSoftDeletePurgeDate(deletedAt) {
  * Builds common soft-delete retention fields.
  * @param {object} root0 - Parameters.
  * @param {string | null | undefined} root0.actorUid - UID performing the delete.
- * @param {unknown} root0.deletedAtValue - Value written to `deletedAt`.
- * @param {unknown} root0.purgeAtValue - Value written to `deletedPurgeAt`.
+ * @param {Date} [root0.deletedAt] - Concrete delete time used for both retention timestamps.
+ * @param {unknown} [root0.deletedAtValue] - Value written to `deletedAt`.
+ * @param {unknown} [root0.purgeAtValue] - Value written to `deletedPurgeAt`.
  * @returns {{ deletedAt: unknown, deletedByUid: string, deletedPurgeAt: unknown }} Soft-delete fields.
  */
-export function buildSoftDeletePayload({ actorUid, deletedAtValue, purgeAtValue }) {
+export function buildSoftDeletePayload({ actorUid, deletedAt, deletedAtValue, purgeAtValue }) {
   if (!actorUid) throw new Error('softDelete: actorUid is required');
+
+  if (deletedAt !== undefined) {
+    if (!(deletedAt instanceof Date) || Number.isNaN(deletedAt.getTime())) {
+      throw new Error('softDelete: deletedAt must be a valid Date');
+    }
+
+    return {
+      deletedAt,
+      deletedByUid: actorUid,
+      deletedPurgeAt: getSoftDeletePurgeDate(deletedAt),
+    };
+  }
+
   return { deletedAt: deletedAtValue, deletedByUid: actorUid, deletedPurgeAt: purgeAtValue };
 }
 

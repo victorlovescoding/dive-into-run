@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "implementation",
-  "activeTask": "T008",
-  "activeWave": "final-review-fix",
+  "activeTask": null,
+  "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -20,7 +20,7 @@
     "branch": "085-event-soft-delete-retention",
     "commit": "d6ecc8f2a058f18e896734fa5885d3d626b62b27",
     "capturedAt": "2026-06-03T00:21:11+08:00",
-    "summary": "Final review requested T008 rules-enforced retention window fix."
+    "summary": "T008 rules-enforced retention window fix reviewed and verified in the working tree; pending implementation commit."
   },
   "remoteHead": {
     "remote": "origin",
@@ -36,7 +36,8 @@
     "T004",
     "T005",
     "T006",
-    "T007"
+    "T007",
+    "T008"
   ],
   "tasks": [
     {
@@ -1096,7 +1097,7 @@
     {
       "id": "T008",
       "title": "Final Review Rules-Enforced Retention Window",
-      "state": "in_progress",
+      "state": "completed",
       "attempt": 1,
       "wave": "final-review-fix",
       "engineer": "Engineer",
@@ -1162,32 +1163,62 @@
         {
           "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js",
           "expectedSignal": "Exit 0, helper compatibility tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 6 tests passed.",
+            "verifiedAt": "2026-06-03T00:41:54+08:00"
+          }
         },
         {
           "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js\"",
           "expectedSignal": "Exit 0, event and post soft-delete rules tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js\"",
+            "exitCode": 0,
+            "summary": "2 files, 26 tests passed.",
+            "verifiedAt": "2026-06-03T00:42:11+08:00"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed with existing React version warning only.",
+            "verifiedAt": "2026-06-03T00:42:31+08:00"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-03T00:42:43+08:00"
+          }
         },
         {
           "command": "npm run workflow:check",
           "expectedSignal": "Exit 0, workflow state valid and synced.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
+            "verifiedAt": "2026-06-03T00:45:05+08:00"
+          }
         },
         {
           "command": "git diff --check",
           "expectedSignal": "Exit 0, no whitespace errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-03T00:42:47+08:00"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -1205,19 +1236,38 @@
         "Fix widens scope into Functions, indexes, UI, notifications, purge behavior, or release actions.",
         "Verification is missing, stale, failed, or not the required command."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T008 reviewer",
+        "summary": "T008 review passed with no Critical or Important findings; rules enforce exact 90-day retention with request-time skew and product payloads use one concrete delete timestamp.",
+        "decidedAt": "2026-06-03T00:41:30+08:00"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": "Final reviewer requested changes: Firestore rules only checked deletedAt/deletedPurgeAt timestamp types and did not enforce the 90-day retention window. Payload explorer found rules_plus_src_helper is required because current product paths mix serverTimestamp() deletedAt with client-computed deletedPurgeAt.",
+        "engineerReport": "DONE. Added rules regressions for early purge windows and backdated delete timestamps, enforced exact 90-day retention in Firestore rules, and aligned event, event comment, post, and post comment payloads to use one concrete delete timestamp.",
+        "reviewerReport": "T008 reviewer passed with no Critical or Important findings; current T008 diff touches only expected files and has no Functions, index, UI, notification, or deploy expansion.",
         "commandOutputSummary": [
           "Final review evidence: git status --short --branch exit 0, clean, ahead 20 and behind 1.",
           "Final review evidence: npm run workflow:check exit 0, 15 status files valid and synced.",
           "Final review evidence: all requested focused Vitest commands exit 0.",
           "Rules feasibility evidence: existing rules allow 1-day deletedPurgeAt for event and event comment.",
           "Rules feasibility evidence: duration.value equality can deny early purge windows in emulator checks.",
-          "Payload evidence: event, event comment, post, and post comment product paths currently use serverTimestamp() for deletedAt and local/client time for deletedPurgeAt."
+          "Payload evidence: event, event comment, post, and post comment product paths currently use serverTimestamp() for deletedAt and local/client time for deletedPurgeAt.",
+          "RED: firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js\": exit 1 before the fix; early/backdated event and event comment soft-delete writes were allowed.",
+          "RED: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js: exit 1 before the new concrete deletedAt API existed.",
+          "GREEN: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js: exit 0, 6 tests passed.",
+          "GREEN: firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js\": exit 0, 26 tests passed.",
+          "npm run lint:changed: exit 0, existing React version warning only.",
+          "npm run type-check:changed: exit 0, no changed-file type errors.",
+          "npm run workflow:check: exit 0, 15 status files valid and synced.",
+          "git diff --check: exit 0, no whitespace errors."
         ],
-        "changedFilesSummary": []
+        "changedFilesSummary": [
+          "firestore.rules: requires exact 90-day retention and bounded request-time delete timestamp for shared soft-delete writes.",
+          "src/repo/soft-delete-retention.js: derives deletedAt and deletedPurgeAt from one concrete delete timestamp.",
+          "src/repo/client/firebase-events-repo.js, src/repo/client/firebase-event-comments-repo.js, and src/repo/client/firebase-posts-repo.js: pass one concrete delete timestamp into the shared helper for event, event comment, post, and post comment soft deletes.",
+          "tests/server/firestore/event-soft-delete-rules.test.js and tests/server/firestore/post-soft-delete-rules.test.js: cover exact 90-day allowed writes, early purge denial, and backdated timestamp denial.",
+          "specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js: covers concrete timestamp payload compatibility."
+        ]
       }
     }
   ],
@@ -1225,46 +1275,40 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js",
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js",
       "exitCode": 0,
-      "summary": "1 file, 3 tests passed.",
-      "verifiedAt": "2026-06-02T23:52:55+08:00"
+      "summary": "1 file, 6 tests passed.",
+      "verifiedAt": "2026-06-03T00:41:54+08:00"
     },
     {
-      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
+      "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js\"",
       "exitCode": 0,
-      "summary": "1 file, 2 tests passed.",
-      "verifiedAt": "2026-06-02T23:53:01+08:00"
-    },
-    {
-      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
-      "exitCode": 0,
-      "summary": "1 file, 10 tests passed.",
-      "verifiedAt": "2026-06-02T23:53:07+08:00"
+      "summary": "2 files, 26 tests passed.",
+      "verifiedAt": "2026-06-03T00:42:11+08:00"
     },
     {
       "command": "npm run lint:changed",
       "exitCode": 0,
       "summary": "Passed with existing React version warning only.",
-      "verifiedAt": "2026-06-02T23:53:18+08:00"
+      "verifiedAt": "2026-06-03T00:42:31+08:00"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
       "summary": "No changed-file type errors.",
-      "verifiedAt": "2026-06-02T23:53:23+08:00"
+      "verifiedAt": "2026-06-03T00:42:43+08:00"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-02T23:53:27+08:00"
+      "verifiedAt": "2026-06-03T00:42:47+08:00"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
       "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
-      "verifiedAt": "2026-06-02T23:56:03+08:00"
+      "verifiedAt": "2026-06-03T00:45:05+08:00"
     }
   ],
   "lastVerifiedCommit": "d6ecc8f2a058f18e896734fa5885d3d626b62b27",
@@ -1365,5 +1409,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-03T00:21:11+08:00"
+  "updatedAt": "2026-06-03T00:45:05+08:00"
 }

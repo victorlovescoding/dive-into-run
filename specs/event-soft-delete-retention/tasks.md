@@ -1001,13 +1001,13 @@ Evidence:
 
 ### T008 - Final Review Rules-Enforced Retention Window
 
-- **State**: `in_progress`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `final-review-fix`
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation or verification
-- **Last verified commit**: `d6ecc8f2a058f18e896734fa5885d3d626b62b27`
+- **Last verified commit**: pending T008 implementation commit
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: final review found Firestore rules allowed arbitrary
@@ -1135,12 +1135,12 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: none yet.
-- Reviewer report: final reviewer requested changes: Firestore rules only
-  checked `deletedAt`/`deletedPurgeAt` timestamp types and did not enforce the
-  90-day retention window. Payload explorer found `rules_plus_src_helper` is
-  required because product paths currently mix `serverTimestamp()` `deletedAt`
-  with client-computed `deletedPurgeAt`.
+- Engineer report: DONE. Added rules regressions for early purge windows and
+  backdated delete timestamps, enforced exact 90-day retention in Firestore
+  rules, and aligned event, event comment, post, and post comment payloads to
+  use one concrete delete timestamp.
+- Reviewer report: T008 review `review_passed`; no Critical or Important
+  findings.
 - Command output summary:
   - Final review: `git status --short --branch`: exit 0, clean, branch ahead
     20 and behind 1.
@@ -1154,7 +1154,27 @@ Evidence:
   - Payload evidence: event, event comment, post, and post comment product paths
     currently use `serverTimestamp()` for `deletedAt` and local/client time for
     `deletedPurgeAt`.
-- Changed files summary: none yet.
+  - RED: `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js"`: exit 1, early/backdated event and event comment soft-delete writes were allowed before the fix.
+  - RED: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js`: exit 1 before the new concrete `deletedAt` API existed.
+  - GREEN: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js`: exit 0, 6 tests passed.
+  - GREEN: `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js"`: exit 0, 26 tests passed.
+  - `npm run lint:changed`: exit 0, existing React version warning only.
+  - `npm run type-check:changed`: exit 0, no changed-file type errors.
+  - `git diff --check`: exit 0, no whitespace errors.
+- Changed files summary:
+  - `firestore.rules`: requires exact 90-day retention and a bounded request-time
+    delete timestamp for soft-delete writes.
+  - `src/repo/soft-delete-retention.js`: derives `deletedAt` and
+    `deletedPurgeAt` from one concrete delete timestamp.
+  - `src/repo/client/firebase-events-repo.js`,
+    `src/repo/client/firebase-event-comments-repo.js`, and
+    `src/repo/client/firebase-posts-repo.js`: pass one concrete delete timestamp
+    into the shared helper for event, event comment, post, and post comment
+    soft deletes.
+  - `tests/server/firestore/event-soft-delete-rules.test.js` and
+    `tests/server/firestore/post-soft-delete-rules.test.js`: cover exact
+    90-day allowed writes, early purge denial, and backdated timestamp denial.
+  - `specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js`: covers concrete timestamp payload compatibility.
 
 ## Final Integration
 

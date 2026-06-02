@@ -15,12 +15,9 @@ import {
   startAfter,
   documentId,
   serverTimestamp,
-  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/config/client/firebase-client';
 import {
-  POST_DELETE_RETENTION_DAYS,
-  addDays,
   buildSoftDeletePayload,
   isSoftDeletedRecord,
 } from '@/repo/post-soft-delete';
@@ -303,8 +300,7 @@ export async function deleteCommentDocument(postId, commentId, actorUid) {
     const deletedAt = new Date();
     const payload = buildSoftDeletePayload({
       actorUid,
-      deletedAtValue: serverTimestamp(),
-      purgeAtValue: Timestamp.fromDate(addDays(deletedAt, POST_DELETE_RETENTION_DAYS)),
+      deletedAt,
     });
     const postSnap = await tx.get(postRef);
     const currentCount = postSnap.exists() ? Number(postSnap.data().commentsCount ?? 0) : 0;
@@ -367,8 +363,7 @@ export async function deletePostTree(postId) {
     const deletedAt = new Date();
     const payload = buildSoftDeletePayload({
       actorUid: snap.data().authorUid,
-      deletedAtValue: serverTimestamp(),
-      purgeAtValue: Timestamp.fromDate(addDays(deletedAt, POST_DELETE_RETENTION_DAYS)),
+      deletedAt,
     });
     tx.update(postRef, payload);
   });

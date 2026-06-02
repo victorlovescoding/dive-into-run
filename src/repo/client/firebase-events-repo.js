@@ -10,13 +10,10 @@ import {
   limit,
   startAfter,
   runTransaction,
-  serverTimestamp,
-  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/config/client/firebase-client';
 import {
   buildSoftDeletePayload,
-  getSoftDeletePurgeDate,
   isSoftDeletedRecord,
 } from '@/repo/soft-delete-retention';
 import { EVENT_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
@@ -318,8 +315,7 @@ export async function deleteEventTree(eventId, actor) {
     const deletedAt = new Date();
     const payload = buildSoftDeletePayload({
       actorUid,
-      deletedAtValue: serverTimestamp(),
-      purgeAtValue: Timestamp.fromDate(getSoftDeletePurgeDate(deletedAt)),
+      deletedAt,
     });
 
     tx.update(eventRef, payload);

@@ -9,13 +9,10 @@ import {
   limit,
   startAfter,
   runTransaction,
-  serverTimestamp,
-  Timestamp,
 } from 'firebase/firestore';
 import { auth, db } from '@/config/client/firebase-client';
 import {
   buildSoftDeletePayload,
-  getSoftDeletePurgeDate,
   isSoftDeletedRecord,
 } from '@/repo/soft-delete-retention';
 
@@ -132,8 +129,7 @@ export async function deleteEventCommentDocument(eventId, commentId) {
     const deletedAt = new Date();
     const payload = buildSoftDeletePayload({
       actorUid,
-      deletedAtValue: serverTimestamp(),
-      purgeAtValue: Timestamp.fromDate(getSoftDeletePurgeDate(deletedAt)),
+      deletedAt,
     });
 
     tx.update(commentRef, payload);

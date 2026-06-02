@@ -14,6 +14,14 @@ service cloud.firestore {
       return ['deletedAt', 'deletedByUid', 'deletedPurgeAt'];
     }
 
+    function softDeleteRetentionWindow() {
+      return duration.value(90, 'd');
+    }
+
+    function softDeleteRequestSkewWindow() {
+      return duration.value(5, 'm');
+    }
+
     function isSoftDeletedData(data) {
       return data.keys().hasAny(['deletedAt']);
     }
@@ -63,7 +71,11 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(softDeleteFields())
         && request.resource.data.deletedByUid == actorUid
         && request.resource.data.deletedAt is timestamp
-        && request.resource.data.deletedPurgeAt is timestamp;
+        && request.resource.data.deletedPurgeAt is timestamp
+        && request.resource.data.deletedPurgeAt
+          == request.resource.data.deletedAt + softDeleteRetentionWindow()
+        && request.resource.data.deletedAt >= request.time - softDeleteRequestSkewWindow()
+        && request.resource.data.deletedAt <= request.time + softDeleteRequestSkewWindow();
     }
 
     function isPostCounterUpdate() {

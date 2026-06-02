@@ -22,6 +22,8 @@ import {
 
 const PROJECT_ID = 'demo-test';
 const RULES_PATH = 'firestore.rules';
+const RETENTION_DAYS = 90;
+const RETENTION_MS = RETENTION_DAYS * 24 * 60 * 60 * 1000;
 
 /** @type {import('@firebase/rules-unit-testing').RulesTestEnvironment} */
 let testEnv;
@@ -64,15 +66,40 @@ async function seed(seedFn) {
 }
 
 /**
+ * Calculates a Firestore Timestamp offset by whole days.
+ * @param {import('firebase/firestore').Timestamp} timestamp - Base timestamp.
+ * @param {number} days - Number of days to add.
+ * @returns {import('firebase/firestore').Timestamp} Offset timestamp.
+ */
+function addDaysToTimestamp(timestamp, days) {
+  return Timestamp.fromMillis(timestamp.toMillis() + days * 24 * 60 * 60 * 1000);
+}
+
+/**
+ * Builds a stale but exact retention payload.
+ * @returns {import('firebase/firestore').Timestamp} Backdated delete timestamp.
+ */
+function staleDeletedAt() {
+  return Timestamp.fromMillis(Date.now() - 10 * 60 * 1000);
+}
+
+/**
  * Builds the soft-delete payload sent by client runtime code.
  * @param {string} actorUid - Acting user uid.
- * @returns {{ deletedAt: import('firebase/firestore').FieldValue, deletedByUid: string, deletedPurgeAt: import('firebase/firestore').Timestamp }} Firestore update payload.
+ * @param {Partial<{
+ *   deletedAt: import('firebase/firestore').Timestamp,
+ *   deletedByUid: string,
+ *   deletedPurgeAt: import('firebase/firestore').Timestamp,
+ * }>} [overrides] - Field overrides.
+ * @returns {{ deletedAt: import('firebase/firestore').Timestamp, deletedByUid: string, deletedPurgeAt: import('firebase/firestore').Timestamp }} Firestore update payload.
  */
-function softDeletePayload(actorUid) {
+function softDeletePayload(actorUid, overrides = {}) {
+  const deletedAt = overrides.deletedAt ?? Timestamp.now();
+
   return {
-    deletedAt: serverTimestamp(),
-    deletedByUid: actorUid,
-    deletedPurgeAt: Timestamp.fromDate(new Date('2026-08-26T00:00:00.000Z')),
+    deletedAt,
+    deletedByUid: overrides.deletedByUid ?? actorUid,
+    deletedPurgeAt: overrides.deletedPurgeAt ?? addDaysToTimestamp(deletedAt, RETENTION_DAYS),
   };
 }
 
@@ -208,7 +235,7 @@ describe('post/comment soft-delete Firestore rules', () => {
     );
   });
 
-  it('allows post authors to soft-delete only by adding retention fields', async () => {
+  it('allows post authors to soft-delete with an exact 90-day retention window', async () => {
     await seedPostWithComment({
       postId: 'active-post',
       commentId: 'comment-1',
@@ -218,6 +245,43 @@ describe('post/comment soft-delete Firestore rules', () => {
 
     await assertSucceeds(
       updateDoc(doc(dbFor('post-author'), 'posts', 'active-post'), softDeletePayload('post-author')),
+    );
+  });
+
+  it('denies post soft-delete updates with an early purge window', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const deletedAt = Timestamp.now();
+
+    await assertFails(
+      updateDoc(
+        doc(dbFor('post-author'), 'posts', 'active-post'),
+        softDeletePayload('post-author', {
+          deletedAt,
+          deletedPurgeAt: Timestamp.fromMillis(deletedAt.toMillis() + RETENTION_MS - 1),
+        }),
+      ),
+    );
+  });
+
+  it('denies post soft-delete updates with a backdated delete timestamp', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
+      updateDoc(
+        doc(dbFor('post-author'), 'posts', 'active-post'),
+        softDeletePayload('post-author', { deletedAt: staleDeletedAt() }),
+      ),
     );
   });
 
@@ -237,7 +301,7 @@ describe('post/comment soft-delete Firestore rules', () => {
     );
   });
 
-  it('allows comment authors to soft-delete their comments under active posts', async () => {
+  it('allows comment authors to soft-delete their comments with an exact 90-day retention window', async () => {
     await seedPostWithComment({
       postId: 'active-post',
       commentId: 'comment-1',
@@ -249,6 +313,43 @@ describe('post/comment soft-delete Firestore rules', () => {
       updateDoc(
         doc(dbFor('comment-author'), 'posts', 'active-post', 'comments', 'comment-1'),
         softDeletePayload('comment-author'),
+      ),
+    );
+  });
+
+  it('denies post comment soft-delete updates with an early purge window', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const deletedAt = Timestamp.now();
+
+    await assertFails(
+      updateDoc(
+        doc(dbFor('comment-author'), 'posts', 'active-post', 'comments', 'comment-1'),
+        softDeletePayload('comment-author', {
+          deletedAt,
+          deletedPurgeAt: addDaysToTimestamp(deletedAt, 1),
+        }),
+      ),
+    );
+  });
+
+  it('denies post comment soft-delete updates with a backdated delete timestamp', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
+      updateDoc(
+        doc(dbFor('comment-author'), 'posts', 'active-post', 'comments', 'comment-1'),
+        softDeletePayload('comment-author', { deletedAt: staleDeletedAt() }),
       ),
     );
   });
