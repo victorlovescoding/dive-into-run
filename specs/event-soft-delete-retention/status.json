@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "implementation",
-  "activeTask": null,
-  "activeWave": null,
+  "activeTask": "T008",
+  "activeWave": "final-review-fix",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "1d221d626e24983436f1645ab664438a9885ca5f",
-    "capturedAt": "2026-06-02T23:58:27+08:00",
-    "summary": "T007 implementation committed; recording workflow-state sync before final review."
+    "commit": "d6ecc8f2a058f18e896734fa5885d3d626b62b27",
+    "capturedAt": "2026-06-03T00:21:11+08:00",
+    "summary": "Final review requested T008 rules-enforced retention window fix."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "f641655b6b7f5fe48058ad43d59a5cdc147cdebf",
-    "capturedAt": "2026-06-02T23:16:12+08:00",
-    "summary": "Current origin/main while branch is ahead 19 and behind 1; rebase remains a later closeout concern."
+    "capturedAt": "2026-06-03T00:21:11+08:00",
+    "summary": "Current origin/main while branch is ahead 20 and behind 1; rebase remains a later closeout concern."
   },
   "completedTasks": [
     "T001",
@@ -1092,6 +1092,133 @@
           "specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js: adds member-comments regression for active, soft-deleted, and missing event parents."
         ]
       }
+    },
+    {
+      "id": "T008",
+      "title": "Final Review Rules-Enforced Retention Window",
+      "state": "in_progress",
+      "attempt": 1,
+      "wave": "final-review-fix",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Fix the final-review blocker where Firestore rules allow arbitrary deletedPurgeAt timestamps.",
+        "Make event, event comment, post, and post comment soft-delete payloads use one concrete delete timestamp for deletedAt and deletedPurgeAt.",
+        "Add rules regressions that deny early purge windows and backdated delete timestamps while allowing exact 90-day retention windows.",
+        "Resynchronize workflow state after Reviewer PASS."
+      ],
+      "nonScope": [
+        "No Firebase Functions changes.",
+        "No Firestore index changes.",
+        "No UI, notification, purge, push, PR, CI watch, merge, local main sync, or deploy behavior changes.",
+        "No Firestore rules deploy."
+      ],
+      "ownedFiles": [
+        "firestore.rules",
+        "src/repo/soft-delete-retention.js",
+        "src/repo/client/firebase-events-repo.js",
+        "src/repo/client/firebase-event-comments-repo.js",
+        "src/repo/client/firebase-posts-repo.js",
+        "tests/server/firestore/event-soft-delete-rules.test.js",
+        "tests/server/firestore/post-soft-delete-rules.test.js",
+        "specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js",
+        "specs/event-soft-delete-retention/tasks.md",
+        "specs/event-soft-delete-retention/handoff.md",
+        "specs/event-soft-delete-retention/status.json"
+      ],
+      "readOnlyContext": [
+        "specs/event-soft-delete-retention/spec.md",
+        "firestore.rules",
+        "tests/server/firestore/event-soft-delete-rules.test.js",
+        "tests/server/firestore/post-soft-delete-rules.test.js",
+        "src/repo/soft-delete-retention.js",
+        "src/repo/post-soft-delete.js",
+        "src/repo/client/firebase-events-repo.js",
+        "src/repo/client/firebase-event-comments-repo.js",
+        "src/repo/client/firebase-posts-repo.js",
+        "functions/event-retention-purge.js"
+      ],
+      "dependencies": [
+        "T007"
+      ],
+      "engineerInstructions": [
+        "Follow test-driven development: first add rules tests that fail because current rules allow deletedPurgeAt earlier than deletedAt plus 90 days for events and event comments.",
+        "Add post rules regressions because the soft-delete rules helper is shared by posts, post comments, events, and event comments.",
+        "Update Firestore rules so soft-delete updates require a valid retention window: deletedPurgeAt equals deletedAt plus 90 days, and deletedAt is not backdated beyond a small request-time skew window.",
+        "Use the same concrete delete timestamp in product soft-delete payloads for deletedAt and deletedPurgeAt; do not mix serverTimestamp() with a client-computed purge timestamp.",
+        "Keep existing post helper compatibility through src/repo/post-soft-delete.js.",
+        "Do not change Functions purge logic, indexes, UI, notifications, or release/deploy state.",
+        "Engineer modifies only the rules/src/test files above; coordinator updates workflow-state files after Reviewer PASS."
+      ],
+      "acceptanceCriteria": [
+        "AC-T008.1: Firestore rules deny event soft delete when deletedPurgeAt is earlier than deletedAt plus 90 days.",
+        "AC-T008.2: Firestore rules deny event comment soft delete when deletedPurgeAt is earlier than deletedAt plus 90 days.",
+        "AC-T008.3: Firestore rules deny backdated deletedAt timestamps even when deletedPurgeAt equals deletedAt plus 90 days.",
+        "AC-T008.4: Firestore rules allow exact 90-day soft delete payloads for authorized event, event comment, post, and post comment deletes.",
+        "AC-T008.5: Product soft-delete payloads are compatible with the stricter rules by using one concrete delete timestamp for deletedAt and deletedPurgeAt.",
+        "AC-T008.6: Workflow state records the final review blocker and fix without deploy claims."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js",
+          "expectedSignal": "Exit 0, helper compatibility tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js\"",
+          "expectedSignal": "Exit 0, event and post soft-delete rules tests pass.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "Exit 0, workflow state valid and synced.",
+          "lastRun": null
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "Exit 0, no whitespace errors.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Rules enforce an exact 90-day deletedPurgeAt window and reject stale/backdated deletedAt values.",
+        "Product event, event comment, post, and post comment soft-delete payloads remain compatible with rules.",
+        "Post soft-delete rules regressions pass because the helper is shared.",
+        "No Functions, indexes, UI, notification, deploy, push, PR, CI, merge, or local main sync claim is introduced.",
+        "Workflow files agree after coordinator sync."
+      ],
+      "reviewerRejectCriteria": [
+        "Authorized users can still set deletedPurgeAt earlier than the 90-day retention window.",
+        "Normal product soft-delete writes would be denied by the stricter rules.",
+        "Post or post comment soft-delete rules regress.",
+        "Fix widens scope into Functions, indexes, UI, notifications, purge behavior, or release actions.",
+        "Verification is missing, stale, failed, or not the required command."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": "Final reviewer requested changes: Firestore rules only checked deletedAt/deletedPurgeAt timestamp types and did not enforce the 90-day retention window. Payload explorer found rules_plus_src_helper is required because current product paths mix serverTimestamp() deletedAt with client-computed deletedPurgeAt.",
+        "commandOutputSummary": [
+          "Final review evidence: git status --short --branch exit 0, clean, ahead 20 and behind 1.",
+          "Final review evidence: npm run workflow:check exit 0, 15 status files valid and synced.",
+          "Final review evidence: all requested focused Vitest commands exit 0.",
+          "Rules feasibility evidence: existing rules allow 1-day deletedPurgeAt for event and event comment.",
+          "Rules feasibility evidence: duration.value equality can deny early purge windows in emulator checks.",
+          "Payload evidence: event, event comment, post, and post comment product paths currently use serverTimestamp() for deletedAt and local/client time for deletedPurgeAt."
+        ],
+        "changedFilesSummary": []
+      }
     }
   ],
   "blocked": false,
@@ -1140,7 +1267,7 @@
       "verifiedAt": "2026-06-02T23:56:03+08:00"
     }
   ],
-  "lastVerifiedCommit": "1d221d626e24983436f1645ab664438a9885ca5f",
+  "lastVerifiedCommit": "d6ecc8f2a058f18e896734fa5885d3d626b62b27",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -1213,6 +1340,12 @@
       "commit": "1d221d626e24983436f1645ab664438a9885ca5f",
       "summary": "Fix event member comments filter.",
       "committedAt": "2026-06-02T23:58:27+08:00"
+    },
+    {
+      "phase": "T007-state",
+      "commit": "d6ecc8f2a058f18e896734fa5885d3d626b62b27",
+      "summary": "Record event member comments state.",
+      "committedAt": "2026-06-02T23:58:27+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -1232,5 +1365,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-02T23:58:27+08:00"
+  "updatedAt": "2026-06-03T00:21:11+08:00"
 }

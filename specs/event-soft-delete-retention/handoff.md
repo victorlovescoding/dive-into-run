@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `1d221d626e24983436f1645ab664438a9885ca5f`
+- Current head: `d6ecc8f2a058f18e896734fa5885d3d626b62b27`
 - Remote head: `origin/main` at `f641655b6b7f5fe48058ad43d59a5cdc147cdebf`
 - Authorization boundary:
   - edit: yes
@@ -18,12 +18,12 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: implementation
-- Active task: none
-- Active wave: none
-- Latest reviewer decision: T007 reviewer `review_passed`; no Critical,
-  Important, or Minor findings after filtering missing and soft-deleted event
-  parents from member comments.
-- Last verified commit: `1d221d626e24983436f1645ab664438a9885ca5f`
+- Active task: T008
+- Active wave: final-review-fix
+- Latest reviewer decision: final feature reviewer `changes_requested` because
+  Firestore rules did not enforce the 90-day retention window; payload explorer
+  found rules_plus_src_helper is required for product-path compatibility.
+- Last verified commit: `d6ecc8f2a058f18e896734fa5885d3d626b62b27`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
   - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
@@ -37,6 +37,7 @@
   - T006-state: `f5f4ebfac5616bc25488e968b2659993b186c15c`
   - T007-dispatch: `e7afa8f2a85b525d38c23eca57c2411ec3695356`
   - T007: `1d221d626e24983436f1645ab664438a9885ca5f`
+  - T007-state: `d6ecc8f2a058f18e896734fa5885d3d626b62b27`
 - Rules deploy status: required, required=true, changed=true, deployedCommit=null
 - Incidents: T002 stale active detail cancellation notification carry-forward is
   mitigated and documented.
@@ -56,10 +57,11 @@
 
 ## Next Action
 
-Coordinator runs workflow gates, commits this T007 workflow-state sync, then
-requests final read-only review of the full feature branch. Do not push, open a
-PR, watch CI, merge, sync local `main`, deploy Firestore rules, or deploy
-Firebase Functions without separate explicit authorization.
+Coordinator commits this T008 dispatch state, then dispatches the T008 Engineer
+subagent to enforce the 90-day retention window in rules and align product
+soft-delete payloads with stricter rules. Do not push, open a PR, watch CI,
+merge, sync local `main`, deploy Firestore rules, or deploy Firebase Functions
+without separate explicit authorization.
 
 ## Task Graph
 
@@ -70,6 +72,8 @@ Firebase Functions without separate explicit authorization.
 - T003 -> T005
 - T004 -> T005
 - T005 -> T006
+- T006 -> T007
+- T007 -> T008
 
 Default execution is sequential. T002, T003, and T004 may run parallel only in
 separate coordinator-created worktrees with disjoint owned files.
@@ -95,6 +99,11 @@ expose active event comments when the parent event was soft-deleted or missing.
 T007 fixed this by filtering missing and soft-deleted event parents from member
 comments while preserving active event parents.
 
+Final feature review requested changes again after T007 because Firestore rules
+did not enforce that `deletedPurgeAt` is exactly 90 days after `deletedAt`.
+Payload investigation found product paths must also stop mixing
+`serverTimestamp()` `deletedAt` with client-computed `deletedPurgeAt`.
+
 ## Closeout Checklist
 
 - [x] `tasks.md` task states match `status.json`.
@@ -115,11 +124,13 @@ comments while preserving active event parents.
 - [ ] Open incidents are resolved, mitigated with explicit carry-forward, or
       block closeout.
 - [x] Changed files are intentionally in scope.
-- [x] Blockers are resolved or explicitly carried forward.
+- [ ] Blockers are resolved or explicitly carried forward.
 
 ## Blockers
 
-- None.
+- Final review requested T008: Firestore rules must enforce the 90-day
+  retention window, and product soft-delete payloads must be compatible with
+  those stricter rules.
 
 ## Pitfalls
 

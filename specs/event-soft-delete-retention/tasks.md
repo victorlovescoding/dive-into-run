@@ -30,14 +30,17 @@
   - T001 -> T003
   - T001 -> T004
   - T002 -> T005
-  - T003 -> T005
-  - T004 -> T005
-  - T005 -> T006
+- T003 -> T005
+- T004 -> T005
+- T005 -> T006
+- T006 -> T007
+- T007 -> T008
 - Parallel waves:
   - `wave-1`: T001
   - `wave-2`: T002, T003, T004 only in separate worktrees; otherwise sequential.
   - `wave-3`: T005
   - `wave-4`: T006
+  - `final-review-fix`: T007, T008
 - Final integration gate:
   - `npm run lint:changed`: exit 0.
   - `npm run type-check:changed`: exit 0.
@@ -995,6 +998,163 @@ Evidence:
     comment parents that are missing or soft-deleted before returning member
     comment rows.
   - `specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js`: covers active event parent kept, soft-deleted event parent hidden, and missing event parent hidden.
+
+### T008 - Final Review Rules-Enforced Retention Window
+
+- **State**: `in_progress`
+- **Attempt**: 1
+- **Wave**: `final-review-fix`
+- **Engineer**: Engineer
+- **Reviewer**: Reviewer
+- **Commit checkpoint**: implementation or verification
+- **Last verified commit**: `d6ecc8f2a058f18e896734fa5885d3d626b62b27`
+- **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Rules deploy status**: required
+- **Incidents**: final review found Firestore rules allowed arbitrary
+  `deletedPurgeAt`; payload investigation found product paths mix
+  `serverTimestamp()` `deletedAt` with client-computed `deletedPurgeAt`.
+
+Scope:
+
+- Fix the final-review blocker where Firestore rules allow arbitrary
+  `deletedPurgeAt` timestamps.
+- Make event, event comment, post, and post comment soft-delete payloads use
+  one concrete delete timestamp for `deletedAt` and `deletedPurgeAt`.
+- Add rules regressions that deny early purge windows and backdated delete
+  timestamps while allowing exact 90-day retention windows.
+- Resynchronize workflow state after Reviewer PASS.
+
+Non-scope:
+
+- Do not change Firebase Functions, Firestore indexes, UI, notifications,
+  purge behavior, push, PR, CI watch, merge, local `main` sync, or deploy
+  behavior.
+- Do not deploy Firestore rules.
+
+Owned files:
+
+- `firestore.rules`
+- `src/repo/soft-delete-retention.js`
+- `src/repo/client/firebase-events-repo.js`
+- `src/repo/client/firebase-event-comments-repo.js`
+- `src/repo/client/firebase-posts-repo.js`
+- `tests/server/firestore/event-soft-delete-rules.test.js`
+- `tests/server/firestore/post-soft-delete-rules.test.js`
+- `specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js`
+- `specs/event-soft-delete-retention/tasks.md`
+- `specs/event-soft-delete-retention/handoff.md`
+- `specs/event-soft-delete-retention/status.json`
+
+Read-only context:
+
+- `specs/event-soft-delete-retention/spec.md`
+- `firestore.rules`
+- `tests/server/firestore/event-soft-delete-rules.test.js`
+- `tests/server/firestore/post-soft-delete-rules.test.js`
+- `src/repo/soft-delete-retention.js`
+- `src/repo/post-soft-delete.js`
+- `src/repo/client/firebase-events-repo.js`
+- `src/repo/client/firebase-event-comments-repo.js`
+- `src/repo/client/firebase-posts-repo.js`
+- `functions/event-retention-purge.js`
+
+Dependencies:
+
+- T007
+
+Browser evidence:
+
+- Not applicable.
+
+Engineer instructions:
+
+- Follow test-driven development: first add rules tests that fail because
+  current rules allow `deletedPurgeAt` earlier than `deletedAt` plus 90 days
+  for events and event comments.
+- Add post rules regressions because the soft-delete rules helper is shared by
+  posts, post comments, events, and event comments.
+- Update Firestore rules so soft-delete updates require a valid retention
+  window: `deletedPurgeAt` equals `deletedAt` plus 90 days, and `deletedAt` is
+  not backdated beyond a small request-time skew window.
+- Use the same concrete delete timestamp in product soft-delete payloads for
+  `deletedAt` and `deletedPurgeAt`; do not mix `serverTimestamp()` with a
+  client-computed purge timestamp.
+- Keep existing post helper compatibility through `src/repo/post-soft-delete.js`.
+- Do not change Functions purge logic, indexes, UI, notifications, or
+  release/deploy state.
+- Engineer modifies only the rules/src/test files above; coordinator updates
+  workflow-state files after Reviewer PASS.
+
+Acceptance criteria:
+
+- AC-T008.1: Firestore rules deny event soft delete when `deletedPurgeAt` is
+  earlier than `deletedAt` plus 90 days.
+- AC-T008.2: Firestore rules deny event comment soft delete when
+  `deletedPurgeAt` is earlier than `deletedAt` plus 90 days.
+- AC-T008.3: Firestore rules deny backdated `deletedAt` timestamps even when
+  `deletedPurgeAt` equals `deletedAt` plus 90 days.
+- AC-T008.4: Firestore rules allow exact 90-day soft delete payloads for
+  authorized event, event comment, post, and post comment deletes.
+- AC-T008.5: Product soft-delete payloads are compatible with the stricter rules
+  by using one concrete delete timestamp for `deletedAt` and `deletedPurgeAt`.
+- AC-T008.6: Workflow state records the final review blocker and fix without
+  deploy claims.
+
+Verification commands and expected signal:
+
+| Command | Expected signal |
+| ------- | --------------- |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js` | Exit 0, helper compatibility tests pass. |
+| `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js"` | Exit 0, event and post soft-delete rules tests pass. |
+| `npm run lint:changed` | Exit 0. |
+| `npm run type-check:changed` | Exit 0. |
+| `npm run workflow:check` | Exit 0, workflow state valid and synced. |
+| `git diff --check` | Exit 0, no whitespace errors. |
+
+Reviewer PASS criteria:
+
+- Diff touches only owned files.
+- Rules enforce an exact 90-day `deletedPurgeAt` window and reject
+  stale/backdated `deletedAt` values.
+- Product event, event comment, post, and post comment soft-delete payloads
+  remain compatible with rules.
+- Post soft-delete rules regressions pass because the helper is shared.
+- No Functions, indexes, UI, notification, deploy, push, PR, CI, merge, or local
+  main sync claim is introduced.
+- Workflow files agree after coordinator sync.
+
+Reviewer REJECT criteria:
+
+- Authorized users can still set `deletedPurgeAt` earlier than the 90-day
+  retention window.
+- Normal product soft-delete writes would be denied by the stricter rules.
+- Post or post comment soft-delete rules regress.
+- Fix widens scope into Functions, indexes, UI, notifications, purge behavior,
+  or release actions.
+- Verification is missing, stale, failed, or not the required command.
+
+Evidence:
+
+- Engineer report: none yet.
+- Reviewer report: final reviewer requested changes: Firestore rules only
+  checked `deletedAt`/`deletedPurgeAt` timestamp types and did not enforce the
+  90-day retention window. Payload explorer found `rules_plus_src_helper` is
+  required because product paths currently mix `serverTimestamp()` `deletedAt`
+  with client-computed `deletedPurgeAt`.
+- Command output summary:
+  - Final review: `git status --short --branch`: exit 0, clean, branch ahead
+    20 and behind 1.
+  - Final review: `npm run workflow:check`: exit 0, 15 status files valid and
+    synced.
+  - Final review: all requested focused Vitest commands: exit 0.
+  - Rules feasibility: existing rules allow 1-day `deletedPurgeAt` for event and
+    event comment.
+  - Rules feasibility: `duration.value(90, 'd')` equality can deny early purge
+    windows in emulator checks.
+  - Payload evidence: event, event comment, post, and post comment product paths
+    currently use `serverTimestamp()` for `deletedAt` and local/client time for
+    `deletedPurgeAt`.
+- Changed files summary: none yet.
 
 ## Final Integration
 
