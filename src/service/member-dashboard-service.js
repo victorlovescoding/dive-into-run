@@ -1,4 +1,4 @@
-import { isAccountDeletionHidden } from '@/config/account-deletion';
+import { isPublicEventRecordVisible } from '@/service/event-service';
 import { isActiveRecord } from '@/service/post-service';
 
 /**
@@ -113,7 +113,7 @@ export function sliceMyEventsFromCache(prevResult, pageSize) {
  */
 export function buildMyEventsPage(eventDocuments, hostedIdsList, pageSize) {
   const allEvents = eventDocuments
-    .filter((document) => !isAccountDeletionHidden(document.data))
+    .filter((document) => isPublicEventRecordVisible(document.data))
     .map((document) => {
       const { data } = document;
 

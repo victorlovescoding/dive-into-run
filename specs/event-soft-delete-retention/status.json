@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "implementation",
-  "activeTask": "T004",
-  "activeWave": "wave-2",
+  "activeTask": null,
+  "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "2b746382a1f9958f056a1c950a1d10bcf29231f2",
-    "capturedAt": "2026-06-02T11:23:01+08:00",
-    "summary": "T003 implementation committed; dispatching T004."
+    "commit": "94a85845245c98e9c3e5c0ba22ae964248695415",
+    "capturedAt": "2026-06-02T11:43:10+08:00",
+    "summary": "T004 implementation diff is reviewed and ready for commit."
   },
   "remoteHead": {
     "remote": "origin",
@@ -32,7 +32,8 @@
   "completedTasks": [
     "T001",
     "T002",
-    "T003"
+    "T003",
+    "T004"
   ],
   "tasks": [
     {
@@ -289,7 +290,8 @@
           "npm run workflow:check: exit 0, 15 status files valid and synced.",
           "npm run lint:changed: exit 0, existing React version warning only.",
           "npm run type-check:changed: exit 0, no changed-file type errors.",
-          "git diff --check: exit 0, no whitespace errors."
+          "git diff --check: exit 0, no whitespace errors.",
+          "npm run workflow:check: exit 0, 15 status files valid and synced."
         ],
         "changedFilesSummary": [
           "src/repo/client/firebase-events-repo.js: soft-deletes event docs with host actor validation and blocks tombstone join/leave/update transaction writes.",
@@ -439,7 +441,7 @@
     {
       "id": "T004",
       "title": "Secondary Surfaces And Notifications",
-      "state": "in_progress",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-2",
       "engineer": "Engineer",
@@ -497,27 +499,52 @@
         {
           "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js",
           "expectedSignal": "Exit 0, member and favorite filtering tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 2 tests passed.",
+            "verifiedAt": "2026-06-02T11:43:10+08:00"
+          }
         },
         {
           "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js",
           "expectedSignal": "Exit 0, notification soft-delete tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 4 tests passed.",
+            "verifiedAt": "2026-06-02T11:43:10+08:00"
+          }
         },
         {
           "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js",
           "expectedSignal": "Exit 0, post notification regression tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 3 tests passed.",
+            "verifiedAt": "2026-06-02T11:43:10+08:00"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed with existing React version warning only.",
+            "verifiedAt": "2026-06-02T11:43:10+08:00"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-02T11:43:10+08:00"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -532,12 +559,32 @@
         "Post/comment notification behavior changes without explicit spec approval.",
         "Verification is missing, stale, failed, or not the required command."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec compliance reviewer and code quality reviewer",
+        "summary": "T004 spec compliance and code-quality reviews passed with no blocking findings.",
+        "decidedAt": "2026-06-02T11:43:10+08:00"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE. Hid deleted events from member surfaces and favorite target hydration, excluded deleted event comments from notification recipient discovery, and added secondary-surface notification coverage.",
+        "reviewerReport": "Spec compliance review passed; code-quality review found no blocking findings and one non-blocking event notification test hardening suggestion.",
+        "commandOutputSummary": [
+          "RED: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js: exit 1 before implementation, 2 tests failed because deleted member events remained visible and deleted event favorite targets were not missing.",
+          "RED: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js: exit 1 before implementation, deleted event comment author still received an event_comment_reply.",
+          "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js: exit 0, 2 tests passed.",
+          "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js: exit 0, 4 tests passed.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js: exit 0, 3 tests passed.",
+          "npm run lint:changed: exit 0, existing React version warning only.",
+          "npm run type-check:changed: exit 0, no changed-file type errors.",
+          "git diff --check: exit 0, no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "src/service/member-dashboard-service.js: filters cached member event records through event visibility before sorting and slicing.",
+          "src/service/content-favorite-service.js: treats soft-deleted event favorite targets as missing.",
+          "src/repo/client/firebase-notifications-repo.js: excludes soft-deleted event comments from event comment recipient discovery.",
+          "specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js: covers member event and event favorite filtering.",
+          "specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js: covers deleted-only and mixed active/deleted event comment notification recipients."
+        ]
       }
     },
     {
@@ -781,40 +828,46 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-comment-service-soft-delete.test.js",
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js",
       "exitCode": 0,
-      "summary": "1 file, 3 tests passed.",
-      "verifiedAt": "2026-06-02T11:17:12+08:00"
+      "summary": "1 file, 2 tests passed.",
+      "verifiedAt": "2026-06-02T11:43:10+08:00"
     },
     {
-      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js",
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js",
       "exitCode": 0,
-      "summary": "1 file, 8 tests passed.",
-      "verifiedAt": "2026-06-02T11:17:12+08:00"
+      "summary": "1 file, 4 tests passed.",
+      "verifiedAt": "2026-06-02T11:43:10+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js",
+      "exitCode": 0,
+      "summary": "1 file, 3 tests passed.",
+      "verifiedAt": "2026-06-02T11:43:10+08:00"
     },
     {
       "command": "npm run lint:changed",
       "exitCode": 0,
       "summary": "Passed with existing React version warning only.",
-      "verifiedAt": "2026-06-02T11:17:12+08:00"
+      "verifiedAt": "2026-06-02T11:43:10+08:00"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
       "summary": "No changed-file type errors.",
-      "verifiedAt": "2026-06-02T11:17:12+08:00"
+      "verifiedAt": "2026-06-02T11:43:10+08:00"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-02T11:17:12+08:00"
+      "verifiedAt": "2026-06-02T11:43:10+08:00"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
       "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
-      "verifiedAt": "2026-06-02T11:17:12+08:00"
+      "verifiedAt": "2026-06-02T11:45:38+08:00"
     }
   ],
   "lastVerifiedCommit": "2b746382a1f9958f056a1c950a1d10bcf29231f2",
@@ -865,5 +918,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-02T11:23:01+08:00"
+  "updatedAt": "2026-06-02T11:45:38+08:00"
 }

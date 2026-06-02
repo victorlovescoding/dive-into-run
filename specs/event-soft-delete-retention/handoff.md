@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `2b746382a1f9958f056a1c950a1d10bcf29231f2`
+- Current head: `94a85845245c98e9c3e5c0ba22ae964248695415`
 - Remote head: `origin/main` at `19434854fd36911879a36406efda80d1b5056dc1`
 - Authorization boundary:
   - edit: yes
@@ -18,10 +18,10 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: implementation
-- Active task: T004
-- Active wave: wave-2
-- Latest reviewer decision: T003 final spec compliance and code-quality reviews
-  `review_passed` on 2026-06-02T11:14:13+08:00.
+- Active task: none
+- Active wave: none
+- Latest reviewer decision: T004 final spec compliance and code-quality reviews
+  `review_passed` on 2026-06-02T11:43:10+08:00.
 - Last verified commit: `2b746382a1f9958f056a1c950a1d10bcf29231f2`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
@@ -48,8 +48,8 @@
 
 ## Next Action
 
-Coordinator commits this T004 dispatch state, then dispatches the T004 Engineer
-subagent.
+Coordinator commits T004 implementation and workflow state, then records the
+T004 phase commit before dispatching T005.
 
 ## Task Graph
 
@@ -80,9 +80,16 @@ separate coordinator-created worktrees with disjoint owned files.
 | `npm run lint:changed` | 0 | Passed with existing React version warning only. |
 | `npm run type-check:changed` | 0 | No changed-file type errors. |
 | `git diff --check` | 0 | No whitespace errors. |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js` | 0 | 1 file, 2 tests passed. |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js` | 0 | 1 file, 4 tests passed. |
+| `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js` | 0 | 1 file, 3 tests passed. |
+| `npm run lint:changed` | 0 | Passed with existing React version warning only. |
+| `npm run type-check:changed` | 0 | No changed-file type errors. |
+| `git diff --check` | 0 | No whitespace errors. |
+| `npm run workflow:check` | 0 | 15 status files valid and synced, including `event-soft-delete-retention/status.json`. |
 
-T003 implementation is reviewed, verified, and committed. T004 dispatch state is
-being committed before Engineer handoff.
+T004 implementation is reviewed and verified in the working tree; the T004 phase
+commit is pending.
 
 ## Closeout Checklist
 

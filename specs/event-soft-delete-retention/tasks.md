@@ -279,6 +279,7 @@ Evidence:
   - `npm run lint:changed`: exit 0, existing React version warning only.
   - `npm run type-check:changed`: exit 0, no changed-file type errors.
   - `git diff --check`: exit 0, no whitespace errors.
+  - `npm run workflow:check`: exit 0, 15 status files valid and synced.
 - Changed files summary:
   - `src/repo/client/firebase-events-repo.js`: soft-deletes event docs with host actor validation and blocks tombstone join/leave/update transaction writes.
   - `src/runtime/client/use-cases/event-use-cases.js`: filters soft-deleted event reads, returns raw-page `hasMore`, and forwards delete actor.
@@ -419,13 +420,13 @@ Evidence:
 
 ### T004 - Secondary Surfaces And Notifications
 
-- **State**: `in_progress`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-2`
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation
-- **Last verified commit**: none
+- **Last verified commit**: pending T004 commit
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -526,10 +527,30 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: none yet.
-- Reviewer report: none yet.
-- Command output summary: none yet.
-- Changed files summary: none yet.
+- Engineer report: DONE. Hid deleted events from member surfaces and favorite
+  target hydration, excluded deleted event comments from notification recipient
+  discovery, and added focused secondary-surface notification coverage.
+- Reviewer report: spec compliance review `review_passed`; code-quality review
+  found no blocking findings and one non-blocking event notification test
+  hardening suggestion.
+- Command output summary:
+  - RED: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js`: exit 1 before implementation, 2 tests failed because deleted member events remained visible and deleted event favorite targets were not missing.
+  - RED: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js`: exit 1 before implementation, deleted event comment author still received an `event_comment_reply`.
+  - `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js`: exit 0, 2 tests passed.
+  - `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js`: exit 0, 4 tests passed.
+  - `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/notification-soft-delete.test.js`: exit 0, 3 tests passed.
+  - `npm run lint:changed`: exit 0, existing React version warning only.
+  - `npm run type-check:changed`: exit 0, no changed-file type errors.
+  - `git diff --check`: exit 0, no whitespace errors.
+- Changed files summary:
+  - `src/service/member-dashboard-service.js`: filters cached member event
+    records through event visibility before sorting and slicing.
+  - `src/service/content-favorite-service.js`: treats soft-deleted event
+    favorite targets as missing.
+  - `src/repo/client/firebase-notifications-repo.js`: excludes soft-deleted
+    event comments from event comment recipient discovery.
+  - `specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js`: covers member event and event favorite filtering.
+  - `specs/event-soft-delete-retention/tests/unit/runtime/event-notification-soft-delete.test.js`: covers deleted-only and mixed active/deleted event comment notification recipients.
 
 ### T005 - Firestore Rules For Event Retention
 

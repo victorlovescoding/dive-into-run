@@ -97,7 +97,15 @@ export async function fetchDistinctPostCommentAuthors(postId) {
  * @returns {Promise<string[]>} 不重複的 authorUid 陣列。
  */
 export async function fetchDistinctEventCommentAuthors(eventId) {
-  return fetchDistinctCommentAuthors(collection(db, 'events', eventId, 'comments'));
+  const snapshot = await getDocs(collection(db, 'events', eventId, 'comments'));
+  const uids = snapshot.docs.flatMap((document) => {
+    const data = document.data();
+    if (!isActiveNotificationSourceRecord(data)) return [];
+
+    const uid = normalizeRecipientUid(data.authorUid);
+    return uid ? [uid] : [];
+  });
+  return [...new Set(uids)];
 }
 
 /**
