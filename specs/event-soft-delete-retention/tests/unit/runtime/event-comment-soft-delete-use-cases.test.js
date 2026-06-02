@@ -25,6 +25,8 @@ const firestoreMocks = vi.hoisted(() => ({
   writeBatch: vi.fn(),
 }));
 
+const RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+
 vi.mock('firebase/firestore', () => firestoreMocks);
 vi.mock('@/config/client/firebase-client', () => ({
   auth: clientState.auth,
@@ -92,14 +94,21 @@ describe('event comment soft-delete use cases', () => {
 
     await expect(deleteEventCommentDocument('event-1', 'comment-1')).resolves.toBeUndefined();
 
+    const expectedDeletedAt = new Date('2026-05-28T03:04:05.006Z');
+    const expectedDeletedPurgeAt = new Date(expectedDeletedAt.getTime() + RETENTION_MS);
+
     expect(tx.update).toHaveBeenCalledWith(
       { kind: 'doc', path: [{ kind: 'db' }, 'events', 'event-1', 'comments', 'comment-1'] },
       {
-        deletedAt: { kind: 'serverTimestamp' },
+        deletedAt: expectedDeletedAt,
         deletedByUid: 'actor-1',
-        deletedPurgeAt: { kind: 'timestamp', iso: '2026-08-26T03:04:05.006Z' },
+        deletedPurgeAt: expectedDeletedPurgeAt,
       },
     );
+    const [, payload] = tx.update.mock.calls[0];
+    expect(payload.deletedAt).toBeInstanceOf(Date);
+    expect(payload.deletedPurgeAt).toBeInstanceOf(Date);
+    expect(payload.deletedPurgeAt.getTime() - payload.deletedAt.getTime()).toBe(RETENTION_MS);
     expect(tx.delete).not.toHaveBeenCalled();
     expect(tx.set).not.toHaveBeenCalled();
     expect(firestoreMocks.getDocs).not.toHaveBeenCalled();

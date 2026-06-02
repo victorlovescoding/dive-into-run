@@ -35,12 +35,13 @@
 - T005 -> T006
 - T006 -> T007
 - T007 -> T008
+- T008 -> T009
 - Parallel waves:
   - `wave-1`: T001
   - `wave-2`: T002, T003, T004 only in separate worktrees; otherwise sequential.
   - `wave-3`: T005
   - `wave-4`: T006
-  - `final-review-fix`: T007, T008
+  - `final-review-fix`: T007, T008, T009
 - Final integration gate:
   - `npm run lint:changed`: exit 0.
   - `npm run type-check:changed`: exit 0.
@@ -1175,6 +1176,144 @@ Evidence:
     `tests/server/firestore/post-soft-delete-rules.test.js`: cover exact
     90-day allowed writes, early purge denial, and backdated timestamp denial.
   - `specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js`: covers concrete timestamp payload compatibility.
+
+### T009 - Final Review Test Sync And Future-Skew Rules Coverage
+
+- **State**: `completed`
+- **Attempt**: 1
+- **Wave**: `final-review-fix`
+- **Engineer**: Engineer
+- **Reviewer**: Final reviewer follow-up `review_passed`; no blocking findings.
+- **Commit checkpoint**: implementation or verification
+- **Last verified commit**: `020cd585cc06d90984364445408d7efeae13adcc`
+- **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Rules deploy status**: required
+- **Incidents**: final reviewer found stale runtime unit-test expectations for
+  soft-delete payload timestamps and requested future-skew rules coverage.
+
+Scope:
+
+- Update stale event and event-comment soft-delete runtime tests to expect one
+  concrete `Date` for `deletedAt` and a concrete `deletedPurgeAt` exactly 90
+  days later.
+- Add emulator coverage that rejects future-skewed event and event-comment
+  soft-delete payloads beyond the allowed request-time skew.
+- Resynchronize workflow state for the final-review follow-up.
+
+Non-scope:
+
+- Do not change production soft-delete payload code.
+- Do not change Firestore rules unless the new future-skew coverage proves the
+  existing rules allow the bad write.
+- Do not deploy Firestore rules, push, open a PR, watch CI, merge, rebase, or
+  sync local `main`.
+
+Owned files:
+
+- `specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js`
+- `specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js`
+- `tests/server/firestore/event-soft-delete-rules.test.js`
+- `specs/event-soft-delete-retention/tasks.md`
+- `specs/event-soft-delete-retention/handoff.md`
+- `specs/event-soft-delete-retention/status.json`
+
+Read-only context:
+
+- `src/repo/client/firebase-events-repo.js`
+- `src/repo/client/firebase-event-comments-repo.js`
+- `src/repo/soft-delete-retention.js`
+- `firestore.rules`
+- `tests/server/firestore/post-soft-delete-rules.test.js`
+
+Dependencies:
+
+- T008
+
+Browser evidence:
+
+- Not applicable.
+
+Engineer instructions:
+
+- Follow systematic debugging and TDD.
+- Reproduce stale runtime unit-test failures before changing expectations.
+- Make the unit tests assert concrete `Date` semantics and exact 90-day purge
+  math.
+- Add future-skew rules coverage first; if existing rules already reject it,
+  report that the test is coverage-only and do not change production rules.
+
+Acceptance criteria:
+
+- AC-T009.1: Event soft-delete runtime test asserts `deletedAt` and
+  `deletedPurgeAt` are concrete `Date` values.
+- AC-T009.2: Event comment soft-delete runtime test asserts `deletedAt` and
+  `deletedPurgeAt` are concrete `Date` values.
+- AC-T009.3: Both runtime tests assert the purge timestamp is exactly 90 days
+  after the delete timestamp.
+- AC-T009.4: Firestore rules emulator coverage rejects future-skewed event and
+  event-comment soft-delete payloads with exact purge math.
+- AC-T009.5: No production rules or product code changes are made when existing
+  rules already reject future-skewed timestamps.
+
+Verification commands and expected signal:
+
+| Command | Expected signal |
+| ------- | --------------- |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js` | Exit 0, 18 tests pass. |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js` | Exit 0, 8 tests pass. |
+| `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js"` | Exit 0, event and post soft-delete rules tests pass. |
+| `npm run lint:changed` | Exit 0. |
+| `npm run type-check:changed` | Exit 0. |
+| `npm run workflow:check` | Exit 0, workflow state valid and synced. |
+| `git diff --check` | Exit 0, no whitespace errors. |
+
+Reviewer PASS criteria:
+
+- Diff touches only owned files.
+- Runtime tests assert concrete `Date` values and exact 90-day math instead of
+  loose matcher semantics.
+- Future-skew rules coverage fails if `deletedAt` can be set more than five
+  minutes in the future.
+- No production code, rules deploy, push, PR, CI, merge, rebase, or local main
+  sync occurs.
+
+Reviewer REJECT criteria:
+
+- Tests still expect `serverTimestamp()` for product soft-delete payloads.
+- Tests loosen timestamp expectations to `anything` or equivalent.
+- Future-skew coverage does not exercise both event and event-comment
+  soft-delete paths.
+- Production code or rules are changed without test evidence requiring it.
+
+Evidence:
+
+- Engineer report: DONE. Reproduced stale unit-test failures, updated runtime
+  expectations to concrete `Date` payloads with exact 90-day retention math,
+  and added event/event-comment future-skew rules coverage.
+- Reviewer report: T009 follow-up review `review_passed`; no Critical,
+  Important, or Minor findings. Reviewer verified the diff is limited to owned
+  files, runtime tests assert concrete `Date` values and exact 90-day math,
+  future-skew coverage rejects both event and event-comment payloads, and no
+  production code or rules changed.
+- Command output summary:
+  - RED: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js`: exit 1, 1 failed and 17 passed; expected `serverTimestamp()` but actual payload used concrete `Date`.
+  - RED: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js`: exit 1, 1 failed and 7 passed; expected `serverTimestamp()` but actual payload used concrete `Date`.
+  - Coverage-only GREEN: `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js"`: exit 0, 27 tests passed after adding the future-skew test; no production rules change needed.
+  - GREEN: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js`: exit 0, 18 tests passed.
+  - GREEN: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js`: exit 0, 8 tests passed.
+  - `npm run lint:changed`: exit 0, existing React version warning only.
+  - `npm run type-check:changed`: exit 0, no changed-file type errors.
+  - `npm run workflow:check`: exit 0, 15 status files valid and synced.
+  - `git diff --check`: exit 0, no whitespace errors.
+  - Reviewer: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js`: exit 0, 18 tests passed.
+  - Reviewer: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js`: exit 0, 8 tests passed.
+  - Reviewer: `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js"`: exit 0, 27 tests passed.
+  - Reviewer: `npm run lint:changed`, `npm run type-check:changed`,
+    `npm run workflow:check`, and `git diff --check`: exit 0.
+- Changed files summary:
+  - `specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js`: asserts event soft-delete writes concrete `Date` values with exact 90-day purge math.
+  - `specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js`: asserts event-comment soft-delete writes concrete `Date` values with exact 90-day purge math.
+  - `tests/server/firestore/event-soft-delete-rules.test.js`: covers rejection of future-skewed event and event-comment soft-delete payloads.
 
 ## Final Integration
 

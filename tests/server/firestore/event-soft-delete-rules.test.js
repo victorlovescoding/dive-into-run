@@ -79,6 +79,14 @@ function staleDeletedAt() {
 }
 
 /**
+ * Builds a delete timestamp beyond the allowed future request-time skew.
+ * @returns {import('firebase/firestore').Timestamp} Future-skewed delete timestamp.
+ */
+function futureSkewedDeletedAt() {
+  return Timestamp.fromMillis(Date.now() + 6 * 60 * 1000);
+}
+
+/**
  * Builds the soft-delete payload sent by client runtime code.
  * @param {string} actorUid - Acting user uid.
  * @param {Partial<{
@@ -273,6 +281,29 @@ describe('event soft-delete Firestore rules', () => {
       updateDoc(
         doc(dbFor('comment-author'), 'events', 'event-1', 'comments', 'comment-1'),
         softDeletePayload('comment-author', { deletedAt }),
+      ),
+    );
+  });
+
+  it('denies future-skewed event and event-comment soft-delete updates with an exact purge window', async () => {
+    await seedEventTree({
+      eventId: 'event-1',
+      commentId: 'comment-1',
+      hostUid: 'event-host',
+      participantUid: 'runner-1',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
+      updateDoc(
+        doc(dbFor('event-host'), 'events', 'event-1'),
+        softDeletePayload('event-host', { deletedAt: futureSkewedDeletedAt() }),
+      ),
+    );
+    await assertFails(
+      updateDoc(
+        doc(dbFor('comment-author'), 'events', 'event-1', 'comments', 'comment-1'),
+        softDeletePayload('comment-author', { deletedAt: futureSkewedDeletedAt() }),
       ),
     );
   });

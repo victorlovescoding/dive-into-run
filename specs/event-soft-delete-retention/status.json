@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "020cd585cc06d90984364445408d7efeae13adcc",
-    "capturedAt": "2026-06-03T00:47:05+08:00",
-    "summary": "T008 implementation committed; recording workflow-state sync before final review."
+    "commit": "ed7b2fdae6251dc42f31a440f6bd4ea4b0be62a1",
+    "capturedAt": "2026-06-03T01:16:32+08:00",
+    "summary": "HEAD is the T008 workflow-state sync commit; T009 final-review test sync passed follow-up review in the working tree and is not staged or committed."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "f641655b6b7f5fe48058ad43d59a5cdc147cdebf",
     "capturedAt": "2026-06-03T00:21:11+08:00",
-    "summary": "Current origin/main while branch is ahead 22 and behind 1; rebase remains a later closeout concern."
+    "summary": "Current origin/main while branch is ahead and behind origin/main; rebase remains a later closeout concern."
   },
   "completedTasks": [
     "T001",
@@ -37,7 +37,8 @@
     "T005",
     "T006",
     "T007",
-    "T008"
+    "T008",
+    "T009"
   ],
   "tasks": [
     {
@@ -1269,46 +1270,216 @@
           "specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js: covers concrete timestamp payload compatibility."
         ]
       }
+    },
+    {
+      "id": "T009",
+      "title": "Final Review Test Sync And Future-Skew Rules Coverage",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "final-review-fix",
+      "engineer": "Engineer",
+      "reviewer": "Final reviewer follow-up requested; no separate post-fix reviewer run in this Engineer dispatch.",
+      "scope": [
+        "Update stale event and event-comment soft-delete runtime tests to expect one concrete Date for deletedAt and a concrete deletedPurgeAt exactly 90 days later.",
+        "Add emulator coverage that rejects future-skewed event and event-comment soft-delete payloads beyond the allowed request-time skew.",
+        "Resynchronize workflow state for the final-review follow-up."
+      ],
+      "nonScope": [
+        "No production soft-delete payload code changes.",
+        "No Firestore rules changes unless the new future-skew coverage proves the existing rules allow the bad write.",
+        "No Firestore rules deploy, push, PR, CI watch, merge, rebase, or local main sync."
+      ],
+      "ownedFiles": [
+        "specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js",
+        "specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js",
+        "tests/server/firestore/event-soft-delete-rules.test.js",
+        "specs/event-soft-delete-retention/tasks.md",
+        "specs/event-soft-delete-retention/handoff.md",
+        "specs/event-soft-delete-retention/status.json"
+      ],
+      "readOnlyContext": [
+        "src/repo/client/firebase-events-repo.js",
+        "src/repo/client/firebase-event-comments-repo.js",
+        "src/repo/soft-delete-retention.js",
+        "firestore.rules",
+        "tests/server/firestore/post-soft-delete-rules.test.js"
+      ],
+      "dependencies": [
+        "T008"
+      ],
+      "engineerInstructions": [
+        "Follow systematic debugging and TDD.",
+        "Reproduce stale runtime unit-test failures before changing expectations.",
+        "Make the unit tests assert concrete Date semantics and exact 90-day purge math.",
+        "Add future-skew rules coverage first; if existing rules already reject it, report that the test is coverage-only and do not change production rules."
+      ],
+      "acceptanceCriteria": [
+        "AC-T009.1: Event soft-delete runtime test asserts deletedAt and deletedPurgeAt are concrete Date values.",
+        "AC-T009.2: Event comment soft-delete runtime test asserts deletedAt and deletedPurgeAt are concrete Date values.",
+        "AC-T009.3: Both runtime tests assert the purge timestamp is exactly 90 days after the delete timestamp.",
+        "AC-T009.4: Firestore rules emulator coverage rejects future-skewed event and event-comment soft-delete payloads with exact purge math.",
+        "AC-T009.5: No production rules or product code changes are made when existing rules already reject future-skewed timestamps."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js",
+          "expectedSignal": "Exit 0, 18 tests pass.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 18 tests passed.",
+            "verifiedAt": "2026-06-03T01:00:23+08:00"
+          }
+        },
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js",
+          "expectedSignal": "Exit 0, 8 tests pass.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 8 tests passed.",
+            "verifiedAt": "2026-06-03T01:00:23+08:00"
+          }
+        },
+        {
+          "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js\"",
+          "expectedSignal": "Exit 0, event and post soft-delete rules tests pass.",
+          "lastRun": {
+            "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js\"",
+            "exitCode": 0,
+            "summary": "2 files, 27 tests passed.",
+            "verifiedAt": "2026-06-03T01:00:15+08:00"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed with existing React version warning only.",
+            "verifiedAt": "2026-06-03T01:01:00+08:00"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-03T01:01:00+08:00"
+          }
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "Exit 0, workflow state valid and synced.",
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
+            "verifiedAt": "2026-06-03T01:05:01+08:00"
+          }
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "Exit 0, no whitespace errors.",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-03T01:01:30+08:00"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Runtime tests assert concrete Date values and exact 90-day math instead of loose matcher semantics.",
+        "Future-skew rules coverage fails if deletedAt can be set more than five minutes in the future.",
+        "No production code, rules deploy, push, PR, CI, merge, rebase, or local main sync occurs."
+      ],
+      "reviewerRejectCriteria": [
+        "Tests still expect serverTimestamp() for product soft-delete payloads.",
+        "Tests loosen timestamp expectations to anything or equivalent.",
+        "Future-skew coverage does not exercise both event and event-comment soft-delete paths.",
+        "Production code or rules are changed without test evidence requiring it."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Pauli",
+        "summary": "T009 review passed with no Critical, Important, or Minor findings. Runtime tests assert concrete Date payloads and exact 90-day retention math; future-skew rules coverage exercises event and event-comment rejection paths; no production code or rules changed.",
+        "decidedAt": "2026-06-03T01:09:28+08:00"
+      },
+      "evidence": {
+        "engineerReport": "DONE. Reproduced stale unit-test failures, updated runtime expectations to concrete Date payloads with exact 90-day retention math, and added event/event-comment future-skew rules coverage.",
+        "reviewerReport": "T009 follow-up review_passed. No Critical, Important, or Minor findings; reviewer verified the diff is limited to the six owned files, runtime tests assert concrete Date values and exact 90-day math, future-skew coverage rejects both event and event-comment payloads, and no production code or rules changed.",
+        "commandOutputSummary": [
+          "RED: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js: exit 1, 1 failed and 17 passed; expected serverTimestamp() but actual payload used concrete Date.",
+          "RED: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js: exit 1, 1 failed and 7 passed; expected serverTimestamp() but actual payload used concrete Date.",
+          "Coverage-only GREEN: firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js\": exit 0, 27 tests passed after adding the future-skew test; no production rules change needed.",
+          "GREEN: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js: exit 0, 18 tests passed.",
+          "GREEN: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js: exit 0, 8 tests passed.",
+          "npm run lint:changed: exit 0, existing React version warning only.",
+          "npm run type-check:changed: exit 0, no changed-file type errors.",
+          "npm run workflow:check: exit 0, 15 status files valid and synced.",
+          "git diff --check: exit 0, no whitespace errors.",
+          "Reviewer: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js: exit 0, 18 tests passed.",
+          "Reviewer: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js: exit 0, 8 tests passed.",
+          "Reviewer: firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js\": exit 0, 27 tests passed.",
+          "Reviewer: npm run lint:changed, npm run type-check:changed, npm run workflow:check, and git diff --check all exited 0."
+        ],
+        "changedFilesSummary": [
+          "specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js: asserts event soft-delete writes concrete Date values with exact 90-day purge math.",
+          "specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js: asserts event-comment soft-delete writes concrete Date values with exact 90-day purge math.",
+          "tests/server/firestore/event-soft-delete-rules.test.js: covers rejection of future-skewed event and event-comment soft-delete payloads."
+        ]
+      }
     }
   ],
   "blocked": false,
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js",
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js",
       "exitCode": 0,
-      "summary": "1 file, 6 tests passed.",
-      "verifiedAt": "2026-06-03T00:41:54+08:00"
+      "summary": "1 file, 18 tests passed.",
+      "verifiedAt": "2026-06-03T01:00:23+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js",
+      "exitCode": 0,
+      "summary": "1 file, 8 tests passed.",
+      "verifiedAt": "2026-06-03T01:00:23+08:00"
     },
     {
       "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js\"",
       "exitCode": 0,
-      "summary": "2 files, 26 tests passed.",
-      "verifiedAt": "2026-06-03T00:42:11+08:00"
+      "summary": "2 files, 27 tests passed.",
+      "verifiedAt": "2026-06-03T01:00:15+08:00"
     },
     {
       "command": "npm run lint:changed",
       "exitCode": 0,
       "summary": "Passed with existing React version warning only.",
-      "verifiedAt": "2026-06-03T00:42:31+08:00"
+      "verifiedAt": "2026-06-03T01:01:00+08:00"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
       "summary": "No changed-file type errors.",
-      "verifiedAt": "2026-06-03T00:42:43+08:00"
+      "verifiedAt": "2026-06-03T01:01:00+08:00"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-03T00:42:47+08:00"
+      "verifiedAt": "2026-06-03T01:01:30+08:00"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
       "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
-      "verifiedAt": "2026-06-03T00:45:05+08:00"
+      "verifiedAt": "2026-06-03T01:05:01+08:00"
     }
   ],
   "lastVerifiedCommit": "020cd585cc06d90984364445408d7efeae13adcc",
@@ -1402,6 +1573,12 @@
       "commit": "020cd585cc06d90984364445408d7efeae13adcc",
       "summary": "Enforce retention window rules.",
       "committedAt": "2026-06-03T00:47:05+08:00"
+    },
+    {
+      "phase": "T008-state",
+      "commit": "ed7b2fdae6251dc42f31a440f6bd4ea4b0be62a1",
+      "summary": "Record event retention rules state.",
+      "committedAt": "2026-06-03T00:48:54+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -1421,5 +1598,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-03T00:47:05+08:00"
+  "updatedAt": "2026-06-03T01:16:32+08:00"
 }

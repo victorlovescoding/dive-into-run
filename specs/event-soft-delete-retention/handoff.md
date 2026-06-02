@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `020cd585cc06d90984364445408d7efeae13adcc`
+- Current head: `ed7b2fdae6251dc42f31a440f6bd4ea4b0be62a1`
 - Remote head: `origin/main` at `f641655b6b7f5fe48058ad43d59a5cdc147cdebf`
 - Authorization boundary:
   - edit: yes
@@ -20,9 +20,8 @@
 - Current phase: implementation
 - Active task: none
 - Active wave: none
-- Latest reviewer decision: T008 reviewer `review_passed`; no Critical or
-  Important findings after rules enforce exact 90-day retention and product
-  payloads use one concrete delete timestamp.
+- Latest reviewer decision: T009 follow-up reviewer `review_passed`; no
+  Critical, Important, or Minor findings.
 - Last verified commit: `020cd585cc06d90984364445408d7efeae13adcc`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
@@ -40,6 +39,10 @@
   - T007-state: `d6ecc8f2a058f18e896734fa5885d3d626b62b27`
   - T008-dispatch: `500bbee7e2803814f0a2821862e3788ff5593a95`
   - T008: `020cd585cc06d90984364445408d7efeae13adcc`
+  - T008-state: `ed7b2fdae6251dc42f31a440f6bd4ea4b0be62a1`
+- Working tree: T009 final-review test sync and future-skew coverage passed
+  follow-up review; not staged or committed. Prior HEAD is already the
+  T008-state workflow-state sync commit `ed7b2fd`.
 - Rules deploy status: required, required=true, changed=true, deployedCommit=null
 - Incidents: T002 stale active detail cancellation notification carry-forward is
   mitigated and documented.
@@ -59,10 +62,11 @@
 
 ## Next Action
 
-Coordinator runs workflow gates, commits this T008 workflow-state sync, then
-requests final read-only review of the full feature branch. Do not push, open a
-PR, watch CI, merge, sync local `main`, deploy Firestore rules, or deploy
-Firebase Functions without separate explicit authorization.
+Coordinator should run fresh verification and commit the unstaged T009 working
+tree changes within the existing commit authorization. Prior HEAD is already
+`ed7b2fd`; do not push, open a PR, watch CI, merge, rebase, sync local `main`,
+deploy Firestore rules, or deploy Firebase Functions without separate explicit
+authorization.
 
 ## Task Graph
 
@@ -75,6 +79,7 @@ Firebase Functions without separate explicit authorization.
 - T005 -> T006
 - T006 -> T007
 - T007 -> T008
+- T008 -> T009
 
 Default execution is sequential. T002, T003, and T004 may run parallel only in
 separate coordinator-created worktrees with disjoint owned files.
@@ -83,8 +88,9 @@ separate coordinator-created worktrees with disjoint owned files.
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js` | 0 | 1 file, 6 tests passed. |
-| `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js"` | 0 | 2 files, 26 tests passed. |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js` | 0 | 1 file, 18 tests passed. |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js` | 0 | 1 file, 8 tests passed. |
+| `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js"` | 0 | 2 files, 27 tests passed. |
 | `npm run lint:changed` | 0 | Passed with existing React version warning only. |
 | `npm run type-check:changed` | 0 | No changed-file type errors. |
 | `npm run workflow:check` | 0 | 15 status files valid and synced, including `event-soft-delete-retention/status.json`. |
@@ -106,6 +112,13 @@ Payload investigation found product paths must also stop mixing
 T008 fixed this by enforcing exact 90-day retention plus request-time skew in
 rules and using one concrete delete timestamp in event, event comment, post,
 and post comment soft-delete payloads.
+
+Final reviewer then found stale runtime unit tests still expected
+`serverTimestamp()` sentinels for event and event-comment soft-delete payloads.
+T009 updated those tests to assert concrete `Date` values and exact 90-day
+purge math. T009 also added explicit future-skew emulator coverage; the new
+test passed immediately against existing rules, so no production rules change
+was needed.
 
 ## Closeout Checklist
 
