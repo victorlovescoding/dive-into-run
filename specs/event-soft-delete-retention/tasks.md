@@ -426,7 +426,7 @@ Evidence:
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation
-- **Last verified commit**: pending T004 commit
+- **Last verified commit**: `1ebfcb472f65c7d9621287692dda9855b9157f12`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -554,7 +554,7 @@ Evidence:
 
 ### T005 - Firestore Rules For Event Retention
 
-- **State**: `todo`
+- **State**: `in_progress`
 - **Attempt**: 1
 - **Wave**: `wave-3`
 - **Engineer**: Engineer

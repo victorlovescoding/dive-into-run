@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `94a85845245c98e9c3e5c0ba22ae964248695415`
+- Current head: `1ebfcb472f65c7d9621287692dda9855b9157f12`
 - Remote head: `origin/main` at `19434854fd36911879a36406efda80d1b5056dc1`
 - Authorization boundary:
   - edit: yes
@@ -18,17 +18,18 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: implementation
-- Active task: none
-- Active wave: none
+- Active task: T005
+- Active wave: wave-3
 - Latest reviewer decision: T004 final spec compliance and code-quality reviews
   `review_passed` on 2026-06-02T11:43:10+08:00.
-- Last verified commit: `2b746382a1f9958f056a1c950a1d10bcf29231f2`
+- Last verified commit: `1ebfcb472f65c7d9621287692dda9855b9157f12`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
   - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
   - T001: `d8c2578f027f4d9fe11f6b21c31e5c16d61757f6`
   - T002: `46e8cbf9b1c7959285a2534090a48b8bef87dab3`
   - T003: `2b746382a1f9958f056a1c950a1d10bcf29231f2`
+  - T004: `1ebfcb472f65c7d9621287692dda9855b9157f12`
 - Rules deploy status: required, required=true, changed=false, deployedCommit=null
 - Incidents: T002 stale active detail cancellation notification carry-forward is
   mitigated and documented.
@@ -48,8 +49,8 @@
 
 ## Next Action
 
-Coordinator commits T004 implementation and workflow state, then records the
-T004 phase commit before dispatching T005.
+Coordinator commits this T005 dispatch state, then dispatches the T005 Engineer
+subagent.
 
 ## Task Graph
 
@@ -88,8 +89,8 @@ separate coordinator-created worktrees with disjoint owned files.
 | `git diff --check` | 0 | No whitespace errors. |
 | `npm run workflow:check` | 0 | 15 status files valid and synced, including `event-soft-delete-retention/status.json`. |
 
-T004 implementation is reviewed and verified in the working tree; the T004 phase
-commit is pending.
+T004 implementation is reviewed, verified, and committed. T005 dispatch state is
+being committed before Engineer handoff.
 
 ## Closeout Checklist
 

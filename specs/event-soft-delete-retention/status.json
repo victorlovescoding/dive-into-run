@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "implementation",
-  "activeTask": null,
-  "activeWave": null,
+  "activeTask": "T005",
+  "activeWave": "wave-3",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "94a85845245c98e9c3e5c0ba22ae964248695415",
-    "capturedAt": "2026-06-02T11:43:10+08:00",
-    "summary": "T004 implementation diff is reviewed and ready for commit."
+    "commit": "1ebfcb472f65c7d9621287692dda9855b9157f12",
+    "capturedAt": "2026-06-02T11:48:25+08:00",
+    "summary": "T004 implementation committed; dispatching T005."
   },
   "remoteHead": {
     "remote": "origin",
@@ -590,7 +590,7 @@
     {
       "id": "T005",
       "title": "Firestore Rules For Event Retention",
-      "state": "todo",
+      "state": "in_progress",
       "attempt": 1,
       "wave": "wave-3",
       "engineer": "Engineer",
@@ -870,7 +870,7 @@
       "verifiedAt": "2026-06-02T11:45:38+08:00"
     }
   ],
-  "lastVerifiedCommit": "2b746382a1f9958f056a1c950a1d10bcf29231f2",
+  "lastVerifiedCommit": "1ebfcb472f65c7d9621287692dda9855b9157f12",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -901,6 +901,12 @@
       "commit": "2b746382a1f9958f056a1c950a1d10bcf29231f2",
       "summary": "Add event comment soft delete.",
       "committedAt": "2026-06-02T11:23:01+08:00"
+    },
+    {
+      "phase": "T004",
+      "commit": "1ebfcb472f65c7d9621287692dda9855b9157f12",
+      "summary": "Add event secondary soft delete.",
+      "committedAt": "2026-06-02T11:48:25+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -918,5 +924,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-02T11:45:38+08:00"
+  "updatedAt": "2026-06-02T11:48:25+08:00"
 }
