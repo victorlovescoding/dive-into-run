@@ -301,13 +301,13 @@ Carry-forward:
 
 ### T003 - Event Comment Delete Writes And Pagination Filtering
 
-- **State**: `in_progress`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-2`
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation
-- **Last verified commit**: none
+- **Last verified commit**: pending T003 commit
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -398,10 +398,24 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: none yet.
-- Reviewer report: none yet.
-- Command output summary: none yet.
-- Changed files summary: none yet.
+- Engineer report: DONE. Converted event comment delete to comment-document
+  soft delete, hid deleted comments from product reads, guarded stale edit and
+  retained history reads, and added pagination backfill coverage.
+- Reviewer report: final spec compliance review `review_passed`; final
+  code-quality review found no blocking findings.
+- Command output summary:
+  - RED: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js`: exit 1 before fixes; stale edit resolved, retained history returned for deleted parent, and terminal all-deleted pagination returned a deleted raw cursor.
+  - `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-comment-service-soft-delete.test.js`: exit 0, 3 tests passed.
+  - `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js`: exit 0, 8 tests passed.
+  - `npm run lint:changed`: exit 0, existing React version warning only.
+  - `npm run type-check:changed`: exit 0, no changed-file type errors.
+  - `git diff --check`: exit 0, no whitespace errors.
+- Changed files summary:
+  - `src/repo/client/firebase-event-comments-repo.js`: soft-deletes event comments, preserves history, and rejects stale edits on soft-deleted comments.
+  - `src/runtime/client/use-cases/event-comment-use-cases.js`: filters deleted comments, backfills visible pages, and hides retained history for deleted parent comments.
+  - `src/service/event-comment-service.js`: hides soft-deleted comment records.
+  - `specs/event-soft-delete-retention/tests/unit/service/event-comment-service-soft-delete.test.js`: covers event comment visibility predicate behavior.
+  - `specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js`: covers event comment soft-delete writes, idempotency, pagination backfill, stale edit guard, and retained-history hiding.
 
 ### T004 - Secondary Surfaces And Notifications
 

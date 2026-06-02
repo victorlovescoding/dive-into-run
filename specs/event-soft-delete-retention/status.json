@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "implementation",
-  "activeTask": "T003",
-  "activeWave": "wave-2",
+  "activeTask": null,
+  "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "46e8cbf9b1c7959285a2534090a48b8bef87dab3",
-    "capturedAt": "2026-06-02T10:24:50+08:00",
-    "summary": "T002 implementation committed; T003 dispatch state is being recorded."
+    "commit": "c091de73a5d053ef55f282a8990a25ed8fad0d79",
+    "capturedAt": "2026-06-02T11:17:12+08:00",
+    "summary": "T003 implementation diff is reviewed and ready for commit."
   },
   "remoteHead": {
     "remote": "origin",
@@ -31,7 +31,8 @@
   },
   "completedTasks": [
     "T001",
-    "T002"
+    "T002",
+    "T003"
   ],
   "tasks": [
     {
@@ -306,7 +307,7 @@
     {
       "id": "T003",
       "title": "Event Comment Delete Writes And Pagination Filtering",
-      "state": "in_progress",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-2",
       "engineer": "Engineer",
@@ -359,22 +360,42 @@
         {
           "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-comment-service-soft-delete.test.js",
           "expectedSignal": "Exit 0, event comment filtering tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-comment-service-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 3 tests passed.",
+            "verifiedAt": "2026-06-02T11:17:12+08:00"
+          }
         },
         {
           "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js",
           "expectedSignal": "Exit 0, event comment delete and pagination tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 8 tests passed.",
+            "verifiedAt": "2026-06-02T11:17:12+08:00"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed with existing React version warning only.",
+            "verifiedAt": "2026-06-02T11:17:12+08:00"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-02T11:17:12+08:00"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -389,12 +410,30 @@
         "Authorization semantics drift from existing event comment delete behavior.",
         "Verification is missing, stale, failed, or not the required command."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec compliance reviewer and code quality reviewer",
+        "summary": "T003 final spec compliance and code-quality reviews passed with no blocking findings.",
+        "decidedAt": "2026-06-02T11:14:13+08:00"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE. Converted event comment delete to comment-document soft delete, hid deleted comments from product reads, guarded stale edit and retained history reads, and added pagination backfill coverage.",
+        "reviewerReport": "Final spec compliance review passed; final code-quality review found no blocking findings.",
+        "commandOutputSummary": [
+          "RED: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js: exit 1 before fixes because stale edit resolved, retained history returned for deleted parent, and terminal all-deleted pagination returned a deleted raw cursor.",
+          "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-comment-service-soft-delete.test.js: exit 0, 3 tests passed.",
+          "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js: exit 0, 8 tests passed.",
+          "npm run lint:changed: exit 0, existing React version warning only.",
+          "npm run type-check:changed: exit 0, no changed-file type errors.",
+          "git diff --check: exit 0, no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "src/repo/client/firebase-event-comments-repo.js: soft-deletes event comments, preserves history, and rejects stale edits on soft-deleted comments.",
+          "src/runtime/client/use-cases/event-comment-use-cases.js: filters deleted comments, backfills visible pages, and hides retained history for deleted parent comments.",
+          "src/service/event-comment-service.js: hides soft-deleted comment records.",
+          "specs/event-soft-delete-retention/tests/unit/service/event-comment-service-soft-delete.test.js: covers event comment visibility predicate behavior.",
+          "specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js: covers event comment soft-delete writes, idempotency, pagination backfill, stale edit guard, and retained-history hiding."
+        ]
       }
     },
     {
@@ -742,40 +781,40 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-service-soft-delete.test.js",
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-comment-service-soft-delete.test.js",
       "exitCode": 0,
-      "summary": "1 file, 2 tests passed.",
-      "verifiedAt": "2026-06-02T10:22:33+08:00"
+      "summary": "1 file, 3 tests passed.",
+      "verifiedAt": "2026-06-02T11:17:12+08:00"
     },
     {
-      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js",
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js",
       "exitCode": 0,
-      "summary": "1 file, 18 tests passed.",
-      "verifiedAt": "2026-06-02T10:22:33+08:00"
-    },
-    {
-      "command": "npm run workflow:check",
-      "exitCode": 0,
-      "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
-      "verifiedAt": "2026-06-02T10:22:33+08:00"
+      "summary": "1 file, 8 tests passed.",
+      "verifiedAt": "2026-06-02T11:17:12+08:00"
     },
     {
       "command": "npm run lint:changed",
       "exitCode": 0,
       "summary": "Passed with existing React version warning only.",
-      "verifiedAt": "2026-06-02T10:22:33+08:00"
+      "verifiedAt": "2026-06-02T11:17:12+08:00"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
       "summary": "No changed-file type errors.",
-      "verifiedAt": "2026-06-02T10:22:33+08:00"
+      "verifiedAt": "2026-06-02T11:17:12+08:00"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-02T10:22:33+08:00"
+      "verifiedAt": "2026-06-02T11:17:12+08:00"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
+      "verifiedAt": "2026-06-02T11:17:12+08:00"
     }
   ],
   "lastVerifiedCommit": "46e8cbf9b1c7959285a2534090a48b8bef87dab3",
@@ -820,5 +859,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-02T10:24:50+08:00"
+  "updatedAt": "2026-06-02T11:17:12+08:00"
 }

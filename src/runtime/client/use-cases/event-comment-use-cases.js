@@ -18,6 +18,54 @@ import {
 } from '@/repo/client/firebase-event-comments-repo';
 
 /**
+ * Collect visible event comments while advancing through raw Firestore pages.
+ * @param {object} options - Pagination options.
+ * @param {string} options.eventId - Event ID.
+ * @param {import('firebase/firestore').DocumentSnapshot | undefined} options.afterDoc - Initial cursor.
+ * @param {number} options.limitCount - Visible page size.
+ * @param {import('@/service/event-comment-service').CommentData[]} [options.comments] - Accumulated visible comments.
+ * @returns {Promise<{
+ *   comments: import('@/service/event-comment-service').CommentData[],
+ *   lastDoc: import('firebase/firestore').DocumentSnapshot | null
+ * }>} Visible comments and raw cursor.
+ */
+async function collectVisibleEventCommentPage(options) {
+  const { eventId, afterDoc, limitCount, comments = [] } = options;
+  const page = await fetchEventCommentPage(eventId, { afterDoc, limitCount });
+  if (page.docs.length === 0) {
+    return { comments, lastDoc: null };
+  }
+
+  /** @type {import('firebase/firestore').DocumentSnapshot | null} */
+  let lastDoc = null;
+  const nextComments = [...comments];
+
+  for (const snapshot of page.docs) {
+    lastDoc = snapshot;
+    if (isPublicEventCommentVisible(snapshot.data())) {
+      nextComments.push(toCommentData(snapshot));
+      if (nextComments.length >= limitCount) {
+        return { comments: nextComments, lastDoc: snapshot };
+      }
+    }
+  }
+
+  if (page.docs.length < limitCount) {
+    return {
+      comments: nextComments,
+      lastDoc: nextComments.length === comments.length ? null : lastDoc,
+    };
+  }
+
+  return collectVisibleEventCommentPage({
+    eventId,
+    afterDoc: lastDoc ?? undefined,
+    limitCount,
+    comments: nextComments,
+  });
+}
+
+/**
  * 取得留言列表（最新在前），支援分頁。
  * @param {string} eventId - 活動 ID。
  * @param {{
@@ -32,13 +80,8 @@ import {
 export async function fetchComments(eventId, options = {}) {
   assertEventId(eventId, 'fetchComments');
 
-  const { docs, lastDoc } = await fetchEventCommentPage(eventId, options);
-  return {
-    comments: docs
-      .filter((snapshot) => isPublicEventCommentVisible(snapshot.data()))
-      .map((snapshot) => toCommentData(snapshot)),
-    lastDoc,
-  };
+  const { afterDoc, limitCount = 15 } = options;
+  return collectVisibleEventCommentPage({ eventId, afterDoc, limitCount });
 }
 
 /**
@@ -119,6 +162,11 @@ export async function deleteComment(eventId, commentId) {
 export async function fetchCommentHistory(eventId, commentId) {
   if (!eventId || !commentId) {
     throw new Error('fetchCommentHistory: eventId and commentId are required');
+  }
+
+  const commentSnapshot = await fetchEventCommentDocument(eventId, commentId);
+  if (!commentSnapshot.exists() || !isPublicEventCommentVisible(commentSnapshot.data())) {
+    return [];
   }
 
   const docs = await fetchEventCommentHistoryDocuments(eventId, commentId);

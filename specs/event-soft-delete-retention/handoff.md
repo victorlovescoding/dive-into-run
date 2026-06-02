@@ -18,11 +18,10 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: implementation
-- Active task: T003
-- Active wave: wave-2
-- Latest reviewer decision: T002 final spec compliance review `review_passed`
-  and final code-quality review found no production-code blockers on
-  2026-06-02T10:16:38+08:00.
+- Active task: none
+- Active wave: none
+- Latest reviewer decision: T003 final spec compliance and code-quality reviews
+  `review_passed` on 2026-06-02T11:14:13+08:00.
 - Last verified commit: `46e8cbf9b1c7959285a2534090a48b8bef87dab3`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
@@ -48,8 +47,8 @@
 
 ## Next Action
 
-Coordinator dispatches T003 `Event Comment Delete Writes And Pagination
-Filtering` to an Engineer subagent.
+Coordinator commits T003 implementation and workflow state, then records the
+T003 phase commit before dispatching T004.
 
 ## Task Graph
 
@@ -74,13 +73,15 @@ separate coordinator-created worktrees with disjoint owned files.
 | `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js` | 0 | 4 tests passed. |
 | `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-service-soft-delete.test.js` | 0 | 1 file, 2 tests passed. |
 | `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js` | 0 | 1 file, 18 tests passed. |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-comment-service-soft-delete.test.js` | 0 | 1 file, 3 tests passed. |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js` | 0 | 1 file, 8 tests passed. |
 | `npm run workflow:check` | 0 | 15 status files valid and synced, including `event-soft-delete-retention/status.json`. |
 | `npm run lint:changed` | 0 | Passed with existing React version warning only. |
 | `npm run type-check:changed` | 0 | No changed-file type errors. |
 | `git diff --check` | 0 | No whitespace errors. |
 
-T002 implementation is reviewed, verified, and committed. T003 verification has
-not run yet.
+T003 implementation is reviewed and verified in the working tree; the T003 phase
+commit is pending.
 
 ## Closeout Checklist
 

@@ -9,14 +9,38 @@ import {
   limit,
   startAfter,
   runTransaction,
-  writeBatch,
+  serverTimestamp,
+  Timestamp,
 } from 'firebase/firestore';
-import { db } from '@/config/client/firebase-client';
+import { auth, db } from '@/config/client/firebase-client';
+import {
+  buildSoftDeletePayload,
+  getSoftDeletePurgeDate,
+  isSoftDeletedRecord,
+} from '@/repo/soft-delete-retention';
 
 /**
  * @typedef {import('firebase/firestore').QueryConstraint} QueryConstraint
  * @typedef {import('firebase/firestore').DocumentSnapshot} DocumentSnapshot
  */
+
+/**
+ * Builds the product-path permission error for unauthorized event comment deletes.
+ * @returns {Error & { code: string }} Permission-denied error.
+ */
+function createPermissionDeniedError() {
+  return Object.assign(new Error('permission-denied'), { code: 'permission-denied' });
+}
+
+/**
+ * Reads the current Firebase Auth UID for event comment soft-delete writes.
+ * @returns {string} Actor UID.
+ */
+function requireCurrentActorUid() {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw createPermissionDeniedError();
+  return String(uid);
+}
 
 /**
  * 取得留言頁。
@@ -81,7 +105,7 @@ export async function updateEventCommentDocument(
 
   await runTransaction(db, async (tx) => {
     const snapshot = await tx.get(commentRef);
-    if (!snapshot.exists()) {
+    if (!snapshot.exists() || isSoftDeletedRecord(snapshot.data())) {
       throw new Error('Comment not found');
     }
 
@@ -91,21 +115,29 @@ export async function updateEventCommentDocument(
 }
 
 /**
- * 刪除留言及其 history 子集合。
+ * 軟刪除留言並保留 history 子集合。
  * @param {string} eventId - 活動 ID。
  * @param {string} commentId - 留言 ID。
  * @returns {Promise<void>}
  */
 export async function deleteEventCommentDocument(eventId, commentId) {
+  const actorUid = requireCurrentActorUid();
   const commentRef = doc(db, 'events', eventId, 'comments', commentId);
-  const historyRef = collection(db, 'events', eventId, 'comments', commentId, 'history');
-  const historySnapshot = await getDocs(historyRef);
-  const batch = writeBatch(db);
 
-  historySnapshot.docs.forEach((historyDoc) => batch.delete(historyDoc.ref));
-  batch.delete(commentRef);
+  await runTransaction(db, async (tx) => {
+    const snapshot = await tx.get(commentRef);
+    if (!snapshot.exists()) return;
+    if (isSoftDeletedRecord(snapshot.data())) return;
 
-  await batch.commit();
+    const deletedAt = new Date();
+    const payload = buildSoftDeletePayload({
+      actorUid,
+      deletedAtValue: serverTimestamp(),
+      purgeAtValue: Timestamp.fromDate(getSoftDeletePurgeDate(deletedAt)),
+    });
+
+    tx.update(commentRef, payload);
+  });
 }
 
 /**

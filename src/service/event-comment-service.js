@@ -1,5 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { isAccountDeletionHidden } from '@/config/account-deletion';
+import { isSoftDeletedRecord } from '@/repo/soft-delete-retention';
 
 /**
  * @typedef {object} CommentData
@@ -148,7 +149,7 @@ export function toCommentData(snapshot) {
  * @returns {boolean} true when visible.
  */
 export function isPublicEventCommentVisible(data) {
-  return !isAccountDeletionHidden(data);
+  return !isSoftDeletedRecord(data) && !isAccountDeletionHidden(data);
 }
 
 /**
