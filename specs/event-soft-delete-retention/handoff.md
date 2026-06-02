@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `f5f4ebfac5616bc25488e968b2659993b186c15c`
+- Current head: `1d221d626e24983436f1645ab664438a9885ca5f`
 - Remote head: `origin/main` at `f641655b6b7f5fe48058ad43d59a5cdc147cdebf`
 - Authorization boundary:
   - edit: yes
@@ -23,7 +23,7 @@
 - Latest reviewer decision: T007 reviewer `review_passed`; no Critical,
   Important, or Minor findings after filtering missing and soft-deleted event
   parents from member comments.
-- Last verified commit: `f5f4ebfac5616bc25488e968b2659993b186c15c`
+- Last verified commit: `1d221d626e24983436f1645ab664438a9885ca5f`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
   - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
@@ -35,6 +35,8 @@
   - T005: `d139cba324b4aa6cb668b40e265ad56203868aa6`
   - T006: `f90480248370b91718105d59376ed32e67bf86dc`
   - T006-state: `f5f4ebfac5616bc25488e968b2659993b186c15c`
+  - T007-dispatch: `e7afa8f2a85b525d38c23eca57c2411ec3695356`
+  - T007: `1d221d626e24983436f1645ab664438a9885ca5f`
 - Rules deploy status: required, required=true, changed=true, deployedCommit=null
 - Incidents: T002 stale active detail cancellation notification carry-forward is
   mitigated and documented.
@@ -54,11 +56,10 @@
 
 ## Next Action
 
-Coordinator runs workflow gates, commits the reviewed T007 member-comments fix
-and synchronized workflow state, then records the resulting T007 commit SHA in
-a follow-up workflow-state commit. Do not push, open a PR, watch CI, merge,
-sync local `main`, deploy Firestore rules, or deploy Firebase Functions without
-separate explicit authorization.
+Coordinator runs workflow gates, commits this T007 workflow-state sync, then
+requests final read-only review of the full feature branch. Do not push, open a
+PR, watch CI, merge, sync local `main`, deploy Firestore rules, or deploy
+Firebase Functions without separate explicit authorization.
 
 ## Task Graph
 

@@ -864,7 +864,7 @@ Evidence:
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation or verification
-- **Last verified commit**: pending T007 implementation commit
+- **Last verified commit**: `1d221d626e24983436f1645ab664438a9885ca5f`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: final review found member comments could expose active event
