@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "implementation",
-  "activeTask": null,
-  "activeWave": null,
+  "activeTask": "T004",
+  "activeWave": "wave-2",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "c091de73a5d053ef55f282a8990a25ed8fad0d79",
-    "capturedAt": "2026-06-02T11:17:12+08:00",
-    "summary": "T003 implementation diff is reviewed and ready for commit."
+    "commit": "2b746382a1f9958f056a1c950a1d10bcf29231f2",
+    "capturedAt": "2026-06-02T11:23:01+08:00",
+    "summary": "T003 implementation committed; dispatching T004."
   },
   "remoteHead": {
     "remote": "origin",
@@ -439,7 +439,7 @@
     {
       "id": "T004",
       "title": "Secondary Surfaces And Notifications",
-      "state": "todo",
+      "state": "in_progress",
       "attempt": 1,
       "wave": "wave-2",
       "engineer": "Engineer",
@@ -817,7 +817,7 @@
       "verifiedAt": "2026-06-02T11:17:12+08:00"
     }
   ],
-  "lastVerifiedCommit": "46e8cbf9b1c7959285a2534090a48b8bef87dab3",
+  "lastVerifiedCommit": "2b746382a1f9958f056a1c950a1d10bcf29231f2",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -842,6 +842,12 @@
       "commit": "46e8cbf9b1c7959285a2534090a48b8bef87dab3",
       "summary": "Add event soft delete reads.",
       "committedAt": "2026-06-02T10:24:50+08:00"
+    },
+    {
+      "phase": "T003",
+      "commit": "2b746382a1f9958f056a1c950a1d10bcf29231f2",
+      "summary": "Add event comment soft delete.",
+      "committedAt": "2026-06-02T11:23:01+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -859,5 +865,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-02T11:17:12+08:00"
+  "updatedAt": "2026-06-02T11:23:01+08:00"
 }

@@ -307,7 +307,7 @@ Carry-forward:
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation
-- **Last verified commit**: pending T003 commit
+- **Last verified commit**: `2b746382a1f9958f056a1c950a1d10bcf29231f2`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -419,7 +419,7 @@ Evidence:
 
 ### T004 - Secondary Surfaces And Notifications
 
-- **State**: `todo`
+- **State**: `in_progress`
 - **Attempt**: 1
 - **Wave**: `wave-2`
 - **Engineer**: Engineer

@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `46e8cbf9b1c7959285a2534090a48b8bef87dab3`
+- Current head: `2b746382a1f9958f056a1c950a1d10bcf29231f2`
 - Remote head: `origin/main` at `19434854fd36911879a36406efda80d1b5056dc1`
 - Authorization boundary:
   - edit: yes
@@ -18,16 +18,17 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: implementation
-- Active task: none
-- Active wave: none
+- Active task: T004
+- Active wave: wave-2
 - Latest reviewer decision: T003 final spec compliance and code-quality reviews
   `review_passed` on 2026-06-02T11:14:13+08:00.
-- Last verified commit: `46e8cbf9b1c7959285a2534090a48b8bef87dab3`
+- Last verified commit: `2b746382a1f9958f056a1c950a1d10bcf29231f2`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
   - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
   - T001: `d8c2578f027f4d9fe11f6b21c31e5c16d61757f6`
   - T002: `46e8cbf9b1c7959285a2534090a48b8bef87dab3`
+  - T003: `2b746382a1f9958f056a1c950a1d10bcf29231f2`
 - Rules deploy status: required, required=true, changed=false, deployedCommit=null
 - Incidents: T002 stale active detail cancellation notification carry-forward is
   mitigated and documented.
@@ -47,8 +48,8 @@
 
 ## Next Action
 
-Coordinator commits T003 implementation and workflow state, then records the
-T003 phase commit before dispatching T004.
+Coordinator commits this T004 dispatch state, then dispatches the T004 Engineer
+subagent.
 
 ## Task Graph
 
@@ -80,8 +81,8 @@ separate coordinator-created worktrees with disjoint owned files.
 | `npm run type-check:changed` | 0 | No changed-file type errors. |
 | `git diff --check` | 0 | No whitespace errors. |
 
-T003 implementation is reviewed and verified in the working tree; the T003 phase
-commit is pending.
+T003 implementation is reviewed, verified, and committed. T004 dispatch state is
+being committed before Engineer handoff.
 
 ## Closeout Checklist
 
