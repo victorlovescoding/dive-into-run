@@ -169,7 +169,7 @@ Evidence:
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation
-- **Last verified commit**: pending T002 commit
+- **Last verified commit**: `46e8cbf9b1c7959285a2534090a48b8bef87dab3`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: stale already-deleted detail cancellation notification side
@@ -301,7 +301,7 @@ Carry-forward:
 
 ### T003 - Event Comment Delete Writes And Pagination Filtering
 
-- **State**: `todo`
+- **State**: `in_progress`
 - **Attempt**: 1
 - **Wave**: `wave-2`
 - **Engineer**: Engineer

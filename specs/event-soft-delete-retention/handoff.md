@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `1851d65cb97b6150afc3068d1336f8ce780418e0`
+- Current head: `46e8cbf9b1c7959285a2534090a48b8bef87dab3`
 - Remote head: `origin/main` at `19434854fd36911879a36406efda80d1b5056dc1`
 - Authorization boundary:
   - edit: yes
@@ -18,16 +18,17 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: implementation
-- Active task: none
-- Active wave: none
+- Active task: T003
+- Active wave: wave-2
 - Latest reviewer decision: T002 final spec compliance review `review_passed`
   and final code-quality review found no production-code blockers on
   2026-06-02T10:16:38+08:00.
-- Last verified commit: `d8c2578f027f4d9fe11f6b21c31e5c16d61757f6`
+- Last verified commit: `46e8cbf9b1c7959285a2534090a48b8bef87dab3`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
   - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
   - T001: `d8c2578f027f4d9fe11f6b21c31e5c16d61757f6`
+  - T002: `46e8cbf9b1c7959285a2534090a48b8bef87dab3`
 - Rules deploy status: required, required=true, changed=false, deployedCommit=null
 - Incidents: T002 stale active detail cancellation notification carry-forward is
   mitigated and documented.
@@ -47,8 +48,8 @@
 
 ## Next Action
 
-Coordinator commits T002 implementation and workflow state, then records the
-T002 phase commit before dispatching T003.
+Coordinator dispatches T003 `Event Comment Delete Writes And Pagination
+Filtering` to an Engineer subagent.
 
 ## Task Graph
 
@@ -78,8 +79,8 @@ separate coordinator-created worktrees with disjoint owned files.
 | `npm run type-check:changed` | 0 | No changed-file type errors. |
 | `git diff --check` | 0 | No whitespace errors. |
 
-T002 implementation is reviewed and verified in the working tree; the T002
-phase commit is pending.
+T002 implementation is reviewed, verified, and committed. T003 verification has
+not run yet.
 
 ## Closeout Checklist
 

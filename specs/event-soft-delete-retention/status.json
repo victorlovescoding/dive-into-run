@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "implementation",
-  "activeTask": null,
-  "activeWave": null,
+  "activeTask": "T003",
+  "activeWave": "wave-2",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "1851d65cb97b6150afc3068d1336f8ce780418e0",
-    "capturedAt": "2026-06-02T10:22:33+08:00",
-    "summary": "T002 implementation diff is reviewed and ready for commit."
+    "commit": "46e8cbf9b1c7959285a2534090a48b8bef87dab3",
+    "capturedAt": "2026-06-02T10:24:50+08:00",
+    "summary": "T002 implementation committed; T003 dispatch state is being recorded."
   },
   "remoteHead": {
     "remote": "origin",
@@ -306,7 +306,7 @@
     {
       "id": "T003",
       "title": "Event Comment Delete Writes And Pagination Filtering",
-      "state": "todo",
+      "state": "in_progress",
       "attempt": 1,
       "wave": "wave-2",
       "engineer": "Engineer",
@@ -778,7 +778,7 @@
       "verifiedAt": "2026-06-02T10:22:33+08:00"
     }
   ],
-  "lastVerifiedCommit": "d8c2578f027f4d9fe11f6b21c31e5c16d61757f6",
+  "lastVerifiedCommit": "46e8cbf9b1c7959285a2534090a48b8bef87dab3",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -797,6 +797,12 @@
       "commit": "d8c2578f027f4d9fe11f6b21c31e5c16d61757f6",
       "summary": "Add event retention helpers.",
       "committedAt": "2026-06-02T01:09:06+08:00"
+    },
+    {
+      "phase": "T002",
+      "commit": "46e8cbf9b1c7959285a2534090a48b8bef87dab3",
+      "summary": "Add event soft delete reads.",
+      "committedAt": "2026-06-02T10:24:50+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -814,5 +820,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-02T10:22:33+08:00"
+  "updatedAt": "2026-06-02T10:24:50+08:00"
 }
