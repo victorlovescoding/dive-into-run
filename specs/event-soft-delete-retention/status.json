@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "implementation",
-  "activeTask": null,
-  "activeWave": null,
+  "activeTask": "T007",
+  "activeWave": "final-review-fix",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "f90480248370b91718105d59376ed32e67bf86dc",
-    "capturedAt": "2026-06-02T23:29:07+08:00",
-    "summary": "T006 implementation committed; recording final workflow-state sync."
+    "commit": "f5f4ebfac5616bc25488e968b2659993b186c15c",
+    "capturedAt": "2026-06-02T23:40:42+08:00",
+    "summary": "Final review requested T007 member-comments secondary-surface fix."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "f641655b6b7f5fe48058ad43d59a5cdc147cdebf",
     "capturedAt": "2026-06-02T23:16:12+08:00",
-    "summary": "Current origin/main while branch is ahead 16 and behind 1; rebase remains a later closeout concern."
+    "summary": "Current origin/main while branch is ahead 17 and behind 1; rebase remains a later closeout concern."
   },
   "completedTasks": [
     "T001",
@@ -923,6 +923,123 @@
           "firestore.indexes.json: unchanged; existing comments collection-group deletedPurgeAt index is reused and no event index evidence was produced."
         ]
       }
+    },
+    {
+      "id": "T007",
+      "title": "Final Review Member Comments Event Parent Filter",
+      "state": "in_progress",
+      "attempt": 1,
+      "wave": "final-review-fix",
+      "engineer": "Engineer",
+      "reviewer": "Reviewer",
+      "scope": [
+        "Fix the final-review blocker where member comments can expose active event comments under a soft-deleted or missing event parent.",
+        "Add a focused regression test that fails before the fix and passes after it.",
+        "Resynchronize workflow state after Reviewer PASS."
+      ],
+      "nonScope": [
+        "No Firebase Functions changes.",
+        "No Firestore rules changes or deploy.",
+        "No index changes.",
+        "No event delete, event comment delete, purge, notification, post/comment, UI, push, PR, CI watch, merge, local main sync, or deploy behavior changes outside the member-comments secondary-surface filter."
+      ],
+      "ownedFiles": [
+        "src/repo/server/firebase-member-comments-server-repo.js",
+        "specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+        "specs/event-soft-delete-retention/tasks.md",
+        "specs/event-soft-delete-retention/handoff.md",
+        "specs/event-soft-delete-retention/status.json"
+      ],
+      "readOnlyContext": [
+        "specs/event-soft-delete-retention/spec.md",
+        "src/repo/server/firebase-member-comments-server-repo.js",
+        "src/repo/server/firebase-member-comments-server-repo.js final review evidence around lines 142, 154, and 158",
+        "specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js"
+      ],
+      "dependencies": [
+        "T006"
+      ],
+      "engineerInstructions": [
+        "Follow test-driven development: add a regression that fails because an active event comment under a soft-deleted or missing event parent is exposed in member comments.",
+        "Fix the root cause by making event parent missing or soft-deleted records return null from the member-comments secondary-surface hydration path.",
+        "Preserve existing post parent filtering and active event comment behavior.",
+        "Do not change Firestore rules, indexes, Functions, UI, notification behavior, or purge behavior.",
+        "Engineer modifies only the server member-comments repo and the minimal owned regression test file needed; coordinator updates workflow-state files after Reviewer PASS."
+      ],
+      "acceptanceCriteria": [
+        "AC-T007.1: Member comments exclude event comments whose parent event is soft-deleted.",
+        "AC-T007.2: Member comments exclude event comments whose parent event is missing.",
+        "AC-T007.3: Member comments still include active event comments under active event parents.",
+        "AC-T007.4: Existing post parent soft-delete filtering remains stable.",
+        "AC-T007.5: Workflow state records the final review blocker and fix without deploy claims."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js",
+          "expectedSignal": "Exit 0, event secondary-surface regression passes.",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
+          "expectedSignal": "Exit 0, existing member-dashboard post/comment regression passes.",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+          "expectedSignal": "Exit 0, member-dashboard runtime regression passes if affected.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0.",
+          "lastRun": null
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "Exit 0, workflow state valid and synced.",
+          "lastRun": null
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "Exit 0, no whitespace errors.",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Final-review member-comments leak is fixed with a red-green regression.",
+        "Post parent filtering and active event parent behavior are preserved.",
+        "No rules, indexes, Functions, UI, notification, push, PR, CI, merge, local main sync, or deploy claim is introduced.",
+        "Workflow files agree after coordinator sync."
+      ],
+      "reviewerRejectCriteria": [
+        "Member comments can still expose active event comments under a missing or soft-deleted event parent.",
+        "Post parent soft-delete filtering regresses.",
+        "Fix widens scope into rules, Functions, indexes, UI, notifications, purge, or release actions.",
+        "Verification is missing, stale, failed, or not the required command."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": "Final reviewer requested changes: member comments secondary surface can expose active event comments under soft-deleted event parents; workflow state final HEAD was stale.",
+        "commandOutputSummary": [
+          "Final review evidence: git status --short --branch exit 0, clean, ahead 17 and behind 1.",
+          "Final review evidence: npm run workflow:check exit 0, 15 status files valid and synced.",
+          "Final review evidence: git diff --check exit 0.",
+          "Final review evidence: focused feature unit tests exit 0, 9 files and 49 tests passed.",
+          "Final review evidence: Firestore rules emulator focused test exit 0, 1 file and 8 tests passed."
+        ],
+        "changedFilesSummary": []
+      }
     }
   ],
   "blocked": false,
@@ -983,7 +1100,7 @@
       "verifiedAt": "2026-06-02T23:30:12+08:00"
     }
   ],
-  "lastVerifiedCommit": "f90480248370b91718105d59376ed32e67bf86dc",
+  "lastVerifiedCommit": "f5f4ebfac5616bc25488e968b2659993b186c15c",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -1038,6 +1155,12 @@
       "commit": "f90480248370b91718105d59376ed32e67bf86dc",
       "summary": "Add event retention purge.",
       "committedAt": "2026-06-02T23:29:07+08:00"
+    },
+    {
+      "phase": "T006-state",
+      "commit": "f5f4ebfac5616bc25488e968b2659993b186c15c",
+      "summary": "Record event retention T006 state.",
+      "committedAt": "2026-06-02T23:30:12+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -1057,5 +1180,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-02T23:30:12+08:00"
+  "updatedAt": "2026-06-02T23:40:42+08:00"
 }

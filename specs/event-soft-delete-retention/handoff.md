@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `f90480248370b91718105d59376ed32e67bf86dc`
+- Current head: `f5f4ebfac5616bc25488e968b2659993b186c15c`
 - Remote head: `origin/main` at `f641655b6b7f5fe48058ad43d59a5cdc147cdebf`
 - Authorization boundary:
   - edit: yes
@@ -18,12 +18,12 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: implementation
-- Active task: none
-- Active wave: none
-- Latest reviewer decision: T006 spec compliance review and code-quality
-  re-review `review_passed`; no blocking findings after the duplicate
-  collection-group counting fix.
-- Last verified commit: `f90480248370b91718105d59376ed32e67bf86dc`
+- Active task: T007
+- Active wave: final-review-fix
+- Latest reviewer decision: final feature reviewer `changes_requested` because
+  member comments could expose active event comments under a soft-deleted or
+  missing event parent; workflow state final HEAD was stale.
+- Last verified commit: `f5f4ebfac5616bc25488e968b2659993b186c15c`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
   - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
@@ -34,6 +34,7 @@
   - workflow-check-fix: `cb0176d0764158f15ecfbda0799ebec438924dca`
   - T005: `d139cba324b4aa6cb668b40e265ad56203868aa6`
   - T006: `f90480248370b91718105d59376ed32e67bf86dc`
+  - T006-state: `f5f4ebfac5616bc25488e968b2659993b186c15c`
 - Rules deploy status: required, required=true, changed=true, deployedCommit=null
 - Incidents: T002 stale active detail cancellation notification carry-forward is
   mitigated and documented.
@@ -53,9 +54,9 @@
 
 ## Next Action
 
-Coordinator runs final workflow gates, commits this final workflow-state sync,
-then stops at the current authorization boundary. Do not push, open a PR, watch
-CI, merge, sync local `main`, deploy Firestore rules, or deploy Firebase
+Coordinator commits this T007 dispatch state, then dispatches the T007 Engineer
+subagent to fix the final-review member-comments leak. Do not push, open a PR,
+watch CI, merge, sync local `main`, deploy Firestore rules, or deploy Firebase
 Functions without separate explicit authorization.
 
 ## Task Graph
@@ -89,6 +90,10 @@ T006 implementation is reviewed and verified in the working tree. Firestore
 rules changed locally in T005 but have not been deployed. Firebase Functions
 changed locally in T006 but have not been deployed.
 
+Final feature review requested changes after T006: member comments can expose
+active event comments when the parent event is soft-deleted or missing. T007 is
+the active corrective task.
+
 ## Closeout Checklist
 
 - [x] `tasks.md` task states match `status.json`.
@@ -109,11 +114,12 @@ changed locally in T006 but have not been deployed.
 - [ ] Open incidents are resolved, mitigated with explicit carry-forward, or
       block closeout.
 - [x] Changed files are intentionally in scope.
-- [x] Blockers are resolved or explicitly carried forward.
+- [ ] Blockers are resolved or explicitly carried forward.
 
 ## Blockers
 
-- None.
+- Final review requested T007: member comments secondary surface can expose
+  active event comments under a soft-deleted or missing event parent.
 
 ## Pitfalls
 

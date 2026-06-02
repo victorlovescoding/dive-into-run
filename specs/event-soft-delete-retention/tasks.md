@@ -856,6 +856,134 @@ Evidence:
   - `firestore.indexes.json`: unchanged; existing comments collection-group
     `deletedPurgeAt` index is reused and no event index evidence was produced.
 
+### T007 - Final Review Member Comments Event Parent Filter
+
+- **State**: `in_progress`
+- **Attempt**: 1
+- **Wave**: `final-review-fix`
+- **Engineer**: Engineer
+- **Reviewer**: Reviewer
+- **Commit checkpoint**: implementation or verification
+- **Last verified commit**: `f5f4ebfac5616bc25488e968b2659993b186c15c`
+- **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Rules deploy status**: required
+- **Incidents**: final review found member comments could expose active event
+  comments under a soft-deleted or missing event parent.
+
+Scope:
+
+- Fix the final-review blocker where member comments can expose active event
+  comments under a soft-deleted or missing event parent.
+- Add a focused regression test that fails before the fix and passes after it.
+- Resynchronize workflow state after Reviewer PASS.
+
+Non-scope:
+
+- Do not change Firebase Functions, Firestore rules, indexes, purge,
+  notifications, UI, post/comment behavior, push, PR, CI watch, merge, local
+  `main` sync, or deploy behavior outside the member-comments secondary-surface
+  filter.
+
+Owned files:
+
+- `src/repo/server/firebase-member-comments-server-repo.js`
+- `specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js`
+- `specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js`
+- `specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js`
+- `specs/event-soft-delete-retention/tasks.md`
+- `specs/event-soft-delete-retention/handoff.md`
+- `specs/event-soft-delete-retention/status.json`
+
+Read-only context:
+
+- `specs/event-soft-delete-retention/spec.md`
+- `src/repo/server/firebase-member-comments-server-repo.js`
+- `specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js`
+- `specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js`
+- `specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js`
+
+Dependencies:
+
+- T006
+
+Browser evidence:
+
+- Not applicable.
+
+Engineer instructions:
+
+- Follow test-driven development: add a regression that fails because an
+  active event comment under a soft-deleted or missing event parent is exposed
+  in member comments.
+- Fix the root cause by making event parent missing or soft-deleted records
+  return null from the member-comments secondary-surface hydration path.
+- Preserve existing post parent filtering and active event comment behavior.
+- Do not change Firestore rules, indexes, Functions, UI, notification behavior,
+  or purge behavior.
+- Engineer modifies only the server member-comments repo and the minimal owned
+  regression test file needed; coordinator updates workflow-state files after
+  Reviewer PASS and final gate evidence.
+
+Acceptance criteria:
+
+- AC-T007.1: Member comments exclude event comments whose parent event is
+  soft-deleted.
+- AC-T007.2: Member comments exclude event comments whose parent event is
+  missing.
+- AC-T007.3: Member comments still include active event comments under active
+  event parents.
+- AC-T007.4: Existing post parent soft-delete filtering remains stable.
+- AC-T007.5: Workflow state records the final review blocker and fix without
+  deploy claims.
+
+Verification commands and expected signal:
+
+| Command | Expected signal |
+| ------- | --------------- |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js` | Exit 0, event secondary-surface regression passes. |
+| `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js` | Exit 0, existing member-dashboard post/comment regression passes. |
+| `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js` | Exit 0, member-dashboard runtime regression passes if affected. |
+| `npm run lint:changed` | Exit 0. |
+| `npm run type-check:changed` | Exit 0. |
+| `npm run workflow:check` | Exit 0, workflow state valid and synced. |
+| `git diff --check` | Exit 0, no whitespace errors. |
+
+Reviewer PASS criteria:
+
+- Diff touches only owned files.
+- Final-review member-comments leak is fixed with a red-green regression.
+- Post parent filtering and active event parent behavior are preserved.
+- No rules, indexes, Functions, UI, notification, push, PR, CI, merge, local
+  main sync, or deploy claim is introduced.
+- Workflow files agree after coordinator sync.
+
+Reviewer REJECT criteria:
+
+- Member comments can still expose active event comments under a missing or
+  soft-deleted event parent.
+- Post parent soft-delete filtering regresses.
+- Fix widens scope into rules, Functions, indexes, UI, notifications, purge, or
+  release actions.
+- Verification is missing, stale, failed, or not the required command.
+
+Evidence:
+
+- Engineer report: none yet.
+- Reviewer report: final reviewer requested changes: member comments secondary
+  surface can expose active event comments under soft-deleted event parents;
+  workflow state final HEAD was stale.
+- Command output summary:
+  - Final review: `git status --short --branch`: exit 0, clean, branch ahead
+    17 and behind 1.
+  - Final review: `npm run workflow:check`: exit 0, 15 status files valid and
+    synced.
+  - Final review: `git diff --check`: exit 0, no whitespace errors.
+  - Final review: focused feature unit tests: exit 0, 9 files and 49 tests
+    passed.
+  - Final review: Firestore rules emulator focused test: exit 0, 1 file and 8
+    tests passed.
+- Changed files summary: none yet.
+
 ## Final Integration
 
 Run after T006 Reviewer PASS and coordinator state sync. These are release
