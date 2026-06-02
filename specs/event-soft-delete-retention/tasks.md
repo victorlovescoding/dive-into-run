@@ -858,13 +858,13 @@ Evidence:
 
 ### T007 - Final Review Member Comments Event Parent Filter
 
-- **State**: `in_progress`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `final-review-fix`
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation or verification
-- **Last verified commit**: `f5f4ebfac5616bc25488e968b2659993b186c15c`
+- **Last verified commit**: pending T007 implementation commit
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: final review found member comments could expose active event
@@ -968,10 +968,11 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: none yet.
-- Reviewer report: final reviewer requested changes: member comments secondary
-  surface can expose active event comments under soft-deleted event parents;
-  workflow state final HEAD was stale.
+- Engineer report: DONE. Added a member-comments regression for active,
+  soft-deleted, and missing event parents, then changed event parent hydration
+  to filter missing or soft-deleted parents the same way as post parents.
+- Reviewer report: T007 review `review_passed`; no Critical, Important, or
+  Minor findings.
 - Command output summary:
   - Final review: `git status --short --branch`: exit 0, clean, branch ahead
     17 and behind 1.
@@ -982,7 +983,18 @@ Evidence:
     passed.
   - Final review: Firestore rules emulator focused test: exit 0, 1 file and 8
     tests passed.
-- Changed files summary: none yet.
+  - RED: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js`: exit 1, member comments included active, deleted-parent, and missing-parent event comments.
+  - GREEN: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js`: exit 0, 3 tests passed.
+  - `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js`: exit 0, 2 tests passed.
+  - `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js`: exit 0, 10 tests passed.
+  - `npm run lint:changed`: exit 0, existing React version warning only.
+  - `npm run type-check:changed`: exit 0, no changed-file type errors.
+  - `git diff --check`: exit 0, no whitespace errors.
+- Changed files summary:
+  - `src/repo/server/firebase-member-comments-server-repo.js`: filters event
+    comment parents that are missing or soft-deleted before returning member
+    comment rows.
+  - `specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js`: covers active event parent kept, soft-deleted event parent hidden, and missing event parent hidden.
 
 ## Final Integration
 

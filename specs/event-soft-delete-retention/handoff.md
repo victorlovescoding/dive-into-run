@@ -18,11 +18,11 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: implementation
-- Active task: T007
-- Active wave: final-review-fix
-- Latest reviewer decision: final feature reviewer `changes_requested` because
-  member comments could expose active event comments under a soft-deleted or
-  missing event parent; workflow state final HEAD was stale.
+- Active task: none
+- Active wave: none
+- Latest reviewer decision: T007 reviewer `review_passed`; no Critical,
+  Important, or Minor findings after filtering missing and soft-deleted event
+  parents from member comments.
 - Last verified commit: `f5f4ebfac5616bc25488e968b2659993b186c15c`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
@@ -54,10 +54,11 @@
 
 ## Next Action
 
-Coordinator commits this T007 dispatch state, then dispatches the T007 Engineer
-subagent to fix the final-review member-comments leak. Do not push, open a PR,
-watch CI, merge, sync local `main`, deploy Firestore rules, or deploy Firebase
-Functions without separate explicit authorization.
+Coordinator runs workflow gates, commits the reviewed T007 member-comments fix
+and synchronized workflow state, then records the resulting T007 commit SHA in
+a follow-up workflow-state commit. Do not push, open a PR, watch CI, merge,
+sync local `main`, deploy Firestore rules, or deploy Firebase Functions without
+separate explicit authorization.
 
 ## Task Graph
 
@@ -76,11 +77,9 @@ separate coordinator-created worktrees with disjoint owned files.
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js` | 0 | 1 file, 5 tests passed. |
-| `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js` | 0 | 1 file, 9 tests passed. |
-| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js` | 0 | 1 file, 2 tests passed. |
-| `node --check functions/index.js` | 0 | Syntax check passed. |
-| `node --check functions/event-retention-purge.js` | 0 | Syntax check passed. |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js` | 0 | 1 file, 3 tests passed. |
+| `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js` | 0 | 1 file, 2 tests passed. |
+| `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js` | 0 | 1 file, 10 tests passed. |
 | `npm run lint:changed` | 0 | Passed with existing React version warning only. |
 | `npm run type-check:changed` | 0 | No changed-file type errors. |
 | `npm run workflow:check` | 0 | 15 status files valid and synced, including `event-soft-delete-retention/status.json`. |
@@ -90,9 +89,10 @@ T006 implementation is reviewed and verified in the working tree. Firestore
 rules changed locally in T005 but have not been deployed. Firebase Functions
 changed locally in T006 but have not been deployed.
 
-Final feature review requested changes after T006: member comments can expose
-active event comments when the parent event is soft-deleted or missing. T007 is
-the active corrective task.
+Final feature review requested changes after T006 because member comments could
+expose active event comments when the parent event was soft-deleted or missing.
+T007 fixed this by filtering missing and soft-deleted event parents from member
+comments while preserving active event parents.
 
 ## Closeout Checklist
 
@@ -114,12 +114,11 @@ the active corrective task.
 - [ ] Open incidents are resolved, mitigated with explicit carry-forward, or
       block closeout.
 - [x] Changed files are intentionally in scope.
-- [ ] Blockers are resolved or explicitly carried forward.
+- [x] Blockers are resolved or explicitly carried forward.
 
 ## Blockers
 
-- Final review requested T007: member comments secondary surface can expose
-  active event comments under a soft-deleted or missing event parent.
+- None.
 
 ## Pitfalls
 

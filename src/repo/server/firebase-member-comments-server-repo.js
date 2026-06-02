@@ -129,8 +129,8 @@ function serializeFirestoreData(data) {
 
 /**
  * Builds visible comment documents from Admin SDK collectionGroup snapshots.
- * Deleted comments are excluded. Post comments are excluded when the parent post
- * is missing or soft-deleted. Event comments keep the existing direct-comment behavior.
+ * Deleted comments are excluded. Comments are excluded when their parent post
+ * or event is missing or soft-deleted.
  * @param {Array<{ id: string, ref: { path: string, parent: { parent?: { id: string, path: string, parent?: { id?: string } } | null } }, data: () => Record<string, unknown> }>} snapshots - Comment snapshots.
  * @param {object} deps - Helper dependencies.
  * @param {(ref: { path: string }) => Promise<{ exists: boolean, data: () => Record<string, unknown> }>} deps.fetchParentSnapshot - Parent snapshot loader.
@@ -151,7 +151,7 @@ export async function buildVisibleMemberCommentDocuments(snapshots, { fetchParen
       const parentSnapshot = await fetchParentSnapshot(parentRef);
       const parentData = parentSnapshot.exists ? parentSnapshot.data() ?? {} : {};
 
-      if (parentCollection === 'posts' && (!parentSnapshot.exists || isSoftDeletedData(parentData))) {
+      if (!parentSnapshot.exists || isSoftDeletedData(parentData)) {
         return null;
       }
 

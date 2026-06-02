@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "implementation",
-  "activeTask": "T007",
-  "activeWave": "final-review-fix",
+  "activeTask": null,
+  "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -20,7 +20,7 @@
     "branch": "085-event-soft-delete-retention",
     "commit": "f5f4ebfac5616bc25488e968b2659993b186c15c",
     "capturedAt": "2026-06-02T23:40:42+08:00",
-    "summary": "Final review requested T007 member-comments secondary-surface fix."
+    "summary": "T007 member-comments secondary-surface fix reviewed and verified in the working tree; pending implementation commit."
   },
   "remoteHead": {
     "remote": "origin",
@@ -35,7 +35,8 @@
     "T003",
     "T004",
     "T005",
-    "T006"
+    "T006",
+    "T007"
   ],
   "tasks": [
     {
@@ -927,7 +928,7 @@
     {
       "id": "T007",
       "title": "Final Review Member Comments Event Parent Filter",
-      "state": "in_progress",
+      "state": "completed",
       "attempt": 1,
       "wave": "final-review-fix",
       "engineer": "Engineer",
@@ -981,37 +982,72 @@
         {
           "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js",
           "expectedSignal": "Exit 0, event secondary-surface regression passes.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 3 tests passed.",
+            "verifiedAt": "2026-06-02T23:52:55+08:00"
+          }
         },
         {
           "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
           "expectedSignal": "Exit 0, existing member-dashboard post/comment regression passes.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 2 tests passed.",
+            "verifiedAt": "2026-06-02T23:53:01+08:00"
+          }
         },
         {
           "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
           "expectedSignal": "Exit 0, member-dashboard runtime regression passes if affected.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 10 tests passed.",
+            "verifiedAt": "2026-06-02T23:53:07+08:00"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed with existing React version warning only.",
+            "verifiedAt": "2026-06-02T23:53:18+08:00"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-02T23:53:23+08:00"
+          }
         },
         {
           "command": "npm run workflow:check",
           "expectedSignal": "Exit 0, workflow state valid and synced.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
+            "verifiedAt": "2026-06-02T23:56:03+08:00"
+          }
         },
         {
           "command": "git diff --check",
           "expectedSignal": "Exit 0, no whitespace errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-02T23:53:27+08:00"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -1027,18 +1063,34 @@
         "Fix widens scope into rules, Functions, indexes, UI, notifications, purge, or release actions.",
         "Verification is missing, stale, failed, or not the required command."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "T007 reviewer",
+        "summary": "T007 review passed with no Critical, Important, or Minor findings; member comments now filter missing and soft-deleted event parents like post parents.",
+        "decidedAt": "2026-06-02T23:52:40+08:00"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": "Final reviewer requested changes: member comments secondary surface can expose active event comments under soft-deleted event parents; workflow state final HEAD was stale.",
+        "engineerReport": "DONE. Added event parent member-comments regression for active, soft-deleted, and missing events, then changed server member-comments parent hydration to filter missing and soft-deleted event parents.",
+        "reviewerReport": "T007 reviewer passed with no Critical, Important, or Minor findings; diff is limited to server member-comments repo and event secondary-surface test.",
         "commandOutputSummary": [
           "Final review evidence: git status --short --branch exit 0, clean, ahead 17 and behind 1.",
           "Final review evidence: npm run workflow:check exit 0, 15 status files valid and synced.",
           "Final review evidence: git diff --check exit 0.",
           "Final review evidence: focused feature unit tests exit 0, 9 files and 49 tests passed.",
-          "Final review evidence: Firestore rules emulator focused test exit 0, 1 file and 8 tests passed."
+          "Final review evidence: Firestore rules emulator focused test exit 0, 1 file and 8 tests passed.",
+          "RED: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js: exit 1 before the fix; member comments included active, soft-deleted-parent, and missing-parent event comments.",
+          "GREEN: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js: exit 0, 3 tests passed.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js: exit 0, 2 tests passed.",
+          "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js: exit 0, 10 tests passed.",
+          "npm run lint:changed: exit 0, existing React version warning only.",
+          "npm run type-check:changed: exit 0, no changed-file type errors.",
+          "npm run workflow:check: exit 0, 15 status files valid and synced.",
+          "git diff --check: exit 0, no whitespace errors."
         ],
-        "changedFilesSummary": []
+        "changedFilesSummary": [
+          "src/repo/server/firebase-member-comments-server-repo.js: filters missing and soft-deleted event parents before returning member comment rows.",
+          "specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js: adds member-comments regression for active, soft-deleted, and missing event parents."
+        ]
       }
     }
   ],
@@ -1046,58 +1098,46 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js",
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-secondary-surfaces-soft-delete.test.js",
       "exitCode": 0,
-      "summary": "1 file, 5 tests passed.",
-      "verifiedAt": "2026-06-02T23:15:22+08:00"
+      "summary": "1 file, 3 tests passed.",
+      "verifiedAt": "2026-06-02T23:52:55+08:00"
     },
     {
-      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js",
-      "exitCode": 0,
-      "summary": "1 file, 9 tests passed.",
-      "verifiedAt": "2026-06-02T23:15:29+08:00"
-    },
-    {
-      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js",
+      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/member-dashboard-soft-delete.test.js",
       "exitCode": 0,
       "summary": "1 file, 2 tests passed.",
-      "verifiedAt": "2026-06-02T23:15:34+08:00"
+      "verifiedAt": "2026-06-02T23:53:01+08:00"
     },
     {
-      "command": "node --check functions/index.js",
+      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/runtime/member-dashboard-soft-delete-use-cases.test.js",
       "exitCode": 0,
-      "summary": "Syntax check passed.",
-      "verifiedAt": "2026-06-02T23:15:40+08:00"
-    },
-    {
-      "command": "node --check functions/event-retention-purge.js",
-      "exitCode": 0,
-      "summary": "Syntax check passed.",
-      "verifiedAt": "2026-06-02T23:15:40+08:00"
+      "summary": "1 file, 10 tests passed.",
+      "verifiedAt": "2026-06-02T23:53:07+08:00"
     },
     {
       "command": "npm run lint:changed",
       "exitCode": 0,
       "summary": "Passed with existing React version warning only.",
-      "verifiedAt": "2026-06-02T23:15:49+08:00"
+      "verifiedAt": "2026-06-02T23:53:18+08:00"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
       "summary": "No changed-file type errors.",
-      "verifiedAt": "2026-06-02T23:15:54+08:00"
+      "verifiedAt": "2026-06-02T23:53:23+08:00"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-02T23:30:12+08:00"
+      "verifiedAt": "2026-06-02T23:53:27+08:00"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
       "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
-      "verifiedAt": "2026-06-02T23:30:12+08:00"
+      "verifiedAt": "2026-06-02T23:56:03+08:00"
     }
   ],
   "lastVerifiedCommit": "f5f4ebfac5616bc25488e968b2659993b186c15c",
@@ -1180,5 +1220,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-02T23:40:42+08:00"
+  "updatedAt": "2026-06-02T23:56:03+08:00"
 }
