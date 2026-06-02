@@ -612,7 +612,9 @@ function checkV3Semantics(statusFile, status, context) {
     }
   }
 
-  const touchedRulesFiles = getTouchedFiles(status).filter((filePath) => RULES_FILES.has(filePath));
+  const touchedRulesFiles = currentWorkflowState
+    ? getTouchedFiles(status).filter((filePath) => RULES_FILES.has(filePath))
+    : [];
   if (touchedRulesFiles.length > 0) {
     if (!isPlainObject(status.rulesDeployStatus)) {
       errors.push(`v3 rules changes require rulesDeployStatus for: ${touchedRulesFiles.join(', ')}`);

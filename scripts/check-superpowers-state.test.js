@@ -124,6 +124,63 @@ function createHistoricalCloseoutFixture() {
 }
 
 /**
+ * Creates a temp git repository with historical and current statuses plus dirty rules.
+ * @param {{currentRulesDeployStatus?: Record<string, unknown>}} [options] - Fixture options.
+ * @returns {{repoPath: string, currentStatusPath: string, historicalStatusPath: string}} Fixture paths.
+ */
+function createRulesChangeFixture({ currentRulesDeployStatus } = {}) {
+  const repoPath = mkdtempSync(join(tmpdir(), 'workflow-check-rules-'));
+  const scriptsPath = join(repoPath, 'scripts');
+  mkdirSync(scriptsPath, { recursive: true });
+  cpSync(validatorScript, join(scriptsPath, 'validate-workflow-state.js'));
+
+  git(repoPath, ['init', '--initial-branch=current-feature']);
+  git(repoPath, ['config', 'user.email', 'workflow-check@example.test']);
+  git(repoPath, ['config', 'user.name', 'Workflow Check Test']);
+
+  writeRepoFile(repoPath, 'src/baseline.js', 'export const baseline = true;\n');
+  writeRepoFile(repoPath, 'firestore.rules', 'rules_version = "2";\nservice cloud.firestore { match /databases/{database}/documents { match /{document=**} { allow read: if true; } } }\n');
+  git(repoPath, ['add', '.']);
+  git(repoPath, ['commit', '-m', 'Initial verified state']);
+  const verifiedCommit = git(repoPath, ['rev-parse', 'HEAD']);
+
+  const historicalStatusPath = 'specs/event-list-card-redesign/status.json';
+  writeRepoFile(repoPath, historicalStatusPath, `${JSON.stringify(createCloseoutStatus({
+    branch: 'event-list-card-redesign',
+    lastVerifiedCommit: verifiedCommit,
+  }), null, 2)}\n`);
+  writeRepoFile(repoPath, 'specs/event-list-card-redesign/handoff.md', '# Historical\n');
+  writeRepoFile(repoPath, 'specs/event-list-card-redesign/tasks.md', '# Historical Tasks\n');
+  git(repoPath, ['add', '.']);
+  git(repoPath, ['commit', '-m', 'Record historical closeout']);
+
+  const currentVerifiedCommit = git(repoPath, ['rev-parse', 'HEAD']);
+  const currentStatus = createCloseoutStatus({
+    branch: 'current-feature',
+    lastVerifiedCommit: currentVerifiedCommit,
+    worktree: repoPath,
+  });
+  currentStatus.rulesDeployStatus = currentRulesDeployStatus ?? {
+    state: 'required',
+    required: true,
+    changed: true,
+    evidence: [],
+    deployedCommit: null,
+  };
+
+  const currentStatusPath = 'specs/event-soft-delete-retention/status.json';
+  writeRepoFile(repoPath, currentStatusPath, `${JSON.stringify(currentStatus, null, 2)}\n`);
+  writeRepoFile(repoPath, 'specs/event-soft-delete-retention/handoff.md', '# Current\n');
+  writeRepoFile(repoPath, 'specs/event-soft-delete-retention/tasks.md', '# Current Tasks\n');
+  git(repoPath, ['add', '.']);
+  git(repoPath, ['commit', '-m', 'Record current closeout']);
+
+  writeRepoFile(repoPath, 'firestore.rules', 'rules_version = "2";\nservice cloud.firestore { match /databases/{database}/documents { match /{document=**} { allow read: if false; } } }\n');
+
+  return { repoPath, currentStatusPath, historicalStatusPath };
+}
+
+/**
  * Creates a detached-HEAD fixture with a closeout status and later product change.
  * @param {{statusBranch?: string}} [options] - Fixture options.
  * @returns {{repoPath: string, statusPath: string}} Fixture paths.
@@ -174,6 +231,41 @@ describe('check-superpowers-state', () => {
     expect(result.stderr).not.toContain('src/current-feature.js');
     expect(result.stderr).not.toContain('non-workflow/evidence changes after lastVerifiedCommit');
     expect(result.status).toBe(0);
+  });
+
+  it('does not apply dirty rules changes to unrelated historical statuses from another branch', () => {
+    const { repoPath, historicalStatusPath } = createRulesChangeFixture();
+
+    const result = spawnSync(process.execPath, [checkerScript], {
+      cwd: repoPath,
+      encoding: 'utf8',
+    });
+
+    expect(result.stderr).not.toContain(`${historicalStatusPath}: sync invalid`);
+    expect(result.stderr).not.toContain('v3 rules changes cannot have rulesDeployStatus.state=not_applicable');
+    expect(result.status).toBe(0);
+  });
+
+  it('requires current workflow rules changes to have applicable rulesDeployStatus', () => {
+    const { repoPath, currentStatusPath } = createRulesChangeFixture({
+      currentRulesDeployStatus: {
+        state: 'not_applicable',
+        required: false,
+        changed: false,
+        evidence: [],
+        deployedCommit: null,
+      },
+    });
+
+    const result = spawnSync(process.execPath, [checkerScript, currentStatusPath], {
+      cwd: repoPath,
+      encoding: 'utf8',
+    });
+
+    expect(result.stderr).toContain(`${currentStatusPath}: sync invalid`);
+    expect(result.stderr).toContain('v3 rules changes cannot have rulesDeployStatus.state=not_applicable for: firestore.rules');
+    expect(result.stderr).toContain('v3 rules changes require rulesDeployStatus.required=true or changed=true');
+    expect(result.status).toBe(1);
   });
 
   it('uses GITHUB_HEAD_REF for detached GitHub PR discovery before pseudo merge refs', () => {
