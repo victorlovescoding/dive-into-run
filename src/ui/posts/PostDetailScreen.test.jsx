@@ -1,5 +1,5 @@
 /* eslint-disable jsdoc/require-jsdoc -- Focused UI prop-wiring test uses local mock components. */
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ComposeModal from '@/components/ComposeModal';
@@ -39,8 +39,15 @@ vi.mock('@/components/PostCard', () => ({
 }));
 
 vi.mock('@/components/CommentCard', () => ({
-  default: function MockCommentCard() {
-    return <div data-testid="comment-card" />;
+  default: function MockCommentCard({ comment, onEdit }) {
+    return (
+      <div data-testid="comment-card">
+        <p>{comment.content}</p>
+        <button type="button" onClick={() => onEdit(comment)}>
+          edit comment
+        </button>
+      </div>
+    );
   },
 }));
 
@@ -86,9 +93,13 @@ const POST_DETAIL = {
   isAuthor: true,
 };
 
-function createRuntime() {
+function createRuntime(overrides = {}) {
   return {
-    user: null,
+    user: {
+      uid: 'user-1',
+      name: 'User One',
+      photoURL: '',
+    },
     post: POST_DETAIL,
     loading: false,
     error: null,
@@ -123,11 +134,15 @@ function createRuntime() {
     handleDeleteComment: vi.fn(),
     handleSubmitComment: vi.fn(),
     handleCommentChange: vi.fn(),
+    ...overrides,
   };
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+  HTMLDialogElement.prototype.showModal = vi.fn(function showModal() {
+    this.open = true;
+  });
 });
 
 describe('PostDetailScreen composer draft props', () => {
@@ -157,5 +172,97 @@ describe('PostDetailScreen composer draft props', () => {
       }),
       undefined,
     );
+  });
+});
+
+describe('PostDetailScreen comment edit modal', () => {
+  it('opens the shared edit modal from the owner comment action without changing the bottom input', async () => {
+    const user = userEvent.setup();
+    const runtime = createRuntime({
+      comment: 'bottom draft',
+      comments: [
+        {
+          id: 'comment-1',
+          authorUid: 'user-1',
+          authorName: 'User One',
+          authorImgURL: '',
+          comment: 'Original post comment',
+          createdAt: null,
+          isAuthor: true,
+        },
+      ],
+    });
+
+    render(<PostDetailScreen postId="post-1" runtime={runtime} />);
+
+    await user.click(screen.getByRole('button', { name: 'edit comment' }));
+
+    expect(screen.getByRole('textbox', { name: '留言' })).toHaveValue('bottom draft');
+    expect(screen.getByRole('textbox', { name: '' })).toHaveValue('Original post comment');
+    expect(runtime.handleEditComment).toHaveBeenLastCalledWith('comment-1');
+  });
+
+  it('saves post comment edits through the runtime update path and closes on success', async () => {
+    const user = userEvent.setup();
+    const runtime = createRuntime({
+      handleEditComment: vi.fn().mockResolvedValue(undefined),
+      comments: [
+        {
+          id: 'comment-1',
+          authorUid: 'user-1',
+          authorName: 'User One',
+          authorImgURL: '',
+          comment: 'Original post comment',
+          createdAt: null,
+          isAuthor: true,
+        },
+      ],
+    });
+
+    render(<PostDetailScreen postId="post-1" runtime={runtime} />);
+
+    await user.click(screen.getByRole('button', { name: 'edit comment' }));
+    const modalTextbox = screen.getByDisplayValue('Original post comment');
+    await user.clear(modalTextbox);
+    await user.type(modalTextbox, 'Updated post comment');
+    await user.click(screen.getByRole('button', { name: '完成編輯' }));
+
+    await waitFor(() =>
+      expect(runtime.handleEditComment).toHaveBeenLastCalledWith(
+        'comment-1',
+        'Updated post comment',
+      ),
+    );
+    expect(screen.queryByDisplayValue('Updated post comment')).not.toBeInTheDocument();
+  });
+
+  it('cancel closes the shared edit modal without changing bottom input or comment list', async () => {
+    const user = userEvent.setup();
+    const runtime = createRuntime({
+      comment: 'bottom draft',
+      comments: [
+        {
+          id: 'comment-1',
+          authorUid: 'user-1',
+          authorName: 'User One',
+          authorImgURL: '',
+          comment: 'Original post comment',
+          createdAt: null,
+          isAuthor: true,
+        },
+      ],
+    });
+
+    render(<PostDetailScreen postId="post-1" runtime={runtime} />);
+
+    await user.click(screen.getByRole('button', { name: 'edit comment' }));
+    await user.clear(screen.getByDisplayValue('Original post comment'));
+    await user.type(screen.getByRole('textbox', { name: '' }), 'Unsaved post comment');
+    await user.click(screen.getByRole('button', { name: '取消編輯' }));
+
+    expect(screen.getByRole('textbox', { name: '留言' })).toHaveValue('bottom draft');
+    expect(screen.getByText('Original post comment')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Unsaved post comment')).not.toBeInTheDocument();
+    expect(runtime.handleEditComment).toHaveBeenLastCalledWith('comment-1');
   });
 });

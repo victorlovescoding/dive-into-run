@@ -17,6 +17,7 @@ import {
   usePostCommentsInfiniteScroll,
   useScrollToHighlightedComment,
 } from '@/runtime/hooks/usePostCommentsEffects';
+import useCommentEditModal from '@/runtime/hooks/useCommentEditModal';
 import { useToast } from '@/runtime/providers/ToastProvider';
 
 /**
@@ -45,11 +46,16 @@ function hydrateComments(comments, userUid) {
  * @typedef {object} PostCommentsReturn
  * @property {Array<object>} comments - 帶有 isAuthor 的留言清單。
  * @property {string} comment - 目前留言輸入框文字。
- * @property {object | null} commentEditing - 正在編輯中的留言。
+ * @property {object | null} editingComment - 正在編輯中的留言。
+ * @property {object | null} commentEditing - 舊名稱相容欄位，等同 editingComment。
+ * @property {boolean} isUpdating - 是否正在儲存留言編輯。
+ * @property {string | null} updateError - 留言編輯錯誤訊息。
  * @property {string | null} highlightedCommentId - 需高亮的留言 ID。
  * @property {boolean} isLoadingNext - 是否正在載入下一頁留言。
  * @property {import('react').RefObject<HTMLDivElement | null>} bottomRef - 無限捲動哨兵元素 ref。
- * @property {(commentId: string) => void} handleEditComment - 開始編輯指定留言。
+ * @property {(commentId: string, newContent?: string) => void | Promise<boolean>} handleEditComment - 開啟或相容儲存指定留言。
+ * @property {(newContent: string) => Promise<boolean>} handleEditSave - 儲存目前編輯留言。
+ * @property {() => void} handleEditCancel - 取消目前編輯留言。
  * @property {(commentId: string) => Promise<void>} handleDeleteComment - 刪除指定留言。
  * @property {(event: Event) => Promise<void>} handleSubmitComment - 送出或更新留言。
  * @property {(event: Event) => void} handleCommentChange - 留言輸入框 onChange。
@@ -73,13 +79,11 @@ export default function usePostComments({
 
   const [comments, setComments] = useState([]);
   const [comment, setComment] = useState('');
-  const [commentEditing, setCommentEditing] = useState(null);
   const [nextCursor, setNextCursor] = useState(null);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
 
   const bottomRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const isMountedRef = useRef(false);
-  const editingCommentId = commentEditing?.id ?? null;
   const userUid = user?.uid ?? null;
 
   useEffect(() => {
@@ -129,18 +133,69 @@ export default function usePostComments({
 
   // --- Handlers ---
 
+  const saveEditedPostComment = useCallback(
+    async (targetComment, newContent) => {
+      const trimmedText = newContent.trim();
+      const previousText =
+        comments.find((commentItem) => commentItem.id === targetComment.id)?.comment ??
+        targetComment.comment ??
+        '';
+
+      setComments((prev) =>
+        prev.map((commentItem) =>
+          commentItem.id === targetComment.id
+            ? { ...commentItem, comment: trimmedText }
+            : commentItem,
+        ),
+      );
+
+      try {
+        await updateComment(postId, targetComment.id, { comment: trimmedText });
+      } catch (saveError) {
+        setComments((prev) =>
+          prev.map((commentItem) =>
+            commentItem.id === targetComment.id
+              ? { ...commentItem, comment: previousText }
+              : commentItem,
+          ),
+        );
+        throw saveError;
+      }
+    },
+    [comments, postId],
+  );
+
+  const {
+    editingComment,
+    isUpdating,
+    updateError,
+    handleEditOpen,
+    handleEditSave,
+    handleEditCancel,
+  } = useCommentEditModal({ saveComment: saveEditedPostComment });
+
+  const editingCommentId = editingComment?.id ?? null;
+
   /**
-   * 開始編輯指定留言。
+   * 開始編輯指定留言；第二參數保留給既有 runtime bridge 的儲存相容路徑。
    * @param {string} commentId - 要編輯的留言 ID。
+   * @param {string} [newContent] - 相容儲存內容。
+   * @returns {void | Promise<boolean>} 開啟時無回傳；相容儲存時回傳成功狀態。
    */
   const handleEditComment = useCallback(
-    (commentId) => {
+    (commentId, newContent) => {
+      if (typeof newContent === 'string') {
+        return handleEditSave(newContent);
+      }
+
       const target = comments.find((commentItem) => commentItem.id === commentId);
-      if (!target) return;
-      setCommentEditing(target);
-      setComment(target.comment);
+      if (!target) return undefined;
+
+      handleEditOpen(target);
+      setOpenMenuPostId('');
+      return undefined;
     },
-    [comments],
+    [comments, handleEditOpen, handleEditSave, setOpenMenuPostId],
   );
 
   /**
@@ -160,10 +215,7 @@ export default function usePostComments({
       try {
         await deleteComment(postId, commentId, userUid);
 
-        if (editingCommentId === commentId) {
-          setCommentEditing(null);
-          setComment('');
-        }
+        if (editingCommentId === commentId) handleEditCancel();
 
         setComments((prev) => prev.filter((commentItem) => commentItem.id !== commentId));
         setPostDetail((prev) =>
@@ -180,7 +232,15 @@ export default function usePostComments({
         console.error(deleteError);
       }
     },
-    [editingCommentId, postId, setOpenMenuPostId, setPostDetail, showToast, userUid],
+    [
+      editingCommentId,
+      handleEditCancel,
+      postId,
+      setOpenMenuPostId,
+      setPostDetail,
+      showToast,
+      userUid,
+    ],
   );
 
   /**
@@ -199,77 +259,49 @@ export default function usePostComments({
         return;
       }
 
-      if (!commentEditing) {
-        const rawComment = comment;
-        const { id } = await addComment(postId, { user, comment: rawComment });
+      const rawComment = comment;
+      const { id } = await addComment(postId, { user, comment: rawComment });
 
-        if (!actor) return;
+      if (!actor) return;
 
-        if (user.uid !== postDetail.authorUid) {
-          notifyPostNewComment(postId, postDetail.title, postDetail.authorUid, id, actor).catch(
-            (notifyError) => {
-              console.error('通知建立失敗:', notifyError);
-              showToast('通知發送失敗', 'error');
-            },
-          );
-        }
-
-        notifyPostCommentReply(postId, postDetail.title, postDetail.authorUid, id, actor).catch(
+      if (user.uid !== postDetail.authorUid) {
+        notifyPostNewComment(postId, postDetail.title, postDetail.authorUid, id, actor).catch(
           (notifyError) => {
-            console.error('跟帖通知失敗:', notifyError);
+            console.error('通知建立失敗:', notifyError);
+            showToast('通知發送失敗', 'error');
           },
         );
-
-        setComment('');
-
-        const mine = await getCommentById(postId, id);
-        const hydratedComment = mine ?? {
-          id,
-          authorUid: user.uid,
-          authorName: user.name || '我',
-          authorImgURL: user.photoURL || '',
-          comment: rawComment,
-          createdAt: createFirestoreTimestamp(new Date()),
-        };
-
-        setComments((prev) => [{ ...hydratedComment, isAuthor: true }, ...prev]);
-        setPostDetail((prev) =>
-          prev
-            ? {
-                ...prev,
-                commentsCount: Math.max(0, Number(prev.commentsCount ?? 0) + 1),
-              }
-            : prev,
-        );
-        return;
       }
 
-      const newText = trimmedComment;
-      const prevText =
-        comments.find((commentItem) => commentItem.id === commentEditing.id)?.comment ?? '';
-
-      setComments((prev) =>
-        prev.map((commentItem) =>
-          commentItem.id === commentEditing.id ? { ...commentItem, comment: newText } : commentItem,
-        ),
+      notifyPostCommentReply(postId, postDetail.title, postDetail.authorUid, id, actor).catch(
+        (notifyError) => {
+          console.error('跟帖通知失敗:', notifyError);
+        },
       );
 
-      try {
-        await updateComment(postId, commentEditing.id, { comment: newText });
-      } catch {
-        setComments((prev) =>
-          prev.map((commentItem) =>
-            commentItem.id === commentEditing.id
-              ? { ...commentItem, comment: prevText }
-              : commentItem,
-          ),
-        );
-      }
-
       setComment('');
-      setCommentEditing(null);
+
+      const mine = await getCommentById(postId, id);
+      const hydratedComment = mine ?? {
+        id,
+        authorUid: user.uid,
+        authorName: user.name || '我',
+        authorImgURL: user.photoURL || '',
+        comment: rawComment,
+        createdAt: createFirestoreTimestamp(new Date()),
+      };
+
+      setComments((prev) => [{ ...hydratedComment, isAuthor: true }, ...prev]);
+      setPostDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              commentsCount: Math.max(0, Number(prev.commentsCount ?? 0) + 1),
+            }
+          : prev,
+      );
     },
-    [actor, comment, commentEditing, comments, postDetail, postId, setPostDetail, showToast, user],
+    [actor, comment, postDetail, postId, setPostDetail, showToast, user],
   );
 
   /**
@@ -283,11 +315,16 @@ export default function usePostComments({
   return {
     comments,
     comment,
-    commentEditing,
+    editingComment,
+    commentEditing: editingComment,
+    isUpdating,
+    updateError,
     highlightedCommentId,
     isLoadingNext,
     bottomRef,
     handleEditComment,
+    handleEditSave,
+    handleEditCancel,
     handleDeleteComment,
     handleSubmitComment,
     handleCommentChange,

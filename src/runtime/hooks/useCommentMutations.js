@@ -6,6 +6,7 @@ import {
   fetchCommentHistory,
 } from '@/runtime/client/use-cases/event-comment-use-cases';
 import { getCurrentFirestoreTimestamp } from '@/config/client/firebase-timestamp';
+import useCommentEditModal from '@/runtime/hooks/useCommentEditModal';
 
 /**
  * @typedef {import('@/service/event-comment-service').CommentData} CommentData
@@ -53,10 +54,6 @@ export default function useCommentMutations(eventId, user, setComments, onSucces
   const [submitKey, setSubmitKey] = useState(0);
   const highlightTimeoutRef = useRef(/** @type {ReturnType<typeof setTimeout> | null} */ (null));
 
-  const [editingComment, setEditingComment] = useState(/** @type {CommentData | null} */ (null));
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [updateError, setUpdateError] = useState(/** @type {string | null} */ (null));
-
   const [deletingComment, setDeletingComment] = useState(/** @type {CommentData | null} */ (null));
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(/** @type {string | null} */ (null));
@@ -93,44 +90,40 @@ export default function useCommentMutations(eventId, user, setComments, onSucces
     [eventId, user, setComments, onSuccess],
   );
 
-  const handleEditOpen = useCallback((comment) => {
-    setEditingComment(comment);
-    setUpdateError(null);
-  }, []);
+  const saveEditedComment = useCallback(
+    async (targetComment, newContent) => {
+      await updateComment(eventId, targetComment.id, newContent, targetComment.content);
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === targetComment.id
+            ? {
+                ...c,
+                content: newContent.trim(),
+                isEdited: true,
+                updatedAt: getCurrentFirestoreTimestamp(),
+              }
+            : c,
+        ),
+      );
+    },
+    [eventId, setComments],
+  );
+
+  const {
+    editingComment,
+    isUpdating,
+    updateError,
+    handleEditOpen,
+    handleEditSave: handleEditSaveWithResult,
+    handleEditCancel,
+  } = useCommentEditModal({ saveComment: saveEditedComment });
 
   const handleEditSave = useCallback(
     async (newContent) => {
-      if (!editingComment) return;
-      setIsUpdating(true);
-      setUpdateError(null);
-      try {
-        await updateComment(eventId, editingComment.id, newContent, editingComment.content);
-        setComments((prev) =>
-          prev.map((c) =>
-            c.id === editingComment.id
-              ? {
-                  ...c,
-                  content: newContent.trim(),
-                  isEdited: true,
-                  updatedAt: getCurrentFirestoreTimestamp(),
-                }
-              : c,
-          ),
-        );
-        setEditingComment(null);
-      } catch {
-        setUpdateError('更新失敗，請再試一次');
-      } finally {
-        setIsUpdating(false);
-      }
+      await handleEditSaveWithResult(newContent);
     },
-    [eventId, editingComment, setComments],
+    [handleEditSaveWithResult],
   );
-
-  const handleEditCancel = useCallback(() => {
-    setEditingComment(null);
-    setUpdateError(null);
-  }, []);
 
   const handleDeleteOpen = useCallback((comment) => {
     setDeletingComment(comment);

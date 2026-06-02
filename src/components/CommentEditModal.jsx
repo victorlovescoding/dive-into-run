@@ -4,17 +4,31 @@ import { useState, useEffect, useRef } from 'react';
 import styles from './CommentEditModal.module.css';
 
 /**
+ * 取得 shared comment modal 可編輯文字。
+ * @param {object} comment - 任一 domain 的留言物件。
+ * @param {string} [comment.content] - Event comment content。
+ * @param {string} [comment.comment] - Post comment content。
+ * @returns {string} 編輯文字。
+ */
+function getCommentContent(comment) {
+  if (typeof comment.content === 'string') return comment.content;
+  if (typeof comment.comment === 'string') return comment.comment;
+  return '';
+}
+
+/**
  * 編輯留言 Modal。
  * @param {object} props - 元件 props。
- * @param {import('@/lib/firebase-comments').CommentData} props.comment - 正在編輯的留言。
+ * @param {object} props.comment - 正在編輯的留言。
  * @param {boolean} props.isUpdating - 是否更新中。
  * @param {string | null} props.updateError - 更新錯誤訊息。
- * @param {(newContent: string) => void} props.onSave - 儲存回呼。
+ * @param {(newContent: string) => void | Promise<void | boolean>} props.onSave - 儲存回呼。
  * @param {() => void} props.onCancel - 取消回呼。
  * @returns {import('react').ReactElement} 編輯留言 Modal 元件。
  */
 export default function CommentEditModal({ comment, isUpdating, updateError, onSave, onCancel }) {
-  const [editContent, setEditContent] = useState(comment.content);
+  const originalContent = getCommentContent(comment);
+  const [editContent, setEditContent] = useState(originalContent);
   const dialogRef = useRef(/** @type {HTMLDialogElement | null} */ (null));
 
   useEffect(() => {
@@ -22,13 +36,17 @@ export default function CommentEditModal({ comment, isUpdating, updateError, onS
     if (dialog && !dialog.open) dialog.showModal();
   }, []);
 
+  useEffect(() => {
+    setEditContent(originalContent);
+  }, [originalContent]);
+
   /** @param {import('react').SyntheticEvent<HTMLDialogElement>} e - dialog cancel 事件。 */
   function handleCancel(e) {
     e.preventDefault();
     onCancel();
   }
 
-  const isUnchanged = editContent.trim() === comment.content;
+  const isUnchanged = editContent.trim() === originalContent;
   const isOverLimit = editContent.length > 500;
 
   return (
