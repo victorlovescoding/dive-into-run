@@ -61,6 +61,8 @@ export default function useEventDetailRuntime(id) {
     };
   }, []);
 
+  const activeEventId = event && String(event.id) === String(id) ? String(id) : '';
+
   const {
     participants,
     participantsLoading,
@@ -75,7 +77,14 @@ export default function useEventDetailRuntime(id) {
     handleLeave,
     handleOpenParticipants,
     handleCloseParticipants,
-  } = useEventDetailParticipation({ id, event, setEvent, user, showToast, isMountedRef });
+  } = useEventDetailParticipation({
+    id: activeEventId,
+    event,
+    setEvent,
+    user,
+    showToast,
+    isMountedRef,
+  });
 
   const {
     editingEvent,

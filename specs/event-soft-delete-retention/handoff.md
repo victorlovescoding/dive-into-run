@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `d8c2578f027f4d9fe11f6b21c31e5c16d61757f6`
+- Current head: `1851d65cb97b6150afc3068d1336f8ce780418e0`
 - Remote head: `origin/main` at `19434854fd36911879a36406efda80d1b5056dc1`
 - Authorization boundary:
   - edit: yes
@@ -18,17 +18,19 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: implementation
-- Active task: T002
-- Active wave: wave-2
-- Latest reviewer decision: T001 spec compliance and code-quality reviews
-  `review_passed` on 2026-06-02T01:04:39+08:00.
+- Active task: none
+- Active wave: none
+- Latest reviewer decision: T002 final spec compliance review `review_passed`
+  and final code-quality review found no production-code blockers on
+  2026-06-02T10:16:38+08:00.
 - Last verified commit: `d8c2578f027f4d9fe11f6b21c31e5c16d61757f6`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
   - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
   - T001: `d8c2578f027f4d9fe11f6b21c31e5c16d61757f6`
 - Rules deploy status: required, required=true, changed=false, deployedCommit=null
-- Incidents: none
+- Incidents: T002 stale active detail cancellation notification carry-forward is
+  mitigated and documented.
 - Blocked: no
 - Blocked reason: none
 
@@ -45,8 +47,8 @@
 
 ## Next Action
 
-Coordinator dispatches T002 `Event Delete Writes And Event Read Filtering` to
-an Engineer subagent.
+Coordinator commits T002 implementation and workflow state, then records the
+T002 phase commit before dispatching T003.
 
 ## Task Graph
 
@@ -69,10 +71,15 @@ separate coordinator-created worktrees with disjoint owned files.
 | `npm run workflow:check` | 0 | 15 status files valid and synced, including `event-soft-delete-retention/status.json`. |
 | `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js` | 0 | 5 tests passed. |
 | `npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js` | 0 | 4 tests passed. |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-service-soft-delete.test.js` | 0 | 1 file, 2 tests passed. |
+| `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js` | 0 | 1 file, 18 tests passed. |
+| `npm run workflow:check` | 0 | 15 status files valid and synced, including `event-soft-delete-retention/status.json`. |
 | `npm run lint:changed` | 0 | Passed with existing React version warning only. |
 | `npm run type-check:changed` | 0 | No changed-file type errors. |
+| `git diff --check` | 0 | No whitespace errors. |
 
-T002 implementation verification has not run yet.
+T002 implementation is reviewed and verified in the working tree; the T002
+phase commit is pending.
 
 ## Closeout Checklist
 
@@ -112,5 +119,16 @@ T002 implementation verification has not run yet.
   count logging, not only purge core behavior and syntax.
 - Firestore rules and Firebase Functions deploys are release actions and are
   not authorized in the current boundary.
+- T002 expanded its owned files to include `src/runtime/hooks/useEventMutations.js`
+  because event-list deletion must pass the actor contract through the existing
+  list-page mutation hook.
+- T002 carry-forward: a stale active event detail can still fetch participants
+  and send the existing cancellation notification before the repo transaction
+  returns `already_deleted` if another session soft-deleted the event first.
+  T002 preserves notification sequencing because notification behavior is
+  non-scope; revisit this with notification ownership.
+- Existing Firestore rules still need T005 before release; T002 may preserve
+  product-path actor semantics, but rules-level soft-delete authorization is not
+  complete until T005 passes.
 - Do not add Firestore indexes unless implementation verification proves the
   exact requirement.

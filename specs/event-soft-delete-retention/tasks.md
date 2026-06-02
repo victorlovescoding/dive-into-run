@@ -163,16 +163,17 @@ Evidence:
 
 ### T002 - Event Delete Writes And Event Read Filtering
 
-- **State**: `in_progress`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-2`
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation
-- **Last verified commit**: none
+- **Last verified commit**: pending T002 commit
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
-- **Incidents**: none
+- **Incidents**: stale already-deleted detail cancellation notification side
+  effect is carried forward; notification behavior is T002 non-scope.
 
 Scope:
 
@@ -192,6 +193,7 @@ Owned files:
 
 - `src/repo/client/firebase-events-repo.js`
 - `src/runtime/client/use-cases/event-use-cases.js`
+- `src/runtime/hooks/useEventMutations.js`
 - `src/runtime/hooks/useEventsPageRuntime.js`
 - `src/runtime/hooks/useEventDetailRuntime.js`
 - `src/runtime/hooks/useEventDetailMutations.js`
@@ -263,10 +265,39 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: none yet.
-- Reviewer report: none yet.
-- Command output summary: none yet.
-- Changed files summary: none yet.
+- Engineer report: DONE. Converted event delete to host-actor soft delete,
+  preserved event-list and event-detail product paths, guarded tombstone
+  join/leave/update writes, and added focused T002 regression tests.
+- Reviewer report: final spec compliance review `review_passed`; final
+  code-quality review found no production-code blockers after workflow evidence
+  sync was requested.
+- Command output summary:
+  - RED: `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js` failed before implementation because soft-deleted events could still be joined, left, and updated.
+  - `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-service-soft-delete.test.js`: exit 0, 2 tests passed.
+  - `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js`: exit 0, 18 tests passed.
+  - `npm run workflow:check`: exit 0, 15 status files valid and synced.
+  - `npm run lint:changed`: exit 0, existing React version warning only.
+  - `npm run type-check:changed`: exit 0, no changed-file type errors.
+  - `git diff --check`: exit 0, no whitespace errors.
+- Changed files summary:
+  - `src/repo/client/firebase-events-repo.js`: soft-deletes event docs with host actor validation and blocks tombstone join/leave/update transaction writes.
+  - `src/runtime/client/use-cases/event-use-cases.js`: filters soft-deleted event reads, returns raw-page `hasMore`, and forwards delete actor.
+  - `src/runtime/hooks/useEventMutations.js`: passes list-page delete actor.
+  - `src/runtime/hooks/useEventsPageRuntime.js`: uses use-case `hasMore` instead of visible count.
+  - `src/runtime/hooks/useEventDetailRuntime.js`: avoids participant loading when detail resolves as missing/deleted.
+  - `src/runtime/hooks/useEventDetailMutations.js`: passes detail delete actor while preserving existing notification sequencing.
+  - `src/service/event-service.js`: hides soft-deleted event records.
+  - `specs/event-soft-delete-retention/tests/unit/service/event-service-soft-delete.test.js`: covers event visibility predicate behavior.
+  - `specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js`: covers event soft-delete writes, pagination, actor contract, deleted detail gating, and tombstone join/leave/update guards.
+
+Carry-forward:
+
+- If a host keeps a stale active event detail open after another session already
+  soft-deleted the event, the detail delete path can still fetch participants
+  and send the existing cancellation notification before the repo transaction
+  returns `already_deleted`. T002 preserves existing notification sequencing
+  because notification behavior is non-scope; revisit this with notification
+  ownership rather than changing it inside event soft-delete writes.
 
 ### T003 - Event Comment Delete Writes And Pagination Filtering
 

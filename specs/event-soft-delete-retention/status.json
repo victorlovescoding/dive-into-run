@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "implementation",
-  "activeTask": "T002",
-  "activeWave": "wave-2",
+  "activeTask": null,
+  "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "d8c2578f027f4d9fe11f6b21c31e5c16d61757f6",
-    "capturedAt": "2026-06-02T01:09:06+08:00",
-    "summary": "T001 implementation committed; T002 dispatch state is being recorded."
+    "commit": "1851d65cb97b6150afc3068d1336f8ce780418e0",
+    "capturedAt": "2026-06-02T10:22:33+08:00",
+    "summary": "T002 implementation diff is reviewed and ready for commit."
   },
   "remoteHead": {
     "remote": "origin",
@@ -30,7 +30,8 @@
     "summary": "Remote base head for origin/main after fetch and rebase."
   },
   "completedTasks": [
-    "T001"
+    "T001",
+    "T002"
   ],
   "tasks": [
     {
@@ -163,7 +164,7 @@
     {
       "id": "T002",
       "title": "Event Delete Writes And Event Read Filtering",
-      "state": "in_progress",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-2",
       "engineer": "Engineer",
@@ -182,6 +183,7 @@
       "ownedFiles": [
         "src/repo/client/firebase-events-repo.js",
         "src/runtime/client/use-cases/event-use-cases.js",
+        "src/runtime/hooks/useEventMutations.js",
         "src/runtime/hooks/useEventsPageRuntime.js",
         "src/runtime/hooks/useEventDetailRuntime.js",
         "src/runtime/hooks/useEventDetailMutations.js",
@@ -220,22 +222,42 @@
         {
           "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-service-soft-delete.test.js",
           "expectedSignal": "Exit 0, event filtering tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-service-soft-delete.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 2 tests passed.",
+            "verifiedAt": "2026-06-02T10:22:33+08:00"
+          }
         },
         {
           "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js",
           "expectedSignal": "Exit 0, event delete and read tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js",
+            "exitCode": 0,
+            "summary": "1 file, 18 tests passed.",
+            "verifiedAt": "2026-06-02T10:22:33+08:00"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Passed with existing React version warning only.",
+            "verifiedAt": "2026-06-02T10:22:33+08:00"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-02T10:22:33+08:00"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -250,12 +272,35 @@
         "Event list or detail filtering is missing or untested.",
         "Verification is missing, stale, failed, or not the required command."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Spec compliance reviewer and code quality reviewer",
+        "summary": "T002 final spec compliance passed; final code-quality review found no production-code blockers after workflow evidence sync.",
+        "decidedAt": "2026-06-02T10:16:38+08:00"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE. Converted event delete to host-actor soft delete, preserved event-list and event-detail product paths, guarded tombstone join/leave/update writes, and added focused T002 regression tests.",
+        "reviewerReport": "Final spec compliance review passed; final code-quality review found no production-code blockers after workflow evidence sync.",
+        "commandOutputSummary": [
+          "RED: npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js failed before implementation because soft-deleted events could still be joined, left, and updated.",
+          "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-service-soft-delete.test.js: exit 0, 2 tests passed.",
+          "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js: exit 0, 18 tests passed.",
+          "npm run workflow:check: exit 0, 15 status files valid and synced.",
+          "npm run lint:changed: exit 0, existing React version warning only.",
+          "npm run type-check:changed: exit 0, no changed-file type errors.",
+          "git diff --check: exit 0, no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "src/repo/client/firebase-events-repo.js: soft-deletes event docs with host actor validation and blocks tombstone join/leave/update transaction writes.",
+          "src/runtime/client/use-cases/event-use-cases.js: filters soft-deleted event reads, returns raw-page hasMore, and forwards delete actor.",
+          "src/runtime/hooks/useEventMutations.js: passes list-page delete actor.",
+          "src/runtime/hooks/useEventsPageRuntime.js: uses use-case hasMore instead of visible count.",
+          "src/runtime/hooks/useEventDetailRuntime.js: avoids participant loading when detail resolves as missing/deleted.",
+          "src/runtime/hooks/useEventDetailMutations.js: passes detail delete actor while preserving existing notification sequencing.",
+          "src/service/event-service.js: hides soft-deleted event records.",
+          "specs/event-soft-delete-retention/tests/unit/service/event-service-soft-delete.test.js: covers event visibility predicate behavior.",
+          "specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js: covers event soft-delete writes, pagination, actor contract, deleted detail gating, and tombstone join/leave/update guards."
+        ]
       }
     },
     {
@@ -697,40 +742,40 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-soft-delete-helpers.test.js",
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/service/event-service-soft-delete.test.js",
       "exitCode": 0,
-      "summary": "5 tests passed.",
-      "verifiedAt": "2026-06-02T01:04:39+08:00"
+      "summary": "1 file, 2 tests passed.",
+      "verifiedAt": "2026-06-02T10:22:33+08:00"
     },
     {
-      "command": "npx vitest run --project=browser specs/post-comment-soft-delete-retention/tests/unit/service/post-service-soft-delete.test.js",
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js",
       "exitCode": 0,
-      "summary": "4 tests passed.",
-      "verifiedAt": "2026-06-02T01:04:39+08:00"
-    },
-    {
-      "command": "npm run lint:changed",
-      "exitCode": 0,
-      "summary": "Passed with existing React version warning only.",
-      "verifiedAt": "2026-06-02T01:04:39+08:00"
-    },
-    {
-      "command": "npm run type-check:changed",
-      "exitCode": 0,
-      "summary": "No changed-file type errors.",
-      "verifiedAt": "2026-06-02T01:04:39+08:00"
-    },
-    {
-      "command": "git diff --check -- specs/event-soft-delete-retention",
-      "exitCode": 0,
-      "summary": "Planning artifacts have no whitespace errors.",
-      "verifiedAt": "2026-06-02T00:29:32+08:00"
+      "summary": "1 file, 18 tests passed.",
+      "verifiedAt": "2026-06-02T10:22:33+08:00"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
       "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
-      "verifiedAt": "2026-06-02T00:29:32+08:00"
+      "verifiedAt": "2026-06-02T10:22:33+08:00"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "Passed with existing React version warning only.",
+      "verifiedAt": "2026-06-02T10:22:33+08:00"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "No changed-file type errors.",
+      "verifiedAt": "2026-06-02T10:22:33+08:00"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "No whitespace errors.",
+      "verifiedAt": "2026-06-02T10:22:33+08:00"
     }
   ],
   "lastVerifiedCommit": "d8c2578f027f4d9fe11f6b21c31e5c16d61757f6",
@@ -761,6 +806,13 @@
     "evidence": [],
     "deployedCommit": null
   },
-  "incidents": [],
-  "updatedAt": "2026-06-02T01:09:06+08:00"
+  "incidents": [
+    {
+      "id": "T002-stale-detail-cancellation-notification",
+      "state": "mitigated",
+      "summary": "A stale active event detail can still fetch participants and send the existing cancellation notification before the repo transaction returns already_deleted if another session soft-deleted the event first. T002 preserves notification sequencing because notification behavior is non-scope; revisit with notification ownership.",
+      "openedAt": "2026-06-02T02:47:10+08:00"
+    }
+  ],
+  "updatedAt": "2026-06-02T10:22:33+08:00"
 }

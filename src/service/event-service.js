@@ -1,6 +1,7 @@
 import polyline from '@mapbox/polyline';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 import { isAccountDeletionHidden } from '@/config/account-deletion';
+import { isSoftDeletedRecord } from '@/repo/soft-delete-retention';
 
 export { EVENT_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
 
@@ -220,7 +221,7 @@ export function toEventData(snapshot) {
  * @returns {boolean} true when visible.
  */
 export function isPublicEventRecordVisible(data) {
-  return !isAccountDeletionHidden(data);
+  return !isAccountDeletionHidden(data) && !isSoftDeletedRecord(data);
 }
 
 /**
