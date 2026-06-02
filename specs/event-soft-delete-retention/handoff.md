@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `c0da97a5c97161d7202dcecbad9e08f3d77cc1a5`
+- Current head: `f90480248370b91718105d59376ed32e67bf86dc`
 - Remote head: `origin/main` at `f641655b6b7f5fe48058ad43d59a5cdc147cdebf`
 - Authorization boundary:
   - edit: yes
@@ -23,7 +23,7 @@
 - Latest reviewer decision: T006 spec compliance review and code-quality
   re-review `review_passed`; no blocking findings after the duplicate
   collection-group counting fix.
-- Last verified commit: `c0da97a5c97161d7202dcecbad9e08f3d77cc1a5`
+- Last verified commit: `f90480248370b91718105d59376ed32e67bf86dc`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
   - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
@@ -33,6 +33,7 @@
   - T004: `1ebfcb472f65c7d9621287692dda9855b9157f12`
   - workflow-check-fix: `cb0176d0764158f15ecfbda0799ebec438924dca`
   - T005: `d139cba324b4aa6cb668b40e265ad56203868aa6`
+  - T006: `f90480248370b91718105d59376ed32e67bf86dc`
 - Rules deploy status: required, required=true, changed=true, deployedCommit=null
 - Incidents: T002 stale active detail cancellation notification carry-forward is
   mitigated and documented.
@@ -52,10 +53,9 @@
 
 ## Next Action
 
-Coordinator runs final workflow gates, commits the reviewed T006
-implementation plus synchronized workflow state, then records the resulting
-T006 commit SHA in a follow-up workflow-state commit. Do not push, open a PR,
-watch CI, merge, sync local `main`, deploy Firestore rules, or deploy Firebase
+Coordinator runs final workflow gates, commits this final workflow-state sync,
+then stops at the current authorization boundary. Do not push, open a PR, watch
+CI, merge, sync local `main`, deploy Firestore rules, or deploy Firebase
 Functions without separate explicit authorization.
 
 ## Task Graph
@@ -95,7 +95,7 @@ changed locally in T006 but have not been deployed.
 - [x] Active task and active wave match `status.json`.
 - [x] Latest reviewer decision is recorded in `tasks.md` and `status.json`.
 - [x] `lastVerification` has one entry per command.
-- [ ] `lastVerifiedCommit`, `currentHead`, `remoteHead`, and `phaseCommits`
+- [x] `lastVerifiedCommit`, `currentHead`, `remoteHead`, and `phaseCommits`
       reflect the latest verified state.
 - [x] `authorizationBoundary.deployFirestoreRules` is recorded and treated as
       separate from edit, commit, push, PR, CI watch, merge, and local main sync.

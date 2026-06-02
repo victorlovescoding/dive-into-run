@@ -689,7 +689,7 @@ Evidence:
 - **Engineer**: Engineer for Functions purge; Coordinator for workflow-state final sync after Reviewer PASS.
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation or verification
-- **Last verified commit**: pending T006 implementation commit
+- **Last verified commit**: `f90480248370b91718105d59376ed32e67bf86dc`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
