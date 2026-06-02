@@ -5,8 +5,8 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `cb0176d0764158f15ecfbda0799ebec438924dca`
-- Remote head: `origin/main` at `19434854fd36911879a36406efda80d1b5056dc1`
+- Current head: `d139cba324b4aa6cb668b40e265ad56203868aa6`
+- Remote head: `origin/main` at `f641655b6b7f5fe48058ad43d59a5cdc147cdebf`
 - Authorization boundary:
   - edit: yes
   - commit: yes
@@ -18,11 +18,11 @@
   - deployFirestoreRules: no
 - Firebase Functions deploy: not authorized
 - Current phase: implementation
-- Active task: none
-- Active wave: none
+- Active task: T006
+- Active wave: wave-4
 - Latest reviewer decision: T005 final spec compliance and code-quality reviews
   `review_passed` on 2026-06-02T12:15:39+08:00.
-- Last verified commit: `cb0176d0764158f15ecfbda0799ebec438924dca`
+- Last verified commit: `d139cba324b4aa6cb668b40e265ad56203868aa6`
 - Phase commits:
   - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
   - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
@@ -31,6 +31,7 @@
   - T003: `2b746382a1f9958f056a1c950a1d10bcf29231f2`
   - T004: `1ebfcb472f65c7d9621287692dda9855b9157f12`
   - workflow-check-fix: `cb0176d0764158f15ecfbda0799ebec438924dca`
+  - T005: `d139cba324b4aa6cb668b40e265ad56203868aa6`
 - Rules deploy status: required, required=true, changed=true, deployedCommit=null
 - Incidents: T002 stale active detail cancellation notification carry-forward is
   mitigated and documented.
@@ -50,8 +51,8 @@
 
 ## Next Action
 
-Coordinator commits T005 implementation and workflow state, then records the
-T005 phase commit before dispatching T006.
+Coordinator commits this T006 dispatch state, then dispatches the T006 Engineer
+subagent.
 
 ## Task Graph
 
@@ -95,8 +96,9 @@ separate coordinator-created worktrees with disjoint owned files.
 | `git diff --check` | 0 | No whitespace errors. |
 | `npm run workflow:check` | 0 | 15 status files valid and synced after the workflow-check rules scope fix. |
 
-T005 implementation is reviewed and verified in the working tree; the T005 phase
-commit is pending. Firestore rules changed locally but have not been deployed.
+T005 implementation is reviewed, verified, and committed. Firestore rules
+changed locally but have not been deployed. T006 dispatch state is being
+committed before Engineer handoff.
 
 ## Closeout Checklist
 

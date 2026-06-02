@@ -4,8 +4,8 @@
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
   "phase": "implementation",
-  "activeTask": null,
-  "activeWave": null,
+  "activeTask": "T006",
+  "activeWave": "wave-4",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "cb0176d0764158f15ecfbda0799ebec438924dca",
-    "capturedAt": "2026-06-02T22:38:39+08:00",
-    "summary": "Workflow-check scope fix committed; T005 implementation diff is reviewed and ready for commit."
+    "commit": "d139cba324b4aa6cb668b40e265ad56203868aa6",
+    "capturedAt": "2026-06-02T22:42:10+08:00",
+    "summary": "T005 implementation committed; dispatching T006."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "19434854fd36911879a36406efda80d1b5056dc1",
-    "capturedAt": "2026-06-02T00:44:58+08:00",
-    "summary": "Remote base head for origin/main after fetch and rebase."
+    "commit": "f641655b6b7f5fe48058ad43d59a5cdc147cdebf",
+    "capturedAt": "2026-06-02T22:42:10+08:00",
+    "summary": "Current origin/main while branch is ahead 14 and behind 1; rebase remains a later closeout concern."
   },
   "completedTasks": [
     "T001",
@@ -890,7 +890,7 @@
       "verifiedAt": "2026-06-02T22:38:39+08:00"
     }
   ],
-  "lastVerifiedCommit": "cb0176d0764158f15ecfbda0799ebec438924dca",
+  "lastVerifiedCommit": "d139cba324b4aa6cb668b40e265ad56203868aa6",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -933,6 +933,12 @@
       "commit": "cb0176d0764158f15ecfbda0799ebec438924dca",
       "summary": "Fix workflow rules status scope.",
       "committedAt": "2026-06-02T22:38:39+08:00"
+    },
+    {
+      "phase": "T005",
+      "commit": "d139cba324b4aa6cb668b40e265ad56203868aa6",
+      "summary": "Add event retention rules.",
+      "committedAt": "2026-06-02T22:42:10+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -952,5 +958,5 @@
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-02T22:38:39+08:00"
+  "updatedAt": "2026-06-02T22:42:10+08:00"
 }

@@ -562,7 +562,7 @@ Evidence:
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation
-- **Last verified commit**: pending T005 commit
+- **Last verified commit**: `d139cba324b4aa6cb668b40e265ad56203868aa6`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -683,7 +683,7 @@ Evidence:
 
 ### T006 - Firebase Event Retention Purge And Integration Gates
 
-- **State**: `todo`
+- **State**: `in_progress`
 - **Attempt**: 1
 - **Wave**: `wave-4`
 - **Engineer**: Engineer for Functions purge; Coordinator for workflow-state final sync after Reviewer PASS.
