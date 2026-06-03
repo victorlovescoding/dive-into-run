@@ -3,7 +3,7 @@
   "feature": "post-comment-edit-history",
   "branch": "088-post-comment-edit-history",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-088-post-comment-edit-history",
-  "phase": "t003_review_passed",
+  "phase": "t004_review_passed",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "088-post-comment-edit-history",
-    "commit": "024c1b61e1feaeb680b470ded8e203a1fa2a4f78",
-    "capturedAt": "2026-06-03T08:48:40Z",
-    "summary": "T002 post data-flow checkpoint committed; T003 dispatch is starting."
+    "commit": "9e1ddc7bfd4547c52128abc81db0d64fb31f78dd",
+    "capturedAt": "2026-06-03T08:59:13Z",
+    "summary": "T003 runtime checkpoint committed; T004 dispatch is starting."
   },
   "remoteHead": {
     "remote": "origin",
@@ -32,7 +32,8 @@
   "completedTasks": [
     "T001",
     "T002",
-    "T003"
+    "T003",
+    "T004"
   ],
   "tasks": [
     {
@@ -423,7 +424,7 @@
     {
       "id": "T004",
       "title": "PostDetailScreen History UI Wiring",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-4",
       "engineer": "Engineer, UI wiring",
@@ -473,22 +474,42 @@
         {
           "command": "npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx",
           "expectedSignal": "Exit 0, post detail screen tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx",
+            "exitCode": 0,
+            "summary": "1 file passed; 6 tests passed.",
+            "verifiedAt": "2026-06-03T09:09:04Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0, no new lint errors for changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors; existing React version warning only.",
+            "verifiedAt": "2026-06-03T09:09:04Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0, no changed-file type errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No type errors in changed files.",
+            "verifiedAt": "2026-06-03T09:09:04Z"
+          }
         },
         {
           "command": "git diff --check",
           "expectedSignal": "Exit 0, no whitespace errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-03T09:09:04Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -503,12 +524,26 @@
         "Diff claims browser verification without screenshot/tool evidence.",
         "Verification is missing, stale, failed, or not from the required commands."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Maxwell",
+        "summary": "No blocking findings. Post detail wiring matches CommentCard and CommentHistoryModal contracts; browser visual evidence remains pending.",
+        "decidedAt": "2026-06-03T09:09:04Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE_WITH_CONCERNS: wired post detail history UI and tests; browser evidence not run.",
+        "reviewerReport": "review_passed: no blocking findings; production shared component contracts checked manually by reviewer.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx -> exit 0, 1 file / 6 tests.",
+          "npm run lint:changed -> exit 0, React version warning only.",
+          "npm run type-check:changed -> exit 0, no changed-file type errors.",
+          "git diff --check -> exit 0, no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "Updated src/ui/posts/PostDetailScreen.jsx to pass onViewHistory and render CommentHistoryModal.",
+          "Updated src/ui/posts/PostDetailScreen.jsx to preserve isEdited/updatedAt and normalize comment to content for shared UI.",
+          "Updated src/ui/posts/PostDetailScreen.test.jsx for edited affordance and history modal wiring."
+        ]
       }
     },
     {
@@ -603,28 +638,28 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npx vitest run --project=browser src/runtime/hooks/usePostComments.test.jsx",
+      "command": "npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx",
       "exitCode": 0,
-      "summary": "1 file passed; 7 tests passed.",
-      "verifiedAt": "2026-06-03T08:57:06Z"
+      "summary": "1 file passed; 6 tests passed.",
+      "verifiedAt": "2026-06-03T09:09:04Z"
     },
     {
       "command": "npm run lint:changed",
       "exitCode": 0,
       "summary": "No lint errors; existing React version warning only.",
-      "verifiedAt": "2026-06-03T08:57:06Z"
+      "verifiedAt": "2026-06-03T09:09:04Z"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
       "summary": "No type errors in changed files.",
-      "verifiedAt": "2026-06-03T08:57:06Z"
+      "verifiedAt": "2026-06-03T09:09:04Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-03T08:57:06Z"
+      "verifiedAt": "2026-06-03T09:09:04Z"
     }
   ],
   "lastVerifiedCommit": null,
@@ -646,6 +681,12 @@
       "commit": "024c1b61e1feaeb680b470ded8e203a1fa2a4f78",
       "summary": "Add post comment history data flow",
       "committedAt": "2026-06-03T08:48:40Z"
+    },
+    {
+      "phase": "runtime",
+      "commit": "9e1ddc7bfd4547c52128abc81db0d64fb31f78dd",
+      "summary": "Wire post comment history runtime",
+      "committedAt": "2026-06-03T08:59:13Z"
     }
   ],
   "rulesDeployStatus": {
@@ -656,5 +697,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-06-03T08:57:06Z"
+  "updatedAt": "2026-06-03T09:09:04Z"
 }

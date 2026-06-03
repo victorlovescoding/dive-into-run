@@ -372,7 +372,7 @@ Evidence:
 
 ### T004 - PostDetailScreen History UI Wiring
 
-- **State**: `todo`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-4`
 - **Engineer**: Engineer, UI wiring
@@ -460,11 +460,18 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending.
-- Reviewer report: pending.
-- Command output summary: pending.
-- Changed files summary: pending.
-- Browser evidence: pending.
+- Engineer report: DONE_WITH_CONCERNS. Wired post detail history UI and tests; browser evidence not run.
+- Reviewer report: review_passed by Maxwell. No blocking findings; production shared component contracts checked manually by reviewer.
+- Command output summary:
+  - `npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx` -> exit 0, 1 file / 6 tests.
+  - `npm run lint:changed` -> exit 0, React version warning only.
+  - `npm run type-check:changed` -> exit 0, no changed-file type errors.
+  - `git diff --check` -> exit 0, no whitespace errors.
+- Changed files summary:
+  - Updated `src/ui/posts/PostDetailScreen.jsx` to pass `onViewHistory` and render `CommentHistoryModal`.
+  - Updated `src/ui/posts/PostDetailScreen.jsx` to preserve `isEdited`/`updatedAt` and normalize `comment` to `content` for shared UI.
+  - Updated `src/ui/posts/PostDetailScreen.test.jsx` for edited affordance and history modal wiring.
+- Browser evidence: pending final UI verification.
 - Phase commits: none.
 - Rules deploy status: required, no rules changed yet.
 - Incidents: none.
