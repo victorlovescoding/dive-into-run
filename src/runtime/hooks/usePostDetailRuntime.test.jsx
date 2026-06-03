@@ -22,6 +22,8 @@ const mocks = vi.hoisted(() => ({
   addContentFavorite: vi.fn(),
   removeContentFavorite: vi.fn(),
   setInitialComments: vi.fn(),
+  handleViewHistory: vi.fn(),
+  handleCloseHistory: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -55,11 +57,16 @@ vi.mock('@/runtime/hooks/usePostComments', () => ({
   default: vi.fn(() => ({
     comments: [],
     comment: '',
+    historyComment: { id: 'comment-1', comment: 'Edited comment', isEdited: true },
+    historyEntries: [{ id: 'history-1', content: 'Previous comment' }],
+    historyError: 'history error',
     highlightedCommentId: '',
     isLoadingNext: false,
     bottomRef: { current: null },
     handleEditComment: vi.fn(),
     handleDeleteComment: vi.fn(),
+    handleViewHistory: mocks.handleViewHistory,
+    handleCloseHistory: mocks.handleCloseHistory,
     handleSubmitComment: vi.fn(),
     handleCommentChange: vi.fn(),
     setInitialComments: mocks.setInitialComments,
@@ -432,5 +439,23 @@ describe('usePostDetailRuntime guest interaction guards', () => {
       id: 'post-1',
       isFavorited: false,
     });
+  });
+});
+
+describe('usePostDetailRuntime comment history composition', () => {
+  it('forwards post comment history state and handlers from the comments runtime', async () => {
+    const { result } = await renderDetailRuntime();
+
+    expect(result.current.historyComment).toEqual({
+      id: 'comment-1',
+      comment: 'Edited comment',
+      isEdited: true,
+    });
+    expect(result.current.historyEntries).toEqual([
+      { id: 'history-1', content: 'Previous comment' },
+    ]);
+    expect(result.current.historyError).toBe('history error');
+    expect(result.current.handleViewHistory).toBe(mocks.handleViewHistory);
+    expect(result.current.handleCloseHistory).toBe(mocks.handleCloseHistory);
   });
 });

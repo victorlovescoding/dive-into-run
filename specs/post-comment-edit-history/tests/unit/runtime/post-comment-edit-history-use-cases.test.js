@@ -7,7 +7,11 @@ const firestoreMocks = vi.hoisted(() => ({
   limit: vi.fn((value) => ({ op: 'limit', value })),
   query: vi.fn((...args) => ({ kind: 'query', args })),
   orderBy: vi.fn((field, direction) => ({ op: 'orderBy', field, direction })),
-  doc: vi.fn((...path) => ({ kind: 'doc', path })),
+  doc: vi.fn((...path) => ({
+    kind: 'doc',
+    path,
+    ...(path.length === 1 && path[0]?.kind === 'collection' ? { id: 'generated-history-id' } : {}),
+  })),
   getDoc: vi.fn(),
   getDocs: vi.fn(),
   runTransaction: vi.fn(),
@@ -82,6 +86,7 @@ describe('post comment edit history use cases', () => {
           path: [{ kind: 'db' }, 'posts', 'post-1', 'comments', 'comment-1', 'history'],
         },
       ],
+      id: 'generated-history-id',
     };
 
     expect(firestoreMocks.runTransaction).toHaveBeenCalledTimes(1);
@@ -94,6 +99,7 @@ describe('post comment edit history use cases', () => {
       comment: 'new comment',
       updatedAt: { kind: 'serverTimestamp' },
       isEdited: true,
+      lastEditHistoryId: 'generated-history-id',
     });
     expect(firestoreMocks.updateDoc).not.toHaveBeenCalled();
   });
@@ -125,6 +131,7 @@ describe('post comment edit history use cases', () => {
             path: [{ kind: 'db' }, 'posts', 'post-1', 'comments', 'comment-1', 'history'],
           },
         ],
+        id: 'generated-history-id',
       },
       {
         content: 'server current comment',
@@ -140,8 +147,31 @@ describe('post comment edit history use cases', () => {
         comment: 'new comment',
         updatedAt: { kind: 'serverTimestamp' },
         isEdited: true,
+        lastEditHistoryId: 'generated-history-id',
       },
     );
+  });
+
+  it('does not write history when the transaction snapshot already has the requested comment', async () => {
+    const { updateComment } = await import('@/runtime/client/use-cases/post-use-cases');
+    const tx = {
+      get: vi.fn().mockResolvedValueOnce(
+        snapshot('comment-1', {
+          comment: 'new comment',
+        }),
+      ),
+      set: vi.fn(),
+      update: vi.fn(),
+    };
+    firestoreMocks.runTransaction.mockImplementationOnce(async (_db, callback) => callback(tx));
+
+    await updateComment('post-1', 'comment-1', {
+      comment: ' new comment ',
+      currentComment: 'stale client comment',
+    });
+
+    expect(tx.set).not.toHaveBeenCalled();
+    expect(tx.update).not.toHaveBeenCalled();
   });
 
   it('rejects empty post comment edits before writing to the repo', async () => {

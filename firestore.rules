@@ -49,6 +49,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/posts/$(postId)/comments/$(commentId);
     }
 
+    function postCommentHistoryPath(postId, commentId, historyId) {
+      return /databases/$(database)/documents/posts/$(postId)/comments/$(commentId)/history/$(historyId);
+    }
+
     function isActivePostComment(postId, commentId) {
       return isActivePost(postId)
         && exists(postCommentPath(postId, commentId))
@@ -67,7 +71,65 @@ service cloud.firestore {
         && request.resource.data.content is string
         && request.resource.data.content.size() > 0
         && request.resource.data.content.size() <= 500
-        && request.resource.data.editedAt is timestamp;
+        && request.resource.data.editedAt == request.time;
+    }
+
+    function postCommentEditFields() {
+      return ['comment', 'updatedAt', 'isEdited', 'lastEditHistoryId'];
+    }
+
+    function isPostCommentTextEditUpdate(postId, commentId) {
+      let historyPath = postCommentHistoryPath(
+        postId,
+        commentId,
+        request.resource.data.lastEditHistoryId
+      );
+      return request.auth.uid == resource.data.authorUid
+        && isActiveData(resource.data)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(accountDeletionManagedFields())
+        && !affectsSoftDeleteFields()
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(postCommentEditFields())
+        && request.resource.data.keys().hasAll(postCommentEditFields())
+        && request.resource.data.comment is string
+        && request.resource.data.comment.size() > 0
+        && request.resource.data.comment.size() <= 500
+        && request.resource.data.comment != resource.data.comment
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.isEdited == true
+        && request.resource.data.lastEditHistoryId is string
+        && request.resource.data.lastEditHistoryId.size() > 0
+        && !exists(historyPath)
+        && existsAfter(historyPath)
+        && getAfter(historyPath).data.content == resource.data.comment
+        && getAfter(historyPath).data.editedAt == request.time;
+    }
+
+    function isPostCommentNonTextAuthorUpdate() {
+      return request.auth.uid == resource.data.authorUid
+        && isActiveData(resource.data)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(accountDeletionManagedFields())
+        && !affectsSoftDeleteFields()
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(postCommentEditFields());
+    }
+
+    function isPostCommentHistoryCreate(postId, commentId, historyId) {
+      let parentPath = postCommentPath(postId, commentId);
+      return isPostCommentAuthor(postId, commentId)
+        && isValidPostCommentHistoryCreate()
+        && request.resource.data.content == get(parentPath).data.comment
+        && existsAfter(parentPath)
+        && isActiveData(getAfter(parentPath).data)
+        && getAfter(parentPath).data.comment is string
+        && getAfter(parentPath).data.comment.size() > 0
+        && getAfter(parentPath).data.comment.size() <= 500
+        && getAfter(parentPath).data.comment != get(parentPath).data.comment
+        && getAfter(parentPath).data.updatedAt == request.time
+        && getAfter(parentPath).data.isEdited == true
+        && getAfter(parentPath).data.lastEditHistoryId == historyId;
     }
 
     function eventPath(eventId) {
@@ -285,13 +347,8 @@ service cloud.firestore {
       allow update: if isSignedIn()
         && isActivePost(postId)
         && (
-          (
-            request.auth.uid == resource.data.authorUid
-            && isActiveData(resource.data)
-            && !request.resource.data.diff(resource.data).affectedKeys()
-              .hasAny(accountDeletionManagedFields())
-            && !affectsSoftDeleteFields()
-          )
+          isPostCommentNonTextAuthorUpdate()
+          || isPostCommentTextEditUpdate(postId, commentId)
           || (
             (request.auth.uid == resource.data.authorUid || isPostAuthor(postId))
             && isSoftDeleteUpdateBy(request.auth.uid)
@@ -307,8 +364,7 @@ service cloud.firestore {
       match /history/{historyId} {
         allow read: if isActivePostComment(postId, commentId);
 
-        allow create: if isPostCommentAuthor(postId, commentId)
-          && isValidPostCommentHistoryCreate();
+        allow create: if isPostCommentHistoryCreate(postId, commentId, historyId);
 
         allow update, delete: if false;
       }

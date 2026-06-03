@@ -299,12 +299,18 @@ export async function updateCommentDocument(postId, commentId, historyPayload, c
     if (isSoftDeletedRecord(currentComment)) {
       throw new Error('Comment not found');
     }
+    if (currentComment.comment === commentUpdate.comment) {
+      return;
+    }
 
     tx.set(historyDocRef, {
       ...historyPayload,
       content: currentComment.comment,
     });
-    tx.update(commentRef, commentUpdate);
+    tx.update(commentRef, {
+      ...commentUpdate,
+      lastEditHistoryId: historyDocRef.id,
+    });
   });
 }
 

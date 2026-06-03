@@ -18,6 +18,7 @@ import {
   Timestamp,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
 
 const PROJECT_ID = 'demo-test';
@@ -279,7 +280,7 @@ describe('post/comment soft-delete Firestore rules', () => {
     );
   });
 
-  it('allows comment authors to create valid history under active post comments', async () => {
+  it('denies direct post comment updates without matching edit history', async () => {
     await seedPostWithComment({
       postId: 'active-post',
       commentId: 'comment-1',
@@ -287,7 +288,24 @@ describe('post/comment soft-delete Firestore rules', () => {
       commentAuthorUid: 'comment-author',
     });
 
-    await assertSucceeds(
+    await assertFails(
+      updateDoc(doc(dbFor('comment-author'), 'posts', 'active-post', 'comments', 'comment-1'), {
+        comment: 'Updated route',
+        updatedAt: serverTimestamp(),
+        isEdited: true,
+      }),
+    );
+  });
+
+  it('denies standalone post comment history creates', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
       setDoc(
         doc(
           dbFor('comment-author'),
@@ -304,6 +322,111 @@ describe('post/comment soft-delete Firestore rules', () => {
         },
       ),
     );
+  });
+
+  it('allows comment authors to update post comments with matching edit history in one batch', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const db = dbFor('comment-author');
+    const batch = writeBatch(db);
+    const commentRef = doc(db, 'posts', 'active-post', 'comments', 'comment-1');
+    const historyRef = doc(
+      db,
+      'posts',
+      'active-post',
+      'comments',
+      'comment-1',
+      'history',
+      'history-2',
+    );
+
+    batch.update(commentRef, {
+      comment: 'Updated route',
+      updatedAt: serverTimestamp(),
+      isEdited: true,
+      lastEditHistoryId: 'history-2',
+    });
+    batch.set(historyRef, {
+      content: 'Nice route',
+      editedAt: serverTimestamp(),
+    });
+
+    await assertSucceeds(batch.commit());
+  });
+
+  it('denies post comment edit history with fake previous content', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const db = dbFor('comment-author');
+    const batch = writeBatch(db);
+    const commentRef = doc(db, 'posts', 'active-post', 'comments', 'comment-1');
+    const historyRef = doc(
+      db,
+      'posts',
+      'active-post',
+      'comments',
+      'comment-1',
+      'history',
+      'history-2',
+    );
+
+    batch.update(commentRef, {
+      comment: 'Updated route',
+      updatedAt: serverTimestamp(),
+      isEdited: true,
+      lastEditHistoryId: 'history-2',
+    });
+    batch.set(historyRef, {
+      content: 'Forged previous content',
+      editedAt: serverTimestamp(),
+    });
+
+    await assertFails(batch.commit());
+  });
+
+  it('denies post comment edits when the history id does not match the parent marker', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const db = dbFor('comment-author');
+    const batch = writeBatch(db);
+    const commentRef = doc(db, 'posts', 'active-post', 'comments', 'comment-1');
+    const historyRef = doc(
+      db,
+      'posts',
+      'active-post',
+      'comments',
+      'comment-1',
+      'history',
+      'history-2',
+    );
+
+    batch.update(commentRef, {
+      comment: 'Updated route',
+      updatedAt: serverTimestamp(),
+      isEdited: true,
+      lastEditHistoryId: 'different-history-id',
+    });
+    batch.set(historyRef, {
+      content: 'Nice route',
+      editedAt: serverTimestamp(),
+    });
+
+    await assertFails(batch.commit());
   });
 
   it('denies post comment history create for non-authors and anonymous users', async () => {
