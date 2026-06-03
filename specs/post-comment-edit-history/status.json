@@ -3,7 +3,7 @@
   "feature": "post-comment-edit-history",
   "branch": "088-post-comment-edit-history",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-088-post-comment-edit-history",
-  "phase": "final_verification_passed",
+  "phase": "rules_deployed",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -14,13 +14,13 @@
     "ciWatch": false,
     "merge": false,
     "localMainSync": false,
-    "deployFirestoreRules": false
+    "deployFirestoreRules": true
   },
   "currentHead": {
     "branch": "088-post-comment-edit-history",
-    "commit": "2bedb02d5b938fbe824c38f0014c118d22af836b",
-    "capturedAt": "2026-06-03T10:03:27Z",
-    "summary": "Review fixes committed; final verification passed."
+    "commit": "f627ce4f1efc43db27e6268608d20d4b22584ae0",
+    "capturedAt": "2026-06-03T15:20:40Z",
+    "summary": "Final verification state committed; Firestore rules deployed after explicit user request."
   },
   "remoteHead": {
     "remote": "origin",
@@ -712,9 +712,15 @@
       "exitCode": 0,
       "summary": "Local post page returned HTTP 200 through the Next dev server. Browser modal click evidence remains limited by local browser permissions and lack of edited public comments.",
       "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "firebase deploy --only firestore:rules --project dive-into-run",
+      "exitCode": 0,
+      "summary": "Firestore rules deployed to project dive-into-run; output included firestore: released rules firestore.rules to cloud.firestore.",
+      "verifiedAt": "2026-06-03T15:20:40Z"
     }
   ],
-  "lastVerifiedCommit": "2bedb02d5b938fbe824c38f0014c118d22af836b",
+  "lastVerifiedCommit": "f627ce4f1efc43db27e6268608d20d4b22584ae0",
   "phaseCommits": [
     {
       "phase": "specs",
@@ -760,12 +766,19 @@
     }
   ],
   "rulesDeployStatus": {
-    "state": "required",
-    "required": true,
+    "state": "deployed",
+    "required": false,
     "changed": true,
-    "evidence": [],
-    "deployedCommit": null
+    "evidence": [
+      {
+        "command": "firebase deploy --only firestore:rules --project dive-into-run",
+        "exitCode": 0,
+        "summary": "firestore: released rules firestore.rules to cloud.firestore",
+        "verifiedAt": "2026-06-03T15:20:40Z"
+      }
+    ],
+    "deployedCommit": "f627ce4f1efc43db27e6268608d20d4b22584ae0"
   },
   "incidents": [],
-  "updatedAt": "2026-06-03T10:03:27Z"
+  "updatedAt": "2026-06-03T15:20:40Z"
 }

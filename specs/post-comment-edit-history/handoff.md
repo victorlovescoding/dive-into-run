@@ -16,12 +16,12 @@
   - ciWatch: false
   - merge: false
   - localMainSync: false
-  - deployFirestoreRules: false
+  - deployFirestoreRules: true. User explicitly requested Firestore rules deploy on 2026-06-03 after feature verification.
 - Current phase: `final_verification_passed`
 - Active task: none
 - Active wave: none
 - Latest reviewer decision: final review `review_passed` by Sagan on 2026-06-03 after worker fixes for runtime forwarding, repo no-op handling, and rules/history binding.
-- Last verified commit: `2bedb02d5b938fbe824c38f0014c118d22af836b`
+- Last verified commit: `f627ce4f1efc43db27e6268608d20d4b22584ae0`
 - Phase commits:
   - `specs`: `dd22c46e82f3e34da62590e3ba0afb9a4fcc8ecf` (`Add post comment history spec`)
   - `service`: `efd5fe4f82193402a3af55cf8a7f4595735ea670` (`Add shared comment edit history service`)
@@ -30,7 +30,7 @@
   - `ui`: `eba044d65694b5fb992d747c7c48af99958f56e2` (`Wire post comment history UI`)
   - `rules`: `50034105ac26b63400bc6fc8f665c890be0cae53` (`Add post comment history rules`)
   - `review-fixes`: `2bedb02d5b938fbe824c38f0014c118d22af836b` (`Fix post history review gaps`)
-- Rules deploy status: `required`, `changed=true`, no deploy evidence.
+- Rules deploy status: `deployed`, `changed=true`, deployed to project `dive-into-run` from commit `f627ce4f1efc43db27e6268608d20d4b22584ae0`.
 - Incidents: none
 - Blocked: no
 - Blocked reason: none.
@@ -46,7 +46,7 @@
 
 ## Next Action
 
-Main coordinator should commit final workflow state. Product implementation edits and commits are authorized; push, pull request, CI watch, merge, local main sync, and Firestore rules deploy are not authorized. Browser visual evidence is limited: HTTP page load passed, but Playwright/browser modal click evidence was blocked by local browser permissions and public data did not provide edited comments to click.
+Main coordinator should record the Firestore rules deploy state. Product implementation edits, commits, and Firestore rules deploy are authorized; push, pull request, CI watch, merge, and local main sync are not authorized. Browser visual evidence is limited: HTTP page load passed, but Playwright/browser modal click evidence was blocked by local browser permissions and public data did not provide edited comments to click.
 
 ## Latest Evidence
 
@@ -98,6 +98,7 @@ Main coordinator should commit final workflow state. Product implementation edit
 | `npm run workflow:check -- specs/post-comment-edit-history/status.json` | 0 | Workflow status valid and synced. |
 | `git diff --check` | 0 | No whitespace errors. |
 | `curl -I http://127.0.0.1:3002/posts` | 0 | Local post page returned HTTP 200 through the Next dev server. Browser modal click evidence remains limited by local browser permissions and lack of edited public comments. |
+| `firebase deploy --only firestore:rules --project dive-into-run` | 0 | Firestore rules deployed; output included `firestore: released rules firestore.rules to cloud.firestore`. |
 
 ## Closeout Checklist
 
@@ -117,11 +118,11 @@ Main coordinator should commit final workflow state. Product implementation edit
 ## Blockers
 
 - No workflow blocker for the specs-only planning task.
-- Firestore rules deploy is not authorized.
+- Firestore rules were deployed after explicit user authorization on 2026-06-03.
 
 ## Pitfalls
 
 - Do not treat the existing `src/service/post-service.js` update helper as complete feature support; it is not wired to repo transaction, runtime history state, UI, or rules.
 - Do not change post comment main document text field from `comment` to `content`.
-- Do not claim rules-backed behavior is deployed unless `rulesDeployStatus.state=deployed` and deploy evidence exists.
+- Rules-backed behavior may be claimed only with deploy evidence recorded in `rulesDeployStatus`.
 - Do not parallelize shared helper or Firestore rules work with dependent tasks.
