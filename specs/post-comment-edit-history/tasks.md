@@ -471,7 +471,7 @@ Evidence:
   - Updated `src/ui/posts/PostDetailScreen.jsx` to pass `onViewHistory` and render `CommentHistoryModal`.
   - Updated `src/ui/posts/PostDetailScreen.jsx` to preserve `isEdited`/`updatedAt` and normalize `comment` to `content` for shared UI.
   - Updated `src/ui/posts/PostDetailScreen.test.jsx` for edited affordance and history modal wiring.
-- Browser evidence: pending final UI verification.
+- Browser evidence: final HTTP page-load check passed for `/posts`; modal click evidence remains limited because local browser automation was blocked by Crashpad permissions and sampled public posts did not have edited comments to click.
 - Phase commits: none.
 - Rules deploy status: required, no rules changed yet.
 - Incidents: none.

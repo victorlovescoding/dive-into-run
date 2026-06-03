@@ -3,7 +3,7 @@
   "feature": "post-comment-edit-history",
   "branch": "088-post-comment-edit-history",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-088-post-comment-edit-history",
-  "phase": "t005_review_passed",
+  "phase": "final_verification_passed",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "088-post-comment-edit-history",
-    "commit": "eba044d65694b5fb992d747c7c48af99958f56e2",
-    "capturedAt": "2026-06-03T09:11:04Z",
-    "summary": "T004 UI checkpoint committed; T005 dispatch is starting."
+    "commit": "2bedb02d5b938fbe824c38f0014c118d22af836b",
+    "capturedAt": "2026-06-03T10:03:27Z",
+    "summary": "Review fixes committed; final verification passed."
   },
   "remoteHead": {
     "remote": "origin",
@@ -532,7 +532,7 @@
         "decidedAt": "2026-06-03T09:09:04Z"
       },
       "evidence": {
-        "engineerReport": "DONE_WITH_CONCERNS: wired post detail history UI and tests; browser evidence not run.",
+        "engineerReport": "DONE_WITH_CONCERNS: wired post detail history UI and tests; final HTTP page-load check passed, but modal click evidence remains limited by local browser permissions and sampled public data.",
         "reviewerReport": "review_passed: no blocking findings; production shared component contracts checked manually by reviewer.",
         "commandOutputSummary": [
           "npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx -> exit 0, 1 file / 6 tests.",
@@ -666,25 +666,55 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\"",
+      "command": "npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/service/comment-edit-history-service.test.js specs/post-comment-edit-history/tests/unit/runtime/post-comment-edit-history-use-cases.test.js src/runtime/hooks/usePostComments.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
       "exitCode": 0,
-      "summary": "1 file passed; 21 tests passed under local Firebase emulators.",
-      "verifiedAt": "2026-06-03T09:20:43Z"
+      "summary": "5 files passed; 37 tests passed.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
     },
     {
-      "command": "npm run lint:changed",
+      "command": "firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\"",
       "exitCode": 0,
-      "summary": "No lint errors; existing React version warning only.",
-      "verifiedAt": "2026-06-03T09:20:43Z"
+      "summary": "1 file passed; 25 tests passed under local Firebase emulators.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "branch changed JS ESLint via npx eslint --no-warn-ignored",
+      "exitCode": 0,
+      "summary": "All JS/JSX/MJS files changed since origin/main, plus dirty JS before the review-fixes commit, lint clean; existing React version warning only.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "npx tsc --noEmit --incremental false",
+      "exitCode": 0,
+      "summary": "Full type check passed without writing tsconfig.tsbuildinfo; plain npx tsc --noEmit was blocked by sandbox EPERM writing the incremental build info file.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "npm run depcruise",
+      "exitCode": 0,
+      "summary": "No dependency violations found.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "npm run workflow:check -- specs/post-comment-edit-history/status.json",
+      "exitCode": 0,
+      "summary": "Workflow status valid and synced.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-03T09:20:43Z"
+      "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "curl -I http://127.0.0.1:3002/posts",
+      "exitCode": 0,
+      "summary": "Local post page returned HTTP 200 through the Next dev server. Browser modal click evidence remains limited by local browser permissions and lack of edited public comments.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
     }
   ],
-  "lastVerifiedCommit": null,
+  "lastVerifiedCommit": "2bedb02d5b938fbe824c38f0014c118d22af836b",
   "phaseCommits": [
     {
       "phase": "specs",
@@ -715,6 +745,18 @@
       "commit": "eba044d65694b5fb992d747c7c48af99958f56e2",
       "summary": "Wire post comment history UI",
       "committedAt": "2026-06-03T09:11:04Z"
+    },
+    {
+      "phase": "rules",
+      "commit": "50034105ac26b63400bc6fc8f665c890be0cae53",
+      "summary": "Add post comment history rules",
+      "committedAt": "2026-06-03T09:23:21Z"
+    },
+    {
+      "phase": "review-fixes",
+      "commit": "2bedb02d5b938fbe824c38f0014c118d22af836b",
+      "summary": "Fix post history review gaps",
+      "committedAt": "2026-06-03T10:00:12Z"
     }
   ],
   "rulesDeployStatus": {
@@ -725,5 +767,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-06-03T09:20:43Z"
+  "updatedAt": "2026-06-03T10:03:27Z"
 }
