@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   POST_NOT_FOUND_MESSAGE,
   deletePost,
-  getLatestComments,
+  getLatestCommentsPage,
   getPostDetail,
   hasUserLikedPost,
   toggleLikePost,
@@ -98,7 +98,7 @@ export default function usePostDetailRuntime(postId) {
       if (!postId) {
         if (!cancelled && isMountedRef.current) {
           setPostDetail(null);
-          setInitialComments({ comments: [], nextCursor: null });
+          setInitialComments({ comments: [], nextCursor: null, hasMore: false });
           setError(POST_DELETED_MESSAGE);
           setLoading(false);
         }
@@ -116,15 +116,14 @@ export default function usePostDetailRuntime(postId) {
 
         if (!postDetailData) {
           setPostDetail(null);
-          setInitialComments({ comments: [], nextCursor: null });
+          setInitialComments({ comments: [], nextCursor: null, hasMore: false });
           setError(POST_DELETED_MESSAGE);
           return;
         }
 
-        const commentsData = await getLatestComments(postId, 10);
+        const commentsPage = await getLatestCommentsPage(postId, 10);
         if (cancelled || !isMountedRef.current) return;
 
-        const last = commentsData[commentsData.length - 1] ?? null;
         const [liked, favoritePostIds] = user?.uid
           ? await Promise.all([
               hasUserLikedPost(user.uid, postId),
@@ -144,12 +143,12 @@ export default function usePostDetailRuntime(postId) {
 
         if (cancelled || !isMountedRef.current) return;
         setPostDetail(nextPostDetail);
-        setInitialComments({ comments: commentsData, nextCursor: last });
+        setInitialComments(commentsPage);
       } catch (loadError) {
         console.error('讀取文章詳情失敗:', loadError);
         if (!cancelled && isMountedRef.current) {
           setPostDetail(null);
-          setInitialComments({ comments: [], nextCursor: null });
+          setInitialComments({ comments: [], nextCursor: null, hasMore: false });
           setError('讀取文章詳情失敗，請稍後再試');
         }
       } finally {

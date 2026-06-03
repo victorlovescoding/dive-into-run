@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { getMoreComments } from '@/runtime/client/use-cases/post-use-cases';
+import { useEffect, useRef } from 'react';
+import { getMoreCommentsPage } from '@/runtime/client/use-cases/post-use-cases';
 
 const INFINITE_SCROLL_MARGIN = '300px 0px';
 
@@ -10,6 +10,7 @@ const INFINITE_SCROLL_MARGIN = '300px 0px';
  * @param {object} params - effect 依賴。
  * @param {import('react').RefObject<HTMLDivElement | null>} params.bottomRef - 無限捲動哨兵元素。
  * @param {object | null} params.nextCursor - 下一頁 cursor。
+ * @param {boolean} params.hasMore - 是否仍有下一頁。
  * @param {boolean} params.isLoadingNext - 是否正在載入下一頁。
  * @param {string} params.postId - 文章 ID。
  * @param {string | null | undefined} params.userUid - 目前使用者 UID。
@@ -17,6 +18,7 @@ const INFINITE_SCROLL_MARGIN = '300px 0px';
  * @param {import('react').MutableRefObject<boolean>} params.isMountedRef - mounted ref。
  * @param {(value: boolean) => void} params.setIsLoadingNext - loading setter。
  * @param {(value: object | null) => void} params.setNextCursor - cursor setter。
+ * @param {(value: boolean) => void} params.setHasMore - hasMore setter。
  * @param {(updater: (prev: object[]) => object[]) => void} params.setComments - comments setter。
  * @param {(comments: object[], userUid: string | null | undefined) => object[]} params.hydrateComments
  *   hydrate helper。
@@ -24,6 +26,7 @@ const INFINITE_SCROLL_MARGIN = '300px 0px';
 export function usePostCommentsInfiniteScroll({
   bottomRef,
   nextCursor,
+  hasMore,
   isLoadingNext,
   postId,
   userUid,
@@ -31,68 +34,92 @@ export function usePostCommentsInfiniteScroll({
   isMountedRef,
   setIsLoadingNext,
   setNextCursor,
+  setHasMore,
   setComments,
   hydrateComments,
 }) {
+  const isLoadingNextRef = useRef(isLoadingNext);
+  const requestInFlightRef = useRef(false);
+  const requestGenerationRef = useRef(0);
+  const requestIdRef = useRef(0);
+  const loadingRequestIdRef = useRef(null);
+
+  useEffect(() => {
+    isLoadingNextRef.current = isLoadingNext;
+  }, [isLoadingNext]);
+
   useEffect(() => {
     if (
       !bottomRef.current ||
       !nextCursor ||
-      isLoadingNext ||
+      !hasMore ||
       !postId ||
       typeof IntersectionObserver === 'undefined'
     ) {
       return undefined;
     }
 
+    const effectGeneration = requestGenerationRef.current + 1;
+    requestGenerationRef.current = effectGeneration;
+    let cancelled = false;
+    const isCurrentEffect = () => !cancelled && requestGenerationRef.current === effectGeneration;
+
     const observer = new IntersectionObserver(
       async (entries) => {
         const entry = entries[0];
-        if (!entry.isIntersecting || isLoadingNext) return;
+        if (!entry.isIntersecting || isLoadingNextRef.current || requestInFlightRef.current) {
+          return;
+        }
 
         observer.unobserve(entry.target);
+        const requestId = requestIdRef.current + 1;
+        requestIdRef.current = requestId;
+        loadingRequestIdRef.current = requestId;
+        requestInFlightRef.current = true;
+        isLoadingNextRef.current = true;
         if (isMountedRef.current) {
           setIsLoadingNext(true);
         }
 
-        let shouldReobserve = true;
         try {
-          const moreComments = await getMoreComments(postId, nextCursor);
-          if (!isMountedRef.current) return;
+          const nextPage = await getMoreCommentsPage(postId, nextCursor, 10);
+          if (!isCurrentEffect() || !isMountedRef.current) return;
 
-          if (moreComments.length === 0) {
+          if (nextPage.comments.length === 0) {
             setNextCursor(null);
-            shouldReobserve = false;
+            setHasMore(false);
             return;
           }
 
-          const last = moreComments[moreComments.length - 1] ?? null;
-          const hydratedComments = hydrateComments(moreComments, userUid);
+          const hydratedComments = hydrateComments(nextPage.comments, userUid);
 
-          setNextCursor(last);
+          setNextCursor(nextPage.nextCursor);
+          setHasMore(nextPage.hasMore);
           setComments((prev) => {
             const seen = new Set(prev.map((item) => item.id));
             const fresh = hydratedComments.filter((item) => !seen.has(item.id));
             return [...prev, ...fresh];
           });
-
-          if (moreComments.length < 10) {
-            setNextCursor(null);
-            shouldReobserve = false;
-          }
         } catch (loadMoreError) {
+          if (!isCurrentEffect()) return;
+
           console.error(loadMoreError);
-          shouldReobserve = false;
+          if (isMountedRef.current) {
+            setNextCursor(null);
+            setHasMore(false);
+          }
         } finally {
-          if (!isMountedRef.current) {
-            observer.disconnect();
-          } else {
-            setIsLoadingNext(false);
-            if (shouldReobserve && bottomRef.current) {
-              observer.observe(bottomRef.current);
-            } else {
-              observer.disconnect();
+          const ownsLoading = loadingRequestIdRef.current === requestId;
+          if (ownsLoading) {
+            requestInFlightRef.current = false;
+            isLoadingNextRef.current = false;
+            loadingRequestIdRef.current = null;
+            if (isMountedRef.current) {
+              setIsLoadingNext(false);
             }
+          }
+          if (isCurrentEffect() || ownsLoading) {
+            observer.disconnect();
           }
         }
       },
@@ -103,17 +130,24 @@ export function usePostCommentsInfiniteScroll({
     observer.observe(sentinel);
 
     return () => {
+      cancelled = true;
+      if (requestGenerationRef.current === effectGeneration) {
+        requestGenerationRef.current += 1;
+        requestInFlightRef.current = false;
+        isLoadingNextRef.current = false;
+      }
       observer.disconnect();
     };
   }, [
     bottomRef,
     commentsLength,
+    hasMore,
     hydrateComments,
-    isLoadingNext,
     isMountedRef,
     nextCursor,
     postId,
     setComments,
+    setHasMore,
     setIsLoadingNext,
     setNextCursor,
     userUid,

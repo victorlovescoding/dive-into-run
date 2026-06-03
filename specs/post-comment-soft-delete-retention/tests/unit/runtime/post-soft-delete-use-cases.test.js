@@ -248,6 +248,84 @@ describe('post/comment soft delete use cases', () => {
     ).resolves.toEqual([{ id: 'active-2', comment: 'more', createdAt: { seconds: 1 } }]);
   });
 
+  it('returns comment page metadata without a boundary empty probe', async () => {
+    const { getLatestCommentsPage, getMoreCommentsPage, getLatestComments } = await import(
+      '@/runtime/client/use-cases/post-use-cases'
+    );
+    const firstEleven = Array.from({ length: 11 }, (_, index) =>
+      snapshot(`comment-${index + 1}`, {
+        comment: `comment ${index + 1}`,
+        createdAt: { seconds: 30 - index },
+      }),
+    );
+    const secondTen = Array.from({ length: 10 }, (_, index) =>
+      snapshot(`comment-${index + 11}`, {
+        comment: `comment ${index + 11}`,
+        createdAt: { seconds: 19 - index },
+      }),
+    );
+    firestoreMocks.getDocs
+      .mockResolvedValueOnce(querySnapshot(firstEleven))
+      .mockResolvedValueOnce(querySnapshot(secondTen))
+      .mockResolvedValueOnce(querySnapshot(firstEleven));
+
+    const firstPage = await getLatestCommentsPage('post-1', 10);
+    expect(firstPage).toEqual({
+      comments: firstEleven.slice(0, 10).map((doc) => ({ id: doc.id, ...doc.data() })),
+      nextCursor: { id: 'comment-10', comment: 'comment 10', createdAt: { seconds: 21 } },
+      hasMore: true,
+    });
+
+    const secondPage = await getMoreCommentsPage('post-1', firstPage.nextCursor, 10);
+    expect(secondPage).toEqual({
+      comments: secondTen.map((doc) => ({ id: doc.id, ...doc.data() })),
+      nextCursor: null,
+      hasMore: false,
+    });
+
+    await expect(getLatestComments('post-1', 10)).resolves.toHaveLength(10);
+    expect(firestoreMocks.getDocs).toHaveBeenCalledTimes(3);
+    expect(firestoreMocks.limit).toHaveBeenCalledWith(11);
+    expect(firestoreMocks.startAfter).toHaveBeenCalledWith({ seconds: 21 }, 'comment-10');
+  });
+
+  it('calculates comment page hasMore from active records beyond hidden raw docs', async () => {
+    const { getLatestCommentsPage } = await import('@/runtime/client/use-cases/post-use-cases');
+    firestoreMocks.getDocs
+      .mockResolvedValueOnce(
+        querySnapshot([
+          snapshot('active-1', { comment: 'active 1', createdAt: { seconds: 5 } }),
+          snapshot('deleted-1', {
+            comment: 'deleted',
+            createdAt: { seconds: 4 },
+            deletedAt: { seconds: 1 },
+          }),
+          snapshot('active-2', { comment: 'active 2', createdAt: { seconds: 3 } }),
+        ]),
+      )
+      .mockResolvedValueOnce(
+        querySnapshot([
+          snapshot('hidden-1', {
+            comment: 'hidden',
+            createdAt: { seconds: 2 },
+            accountDeletionHidden: true,
+          }),
+          snapshot('active-3', { comment: 'active 3', createdAt: { seconds: 1 } }),
+        ]),
+      );
+
+    await expect(getLatestCommentsPage('post-1', 2)).resolves.toEqual({
+      comments: [
+        { id: 'active-1', comment: 'active 1', createdAt: { seconds: 5 } },
+        { id: 'active-2', comment: 'active 2', createdAt: { seconds: 3 } },
+      ],
+      nextCursor: { id: 'active-2', comment: 'active 2', createdAt: { seconds: 3 } },
+      hasMore: true,
+    });
+    expect(firestoreMocks.getDocs).toHaveBeenCalledTimes(2);
+    expect(firestoreMocks.startAfter).toHaveBeenCalledWith({ seconds: 3 }, 'active-2');
+  });
+
   it('continues comment pagination using raw deleted cursors', async () => {
     const { getLatestComments } = await import('@/runtime/client/use-cases/post-use-cases');
     firestoreMocks.getDocs
@@ -263,6 +341,11 @@ describe('post/comment soft delete use cases', () => {
             createdAt: { seconds: 2 },
             deletedAt: { seconds: 1 },
           }),
+          snapshot('deleted-0', {
+            comment: 'deleted oldest',
+            createdAt: { seconds: 1.5 },
+            deletedAt: { seconds: 1 },
+          }),
         ]),
       )
       .mockResolvedValueOnce(
@@ -273,7 +356,7 @@ describe('post/comment soft delete use cases', () => {
       { id: 'active-1', comment: 'active', createdAt: { seconds: 1 } },
     ]);
     expect(firestoreMocks.getDocs).toHaveBeenCalledTimes(2);
-    expect(firestoreMocks.startAfter).toHaveBeenCalledWith({ seconds: 2 }, 'deleted-1');
+    expect(firestoreMocks.startAfter).toHaveBeenCalledWith({ seconds: 1.5 }, 'deleted-0');
   });
 
   it('does not start comment delete work without an actor uid', async () => {

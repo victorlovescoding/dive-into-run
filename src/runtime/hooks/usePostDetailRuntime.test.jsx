@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   removeToast: vi.fn(),
   getPostDetail: vi.fn(),
   getLatestComments: vi.fn(),
+  getLatestCommentsPage: vi.fn(),
   hasUserLikedPost: vi.fn(),
   toggleLikePost: vi.fn(),
   updatePost: vi.fn(),
@@ -35,6 +36,7 @@ vi.mock('@/runtime/client/use-cases/post-use-cases', () => ({
   POST_NOT_FOUND_MESSAGE: 'POST_NOT_FOUND',
   deletePost: mocks.deletePost,
   getLatestComments: mocks.getLatestComments,
+  getLatestCommentsPage: mocks.getLatestCommentsPage,
   getPostDetail: mocks.getPostDetail,
   hasUserLikedPost: mocks.hasUserLikedPost,
   toggleLikePost: mocks.toggleLikePost,
@@ -180,10 +182,34 @@ beforeEach(() => {
 
   mocks.getPostDetail.mockResolvedValue({ ...POST_DETAIL });
   mocks.getLatestComments.mockResolvedValue([]);
+  mocks.getLatestCommentsPage.mockResolvedValue({ comments: [], nextCursor: null, hasMore: false });
   mocks.hasUserLikedPost.mockResolvedValue(false);
   mocks.getFavoritedTargetIds.mockResolvedValue(new Set());
   mocks.validatePostInput.mockReturnValue(null);
   mocks.updatePost.mockResolvedValue(undefined);
+});
+
+describe('usePostDetailRuntime comment page loading', () => {
+  it('uses comment page metadata instead of deriving the next cursor locally', async () => {
+    const serverCursor = { id: 'server-cursor', createdAt: { seconds: 99 } };
+    mocks.getLatestComments.mockResolvedValue([
+      { id: 'local-last', comment: 'local last', createdAt: { seconds: 1 } },
+    ]);
+    mocks.getLatestCommentsPage.mockResolvedValue({
+      comments: [{ id: 'comment-1', comment: 'loaded', createdAt: { seconds: 2 } }],
+      nextCursor: serverCursor,
+      hasMore: true,
+    });
+
+    await renderDetailRuntime();
+
+    expect(mocks.getLatestCommentsPage).toHaveBeenCalledWith('post-1', 10);
+    expect(mocks.setInitialComments).toHaveBeenCalledWith({
+      comments: [{ id: 'comment-1', comment: 'loaded', createdAt: { seconds: 2 } }],
+      nextCursor: serverCursor,
+      hasMore: true,
+    });
+  });
 });
 
 describe('usePostDetailRuntime detail edit drafts', () => {

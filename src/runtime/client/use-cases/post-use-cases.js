@@ -83,6 +83,54 @@ async function collectActiveRecords({ initialDocs, pageSize, toRecords, fetchNex
 }
 
 /**
+ * 以 active record 多取一筆來計算分頁狀態，避免滿頁時額外打空頁。
+ * @template T
+ * @param {object} root0 - 參數物件。
+ * @param {QueryDocumentSnapshot[]} root0.initialDocs - 第一頁 raw docs。
+ * @param {number} root0.pageSize - 回傳頁大小。
+ * @param {(docs: QueryDocumentSnapshot[]) => T[]} root0.toRecords - raw docs 轉資料。
+ * @param {(cursor: T) => Promise<{ docs: QueryDocumentSnapshot[] }>} root0.fetchNextPage - 取下一頁。
+ * @returns {Promise<{ records: T[], nextCursor: T | null, hasMore: boolean }>} 分頁資料。
+ */
+async function collectActiveRecordPage({ initialDocs, pageSize, toRecords, fetchNextPage }) {
+  const activeTarget = pageSize + 1;
+
+  /**
+   * @param {QueryDocumentSnapshot[]} rawDocs - Current raw page.
+   * @param {T[]} activeRecords - Active records collected so far.
+   * @returns {Promise<T[]>} Active records plus one sentinel when available.
+   */
+  async function collect(rawDocs, activeRecords) {
+    if (rawDocs.length === 0) return activeRecords.slice(0, activeTarget);
+
+    const records = toRecords(rawDocs);
+    const activePageRecords = records.filter((record) =>
+      isActiveRecord(/** @type {Record<string, unknown>} */ (record)),
+    );
+    const nextActiveRecords = [...activeRecords, ...activePageRecords];
+
+    if (nextActiveRecords.length >= activeTarget || rawDocs.length < activeTarget) {
+      return nextActiveRecords.slice(0, activeTarget);
+    }
+
+    const rawCursor = records[records.length - 1];
+    if (!rawCursor) return nextActiveRecords.slice(0, activeTarget);
+    const nextPage = await fetchNextPage(rawCursor);
+    return collect(nextPage.docs, nextActiveRecords);
+  }
+
+  const activeRecords = await collect(initialDocs, []);
+  const records = activeRecords.slice(0, pageSize);
+  const hasMore = activeRecords.length > pageSize;
+
+  return {
+    records,
+    nextCursor: hasMore ? records[records.length - 1] ?? null : null,
+    hasMore,
+  };
+}
+
+/**
  * 建立文章。
  * @param {object} root0 - 參數物件。
  * @param {string} root0.title - 文章標題。
@@ -213,14 +261,15 @@ export async function getPostDetail(id) {
 }
 
 /**
- * 取得文章最新留言。
+ * 取得文章最新留言頁。
  * @param {string} id - 文章 ID。
  * @param {number} numberOfComments - 要取得的留言數量。
- * @returns {Promise<Comment[]>} 留言陣列。
+ * @returns {Promise<{ comments: Comment[], nextCursor: Comment | null, hasMore: boolean }>} 留言頁。
  */
-export async function getLatestComments(id, numberOfComments) {
-  const { docs } = await fetchLatestCommentDocuments(id, numberOfComments);
-  return collectActiveRecords({
+export async function getLatestCommentsPage(id, numberOfComments = POST_PAGE_SIZE) {
+  const querySize = numberOfComments + 1;
+  const { docs } = await fetchLatestCommentDocuments(id, querySize);
+  const page = await collectActiveRecordPage({
     initialDocs: docs,
     pageSize: numberOfComments,
     toRecords: toCommentDataList,
@@ -228,9 +277,62 @@ export async function getLatestComments(id, numberOfComments) {
       fetchNextCommentDocuments(
         id,
         /** @type {Comment & { createdAt: import('firebase/firestore').Timestamp }} */ (cursor),
-        numberOfComments,
+        querySize,
       ),
   });
+
+  return {
+    comments: page.records,
+    nextCursor: page.nextCursor,
+    hasMore: page.hasMore,
+  };
+}
+
+/**
+ * 取得文章最新留言。
+ * @param {string} id - 文章 ID。
+ * @param {number} numberOfComments - 要取得的留言數量。
+ * @returns {Promise<Comment[]>} 留言陣列。
+ */
+export async function getLatestComments(id, numberOfComments) {
+  const page = await getLatestCommentsPage(id, numberOfComments);
+  return page.comments;
+}
+
+/**
+ * 取得更多留言頁。
+ * @param {string} id - 文章 ID。
+ * @param {Comment | null} last - 上一頁最後一筆留言。
+ * @param {number} [numberOfComments] - 要取得的留言數量。
+ * @returns {Promise<{ comments: Comment[], nextCursor: Comment | null, hasMore: boolean }>} 留言頁。
+ */
+export async function getMoreCommentsPage(id, last, numberOfComments = POST_PAGE_SIZE) {
+  if (!last) return { comments: [], nextCursor: null, hasMore: false };
+  const querySize = numberOfComments + 1;
+  const { docs } = await fetchNextCommentDocuments(
+    id,
+    /** @type {import('@/service/post-service').Comment & { createdAt: import('firebase/firestore').Timestamp }} */ (
+      last
+    ),
+    querySize,
+  );
+  const page = await collectActiveRecordPage({
+    initialDocs: docs,
+    pageSize: numberOfComments,
+    toRecords: toCommentDataList,
+    fetchNextPage: (cursor) =>
+      fetchNextCommentDocuments(
+        id,
+        /** @type {Comment & { createdAt: import('firebase/firestore').Timestamp }} */ (cursor),
+        querySize,
+      ),
+  });
+
+  return {
+    comments: page.records,
+    nextCursor: page.nextCursor,
+    hasMore: page.hasMore,
+  };
 }
 
 /**
@@ -240,24 +342,8 @@ export async function getLatestComments(id, numberOfComments) {
  * @returns {Promise<Comment[]>} 下一頁留言陣列。
  */
 export async function getMoreComments(id, last) {
-  const { docs } = await fetchNextCommentDocuments(
-    id,
-    /** @type {import('@/service/post-service').Comment & { createdAt: import('firebase/firestore').Timestamp }} */ (
-      last
-    ),
-    10,
-  );
-  return collectActiveRecords({
-    initialDocs: docs,
-    pageSize: POST_PAGE_SIZE,
-    toRecords: toCommentDataList,
-    fetchNextPage: (cursor) =>
-      fetchNextCommentDocuments(
-        id,
-        /** @type {Comment & { createdAt: import('firebase/firestore').Timestamp }} */ (cursor),
-        POST_PAGE_SIZE,
-      ),
-  });
+  const page = await getMoreCommentsPage(id, last, POST_PAGE_SIZE);
+  return page.comments;
 }
 
 /**
