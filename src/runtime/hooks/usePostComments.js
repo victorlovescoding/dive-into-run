@@ -52,6 +52,7 @@ function hydrateComments(comments, userUid) {
  * @property {string | null} updateError - 留言編輯錯誤訊息。
  * @property {string | null} highlightedCommentId - 需高亮的留言 ID。
  * @property {boolean} isLoadingNext - 是否正在載入下一頁留言。
+ * @property {boolean} hasMore - 是否仍有下一頁留言。
  * @property {import('react').RefObject<HTMLDivElement | null>} bottomRef - 無限捲動哨兵元素 ref。
  * @property {(commentId: string, newContent?: string) => void | Promise<boolean>} handleEditComment - 開啟或相容儲存指定留言。
  * @property {(newContent: string) => Promise<boolean>} handleEditSave - 儲存目前編輯留言。
@@ -59,7 +60,7 @@ function hydrateComments(comments, userUid) {
  * @property {(commentId: string) => Promise<void>} handleDeleteComment - 刪除指定留言。
  * @property {(event: Event) => Promise<void>} handleSubmitComment - 送出或更新留言。
  * @property {(event: Event) => void} handleCommentChange - 留言輸入框 onChange。
- * @property {(data: { comments: Array<object>, nextCursor: object | null }) => void} setInitialComments - 由父層設定初始留言與 cursor。
+ * @property {(data: { comments: Array<object>, nextCursor: object | null, hasMore?: boolean }) => void} setInitialComments - 由父層設定初始留言與 cursor。
  */
 
 /**
@@ -80,6 +81,7 @@ export default function usePostComments({
   const [comments, setComments] = useState([]);
   const [comment, setComment] = useState('');
   const [nextCursor, setNextCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
 
   const bottomRef = useRef(/** @type {HTMLDivElement | null} */ (null));
@@ -106,12 +108,13 @@ export default function usePostComments({
 
   /**
    * 由父層（loadPostDetail）設定初始留言與 cursor。
-   * @param {{ comments: Array<object>, nextCursor: object | null }} data - 初始留言資料。
+   * @param {{ comments: Array<object>, nextCursor: object | null, hasMore?: boolean }} data - 初始留言資料。
    */
   const setInitialComments = useCallback(
     (data) => {
       setComments(hydrateComments(data.comments, userUid));
       setNextCursor(data.nextCursor);
+      setHasMore(typeof data.hasMore === 'boolean' ? data.hasMore : Boolean(data.nextCursor));
     },
     [userUid],
   );
@@ -119,6 +122,7 @@ export default function usePostComments({
   usePostCommentsInfiniteScroll({
     bottomRef,
     nextCursor,
+    hasMore,
     isLoadingNext,
     postId,
     userUid,
@@ -126,6 +130,7 @@ export default function usePostComments({
     isMountedRef,
     setIsLoadingNext,
     setNextCursor,
+    setHasMore,
     setComments,
     hydrateComments,
   });
@@ -321,6 +326,7 @@ export default function usePostComments({
     updateError,
     highlightedCommentId,
     isLoadingNext,
+    hasMore,
     bottomRef,
     handleEditComment,
     handleEditSave,

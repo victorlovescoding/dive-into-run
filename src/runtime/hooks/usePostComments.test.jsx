@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { ToastContext } from '@/runtime/providers/ToastProvider';
+import { usePostCommentsInfiniteScroll } from '@/runtime/hooks/usePostCommentsEffects';
 import usePostComments from './usePostComments';
 
 const navigationMock = vi.hoisted(() => ({
@@ -21,6 +22,11 @@ const notificationUseCasesMock = vi.hoisted(() => ({
   notifyPostNewComment: vi.fn(),
 }));
 
+const postCommentsEffectsMock = vi.hoisted(() => ({
+  usePostCommentsInfiniteScroll: vi.fn(),
+  useScrollToHighlightedComment: vi.fn(),
+}));
+
 vi.mock('next/navigation', () => ({
   useSearchParams: () => navigationMock.searchParams,
 }));
@@ -38,8 +44,8 @@ vi.mock('@/runtime/client/use-cases/notification-use-cases', () => ({
 }));
 
 vi.mock('@/runtime/hooks/usePostCommentsEffects', () => ({
-  usePostCommentsInfiniteScroll: vi.fn(),
-  useScrollToHighlightedComment: vi.fn(),
+  usePostCommentsInfiniteScroll: postCommentsEffectsMock.usePostCommentsInfiniteScroll,
+  useScrollToHighlightedComment: postCommentsEffectsMock.useScrollToHighlightedComment,
 }));
 
 const signedInUser = {
@@ -132,7 +138,7 @@ function commentChangeEvent(value) {
  */
 function seedComments(view, comments = [existingComment]) {
   act(() => {
-    view.result.current.setInitialComments({ comments, nextCursor: null });
+    view.result.current.setInitialComments({ comments, nextCursor: null, hasMore: false });
   });
 }
 
@@ -140,6 +146,43 @@ beforeEach(() => {
   vi.clearAllMocks();
   navigationMock.searchParams.get.mockReturnValue(null);
   postUseCasesMock.updateComment.mockResolvedValue(undefined);
+});
+
+describe('usePostComments infinite-scroll contract', () => {
+  test('tracks hasMore from initial comment page metadata and passes it to the effect', () => {
+    const view = renderCommentsRuntime();
+    const nextCursor = { id: 'comment-cursor', createdAt: { seconds: 1 } };
+
+    act(() => {
+      view.result.current.setInitialComments({
+        comments: [existingComment],
+        nextCursor,
+        hasMore: true,
+      });
+    });
+
+    expect(vi.mocked(usePostCommentsInfiniteScroll)).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        nextCursor,
+        hasMore: true,
+      }),
+    );
+
+    act(() => {
+      view.result.current.setInitialComments({
+        comments: [existingComment],
+        nextCursor: null,
+        hasMore: false,
+      });
+    });
+
+    expect(vi.mocked(usePostCommentsInfiniteScroll)).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        nextCursor: null,
+        hasMore: false,
+      }),
+    );
+  });
 });
 
 describe('usePostComments guest interaction guards', () => {
