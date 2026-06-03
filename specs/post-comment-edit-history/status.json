@@ -3,7 +3,7 @@
   "feature": "post-comment-edit-history",
   "branch": "088-post-comment-edit-history",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-088-post-comment-edit-history",
-  "phase": "t002_review_passed",
+  "phase": "t003_review_passed",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "088-post-comment-edit-history",
-    "commit": "efd5fe4f82193402a3af55cf8a7f4595735ea670",
-    "capturedAt": "2026-06-03T08:30:36Z",
-    "summary": "T001 service checkpoint committed; T002 dispatch is starting."
+    "commit": "024c1b61e1feaeb680b470ded8e203a1fa2a4f78",
+    "capturedAt": "2026-06-03T08:48:40Z",
+    "summary": "T002 post data-flow checkpoint committed; T003 dispatch is starting."
   },
   "remoteHead": {
     "remote": "origin",
@@ -31,7 +31,8 @@
   },
   "completedTasks": [
     "T001",
-    "T002"
+    "T002",
+    "T003"
   ],
   "tasks": [
     {
@@ -298,7 +299,7 @@
     {
       "id": "T003",
       "title": "Post Comment Runtime History State",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-3",
       "engineer": "Engineer, runtime hook",
@@ -348,22 +349,42 @@
         {
           "command": "npx vitest run --project=browser src/runtime/hooks/usePostComments.test.jsx",
           "expectedSignal": "Exit 0, post comment hook tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser src/runtime/hooks/usePostComments.test.jsx",
+            "exitCode": 0,
+            "summary": "1 file passed; 7 tests passed.",
+            "verifiedAt": "2026-06-03T08:57:06Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0, no new lint errors for changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors; existing React version warning only.",
+            "verifiedAt": "2026-06-03T08:57:06Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0, no changed-file type errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No type errors in changed files.",
+            "verifiedAt": "2026-06-03T08:57:06Z"
+          }
         },
         {
           "command": "git diff --check",
           "expectedSignal": "Exit 0, no whitespace errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-03T08:57:06Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -378,12 +399,25 @@
         "Diff changes unrelated post comment behaviors.",
         "Verification is missing, stale, failed, or not from the required commands."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Curie",
+        "summary": "No blocking findings. Hook passes currentComment, updates and rolls back edit metadata, and loads history through the runtime use-case.",
+        "decidedAt": "2026-06-03T08:57:06Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE: added runtime history state/handlers, currentComment payload wiring, optimistic edit metadata, rollback tests, and history fetch tests.",
+        "reviewerReport": "review_passed: no blocking findings; current T003 working-tree diff and required gates reviewed.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser src/runtime/hooks/usePostComments.test.jsx -> exit 0, 1 file / 7 tests.",
+          "npm run lint:changed -> exit 0, React version warning only.",
+          "npm run type-check:changed -> exit 0, no changed-file type errors.",
+          "git diff --check -> exit 0, no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "Updated src/runtime/hooks/usePostComments.js with history modal state/handlers and currentComment edit payloads.",
+          "Updated src/runtime/hooks/usePostComments.test.jsx for edit metadata, rollback, and history fetch behavior."
+        ]
       }
     },
     {
@@ -569,28 +603,28 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/runtime/post-comment-edit-history-use-cases.test.js",
+      "command": "npx vitest run --project=browser src/runtime/hooks/usePostComments.test.jsx",
       "exitCode": 0,
       "summary": "1 file passed; 7 tests passed.",
-      "verifiedAt": "2026-06-03T08:46:23Z"
+      "verifiedAt": "2026-06-03T08:57:06Z"
     },
     {
       "command": "npm run lint:changed",
       "exitCode": 0,
       "summary": "No lint errors; existing React version warning only.",
-      "verifiedAt": "2026-06-03T08:46:23Z"
+      "verifiedAt": "2026-06-03T08:57:06Z"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
       "summary": "No type errors in changed files.",
-      "verifiedAt": "2026-06-03T08:46:23Z"
+      "verifiedAt": "2026-06-03T08:57:06Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-03T08:46:23Z"
+      "verifiedAt": "2026-06-03T08:57:06Z"
     }
   ],
   "lastVerifiedCommit": null,
@@ -606,6 +640,12 @@
       "commit": "efd5fe4f82193402a3af55cf8a7f4595735ea670",
       "summary": "Add shared comment edit history service",
       "committedAt": "2026-06-03T08:30:36Z"
+    },
+    {
+      "phase": "post-data-flow",
+      "commit": "024c1b61e1feaeb680b470ded8e203a1fa2a4f78",
+      "summary": "Add post comment history data flow",
+      "committedAt": "2026-06-03T08:48:40Z"
     }
   ],
   "rulesDeployStatus": {
@@ -616,5 +656,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-06-03T08:46:23Z"
+  "updatedAt": "2026-06-03T08:57:06Z"
 }

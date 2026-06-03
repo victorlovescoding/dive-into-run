@@ -268,7 +268,7 @@ Evidence:
 
 ### T003 - Post Comment Runtime History State
 
-- **State**: `todo`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-3`
 - **Engineer**: Engineer, runtime hook
@@ -356,10 +356,16 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending.
-- Reviewer report: pending.
-- Command output summary: pending.
-- Changed files summary: pending.
+- Engineer report: DONE. Added runtime history state/handlers, currentComment payload wiring, optimistic edit metadata, rollback tests, and history fetch tests.
+- Reviewer report: review_passed by Curie. No blocking findings; current T003 working-tree diff and required gates reviewed.
+- Command output summary:
+  - `npx vitest run --project=browser src/runtime/hooks/usePostComments.test.jsx` -> exit 0, 1 file / 7 tests.
+  - `npm run lint:changed` -> exit 0, React version warning only.
+  - `npm run type-check:changed` -> exit 0, no changed-file type errors.
+  - `git diff --check` -> exit 0, no whitespace errors.
+- Changed files summary:
+  - Updated `src/runtime/hooks/usePostComments.js` with history modal state/handlers and currentComment edit payloads.
+  - Updated `src/runtime/hooks/usePostComments.test.jsx` for edit metadata, rollback, and history fetch behavior.
 - Phase commits: none.
 - Rules deploy status: required, no rules changed yet.
 - Incidents: none.

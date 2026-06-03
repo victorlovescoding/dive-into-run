@@ -6,7 +6,7 @@
 - Profile: P4, because this is a new product feature and Firestore rules are in scope.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-088-post-comment-edit-history`
 - Branch: `088-post-comment-edit-history`
-- Current head: `efd5fe4f82193402a3af55cf8a7f4595735ea670`
+- Current head: `024c1b61e1feaeb680b470ded8e203a1fa2a4f78`
 - Remote head: `origin/main` at `f3ca150ece7f9ba182fcde80cae95d6c0da18305`
 - Authorization boundary:
   - edit: true. User authorized implementation on 2026-06-03 after approving the design and durable repo docs.
@@ -17,14 +17,15 @@
   - merge: false
   - localMainSync: false
   - deployFirestoreRules: false
-- Current phase: `t002_review_passed`
+- Current phase: `t003_review_passed`
 - Active task: none
 - Active wave: none
-- Latest reviewer decision: T002 `review_passed` by Mendel on 2026-06-03.
+- Latest reviewer decision: T003 `review_passed` by Curie on 2026-06-03.
 - Last verified commit: none
 - Phase commits:
   - `specs`: `dd22c46e82f3e34da62590e3ba0afb9a4fcc8ecf` (`Add post comment history spec`)
   - `service`: `efd5fe4f82193402a3af55cf8a7f4595735ea670` (`Add shared comment edit history service`)
+  - `post-data-flow`: `024c1b61e1feaeb680b470ded8e203a1fa2a4f78` (`Add post comment history data flow`)
 - Rules deploy status: `required`, `changed=false`, no deploy evidence.
 - Incidents: none
 - Blocked: no
@@ -41,7 +42,7 @@
 
 ## Next Action
 
-Main coordinator should commit the reviewed T002 post data-flow checkpoint, then dispatch T003. Product implementation edits and commits are authorized; push, pull request, CI watch, merge, local main sync, and Firestore rules deploy are not authorized.
+Main coordinator should commit the reviewed T003 runtime checkpoint, then dispatch T004. Product implementation edits and commits are authorized; push, pull request, CI watch, merge, local main sync, and Firestore rules deploy are not authorized.
 
 ## Latest Evidence
 
@@ -77,6 +78,7 @@ Main coordinator should commit the reviewed T002 post data-flow checkpoint, then
 | `npm run lint:changed` | 0 | No lint errors; existing React version warning only. |
 | `npm run type-check:changed` | 0 | No type errors in changed files. |
 | `npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/runtime/post-comment-edit-history-use-cases.test.js` | 0 | T002 use-case tests passed: 1 file, 7 tests. |
+| `npx vitest run --project=browser src/runtime/hooks/usePostComments.test.jsx` | 0 | T003 hook tests passed: 1 file, 7 tests. |
 
 ## Closeout Checklist
 

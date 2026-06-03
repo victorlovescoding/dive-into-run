@@ -6,6 +6,7 @@ import { createFirestoreTimestamp } from '@/config/client/firebase-timestamp';
 import {
   addComment,
   deleteComment,
+  fetchCommentHistory,
   getCommentById,
   updateComment,
 } from '@/runtime/client/use-cases/post-use-cases';
@@ -48,6 +49,9 @@ function hydrateComments(comments, userUid) {
  * @property {string} comment - 目前留言輸入框文字。
  * @property {object | null} editingComment - 正在編輯中的留言。
  * @property {object | null} commentEditing - 舊名稱相容欄位，等同 editingComment。
+ * @property {object | null} historyComment - 正在檢視編輯歷史的留言。
+ * @property {Array<object>} historyEntries - 編輯歷史列表。
+ * @property {string | null} historyError - 編輯歷史載入錯誤訊息。
  * @property {boolean} isUpdating - 是否正在儲存留言編輯。
  * @property {string | null} updateError - 留言編輯錯誤訊息。
  * @property {string | null} highlightedCommentId - 需高亮的留言 ID。
@@ -58,6 +62,9 @@ function hydrateComments(comments, userUid) {
  * @property {(newContent: string) => Promise<boolean>} handleEditSave - 儲存目前編輯留言。
  * @property {() => void} handleEditCancel - 取消目前編輯留言。
  * @property {(commentId: string) => Promise<void>} handleDeleteComment - 刪除指定留言。
+ * @property {(comment: object) => Promise<void>} handleViewHistory - 查看留言編輯歷史。
+ * @property {() => void} handleCloseHistory - 關閉編輯歷史 modal。
+ * @property {() => void} handleHistoryClose - 舊名稱相容欄位，等同 handleCloseHistory。
  * @property {(event: Event) => Promise<void>} handleSubmitComment - 送出或更新留言。
  * @property {(event: Event) => void} handleCommentChange - 留言輸入框 onChange。
  * @property {(data: { comments: Array<object>, nextCursor: object | null, hasMore?: boolean }) => void} setInitialComments - 由父層設定初始留言與 cursor。
@@ -83,6 +90,9 @@ export default function usePostComments({
   const [nextCursor, setNextCursor] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
+  const [historyComment, setHistoryComment] = useState(/** @type {object | null} */ (null));
+  const [historyEntries, setHistoryEntries] = useState(/** @type {Array<object>} */ ([]));
+  const [historyError, setHistoryError] = useState(/** @type {string | null} */ (null));
 
   const bottomRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const isMountedRef = useRef(false);
@@ -141,26 +151,41 @@ export default function usePostComments({
   const saveEditedPostComment = useCallback(
     async (targetComment, newContent) => {
       const trimmedText = newContent.trim();
-      const previousText =
-        comments.find((commentItem) => commentItem.id === targetComment.id)?.comment ??
-        targetComment.comment ??
-        '';
+      const currentComment =
+        comments.find((commentItem) => commentItem.id === targetComment.id) ?? targetComment;
+      const previousText = currentComment.comment ?? targetComment.comment ?? '';
+      const previousIsEdited = currentComment.isEdited ?? targetComment.isEdited ?? false;
+      const previousUpdatedAt = currentComment.updatedAt ?? targetComment.updatedAt ?? null;
+      const optimisticUpdatedAt = createFirestoreTimestamp(new Date());
 
       setComments((prev) =>
         prev.map((commentItem) =>
           commentItem.id === targetComment.id
-            ? { ...commentItem, comment: trimmedText }
+            ? {
+                ...commentItem,
+                comment: trimmedText,
+                isEdited: true,
+                updatedAt: optimisticUpdatedAt,
+              }
             : commentItem,
         ),
       );
 
       try {
-        await updateComment(postId, targetComment.id, { comment: trimmedText });
+        await updateComment(postId, targetComment.id, {
+          comment: trimmedText,
+          currentComment: previousText,
+        });
       } catch (saveError) {
         setComments((prev) =>
           prev.map((commentItem) =>
             commentItem.id === targetComment.id
-              ? { ...commentItem, comment: previousText }
+              ? {
+                  ...commentItem,
+                  comment: previousText,
+                  isEdited: previousIsEdited,
+                  updatedAt: previousUpdatedAt,
+                }
               : commentItem,
           ),
         );
@@ -169,6 +194,28 @@ export default function usePostComments({
     },
     [comments, postId],
   );
+
+  const handleViewHistory = useCallback(
+    async (targetComment) => {
+      setHistoryComment(targetComment);
+      setHistoryError(null);
+
+      try {
+        const entries = await fetchCommentHistory(postId, targetComment.id);
+        setHistoryEntries(entries);
+      } catch {
+        setHistoryError('載入編輯記錄失敗');
+        setHistoryEntries([]);
+      }
+    },
+    [postId],
+  );
+
+  const handleCloseHistory = useCallback(() => {
+    setHistoryComment(null);
+    setHistoryEntries([]);
+    setHistoryError(null);
+  }, []);
 
   const {
     editingComment,
@@ -322,6 +369,9 @@ export default function usePostComments({
     comment,
     editingComment,
     commentEditing: editingComment,
+    historyComment,
+    historyEntries,
+    historyError,
     isUpdating,
     updateError,
     highlightedCommentId,
@@ -332,6 +382,9 @@ export default function usePostComments({
     handleEditSave,
     handleEditCancel,
     handleDeleteComment,
+    handleViewHistory,
+    handleCloseHistory,
+    handleHistoryClose: handleCloseHistory,
     handleSubmitComment,
     handleCommentChange,
     setInitialComments,
