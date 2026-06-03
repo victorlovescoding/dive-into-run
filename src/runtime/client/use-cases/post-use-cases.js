@@ -2,6 +2,7 @@ import { serverTimestamp } from 'firebase/firestore';
 import {
   buildAddCommentPayload,
   buildCreatePostPayload,
+  buildUpdateCommentPayload,
   buildUpdatePostPayload,
   isActiveRecord,
   toCommentData,
@@ -15,6 +16,7 @@ import {
   deleteCommentDocument,
   deletePostTree,
   fetchCommentDocument,
+  fetchCommentHistoryDocuments,
   fetchLatestCommentDocuments,
   fetchLatestPostDocuments,
   fetchLikedPost,
@@ -40,9 +42,24 @@ export {
  * @typedef {import('@/service/post-service').Post} Post
  * @typedef {import('@/service/post-service').Comment} Comment
  * @typedef {import('firebase/firestore').QueryDocumentSnapshot} QueryDocumentSnapshot
+ * @typedef {{ id: string, content: unknown, editedAt: unknown }} CommentHistoryEntry
  */
 
 const POST_PAGE_SIZE = 10;
+
+/**
+ * 將文章留言 history snapshot 正規化成共用 modal 需要的資料形狀。
+ * @param {{ id: string, data: () => Record<string, unknown> }} snapshot - Firestore history snapshot。
+ * @returns {CommentHistoryEntry} 留言歷史資料。
+ */
+function toCommentHistoryEntry(snapshot) {
+  const data = snapshot.data();
+  return {
+    id: snapshot.id,
+    content: data.content,
+    editedAt: data.editedAt,
+  };
+}
 
 /**
  * 以 raw cursor 補齊 active record，避免 deleted docs 卡住分頁。
@@ -398,10 +415,41 @@ export async function addComment(postId, { user, comment }) {
  * @param {string} commentId - 留言 ID。
  * @param {object} root0 - 參數物件。
  * @param {string} root0.comment - 新留言內容。
+ * @param {string} root0.currentComment - 目前留言內容，會寫入 history。
  * @returns {Promise<void>} 無回傳值。
  */
-export async function updateComment(postId, commentId, { comment }) {
-  await updateCommentDocument(postId, commentId, { comment });
+export async function updateComment(postId, commentId, { comment, currentComment }) {
+  if (typeof currentComment !== 'string') {
+    throw new Error('updateComment: currentComment is required');
+  }
+
+  const { historyPayload, commentUpdate } = buildUpdateCommentPayload({
+    comment,
+    currentComment,
+    updatedAtValue: serverTimestamp(),
+  });
+
+  await updateCommentDocument(postId, commentId, historyPayload, commentUpdate);
+}
+
+/**
+ * 取得文章留言編輯歷史。
+ * @param {string} postId - 文章 ID。
+ * @param {string} commentId - 留言 ID。
+ * @returns {Promise<CommentHistoryEntry[]>} 共用 history modal 可直接使用的歷史記錄。
+ */
+export async function fetchCommentHistory(postId, commentId) {
+  if (!postId || !commentId) {
+    throw new Error('fetchCommentHistory: postId and commentId are required');
+  }
+
+  const commentSnapshot = await fetchCommentDocument(postId, commentId);
+  if (!commentSnapshot || !isActiveRecord(commentSnapshot.data())) {
+    return [];
+  }
+
+  const docs = await fetchCommentHistoryDocuments(postId, commentId);
+  return docs.map((snapshot) => toCommentHistoryEntry(snapshot));
 }
 
 /**

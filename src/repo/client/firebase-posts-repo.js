@@ -271,14 +271,64 @@ export async function addCommentDocument(postId, payload) {
 }
 
 /**
- * 更新留言內容。
+ * 更新留言內容並寫入編輯歷史。
  * @param {string} postId - 文章 ID。
  * @param {string} commentId - 留言 ID。
- * @param {object} payload - 要更新的 payload。
+ * @param {object} historyPayload - 要寫入 history 子集合的 payload。
+ * @param {object} commentUpdate - 要更新到 comment 文件的 payload。
  * @returns {Promise<void>} 無回傳值。
  */
-export async function updateCommentDocument(postId, commentId, payload) {
-  await updateDoc(doc(db, 'posts', String(postId), 'comments', String(commentId)), payload);
+export async function updateCommentDocument(postId, commentId, historyPayload, commentUpdate) {
+  const commentRef = doc(db, 'posts', String(postId), 'comments', String(commentId));
+  const historyCollectionRef = collection(
+    db,
+    'posts',
+    String(postId),
+    'comments',
+    String(commentId),
+    'history',
+  );
+  const historyDocRef = doc(historyCollectionRef);
+
+  await runTransaction(db, async (tx) => {
+    const snapshot = await tx.get(commentRef);
+    if (!snapshot.exists()) {
+      throw new Error('Comment not found');
+    }
+    const currentComment = snapshot.data();
+    if (isSoftDeletedRecord(currentComment)) {
+      throw new Error('Comment not found');
+    }
+    if (currentComment.comment === commentUpdate.comment) {
+      return;
+    }
+
+    tx.set(historyDocRef, {
+      ...historyPayload,
+      content: currentComment.comment,
+    });
+    tx.update(commentRef, {
+      ...commentUpdate,
+      lastEditHistoryId: historyDocRef.id,
+    });
+  });
+}
+
+/**
+ * 取得文章留言歷史列表。
+ * @param {string} postId - 文章 ID。
+ * @param {string} commentId - 留言 ID。
+ * @returns {Promise<QueryDocumentSnapshot[]>} 歷史文件列表。
+ */
+export async function fetchCommentHistoryDocuments(postId, commentId) {
+  const snapshot = await getDocs(
+    query(
+      collection(db, 'posts', String(postId), 'comments', String(commentId), 'history'),
+      orderBy('editedAt', 'asc'),
+    ),
+  );
+
+  return snapshot.docs;
 }
 
 /**

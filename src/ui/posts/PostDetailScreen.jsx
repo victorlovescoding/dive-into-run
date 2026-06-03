@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import CommentCard from '@/components/CommentCard';
 import CommentEditModal from '@/components/CommentEditModal';
+import CommentHistoryModal from '@/components/CommentHistoryModal';
 import ComposeModal from '@/components/ComposeModal';
 import PostCard from '@/components/PostCard';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
@@ -182,8 +183,12 @@ function PostDetailActions({ title, url }) {
  * @param {string} commentItem.authorUid - 留言者 UID。
  * @param {string} [commentItem.authorName] - 留言者名稱。
  * @param {string} [commentItem.authorImgURL] - 留言者頭像 URL。
- * @param {string} commentItem.comment - 留言內容。
- * @param {import('firebase/firestore').Timestamp} commentItem.createdAt - 建立時間。
+ * @param {string} [commentItem.authorPhotoURL] - 已正規化的留言者頭像 URL。
+ * @param {string} [commentItem.comment] - 文章留言原始內容欄位。
+ * @param {string} [commentItem.content] - 共用留言 UI 內容欄位。
+ * @param {import('firebase/firestore').Timestamp | null} commentItem.createdAt - 建立時間。
+ * @param {import('firebase/firestore').Timestamp | null} [commentItem.updatedAt] - 更新時間。
+ * @param {boolean} [commentItem.isEdited] - 是否曾被編輯。
  * @returns {import('@/service/event-comment-service').CommentData} CommentCard 格式資料。
  */
 function mapToCommentCardData(commentItem) {
@@ -191,11 +196,11 @@ function mapToCommentCardData(commentItem) {
     id: commentItem.id,
     authorUid: commentItem.authorUid,
     authorName: commentItem.authorName ?? '使用者',
-    authorPhotoURL: commentItem.authorImgURL,
-    content: commentItem.comment,
+    authorPhotoURL: commentItem.authorPhotoURL ?? commentItem.authorImgURL,
+    content: commentItem.content ?? commentItem.comment ?? '',
     createdAt: commentItem.createdAt,
-    updatedAt: null,
-    isEdited: false,
+    updatedAt: commentItem.updatedAt ?? null,
+    isEdited: commentItem.isEdited ?? false,
   };
 }
 
@@ -217,6 +222,9 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     highlightedCommentId,
     comment,
     editingComment: runtimeEditingComment,
+    historyComment,
+    historyEntries,
+    historyError,
     isUpdating: runtimeIsCommentUpdating,
     updateError: runtimeCommentUpdateError,
     title,
@@ -246,6 +254,8 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     handleEditSave,
     handleEditCancel,
     handleDeleteComment,
+    handleViewHistory,
+    handleCloseHistory,
     handleSubmitComment,
     handleCommentChange,
   } = runtime;
@@ -259,6 +269,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
   const activeUpdateError = runtimeEditingComment
     ? runtimeCommentUpdateError ?? null
     : localUpdateError;
+  const activeHistoryComment = historyComment ? mapToCommentCardData(historyComment) : null;
 
   const handleOpenCommentEdit = useCallback(
     (currentComment) => {
@@ -355,6 +366,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
                 onDelete={(currentComment) => {
                   handleDeleteComment(currentComment.id);
                 }}
+                onViewHistory={handleViewHistory}
               />
             ))}
           </section>
@@ -389,6 +401,15 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
               updateError={activeUpdateError}
               onSave={handleSaveCommentEdit}
               onCancel={handleCancelCommentEdit}
+            />
+          )}
+
+          {activeHistoryComment && (
+            <CommentHistoryModal
+              comment={activeHistoryComment}
+              history={historyEntries}
+              historyError={historyError}
+              onClose={handleCloseHistory}
             />
           )}
 

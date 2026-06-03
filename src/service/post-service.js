@@ -1,5 +1,6 @@
 import { isAccountDeletionHidden } from '@/config/account-deletion';
 import { isSoftDeletedRecord } from '@/repo/post-soft-delete';
+import buildCommentEditHistoryPayload from '@/service/comment-edit-history-service';
 
 export { POST_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
 export {
@@ -154,26 +155,14 @@ export function buildAddCommentPayload({ user, comment, createdAtValue }) {
  * @returns {{ commentUpdate: object, historyPayload: object }} transaction payload。
  */
 export function buildUpdateCommentPayload({ comment, currentComment, updatedAtValue }) {
-  const trimmed = (comment ?? '').trim();
-  if (!trimmed) {
-    throw new Error('updateComment: comment is required');
-  }
-
-  if (trimmed === currentComment) {
-    throw new Error('updateComment: content unchanged');
-  }
-
-  return {
-    historyPayload: {
-      comment: currentComment,
-      editedAt: updatedAtValue,
-    },
-    commentUpdate: {
-      comment: trimmed,
-      updatedAt: updatedAtValue,
-      isEdited: true,
-    },
-  };
+  return buildCommentEditHistoryPayload({
+    newText: comment,
+    oldText: currentComment,
+    currentTextField: 'comment',
+    updatedAtValue,
+    fieldLabel: 'comment',
+    functionName: 'updateComment',
+  });
 }
 
 /**

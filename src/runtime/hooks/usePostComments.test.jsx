@@ -13,6 +13,7 @@ const navigationMock = vi.hoisted(() => ({
 const postUseCasesMock = vi.hoisted(() => ({
   addComment: vi.fn(),
   deleteComment: vi.fn(),
+  fetchCommentHistory: vi.fn(),
   getCommentById: vi.fn(),
   updateComment: vi.fn(),
 }));
@@ -34,6 +35,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/runtime/client/use-cases/post-use-cases', () => ({
   addComment: postUseCasesMock.addComment,
   deleteComment: postUseCasesMock.deleteComment,
+  fetchCommentHistory: postUseCasesMock.fetchCommentHistory,
   getCommentById: postUseCasesMock.getCommentById,
   updateComment: postUseCasesMock.updateComment,
 }));
@@ -68,6 +70,8 @@ const existingComment = {
   authorImgURL: '',
   comment: 'Original post comment',
   createdAt: null,
+  updatedAt: null,
+  isEdited: false,
 };
 
 /**
@@ -145,6 +149,7 @@ function seedComments(view, comments = [existingComment]) {
 beforeEach(() => {
   vi.clearAllMocks();
   navigationMock.searchParams.get.mockReturnValue(null);
+  postUseCasesMock.fetchCommentHistory.mockResolvedValue([]);
   postUseCasesMock.updateComment.mockResolvedValue(undefined);
 });
 
@@ -242,19 +247,30 @@ describe('usePostComments edit modal behavior', () => {
 
     expect(postUseCasesMock.updateComment).toHaveBeenLastCalledWith('post-1', 'comment-1', {
       comment: 'Updated post comment',
+      currentComment: 'Original post comment',
     });
     expect(view.result.current.comments[0]).toMatchObject({
       comment: 'Updated post comment',
+      isEdited: true,
     });
+    expect(view.result.current.comments[0].updatedAt).toBeTruthy();
     expect(view.result.current.comment).toBe('bottom draft');
     expect(view.result.current.editingComment).toBeNull();
     expect(view.result.current.updateError).toBeNull();
   });
 
-  test('rolls back local post comment text and keeps the modal open after save failure', async () => {
+  test('rolls back local post comment text and edit metadata after save failure', async () => {
     postUseCasesMock.updateComment.mockRejectedValueOnce(new Error('failed'));
+    const previousUpdatedAt = { seconds: 10, nanoseconds: 0 };
     const view = renderCommentsRuntime();
-    seedComments(view);
+    seedComments(view, [
+      {
+        ...existingComment,
+        comment: 'Previously edited post comment',
+        isEdited: true,
+        updatedAt: previousUpdatedAt,
+      },
+    ]);
 
     act(() => {
       view.result.current.handleEditComment('comment-1');
@@ -264,8 +280,10 @@ describe('usePostComments edit modal behavior', () => {
     });
 
     expect(view.result.current.comments[0]).toMatchObject({
-      comment: 'Original post comment',
+      comment: 'Previously edited post comment',
+      isEdited: true,
     });
+    expect(view.result.current.comments[0].updatedAt).toBe(previousUpdatedAt);
     expect(view.result.current.editingComment).toMatchObject({
       id: 'comment-1',
     });
@@ -292,5 +310,52 @@ describe('usePostComments edit modal behavior', () => {
     });
     expect(view.result.current.editingComment).toBeNull();
     expect(view.result.current.updateError).toBeNull();
+  });
+});
+
+describe('usePostComments history modal behavior', () => {
+  test('loads comment history and closes history modal state', async () => {
+    const historyEntries = [
+      { id: 'history-1', content: 'Original post comment', editedAt: { seconds: 1 } },
+    ];
+    postUseCasesMock.fetchCommentHistory.mockResolvedValueOnce(historyEntries);
+    const view = renderCommentsRuntime();
+    seedComments(view);
+
+    await act(async () => {
+      await view.result.current.handleViewHistory(view.result.current.comments[0]);
+    });
+
+    expect(postUseCasesMock.fetchCommentHistory).toHaveBeenCalledWith('post-1', 'comment-1');
+    expect(view.result.current.historyComment).toMatchObject({
+      id: 'comment-1',
+      comment: 'Original post comment',
+    });
+    expect(view.result.current.historyEntries).toEqual(historyEntries);
+    expect(view.result.current.historyError).toBeNull();
+
+    act(() => {
+      view.result.current.handleCloseHistory();
+    });
+
+    expect(view.result.current.historyComment).toBeNull();
+    expect(view.result.current.historyEntries).toEqual([]);
+    expect(view.result.current.historyError).toBeNull();
+  });
+
+  test('keeps history modal open with an error state after history fetch failure', async () => {
+    postUseCasesMock.fetchCommentHistory.mockRejectedValueOnce(new Error('failed'));
+    const view = renderCommentsRuntime();
+    seedComments(view);
+
+    await act(async () => {
+      await view.result.current.handleViewHistory(view.result.current.comments[0]);
+    });
+
+    expect(view.result.current.historyComment).toMatchObject({
+      id: 'comment-1',
+    });
+    expect(view.result.current.historyEntries).toEqual([]);
+    expect(view.result.current.historyError).toBe('載入編輯記錄失敗');
   });
 });

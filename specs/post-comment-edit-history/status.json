@@ -1,0 +1,784 @@
+{
+  "schemaVersion": 3,
+  "feature": "post-comment-edit-history",
+  "branch": "088-post-comment-edit-history",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-088-post-comment-edit-history",
+  "phase": "closeout_authorized",
+  "activeTask": null,
+  "activeWave": null,
+  "authorizationBoundary": {
+    "edit": true,
+    "commit": true,
+    "push": true,
+    "pullRequest": true,
+    "ciWatch": true,
+    "merge": true,
+    "localMainSync": true,
+    "deployFirestoreRules": true
+  },
+  "currentHead": {
+    "branch": "088-post-comment-edit-history",
+    "commit": "c3c3d7c4b92c2588ea673298f5fbcc3bd0359863",
+    "capturedAt": "2026-06-03T15:35:16Z",
+    "summary": "Rebased onto origin/main and authorized for push, PR, CI watch, merge, and local main sync."
+  },
+  "remoteHead": {
+    "remote": "origin",
+    "branch": "main",
+    "commit": "7beac6ba38d04867fa73337bf3b4601dce7789af",
+    "capturedAt": "2026-06-03T15:35:16Z",
+    "summary": "origin/main after fetch before closeout rebase."
+  },
+  "completedTasks": [
+    "T001",
+    "T002",
+    "T003",
+    "T004",
+    "T005"
+  ],
+  "tasks": [
+    {
+      "id": "T001",
+      "title": "Shared Comment Edit History Service",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-1",
+      "engineer": "Engineer, service layer",
+      "reviewer": "Reviewer, service contract",
+      "scope": [
+        "Create a shared service helper for comment edit history payload generation.",
+        "Refactor event and post service payload builders to use the shared helper.",
+        "Preserve event comment update behavior.",
+        "Preserve post comment main document field name comment.",
+        "Add focused service tests under this feature spec."
+      ],
+      "nonScope": [
+        "Do not modify repo, runtime, UI, Firestore rules, package files, or lockfiles.",
+        "Do not change event comment UI behavior.",
+        "Do not migrate post comment fields from comment to content.",
+        "Do not add Firestore deploy or production data migration behavior."
+      ],
+      "ownedFiles": [
+        "src/service/comment-edit-history-service.js",
+        "src/service/event-comment-service.js",
+        "src/service/post-service.js",
+        "specs/post-comment-edit-history/tests/unit/service/comment-edit-history-service.test.js"
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-contract.md",
+        ".codex/rules/coding-rules.md",
+        ".codex/rules/code-style.md",
+        "src/runtime/client/use-cases/event-comment-use-cases.js",
+        "src/runtime/client/use-cases/post-use-cases.js"
+      ],
+      "dependencies": [
+        "implementation_edit_authorization"
+      ],
+      "engineerInstructions": [
+        "RED: add tests proving the shared helper trims new text, rejects empty text, rejects unchanged text, creates history { content: oldText, editedAt }, and updates the configured current text field with updatedAt and isEdited: true.",
+        "RED: add event-specific coverage proving buildUpdateCommentPayload(newContent, oldContent, editedAtValue) still returns commentUpdate.content and historyPayload.content.",
+        "RED: add post-specific coverage proving buildUpdateCommentPayload({ comment, currentComment, updatedAtValue }) returns commentUpdate.comment, commentUpdate.updatedAt, commentUpdate.isEdited, and history content normalized for modal consumption.",
+        "GREEN: create src/service/comment-edit-history-service.js with JSDoc and no imports from runtime, repo, UI, or config layers.",
+        "GREEN: update src/service/event-comment-service.js and src/service/post-service.js to delegate duplicated update/history payload logic to the shared helper.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T001.1: Shared helper supports event current text field content and post current text field comment.",
+        "AC-T001.2: Event update payload shape stays compatible with existing event repo transaction.",
+        "AC-T001.3: Post update payload preserves the post comment main document comment field.",
+        "AC-T001.4: History entries produced for UI consumption use content and editedAt.",
+        "AC-T001.5: Empty and unchanged update attempts throw before any repo write can be requested."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/service/comment-edit-history-service.test.js",
+          "expectedSignal": "Exit 0, shared helper and service contract tests pass.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/service/comment-edit-history-service.test.js",
+            "exitCode": 0,
+            "summary": "1 file passed; 6 tests passed.",
+            "verifiedAt": "2026-06-03T08:24:43Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0, no new lint errors for changed files.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors; existing React version warning only.",
+            "verifiedAt": "2026-06-03T08:24:43Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0, no changed-file type errors.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No type errors in changed files.",
+            "verifiedAt": "2026-06-03T08:24:43Z"
+          }
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "Exit 0, no whitespace errors.",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-03T08:24:43Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Shared helper sits in service layer and does not violate forward-only dependency direction.",
+        "Event payload output remains compatible with current event transaction.",
+        "Post service does not rename the post comment main document field to content.",
+        "Required verification commands pass with fresh evidence."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without prior coordinator approval.",
+        "Event payload shape changes incompatibly.",
+        "Post comment main document is migrated or renamed from comment to content.",
+        "Verification is missing, stale, failed, or not from the required commands."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Hubble",
+        "summary": "No blocking findings. Shared helper and event/post service contracts pass required verification.",
+        "decidedAt": "2026-06-03T08:24:43Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE_WITH_CONCERNS: implementation complete; worktree lacked node_modules so Engineer used a git-ignored node_modules symlink to run verification.",
+        "reviewerReport": "review_passed: no blocking findings; node_modules is ignored; T001 diff stays within owned service/test files.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/service/comment-edit-history-service.test.js -> exit 0, 1 file / 6 tests.",
+          "npm run lint:changed -> exit 0, React version warning only.",
+          "npm run type-check:changed -> exit 0, no changed-file type errors.",
+          "git diff --check -> exit 0, no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "Created src/service/comment-edit-history-service.js.",
+          "Updated src/service/event-comment-service.js to use the shared helper while preserving content payloads.",
+          "Updated src/service/post-service.js to use the shared helper while preserving the comment field.",
+          "Created specs/post-comment-edit-history/tests/unit/service/comment-edit-history-service.test.js."
+        ]
+      }
+    },
+    {
+      "id": "T002",
+      "title": "Post Comment Transaction And Use-Case History API",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-2",
+      "engineer": "Engineer, repo and use-case layer",
+      "reviewer": "Reviewer, data flow",
+      "scope": [
+        "Add post comment transaction update that writes history and updates the comment main document atomically.",
+        "Add post comment history fetch repo API.",
+        "Update post use-case update API to pass current text, build payloads, and expose history fetch.",
+        "Add focused use-case tests under this feature spec."
+      ],
+      "nonScope": [
+        "Do not modify service helper files owned by T001 unless T001 is reopened through coordinator approval.",
+        "Do not modify runtime hooks, UI screens, Firestore rules, package files, or lockfiles.",
+        "Do not change post comment delete, notification, pagination, or soft-delete retention semantics.",
+        "Do not deploy Firestore rules."
+      ],
+      "ownedFiles": [
+        "src/repo/client/firebase-posts-repo.js",
+        "src/runtime/client/use-cases/post-use-cases.js",
+        "specs/post-comment-edit-history/tests/unit/runtime/post-comment-edit-history-use-cases.test.js"
+      ],
+      "readOnlyContext": [
+        "src/service/comment-edit-history-service.js",
+        "src/service/post-service.js",
+        "src/repo/client/firebase-event-comments-repo.js",
+        "src/runtime/client/use-cases/event-comment-use-cases.js",
+        "src/runtime/hooks/usePostComments.js",
+        "firestore.rules"
+      ],
+      "dependencies": [
+        "implementation_edit_authorization",
+        "T001"
+      ],
+      "engineerInstructions": [
+        "RED: add use-case tests proving updateComment(postId, commentId, { comment, currentComment }) builds history/update payload and calls the repo transaction API.",
+        "RED: add tests proving unchanged or empty content rejects before calling the repo.",
+        "RED: add tests proving history fetch returns entries normalized as { id, content, editedAt }.",
+        "GREEN: in firebase-posts-repo, replace simple post comment updateDoc behavior with an explicit transaction API for edit history, or add a new transaction function and migrate post-use-cases to it.",
+        "GREEN: transaction must create a new history doc under posts/{postId}/comments/{commentId}/history and update the parent comment in the same transaction.",
+        "GREEN: add a history fetch function that orders by editedAt ascending, matching CommentHistoryModal expectations.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T002.1: Post comment edits create exactly one history doc and one parent comment update in one transaction.",
+        "AC-T002.2: Use-case update requires the previous comment text and does not write history for unchanged text.",
+        "AC-T002.3: History fetch returns modal-ready { id, content, editedAt } entries.",
+        "AC-T002.4: Existing add/delete/list post comment behavior is unchanged.",
+        "AC-T002.5: No Firestore rules deploy or rules claim is made by this task."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/runtime/post-comment-edit-history-use-cases.test.js",
+          "expectedSignal": "Exit 0, post comment edit history use-case tests pass.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/runtime/post-comment-edit-history-use-cases.test.js",
+            "exitCode": 0,
+            "summary": "1 file passed; 7 tests passed.",
+            "verifiedAt": "2026-06-03T08:46:23Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0, no new lint errors for changed files.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors; existing React version warning only.",
+            "verifiedAt": "2026-06-03T08:46:23Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0, no changed-file type errors.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No type errors in changed files.",
+            "verifiedAt": "2026-06-03T08:46:23Z"
+          }
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "Exit 0, no whitespace errors.",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-03T08:46:23Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Transaction creates history and updates parent comment atomically.",
+        "Use-case preserves post comment comment field and exposes modal-ready history entries.",
+        "Verification commands pass with fresh evidence."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff leaves post comment edit as a standalone updateDoc without history transaction.",
+        "Diff stores post comment main text under content.",
+        "Diff changes unrelated post comment behavior.",
+        "Verification is missing, stale, failed, or not from the required commands."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Mendel",
+        "summary": "Original stale-history P1 rejected and then resolved; transaction now derives history content from the server comment snapshot.",
+        "decidedAt": "2026-06-03T08:46:23Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE: added post comment edit transaction, history fetch use-case, and focused tests. Fixed reviewer P1 by deriving history content from transaction snapshot comment.",
+        "reviewerReport": "review_passed after one rejection. Original P1 stale-currentComment history risk resolved.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/runtime/post-comment-edit-history-use-cases.test.js -> exit 0, 1 file / 7 tests.",
+          "npm run lint:changed -> exit 0, React version warning only.",
+          "npm run type-check:changed -> exit 0, no changed-file type errors.",
+          "git diff --check -> exit 0, no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "Updated src/repo/client/firebase-posts-repo.js with transaction-backed post comment edit history and history fetch.",
+          "Updated src/runtime/client/use-cases/post-use-cases.js with update payload wiring and fetchCommentHistory.",
+          "Created specs/post-comment-edit-history/tests/unit/runtime/post-comment-edit-history-use-cases.test.js."
+        ]
+      }
+    },
+    {
+      "id": "T003",
+      "title": "Post Comment Runtime History State",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-3",
+      "engineer": "Engineer, runtime hook",
+      "reviewer": "Reviewer, runtime behavior",
+      "scope": [
+        "Extend post comment hook return state with history modal data and handlers.",
+        "Pass current post comment text into the updated post use-case.",
+        "Update optimistic edit state to include isEdited and updatedAt.",
+        "Add hook tests for success, rollback, and history fetch."
+      ],
+      "nonScope": [
+        "Do not modify service, repo, use-case, UI screen, Firestore rules, package files, or lockfiles.",
+        "Do not change notification behavior or comment pagination.",
+        "Do not introduce data fetching in UI components."
+      ],
+      "ownedFiles": [
+        "src/runtime/hooks/usePostComments.js",
+        "src/runtime/hooks/usePostComments.test.jsx"
+      ],
+      "readOnlyContext": [
+        "src/runtime/client/use-cases/post-use-cases.js",
+        "src/runtime/hooks/useCommentMutations.js",
+        "src/components/CommentHistoryModal.jsx",
+        "src/ui/posts/PostDetailScreen.jsx"
+      ],
+      "dependencies": [
+        "implementation_edit_authorization",
+        "T002"
+      ],
+      "engineerInstructions": [
+        "RED: extend usePostComments.test.jsx to prove save calls updateComment with the trimmed new text and previous comment text.",
+        "RED: test optimistic success updates local comment, isEdited, and updatedAt.",
+        "RED: test save failure rolls back comment, isEdited, and updatedAt.",
+        "RED: test handleViewHistory loads history entries and sets historyComment, historyEntries, and historyError; test close handler clears modal state.",
+        "GREEN: add history state and handlers in usePostComments following the event comment hook shape where practical.",
+        "GREEN: return the new state and handlers for PostDetailScreen.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T003.1: Runtime hook exposes historyComment, historyEntries, historyError, handleViewHistory, and handleCloseHistory or equivalent names documented by tests.",
+        "AC-T003.2: Successful edit sets post comment local state to edited without waiting for a full page reload.",
+        "AC-T003.3: Failed edit restores previous text and edit metadata.",
+        "AC-T003.4: History fetch failure opens the modal with an error state or records historyError without crashing.",
+        "AC-T003.5: Existing add/delete/edit modal behavior remains covered by existing tests."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser src/runtime/hooks/usePostComments.test.jsx",
+          "expectedSignal": "Exit 0, post comment hook tests pass.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser src/runtime/hooks/usePostComments.test.jsx",
+            "exitCode": 0,
+            "summary": "1 file passed; 7 tests passed.",
+            "verifiedAt": "2026-06-03T08:57:06Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0, no new lint errors for changed files.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors; existing React version warning only.",
+            "verifiedAt": "2026-06-03T08:57:06Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0, no changed-file type errors.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No type errors in changed files.",
+            "verifiedAt": "2026-06-03T08:57:06Z"
+          }
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "Exit 0, no whitespace errors.",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-03T08:57:06Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Hook keeps data fetching in runtime, not UI.",
+        "Optimistic update and rollback cover edit metadata, not only text.",
+        "Verification commands pass with fresh evidence."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff fetches history from UI/component effects.",
+        "Diff omits rollback for isEdited or updatedAt.",
+        "Diff changes unrelated post comment behaviors.",
+        "Verification is missing, stale, failed, or not from the required commands."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Curie",
+        "summary": "No blocking findings. Hook passes currentComment, updates and rolls back edit metadata, and loads history through the runtime use-case.",
+        "decidedAt": "2026-06-03T08:57:06Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE: added runtime history state/handlers, currentComment payload wiring, optimistic edit metadata, rollback tests, and history fetch tests.",
+        "reviewerReport": "review_passed: no blocking findings; current T003 working-tree diff and required gates reviewed.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser src/runtime/hooks/usePostComments.test.jsx -> exit 0, 1 file / 7 tests.",
+          "npm run lint:changed -> exit 0, React version warning only.",
+          "npm run type-check:changed -> exit 0, no changed-file type errors.",
+          "git diff --check -> exit 0, no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "Updated src/runtime/hooks/usePostComments.js with history modal state/handlers and currentComment edit payloads.",
+          "Updated src/runtime/hooks/usePostComments.test.jsx for edit metadata, rollback, and history fetch behavior."
+        ]
+      }
+    },
+    {
+      "id": "T004",
+      "title": "PostDetailScreen History UI Wiring",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-4",
+      "engineer": "Engineer, UI wiring",
+      "reviewer": "Reviewer, UI behavior",
+      "scope": [
+        "Wire post detail comments to CommentCard history behavior.",
+        "Render CommentHistoryModal from post detail runtime state.",
+        "Normalize post comment comment into content for shared components.",
+        "Add PostDetailScreen tests for edited marker and modal wiring."
+      ],
+      "nonScope": [
+        "Do not modify runtime hook, use-case, repo, service, Firestore rules, CSS, package files, or lockfiles.",
+        "Do not redesign comment UI or modal styling.",
+        "Do not change event comment UI."
+      ],
+      "ownedFiles": [
+        "src/ui/posts/PostDetailScreen.jsx",
+        "src/ui/posts/PostDetailScreen.test.jsx"
+      ],
+      "readOnlyContext": [
+        "src/components/CommentCard.jsx",
+        "src/components/CommentHistoryModal.jsx",
+        "src/runtime/hooks/usePostComments.js",
+        "src/components/CommentSection.jsx"
+      ],
+      "dependencies": [
+        "implementation_edit_authorization",
+        "T003"
+      ],
+      "engineerInstructions": [
+        "RED: update PostDetailScreen.test.jsx to prove an edited post comment renders the 已編輯 action instead of being forced to unedited.",
+        "RED: test clicking 已編輯 calls the runtime history handler with the normalized comment.",
+        "RED: test CommentHistoryModal renders when runtime history state is present and receives normalized current/history content.",
+        "GREEN: import and render CommentHistoryModal using runtime state.",
+        "GREEN: update mapToCommentCardData so updatedAt and isEdited come from the post comment item.",
+        "GREEN: pass onViewHistory to CommentCard.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T004.1: PostDetailScreen no longer hard-codes updatedAt: null and isEdited: false.",
+        "AC-T004.2: Edited post comments show the same 已編輯 affordance as event comments.",
+        "AC-T004.3: Post detail history modal uses shared CommentHistoryModal.",
+        "AC-T004.4: Post comment current text is normalized from comment to content for shared UI only.",
+        "AC-T004.5: Existing edit/delete/comment form tests still pass."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx",
+          "expectedSignal": "Exit 0, post detail screen tests pass.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx",
+            "exitCode": 0,
+            "summary": "1 file passed; 6 tests passed.",
+            "verifiedAt": "2026-06-03T09:09:04Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0, no new lint errors for changed files.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors; existing React version warning only.",
+            "verifiedAt": "2026-06-03T09:09:04Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0, no changed-file type errors.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No type errors in changed files.",
+            "verifiedAt": "2026-06-03T09:09:04Z"
+          }
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "Exit 0, no whitespace errors.",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-03T09:09:04Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "UI normalization does not mutate source post comment objects.",
+        "Browser evidence is recorded before final completion if UI behavior is claimed.",
+        "Verification commands pass with fresh evidence."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff hides or removes existing comment edit/delete behavior.",
+        "Diff changes modal styling or unrelated UI layout.",
+        "Diff claims browser verification without screenshot/tool evidence.",
+        "Verification is missing, stale, failed, or not from the required commands."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Maxwell",
+        "summary": "No blocking findings. Post detail wiring matches CommentCard and CommentHistoryModal contracts; browser visual evidence remains pending.",
+        "decidedAt": "2026-06-03T09:09:04Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE_WITH_CONCERNS: wired post detail history UI and tests; final HTTP page-load check passed, but modal click evidence remains limited by local browser permissions and sampled public data.",
+        "reviewerReport": "review_passed: no blocking findings; production shared component contracts checked manually by reviewer.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx -> exit 0, 1 file / 6 tests.",
+          "npm run lint:changed -> exit 0, React version warning only.",
+          "npm run type-check:changed -> exit 0, no changed-file type errors.",
+          "git diff --check -> exit 0, no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "Updated src/ui/posts/PostDetailScreen.jsx to pass onViewHistory and render CommentHistoryModal.",
+          "Updated src/ui/posts/PostDetailScreen.jsx to preserve isEdited/updatedAt and normalize comment to content for shared UI.",
+          "Updated src/ui/posts/PostDetailScreen.test.jsx for edited affordance and history modal wiring."
+        ]
+      }
+    },
+    {
+      "id": "T005",
+      "title": "Post Comment History Firestore Rules",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-5",
+      "engineer": "Engineer, Firestore rules",
+      "reviewer": "Reviewer, Security/Rules",
+      "scope": [
+        "Add Firestore rules for posts/{postId}/comments/{commentId}/history/{historyId}.",
+        "Add rules tests for read, create, update denial, delete denial, and deleted parent behavior.",
+        "Keep rules deploy as a separate unauthorized release boundary."
+      ],
+      "nonScope": [
+        "Do not modify product source, runtime, UI, service, repo, package files, lockfiles, or Firestore indexes.",
+        "Do not deploy Firestore rules.",
+        "Do not change event history rules unless a test proves a shared helper in rules is required and coordinator updates the plan."
+      ],
+      "ownedFiles": [
+        "firestore.rules",
+        "tests/server/firestore/post-soft-delete-rules.test.js"
+      ],
+      "readOnlyContext": [
+        "docs/superpowers/task-contract.md",
+        "src/repo/client/firebase-posts-repo.js",
+        "tests/server/firestore/event-soft-delete-rules.test.js",
+        "src/runtime/client/use-cases/post-use-cases.js"
+      ],
+      "dependencies": [
+        "implementation_edit_authorization",
+        "T004"
+      ],
+      "engineerInstructions": [
+        "RED: add rules tests proving active post history read succeeds for a visible post comment history doc.",
+        "RED: add tests proving comment author can create a valid history doc under an active post comment.",
+        "RED: add tests proving non-author, anonymous, deleted-post, invalid payload, update, and delete attempts fail.",
+        "GREEN: add the narrow nested history match under the existing post comment rules.",
+        "GREEN: restrict create payload to the agreed history contract and reject update/delete.",
+        "Modify only the owned files above.",
+        "Do not run or imply an actual deploy."
+      ],
+      "acceptanceCriteria": [
+        "AC-T005.1: Active post comment history read is allowed according to the same audience as visible post comments.",
+        "AC-T005.2: Only the parent post comment author can create history.",
+        "AC-T005.3: History create requires valid content and editedAt fields.",
+        "AC-T005.4: History update and delete are denied.",
+        "AC-T005.5: Rules deploy remains not authorized and not evidenced."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js",
+          "expectedSignal": "Exit 0, post Firestore rules tests pass.",
+          "lastRun": {
+            "command": "firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\"",
+            "exitCode": 0,
+            "summary": "1 file passed; 21 tests passed under local Firebase emulators.",
+            "verifiedAt": "2026-06-03T09:20:43Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0, no new lint errors for changed files.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors; existing React version warning only.",
+            "verifiedAt": "2026-06-03T09:20:43Z"
+          }
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "Exit 0, no whitespace errors.",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-03T09:20:43Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Rules create path is limited to the comment author and active post.",
+        "Rules update/delete are false for history.",
+        "Reviewer confirms no deploy command was run or claimed.",
+        "Required verification commands pass with fresh evidence."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff permits non-author history creation.",
+        "Diff permits history update/delete.",
+        "Diff weakens existing post comment or event comment rules outside scope.",
+        "Diff implies rules are deployed without rulesDeployStatus.state=deployed and deploy evidence.",
+        "Verification is missing, stale, failed, or not from the required commands."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "McClintock",
+        "summary": "No blocking findings. Post comment history rules are narrow; local emulator verification passed; no deploy command was run.",
+        "decidedAt": "2026-06-03T09:20:43Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE_WITH_CONCERNS: bare server vitest lacked emulator env; local firebase emulators:exec verification passed. No deploy command was run.",
+        "reviewerReport": "review_passed: no blocking findings; rules scope and tests reviewed; no deploy command was run.",
+        "commandOutputSummary": [
+          "firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\" -> exit 0, 1 file / 21 tests.",
+          "npm run lint:changed -> exit 0, React version warning only.",
+          "git diff --check -> exit 0, no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "Updated firestore.rules with post comment history read/create/update/delete rules.",
+          "Updated tests/server/firestore/post-soft-delete-rules.test.js with post comment history allow/deny coverage."
+        ]
+      }
+    }
+  ],
+  "blocked": false,
+  "blockedReason": null,
+  "lastVerification": [
+    {
+      "command": "npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/service/comment-edit-history-service.test.js specs/post-comment-edit-history/tests/unit/runtime/post-comment-edit-history-use-cases.test.js src/runtime/hooks/usePostComments.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
+      "exitCode": 0,
+      "summary": "5 files passed; 37 tests passed.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\"",
+      "exitCode": 0,
+      "summary": "1 file passed; 25 tests passed under local Firebase emulators.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "branch changed JS ESLint via npx eslint --no-warn-ignored",
+      "exitCode": 0,
+      "summary": "All JS/JSX/MJS files changed since origin/main, plus dirty JS before the review-fixes commit, lint clean; existing React version warning only.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "npx tsc --noEmit --incremental false",
+      "exitCode": 0,
+      "summary": "Full type check passed without writing tsconfig.tsbuildinfo; plain npx tsc --noEmit was blocked by sandbox EPERM writing the incremental build info file.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "npm run depcruise",
+      "exitCode": 0,
+      "summary": "No dependency violations found.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "npm run workflow:check -- specs/post-comment-edit-history/status.json",
+      "exitCode": 0,
+      "summary": "Workflow status valid and synced.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "No whitespace errors.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "curl -I http://127.0.0.1:3002/posts",
+      "exitCode": 0,
+      "summary": "Local post page returned HTTP 200 through the Next dev server. Browser modal click evidence remains limited by local browser permissions and lack of edited public comments.",
+      "verifiedAt": "2026-06-03T10:03:27Z"
+    },
+    {
+      "command": "firebase deploy --only firestore:rules --project dive-into-run",
+      "exitCode": 0,
+      "summary": "Firestore rules deployed to project dive-into-run; output included firestore: released rules firestore.rules to cloud.firestore.",
+      "verifiedAt": "2026-06-03T15:20:40Z"
+    }
+  ],
+  "lastVerifiedCommit": "c3c3d7c4b92c2588ea673298f5fbcc3bd0359863",
+  "phaseCommits": [
+    {
+      "phase": "specs",
+      "commit": "35fee2d6037d83df0a5caf417b5d878e28f1670d",
+      "summary": "Add post comment history spec",
+      "committedAt": "2026-06-03T08:10:39Z"
+    },
+    {
+      "phase": "service",
+      "commit": "e0a54ed2941822d964ec2a798d0d87e9406da493",
+      "summary": "Add shared comment edit history service",
+      "committedAt": "2026-06-03T08:30:36Z"
+    },
+    {
+      "phase": "post-data-flow",
+      "commit": "b7c1b72d71364792eda4d152adf3073e08592d12",
+      "summary": "Add post comment history data flow",
+      "committedAt": "2026-06-03T08:48:40Z"
+    },
+    {
+      "phase": "runtime",
+      "commit": "c7bec764301e890143cde8576a1350dd766cc4ab",
+      "summary": "Wire post comment history runtime",
+      "committedAt": "2026-06-03T08:59:13Z"
+    },
+    {
+      "phase": "ui",
+      "commit": "5893c785584a4f5db2dbb332876178b0465d53de",
+      "summary": "Wire post comment history UI",
+      "committedAt": "2026-06-03T09:11:04Z"
+    },
+    {
+      "phase": "rules",
+      "commit": "7375402afdb36e99c9934b6583359652b995b612",
+      "summary": "Add post comment history rules",
+      "committedAt": "2026-06-03T09:23:21Z"
+    },
+    {
+      "phase": "review-fixes",
+      "commit": "73fd4e04eeae582fd71af814a6aa384b705c7e41",
+      "summary": "Fix post history review gaps",
+      "committedAt": "2026-06-03T10:00:12Z"
+    }
+  ],
+  "rulesDeployStatus": {
+    "state": "deployed",
+    "required": false,
+    "changed": true,
+    "evidence": [
+      {
+        "command": "firebase deploy --only firestore:rules --project dive-into-run",
+        "exitCode": 0,
+        "summary": "firestore: released rules firestore.rules to cloud.firestore",
+        "verifiedAt": "2026-06-03T15:20:40Z"
+      }
+    ],
+    "deployedCommit": "c3c3d7c4b92c2588ea673298f5fbcc3bd0359863"
+  },
+  "incidents": [],
+  "updatedAt": "2026-06-03T15:35:16Z"
+}
