@@ -11,7 +11,8 @@
 - Command evidence is one command per entry. Do not combine commands with shell chain operators.
 - New `status.json` state uses schemaVersion 3 and records `currentHead`, `remoteHead`, `lastVerifiedCommit`, `phaseCommits`, `rulesDeployStatus`, and `incidents`.
 - Final summaries must not imply deployed Firestore/storage rules or deployed product behavior unless `rulesDeployStatus.state` is `deployed` with deploy evidence.
-- Current authorization boundary: product implementation edit, commit, and Firestore rules deploy are authorized by the user on 2026-06-03. Push, pull request, CI watch, merge, and local main sync remain unauthorized.
+- Current authorization boundary: product implementation edit, commit, Firestore rules deploy, push, pull request, CI watch, merge, and local main sync are authorized by the user on 2026-06-03.
+- Closeout authorization evidence: user explicitly requested "push pr ci merge 本地同步，請subagent完成" on 2026-06-03.
 - Firestore rules deploy evidence: `firebase deploy --only firestore:rules --project dive-into-run` succeeded on 2026-06-03; output included `firestore: released rules firestore.rules to cloud.firestore`.
 
 ## Team And Parallelism

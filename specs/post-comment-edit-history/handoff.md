@@ -6,31 +6,31 @@
 - Profile: P4, because this is a new product feature and Firestore rules are in scope.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-088-post-comment-edit-history`
 - Branch: `088-post-comment-edit-history`
-- Current head: `2bedb02d5b938fbe824c38f0014c118d22af836b`
-- Remote head: `origin/main` at `f3ca150ece7f9ba182fcde80cae95d6c0da18305`
+- Current head: `c3c3d7c4b92c2588ea673298f5fbcc3bd0359863`
+- Remote head: `origin/main` at `7beac6ba38d04867fa73337bf3b4601dce7789af`
 - Authorization boundary:
   - edit: true. User authorized implementation on 2026-06-03 after approving the design and durable repo docs.
   - commit: true. User said "該commit就commit" on 2026-06-03.
-  - push: false
-  - pullRequest: false
-  - ciWatch: false
-  - merge: false
-  - localMainSync: false
+  - push: true. User explicitly requested closeout on 2026-06-03: "push pr ci merge 本地同步，請subagent完成".
+  - pullRequest: true. User explicitly requested closeout on 2026-06-03.
+  - ciWatch: true. User explicitly requested closeout on 2026-06-03.
+  - merge: true. User explicitly requested closeout on 2026-06-03.
+  - localMainSync: true. User explicitly requested closeout on 2026-06-03.
   - deployFirestoreRules: true. User explicitly requested Firestore rules deploy on 2026-06-03 after feature verification.
-- Current phase: `final_verification_passed`
+- Current phase: `closeout_authorized`
 - Active task: none
 - Active wave: none
 - Latest reviewer decision: final review `review_passed` by Sagan on 2026-06-03 after worker fixes for runtime forwarding, repo no-op handling, and rules/history binding.
-- Last verified commit: `f627ce4f1efc43db27e6268608d20d4b22584ae0`
+- Last verified commit: `c3c3d7c4b92c2588ea673298f5fbcc3bd0359863`
 - Phase commits:
-  - `specs`: `dd22c46e82f3e34da62590e3ba0afb9a4fcc8ecf` (`Add post comment history spec`)
-  - `service`: `efd5fe4f82193402a3af55cf8a7f4595735ea670` (`Add shared comment edit history service`)
-  - `post-data-flow`: `024c1b61e1feaeb680b470ded8e203a1fa2a4f78` (`Add post comment history data flow`)
-  - `runtime`: `9e1ddc7bfd4547c52128abc81db0d64fb31f78dd` (`Wire post comment history runtime`)
-  - `ui`: `eba044d65694b5fb992d747c7c48af99958f56e2` (`Wire post comment history UI`)
-  - `rules`: `50034105ac26b63400bc6fc8f665c890be0cae53` (`Add post comment history rules`)
-  - `review-fixes`: `2bedb02d5b938fbe824c38f0014c118d22af836b` (`Fix post history review gaps`)
-- Rules deploy status: `deployed`, `changed=true`, deployed to project `dive-into-run` from commit `f627ce4f1efc43db27e6268608d20d4b22584ae0`.
+  - `specs`: `35fee2d6037d83df0a5caf417b5d878e28f1670d` (`Add post comment history spec`)
+  - `service`: `e0a54ed2941822d964ec2a798d0d87e9406da493` (`Add shared comment edit history service`)
+  - `post-data-flow`: `b7c1b72d71364792eda4d152adf3073e08592d12` (`Add post comment history data flow`)
+  - `runtime`: `c7bec764301e890143cde8576a1350dd766cc4ab` (`Wire post comment history runtime`)
+  - `ui`: `5893c785584a4f5db2dbb332876178b0465d53de` (`Wire post comment history UI`)
+  - `rules`: `7375402afdb36e99c9934b6583359652b995b612` (`Add post comment history rules`)
+  - `review-fixes`: `73fd4e04eeae582fd71af814a6aa384b705c7e41` (`Fix post history review gaps`)
+- Rules deploy status: `deployed`, `changed=true`, deployed to project `dive-into-run` from commit `c3c3d7c4b92c2588ea673298f5fbcc3bd0359863`.
 - Incidents: none
 - Blocked: no
 - Blocked reason: none.
@@ -46,7 +46,7 @@
 
 ## Next Action
 
-Main coordinator should record the Firestore rules deploy state. Product implementation edits, commits, and Firestore rules deploy are authorized; push, pull request, CI watch, merge, and local main sync are not authorized. Browser visual evidence is limited: HTTP page load passed, but Playwright/browser modal click evidence was blocked by local browser permissions and public data did not provide edited comments to click.
+Closeout worker should push the rebased branch, open a ready PR, watch CI, merge after required checks are green, and fast-forward local main. Product code edits remain forbidden during closeout. Browser visual evidence is limited: HTTP page load passed, but Playwright/browser modal click evidence was blocked by local browser permissions and public data did not provide edited comments to click.
 
 ## Latest Evidence
 

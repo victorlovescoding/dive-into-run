@@ -3,31 +3,31 @@
   "feature": "post-comment-edit-history",
   "branch": "088-post-comment-edit-history",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-088-post-comment-edit-history",
-  "phase": "rules_deployed",
+  "phase": "closeout_authorized",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
-    "push": false,
-    "pullRequest": false,
-    "ciWatch": false,
-    "merge": false,
-    "localMainSync": false,
+    "push": true,
+    "pullRequest": true,
+    "ciWatch": true,
+    "merge": true,
+    "localMainSync": true,
     "deployFirestoreRules": true
   },
   "currentHead": {
     "branch": "088-post-comment-edit-history",
-    "commit": "f627ce4f1efc43db27e6268608d20d4b22584ae0",
-    "capturedAt": "2026-06-03T15:20:40Z",
-    "summary": "Final verification state committed; Firestore rules deployed after explicit user request."
+    "commit": "c3c3d7c4b92c2588ea673298f5fbcc3bd0359863",
+    "capturedAt": "2026-06-03T15:35:16Z",
+    "summary": "Rebased onto origin/main and authorized for push, PR, CI watch, merge, and local main sync."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "f3ca150ece7f9ba182fcde80cae95d6c0da18305",
-    "capturedAt": "2026-06-03T07:54:47Z",
-    "summary": "origin/main at planning start."
+    "commit": "7beac6ba38d04867fa73337bf3b4601dce7789af",
+    "capturedAt": "2026-06-03T15:35:16Z",
+    "summary": "origin/main after fetch before closeout rebase."
   },
   "completedTasks": [
     "T001",
@@ -720,47 +720,47 @@
       "verifiedAt": "2026-06-03T15:20:40Z"
     }
   ],
-  "lastVerifiedCommit": "f627ce4f1efc43db27e6268608d20d4b22584ae0",
+  "lastVerifiedCommit": "c3c3d7c4b92c2588ea673298f5fbcc3bd0359863",
   "phaseCommits": [
     {
       "phase": "specs",
-      "commit": "dd22c46e82f3e34da62590e3ba0afb9a4fcc8ecf",
+      "commit": "35fee2d6037d83df0a5caf417b5d878e28f1670d",
       "summary": "Add post comment history spec",
       "committedAt": "2026-06-03T08:10:39Z"
     },
     {
       "phase": "service",
-      "commit": "efd5fe4f82193402a3af55cf8a7f4595735ea670",
+      "commit": "e0a54ed2941822d964ec2a798d0d87e9406da493",
       "summary": "Add shared comment edit history service",
       "committedAt": "2026-06-03T08:30:36Z"
     },
     {
       "phase": "post-data-flow",
-      "commit": "024c1b61e1feaeb680b470ded8e203a1fa2a4f78",
+      "commit": "b7c1b72d71364792eda4d152adf3073e08592d12",
       "summary": "Add post comment history data flow",
       "committedAt": "2026-06-03T08:48:40Z"
     },
     {
       "phase": "runtime",
-      "commit": "9e1ddc7bfd4547c52128abc81db0d64fb31f78dd",
+      "commit": "c7bec764301e890143cde8576a1350dd766cc4ab",
       "summary": "Wire post comment history runtime",
       "committedAt": "2026-06-03T08:59:13Z"
     },
     {
       "phase": "ui",
-      "commit": "eba044d65694b5fb992d747c7c48af99958f56e2",
+      "commit": "5893c785584a4f5db2dbb332876178b0465d53de",
       "summary": "Wire post comment history UI",
       "committedAt": "2026-06-03T09:11:04Z"
     },
     {
       "phase": "rules",
-      "commit": "50034105ac26b63400bc6fc8f665c890be0cae53",
+      "commit": "7375402afdb36e99c9934b6583359652b995b612",
       "summary": "Add post comment history rules",
       "committedAt": "2026-06-03T09:23:21Z"
     },
     {
       "phase": "review-fixes",
-      "commit": "2bedb02d5b938fbe824c38f0014c118d22af836b",
+      "commit": "73fd4e04eeae582fd71af814a6aa384b705c7e41",
       "summary": "Fix post history review gaps",
       "committedAt": "2026-06-03T10:00:12Z"
     }
@@ -777,8 +777,8 @@
         "verifiedAt": "2026-06-03T15:20:40Z"
       }
     ],
-    "deployedCommit": "f627ce4f1efc43db27e6268608d20d4b22584ae0"
+    "deployedCommit": "c3c3d7c4b92c2588ea673298f5fbcc3bd0359863"
   },
   "incidents": [],
-  "updatedAt": "2026-06-03T15:20:40Z"
+  "updatedAt": "2026-06-03T15:35:16Z"
 }
