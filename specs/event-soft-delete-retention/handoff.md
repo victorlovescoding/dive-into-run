@@ -5,47 +5,47 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention`
 - Branch: `085-event-soft-delete-retention`
-- Current head: `ed7b2fdae6251dc42f31a440f6bd4ea4b0be62a1`
+- Current head: `e73e98c13e6ad09c2234c51f9c0746136f2deee8`
 - Remote head: `origin/main` at `f641655b6b7f5fe48058ad43d59a5cdc147cdebf`
 - Authorization boundary:
   - edit: yes
   - commit: yes
-  - push: no
-  - pullRequest: no
-  - ciWatch: no
-  - merge: no
-  - localMainSync: no
-  - deployFirestoreRules: no
-- Firebase Functions deploy: not authorized
-- Current phase: implementation
+  - push: yes
+  - pullRequest: yes
+  - ciWatch: yes
+  - merge: yes
+  - localMainSync: yes
+  - deployFirestoreRules: yes (record completed deploy only; do not redeploy)
+- Firebase Functions deploy: completed before closeout; do not redeploy.
+- Current phase: closeout
 - Active task: none
 - Active wave: none
 - Latest reviewer decision: T009 follow-up reviewer `review_passed`; no
   Critical, Important, or Minor findings.
-- Last verified commit: `020cd585cc06d90984364445408d7efeae13adcc`
+- Last verified commit: `e73e98c13e6ad09c2234c51f9c0746136f2deee8`
 - Phase commits:
-  - spec: `8c3d5e797935186d8db27af6e80e042b9508ae3c`
-  - plan: `13347d19506c1c4e721ab3322ed40f92a4a1c92a`
-  - T001: `d8c2578f027f4d9fe11f6b21c31e5c16d61757f6`
-  - T002: `46e8cbf9b1c7959285a2534090a48b8bef87dab3`
-  - T003: `2b746382a1f9958f056a1c950a1d10bcf29231f2`
-  - T004: `1ebfcb472f65c7d9621287692dda9855b9157f12`
-  - workflow-check-fix: `cb0176d0764158f15ecfbda0799ebec438924dca`
-  - T005: `d139cba324b4aa6cb668b40e265ad56203868aa6`
-  - T006: `f90480248370b91718105d59376ed32e67bf86dc`
-  - T006-state: `f5f4ebfac5616bc25488e968b2659993b186c15c`
-  - T007-dispatch: `e7afa8f2a85b525d38c23eca57c2411ec3695356`
-  - T007: `1d221d626e24983436f1645ab664438a9885ca5f`
-  - T007-state: `d6ecc8f2a058f18e896734fa5885d3d626b62b27`
-  - T008-dispatch: `500bbee7e2803814f0a2821862e3788ff5593a95`
-  - T008: `020cd585cc06d90984364445408d7efeae13adcc`
-  - T008-state: `ed7b2fdae6251dc42f31a440f6bd4ea4b0be62a1`
-- Working tree: T009 final-review test sync and future-skew coverage passed
-  follow-up review; not staged or committed. Prior HEAD is already the
-  T008-state workflow-state sync commit `ed7b2fd`.
-- Rules deploy status: required, required=true, changed=true, deployedCommit=null
+  - spec: `c711116dd97ee5c13f87b57b622cc8503098a0d5`
+  - plan: `b492d5a5576bb8db8a7c1d4ebded845df55af2e3`
+  - T001: `847f4950ef1721c30e51e8210b32724c624dee04`
+  - T002: `dffaac27c72e6e98ba4e83a340669475b15b5624`
+  - T003: `addaca9b90618d0f5ce78b0492d414292681c9c1`
+  - T004: `2971d48f0d7ee488a04e6d457eeb5f821cda4d0e`
+  - workflow-check-fix: `baecdcb9dea592f6a925d32af8c6f803d6f3b061`
+  - T005: `94d7ddcc460aa3e2a02bcc903a91f284458139c4`
+  - T006: `5a59d5b5a320b022ccd3ea695194de26ac47fbf8`
+  - T006-state: `ab7670e688a532cc93429d8c3f64a459fb24a815`
+  - T007-dispatch: `903126ea1378c0e49f4fd8d4059c99ecacc0d9ff`
+  - T007: `69367b93df74278ea656e8321c4480e5b0d537c0`
+  - T007-state: `dbaa051b2bef4e1d687f8431fc6481e360b65bf9`
+  - T008-dispatch: `640d34d79fec121cc274a8f833fa8abc506ab308`
+  - T008: `194bb6da448e8cea07ebaacba972a24daac7b3bc`
+  - T008-state: `d7e56cee2c456c42b7c8a8e8d2560db1613ca988`
+  - T009: `e73e98c13e6ad09c2234c51f9c0746136f2deee8`
+- Working tree: clean before this workflow-only closeout metadata update.
+- Rebase: branch rebased onto `origin/main` at `f641655b6b7f5fe48058ad43d59a5cdc147cdebf` without conflicts.
+- Rules deploy status: deployed to Firebase project `dive-into-run`; deploy output reported `firestore.rules` released to `cloud.firestore`; deployed commit unavailable.
 - Incidents: T002 stale active detail cancellation notification carry-forward is
-  mitigated and documented.
+  resolved for this feature as a documented non-scope carry-forward.
 - Blocked: no
 - Blocked reason: none
 
@@ -62,11 +62,7 @@
 
 ## Next Action
 
-Coordinator should run fresh verification and commit the unstaged T009 working
-tree changes within the existing commit authorization. Prior HEAD is already
-`ed7b2fd`; do not push, open a PR, watch CI, merge, rebase, sync local `main`,
-deploy Firestore rules, or deploy Firebase Functions without separate explicit
-authorization.
+Push the feature branch, create a PR to `main`, watch required GitHub CI, merge on GitHub when checks pass, then fast-forward local `main`. Do not redeploy Firestore rules or Firebase Functions.
 
 ## Task Graph
 
@@ -91,34 +87,14 @@ separate coordinator-created worktrees with disjoint owned files.
 | `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js` | 0 | 1 file, 18 tests passed. |
 | `npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js` | 0 | 1 file, 8 tests passed. |
 | `firebase emulators:exec --only auth,firestore --project=demo-test "npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js"` | 0 | 2 files, 27 tests passed. |
-| `npm run lint:changed` | 0 | Passed with existing React version warning only. |
-| `npm run type-check:changed` | 0 | No changed-file type errors. |
+| `npm run lint:changed` | 0 | No changed JS files to lint after rebase. |
+| `npm run type-check:changed` | 0 | No changed JS files to check after rebase. |
 | `npm run workflow:check` | 0 | 15 status files valid and synced, including `event-soft-delete-retention/status.json`. |
-| `git diff --check` | 0 | No whitespace errors. |
+| `git diff --check` | 0 | No whitespace errors after rebase. |
 
-T006 implementation is reviewed and verified in the working tree. Firestore
-rules changed locally in T005 but have not been deployed. Firebase Functions
-changed locally in T006 but have not been deployed.
+T006 implementation is reviewed. Firestore rules and Firebase Functions deploys were completed before closeout to Firebase project `dive-into-run`; do not redeploy.
 
-Final feature review requested changes after T006 because member comments could
-expose active event comments when the parent event was soft-deleted or missing.
-T007 fixed this by filtering missing and soft-deleted event parents from member
-comments while preserving active event parents.
-
-Final feature review requested changes again after T007 because Firestore rules
-did not enforce that `deletedPurgeAt` is exactly 90 days after `deletedAt`.
-Payload investigation found product paths must also stop mixing
-`serverTimestamp()` `deletedAt` with client-computed `deletedPurgeAt`.
-T008 fixed this by enforcing exact 90-day retention plus request-time skew in
-rules and using one concrete delete timestamp in event, event comment, post,
-and post comment soft-delete payloads.
-
-Final reviewer then found stale runtime unit tests still expected
-`serverTimestamp()` sentinels for event and event-comment soft-delete payloads.
-T009 updated those tests to assert concrete `Date` values and exact 90-day
-purge math. T009 also added explicit future-skew emulator coverage; the new
-test passed immediately against existing rules, so no production rules change
-was needed.
+T009 updated runtime tests to assert concrete `Date` values and exact 90-day purge math. T009 also added explicit future-skew emulator coverage; the test passed against existing rules, so no additional production rules change was needed.
 
 ## Closeout Checklist
 
@@ -135,10 +111,8 @@ was needed.
 - [x] `rulesDeployStatus` matches the rules release state.
 - [x] Final summary does not imply deployed rules, deployed Functions, or
       deployed product behavior without deploy evidence.
-- [ ] PR, CI, and merge notes carry release risk if rules or Functions are not
-      deployed.
-- [ ] Open incidents are resolved, mitigated with explicit carry-forward, or
-      block closeout.
+- [x] PR, CI, and merge notes record that rules and Functions were already deployed before closeout.
+- [x] Open incidents are resolved or explicitly carried forward without blocking closeout.
 - [x] Changed files are intentionally in scope.
 - [x] Blockers are resolved or explicitly carried forward.
 
@@ -156,8 +130,7 @@ was needed.
 - No task may introduce restore UI or restore API behavior.
 - T006 must verify scheduled function wrapper registration/delegation and purge
   count logging, not only purge core behavior and syntax.
-- Firestore rules and Firebase Functions deploys are release actions and are
-  not authorized in the current boundary.
+- Firestore rules and Firebase Functions were already deployed before closeout; do not redeploy.
 - T002 expanded its owned files to include `src/runtime/hooks/useEventMutations.js`
   because event-list deletion must pass the actor contract through the existing
   list-page mutation hook.

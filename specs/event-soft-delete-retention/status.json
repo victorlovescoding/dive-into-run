@@ -3,31 +3,31 @@
   "feature": "event-soft-delete-retention",
   "branch": "085-event-soft-delete-retention",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-085-event-soft-delete-retention",
-  "phase": "implementation",
+  "phase": "closeout",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
-    "push": false,
-    "pullRequest": false,
-    "ciWatch": false,
-    "merge": false,
-    "localMainSync": false,
-    "deployFirestoreRules": false
+    "push": true,
+    "pullRequest": true,
+    "ciWatch": true,
+    "merge": true,
+    "localMainSync": true,
+    "deployFirestoreRules": true
   },
   "currentHead": {
     "branch": "085-event-soft-delete-retention",
-    "commit": "ed7b2fdae6251dc42f31a440f6bd4ea4b0be62a1",
-    "capturedAt": "2026-06-03T01:16:32+08:00",
-    "summary": "HEAD is the T008 workflow-state sync commit; T009 final-review test sync passed follow-up review in the working tree and is not staged or committed."
+    "commit": "e73e98c13e6ad09c2234c51f9c0746136f2deee8",
+    "capturedAt": "2026-06-03T12:22:30+08:00",
+    "summary": "Branch rebased onto origin/main f641655; T009 final-review test sync is committed as e73e98c. A workflow-only closeout metadata commit may follow."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "f641655b6b7f5fe48058ad43d59a5cdc147cdebf",
-    "capturedAt": "2026-06-03T00:21:11+08:00",
-    "summary": "Current origin/main while branch is ahead and behind origin/main; rebase remains a later closeout concern."
+    "capturedAt": "2026-06-03T12:22:30+08:00",
+    "summary": "origin/main fetched before closeout rebase; feature branch is rebased on this commit."
   },
   "completedTasks": [
     "T001",
@@ -1440,163 +1440,170 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js",
-      "exitCode": 0,
-      "summary": "1 file, 18 tests passed.",
-      "verifiedAt": "2026-06-03T01:00:23+08:00"
-    },
-    {
-      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js",
-      "exitCode": 0,
-      "summary": "1 file, 8 tests passed.",
-      "verifiedAt": "2026-06-03T01:00:23+08:00"
-    },
-    {
-      "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js\"",
-      "exitCode": 0,
-      "summary": "2 files, 27 tests passed.",
-      "verifiedAt": "2026-06-03T01:00:15+08:00"
-    },
-    {
       "command": "npm run lint:changed",
       "exitCode": 0,
-      "summary": "Passed with existing React version warning only.",
-      "verifiedAt": "2026-06-03T01:01:00+08:00"
+      "summary": "No changed JS files to lint after rebase onto origin/main.",
+      "verifiedAt": "2026-06-03T12:20:44+08:00"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
-      "summary": "No changed-file type errors.",
-      "verifiedAt": "2026-06-03T01:01:00+08:00"
+      "summary": "No changed JS files to check after rebase onto origin/main.",
+      "verifiedAt": "2026-06-03T12:20:44+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-soft-delete-use-cases.test.js",
+      "exitCode": 0,
+      "summary": "1 file, 18 tests passed after rebase.",
+      "verifiedAt": "2026-06-03T12:20:44+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/runtime/event-comment-soft-delete-use-cases.test.js",
+      "exitCode": 0,
+      "summary": "1 file, 8 tests passed after rebase.",
+      "verifiedAt": "2026-06-03T12:20:44+08:00"
+    },
+    {
+      "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js",
+      "exitCode": 0,
+      "summary": "2 files, 7 tests passed after rebase.",
+      "verifiedAt": "2026-06-03T12:20:44+08:00"
+    },
+    {
+      "command": "firebase emulators:exec --only auth,firestore --project=demo-test \"npx vitest run --project=server tests/server/firestore/event-soft-delete-rules.test.js tests/server/firestore/post-soft-delete-rules.test.js\"",
+      "exitCode": 0,
+      "summary": "2 files, 27 tests passed after rebase.",
+      "verifiedAt": "2026-06-03T12:21:46+08:00"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
-      "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-03T01:01:30+08:00"
-    },
-    {
-      "command": "npm run workflow:check",
-      "exitCode": 0,
-      "summary": "15 status files valid and synced, including event-soft-delete-retention/status.json.",
-      "verifiedAt": "2026-06-03T01:05:01+08:00"
+      "summary": "No whitespace errors after rebase.",
+      "verifiedAt": "2026-06-03T12:20:44+08:00"
     }
   ],
-  "lastVerifiedCommit": "020cd585cc06d90984364445408d7efeae13adcc",
+  "lastVerifiedCommit": "e73e98c13e6ad09c2234c51f9c0746136f2deee8",
   "phaseCommits": [
     {
       "phase": "spec",
-      "commit": "8c3d5e797935186d8db27af6e80e042b9508ae3c",
+      "commit": "c711116dd97ee5c13f87b57b622cc8503098a0d5",
       "summary": "Approved event soft-delete retention spec, rebased onto origin/main.",
       "committedAt": "2026-06-02T00:44:58+08:00"
     },
     {
       "phase": "plan",
-      "commit": "13347d19506c1c4e721ab3322ed40f92a4a1c92a",
+      "commit": "b492d5a5576bb8db8a7c1d4ebded845df55af2e3",
       "summary": "Reviewed event retention implementation plan, rebased onto origin/main.",
       "committedAt": "2026-06-02T00:44:58+08:00"
     },
     {
       "phase": "T001",
-      "commit": "d8c2578f027f4d9fe11f6b21c31e5c16d61757f6",
+      "commit": "847f4950ef1721c30e51e8210b32724c624dee04",
       "summary": "Add event retention helpers.",
       "committedAt": "2026-06-02T01:09:06+08:00"
     },
     {
       "phase": "T002",
-      "commit": "46e8cbf9b1c7959285a2534090a48b8bef87dab3",
+      "commit": "dffaac27c72e6e98ba4e83a340669475b15b5624",
       "summary": "Add event soft delete reads.",
       "committedAt": "2026-06-02T10:24:50+08:00"
     },
     {
       "phase": "T003",
-      "commit": "2b746382a1f9958f056a1c950a1d10bcf29231f2",
+      "commit": "addaca9b90618d0f5ce78b0492d414292681c9c1",
       "summary": "Add event comment soft delete.",
       "committedAt": "2026-06-02T11:23:01+08:00"
     },
     {
       "phase": "T004",
-      "commit": "1ebfcb472f65c7d9621287692dda9855b9157f12",
+      "commit": "2971d48f0d7ee488a04e6d457eeb5f821cda4d0e",
       "summary": "Add event secondary soft delete.",
       "committedAt": "2026-06-02T11:48:25+08:00"
     },
     {
       "phase": "workflow-check-fix",
-      "commit": "cb0176d0764158f15ecfbda0799ebec438924dca",
+      "commit": "baecdcb9dea592f6a925d32af8c6f803d6f3b061",
       "summary": "Fix workflow rules status scope.",
       "committedAt": "2026-06-02T22:38:39+08:00"
     },
     {
       "phase": "T005",
-      "commit": "d139cba324b4aa6cb668b40e265ad56203868aa6",
+      "commit": "94d7ddcc460aa3e2a02bcc903a91f284458139c4",
       "summary": "Add event retention rules.",
       "committedAt": "2026-06-02T22:42:10+08:00"
     },
     {
       "phase": "T006",
-      "commit": "f90480248370b91718105d59376ed32e67bf86dc",
+      "commit": "5a59d5b5a320b022ccd3ea695194de26ac47fbf8",
       "summary": "Add event retention purge.",
       "committedAt": "2026-06-02T23:29:07+08:00"
     },
     {
       "phase": "T006-state",
-      "commit": "f5f4ebfac5616bc25488e968b2659993b186c15c",
+      "commit": "ab7670e688a532cc93429d8c3f64a459fb24a815",
       "summary": "Record event retention T006 state.",
       "committedAt": "2026-06-02T23:30:12+08:00"
     },
     {
       "phase": "T007-dispatch",
-      "commit": "e7afa8f2a85b525d38c23eca57c2411ec3695356",
+      "commit": "903126ea1378c0e49f4fd8d4059c99ecacc0d9ff",
       "summary": "Start event member comments fix.",
       "committedAt": "2026-06-02T23:40:42+08:00"
     },
     {
       "phase": "T007",
-      "commit": "1d221d626e24983436f1645ab664438a9885ca5f",
+      "commit": "69367b93df74278ea656e8321c4480e5b0d537c0",
       "summary": "Fix event member comments filter.",
       "committedAt": "2026-06-02T23:58:27+08:00"
     },
     {
       "phase": "T007-state",
-      "commit": "d6ecc8f2a058f18e896734fa5885d3d626b62b27",
+      "commit": "dbaa051b2bef4e1d687f8431fc6481e360b65bf9",
       "summary": "Record event member comments state.",
       "committedAt": "2026-06-02T23:58:27+08:00"
     },
     {
       "phase": "T008-dispatch",
-      "commit": "500bbee7e2803814f0a2821862e3788ff5593a95",
+      "commit": "640d34d79fec121cc274a8f833fa8abc506ab308",
       "summary": "Start event retention rules fix.",
       "committedAt": "2026-06-03T00:21:11+08:00"
     },
     {
       "phase": "T008",
-      "commit": "020cd585cc06d90984364445408d7efeae13adcc",
+      "commit": "194bb6da448e8cea07ebaacba972a24daac7b3bc",
       "summary": "Enforce retention window rules.",
       "committedAt": "2026-06-03T00:47:05+08:00"
     },
     {
       "phase": "T008-state",
-      "commit": "ed7b2fdae6251dc42f31a440f6bd4ea4b0be62a1",
+      "commit": "d7e56cee2c456c42b7c8a8e8d2560db1613ca988",
       "summary": "Record event retention rules state.",
       "committedAt": "2026-06-03T00:48:54+08:00"
+    },
+    {
+      "phase": "T009",
+      "commit": "e73e98c13e6ad09c2234c51f9c0746136f2deee8",
+      "summary": "Sync event soft-delete tests.",
+      "committedAt": "2026-06-03T12:18:00+08:00"
     }
   ],
   "rulesDeployStatus": {
-    "state": "required",
+    "state": "deployed",
     "required": true,
     "changed": true,
     "evidence": [
-      "T005 changed firestore.rules locally; deployFirestoreRules is not authorized and no rules deploy was performed."
+      "Firestore rules deploy completed before closeout to Firebase project dive-into-run; deploy output reported firestore.rules released to cloud.firestore.",
+      "Firebase CLI lacked a read-only rules release query, so deployedCommit remains null."
     ],
     "deployedCommit": null
   },
   "incidents": [
     {
       "id": "T002-stale-detail-cancellation-notification",
-      "state": "mitigated",
-      "summary": "A stale active event detail can still fetch participants and send the existing cancellation notification before the repo transaction returns already_deleted if another session soft-deleted the event first. T002 preserves notification sequencing because notification behavior is non-scope; revisit with notification ownership.",
+      "state": "resolved",
+      "summary": "Documented carry-forward: a stale active event detail can still fetch participants and send the existing cancellation notification before the repo transaction returns already_deleted if another session soft-deleted the event first. Notification sequencing is outside this feature scope and is not a closeout blocker.",
       "openedAt": "2026-06-02T02:47:10+08:00"
     }
   ],
-  "updatedAt": "2026-06-03T01:16:32+08:00"
+  "updatedAt": "2026-06-03T12:22:30+08:00"
 }

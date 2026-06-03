@@ -58,7 +58,7 @@
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: plan or implementation phase commit after Reviewer PASS and coordinator approval.
-- **Last verified commit**: `d8c2578f027f4d9fe11f6b21c31e5c16d61757f6`
+- **Last verified commit**: `847f4950ef1721c30e51e8210b32724c624dee04`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -173,7 +173,7 @@ Evidence:
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation
-- **Last verified commit**: `46e8cbf9b1c7959285a2534090a48b8bef87dab3`
+- **Last verified commit**: `dffaac27c72e6e98ba4e83a340669475b15b5624`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: stale already-deleted detail cancellation notification side
@@ -314,7 +314,7 @@ Carry-forward:
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation
-- **Last verified commit**: `2b746382a1f9958f056a1c950a1d10bcf29231f2`
+- **Last verified commit**: `addaca9b90618d0f5ce78b0492d414292681c9c1`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -432,7 +432,7 @@ Evidence:
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation
-- **Last verified commit**: `1ebfcb472f65c7d9621287692dda9855b9157f12`
+- **Last verified commit**: `2971d48f0d7ee488a04e6d457eeb5f821cda4d0e`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -566,7 +566,7 @@ Evidence:
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation
-- **Last verified commit**: `d139cba324b4aa6cb668b40e265ad56203868aa6`
+- **Last verified commit**: `94d7ddcc460aa3e2a02bcc903a91f284458139c4`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -693,7 +693,7 @@ Evidence:
 - **Engineer**: Engineer for Functions purge; Coordinator for workflow-state final sync after Reviewer PASS.
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation or verification
-- **Last verified commit**: `f90480248370b91718105d59376ed32e67bf86dc`
+- **Last verified commit**: `5a59d5b5a320b022ccd3ea695194de26ac47fbf8`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: none
@@ -868,7 +868,7 @@ Evidence:
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation or verification
-- **Last verified commit**: `1d221d626e24983436f1645ab664438a9885ca5f`
+- **Last verified commit**: `69367b93df74278ea656e8321c4480e5b0d537c0`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: final review found member comments could expose active event
@@ -1008,7 +1008,7 @@ Evidence:
 - **Engineer**: Engineer
 - **Reviewer**: Reviewer
 - **Commit checkpoint**: implementation or verification
-- **Last verified commit**: `020cd585cc06d90984364445408d7efeae13adcc`
+- **Last verified commit**: `194bb6da448e8cea07ebaacba972a24daac7b3bc`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: final review found Firestore rules allowed arbitrary
@@ -1185,7 +1185,7 @@ Evidence:
 - **Engineer**: Engineer
 - **Reviewer**: Final reviewer follow-up `review_passed`; no blocking findings.
 - **Commit checkpoint**: implementation or verification
-- **Last verified commit**: `020cd585cc06d90984364445408d7efeae13adcc`
+- **Last verified commit**: `e73e98c13e6ad09c2234c51f9c0746136f2deee8`
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required
 - **Incidents**: final reviewer found stale runtime unit-test expectations for
@@ -1327,6 +1327,4 @@ readiness gates, not deploy authorization.
 | `npm run workflow:check` | Exit 0, workflow state valid and synced. |
 | `git diff --check` | Exit 0, no whitespace errors. |
 
-Closeout remains blocked at push, PR, CI watch, merge, local `main` sync,
-Firestore rules deploy, and Firebase Functions deploy until the user explicitly
-authorizes those boundaries.
+Closeout is now authorized for push, PR, CI watch, GitHub merge, and local `main` fast-forward/sync. Firestore rules and Firebase Functions were deployed before closeout to Firebase project `dive-into-run`; do not redeploy.
