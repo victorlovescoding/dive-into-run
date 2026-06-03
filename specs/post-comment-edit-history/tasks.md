@@ -159,7 +159,7 @@ Evidence:
 
 ### T002 - Post Comment Transaction And Use-Case History API
 
-- **State**: `todo`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-2`
 - **Engineer**: Engineer, repo and use-case layer
@@ -251,10 +251,17 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending.
-- Reviewer report: pending.
-- Command output summary: pending.
-- Changed files summary: pending.
+- Engineer report: DONE. Added post comment edit transaction, history fetch use-case, and focused tests. After review rejection, changed transaction history content to come from the server comment snapshot.
+- Reviewer report: review_passed by Mendel after one rejection. Original stale-client history P1 was resolved.
+- Command output summary:
+  - `npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/runtime/post-comment-edit-history-use-cases.test.js` -> exit 0, 1 file / 7 tests.
+  - `npm run lint:changed` -> exit 0, React version warning only.
+  - `npm run type-check:changed` -> exit 0, no changed-file type errors.
+  - `git diff --check` -> exit 0, no whitespace errors.
+- Changed files summary:
+  - Updated `src/repo/client/firebase-posts-repo.js` with transaction-backed post comment edit history and history fetch.
+  - Updated `src/runtime/client/use-cases/post-use-cases.js` with update payload wiring and `fetchCommentHistory`.
+  - Created `specs/post-comment-edit-history/tests/unit/runtime/post-comment-edit-history-use-cases.test.js`.
 - Phase commits: none.
 - Rules deploy status: required, no rules changed yet.
 - Incidents: none.
