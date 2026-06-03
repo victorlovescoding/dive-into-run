@@ -47,7 +47,7 @@
 
 ### T001 - Shared Comment Edit History Service
 
-- **State**: `todo`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-1`
 - **Engineer**: Engineer, service layer
@@ -141,10 +141,18 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending.
-- Reviewer report: pending.
-- Command output summary: pending.
-- Changed files summary: pending.
+- Engineer report: DONE_WITH_CONCERNS. T001 implementation complete; worktree lacked `node_modules`, so Engineer used a git-ignored `node_modules` symlink to run verification.
+- Reviewer report: review_passed by Hubble. No blocking findings; T001 diff stayed within owned service/test files and `node_modules` is ignored.
+- Command output summary:
+  - `npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/service/comment-edit-history-service.test.js` -> exit 0, 1 file / 6 tests.
+  - `npm run lint:changed` -> exit 0, React version warning only.
+  - `npm run type-check:changed` -> exit 0, no changed-file type errors.
+  - `git diff --check` -> exit 0, no whitespace errors.
+- Changed files summary:
+  - Created `src/service/comment-edit-history-service.js`.
+  - Updated `src/service/event-comment-service.js` to use the shared helper while preserving `content` payloads.
+  - Updated `src/service/post-service.js` to use the shared helper while preserving the `comment` field.
+  - Created `specs/post-comment-edit-history/tests/unit/service/comment-edit-history-service.test.js`.
 - Phase commits: none.
 - Rules deploy status: required, no rules changed yet.
 - Incidents: none.

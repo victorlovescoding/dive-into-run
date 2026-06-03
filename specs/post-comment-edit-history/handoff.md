@@ -6,7 +6,7 @@
 - Profile: P4, because this is a new product feature and Firestore rules are in scope.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-088-post-comment-edit-history`
 - Branch: `088-post-comment-edit-history`
-- Current head: `f3ca150ece7f9ba182fcde80cae95d6c0da18305`
+- Current head: `dd22c46e82f3e34da62590e3ba0afb9a4fcc8ecf`
 - Remote head: `origin/main` at `f3ca150ece7f9ba182fcde80cae95d6c0da18305`
 - Authorization boundary:
   - edit: true. User authorized implementation on 2026-06-03 after approving the design and durable repo docs.
@@ -17,12 +17,13 @@
   - merge: false
   - localMainSync: false
   - deployFirestoreRules: false
-- Current phase: `implementation_authorized`
+- Current phase: `t001_review_passed`
 - Active task: none
 - Active wave: none
-- Latest reviewer decision: none
+- Latest reviewer decision: T001 `review_passed` by Hubble on 2026-06-03.
 - Last verified commit: none
-- Phase commits: none
+- Phase commits:
+  - `specs`: `dd22c46e82f3e34da62590e3ba0afb9a4fcc8ecf` (`Add post comment history spec`)
 - Rules deploy status: `required`, `changed=false`, no deploy evidence.
 - Incidents: none
 - Blocked: no
@@ -39,7 +40,7 @@
 
 ## Next Action
 
-Main coordinator should dispatch T001 to an Engineer. Product implementation edits and commits are authorized; push, pull request, CI watch, merge, local main sync, and Firestore rules deploy are not authorized.
+Main coordinator should commit the reviewed T001 service checkpoint, then dispatch T002. Product implementation edits and commits are authorized; push, pull request, CI watch, merge, local main sync, and Firestore rules deploy are not authorized.
 
 ## Latest Evidence
 
@@ -71,6 +72,9 @@ Main coordinator should dispatch T001 to an Engineer. Product implementation edi
 | `npm run workflow:check -- specs/post-comment-edit-history/status.json` | 0 | `status.json` valid and synced for this feature. |
 | `node scripts/check-superpowers-state.js --owned-files specs/post-comment-edit-history/spec.md specs/post-comment-edit-history/plan.md specs/post-comment-edit-history/tasks.md specs/post-comment-edit-history/handoff.md specs/post-comment-edit-history/status.json --status specs/post-comment-edit-history/status.json` | 0 | Five changed files are within explicit owned specs files; workflow state synced. |
 | `git diff --check` | 0 | No whitespace errors. |
+| `npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/service/comment-edit-history-service.test.js` | 0 | T001 service tests passed: 1 file, 6 tests. |
+| `npm run lint:changed` | 0 | No lint errors; existing React version warning only. |
+| `npm run type-check:changed` | 0 | No type errors in changed files. |
 
 ## Closeout Checklist
 

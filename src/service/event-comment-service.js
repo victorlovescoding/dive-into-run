@@ -1,6 +1,7 @@
 import { Timestamp } from 'firebase/firestore';
 import { isAccountDeletionHidden } from '@/config/account-deletion';
 import { isSoftDeletedRecord } from '@/repo/soft-delete-retention';
+import buildCommentEditHistoryPayload from '@/service/comment-edit-history-service';
 
 /**
  * @typedef {object} CommentData
@@ -112,23 +113,15 @@ export function buildAddedComment(id, user, trimmed) {
  * @returns {{ historyPayload: object, commentUpdate: object }} transaction payload。
  */
 export function buildUpdateCommentPayload(newContent, oldContent, editedAtValue) {
-  const trimmed = validateCommentContent(newContent, 'newContent', 'updateComment');
-
-  if (trimmed === oldContent) {
-    throw new Error('updateComment: content unchanged');
-  }
-
-  return {
-    historyPayload: {
-      content: oldContent,
-      editedAt: editedAtValue,
-    },
-    commentUpdate: {
-      content: trimmed,
-      updatedAt: editedAtValue,
-      isEdited: true,
-    },
-  };
+  return buildCommentEditHistoryPayload({
+    newText: newContent,
+    oldText: oldContent,
+    currentTextField: 'content',
+    updatedAtValue: editedAtValue,
+    fieldLabel: 'newContent',
+    functionName: 'updateComment',
+    maxLength: 500,
+  });
 }
 
 /**
