@@ -1,6 +1,7 @@
 import polyline from '@mapbox/polyline';
 import { Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 import { isAccountDeletionHidden } from '@/config/account-deletion';
+import { isSoftDeletedRecord } from '@/repo/soft-delete-retention';
 
 export { EVENT_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
 
@@ -79,6 +80,9 @@ export { EVENT_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
  * @property {string} [routeImage] - 路線圖片 URL。
  * @property {RoutePayload} [route] - 路線資料。
  * @property {RoutePoint[][]} [routeCoordinates] - 路線座標（每條路線一個子陣列）。
+ * @property {Timestamp} [deletedAt] - 軟刪除時間。
+ * @property {string} [deletedByUid] - 執行軟刪除的使用者 UID。
+ * @property {Timestamp} [deletedPurgeAt] - 可永久刪除時間。
  */
 
 /**
@@ -217,7 +221,7 @@ export function toEventData(snapshot) {
  * @returns {boolean} true when visible.
  */
 export function isPublicEventRecordVisible(data) {
-  return !isAccountDeletionHidden(data);
+  return !isAccountDeletionHidden(data) && !isSoftDeletedRecord(data);
 }
 
 /**

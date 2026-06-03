@@ -41,7 +41,8 @@ export async function createEvent(raw, extra = {}) {
  * @param {number} [limitCount] - 一次取得幾筆資料。
  * @returns {Promise<{
  *   events: import('@/service/event-service').EventData[],
- *   lastDoc: import('firebase/firestore').QueryDocumentSnapshot | null
+ *   lastDoc: import('firebase/firestore').QueryDocumentSnapshot | null,
+ *   hasMore: boolean
  * }>} 活動列表與分頁 cursor。
  */
 export async function fetchLatestEvents(limitCount = 10) {
@@ -49,6 +50,7 @@ export async function fetchLatestEvents(limitCount = 10) {
   return {
     events: toEventDataList(docs),
     lastDoc,
+    hasMore: docs.length === limitCount && Boolean(lastDoc),
   };
 }
 
@@ -90,18 +92,20 @@ export async function fetchEventById(eventId) {
  * @param {number} [limitCount] - 一次取得幾筆資料。
  * @returns {Promise<{
  *   events: import('@/service/event-service').EventData[],
- *   lastDoc: import('firebase/firestore').QueryDocumentSnapshot | null
+ *   lastDoc: import('firebase/firestore').QueryDocumentSnapshot | null,
+ *   hasMore: boolean
  * }>} 活動列表與分頁 cursor。
  */
 export async function fetchNextEvents(afterDoc, limitCount = 10) {
   if (!afterDoc) {
-    return { events: [], lastDoc: null };
+    return { events: [], lastDoc: null, hasMore: false };
   }
 
   const { docs, lastDoc } = await fetchNextEventPage(afterDoc, limitCount);
   return {
     events: toEventDataList(docs),
     lastDoc,
+    hasMore: docs.length === limitCount && Boolean(lastDoc),
   };
 }
 
@@ -208,11 +212,12 @@ export async function updateEvent(eventId, updatedFields) {
 }
 
 /**
- * 刪除活動及其子集合。
+ * Soft deletes an event document.
  * @param {string} eventId - 活動 ID。
- * @returns {Promise<{ ok: boolean }>} 刪除結果。
+ * @param {string | { uid?: string, name?: string, photoURL?: string }} actor - User performing the delete.
+ * @returns {Promise<{ ok: boolean, status: 'deleted' | 'already_deleted' }>} 刪除結果。
  */
-export async function deleteEvent(eventId) {
+export async function deleteEvent(eventId, actor) {
   if (!eventId) throw new Error('deleteEvent: eventId is required');
-  return deleteEventTree(String(eventId));
+  return deleteEventTree(String(eventId), actor);
 }

@@ -10,15 +10,37 @@ import {
   limit,
   startAfter,
   runTransaction,
-  writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/config/client/firebase-client';
+import {
+  buildSoftDeletePayload,
+  isSoftDeletedRecord,
+} from '@/repo/soft-delete-retention';
 import { EVENT_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
 
 /**
  * @typedef {import('firebase/firestore').QueryConstraint} QueryConstraint
  * @typedef {import('firebase/firestore').QueryDocumentSnapshot} QueryDocumentSnapshot
  */
+
+/**
+ * Builds the product-path permission error for unauthorized event deletes.
+ * @returns {Error & { code: string }} Permission-denied error.
+ */
+function createPermissionDeniedError() {
+  return Object.assign(new Error('permission-denied'), { code: 'permission-denied' });
+}
+
+/**
+ * Reads an actor UID from the supported delete actor shapes.
+ * @param {string | { uid?: string, name?: string, photoURL?: string } | null | undefined} actor - User performing the delete.
+ * @returns {string} Actor UID.
+ */
+function requireDeleteActorUid(actor) {
+  const uid = typeof actor === 'string' ? actor : actor?.uid;
+  if (!uid) throw createPermissionDeniedError();
+  return String(uid);
+}
 
 /**
  * 新增活動文件。
@@ -169,9 +191,14 @@ export async function runEventParticipantTransaction(eventId, uid, buildPlan) {
       throw new Error(EVENT_NOT_FOUND_MESSAGE);
     }
 
+    const eventData = eventSnapshot.data();
+    if (isSoftDeletedRecord(eventData)) {
+      throw new Error(EVENT_NOT_FOUND_MESSAGE);
+    }
+
     const participantSnapshot = await tx.get(participantRef);
     const plan = buildPlan({
-      eventData: eventSnapshot.data(),
+      eventData,
       participantExists: participantSnapshot.exists(),
     });
 
@@ -249,45 +276,51 @@ export async function runEventUpdateTransaction(eventId, buildPlan) {
       throw new Error(EVENT_NOT_FOUND_MESSAGE);
     }
 
-    const plan = buildPlan(snapshot.data());
+    const eventData = snapshot.data();
+    if (isSoftDeletedRecord(eventData)) {
+      throw new Error(EVENT_NOT_FOUND_MESSAGE);
+    }
+
+    const plan = buildPlan(eventData);
     tx.update(eventRef, plan.updates);
     return plan.result;
   });
 }
 
 /**
- * 刪除活動及其 participants/comments/history 子樹。
+ * Soft deletes the event document and leaves participants/comments/history for retention purge.
  * @param {string} eventId - 活動 ID。
- * @returns {Promise<{ ok: boolean }>} 刪除結果。
+ * @param {string | { uid?: string, name?: string, photoURL?: string }} actor - User performing the delete.
+ * @returns {Promise<{ ok: boolean, status: 'deleted' | 'already_deleted' }>} 刪除結果。
  */
-export async function deleteEventTree(eventId) {
+export async function deleteEventTree(eventId, actor) {
+  if (!eventId) throw new Error('deleteEvent: eventId is required');
+
+  const actorUid = requireDeleteActorUid(actor);
   const eventRef = doc(db, 'events', String(eventId));
-  const eventSnapshot = await getDoc(eventRef);
 
-  if (!eventSnapshot.exists()) {
-    throw new Error(EVENT_NOT_FOUND_MESSAGE);
-  }
+  const status = await runTransaction(db, async (tx) => {
+    const snapshot = await tx.get(eventRef);
+    if (!snapshot.exists()) {
+      throw new Error(EVENT_NOT_FOUND_MESSAGE);
+    }
 
-  const participantsSnapshot = await getDocs(
-    collection(db, 'events', String(eventId), 'participants'),
-  );
-  const commentsSnapshot = await getDocs(collection(db, 'events', String(eventId), 'comments'));
-  const historySnapshots = await Promise.all(
-    commentsSnapshot.docs.map((commentDoc) =>
-      getDocs(collection(db, 'events', String(eventId), 'comments', commentDoc.id, 'history')),
-    ),
-  );
+    const eventData = snapshot.data();
+    if (String(eventData.hostUid || '') !== actorUid) {
+      throw createPermissionDeniedError();
+    }
 
-  const batch = writeBatch(db);
+    if (isSoftDeletedRecord(eventData)) return 'already_deleted';
 
-  historySnapshots.forEach((historySnapshot) => {
-    historySnapshot.docs.forEach((historyDoc) => batch.delete(historyDoc.ref));
+    const deletedAt = new Date();
+    const payload = buildSoftDeletePayload({
+      actorUid,
+      deletedAt,
+    });
+
+    tx.update(eventRef, payload);
+    return 'deleted';
   });
 
-  commentsSnapshot.docs.forEach((commentDoc) => batch.delete(commentDoc.ref));
-  participantsSnapshot.docs.forEach((participantDoc) => batch.delete(participantDoc.ref));
-  batch.delete(eventRef);
-
-  await batch.commit();
-  return { ok: true };
+  return { ok: true, status };
 }

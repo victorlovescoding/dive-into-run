@@ -187,12 +187,16 @@ export default function useEventDetailMutations({
         showToast('刪除活動前請先登入', 'error');
         return;
       }
+      if (!event || String(event.hostUid || '') !== actor.uid) {
+        showToast('刪除活動失敗，請稍後再試', 'error');
+        return;
+      }
 
       setIsDeletingEvent(true);
       try {
         const currentParticipants = await fetchParticipants(String(eventId));
-        await notifyEventCancelled(String(eventId), event?.title || '', currentParticipants, actor);
-        await deleteEvent(String(eventId));
+        await notifyEventCancelled(String(eventId), event.title || '', currentParticipants, actor);
+        await deleteEvent(String(eventId), actor);
 
         if (!isMountedRef.current) return;
         setDeletingEventId(null);

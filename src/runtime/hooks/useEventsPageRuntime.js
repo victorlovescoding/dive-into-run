@@ -90,12 +90,13 @@ export default function useEventsPageRuntime() {
     }
 
     try {
-      const { events: latest, lastDoc } = await fetchLatestEvents(10);
+      const page = await fetchLatestEvents(10);
+      const { events: latest, lastDoc } = page;
       if (!isMountedRef.current) return;
 
       setEvents((previous) => (replaceExisting ? latest : mergeEventsById(previous, latest)));
       setCursor(lastDoc);
-      setHasMore(latest.length === 10 && Boolean(lastDoc));
+      setHasMore(page.hasMore);
       setLoadMoreError(null);
     } catch (error) {
       console.error('載入活動失敗:', error);
@@ -280,11 +281,12 @@ export default function useEventsPageRuntime() {
     setIsLoadingMore(true);
 
     try {
-      const { events: nextEvents, lastDoc } = await fetchNextEvents(cursor, 10);
+      const page = await fetchNextEvents(cursor, 10);
+      const { events: nextEvents, lastDoc } = page;
       if (!isMountedRef.current) return;
       setEvents((previous) => mergeEventsById(previous, nextEvents));
       setCursor(lastDoc);
-      setHasMore(nextEvents.length === 10 && Boolean(lastDoc));
+      setHasMore(page.hasMore);
       setLoadMoreError(null);
     } catch (error) {
       console.error('載入更多活動失敗:', error);

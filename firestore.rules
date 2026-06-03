@@ -14,6 +14,14 @@ service cloud.firestore {
       return ['deletedAt', 'deletedByUid', 'deletedPurgeAt'];
     }
 
+    function softDeleteRetentionWindow() {
+      return duration.value(90, 'd');
+    }
+
+    function softDeleteRequestSkewWindow() {
+      return duration.value(5, 'm');
+    }
+
     function isSoftDeletedData(data) {
       return data.keys().hasAny(['deletedAt']);
     }
@@ -37,6 +45,21 @@ service cloud.firestore {
         && request.auth.uid == get(postPath(postId)).data.authorUid;
     }
 
+    function eventPath(eventId) {
+      return /databases/$(database)/documents/events/$(eventId);
+    }
+
+    function isActiveEvent(eventId) {
+      return exists(eventPath(eventId))
+        && isActiveData(get(eventPath(eventId)).data);
+    }
+
+    function isEventHost(eventId) {
+      return isSignedIn()
+        && exists(eventPath(eventId))
+        && request.auth.uid == get(eventPath(eventId)).data.hostUid;
+    }
+
     function affectsSoftDeleteFields() {
       return request.resource.data.diff(resource.data).affectedKeys().hasAny(softDeleteFields());
     }
@@ -48,7 +71,11 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(softDeleteFields())
         && request.resource.data.deletedByUid == actorUid
         && request.resource.data.deletedAt is timestamp
-        && request.resource.data.deletedPurgeAt is timestamp;
+        && request.resource.data.deletedPurgeAt is timestamp
+        && request.resource.data.deletedPurgeAt
+          == request.resource.data.deletedAt + softDeleteRetentionWindow()
+        && request.resource.data.deletedAt >= request.time - softDeleteRequestSkewWindow()
+        && request.resource.data.deletedAt <= request.time + softDeleteRequestSkewWindow();
     }
 
     function isPostCounterUpdate() {
@@ -217,7 +244,7 @@ service cloud.firestore {
     // collectionGroup('likes') 需要的規則
     match /{path=**}/likes/{uid} {
       allow read: if isSignedIn();
-      allow create, delete: if isSignedIn() && request.auth.uid == uid;
+      allow create, delete: if false;
     }
 
     match /posts/{postId}/comments/{commentId} {
@@ -296,21 +323,26 @@ service cloud.firestore {
         && request.resource.data.distanceKm is number
         && request.resource.data.maxParticipants is number;
 
-      // 主揪才能刪活動
-      allow delete: if isSignedIn()
-        && request.auth.uid == resource.data.hostUid;
+      allow delete: if false;
 
       // 主揪：可更新任何欄位（但 maxParticipants 不可低於目前報名人數）；非主揪：只能更新名額相關欄位
       allow update: if (
         isSignedIn() && request.auth.uid == resource.data.hostUid
+        && isActiveData(resource.data)
         && !request.resource.data.diff(resource.data).affectedKeys()
           .hasAny(accountDeletionManagedFields())
+        && !affectsSoftDeleteFields()
         && (!request.resource.data.keys().hasAny(['maxParticipants'])
             || !('participantsCount' in resource.data)
             || request.resource.data.maxParticipants >= resource.data.participantsCount)
       ) || (
         isSignedIn()
-        && request.resource.data.diff(resource.data).changedKeys()
+        && request.auth.uid == resource.data.hostUid
+        && isSoftDeleteUpdateBy(request.auth.uid)
+      ) || (
+        isSignedIn()
+        && isActiveData(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['remainingSeats', 'participantsCount'])
         && request.resource.data.remainingSeats is number
         && request.resource.data.participantsCount is number
@@ -325,6 +357,7 @@ service cloud.firestore {
         allow read: if true;
 
         allow create: if isSignedIn()
+          && isActiveEvent(eventId)
           && request.auth.uid == uid
           && request.resource.data.uid == uid
           && request.resource.data.eventId == eventId
@@ -333,9 +366,9 @@ service cloud.firestore {
           && request.resource.data.photoURL is string;
 
         // ✅ 本人可退出（刪自己的紀錄），或主揪刪除整個活動時可刪所有 participants
-        allow delete: if isSignedIn() && (
+        allow delete: if isSignedIn() && isActiveEvent(eventId) && (
           request.auth.uid == uid
-          || get(/databases/$(database)/documents/events/$(eventId)).data.hostUid == request.auth.uid
+          || isEventHost(eventId)
         );
 
         allow update: if false;
@@ -349,21 +382,29 @@ service cloud.firestore {
         allow read: if true;
 
         allow create: if isSignedIn()
+          && isActiveEvent(eventId)
           && request.resource.data.authorUid == request.auth.uid
           && !request.resource.data.keys().hasAny(accountDeletionManagedFields())
           && request.resource.data.content is string
           && request.resource.data.content.size() <= 500;
 
         allow update: if isSignedIn()
-          && request.auth.uid == resource.data.authorUid
-          && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(accountDeletionManagedFields());
+          && isActiveEvent(eventId)
+          && (
+            (
+              request.auth.uid == resource.data.authorUid
+              && isActiveData(resource.data)
+              && !request.resource.data.diff(resource.data).affectedKeys()
+                .hasAny(accountDeletionManagedFields())
+              && !affectsSoftDeleteFields()
+            )
+            || (
+              (request.auth.uid == resource.data.authorUid || isEventHost(eventId))
+              && isSoftDeleteUpdateBy(request.auth.uid)
+            )
+          );
 
-        // 留言作者刪自己留言，或主揪 deleteEvent cascade
-        allow delete: if isSignedIn() && (
-          request.auth.uid == resource.data.authorUid
-          || request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)).data.hostUid
-        );
+        allow delete: if false;
 
         // history 子集合（編輯記錄）
         match /history/{historyId} {
@@ -371,14 +412,10 @@ service cloud.firestore {
 
           // 編輯留言時 transaction 內建立（僅留言作者可寫入）
           allow create: if isSignedIn()
+            && isActiveEvent(eventId)
             && request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)/comments/$(commentId)).data.authorUid;
 
-          // cascade delete（刪留言或刪活動時）
-          // UI 層確保不會單獨刪 history
-          allow delete: if isSignedIn() && (
-            request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)/comments/$(commentId)).data.authorUid
-            || request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)).data.hostUid
-          );
+          allow delete: if false;
 
           allow update: if false;
         }

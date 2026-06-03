@@ -166,7 +166,11 @@ export default function useEventMutations({ isMountedRef, setEvents, showToast, 
     async (eventId) => {
       setIsDeletingEvent(true);
       try {
-        await deleteEvent(String(eventId));
+        await deleteEvent(String(eventId), {
+          uid: createCtx.hostUid,
+          name: createCtx.hostName,
+          photoURL: createCtx.hostPhotoURL,
+        });
         if (!isMountedRef.current) return;
         setEvents((previous) => previous.filter((event) => String(event.id) !== String(eventId)));
         setDeletingEventId(null);
@@ -181,7 +185,7 @@ export default function useEventMutations({ isMountedRef, setEvents, showToast, 
         }
       }
     },
-    [isMountedRef, setEvents, showToast],
+    [createCtx.hostName, createCtx.hostPhotoURL, createCtx.hostUid, isMountedRef, setEvents, showToast],
   );
 
   const handleSubmit = useCallback(

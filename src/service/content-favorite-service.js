@@ -156,7 +156,10 @@ export function buildFavoriteTargetItem({ type, favorite, targetSnapshot }) {
 
   const targetData = targetSnapshot.data();
 
-  if (type === FAVORITE_CONTENT_TYPES.POST && isSoftDeletedRecord(targetData)) {
+  if (
+    (type === FAVORITE_CONTENT_TYPES.POST || type === FAVORITE_CONTENT_TYPES.EVENT) &&
+    isSoftDeletedRecord(targetData)
+  ) {
     return {
       ...base,
       target: null,
