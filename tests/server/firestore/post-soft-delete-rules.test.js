@@ -55,6 +55,14 @@ function dbFor(uid) {
 }
 
 /**
+ * Returns an unauthenticated Firestore test client.
+ * @returns {import('firebase/firestore').Firestore} Firestore client.
+ */
+function anonymousDb() {
+  return testEnv.unauthenticatedContext().firestore();
+}
+
+/**
  * Seeds Firestore with security rules disabled.
  * @param {(db: import('firebase/firestore').Firestore) => Promise<void>} seedFn - Seed callback.
  * @returns {Promise<void>} Seed completion.
@@ -111,6 +119,7 @@ function softDeletePayload(actorUid, overrides = {}) {
  * @param {string} options.postAuthorUid - Parent post author uid.
  * @param {string} options.commentAuthorUid - Child comment author uid.
  * @param {boolean} [options.deletedPost] - Whether the parent post is soft-deleted.
+ * @param {boolean} [options.deletedComment] - Whether the parent comment is soft-deleted.
  * @returns {Promise<void>} Seed completion.
  */
 async function seedPostWithComment({
@@ -119,6 +128,7 @@ async function seedPostWithComment({
   postAuthorUid,
   commentAuthorUid,
   deletedPost = false,
+  deletedComment = false,
 }) {
   await seed(async (adminDb) => {
     await setDoc(doc(adminDb, 'posts', postId), {
@@ -141,6 +151,17 @@ async function seedPostWithComment({
       authorImgURL: '',
       comment: 'Nice route',
       createdAt: Timestamp.fromDate(new Date('2026-05-28T01:00:00.000Z')),
+      ...(deletedComment
+        ? {
+            deletedAt: Timestamp.fromDate(new Date('2026-05-28T01:30:00.000Z')),
+            deletedByUid: commentAuthorUid,
+            deletedPurgeAt: Timestamp.fromDate(new Date('2026-08-26T01:30:00.000Z')),
+          }
+        : {}),
+    });
+    await setDoc(doc(adminDb, 'posts', postId, 'comments', commentId, 'history', 'history-1'), {
+      content: 'Before edit',
+      editedAt: Timestamp.fromDate(new Date('2026-05-28T01:15:00.000Z')),
     });
   });
 }
@@ -232,6 +253,316 @@ describe('post/comment soft-delete Firestore rules', () => {
         comment: 'Blocked',
         createdAt: serverTimestamp(),
       }),
+    );
+  });
+
+  it('allows reading post comment history under active post comments', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertSucceeds(
+      getDoc(
+        doc(
+          anonymousDb(),
+          'posts',
+          'active-post',
+          'comments',
+          'comment-1',
+          'history',
+          'history-1',
+        ),
+      ),
+    );
+  });
+
+  it('allows comment authors to create valid history under active post comments', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertSucceeds(
+      setDoc(
+        doc(
+          dbFor('comment-author'),
+          'posts',
+          'active-post',
+          'comments',
+          'comment-1',
+          'history',
+          'history-2',
+        ),
+        {
+          content: 'Nice route',
+          editedAt: serverTimestamp(),
+        },
+      ),
+    );
+  });
+
+  it('denies post comment history create for non-authors and anonymous users', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
+      setDoc(
+        doc(
+          dbFor('intruder'),
+          'posts',
+          'active-post',
+          'comments',
+          'comment-1',
+          'history',
+          'history-2',
+        ),
+        {
+          content: 'Nice route',
+          editedAt: serverTimestamp(),
+        },
+      ),
+    );
+    await assertFails(
+      setDoc(
+        doc(
+          anonymousDb(),
+          'posts',
+          'active-post',
+          'comments',
+          'comment-1',
+          'history',
+          'history-3',
+        ),
+        {
+          content: 'Nice route',
+          editedAt: serverTimestamp(),
+        },
+      ),
+    );
+  });
+
+  it('denies post comment history create with invalid payloads', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
+      setDoc(
+        doc(
+          dbFor('comment-author'),
+          'posts',
+          'active-post',
+          'comments',
+          'comment-1',
+          'history',
+          'missing-content',
+        ),
+        {
+          editedAt: serverTimestamp(),
+        },
+      ),
+    );
+    await assertFails(
+      setDoc(
+        doc(
+          dbFor('comment-author'),
+          'posts',
+          'active-post',
+          'comments',
+          'comment-1',
+          'history',
+          'empty-content',
+        ),
+        {
+          content: '',
+          editedAt: serverTimestamp(),
+        },
+      ),
+    );
+    await assertFails(
+      setDoc(
+        doc(
+          dbFor('comment-author'),
+          'posts',
+          'active-post',
+          'comments',
+          'comment-1',
+          'history',
+          'long-content',
+        ),
+        {
+          content: 'x'.repeat(501),
+          editedAt: serverTimestamp(),
+        },
+      ),
+    );
+    await assertFails(
+      setDoc(
+        doc(
+          dbFor('comment-author'),
+          'posts',
+          'active-post',
+          'comments',
+          'comment-1',
+          'history',
+          'non-timestamp',
+        ),
+        {
+          content: 'Nice route',
+          editedAt: '2026-05-28T01:15:00.000Z',
+        },
+      ),
+    );
+    await assertFails(
+      setDoc(
+        doc(
+          dbFor('comment-author'),
+          'posts',
+          'active-post',
+          'comments',
+          'comment-1',
+          'history',
+          'extra-field',
+        ),
+        {
+          content: 'Nice route',
+          editedAt: serverTimestamp(),
+          authorUid: 'comment-author',
+        },
+      ),
+    );
+  });
+
+  it('denies post comment history updates and deletes', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
+      updateDoc(
+        doc(
+          dbFor('comment-author'),
+          'posts',
+          'active-post',
+          'comments',
+          'comment-1',
+          'history',
+          'history-1',
+        ),
+        {
+          content: 'Changed history',
+        },
+      ),
+    );
+    await assertFails(
+      deleteDoc(
+        doc(
+          dbFor('comment-author'),
+          'posts',
+          'active-post',
+          'comments',
+          'comment-1',
+          'history',
+          'history-1',
+        ),
+      ),
+    );
+  });
+
+  it('denies reading or creating history under soft-deleted posts', async () => {
+    await seedPostWithComment({
+      postId: 'deleted-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+      deletedPost: true,
+    });
+
+    await assertFails(
+      getDoc(
+        doc(
+          dbFor('comment-author'),
+          'posts',
+          'deleted-post',
+          'comments',
+          'comment-1',
+          'history',
+          'history-1',
+        ),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        doc(
+          dbFor('comment-author'),
+          'posts',
+          'deleted-post',
+          'comments',
+          'comment-1',
+          'history',
+          'history-2',
+        ),
+        {
+          content: 'Blocked edit',
+          editedAt: serverTimestamp(),
+        },
+      ),
+    );
+  });
+
+  it('denies reading or creating history under soft-deleted parent comments', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'deleted-comment',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+      deletedComment: true,
+    });
+
+    await assertFails(
+      getDoc(
+        doc(
+          dbFor('comment-author'),
+          'posts',
+          'active-post',
+          'comments',
+          'deleted-comment',
+          'history',
+          'history-1',
+        ),
+      ),
+    );
+    await assertFails(
+      setDoc(
+        doc(
+          dbFor('comment-author'),
+          'posts',
+          'active-post',
+          'comments',
+          'deleted-comment',
+          'history',
+          'history-2',
+        ),
+        {
+          content: 'Blocked edit',
+          editedAt: serverTimestamp(),
+        },
+      ),
     );
   });
 

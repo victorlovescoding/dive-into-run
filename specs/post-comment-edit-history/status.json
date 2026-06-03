@@ -3,7 +3,7 @@
   "feature": "post-comment-edit-history",
   "branch": "088-post-comment-edit-history",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-088-post-comment-edit-history",
-  "phase": "t004_review_passed",
+  "phase": "t005_review_passed",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "088-post-comment-edit-history",
-    "commit": "9e1ddc7bfd4547c52128abc81db0d64fb31f78dd",
-    "capturedAt": "2026-06-03T08:59:13Z",
-    "summary": "T003 runtime checkpoint committed; T004 dispatch is starting."
+    "commit": "eba044d65694b5fb992d747c7c48af99958f56e2",
+    "capturedAt": "2026-06-03T09:11:04Z",
+    "summary": "T004 UI checkpoint committed; T005 dispatch is starting."
   },
   "remoteHead": {
     "remote": "origin",
@@ -33,7 +33,8 @@
     "T001",
     "T002",
     "T003",
-    "T004"
+    "T004",
+    "T005"
   ],
   "tasks": [
     {
@@ -549,7 +550,7 @@
     {
       "id": "T005",
       "title": "Post Comment History Firestore Rules",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-5",
       "engineer": "Engineer, Firestore rules",
@@ -598,17 +599,32 @@
         {
           "command": "npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js",
           "expectedSignal": "Exit 0, post Firestore rules tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\"",
+            "exitCode": 0,
+            "summary": "1 file passed; 21 tests passed under local Firebase emulators.",
+            "verifiedAt": "2026-06-03T09:20:43Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0, no new lint errors for changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors; existing React version warning only.",
+            "verifiedAt": "2026-06-03T09:20:43Z"
+          }
         },
         {
           "command": "git diff --check",
           "expectedSignal": "Exit 0, no whitespace errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-03T09:20:43Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -625,12 +641,24 @@
         "Diff implies rules are deployed without rulesDeployStatus.state=deployed and deploy evidence.",
         "Verification is missing, stale, failed, or not from the required commands."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "McClintock",
+        "summary": "No blocking findings. Post comment history rules are narrow; local emulator verification passed; no deploy command was run.",
+        "decidedAt": "2026-06-03T09:20:43Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE_WITH_CONCERNS: bare server vitest lacked emulator env; local firebase emulators:exec verification passed. No deploy command was run.",
+        "reviewerReport": "review_passed: no blocking findings; rules scope and tests reviewed; no deploy command was run.",
+        "commandOutputSummary": [
+          "firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\" -> exit 0, 1 file / 21 tests.",
+          "npm run lint:changed -> exit 0, React version warning only.",
+          "git diff --check -> exit 0, no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "Updated firestore.rules with post comment history read/create/update/delete rules.",
+          "Updated tests/server/firestore/post-soft-delete-rules.test.js with post comment history allow/deny coverage."
+        ]
       }
     }
   ],
@@ -638,28 +666,22 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx",
+      "command": "firebase emulators:exec --only auth,firestore --project demo-test \"npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js\"",
       "exitCode": 0,
-      "summary": "1 file passed; 6 tests passed.",
-      "verifiedAt": "2026-06-03T09:09:04Z"
+      "summary": "1 file passed; 21 tests passed under local Firebase emulators.",
+      "verifiedAt": "2026-06-03T09:20:43Z"
     },
     {
       "command": "npm run lint:changed",
       "exitCode": 0,
       "summary": "No lint errors; existing React version warning only.",
-      "verifiedAt": "2026-06-03T09:09:04Z"
-    },
-    {
-      "command": "npm run type-check:changed",
-      "exitCode": 0,
-      "summary": "No type errors in changed files.",
-      "verifiedAt": "2026-06-03T09:09:04Z"
+      "verifiedAt": "2026-06-03T09:20:43Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-03T09:09:04Z"
+      "verifiedAt": "2026-06-03T09:20:43Z"
     }
   ],
   "lastVerifiedCommit": null,
@@ -687,15 +709,21 @@
       "commit": "9e1ddc7bfd4547c52128abc81db0d64fb31f78dd",
       "summary": "Wire post comment history runtime",
       "committedAt": "2026-06-03T08:59:13Z"
+    },
+    {
+      "phase": "ui",
+      "commit": "eba044d65694b5fb992d747c7c48af99958f56e2",
+      "summary": "Wire post comment history UI",
+      "committedAt": "2026-06-03T09:11:04Z"
     }
   ],
   "rulesDeployStatus": {
     "state": "required",
     "required": true,
-    "changed": false,
+    "changed": true,
     "evidence": [],
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-06-03T09:09:04Z"
+  "updatedAt": "2026-06-03T09:20:43Z"
 }

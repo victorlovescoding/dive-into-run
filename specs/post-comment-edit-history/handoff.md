@@ -6,7 +6,7 @@
 - Profile: P4, because this is a new product feature and Firestore rules are in scope.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-088-post-comment-edit-history`
 - Branch: `088-post-comment-edit-history`
-- Current head: `9e1ddc7bfd4547c52128abc81db0d64fb31f78dd`
+- Current head: `eba044d65694b5fb992d747c7c48af99958f56e2`
 - Remote head: `origin/main` at `f3ca150ece7f9ba182fcde80cae95d6c0da18305`
 - Authorization boundary:
   - edit: true. User authorized implementation on 2026-06-03 after approving the design and durable repo docs.
@@ -17,17 +17,18 @@
   - merge: false
   - localMainSync: false
   - deployFirestoreRules: false
-- Current phase: `t004_review_passed`
+- Current phase: `t005_review_passed`
 - Active task: none
 - Active wave: none
-- Latest reviewer decision: T004 `review_passed` by Maxwell on 2026-06-03.
+- Latest reviewer decision: T005 `review_passed` by McClintock on 2026-06-03.
 - Last verified commit: none
 - Phase commits:
   - `specs`: `dd22c46e82f3e34da62590e3ba0afb9a4fcc8ecf` (`Add post comment history spec`)
   - `service`: `efd5fe4f82193402a3af55cf8a7f4595735ea670` (`Add shared comment edit history service`)
   - `post-data-flow`: `024c1b61e1feaeb680b470ded8e203a1fa2a4f78` (`Add post comment history data flow`)
   - `runtime`: `9e1ddc7bfd4547c52128abc81db0d64fb31f78dd` (`Wire post comment history runtime`)
-- Rules deploy status: `required`, `changed=false`, no deploy evidence.
+  - `ui`: `eba044d65694b5fb992d747c7c48af99958f56e2` (`Wire post comment history UI`)
+- Rules deploy status: `required`, `changed=true`, no deploy evidence.
 - Incidents: none
 - Blocked: no
 - Blocked reason: none.
@@ -43,7 +44,7 @@
 
 ## Next Action
 
-Main coordinator should commit the reviewed T004 UI checkpoint, then dispatch T005. Product implementation edits and commits are authorized; push, pull request, CI watch, merge, local main sync, and Firestore rules deploy are not authorized. Browser visual evidence remains pending final UI verification.
+Main coordinator should commit the reviewed T005 rules checkpoint, then run final integration verification. Product implementation edits and commits are authorized; push, pull request, CI watch, merge, local main sync, and Firestore rules deploy are not authorized. Browser visual evidence remains pending final UI verification.
 
 ## Latest Evidence
 
@@ -81,6 +82,7 @@ Main coordinator should commit the reviewed T004 UI checkpoint, then dispatch T0
 | `npx vitest run --project=browser specs/post-comment-edit-history/tests/unit/runtime/post-comment-edit-history-use-cases.test.js` | 0 | T002 use-case tests passed: 1 file, 7 tests. |
 | `npx vitest run --project=browser src/runtime/hooks/usePostComments.test.jsx` | 0 | T003 hook tests passed: 1 file, 7 tests. |
 | `npx vitest run --project=browser src/ui/posts/PostDetailScreen.test.jsx` | 0 | T004 UI wiring tests passed: 1 file, 6 tests. |
+| `firebase emulators:exec --only auth,firestore --project demo-test "npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js"` | 0 | T005 rules tests passed under local emulators: 1 file, 21 tests. |
 
 ## Closeout Checklist
 

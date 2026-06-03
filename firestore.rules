@@ -45,6 +45,31 @@ service cloud.firestore {
         && request.auth.uid == get(postPath(postId)).data.authorUid;
     }
 
+    function postCommentPath(postId, commentId) {
+      return /databases/$(database)/documents/posts/$(postId)/comments/$(commentId);
+    }
+
+    function isActivePostComment(postId, commentId) {
+      return isActivePost(postId)
+        && exists(postCommentPath(postId, commentId))
+        && isActiveData(get(postCommentPath(postId, commentId)).data);
+    }
+
+    function isPostCommentAuthor(postId, commentId) {
+      return isSignedIn()
+        && isActivePostComment(postId, commentId)
+        && request.auth.uid == get(postCommentPath(postId, commentId)).data.authorUid;
+    }
+
+    function isValidPostCommentHistoryCreate() {
+      return request.resource.data.keys().hasAll(['content', 'editedAt'])
+        && request.resource.data.keys().hasOnly(['content', 'editedAt'])
+        && request.resource.data.content is string
+        && request.resource.data.content.size() > 0
+        && request.resource.data.content.size() <= 500
+        && request.resource.data.editedAt is timestamp;
+    }
+
     function eventPath(eventId) {
       return /databases/$(database)/documents/events/$(eventId);
     }
@@ -278,6 +303,15 @@ service cloud.firestore {
         request.auth.uid == resource.data.authorUid
         || isPostAuthor(postId)
       );
+
+      match /history/{historyId} {
+        allow read: if isActivePostComment(postId, commentId);
+
+        allow create: if isPostCommentAuthor(postId, commentId)
+          && isValidPostCommentHistoryCreate();
+
+        allow update, delete: if false;
+      }
     }
 
     // -------------------------

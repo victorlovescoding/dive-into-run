@@ -478,7 +478,7 @@ Evidence:
 
 ### T005 - Post Comment History Firestore Rules
 
-- **State**: `todo`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-5`
 - **Engineer**: Engineer, Firestore rules
@@ -486,7 +486,7 @@ Evidence:
 - **Commit checkpoint**: planned `rules`, authorized
 - **Last verified commit**: none
 - **Authorization boundary**: edit=yes, commit=yes, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
-- **Rules deploy status**: required, changed=false, deployed=false
+- **Rules deploy status**: required, changed=true, deployed=false
 - **Incidents**: none
 
 Scope:
@@ -566,10 +566,15 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending.
-- Reviewer report: pending.
-- Command output summary: pending.
-- Changed files summary: pending.
+- Engineer report: DONE_WITH_CONCERNS. Bare server vitest lacked emulator env; local `firebase emulators:exec` verification passed. No deploy command was run.
+- Reviewer report: review_passed by McClintock. No blocking findings; rules scope and tests reviewed; no deploy command was run.
+- Command output summary:
+  - `firebase emulators:exec --only auth,firestore --project demo-test "npx vitest run --project=server tests/server/firestore/post-soft-delete-rules.test.js"` -> exit 0, 1 file / 21 tests.
+  - `npm run lint:changed` -> exit 0, React version warning only.
+  - `git diff --check` -> exit 0, no whitespace errors.
+- Changed files summary:
+  - Updated `firestore.rules` with post comment history read/create/update/delete rules.
+  - Updated `tests/server/firestore/post-soft-delete-rules.test.js` with post comment history allow/deny coverage.
 - Phase commits: none.
-- Rules deploy status: required, no deploy evidence.
+- Rules deploy status: required, changed=true, no deploy evidence.
 - Incidents: none.
