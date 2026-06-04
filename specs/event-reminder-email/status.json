@@ -1,0 +1,665 @@
+{
+  "schemaVersion": 3,
+  "feature": "event-reminder-email",
+  "branch": "093-event-reminder-email",
+  "worktree": "/Users/chentzuyu/Desktop/dive-into-run-093-event-reminder-email",
+  "phase": "release_closeout_authorized",
+  "activeTask": null,
+  "activeWave": null,
+  "authorizationBoundary": {
+    "edit": true,
+    "commit": true,
+    "push": true,
+    "pullRequest": true,
+    "ciWatch": true,
+    "merge": true,
+    "localMainSync": true,
+    "deployFirestoreRules": false
+  },
+  "currentHead": {
+    "branch": "093-event-reminder-email",
+    "ref": "093-event-reminder-email",
+    "commit": "38181f0c688d297fbfb021a12ed5be96d202dbaf",
+    "capturedAt": "2026-06-04T13:01:40Z",
+    "summary": "Current committed HEAD includes event reminder email implementation and prior workflow-state sync; branch is clean and ahead of origin/main by 4 before closeout reconciliation."
+  },
+  "remoteHead": {
+    "remote": "origin",
+    "branch": "main",
+    "commit": "4145241dd5f21e17812dad3d7448be2bb74c090e",
+    "capturedAt": "2026-06-04T13:01:40Z",
+    "summary": "Local origin/main snapshot during closeout reconciliation; branch status is 093-event-reminder-email...origin/main [ahead 4], behind 0 before the reconciliation commit."
+  },
+  "completedTasks": [
+    "T001",
+    "T002",
+    "T003",
+    "T004"
+  ],
+  "tasks": [
+    {
+      "id": "T001",
+      "title": "Reminder core helpers and email content",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-1",
+      "engineer": "Functions Core Engineer",
+      "reviewer": "Functions Core Reviewer",
+      "scope": [
+        "Create pure reminder helper module and spec-local unit tests.",
+        "Implement scheduler window, recipient UID dedupe, email validation, detail URL, and email content helpers.",
+        "Use existing event description as reminder 注意事項 content."
+      ],
+      "nonScope": [
+        "No scheduled wrapper registration.",
+        "No Resend network call.",
+        "No Firestore writes or transactions.",
+        "No package, lockfile, rules, indexes, src, UI, deploy, secret setup, or live provider configuration changes."
+      ],
+      "ownedFiles": [
+        "functions/event-reminder-email.js",
+        "specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js"
+      ],
+      "readOnlyContext": [
+        "specs/event-reminder-email/spec.md",
+        "specs/event-reminder-email/plan.md",
+        "functions/event-retention-purge.js",
+        "functions/post-retention-purge.js",
+        "specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js",
+        "specs/post-comment-soft-delete-retention/tests/unit/functions/post-retention-purge.test.js",
+        "src/service/event-service.js",
+        "src/repo/client/firebase-events-repo.js",
+        "src/repo/client/firebase-auth-repo.js",
+        "src/runtime/providers/AuthProvider.jsx"
+      ],
+      "dependencies": [
+        "G0 branch reconciliation and implementation authorization resolved at 2026-06-04T07:20:56Z."
+      ],
+      "engineerInstructions": [
+        "Use superpowers:test-driven-development.",
+        "Write failing tests first in specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js.",
+        "Export REMINDER_LOOKAHEAD_MS, REMINDER_WINDOW_BEFORE_MS, REMINDER_WINDOW_AFTER_MS, and MAX_DELIVERY_ATTEMPTS.",
+        "Implement getReminderWindow(now) with the exact scan band from plan.md.",
+        "Implement normalizeRecipientUids(eventData, participantDocs), isUsableEmail(email), buildEventDetailUrl(publicAppBaseUrl, eventId), and buildReminderEmail({ eventId, eventData, publicAppBaseUrl }).",
+        "Use existing event description in the email content and do not introduce a new note field.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T001.1: Reminder window constants produce the exact 75-minute scan band around now plus 24 hours.",
+        "AC-T001.2: Recipient UID construction includes host independently and dedupes host or participant overlap.",
+        "AC-T001.3: Email content uses existing description and includes the configured event detail URL.",
+        "AC-T001.4: Email validation rejects missing, blank, whitespace-containing, missing-domain, and missing-local emails.",
+        "AC-T001.5: No dependency, package, rules, index, src, or UI file changes are made."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js",
+          "expectedSignal": "Red before implementation because functions/event-reminder-email.js is missing; green after implementation with helper tests passing.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js",
+            "exitCode": 0,
+            "summary": "T001 focused helper tests passed: 1 file, 7 tests.",
+            "verifiedAt": "2026-06-04T08:00:48Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0, no lint errors in changed files.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors in changed files; React version warning only.",
+            "verifiedAt": "2026-06-04T08:00:48Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 or No type errors in changed files.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-04T08:00:48Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Helper exports and constants match the task contract.",
+        "Tests cover window, recipient dedupe, email validation, detail URL, and description-backed content.",
+        "No package, lockfile, rules, index, src, UI, deploy, or secret setup change appears in the diff.",
+        "Verification commands are fresh and pass after implementation."
+      ],
+      "reviewerRejectCriteria": [
+        "Host inclusion depends on participant docs.",
+        "Email content uses a new field instead of description.",
+        "Email address is read from event or participant data.",
+        "The scan window differs from the plan without a plan update.",
+        "Diff touches non-owned files or verification is missing, stale, failed, or run against the wrong files."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Functions Core Reviewer",
+        "summary": "Spec compliance review passed AC-T001.1 through AC-T001.5; code quality re-review passed after malformed email domains and hostile HTML payload test coverage were fixed.",
+        "decidedAt": "2026-06-04T08:00:48Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE after fixes for T001 owned files.",
+        "reviewerReport": "review_passed with no blocking findings; coverage AC-T001.1 through AC-T001.5 passed; malformed email domains and hostile HTML payload test coverage fixed.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js exit 0; 1 file, 7 tests passed.",
+          "npm run lint:changed exit 0; React version warning only.",
+          "npm run type-check:changed exit 0; no changed-file type errors.",
+          "node --check functions/event-reminder-email.js exit 0.",
+          "git diff --check exit 0."
+        ],
+        "changedFilesSummary": [
+          "functions/event-reminder-email.js is committed in implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf.",
+          "specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js is committed in implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf.",
+          "Implementation commit boundary is complete and authorized for release closeout; no Functions deploy or secret setup was performed."
+        ]
+      }
+    },
+    {
+      "id": "T002",
+      "title": "Delivery state, retry orchestration, and Resend HTTP adapter",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-2",
+      "engineer": "Reminder Delivery Engineer",
+      "reviewer": "Reminder Delivery Reviewer",
+      "scope": [
+        "Extend the core module with Firestore reminder state, delivery state, retry decisions, send-time email resolution, completion marking, Resend HTTP adapter, and structured logs.",
+        "Extend the T001 unit test file with delivery orchestration tests."
+      ],
+      "nonScope": [
+        "No scheduled wrapper registration.",
+        "No package or lockfile changes.",
+        "No Firestore rules or index changes.",
+        "No UI, src, deploy, secret setup, manual resend tooling, or admin resend UI."
+      ],
+      "ownedFiles": [
+        "functions/event-reminder-email.js",
+        "specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js"
+      ],
+      "readOnlyContext": [
+        "specs/event-reminder-email/spec.md",
+        "specs/event-reminder-email/plan.md",
+        "functions/event-retention-purge.js",
+        "specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge.test.js",
+        "specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js",
+        "firestore.rules",
+        "firestore.indexes.json"
+      ],
+      "dependencies": [
+        "T001 completed after review_passed; T001 files are committed in 38181f0c688d297fbfb021a12ed5be96d202dbaf."
+      ],
+      "engineerInstructions": [
+        "Use superpowers:test-driven-development.",
+        "Add tests for send-time recipient resolution, skipped missing email, skipped invalid email, sent terminal no-resend, failed retry, attempt 3 final_failed, event completion, independent-recipient continuation, Resend request shape, and logs without email addresses.",
+        "Implement createResendEmailClient({ apiKey, fetchImpl }) using POST https://api.resend.com/emails.",
+        "Implement sendEventReminderEmails({ firestore, logger, now, runId, config, emailClient }).",
+        "Store reminder state at eventReminderStates/{eventId} and delivery state at eventReminderStates/{eventId}/deliveries/{uid}.",
+        "Use Firestore transactions to reserve attempts and lease failed delivery docs before provider sends.",
+        "Use only delivery states sent, skipped, failed, and final_failed.",
+        "Never resend a sent recipient.",
+        "Do not store or log email addresses.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T002.1: sent recipients are never resent.",
+        "AC-T002.2: failed recipients retry while attempts are below 3.",
+        "AC-T002.3: Attempt 3 provider failure records final_failed.",
+        "AC-T002.4: Missing user, missing email, and invalid email record skipped.",
+        "AC-T002.5: One recipient failure does not stop independent recipients.",
+        "AC-T002.6: Event reminder state becomes complete only after every send-time UID is terminal.",
+        "AC-T002.7: Resend request uses fixed platform sender from config and never host email.",
+        "AC-T002.8: Logs and state do not contain recipient email addresses."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js",
+          "expectedSignal": "Red before implementation for missing delivery behavior; green after implementation with helper and delivery tests passing.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js",
+            "exitCode": 0,
+            "summary": "T002 focused helper and delivery tests passed: 1 file, 21 tests.",
+            "verifiedAt": "2026-06-04T08:46:48Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0, no lint errors in changed files.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors in changed files; React version warning only.",
+            "verifiedAt": "2026-06-04T08:46:48Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 or No type errors in changed files.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-04T08:46:48Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Delivery state path is eventReminderStates/{eventId}/deliveries/{uid}.",
+        "No emails are stored in Firestore reminder state or logs.",
+        "Resend adapter uses HTTP fetch and does not add a dependency.",
+        "Retry and terminal state behavior matches spec and tests.",
+        "The accepted duplicate-send crash window is not over-engineered beyond the lease design.",
+        "Verification commands are fresh and pass after implementation."
+      ],
+      "reviewerRejectCriteria": [
+        "Sent recipients can be resent.",
+        "Host email is used or exposed as sender.",
+        "Email addresses are copied into event, participant, reminder state, or logs.",
+        "Firestore state is stored under client-writable event fields.",
+        "New dependency, package, lockfile, rules, index, UI, or src changes appear.",
+        "Verification is missing, stale, failed, or run against the wrong files."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Reminder Delivery Reviewer",
+        "summary": "Spec re-review passed after provider errors were reduced to coarse codes and failed/final_failed provider payload leakage tests were added; quality re-review passed after provider completion transaction/lease guards, active foreign lease skip blocking, active lease exclusion from completion, and stale lease tests were added.",
+        "decidedAt": "2026-06-04T08:46:48Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE after fixes for T002 owned files.",
+        "reviewerReport": "Spec review initially rejected provider error leakage, then re-review passed; quality review initially rejected stale lease/race issues, then re-review passed.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js exit 0; 1 file, 21 tests passed.",
+          "npm run lint:changed exit 0; React version warning only.",
+          "npm run type-check:changed exit 0; no changed-file type errors.",
+          "node --check functions/event-reminder-email.js exit 0.",
+          "git diff --check exit 0."
+        ],
+        "changedFilesSummary": [
+          "functions/event-reminder-email.js is committed in implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf.",
+          "specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js is committed in implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf.",
+          "Implementation commit boundary is complete and authorized for release closeout; no Functions deploy or secret setup was performed."
+        ]
+      }
+    },
+    {
+      "id": "T003",
+      "title": "Scheduled wrapper and Functions config",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-3",
+      "engineer": "Functions Scheduler Engineer",
+      "reviewer": "Functions Scheduler Reviewer",
+      "scope": [
+        "Wire the scheduled Firebase Functions v2 wrapper in functions/index.js.",
+        "Add a schedule wrapper test for schedule, secrets, params, and delegation."
+      ],
+      "nonScope": [
+        "No changes to reminder core behavior except imports required by wrapper wiring.",
+        "No dependency, package, lockfile, rules, index, UI, src, deploy, or secret value setup."
+      ],
+      "ownedFiles": [
+        "functions/index.js",
+        "specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js"
+      ],
+      "readOnlyContext": [
+        "specs/event-reminder-email/spec.md",
+        "specs/event-reminder-email/plan.md",
+        "functions/event-reminder-email.js",
+        "functions/index.js",
+        "specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js",
+        "firebase.json",
+        "functions/package.json"
+      ],
+      "dependencies": [
+        "T002 completed after review_passed; T002 files are committed in 38181f0c688d297fbfb021a12ed5be96d202dbaf."
+      ],
+      "engineerInstructions": [
+        "Use superpowers:test-driven-development.",
+        "Write specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js before modifying functions/index.js.",
+        "Mock Firebase modules and ./event-reminder-email following the existing retention schedule test pattern.",
+        "Add defineSecret('RESEND_API_KEY'), defineString('REMINDER_EMAIL_FROM'), and defineString('PUBLIC_APP_BASE_URL') in functions/index.js.",
+        "Register exports.sendEventReminderEmails with onSchedule({ schedule: 'every 15 minutes', timeZone: 'Asia/Taipei', secrets: [resendApiKey] }, handler).",
+        "Pass firestore, logger, Timestamp.now(), runId, and config values to the core.",
+        "Keep business logic in functions/event-reminder-email.js.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T003.1: Scheduled function is exported as sendEventReminderEmails.",
+        "AC-T003.2: Schedule is exactly every 15 minutes with Asia/Taipei timezone.",
+        "AC-T003.3: Resend API key is configured as a Functions secret and passed to the core at runtime.",
+        "AC-T003.4: Sender and public app base URL are read from Functions string params, not hardcoded.",
+        "AC-T003.5: Existing scheduled functions remain exported and their schedule options are unchanged."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js",
+          "expectedSignal": "Red before wrapper implementation; green after implementation with schedule and delegation tests passing.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js",
+            "exitCode": 0,
+            "summary": "T003 schedule wrapper tests passed: 1 file, 2 tests.",
+            "verifiedAt": "2026-06-04T09:12:39Z"
+          }
+        },
+        {
+          "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js",
+          "expectedSignal": "Exit 0, existing scheduled retention wrapper tests still pass.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js",
+            "exitCode": 0,
+            "summary": "Retention schedule regression passed: 1 file, 2 tests.",
+            "verifiedAt": "2026-06-04T09:12:39Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0, no lint errors in changed files.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors in changed files; React version warning only.",
+            "verifiedAt": "2026-06-04T09:12:39Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 or No type errors in changed files.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-04T09:12:39Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned files.",
+        "Wrapper remains thin and delegates to the core.",
+        "Schedule, timezone, secret, string params, and config mapping match the task contract.",
+        "Existing scheduled exports are preserved.",
+        "No secret values are committed.",
+        "Verification commands are fresh and pass after implementation."
+      ],
+      "reviewerRejectCriteria": [
+        "API key, sender, or base URL is hardcoded.",
+        "Host email can influence the sender.",
+        "Business logic is implemented in functions/index.js.",
+        "Existing scheduled functions are changed unintentionally.",
+        "Package, lockfile, rules, index, UI, deploy, secret setup, or src changes appear.",
+        "Verification is missing, stale, failed, or run against the wrong files."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Functions Scheduler Reviewer",
+        "summary": "T003 spec review passed with no blocking findings; wrapper compatibility shim passing both fromEmail and emailFrom was accepted, and the test-only params fallback was accepted as non-blocking. T003 quality review passed with no blocking findings; wrapper remains thin, no secret/sender/base URL is hardcoded, and the retention schedule regression passed.",
+        "decidedAt": "2026-06-04T09:12:39Z"
+      },
+      "evidence": {
+        "engineerReport": "DONE_WITH_CONCERNS for T003 owned files; both spec and quality reviews passed.",
+        "reviewerReport": "Spec review_passed with no blocking findings; accepted wrapper passing both fromEmail and emailFrom as a compatibility shim and accepted test-only params fallback as non-blocking. Quality review_passed with no blocking findings; wrapper thin, no hardcoded secret/sender/base URL, retention schedule regression passed. Residual risks: local root node_modules lacks firebase-functions so real require against functions deps was not run; config naming debt remains.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js exit 0; 1 file, 2 tests passed.",
+          "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js exit 0; 1 file, 2 tests passed.",
+          "npm run lint:changed exit 0; React version warning only.",
+          "npm run type-check:changed exit 0; no changed-file type errors.",
+          "node --check functions/index.js exit 0.",
+          "git diff --check exit 0."
+        ],
+        "changedFilesSummary": [
+          "functions/index.js is committed in implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf.",
+          "specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js is committed in implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf.",
+          "Implementation commit boundary is complete and authorized for release closeout; no Functions deploy or secret setup was performed."
+        ]
+      }
+    },
+    {
+      "id": "T004",
+      "title": "Final integration verification and workflow state sync",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-4",
+      "engineer": "Final Verification / Workflow State Engineer",
+      "reviewer": "Final Verification Reviewer",
+      "scope": [
+        "Run final local gates after T001, T002, and T003 have Reviewer PASS.",
+        "Update workflow state files with implementation evidence, task states, phase commits, head snapshots, and verification summaries."
+      ],
+      "nonScope": [
+        "No production source changes.",
+        "No tests beyond evidence updates.",
+        "No package, lockfile, rules, index, UI, deploy, secret setup, push, pull request, CI watch, merge, or local main sync."
+      ],
+      "ownedFiles": [
+        "specs/event-reminder-email/tasks.md",
+        "specs/event-reminder-email/handoff.md",
+        "specs/event-reminder-email/status.json"
+      ],
+      "readOnlyContext": [
+        "specs/event-reminder-email/spec.md",
+        "specs/event-reminder-email/plan.md",
+        "functions/event-reminder-email.js",
+        "functions/index.js",
+        "specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js",
+        "specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js",
+        "docs/superpowers/status.schema.json",
+        "docs/superpowers/task-contract.md",
+        ".codex/rules/sensors.md"
+      ],
+      "dependencies": [
+        "T001 completed after review_passed.",
+        "T002 completed after review_passed.",
+        "T003 completed after review_passed; T003 implementation and test files are committed in 38181f0c688d297fbfb021a12ed5be96d202dbaf."
+      ],
+      "engineerInstructions": [
+        "Confirm tasks.md, handoff.md, and status.json agree before editing workflow state.",
+        "Run each final integration command as a separate command.",
+        "Record command, exit code, concise signal, and timestamp in workflow state files.",
+        "Set completed task states only after Reviewer PASS is present for each implementation task.",
+        "Keep rulesDeployStatus.state as not_applicable unless a separately approved rules plan changes firestore.rules.",
+        "Record that push, pullRequest, ciWatch, merge, and localMainSync are now authorized for this closeout, while deployFirestoreRules, Functions deploy, and secret setup remain out of scope.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T004.1: Final focused Vitest, lint, type-check, depcruise, workflow validation, workflow check, and whitespace gates have fresh evidence.",
+        "AC-T004.2: Workflow state files agree on active task, active wave, completed tasks, latest reviewer decision, head snapshots, phase commits, last verification, rules deploy status, and incidents.",
+        "AC-T004.3: Final state does not imply deployed Functions, configured secrets, deployed rules, push, pull request, CI watch, merge, or local main sync."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js",
+          "expectedSignal": "Exit 0, all reminder Functions tests pass.",
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js",
+            "exitCode": 0,
+            "summary": "Final reminder Functions tests passed: 2 files, 23 tests.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "Exit 0, no lint errors in changed files.",
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors in changed files; React version warning only.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "Exit 0 or No type errors in changed files.",
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
+        },
+        {
+          "command": "npm run depcruise",
+          "expectedSignal": "Exit 0, no dependency violations.",
+          "lastRun": {
+            "command": "npm run depcruise",
+            "exitCode": 0,
+            "summary": "No dependency violations found across 1304 modules and 3038 dependencies; Node module type warning only.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
+        },
+        {
+          "command": "node scripts/validate-workflow-state.js specs/event-reminder-email/status.json",
+          "expectedSignal": "Exit 0, status schema is valid.",
+          "lastRun": {
+            "command": "node scripts/validate-workflow-state.js specs/event-reminder-email/status.json",
+            "exitCode": 0,
+            "summary": "specs/event-reminder-email/status.json: ok; 1 status file valid.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
+        },
+        {
+          "command": "node scripts/check-superpowers-state.js specs/event-reminder-email/status.json",
+          "expectedSignal": "Exit 0, workflow companion files are synced.",
+          "lastRun": {
+            "command": "node scripts/check-superpowers-state.js specs/event-reminder-email/status.json",
+            "exitCode": 0,
+            "summary": "specs/event-reminder-email/status.json: sync ok; 1 status file synced.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "Exit 0, no whitespace errors.",
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only owned workflow-state files.",
+        "Final evidence is fresh, command-oriented, and one command per entry.",
+        "Workflow state files agree.",
+        "No deployment or release boundary is crossed or implied.",
+        "Rules deploy status remains accurate."
+      ],
+      "reviewerRejectCriteria": [
+        "Workflow state marks tasks completed without Reviewer PASS.",
+        "Evidence is stale, missing, combined into shell chains, or inconsistent.",
+        "Workflow files drift from each other.",
+        "Final summary implies deployment, configured secrets, push, pull request, CI watch, merge, or local main sync without authorization.",
+        "Diff touches non-owned files."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": "DONE. Confirmed tasks.md, handoff.md, and status.json agreed before editing; T001/T002/T003 had existing Reviewer PASS; ran all final gates as separate commands and updated only owned workflow-state files.",
+        "reviewerReport": "Not run for T004 in this authorized boundary; latest implementation Reviewer PASS remains T003.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js exit 0; 2 files, 23 tests passed.",
+          "npm run lint:changed exit 0; React version warning only.",
+          "npm run type-check:changed exit 0; no changed-file type errors.",
+          "npm run depcruise exit 0; no dependency violations across 1304 modules and 3038 dependencies; Node module type warning only.",
+          "node scripts/validate-workflow-state.js specs/event-reminder-email/status.json exit 0; 1 status file valid.",
+          "node scripts/check-superpowers-state.js specs/event-reminder-email/status.json exit 0; 1 status file synced.",
+          "git diff --check exit 0; no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "specs/event-reminder-email/tasks.md updated with T004 final verification evidence and completed state.",
+          "specs/event-reminder-email/handoff.md updated with final handoff state and release-boundary stop point.",
+          "specs/event-reminder-email/status.json updated with T004 final verification evidence, completedTasks, and head snapshots.",
+          "Implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf exists and the branch was clean/ahead 4 before closeout reconciliation.",
+          "Closeout boundary now authorizes commit, push, pullRequest, ciWatch, merge, and localMainSync; Functions deploy and secret setup were not performed."
+        ]
+      }
+    }
+  ],
+  "blocked": false,
+  "blockedReason": null,
+  "lastVerification": [
+    {
+      "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js",
+      "exitCode": 0,
+      "summary": "Final reminder Functions tests passed: 2 files, 23 tests.",
+      "verifiedAt": "2026-06-04T09:22:34Z"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "No lint errors in changed files; React version warning only.",
+      "verifiedAt": "2026-06-04T09:22:34Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "No changed-file type errors.",
+      "verifiedAt": "2026-06-04T09:22:34Z"
+    },
+    {
+      "command": "npm run depcruise",
+      "exitCode": 0,
+      "summary": "No dependency violations found across 1304 modules and 3038 dependencies; Node module type warning only.",
+      "verifiedAt": "2026-06-04T09:22:34Z"
+    },
+    {
+      "command": "node scripts/validate-workflow-state.js specs/event-reminder-email/status.json",
+      "exitCode": 0,
+      "summary": "specs/event-reminder-email/status.json: ok; 1 status file valid.",
+      "verifiedAt": "2026-06-04T09:22:34Z"
+    },
+    {
+      "command": "node scripts/check-superpowers-state.js specs/event-reminder-email/status.json",
+      "exitCode": 0,
+      "summary": "specs/event-reminder-email/status.json: sync ok; 1 status file synced.",
+      "verifiedAt": "2026-06-04T09:22:34Z"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "summary": "No whitespace errors.",
+      "verifiedAt": "2026-06-04T09:22:34Z"
+    }
+  ],
+  "lastVerifiedCommit": "38181f0c688d297fbfb021a12ed5be96d202dbaf",
+  "phaseCommits": [
+    {
+      "phase": "spec",
+      "sha": "7b8b6affa0025735221256dfecb88034541c380a",
+      "summary": "Approved event reminder email spec after rebase.",
+      "committedAt": "2026-06-04T15:20:24+08:00"
+    },
+    {
+      "phase": "plan",
+      "sha": "7572b8e6a6a048d9f5b85db9bd5283f2b8141713",
+      "summary": "Committed event reminder email planning artifacts after rebase.",
+      "committedAt": "2026-06-04T15:20:24+08:00"
+    },
+    {
+      "phase": "workflow-state-fix",
+      "sha": "16bcef3e1533a62d68ee0c5ba657697c802b54be",
+      "summary": "Pre-G0 workflow planning state after rebase.",
+      "committedAt": "2026-06-04T15:20:24+08:00"
+    },
+    {
+      "phase": "implementation",
+      "sha": "38181f0c688d297fbfb021a12ed5be96d202dbaf",
+      "summary": "Committed event reminder email implementation and tests.",
+      "committedAt": "2026-06-04T20:23:27+08:00"
+    }
+  ],
+  "rulesDeployStatus": {
+    "state": "not_applicable",
+    "required": false,
+    "changed": false,
+    "evidence": [],
+    "deployedCommit": null
+  },
+  "incidents": [],
+  "updatedAt": "2026-06-04T13:01:40Z"
+}
