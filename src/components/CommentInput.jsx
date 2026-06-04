@@ -1,53 +1,44 @@
 'use client';
 
-import { useState } from 'react';
 import styles from './CommentInput.module.css';
+import useCommentComposerInput from './useCommentComposerInput';
 
 /**
  * 浮動留言輸入框。
  * @param {object} props - 元件 props。
- * @param {(content: string) => void | Promise<void>} props.onSubmit - 送出留言回呼。
+ * @param {(content: string) => boolean | Promise<boolean>} props.onSubmit - 送出留言回呼，成功回傳 true。
  * @param {boolean} props.isSubmitting - 是否送出中。
  * @returns {import('react').ReactElement} 留言輸入框元件。
  */
 export default function CommentInput({ onSubmit, isSubmitting }) {
-  const [content, setContent] = useState('');
-
-  const trimmed = content.trim();
-  const isDisabled = trimmed === '' || content.length > 500 || isSubmitting;
-
-  /**
-   * 觸發送出留言。
-   */
-  function handleSubmit() {
-    if (!isDisabled) {
-      onSubmit(content);
-    }
-  }
-
-  /** @param {import('react').KeyboardEvent} e - 鍵盤事件。 */
-  function handleKeyDown(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      handleSubmit();
-    }
-  }
+  const {
+    content,
+    setContent,
+    isDisabled,
+    textboxRef,
+    handleSubmit,
+    handleKeyDown,
+  } = useCommentComposerInput({ onSubmit, isSubmitting });
 
   return (
     <div className={styles.wrapper}>
       <div className={styles.inputRow}>
-        <textarea
+        <input
+          ref={textboxRef}
+          type="text"
+          aria-label="留言"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="留言..."
+          placeholder="留言"
           className={styles.textbox}
           disabled={isSubmitting}
-          rows={1}
         />
         <button
           type="button"
-          onClick={handleSubmit}
+          onClick={() => {
+            handleSubmit();
+          }}
           disabled={isDisabled}
           className={styles.submitButton}
           aria-label="送出留言"
