@@ -14,14 +14,14 @@
 ## Current Workflow State
 
 - Profile: P4 Full Feature/Program.
-- Phase: `implementation_ready`.
-- Active task: `T003`; leave `T003` as `todo` until dispatch.
-- Active wave: `wave-3`.
-- Latest reviewer decision: `review_passed` for `T002` article post history persistence, strict rules, and cleanup.
-- Blocked: no.
-- Next gate: dispatch `T003` for article post list/detail UI wiring and browser evidence.
+- Phase: `implementation_blocked`.
+- Active task: `T003`.
+- Active wave: `wave-3b`.
+- Latest reviewer decision: `review_passed` for `T003A` browser test lint configuration; `T003` remains task-local `blocked`.
+- Blocked: no for dispatching `T003` follow-up. `npm run lint:changed` no longer fails on ESLint project-service coverage for `tests/browser/**/*.jsx`; it now fails on a real T003-owned lint violation in `tests/browser/ui/posts/PostDetailScreen.test.jsx:185` for no-restricted-syntax (`toHaveBeenCalledTimes`). Browser evidence still needs setup against a real edited article post.
+- Next gate: dispatch `T003` follow-up to replace the forbidden `toHaveBeenCalledTimes` assertion and then obtain browser article evidence. Do not mark `T003` completed until Reviewer PASS and workflow state reconciliation.
 - Authorization boundary: `edit=true`, `commit=true` after Engineer + Reviewer + fresh verification for reviewed implementation batches; `push=false`, `pullRequest=false`, `ciWatch=false`, `merge=false`, `localMainSync=false`, `deployFirestoreRules=false`.
-- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `dcda33b5237509cb8eac9949a9776b6cfd47366f`, tracking `origin/main` at `4145241dd5f21e17812dad3d7448be2bb74c090e`; `git status --short --branch` currently reports branch ahead 6 with no behind state and dirty T002 implementation plus workflow state files.
+- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `6a61283c02c6334f9062f10b26e44e0c4a9910c3`, tracking `origin/main` at `4145241dd5f21e17812dad3d7448be2bb74c090e`; `git status --short --branch` currently reports branch ahead 7 with no behind state and dirty T003 implementation files plus untracked T003 browser tests.
 - Rules deploy status: `required`, currently `changed=true`; T002 changed `firestore.rules`, but deploy remains unauthorized and not claimed.
 - Incidents: none.
 - Planning evidence:
@@ -55,14 +55,23 @@
       - `npm run type-check`: exit 0; type check completed.
       - `npm run lint -- --max-warnings 0`: exit 0; strict lint completed.
       - `git diff --check`: exit 0; no whitespace errors.
+  - T003A evidence:
+    - Engineer report: Fixed ESLint project-service coverage for browser tests in `eslint.config.mjs`.
+    - Reviewer report: `review_passed`; config blocker is resolved and `tests/browser/**/*.jsx` remains linted.
+    - Command output summary:
+      - `npm run lint:changed`: exit non-zero; project-service/default-project parser error is resolved, and the remaining failure is a real T003-owned no-restricted-syntax violation at `tests/browser/ui/posts/PostDetailScreen.test.jsx:185` for `toHaveBeenCalledTimes`.
+  - T003 follow-up evidence:
+    - `T003` remains task-local `blocked`; fix `tests/browser/ui/posts/PostDetailScreen.test.jsx:185` no-restricted-syntax (`toHaveBeenCalledTimes`) before retrying `npm run lint:changed`.
+    - Browser evidence can be produced by app/browser setup: sign in, create an article post, edit it, then validate the edited article in `/posts` and `/posts/{postId}`. No seed fixture task is required unless app/browser interaction cannot create the evidence data.
 
 ## Dependency Graph
 
 ```text
 T001 shared core
   -> T002 article persistence/rules/cleanup
-      -> T003 post list/detail UI wiring
-          -> T004 final integration gate/workflow state
+      -> T003A browser test lint configuration
+          -> T003 post list/detail UI wiring review completion
+              -> T004 final integration gate/workflow state
 ```
 
 ## Parallel Waves
@@ -70,13 +79,14 @@ T001 shared core
 - Serialized execution is safer than parallel execution.
 - `wave-1`: `T001` only. Shared helpers/components/hooks are prerequisites.
 - `wave-2`: `T002` only. Firestore rules and account-deletion cleanup are shared high-risk surfaces.
-- `wave-3`: `T003` only. UI wiring depends on T001 shared components and T002 use-case/repo contracts.
+- `wave-3a`: `T003A` only. Shared lint/type-check configuration must serialize before T003 can complete review.
+- `wave-3b`: `T003` only. UI wiring depends on T001 shared components, T002 use-case/repo contracts, and T003A lint configuration support.
 - `wave-4`: `T004` only. Final integration gate and workflow-state sync after all implementation tasks.
 - No same-wave owned files overlap because every wave has exactly one task.
 
 ## Final Integration Gate
 
-- Run after `T001`, `T002`, and `T003` are `completed`.
+- Run after `T001`, `T002`, `T003A`, and `T003` are `completed`.
 - Required commands:
   - `git status --short --branch`
   - `git diff --check`
@@ -218,7 +228,7 @@ Evidence:
 - **Engineer**: Persistence And Rules Engineer
 - **Reviewer**: Persistence And Rules Reviewer
 - **Commit checkpoint**: `article_history_persistence_rules` after Reviewer PASS and fresh verification
-- **Last verified commit**: `dcda33b5237509cb8eac9949a9776b6cfd47366f`; T002 implementation is verified in the current dirty working tree and pending commit
+- **Last verified commit**: `6a61283c02c6334f9062f10b26e44e0c4a9910c3`; T002 implementation is completed and committed
 - **Authorization boundary**: edit=yes, commit=yes after Reviewer PASS and fresh verification, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required; changed=true; deploy remains unauthorized and not claimed
 - **Incidents**: none
@@ -334,18 +344,126 @@ Evidence:
 - Rules deploy status: required; changed=true; no deploy evidence
 - Incidents: none
 
+### T003A - Browser Test Lint Configuration
+
+- **State**: `completed`
+- **Attempt**: 1
+- **Wave**: `wave-3a`
+- **Engineer**: Tooling Configuration Engineer
+- **Reviewer**: Tooling Configuration Reviewer
+- **Commit checkpoint**: `browser_test_lint_config` after Reviewer PASS and fresh verification
+- **Last verified commit**: none for this task; config change is dirty and not committed by this state sync
+- **Authorization boundary**: edit=yes, commit=yes after Engineer + Reviewer + fresh verification, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Rules deploy status**: required; carry T002 changed=true state; deploy remains unauthorized
+- **Incidents**: none
+
+Scope:
+
+- Make changed-file lint work for new `tests/browser/**/*.js` and `tests/browser/**/*.jsx` files while keeping those tests linted.
+- Prefer minimal configuration changes in `eslint.config.mjs` and/or `tsconfig.json`.
+- Preserve type-aware lint behavior for source and browser tests.
+- Add no test fixtures and no production/runtime behavior.
+
+Non-scope:
+
+- Do not edit T003 UI/runtime implementation files or browser tests.
+- Do not edit production source, Firestore rules, package files, lockfiles, or seed/fixture data.
+- Do not relax lint policy by excluding `tests/browser/**` from changed-file lint.
+- Do not change `scripts/lint-changed.sh` unless the Engineer proves the current lint policy itself is wrong; if that happens, stop for coordinator approval before editing it.
+
+Owned files:
+
+- `eslint.config.mjs`
+- `tsconfig.json`
+
+Read-only context:
+
+- `scripts/lint-changed.sh`
+- `package.json`
+- `docs/superpowers/task-contract.md`
+- `specs/post-edit-history/plan.md`
+- `specs/post-edit-history/tasks.md`
+- `tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx`
+- `tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx`
+- `tests/browser/ui/posts/PostsPageScreen.test.jsx`
+- `tests/browser/ui/posts/PostDetailScreen.test.jsx`
+
+Dependencies:
+
+- `T001`
+- `T002`
+
+Browser evidence:
+
+- not applicable for this non-UI tooling slice. T003 owns browser evidence.
+
+Engineer instructions:
+
+- Inspect the current ESLint project-service configuration and TypeScript project includes.
+- Make the smallest config change that lets `npm run lint:changed` parse and lint untracked `tests/browser/**/*.jsx` files.
+- Keep `tests/browser/**` linted; do not hide the files from `lint:changed`.
+- If solving this requires changing `scripts/lint-changed.sh`, stop and report the exact reason instead of editing it.
+- Modify only the owned files above.
+
+Acceptance criteria:
+
+- AC-T003A.1: `npm run lint:changed` can lint changed and untracked `tests/browser/**/*.jsx` files without project-service parser errors.
+- AC-T003A.2: Full strict lint still succeeds with tests included in the intended project/config coverage.
+- AC-T003A.3: Type checking still succeeds.
+- AC-T003A.4: Focused T003 browser/runtime tests still run after the config change.
+- AC-T003A.5: No lint exclusion or script change removes browser tests from changed-file lint.
+
+Verification commands and expected signal:
+
+| Command | Expected signal |
+| ------- | --------------- |
+| `npm run lint:changed` | ESLint reaches changed and untracked T003 JS/JSX files without project-service/default-project parser errors; a non-zero exit is acceptable only when the remaining failure is a real downstream T003 lint violation |
+| `npm run lint -- --max-warnings 0` | strict lint has browser test project-service coverage; any remaining rule violations are reported as downstream task blockers, not T003A parser coverage failures |
+| `npm run type-check` | full type check succeeds or any failure is reported as unrelated to T003A project-service parser coverage |
+| `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; focused T003 runtime/UI tests still pass or failures are reported as T003-owned behavior, not config parser errors |
+| `npm run workflow:check` | exit 0; workflow state remains valid and synced after T003A state updates |
+
+Reviewer PASS criteria:
+
+- Diff touches only T003A owned files.
+- Required T003A evidence shows the ESLint parser/project-service coverage blocker is resolved; downstream T003 lint failures do not fail T003A.
+- Browser tests remain linted; they are not excluded from `lint:changed`.
+- No production, T003 UI/runtime, package, lockfile, rules, seed, or fixture files are changed.
+- Rules deploy remains `required`, `changed=true`, and not deployed.
+
+Reviewer REJECT criteria:
+
+- Config hides `tests/browser/**` from lint instead of supporting them.
+- Diff touches files outside owned files without coordinator approval.
+- Required commands are missing, stale, failed, or combined into shell chains.
+- Full strict lint or type check regresses.
+- The fix requires script policy changes, package changes, or fixture data changes.
+
+Evidence:
+
+- Engineer report: Fixed ESLint project-service config for `tests/browser/**` in `eslint.config.mjs`.
+- Reviewer report: `review_passed`; config issue is resolved and browser tests remain linted.
+- Command output summary:
+  - `npm run lint:changed`: exit non-zero; no ESLint project-service/default-project parser error remains for `tests/browser/**/*.jsx`; current failure is a real downstream T003-owned no-restricted-syntax violation at `tests/browser/ui/posts/PostDetailScreen.test.jsx:185` for `toHaveBeenCalledTimes`, so this is not T003A incompletion.
+- Changed files summary:
+  - `eslint.config.mjs`: browser test project-service/default-project coverage fixed for `tests/browser/**`.
+- Browser evidence: not applicable
+- Phase commits: pending; do not commit in this state sync
+- Rules deploy status: required; changed=true; no deploy evidence
+- Incidents: none
+
 ### T003 - Article Post List/Detail UI Wiring And Browser Evidence
 
-- **State**: `todo`
+- **State**: `blocked`
 - **Attempt**: 1
-- **Wave**: `wave-3`
+- **Wave**: `wave-3b`
 - **Engineer**: UI Runtime Engineer
 - **Reviewer**: UI Runtime Reviewer
 - **Commit checkpoint**: `article_history_ui` after Reviewer PASS and fresh verification
-- **Last verified commit**: none for this task
+- **Last verified commit**: none for this task; Engineer implementation is dirty and follow-up is required after T003A completion
 - **Authorization boundary**: edit=yes, commit=yes after Reviewer PASS and fresh verification, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required; carry T002 changed=true state; deploy remains unauthorized
-- **Incidents**: none
+- **Incidents**: none; blocker is task-local to T003 and requires fixing the test lint violation plus browser setup.
 
 Scope:
 
@@ -391,6 +509,7 @@ Dependencies:
 
 - `T001`
 - `T002`
+- `T003A` completed
 
 Browser evidence:
 
@@ -398,13 +517,15 @@ Browser evidence:
 - Target URL: local app `/posts` and `/posts/{postId}`.
 - Tool: Browser plugin or Chrome plugin; record which one.
 - Viewports: desktop 1280x800 and mobile 390x844.
+- Setup: Coordinator/Engineer may sign in through the app, create an article post, edit that post, and use that same edited article for evidence. This setup is allowed only through app/browser interaction and must not require code, data fixture, seed, or config changes.
 - Journey:
   - Load `/posts`; verify an edited article post shows `已編輯`.
   - Click article `已編輯`; verify modal opens with previous title/content and closes.
   - Navigate to `/posts/{postId}`; verify detail card shows `已編輯`, modal opens, and current title/content plus previous title/content are visible.
-  - Verify existing comment `已編輯` affordance and comment history modal still open/close on detail.
+  - Verify existing comment `已編輯` affordance and comment history modal still open/close on detail when an edited comment is already available or can be created through app/browser interaction.
   - Record console errors and failed network requests.
 - Screenshot artifact: save or report screenshot paths for each viewport/journey.
+- Stop if deterministic seeded fixture data is required; that must become a separate fixture task before T003 review can complete.
 
 Engineer instructions:
 
@@ -430,11 +551,13 @@ Verification commands and expected signal:
 | ------- | --------------- |
 | `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; article post history wiring and comment regression tests pass |
 | `npm run lint:changed` | exit 0; changed files lint clean |
+| `npm run lint -- --max-warnings 0` | exit 0; strict lint clean after T003A config support |
 | `npm run type-check:changed` | exit 0; changed-file type check clean |
 
 Reviewer PASS criteria:
 
 - Diff touches only T003 owned files.
+- `T003A` is `completed` before T003 review is retried or completed.
 - Required commands pass with expected signals.
 - Browser evidence covers `/posts` and `/posts/{postId}` on desktop and mobile.
 - Article affordance/modal works and comment history is not regressed.
@@ -450,14 +573,15 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending
-- Reviewer report: pending
-- Command output summary: pending
+- Engineer report: Implemented T003 UI/runtime owned scope in the current dirty working tree; not accepted yet.
+- Reviewer report: `blocked`; after T003A resolved ESLint project-service coverage, lint now fails on a real T003-owned no-restricted-syntax violation in `tests/browser/ui/posts/PostDetailScreen.test.jsx:185` for `toHaveBeenCalledTimes`, and browser evidence needs a real edited article setup.
+- Command output summary:
+  - `npm run lint:changed`: exit non-zero; fails at `tests/browser/ui/posts/PostDetailScreen.test.jsx:185` on no-restricted-syntax (`toHaveBeenCalledTimes`).
 - Changed files summary: pending
 - Browser evidence: pending
 - Phase commits: pending
 - Rules deploy status: required; changed=true; no deploy evidence
-- Incidents: none
+- Incidents: none; blocker is task-local to T003 and requires fixing the test lint violation plus browser setup.
 
 ### T004 - Final Integration Verification And Workflow State
 
@@ -474,7 +598,7 @@ Evidence:
 
 Scope:
 
-- Run final integration verification after T001-T003 are `completed`.
+- Run final integration verification after T001, T002, T003A, and T003 are `completed`.
 - Sync `tasks.md`, `handoff.md`, and `status.json` with final local evidence.
 - Record rules deploy state accurately without claiming deployment.
 
@@ -498,7 +622,7 @@ Read-only context:
 - `docs/superpowers/status.schema.json`
 - `specs/post-edit-history/spec.md`
 - `specs/post-edit-history/plan.md`
-- T001-T003 Engineer and Reviewer reports
+- T001-T003A/T003 Engineer and Reviewer reports
 - `git status --short --branch`
 - `git diff --name-only`
 
@@ -506,6 +630,7 @@ Dependencies:
 
 - `T001`
 - `T002`
+- `T003A`
 - `T003`
 
 Browser evidence:
@@ -514,7 +639,7 @@ Browser evidence:
 
 Engineer instructions:
 
-- Confirm T001, T002, and T003 are `completed` in `tasks.md` and `status.json`.
+- Confirm T001, T002, T003A, and T003 are `completed` in `tasks.md` and `status.json`.
 - Run the final integration commands one at a time and record exit codes and concise signals.
 - Update workflow state to reflect latest task states, current head, last verification, phase commits, rules deploy state, and any incidents.
 - If `firestore.rules` changed, keep `rulesDeployStatus.state=required`, `required=true`, `changed=true`, `deployedCommit=null`, and no deploy evidence.

@@ -3,9 +3,9 @@
   "feature": "post-edit-history",
   "branch": "092-post-edit-history",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history",
-  "phase": "implementation_ready",
+  "phase": "implementation_blocked",
   "activeTask": "T003",
-  "activeWave": "wave-3",
+  "activeWave": "wave-3b",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,20 +18,21 @@
   },
   "currentHead": {
     "branch": "092-post-edit-history",
-    "commit": "dcda33b5237509cb8eac9949a9776b6cfd47366f",
-    "capturedAt": "2026-06-04T08:40:47Z",
-    "summary": "Shared-core test-layout migration is committed; T002 implementation is verified in the current dirty working tree and pending commit."
+    "commit": "6a61283c02c6334f9062f10b26e44e0c4a9910c3",
+    "capturedAt": "2026-06-04T09:31:38Z",
+    "summary": "T001 and T002 are committed; T003A config review passed; T003 UI/runtime implementation is dirty and blocked on a T003-owned lint violation plus browser evidence setup."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "4145241dd5f21e17812dad3d7448be2bb74c090e",
-    "capturedAt": "2026-06-04T08:40:47Z",
-    "summary": "origin/main includes Remove colocated src tests (#134); current branch reports ahead 6 with no behind state."
+    "capturedAt": "2026-06-04T09:13:27Z",
+    "summary": "origin/main includes Remove colocated src tests (#134); current branch reports ahead 7 with no behind state."
   },
   "completedTasks": [
     "T001",
-    "T002"
+    "T002",
+    "T003A"
   ],
   "tasks": [
     {
@@ -296,11 +297,122 @@
       }
     },
     {
+      "id": "T003A",
+      "title": "Browser Test Lint Configuration",
+      "state": "completed",
+      "attempt": 1,
+      "wave": "wave-3a",
+      "engineer": "Tooling Configuration Engineer",
+      "reviewer": "Tooling Configuration Reviewer",
+      "scope": [
+        "Make changed-file lint work for new tests/browser/**/*.js and tests/browser/**/*.jsx files while keeping those tests linted.",
+        "Prefer minimal configuration changes in eslint.config.mjs and/or tsconfig.json.",
+        "Preserve type-aware lint behavior for source and browser tests.",
+        "Add no test fixtures and no production/runtime behavior."
+      ],
+      "nonScope": [
+        "Do not edit T003 UI/runtime implementation files or browser tests.",
+        "Do not edit production source, Firestore rules, package files, lockfiles, or seed/fixture data.",
+        "Do not relax lint policy by excluding tests/browser/** from changed-file lint.",
+        "Do not change scripts/lint-changed.sh unless coordinator explicitly approves a lint-policy change."
+      ],
+      "ownedFiles": [
+        "eslint.config.mjs",
+        "tsconfig.json"
+      ],
+      "readOnlyContext": [
+        "scripts/lint-changed.sh",
+        "package.json",
+        "docs/superpowers/task-contract.md",
+        "specs/post-edit-history/plan.md",
+        "specs/post-edit-history/tasks.md",
+        "tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx",
+        "tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx",
+        "tests/browser/ui/posts/PostsPageScreen.test.jsx",
+        "tests/browser/ui/posts/PostDetailScreen.test.jsx"
+      ],
+      "dependencies": [
+        "T001",
+        "T002"
+      ],
+      "engineerInstructions": [
+        "Inspect the current ESLint project-service configuration and TypeScript project includes.",
+        "Make the smallest config change that lets npm run lint:changed parse and lint untracked tests/browser/**/*.jsx files.",
+        "Keep tests/browser/** linted; do not hide the files from lint:changed.",
+        "If solving this requires changing scripts/lint-changed.sh, stop and report the exact reason instead of editing it.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T003A.1: npm run lint:changed can lint changed and untracked tests/browser/**/*.jsx files without project-service parser errors.",
+        "AC-T003A.2: Full strict lint still succeeds with tests included in the intended project/config coverage.",
+        "AC-T003A.3: Type checking still succeeds.",
+        "AC-T003A.4: Focused T003 browser/runtime tests still run after the config change.",
+        "AC-T003A.5: No lint exclusion or script change removes browser tests from changed-file lint."
+      ],
+      "verification": [
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "ESLint reaches changed and untracked T003 JS/JSX files without project-service/default-project parser errors; a non-zero exit is acceptable only when the remaining failure is a real downstream T003 lint violation",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint -- --max-warnings 0",
+          "expectedSignal": "strict lint has browser test project-service coverage; any remaining rule violations are reported as downstream task blockers, not T003A parser coverage failures",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check",
+          "expectedSignal": "full type check succeeds or any failure is reported as unrelated to T003A project-service parser coverage",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
+          "expectedSignal": "exit 0; focused T003 runtime/UI tests still pass or failures are reported as T003-owned behavior, not config parser errors",
+          "lastRun": null
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "exit 0; workflow state remains valid and synced after T003A state updates",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only T003A owned files.",
+        "Required T003A evidence shows the ESLint parser/project-service coverage blocker is resolved; downstream T003 lint failures do not fail T003A.",
+        "Browser tests remain linted; they are not excluded from lint:changed.",
+        "No production, T003 UI/runtime, package, lockfile, rules, seed, or fixture files are changed.",
+        "Rules deploy remains required, changed=true, and not deployed."
+      ],
+      "reviewerRejectCriteria": [
+        "Config hides tests/browser/** from lint instead of supporting them.",
+        "Diff touches files outside owned files without coordinator approval.",
+        "Required commands are missing, stale, failed, or combined into shell chains.",
+        "Full strict lint or type check regresses.",
+        "The fix requires script policy changes, package changes, or fixture data changes."
+      ],
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Tooling Configuration Reviewer",
+        "summary": "T003A passed; ESLint project-service/default-project coverage for tests/browser is resolved and browser tests remain linted. Remaining lint failure belongs to T003 test assertion policy.",
+        "decidedAt": "2026-06-04T09:31:38Z"
+      },
+      "evidence": {
+        "engineerReport": "Fixed ESLint project-service config for tests/browser in eslint.config.mjs.",
+        "reviewerReport": "review_passed; config issue is resolved and browser tests remain linted.",
+        "commandOutputSummary": [
+          "npm run lint:changed: exit non-zero; no ESLint project-service/default-project parser error remains for tests/browser/**/*.jsx; current failure is a real downstream T003-owned no-restricted-syntax violation at tests/browser/ui/posts/PostDetailScreen.test.jsx:185 for toHaveBeenCalledTimes, so this is not T003A incompletion."
+        ],
+        "changedFilesSummary": [
+          "eslint.config.mjs: browser test project-service/default-project coverage fixed for tests/browser/**."
+        ]
+      }
+    },
+    {
       "id": "T003",
       "title": "Article Post List/Detail UI Wiring And Browser Evidence",
-      "state": "todo",
+      "state": "blocked",
       "attempt": 1,
-      "wave": "wave-3",
+      "wave": "wave-3b",
       "engineer": "UI Runtime Engineer",
       "reviewer": "UI Runtime Reviewer",
       "scope": [
@@ -312,7 +424,8 @@
       "nonScope": [
         "No persistence/rules/account-deletion edits.",
         "No shared core edits unless coordinator updates the task.",
-        "No event-comment UI files, package files, config, lockfiles, or rules deploy."
+        "No event-comment UI files, package files, config, lockfiles, or rules deploy.",
+        "Do not add seed or fixture data for browser evidence inside T003; stop for a separate fixture task if app/browser setup is insufficient."
       ],
       "ownedFiles": [
         "src/components/PostCard.jsx",
@@ -340,7 +453,8 @@
       ],
       "dependencies": [
         "T001",
-        "T002"
+        "T002",
+        "T003A"
       ],
       "engineerInstructions": [
         "Extend PostCard with article history affordance props without breaking owner menu, links, like/favorite, and children behavior.",
@@ -355,7 +469,8 @@
         "AC-T003.3: Modal close resets article history state.",
         "AC-T003.4: Failed article history load leaves an error visible without corrupting current post state.",
         "AC-T003.5: Existing comment history modal behavior remains green in detail.",
-        "AC-T003.6: Desktop/mobile browser evidence shows no material overlap or layout regression."
+        "AC-T003.6: Desktop/mobile browser evidence shows no material overlap or layout regression.",
+        "AC-T003.7: Browser evidence may use app/browser setup to sign in, create an article, edit it, and validate that same edited article without code/data fixture changes."
       ],
       "verification": [
         {
@@ -365,7 +480,12 @@
         },
         {
           "command": "npm run lint:changed",
-          "expectedSignal": "exit 0; changed files lint clean",
+          "expectedSignal": "exit 0; changed files lint clean after T003A config support",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint -- --max-warnings 0",
+          "expectedSignal": "exit 0; strict lint clean after T003A config support",
           "lastRun": null
         },
         {
@@ -376,24 +496,35 @@
       ],
       "reviewerPassCriteria": [
         "Diff touches only T003 owned files.",
+        "T003A is completed before T003 review is retried or completed.",
         "Required commands pass with expected signals.",
-        "Browser evidence covers /posts and /posts/{postId} on desktop and mobile.",
+        "Browser evidence covers /posts and /posts/{postId} on desktop and mobile using a real edited article created through app/browser setup or existing local data.",
         "Article affordance/modal works and comment history is not regressed.",
-        "No persistence/rules/event-comment/package/config/lockfile changes are present."
+        "No persistence/rules/event-comment/package/config/lockfile/fixture changes are present."
       ],
       "reviewerRejectCriteria": [
         "UI requires changes outside T003 owned files without coordinator approval.",
         "Browser evidence is missing, blank, overlapping, or has material console/network errors.",
         "Article history modal shows current content as history instead of pre-edit title/content.",
         "Comment history affordance/modal regresses.",
-        "Verification is missing, stale, failed, or combined into shell chains."
+        "Verification is missing, stale, failed, or combined into shell chains.",
+        "Browser evidence requires deterministic seeded fixture data without a separate approved fixture task."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "blocked",
+        "reviewer": "UI Runtime Reviewer",
+        "summary": "T003 remains blocked on a T003-owned no-restricted-syntax violation at tests/browser/ui/posts/PostDetailScreen.test.jsx:185 for toHaveBeenCalledTimes, plus browser evidence against a real edited article setup.",
+        "decidedAt": "2026-06-04T09:31:38Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "Implemented T003 UI/runtime owned scope in the current dirty working tree; not accepted yet.",
+        "reviewerReport": "blocked; after T003A resolved ESLint project-service/default-project coverage, lint now fails on a real T003-owned no-restricted-syntax violation in tests/browser/ui/posts/PostDetailScreen.test.jsx:185 for toHaveBeenCalledTimes, and browser evidence needs a real edited article setup.",
+        "commandOutputSummary": [
+          "npm run lint:changed: exit non-zero; fails at tests/browser/ui/posts/PostDetailScreen.test.jsx:185 on no-restricted-syntax (toHaveBeenCalledTimes)."
+        ],
+        "changedFilesSummary": [
+          "src/components/PostCard.jsx, src/components/PostCard.module.css, src/runtime/hooks/usePostDetailRuntime.js, src/runtime/hooks/usePostsPageRuntime.js, src/ui/posts/PostDetailScreen.jsx, src/ui/posts/PostsPageScreen.jsx, and untracked tests/browser T003 files are dirty from the blocked T003 Engineer implementation."
+        ]
       }
     },
     {
@@ -405,7 +536,7 @@
       "engineer": "Integration Verifier",
       "reviewer": "Integration Reviewer",
       "scope": [
-        "Run final integration verification after T001-T003 are completed.",
+        "Run final integration verification after T001, T002, T003A, and T003 are completed.",
         "Sync tasks.md, handoff.md, and status.json with final local evidence.",
         "Record rules deploy state accurately without claiming deployment."
       ],
@@ -426,17 +557,18 @@
         "docs/superpowers/status.schema.json",
         "specs/post-edit-history/spec.md",
         "specs/post-edit-history/plan.md",
-        "T001-T003 Engineer and Reviewer reports",
+        "T001-T003A/T003 Engineer and Reviewer reports",
         "git status --short --branch",
         "git diff --name-only"
       ],
       "dependencies": [
         "T001",
         "T002",
+        "T003A",
         "T003"
       ],
       "engineerInstructions": [
-        "Confirm T001, T002, and T003 are completed in tasks.md and status.json.",
+        "Confirm T001, T002, T003A, and T003 are completed in tasks.md and status.json.",
         "Run final integration commands one at a time and record exit codes.",
         "Update workflow state with latest task states, current head, verification, phase commits, rules deploy state, and incidents.",
         "If firestore.rules changed, keep rulesDeployStatus required/changed=true/deployedCommit=null.",
@@ -511,7 +643,7 @@
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "dcda33b5237509cb8eac9949a9776b6cfd47366f",
+  "lastVerifiedCommit": "6a61283c02c6334f9062f10b26e44e0c4a9910c3",
   "phaseCommits": [
     {
       "phase": "spec_approved",
@@ -527,6 +659,11 @@
       "phase": "shared_core",
       "commit": "3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf",
       "summary": "Committed T001 shared edit-history core; post-rebase test-layout migration remains pending review/commit."
+    },
+    {
+      "phase": "article_history_persistence_rules",
+      "commit": "6a61283c02c6334f9062f10b26e44e0c4a9910c3",
+      "summary": "Committed T002 article post edit-history persistence, strict rules, and cleanup."
     }
   ],
   "rulesDeployStatus": {
@@ -539,53 +676,23 @@
   "incidents": [],
   "lastVerification": [
     {
-      "command": "npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js",
+      "command": "git status --short --branch",
       "exitCode": 0,
-      "summary": "2 files / 5 tests passed.",
-      "verifiedAt": "2026-06-04T08:40:47Z"
-    },
-    {
-      "command": "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
-      "exitCode": 0,
-      "summary": "1 file / 37 tests passed.",
-      "verifiedAt": "2026-06-04T08:40:47Z"
-    },
-    {
-      "command": "git diff -- firestore.rules",
-      "exitCode": 0,
-      "summary": "No event-comment rules hunks changed.",
-      "verifiedAt": "2026-06-04T08:40:47Z"
-    },
-    {
-      "command": "npm run type-check",
-      "exitCode": 0,
-      "summary": "Type check completed.",
-      "verifiedAt": "2026-06-04T08:40:47Z"
-    },
-    {
-      "command": "npm run lint -- --max-warnings 0",
-      "exitCode": 0,
-      "summary": "Strict lint completed.",
-      "verifiedAt": "2026-06-04T08:40:47Z"
+      "summary": "On 092-post-edit-history; branch ahead 7 of origin/main; workflow docs dirty plus blocked T003 implementation files and untracked T003 browser tests; no staged changes.",
+      "verifiedAt": "2026-06-04T09:20:06Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-04T08:45:01Z"
+      "verifiedAt": "2026-06-04T09:20:06Z"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
       "summary": "17 status file(s) valid and synced; specs/post-edit-history/status.json ok and sync ok.",
-      "verifiedAt": "2026-06-04T08:45:01Z"
-    },
-    {
-      "command": "git status --short --branch",
-      "exitCode": 0,
-      "summary": "On 092-post-edit-history; branch ahead 6 of origin/main; dirty files are T002 implementation plus workflow state files; no staged changes.",
-      "verifiedAt": "2026-06-04T08:45:01Z"
+      "verifiedAt": "2026-06-04T09:20:06Z"
     }
   ],
-  "updatedAt": "2026-06-04T08:45:01Z"
+  "updatedAt": "2026-06-04T09:20:06Z"
 }
