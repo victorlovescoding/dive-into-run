@@ -11,15 +11,15 @@ const COMMENT_MAX_LENGTH = 500;
  *   content: string,
  *   setContent: import('react').Dispatch<import('react').SetStateAction<string>>,
  *   isDisabled: boolean,
- *   textboxRef: import('react').RefObject<HTMLTextAreaElement | null>,
+ *   textboxRef: import('react').RefObject<HTMLInputElement | null>,
  *   handleSubmit: () => Promise<boolean>,
- *   handleKeyDown: (event: import('react').KeyboardEvent<HTMLTextAreaElement>) => void,
+ *   handleKeyDown: (event: import('react').KeyboardEvent<HTMLInputElement>) => void,
  * }} 留言輸入框狀態與事件處理器。
  */
 export default function useCommentComposerInput({ onSubmit, isSubmitting }) {
   const [content, setContent] = useState('');
   const [refocusToken, setRefocusToken] = useState(0);
-  const textboxRef = useRef(/** @type {HTMLTextAreaElement | null} */ (null));
+  const textboxRef = useRef(/** @type {HTMLInputElement | null} */ (null));
   const pendingRefocusRef = useRef(false);
 
   const trimmed = content.trim();
@@ -31,13 +31,13 @@ export default function useCommentComposerInput({ onSubmit, isSubmitting }) {
   }, []);
 
   useEffect(() => {
-    const textbox = textboxRef.current;
-    if (!pendingRefocusRef.current || isSubmitting || !textbox || textbox.disabled) {
+    const input = textboxRef.current;
+    if (!pendingRefocusRef.current || isSubmitting || !input || input.disabled) {
       return;
     }
 
     pendingRefocusRef.current = false;
-    textbox.focus();
+    input.focus();
   }, [isSubmitting, refocusToken]);
 
   const handleSubmit = useCallback(async () => {

@@ -23,15 +23,16 @@ export default function CommentInput({ onSubmit, isSubmitting }) {
   return (
     <div className={styles.wrapper}>
       <div className={styles.inputRow}>
-        <textarea
+        <input
           ref={textboxRef}
+          type="text"
+          aria-label="留言"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="留言..."
+          placeholder="留言"
           className={styles.textbox}
           disabled={isSubmitting}
-          rows={1}
         />
         <button
           type="button"

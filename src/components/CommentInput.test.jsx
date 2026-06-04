@@ -54,6 +54,17 @@ function renderWithSubmittingParent({ promise }) {
 }
 
 describe('CommentInput composer behavior', () => {
+  it('renders a single-line text input instead of a resizable textarea', () => {
+    const onSubmit = vi.fn().mockResolvedValue(true);
+    render(<CommentInput onSubmit={onSubmit} isSubmitting={false} />);
+
+    const textbox = screen.getByRole('textbox', { name: '留言' });
+    expect(textbox.tagName).toBe('INPUT');
+    expect(textbox).toHaveAttribute('type', 'text');
+    expect(textbox).toHaveAttribute('placeholder', '留言');
+    expect(textbox).not.toHaveAttribute('rows');
+  });
+
   it('submits non-empty content with Enter, clears after success, and keeps focus', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(true);
@@ -68,20 +79,31 @@ describe('CommentInput composer behavior', () => {
     expect(textbox).toHaveFocus();
   });
 
-  it('keeps newline entry for Shift+Enter and skips submission during IME composition', async () => {
+  it('ignores Shift+Enter without inserting a newline or submitting', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(true);
     render(<CommentInput onSubmit={onSubmit} isSubmitting={false} />);
 
     const textbox = screen.getByRole('textbox');
     await user.type(textbox, '第一行{Shift>}{Enter}{/Shift}第二行');
-    expect(textbox).toHaveValue('第一行\n第二行');
 
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(textbox).toHaveValue('第一行第二行');
+    expect(textbox).toHaveFocus();
+  });
+
+  it('skips submission during IME composition without changing the draft', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(true);
+    render(<CommentInput onSubmit={onSubmit} isSubmitting={false} />);
+
+    const textbox = screen.getByRole('textbox');
+    await user.type(textbox, '輸入中');
     // eslint-disable-next-line testing-library/prefer-user-event -- fireEvent can set the IME isComposing flag.
     fireEvent.keyDown(textbox, { key: 'Enter', isComposing: true });
 
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(textbox).toHaveValue('第一行\n第二行');
+    expect(textbox).toHaveValue('輸入中');
     expect(textbox).toHaveFocus();
   });
 
