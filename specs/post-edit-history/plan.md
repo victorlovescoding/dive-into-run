@@ -2,8 +2,11 @@
 
 ## Summary
 
-Current phase: `implementation_ready`. The spec is approved and implementation may
-start from the task contracts in `tasks.md`.
+Current phase: `integration`. T001 and T002 are completed and committed. T003
+article post list/detail UI wiring is reviewed in the dirty working tree with
+Reviewer `review_passed` and Browser/Playwright evidence PASS. The earlier T003
+lint/browser blocker is resolved; T004 final integration verification and
+workflow-state sync remain.
 
 The implementation uses Shared Core + Resource Adapters. Shared edit-history
 code owns generic affordance/modal/state/snapshot concepts. Article posts own
@@ -70,6 +73,8 @@ wiring.
 | `src/ui/posts/PostsPageScreen.jsx` | Modify | Pass article history handlers/state to list cards/modal. |
 | `src/ui/posts/PostDetailScreen.jsx` | Modify | Pass article history handlers/state to detail card/modal without regressing comment modal. |
 | Focused tests named in `tasks.md` | Modify/Create | Prove shared core compatibility, persistence/rules strictness, UI wiring, and integration behavior. |
+| `eslint.config.mjs` | Modify in T003A only | Keep browser/jsdom tests linted by including `tests/browser/**` in the type-aware lint project service/default-project coverage. |
+| `tsconfig.json` | Modify in T003A only | Include browser/jsdom tests in the TypeScript project graph when needed for type-aware linting. |
 
 ## Verification Strategy
 
@@ -80,14 +85,24 @@ wiring.
   - `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`
   - `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`
   - `npm run lint:changed`
+  - `npm run lint -- --max-warnings 0`
+  - `npm run type-check`
   - `npm run type-check:changed`
   - `npm run workflow:check`
 - Browser evidence target:
-  - In `/posts`, an edited article post shows `已編輯`; clicking it opens a
+  - Browser setup may sign in through the app, create an article post, edit that
+    article post, and then capture evidence for that same edited article. This
+    is allowed only through app/browser interaction and must not require code,
+    test, config, seed, or fixture changes.
+  - In `/posts`, the edited article post shows `已編輯`; clicking it opens a
     history modal with previous title/content.
   - In `/posts/{postId}`, the same edited article post shows `已編輯` in the
-    detail card; modal close works and comment history still works.
+    detail card; modal close works and comment history still works when a
+    suitable edited comment already exists or can be created through the app.
   - Capture desktop and mobile screenshots plus console/network findings.
+  - If deterministic seeded data or a code/data fixture becomes required to
+    produce evidence, stop and add a separate fixture task instead of widening
+    T003 or T003A.
 - Regression risk and mitigation:
   - Comment history regression: keep `CommentHistoryModal` API stable and run
     post comment runtime/screen tests.
@@ -101,12 +116,17 @@ wiring.
 
 - Status schema: v3.
 - Current head snapshot: captured from `092-post-edit-history` at
-  `dcda33b5237509cb8eac9949a9776b6cfd47366f` after the shared-core
-  test-layout migration checkpoint.
+  `6821d3c5f92d6e8adc768aa610d27e7cba87be70` after the T003A browser test
+  lint config checkpoint.
 - Remote head snapshot: captured from `origin/main` at
-  `4145241dd5f21e17812dad3d7448be2bb74c090e`.
+  `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 8
+  and behind 6 relative to `origin/main`.
 - Post-rebase test-layout migration: T001 browser/jsdom tests live under
   `tests/browser/...` and are committed in the current head.
+- T003 blocker: resolved. T003A fixed type-aware ESLint project coverage for
+  `tests/browser/**`; T003 later resolved the no-restricted-syntax
+  `toHaveBeenCalledTimes(N)` issue and captured Browser/Playwright article
+  history evidence against emulator-backed local data.
 - Last verified commit policy: `lastVerifiedCommit` records the local HEAD/ref
   covered by fresh verification; dirty workflow doc edits must be described in
   `lastVerification` until committed.
@@ -152,5 +172,6 @@ wiring.
 
 - T001: Shared edit-history core and comment compatibility.
 - T002: Article post history persistence, strict rules, and cleanup.
+- T003A: Browser test lint configuration for `tests/browser/**`.
 - T003: Article post list/detail UI wiring and browser evidence.
 - T004: Final integration verification and workflow state sync.

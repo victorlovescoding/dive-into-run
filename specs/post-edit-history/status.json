@@ -3,9 +3,9 @@
   "feature": "post-edit-history",
   "branch": "092-post-edit-history",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history",
-  "phase": "implementation_blocked",
-  "activeTask": "T003",
-  "activeWave": "wave-3b",
+  "phase": "integration",
+  "activeTask": "T004",
+  "activeWave": "wave-4",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,21 +18,22 @@
   },
   "currentHead": {
     "branch": "092-post-edit-history",
-    "commit": "6a61283c02c6334f9062f10b26e44e0c4a9910c3",
-    "capturedAt": "2026-06-04T09:31:38Z",
-    "summary": "T001 and T002 are committed; T003A config review passed; T003 UI/runtime implementation is dirty and blocked on a T003-owned lint violation plus browser evidence setup."
+    "commit": "6821d3c5f92d6e8adc768aa610d27e7cba87be70",
+    "capturedAt": "2026-06-04T13:19:43Z",
+    "summary": "Current HEAD includes the T003A browser test lint config checkpoint; T003 UI/runtime implementation is reviewed in the dirty working tree with Reviewer PASS and Browser/Playwright evidence PASS; T004 final integration remains. Current branch reports ahead 8 and behind 6 relative to origin/main."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "4145241dd5f21e17812dad3d7448be2bb74c090e",
-    "capturedAt": "2026-06-04T09:13:27Z",
-    "summary": "origin/main includes Remove colocated src tests (#134); current branch reports ahead 7 with no behind state."
+    "commit": "14515eee2d730d25c7f73fa8eb5c1315504787e8",
+    "capturedAt": "2026-06-04T13:19:43Z",
+    "summary": "origin/main is at 14515eee2d730d25c7f73fa8eb5c1315504787e8; current branch reports ahead 8 and behind 6 relative to origin/main."
   },
   "completedTasks": [
     "T001",
     "T002",
-    "T003A"
+    "T003A",
+    "T003"
   ],
   "tasks": [
     {
@@ -410,7 +411,7 @@
     {
       "id": "T003",
       "title": "Article Post List/Detail UI Wiring And Browser Evidence",
-      "state": "blocked",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-3b",
       "engineer": "UI Runtime Engineer",
@@ -474,14 +475,34 @@
       ],
       "verification": [
         {
+          "command": "npx vitest run tests/browser/ui/posts/PostDetailScreen.test.jsx",
+          "expectedSignal": "exit 0; detail article history and comment regression screen tests pass",
+          "lastRun": {
+            "command": "npx vitest run tests/browser/ui/posts/PostDetailScreen.test.jsx",
+            "exitCode": 0,
+            "summary": "1 file / 4 tests passed.",
+            "verifiedAt": "2026-06-04T13:10:53Z"
+          }
+        },
+        {
           "command": "npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
           "expectedSignal": "exit 0; article post history wiring and comment regression tests pass",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
+            "exitCode": 0,
+            "summary": "4 files / 11 tests passed.",
+            "verifiedAt": "2026-06-04T13:10:53Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "exit 0; changed files lint clean after T003A config support",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "Changed-file lint passed; only existing React version warning.",
+            "verifiedAt": "2026-06-04T13:10:53Z"
+          }
         },
         {
           "command": "npm run lint -- --max-warnings 0",
@@ -491,7 +512,12 @@
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "exit 0; changed-file type check clean",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "Changed-file type check passed.",
+            "verifiedAt": "2026-06-04T13:10:53Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -511,19 +537,29 @@
         "Browser evidence requires deterministic seeded fixture data without a separate approved fixture task."
       ],
       "reviewerDecision": {
-        "decision": "blocked",
+        "decision": "review_passed",
         "reviewer": "UI Runtime Reviewer",
-        "summary": "T003 remains blocked on a T003-owned no-restricted-syntax violation at tests/browser/ui/posts/PostDetailScreen.test.jsx:185 for toHaveBeenCalledTimes, plus browser evidence against a real edited article setup.",
-        "decidedAt": "2026-06-04T09:31:38Z"
+        "summary": "T003 passed with no findings. PostCard article edited affordance is gated by post.isEdited && onViewArticleHistory and calls the article handler; list/detail runtimes use useEditHistoryModal plus fetchPostHistory; local edit sets isEdited true; detail comment history remains intact; tests cover list/detail article history and detail comment regression without toHaveBeenCalledTimes(N); Browser/Playwright evidence passed.",
+        "decidedAt": "2026-06-04T13:10:53Z"
       },
       "evidence": {
-        "engineerReport": "Implemented T003 UI/runtime owned scope in the current dirty working tree; not accepted yet.",
-        "reviewerReport": "blocked; after T003A resolved ESLint project-service/default-project coverage, lint now fails on a real T003-owned no-restricted-syntax violation in tests/browser/ui/posts/PostDetailScreen.test.jsx:185 for toHaveBeenCalledTimes, and browser evidence needs a real edited article setup.",
+        "engineerReport": "Implemented T003 UI/runtime owned scope in the current dirty working tree and resolved the prior lint/browser evidence blocker.",
+        "reviewerReport": "review_passed; findings none. PostCard shows article-level 已編輯 only when post.isEdited && onViewArticleHistory, calls the article handler, list/detail runtimes use shared useEditHistoryModal plus T002 fetchPostHistory, local edit sets isEdited: true, detail comment history wiring remains intact, and tests cover list/detail article history plus detail comment regression without toHaveBeenCalledTimes(N).",
         "commandOutputSummary": [
-          "npm run lint:changed: exit non-zero; fails at tests/browser/ui/posts/PostDetailScreen.test.jsx:185 on no-restricted-syntax (toHaveBeenCalledTimes)."
+          "npx vitest run tests/browser/ui/posts/PostDetailScreen.test.jsx: exit 0; 1 file / 4 tests passed.",
+          "npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx: exit 0; 4 files / 11 tests passed.",
+          "npm run lint:changed: exit 0; only existing React version warning.",
+          "npm run type-check:changed: exit 0.",
+          "git diff --check: exit 0; no whitespace errors.",
+          "Browser verification PASS via Playwright/emulator using project demo-test, Auth 9099, Firestore 8080, Storage 9199, and Next on localhost:3002 with emulator env/fake config; did not use localhost:3000 or production.",
+          "Browser screenshots: /private/tmp/t003-article-history-ui/playwright-article-edited-button-desktop.png, /private/tmp/t003-article-history-ui/playwright-article-history-modal-desktop.png, /private/tmp/t003-article-history-ui/playwright-article-edited-button-mobile.png.",
+          "Browser modal showed old title/content T003 old title 2026-06-04T13-04-19-806Z and T003 old content 2026-06-04T13-04-19-806Z, plus 目前版本, 原始版本, and new title/content."
         ],
         "changedFilesSummary": [
-          "src/components/PostCard.jsx, src/components/PostCard.module.css, src/runtime/hooks/usePostDetailRuntime.js, src/runtime/hooks/usePostsPageRuntime.js, src/ui/posts/PostDetailScreen.jsx, src/ui/posts/PostsPageScreen.jsx, and untracked tests/browser T003 files are dirty from the blocked T003 Engineer implementation."
+          "src/components/PostCard.jsx and src/components/PostCard.module.css: article edited affordance rendering/placement for post cards.",
+          "src/runtime/hooks/usePostsPageRuntime.js and src/runtime/hooks/usePostDetailRuntime.js: article history modal state/handlers wired through shared useEditHistoryModal and T002 fetchPostHistory.",
+          "src/ui/posts/PostsPageScreen.jsx and src/ui/posts/PostDetailScreen.jsx: list/detail article history modal rendering and handlers, with detail comment history preserved.",
+          "tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx, tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx, tests/browser/ui/posts/PostsPageScreen.test.jsx, and tests/browser/ui/posts/PostDetailScreen.test.jsx: article history list/detail coverage and detail comment regression without toHaveBeenCalledTimes(N)."
         ]
       }
     },
@@ -678,21 +714,21 @@
     {
       "command": "git status --short --branch",
       "exitCode": 0,
-      "summary": "On 092-post-edit-history; branch ahead 7 of origin/main; workflow docs dirty plus blocked T003 implementation files and untracked T003 browser tests; no staged changes.",
-      "verifiedAt": "2026-06-04T09:20:06Z"
+      "summary": "On 092-post-edit-history; branch ahead 8 and behind 6 relative to origin/main; workflow docs dirty plus reviewed T003 implementation files and untracked T003 browser tests; no staged changes.",
+      "verifiedAt": "2026-06-04T13:15:19Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-04T09:20:06Z"
+      "verifiedAt": "2026-06-04T13:15:19Z"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
       "summary": "17 status file(s) valid and synced; specs/post-edit-history/status.json ok and sync ok.",
-      "verifiedAt": "2026-06-04T09:20:06Z"
+      "verifiedAt": "2026-06-04T13:15:19Z"
     }
   ],
-  "updatedAt": "2026-06-04T09:20:06Z"
+  "updatedAt": "2026-06-04T13:15:19Z"
 }

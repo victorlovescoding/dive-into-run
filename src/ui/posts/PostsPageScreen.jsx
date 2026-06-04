@@ -2,6 +2,7 @@
 
 import ComposeModal from '@/components/ComposeModal';
 import ComposePrompt from '@/components/ComposePrompt';
+import EditHistoryModal from '@/components/EditHistoryModal';
 import PostCard from '@/components/PostCard';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import styles from '@/app/posts/posts.module.css';
@@ -18,6 +19,7 @@ import styles from '@/app/posts/posts.module.css';
  * @param {(postId: string) => void | Promise<void>} props.onDelete - 刪除文章。
  * @param {(postId: string) => void | Promise<void>} props.onLike - 按讚文章。
  * @param {(postId: string) => void | Promise<void>} props.onToggleFavorite - 收藏文章。
+ * @param {(post: object) => void | Promise<void>} props.onViewArticleHistory - 查看文章編輯記錄。
  * @returns {import('react').ReactNode} 文章列表內容。
  */
 function renderPostList({
@@ -30,6 +32,7 @@ function renderPostList({
   onDelete,
   onLike,
   onToggleFavorite,
+  onViewArticleHistory,
 }) {
   if (isLoading) {
     return <PostCardSkeleton count={3} />;
@@ -50,6 +53,7 @@ function renderPostList({
       onDelete={onDelete}
       onLike={onLike}
       onToggleFavorite={onToggleFavorite}
+      onViewArticleHistory={onViewArticleHistory}
     />
   ));
 }
@@ -74,6 +78,9 @@ export default function PostsPageScreen({ runtime }) {
     openMenuPostId,
     isLoadingNext,
     isDraftConfirmOpen,
+    articleHistoryPost,
+    articleHistoryEntries,
+    articleHistoryError,
     dialogRef,
     bottomRef,
     setTitle,
@@ -85,6 +92,8 @@ export default function PostsPageScreen({ runtime }) {
     handleDeletePost,
     handleSubmitPost,
     handleToggleFavoritePost,
+    handleViewArticleHistory,
+    handleCloseArticleHistory,
     handleRequestComposerClose,
     handleSaveComposerDraft,
     handleContinueEditingDraft,
@@ -106,6 +115,7 @@ export default function PostsPageScreen({ runtime }) {
         onDelete: handleDeletePost,
         onLike: handlePressLike,
         onToggleFavorite: handleToggleFavoritePost,
+        onViewArticleHistory: handleViewArticleHistory,
       })}
 
       {isLoadingNext && <PostCardSkeleton count={1} />}
@@ -128,6 +138,15 @@ export default function PostsPageScreen({ runtime }) {
         onContinueEditing={handleContinueEditingDraft}
         onDiscardDraft={handleDiscardComposerDraft}
       />
+
+      {articleHistoryPost && (
+        <EditHistoryModal
+          currentEntry={articleHistoryPost}
+          history={articleHistoryEntries}
+          historyError={articleHistoryError}
+          onClose={handleCloseArticleHistory}
+        />
+      )}
     </div>
   );
 }

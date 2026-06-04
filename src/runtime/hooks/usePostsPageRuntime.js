@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   createPost,
   deletePost,
+  fetchPostHistory,
   getPostDetail,
   toggleLikePost,
   updatePost,
@@ -35,6 +36,7 @@ import {
 } from '@/repo/client/post-composer-draft-storage-repo';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
+import useEditHistoryModal from '@/runtime/hooks/useEditHistoryModal';
 
 const PAGE_SIZE = 10;
 const OBSERVER_MARGIN = '300px 0px';
@@ -67,6 +69,18 @@ export default function usePostsPageRuntime() {
   const isLoadingNextRef = useRef(false);
 
   const userUid = user?.uid ?? null;
+  const loadArticleHistory = useCallback((targetPost) => fetchPostHistory(targetPost.id), []);
+  const {
+    historyTarget: articleHistoryPost,
+    historyEntries: articleHistoryEntries,
+    historyError: articleHistoryError,
+    isHistoryOpen: isArticleHistoryOpen,
+    handleViewHistory: handleViewArticleHistory,
+    handleCloseHistory: handleCloseArticleHistory,
+  } = useEditHistoryModal({
+    loadHistory: loadArticleHistory,
+    loadErrorMessage: '載入編輯記錄失敗',
+  });
 
   /**
    * 套用新增/編輯表單 draft。
@@ -391,7 +405,11 @@ export default function usePostsPageRuntime() {
         if (editingPostId) {
           await updatePost(editingPostId, { title, content });
           removePostComposerDraft(draftTarget);
-          setPosts((previousPosts) => replaceEditedPost(previousPosts, editingPostId, title, content));
+          setPosts((previousPosts) =>
+            replaceEditedPost(previousPosts, editingPostId, title, content).map((postItem) =>
+              postItem.id === editingPostId ? { ...postItem, isEdited: true } : postItem,
+            ),
+          );
           showToast('更新文章成功');
           closeAndResetComposer();
           return;
@@ -442,6 +460,10 @@ export default function usePostsPageRuntime() {
     openMenuPostId,
     isLoadingNext,
     isDraftConfirmOpen,
+    articleHistoryPost,
+    articleHistoryEntries,
+    articleHistoryError,
+    isArticleHistoryOpen,
     dialogRef,
     bottomRef,
     setTitle,
@@ -453,6 +475,8 @@ export default function usePostsPageRuntime() {
     handleCloseOwnerMenu,
     handleDeletePost,
     handleSubmitPost,
+    handleViewArticleHistory,
+    handleCloseArticleHistory,
     handleRequestComposerClose,
     handleSaveComposerDraft,
     handleContinueEditingDraft,

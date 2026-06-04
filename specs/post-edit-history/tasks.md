@@ -14,14 +14,14 @@
 ## Current Workflow State
 
 - Profile: P4 Full Feature/Program.
-- Phase: `implementation_blocked`.
-- Active task: `T003`.
-- Active wave: `wave-3b`.
-- Latest reviewer decision: `review_passed` for `T003A` browser test lint configuration; `T003` remains task-local `blocked`.
-- Blocked: no for dispatching `T003` follow-up. `npm run lint:changed` no longer fails on ESLint project-service coverage for `tests/browser/**/*.jsx`; it now fails on a real T003-owned lint violation in `tests/browser/ui/posts/PostDetailScreen.test.jsx:185` for no-restricted-syntax (`toHaveBeenCalledTimes`). Browser evidence still needs setup against a real edited article post.
-- Next gate: dispatch `T003` follow-up to replace the forbidden `toHaveBeenCalledTimes` assertion and then obtain browser article evidence. Do not mark `T003` completed until Reviewer PASS and workflow state reconciliation.
+- Phase: `integration`.
+- Active task: `T004`.
+- Active wave: `wave-4`.
+- Latest reviewer decision: `review_passed` for `T003` article post list/detail UI wiring and browser evidence.
+- Blocked: no. The old T003 lint/browser blocker is resolved: changed-file lint passed without `toHaveBeenCalledTimes(N)`, and Browser/Playwright evidence verified the article history affordance/modal on emulator-backed local app data.
+- Next gate: run `T004` final integration verification and workflow-state sync. Do not mark the feature complete until T004 passes.
 - Authorization boundary: `edit=true`, `commit=true` after Engineer + Reviewer + fresh verification for reviewed implementation batches; `push=false`, `pullRequest=false`, `ciWatch=false`, `merge=false`, `localMainSync=false`, `deployFirestoreRules=false`.
-- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `6a61283c02c6334f9062f10b26e44e0c4a9910c3`, tracking `origin/main` at `4145241dd5f21e17812dad3d7448be2bb74c090e`; `git status --short --branch` currently reports branch ahead 7 with no behind state and dirty T003 implementation files plus untracked T003 browser tests.
+- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `6821d3c5f92d6e8adc768aa610d27e7cba87be70`, tracking `origin/main` at `14515eee2d730d25c7f73fa8eb5c1315504787e8`; `git status --short --branch` currently reports branch ahead 8 and behind 6 with dirty reviewed T003 implementation files, untracked T003 browser tests, and workflow state files.
 - Rules deploy status: `required`, currently `changed=true`; T002 changed `firestore.rules`, but deploy remains unauthorized and not claimed.
 - Incidents: none.
 - Planning evidence:
@@ -61,8 +61,24 @@
     - Command output summary:
       - `npm run lint:changed`: exit non-zero; project-service/default-project parser error is resolved, and the remaining failure is a real T003-owned no-restricted-syntax violation at `tests/browser/ui/posts/PostDetailScreen.test.jsx:185` for `toHaveBeenCalledTimes`.
   - T003 follow-up evidence:
-    - `T003` remains task-local `blocked`; fix `tests/browser/ui/posts/PostDetailScreen.test.jsx:185` no-restricted-syntax (`toHaveBeenCalledTimes`) before retrying `npm run lint:changed`.
-    - Browser evidence can be produced by app/browser setup: sign in, create an article post, edit it, then validate the edited article in `/posts` and `/posts/{postId}`. No seed fixture task is required unless app/browser interaction cannot create the evidence data.
+    - Reviewer verdict: `review_passed`; findings none.
+    - `PostCard` shows article-level `已編輯` only when `post.isEdited && onViewArticleHistory`, and calls the article handler.
+    - List/detail runtimes use shared `useEditHistoryModal` plus T002 `fetchPostHistory`.
+    - Local edit sets `isEdited: true`.
+    - Detail comment history wiring remains intact.
+    - Tests cover list/detail article history and detail comment regression; no `toHaveBeenCalledTimes(N)` remains.
+    - Fresh verification:
+      - `npx vitest run tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 1 file / 4 tests passed.
+      - `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 4 files / 11 tests passed.
+      - `npm run lint:changed`: exit 0; only existing React version warning.
+      - `npm run type-check:changed`: exit 0.
+      - `git diff --check`: exit 0.
+    - Browser verification: PASS via Playwright/emulator using project `demo-test`, Auth 9099, Firestore 8080, Storage 9199, and Next on `localhost:3002` with emulator env/fake config; did not use `localhost:3000` or production.
+    - Browser screenshots:
+      - `/private/tmp/t003-article-history-ui/playwright-article-edited-button-desktop.png`
+      - `/private/tmp/t003-article-history-ui/playwright-article-history-modal-desktop.png`
+      - `/private/tmp/t003-article-history-ui/playwright-article-edited-button-mobile.png`
+    - Modal evidence included old title/content `T003 old title 2026-06-04T13-04-19-806Z` and `T003 old content 2026-06-04T13-04-19-806Z`, plus `目前版本`, `原始版本`, and new title/content.
 
 ## Dependency Graph
 
@@ -454,16 +470,16 @@ Evidence:
 
 ### T003 - Article Post List/Detail UI Wiring And Browser Evidence
 
-- **State**: `blocked`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-3b`
 - **Engineer**: UI Runtime Engineer
 - **Reviewer**: UI Runtime Reviewer
 - **Commit checkpoint**: `article_history_ui` after Reviewer PASS and fresh verification
-- **Last verified commit**: none for this task; Engineer implementation is dirty and follow-up is required after T003A completion
+- **Last verified commit**: none for this task; T003 is reviewed in the dirty working tree and awaits its authorized checkpoint commit
 - **Authorization boundary**: edit=yes, commit=yes after Reviewer PASS and fresh verification, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required; carry T002 changed=true state; deploy remains unauthorized
-- **Incidents**: none; blocker is task-local to T003 and requires fixing the test lint violation plus browser setup.
+- **Incidents**: none
 
 Scope:
 
@@ -549,6 +565,7 @@ Verification commands and expected signal:
 
 | Command | Expected signal |
 | ------- | --------------- |
+| `npx vitest run tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; detail article history and comment regression screen tests pass |
 | `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; article post history wiring and comment regression tests pass |
 | `npm run lint:changed` | exit 0; changed files lint clean |
 | `npm run lint -- --max-warnings 0` | exit 0; strict lint clean after T003A config support |
@@ -573,15 +590,27 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: Implemented T003 UI/runtime owned scope in the current dirty working tree; not accepted yet.
-- Reviewer report: `blocked`; after T003A resolved ESLint project-service coverage, lint now fails on a real T003-owned no-restricted-syntax violation in `tests/browser/ui/posts/PostDetailScreen.test.jsx:185` for `toHaveBeenCalledTimes`, and browser evidence needs a real edited article setup.
+- Engineer report: Implemented T003 UI/runtime owned scope in the current dirty working tree and resolved the prior lint/browser evidence blocker.
+- Reviewer report: `review_passed`; findings none. `PostCard` shows article-level `已編輯` only when `post.isEdited && onViewArticleHistory`, calls the article handler, list/detail runtimes use shared `useEditHistoryModal` plus T002 `fetchPostHistory`, local edit sets `isEdited: true`, detail comment history wiring remains intact, and tests cover list/detail article history plus detail comment regression without `toHaveBeenCalledTimes(N)`.
 - Command output summary:
-  - `npm run lint:changed`: exit non-zero; fails at `tests/browser/ui/posts/PostDetailScreen.test.jsx:185` on no-restricted-syntax (`toHaveBeenCalledTimes`).
-- Changed files summary: pending
-- Browser evidence: pending
+  - `npx vitest run tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 1 file / 4 tests passed.
+  - `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 4 files / 11 tests passed.
+  - `npm run lint:changed`: exit 0; only existing React version warning.
+  - `npm run type-check:changed`: exit 0.
+  - `git diff --check`: exit 0; no whitespace errors.
+- Changed files summary:
+  - `src/components/PostCard.jsx` and `src/components/PostCard.module.css`: article edited affordance rendering/placement for post cards.
+  - `src/runtime/hooks/usePostsPageRuntime.js` and `src/runtime/hooks/usePostDetailRuntime.js`: article history modal state/handlers wired through shared `useEditHistoryModal` and T002 `fetchPostHistory`.
+  - `src/ui/posts/PostsPageScreen.jsx` and `src/ui/posts/PostDetailScreen.jsx`: list/detail article history modal rendering and handlers, with detail comment history preserved.
+  - `tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx`, `tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx`, `tests/browser/ui/posts/PostsPageScreen.test.jsx`, and `tests/browser/ui/posts/PostDetailScreen.test.jsx`: article history list/detail coverage and detail comment regression without `toHaveBeenCalledTimes(N)`.
+- Browser evidence: PASS via Playwright/emulator using project `demo-test`, Auth 9099, Firestore 8080, Storage 9199, and Next on `localhost:3002` with emulator env/fake config; did not use `localhost:3000` or production. Screenshots:
+  - `/private/tmp/t003-article-history-ui/playwright-article-edited-button-desktop.png`
+  - `/private/tmp/t003-article-history-ui/playwright-article-history-modal-desktop.png`
+  - `/private/tmp/t003-article-history-ui/playwright-article-edited-button-mobile.png`
+  - Modal showed old title/content `T003 old title 2026-06-04T13-04-19-806Z` and `T003 old content 2026-06-04T13-04-19-806Z`, plus `目前版本`, `原始版本`, and new title/content.
 - Phase commits: pending
 - Rules deploy status: required; changed=true; no deploy evidence
-- Incidents: none; blocker is task-local to T003 and requires fixing the test lint violation plus browser setup.
+- Incidents: none
 
 ### T004 - Final Integration Verification And Workflow State
 
