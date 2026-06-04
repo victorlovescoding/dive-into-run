@@ -2,7 +2,7 @@
 
 ## Summary
 
-Current phase: `planning_ready`. The spec is approved and implementation may
+Current phase: `implementation_ready`. The spec is approved and implementation may
 start from the task contracts in `tasks.md`.
 
 The implementation uses Shared Core + Resource Adapters. Shared edit-history
@@ -74,11 +74,11 @@ wiring.
 ## Verification Strategy
 
 - Required local gates:
-  - `npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx`
-  - `npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx`
-  - `npx vitest run src/service/post-service.test.js src/runtime/client/use-cases/post-use-cases.test.js`
+  - `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx`
+  - `npx vitest run tests/browser/runtime/hooks/usePostComments.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`
+  - `npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js`
   - `firebase emulators:exec --only firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`
-  - `npx vitest run src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx src/ui/posts/PostsPageScreen.test.jsx src/ui/posts/PostDetailScreen.test.jsx`
+  - `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`
   - `npm run lint:changed`
   - `npm run type-check:changed`
   - `npm run workflow:check`
@@ -101,9 +101,13 @@ wiring.
 
 - Status schema: v3.
 - Current head snapshot: captured from `092-post-edit-history` at
-  `9025466aa75b19f3b24737acad5dd5c62126474e` before planning doc edits.
+  `3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf` after the `shared_core`
+  checkpoint.
 - Remote head snapshot: captured from `origin/main` at
-  `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`.
+  `4145241dd5f21e17812dad3d7448be2bb74c090e`.
+- Post-rebase test-layout migration: T001 browser/jsdom tests must live under
+  `tests/browser/...`; review and commit this migration before dispatching
+  `T002`.
 - Last verified commit policy: `lastVerifiedCommit` records the local HEAD/ref
   covered by fresh verification; dirty workflow doc edits must be described in
   `lastVerification` until committed.

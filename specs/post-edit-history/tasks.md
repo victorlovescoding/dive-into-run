@@ -15,13 +15,13 @@
 
 - Profile: P4 Full Feature/Program.
 - Phase: `implementation_ready`.
-- Active task: `T002` after `T001` completion; do not dispatch until the `shared_core` commit checkpoint is created and branch-behind state is handled.
+- Active task: `T002` after the post-rebase test-layout migration is reviewed and committed; do not dispatch while the migration is unreviewed or uncommitted.
 - Active wave: `wave-2`.
 - Latest reviewer decision: `review_passed` for `T001` shared edit-history core and comment compatibility.
 - Blocked: no.
-- Next gate: commit `shared_core` checkpoint, then handle branch behind `origin/main` by 1 if current status still confirms it before dispatching `T002`.
+- Next gate: review and commit the post-rebase `tests/browser/...` migration, then dispatch `T002`.
 - Authorization boundary: `edit=true`, `commit=true` after Engineer + Reviewer + fresh verification for reviewed implementation batches; `push=false`, `pullRequest=false`, `ciWatch=false`, `merge=false`, `localMainSync=false`, `deployFirestoreRules=false`.
-- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `9025466aa75b19f3b24737acad5dd5c62126474e`, tracking `origin/main` at `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`; `git status --short --branch` currently reports branch ahead 4 and behind 1.
+- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf`, tracking `origin/main` at `4145241dd5f21e17812dad3d7448be2bb74c090e`; `git status --short --branch` currently reports branch ahead 5 with no behind state and dirty test-layout migration files.
 - Rules deploy status: `required`, currently `changed=false`; T002 is expected to change `firestore.rules`, but deploy remains unauthorized.
 - Incidents: none.
 - Planning evidence:
@@ -29,10 +29,10 @@
   - T001 Engineer report: Implemented shared edit-history core, generic modal/runtime primitives, and comment compatibility within T001 owned files.
   - T001 Reviewer report: `review_passed` after a stale-load issue was fixed.
   - Command output summary:
-    - `npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx`: exit 0; 3 files / 11 tests passed.
-    - `npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx`: exit 0; 2 files / 14 tests passed.
-    - `npx vitest run src/runtime/hooks/useCommentMutations.test.jsx`: exit 0; 1 file / 4 tests passed.
-    - `git status --short --branch`: exit 0; on `092-post-edit-history`; branch ahead 4 and behind 1 of `origin/main`; dirty files are T001 owned files plus workflow state files.
+    - `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx`: exit 0; 3 files / 11 tests passed.
+    - `npx vitest run tests/browser/runtime/hooks/usePostComments.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 2 files / 14 tests passed.
+    - `npx vitest run tests/browser/runtime/hooks/useCommentMutations.test.jsx`: exit 0; 1 file / 4 tests passed.
+    - `git status --short --branch`: exit 0; on `092-post-edit-history`; branch ahead 5 of `origin/main`; dirty files are the post-rebase test-layout migration plus workflow state files.
     - `git diff --check`: exit 0; no whitespace errors.
     - `npm run workflow:check`: exit 0; 17 status file(s) valid and 17 status file(s) synced; `specs/post-edit-history/status.json` ok and sync ok.
   - Changed files summary:
@@ -40,6 +40,11 @@
     - `specs/post-edit-history/tasks.md`: dispatchable task contracts and dependency graph.
     - `specs/post-edit-history/handoff.md`: next-session state and first dispatchable task.
     - `specs/post-edit-history/status.json`: v3 machine-readable planning state.
+  - Post-rebase test-layout migration evidence:
+    - T001 browser/jsdom tests moved from `src/**` to `tests/browser/**`.
+    - All workflow verification commands that target browser/jsdom tests now use `tests/browser/...`.
+    - Fresh migration verification passed: focused Vitest, full type-check, strict lint, workflow check, `git diff --check`, and `git status --short --branch`.
+    - Next action remains review and commit this migration before dispatching `T002`.
 
 ## Dependency Graph
 
@@ -69,7 +74,7 @@ T001 shared core
   - `npm run type-check:changed`
   - `npm run workflow:check`
   - `firebase emulators:exec --only firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`
-  - `npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx src/service/post-service.test.js src/runtime/client/use-cases/post-use-cases.test.js src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx src/ui/posts/PostsPageScreen.test.jsx src/ui/posts/PostDetailScreen.test.jsx`
+  - `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`
 - Browser evidence is required for `/posts` and `/posts/{postId}` article history affordance/modal, plus comment history regression.
 
 ## Tasks
@@ -82,7 +87,7 @@ T001 shared core
 - **Engineer**: Shared Core Engineer
 - **Reviewer**: Shared Core Reviewer
 - **Commit checkpoint**: `shared_core` after Reviewer PASS and fresh verification
-- **Last verified commit**: working tree at `9025466aa75b19f3b24737acad5dd5c62126474e` plus uncommitted T001 implementation; commit checkpoint `shared_core` pending
+- **Last verified commit**: `3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf`; post-rebase test-layout migration is uncommitted and requires review before dispatching `T002`
 - **Authorization boundary**: edit=yes, commit=yes after Reviewer PASS and fresh verification, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required; changed=false unless this task unexpectedly touches rules, which is not authorized
 - **Incidents**: none
@@ -103,13 +108,13 @@ Owned files:
 
 - `src/service/comment-edit-history-service.js`
 - `src/runtime/hooks/useEditHistoryModal.js`
-- `src/runtime/hooks/useEditHistoryModal.test.jsx`
+- `tests/browser/runtime/hooks/useEditHistoryModal.test.jsx`
 - `src/components/EditedAffordance.jsx`
 - `src/components/EditHistoryModal.jsx`
-- `src/components/EditHistoryModal.test.jsx`
+- `tests/browser/components/EditHistoryModal.test.jsx`
 - `src/components/CommentHistoryModal.jsx`
 - `src/components/CommentHistoryModal.module.css`
-- `src/components/CommentHistoryModal.test.jsx`
+- `tests/browser/components/CommentHistoryModal.test.jsx`
 - `src/components/CommentCard.jsx`
 - `src/components/CommentCard.module.css`
 
@@ -118,13 +123,13 @@ Read-only context:
 - `specs/post-edit-history/spec.md`
 - `specs/post-edit-history/plan.md`
 - `src/runtime/hooks/usePostComments.js`
-- `src/runtime/hooks/usePostComments.test.jsx`
+- `tests/browser/runtime/hooks/usePostComments.test.jsx`
 - `src/runtime/hooks/usePostDetailRuntime.js`
 - `src/ui/posts/PostDetailScreen.jsx`
-- `src/ui/posts/PostDetailScreen.test.jsx`
+- `tests/browser/ui/posts/PostDetailScreen.test.jsx`
 - `src/service/event-comment-service.js`
 - `src/runtime/hooks/useCommentMutations.js`
-- `src/runtime/hooks/useCommentMutations.test.jsx`
+- `tests/browser/runtime/hooks/useCommentMutations.test.jsx`
 
 Dependencies:
 
@@ -155,9 +160,9 @@ Verification commands and expected signal:
 
 | Command | Expected signal |
 | ------- | --------------- |
-| `npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx` | exit 0; shared hook/modal and compatibility wrapper tests pass |
-| `npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx` | exit 0; existing post-comment history runtime/screen behavior remains green |
-| `npx vitest run src/runtime/hooks/useCommentMutations.test.jsx` | exit 0; `handleSubmit` true/false contract remains green |
+| `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx` | exit 0; shared hook/modal and compatibility wrapper tests pass |
+| `npx vitest run tests/browser/runtime/hooks/usePostComments.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; existing post-comment history runtime/screen behavior remains green |
+| `npx vitest run tests/browser/runtime/hooks/useCommentMutations.test.jsx` | exit 0; `handleSubmit` true/false contract remains green |
 
 Reviewer PASS criteria:
 
@@ -180,9 +185,9 @@ Evidence:
 - Engineer report: Implemented shared edit-history core and comment compatibility in T001 owned files.
 - Reviewer report: `review_passed` after one rejected stale-load issue was fixed.
 - Command output summary:
-  - `npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx`: exit 0; 3 files / 11 tests passed.
-  - `npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx`: exit 0; 2 files / 14 tests passed.
-  - `npx vitest run src/runtime/hooks/useCommentMutations.test.jsx`: exit 0; 1 file / 4 tests passed.
+  - `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx`: exit 0; 3 files / 11 tests passed.
+  - `npx vitest run tests/browser/runtime/hooks/usePostComments.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 2 files / 14 tests passed.
+  - `npx vitest run tests/browser/runtime/hooks/useCommentMutations.test.jsx`: exit 0; 1 file / 4 tests passed.
   - `git diff --check`: exit 0; no whitespace errors.
 - Changed files summary:
   - `src/service/comment-edit-history-service.js`: shared generic edit-history payload support while preserving comment payload compatibility.
@@ -191,7 +196,7 @@ Evidence:
   - `src/components/EditHistoryModal.jsx` and test: generic edit-history modal.
   - `src/components/CommentHistoryModal.jsx`, `src/components/CommentHistoryModal.module.css`, and test: compatibility wrapper for comment history.
   - `src/components/CommentCard.jsx`: comment card now uses shared affordance while preserving `onViewHistory(comment)`.
-- Phase commits: pending `shared_core` checkpoint.
+- Phase commits: `shared_core` checkpoint committed at `3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf`; post-rebase test-layout migration checkpoint pending review/commit.
 - Rules deploy status: required; changed=false; no deploy evidence
 - Incidents: none
 
@@ -226,9 +231,9 @@ Non-scope:
 Owned files:
 
 - `src/service/post-service.js`
-- `src/service/post-service.test.js`
+- `tests/browser/service/post-service.test.js`
 - `src/runtime/client/use-cases/post-use-cases.js`
-- `src/runtime/client/use-cases/post-use-cases.test.js`
+- `tests/browser/runtime/client/use-cases/post-use-cases.test.js`
 - `src/repo/client/firebase-posts-repo.js`
 - `src/repo/server/account-deletion-server-repo.js`
 - `firestore.rules`
@@ -276,7 +281,7 @@ Verification commands and expected signal:
 
 | Command | Expected signal |
 | ------- | --------------- |
-| `npx vitest run src/service/post-service.test.js src/runtime/client/use-cases/post-use-cases.test.js` | exit 0; article post payload/history builder and use-case tests pass |
+| `npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js` | exit 0; article post payload/history builder and use-case tests pass |
 | `firebase emulators:exec --only firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | exit 0; post rules tests pass including article history acceptance/rejection cases |
 | `git diff -- firestore.rules` | output shows no changes under `/events/{eventId}/comments/{commentId}/history/{historyId}` except unrelated context if any |
 
@@ -339,13 +344,13 @@ Owned files:
 - `src/components/PostCard.jsx`
 - `src/components/PostCard.module.css`
 - `src/runtime/hooks/usePostsPageRuntime.js`
-- `src/runtime/hooks/usePostsPageRuntime.test.jsx`
+- `tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx`
 - `src/runtime/hooks/usePostDetailRuntime.js`
-- `src/runtime/hooks/usePostDetailRuntime.test.jsx`
+- `tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx`
 - `src/ui/posts/PostsPageScreen.jsx`
-- `src/ui/posts/PostsPageScreen.test.jsx`
+- `tests/browser/ui/posts/PostsPageScreen.test.jsx`
 - `src/ui/posts/PostDetailScreen.jsx`
-- `src/ui/posts/PostDetailScreen.test.jsx`
+- `tests/browser/ui/posts/PostDetailScreen.test.jsx`
 
 Read-only context:
 
@@ -401,7 +406,7 @@ Verification commands and expected signal:
 
 | Command | Expected signal |
 | ------- | --------------- |
-| `npx vitest run src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx src/ui/posts/PostsPageScreen.test.jsx src/ui/posts/PostDetailScreen.test.jsx` | exit 0; article post history wiring and comment regression tests pass |
+| `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; article post history wiring and comment regression tests pass |
 | `npm run lint:changed` | exit 0; changed files lint clean |
 | `npm run type-check:changed` | exit 0; changed-file type check clean |
 
@@ -511,7 +516,7 @@ Verification commands and expected signal:
 | `npm run type-check:changed` | exit 0; changed-file type check clean |
 | `npm run workflow:check` | exit 0; `specs/post-edit-history/status.json` valid and synced |
 | `firebase emulators:exec --only firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | exit 0; post rules tests pass |
-| `npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx src/service/post-service.test.js src/runtime/client/use-cases/post-use-cases.test.js src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx src/ui/posts/PostsPageScreen.test.jsx src/ui/posts/PostDetailScreen.test.jsx` | exit 0; focused shared/persistence/UI tests pass |
+| `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; focused shared/persistence/UI tests pass |
 
 Reviewer PASS criteria:
 

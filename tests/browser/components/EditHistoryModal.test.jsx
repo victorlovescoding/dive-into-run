@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import EditHistoryModal from './EditHistoryModal';
+import EditHistoryModal from '@/components/EditHistoryModal';
 
 const UPDATED_AT = {
   toDate: () => new Date('2026-01-02T03:04:05.000Z'),

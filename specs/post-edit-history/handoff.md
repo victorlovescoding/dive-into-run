@@ -5,8 +5,8 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history`
 - Branch: `092-post-edit-history`
-- Current head: `9025466aa75b19f3b24737acad5dd5c62126474e` (`Record post history rebase state`)
-- Remote head: `origin/main` at `b1cdaee96618983d333d1b6da2a78c0312e3b7ba` (`Align event comment input behavior`)
+- Current head: `3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf` (`Add shared edit history core`)
+- Remote head: `origin/main` at `4145241dd5f21e17812dad3d7448be2bb74c090e` (`Remove colocated src tests (#134)`)
 - Authorization boundary:
   - edit: true
   - commit: true after Engineer + Reviewer + fresh verification for reviewed implementation batches
@@ -20,16 +20,17 @@
 - Active task: `T002`
 - Active wave: `wave-2`
 - Latest reviewer decision: `review_passed` for `T001` shared edit-history core and comment compatibility
-- Last verified commit: `9025466aa75b19f3b24737acad5dd5c62126474e`
+- Last verified commit: `3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf`
 - Phase commits:
-  - `spec_approved` -> `d5568aea71f9b146ead4c460a42b62d25b4040e3`
-  - `post_rebase_state` -> `9025466aa75b19f3b24737acad5dd5c62126474e`
-- Pending phase commit: `shared_core` for completed `T001`
+  - `spec_approved` -> `891da4a415da652dc32688f9d738afd958adc5c6`
+  - `post_rebase_state` -> `b97f8a0db6e8fe62ba10c23593cbec133ece5eec`
+  - `shared_core` -> `3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf`
+- Pending phase commit: post-rebase test-layout migration before `T002`
 - Rules deploy status: `required`; required later, changed=false, deployedCommit=null
 - Incidents: none
 - Blocked: no
 - Blocked reason: none
-- Latest T001 sync: 2026-06-04T07:28:10Z; `T001` completed after Engineer implementation, Reviewer `review_passed`, and required verification. Current status reports branch ahead 4 and behind 1 of `origin/main`; do not rebase until after the `shared_core` checkpoint commit unless a fresh status changes that decision.
+- Latest T001 sync: 2026-06-04T08:04:17Z; `T001` completed, `shared_core` is committed, and current status reports branch ahead 5 of `origin/main` with no behind state. The uncommitted post-rebase test-layout migration moves T001 browser/jsdom tests under `tests/browser/...` and must be reviewed and committed before `T002` dispatch.
 
 ## Read Order
 
@@ -44,9 +45,7 @@
 
 ## Next Action
 
-Commit the reviewed `T001` shared-core checkpoint as `shared_core`, then run a fresh `git status --short --branch`.
-
-If branch still reports behind `origin/main`, handle the rebase before dispatching `T002`. Do not mark `T002` in progress until the checkpoint commit and branch-behind handling are complete.
+Review the post-rebase test-layout migration, then commit it as the next checkpoint. Do not mark `T002` in progress until that migration is reviewed and committed.
 
 Next dispatchable task after that gate:
 
@@ -71,12 +70,12 @@ T001 shared core
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx` | 0 | 3 files / 11 tests passed. |
-| `npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx` | 0 | 2 files / 14 tests passed. |
-| `npx vitest run src/runtime/hooks/useCommentMutations.test.jsx` | 0 | 1 file / 4 tests passed. |
-| `git status --short --branch` | 0 | On `092-post-edit-history`; branch ahead 4 and behind 1 of `origin/main`; dirty files are T001 owned files plus workflow state files. |
+| `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx` | 0 | 3 files / 11 tests passed. |
+| `npm run type-check` | 0 | `tsc --noEmit` completed without errors. |
+| `npm run lint -- --max-warnings 0` | 0 | `eslint src specs --max-warnings 0` completed; existing React-version settings warning only. |
+| `npm run workflow:check` | 0 | 17 status file(s) valid and synced; `specs/post-edit-history/status.json` ok and sync ok. |
 | `git diff --check` | 0 | No whitespace errors. |
-| `npm run workflow:check` | 0 | 17 status file(s) valid and 17 status file(s) synced; `specs/post-edit-history/status.json` ok and sync ok. |
+| `git status --short --branch` | 0 | On `092-post-edit-history`; branch ahead 5 of `origin/main`; dirty files are workflow state plus the moved T001 tests under `tests/browser/...`; no staged changes. |
 
 ## Closeout Checklist
 
@@ -96,7 +95,7 @@ T001 shared core
 ## Blockers
 
 - None.
-- Carry-forward gate before `T002`: create the `shared_core` commit checkpoint, then re-check and handle branch behind `origin/main` if still present.
+- Carry-forward gate before `T002`: review and commit the post-rebase test-layout migration; current status has no branch-behind state.
 
 ## Latest Review State
 

@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "092-post-edit-history",
-    "commit": "9025466aa75b19f3b24737acad5dd5c62126474e",
-    "capturedAt": "2026-06-04T07:28:10Z",
-    "summary": "T001 reviewed implementation is uncommitted on top of this head; git status reports branch ahead 4 and behind 1 of origin/main."
+    "commit": "3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf",
+    "capturedAt": "2026-06-04T08:09:48Z",
+    "summary": "shared_core is committed; uncommitted post-rebase test-layout migration moves T001 browser/jsdom tests under tests/browser/... before T002 dispatch."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "b1cdaee96618983d333d1b6da2a78c0312e3b7ba",
-    "capturedAt": "2026-06-04T07:28:10Z",
-    "summary": "origin/main at local tracking ref b1cdaee96618983d333d1b6da2a78c0312e3b7ba; current branch reports behind 1."
+    "commit": "4145241dd5f21e17812dad3d7448be2bb74c090e",
+    "capturedAt": "2026-06-04T08:09:48Z",
+    "summary": "origin/main includes Remove colocated src tests (#134); current branch reports ahead 5 with no behind state."
   },
   "completedTasks": [
     "T001"
@@ -53,13 +53,13 @@
       "ownedFiles": [
         "src/service/comment-edit-history-service.js",
         "src/runtime/hooks/useEditHistoryModal.js",
-        "src/runtime/hooks/useEditHistoryModal.test.jsx",
+        "tests/browser/runtime/hooks/useEditHistoryModal.test.jsx",
         "src/components/EditedAffordance.jsx",
         "src/components/EditHistoryModal.jsx",
-        "src/components/EditHistoryModal.test.jsx",
+        "tests/browser/components/EditHistoryModal.test.jsx",
         "src/components/CommentHistoryModal.jsx",
         "src/components/CommentHistoryModal.module.css",
-        "src/components/CommentHistoryModal.test.jsx",
+        "tests/browser/components/CommentHistoryModal.test.jsx",
         "src/components/CommentCard.jsx",
         "src/components/CommentCard.module.css"
       ],
@@ -67,13 +67,13 @@
         "specs/post-edit-history/spec.md",
         "specs/post-edit-history/plan.md",
         "src/runtime/hooks/usePostComments.js",
-        "src/runtime/hooks/usePostComments.test.jsx",
+        "tests/browser/runtime/hooks/usePostComments.test.jsx",
         "src/runtime/hooks/usePostDetailRuntime.js",
         "src/ui/posts/PostDetailScreen.jsx",
-        "src/ui/posts/PostDetailScreen.test.jsx",
+        "tests/browser/ui/posts/PostDetailScreen.test.jsx",
         "src/service/event-comment-service.js",
         "src/runtime/hooks/useCommentMutations.js",
-        "src/runtime/hooks/useCommentMutations.test.jsx"
+        "tests/browser/runtime/hooks/useCommentMutations.test.jsx"
       ],
       "dependencies": [],
       "engineerInstructions": [
@@ -92,30 +92,30 @@
       ],
       "verification": [
         {
-          "command": "npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx",
+          "command": "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx",
           "expectedSignal": "exit 0; shared hook/modal and compatibility wrapper tests pass",
           "lastRun": {
-            "command": "npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx",
+            "command": "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx",
             "exitCode": 0,
             "summary": "3 files / 11 tests passed.",
             "verifiedAt": "2026-06-04T07:28:10Z"
           }
         },
         {
-          "command": "npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
+          "command": "npx vitest run tests/browser/runtime/hooks/usePostComments.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
           "expectedSignal": "exit 0; existing post-comment history runtime/screen behavior remains green",
           "lastRun": {
-            "command": "npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
+            "command": "npx vitest run tests/browser/runtime/hooks/usePostComments.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
             "exitCode": 0,
             "summary": "2 files / 14 tests passed.",
             "verifiedAt": "2026-06-04T07:28:10Z"
           }
         },
         {
-          "command": "npx vitest run src/runtime/hooks/useCommentMutations.test.jsx",
+          "command": "npx vitest run tests/browser/runtime/hooks/useCommentMutations.test.jsx",
           "expectedSignal": "exit 0; handleSubmit true/false contract remains green",
           "lastRun": {
-            "command": "npx vitest run src/runtime/hooks/useCommentMutations.test.jsx",
+            "command": "npx vitest run tests/browser/runtime/hooks/useCommentMutations.test.jsx",
             "exitCode": 0,
             "summary": "1 file / 4 tests passed.",
             "verifiedAt": "2026-06-04T07:28:10Z"
@@ -145,17 +145,20 @@
         "engineerReport": "Implemented shared edit-history core and comment compatibility in T001 owned files.",
         "reviewerReport": "review_passed after one rejected stale-load issue was fixed.",
         "commandOutputSummary": [
-          "npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx: exit 0; 3 files / 11 tests passed.",
-          "npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx: exit 0; 2 files / 14 tests passed.",
-          "npx vitest run src/runtime/hooks/useCommentMutations.test.jsx: exit 0; 1 file / 4 tests passed.",
+          "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx: exit 0; 3 files / 11 tests passed.",
+          "npx vitest run tests/browser/runtime/hooks/usePostComments.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx: exit 0; 2 files / 14 tests passed.",
+          "npx vitest run tests/browser/runtime/hooks/useCommentMutations.test.jsx: exit 0; 1 file / 4 tests passed.",
           "git diff --check: exit 0; no whitespace errors."
         ],
         "changedFilesSummary": [
           "src/service/comment-edit-history-service.js: shared generic edit-history payload support while preserving comment payload compatibility.",
-          "src/runtime/hooks/useEditHistoryModal.js and test: generic load/open/error/close/reset modal state.",
+          "src/runtime/hooks/useEditHistoryModal.js: generic load/open/error/close/reset modal state.",
+          "tests/browser/runtime/hooks/useEditHistoryModal.test.jsx: generic load/open/error/close/reset modal state coverage.",
           "src/components/EditedAffordance.jsx: shared edited affordance.",
-          "src/components/EditHistoryModal.jsx and test: generic edit-history modal.",
-          "src/components/CommentHistoryModal.jsx, src/components/CommentHistoryModal.module.css, and test: compatibility wrapper for comment history.",
+          "src/components/EditHistoryModal.jsx: generic edit-history modal.",
+          "tests/browser/components/EditHistoryModal.test.jsx: generic edit-history modal coverage.",
+          "src/components/CommentHistoryModal.jsx and src/components/CommentHistoryModal.module.css: compatibility wrapper for comment history.",
+          "tests/browser/components/CommentHistoryModal.test.jsx: comment history compatibility wrapper coverage.",
           "src/components/CommentCard.jsx: comment card now uses shared affordance while preserving onViewHistory(comment)."
         ]
       }
@@ -181,9 +184,9 @@
       ],
       "ownedFiles": [
         "src/service/post-service.js",
-        "src/service/post-service.test.js",
+        "tests/browser/service/post-service.test.js",
         "src/runtime/client/use-cases/post-use-cases.js",
-        "src/runtime/client/use-cases/post-use-cases.test.js",
+        "tests/browser/runtime/client/use-cases/post-use-cases.test.js",
         "src/repo/client/firebase-posts-repo.js",
         "src/repo/server/account-deletion-server-repo.js",
         "firestore.rules",
@@ -219,7 +222,7 @@
       ],
       "verification": [
         {
-          "command": "npx vitest run src/service/post-service.test.js src/runtime/client/use-cases/post-use-cases.test.js",
+          "command": "npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js",
           "expectedSignal": "exit 0; article post payload/history builder and use-case tests pass",
           "lastRun": null
         },
@@ -280,13 +283,13 @@
         "src/components/PostCard.jsx",
         "src/components/PostCard.module.css",
         "src/runtime/hooks/usePostsPageRuntime.js",
-        "src/runtime/hooks/usePostsPageRuntime.test.jsx",
+        "tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx",
         "src/runtime/hooks/usePostDetailRuntime.js",
-        "src/runtime/hooks/usePostDetailRuntime.test.jsx",
+        "tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx",
         "src/ui/posts/PostsPageScreen.jsx",
-        "src/ui/posts/PostsPageScreen.test.jsx",
+        "tests/browser/ui/posts/PostsPageScreen.test.jsx",
         "src/ui/posts/PostDetailScreen.jsx",
-        "src/ui/posts/PostDetailScreen.test.jsx"
+        "tests/browser/ui/posts/PostDetailScreen.test.jsx"
       ],
       "readOnlyContext": [
         "specs/post-edit-history/spec.md",
@@ -321,7 +324,7 @@
       ],
       "verification": [
         {
-          "command": "npx vitest run src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx src/ui/posts/PostsPageScreen.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
+          "command": "npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
           "expectedSignal": "exit 0; article post history wiring and comment regression tests pass",
           "lastRun": null
         },
@@ -443,7 +446,7 @@
           "lastRun": null
         },
         {
-          "command": "npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx src/service/post-service.test.js src/runtime/client/use-cases/post-use-cases.test.js src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx src/ui/posts/PostsPageScreen.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
+          "command": "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
           "expectedSignal": "exit 0; focused shared/persistence/UI tests pass",
           "lastRun": null
         }
@@ -473,17 +476,22 @@
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "9025466aa75b19f3b24737acad5dd5c62126474e",
+  "lastVerifiedCommit": "3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf",
   "phaseCommits": [
     {
       "phase": "spec_approved",
-      "commit": "d5568aea71f9b146ead4c460a42b62d25b4040e3",
+      "commit": "891da4a415da652dc32688f9d738afd958adc5c6",
       "summary": "Reviewed spec workflow docs committed before Planner dispatch."
     },
     {
       "phase": "post_rebase_state",
-      "commit": "9025466aa75b19f3b24737acad5dd5c62126474e",
-      "summary": "Recorded post-rebase workflow state; branch ahead 3 of origin/main."
+      "commit": "b97f8a0db6e8fe62ba10c23593cbec133ece5eec",
+      "summary": "Recorded post-rebase workflow state after rebasing onto Remove colocated src tests (#134)."
+    },
+    {
+      "phase": "shared_core",
+      "commit": "3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf",
+      "summary": "Committed T001 shared edit-history core; post-rebase test-layout migration remains pending review/commit."
     }
   ],
   "rulesDeployStatus": {
@@ -496,41 +504,41 @@
   "incidents": [],
   "lastVerification": [
     {
-      "command": "npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx",
+      "command": "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx",
       "exitCode": 0,
       "summary": "3 files / 11 tests passed.",
-      "verifiedAt": "2026-06-04T07:28:10Z"
+      "verifiedAt": "2026-06-04T08:09:48Z"
     },
     {
-      "command": "npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
+      "command": "npm run type-check",
       "exitCode": 0,
-      "summary": "2 files / 14 tests passed.",
-      "verifiedAt": "2026-06-04T07:28:10Z"
+      "summary": "tsc --noEmit completed without errors.",
+      "verifiedAt": "2026-06-04T08:09:48Z"
     },
     {
-      "command": "npx vitest run src/runtime/hooks/useCommentMutations.test.jsx",
+      "command": "npm run lint -- --max-warnings 0",
       "exitCode": 0,
-      "summary": "1 file / 4 tests passed.",
-      "verifiedAt": "2026-06-04T07:28:10Z"
+      "summary": "eslint src specs --max-warnings 0 completed; existing React-version settings warning only.",
+      "verifiedAt": "2026-06-04T08:09:48Z"
     },
     {
-      "command": "git status --short --branch",
+      "command": "npm run workflow:check",
       "exitCode": 0,
-      "summary": "On 092-post-edit-history; branch ahead 4 and behind 1 of origin/main; dirty files are T001 owned files plus workflow state files.",
-      "verifiedAt": "2026-06-04T07:28:10Z"
+      "summary": "17 status file(s) valid and synced; specs/post-edit-history/status.json ok and sync ok.",
+      "verifiedAt": "2026-06-04T08:09:48Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-04T07:28:10Z"
+      "verifiedAt": "2026-06-04T08:09:48Z"
     },
     {
-      "command": "npm run workflow:check",
+      "command": "git status --short --branch",
       "exitCode": 0,
-      "summary": "17 status file(s) valid and 17 status file(s) synced; specs/post-edit-history/status.json ok and sync ok.",
-      "verifiedAt": "2026-06-04T07:30:43Z"
+      "summary": "On 092-post-edit-history; branch ahead 5 of origin/main; dirty files are workflow state plus moved T001 tests under tests/browser/...; no staged changes.",
+      "verifiedAt": "2026-06-04T08:09:48Z"
     }
   ],
-  "updatedAt": "2026-06-04T07:30:43Z"
+  "updatedAt": "2026-06-04T08:09:48Z"
 }

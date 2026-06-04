@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import useEditHistoryModal from './useEditHistoryModal';
+import useEditHistoryModal from '@/runtime/hooks/useEditHistoryModal';
 
 const targetEntry = {
   id: 'entry-1',

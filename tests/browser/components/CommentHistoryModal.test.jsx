@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import CommentHistoryModal from './CommentHistoryModal';
+import CommentHistoryModal from '@/components/CommentHistoryModal';
 
 /** @type {import('firebase/firestore').Timestamp} */
 const UPDATED_AT = {
