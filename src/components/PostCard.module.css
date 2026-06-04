@@ -16,7 +16,10 @@
 .authorInfo {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
+  row-gap: 2px;
 }
 
 .authorLink img {
@@ -166,6 +169,7 @@
 .editedBadge {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
   min-width: max-content;
   background: none;
   border: none;

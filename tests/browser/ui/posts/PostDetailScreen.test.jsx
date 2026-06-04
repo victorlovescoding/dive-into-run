@@ -26,6 +26,7 @@ const editedPost = {
   content: 'Current content',
   authorUid: 'author-1',
   authorName: 'Runner',
+  postAt: new Date(),
   likesCount: 2,
   commentsCount: 1,
   liked: false,
@@ -115,7 +116,17 @@ describe('PostDetailScreen article and comment history wiring', () => {
     const runtime = createRuntime();
 
     render(<PostDetailScreen postId="post-1" runtime={runtime} />);
-    await user.click(screen.getByRole('button', { name: '查看文章編輯記錄' }));
+    const articleHistoryButton = screen.getByRole('button', { name: '查看文章編輯記錄' });
+    const metadata = screen.getByTestId('post-metadata');
+    const actionRow = screen.getByTestId('post-action-row');
+
+    expect(within(metadata).getByText('剛剛')).toBeInTheDocument();
+    expect(within(metadata).getByRole('button', { name: '查看文章編輯記錄' })).toBe(
+      articleHistoryButton,
+    );
+    expect(within(actionRow).queryByRole('button', { name: '查看文章編輯記錄' })).toBeNull();
+
+    await user.click(articleHistoryButton);
 
     expect(screen.getAllByText('已編輯')).toHaveLength(2);
     expect(runtime.handleViewArticleHistory).toHaveBeenCalledWith(editedPost);

@@ -309,7 +309,7 @@ export default function PostCard({
   return (
     <article className={styles.card}>
       <div className={styles.header}>
-        <div className={styles.authorInfo}>
+        <div className={styles.authorInfo} data-testid="post-metadata">
           <UserLink
             uid={post.authorUid}
             name={displayName}
@@ -322,6 +322,13 @@ export default function PostCard({
               <span className={styles.dot}>·</span>
               <span className={styles.time}>{timeText}</span>
             </>
+          )}
+          {post.isEdited && onViewArticleHistory && (
+            <EditedAffordance
+              className={styles.editedBadge}
+              ariaLabel="查看文章編輯記錄"
+              onClick={() => onViewArticleHistory(post)}
+            />
           )}
         </div>
         {post.isAuthor && onToggleMenu && onCloseMenu && onEdit && onDelete && (
@@ -356,7 +363,7 @@ export default function PostCard({
       )}
 
       <div className={styles.metaBar}>
-        <div className={styles.metaActions}>
+        <div className={styles.metaActions} data-testid="post-action-row">
           <button
             type="button"
             className={likeClassName}
@@ -369,14 +376,6 @@ export default function PostCard({
           </button>
 
           <CommentMeta postId={post.id} count={post.commentsCount} truncate={truncate} />
-
-          {post.isEdited && onViewArticleHistory && (
-            <EditedAffordance
-              className={styles.editedBadge}
-              ariaLabel="查看文章編輯記錄"
-              onClick={() => onViewArticleHistory(post)}
-            />
-          )}
         </div>
         <div className={styles.metaTrailingActions}>
           <BookmarkButton
