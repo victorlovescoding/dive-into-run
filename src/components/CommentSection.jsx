@@ -38,7 +38,6 @@ export default function CommentSection({ eventId, onCommentAdded }) {
     isSubmitting,
     submitError,
     highlightId,
-    submitKey,
     handleSubmit,
     editingComment,
     isUpdating,
@@ -145,7 +144,7 @@ export default function CommentSection({ eventId, onCommentAdded }) {
           送出失敗，請再試一次
         </div>
       )}
-      {user && <CommentInput key={submitKey} onSubmit={handleSubmit} isSubmitting={isSubmitting} />}
+      {user && <CommentInput onSubmit={handleSubmit} isSubmitting={isSubmitting} />}
       {editingComment && (
         <CommentEditModal
           comment={editingComment}

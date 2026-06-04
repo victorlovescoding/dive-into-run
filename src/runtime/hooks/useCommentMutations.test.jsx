@@ -61,6 +61,44 @@ beforeEach(() => {
 });
 
 describe('useCommentMutations edit behavior', () => {
+  test('returns true after successfully adding a comment without exposing input remount state', async () => {
+    const newComment = { ...comment, id: 'comment-2', content: 'New event comment' };
+    eventCommentUseCasesMock.addComment.mockResolvedValueOnce(newComment);
+    const onSuccess = vi.fn();
+    const view = renderHook(() => {
+      const [comments, setComments] = useState([comment]);
+      const mutations = useCommentMutations('event-1', user, setComments, onSuccess);
+      return { comments, ...mutations };
+    });
+
+    let result;
+    await act(async () => {
+      result = await view.result.current.handleSubmit('New event comment');
+    });
+
+    expect(result).toBe(true);
+    expect(eventCommentUseCasesMock.addComment).toHaveBeenCalledWith('event-1', user, 'New event comment');
+    expect(view.result.current.comments[0]).toEqual(newComment);
+    expect(onSuccess).toHaveBeenCalledWith('comment-2');
+    expect(view.result.current.submitError).toBeNull();
+    expect(view.result.current).not.toHaveProperty('submitKey');
+  });
+
+  test('returns false and preserves local comments after add failure', async () => {
+    eventCommentUseCasesMock.addComment.mockRejectedValueOnce(new Error('failed'));
+    const view = renderMutations();
+
+    let result;
+    await act(async () => {
+      result = await view.result.current.handleSubmit('Will fail');
+    });
+
+    expect(result).toBe(false);
+    expect(view.result.current.comments).toEqual([comment]);
+    expect(view.result.current.submitError).toBe('送出失敗，請再試一次');
+    expect(view.result.current).not.toHaveProperty('submitKey');
+  });
+
   test('uses the shared edit modal state and preserves event edited metadata', async () => {
     const view = renderMutations();
 

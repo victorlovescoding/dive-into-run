@@ -18,8 +18,7 @@ import useCommentEditModal from '@/runtime/hooks/useCommentEditModal';
  * @property {boolean} isSubmitting - 送出留言中。
  * @property {string | null} submitError - 送出錯誤訊息。
  * @property {string | null} highlightId - 高亮留言 ID。
- * @property {number} submitKey - 用於 key reset CommentInput。
- * @property {(content: string) => Promise<void>} handleSubmit - 送出新留言。
+ * @property {(content: string) => Promise<boolean>} handleSubmit - 送出新留言。
  * @property {CommentData | null} editingComment - 正在編輯的留言。
  * @property {boolean} isUpdating - 編輯更新中。
  * @property {string | null} updateError - 編輯更新錯誤訊息。
@@ -51,7 +50,6 @@ export default function useCommentMutations(eventId, user, setComments, onSucces
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(/** @type {string | null} */ (null));
   const [highlightId, setHighlightId] = useState(/** @type {string | null} */ (null));
-  const [submitKey, setSubmitKey] = useState(0);
   const highlightTimeoutRef = useRef(/** @type {ReturnType<typeof setTimeout> | null} */ (null));
 
   const [deletingComment, setDeletingComment] = useState(/** @type {CommentData | null} */ (null));
@@ -79,10 +77,11 @@ export default function useCommentMutations(eventId, user, setComments, onSucces
         setHighlightId(newComment.id);
         clearTimeout(highlightTimeoutRef.current);
         highlightTimeoutRef.current = setTimeout(() => setHighlightId(null), 2000);
-        setSubmitKey((k) => k + 1);
         onSuccess?.(newComment.id);
+        return true;
       } catch {
         setSubmitError('送出失敗，請再試一次');
+        return false;
       } finally {
         setIsSubmitting(false);
       }
@@ -175,7 +174,6 @@ export default function useCommentMutations(eventId, user, setComments, onSucces
     isSubmitting,
     submitError,
     highlightId,
-    submitKey,
     handleSubmit,
     editingComment,
     isUpdating,
