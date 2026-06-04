@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { signInWithGoogle, signOutUser } from '@/lib/firebase-auth-helpers';
+import getVisibleNavItems from './member-nav-visibility';
 import { NAV_ITEMS, isActivePath } from './nav-constants';
 import styles from './Navbar.module.css';
 
@@ -27,9 +28,10 @@ export default function MobileDrawer({
   user,
   loading,
 }) {
+  const visibleNavItems = getVisibleNavItems(NAV_ITEMS, { user, loading });
   const drawerClass = isDrawerOpen ? `${styles.drawer} ${styles.drawerOpen}` : styles.drawer;
   const overlayClass = isDrawerOpen ? `${styles.overlay} ${styles.overlayVisible}` : styles.overlay;
-  const drawerLinks = NAV_ITEMS.map((item) => {
+  const drawerLinks = visibleNavItems.map((item) => {
     const active = isActivePath(pathname, item.href);
     const linkClass = active
       ? `${styles.drawerLink} ${styles.drawerLinkActive}`

@@ -1,8 +1,10 @@
 'use client';
 
-import { useCallback, useContext, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
+import { markMemberAuthGateToastPending } from '@/runtime/member-auth-gate-toast';
 import { updateUserName, updateUserPhotoURL } from '@/repo/client/firebase-users-repo';
 import { uploadUserAvatar } from '@/runtime/client/use-cases/avatar-upload-use-cases';
 import { requestAccountDeletion } from '@/runtime/client/use-cases/account-deletion-use-cases';
@@ -18,6 +20,8 @@ const ACCOUNT_DELETION_ERROR_MESSAGE = '刪除帳號申請失敗，請稍後再�
 export default function useMemberPageRuntime() {
   const { user, loading } = useContext(AuthContext);
   const { showToast } = useToast();
+  const router = useRouter();
+  const unauthRedirectStartedRef = useRef(false);
   const userName = user?.name ?? '';
   const [nameDraft, setNameDraft] = useState(() => ({
     sourceName: userName,
@@ -28,6 +32,15 @@ export default function useMemberPageRuntime() {
   const [accountDeletionSubmitting, setAccountDeletionSubmitting] = useState(false);
   const [accountDeletionError, setAccountDeletionError] = useState(null);
   const inputFileRef = useRef(null);
+
+  useEffect(() => {
+    if (loading || user) return;
+    if (unauthRedirectStartedRef.current) return;
+
+    unauthRedirectStartedRef.current = true;
+    markMemberAuthGateToastPending();
+    router.replace('/');
+  }, [loading, router, user]);
 
   const onNameChange = useCallback(
     /**
