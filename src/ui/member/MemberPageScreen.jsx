@@ -21,6 +21,7 @@ export default function MemberPageScreen({
 }) {
   const {
     user,
+    loading,
     name,
     inputFileRef,
     onNameChange,
@@ -28,6 +29,9 @@ export default function MemberPageScreen({
     onAvatarFileChange,
     onSubmitNewName,
   } = runtime;
+
+  if (loading || !user) return null;
+
   const userLabel = user?.name || user?.email || '跑者';
 
   return (
