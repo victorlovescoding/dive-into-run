@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   POST_NOT_FOUND_MESSAGE,
   deletePost,
+  fetchPostHistory,
   getLatestCommentsPage,
   getPostDetail,
   hasUserLikedPost,
@@ -26,6 +27,7 @@ import {
 } from '@/repo/client/post-composer-draft-storage-repo';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
+import useEditHistoryModal from '@/runtime/hooks/useEditHistoryModal';
 import usePostComments from '@/runtime/hooks/usePostComments';
 
 const POST_DELETED_MESSAGE = '找不到這篇文章（可能已被刪除）';
@@ -79,6 +81,18 @@ export default function usePostDetailRuntime(postId) {
     handleCommentChange,
     setInitialComments,
   } = usePostComments({ postId, user, postDetail, setPostDetail, setOpenMenuPostId });
+  const loadArticleHistory = useCallback((targetPost) => fetchPostHistory(targetPost.id), []);
+  const {
+    historyTarget: articleHistoryPost,
+    historyEntries: articleHistoryEntries,
+    historyError: articleHistoryError,
+    isHistoryOpen: isArticleHistoryOpen,
+    handleViewHistory: handleViewArticleHistory,
+    handleCloseHistory: handleCloseArticleHistory,
+  } = useEditHistoryModal({
+    loadHistory: loadArticleHistory,
+    loadErrorMessage: '載入編輯記錄失敗',
+  });
 
   const shareUrl =
     typeof window !== 'undefined'
@@ -261,7 +275,7 @@ export default function usePostDetailRuntime(postId) {
             removePostComposerDraft({ uid: user.uid, postId: editingPostId });
           }
           setPostDetail((prev) =>
-            prev ? { ...prev, title: title.trim(), content: content.trim() } : prev,
+            prev ? { ...prev, title: title.trim(), content: content.trim(), isEdited: true } : prev,
           );
           showToast('更新文章成功');
           closeAndResetComposer();
@@ -390,6 +404,10 @@ export default function usePostDetailRuntime(postId) {
     historyComment,
     historyEntries,
     historyError,
+    articleHistoryPost,
+    articleHistoryEntries,
+    articleHistoryError,
+    isArticleHistoryOpen,
     title,
     content,
     originalTitle,
@@ -417,6 +435,8 @@ export default function usePostDetailRuntime(postId) {
     handleDeleteComment,
     handleViewHistory,
     handleCloseHistory,
+    handleViewArticleHistory,
+    handleCloseArticleHistory,
     handleSubmitComment,
     handleCommentChange,
   };

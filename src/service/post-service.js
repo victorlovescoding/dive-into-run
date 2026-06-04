@@ -1,6 +1,8 @@
 import { isAccountDeletionHidden } from '@/config/account-deletion';
 import { isSoftDeletedRecord } from '@/repo/post-soft-delete';
-import buildCommentEditHistoryPayload from '@/service/comment-edit-history-service';
+import buildCommentEditHistoryPayload, {
+  buildEditHistoryPayload,
+} from '@/service/comment-edit-history-service';
 
 export { POST_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
 export {
@@ -104,15 +106,50 @@ export function buildCreatePostPayload({ title, content, user, postAtValue }) {
  * @param {object} root0 - 參數物件。
  * @param {string} root0.title - 新標題。
  * @param {string} root0.content - 新內容。
- * @returns {object} Firestore payload。
+ * @param {Post} root0.currentPost - 目前文章，會保存到 history。
+ * @param {unknown} root0.updatedAtValue - 由 runtime 注入的 `updatedAt`/`editedAt` 值。
+ * @param {string} root0.historyId - 本次 history 文件 ID。
+ * @returns {{ historyPayload: object, postUpdate: object }} Firestore transaction payload。
  */
-export function buildUpdatePostPayload({ title, content }) {
+export function buildUpdatePostPayload({ title, content, currentPost, updatedAtValue, historyId }) {
   const error = validatePostInput({ title, content });
   if (error) throw new Error(`updatePost: ${error}`);
 
+  if (!currentPost || typeof currentPost.title !== 'string' || typeof currentPost.content !== 'string') {
+    throw new Error('updatePost: current post is required');
+  }
+  if (typeof historyId !== 'string' || !historyId) {
+    throw new Error('updatePost: historyId is required');
+  }
+
+  const { historyPayload, updatePayload } = buildEditHistoryPayload({
+    fields: [
+      {
+        newText: title,
+        oldText: currentPost.title,
+        currentTextField: 'title',
+        fieldLabel: 'title',
+        maxLength: POST_TITLE_MAX_LENGTH,
+      },
+      {
+        newText: content,
+        oldText: currentPost.content,
+        currentTextField: 'content',
+        fieldLabel: 'content',
+        maxLength: POST_CONTENT_MAX_LENGTH,
+      },
+    ],
+    updatedAtValue,
+    functionName: 'updatePost',
+    unchangedMessage: 'content unchanged',
+  });
+
   return {
-    title: title.trim(),
-    content: content.trim(),
+    historyPayload,
+    postUpdate: {
+      ...updatePayload,
+      lastEditHistoryId: historyId,
+    },
   };
 }
 

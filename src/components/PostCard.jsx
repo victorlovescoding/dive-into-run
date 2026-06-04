@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import BookmarkButton from '@/components/BookmarkButton';
+import EditedAffordance from '@/components/EditedAffordance';
 import UserLink from '@/components/UserLink';
 import { formatRelativeTime } from '@/lib/notification-helpers';
 import styles from './PostCard.module.css';
@@ -22,6 +23,7 @@ const TRUNCATE_THRESHOLD = 150;
  * @property {boolean} liked - 當前使用者是否已按讚。
  * @property {boolean} [isFavorited] - 當前使用者是否已收藏。
  * @property {boolean} isAuthor - 當前使用者是否為作者。
+ * @property {boolean} [isEdited] - 文章是否曾被編輯。
  */
 
 /**
@@ -248,6 +250,7 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onCloseMenu, onEdit, onDelete
  * @property {(postId: string) => void} [onDelete] - 刪除回呼。
  * @property {(postId: string) => void} [onLike] - 按讚回呼。
  * @property {(postId: string) => void | Promise<void>} [onToggleFavorite] - 收藏切換回呼。
+ * @property {(post: EnrichedPost) => void | Promise<void>} [onViewArticleHistory] - 查看文章編輯記錄。
  * @property {import('react').ReactNode} [children] - 額外 meta action（詳文頁用，如分享/複製）。
  * @property {import('react').Key} [key] - React reconciler 專用 key；非元件內部使用的 prop，
  *   但為了讓 JSDoc-based `checkJs` 不誤報 "Property 'key' does not exist on type 'PostCardProps'"，
@@ -269,6 +272,7 @@ export default function PostCard({
   onDelete,
   onLike,
   onToggleFavorite,
+  onViewArticleHistory,
   children,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -305,7 +309,7 @@ export default function PostCard({
   return (
     <article className={styles.card}>
       <div className={styles.header}>
-        <div className={styles.authorInfo}>
+        <div className={styles.authorInfo} data-testid="post-metadata">
           <UserLink
             uid={post.authorUid}
             name={displayName}
@@ -318,6 +322,13 @@ export default function PostCard({
               <span className={styles.dot}>·</span>
               <span className={styles.time}>{timeText}</span>
             </>
+          )}
+          {post.isEdited && onViewArticleHistory && (
+            <EditedAffordance
+              className={styles.editedBadge}
+              ariaLabel="查看文章編輯記錄"
+              onClick={() => onViewArticleHistory(post)}
+            />
           )}
         </div>
         {post.isAuthor && onToggleMenu && onCloseMenu && onEdit && onDelete && (
@@ -352,7 +363,7 @@ export default function PostCard({
       )}
 
       <div className={styles.metaBar}>
-        <div className={styles.metaActions}>
+        <div className={styles.metaActions} data-testid="post-action-row">
           <button
             type="button"
             className={likeClassName}

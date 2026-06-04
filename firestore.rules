@@ -34,6 +34,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/posts/$(postId);
     }
 
+    function postHistoryPath(postId, historyId) {
+      return /databases/$(database)/documents/posts/$(postId)/history/$(historyId);
+    }
+
     function isActivePost(postId) {
       return exists(postPath(postId))
         && isActiveData(get(postPath(postId)).data);
@@ -180,6 +184,90 @@ service cloud.firestore {
         );
     }
 
+    function isValidPostHistoryCreate() {
+      return request.resource.data.keys().hasAll(['title', 'content', 'editedAt'])
+        && request.resource.data.keys().hasOnly(['title', 'content', 'editedAt'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.content is string
+        && request.resource.data.content.size() > 0
+        && request.resource.data.content.size() <= 10000
+        && request.resource.data.editedAt == request.time;
+    }
+
+    function postEditFields() {
+      return ['title', 'content', 'updatedAt', 'isEdited', 'lastEditHistoryId'];
+    }
+
+    function isPostTextEditUpdate(postId) {
+      let historyPath = postHistoryPath(
+        postId,
+        request.resource.data.lastEditHistoryId
+      );
+      return request.auth.uid == resource.data.authorUid
+        && isActiveData(resource.data)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(accountDeletionManagedFields())
+        && !affectsSoftDeleteFields()
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(postEditFields())
+        && request.resource.data.keys().hasAll(postEditFields())
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.content is string
+        && request.resource.data.content.size() > 0
+        && request.resource.data.content.size() <= 10000
+        && (
+          request.resource.data.title != resource.data.title
+          || request.resource.data.content != resource.data.content
+        )
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.isEdited == true
+        && request.resource.data.lastEditHistoryId is string
+        && request.resource.data.lastEditHistoryId.size() > 0
+        && !exists(historyPath)
+        && existsAfter(historyPath)
+        && getAfter(historyPath).data.title == resource.data.title
+        && getAfter(historyPath).data.content == resource.data.content
+        && getAfter(historyPath).data.editedAt == request.time;
+    }
+
+    function isPostNonTextAuthorUpdate() {
+      return request.auth.uid == resource.data.authorUid
+        && isActiveData(resource.data)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(accountDeletionManagedFields())
+        && !affectsSoftDeleteFields()
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(postEditFields());
+    }
+
+    function isPostHistoryCreate(postId, historyId) {
+      let parentPath = postPath(postId);
+      return isPostAuthor(postId)
+        && isActivePost(postId)
+        && isValidPostHistoryCreate()
+        && request.resource.data.title == get(parentPath).data.title
+        && request.resource.data.content == get(parentPath).data.content
+        && existsAfter(parentPath)
+        && isActiveData(getAfter(parentPath).data)
+        && getAfter(parentPath).data.title is string
+        && getAfter(parentPath).data.title.size() > 0
+        && getAfter(parentPath).data.title.size() <= 120
+        && getAfter(parentPath).data.content is string
+        && getAfter(parentPath).data.content.size() > 0
+        && getAfter(parentPath).data.content.size() <= 10000
+        && (
+          getAfter(parentPath).data.title != get(parentPath).data.title
+          || getAfter(parentPath).data.content != get(parentPath).data.content
+        )
+        && getAfter(parentPath).data.updatedAt == request.time
+        && getAfter(parentPath).data.isEdited == true
+        && getAfter(parentPath).data.lastEditHistoryId == historyId;
+    }
+
     function isValidFavoriteCreate(targetId) {
       return request.resource.data.keys().hasAll(['targetId', 'createdAt'])
         && request.resource.data.keys().hasOnly(['targetId', 'createdAt'])
@@ -292,16 +380,11 @@ service cloud.firestore {
         && request.resource.data.content is string
         && request.resource.data.content.size() <= 5000;
 
-      // 作者可更新一般欄位；軟刪除只能新增 retention 欄位。
-      // 非作者只能更新 commentsCount / likesCount（transaction 用）。
+      // 作者可更新非文字欄位；title/content 編輯必須與 history 建立同批送出。
+      // 軟刪除只能新增 retention 欄位；非作者只能更新 commentsCount / likesCount（transaction 用）。
       allow update: if isSignedIn() && (
-        (
-          request.auth.uid == resource.data.authorUid
-          && isActiveData(resource.data)
-          && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(accountDeletionManagedFields())
-          && !affectsSoftDeleteFields()
-        )
+        isPostNonTextAuthorUpdate()
+        || isPostTextEditUpdate(postId)
         || (
           request.auth.uid == resource.data.authorUid
           && isSoftDeleteUpdateBy(request.auth.uid)
@@ -320,6 +403,14 @@ service cloud.firestore {
           request.auth.uid == uid
           || request.auth.uid == get(/databases/$(database)/documents/posts/$(postId)).data.authorUid
         );
+      }
+
+      match /history/{historyId} {
+        allow read: if isActivePost(postId);
+
+        allow create: if isPostHistoryCreate(postId, historyId);
+
+        allow update, delete: if false;
       }
     }
 

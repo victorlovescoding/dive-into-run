@@ -1,0 +1,176 @@
+# Article Post Edit History Plan
+
+## Summary
+
+Current phase: `integration`. T001, T002, T003A, and T003 are completed and
+committed. Current rebased HEAD is `2ded9f33aa71010ced6e037001c5e2b93487f24d`
+(`2ded9f3 Move post edited badge to time row`), with `origin/main` at
+`50972d7694cdd52096f3e857226fcb60e14de536`; the branch is ahead 12 and behind 0. Fresh final
+verification after rebase covers the UI placement commit.
+
+Firestore rules deploy evidence is preserved as Firestore-only deploy from the
+pre-rebase source commit `3f83371be5cf7ef3c59aee463c006a4930a4f5e2` to project `dive-into-run` with
+`firebase deploy --only firestore:rules`. Current HEAD was not redeployed;
+`git diff --exit-code 3f83371be5cf7ef3c59aee463c006a4930a4f5e2 HEAD -- firestore.rules` proves rules content
+equivalence only.
+
+The implementation uses Shared Core + Resource Adapters. Shared edit-history
+code owns generic affordance/modal/state/snapshot concepts. Article posts own
+their `/posts/{postId}/history/{historyId}` repo path, use-case contract,
+Firestore rules validation, account-deletion cleanup, and article-specific UI
+wiring.
+
+## Architecture
+
+- Shared core:
+  - `EditedAffordance` renders the reusable `已編輯` button affordance.
+  - `EditHistoryModal` renders a generic current-version + previous-version
+    history modal.
+  - `CommentHistoryModal` remains a compatibility wrapper so comment consumers
+    do not need a broad migration.
+  - `useEditHistoryModal` owns generic modal state and preserves the existing
+    comment failure behavior: failed history load keeps the modal open and
+    shows an error.
+  - `comment-edit-history-service.js` may expose a generic snapshot/update
+    builder while keeping the existing comment builder contract stable.
+- Article post persistence:
+  - Article edits must read the current post before writing.
+  - The write must create `/posts/{postId}/history/{historyId}` with the
+    pre-edit `title` and `content`.
+  - The parent post update must write trimmed `title`, trimmed `content`,
+    `updatedAt`, `isEdited=true`, and `lastEditHistoryId=<historyId>`.
+  - Repo writes should use a transaction or batch shape that Firestore rules can
+    validate atomically.
+- Firestore rules:
+  - `/posts/{postId}` update and `/posts/{postId}/history/{historyId}` create
+    must cross-validate pre-edit `title` + `content`, timestamp equality, and
+    parent `lastEditHistoryId` / `historyId` coupling.
+  - Article history read visibility is fixed: same as active article post read
+    visibility; parent soft-deleted or inaccessible means history is denied.
+  - Event comment rules remain non-scope and must not be hardened here.
+- UI/runtime:
+  - `PostCard` is the shared article card for `/posts` and `/posts/{id}`.
+  - List and detail runtime state should expose article post history state and
+    handlers without regressing comment history state.
+  - UI must show `已編輯` for edited article posts in list and detail, and the
+    modal must show previous `title` and `content`.
+
+## Files And Responsibilities
+
+| Path | Action | Responsibility |
+| ---- | ------ | -------------- |
+| `src/service/comment-edit-history-service.js` | Modify | Keep current comment builder stable and expose generic snapshot/update helpers where useful. |
+| `src/runtime/hooks/useEditHistoryModal.js` | Create | Generic edit-history modal state for resource adapters. |
+| `src/components/EditedAffordance.jsx` | Create | Shared `已編輯` affordance. |
+| `src/components/EditHistoryModal.jsx` | Create | Generic edit-history modal presentation. |
+| `src/components/CommentHistoryModal.jsx` | Modify | Thin compatibility wrapper over generic modal. |
+| `src/components/CommentHistoryModal.module.css` | Modify | Modal styles reusable by generic wrapper without changing visible behavior. |
+| `src/components/CommentCard.jsx` | Modify | Use shared affordance while preserving `onViewHistory(comment)`. |
+| `src/components/CommentCard.module.css` | Modify | Style shared affordance usage if needed. |
+| `src/service/post-service.js` | Modify | Build article post edit metadata and history payload from pre-edit post data. |
+| `src/runtime/client/use-cases/post-use-cases.js` | Modify | Route article edits through atomic history write and expose history fetch normalization. |
+| `src/repo/client/firebase-posts-repo.js` | Modify | Implement article post transaction and history reads under `/posts/{postId}/history/{historyId}`. |
+| `src/repo/server/account-deletion-server-repo.js` | Modify | Delete post-level history during post tree cleanup. |
+| `firestore.rules` | Modify | Add strict article post parent/history validation and read rules. |
+| `src/components/PostCard.jsx` | Modify | Render article post edit affordance and trigger history view. |
+| `src/components/PostCard.module.css` | Modify | Style article post edit affordance placement. |
+| `src/runtime/hooks/usePostsPageRuntime.js` | Modify | Wire list-level article post history handlers/state. |
+| `src/runtime/hooks/usePostDetailRuntime.js` | Modify | Wire detail-level article post history handlers/state alongside comment history. |
+| `src/ui/posts/PostsPageScreen.jsx` | Modify | Pass article history handlers/state to list cards/modal. |
+| `src/ui/posts/PostDetailScreen.jsx` | Modify | Pass article history handlers/state to detail card/modal without regressing comment modal. |
+| Focused tests named in `tasks.md` | Modify/Create | Prove shared core compatibility, persistence/rules strictness, UI wiring, and integration behavior. |
+| `eslint.config.mjs` | Modify in T003A only | Keep browser/jsdom tests linted by including `tests/browser/**` in the type-aware lint project service/default-project coverage. |
+| `tsconfig.json` | Modify in T003A only | Include browser/jsdom tests in the TypeScript project graph when needed for type-aware linting. |
+
+## Verification Strategy
+
+- Required local gates:
+  - `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx`
+  - `npx vitest run tests/browser/runtime/hooks/usePostComments.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`
+  - `npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js`
+  - `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`
+  - `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`
+  - `npm run lint:changed`
+  - `npm run lint -- --max-warnings 0`
+  - `npm run type-check`
+  - `npm run type-check:changed`
+  - `npm run workflow:check`
+- Browser evidence target:
+  - Browser setup may sign in through the app, create an article post, edit that
+    article post, and then capture evidence for that same edited article. This
+    is allowed only through app/browser interaction and must not require code,
+    test, config, seed, or fixture changes.
+  - In `/posts`, the edited article post shows `已編輯`; clicking it opens a
+    history modal with previous title/content.
+  - In `/posts/{postId}`, the same edited article post shows `已編輯` in the
+    detail card; modal close works and comment history still works when a
+    suitable edited comment already exists or can be created through the app.
+  - Capture desktop and mobile screenshots plus console/network findings.
+  - If deterministic seeded data or a code/data fixture becomes required to
+    produce evidence, stop and add a separate fixture task instead of widening
+    T003 or T003A.
+- Regression risk and mitigation:
+  - Comment history regression: keep `CommentHistoryModal` API stable and run
+    post comment runtime/screen tests.
+  - Rules overreach: rules tests must continue proving event comments are not
+    newly constrained by this feature; no event-comment rules writes are owned.
+  - Non-atomic article writes: rules and repo/use-case tests must reject missing
+    history, mismatched history id, mismatched timestamp, and fake pre-edit
+    title/content.
+
+## Workflow State
+
+- Status schema: v3.
+- Current head snapshot: `2ded9f33aa71010ced6e037001c5e2b93487f24d` (`2ded9f3 Move post edited badge to time row`).
+- Remote head snapshot: `origin/main` at `50972d7694cdd52096f3e857226fcb60e14de536`; current branch reports ahead 12 and behind 0.
+- UI placement commit: current HEAD moves the post edited badge to the time row and is covered by focused UI tests plus the 4-file runtime/UI suite.
+- T004 state: `engineer_done`; Integration Reviewer PASS is pending.
+- Last verified commit policy: `lastVerifiedCommit` records current HEAD because fresh final gates cover it.
+- Phase commit checkpoints:
+  - `spec_created` -> `4b87ce41d02ca821c93de114e545b948c400f16c`
+  - `spec_approved` -> `4798096195563e57977a79934b007b057ab07e51`
+  - `post_rebase_state` -> `9e8052e3fd121eb7c17bc66446bb58099260bdac`
+  - `plan_and_tasks` -> `35257d036d568293bc7cee923c9be0ffd3693256`
+  - `shared_core` -> `29b7d9c24d358431e9739c2e6ffb9dd396c666de`
+  - `shared_core_test_layout` -> `066ba10ea1639755601dbf3aea0155e9adab6a98`
+  - `article_history_persistence_rules` -> `c9b2714939ba5dffbbac0f3ff8731a985bc61657`
+  - `browser_test_lint_config` -> `3e6f35b06f6fe28291e7bf05adbe8a8c51ef91d7`
+  - `article_history_ui` -> `363b229b484d517da99d72d9c6a86b647ca9b51d`
+  - `integration_gate` -> `1f6e1d329cf82a9463e5506f12108e0974277f13`
+  - `rules_deploy_record` -> `754e8d2dfb1958a4de98a8106d83ec2c1a236d63`
+  - `post_edited_badge_time_row` -> `2ded9f33aa71010ced6e037001c5e2b93487f24d`
+- Rules deploy status: `deployed` for Firestore rules content only. Actual deploy source was the pre-rebase commit `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; current HEAD `2ded9f33aa71010ced6e037001c5e2b93487f24d` was not redeployed and is only content-equivalent for `firestore.rules`. The `status.json` `deployedCommit` field stores current HEAD only to satisfy workflow schema ancestor checks; evidence records the actual deploy source separately.
+- Incident handling: any open incident blocks dispatch, commit, push, PR, CI, merge, local main sync, and rules deploy until resolved or explicitly carried forward.
+
+## Release Boundary
+
+- Firestore/storage rules deploy authorization:
+  `authorizationBoundary.deployFirestoreRules=true` for the already executed Firestore-only rules deploy.
+- Rules deploy is separate from edit, commit, push, PR, CI, merge, and local
+  `main` sync.
+- Final summaries must not imply deployed rules or deployed product behavior
+  unless `rulesDeployStatus.state` is `deployed` with deploy evidence.
+- Push, PR creation, CI watch, merge, and local `main` sync are authorized for downstream closeout but were not performed by this verifier task.
+- No additional deploy is authorized; the recorded deploy was Firestore rules only and came from the pre-rebase source commit.
+
+## Risk And Stop Conditions
+
+- Stop if implementation needs migration/backfill for existing posts.
+- Stop if article post history path changes away from
+  `/posts/{postId}/history/{historyId}`.
+- Stop if article history read visibility would differ from active post read
+  visibility without user approval.
+- Stop if strict parent/history validation cannot be expressed without a broad
+  rules rewrite.
+- Stop if event comment rules or event comment mutation behavior must change.
+- Stop if a new dependency, package-lock change, schema migration, destructive
+  operation, or rules deploy is required.
+- Stop if same-wave tasks need overlapping owned files.
+
+## Task Slices
+
+- T001: Shared edit-history core and comment compatibility.
+- T002: Article post history persistence, strict rules, and cleanup.
+- T003A: Browser test lint configuration for `tests/browser/**`.
+- T003: Article post list/detail UI wiring and browser evidence.
+- T004: Final integration verification and workflow state sync.

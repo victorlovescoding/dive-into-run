@@ -164,6 +164,11 @@ async function seedPostWithComment({
       content: 'Before edit',
       editedAt: Timestamp.fromDate(new Date('2026-05-28T01:15:00.000Z')),
     });
+    await setDoc(doc(adminDb, 'posts', postId, 'history', 'history-1'), {
+      title: 'Original morning run',
+      content: 'Original easy miles',
+      editedAt: Timestamp.fromDate(new Date('2026-05-28T00:30:00.000Z')),
+    });
   });
 }
 
@@ -699,6 +704,287 @@ describe('post/comment soft-delete Firestore rules', () => {
 
     await assertSucceeds(
       updateDoc(doc(dbFor('post-author'), 'posts', 'active-post'), softDeletePayload('post-author')),
+    );
+  });
+
+  it('allows reading article post history under active posts', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertSucceeds(
+      getDoc(doc(anonymousDb(), 'posts', 'active-post', 'history', 'history-1')),
+    );
+  });
+
+  it('denies reading article post history under soft-deleted posts', async () => {
+    await seedPostWithComment({
+      postId: 'deleted-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+      deletedPost: true,
+    });
+
+    await assertFails(
+      getDoc(doc(dbFor('post-author'), 'posts', 'deleted-post', 'history', 'history-1')),
+    );
+  });
+
+  it('denies direct article post edits without matching edit history', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
+      updateDoc(doc(dbFor('post-author'), 'posts', 'active-post'), {
+        title: 'Updated morning run',
+        content: 'Updated easy miles',
+        updatedAt: serverTimestamp(),
+        isEdited: true,
+        lastEditHistoryId: 'history-2',
+      }),
+    );
+  });
+
+  it('denies standalone article post history creates', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
+      setDoc(doc(dbFor('post-author'), 'posts', 'active-post', 'history', 'history-2'), {
+        title: 'Morning run',
+        content: 'Easy miles',
+        editedAt: serverTimestamp(),
+      }),
+    );
+  });
+
+  it('allows post authors to update article posts with matching edit history in one batch', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const db = dbFor('post-author');
+    const batch = writeBatch(db);
+    const postRef = doc(db, 'posts', 'active-post');
+    const historyRef = doc(db, 'posts', 'active-post', 'history', 'history-2');
+
+    batch.update(postRef, {
+      title: 'Updated morning run',
+      content: 'Updated easy miles',
+      updatedAt: serverTimestamp(),
+      isEdited: true,
+      lastEditHistoryId: 'history-2',
+    });
+    batch.set(historyRef, {
+      title: 'Morning run',
+      content: 'Easy miles',
+      editedAt: serverTimestamp(),
+    });
+
+    await assertSucceeds(batch.commit());
+  });
+
+  it('denies article post edit history with fake previous title or content', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const db = dbFor('post-author');
+    const batch = writeBatch(db);
+    const postRef = doc(db, 'posts', 'active-post');
+    const historyRef = doc(db, 'posts', 'active-post', 'history', 'history-2');
+
+    batch.update(postRef, {
+      title: 'Updated morning run',
+      content: 'Updated easy miles',
+      updatedAt: serverTimestamp(),
+      isEdited: true,
+      lastEditHistoryId: 'history-2',
+    });
+    batch.set(historyRef, {
+      title: 'Forged previous title',
+      content: 'Easy miles',
+      editedAt: serverTimestamp(),
+    });
+
+    await assertFails(batch.commit());
+  });
+
+  it('denies article post edits when the history id does not match the parent marker', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const db = dbFor('post-author');
+    const batch = writeBatch(db);
+    const postRef = doc(db, 'posts', 'active-post');
+    const historyRef = doc(db, 'posts', 'active-post', 'history', 'history-2');
+
+    batch.update(postRef, {
+      title: 'Updated morning run',
+      content: 'Updated easy miles',
+      updatedAt: serverTimestamp(),
+      isEdited: true,
+      lastEditHistoryId: 'different-history-id',
+    });
+    batch.set(historyRef, {
+      title: 'Morning run',
+      content: 'Easy miles',
+      editedAt: serverTimestamp(),
+    });
+
+    await assertFails(batch.commit());
+  });
+
+  it('denies article post edits when parent and history timestamps do not match', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const db = dbFor('post-author');
+    const batch = writeBatch(db);
+    const postRef = doc(db, 'posts', 'active-post');
+    const historyRef = doc(db, 'posts', 'active-post', 'history', 'history-2');
+
+    batch.update(postRef, {
+      title: 'Updated morning run',
+      content: 'Updated easy miles',
+      updatedAt: serverTimestamp(),
+      isEdited: true,
+      lastEditHistoryId: 'history-2',
+    });
+    batch.set(historyRef, {
+      title: 'Morning run',
+      content: 'Easy miles',
+      editedAt: Timestamp.fromDate(new Date('2026-05-28T03:00:00.000Z')),
+    });
+
+    await assertFails(batch.commit());
+  });
+
+  it('denies article post edit batches from non-authors', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const db = dbFor('intruder');
+    const batch = writeBatch(db);
+    const postRef = doc(db, 'posts', 'active-post');
+    const historyRef = doc(db, 'posts', 'active-post', 'history', 'history-2');
+
+    batch.update(postRef, {
+      title: 'Updated morning run',
+      content: 'Updated easy miles',
+      updatedAt: serverTimestamp(),
+      isEdited: true,
+      lastEditHistoryId: 'history-2',
+    });
+    batch.set(historyRef, {
+      title: 'Morning run',
+      content: 'Easy miles',
+      editedAt: serverTimestamp(),
+    });
+
+    await assertFails(batch.commit());
+  });
+
+  it('denies article post edit parent updates with invalid payload fields', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    const db = dbFor('post-author');
+    const batch = writeBatch(db);
+    const postRef = doc(db, 'posts', 'active-post');
+    const historyRef = doc(db, 'posts', 'active-post', 'history', 'history-2');
+
+    batch.update(postRef, {
+      title: 'Updated morning run',
+      content: 'Updated easy miles',
+      updatedAt: serverTimestamp(),
+      isEdited: true,
+      lastEditHistoryId: 'history-2',
+      authorName: 'Changed author name',
+    });
+    batch.set(historyRef, {
+      title: 'Morning run',
+      content: 'Easy miles',
+      editedAt: serverTimestamp(),
+    });
+
+    await assertFails(batch.commit());
+  });
+
+  it('denies article post edit history with invalid payloads or non-author writes', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
+      setDoc(doc(dbFor('intruder'), 'posts', 'active-post', 'history', 'history-2'), {
+        title: 'Morning run',
+        content: 'Easy miles',
+        editedAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      setDoc(doc(dbFor('post-author'), 'posts', 'active-post', 'history', 'history-3'), {
+        title: 'Morning run',
+        content: 'Easy miles',
+        editedAt: serverTimestamp(),
+        authorUid: 'post-author',
+      }),
+    );
+  });
+
+  it('denies article post history updates and deletes', async () => {
+    await seedPostWithComment({
+      postId: 'active-post',
+      commentId: 'comment-1',
+      postAuthorUid: 'post-author',
+      commentAuthorUid: 'comment-author',
+    });
+
+    await assertFails(
+      updateDoc(doc(dbFor('post-author'), 'posts', 'active-post', 'history', 'history-1'), {
+        content: 'Changed history',
+      }),
+    );
+    await assertFails(
+      deleteDoc(doc(dbFor('post-author'), 'posts', 'active-post', 'history', 'history-1')),
     );
   });
 

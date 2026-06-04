@@ -615,6 +615,7 @@ async function deleteCommentsCollectionWithHistory(commentsRef) {
 
 async function deletePostTree(postDoc) {
   await deleteCollectionReference(postDoc.ref.collection('likes'));
+  await deleteCollectionReference(postDoc.ref.collection('history'));
   await deleteCommentsCollectionWithHistory(postDoc.ref.collection('comments'));
   await postDoc.ref.delete();
 }

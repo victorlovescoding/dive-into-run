@@ -1,11 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
-import { formatCommentTimeFull } from '@/lib/event-helpers';
-import styles from './CommentHistoryModal.module.css';
+import EditHistoryModal from './EditHistoryModal';
 
 /**
- * 編輯記錄 Modal。
+ * 留言編輯記錄 Modal 相容 wrapper。
  * @param {object} props - 元件 props。
  * @param {import('@/lib/firebase-comments').CommentData} props.comment - 當前留言。
  * @param {import('@/lib/firebase-comments').CommentHistoryEntry[]} props.history - 編輯歷史（editedAt asc）。
@@ -14,64 +12,12 @@ import styles from './CommentHistoryModal.module.css';
  * @returns {import('react').ReactElement} 編輯記錄 Modal 元件。
  */
 export default function CommentHistoryModal({ comment, history, historyError, onClose }) {
-  const dialogRef = useRef(/** @type {HTMLDialogElement | null} */ (null));
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (dialog && !dialog.open) dialog.showModal();
-  }, []);
-
-  /** @param {import('react').SyntheticEvent<HTMLDialogElement>} e - dialog cancel 事件。 */
-  function handleCancel(e) {
-    e.preventDefault();
-    onClose();
-  }
-
-  const reversedHistory = useMemo(() => [...history].reverse(), [history]);
-  const historyEntries = reversedHistory.map((entry, i) => {
-    const isOriginal = i === reversedHistory.length - 1;
-
-    return (
-      <li key={entry.id || i} className={styles.entry}>
-        <div className={styles.entryHeader}>
-          {isOriginal && <span className={styles.badgeOriginal}>原始版本</span>}
-          <time className={styles.entryTime}>{formatCommentTimeFull(entry.editedAt)}</time>
-        </div>
-        <p className={styles.entryContent}>{entry.content}</p>
-      </li>
-    );
-  });
-
   return (
-    <dialog ref={dialogRef} className={styles.dialog} onCancel={handleCancel}>
-      <div className={styles.header}>
-        <h2 className={styles.title}>編輯記錄</h2>
-        <button type="button" className={styles.closeButton} onClick={onClose} aria-label="關閉">
-          ✕
-        </button>
-      </div>
-      {historyError && (
-        <div role="alert" className={styles.errorAlert}>
-          {historyError}
-        </div>
-      )}
-      {!historyError && history.length === 0 && <p className={styles.emptyHint}>沒有編輯記錄</p>}
-      {!historyError && history.length > 0 && (
-        <ul className={styles.list}>
-          {/* Current version */}
-          <li className={styles.entry}>
-            <div className={styles.entryHeader}>
-              <span className={styles.badgeCurrent}>目前版本</span>
-              {comment.updatedAt && (
-                <time className={styles.entryTime}>{formatCommentTimeFull(comment.updatedAt)}</time>
-              )}
-            </div>
-            <p className={styles.entryContent}>{comment.content}</p>
-          </li>
-          {/* History entries (newest to oldest) */}
-          {historyEntries}
-        </ul>
-      )}
-    </dialog>
+    <EditHistoryModal
+      currentEntry={comment}
+      history={history}
+      historyError={historyError}
+      onClose={onClose}
+    />
   );
 }

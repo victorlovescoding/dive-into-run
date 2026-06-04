@@ -8,6 +8,7 @@ import CommentCard from '@/components/CommentCard';
 import CommentEditModal from '@/components/CommentEditModal';
 import CommentHistoryModal from '@/components/CommentHistoryModal';
 import ComposeModal from '@/components/ComposeModal';
+import EditHistoryModal from '@/components/EditHistoryModal';
 import PostCard from '@/components/PostCard';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import ShareButton from '@/components/ShareButton';
@@ -225,6 +226,9 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     historyComment,
     historyEntries,
     historyError,
+    articleHistoryPost,
+    articleHistoryEntries,
+    articleHistoryError,
     isUpdating: runtimeIsCommentUpdating,
     updateError: runtimeCommentUpdateError,
     title,
@@ -256,6 +260,8 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     handleDeleteComment,
     handleViewHistory,
     handleCloseHistory,
+    handleViewArticleHistory,
+    handleCloseArticleHistory,
     handleSubmitComment,
     handleCommentChange,
   } = runtime;
@@ -348,6 +354,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
             onDelete={handleDeletePost}
             onLike={handleToggleLike}
             onToggleFavorite={handleToggleFavoritePost}
+            onViewArticleHistory={handleViewArticleHistory}
           >
             <PostDetailActions title={post.title} url={shareUrl} />
           </PostCard>
@@ -410,6 +417,15 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
               history={historyEntries}
               historyError={historyError}
               onClose={handleCloseHistory}
+            />
+          )}
+
+          {articleHistoryPost && (
+            <EditHistoryModal
+              currentEntry={articleHistoryPost}
+              history={articleHistoryEntries}
+              historyError={articleHistoryError}
+              onClose={handleCloseArticleHistory}
             />
           )}
 
