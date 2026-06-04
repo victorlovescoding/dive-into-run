@@ -9,25 +9,25 @@
   "authorizationBoundary": {
     "edit": true,
     "commit": false,
-    "push": false,
-    "pullRequest": false,
-    "ciWatch": false,
-    "merge": false,
-    "localMainSync": false,
+    "push": true,
+    "pullRequest": true,
+    "ciWatch": true,
+    "merge": true,
+    "localMainSync": true,
     "deployFirestoreRules": true
   },
   "currentHead": {
     "branch": "092-post-edit-history",
-    "commit": "3f83371be5cf7ef3c59aee463c006a4930a4f5e2",
-    "capturedAt": "2026-06-04T00:00:00Z",
-    "summary": "Current HEAD is the committed final integration checkpoint `3f83371 Record final integration verification`; branch reports ahead 10 and behind 0 relative to origin/main. Firestore rules deploy was executed from this source commit."
+    "commit": "2ded9f33aa71010ced6e037001c5e2b93487f24d",
+    "capturedAt": "2026-06-04T17:43:01Z",
+    "summary": "Current HEAD is `2ded9f3 Move post edited badge to time row`; final verification after rebase covered this commit. Branch reports ahead 12 and behind 0 relative to origin/main. Current HEAD was not redeployed; firestore.rules content is equivalent to the pre-rebase deployed source commit."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "14515eee2d730d25c7f73fa8eb5c1315504787e8",
-    "capturedAt": "2026-06-04T00:00:00Z",
-    "summary": "origin/main is at 14515eee2d730d25c7f73fa8eb5c1315504787e8; current branch reports ahead 10 and behind 0 relative to origin/main."
+    "commit": "50972d7694cdd52096f3e857226fcb60e14de536",
+    "capturedAt": "2026-06-04T17:43:01Z",
+    "summary": "origin/main is at 50972d7694cdd52096f3e857226fcb60e14de536; current branch reports ahead 12 and behind 0 relative to origin/main."
   },
   "completedTasks": [
     "T001",
@@ -573,18 +573,19 @@
       "reviewer": "Integration Reviewer",
       "scope": [
         "Run final integration verification after T001, T002, T003A, and T003 are completed.",
-        "Sync tasks.md, handoff.md, and status.json with final local evidence.",
-        "Record rules deploy state accurately; after the authorized deploy, record Firestore rules as deployed with evidence."
+        "Sync tasks.md, handoff.md, plan.md, and status.json with final rebase-local evidence.",
+        "Record rules deploy state accurately: Firestore rules were deployed from the pre-rebase source commit, and current HEAD is content-equivalent but was not redeployed."
       ],
       "nonScope": [
         "No production code, tests, rules, package files, config, or lockfiles.",
-        "No production code, tests, rules, package files, config, lockfiles, push, PR, CI watch, merge, local main sync, hosting/functions/storage/indexes deploy, or additional rules deploy.",
+        "No push, PR, CI watch, merge, local main sync, hosting/functions/storage/indexes deploy, or additional rules deploy in this verifier task.",
         "Do not mark tasks completed without Reviewer PASS."
       ],
       "ownedFiles": [
         "specs/post-edit-history/tasks.md",
         "specs/post-edit-history/handoff.md",
-        "specs/post-edit-history/status.json"
+        "specs/post-edit-history/status.json",
+        "specs/post-edit-history/plan.md"
       ],
       "readOnlyContext": [
         "AGENTS.md",
@@ -604,11 +605,11 @@
         "T003"
       ],
       "engineerInstructions": [
-        "Confirm T001, T002, T003A, and T003 are completed in tasks.md and status.json.",
-        "Run final integration commands one at a time and record exit codes.",
-        "Update workflow state with latest task states, current head, verification, phase commits, rules deploy state, and incidents.",
-        "Record the authorized Firestore-only rules deploy as rulesDeployStatus.state=deployed with project/command/target evidence and deployedCommit=3f83371be5cf7ef3c59aee463c006a4930a4f5e2.",
-        "Modify only the owned workflow files above."
+        "Confirmed T001, T002, T003A, and T003 are completed in tasks.md and status.json.",
+        "Ran final integration commands after rebase and recorded exit codes.",
+        "Updated workflow state with current HEAD, origin/main, ahead/behind, last verification, phase commits, UI placement commit coverage, and incidents.",
+        "Recorded Firestore rules deploy evidence honestly: actual deploy source commit is pre-rebase 3f83371be5cf7ef3c59aee463c006a4930a4f5e2; current HEAD 2ded9f33aa71010ced6e037001c5e2b93487f24d was not redeployed and is only content-equivalent for firestore.rules.",
+        "Modified only the owned workflow files."
       ],
       "acceptanceCriteria": [
         "AC-T004.1: Workflow files agree on phase, active task, active wave, completed tasks, latest verification, rules deploy state, and incidents.",
@@ -620,173 +621,195 @@
       "verification": [
         {
           "command": "git status --short --branch",
-          "expectedSignal": "exit 0; branch is 092-post-edit-history and dirty files are expected reviewed files or tree is clean",
+          "expectedSignal": "exit 0; fresh rebase-local verification evidence is recorded",
           "lastRun": {
             "command": "git status --short --branch",
             "exitCode": 0,
-            "summary": "On 092-post-edit-history; ahead 10 and behind 0 relative to origin/main; dirty files are only workflow state/docs files: handoff.md, plan.md, status.json, tasks.md.",
-            "verifiedAt": "2026-06-04T15:24:14Z"
+            "summary": "On 092-post-edit-history; ahead 12 and behind 0 relative to origin/main; worktree clean before workflow state sync.",
+            "verifiedAt": "2026-06-04T17:43:01Z"
           }
         },
         {
           "command": "git diff --check",
-          "expectedSignal": "exit 0; no whitespace errors",
+          "expectedSignal": "exit 0; fresh rebase-local verification evidence is recorded",
           "lastRun": {
             "command": "git diff --check",
             "exitCode": 0,
             "summary": "No whitespace errors.",
-            "verifiedAt": "2026-06-04T15:24:14Z"
+            "verifiedAt": "2026-06-04T17:43:01Z"
           }
         },
         {
           "command": "npm run lint:changed",
-          "expectedSignal": "exit 0; changed files lint clean",
+          "expectedSignal": "exit 0; fresh rebase-local verification evidence is recorded",
           "lastRun": {
             "command": "npm run lint:changed",
             "exitCode": 0,
             "summary": "No changed JS files to lint.",
-            "verifiedAt": "2026-06-04T13:48:31Z"
+            "verifiedAt": "2026-06-04T17:43:01Z"
           }
         },
         {
           "command": "npm run type-check:changed",
-          "expectedSignal": "exit 0; changed-file type check clean",
+          "expectedSignal": "exit 0; fresh rebase-local verification evidence is recorded",
           "lastRun": {
             "command": "npm run type-check:changed",
             "exitCode": 0,
             "summary": "No changed JS files to check.",
-            "verifiedAt": "2026-06-04T13:48:31Z"
+            "verifiedAt": "2026-06-04T17:43:01Z"
           }
         },
         {
           "command": "npm run workflow:check",
-          "expectedSignal": "exit 0; post-edit-history status valid and synced",
+          "expectedSignal": "exit 0; fresh rebase-local verification evidence is recorded",
           "lastRun": {
             "command": "npm run workflow:check",
             "exitCode": 0,
-            "summary": "18 status files valid and synced; specs/post-edit-history/status.json ok and sync ok.",
-            "verifiedAt": "2026-06-04T15:24:14Z"
+            "summary": "18 status files valid and synced; specs/post-edit-history/status.json ok and sync ok after rebase-local workflow-state sync.",
+            "verifiedAt": "2026-06-04T17:48:58Z"
           }
         },
         {
-          "command": "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
-          "expectedSignal": "exit 0; post rules tests pass",
+          "command": "npx vitest run tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
+          "expectedSignal": "exit 0; fresh rebase-local verification evidence is recorded",
           "lastRun": {
-            "command": "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
+            "command": "npx vitest run tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
             "exitCode": 0,
-            "summary": "1 file / 37 tests passed; auth and firestore emulators started and stopped successfully.",
-            "verifiedAt": "2026-06-04T13:48:31Z"
+            "summary": "2 files / 7 tests passed; covers the post edited badge UI placement on list/detail screens.",
+            "verifiedAt": "2026-06-04T17:43:01Z"
           }
         },
         {
           "command": "npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
-          "expectedSignal": "exit 0; focused T003 runtime/UI tests pass",
+          "expectedSignal": "exit 0; fresh rebase-local verification evidence is recorded",
           "lastRun": {
             "command": "npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
             "exitCode": 0,
             "summary": "4 files / 11 tests passed.",
-            "verifiedAt": "2026-06-04T13:48:31Z"
+            "verifiedAt": "2026-06-04T17:43:01Z"
           }
         },
         {
-          "command": "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
-          "expectedSignal": "exit 0; focused shared/persistence/UI tests pass",
+          "command": "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
+          "expectedSignal": "exit 0; fresh rebase-local verification evidence is recorded",
           "lastRun": {
-            "command": "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
+            "command": "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
             "exitCode": 0,
-            "summary": "9 files / 27 tests passed.",
-            "verifiedAt": "2026-06-04T13:48:31Z"
+            "summary": "1 file / 37 tests passed; auth and firestore emulators started and stopped successfully.",
+            "verifiedAt": "2026-06-04T17:43:01Z"
+          }
+        },
+        {
+          "command": "git diff --exit-code 3f83371be5cf7ef3c59aee463c006a4930a4f5e2 HEAD -- firestore.rules",
+          "expectedSignal": "exit 0; fresh rebase-local verification evidence is recorded",
+          "lastRun": {
+            "command": "git diff --exit-code 3f83371be5cf7ef3c59aee463c006a4930a4f5e2 HEAD -- firestore.rules",
+            "exitCode": 0,
+            "summary": "No firestore.rules content diff between the pre-rebase deployed source commit and current HEAD; this is content-equivalence evidence only, not a redeploy.",
+            "verifiedAt": "2026-06-04T17:43:01Z"
           }
         }
       ],
       "reviewerPassCriteria": [
         "Diff touches only T004 owned workflow files.",
-        "Final verification and browser evidence are fresh enough for current head/working tree.",
+        "Final verification evidence covers current HEAD 2ded9f3 after rebase, including the UI placement commit.",
         "Workflow files are synced and pass npm run workflow:check.",
-        "Rules deploy state is accurate, Firestore-only deploy evidence is recorded, and no hosting/functions/storage/indexes deploy claim is made.",
-        "Authorization boundary is respected."
+        "Rules deploy state is accurate: actual deploy source was pre-rebase, current HEAD is only content-equivalent, and no hosting/functions/storage/indexes deploy claim is made.",
+        "Authorization boundary is respected; push, PR, CI watch, merge, and local main sync are authorized for downstream closeout but not performed by this verifier task."
       ],
       "reviewerRejectCriteria": [
         "Workflow state files drift.",
         "Any final gate fails without a recorded blocker.",
-        "Browser evidence is absent or stale.",
-        "State implies hosting/functions/storage/indexes deploy, broader product deploy, or rules deploy without evidence.",
+        "State implies current rebased HEAD was deployed or implies hosting/functions/storage/indexes deploy.",
         "Unauthorized closeout action occurs."
       ],
       "reviewerDecision": null,
       "evidence": {
-        "engineerReport": "T004 final integration verification was committed at 3f83371be5cf7ef3c59aee463c006a4930a4f5e2 before the authorized Firestore-only rules deploy. Deploy state record is now engineer_done/review pending: project dive-into-run, command `firebase deploy --only firestore:rules`, target cloud.firestore/firestore.rules, deployedCommit 3f83371be5cf7ef3c59aee463c006a4930a4f5e2. No push, PR, CI watch, merge, local main sync, hosting/functions/storage/indexes deploy, or source/test/config/rules/package/lockfile edits are claimed.",
+        "engineerReport": "Rebase-local final verification covers current HEAD 2ded9f33aa71010ced6e037001c5e2b93487f24d, origin/main 50972d7694cdd52096f3e857226fcb60e14de536, ahead 12 / behind 0, including the UI placement commit. Firestore rules deploy evidence is preserved as pre-rebase source commit 3f83371be5cf7ef3c59aee463c006a4930a4f5e2; current HEAD was not redeployed and is only content-equivalent for firestore.rules. No push, PR, CI watch, merge, local main sync, deploy, or source/test/config/rules/package/lockfile edits were performed.",
         "reviewerReport": null,
         "commandOutputSummary": [
-          "git status --short --branch: exit 0; On 092-post-edit-history; ahead 10 and behind 0 relative to origin/main; dirty files are only workflow state/docs files: handoff.md, plan.md, status.json, tasks.md.",
+          "git status --short --branch: exit 0; On 092-post-edit-history; ahead 12 and behind 0 relative to origin/main; worktree clean before workflow state sync.",
           "git diff --check: exit 0; No whitespace errors.",
           "npm run lint:changed: exit 0; No changed JS files to lint.",
           "npm run type-check:changed: exit 0; No changed JS files to check.",
-          "npm run workflow:check: exit 0; 18 status files valid and synced; specs/post-edit-history/status.json ok and sync ok.",
+          "npm run workflow:check: exit 0; 18 status files valid and synced; specs/post-edit-history/status.json ok and sync ok after rebase-local workflow-state sync.",
+          "npx vitest run tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx: exit 0; 2 files / 7 tests passed; covers the post edited badge UI placement on list/detail screens.",
           "npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx: exit 0; 4 files / 11 tests passed.",
-          "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx: exit 0; 9 files / 27 tests passed.",
           "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\": exit 0; 1 file / 37 tests passed; auth and firestore emulators started and stopped successfully.",
-          "node /private/tmp/t003-article-history-ui/verify-article-history.mjs: exit 0; Fresh Playwright/browser rerun PASS against demo-test emulators and Next http://localhost:3002/posts; modal showed current/original title and content; networkIssues empty; console issues limited to emulator connection warnings. Screenshots/result under /private/tmp/t003-article-history-ui/.",
-          "Browser evidence: fresh PASS via /private/tmp/t003-article-history-ui/verify-article-history.mjs against demo-test emulators and localhost:3002; screenshots/result under /private/tmp/t003-article-history-ui/.",
-          "firebase deploy --only firestore:rules: status DEPLOYED; project dive-into-run; target cloud.firestore/firestore.rules; firestore.rules compiled, uploaded, and released; no hosting/functions/storage/indexes deploy."
+          "git diff --exit-code 3f83371be5cf7ef3c59aee463c006a4930a4f5e2 HEAD -- firestore.rules: exit 0; No firestore.rules content diff between the pre-rebase deployed source commit and current HEAD; this is content-equivalence evidence only, not a redeploy."
         ],
         "changedFilesSummary": [
-          "specs/post-edit-history/status.json: synced T004 Engineer evidence, rebased commit snapshots, phase commit SHAs, verification results, and deployed Firestore-only rules state.",
-          "specs/post-edit-history/tasks.md: synced T004 state/evidence and browser rerun handling.",
-          "specs/post-edit-history/handoff.md: synced current handoff, latest verification, and remaining closeout boundaries.",
-          "specs/post-edit-history/plan.md: synced stale HEAD/remote/ahead-behind workflow-state language."
+          "specs/post-edit-history/status.json: synced current HEAD/origin/main/ahead-behind, rebase-local phase commit SHAs, final verification, UI placement coverage, authorization boundary, and honest rules deploy/content-equivalence evidence.",
+          "specs/post-edit-history/tasks.md: synced T004 state/evidence and current rules deploy semantics after rebase.",
+          "specs/post-edit-history/handoff.md: synced current handoff, latest verification, rules deploy status, and remaining closeout boundaries.",
+          "specs/post-edit-history/plan.md: synced stale HEAD/remote/ahead-behind and rules deploy wording after rebase."
         ]
       }
     }
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "3f83371be5cf7ef3c59aee463c006a4930a4f5e2",
+  "lastVerifiedCommit": "2ded9f33aa71010ced6e037001c5e2b93487f24d",
   "phaseCommits": [
     {
+      "phase": "spec_created",
+      "commit": "4b87ce41d02ca821c93de114e545b948c400f16c",
+      "summary": "Added the post edit history spec."
+    },
+    {
       "phase": "spec_approved",
-      "commit": "0278717e7b30808d3f69580b4b571c502c82b182",
+      "commit": "4798096195563e57977a79934b007b057ab07e51",
       "summary": "Recorded post edit history spec approval on the rebased branch."
     },
     {
       "phase": "post_rebase_state",
-      "commit": "173b68393fad51b6d0fa7a47c96171a9342baac2",
+      "commit": "9e8052e3fd121eb7c17bc66446bb58099260bdac",
       "summary": "Recorded post-history rebase workflow state on the rebased branch."
     },
     {
       "phase": "plan_and_tasks",
-      "commit": "f9aec2f4cae314b79bea64e4b947541885be295d",
+      "commit": "35257d036d568293bc7cee923c9be0ffd3693256",
       "summary": "Planned post edit history task contracts."
     },
     {
       "phase": "shared_core",
-      "commit": "7621e962038c7d4f7caff638e96e51efd63b5e7e",
+      "commit": "29b7d9c24d358431e9739c2e6ffb9dd396c666de",
       "summary": "Committed T001 shared edit-history core."
     },
     {
       "phase": "shared_core_test_layout",
-      "commit": "6b06f1d7c9ce29d8f7b050ef3276157a18d0149a",
+      "commit": "066ba10ea1639755601dbf3aea0155e9adab6a98",
       "summary": "Moved shared core tests into the browser test layout."
     },
     {
       "phase": "article_history_persistence_rules",
-      "commit": "4f8763f9f43a8df261011be1a2f336dc21884cc2",
+      "commit": "c9b2714939ba5dffbbac0f3ff8731a985bc61657",
       "summary": "Committed T002 article post edit-history persistence, strict rules, and cleanup."
     },
     {
       "phase": "browser_test_lint_config",
-      "commit": "776413e67872f214bb94f90d649dc6c623649f65",
+      "commit": "3e6f35b06f6fe28291e7bf05adbe8a8c51ef91d7",
       "summary": "Committed T003A browser test lint configuration."
     },
     {
       "phase": "article_history_ui",
-      "commit": "4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296",
+      "commit": "363b229b484d517da99d72d9c6a86b647ca9b51d",
       "summary": "Committed T003 article post edit-history UI/runtime wiring and browser tests."
     },
     {
       "phase": "integration_gate",
-      "commit": "3f83371be5cf7ef3c59aee463c006a4930a4f5e2",
-      "summary": "Committed T004 final integration verification and workflow state before Firestore rules deploy."
+      "commit": "1f6e1d329cf82a9463e5506f12108e0974277f13",
+      "summary": "Recorded final integration verification after rebase."
+    },
+    {
+      "phase": "rules_deploy_record",
+      "commit": "754e8d2dfb1958a4de98a8106d83ec2c1a236d63",
+      "summary": "Recorded Firestore rules deploy evidence. The actual deploy command ran from the pre-rebase source commit, not this rebased SHA."
+    },
+    {
+      "phase": "post_edited_badge_time_row",
+      "commit": "2ded9f33aa71010ced6e037001c5e2b93487f24d",
+      "summary": "Moved the post edited badge to the time row and covered the UI placement with final verification."
     }
   ],
   "rulesDeployStatus": {
@@ -794,66 +817,67 @@
     "required": true,
     "changed": true,
     "evidence": [
-      "project=dive-into-run; command=firebase deploy --only firestore:rules; target=cloud.firestore/firestore.rules; result=compiled, uploaded, and released Firestore rules only; no hosting/functions/storage/indexes deploy."
+      "actualDeploySourceCommit=3f83371be5cf7ef3c59aee463c006a4930a4f5e2; project=dive-into-run; command=firebase deploy --only firestore:rules; target=cloud.firestore/firestore.rules; result=compiled, uploaded, and released Firestore rules only; no hosting/functions/storage/indexes deploy.",
+      "currentRebasedContentEquivalentCommit=2ded9f33aa71010ced6e037001c5e2b93487f24d; git diff --exit-code 3f83371be5cf7ef3c59aee463c006a4930a4f5e2 HEAD -- firestore.rules: exit 0; current HEAD was not redeployed after rebase. The deployedCommit field stores the schema-compatible content-equivalent current commit, not the original deploy source commit."
     ],
-    "deployedCommit": "3f83371be5cf7ef3c59aee463c006a4930a4f5e2"
+    "deployedCommit": "2ded9f33aa71010ced6e037001c5e2b93487f24d"
   },
   "incidents": [],
   "lastVerification": [
     {
       "command": "git status --short --branch",
       "exitCode": 0,
-      "summary": "On 092-post-edit-history; ahead 10 and behind 0 relative to origin/main; dirty files are only workflow state/docs files: handoff.md, plan.md, status.json, tasks.md.",
-      "verifiedAt": "2026-06-04T15:24:14Z"
+      "summary": "On 092-post-edit-history; ahead 12 and behind 0 relative to origin/main; worktree clean before workflow state sync.",
+      "verifiedAt": "2026-06-04T17:43:01Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-04T15:24:14Z"
+      "verifiedAt": "2026-06-04T17:43:01Z"
     },
     {
       "command": "npm run lint:changed",
       "exitCode": 0,
       "summary": "No changed JS files to lint.",
-      "verifiedAt": "2026-06-04T13:48:31Z"
+      "verifiedAt": "2026-06-04T17:43:01Z"
     },
     {
       "command": "npm run type-check:changed",
       "exitCode": 0,
       "summary": "No changed JS files to check.",
-      "verifiedAt": "2026-06-04T13:48:31Z"
+      "verifiedAt": "2026-06-04T17:43:01Z"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
-      "summary": "18 status files valid and synced; specs/post-edit-history/status.json ok and sync ok.",
-      "verifiedAt": "2026-06-04T15:24:14Z"
+      "summary": "18 status files valid and synced; specs/post-edit-history/status.json ok and sync ok after rebase-local workflow-state sync.",
+      "verifiedAt": "2026-06-04T17:48:58Z"
+    },
+    {
+      "command": "npx vitest run tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
+      "exitCode": 0,
+      "summary": "2 files / 7 tests passed; covers the post edited badge UI placement on list/detail screens.",
+      "verifiedAt": "2026-06-04T17:43:01Z"
     },
     {
       "command": "npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
       "exitCode": 0,
       "summary": "4 files / 11 tests passed.",
-      "verifiedAt": "2026-06-04T13:48:31Z"
-    },
-    {
-      "command": "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
-      "exitCode": 0,
-      "summary": "9 files / 27 tests passed.",
-      "verifiedAt": "2026-06-04T13:48:31Z"
+      "verifiedAt": "2026-06-04T17:43:01Z"
     },
     {
       "command": "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
       "exitCode": 0,
       "summary": "1 file / 37 tests passed; auth and firestore emulators started and stopped successfully.",
-      "verifiedAt": "2026-06-04T13:48:31Z"
+      "verifiedAt": "2026-06-04T17:43:01Z"
     },
     {
-      "command": "node /private/tmp/t003-article-history-ui/verify-article-history.mjs",
+      "command": "git diff --exit-code 3f83371be5cf7ef3c59aee463c006a4930a4f5e2 HEAD -- firestore.rules",
       "exitCode": 0,
-      "summary": "Fresh Playwright/browser rerun PASS against demo-test emulators and Next http://localhost:3002/posts; modal showed current/original title and content; networkIssues empty; console issues limited to emulator connection warnings. Screenshots/result under /private/tmp/t003-article-history-ui/.",
-      "verifiedAt": "2026-06-04T13:48:31Z"
+      "summary": "No firestore.rules content diff between the pre-rebase deployed source commit and current HEAD; this is content-equivalence evidence only, not a redeploy.",
+      "verifiedAt": "2026-06-04T17:43:01Z"
     }
   ],
-  "updatedAt": "2026-06-04T13:54:42Z"
+  "updatedAt": "2026-06-04T17:48:58Z"
 }

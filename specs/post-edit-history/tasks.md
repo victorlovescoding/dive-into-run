@@ -17,68 +17,26 @@
 - Phase: `integration`.
 - Active task: `T004`.
 - Active wave: `wave-4`.
-- Latest reviewer decision: `review_passed` for `T003` article post list/detail UI wiring and browser evidence. T004 final integration was committed at `3f83371`; deploy-state record is pending review and must not be treated as feature closeout.
-- Blocked: no. The old T003 lint/browser blocker is resolved: changed-file lint passed without `toHaveBeenCalledTimes(N)`, and Browser/Playwright evidence verified the article history affordance/modal on emulator-backed local app data.
-- Next gate: review this deploy-state workflow-only diff. Do not mark the feature closed; push, PR, CI watch, merge, and local `main` sync remain unauthorized.
-- Authorization boundary: `edit=true`, `commit=false` for this deploy-state update; `push=false`, `pullRequest=false`, `ciWatch=false`, `merge=false`, `localMainSync=false`, `deployFirestoreRules=true` for the already executed Firestore-only rules deploy. Release Manager handles any later commit.
-- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`, tracking `origin/main` at `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 10 and behind 0 relative to `origin/main`; after this edit, dirty scope must remain only workflow files: `specs/post-edit-history/handoff.md`, `specs/post-edit-history/plan.md`, `specs/post-edit-history/status.json`, and `specs/post-edit-history/tasks.md`.
-- Rules deploy status: `deployed`, with `required=true`, `changed=true`, deployedCommit=`3f83371be5cf7ef3c59aee463c006a4930a4f5e2`, project `dive-into-run`, command `firebase deploy --only firestore:rules`, and target `cloud.firestore/firestore.rules`; hosting/functions/storage/indexes were not deployed.
+- Latest reviewer decision: `review_passed` for `T003` article post list/detail UI wiring and browser evidence. T004 remains `engineer_done` and awaits Integration Reviewer; do not mark the feature closed yet.
+- Blocked: no.
+- Next gate: Integration Reviewer review of this rebase-local workflow-state diff. Push, PR, CI watch, merge, and local `main` sync are authorized for downstream closeout but were not performed by this verifier task.
+- Authorization boundary: `edit=true`, `commit=false` for this verifier state update; `push=true`, `pullRequest=true`, `ciWatch=true`, `merge=true`, and `localMainSync=true` are authorized for downstream closeout only; `deployFirestoreRules=true` records the already executed Firestore-only rules deploy and does not authorize another deploy.
+- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `2ded9f33aa71010ced6e037001c5e2b93487f24d`, tracking `origin/main` at `50972d7694cdd52096f3e857226fcb60e14de536`; branch reports ahead 12 and behind 0 relative to `origin/main`.
+- Rules deploy status: `deployed` for Firestore rules content, with `required=true` and `changed=true`. Actual deploy source commit was pre-rebase `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; current HEAD `2ded9f33aa71010ced6e037001c5e2b93487f24d` was not redeployed. Verified content equivalence with `git diff --exit-code 3f83371be5cf7ef3c59aee463c006a4930a4f5e2 HEAD -- firestore.rules` exit 0. The `deployedCommit` field in `status.json` is set to current HEAD only because workflow schema requires an ancestor ref; evidence records the actual deployed source.
+- UI placement commit: `2ded9f33aa71010ced6e037001c5e2b93487f24d` (`2ded9f3 Move post edited badge to time row`) is covered by fresh focused UI tests and the 4-file runtime/UI suite.
 - Incidents: none.
-- Planning evidence:
-  - Planner report: Produced serialized T001-T004 implementation task contracts; no production code, tests, rules, package files, config, or lockfiles modified.
-  - T001 Engineer report: Implemented shared edit-history core, generic modal/runtime primitives, and comment compatibility within T001 owned files.
-  - T001 Reviewer report: `review_passed` after a stale-load issue was fixed.
-  - Command output summary:
-    - `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx`: exit 0; 3 files / 11 tests passed.
-    - `npx vitest run tests/browser/runtime/hooks/usePostComments.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 2 files / 14 tests passed.
-    - `npx vitest run tests/browser/runtime/hooks/useCommentMutations.test.jsx`: exit 0; 1 file / 4 tests passed.
-    - `git status --short --branch`: exit 0; on `092-post-edit-history`; branch ahead 5 of `origin/main`; dirty files are the post-rebase test-layout migration plus workflow state files.
-    - `git diff --check`: exit 0; no whitespace errors.
-    - `npm run workflow:check`: exit 0; 17 status file(s) valid and 17 status file(s) synced; `specs/post-edit-history/status.json` ok and sync ok.
-  - Changed files summary:
-    - `specs/post-edit-history/plan.md`: decision-complete architecture, file responsibilities, verification strategy, and task slices.
-    - `specs/post-edit-history/tasks.md`: dispatchable task contracts and dependency graph.
-    - `specs/post-edit-history/handoff.md`: next-session state and first dispatchable task.
-    - `specs/post-edit-history/status.json`: v3 machine-readable planning state.
-  - Post-rebase test-layout migration evidence:
-    - T001 browser/jsdom tests moved from `src/**` to `tests/browser/**`.
-    - All workflow verification commands that target browser/jsdom tests now use `tests/browser/...`.
-    - Fresh migration verification passed: focused Vitest, full type-check, strict lint, workflow check, `git diff --check`, and `git status --short --branch`.
-    - Migration is committed in current HEAD before T002 completion state sync.
-  - T002 evidence:
-    - Engineer report: Implemented article post edit-history persistence, strict Firestore parent/history validation, and post-level history cleanup.
-    - Reviewer report: `review_passed`; required follow-up was to update planned Firestore rules verification commands to `--only auth,firestore`, keep rules deploy required, and set `rulesDeployStatus.changed=true`.
-    - Command output summary:
-      - `npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js`: exit 0; 2 files / 5 tests passed.
-      - `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`: exit 0; 1 file / 37 tests passed.
-      - `git diff -- firestore.rules`: exit 0; no event-comment rules hunks changed.
-      - `npm run type-check`: exit 0; type check completed.
-      - `npm run lint -- --max-warnings 0`: exit 0; strict lint completed.
-      - `git diff --check`: exit 0; no whitespace errors.
-  - T003A evidence:
-    - Engineer report: Fixed ESLint project-service coverage for browser tests in `eslint.config.mjs`.
-    - Reviewer report: `review_passed`; config blocker is resolved and `tests/browser/**/*.jsx` remains linted.
-    - Command output summary:
-      - `npm run lint:changed`: exit non-zero; project-service/default-project parser error is resolved, and the remaining failure is a real T003-owned no-restricted-syntax violation at `tests/browser/ui/posts/PostDetailScreen.test.jsx:185` for `toHaveBeenCalledTimes`.
-  - T003 follow-up evidence:
-    - Reviewer verdict: `review_passed`; findings none.
-    - `PostCard` shows article-level `已編輯` only when `post.isEdited && onViewArticleHistory`, and calls the article handler.
-    - List/detail runtimes use shared `useEditHistoryModal` plus T002 `fetchPostHistory`.
-    - Local edit sets `isEdited: true`.
-    - Detail comment history wiring remains intact.
-    - Tests cover list/detail article history and detail comment regression; no `toHaveBeenCalledTimes(N)` remains.
-    - Fresh verification:
-      - `npx vitest run tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 1 file / 4 tests passed.
-      - `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 4 files / 11 tests passed.
-      - `npm run lint:changed`: exit 0; only existing React version warning.
-      - `npm run type-check:changed`: exit 0.
-      - `git diff --check`: exit 0.
-    - Browser verification: PASS via Playwright/emulator using project `demo-test`, Auth 9099, Firestore 8080, Storage 9199, and Next on `localhost:3002` with emulator env/fake config; did not use `localhost:3000` or production.
-    - Browser screenshots:
-      - `/private/tmp/t003-article-history-ui/playwright-article-edited-button-desktop.png`
-      - `/private/tmp/t003-article-history-ui/playwright-article-history-modal-desktop.png`
-      - `/private/tmp/t003-article-history-ui/playwright-article-edited-button-mobile.png`
-    - Modal evidence included old title/content `T003 old title 2026-06-04T13-04-19-806Z` and `T003 old content 2026-06-04T13-04-19-806Z`, plus `目前版本`, `原始版本`, and new title/content.
+- Final verification evidence:
+| Command | Exit | Evidence |
+| ------- | ---- | -------- |
+| `git status --short --branch` | 0 | On `092-post-edit-history`; ahead 12 and behind 0 relative to `origin/main`; worktree clean before workflow state sync. |
+| `git diff --check` | 0 | No whitespace errors. |
+| `npm run lint:changed` | 0 | No changed JS files to lint. |
+| `npm run type-check:changed` | 0 | No changed JS files to check. |
+| `npm run workflow:check` | 0 | 18 status files valid and synced; specs/post-edit-history/status.json ok and sync ok after rebase-local workflow-state sync. |
+| `npx vitest run tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | 0 | 2 files / 7 tests passed; covers post edited badge placement on list/detail screens. |
+| `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | 0 | 4 files / 11 tests passed. |
+| `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | 0 | 1 file / 37 tests passed; auth/firestore emulators started and stopped successfully. |
+| `git diff --exit-code 3f83371be5cf7ef3c59aee463c006a4930a4f5e2 HEAD -- firestore.rules` | 0 | No `firestore.rules` content diff between the pre-rebase deployed source commit and current HEAD; content-equivalence evidence only, not a redeploy. |
 
 ## Dependency Graph
 
@@ -476,7 +434,7 @@ Evidence:
 - **Engineer**: UI Runtime Engineer
 - **Reviewer**: UI Runtime Reviewer
 - **Commit checkpoint**: `article_history_ui` after Reviewer PASS and fresh verification
-- **Last verified commit**: `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296` (`article_history_ui`); T003 is completed and committed on the current rebased HEAD
+- **Last verified commit**: pre-rebase `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`; rebased `article_history_ui` checkpoint is `363b229b484d517da99d72d9c6a86b647ca9b51d`.
 - **Authorization boundary**: edit=yes, commit=yes after Reviewer PASS and fresh verification, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required; carry T002 changed=true state; deploy remains unauthorized
 - **Incidents**: none
@@ -619,22 +577,22 @@ Evidence:
 - **Wave**: `wave-4`
 - **Engineer**: Integration Verifier
 - **Reviewer**: Integration Reviewer
-- **Commit checkpoint**: `integration_gate` after Reviewer PASS and fresh verification if workflow state changed
-- **Last verified commit**: `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`
-- **Authorization boundary**: edit=yes for workflow state only, commit=no for this deploy-state update, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=yes for the already executed Firestore-only rules deploy
-- **Rules deploy status**: deployed; `firestore.rules` changed in T002, required=true, changed=true, deployedCommit=`3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; project `dive-into-run`, command `firebase deploy --only firestore:rules`, target `cloud.firestore/firestore.rules`
+- **Commit checkpoint**: downstream commit only after Reviewer PASS and fresh verification; this verifier did not stage or commit
+- **Last verified commit**: `2ded9f33aa71010ced6e037001c5e2b93487f24d`
+- **Authorization boundary**: edit=yes for workflow state only, commit=no for this verifier update, push=yes/pullRequest=yes/ciWatch=yes/merge=yes/localMainSync=yes for downstream closeout only, deployFirestoreRules=yes only to record the already executed Firestore-only rules deploy
+- **Rules deploy status**: deployed content, not redeployed HEAD. Actual deploy source commit was pre-rebase `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; current HEAD `2ded9f33aa71010ced6e037001c5e2b93487f24d` is `firestore.rules` content-equivalent by `git diff --exit-code 3f83371be5cf7ef3c59aee463c006a4930a4f5e2 HEAD -- firestore.rules` exit 0. No hosting/functions/storage/indexes deploy.
 - **Incidents**: none
 
 Scope:
 
-- Run final integration verification after T001, T002, T003A, and T003 are `completed`.
-- Sync `tasks.md`, `handoff.md`, and `status.json` with final local evidence.
-- Record the authorized Firestore-only rules deploy accurately without claiming hosting/functions/storage/indexes deploy or broader product deploy.
+- Run final integration verification after rebase.
+- Sync `tasks.md`, `handoff.md`, `plan.md`, and `status.json` with current HEAD, origin/main, ahead/behind, phase commits, final verification, UI placement coverage, and rules deploy/content-equivalence evidence.
+- Record Firestore rules deploy honestly: deployed command/source evidence is pre-rebase; current HEAD was not redeployed.
 
 Non-scope:
 
 - Do not edit production code, tests, rules, package files, config, or lockfiles.
-- Do not push, open PR, watch CI, merge, sync local `main`, edit source/tests/config/rules/package/lockfile, or run another deploy.
+- Do not push, open PR, watch CI, merge, sync local `main`, or run another deploy.
 - Do not mark tasks completed without Reviewer PASS.
 
 Owned files:
@@ -642,19 +600,7 @@ Owned files:
 - `specs/post-edit-history/tasks.md`
 - `specs/post-edit-history/handoff.md`
 - `specs/post-edit-history/status.json`
-- `specs/post-edit-history/plan.md` only for stale HEAD/remote/T004 language sync
-
-Read-only context:
-
-- `AGENTS.md`
-- `docs/superpowers/workflow.md`
-- `docs/superpowers/task-contract.md`
-- `docs/superpowers/status.schema.json`
-- `specs/post-edit-history/spec.md`
 - `specs/post-edit-history/plan.md`
-- T001-T003A/T003 Engineer and Reviewer reports
-- `git status --short --branch`
-- `git diff --name-only`
 
 Dependencies:
 
@@ -663,76 +609,81 @@ Dependencies:
 - `T003A`
 - `T003`
 
-Browser evidence:
+Engineer instructions completed:
 
-- Fresh browser verification reran via `node /private/tmp/t003-article-history-ui/verify-article-history.mjs` against `demo-test` emulators and `http://localhost:3002/posts`. Final PASS result and screenshots are under `/private/tmp/t003-article-history-ui/`.
-
-Engineer instructions:
-
-- Confirmed T001, T002, T003A, and T003 are `completed` in `tasks.md` and `status.json`.
-- Ran final integration commands one at a time and recorded exit codes and concise signals.
-- Updated workflow state to reflect latest task states, current head, last verification, phase commits, rules deploy state, and incidents.
-- Because the authorized deploy completed, recorded `rulesDeployStatus.state=deployed`, `required=true`, `changed=true`, deployedCommit=`3f83371be5cf7ef3c59aee463c006a4930a4f5e2`, and Firestore-only deploy evidence.
-- Modified only T004 workflow files.
+- Confirmed T001, T002, T003A, and T003 are `completed` in workflow state.
+- Ran final integration commands after rebase and recorded exit codes.
+- Recorded rebase-local phase commits:
+  - `spec_created` -> `4b87ce41d02ca821c93de114e545b948c400f16c`
+  - `spec_approved` -> `4798096195563e57977a79934b007b057ab07e51`
+  - `post_rebase_state` -> `9e8052e3fd121eb7c17bc66446bb58099260bdac`
+  - `plan_and_tasks` -> `35257d036d568293bc7cee923c9be0ffd3693256`
+  - `shared_core` -> `29b7d9c24d358431e9739c2e6ffb9dd396c666de`
+  - `shared_core_test_layout` -> `066ba10ea1639755601dbf3aea0155e9adab6a98`
+  - `article_history_persistence_rules` -> `c9b2714939ba5dffbbac0f3ff8731a985bc61657`
+  - `browser_test_lint_config` -> `3e6f35b06f6fe28291e7bf05adbe8a8c51ef91d7`
+  - `article_history_ui` -> `363b229b484d517da99d72d9c6a86b647ca9b51d`
+  - `integration_gate` -> `1f6e1d329cf82a9463e5506f12108e0974277f13`
+  - `rules_deploy_record` -> `754e8d2dfb1958a4de98a8106d83ec2c1a236d63`
+  - `post_edited_badge_time_row` -> `2ded9f33aa71010ced6e037001c5e2b93487f24d`
+- Recorded that UI placement commit `2ded9f33aa71010ced6e037001c5e2b93487f24d` is covered by verification.
+- Recorded rules deploy evidence without claiming current HEAD was deployed.
 
 Acceptance criteria:
 
-- AC-T004.1: `tasks.md`, `handoff.md`, and `status.json` agree on phase, active task, active wave, completed tasks, latest verification, rules deploy state, and incidents.
+- AC-T004.1: Workflow files agree on phase, active task, active wave, completed tasks, latest verification, rules deploy state, and incidents.
 - AC-T004.2: Final commands pass or any failure is recorded as `blocked` with a concrete owner/next decision.
-- AC-T004.3: Browser evidence is present and reviewed for article list/detail and comment history regression.
-- AC-T004.4: Firestore rules deploy claim is backed by deploy evidence; no hosting/functions/storage/indexes or broader product deploy claim is made.
-- AC-T004.5: No unauthorized push, PR, CI watch, merge, local main sync, or rules deploy occurs.
+- AC-T004.3: UI placement and post edit history runtime/UI behavior are covered by fresh tests.
+- AC-T004.4: Firestore rules deploy claim is backed by deploy evidence; current HEAD is recorded only as content-equivalent, not redeployed.
+- AC-T004.5: No unauthorized push, PR, CI watch, merge, local main sync, or deploy occurs in this verifier task.
 
 Verification commands and expected signal:
 
-| Command | Expected signal | Last run |
-| ------- | --------------- | -------- |
-| `git status --short --branch` | exit 0; branch is `092-post-edit-history`; only workflow files are dirty after deploy-state edit | exit 0; ahead 10 / behind 0; dirty files are only workflow state/docs files: `handoff.md`, `plan.md`, `status.json`, `tasks.md` |
-| `git diff --check` | exit 0; no whitespace errors | exit 0; no whitespace errors |
-| `npm run lint:changed` | exit 0; changed files lint clean | exit 0; no changed JS files to lint |
-| `npm run type-check:changed` | exit 0; changed-file type check clean | exit 0; no changed JS files to check |
-| `npm run workflow:check` | exit 0; `specs/post-edit-history/status.json` valid and synced | exit 0; 18 status files valid and synced; `specs/post-edit-history/status.json` ok and sync ok |
-| `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | exit 0; post rules tests pass | exit 0; 1 file / 37 tests passed |
-| `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; focused T003 runtime/UI tests pass | exit 0; 4 files / 11 tests passed |
-| `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; focused shared/persistence/UI tests pass | exit 0; 9 files / 27 tests passed |
-| `node /private/tmp/t003-article-history-ui/verify-article-history.mjs` | exit 0; browser article create/edit/history journey passes against local demo-test app | exit 0; fresh PASS, networkIssues empty, emulator connection warnings only |
+| Command | Exit | Last run |
+| ------- | ---- | -------- |
+| `git status --short --branch` | 0 | On `092-post-edit-history`; ahead 12 and behind 0 relative to `origin/main`; worktree clean before workflow state sync. |
+| `git diff --check` | 0 | No whitespace errors. |
+| `npm run lint:changed` | 0 | No changed JS files to lint. |
+| `npm run type-check:changed` | 0 | No changed JS files to check. |
+| `npm run workflow:check` | 0 | 18 status files valid and synced; specs/post-edit-history/status.json ok and sync ok after rebase-local workflow-state sync. |
+| `npx vitest run tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | 0 | 2 files / 7 tests passed; covers post edited badge placement on list/detail screens. |
+| `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | 0 | 4 files / 11 tests passed. |
+| `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | 0 | 1 file / 37 tests passed; auth/firestore emulators started and stopped successfully. |
+| `git diff --exit-code 3f83371be5cf7ef3c59aee463c006a4930a4f5e2 HEAD -- firestore.rules` | 0 | No `firestore.rules` content diff between the pre-rebase deployed source commit and current HEAD; content-equivalence evidence only, not a redeploy. |
 
 Reviewer PASS criteria:
 
 - Diff touches only T004 owned workflow files.
-- Final verification and browser evidence are fresh enough for the current head/working tree.
+- Final verification evidence covers current HEAD `2ded9f3` after rebase, including the UI placement commit.
 - Workflow files are synced and pass `npm run workflow:check`.
-- Rules deploy state is accurate, Firestore-only deploy evidence is recorded, and no hosting/functions/storage/indexes deploy claim is made.
+- Rules deploy state is honest: actual deploy source was pre-rebase, current HEAD is only content-equivalent, and no hosting/functions/storage/indexes deploy claim is made.
 - Authorization boundary is respected.
 
 Reviewer REJECT criteria:
 
 - Workflow state files drift.
 - Any final gate fails without a recorded blocker.
-- Browser evidence is absent or stale.
-- Summary/state implies hosting/functions/storage/indexes deploy, broader product deploy, or rules deploy without deploy evidence.
+- State implies current rebased HEAD was deployed or implies hosting/functions/storage/indexes deploy.
 - Unauthorized closeout action occurs.
 
 Evidence:
 
-- Engineer report: T004 final integration verification was committed at `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`, `origin/main` remains `14515eee2d730d25c7f73fa8eb5c1315504787e8`, ahead 10 / behind 0. Firestore-only deploy state is recorded and review is pending; no Reviewer PASS is invented for this deploy-state update.
+- Engineer report: Rebase-local final verification covers current HEAD `2ded9f33aa71010ced6e037001c5e2b93487f24d`, origin/main `50972d7694cdd52096f3e857226fcb60e14de536`, ahead 12 / behind 0, including UI placement commit `2ded9f3`. Firestore rules deploy evidence is preserved as pre-rebase source commit `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; current HEAD was not redeployed and is only content-equivalent for `firestore.rules`. No push, PR, CI watch, merge, local main sync, deploy, or source/test/config/rules/package/lockfile edits were performed.
 - Reviewer report: pending
 - Command output summary:
-  - `git status --short --branch`: exit 0; ahead 10 / behind 0; dirty files are only workflow state/docs files: `handoff.md`, `plan.md`, `status.json`, `tasks.md`.
-  - `git diff --check`: exit 0; no whitespace errors.
-  - `npm run lint:changed`: exit 0; no changed JS files to lint.
-  - `npm run type-check:changed`: exit 0; no changed JS files to check.
-  - `npm run workflow:check`: exit 0; 18 status files valid and synced; `specs/post-edit-history/status.json` ok and sync ok.
-  - `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 4 files / 11 tests passed.
-  - `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 9 files / 27 tests passed.
-  - `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`: exit 0; 1 file / 37 tests passed.
-  - `node /private/tmp/t003-article-history-ui/verify-article-history.mjs`: exit 0; browser PASS against demo-test emulators and localhost:3002.
+  - | `git status --short --branch` | 0 | On `092-post-edit-history`; ahead 12 and behind 0 relative to `origin/main`; worktree clean before workflow state sync. |
+  - | `git diff --check` | 0 | No whitespace errors. |
+  - | `npm run lint:changed` | 0 | No changed JS files to lint. |
+  - | `npm run type-check:changed` | 0 | No changed JS files to check. |
+  - | `npm run workflow:check` | 0 | 18 status files valid and synced; specs/post-edit-history/status.json ok and sync ok after rebase-local workflow-state sync. |
+  - | `npx vitest run tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | 0 | 2 files / 7 tests passed; covers post edited badge placement on list/detail screens. |
+  - | `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | 0 | 4 files / 11 tests passed. |
+  - | `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | 0 | 1 file / 37 tests passed; auth/firestore emulators started and stopped successfully. |
+  - | `git diff --exit-code 3f83371be5cf7ef3c59aee463c006a4930a4f5e2 HEAD -- firestore.rules` | 0 | No `firestore.rules` content diff between the pre-rebase deployed source commit and current HEAD; content-equivalence evidence only, not a redeploy. |
 - Changed files summary:
-  - `specs/post-edit-history/status.json`: synced T004/deploy state evidence, commit snapshots, phase commit SHAs, verification results, and deployed Firestore-only rules state.
-  - `specs/post-edit-history/tasks.md`: synced T004 state/evidence and browser rerun handling.
-  - `specs/post-edit-history/handoff.md`: synced current handoff, latest verification, and remaining closeout boundaries.
-  - `specs/post-edit-history/plan.md`: synced stale HEAD/remote/ahead-behind workflow-state language.
-- Browser evidence: fresh PASS via Playwright/emulator using project `demo-test`, Auth 9099, Firestore 8080, Storage 9199, and Next on `localhost:3002`; screenshots/result under `/private/tmp/t003-article-history-ui/`. Setup-only reruns failed until the local emulator Auth/profile avatar was set to `/default-avatar.png`; no repo files changed for setup.
-- Phase commits: `spec_approved` -> `0278717e7b30808d3f69580b4b571c502c82b182`; `post_rebase_state` -> `173b68393fad51b6d0fa7a47c96171a9342baac2`; `plan_and_tasks` -> `f9aec2f4cae314b79bea64e4b947541885be295d`; `shared_core` -> `7621e962038c7d4f7caff638e96e51efd63b5e7e`; `shared_core_test_layout` -> `6b06f1d7c9ce29d8f7b050ef3276157a18d0149a`; `article_history_persistence_rules` -> `4f8763f9f43a8df261011be1a2f336dc21884cc2`; `browser_test_lint_config` -> `776413e67872f214bb94f90d649dc6c623649f65`; `article_history_ui` -> `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`; `integration_gate` -> `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`.
-- Rules deploy status: deployed; required=true; changed=true; deployedCommit=`3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; evidence: project `dive-into-run`, command `firebase deploy --only firestore:rules`, target `cloud.firestore/firestore.rules`; no hosting/functions/storage/indexes deploy.
+  - `specs/post-edit-history/status.json`: synced current HEAD/origin/main/ahead-behind, rebase-local phase commit SHAs, final verification, UI placement coverage, authorization boundary, and honest rules deploy/content-equivalence evidence.
+  - `specs/post-edit-history/tasks.md`: synced T004 state/evidence and current rules deploy semantics after rebase.
+  - `specs/post-edit-history/handoff.md`: synced current handoff, latest verification, rules deploy status, and remaining closeout boundaries.
+  - `specs/post-edit-history/plan.md`: synced stale HEAD/remote/ahead-behind and rules deploy wording after rebase.
+- Rules deploy status: deployed content only; actual deploy source commit `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; current HEAD `2ded9f33aa71010ced6e037001c5e2b93487f24d` was not redeployed and is only content-equivalent.
 - Incidents: none

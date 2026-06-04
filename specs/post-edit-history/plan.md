@@ -3,11 +3,16 @@
 ## Summary
 
 Current phase: `integration`. T001, T002, T003A, and T003 are completed and
-committed. T003 article post list/detail UI wiring is committed as
-`article_history_ui` at `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296` with
-Reviewer `review_passed` and Browser/Playwright evidence PASS. T004 final
-integration verification was committed as `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; the Firestore-only
-rules deploy from that commit is now recorded and awaits deploy-state review.
+committed. Current rebased HEAD is `2ded9f33aa71010ced6e037001c5e2b93487f24d`
+(`2ded9f3 Move post edited badge to time row`), with `origin/main` at
+`50972d7694cdd52096f3e857226fcb60e14de536`; the branch is ahead 12 and behind 0. Fresh final
+verification after rebase covers the UI placement commit.
+
+Firestore rules deploy evidence is preserved as Firestore-only deploy from the
+pre-rebase source commit `3f83371be5cf7ef3c59aee463c006a4930a4f5e2` to project `dive-into-run` with
+`firebase deploy --only firestore:rules`. Current HEAD was not redeployed;
+`git diff --exit-code 3f83371be5cf7ef3c59aee463c006a4930a4f5e2 HEAD -- firestore.rules` proves rules content
+equivalence only.
 
 The implementation uses Shared Core + Resource Adapters. Shared edit-history
 code owns generic affordance/modal/state/snapshot concepts. Article posts own
@@ -116,40 +121,26 @@ wiring.
 ## Workflow State
 
 - Status schema: v3.
-- Current head snapshot: captured from `092-post-edit-history` at
-  `3f83371be5cf7ef3c59aee463c006a4930a4f5e2` (`3f83371 Record final integration verification`) after T004 commit.
-- Remote head snapshot: captured from `origin/main` at
-  `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 10
-  and behind 0 relative to `origin/main`.
-- Post-rebase test-layout migration: T001 browser/jsdom tests live under
-  `tests/browser/...` and are committed in the current head.
-- T003 blocker: resolved. T003A fixed type-aware ESLint project coverage for
-  `tests/browser/**`; T003 later resolved the no-restricted-syntax
-  `toHaveBeenCalledTimes(N)` issue and T004 reran Browser/Playwright article
-  history evidence against emulator-backed local data.
-- T004 state: committed as `integration_gate`; deploy-state record is pending review and must not be treated as feature closeout.
-- Last verified commit policy: `lastVerifiedCommit` records the local HEAD/ref
-  covered by fresh verification; dirty workflow doc edits must be described in
-  `lastVerification` until committed.
+- Current head snapshot: `2ded9f33aa71010ced6e037001c5e2b93487f24d` (`2ded9f3 Move post edited badge to time row`).
+- Remote head snapshot: `origin/main` at `50972d7694cdd52096f3e857226fcb60e14de536`; current branch reports ahead 12 and behind 0.
+- UI placement commit: current HEAD moves the post edited badge to the time row and is covered by focused UI tests plus the 4-file runtime/UI suite.
+- T004 state: `engineer_done`; Integration Reviewer PASS is pending.
+- Last verified commit policy: `lastVerifiedCommit` records current HEAD because fresh final gates cover it.
 - Phase commit checkpoints:
-  - `spec_approved`
-  - `post_rebase_state`
-  - `plan_and_tasks`
-  - `shared_core`
-  - `shared_core_test_layout`
-  - `article_history_persistence_rules`
-  - `browser_test_lint_config`
-  - `article_history_ui`
-  - `integration_gate` -> `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`
-- Rules deploy status: `deployed`; T002 changed `firestore.rules`, so
-  `required=true` and `changed=true` remain. Deploy evidence records project
-  `dive-into-run`, command `firebase deploy --only firestore:rules`, target
-  `cloud.firestore/firestore.rules`, and deployedCommit=`3f83371be5cf7ef3c59aee463c006a4930a4f5e2`.
-  Only Firestore rules were deployed; hosting, functions, storage, and indexes
-  were not deployed.
-- Incident handling: any open incident blocks dispatch, commit, push, PR, CI,
-  merge, local main sync, and rules deploy until resolved or explicitly carried
-  forward.
+  - `spec_created` -> `4b87ce41d02ca821c93de114e545b948c400f16c`
+  - `spec_approved` -> `4798096195563e57977a79934b007b057ab07e51`
+  - `post_rebase_state` -> `9e8052e3fd121eb7c17bc66446bb58099260bdac`
+  - `plan_and_tasks` -> `35257d036d568293bc7cee923c9be0ffd3693256`
+  - `shared_core` -> `29b7d9c24d358431e9739c2e6ffb9dd396c666de`
+  - `shared_core_test_layout` -> `066ba10ea1639755601dbf3aea0155e9adab6a98`
+  - `article_history_persistence_rules` -> `c9b2714939ba5dffbbac0f3ff8731a985bc61657`
+  - `browser_test_lint_config` -> `3e6f35b06f6fe28291e7bf05adbe8a8c51ef91d7`
+  - `article_history_ui` -> `363b229b484d517da99d72d9c6a86b647ca9b51d`
+  - `integration_gate` -> `1f6e1d329cf82a9463e5506f12108e0974277f13`
+  - `rules_deploy_record` -> `754e8d2dfb1958a4de98a8106d83ec2c1a236d63`
+  - `post_edited_badge_time_row` -> `2ded9f33aa71010ced6e037001c5e2b93487f24d`
+- Rules deploy status: `deployed` for Firestore rules content only. Actual deploy source was the pre-rebase commit `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; current HEAD `2ded9f33aa71010ced6e037001c5e2b93487f24d` was not redeployed and is only content-equivalent for `firestore.rules`. The `status.json` `deployedCommit` field stores current HEAD only to satisfy workflow schema ancestor checks; evidence records the actual deploy source separately.
+- Incident handling: any open incident blocks dispatch, commit, push, PR, CI, merge, local main sync, and rules deploy until resolved or explicitly carried forward.
 
 ## Release Boundary
 
@@ -159,8 +150,8 @@ wiring.
   `main` sync.
 - Final summaries must not imply deployed rules or deployed product behavior
   unless `rulesDeployStatus.state` is `deployed` with deploy evidence.
-- Push, PR creation, CI watch, merge, and local `main` sync remain unauthorized.
-- No additional deploy is authorized; the recorded deploy was Firestore rules only.
+- Push, PR creation, CI watch, merge, and local `main` sync are authorized for downstream closeout but were not performed by this verifier task.
+- No additional deploy is authorized; the recorded deploy was Firestore rules only and came from the pre-rebase source commit.
 
 ## Risk And Stop Conditions
 
