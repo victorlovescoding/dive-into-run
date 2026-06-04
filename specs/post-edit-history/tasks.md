@@ -17,12 +17,12 @@
 - Phase: `integration`.
 - Active task: `T004`.
 - Active wave: `wave-4`.
-- Latest reviewer decision: `review_passed` for `T003` article post list/detail UI wiring and browser evidence; `T004` is `engineer_done` and awaits Integration Reviewer.
+- Latest reviewer decision: `review_passed` for `T003` article post list/detail UI wiring and browser evidence. T004 final integration was committed at `3f83371`; deploy-state record is pending review and must not be treated as feature closeout.
 - Blocked: no. The old T003 lint/browser blocker is resolved: changed-file lint passed without `toHaveBeenCalledTimes(N)`, and Browser/Playwright evidence verified the article history affordance/modal on emulator-backed local app data.
-- Next gate: send `T004` workflow-only diff and final integration evidence to Integration Reviewer. Do not mark T004 or the feature complete until Reviewer PASS and post-review workflow sync.
-- Authorization boundary: `edit=true`, `commit=true` after Engineer + Reviewer + fresh verification for reviewed implementation batches; `push=false`, `pullRequest=false`, `ciWatch=false`, `merge=false`, `localMainSync=false`, `deployFirestoreRules=false`.
-- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`, tracking `origin/main` at `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 9 and behind 0 relative to `origin/main`, and dirty scope is only workflow files: `specs/post-edit-history/handoff.md`, `specs/post-edit-history/plan.md`, `specs/post-edit-history/status.json`, and `specs/post-edit-history/tasks.md`.
-- Rules deploy status: `required`, currently `changed=true`; T002 changed `firestore.rules`, but deploy remains unauthorized and not claimed.
+- Next gate: review this deploy-state workflow-only diff. Do not mark the feature closed; push, PR, CI watch, merge, and local `main` sync remain unauthorized.
+- Authorization boundary: `edit=true`, `commit=false` for this deploy-state update; `push=false`, `pullRequest=false`, `ciWatch=false`, `merge=false`, `localMainSync=false`, `deployFirestoreRules=true` for the already executed Firestore-only rules deploy. Release Manager handles any later commit.
+- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`, tracking `origin/main` at `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 10 and behind 0 relative to `origin/main`; after this edit, dirty scope must remain only workflow files: `specs/post-edit-history/handoff.md`, `specs/post-edit-history/plan.md`, `specs/post-edit-history/status.json`, and `specs/post-edit-history/tasks.md`.
+- Rules deploy status: `deployed`, with `required=true`, `changed=true`, deployedCommit=`3f83371be5cf7ef3c59aee463c006a4930a4f5e2`, project `dive-into-run`, command `firebase deploy --only firestore:rules`, and target `cloud.firestore/firestore.rules`; hosting/functions/storage/indexes were not deployed.
 - Incidents: none.
 - Planning evidence:
   - Planner report: Produced serialized T001-T004 implementation task contracts; no production code, tests, rules, package files, config, or lockfiles modified.
@@ -327,7 +327,7 @@ Reviewer PASS criteria:
 - Required commands pass with expected signals.
 - Rules validate both sides of the parent/history coupling and deny forbidden writes.
 - `firestore.rules` event-comment surfaces are not hardened or rewritten.
-- `rulesDeployStatus` is carried as `required`, not `deployed`.
+- Historical T002 review state carried `rulesDeployStatus` as `required` and not yet deployed; current workflow state records `rulesDeployStatus.state=deployed` with `required=true` and `changed=true`.
 
 Reviewer REJECT criteria:
 
@@ -445,7 +445,7 @@ Reviewer PASS criteria:
 - Required T003A evidence shows the ESLint parser/project-service coverage blocker is resolved; downstream T003 lint failures do not fail T003A.
 - Browser tests remain linted; they are not excluded from `lint:changed`.
 - No production, T003 UI/runtime, package, lockfile, rules, seed, or fixture files are changed.
-- Rules deploy remains `required`, `changed=true`, and not deployed.
+- Rules deploy metadata remains `required=true` and `changed=true`; current workflow state records `rulesDeployStatus.state=deployed`.
 
 Reviewer REJECT criteria:
 
@@ -620,21 +620,21 @@ Evidence:
 - **Engineer**: Integration Verifier
 - **Reviewer**: Integration Reviewer
 - **Commit checkpoint**: `integration_gate` after Reviewer PASS and fresh verification if workflow state changed
-- **Last verified commit**: `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`
-- **Authorization boundary**: edit=yes for workflow state only, commit=yes after Reviewer PASS and fresh verification, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
-- **Rules deploy status**: required; `firestore.rules` changed in T002, deploy remains unauthorized, changed=true, deployedCommit=null
+- **Last verified commit**: `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`
+- **Authorization boundary**: edit=yes for workflow state only, commit=no for this deploy-state update, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=yes for the already executed Firestore-only rules deploy
+- **Rules deploy status**: deployed; `firestore.rules` changed in T002, required=true, changed=true, deployedCommit=`3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; project `dive-into-run`, command `firebase deploy --only firestore:rules`, target `cloud.firestore/firestore.rules`
 - **Incidents**: none
 
 Scope:
 
 - Run final integration verification after T001, T002, T003A, and T003 are `completed`.
 - Sync `tasks.md`, `handoff.md`, and `status.json` with final local evidence.
-- Record rules deploy state accurately without claiming deployment.
+- Record the authorized Firestore-only rules deploy accurately without claiming hosting/functions/storage/indexes deploy or broader product deploy.
 
 Non-scope:
 
 - Do not edit production code, tests, rules, package files, config, or lockfiles.
-- Do not push, open PR, watch CI, merge, sync local `main`, or deploy rules.
+- Do not push, open PR, watch CI, merge, sync local `main`, edit source/tests/config/rules/package/lockfile, or run another deploy.
 - Do not mark tasks completed without Reviewer PASS.
 
 Owned files:
@@ -672,7 +672,7 @@ Engineer instructions:
 - Confirmed T001, T002, T003A, and T003 are `completed` in `tasks.md` and `status.json`.
 - Ran final integration commands one at a time and recorded exit codes and concise signals.
 - Updated workflow state to reflect latest task states, current head, last verification, phase commits, rules deploy state, and incidents.
-- Because `firestore.rules` changed, kept `rulesDeployStatus.state=required`, `required=true`, `changed=true`, `deployedCommit=null`, and no deploy evidence.
+- Because the authorized deploy completed, recorded `rulesDeployStatus.state=deployed`, `required=true`, `changed=true`, deployedCommit=`3f83371be5cf7ef3c59aee463c006a4930a4f5e2`, and Firestore-only deploy evidence.
 - Modified only T004 workflow files.
 
 Acceptance criteria:
@@ -680,18 +680,18 @@ Acceptance criteria:
 - AC-T004.1: `tasks.md`, `handoff.md`, and `status.json` agree on phase, active task, active wave, completed tasks, latest verification, rules deploy state, and incidents.
 - AC-T004.2: Final commands pass or any failure is recorded as `blocked` with a concrete owner/next decision.
 - AC-T004.3: Browser evidence is present and reviewed for article list/detail and comment history regression.
-- AC-T004.4: No deployed rules or deployed product behavior claim is made.
+- AC-T004.4: Firestore rules deploy claim is backed by deploy evidence; no hosting/functions/storage/indexes or broader product deploy claim is made.
 - AC-T004.5: No unauthorized push, PR, CI watch, merge, local main sync, or rules deploy occurs.
 
 Verification commands and expected signal:
 
 | Command | Expected signal | Last run |
 | ------- | --------------- | -------- |
-| `git status --short --branch` | exit 0; branch is `092-post-edit-history`; only expected reviewed files are dirty or tree is clean after authorized commits | exit 0; clean before T004 workflow edits; ahead 9 / behind 0 |
-| `git diff --check` | exit 0; no whitespace errors | exit 0; post-sync workflow diff has no whitespace errors |
+| `git status --short --branch` | exit 0; branch is `092-post-edit-history`; only workflow files are dirty after deploy-state edit | exit 0; ahead 10 / behind 0; dirty files are only workflow state/docs files: `handoff.md`, `plan.md`, `status.json`, `tasks.md` |
+| `git diff --check` | exit 0; no whitespace errors | exit 0; no whitespace errors |
 | `npm run lint:changed` | exit 0; changed files lint clean | exit 0; no changed JS files to lint |
 | `npm run type-check:changed` | exit 0; changed-file type check clean | exit 0; no changed JS files to check |
-| `npm run workflow:check` | exit 0; `specs/post-edit-history/status.json` valid and synced | exit 0 post-sync; 18 status files valid and synced, including `specs/post-edit-history/status.json` |
+| `npm run workflow:check` | exit 0; `specs/post-edit-history/status.json` valid and synced | exit 0; 18 status files valid and synced; `specs/post-edit-history/status.json` ok and sync ok |
 | `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | exit 0; post rules tests pass | exit 0; 1 file / 37 tests passed |
 | `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; focused T003 runtime/UI tests pass | exit 0; 4 files / 11 tests passed |
 | `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; focused shared/persistence/UI tests pass | exit 0; 9 files / 27 tests passed |
@@ -702,7 +702,7 @@ Reviewer PASS criteria:
 - Diff touches only T004 owned workflow files.
 - Final verification and browser evidence are fresh enough for the current head/working tree.
 - Workflow files are synced and pass `npm run workflow:check`.
-- Rules deploy state is accurate and no deployment claim is made.
+- Rules deploy state is accurate, Firestore-only deploy evidence is recorded, and no hosting/functions/storage/indexes deploy claim is made.
 - Authorization boundary is respected.
 
 Reviewer REJECT criteria:
@@ -710,29 +710,29 @@ Reviewer REJECT criteria:
 - Workflow state files drift.
 - Any final gate fails without a recorded blocker.
 - Browser evidence is absent or stale.
-- Summary/state implies deployed rules or deployed product behavior without deploy evidence.
+- Summary/state implies hosting/functions/storage/indexes deploy, broader product deploy, or rules deploy without deploy evidence.
 - Unauthorized closeout action occurs.
 
 Evidence:
 
-- Engineer report: T004 final integration verification completed and workflow docs/state synced to rebased HEAD `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`, `origin/main` `14515eee2d730d25c7f73fa8eb5c1315504787e8`, ahead 9 / behind 0. T004 is `engineer_done`; Reviewer PASS is pending.
+- Engineer report: T004 final integration verification was committed at `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`, `origin/main` remains `14515eee2d730d25c7f73fa8eb5c1315504787e8`, ahead 10 / behind 0. Firestore-only deploy state is recorded and review is pending; no Reviewer PASS is invented for this deploy-state update.
 - Reviewer report: pending
 - Command output summary:
-  - `git status --short --branch`: exit 0; branch clean before T004 workflow edits, ahead 9 / behind 0.
-  - `git diff --check`: exit 0; post-sync workflow diff has no whitespace errors.
+  - `git status --short --branch`: exit 0; ahead 10 / behind 0; dirty files are only workflow state/docs files: `handoff.md`, `plan.md`, `status.json`, `tasks.md`.
+  - `git diff --check`: exit 0; no whitespace errors.
   - `npm run lint:changed`: exit 0; no changed JS files to lint.
   - `npm run type-check:changed`: exit 0; no changed JS files to check.
-  - `npm run workflow:check`: exit 0 post-sync; 18 status files valid and synced. Earlier pre-sync exit 1 was stale pre-rebase `lastVerifiedCommit`/`phaseCommits` ancestry and is resolved.
+  - `npm run workflow:check`: exit 0; 18 status files valid and synced; `specs/post-edit-history/status.json` ok and sync ok.
   - `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 4 files / 11 tests passed.
   - `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 9 files / 27 tests passed.
   - `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`: exit 0; 1 file / 37 tests passed.
   - `node /private/tmp/t003-article-history-ui/verify-article-history.mjs`: exit 0; browser PASS against demo-test emulators and localhost:3002.
 - Changed files summary:
-  - `specs/post-edit-history/status.json`: synced T004 Engineer state/evidence, rebased commit snapshots, phase commit SHAs, verification results, and required/not-deployed rules state.
+  - `specs/post-edit-history/status.json`: synced T004/deploy state evidence, commit snapshots, phase commit SHAs, verification results, and deployed Firestore-only rules state.
   - `specs/post-edit-history/tasks.md`: synced T004 state/evidence and browser rerun handling.
   - `specs/post-edit-history/handoff.md`: synced current handoff, latest verification, and remaining closeout boundaries.
   - `specs/post-edit-history/plan.md`: synced stale HEAD/remote/ahead-behind workflow-state language.
 - Browser evidence: fresh PASS via Playwright/emulator using project `demo-test`, Auth 9099, Firestore 8080, Storage 9199, and Next on `localhost:3002`; screenshots/result under `/private/tmp/t003-article-history-ui/`. Setup-only reruns failed until the local emulator Auth/profile avatar was set to `/default-avatar.png`; no repo files changed for setup.
-- Phase commits: `spec_approved` -> `0278717e7b30808d3f69580b4b571c502c82b182`; `post_rebase_state` -> `173b68393fad51b6d0fa7a47c96171a9342baac2`; `plan_and_tasks` -> `f9aec2f4cae314b79bea64e4b947541885be295d`; `shared_core` -> `7621e962038c7d4f7caff638e96e51efd63b5e7e`; `shared_core_test_layout` -> `6b06f1d7c9ce29d8f7b050ef3276157a18d0149a`; `article_history_persistence_rules` -> `4f8763f9f43a8df261011be1a2f336dc21884cc2`; `browser_test_lint_config` -> `776413e67872f214bb94f90d649dc6c623649f65`; `article_history_ui` -> `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`.
-- Rules deploy status: required; changed=true; deployedCommit=null; no deploy evidence; deploy unauthorized
+- Phase commits: `spec_approved` -> `0278717e7b30808d3f69580b4b571c502c82b182`; `post_rebase_state` -> `173b68393fad51b6d0fa7a47c96171a9342baac2`; `plan_and_tasks` -> `f9aec2f4cae314b79bea64e4b947541885be295d`; `shared_core` -> `7621e962038c7d4f7caff638e96e51efd63b5e7e`; `shared_core_test_layout` -> `6b06f1d7c9ce29d8f7b050ef3276157a18d0149a`; `article_history_persistence_rules` -> `4f8763f9f43a8df261011be1a2f336dc21884cc2`; `browser_test_lint_config` -> `776413e67872f214bb94f90d649dc6c623649f65`; `article_history_ui` -> `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`; `integration_gate` -> `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`.
+- Rules deploy status: deployed; required=true; changed=true; deployedCommit=`3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; evidence: project `dive-into-run`, command `firebase deploy --only firestore:rules`, target `cloud.firestore/firestore.rules`; no hosting/functions/storage/indexes deploy.
 - Incidents: none

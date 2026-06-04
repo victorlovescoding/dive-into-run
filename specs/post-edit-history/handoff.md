@@ -5,22 +5,22 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history`
 - Branch: `092-post-edit-history`
-- Current head: `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296` (`4d80d09 Add post edit history UI`)
-- Remote head: `origin/main` at `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 9 and behind 0 relative to `origin/main`
+- Current head: `3f83371be5cf7ef3c59aee463c006a4930a4f5e2` (`3f83371 Record final integration verification`)
+- Remote head: `origin/main` at `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 10 and behind 0 relative to `origin/main`
 - Authorization boundary:
   - edit: true
-  - commit: true after Engineer + Reviewer + fresh verification for reviewed implementation batches
+  - commit: false (this deploy-state update must not be staged or committed; Release Manager handles commit later)
   - push: false
   - pullRequest: false
   - ciWatch: false
   - merge: false
   - localMainSync: false
-  - deployFirestoreRules: false
+  - deployFirestoreRules: true (executed Firestore-only rules deploy; no additional deploy authorized)
 - Current phase: `integration`
 - Active task: `T004`
 - Active wave: `wave-4`
 - Latest reviewer decision: `review_passed` for `T003`; findings none. T004 is `engineer_done` and awaits Integration Reviewer.
-- Last verified commit: `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`; fresh final integration gates covered current HEAD before T004 workflow-state edits.
+- Last verified commit: `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; T004 final integration verification was committed before the authorized Firestore rules deploy.
 - Phase commits:
   - `spec_approved` -> `0278717e7b30808d3f69580b4b571c502c82b182`
   - `post_rebase_state` -> `173b68393fad51b6d0fa7a47c96171a9342baac2`
@@ -30,12 +30,13 @@
   - `article_history_persistence_rules` -> `4f8763f9f43a8df261011be1a2f336dc21884cc2`
   - `browser_test_lint_config` -> `776413e67872f214bb94f90d649dc6c623649f65`
   - `article_history_ui` -> `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`
-- Pending phase commit: `integration_gate`; do not commit until Reviewer PASS and explicit commit boundary handling.
-- Rules deploy status: `required`; changed=true because `firestore.rules` changed, deployedCommit=null, no deploy evidence
+  - `integration_gate` -> `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`
+- Pending workflow-state review: deploy record is synced here for Reviewer check; do not stage or commit this deploy-state update.
+- Rules deploy status: `deployed`; required=true, changed=true, deployedCommit=`3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; evidence records project `dive-into-run`, command `firebase deploy --only firestore:rules`, target `cloud.firestore/firestore.rules`.
 - Incidents: none
 - Blocked: no
 - Blocked reason: null
-- Latest T004 sync: 2026-06-04T13:48:31Z; stale pre-rebase commit ancestry was corrected after final verification. Rules deploy remains required and unauthorized; do not claim deploy.
+- Latest deploy-state sync: Firestore rules deploy was recorded after authorized deploy. Only Firestore rules were deployed; hosting, functions, storage, and indexes were not deployed. Push/PR/CI watch/merge/local main sync remain unauthorized.
 
 ## Read Order
 
@@ -77,11 +78,11 @@ T001 shared core
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `git status --short --branch` | 0 | Before T004 workflow edits: on `092-post-edit-history`, branch clean, ahead 9 and behind 0 relative to `origin/main`. |
-| `git diff --check` | 0 | Post-sync workflow diff has no whitespace errors. |
+| `git status --short --branch` | 0 | On `092-post-edit-history`; ahead 10 and behind 0 relative to `origin/main`; dirty files are only workflow state/docs files: `handoff.md`, `plan.md`, `status.json`, `tasks.md`. |
+| `git diff --check` | 0 | No whitespace errors. |
 | `npm run lint:changed` | 0 | No changed JS files to lint. |
 | `npm run type-check:changed` | 0 | No changed JS files to check. |
-| `npm run workflow:check` | 0 | Post-sync check passed: 18 status files valid and synced, including `specs/post-edit-history/status.json`. Earlier pre-sync failure was stale pre-rebase commit ancestry and is resolved. |
+| `npm run workflow:check` | 0 | 18 status files valid and synced; `specs/post-edit-history/status.json` ok and sync ok. |
 | `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | 0 | 4 files / 11 tests passed. |
 | `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | 0 | 9 files / 27 tests passed. |
 | `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | 0 | 1 file / 37 tests passed; auth/firestore emulators started and stopped successfully. |
@@ -107,7 +108,7 @@ Browser screenshots/result: `/private/tmp/t003-article-history-ui/playwright-art
 ## Blockers
 
 - None active.
-- Carry-forward release boundary: Firestore rules deploy is required because `firestore.rules` changed, but deploy is unauthorized and not evidenced. Keep `rulesDeployStatus.state=required`, `changed=true`, and `deployedCommit=null` until a separate authorized deploy occurs.
+- Firestore rules release boundary: deploy is now evidenced as Firestore-only for project `dive-into-run`, command `firebase deploy --only firestore:rules`, target `cloud.firestore/firestore.rules`, deployedCommit=`3f83371be5cf7ef3c59aee463c006a4930a4f5e2`. Hosting, functions, storage, and indexes were not deployed.
 
 ## Latest Review State
 
@@ -133,9 +134,9 @@ Browser screenshots/result: `/private/tmp/t003-article-history-ui/playwright-art
 
 - Do not implement production code from the Planner role.
 - Do not broaden T001 into article post persistence or UI wiring.
-- Do not run a rules deploy; `deployFirestoreRules=false`.
+- Do not run another deploy. `deployFirestoreRules=true` records the already executed Firestore-only rules deploy; no additional deploy boundary is authorized.
 - Do not mark the feature complete before T004 final integration verification passes.
 - Do not add deterministic seed/fixture data inside T003; that requires a separate task.
-- Do not claim deployed rules or deployed product behavior without deploy evidence.
+- Firestore rules deploy may be claimed only with the recorded deploy evidence; do not claim hosting/functions/storage/indexes deploy or broader deployed product behavior.
 - Do not push, create PR, watch CI, merge, or sync local `main` under the current authorization boundary.
 - Stop if package-lock or unrelated files become dirty.

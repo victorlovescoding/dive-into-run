@@ -4,10 +4,10 @@
 
 Current phase: `integration`. T001, T002, T003A, and T003 are completed and
 committed. T003 article post list/detail UI wiring is committed as
-`article_history_ui` at HEAD `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296` with
+`article_history_ui` at `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296` with
 Reviewer `review_passed` and Browser/Playwright evidence PASS. T004 final
-integration verification and workflow-state sync are `engineer_done` and await
-Integration Reviewer.
+integration verification was committed as `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`; the Firestore-only
+rules deploy from that commit is now recorded and awaits deploy-state review.
 
 The implementation uses Shared Core + Resource Adapters. Shared edit-history
 code owns generic affordance/modal/state/snapshot concepts. Article posts own
@@ -117,9 +117,9 @@ wiring.
 
 - Status schema: v3.
 - Current head snapshot: captured from `092-post-edit-history` at
-  `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296` (`4d80d09 Add post edit history UI`) after rebase.
+  `3f83371be5cf7ef3c59aee463c006a4930a4f5e2` (`3f83371 Record final integration verification`) after T004 commit.
 - Remote head snapshot: captured from `origin/main` at
-  `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 9
+  `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 10
   and behind 0 relative to `origin/main`.
 - Post-rebase test-layout migration: T001 browser/jsdom tests live under
   `tests/browser/...` and are committed in the current head.
@@ -127,7 +127,7 @@ wiring.
   `tests/browser/**`; T003 later resolved the no-restricted-syntax
   `toHaveBeenCalledTimes(N)` issue and T004 reran Browser/Playwright article
   history evidence against emulator-backed local data.
-- T004 state: `engineer_done`; Integration Reviewer PASS is still pending.
+- T004 state: committed as `integration_gate`; deploy-state record is pending review and must not be treated as feature closeout.
 - Last verified commit policy: `lastVerifiedCommit` records the local HEAD/ref
   covered by fresh verification; dirty workflow doc edits must be described in
   `lastVerification` until committed.
@@ -140,9 +140,13 @@ wiring.
   - `article_history_persistence_rules`
   - `browser_test_lint_config`
   - `article_history_ui`
-  - `integration_gate`
-- Rules deploy status: `required`; T002 changed `firestore.rules`, so
-  `changed=true`, but deploy remains unauthorized and `deployedCommit=null`.
+  - `integration_gate` -> `3f83371be5cf7ef3c59aee463c006a4930a4f5e2`
+- Rules deploy status: `deployed`; T002 changed `firestore.rules`, so
+  `required=true` and `changed=true` remain. Deploy evidence records project
+  `dive-into-run`, command `firebase deploy --only firestore:rules`, target
+  `cloud.firestore/firestore.rules`, and deployedCommit=`3f83371be5cf7ef3c59aee463c006a4930a4f5e2`.
+  Only Firestore rules were deployed; hosting, functions, storage, and indexes
+  were not deployed.
 - Incident handling: any open incident blocks dispatch, commit, push, PR, CI,
   merge, local main sync, and rules deploy until resolved or explicitly carried
   forward.
@@ -150,13 +154,13 @@ wiring.
 ## Release Boundary
 
 - Firestore/storage rules deploy authorization:
-  `authorizationBoundary.deployFirestoreRules=false`.
+  `authorizationBoundary.deployFirestoreRules=true` for the already executed Firestore-only rules deploy.
 - Rules deploy is separate from edit, commit, push, PR, CI, merge, and local
   `main` sync.
 - Final summaries must not imply deployed rules or deployed product behavior
   unless `rulesDeployStatus.state` is `deployed` with deploy evidence.
-- Push, PR creation, CI watch, merge, local `main` sync, and rules deploy are
-  not authorized in the current boundary.
+- Push, PR creation, CI watch, merge, and local `main` sync remain unauthorized.
+- No additional deploy is authorized; the recorded deploy was Firestore rules only.
 
 ## Risk And Stop Conditions
 
