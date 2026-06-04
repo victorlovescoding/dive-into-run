@@ -3,12 +3,12 @@
   "feature": "event-reminder-email",
   "branch": "093-event-reminder-email",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-093-event-reminder-email",
-  "phase": "plan_artifacts_committed",
+  "phase": "t004_final_verified_commit_unauthorized",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
-    "edit": false,
-    "commit": true,
+    "edit": true,
+    "commit": false,
     "push": false,
     "pullRequest": false,
     "ciWatch": false,
@@ -19,22 +19,28 @@
   "currentHead": {
     "branch": "093-event-reminder-email",
     "ref": "093-event-reminder-email",
-    "capturedAt": "2026-06-04T04:03:16Z",
-    "summary": "Branch ref points to the current workflow-state head; the reviewed plan checkpoint is phaseCommits.plan 6ed0af5967b452c87ab1ab026f4181569a1e51d3."
+    "commit": "16bcef3e1533a62d68ee0c5ba657697c802b54be",
+    "capturedAt": "2026-06-04T09:22:34Z",
+    "summary": "Current committed HEAD after final verification; T001/T002/T003 implementation files and workflow-state sync files are uncommitted because commit is unauthorized."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "b1cdaee96618983d333d1b6da2a78c0312e3b7ba",
-    "capturedAt": "2026-06-04T03:39:59Z",
-    "summary": "Local origin/main snapshot at plan-stage start."
+    "commit": "4145241dd5f21e17812dad3d7448be2bb74c090e",
+    "capturedAt": "2026-06-04T09:22:34Z",
+    "summary": "Local origin/main snapshot during T004 final verification; final branch status is 093-event-reminder-email...origin/main [ahead 3], behind 0."
   },
-  "completedTasks": [],
+  "completedTasks": [
+    "T001",
+    "T002",
+    "T003",
+    "T004"
+  ],
   "tasks": [
     {
       "id": "T001",
       "title": "Reminder core helpers and email content",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-1",
       "engineer": "Functions Core Engineer",
@@ -67,7 +73,7 @@
         "src/runtime/providers/AuthProvider.jsx"
       ],
       "dependencies": [
-        "G0 branch reconciliation and implementation authorization."
+        "G0 branch reconciliation and implementation authorization resolved at 2026-06-04T07:20:56Z."
       ],
       "engineerInstructions": [
         "Use superpowers:test-driven-development.",
@@ -89,17 +95,32 @@
         {
           "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js",
           "expectedSignal": "Red before implementation because functions/event-reminder-email.js is missing; green after implementation with helper tests passing.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js",
+            "exitCode": 0,
+            "summary": "T001 focused helper tests passed: 1 file, 7 tests.",
+            "verifiedAt": "2026-06-04T08:00:48Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0, no lint errors in changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors in changed files; React version warning only.",
+            "verifiedAt": "2026-06-04T08:00:48Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0 or No type errors in changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-04T08:00:48Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -116,18 +137,33 @@
         "The scan window differs from the plan without a plan update.",
         "Diff touches non-owned files or verification is missing, stale, failed, or run against the wrong files."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Functions Core Reviewer",
+        "summary": "Spec compliance review passed AC-T001.1 through AC-T001.5; code quality re-review passed after malformed email domains and hostile HTML payload test coverage were fixed.",
+        "decidedAt": "2026-06-04T08:00:48Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE after fixes for T001 owned files.",
+        "reviewerReport": "review_passed with no blocking findings; coverage AC-T001.1 through AC-T001.5 passed; malformed email domains and hostile HTML payload test coverage fixed.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js exit 0; 1 file, 7 tests passed.",
+          "npm run lint:changed exit 0; React version warning only.",
+          "npm run type-check:changed exit 0; no changed-file type errors.",
+          "node --check functions/event-reminder-email.js exit 0.",
+          "git diff --check exit 0."
+        ],
+        "changedFilesSummary": [
+          "functions/event-reminder-email.js is an untracked/dirty T001 file.",
+          "specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js is an untracked/dirty T001 file.",
+          "No staging or commit occurred because implementation commit remains unauthorized."
+        ]
       }
     },
     {
       "id": "T002",
       "title": "Delivery state, retry orchestration, and Resend HTTP adapter",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-2",
       "engineer": "Reminder Delivery Engineer",
@@ -156,7 +192,7 @@
         "firestore.indexes.json"
       ],
       "dependencies": [
-        "T001 review_passed"
+        "T001 completed after review_passed; T001 files remain untracked/dirty and uncommitted because commit is unauthorized."
       ],
       "engineerInstructions": [
         "Use superpowers:test-driven-development.",
@@ -184,17 +220,32 @@
         {
           "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js",
           "expectedSignal": "Red before implementation for missing delivery behavior; green after implementation with helper and delivery tests passing.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js",
+            "exitCode": 0,
+            "summary": "T002 focused helper and delivery tests passed: 1 file, 21 tests.",
+            "verifiedAt": "2026-06-04T08:46:48Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0, no lint errors in changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors in changed files; React version warning only.",
+            "verifiedAt": "2026-06-04T08:46:48Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0 or No type errors in changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-04T08:46:48Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -214,18 +265,33 @@
         "New dependency, package, lockfile, rules, index, UI, or src changes appear.",
         "Verification is missing, stale, failed, or run against the wrong files."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Reminder Delivery Reviewer",
+        "summary": "Spec re-review passed after provider errors were reduced to coarse codes and failed/final_failed provider payload leakage tests were added; quality re-review passed after provider completion transaction/lease guards, active foreign lease skip blocking, active lease exclusion from completion, and stale lease tests were added.",
+        "decidedAt": "2026-06-04T08:46:48Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE after fixes for T002 owned files.",
+        "reviewerReport": "Spec review initially rejected provider error leakage, then re-review passed; quality review initially rejected stale lease/race issues, then re-review passed.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js exit 0; 1 file, 21 tests passed.",
+          "npm run lint:changed exit 0; React version warning only.",
+          "npm run type-check:changed exit 0; no changed-file type errors.",
+          "node --check functions/event-reminder-email.js exit 0.",
+          "git diff --check exit 0."
+        ],
+        "changedFilesSummary": [
+          "functions/event-reminder-email.js is an untracked/dirty T002 file.",
+          "specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js is an untracked/dirty T002 file.",
+          "No staging or commit occurred because implementation commit remains unauthorized."
+        ]
       }
     },
     {
       "id": "T003",
       "title": "Scheduled wrapper and Functions config",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-3",
       "engineer": "Functions Scheduler Engineer",
@@ -252,7 +318,7 @@
         "functions/package.json"
       ],
       "dependencies": [
-        "T002 review_passed"
+        "T002 completed after review_passed; T002 files remain untracked/dirty and uncommitted because commit is unauthorized."
       ],
       "engineerInstructions": [
         "Use superpowers:test-driven-development.",
@@ -275,22 +341,42 @@
         {
           "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js",
           "expectedSignal": "Red before wrapper implementation; green after implementation with schedule and delegation tests passing.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js",
+            "exitCode": 0,
+            "summary": "T003 schedule wrapper tests passed: 1 file, 2 tests.",
+            "verifiedAt": "2026-06-04T09:12:39Z"
+          }
         },
         {
           "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js",
           "expectedSignal": "Exit 0, existing scheduled retention wrapper tests still pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js",
+            "exitCode": 0,
+            "summary": "Retention schedule regression passed: 1 file, 2 tests.",
+            "verifiedAt": "2026-06-04T09:12:39Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0, no lint errors in changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors in changed files; React version warning only.",
+            "verifiedAt": "2026-06-04T09:12:39Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0 or No type errors in changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-04T09:12:39Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -309,18 +395,34 @@
         "Package, lockfile, rules, index, UI, deploy, secret setup, or src changes appear.",
         "Verification is missing, stale, failed, or run against the wrong files."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Functions Scheduler Reviewer",
+        "summary": "T003 spec review passed with no blocking findings; wrapper compatibility shim passing both fromEmail and emailFrom was accepted, and the test-only params fallback was accepted as non-blocking. T003 quality review passed with no blocking findings; wrapper remains thin, no secret/sender/base URL is hardcoded, and the retention schedule regression passed.",
+        "decidedAt": "2026-06-04T09:12:39Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE_WITH_CONCERNS for T003 owned files; both spec and quality reviews passed.",
+        "reviewerReport": "Spec review_passed with no blocking findings; accepted wrapper passing both fromEmail and emailFrom as a compatibility shim and accepted test-only params fallback as non-blocking. Quality review_passed with no blocking findings; wrapper thin, no hardcoded secret/sender/base URL, retention schedule regression passed. Residual risks: local root node_modules lacks firebase-functions so real require against functions deps was not run; config naming debt remains.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js exit 0; 1 file, 2 tests passed.",
+          "npx vitest run --project=browser specs/event-soft-delete-retention/tests/unit/functions/event-retention-purge-schedule.test.js exit 0; 1 file, 2 tests passed.",
+          "npm run lint:changed exit 0; React version warning only.",
+          "npm run type-check:changed exit 0; no changed-file type errors.",
+          "node --check functions/index.js exit 0.",
+          "git diff --check exit 0."
+        ],
+        "changedFilesSummary": [
+          "functions/index.js is a modified T003 implementation file.",
+          "specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js is an untracked T003 test file.",
+          "No staging or commit occurred because implementation commit remains unauthorized."
+        ]
       }
     },
     {
       "id": "T004",
       "title": "Final integration verification and workflow state sync",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-4",
       "engineer": "Final Verification / Workflow State Engineer",
@@ -351,9 +453,9 @@
         ".codex/rules/sensors.md"
       ],
       "dependencies": [
-        "T001 review_passed",
-        "T002 review_passed",
-        "T003 review_passed"
+        "T001 completed after review_passed.",
+        "T002 completed after review_passed.",
+        "T003 completed after review_passed; T003 implementation and test files remain dirty/untracked and uncommitted because commit is unauthorized."
       ],
       "engineerInstructions": [
         "Confirm tasks.md, handoff.md, and status.json agree before editing workflow state.",
@@ -373,37 +475,72 @@
         {
           "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js",
           "expectedSignal": "Exit 0, all reminder Functions tests pass.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js",
+            "exitCode": 0,
+            "summary": "Final reminder Functions tests passed: 2 files, 23 tests.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "Exit 0, no lint errors in changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No lint errors in changed files; React version warning only.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "Exit 0 or No type errors in changed files.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed-file type errors.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
         },
         {
           "command": "npm run depcruise",
           "expectedSignal": "Exit 0, no dependency violations.",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run depcruise",
+            "exitCode": 0,
+            "summary": "No dependency violations found across 1304 modules and 3038 dependencies; Node module type warning only.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
         },
         {
           "command": "node scripts/validate-workflow-state.js specs/event-reminder-email/status.json",
           "expectedSignal": "Exit 0, status schema is valid.",
-          "lastRun": null
+          "lastRun": {
+            "command": "node scripts/validate-workflow-state.js specs/event-reminder-email/status.json",
+            "exitCode": 0,
+            "summary": "specs/event-reminder-email/status.json: ok; 1 status file valid.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
         },
         {
           "command": "node scripts/check-superpowers-state.js specs/event-reminder-email/status.json",
           "expectedSignal": "Exit 0, workflow companion files are synced.",
-          "lastRun": null
+          "lastRun": {
+            "command": "node scripts/check-superpowers-state.js specs/event-reminder-email/status.json",
+            "exitCode": 0,
+            "summary": "specs/event-reminder-email/status.json: sync ok; 1 status file synced.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
         },
         {
           "command": "git diff --check",
           "expectedSignal": "Exit 0, no whitespace errors.",
-          "lastRun": null
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "No whitespace errors.",
+            "verifiedAt": "2026-06-04T09:22:34Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -422,10 +559,23 @@
       ],
       "reviewerDecision": null,
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "DONE. Confirmed tasks.md, handoff.md, and status.json agreed before editing; T001/T002/T003 had existing Reviewer PASS; ran all final gates as separate commands and updated only owned workflow-state files.",
+        "reviewerReport": "Not run for T004 in this authorized boundary; latest implementation Reviewer PASS remains T003.",
+        "commandOutputSummary": [
+          "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js exit 0; 2 files, 23 tests passed.",
+          "npm run lint:changed exit 0; React version warning only.",
+          "npm run type-check:changed exit 0; no changed-file type errors.",
+          "npm run depcruise exit 0; no dependency violations across 1304 modules and 3038 dependencies; Node module type warning only.",
+          "node scripts/validate-workflow-state.js specs/event-reminder-email/status.json exit 0; 1 status file valid.",
+          "node scripts/check-superpowers-state.js specs/event-reminder-email/status.json exit 0; 1 status file synced.",
+          "git diff --check exit 0; no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "specs/event-reminder-email/tasks.md updated with T004 final verification evidence and completed state.",
+          "specs/event-reminder-email/handoff.md updated with final handoff state and release-boundary stop point.",
+          "specs/event-reminder-email/status.json updated with T004 final verification evidence, completedTasks, and head snapshots.",
+          "No staging or commit occurred because implementation commit remains unauthorized."
+        ]
       }
     }
   ],
@@ -433,49 +583,67 @@
   "blockedReason": null,
   "lastVerification": [
     {
-      "command": "git status --short --branch --untracked-files=all",
+      "command": "npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js",
       "exitCode": 0,
-      "summary": "Branch 093-event-reminder-email...origin/main [ahead 2, behind 1]; touched workflow-state files only for reviewer state fix.",
-      "verifiedAt": "2026-06-04T04:03:16Z"
+      "summary": "Final reminder Functions tests passed: 2 files, 23 tests.",
+      "verifiedAt": "2026-06-04T09:22:34Z"
     },
     {
-      "command": "rg -n \"TB[D]|TO[D]O|PLACEHOLD[E]R|FILL[_]ME\" specs/event-reminder-email/status.json specs/event-reminder-email/tasks.md specs/event-reminder-email/handoff.md",
-      "exitCode": 1,
-      "summary": "No template markers were found; exit 1 is the expected no-match signal.",
-      "verifiedAt": "2026-06-04T04:03:16Z"
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "No lint errors in changed files; React version warning only.",
+      "verifiedAt": "2026-06-04T09:22:34Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "No changed-file type errors.",
+      "verifiedAt": "2026-06-04T09:22:34Z"
+    },
+    {
+      "command": "npm run depcruise",
+      "exitCode": 0,
+      "summary": "No dependency violations found across 1304 modules and 3038 dependencies; Node module type warning only.",
+      "verifiedAt": "2026-06-04T09:22:34Z"
     },
     {
       "command": "node scripts/validate-workflow-state.js specs/event-reminder-email/status.json",
       "exitCode": 0,
-      "summary": "status.json validated successfully.",
-      "verifiedAt": "2026-06-04T04:03:16Z"
+      "summary": "specs/event-reminder-email/status.json: ok; 1 status file valid.",
+      "verifiedAt": "2026-06-04T09:22:34Z"
     },
     {
       "command": "node scripts/check-superpowers-state.js specs/event-reminder-email/status.json",
       "exitCode": 0,
-      "summary": "Workflow state is valid and synced.",
-      "verifiedAt": "2026-06-04T04:03:16Z"
+      "summary": "specs/event-reminder-email/status.json: sync ok; 1 status file synced.",
+      "verifiedAt": "2026-06-04T09:22:34Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-04T04:03:16Z"
+      "verifiedAt": "2026-06-04T09:22:34Z"
     }
   ],
   "lastVerifiedCommit": null,
   "phaseCommits": [
     {
       "phase": "spec",
-      "sha": "08827b45d3383c7ca6a4f3b98f37ecf613a89379",
-      "summary": "Approved event reminder email spec.",
-      "committedAt": "2026-06-04T03:39:59Z"
+      "sha": "7b8b6affa0025735221256dfecb88034541c380a",
+      "summary": "Approved event reminder email spec after rebase.",
+      "committedAt": "2026-06-04T15:20:24+08:00"
     },
     {
       "phase": "plan",
-      "sha": "6ed0af5967b452c87ab1ab026f4181569a1e51d3",
-      "summary": "Committed event reminder email planning artifacts.",
-      "committedAt": "2026-06-04T03:53:19Z"
+      "sha": "7572b8e6a6a048d9f5b85db9bd5283f2b8141713",
+      "summary": "Committed event reminder email planning artifacts after rebase.",
+      "committedAt": "2026-06-04T15:20:24+08:00"
+    },
+    {
+      "phase": "workflow-state-fix",
+      "sha": "16bcef3e1533a62d68ee0c5ba657697c802b54be",
+      "summary": "Pre-G0 workflow planning state after rebase.",
+      "committedAt": "2026-06-04T15:20:24+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -486,5 +654,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-06-04T04:03:16Z"
+  "updatedAt": "2026-06-04T09:22:34Z"
 }

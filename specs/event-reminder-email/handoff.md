@@ -6,31 +6,33 @@
 - Feature slug: `event-reminder-email`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-093-event-reminder-email`.
 - Branch: `093-event-reminder-email`.
-- Current branch ref: `093-event-reminder-email`; reviewed planning checkpoint: `6ed0af5967b452c87ab1ab026f4181569a1e51d3` (`Add event reminder email plan`).
-- Remote head: `b1cdaee96618983d333d1b6da2a78c0312e3b7ba` from local `origin/main`.
-- Captured at: `2026-06-04T04:03:16Z`.
-- Branch divergence at plan time: ahead 1, behind 1.
+- Current branch ref: `093-event-reminder-email` at `16bcef3e1533a62d68ee0c5ba657697c802b54be`; reviewed planning checkpoint: `7572b8e6a6a048d9f5b85db9bd5283f2b8141713` (`Add event reminder email plan`).
+- Remote head: `4145241dd5f21e17812dad3d7448be2bb74c090e` from local `origin/main`.
+- Captured at: `2026-06-04T09:22:34Z`.
+- Branch reconciliation: `git fetch origin main` exit 0 and `git rebase origin/main` exit 0; old HEAD `6532b0229fd298011f5ff06a08281cd7f58b5988` -> new HEAD `16bcef3e1533a62d68ee0c5ba657697c802b54be`; current status is `093-event-reminder-email...origin/main [ahead 3]`, behind 0.
 - Authorization boundary:
-  - edit: no for implementation; yes only for this planning artifact edit.
-  - commit: yes for planning artifacts only.
+  - edit: yes for implementation within task-owned files.
+  - commit: no for implementation.
   - push: no.
   - pullRequest: no.
   - ciWatch: no.
   - merge: no.
   - localMainSync: no.
   - deployFirestoreRules: no.
-- Current phase: plan artifacts committed; reviewer state-fix pass is pending.
-- Active task: none.
+- Current phase: final local verification complete; G0 and T001/T002/T003/T004 are completed, with T001/T002/T003 completed after Reviewer PASS and T004 completed after final gates.
+- Active task: none; next boundary is implementation commit authorization.
 - Active wave: none.
-- Latest reviewer decision: none.
-- Last verified commit: none; implementation verification has not started.
+- Latest reviewer decision: T003 spec review `review_passed` with no blocking findings; wrapper passing both `fromEmail` and `emailFrom` was accepted as a compatibility shim, and the test-only params fallback was accepted as non-blocking. T003 quality review `review_passed` with no blocking findings; wrapper remains thin, no secret/sender/base URL is hardcoded, and the retention schedule regression passed.
+- Last verified commit: none; final verification covered uncommitted dirty implementation and workflow-state files at committed HEAD `16bcef3e1533a62d68ee0c5ba657697c802b54be`.
+- Dirty/uncommitted files: `functions/event-reminder-email.js`, `functions/index.js`, `specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js`, and `specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js` are dirty/untracked T001/T002/T003 implementation files; `specs/event-reminder-email/tasks.md`, `specs/event-reminder-email/handoff.md`, and `specs/event-reminder-email/status.json` are uncommitted workflow-state sync files. No staging or commit occurred because implementation commit remains unauthorized.
 - Phase commits:
-  - spec: `08827b45d3383c7ca6a4f3b98f37ecf613a89379` - approved spec.
-  - plan: `6ed0af5967b452c87ab1ab026f4181569a1e51d3` - committed planning artifacts.
+  - spec: `7b8b6affa0025735221256dfecb88034541c380a` - approved spec after rebase.
+  - plan: `7572b8e6a6a048d9f5b85db9bd5283f2b8141713` - committed planning artifacts after rebase.
+  - workflow-state-fix: `16bcef3e1533a62d68ee0c5ba657697c802b54be` - pre-G0 workflow planning state after rebase.
 - Rules deploy status: `not_applicable`; no rules change is planned.
 - Incidents: none.
-- Blocked: no for planning-state fix; implementation dispatch is blocked by missing implementation authorization and branch divergence until G0 is resolved.
-- Blocked reason: implementation needs explicit edit authorization and branch reconciliation before T001 dispatch.
+- Blocked: no for G0/T001/T002/T003/T004; closeout is stopped at the unauthorized implementation commit boundary.
+- Blocked reason: none.
 
 ## Read Order
 
@@ -47,19 +49,21 @@
 
 ## Next Action
 
-Reviewer state-fix validation is required before staging the touched workflow files. After the state-fix commit, the coordinator should not dispatch implementation until the user explicitly authorizes implementation edits and the branch no longer reports behind `origin/main`.
+Await coordinator/user decision on the next release boundary. Implementation commit, push, pull request, CI watch, merge, local main sync, Functions deploy, dependency install, package edits, and secret setup remain unauthorized.
 
 ## Latest Verification
 
-Reviewer state-fix verification recorded before staging:
+T004 final integration evidence:
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `git status --short --branch --untracked-files=all` | 0 | Branch `093-event-reminder-email...origin/main [ahead 2, behind 1]`; touched workflow-state files only for reviewer state fix. |
-| `rg -n "TB[D]|TO[D]O|PLACEHOLD[E]R|FILL[_]ME" specs/event-reminder-email/status.json specs/event-reminder-email/tasks.md specs/event-reminder-email/handoff.md` | 1 | No template markers were found. Exit 1 is the expected no-match signal for this command. |
-| `node scripts/validate-workflow-state.js specs/event-reminder-email/status.json` | 0 | `status.json: ok`; one status file valid. |
-| `node scripts/check-superpowers-state.js specs/event-reminder-email/status.json` | 0 | Workflow state valid and synced. |
-| `git diff --check` | 0 | No whitespace errors. |
+| `npx vitest run --project=browser specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js` | 0 | 2 files, 23 tests passed at `2026-06-04T09:22:34Z`. |
+| `npm run lint:changed` | 0 | No lint errors; React version warning only at `2026-06-04T09:22:34Z`. |
+| `npm run type-check:changed` | 0 | No changed-file type errors at `2026-06-04T09:22:34Z`. |
+| `npm run depcruise` | 0 | No dependency violations across 1304 modules and 3038 dependencies; Node module type warning only at `2026-06-04T09:22:34Z`. |
+| `node scripts/validate-workflow-state.js specs/event-reminder-email/status.json` | 0 | `specs/event-reminder-email/status.json: ok`; 1 status file valid at `2026-06-04T09:22:34Z`. |
+| `node scripts/check-superpowers-state.js specs/event-reminder-email/status.json` | 0 | `sync ok`; 1 status file synced at `2026-06-04T09:22:34Z`. |
+| `git diff --check` | 0 | No whitespace errors at `2026-06-04T09:22:34Z`. |
 
 ## Closeout Checklist
 
@@ -73,13 +77,21 @@ Reviewer state-fix verification recorded before staging:
 - [x] Workflow companion check passes.
 - [x] `git diff --check` passes.
 - [x] Planning files were staged by concrete path only.
-- [x] Planning commit was created as `6ed0af5967b452c87ab1ab026f4181569a1e51d3` with message `Add event reminder email plan`.
+- [x] Planning commit is `7572b8e6a6a048d9f5b85db9bd5283f2b8141713` after rebase, with message `Add event reminder email plan`.
+- [x] G0 branch reconciliation completed; branch no longer reports behind `origin/main`.
+- [x] Implementation edit authorization is true; implementation commit remains unauthorized.
+- [x] T001 Engineer DONE and Reviewer PASS evidence recorded.
+- [x] T001 task state is completed in `tasks.md` and `status.json`.
+- [x] T002 Engineer DONE and Reviewer PASS evidence recorded.
+- [x] T002 task state is completed in `tasks.md` and `status.json`.
+- [x] T003 Engineer DONE_WITH_CONCERNS and Reviewer PASS evidence recorded.
+- [x] T003 task state is completed in `tasks.md` and `status.json`.
+- [x] T004 final integration verification passed and workflow state was synced.
 - [ ] Push, pull request, CI watch, merge, local main sync, deploy, dependency install, package edits, and secret setup remain unauthorized and not done.
 
 ## Blockers
 
-- Implementation dispatch is blocked until the coordinator obtains explicit implementation edit authorization.
-- Implementation dispatch is blocked until branch divergence is reconciled and `git status --short --branch --untracked-files=all` no longer reports behind `origin/main`.
+- No G0, T001, T002, T003, or T004 blocker remains.
 - Secret values and live Functions configuration are not authorized in this stage.
 - Functions deploy is not authorized in this stage.
 

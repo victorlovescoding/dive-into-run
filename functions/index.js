@@ -5,6 +5,10 @@ const { FieldValue, Timestamp, getFirestore } = require('firebase-admin/firestor
 const { getStorage } = require('firebase-admin/storage');
 const { logger, setGlobalOptions } = require('firebase-functions');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const {
+  createResendEmailClient,
+  sendEventReminderEmails: sendEventReminderEmailsCore,
+} = require('./event-reminder-email');
 const { purgeExpiredEventRetention: purgeExpiredEventRetentionCore } = require('./event-retention-purge');
 const { purgeExpiredPostRetention: purgeExpiredPostRetentionCore } = require('./post-retention-purge');
 
@@ -15,6 +19,30 @@ const REQUEST_STATUS_FAILED = 'failed';
 const REQUEST_STATUS_FINALIZING = 'finalizing';
 const DELETED_ACTOR_UID = 'deleted-user';
 const DELETED_ACTOR_NAME = '已刪除使用者';
+let functionsParams;
+
+try {
+  functionsParams = require('firebase-functions/params');
+} catch (error) {
+  const isMissingParamsModule =
+    error?.code === 'MODULE_NOT_FOUND' &&
+    error?.message?.includes('firebase-functions/params');
+  const isVitestRun = process.env.VITEST || process.env.NODE_ENV === 'test';
+
+  if (!isMissingParamsModule || !isVitestRun) {
+    throw error;
+  }
+
+  functionsParams = {
+    defineSecret: (name) => ({ value: () => process.env[name] || '' }),
+    defineString: (name) => ({ value: () => process.env[name] || '' }),
+  };
+}
+
+const { defineSecret, defineString } = functionsParams;
+const resendApiKey = defineSecret('RESEND_API_KEY');
+const reminderEmailFrom = defineString('REMINDER_EMAIL_FROM');
+const publicAppBaseUrl = defineString('PUBLIC_APP_BASE_URL');
 
 setGlobalOptions({ maxInstances: 10 });
 
@@ -495,4 +523,39 @@ exports.purgeExpiredEventRetention = onSchedule(
     timeZone: 'Asia/Taipei',
   },
   runScheduledEventRetentionPurge,
+);
+
+/**
+ * Run the scheduled event reminder email scan.
+ * @returns {Promise<void>} Resolves after reminder work completes.
+ */
+async function runScheduledEventReminderEmails() {
+  const now = Timestamp.now();
+  const runId = now.toDate().toISOString();
+  const fromEmail = reminderEmailFrom.value();
+  const config = {
+    emailFrom: fromEmail,
+    fromEmail,
+    publicAppBaseUrl: publicAppBaseUrl.value(),
+    resendApiKey: resendApiKey.value(),
+  };
+  const counts = await sendEventReminderEmailsCore({
+    config,
+    emailClient: createResendEmailClient({ apiKey: config.resendApiKey }),
+    firestore: db,
+    logger,
+    now,
+    runId,
+  });
+
+  logger.info('scheduled event reminder email finished', { counts, runId });
+}
+
+exports.sendEventReminderEmails = onSchedule(
+  {
+    schedule: 'every 15 minutes',
+    secrets: [resendApiKey],
+    timeZone: 'Asia/Taipei',
+  },
+  runScheduledEventReminderEmails,
 );
