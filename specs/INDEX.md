@@ -22,6 +22,7 @@
 | `010-responsive-navbar` | UI | Ready to merge | 響應式導覽列重構 | `spec.md`, `plan.md`, `tasks.md`, `code-review.md` | - |
 | `011-event-share-og` | Social | Ready to merge | 活動分享與 OG metadata | `spec.md`, `plan.md`, `tasks.md`, `code-review.md` | `004` |
 | `012-public-profile` | Auth/Profile | Ready to merge | 公開個人頁與 profile 資料 | `spec.md`, `plan.md`, `tasks.md`, `code-review.md`, `code-review-r2.md` | `006`, `007` |
+| `member-auth-gate` | Auth/Profile | Active | 會員中心登入導覽與直連 redirect guard | `spec.md` | `007`, `012`, `member-page-redesign` |
 | `013-pre-run-weather` | Weather | Ready to merge | 跑前天氣與收藏流程 | `spec.md`, `plan.md`, `tasks.md`, `code-review.md` | - |
 | `weather-taiwan-md-map` | Weather/UI | Active | 天氣頁 Taiwan.md 風格互動地圖規格 | `spec.md` | `013` |
 | `014-notification-system` | Notifications | Ready to merge | 通知中心與未讀分頁 | `spec.md`, `plan.md`, `tasks.md`, `code-review.md` | `015` |
