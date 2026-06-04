@@ -17,10 +17,10 @@
 - Branch: `093-event-reminder-email`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-093-event-reminder-email`.
 - Profile: P4 new feature.
-- Current phase: plan artifacts drafted for planning commit.
+- Current phase: plan artifacts committed; reviewer state-fix pass is pending.
 - Active task: none.
 - Active wave: none.
-- Current HEAD: `08827b45d3383c7ca6a4f3b98f37ecf613a89379` (`Add event reminder email spec`).
+- Current branch ref: `093-event-reminder-email`; reviewed planning checkpoint: `6ed0af5967b452c87ab1ab026f4181569a1e51d3` (`Add event reminder email plan`).
 - Remote head: `b1cdaee96618983d333d1b6da2a78c0312e3b7ba` from local `origin/main`.
 - Branch divergence at plan time: ahead 1, behind 1.
 - Authorization boundary: edit=no for implementation, commit=yes for planning artifacts only, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.

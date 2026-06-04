@@ -3,7 +3,7 @@
   "feature": "event-reminder-email",
   "branch": "093-event-reminder-email",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-093-event-reminder-email",
-  "phase": "plan_ready_pending_planning_commit",
+  "phase": "plan_artifacts_committed",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "093-event-reminder-email",
-    "commit": "08827b45d3383c7ca6a4f3b98f37ecf613a89379",
-    "capturedAt": "2026-06-04T03:39:59Z",
-    "summary": "Approved spec commit at plan-stage start. Branch was ahead 1 and behind origin/main 1."
+    "ref": "093-event-reminder-email",
+    "capturedAt": "2026-06-04T04:03:16Z",
+    "summary": "Branch ref points to the current workflow-state head; the reviewed plan checkpoint is phaseCommits.plan 6ed0af5967b452c87ab1ab026f4181569a1e51d3."
   },
   "remoteHead": {
     "remote": "origin",
@@ -435,32 +435,32 @@
     {
       "command": "git status --short --branch --untracked-files=all",
       "exitCode": 0,
-      "summary": "Branch 093-event-reminder-email...origin/main [ahead 1, behind 1]; only the four planning files are untracked.",
-      "verifiedAt": "2026-06-04T03:51:19Z"
+      "summary": "Branch 093-event-reminder-email...origin/main [ahead 2, behind 1]; touched workflow-state files only for reviewer state fix.",
+      "verifiedAt": "2026-06-04T04:03:16Z"
     },
     {
-      "command": "rg -n \"TB[D]|TO[D]O|PLACEHOLD[E]R|FILL[_]ME\" specs/event-reminder-email/plan.md specs/event-reminder-email/tasks.md specs/event-reminder-email/handoff.md specs/event-reminder-email/status.json",
+      "command": "rg -n \"TB[D]|TO[D]O|PLACEHOLD[E]R|FILL[_]ME\" specs/event-reminder-email/status.json specs/event-reminder-email/tasks.md specs/event-reminder-email/handoff.md",
       "exitCode": 1,
       "summary": "No template markers were found; exit 1 is the expected no-match signal.",
-      "verifiedAt": "2026-06-04T03:51:19Z"
+      "verifiedAt": "2026-06-04T04:03:16Z"
     },
     {
       "command": "node scripts/validate-workflow-state.js specs/event-reminder-email/status.json",
       "exitCode": 0,
       "summary": "status.json validated successfully.",
-      "verifiedAt": "2026-06-04T03:51:19Z"
+      "verifiedAt": "2026-06-04T04:03:16Z"
     },
     {
       "command": "node scripts/check-superpowers-state.js specs/event-reminder-email/status.json",
       "exitCode": 0,
       "summary": "Workflow state is valid and synced.",
-      "verifiedAt": "2026-06-04T03:51:19Z"
+      "verifiedAt": "2026-06-04T04:03:16Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-04T03:51:19Z"
+      "verifiedAt": "2026-06-04T04:03:16Z"
     }
   ],
   "lastVerifiedCommit": null,
@@ -473,9 +473,9 @@
     },
     {
       "phase": "plan",
-      "ref": "093-event-reminder-email",
-      "summary": "Branch ref resolves to the planning checkpoint after the planning commit; final SHA is reported by the Planner because a commit cannot contain its own SHA.",
-      "committedAt": "pending planning commit"
+      "sha": "6ed0af5967b452c87ab1ab026f4181569a1e51d3",
+      "summary": "Committed event reminder email planning artifacts.",
+      "committedAt": "2026-06-04T03:53:19Z"
     }
   ],
   "rulesDeployStatus": {
@@ -486,5 +486,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-06-04T03:51:19Z"
+  "updatedAt": "2026-06-04T04:03:16Z"
 }

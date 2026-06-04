@@ -6,9 +6,9 @@
 - Feature slug: `event-reminder-email`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-093-event-reminder-email`.
 - Branch: `093-event-reminder-email`.
-- Current head: `08827b45d3383c7ca6a4f3b98f37ecf613a89379` (`Add event reminder email spec`).
+- Current branch ref: `093-event-reminder-email`; reviewed planning checkpoint: `6ed0af5967b452c87ab1ab026f4181569a1e51d3` (`Add event reminder email plan`).
 - Remote head: `b1cdaee96618983d333d1b6da2a78c0312e3b7ba` from local `origin/main`.
-- Captured at: `2026-06-04T03:39:59Z`.
+- Captured at: `2026-06-04T04:03:16Z`.
 - Branch divergence at plan time: ahead 1, behind 1.
 - Authorization boundary:
   - edit: no for implementation; yes only for this planning artifact edit.
@@ -19,17 +19,17 @@
   - merge: no.
   - localMainSync: no.
   - deployFirestoreRules: no.
-- Current phase: plan artifacts drafted for planning commit.
+- Current phase: plan artifacts committed; reviewer state-fix pass is pending.
 - Active task: none.
 - Active wave: none.
 - Latest reviewer decision: none.
-- Last verified commit: none for plan artifacts before the planning commit.
+- Last verified commit: none; implementation verification has not started.
 - Phase commits:
   - spec: `08827b45d3383c7ca6a4f3b98f37ecf613a89379` - approved spec.
-  - plan: `093-event-reminder-email` - branch ref resolves to the planning checkpoint after the planning commit; final SHA is reported by the Planner.
+  - plan: `6ed0af5967b452c87ab1ab026f4181569a1e51d3` - committed planning artifacts.
 - Rules deploy status: `not_applicable`; no rules change is planned.
 - Incidents: none.
-- Blocked: no for planning commit; implementation dispatch is blocked by missing implementation authorization and branch divergence until G0 is resolved.
+- Blocked: no for planning-state fix; implementation dispatch is blocked by missing implementation authorization and branch divergence until G0 is resolved.
 - Blocked reason: implementation needs explicit edit authorization and branch reconciliation before T001 dispatch.
 
 ## Read Order
@@ -47,16 +47,16 @@
 
 ## Next Action
 
-Planner self-review and validation are required before staging the four planning files. After the planning commit, the coordinator should not dispatch implementation until the user explicitly authorizes implementation edits and the branch no longer reports behind `origin/main`.
+Reviewer state-fix validation is required before staging the touched workflow files. After the state-fix commit, the coordinator should not dispatch implementation until the user explicitly authorizes implementation edits and the branch no longer reports behind `origin/main`.
 
 ## Latest Verification
 
-Plan-stage verification recorded before staging:
+Reviewer state-fix verification recorded before staging:
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `git status --short --branch --untracked-files=all` | 0 | Branch `093-event-reminder-email...origin/main [ahead 1, behind 1]`; only the four planning files are untracked. |
-| `rg -n "TB[D]|TO[D]O|PLACEHOLD[E]R|FILL[_]ME" specs/event-reminder-email/plan.md specs/event-reminder-email/tasks.md specs/event-reminder-email/handoff.md specs/event-reminder-email/status.json` | 1 | No template markers were found. Exit 1 is the expected no-match signal for this command. |
+| `git status --short --branch --untracked-files=all` | 0 | Branch `093-event-reminder-email...origin/main [ahead 2, behind 1]`; touched workflow-state files only for reviewer state fix. |
+| `rg -n "TB[D]|TO[D]O|PLACEHOLD[E]R|FILL[_]ME" specs/event-reminder-email/status.json specs/event-reminder-email/tasks.md specs/event-reminder-email/handoff.md` | 1 | No template markers were found. Exit 1 is the expected no-match signal for this command. |
 | `node scripts/validate-workflow-state.js specs/event-reminder-email/status.json` | 0 | `status.json: ok`; one status file valid. |
 | `node scripts/check-superpowers-state.js specs/event-reminder-email/status.json` | 0 | Workflow state valid and synced. |
 | `git diff --check` | 0 | No whitespace errors. |
@@ -72,8 +72,8 @@ Plan-stage verification recorded before staging:
 - [x] Workflow state validation passes.
 - [x] Workflow companion check passes.
 - [x] `git diff --check` passes.
-- [ ] Planning files are staged by concrete path only.
-- [ ] Planning commit is created with message `Add event reminder email plan`.
+- [x] Planning files were staged by concrete path only.
+- [x] Planning commit was created as `6ed0af5967b452c87ab1ab026f4181569a1e51d3` with message `Add event reminder email plan`.
 - [ ] Push, pull request, CI watch, merge, local main sync, deploy, dependency install, package edits, and secret setup remain unauthorized and not done.
 
 ## Blockers
