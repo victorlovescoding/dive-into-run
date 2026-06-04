@@ -10,6 +10,7 @@ import useMobileDrawer from './useMobileDrawer';
 import useUserMenu from './useUserMenu';
 import MobileDrawer from './MobileDrawer';
 import UserMenu from './UserMenu';
+import getVisibleNavItems from './member-nav-visibility';
 import { NAV_ITEMS, isActivePath } from './nav-constants';
 import styles from './Navbar.module.css';
 
@@ -25,11 +26,12 @@ export default function Navbar() {
   const { isDropdownOpen, dropdownRef, avatarButtonRef, toggleDropdown, handleSignOut } =
     useUserMenu();
 
+  const visibleNavItems = getVisibleNavItems(NAV_ITEMS, { user, loading });
   const hamburgerLabel = isDrawerOpen ? '關閉導覽選單' : '開啟導覽選單';
   const hamburgerClass = isDrawerOpen
     ? `${styles.hamburger} ${styles.hamburgerOpen}`
     : styles.hamburger;
-  const desktopLinks = NAV_ITEMS.map((item) => {
+  const desktopLinks = visibleNavItems.map((item) => {
     const active = isActivePath(pathname, item.href);
     const linkClass = active ? `${styles.link} ${styles.linkActive}` : styles.link;
     const ariaCurrent = active ? 'page' : undefined;
