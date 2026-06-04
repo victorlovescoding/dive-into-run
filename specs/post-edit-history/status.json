@@ -3,9 +3,9 @@
   "feature": "post-edit-history",
   "branch": "092-post-edit-history",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history",
-  "phase": "spec_approved_planner_next",
-  "activeTask": null,
-  "activeWave": null,
+  "phase": "planning_ready",
+  "activeTask": "T001",
+  "activeWave": "wave-1",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,27 +18,438 @@
   },
   "currentHead": {
     "branch": "092-post-edit-history",
-    "commit": "d5568aea71f9b146ead4c460a42b62d25b4040e3",
-    "capturedAt": "2026-06-04T03:38:38Z",
-    "summary": "Post-rebase spec-approved workflow state; local spec commits were rewritten after origin/main b1cdaee."
+    "commit": "9025466aa75b19f3b24737acad5dd5c62126474e",
+    "capturedAt": "2026-06-04T03:49:57Z",
+    "summary": "Planning contracts prepared from clean branch ahead 3 of origin/main before workflow doc edits."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "b1cdaee96618983d333d1b6da2a78c0312e3b7ba",
-    "capturedAt": "2026-06-04T03:38:38Z",
-    "summary": "origin/main at post-rebase state sync: Align event comment input behavior."
+    "capturedAt": "2026-06-04T03:49:57Z",
+    "summary": "origin/main at local tracking ref: Align event comment input behavior."
   },
   "completedTasks": [],
-  "tasks": [],
+  "tasks": [
+    {
+      "id": "T001",
+      "title": "Shared Edit-History Core And Comment Compatibility",
+      "state": "ready",
+      "attempt": 1,
+      "wave": "wave-1",
+      "engineer": "Shared Core Engineer",
+      "reviewer": "Shared Core Reviewer",
+      "scope": [
+        "Create shared edit-history UI/runtime primitives.",
+        "Preserve existing post-comment history behavior and CommentHistoryModal import API.",
+        "Keep buildCommentEditHistoryPayload stable while extracting generic builder logic where useful."
+      ],
+      "nonScope": [
+        "No article post persistence, Firestore rules, account-deletion cleanup, post list/detail article wiring, event-comment rules, package files, config, or lockfiles.",
+        "Do not touch useCommentMutations.js or change its Promise<boolean> submit contract."
+      ],
+      "ownedFiles": [
+        "src/service/comment-edit-history-service.js",
+        "src/runtime/hooks/useEditHistoryModal.js",
+        "src/runtime/hooks/useEditHistoryModal.test.jsx",
+        "src/components/EditedAffordance.jsx",
+        "src/components/EditHistoryModal.jsx",
+        "src/components/EditHistoryModal.test.jsx",
+        "src/components/CommentHistoryModal.jsx",
+        "src/components/CommentHistoryModal.module.css",
+        "src/components/CommentHistoryModal.test.jsx",
+        "src/components/CommentCard.jsx",
+        "src/components/CommentCard.module.css"
+      ],
+      "readOnlyContext": [
+        "specs/post-edit-history/spec.md",
+        "specs/post-edit-history/plan.md",
+        "src/runtime/hooks/usePostComments.js",
+        "src/runtime/hooks/usePostComments.test.jsx",
+        "src/runtime/hooks/usePostDetailRuntime.js",
+        "src/ui/posts/PostDetailScreen.jsx",
+        "src/ui/posts/PostDetailScreen.test.jsx",
+        "src/service/event-comment-service.js",
+        "src/runtime/hooks/useCommentMutations.js",
+        "src/runtime/hooks/useCommentMutations.test.jsx"
+      ],
+      "dependencies": [],
+      "engineerInstructions": [
+        "Add EditedAffordance with the existing visible 已編輯 text and accessible label semantics.",
+        "Add EditHistoryModal for generic current-version plus previous-version rendering.",
+        "Keep CommentHistoryModal as a compatibility wrapper accepting comment, history, historyError, and onClose.",
+        "Add useEditHistoryModal for generic open/load/error/close/reset state.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T001.1: Existing comment cards still show 已編輯 only when comment.isEdited is truthy and still call onViewHistory(comment).",
+        "AC-T001.2: CommentHistoryModal public props remain compatible with existing consumers.",
+        "AC-T001.3: Generic modal can render content-only entries and title+content-capable entries.",
+        "AC-T001.4: Generic modal state handles load success, load failure, and close reset.",
+        "AC-T001.5: Event comment mutation submit Promise<boolean> behavior is untouched."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx",
+          "expectedSignal": "exit 0; shared hook/modal and compatibility wrapper tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
+          "expectedSignal": "exit 0; existing post-comment history runtime/screen behavior remains green",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run src/runtime/hooks/useCommentMutations.test.jsx",
+          "expectedSignal": "exit 0; handleSubmit true/false contract remains green",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only T001 owned files.",
+        "Required commands pass with the expected signal.",
+        "CommentHistoryModal remains a thin compatibility wrapper.",
+        "No article post persistence, Firestore rules, event-comment rules, package, config, or lockfile changes are present."
+      ],
+      "reviewerRejectCriteria": [
+        "Diff touches non-owned files without coordinator approval.",
+        "Comment history UI/runtime behavior regresses or tests are missing.",
+        "useCommentMutations or event-comment rules are changed.",
+        "Shared abstractions contain article-post path/rules knowledge.",
+        "Verification is missing, stale, failed, or combined into shell chains."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T002",
+      "title": "Article Post History Persistence, Strict Rules, And Cleanup",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-2",
+      "engineer": "Persistence And Rules Engineer",
+      "reviewer": "Persistence And Rules Reviewer",
+      "scope": [
+        "Implement article post edit history persistence at /posts/{postId}/history/{historyId}.",
+        "Enforce strict parent/history atomic validation in Firestore rules.",
+        "Add post-level history cleanup in account deletion.",
+        "Add focused service/use-case/rules tests."
+      ],
+      "nonScope": [
+        "No UI screen/card edits.",
+        "Do not harden event-comment rules or change event-comment repo/service behavior.",
+        "No migrations/backfills, rules deploy, package files, config, or lockfiles."
+      ],
+      "ownedFiles": [
+        "src/service/post-service.js",
+        "src/service/post-service.test.js",
+        "src/runtime/client/use-cases/post-use-cases.js",
+        "src/runtime/client/use-cases/post-use-cases.test.js",
+        "src/repo/client/firebase-posts-repo.js",
+        "src/repo/server/account-deletion-server-repo.js",
+        "firestore.rules",
+        "tests/server/firestore/post-soft-delete-rules.test.js"
+      ],
+      "readOnlyContext": [
+        "specs/post-edit-history/spec.md",
+        "specs/post-edit-history/plan.md",
+        "src/service/comment-edit-history-service.js",
+        "src/service/event-comment-service.js",
+        "src/runtime/hooks/usePostsPageRuntime.js",
+        "src/runtime/hooks/usePostDetailRuntime.js",
+        "src/repo/client/firebase-event-comments-repo.js",
+        "tests/server/firestore/event-soft-delete-rules.test.js"
+      ],
+      "dependencies": [
+        "T001"
+      ],
+      "engineerInstructions": [
+        "Read current post before writing and create a history entry with pre-edit title/content.",
+        "Parent update must include trimmed title/content, updatedAt, isEdited=true, and lastEditHistoryId.",
+        "Rules must reject missing history, standalone history, fake pre-edit fields, mismatched timestamp/id, non-author writes, invalid payloads, history update/delete, and inactive parent reads.",
+        "Account deletion must delete post-level history.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T002.1: Editing article post title/content creates an immutable pre-edit history doc.",
+        "AC-T002.2: Parent post update and history create cross-validate pre-edit title/content, timestamp, and lastEditHistoryId/historyId.",
+        "AC-T002.3: Article history read follows active post read visibility.",
+        "AC-T002.4: Existing post-comment history strict validation remains green.",
+        "AC-T002.5: Event-comment rules are not modified.",
+        "AC-T002.6: Account deletion cleanup includes post-level history."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run src/service/post-service.test.js src/runtime/client/use-cases/post-use-cases.test.js",
+          "expectedSignal": "exit 0; article post payload/history builder and use-case tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "firebase emulators:exec --only firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
+          "expectedSignal": "exit 0; post rules tests pass including article history acceptance/rejection cases",
+          "lastRun": null
+        },
+        {
+          "command": "git diff -- firestore.rules",
+          "expectedSignal": "output shows no changes under event comment history rules except unchanged context",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only T002 owned files.",
+        "Required commands pass with expected signals.",
+        "Rules validate both sides of parent/history coupling.",
+        "Event-comment rules are not hardened or rewritten.",
+        "rulesDeployStatus is carried as required, not deployed."
+      ],
+      "reviewerRejectCriteria": [
+        "Missing atomicity or strict rules validation.",
+        "History stores current article content instead of pre-edit title/content.",
+        "Parent lastEditHistoryId and history id are not coupled.",
+        "Event-comment rules or behavior changes.",
+        "Account deletion ignores post-level history.",
+        "Verification is missing, stale, failed, or combined into shell chains."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T003",
+      "title": "Article Post List/Detail UI Wiring And Browser Evidence",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-3",
+      "engineer": "UI Runtime Engineer",
+      "reviewer": "UI Runtime Reviewer",
+      "scope": [
+        "Wire article post 已編輯 affordance and history modal into /posts and /posts/{postId}.",
+        "Add runtime state/handlers for article post history in list and detail.",
+        "Keep comment history modal behavior working in post detail.",
+        "Add focused runtime/UI tests and browser evidence."
+      ],
+      "nonScope": [
+        "No persistence/rules/account-deletion edits.",
+        "No shared core edits unless coordinator updates the task.",
+        "No event-comment UI files, package files, config, lockfiles, or rules deploy."
+      ],
+      "ownedFiles": [
+        "src/components/PostCard.jsx",
+        "src/components/PostCard.module.css",
+        "src/runtime/hooks/usePostsPageRuntime.js",
+        "src/runtime/hooks/usePostsPageRuntime.test.jsx",
+        "src/runtime/hooks/usePostDetailRuntime.js",
+        "src/runtime/hooks/usePostDetailRuntime.test.jsx",
+        "src/ui/posts/PostsPageScreen.jsx",
+        "src/ui/posts/PostsPageScreen.test.jsx",
+        "src/ui/posts/PostDetailScreen.jsx",
+        "src/ui/posts/PostDetailScreen.test.jsx"
+      ],
+      "readOnlyContext": [
+        "specs/post-edit-history/spec.md",
+        "specs/post-edit-history/plan.md",
+        "src/components/EditedAffordance.jsx",
+        "src/components/EditHistoryModal.jsx",
+        "src/components/CommentHistoryModal.jsx",
+        "src/components/CommentCard.jsx",
+        "src/runtime/hooks/useEditHistoryModal.js",
+        "src/runtime/hooks/usePostComments.js",
+        "src/runtime/client/use-cases/post-use-cases.js",
+        "src/service/post-service.js"
+      ],
+      "dependencies": [
+        "T001",
+        "T002"
+      ],
+      "engineerInstructions": [
+        "Extend PostCard with article history affordance props without breaking owner menu, links, like/favorite, and children behavior.",
+        "Expose article history modal state and handlers in list/detail runtimes.",
+        "Render article history modal in PostsPageScreen and PostDetailScreen.",
+        "Preserve existing post-comment history modal rendering.",
+        "Modify only the owned files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T003.1: Edited article posts show 已編輯 in both list and detail UI.",
+        "AC-T003.2: Clicking article 已編輯 opens a modal showing pre-edit title and content.",
+        "AC-T003.3: Modal close resets article history state.",
+        "AC-T003.4: Failed article history load leaves an error visible without corrupting current post state.",
+        "AC-T003.5: Existing comment history modal behavior remains green in detail.",
+        "AC-T003.6: Desktop/mobile browser evidence shows no material overlap or layout regression."
+      ],
+      "verification": [
+        {
+          "command": "npx vitest run src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx src/ui/posts/PostsPageScreen.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
+          "expectedSignal": "exit 0; article post history wiring and comment regression tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0; changed files lint clean",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0; changed-file type check clean",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only T003 owned files.",
+        "Required commands pass with expected signals.",
+        "Browser evidence covers /posts and /posts/{postId} on desktop and mobile.",
+        "Article affordance/modal works and comment history is not regressed.",
+        "No persistence/rules/event-comment/package/config/lockfile changes are present."
+      ],
+      "reviewerRejectCriteria": [
+        "UI requires changes outside T003 owned files without coordinator approval.",
+        "Browser evidence is missing, blank, overlapping, or has material console/network errors.",
+        "Article history modal shows current content as history instead of pre-edit title/content.",
+        "Comment history affordance/modal regresses.",
+        "Verification is missing, stale, failed, or combined into shell chains."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    },
+    {
+      "id": "T004",
+      "title": "Final Integration Verification And Workflow State",
+      "state": "todo",
+      "attempt": 1,
+      "wave": "wave-4",
+      "engineer": "Integration Verifier",
+      "reviewer": "Integration Reviewer",
+      "scope": [
+        "Run final integration verification after T001-T003 are completed.",
+        "Sync tasks.md, handoff.md, and status.json with final local evidence.",
+        "Record rules deploy state accurately without claiming deployment."
+      ],
+      "nonScope": [
+        "No production code, tests, rules, package files, config, or lockfiles.",
+        "No push, PR, CI watch, merge, local main sync, or rules deploy.",
+        "Do not mark tasks completed without Reviewer PASS."
+      ],
+      "ownedFiles": [
+        "specs/post-edit-history/tasks.md",
+        "specs/post-edit-history/handoff.md",
+        "specs/post-edit-history/status.json"
+      ],
+      "readOnlyContext": [
+        "AGENTS.md",
+        "docs/superpowers/workflow.md",
+        "docs/superpowers/task-contract.md",
+        "docs/superpowers/status.schema.json",
+        "specs/post-edit-history/spec.md",
+        "specs/post-edit-history/plan.md",
+        "T001-T003 Engineer and Reviewer reports",
+        "git status --short --branch",
+        "git diff --name-only"
+      ],
+      "dependencies": [
+        "T001",
+        "T002",
+        "T003"
+      ],
+      "engineerInstructions": [
+        "Confirm T001, T002, and T003 are completed in tasks.md and status.json.",
+        "Run final integration commands one at a time and record exit codes.",
+        "Update workflow state with latest task states, current head, verification, phase commits, rules deploy state, and incidents.",
+        "If firestore.rules changed, keep rulesDeployStatus required/changed=true/deployedCommit=null.",
+        "Modify only the owned workflow files above."
+      ],
+      "acceptanceCriteria": [
+        "AC-T004.1: Workflow files agree on phase, active task, active wave, completed tasks, latest verification, rules deploy state, and incidents.",
+        "AC-T004.2: Final commands pass or failure is recorded as blocked with owner/next decision.",
+        "AC-T004.3: Browser evidence is present and reviewed.",
+        "AC-T004.4: No deployed rules or deployed product behavior claim is made.",
+        "AC-T004.5: No unauthorized closeout action occurs."
+      ],
+      "verification": [
+        {
+          "command": "git status --short --branch",
+          "expectedSignal": "exit 0; branch is 092-post-edit-history and dirty files are expected reviewed files or tree is clean",
+          "lastRun": null
+        },
+        {
+          "command": "git diff --check",
+          "expectedSignal": "exit 0; no whitespace errors",
+          "lastRun": null
+        },
+        {
+          "command": "npm run lint:changed",
+          "expectedSignal": "exit 0; changed files lint clean",
+          "lastRun": null
+        },
+        {
+          "command": "npm run type-check:changed",
+          "expectedSignal": "exit 0; changed-file type check clean",
+          "lastRun": null
+        },
+        {
+          "command": "npm run workflow:check",
+          "expectedSignal": "exit 0; post-edit-history status valid and synced",
+          "lastRun": null
+        },
+        {
+          "command": "firebase emulators:exec --only firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
+          "expectedSignal": "exit 0; post rules tests pass",
+          "lastRun": null
+        },
+        {
+          "command": "npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx src/service/post-service.test.js src/runtime/client/use-cases/post-use-cases.test.js src/runtime/hooks/usePostsPageRuntime.test.jsx src/runtime/hooks/usePostDetailRuntime.test.jsx src/ui/posts/PostsPageScreen.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
+          "expectedSignal": "exit 0; focused shared/persistence/UI tests pass",
+          "lastRun": null
+        }
+      ],
+      "reviewerPassCriteria": [
+        "Diff touches only T004 owned workflow files.",
+        "Final verification and browser evidence are fresh enough for current head/working tree.",
+        "Workflow files are synced and pass npm run workflow:check.",
+        "Rules deploy state is accurate and no deployment claim is made.",
+        "Authorization boundary is respected."
+      ],
+      "reviewerRejectCriteria": [
+        "Workflow state files drift.",
+        "Any final gate fails without a recorded blocker.",
+        "Browser evidence is absent or stale.",
+        "State implies deployed rules or deployed product behavior without deploy evidence.",
+        "Unauthorized closeout action occurs."
+      ],
+      "reviewerDecision": null,
+      "evidence": {
+        "engineerReport": null,
+        "reviewerReport": null,
+        "commandOutputSummary": [],
+        "changedFilesSummary": []
+      }
+    }
+  ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "d5568aea71f9b146ead4c460a42b62d25b4040e3",
+  "lastVerifiedCommit": "9025466aa75b19f3b24737acad5dd5c62126474e",
   "phaseCommits": [
     {
       "phase": "spec_approved",
       "commit": "d5568aea71f9b146ead4c460a42b62d25b4040e3",
-      "summary": "Reviewed spec workflow docs committed before Planner dispatch; commit rewritten by successful rebase onto origin/main b1cdaee."
+      "summary": "Reviewed spec workflow docs committed before Planner dispatch."
+    },
+    {
+      "phase": "post_rebase_state",
+      "commit": "9025466aa75b19f3b24737acad5dd5c62126474e",
+      "summary": "Recorded post-rebase workflow state; branch ahead 3 of origin/main."
     }
   ],
   "rulesDeployStatus": {
@@ -53,33 +464,21 @@
     {
       "command": "git status --short --branch",
       "exitCode": 0,
-      "summary": "On 092-post-edit-history; branch is ahead 2 of origin/main; modified files are handoff.md, status.json, and tasks.md.",
-      "verifiedAt": "2026-06-04T03:40:33Z"
-    },
-    {
-      "command": "git rev-parse HEAD",
-      "exitCode": 0,
-      "summary": "HEAD is d5568aea71f9b146ead4c460a42b62d25b4040e3.",
-      "verifiedAt": "2026-06-04T03:40:33Z"
-    },
-    {
-      "command": "git rev-parse origin/main",
-      "exitCode": 0,
-      "summary": "origin/main is b1cdaee96618983d333d1b6da2a78c0312e3b7ba.",
-      "verifiedAt": "2026-06-04T03:40:33Z"
+      "summary": "On 092-post-edit-history; branch ahead 3 of origin/main; modified files are plan.md, tasks.md, handoff.md, and status.json.",
+      "verifiedAt": "2026-06-04T03:57:06Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-04T03:40:33Z"
+      "verifiedAt": "2026-06-04T03:57:06Z"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
-      "summary": "17 status file(s) valid and 17 status file(s) synced; post-edit-history/status.json ok and sync ok.",
-      "verifiedAt": "2026-06-04T03:40:33Z"
+      "summary": "17 status file(s) valid and 17 status file(s) synced; specs/post-edit-history/status.json ok and sync ok.",
+      "verifiedAt": "2026-06-04T03:57:06Z"
     }
   ],
-  "updatedAt": "2026-06-04T03:40:33Z"
+  "updatedAt": "2026-06-04T03:57:06Z"
 }

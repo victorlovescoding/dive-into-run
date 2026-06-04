@@ -5,50 +5,80 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history`
 - Branch: `092-post-edit-history`
-- Current head: `d5568aea71f9b146ead4c460a42b62d25b4040e3` (`Record post history spec approval`)
+- Current head: `9025466aa75b19f3b24737acad5dd5c62126474e` (`Record post history rebase state`)
 - Remote head: `origin/main` at `b1cdaee96618983d333d1b6da2a78c0312e3b7ba` (`Align event comment input behavior`)
 - Authorization boundary:
-  - edit: true after Planner produces implementation task contracts; current post-rebase coordinator state edits are limited to `specs/post-edit-history/handoff.md`, `specs/post-edit-history/tasks.md`, and `specs/post-edit-history/status.json`
-  - commit: true when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches
+  - edit: true
+  - commit: true after Engineer + Reviewer + fresh verification for reviewed implementation batches
   - push: false
   - pullRequest: false
   - ciWatch: false
   - merge: false
   - localMainSync: false
   - deployFirestoreRules: false
-- Current phase: `spec_approved_planner_next`
-- Active task: none
-- Active wave: none
-- Latest reviewer decision: `review_passed` for spec docs
-- Last verified commit: `d5568aea71f9b146ead4c460a42b62d25b4040e3`
-- Phase commits: `spec_approved` -> `d5568aea71f9b146ead4c460a42b62d25b4040e3` (rewritten by successful rebase onto `origin/main` `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`)
+- Current phase: `planning_ready`
+- Active task: `T001`
+- Active wave: `wave-1`
+- Latest reviewer decision: `review_passed` for spec docs; no implementation task reviewed yet
+- Last verified commit: `9025466aa75b19f3b24737acad5dd5c62126474e`
+- Phase commits:
+  - `spec_approved` -> `d5568aea71f9b146ead4c460a42b62d25b4040e3`
+  - `post_rebase_state` -> `9025466aa75b19f3b24737acad5dd5c62126474e`
 - Rules deploy status: `required`; required later, changed=false, deployedCommit=null
 - Incidents: none
 - Blocked: no
 - Blocked reason: none
-- Latest reconciliation: 2026-06-04T03:38:38Z; synchronized post-rebase workflow state after branch `092-post-edit-history` was successfully rebased onto `origin/main` at `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`. Local spec commits were rewritten and current HEAD is `d5568aea71f9b146ead4c460a42b62d25b4040e3`.
+- Latest planning sync: 2026-06-04T03:57:06Z; Planner produced serialized implementation task contracts T001-T004 and recorded verification evidence.
 
 ## Read Order
 
 1. `AGENTS.md`
 2. `docs/superpowers/workflow.md`
-3. `specs/post-edit-history/handoff.md`
-4. `specs/post-edit-history/tasks.md`
-5. `specs/post-edit-history/status.json`
-6. `specs/post-edit-history/spec.md`
-7. `specs/post-edit-history/plan.md`
+3. `docs/superpowers/task-contract.md`
+4. `specs/post-edit-history/handoff.md`
+5. `specs/post-edit-history/tasks.md`
+6. `specs/post-edit-history/status.json`
+7. `specs/post-edit-history/spec.md`
+8. `specs/post-edit-history/plan.md`
 
 ## Next Action
 
-User approved the spec and explicitly authorized implementation to start after Planner task contracts. Coordinator should dispatch Planner next to produce implementation-ready task slices before any production code, tests, or rules edits.
+Dispatch `T001 - Shared Edit-History Core And Comment Compatibility` to an Engineer subagent.
+
+First dispatchable owned files:
+
+- `src/service/comment-edit-history-service.js`
+- `src/runtime/hooks/useEditHistoryModal.js`
+- `src/runtime/hooks/useEditHistoryModal.test.jsx`
+- `src/components/EditedAffordance.jsx`
+- `src/components/EditHistoryModal.jsx`
+- `src/components/EditHistoryModal.test.jsx`
+- `src/components/CommentHistoryModal.jsx`
+- `src/components/CommentHistoryModal.module.css`
+- `src/components/CommentHistoryModal.test.jsx`
+- `src/components/CommentCard.jsx`
+- `src/components/CommentCard.module.css`
+
+## Task Graph Summary
+
+```text
+T001 shared core
+  -> T002 article persistence/rules/cleanup
+      -> T003 post list/detail UI wiring
+          -> T004 final integration gate/workflow state
+```
+
+- Execution is explicitly serialized.
+- Shared core is prerequisite to persistence/UI adapters.
+- `firestore.rules` and account-deletion cleanup are isolated in T002.
+- Browser evidence is required in T003 and validated again in T004.
+- T004 owns only workflow state and final integration verification.
 
 ## Latest Verification
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `git status --short --branch` | 0 | On `092-post-edit-history`; branch is ahead 2 of `origin/main`; modified files are `handoff.md`, `status.json`, and `tasks.md`. |
-| `git rev-parse HEAD` | 0 | `d5568aea71f9b146ead4c460a42b62d25b4040e3`. |
-| `git rev-parse origin/main` | 0 | `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`. |
+| `git status --short --branch` | 0 | On `092-post-edit-history`; branch ahead 3 of `origin/main`; modified files are `plan.md`, `tasks.md`, `handoff.md`, and `status.json`. |
 | `git diff --check` | 0 | No whitespace errors. |
 | `npm run workflow:check` | 0 | 17 status file(s) valid and 17 status file(s) synced; `specs/post-edit-history/status.json` ok and sync ok. |
 
@@ -69,29 +99,29 @@ User approved the spec and explicitly authorized implementation to start after P
 
 ## Blockers
 
-- None for Planner dispatch.
+- None for `T001` dispatch.
 
 ## Latest Review State
 
-- Reviewer returned `review_passed` for the spec docs.
-- User approved the spec.
-- Approval reconciliation completed on 2026-06-04: `spec.md` now matches `tasks.md`, `handoff.md`, and `status.json`.
-- Post-rebase state sync completed on 2026-06-04: branch `092-post-edit-history` is based on `origin/main` `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`; current HEAD is rewritten commit `d5568aea71f9b146ead4c460a42b62d25b4040e3`.
-- Planner dispatch is next; Planner owns slicing and implementation task contracts.
-- Implementation edit phase is authorized after Planner task contracts.
-- Commit is authorized when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches. Push, PR, CI watch, merge, local `main` sync, and rules deploy remain unauthorized.
-- Package-lock cleanup is complete; the worktree was clean before this planning state update.
+- Reviewer returned `review_passed` for spec docs.
+- User approved the spec and authorized implementation start after Planner task contracts.
+- Planner contracts are now available in `tasks.md`.
+- Commit is authorized when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches.
+- Push, PR, CI watch, merge, local `main` sync, and rules deploy remain unauthorized.
 
 ## Reviewer Attention
 
 - Treat article post history path as fixed: `/posts/{postId}/history/{historyId}`.
-- Treat article post history read policy as a user-reviewable spec decision, not an open question: same read visibility as the active article post; history is unavailable when the parent post is soft-deleted or otherwise inaccessible.
-- Check that Planner preserves mandatory strict post-comment style validation: parent post update and history create cross-validate pre-edit `title` + `content`, timestamp, and parent `lastEditHistoryId` / `historyId` coupling.
-- Check that `rulesDeployStatus.state=required` is acceptable at spec stage: no rules changed yet, but the feature is expected to require rules changes later.
+- Treat article post history read policy as fixed: same read visibility as the active article post; history is unavailable when the parent post is soft-deleted or otherwise inaccessible.
+- Enforce strict post-comment style validation for article posts: parent post update and history create cross-validate pre-edit `title` + `content`, timestamp, and parent `lastEditHistoryId` / `historyId` coupling.
+- T002 must not harden event-comment Firestore rules.
+- T003 must account for origin/main event comment input behavior if it ever touches comment mutation surfaces; current plan avoids those files.
 
 ## Pitfalls
 
-- Do not treat this plan as implementation-ready; Planner has not sliced owned files or verification commands yet.
-- Do not harden event comments in this feature.
-- Do not claim deployed rules or deployed product behavior without rules deploy evidence.
-- Do not push, create PR, watch CI, merge, sync local `main`, or deploy rules under the current authorization boundary.
+- Do not implement production code from the Planner role.
+- Do not broaden T001 into article post persistence or UI wiring.
+- Do not run a rules deploy; `deployFirestoreRules=false`.
+- Do not claim deployed rules or deployed product behavior without deploy evidence.
+- Do not push, create PR, watch CI, merge, or sync local `main` under the current authorization boundary.
+- Stop if package-lock or unrelated files become dirty.
