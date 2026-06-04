@@ -14,20 +14,25 @@
 ## Current Workflow State
 
 - Profile: P4 Full Feature/Program.
-- Phase: `planning_ready`.
-- Active task: `T001`.
-- Active wave: `wave-1`.
-- Latest reviewer decision: `review_passed` for spec docs; Planner contracts pending Reviewer after implementation starts.
+- Phase: `implementation_ready`.
+- Active task: `T002` after `T001` completion; do not dispatch until the `shared_core` commit checkpoint is created and branch-behind state is handled.
+- Active wave: `wave-2`.
+- Latest reviewer decision: `review_passed` for `T001` shared edit-history core and comment compatibility.
 - Blocked: no.
-- Next gate: dispatch `T001` Engineer.
+- Next gate: commit `shared_core` checkpoint, then handle branch behind `origin/main` by 1 if current status still confirms it before dispatching `T002`.
 - Authorization boundary: `edit=true`, `commit=true` after Engineer + Reviewer + fresh verification for reviewed implementation batches; `push=false`, `pullRequest=false`, `ciWatch=false`, `merge=false`, `localMainSync=false`, `deployFirestoreRules=false`.
-- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `9025466aa75b19f3b24737acad5dd5c62126474e`, tracking `origin/main` at `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`.
+- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `9025466aa75b19f3b24737acad5dd5c62126474e`, tracking `origin/main` at `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`; `git status --short --branch` currently reports branch ahead 4 and behind 1.
 - Rules deploy status: `required`, currently `changed=false`; T002 is expected to change `firestore.rules`, but deploy remains unauthorized.
 - Incidents: none.
 - Planning evidence:
   - Planner report: Produced serialized T001-T004 implementation task contracts; no production code, tests, rules, package files, config, or lockfiles modified.
+  - T001 Engineer report: Implemented shared edit-history core, generic modal/runtime primitives, and comment compatibility within T001 owned files.
+  - T001 Reviewer report: `review_passed` after a stale-load issue was fixed.
   - Command output summary:
-    - `git status --short --branch`: exit 0; on `092-post-edit-history`; branch ahead 3 of `origin/main`; modified files are `plan.md`, `tasks.md`, `handoff.md`, and `status.json`.
+    - `npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx`: exit 0; 3 files / 11 tests passed.
+    - `npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx`: exit 0; 2 files / 14 tests passed.
+    - `npx vitest run src/runtime/hooks/useCommentMutations.test.jsx`: exit 0; 1 file / 4 tests passed.
+    - `git status --short --branch`: exit 0; on `092-post-edit-history`; branch ahead 4 and behind 1 of `origin/main`; dirty files are T001 owned files plus workflow state files.
     - `git diff --check`: exit 0; no whitespace errors.
     - `npm run workflow:check`: exit 0; 17 status file(s) valid and 17 status file(s) synced; `specs/post-edit-history/status.json` ok and sync ok.
   - Changed files summary:
@@ -71,13 +76,13 @@ T001 shared core
 
 ### T001 - Shared Edit-History Core And Comment Compatibility
 
-- **State**: `ready`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-1`
 - **Engineer**: Shared Core Engineer
 - **Reviewer**: Shared Core Reviewer
 - **Commit checkpoint**: `shared_core` after Reviewer PASS and fresh verification
-- **Last verified commit**: none for this task
+- **Last verified commit**: working tree at `9025466aa75b19f3b24737acad5dd5c62126474e` plus uncommitted T001 implementation; commit checkpoint `shared_core` pending
 - **Authorization boundary**: edit=yes, commit=yes after Reviewer PASS and fresh verification, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required; changed=false unless this task unexpectedly touches rules, which is not authorized
 - **Incidents**: none
@@ -172,11 +177,21 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending
-- Reviewer report: pending
-- Command output summary: pending
-- Changed files summary: pending
-- Phase commits: pending
+- Engineer report: Implemented shared edit-history core and comment compatibility in T001 owned files.
+- Reviewer report: `review_passed` after one rejected stale-load issue was fixed.
+- Command output summary:
+  - `npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx`: exit 0; 3 files / 11 tests passed.
+  - `npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx`: exit 0; 2 files / 14 tests passed.
+  - `npx vitest run src/runtime/hooks/useCommentMutations.test.jsx`: exit 0; 1 file / 4 tests passed.
+  - `git diff --check`: exit 0; no whitespace errors.
+- Changed files summary:
+  - `src/service/comment-edit-history-service.js`: shared generic edit-history payload support while preserving comment payload compatibility.
+  - `src/runtime/hooks/useEditHistoryModal.js` and test: generic load/open/error/close/reset modal state.
+  - `src/components/EditedAffordance.jsx`: shared edited affordance.
+  - `src/components/EditHistoryModal.jsx` and test: generic edit-history modal.
+  - `src/components/CommentHistoryModal.jsx`, `src/components/CommentHistoryModal.module.css`, and test: compatibility wrapper for comment history.
+  - `src/components/CommentCard.jsx`: comment card now uses shared affordance while preserving `onViewHistory(comment)`.
+- Phase commits: pending `shared_core` checkpoint.
 - Rules deploy status: required; changed=false; no deploy evidence
 - Incidents: none
 

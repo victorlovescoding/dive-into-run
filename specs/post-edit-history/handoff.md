@@ -16,19 +16,20 @@
   - merge: false
   - localMainSync: false
   - deployFirestoreRules: false
-- Current phase: `planning_ready`
-- Active task: `T001`
-- Active wave: `wave-1`
-- Latest reviewer decision: `review_passed` for spec docs; no implementation task reviewed yet
+- Current phase: `implementation_ready`
+- Active task: `T002`
+- Active wave: `wave-2`
+- Latest reviewer decision: `review_passed` for `T001` shared edit-history core and comment compatibility
 - Last verified commit: `9025466aa75b19f3b24737acad5dd5c62126474e`
 - Phase commits:
   - `spec_approved` -> `d5568aea71f9b146ead4c460a42b62d25b4040e3`
   - `post_rebase_state` -> `9025466aa75b19f3b24737acad5dd5c62126474e`
+- Pending phase commit: `shared_core` for completed `T001`
 - Rules deploy status: `required`; required later, changed=false, deployedCommit=null
 - Incidents: none
 - Blocked: no
 - Blocked reason: none
-- Latest planning sync: 2026-06-04T03:57:06Z; Planner produced serialized implementation task contracts T001-T004 and recorded verification evidence.
+- Latest T001 sync: 2026-06-04T07:28:10Z; `T001` completed after Engineer implementation, Reviewer `review_passed`, and required verification. Current status reports branch ahead 4 and behind 1 of `origin/main`; do not rebase until after the `shared_core` checkpoint commit unless a fresh status changes that decision.
 
 ## Read Order
 
@@ -43,21 +44,13 @@
 
 ## Next Action
 
-Dispatch `T001 - Shared Edit-History Core And Comment Compatibility` to an Engineer subagent.
+Commit the reviewed `T001` shared-core checkpoint as `shared_core`, then run a fresh `git status --short --branch`.
 
-First dispatchable owned files:
+If branch still reports behind `origin/main`, handle the rebase before dispatching `T002`. Do not mark `T002` in progress until the checkpoint commit and branch-behind handling are complete.
 
-- `src/service/comment-edit-history-service.js`
-- `src/runtime/hooks/useEditHistoryModal.js`
-- `src/runtime/hooks/useEditHistoryModal.test.jsx`
-- `src/components/EditedAffordance.jsx`
-- `src/components/EditHistoryModal.jsx`
-- `src/components/EditHistoryModal.test.jsx`
-- `src/components/CommentHistoryModal.jsx`
-- `src/components/CommentHistoryModal.module.css`
-- `src/components/CommentHistoryModal.test.jsx`
-- `src/components/CommentCard.jsx`
-- `src/components/CommentCard.module.css`
+Next dispatchable task after that gate:
+
+- `T002 - Article Post History Persistence, Strict Rules, And Cleanup`
 
 ## Task Graph Summary
 
@@ -78,7 +71,10 @@ T001 shared core
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `git status --short --branch` | 0 | On `092-post-edit-history`; branch ahead 3 of `origin/main`; modified files are `plan.md`, `tasks.md`, `handoff.md`, and `status.json`. |
+| `npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx` | 0 | 3 files / 11 tests passed. |
+| `npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx` | 0 | 2 files / 14 tests passed. |
+| `npx vitest run src/runtime/hooks/useCommentMutations.test.jsx` | 0 | 1 file / 4 tests passed. |
+| `git status --short --branch` | 0 | On `092-post-edit-history`; branch ahead 4 and behind 1 of `origin/main`; dirty files are T001 owned files plus workflow state files. |
 | `git diff --check` | 0 | No whitespace errors. |
 | `npm run workflow:check` | 0 | 17 status file(s) valid and 17 status file(s) synced; `specs/post-edit-history/status.json` ok and sync ok. |
 
@@ -99,11 +95,12 @@ T001 shared core
 
 ## Blockers
 
-- None for `T001` dispatch.
+- None.
+- Carry-forward gate before `T002`: create the `shared_core` commit checkpoint, then re-check and handle branch behind `origin/main` if still present.
 
 ## Latest Review State
 
-- Reviewer returned `review_passed` for spec docs.
+- Reviewer returned `review_passed` for `T001`.
 - User approved the spec and authorized implementation start after Planner task contracts.
 - Planner contracts are now available in `tasks.md`.
 - Commit is authorized when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches.

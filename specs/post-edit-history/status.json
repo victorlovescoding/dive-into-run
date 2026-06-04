@@ -3,9 +3,9 @@
   "feature": "post-edit-history",
   "branch": "092-post-edit-history",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history",
-  "phase": "planning_ready",
-  "activeTask": "T001",
-  "activeWave": "wave-1",
+  "phase": "implementation_ready",
+  "activeTask": "T002",
+  "activeWave": "wave-2",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -19,22 +19,24 @@
   "currentHead": {
     "branch": "092-post-edit-history",
     "commit": "9025466aa75b19f3b24737acad5dd5c62126474e",
-    "capturedAt": "2026-06-04T03:49:57Z",
-    "summary": "Planning contracts prepared from clean branch ahead 3 of origin/main before workflow doc edits."
+    "capturedAt": "2026-06-04T07:28:10Z",
+    "summary": "T001 reviewed implementation is uncommitted on top of this head; git status reports branch ahead 4 and behind 1 of origin/main."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "b1cdaee96618983d333d1b6da2a78c0312e3b7ba",
-    "capturedAt": "2026-06-04T03:49:57Z",
-    "summary": "origin/main at local tracking ref: Align event comment input behavior."
+    "capturedAt": "2026-06-04T07:28:10Z",
+    "summary": "origin/main at local tracking ref b1cdaee96618983d333d1b6da2a78c0312e3b7ba; current branch reports behind 1."
   },
-  "completedTasks": [],
+  "completedTasks": [
+    "T001"
+  ],
   "tasks": [
     {
       "id": "T001",
       "title": "Shared Edit-History Core And Comment Compatibility",
-      "state": "ready",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-1",
       "engineer": "Shared Core Engineer",
@@ -92,17 +94,32 @@
         {
           "command": "npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx",
           "expectedSignal": "exit 0; shared hook/modal and compatibility wrapper tests pass",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx",
+            "exitCode": 0,
+            "summary": "3 files / 11 tests passed.",
+            "verifiedAt": "2026-06-04T07:28:10Z"
+          }
         },
         {
           "command": "npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
           "expectedSignal": "exit 0; existing post-comment history runtime/screen behavior remains green",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
+            "exitCode": 0,
+            "summary": "2 files / 14 tests passed.",
+            "verifiedAt": "2026-06-04T07:28:10Z"
+          }
         },
         {
           "command": "npx vitest run src/runtime/hooks/useCommentMutations.test.jsx",
           "expectedSignal": "exit 0; handleSubmit true/false contract remains green",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run src/runtime/hooks/useCommentMutations.test.jsx",
+            "exitCode": 0,
+            "summary": "1 file / 4 tests passed.",
+            "verifiedAt": "2026-06-04T07:28:10Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -118,12 +135,29 @@
         "Shared abstractions contain article-post path/rules knowledge.",
         "Verification is missing, stale, failed, or combined into shell chains."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Shared Core Reviewer",
+        "summary": "T001 passed after one rejected stale-load issue was fixed; required verification passed and diff stayed within T001 owned files.",
+        "decidedAt": "2026-06-04T07:28:10Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "Implemented shared edit-history core and comment compatibility in T001 owned files.",
+        "reviewerReport": "review_passed after one rejected stale-load issue was fixed.",
+        "commandOutputSummary": [
+          "npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx: exit 0; 3 files / 11 tests passed.",
+          "npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx: exit 0; 2 files / 14 tests passed.",
+          "npx vitest run src/runtime/hooks/useCommentMutations.test.jsx: exit 0; 1 file / 4 tests passed.",
+          "git diff --check: exit 0; no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "src/service/comment-edit-history-service.js: shared generic edit-history payload support while preserving comment payload compatibility.",
+          "src/runtime/hooks/useEditHistoryModal.js and test: generic load/open/error/close/reset modal state.",
+          "src/components/EditedAffordance.jsx: shared edited affordance.",
+          "src/components/EditHistoryModal.jsx and test: generic edit-history modal.",
+          "src/components/CommentHistoryModal.jsx, src/components/CommentHistoryModal.module.css, and test: compatibility wrapper for comment history.",
+          "src/components/CommentCard.jsx: comment card now uses shared affordance while preserving onViewHistory(comment)."
+        ]
       }
     },
     {
@@ -462,23 +496,41 @@
   "incidents": [],
   "lastVerification": [
     {
+      "command": "npx vitest run src/runtime/hooks/useEditHistoryModal.test.jsx src/components/EditHistoryModal.test.jsx src/components/CommentHistoryModal.test.jsx",
+      "exitCode": 0,
+      "summary": "3 files / 11 tests passed.",
+      "verifiedAt": "2026-06-04T07:28:10Z"
+    },
+    {
+      "command": "npx vitest run src/runtime/hooks/usePostComments.test.jsx src/ui/posts/PostDetailScreen.test.jsx",
+      "exitCode": 0,
+      "summary": "2 files / 14 tests passed.",
+      "verifiedAt": "2026-06-04T07:28:10Z"
+    },
+    {
+      "command": "npx vitest run src/runtime/hooks/useCommentMutations.test.jsx",
+      "exitCode": 0,
+      "summary": "1 file / 4 tests passed.",
+      "verifiedAt": "2026-06-04T07:28:10Z"
+    },
+    {
       "command": "git status --short --branch",
       "exitCode": 0,
-      "summary": "On 092-post-edit-history; branch ahead 3 of origin/main; modified files are plan.md, tasks.md, handoff.md, and status.json.",
-      "verifiedAt": "2026-06-04T03:57:06Z"
+      "summary": "On 092-post-edit-history; branch ahead 4 and behind 1 of origin/main; dirty files are T001 owned files plus workflow state files.",
+      "verifiedAt": "2026-06-04T07:28:10Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-04T03:57:06Z"
+      "verifiedAt": "2026-06-04T07:28:10Z"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
       "summary": "17 status file(s) valid and 17 status file(s) synced; specs/post-edit-history/status.json ok and sync ok.",
-      "verifiedAt": "2026-06-04T03:57:06Z"
+      "verifiedAt": "2026-06-04T07:30:43Z"
     }
   ],
-  "updatedAt": "2026-06-04T03:57:06Z"
+  "updatedAt": "2026-06-04T07:30:43Z"
 }

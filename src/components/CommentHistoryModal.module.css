@@ -130,6 +130,21 @@
   word-break: break-word;
 }
 
+.entryBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.entryTitle {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  font-weight: 700;
+  color: #1a1a1a;
+  word-break: break-word;
+}
+
 .errorAlert {
   background: #fdecea;
   color: #d32f2f;

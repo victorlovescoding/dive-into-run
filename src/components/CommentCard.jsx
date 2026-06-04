@@ -1,6 +1,7 @@
 import { formatCommentTime, formatCommentTimeFull } from '@/lib/event-helpers';
 import UserLink from './UserLink';
 import CommentCardMenu from './CommentCardMenu';
+import EditedAffordance from './EditedAffordance';
 import styles from './CommentCard.module.css';
 
 /**
@@ -63,14 +64,10 @@ export default function CommentCard({
               {timeText}
             </time>
             {comment.isEdited && (
-              <button
-                type="button"
+              <EditedAffordance
                 className={styles.editedBadge}
-                aria-label="查看編輯記錄"
                 onClick={() => onViewHistory?.(comment)}
-              >
-                已編輯
-              </button>
+              />
             )}
           </div>
         </div>
