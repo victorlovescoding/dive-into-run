@@ -5,10 +5,10 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history`
 - Branch: `092-post-edit-history`
-- Current head: `12b799e6d84f89e72da24a1f624b60b509d5e714`
-- Remote head: `origin/main` at `64607617c9af07fbb8efc1d1a147964f7a589c50`
+- Current head: `d5568aea71f9b146ead4c460a42b62d25b4040e3` (`Record post history spec approval`)
+- Remote head: `origin/main` at `b1cdaee96618983d333d1b6da2a78c0312e3b7ba` (`Align event comment input behavior`)
 - Authorization boundary:
-  - edit: true after Planner produces implementation task contracts; current coordinator state edits are limited to `specs/post-edit-history/spec.md`, `specs/post-edit-history/handoff.md`, `specs/post-edit-history/tasks.md`, and `specs/post-edit-history/status.json`
+  - edit: true after Planner produces implementation task contracts; current post-rebase coordinator state edits are limited to `specs/post-edit-history/handoff.md`, `specs/post-edit-history/tasks.md`, and `specs/post-edit-history/status.json`
   - commit: true when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches
   - push: false
   - pullRequest: false
@@ -20,13 +20,13 @@
 - Active task: none
 - Active wave: none
 - Latest reviewer decision: `review_passed` for spec docs
-- Last verified commit: `12b799e6d84f89e72da24a1f624b60b509d5e714`
-- Phase commits: `spec_approved` -> `12b799e6d84f89e72da24a1f624b60b509d5e714`
+- Last verified commit: `d5568aea71f9b146ead4c460a42b62d25b4040e3`
+- Phase commits: `spec_approved` -> `d5568aea71f9b146ead4c460a42b62d25b4040e3` (rewritten by successful rebase onto `origin/main` `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`)
 - Rules deploy status: `required`; required later, changed=false, deployedCommit=null
 - Incidents: none
 - Blocked: no
 - Blocked reason: none
-- Latest reconciliation: 2026-06-04T03:26:07Z; synchronized `spec.md` approval metadata with existing `tasks.md`, `handoff.md`, and `status.json` state after user said `approve spec，開始實作文章已編輯功能`.
+- Latest reconciliation: 2026-06-04T03:38:38Z; synchronized post-rebase workflow state after branch `092-post-edit-history` was successfully rebased onto `origin/main` at `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`. Local spec commits were rewritten and current HEAD is `d5568aea71f9b146ead4c460a42b62d25b4040e3`.
 
 ## Read Order
 
@@ -46,10 +46,11 @@ User approved the spec and explicitly authorized implementation to start after P
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `git status --short --branch` | 0 | On `092-post-edit-history`; branch is ahead 1 and behind 1; modified files are `handoff.md`, `spec.md`, `status.json`, and `tasks.md`. |
+| `git status --short --branch` | 0 | On `092-post-edit-history`; branch is ahead 2 of `origin/main`; modified files are `handoff.md`, `status.json`, and `tasks.md`. |
+| `git rev-parse HEAD` | 0 | `d5568aea71f9b146ead4c460a42b62d25b4040e3`. |
+| `git rev-parse origin/main` | 0 | `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`. |
 | `git diff --check` | 0 | No whitespace errors. |
-| `node -e "JSON.parse(require('fs').readFileSync('specs/post-edit-history/status.json', 'utf8')); console.log('status.json valid JSON')"` | 0 | `status.json valid JSON`. |
-| `rg -n "Spec approved by: not\\syet" specs/post-edit-history` | 1 | No stale unapproved spec approval marker remains. |
+| `npm run workflow:check` | 0 | 17 status file(s) valid and 17 status file(s) synced; `specs/post-edit-history/status.json` ok and sync ok. |
 
 ## Closeout Checklist
 
@@ -75,6 +76,7 @@ User approved the spec and explicitly authorized implementation to start after P
 - Reviewer returned `review_passed` for the spec docs.
 - User approved the spec.
 - Approval reconciliation completed on 2026-06-04: `spec.md` now matches `tasks.md`, `handoff.md`, and `status.json`.
+- Post-rebase state sync completed on 2026-06-04: branch `092-post-edit-history` is based on `origin/main` `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`; current HEAD is rewritten commit `d5568aea71f9b146ead4c460a42b62d25b4040e3`.
 - Planner dispatch is next; Planner owns slicing and implementation task contracts.
 - Implementation edit phase is authorized after Planner task contracts.
 - Commit is authorized when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches. Push, PR, CI watch, merge, local `main` sync, and rules deploy remain unauthorized.

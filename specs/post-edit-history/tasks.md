@@ -23,6 +23,7 @@
 - Next gate: Planner dispatch. User approved the spec and explicitly authorized implementation edits after Planner task contracts.
 - Authorization boundary: `edit=true` after Planner task contracts; `commit=true` when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches; `push=false`, `pullRequest=false`, `ciWatch=false`, `merge=false`, `localMainSync=false`, `deployFirestoreRules=false`.
 - Package-lock cleanup is complete; the worktree was clean before planning state update.
+- Post-rebase state: branch `092-post-edit-history` was successfully rebased onto `origin/main` at `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`; current HEAD is rewritten spec-approved commit `d5568aea71f9b146ead4c460a42b62d25b4040e3`.
 
 ## Team And Parallelism
 
@@ -72,19 +73,19 @@ Pending after Planner run:
 - Engineer report: Spec Engineer drafted initial P4 workflow docs, then fixed Reviewer `review_rejected` findings about fixed article history path, strict validation language, and read visibility policy.
 - Reviewer report: `review_passed` for spec docs.
 - Reconciliation: 2026-06-04T03:26:07Z; synchronized stale `spec.md` approval metadata with the existing approved Planner-next state after user said `approve spec，開始實作文章已編輯功能`.
+- Post-rebase state sync: 2026-06-04T03:38:38Z; local spec commits were rewritten after remote commit `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`. Current HEAD is `d5568aea71f9b146ead4c460a42b62d25b4040e3`; phase remains `spec_approved_planner_next`; active task and active wave remain none; Planner remains next.
 - Command output summary:
-  - `git status --short --branch`: exit 0; on `092-post-edit-history`; branch is ahead 1 and behind 1; modified files are `handoff.md`, `spec.md`, `status.json`, and `tasks.md`.
+  - `git status --short --branch`: exit 0; on `092-post-edit-history`; branch is ahead 2 of `origin/main`; modified files are `handoff.md`, `status.json`, and `tasks.md`.
+  - `git rev-parse HEAD`: exit 0; `d5568aea71f9b146ead4c460a42b62d25b4040e3`.
+  - `git rev-parse origin/main`: exit 0; `b1cdaee96618983d333d1b6da2a78c0312e3b7ba`.
   - `git diff --check`: exit 0; no whitespace errors.
-  - `node -e "JSON.parse(require('fs').readFileSync('specs/post-edit-history/status.json', 'utf8')); console.log('status.json valid JSON')"`: exit 0; `status.json valid JSON`.
-  - `rg -n "Spec approved by: not\\syet" specs/post-edit-history`: exit 1; no stale unapproved spec approval marker remains.
+  - `npm run workflow:check`: exit 0; 17 status file(s) valid and 17 status file(s) synced; `specs/post-edit-history/status.json` ok and sync ok.
 - Changed files summary:
-  - `specs/post-edit-history/spec.md`: product requirements, decisions, acceptance criteria, non-scope, and authorization.
-  - `specs/post-edit-history/plan.md`: technical direction draft and Planner constraints.
-  - `specs/post-edit-history/tasks.md`: current task board showing no dispatchable implementation tasks.
-  - `specs/post-edit-history/handoff.md`: next-session brief.
-  - `specs/post-edit-history/status.json`: machine-readable v3 state.
-- Phase commits: `spec_approved` -> `12b799e6d84f89e72da24a1f624b60b509d5e714`.
-- Last verified commit: `12b799e6d84f89e72da24a1f624b60b509d5e714`.
+  - `specs/post-edit-history/tasks.md`: current task board and rebase evidence.
+  - `specs/post-edit-history/handoff.md`: next-session brief and rebase evidence.
+  - `specs/post-edit-history/status.json`: machine-readable v3 post-rebase state.
+- Phase commits: `spec_approved` -> `d5568aea71f9b146ead4c460a42b62d25b4040e3`.
+- Last verified commit: `d5568aea71f9b146ead4c460a42b62d25b4040e3`.
 - Authorization: implementation edits may begin after Planner task contracts; commits are authorized when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches. Push, PR, CI watch, merge, local `main` sync, and rules deploy remain unauthorized.
 - Rules deploy status: `required`, `changed=false`, no deploy evidence.
 - Incidents: none.

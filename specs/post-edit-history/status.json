@@ -18,27 +18,27 @@
   },
   "currentHead": {
     "branch": "092-post-edit-history",
-    "commit": "12b799e6d84f89e72da24a1f624b60b509d5e714",
-    "capturedAt": "2026-06-04T03:15:47Z",
-    "summary": "Spec workflow docs committed; package-lock cleanup completed and worktree was clean before planning state update."
+    "commit": "d5568aea71f9b146ead4c460a42b62d25b4040e3",
+    "capturedAt": "2026-06-04T03:38:38Z",
+    "summary": "Post-rebase spec-approved workflow state; local spec commits were rewritten after origin/main b1cdaee."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
-    "commit": "64607617c9af07fbb8efc1d1a147964f7a589c50",
-    "capturedAt": "2026-06-04T02:29:22Z",
-    "summary": "origin/main at worktree creation."
+    "commit": "b1cdaee96618983d333d1b6da2a78c0312e3b7ba",
+    "capturedAt": "2026-06-04T03:38:38Z",
+    "summary": "origin/main at post-rebase state sync: Align event comment input behavior."
   },
   "completedTasks": [],
   "tasks": [],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "12b799e6d84f89e72da24a1f624b60b509d5e714",
+  "lastVerifiedCommit": "d5568aea71f9b146ead4c460a42b62d25b4040e3",
   "phaseCommits": [
     {
       "phase": "spec_approved",
-      "commit": "12b799e6d84f89e72da24a1f624b60b509d5e714",
-      "summary": "Reviewed spec workflow docs committed before Planner dispatch."
+      "commit": "d5568aea71f9b146ead4c460a42b62d25b4040e3",
+      "summary": "Reviewed spec workflow docs committed before Planner dispatch; commit rewritten by successful rebase onto origin/main b1cdaee."
     }
   ],
   "rulesDeployStatus": {
@@ -53,27 +53,33 @@
     {
       "command": "git status --short --branch",
       "exitCode": 0,
-      "summary": "On 092-post-edit-history; branch is ahead 1 and behind 1; modified files are handoff.md, spec.md, status.json, and tasks.md.",
-      "verifiedAt": "2026-06-04T03:26:07Z"
+      "summary": "On 092-post-edit-history; branch is ahead 2 of origin/main; modified files are handoff.md, status.json, and tasks.md.",
+      "verifiedAt": "2026-06-04T03:40:33Z"
+    },
+    {
+      "command": "git rev-parse HEAD",
+      "exitCode": 0,
+      "summary": "HEAD is d5568aea71f9b146ead4c460a42b62d25b4040e3.",
+      "verifiedAt": "2026-06-04T03:40:33Z"
+    },
+    {
+      "command": "git rev-parse origin/main",
+      "exitCode": 0,
+      "summary": "origin/main is b1cdaee96618983d333d1b6da2a78c0312e3b7ba.",
+      "verifiedAt": "2026-06-04T03:40:33Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-04T03:26:07Z"
+      "verifiedAt": "2026-06-04T03:40:33Z"
     },
     {
-      "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/post-edit-history/status.json', 'utf8'))\"",
+      "command": "npm run workflow:check",
       "exitCode": 0,
-      "summary": "status.json valid JSON.",
-      "verifiedAt": "2026-06-04T03:26:07Z"
-    },
-    {
-      "command": "rg -n \"Spec approved by: not\\\\syet\" specs/post-edit-history",
-      "exitCode": 1,
-      "summary": "No stale unapproved spec approval marker remains.",
-      "verifiedAt": "2026-06-04T03:26:07Z"
+      "summary": "17 status file(s) valid and 17 status file(s) synced; post-edit-history/status.json ok and sync ok.",
+      "verifiedAt": "2026-06-04T03:40:33Z"
     }
   ],
-  "updatedAt": "2026-06-04T03:26:07Z"
+  "updatedAt": "2026-06-04T03:40:33Z"
 }
