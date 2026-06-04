@@ -17,14 +17,14 @@
 - Branch: `093-event-reminder-email`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-093-event-reminder-email`.
 - Profile: P4 new feature.
-- Current phase: final local verification complete; G0 and T001/T002/T003/T004 are completed, with T001/T002/T003 completed after Reviewer PASS and T004 completed after final gates.
-- Active task: none; next boundary is implementation commit authorization.
+- Current phase: release closeout authorized after final local verification; G0 and T001/T002/T003/T004 are completed, with T001/T002/T003 completed after Reviewer PASS and T004 completed after final gates.
+- Active task: none; next boundary is push and pull request after reconciliation commit if needed.
 - Active wave: none.
-- Current branch ref: `093-event-reminder-email` at `16bcef3e1533a62d68ee0c5ba657697c802b54be`; reviewed planning checkpoint: `7572b8e6a6a048d9f5b85db9bd5283f2b8141713` (`Add event reminder email plan`).
+- Current branch ref: `093-event-reminder-email` at `38181f0c688d297fbfb021a12ed5be96d202dbaf`; reviewed planning checkpoint: `7572b8e6a6a048d9f5b85db9bd5283f2b8141713` (`Add event reminder email plan`).
 - Remote head: `4145241dd5f21e17812dad3d7448be2bb74c090e` from local `origin/main`.
-- Branch reconciliation: `git fetch origin main` and `git rebase origin/main` completed; old HEAD `6532b0229fd298011f5ff06a08281cd7f58b5988` -> new HEAD `16bcef3e1533a62d68ee0c5ba657697c802b54be`; current status is `093-event-reminder-email...origin/main [ahead 3]`, behind 0.
-- Authorization boundary: edit=yes for implementation, commit=no for implementation, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no.
-- Dirty/uncommitted files: `functions/index.js`, `functions/event-reminder-email.js`, event reminder unit tests, and workflow-state files remain dirty/untracked; no staging or commit occurred because implementation commit remains unauthorized.
+- Branch reconciliation: `git fetch origin main` and `git rebase origin/main` completed earlier; implementation commit `38181f0c688d297fbfb021a12ed5be96d202dbaf` exists, and closeout reconciliation started from clean status `093-event-reminder-email...origin/main [ahead 4]`, behind 0.
+- Authorization boundary: edit=yes for implementation, commit=yes for closeout reconciliation if needed, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, localMainSync=yes, deployFirestoreRules=no.
+- Dirty/uncommitted files: none before closeout reconciliation; only workflow-state reconciliation files may be dirty until the reconciliation commit.
 - Rules deploy status: `not_applicable`.
 - Incidents: none.
 
@@ -69,7 +69,7 @@ Shared helper, config, lockfile, rules, and workflow-state writes are serialized
 - **Required command**: `git status --short --branch --untracked-files=all`.
 - **Expected signal**: Branch `093-event-reminder-email` does not report behind `origin/main`; dirty files are absent or limited to approved workflow-state dispatch edits.
 - **Stop condition**: If the branch still reports behind `origin/main`, do not dispatch T001.
-- **Resolution evidence**: `git fetch origin main` exit 0, `git rebase origin/main` exit 0, branch moved from `6532b0229fd298011f5ff06a08281cd7f58b5988` to `16bcef3e1533a62d68ee0c5ba657697c802b54be`, `origin/main` is `4145241dd5f21e17812dad3d7448be2bb74c090e`, and final status is `093-event-reminder-email...origin/main [ahead 3]`.
+- **Resolution evidence**: `git fetch origin main` exit 0, `git rebase origin/main` exit 0, branch moved from `6532b0229fd298011f5ff06a08281cd7f58b5988` to `16bcef3e1533a62d68ee0c5ba657697c802b54be`, implementation commit later reached `38181f0c688d297fbfb021a12ed5be96d202dbaf`, `origin/main` is `4145241dd5f21e17812dad3d7448be2bb74c090e`, and closeout reconciliation started from status `093-event-reminder-email...origin/main [ahead 4]`.
 
 ## Tasks
 
@@ -81,8 +81,8 @@ Shared helper, config, lockfile, rules, and workflow-state writes are serialized
 - **Engineer**: Functions Core Engineer
 - **Reviewer**: Functions Core Reviewer
 - **Commit checkpoint**: implementation commit after Reviewer PASS and coordinator authorization.
-- **Last verified commit**: none for this task; T001 files remain untracked/dirty because implementation commit is unauthorized.
-- **Authorization boundary**: edit=yes for implementation within owned files, commit=no for Engineer, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Last verified commit**: `38181f0c688d297fbfb021a12ed5be96d202dbaf`.
+- **Authorization boundary**: edit=yes for implementation within owned files, commit=yes for closeout, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, localMainSync=yes, deployFirestoreRules=no
 - **Rules deploy status**: `not_applicable`
 - **Incidents**: none
 
@@ -187,8 +187,8 @@ Evidence:
 - Engineer report: DONE after fixes for T001 owned files.
 - Reviewer report: spec compliance review `review_passed` with AC-T001.1 through AC-T001.5 passed; code quality re-review `review_passed` with no blocking findings after malformed email domains and hostile HTML payload test coverage were fixed.
 - Command output summary: T001 focused Vitest exit 0 with 1 file and 7 tests passed; `npm run lint:changed` exit 0 with React version warning only; `npm run type-check:changed` exit 0 with no changed-file type errors; `node --check functions/event-reminder-email.js` exit 0; `git diff --check` exit 0.
-- Changed files summary: `functions/event-reminder-email.js` and `specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js` are untracked/dirty T001 files; no stage or commit occurred.
-- Phase commits: none for T001; coordinator commit is unauthorized.
+- Changed files summary: `functions/event-reminder-email.js` and `specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js` are committed in implementation commit `38181f0c688d297fbfb021a12ed5be96d202dbaf`.
+- Phase commits: implementation commit `38181f0c688d297fbfb021a12ed5be96d202dbaf`.
 - Rules deploy status: `not_applicable`.
 - Incidents: none.
 
@@ -200,8 +200,8 @@ Evidence:
 - **Engineer**: Reminder Delivery Engineer
 - **Reviewer**: Reminder Delivery Reviewer
 - **Commit checkpoint**: implementation commit after Reviewer PASS and coordinator authorization.
-- **Last verified commit**: none for this task; T002 files remain untracked/dirty because implementation commit is unauthorized.
-- **Authorization boundary**: edit=yes for implementation within owned files after dependencies are satisfied, commit=no for Engineer, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Last verified commit**: `38181f0c688d297fbfb021a12ed5be96d202dbaf`.
+- **Authorization boundary**: edit=yes for implementation within owned files after dependencies are satisfied, commit=yes for closeout, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, localMainSync=yes, deployFirestoreRules=no
 - **Rules deploy status**: `not_applicable`
 - **Incidents**: none
 
@@ -234,7 +234,7 @@ Read-only context:
 
 Dependencies:
 
-- T001 `completed` after `review_passed`; T001 files remain untracked/dirty and uncommitted because commit is unauthorized.
+- T001 `completed` after `review_passed`; T001 files are committed in `38181f0c688d297fbfb021a12ed5be96d202dbaf`.
 
 Browser evidence:
 
@@ -313,8 +313,8 @@ Evidence:
 - Engineer report: DONE after fixes for T002 owned files.
 - Reviewer report: spec review initially `review_rejected` for provider error leakage, then re-review `review_passed` because provider errors are reduced to coarse codes and tests cover failed/final_failed provider payload leakage. Quality review initially `review_rejected` for stale lease/race issues, then re-review `review_passed` because provider completion is transaction/lease guarded, skip blocks active foreign leases, completion excludes active leases, and tests cover late stale failure, late stale success, and skip-over-active-lease.
 - Command output summary: T002 focused Vitest exit 0 with 1 file and 21 tests passed; `npm run lint:changed` exit 0 with React version warning only; `npm run type-check:changed` exit 0 with no changed-file type errors; `node --check functions/event-reminder-email.js` exit 0; `git diff --check` exit 0.
-- Changed files summary: `functions/event-reminder-email.js` and `specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js` are untracked/dirty T002 files; no stage or commit occurred.
-- Phase commits: none for T002; coordinator commit is unauthorized.
+- Changed files summary: `functions/event-reminder-email.js` and `specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js` are committed in implementation commit `38181f0c688d297fbfb021a12ed5be96d202dbaf`.
+- Phase commits: implementation commit `38181f0c688d297fbfb021a12ed5be96d202dbaf`.
 - Rules deploy status: `not_applicable`.
 - Incidents: none.
 
@@ -326,8 +326,8 @@ Evidence:
 - **Engineer**: Functions Scheduler Engineer
 - **Reviewer**: Functions Scheduler Reviewer
 - **Commit checkpoint**: implementation commit after Reviewer PASS and coordinator authorization.
-- **Last verified commit**: none for this task; T003 files remain dirty/untracked because implementation commit is unauthorized.
-- **Authorization boundary**: edit=yes for implementation within owned files after dependencies are satisfied, commit=no for Engineer, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Last verified commit**: `38181f0c688d297fbfb021a12ed5be96d202dbaf`.
+- **Authorization boundary**: edit=yes for implementation within owned files after dependencies are satisfied, commit=yes for closeout, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, localMainSync=yes, deployFirestoreRules=no
 - **Rules deploy status**: `not_applicable`
 - **Incidents**: none
 
@@ -358,7 +358,7 @@ Read-only context:
 
 Dependencies:
 
-- T002 `completed` after `review_passed`; T002 files remain untracked/dirty and uncommitted because commit is unauthorized.
+- T002 `completed` after `review_passed`; T002 files are committed in `38181f0c688d297fbfb021a12ed5be96d202dbaf`.
 
 Browser evidence:
 
@@ -429,8 +429,8 @@ Evidence:
 - Engineer report: DONE_WITH_CONCERNS for T003 owned files; both reviews passed.
 - Reviewer report: spec review `review_passed` with no blocking findings; accepted wrapper passing both `fromEmail` and `emailFrom` as a compatibility shim and accepted test-only fallback for params as non-blocking. Quality review `review_passed` with no blocking findings; wrapper thin, no hardcoded secret/sender/base URL, and retention schedule regression passed. Residual risks: local root `node_modules` lacks `firebase-functions` so real require against functions deps was not run; config naming debt remains.
 - Command output summary: T003 focused schedule Vitest exit 0 with 1 file and 2 tests passed; retention schedule regression Vitest exit 0 with 1 file and 2 tests passed; `npm run lint:changed` exit 0 with React version warning only; `npm run type-check:changed` exit 0 with no changed-file type errors; `node --check functions/index.js` exit 0; `git diff --check` exit 0.
-- Changed files summary: `functions/index.js` is a modified T003 implementation file; `specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js` is an untracked T003 test file; no stage or commit occurred.
-- Phase commits: none for T003; coordinator commit is unauthorized.
+- Changed files summary: `functions/index.js` and `specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js` are committed in implementation commit `38181f0c688d297fbfb021a12ed5be96d202dbaf`.
+- Phase commits: implementation commit `38181f0c688d297fbfb021a12ed5be96d202dbaf`.
 - Rules deploy status: `not_applicable`.
 - Incidents: none.
 
@@ -442,8 +442,8 @@ Evidence:
 - **Engineer**: Final Verification / Workflow State Engineer
 - **Reviewer**: Final Verification Reviewer
 - **Commit checkpoint**: final evidence or implementation closeout commit only if workflow-state files intentionally change and coordinator has commit authorization.
-- **Last verified commit**: none for this task; final verification covered uncommitted dirty implementation and workflow-state files at committed HEAD `16bcef3e1533a62d68ee0c5ba657697c802b54be`.
-- **Authorization boundary**: edit=yes for implementation workflow-state sync after dependencies are satisfied, commit=no until coordinator authorizes a closeout commit, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
+- **Last verified commit**: `38181f0c688d297fbfb021a12ed5be96d202dbaf`; final verification covered the implementation commit before closeout reconciliation.
+- **Authorization boundary**: edit=yes for implementation workflow-state sync after dependencies are satisfied, commit=yes for closeout reconciliation, push=yes, pullRequest=yes, ciWatch=yes, merge=yes, localMainSync=yes, deployFirestoreRules=no
 - **Rules deploy status**: `not_applicable`
 - **Incidents**: none
 
@@ -480,7 +480,7 @@ Dependencies:
 
 - T001 `completed` after `review_passed`.
 - T002 `completed` after `review_passed`.
-- T003 `completed` after `review_passed`; T003 implementation and test files remain dirty/untracked and uncommitted because commit is unauthorized.
+- T003 `completed` after `review_passed`; T003 implementation and test files are committed in `38181f0c688d297fbfb021a12ed5be96d202dbaf`.
 
 Browser evidence:
 
@@ -493,7 +493,7 @@ Engineer instructions:
 - Record command, exit code, concise signal, and timestamp in the workflow state files.
 - Set completed task states only after Reviewer PASS is present for each implementation task.
 - Keep `rulesDeployStatus.state` as `not_applicable` unless a separately approved rules plan changes `firestore.rules`.
-- Keep deploy, push, pullRequest, ciWatch, merge, and localMainSync unauthorized unless the user explicitly expands the boundary.
+- Record that push, pullRequest, ciWatch, merge, and localMainSync are now authorized for this closeout, while deployFirestoreRules, Functions deploy, and secret setup remain out of scope.
 - Modify only the owned files above.
 
 Acceptance criteria:
@@ -548,6 +548,6 @@ Evidence:
 - Reviewer report: not run for T004 in this authorized boundary; latest implementation Reviewer PASS remains T003.
 - Command output summary: focused reminder Vitest exit 0 with 2 files and 23 tests passed; `npm run lint:changed` exit 0 with React version warning only; `npm run type-check:changed` exit 0 with no changed-file type errors; `npm run depcruise` exit 0 with no dependency violations; workflow validation exit 0; workflow companion check exit 0; `git diff --check` exit 0.
 - Changed files summary: updated `specs/event-reminder-email/tasks.md`, `specs/event-reminder-email/handoff.md`, and `specs/event-reminder-email/status.json` with final verification evidence and state sync only.
-- Phase commits: no implementation or final evidence commit exists; commit remains unauthorized.
+- Phase commits: implementation commit `38181f0c688d297fbfb021a12ed5be96d202dbaf`; closeout reconciliation commit may follow if these workflow-state updates validate.
 - Rules deploy status: `not_applicable`.
 - Incidents: none.

@@ -3,32 +3,32 @@
   "feature": "event-reminder-email",
   "branch": "093-event-reminder-email",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-093-event-reminder-email",
-  "phase": "t004_final_verified_commit_unauthorized",
+  "phase": "release_closeout_authorized",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
     "edit": true,
-    "commit": false,
-    "push": false,
-    "pullRequest": false,
-    "ciWatch": false,
-    "merge": false,
-    "localMainSync": false,
+    "commit": true,
+    "push": true,
+    "pullRequest": true,
+    "ciWatch": true,
+    "merge": true,
+    "localMainSync": true,
     "deployFirestoreRules": false
   },
   "currentHead": {
     "branch": "093-event-reminder-email",
     "ref": "093-event-reminder-email",
-    "commit": "16bcef3e1533a62d68ee0c5ba657697c802b54be",
-    "capturedAt": "2026-06-04T09:22:34Z",
-    "summary": "Current committed HEAD after final verification; T001/T002/T003 implementation files and workflow-state sync files are uncommitted because commit is unauthorized."
+    "commit": "38181f0c688d297fbfb021a12ed5be96d202dbaf",
+    "capturedAt": "2026-06-04T13:01:40Z",
+    "summary": "Current committed HEAD includes event reminder email implementation and prior workflow-state sync; branch is clean and ahead of origin/main by 4 before closeout reconciliation."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "4145241dd5f21e17812dad3d7448be2bb74c090e",
-    "capturedAt": "2026-06-04T09:22:34Z",
-    "summary": "Local origin/main snapshot during T004 final verification; final branch status is 093-event-reminder-email...origin/main [ahead 3], behind 0."
+    "capturedAt": "2026-06-04T13:01:40Z",
+    "summary": "Local origin/main snapshot during closeout reconciliation; branch status is 093-event-reminder-email...origin/main [ahead 4], behind 0 before the reconciliation commit."
   },
   "completedTasks": [
     "T001",
@@ -154,9 +154,9 @@
           "git diff --check exit 0."
         ],
         "changedFilesSummary": [
-          "functions/event-reminder-email.js is an untracked/dirty T001 file.",
-          "specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js is an untracked/dirty T001 file.",
-          "No staging or commit occurred because implementation commit remains unauthorized."
+          "functions/event-reminder-email.js is committed in implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf.",
+          "specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js is committed in implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf.",
+          "Implementation commit boundary is complete and authorized for release closeout; no Functions deploy or secret setup was performed."
         ]
       }
     },
@@ -192,7 +192,7 @@
         "firestore.indexes.json"
       ],
       "dependencies": [
-        "T001 completed after review_passed; T001 files remain untracked/dirty and uncommitted because commit is unauthorized."
+        "T001 completed after review_passed; T001 files are committed in 38181f0c688d297fbfb021a12ed5be96d202dbaf."
       ],
       "engineerInstructions": [
         "Use superpowers:test-driven-development.",
@@ -282,9 +282,9 @@
           "git diff --check exit 0."
         ],
         "changedFilesSummary": [
-          "functions/event-reminder-email.js is an untracked/dirty T002 file.",
-          "specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js is an untracked/dirty T002 file.",
-          "No staging or commit occurred because implementation commit remains unauthorized."
+          "functions/event-reminder-email.js is committed in implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf.",
+          "specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js is committed in implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf.",
+          "Implementation commit boundary is complete and authorized for release closeout; no Functions deploy or secret setup was performed."
         ]
       }
     },
@@ -318,7 +318,7 @@
         "functions/package.json"
       ],
       "dependencies": [
-        "T002 completed after review_passed; T002 files remain untracked/dirty and uncommitted because commit is unauthorized."
+        "T002 completed after review_passed; T002 files are committed in 38181f0c688d297fbfb021a12ed5be96d202dbaf."
       ],
       "engineerInstructions": [
         "Use superpowers:test-driven-development.",
@@ -413,9 +413,9 @@
           "git diff --check exit 0."
         ],
         "changedFilesSummary": [
-          "functions/index.js is a modified T003 implementation file.",
-          "specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js is an untracked T003 test file.",
-          "No staging or commit occurred because implementation commit remains unauthorized."
+          "functions/index.js is committed in implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf.",
+          "specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js is committed in implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf.",
+          "Implementation commit boundary is complete and authorized for release closeout; no Functions deploy or secret setup was performed."
         ]
       }
     },
@@ -455,7 +455,7 @@
       "dependencies": [
         "T001 completed after review_passed.",
         "T002 completed after review_passed.",
-        "T003 completed after review_passed; T003 implementation and test files remain dirty/untracked and uncommitted because commit is unauthorized."
+        "T003 completed after review_passed; T003 implementation and test files are committed in 38181f0c688d297fbfb021a12ed5be96d202dbaf."
       ],
       "engineerInstructions": [
         "Confirm tasks.md, handoff.md, and status.json agree before editing workflow state.",
@@ -463,7 +463,7 @@
         "Record command, exit code, concise signal, and timestamp in workflow state files.",
         "Set completed task states only after Reviewer PASS is present for each implementation task.",
         "Keep rulesDeployStatus.state as not_applicable unless a separately approved rules plan changes firestore.rules.",
-        "Keep deploy, push, pullRequest, ciWatch, merge, and localMainSync unauthorized unless the user explicitly expands the boundary.",
+        "Record that push, pullRequest, ciWatch, merge, and localMainSync are now authorized for this closeout, while deployFirestoreRules, Functions deploy, and secret setup remain out of scope.",
         "Modify only the owned files above."
       ],
       "acceptanceCriteria": [
@@ -574,7 +574,8 @@
           "specs/event-reminder-email/tasks.md updated with T004 final verification evidence and completed state.",
           "specs/event-reminder-email/handoff.md updated with final handoff state and release-boundary stop point.",
           "specs/event-reminder-email/status.json updated with T004 final verification evidence, completedTasks, and head snapshots.",
-          "No staging or commit occurred because implementation commit remains unauthorized."
+          "Implementation commit 38181f0c688d297fbfb021a12ed5be96d202dbaf exists and the branch was clean/ahead 4 before closeout reconciliation.",
+          "Closeout boundary now authorizes commit, push, pullRequest, ciWatch, merge, and localMainSync; Functions deploy and secret setup were not performed."
         ]
       }
     }
@@ -625,7 +626,7 @@
       "verifiedAt": "2026-06-04T09:22:34Z"
     }
   ],
-  "lastVerifiedCommit": null,
+  "lastVerifiedCommit": "38181f0c688d297fbfb021a12ed5be96d202dbaf",
   "phaseCommits": [
     {
       "phase": "spec",
@@ -644,6 +645,12 @@
       "sha": "16bcef3e1533a62d68ee0c5ba657697c802b54be",
       "summary": "Pre-G0 workflow planning state after rebase.",
       "committedAt": "2026-06-04T15:20:24+08:00"
+    },
+    {
+      "phase": "implementation",
+      "sha": "38181f0c688d297fbfb021a12ed5be96d202dbaf",
+      "summary": "Committed event reminder email implementation and tests.",
+      "committedAt": "2026-06-04T20:23:27+08:00"
     }
   ],
   "rulesDeployStatus": {
@@ -654,5 +661,5 @@
     "deployedCommit": null
   },
   "incidents": [],
-  "updatedAt": "2026-06-04T09:22:34Z"
+  "updatedAt": "2026-06-04T13:01:40Z"
 }

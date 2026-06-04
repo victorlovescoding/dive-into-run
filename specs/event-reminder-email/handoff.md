@@ -6,32 +6,33 @@
 - Feature slug: `event-reminder-email`.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-093-event-reminder-email`.
 - Branch: `093-event-reminder-email`.
-- Current branch ref: `093-event-reminder-email` at `16bcef3e1533a62d68ee0c5ba657697c802b54be`; reviewed planning checkpoint: `7572b8e6a6a048d9f5b85db9bd5283f2b8141713` (`Add event reminder email plan`).
+- Current branch ref: `093-event-reminder-email` at `38181f0c688d297fbfb021a12ed5be96d202dbaf`; reviewed planning checkpoint: `7572b8e6a6a048d9f5b85db9bd5283f2b8141713` (`Add event reminder email plan`).
 - Remote head: `4145241dd5f21e17812dad3d7448be2bb74c090e` from local `origin/main`.
-- Captured at: `2026-06-04T09:22:34Z`.
-- Branch reconciliation: `git fetch origin main` exit 0 and `git rebase origin/main` exit 0; old HEAD `6532b0229fd298011f5ff06a08281cd7f58b5988` -> new HEAD `16bcef3e1533a62d68ee0c5ba657697c802b54be`; current status is `093-event-reminder-email...origin/main [ahead 3]`, behind 0.
+- Captured at: `2026-06-04T13:01:40Z`.
+- Branch reconciliation: `git fetch origin main` exit 0 and `git rebase origin/main` exit 0 earlier; implementation commit `38181f0c688d297fbfb021a12ed5be96d202dbaf` exists, and closeout reconciliation started from clean status `093-event-reminder-email...origin/main [ahead 4]`, behind 0.
 - Authorization boundary:
   - edit: yes for implementation within task-owned files.
-  - commit: no for implementation.
-  - push: no.
-  - pullRequest: no.
-  - ciWatch: no.
-  - merge: no.
-  - localMainSync: no.
+  - commit: yes for closeout reconciliation if needed.
+  - push: yes.
+  - pullRequest: yes.
+  - ciWatch: yes.
+  - merge: yes.
+  - localMainSync: yes.
   - deployFirestoreRules: no.
-- Current phase: final local verification complete; G0 and T001/T002/T003/T004 are completed, with T001/T002/T003 completed after Reviewer PASS and T004 completed after final gates.
-- Active task: none; next boundary is implementation commit authorization.
+- Current phase: release closeout authorized after final local verification; G0 and T001/T002/T003/T004 are completed, with T001/T002/T003 completed after Reviewer PASS and T004 completed after final gates.
+- Active task: none; next boundary is push and pull request after reconciliation commit if needed.
 - Active wave: none.
 - Latest reviewer decision: T003 spec review `review_passed` with no blocking findings; wrapper passing both `fromEmail` and `emailFrom` was accepted as a compatibility shim, and the test-only params fallback was accepted as non-blocking. T003 quality review `review_passed` with no blocking findings; wrapper remains thin, no secret/sender/base URL is hardcoded, and the retention schedule regression passed.
-- Last verified commit: none; final verification covered uncommitted dirty implementation and workflow-state files at committed HEAD `16bcef3e1533a62d68ee0c5ba657697c802b54be`.
-- Dirty/uncommitted files: `functions/event-reminder-email.js`, `functions/index.js`, `specs/event-reminder-email/tests/unit/functions/event-reminder-email.test.js`, and `specs/event-reminder-email/tests/unit/functions/event-reminder-email-schedule.test.js` are dirty/untracked T001/T002/T003 implementation files; `specs/event-reminder-email/tasks.md`, `specs/event-reminder-email/handoff.md`, and `specs/event-reminder-email/status.json` are uncommitted workflow-state sync files. No staging or commit occurred because implementation commit remains unauthorized.
+- Last verified commit: `38181f0c688d297fbfb021a12ed5be96d202dbaf`; final verification covered the implementation commit before closeout reconciliation.
+- Dirty/uncommitted files: none before closeout reconciliation; only `specs/event-reminder-email/tasks.md`, `specs/event-reminder-email/handoff.md`, and `specs/event-reminder-email/status.json` may be dirty until the reconciliation commit.
 - Phase commits:
   - spec: `7b8b6affa0025735221256dfecb88034541c380a` - approved spec after rebase.
   - plan: `7572b8e6a6a048d9f5b85db9bd5283f2b8141713` - committed planning artifacts after rebase.
   - workflow-state-fix: `16bcef3e1533a62d68ee0c5ba657697c802b54be` - pre-G0 workflow planning state after rebase.
+  - implementation: `38181f0c688d297fbfb021a12ed5be96d202dbaf` - event reminder email implementation and tests.
 - Rules deploy status: `not_applicable`; no rules change is planned.
 - Incidents: none.
-- Blocked: no for G0/T001/T002/T003/T004; closeout is stopped at the unauthorized implementation commit boundary.
+- Blocked: no for G0/T001/T002/T003/T004; closeout is authorized through push, pullRequest, ciWatch, merge, and localMainSync.
 - Blocked reason: none.
 
 ## Read Order
@@ -49,7 +50,7 @@
 
 ## Next Action
 
-Await coordinator/user decision on the next release boundary. Implementation commit, push, pull request, CI watch, merge, local main sync, Functions deploy, dependency install, package edits, and secret setup remain unauthorized.
+Run workflow-state validation, commit this reconciliation if needed, rerun closeout verification, push the branch, open the PR, watch required checks, merge when allowed, and fast-forward local `main`. Functions deploy, dependency install, package edits, and secret setup remain out of scope.
 
 ## Latest Verification
 
@@ -79,7 +80,7 @@ T004 final integration evidence:
 - [x] Planning files were staged by concrete path only.
 - [x] Planning commit is `7572b8e6a6a048d9f5b85db9bd5283f2b8141713` after rebase, with message `Add event reminder email plan`.
 - [x] G0 branch reconciliation completed; branch no longer reports behind `origin/main`.
-- [x] Implementation edit authorization is true; implementation commit remains unauthorized.
+- [x] Implementation edit authorization is true; implementation commit `38181f0c688d297fbfb021a12ed5be96d202dbaf` exists.
 - [x] T001 Engineer DONE and Reviewer PASS evidence recorded.
 - [x] T001 task state is completed in `tasks.md` and `status.json`.
 - [x] T002 Engineer DONE and Reviewer PASS evidence recorded.
@@ -87,13 +88,14 @@ T004 final integration evidence:
 - [x] T003 Engineer DONE_WITH_CONCERNS and Reviewer PASS evidence recorded.
 - [x] T003 task state is completed in `tasks.md` and `status.json`.
 - [x] T004 final integration verification passed and workflow state was synced.
-- [ ] Push, pull request, CI watch, merge, local main sync, deploy, dependency install, package edits, and secret setup remain unauthorized and not done.
+- [ ] Push, pull request, CI watch, merge, and local main sync are authorized but not yet done.
+- [ ] Functions deploy, dependency install, package edits, and secret setup remain out of scope and not done.
 
 ## Blockers
 
 - No G0, T001, T002, T003, or T004 blocker remains.
-- Secret values and live Functions configuration are not authorized in this stage.
-- Functions deploy is not authorized in this stage.
+- Secret values and live Functions configuration are not in this closeout scope.
+- Functions deploy is not in this closeout scope.
 
 ## Pitfalls
 
