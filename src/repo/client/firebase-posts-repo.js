@@ -1,6 +1,5 @@
 import {
   addDoc,
-  updateDoc,
   collection,
   limit,
   query,
@@ -41,13 +40,38 @@ export async function addPostDocument(payload) {
 }
 
 /**
- * 更新文章文件。
+ * 建立文章 history 文件 ID。
  * @param {string} postId - 文章 ID。
- * @param {object} payload - Firestore payload。
+ * @returns {string} 新 history 文件 ID。
+ */
+export function createPostHistoryDocumentId(postId) {
+  return doc(collection(db, 'posts', String(postId), 'history')).id;
+}
+
+/**
+ * 更新文章文件並寫入編輯歷史。
+ * @param {string} postId - 文章 ID。
+ * @param {string} historyId - 本次 history 文件 ID。
+ * @param {object} historyPayload - 要寫入 history 子集合的 payload。
+ * @param {object} postUpdate - 要更新到 post 文件的 payload。
  * @returns {Promise<void>}
  */
-export async function updatePostDocument(postId, payload) {
-  await updateDoc(doc(db, 'posts', String(postId)), payload);
+export async function updatePostDocument(postId, historyId, historyPayload, postUpdate) {
+  const postRef = doc(db, 'posts', String(postId));
+  const historyRef = doc(db, 'posts', String(postId), 'history', String(historyId));
+
+  await runTransaction(db, async (tx) => {
+    const snapshot = await tx.get(postRef);
+    if (!snapshot.exists()) {
+      throw new Error(POST_NOT_FOUND_MESSAGE);
+    }
+    if (isSoftDeletedRecord(snapshot.data())) {
+      throw new Error(POST_NOT_FOUND_MESSAGE);
+    }
+
+    tx.set(historyRef, historyPayload);
+    tx.update(postRef, postUpdate);
+  });
 }
 
 /**
@@ -324,6 +348,22 @@ export async function fetchCommentHistoryDocuments(postId, commentId) {
   const snapshot = await getDocs(
     query(
       collection(db, 'posts', String(postId), 'comments', String(commentId), 'history'),
+      orderBy('editedAt', 'asc'),
+    ),
+  );
+
+  return snapshot.docs;
+}
+
+/**
+ * 取得文章歷史列表。
+ * @param {string} postId - 文章 ID。
+ * @returns {Promise<QueryDocumentSnapshot[]>} 歷史文件列表。
+ */
+export async function fetchPostHistoryDocuments(postId) {
+  const snapshot = await getDocs(
+    query(
+      collection(db, 'posts', String(postId), 'history'),
       orderBy('editedAt', 'asc'),
     ),
   );

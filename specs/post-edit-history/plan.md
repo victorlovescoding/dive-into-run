@@ -77,7 +77,7 @@ wiring.
   - `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx`
   - `npx vitest run tests/browser/runtime/hooks/usePostComments.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`
   - `npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js`
-  - `firebase emulators:exec --only firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`
+  - `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`
   - `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`
   - `npm run lint:changed`
   - `npm run type-check:changed`
@@ -101,13 +101,12 @@ wiring.
 
 - Status schema: v3.
 - Current head snapshot: captured from `092-post-edit-history` at
-  `3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf` after the `shared_core`
-  checkpoint.
+  `dcda33b5237509cb8eac9949a9776b6cfd47366f` after the shared-core
+  test-layout migration checkpoint.
 - Remote head snapshot: captured from `origin/main` at
   `4145241dd5f21e17812dad3d7448be2bb74c090e`.
-- Post-rebase test-layout migration: T001 browser/jsdom tests must live under
-  `tests/browser/...`; review and commit this migration before dispatching
-  `T002`.
+- Post-rebase test-layout migration: T001 browser/jsdom tests live under
+  `tests/browser/...` and are committed in the current head.
 - Last verified commit policy: `lastVerifiedCommit` records the local HEAD/ref
   covered by fresh verification; dirty workflow doc edits must be described in
   `lastVerification` until committed.
@@ -118,8 +117,8 @@ wiring.
   - `article_history_persistence_rules`
   - `article_history_ui`
   - `integration_gate`
-- Rules deploy status: `required`; implementation is expected to change
-  `firestore.rules`, but deploy remains unauthorized.
+- Rules deploy status: `required`; T002 changed `firestore.rules`, so
+  `changed=true`, but deploy remains unauthorized.
 - Incident handling: any open incident blocks dispatch, commit, push, PR, CI,
   merge, local main sync, and rules deploy until resolved or explicitly carried
   forward.

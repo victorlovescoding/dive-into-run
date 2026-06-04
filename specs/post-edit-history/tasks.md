@@ -15,14 +15,14 @@
 
 - Profile: P4 Full Feature/Program.
 - Phase: `implementation_ready`.
-- Active task: `T002` after the post-rebase test-layout migration is reviewed and committed; do not dispatch while the migration is unreviewed or uncommitted.
-- Active wave: `wave-2`.
-- Latest reviewer decision: `review_passed` for `T001` shared edit-history core and comment compatibility.
+- Active task: `T003`; leave `T003` as `todo` until dispatch.
+- Active wave: `wave-3`.
+- Latest reviewer decision: `review_passed` for `T002` article post history persistence, strict rules, and cleanup.
 - Blocked: no.
-- Next gate: review and commit the post-rebase `tests/browser/...` migration, then dispatch `T002`.
+- Next gate: dispatch `T003` for article post list/detail UI wiring and browser evidence.
 - Authorization boundary: `edit=true`, `commit=true` after Engineer + Reviewer + fresh verification for reviewed implementation batches; `push=false`, `pullRequest=false`, `ciWatch=false`, `merge=false`, `localMainSync=false`, `deployFirestoreRules=false`.
-- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf`, tracking `origin/main` at `4145241dd5f21e17812dad3d7448be2bb74c090e`; `git status --short --branch` currently reports branch ahead 5 with no behind state and dirty test-layout migration files.
-- Rules deploy status: `required`, currently `changed=false`; T002 is expected to change `firestore.rules`, but deploy remains unauthorized.
+- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `dcda33b5237509cb8eac9949a9776b6cfd47366f`, tracking `origin/main` at `4145241dd5f21e17812dad3d7448be2bb74c090e`; `git status --short --branch` currently reports branch ahead 6 with no behind state and dirty T002 implementation plus workflow state files.
+- Rules deploy status: `required`, currently `changed=true`; T002 changed `firestore.rules`, but deploy remains unauthorized and not claimed.
 - Incidents: none.
 - Planning evidence:
   - Planner report: Produced serialized T001-T004 implementation task contracts; no production code, tests, rules, package files, config, or lockfiles modified.
@@ -44,7 +44,17 @@
     - T001 browser/jsdom tests moved from `src/**` to `tests/browser/**`.
     - All workflow verification commands that target browser/jsdom tests now use `tests/browser/...`.
     - Fresh migration verification passed: focused Vitest, full type-check, strict lint, workflow check, `git diff --check`, and `git status --short --branch`.
-    - Next action remains review and commit this migration before dispatching `T002`.
+    - Migration is committed in current HEAD before T002 completion state sync.
+  - T002 evidence:
+    - Engineer report: Implemented article post edit-history persistence, strict Firestore parent/history validation, and post-level history cleanup.
+    - Reviewer report: `review_passed`; required follow-up was to update planned Firestore rules verification commands to `--only auth,firestore`, keep rules deploy required, and set `rulesDeployStatus.changed=true`.
+    - Command output summary:
+      - `npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js`: exit 0; 2 files / 5 tests passed.
+      - `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`: exit 0; 1 file / 37 tests passed.
+      - `git diff -- firestore.rules`: exit 0; no event-comment rules hunks changed.
+      - `npm run type-check`: exit 0; type check completed.
+      - `npm run lint -- --max-warnings 0`: exit 0; strict lint completed.
+      - `git diff --check`: exit 0; no whitespace errors.
 
 ## Dependency Graph
 
@@ -73,7 +83,7 @@ T001 shared core
   - `npm run lint:changed`
   - `npm run type-check:changed`
   - `npm run workflow:check`
-  - `firebase emulators:exec --only firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`
+  - `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`
   - `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`
 - Browser evidence is required for `/posts` and `/posts/{postId}` article history affordance/modal, plus comment history regression.
 
@@ -202,15 +212,15 @@ Evidence:
 
 ### T002 - Article Post History Persistence, Strict Rules, And Cleanup
 
-- **State**: `todo`
+- **State**: `completed`
 - **Attempt**: 1
 - **Wave**: `wave-2`
 - **Engineer**: Persistence And Rules Engineer
 - **Reviewer**: Persistence And Rules Reviewer
 - **Commit checkpoint**: `article_history_persistence_rules` after Reviewer PASS and fresh verification
-- **Last verified commit**: none for this task
+- **Last verified commit**: `dcda33b5237509cb8eac9949a9776b6cfd47366f`; T002 implementation is verified in the current dirty working tree and pending commit
 - **Authorization boundary**: edit=yes, commit=yes after Reviewer PASS and fresh verification, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
-- **Rules deploy status**: required; changed=true expected after this task; deploy remains unauthorized
+- **Rules deploy status**: required; changed=true; deploy remains unauthorized and not claimed
 - **Incidents**: none
 
 Scope:
@@ -282,7 +292,7 @@ Verification commands and expected signal:
 | Command | Expected signal |
 | ------- | --------------- |
 | `npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js` | exit 0; article post payload/history builder and use-case tests pass |
-| `firebase emulators:exec --only firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | exit 0; post rules tests pass including article history acceptance/rejection cases |
+| `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | exit 0; post rules tests pass including article history acceptance/rejection cases |
 | `git diff -- firestore.rules` | output shows no changes under `/events/{eventId}/comments/{commentId}/history/{historyId}` except unrelated context if any |
 
 Reviewer PASS criteria:
@@ -304,12 +314,24 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending
-- Reviewer report: pending
-- Command output summary: pending
-- Changed files summary: pending
-- Phase commits: pending
-- Rules deploy status: required; changed=true expected; no deploy evidence
+- Engineer report: Implemented article post edit-history persistence, strict Firestore parent/history validation, and post-level history cleanup in T002 owned files.
+- Reviewer report: `review_passed`; workflow follow-up required planned rules verification commands to use `--only auth,firestore`, `rulesDeployStatus.state=required`, and `rulesDeployStatus.changed=true`.
+- Command output summary:
+  - `npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js`: exit 0; 2 files / 5 tests passed.
+  - `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`: exit 0; 1 file / 37 tests passed.
+  - `git diff -- firestore.rules`: exit 0; no event-comment rules hunks changed.
+  - `npm run type-check`: exit 0; type check completed.
+  - `npm run lint -- --max-warnings 0`: exit 0; strict lint completed.
+  - `git diff --check`: exit 0; no whitespace errors.
+- Changed files summary:
+  - `src/service/post-service.js`: builds article post edit metadata/history payload from pre-edit post data.
+  - `src/runtime/client/use-cases/post-use-cases.js`: routes article edits through the history-aware update contract and exposes history fetch normalization.
+  - `src/repo/client/firebase-posts-repo.js`: writes parent update plus `/posts/{postId}/history/{historyId}` atomically and reads article history.
+  - `src/repo/server/account-deletion-server-repo.js`: includes post-level history in account-deletion cleanup.
+  - `firestore.rules`: adds strict article parent/history validation and read rules without changing event-comment history rules.
+  - `tests/browser/service/post-service.test.js`, `tests/browser/runtime/client/use-cases/post-use-cases.test.js`, and `tests/server/firestore/post-soft-delete-rules.test.js`: cover article history payload/use-case/rules behavior.
+- Phase commits: pending; do not commit in this state sync
+- Rules deploy status: required; changed=true; no deploy evidence
 - Incidents: none
 
 ### T003 - Article Post List/Detail UI Wiring And Browser Evidence
@@ -322,7 +344,7 @@ Evidence:
 - **Commit checkpoint**: `article_history_ui` after Reviewer PASS and fresh verification
 - **Last verified commit**: none for this task
 - **Authorization boundary**: edit=yes, commit=yes after Reviewer PASS and fresh verification, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
-- **Rules deploy status**: required; carry T002 state; deploy remains unauthorized
+- **Rules deploy status**: required; carry T002 changed=true state; deploy remains unauthorized
 - **Incidents**: none
 
 Scope:
@@ -434,7 +456,7 @@ Evidence:
 - Changed files summary: pending
 - Browser evidence: pending
 - Phase commits: pending
-- Rules deploy status: carry T002; no deploy evidence
+- Rules deploy status: required; changed=true; no deploy evidence
 - Incidents: none
 
 ### T004 - Final Integration Verification And Workflow State
@@ -515,7 +537,7 @@ Verification commands and expected signal:
 | `npm run lint:changed` | exit 0; changed files lint clean |
 | `npm run type-check:changed` | exit 0; changed-file type check clean |
 | `npm run workflow:check` | exit 0; `specs/post-edit-history/status.json` valid and synced |
-| `firebase emulators:exec --only firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | exit 0; post rules tests pass |
+| `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | exit 0; post rules tests pass |
 | `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; focused shared/persistence/UI tests pass |
 
 Reviewer PASS criteria:

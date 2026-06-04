@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- Post browser use-case facade groups post, comment, and history APIs. */
 import { serverTimestamp } from 'firebase/firestore';
 import {
   buildAddCommentPayload,
@@ -5,6 +6,7 @@ import {
   buildUpdateCommentPayload,
   buildUpdatePostPayload,
   isActiveRecord,
+  POST_NOT_FOUND_MESSAGE,
   toCommentData,
   toCommentDataList,
   toPostData,
@@ -13,6 +15,7 @@ import {
 import {
   addPostDocument,
   addCommentDocument,
+  createPostHistoryDocumentId,
   deleteCommentDocument,
   deletePostTree,
   fetchCommentDocument,
@@ -26,6 +29,7 @@ import {
   fetchNextPostDocumentsBySearch,
   fetchPostDocument,
   fetchPostDocumentsBySearch,
+  fetchPostHistoryDocuments,
   toggleLikePost as toggleLikePostDocument,
   updateCommentDocument,
   updatePostDocument,
@@ -43,6 +47,7 @@ export {
  * @typedef {import('@/service/post-service').Comment} Comment
  * @typedef {import('firebase/firestore').QueryDocumentSnapshot} QueryDocumentSnapshot
  * @typedef {{ id: string, content: unknown, editedAt: unknown }} CommentHistoryEntry
+ * @typedef {{ id: string, title: unknown, content: unknown, editedAt: unknown }} PostHistoryEntry
  */
 
 const POST_PAGE_SIZE = 10;
@@ -56,6 +61,21 @@ function toCommentHistoryEntry(snapshot) {
   const data = snapshot.data();
   return {
     id: snapshot.id,
+    content: data.content,
+    editedAt: data.editedAt,
+  };
+}
+
+/**
+ * 將文章 history snapshot 正規化成共用 modal 需要的資料形狀。
+ * @param {{ id: string, data: () => Record<string, unknown> }} snapshot - Firestore history snapshot。
+ * @returns {PostHistoryEntry} 文章歷史資料。
+ */
+function toPostHistoryEntry(snapshot) {
+  const data = snapshot.data();
+  return {
+    id: snapshot.id,
+    title: data.title,
     content: data.content,
     editedAt: data.editedAt,
   };
@@ -174,8 +194,26 @@ export async function createPost({ title, content, user }) {
  * @param {string} root0.content - 新內容。
  */
 export async function updatePost(editingPostId, { title, content }) {
-  const payload = buildUpdatePostPayload({ title, content });
-  await updatePostDocument(editingPostId, payload);
+  const historyId = createPostHistoryDocumentId(editingPostId);
+  const snapshot = await fetchPostDocument(editingPostId);
+  if (!snapshot) {
+    throw new Error(POST_NOT_FOUND_MESSAGE);
+  }
+
+  const currentPost = toPostData(snapshot);
+  if (!isActiveRecord(currentPost)) {
+    throw new Error(POST_NOT_FOUND_MESSAGE);
+  }
+
+  const { historyPayload, postUpdate } = buildUpdatePostPayload({
+    title,
+    content,
+    currentPost,
+    updatedAtValue: serverTimestamp(),
+    historyId,
+  });
+
+  await updatePostDocument(editingPostId, historyId, historyPayload, postUpdate);
 }
 
 /**
@@ -450,6 +488,25 @@ export async function fetchCommentHistory(postId, commentId) {
 
   const docs = await fetchCommentHistoryDocuments(postId, commentId);
   return docs.map((snapshot) => toCommentHistoryEntry(snapshot));
+}
+
+/**
+ * 取得文章編輯歷史。
+ * @param {string} postId - 文章 ID。
+ * @returns {Promise<PostHistoryEntry[]>} 共用 history modal 可直接使用的歷史記錄。
+ */
+export async function fetchPostHistory(postId) {
+  if (!postId) {
+    throw new Error('fetchPostHistory: postId is required');
+  }
+
+  const postSnapshot = await fetchPostDocument(postId);
+  if (!postSnapshot || !isActiveRecord(postSnapshot.data())) {
+    return [];
+  }
+
+  const docs = await fetchPostHistoryDocuments(postId);
+  return docs.map((snapshot) => toPostHistoryEntry(snapshot));
 }
 
 /**

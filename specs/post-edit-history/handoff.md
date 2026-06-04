@@ -5,7 +5,7 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history`
 - Branch: `092-post-edit-history`
-- Current head: `3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf` (`Add shared edit history core`)
+- Current head: `dcda33b5237509cb8eac9949a9776b6cfd47366f` (`Move shared core tests`)
 - Remote head: `origin/main` at `4145241dd5f21e17812dad3d7448be2bb74c090e` (`Remove colocated src tests (#134)`)
 - Authorization boundary:
   - edit: true
@@ -17,20 +17,20 @@
   - localMainSync: false
   - deployFirestoreRules: false
 - Current phase: `implementation_ready`
-- Active task: `T002`
-- Active wave: `wave-2`
-- Latest reviewer decision: `review_passed` for `T001` shared edit-history core and comment compatibility
-- Last verified commit: `3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf`
+- Active task: `T003`
+- Active wave: `wave-3`
+- Latest reviewer decision: `review_passed` for `T002` article post history persistence, strict rules, and cleanup
+- Last verified commit: `dcda33b5237509cb8eac9949a9776b6cfd47366f`; T002 implementation is verified in the current dirty working tree and pending commit
 - Phase commits:
   - `spec_approved` -> `891da4a415da652dc32688f9d738afd958adc5c6`
   - `post_rebase_state` -> `b97f8a0db6e8fe62ba10c23593cbec133ece5eec`
   - `shared_core` -> `3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf`
-- Pending phase commit: post-rebase test-layout migration before `T002`
-- Rules deploy status: `required`; required later, changed=false, deployedCommit=null
+- Pending phase commit: `article_history_persistence_rules`; do not commit from this state sync
+- Rules deploy status: `required`; changed=true because `firestore.rules` changed, deployedCommit=null, no deploy evidence
 - Incidents: none
 - Blocked: no
 - Blocked reason: none
-- Latest T001 sync: 2026-06-04T08:04:17Z; `T001` completed, `shared_core` is committed, and current status reports branch ahead 5 of `origin/main` with no behind state. The uncommitted post-rebase test-layout migration moves T001 browser/jsdom tests under `tests/browser/...` and must be reviewed and committed before `T002` dispatch.
+- Latest T002 sync: 2026-06-04T08:40:47Z; `T002` completed with Reviewer `review_passed`, current status reports branch ahead 6 of `origin/main` with no behind state, and dirty files are T002 implementation plus workflow state files. Rules deploy remains required and unauthorized; do not claim deploy.
 
 ## Read Order
 
@@ -45,11 +45,11 @@
 
 ## Next Action
 
-Review the post-rebase test-layout migration, then commit it as the next checkpoint. Do not mark `T002` in progress until that migration is reviewed and committed.
+Dispatch `T003` for article post list/detail UI wiring and browser evidence. Leave `T003` as `todo` until dispatch.
 
 Next dispatchable task after that gate:
 
-- `T002 - Article Post History Persistence, Strict Rules, And Cleanup`
+- `T003 - Article Post List/Detail UI Wiring And Browser Evidence`
 
 ## Task Graph Summary
 
@@ -71,11 +71,14 @@ T001 shared core
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
 | `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx` | 0 | 3 files / 11 tests passed. |
+| `npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js` | 0 | 2 files / 5 tests passed. |
+| `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | 0 | 1 file / 37 tests passed. |
+| `git diff -- firestore.rules` | 0 | No event-comment rules hunks changed. |
 | `npm run type-check` | 0 | `tsc --noEmit` completed without errors. |
 | `npm run lint -- --max-warnings 0` | 0 | `eslint src specs --max-warnings 0` completed; existing React-version settings warning only. |
 | `npm run workflow:check` | 0 | 17 status file(s) valid and synced; `specs/post-edit-history/status.json` ok and sync ok. |
 | `git diff --check` | 0 | No whitespace errors. |
-| `git status --short --branch` | 0 | On `092-post-edit-history`; branch ahead 5 of `origin/main`; dirty files are workflow state plus the moved T001 tests under `tests/browser/...`; no staged changes. |
+| `git status --short --branch` | 0 | On `092-post-edit-history`; branch ahead 6 of `origin/main`; dirty files are T002 implementation plus workflow state files; no staged changes. |
 
 ## Closeout Checklist
 
@@ -95,14 +98,14 @@ T001 shared core
 ## Blockers
 
 - None.
-- Carry-forward gate before `T002`: review and commit the post-rebase test-layout migration; current status has no branch-behind state.
+- Carry-forward gate before `T003`: commit for T002 remains pending; current status has no branch-behind state. Do not dispatch if workflow state drifts.
 
 ## Latest Review State
 
-- Reviewer returned `review_passed` for `T001`.
+- Reviewer returned `review_passed` for `T002`.
 - User approved the spec and authorized implementation start after Planner task contracts.
 - Planner contracts are now available in `tasks.md`.
-- Commit is authorized when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches.
+- Commit is authorized when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches, but this state sync did not commit.
 - Push, PR, CI watch, merge, local `main` sync, and rules deploy remain unauthorized.
 
 ## Reviewer Attention

@@ -4,8 +4,8 @@
   "branch": "092-post-edit-history",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history",
   "phase": "implementation_ready",
-  "activeTask": "T002",
-  "activeWave": "wave-2",
+  "activeTask": "T003",
+  "activeWave": "wave-3",
   "authorizationBoundary": {
     "edit": true,
     "commit": true,
@@ -18,19 +18,20 @@
   },
   "currentHead": {
     "branch": "092-post-edit-history",
-    "commit": "3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf",
-    "capturedAt": "2026-06-04T08:09:48Z",
-    "summary": "shared_core is committed; uncommitted post-rebase test-layout migration moves T001 browser/jsdom tests under tests/browser/... before T002 dispatch."
+    "commit": "dcda33b5237509cb8eac9949a9776b6cfd47366f",
+    "capturedAt": "2026-06-04T08:40:47Z",
+    "summary": "Shared-core test-layout migration is committed; T002 implementation is verified in the current dirty working tree and pending commit."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "4145241dd5f21e17812dad3d7448be2bb74c090e",
-    "capturedAt": "2026-06-04T08:09:48Z",
-    "summary": "origin/main includes Remove colocated src tests (#134); current branch reports ahead 5 with no behind state."
+    "capturedAt": "2026-06-04T08:40:47Z",
+    "summary": "origin/main includes Remove colocated src tests (#134); current branch reports ahead 6 with no behind state."
   },
   "completedTasks": [
-    "T001"
+    "T001",
+    "T002"
   ],
   "tasks": [
     {
@@ -166,7 +167,7 @@
     {
       "id": "T002",
       "title": "Article Post History Persistence, Strict Rules, And Cleanup",
-      "state": "todo",
+      "state": "completed",
       "attempt": 1,
       "wave": "wave-2",
       "engineer": "Persistence And Rules Engineer",
@@ -224,17 +225,32 @@
         {
           "command": "npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js",
           "expectedSignal": "exit 0; article post payload/history builder and use-case tests pass",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js",
+            "exitCode": 0,
+            "summary": "2 files / 5 tests passed.",
+            "verifiedAt": "2026-06-04T08:40:47Z"
+          }
         },
         {
-          "command": "firebase emulators:exec --only firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
+          "command": "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
           "expectedSignal": "exit 0; post rules tests pass including article history acceptance/rejection cases",
-          "lastRun": null
+          "lastRun": {
+            "command": "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
+            "exitCode": 0,
+            "summary": "1 file / 37 tests passed.",
+            "verifiedAt": "2026-06-04T08:40:47Z"
+          }
         },
         {
           "command": "git diff -- firestore.rules",
           "expectedSignal": "output shows no changes under event comment history rules except unchanged context",
-          "lastRun": null
+          "lastRun": {
+            "command": "git diff -- firestore.rules",
+            "exitCode": 0,
+            "summary": "No event-comment rules hunks changed.",
+            "verifiedAt": "2026-06-04T08:40:47Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -252,12 +268,31 @@
         "Account deletion ignores post-level history.",
         "Verification is missing, stale, failed, or combined into shell chains."
       ],
-      "reviewerDecision": null,
+      "reviewerDecision": {
+        "decision": "review_passed",
+        "reviewer": "Persistence And Rules Reviewer",
+        "summary": "T002 passed; workflow follow-up required planned rules verification commands to use auth+firestore and rulesDeployStatus to stay required with changed=true.",
+        "decidedAt": "2026-06-04T08:40:47Z"
+      },
       "evidence": {
-        "engineerReport": null,
-        "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "engineerReport": "Implemented article post edit-history persistence, strict Firestore parent/history validation, and post-level history cleanup in T002 owned files.",
+        "reviewerReport": "review_passed; planned rules verification commands must use --only auth,firestore; rules deploy remains required and not deployed; changed=true because firestore.rules changed.",
+        "commandOutputSummary": [
+          "npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js: exit 0; 2 files / 5 tests passed.",
+          "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\": exit 0; 1 file / 37 tests passed.",
+          "git diff -- firestore.rules: exit 0; no event-comment rules hunks changed.",
+          "npm run type-check: exit 0; type check completed.",
+          "npm run lint -- --max-warnings 0: exit 0; strict lint completed.",
+          "git diff --check: exit 0; no whitespace errors."
+        ],
+        "changedFilesSummary": [
+          "src/service/post-service.js: builds article post edit metadata/history payload from pre-edit post data.",
+          "src/runtime/client/use-cases/post-use-cases.js: routes article edits through the history-aware update contract and exposes history fetch normalization.",
+          "src/repo/client/firebase-posts-repo.js: writes parent update plus /posts/{postId}/history/{historyId} atomically and reads article history.",
+          "src/repo/server/account-deletion-server-repo.js: includes post-level history in account-deletion cleanup.",
+          "firestore.rules: adds strict article parent/history validation and read rules without changing event-comment history rules.",
+          "tests/browser/service/post-service.test.js, tests/browser/runtime/client/use-cases/post-use-cases.test.js, and tests/server/firestore/post-soft-delete-rules.test.js: cover article history payload/use-case/rules behavior."
+        ]
       }
     },
     {
@@ -441,7 +476,7 @@
           "lastRun": null
         },
         {
-          "command": "firebase emulators:exec --only firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
+          "command": "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
           "expectedSignal": "exit 0; post rules tests pass",
           "lastRun": null
         },
@@ -476,7 +511,7 @@
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf",
+  "lastVerifiedCommit": "dcda33b5237509cb8eac9949a9776b6cfd47366f",
   "phaseCommits": [
     {
       "phase": "spec_approved",
@@ -497,48 +532,60 @@
   "rulesDeployStatus": {
     "state": "required",
     "required": true,
-    "changed": false,
+    "changed": true,
     "evidence": [],
     "deployedCommit": null
   },
   "incidents": [],
   "lastVerification": [
     {
-      "command": "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx",
+      "command": "npx vitest run tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js",
       "exitCode": 0,
-      "summary": "3 files / 11 tests passed.",
-      "verifiedAt": "2026-06-04T08:09:48Z"
+      "summary": "2 files / 5 tests passed.",
+      "verifiedAt": "2026-06-04T08:40:47Z"
+    },
+    {
+      "command": "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
+      "exitCode": 0,
+      "summary": "1 file / 37 tests passed.",
+      "verifiedAt": "2026-06-04T08:40:47Z"
+    },
+    {
+      "command": "git diff -- firestore.rules",
+      "exitCode": 0,
+      "summary": "No event-comment rules hunks changed.",
+      "verifiedAt": "2026-06-04T08:40:47Z"
     },
     {
       "command": "npm run type-check",
       "exitCode": 0,
-      "summary": "tsc --noEmit completed without errors.",
-      "verifiedAt": "2026-06-04T08:09:48Z"
+      "summary": "Type check completed.",
+      "verifiedAt": "2026-06-04T08:40:47Z"
     },
     {
       "command": "npm run lint -- --max-warnings 0",
       "exitCode": 0,
-      "summary": "eslint src specs --max-warnings 0 completed; existing React-version settings warning only.",
-      "verifiedAt": "2026-06-04T08:09:48Z"
-    },
-    {
-      "command": "npm run workflow:check",
-      "exitCode": 0,
-      "summary": "17 status file(s) valid and synced; specs/post-edit-history/status.json ok and sync ok.",
-      "verifiedAt": "2026-06-04T08:09:48Z"
+      "summary": "Strict lint completed.",
+      "verifiedAt": "2026-06-04T08:40:47Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-04T08:09:48Z"
+      "verifiedAt": "2026-06-04T08:45:01Z"
+    },
+    {
+      "command": "npm run workflow:check",
+      "exitCode": 0,
+      "summary": "17 status file(s) valid and synced; specs/post-edit-history/status.json ok and sync ok.",
+      "verifiedAt": "2026-06-04T08:45:01Z"
     },
     {
       "command": "git status --short --branch",
       "exitCode": 0,
-      "summary": "On 092-post-edit-history; branch ahead 5 of origin/main; dirty files are workflow state plus moved T001 tests under tests/browser/...; no staged changes.",
-      "verifiedAt": "2026-06-04T08:09:48Z"
+      "summary": "On 092-post-edit-history; branch ahead 6 of origin/main; dirty files are T002 implementation plus workflow state files; no staged changes.",
+      "verifiedAt": "2026-06-04T08:45:01Z"
     }
   ],
-  "updatedAt": "2026-06-04T08:09:48Z"
+  "updatedAt": "2026-06-04T08:45:01Z"
 }
