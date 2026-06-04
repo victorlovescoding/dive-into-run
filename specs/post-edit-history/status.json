@@ -3,7 +3,7 @@
   "feature": "post-edit-history",
   "branch": "092-post-edit-history",
   "worktree": "/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history",
-  "phase": "spec_review_passed_awaiting_user_review",
+  "phase": "spec_approved_planner_next",
   "activeTask": null,
   "activeWave": null,
   "authorizationBoundary": {
@@ -18,9 +18,9 @@
   },
   "currentHead": {
     "branch": "092-post-edit-history",
-    "commit": "64607617c9af07fbb8efc1d1a147964f7a589c50",
-    "capturedAt": "2026-06-04T02:29:22Z",
-    "summary": "Branch created from origin/main for post edit history spec."
+    "commit": "12b799e6d84f89e72da24a1f624b60b509d5e714",
+    "capturedAt": "2026-06-04T03:15:47Z",
+    "summary": "Spec workflow docs committed; package-lock cleanup completed and worktree was clean before planning state update."
   },
   "remoteHead": {
     "remote": "origin",
@@ -33,8 +33,14 @@
   "tasks": [],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": null,
-  "phaseCommits": [],
+  "lastVerifiedCommit": "12b799e6d84f89e72da24a1f624b60b509d5e714",
+  "phaseCommits": [
+    {
+      "phase": "spec_approved",
+      "commit": "12b799e6d84f89e72da24a1f624b60b509d5e714",
+      "summary": "Reviewed spec workflow docs committed before Planner dispatch."
+    }
+  ],
   "rulesDeployStatus": {
     "state": "required",
     "required": true,
@@ -47,21 +53,27 @@
     {
       "command": "git status --short --branch",
       "exitCode": 0,
-      "summary": "On 092-post-edit-history; only specs/post-edit-history/ is untracked.",
-      "verifiedAt": "2026-06-04T02:46:39Z"
+      "summary": "On 092-post-edit-history; branch is ahead 1 and behind 1; modified files are handoff.md, spec.md, status.json, and tasks.md.",
+      "verifiedAt": "2026-06-04T03:26:07Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
       "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-04T02:46:39Z"
+      "verifiedAt": "2026-06-04T03:26:07Z"
     },
     {
-      "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/post-edit-history/status.json', 'utf8')); console.log('status.json valid JSON')\"",
+      "command": "node -e \"JSON.parse(require('fs').readFileSync('specs/post-edit-history/status.json', 'utf8'))\"",
       "exitCode": 0,
       "summary": "status.json valid JSON.",
-      "verifiedAt": "2026-06-04T02:46:39Z"
+      "verifiedAt": "2026-06-04T03:26:07Z"
+    },
+    {
+      "command": "rg -n \"Spec approved by: not\\\\syet\" specs/post-edit-history",
+      "exitCode": 1,
+      "summary": "No stale unapproved spec approval marker remains.",
+      "verifiedAt": "2026-06-04T03:26:07Z"
     }
   ],
-  "updatedAt": "2026-06-04T02:46:39Z"
+  "updatedAt": "2026-06-04T03:26:07Z"
 }

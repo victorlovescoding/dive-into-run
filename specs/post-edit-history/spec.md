@@ -72,11 +72,12 @@
 
 ## User Authorization
 
-- Spec approved by: not yet; drafted for user review on 2026-06-04.
-- One-time automated execution authorization: edit owned docs only, 2026-06-04.
+- Spec approved by: user, 2026-06-04.
+- User approval evidence: `approve spec，開始實作文章已編輯功能`.
+- One-time automated execution authorization: edit owned docs only for spec approval state reconciliation, 2026-06-04.
 - Authorization boundary:
-  - edit: true for `specs/post-edit-history/*` only
-  - commit: false
+  - edit: true after Planner produces implementation task contracts; current reconciliation edits are limited to `specs/post-edit-history/spec.md`, `specs/post-edit-history/handoff.md`, `specs/post-edit-history/tasks.md`, and `specs/post-edit-history/status.json`
+  - commit: true when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches/workflow state
   - push: false
   - pullRequest: false
   - ciWatch: false

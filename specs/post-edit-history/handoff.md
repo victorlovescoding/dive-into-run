@@ -5,27 +5,28 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history`
 - Branch: `092-post-edit-history`
-- Current head: `64607617c9af07fbb8efc1d1a147964f7a589c50`
+- Current head: `12b799e6d84f89e72da24a1f624b60b509d5e714`
 - Remote head: `origin/main` at `64607617c9af07fbb8efc1d1a147964f7a589c50`
 - Authorization boundary:
-  - edit: true for `specs/post-edit-history/*` only
-  - commit: true for the reviewed spec workflow docs commit only
+  - edit: true after Planner produces implementation task contracts; current coordinator state edits are limited to `specs/post-edit-history/spec.md`, `specs/post-edit-history/handoff.md`, `specs/post-edit-history/tasks.md`, and `specs/post-edit-history/status.json`
+  - commit: true when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches
   - push: false
   - pullRequest: false
   - ciWatch: false
   - merge: false
   - localMainSync: false
   - deployFirestoreRules: false
-- Current phase: `spec_review_passed_awaiting_user_review`
+- Current phase: `spec_approved_planner_next`
 - Active task: none
 - Active wave: none
 - Latest reviewer decision: `review_passed` for spec docs
-- Last verified commit: none
-- Phase commits: none
+- Last verified commit: `12b799e6d84f89e72da24a1f624b60b509d5e714`
+- Phase commits: `spec_approved` -> `12b799e6d84f89e72da24a1f624b60b509d5e714`
 - Rules deploy status: `required`; required later, changed=false, deployedCommit=null
 - Incidents: none
 - Blocked: no
 - Blocked reason: none
+- Latest reconciliation: 2026-06-04T03:26:07Z; synchronized `spec.md` approval metadata with existing `tasks.md`, `handoff.md`, and `status.json` state after user said `approve spec，開始實作文章已編輯功能`.
 
 ## Read Order
 
@@ -39,15 +40,16 @@
 
 ## Next Action
 
-Coordinator should ask the user to review/approve the written spec. After user approval, dispatch Planner to produce implementation-ready task slices before any production code, tests, or rules edits.
+User approved the spec and explicitly authorized implementation to start after Planner task contracts. Coordinator should dispatch Planner next to produce implementation-ready task slices before any production code, tests, or rules edits.
 
 ## Latest Verification
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `git status --short --branch` | 0 | On `092-post-edit-history`; only `specs/post-edit-history/` is untracked. |
+| `git status --short --branch` | 0 | On `092-post-edit-history`; branch is ahead 1 and behind 1; modified files are `handoff.md`, `spec.md`, `status.json`, and `tasks.md`. |
 | `git diff --check` | 0 | No whitespace errors. |
 | `node -e "JSON.parse(require('fs').readFileSync('specs/post-edit-history/status.json', 'utf8')); console.log('status.json valid JSON')"` | 0 | `status.json valid JSON`. |
+| `rg -n "Spec approved by: not\\syet" specs/post-edit-history` | 1 | No stale unapproved spec approval marker remains. |
 
 ## Closeout Checklist
 
@@ -66,14 +68,17 @@ Coordinator should ask the user to review/approve the written spec. After user a
 
 ## Blockers
 
-- None for the spec draft.
+- None for Planner dispatch.
 
 ## Latest Review State
 
 - Reviewer returned `review_passed` for the spec docs.
-- Spec docs are ready for user review.
-- Implementation has not started and is not authorized.
-- Release commit is handled separately by Release Manager and is authorized only for the reviewed spec workflow docs. Push, PR, CI watch, merge, local `main` sync, and rules deploy remain unauthorized.
+- User approved the spec.
+- Approval reconciliation completed on 2026-06-04: `spec.md` now matches `tasks.md`, `handoff.md`, and `status.json`.
+- Planner dispatch is next; Planner owns slicing and implementation task contracts.
+- Implementation edit phase is authorized after Planner task contracts.
+- Commit is authorized when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches. Push, PR, CI watch, merge, local `main` sync, and rules deploy remain unauthorized.
+- Package-lock cleanup is complete; the worktree was clean before this planning state update.
 
 ## Reviewer Attention
 
@@ -84,7 +89,7 @@ Coordinator should ask the user to review/approve the written spec. After user a
 
 ## Pitfalls
 
-- Do not treat this plan as implementation-ready; Planner has not sliced owned files or verification commands.
+- Do not treat this plan as implementation-ready; Planner has not sliced owned files or verification commands yet.
 - Do not harden event comments in this feature.
 - Do not claim deployed rules or deployed product behavior without rules deploy evidence.
-- Do not push, create PR, watch CI, merge, sync local `main`, or deploy rules under the current authorization boundary. Commit authorization is limited to the reviewed spec workflow docs commit handled by Release Manager.
+- Do not push, create PR, watch CI, merge, sync local `main`, or deploy rules under the current authorization boundary.
