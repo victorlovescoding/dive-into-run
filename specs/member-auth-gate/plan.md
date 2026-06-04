@@ -69,18 +69,65 @@
 
 ## Dependency Graph And Execution Shape
 
-- Task 1 can run first: shared Navbar visibility helper and direct helper tests.
-- Task 2 depends on Task 1: wire desktop/mobile navigation and add Navbar rendering tests.
-- Task 3 can run in parallel with Task 1: redirect-toast storage helper, bridge, and bridge tests.
-- Task 4 depends on Task 3: member runtime redirect, layout bridge wiring, screen suppression, and focused tests.
-- Task 5 depends on Tasks 1-4: final verification and review handoff.
-- Default to one Engineer/Reviewer pair. Do not split into same-wave writable lanes unless the dispatcher assigns completely disjoint owned files and a final integration gate.
+Safe max concurrent Engineer lanes: 2.
+
+This is a quality-first limit, not a theoretical maximum. Same-wave tasks must be small enough for one subagent to do one coherent thing well, must own disjoint writable files, and must remain reviewable by one Reviewer lane per Engineer lane. Do not combine unrelated responsibilities into one task to increase concurrency. Do not run same-wave tasks together if either task adds or modifies a shared helper, config file, lockfile, generated artifact, workflow state file, or shared test fixture used by the other same-wave task.
+
+Task scope re-evaluation:
+
+- The previous Task 3 mixed storage helper and provider bridge work. It is split into Task 3 storage helper and Task 4 provider bridge because the helper is the contract used by both redirect and bridge work.
+- The previous Task 4 mixed `/member` runtime redirect, root layout bridge wiring, member screen suppression, and tests. It is split into Task 5 runtime redirect, Task 6 root layout wiring, and Task 7 member screen suppression so each Reviewer can check one responsibility.
+- The previous final verification task is now Task 8 and remains the final integration gate after every Engineer task.
+
+### Execution Waves
+
+| Wave | Tasks | Safe lanes | Why same-wave is safe | Reviewer checkpoint |
+| ---- | ----- | ---------- | --------------------- | ------------------- |
+| 1 | Task 1 Shared Member Nav Eligibility; Task 3 Toast Storage Helper | 2 | Independent helper contracts in different directories. No shared writable files. | Review each helper API and tests before dependent wiring starts. |
+| 2 | Task 2 Wire Desktop And Mobile Navigation; Task 4 Post-Redirect Toast Provider Bridge | 2 | Each depends on a different Wave 1 helper and writes disjoint Navbar vs runtime provider files. | Review UI wiring and provider bridge independently before route-level integration. |
+| 3 | Task 5 Member Runtime Redirect Guard; Task 7 Member Screen Suppression | 2 | Both affect `/member` behavior but own different runtime-hook and render-screen files. Neither writes layout, helpers, config, or shared fixtures. | Review redirect/guard preservation and unauthenticated screen suppression separately. |
+| 4 | Task 6 Root Layout Toast Bridge Wiring | 1 | Writes the shared app root layout, so it serializes after the bridge exists. | Review provider placement and no provider-order drift. |
+| 5 | Task 8 Final Integration Gate And Reviewer Handoff | 1 | Read-only verification over the whole integrated diff. | Reviewer receives complete evidence and decides `review_passed`, `review_rejected`, or `blocked`. |
+
+### Same-Wave Owned Files
+
+| Wave | Task | Owned writable files |
+| ---- | ---- | -------------------- |
+| 1 | Task 1 | `src/components/Navbar/member-nav-visibility.js`; `src/components/Navbar/member-nav-visibility.test.js` |
+| 1 | Task 3 | `src/runtime/member-auth-gate-toast.js`; `src/runtime/member-auth-gate-toast.test.js` |
+| 2 | Task 2 | `src/components/Navbar/Navbar.jsx`; `src/components/Navbar/MobileDrawer.jsx`; `src/components/Navbar/Navbar.test.jsx` |
+| 2 | Task 4 | `src/runtime/providers/MemberAuthGateToastBridge.jsx`; `src/runtime/providers/MemberAuthGateToastBridge.test.jsx` |
+| 3 | Task 5 | `src/runtime/hooks/useMemberPageRuntime.js`; `src/runtime/hooks/useMemberPageRuntime.test.jsx` |
+| 3 | Task 7 | `src/ui/member/MemberPageScreen.jsx`; `src/ui/member/MemberPageScreen.test.jsx` |
+| 4 | Task 6 | `src/app/layout.jsx` |
+| 5 | Task 8 | No writable files; read-only verification only |
+
+Dependency edges:
+
+```text
+Task 1 -> Task 2
+Task 3 -> Task 4
+Task 3 -> Task 5
+Task 4 -> Task 6
+Task 2 -> Task 8
+Task 4 -> Task 8
+Task 5 -> Task 8
+Task 6 -> Task 8
+Task 7 -> Task 8
+```
 
 ## Task 1: Shared Member Nav Eligibility
 
 **Files:**
 - Create: `src/components/Navbar/member-nav-visibility.js`
 - Create: `src/components/Navbar/member-nav-visibility.test.js`
+
+**Execution contract:**
+- Responsibility: define and test the single auth-state eligibility rule for the `/member` nav item.
+- Owned files: `src/components/Navbar/member-nav-visibility.js`, `src/components/Navbar/member-nav-visibility.test.js`.
+- Dependencies: none.
+- Wave sharing: Wave 1 with Task 3 only; owned files are disjoint.
+- Reviewer checkpoint: helper hides only `href === '/member'` while `loading` or `!user`, preserves all public items, exposes no side effects, and has direct tests for loading, unauthenticated, and signed-in states.
 
 - [ ] **Step 1: Write the failing helper tests**
 
@@ -185,6 +232,13 @@ Expected: commit succeeds with no `Co-Authored-By`.
 - Modify: `src/components/Navbar/MobileDrawer.jsx`
 - Create: `src/components/Navbar/Navbar.test.jsx`
 - Read-only if needed: `src/components/Navbar/nav-constants.js`
+
+**Execution contract:**
+- Responsibility: wire both desktop Navbar and mobile drawer through the shared member-link visibility helper.
+- Owned files: `src/components/Navbar/Navbar.jsx`, `src/components/Navbar/MobileDrawer.jsx`, `src/components/Navbar/Navbar.test.jsx`.
+- Dependencies: Task 1.
+- Wave sharing: Wave 2 with Task 4 only; owned files are disjoint and Task 2 does not modify shared helpers.
+- Reviewer checkpoint: desktop and mobile consumers use the same helper, public links stay visible, signed-in `/member` link still points to `/member`, and UserMenu, notification bell, drawer close, login, and sign-out behavior are unchanged.
 
 - [ ] **Step 1: Write the failing Navbar rendering tests**
 
@@ -354,13 +408,18 @@ git commit -m "gate member nav link"
 
 Expected: commit succeeds with no `Co-Authored-By`.
 
-## Task 3: Post-Redirect Toast Bridge
+## Task 3: Toast Storage Helper
 
 **Files:**
 - Create: `src/runtime/member-auth-gate-toast.js`
 - Create: `src/runtime/member-auth-gate-toast.test.js`
-- Create: `src/runtime/providers/MemberAuthGateToastBridge.jsx`
-- Create: `src/runtime/providers/MemberAuthGateToastBridge.test.jsx`
+
+**Execution contract:**
+- Responsibility: define the exact login-required toast message and tab-scoped pending marker API used after redirect.
+- Owned files: `src/runtime/member-auth-gate-toast.js`, `src/runtime/member-auth-gate-toast.test.js`.
+- Dependencies: none.
+- Wave sharing: Wave 1 with Task 1 only; owned files are disjoint.
+- Reviewer checkpoint: helper writes a single marker value, consumes it once, handles unavailable `sessionStorage`, and exports the exact message `請先登入才能進入會員中心`.
 
 - [ ] **Step 1: Write the failing storage helper tests**
 
@@ -463,7 +522,31 @@ npx vitest run --project=browser src/runtime/member-auth-gate-toast.test.js
 
 Expected: exit 0 and both storage helper tests pass.
 
-- [ ] **Step 5: Write the failing toast bridge tests**
+- [ ] **Step 5: Checkpoint if commit is authorized**
+
+Only if the dispatch explicitly authorizes commits:
+
+```bash
+git add src/runtime/member-auth-gate-toast.js src/runtime/member-auth-gate-toast.test.js
+git commit -m "add member auth toast marker"
+```
+
+Expected: commit succeeds with no `Co-Authored-By`.
+
+## Task 4: Post-Redirect Toast Provider Bridge
+
+**Files:**
+- Create: `src/runtime/providers/MemberAuthGateToastBridge.jsx`
+- Create: `src/runtime/providers/MemberAuthGateToastBridge.test.jsx`
+
+**Execution contract:**
+- Responsibility: consume the pending marker only after the app lands on `/` and show exactly one info toast through the existing Toast context.
+- Owned files: `src/runtime/providers/MemberAuthGateToastBridge.jsx`, `src/runtime/providers/MemberAuthGateToastBridge.test.jsx`.
+- Dependencies: Task 3.
+- Wave sharing: Wave 2 with Task 2 only; owned files are disjoint and Task 4 does not modify shared helpers or root layout.
+- Reviewer checkpoint: bridge renders no UI, does not consume markers away from `/`, schedules the toast after pathname clearing, calls `showToast(MEMBER_AUTH_GATE_TOAST_MESSAGE, 'info')`, and does not change `ToastProvider` semantics.
+
+- [ ] **Step 1: Write the failing toast bridge tests**
 
 Create `src/runtime/providers/MemberAuthGateToastBridge.test.jsx`:
 
@@ -490,7 +573,7 @@ function ToastProbe() {
 
   return (
     <output aria-label="toast messages">
-      {toasts.map((toast) => toast.message).join('|')}
+      {toasts.map((toast) => `${toast.type}:${toast.message}`).join('|')}
     </output>
   );
 }
@@ -520,12 +603,12 @@ describe('MemberAuthGateToastBridge', () => {
 
     await waitFor(() => {
       expect(screen.getByLabelText('toast messages')).toHaveTextContent(
-        MEMBER_AUTH_GATE_TOAST_MESSAGE,
+        `info:${MEMBER_AUTH_GATE_TOAST_MESSAGE}`,
       );
     });
-    expect(
-      screen.getByLabelText('toast messages').textContent?.split(MEMBER_AUTH_GATE_TOAST_MESSAGE),
-    ).toHaveLength(2);
+    expect(screen.getByLabelText('toast messages').textContent).toBe(
+      `info:${MEMBER_AUTH_GATE_TOAST_MESSAGE}`,
+    );
     expect(window.sessionStorage.getItem(MEMBER_AUTH_GATE_TOAST_STORAGE_KEY)).toBeNull();
   });
 
@@ -543,7 +626,7 @@ describe('MemberAuthGateToastBridge', () => {
 });
 ```
 
-- [ ] **Step 6: Run the bridge tests and verify they fail**
+- [ ] **Step 2: Run the bridge tests and verify they fail**
 
 Run:
 
@@ -553,7 +636,7 @@ npx vitest run --project=browser src/runtime/providers/MemberAuthGateToastBridge
 
 Expected: exit 1 because `./MemberAuthGateToastBridge` does not exist.
 
-- [ ] **Step 7: Implement the toast bridge**
+- [ ] **Step 3: Implement the toast bridge**
 
 Create `src/runtime/providers/MemberAuthGateToastBridge.jsx`:
 
@@ -591,7 +674,7 @@ export default function MemberAuthGateToastBridge() {
 
 The `window.setTimeout(..., 0)` is intentional. `ToastProvider` currently clears all toasts in an effect whenever `pathname` changes, so the bridge schedules the new toast after the redirect commit's pathname effects have flushed.
 
-- [ ] **Step 8: Run storage and bridge tests and verify they pass**
+- [ ] **Step 4: Run storage and bridge tests and verify they pass**
 
 Run:
 
@@ -601,25 +684,29 @@ npx vitest run --project=browser src/runtime/member-auth-gate-toast.test.js src/
 
 Expected: exit 0 and all storage plus bridge tests pass.
 
-- [ ] **Step 9: Checkpoint if commit is authorized**
+- [ ] **Step 5: Checkpoint if commit is authorized**
 
 Only if the dispatch explicitly authorizes commits:
 
 ```bash
-git add src/runtime/member-auth-gate-toast.js src/runtime/member-auth-gate-toast.test.js src/runtime/providers/MemberAuthGateToastBridge.jsx src/runtime/providers/MemberAuthGateToastBridge.test.jsx
+git add src/runtime/providers/MemberAuthGateToastBridge.jsx src/runtime/providers/MemberAuthGateToastBridge.test.jsx
 git commit -m "add member auth toast bridge"
 ```
 
 Expected: commit succeeds with no `Co-Authored-By`.
 
-## Task 4: Member Route Guard And UI Suppression
+## Task 5: Member Runtime Redirect Guard
 
 **Files:**
 - Modify: `src/runtime/hooks/useMemberPageRuntime.js`
 - Create: `src/runtime/hooks/useMemberPageRuntime.test.jsx`
-- Modify: `src/app/layout.jsx`
-- Modify: `src/ui/member/MemberPageScreen.jsx`
-- Create: `src/ui/member/MemberPageScreen.test.jsx`
+
+**Execution contract:**
+- Responsibility: after auth loading settles with no user on `/member`, mark the toast pending and call `router.replace('/')` while preserving existing mutation guards.
+- Owned files: `src/runtime/hooks/useMemberPageRuntime.js`, `src/runtime/hooks/useMemberPageRuntime.test.jsx`.
+- Dependencies: Task 3.
+- Wave sharing: Wave 3 with Task 7 only; owned files are disjoint and Task 5 does not modify layout, screen, or shared helpers.
+- Reviewer checkpoint: no redirect while `loading`, signed-in users are not redirected, unauthenticated settled auth calls `replace('/')`, the toast marker is written, and existing `!user` guards remain present.
 
 - [ ] **Step 1: Write the failing runtime redirect tests**
 
@@ -630,9 +717,7 @@ import { render, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import ToastProvider from '@/runtime/providers/ToastProvider';
-import {
-  MEMBER_AUTH_GATE_TOAST_STORAGE_KEY,
-} from '@/runtime/member-auth-gate-toast';
+import { MEMBER_AUTH_GATE_TOAST_STORAGE_KEY } from '@/runtime/member-auth-gate-toast';
 import useMemberPageRuntime from './useMemberPageRuntime';
 
 const replaceMock = vi.fn();
@@ -772,7 +857,40 @@ Do not remove or weaken these existing guards:
     if (!user || accountDeletionSubmitting) return;
 ```
 
-- [ ] **Step 4: Wire the toast bridge into the root layout**
+- [ ] **Step 4: Run focused runtime tests and verify they pass**
+
+Run:
+
+```bash
+npx vitest run --project=browser src/runtime/member-auth-gate-toast.test.js src/runtime/hooks/useMemberPageRuntime.test.jsx
+```
+
+Expected: exit 0 and all toast helper plus runtime redirect tests pass.
+
+- [ ] **Step 5: Checkpoint if commit is authorized**
+
+Only if the dispatch explicitly authorizes commits:
+
+```bash
+git add src/runtime/hooks/useMemberPageRuntime.js src/runtime/hooks/useMemberPageRuntime.test.jsx
+git commit -m "gate direct member visits"
+```
+
+Expected: commit succeeds with no `Co-Authored-By`.
+
+## Task 6: Root Layout Toast Bridge Wiring
+
+**Files:**
+- Modify: `src/app/layout.jsx`
+
+**Execution contract:**
+- Responsibility: mount the post-redirect toast bridge under the existing `ToastProvider` so the pending marker is consumed after navigation lands on `/`.
+- Owned files: `src/app/layout.jsx`.
+- Dependencies: Task 4.
+- Wave sharing: Wave 4 only; this writes the shared app root layout and must not share a wave with other writable tasks.
+- Reviewer checkpoint: provider order remains `AuthProvider` > `ToastProvider` > `NotificationProvider` > `AccountDeletionGate`, `Navbar` and `children` stay in the same place, and `NotificationToast` plus `ToastContainer` stay mounted.
+
+- [ ] **Step 1: Wire the toast bridge into the root layout**
 
 Modify `src/app/layout.jsx` imports:
 
@@ -798,7 +916,51 @@ Inside `<ToastProvider>`, render the bridge next to the existing toast UI:
 
 Do not change the order of `AuthProvider`, `ToastProvider`, `NotificationProvider`, or `AccountDeletionGate`.
 
-- [ ] **Step 5: Write the failing member screen suppression tests**
+- [ ] **Step 2: Confirm the layout imports and provider order**
+
+Run:
+
+```bash
+rg -n "MemberAuthGateToastBridge|ToastProvider|NotificationProvider|AccountDeletionGate|ToastContainer" src/app/layout.jsx
+```
+
+Expected: output includes one `MemberAuthGateToastBridge` import, one `<MemberAuthGateToastBridge />` render under `<NotificationProvider>`, and the existing provider nesting remains visible in the same order.
+
+- [ ] **Step 3: Run bridge test after layout wiring**
+
+Run:
+
+```bash
+npx vitest run --project=browser src/runtime/providers/MemberAuthGateToastBridge.test.jsx
+```
+
+Expected: exit 0 and the provider bridge tests still pass after layout wiring.
+
+- [ ] **Step 4: Checkpoint if commit is authorized**
+
+Only if the dispatch explicitly authorizes commits:
+
+```bash
+git add src/app/layout.jsx
+git commit -m "mount member auth toast bridge"
+```
+
+Expected: commit succeeds with no `Co-Authored-By`.
+
+## Task 7: Member Screen Suppression
+
+**Files:**
+- Modify: `src/ui/member/MemberPageScreen.jsx`
+- Create: `src/ui/member/MemberPageScreen.test.jsx`
+
+**Execution contract:**
+- Responsibility: prevent unauthenticated or loading `/member` render states from showing member profile controls.
+- Owned files: `src/ui/member/MemberPageScreen.jsx`, `src/ui/member/MemberPageScreen.test.jsx`.
+- Dependencies: none; scheduled in Wave 3 to keep the max lane count at 2 and review member-route behavior after the helper/bridge contracts exist.
+- Wave sharing: Wave 3 with Task 5 only; owned files are disjoint and Task 7 does not modify runtime hooks or layout.
+- Reviewer checkpoint: loading and unauthenticated settled runtime render `null`, signed-in markup remains unchanged, and `/member/favorites` link behavior is not modified.
+
+- [ ] **Step 1: Write the failing member screen suppression tests**
 
 Create `src/ui/member/MemberPageScreen.test.jsx`:
 
@@ -890,7 +1052,7 @@ describe('MemberPageScreen auth-state rendering', () => {
 });
 ```
 
-- [ ] **Step 6: Run the screen tests and verify they fail**
+- [ ] **Step 2: Run the screen tests and verify they fail**
 
 Run:
 
@@ -900,7 +1062,7 @@ npx vitest run --project=browser src/ui/member/MemberPageScreen.test.jsx
 
 Expected: exit 1 because unauthenticated runtime still renders member profile controls.
 
-- [ ] **Step 7: Suppress unauthenticated/loading member screen UI**
+- [ ] **Step 3: Suppress unauthenticated/loading member screen UI**
 
 Modify `src/ui/member/MemberPageScreen.jsx` destructuring to include `loading`:
 
@@ -925,32 +1087,39 @@ Add this guard before `const userLabel = ...`:
 
 Keep the existing signed-in markup below the guard unchanged.
 
-- [ ] **Step 8: Run focused member runtime and screen tests and verify they pass**
+- [ ] **Step 4: Run focused member screen tests and verify they pass**
 
 Run:
 
 ```bash
-npx vitest run --project=browser src/runtime/hooks/useMemberPageRuntime.test.jsx src/runtime/providers/MemberAuthGateToastBridge.test.jsx src/ui/member/MemberPageScreen.test.jsx
+npx vitest run --project=browser src/ui/member/MemberPageScreen.test.jsx
 ```
 
-Expected: exit 0 and all route guard, toast bridge, and screen suppression tests pass.
+Expected: exit 0 and all member screen suppression tests pass.
 
-- [ ] **Step 9: Checkpoint if commit is authorized**
+- [ ] **Step 5: Checkpoint if commit is authorized**
 
 Only if the dispatch explicitly authorizes commits:
 
 ```bash
-git add src/runtime/hooks/useMemberPageRuntime.js src/runtime/hooks/useMemberPageRuntime.test.jsx src/app/layout.jsx src/ui/member/MemberPageScreen.jsx src/ui/member/MemberPageScreen.test.jsx
-git commit -m "gate direct member visits"
+git add src/ui/member/MemberPageScreen.jsx src/ui/member/MemberPageScreen.test.jsx
+git commit -m "suppress signed-out member UI"
 ```
 
 Expected: commit succeeds with no `Co-Authored-By`.
 
-## Task 5: Final Verification And Reviewer Handoff
+## Task 8: Final Integration Gate And Reviewer Handoff
 
 **Files:**
 - Read-only verification over changed files and focused tests.
 - No new files.
+
+**Execution contract:**
+- Responsibility: verify the integrated feature after all Engineer tasks and prepare the Reviewer handoff evidence.
+- Owned files: none; read-only verification only.
+- Dependencies: Tasks 1, 2, 3, 4, 5, 6, and 7.
+- Wave sharing: Wave 5 only; no writable work can run in this gate.
+- Reviewer checkpoint: all focused tests and changed-file gates pass, browser behavior matches the approved spec, changed files stay within the plan, and existing runtime/data-layer `!user` guards remain.
 
 - [ ] **Step 1: Run all focused browser-unit tests for this feature**
 
@@ -1069,18 +1238,18 @@ Reviewer decision must be one of `review_passed`, `review_rejected`, or `blocked
 
 ## Acceptance Criteria Mapping
 
-- `會員頁面` absent from desktop Navbar while auth loading: Task 1 helper tests, Task 2 Navbar test `does not render member links while auth is loading`, Task 5 browser verification.
-- `會員頁面` absent from desktop Navbar when auth settled and `user === null`: Task 1 helper tests, Task 2 Navbar test `does not render member links after auth settles without a user`, Task 5 browser verification.
-- `會員頁面` absent from mobile drawer while auth loading: Task 1 helper tests, Task 2 full Navbar render includes drawer DOM, Task 5 browser verification.
-- `會員頁面` absent from mobile drawer when auth settled and `user === null`: Task 1 helper tests, Task 2 full Navbar render includes drawer DOM, Task 5 browser verification.
-- Signed-in user sees `會員頁面` path to `/member`: Task 1 signed-in helper test, Task 2 signed-in Navbar test, Task 5 browser verification.
-- Direct `/member` waits for auth loading to finish: Task 4 runtime test `does not redirect before auth loading settles`.
-- Unauthenticated settled `/member` uses `replace('/')`: Task 4 runtime test `marks the login-required toast and replaces home`.
-- Home redirect shows one info toast `請先登入才能進入會員中心`: Task 3 bridge test, Task 5 browser verification.
-- Browser Back does not re-enter `/member` redirect loop: Task 4 requires `router.replace('/')`, Task 5 browser verification.
-- Unauthenticated member screen does not display `跑者`, `/default-avatar.png`, or editable display-name form: Task 4 screen suppression tests.
-- Existing signed-in `/member` behavior remains unchanged: Task 4 signed-in screen test plus Task 5 signed-in browser verification.
-- Runtime/data-layer `!user` guards remain: Task 4 implementation step explicitly preserves guards, Task 5 Reviewer handoff confirms them.
+- `會員頁面` absent from desktop Navbar while auth loading: Task 1 helper tests, Task 2 Navbar test `does not render member links while auth is loading`, Task 8 browser verification.
+- `會員頁面` absent from desktop Navbar when auth settled and `user === null`: Task 1 helper tests, Task 2 Navbar test `does not render member links after auth settles without a user`, Task 8 browser verification.
+- `會員頁面` absent from mobile drawer while auth loading: Task 1 helper tests, Task 2 full Navbar render includes drawer DOM, Task 8 browser verification.
+- `會員頁面` absent from mobile drawer when auth settled and `user === null`: Task 1 helper tests, Task 2 full Navbar render includes drawer DOM, Task 8 browser verification.
+- Signed-in user sees `會員頁面` path to `/member`: Task 1 signed-in helper test, Task 2 signed-in Navbar test, Task 8 browser verification.
+- Direct `/member` waits for auth loading to finish: Task 5 runtime test `does not redirect before auth loading settles`.
+- Unauthenticated settled `/member` uses `replace('/')`: Task 5 runtime test `marks the login-required toast and replaces home`.
+- Home redirect shows one info toast `請先登入才能進入會員中心`: Task 3 storage marker, Task 4 bridge test, Task 6 root layout wiring, and Task 8 browser verification.
+- Browser Back does not re-enter `/member` redirect loop: Task 5 requires `router.replace('/')`, Task 8 browser verification.
+- Unauthenticated member screen does not display `跑者`, `/default-avatar.png`, or editable display-name form: Task 7 screen suppression tests.
+- Existing signed-in `/member` behavior remains unchanged: Task 7 signed-in screen test plus Task 8 signed-in browser verification.
+- Runtime/data-layer `!user` guards remain: Task 5 implementation step explicitly preserves guards, Task 8 Reviewer handoff confirms them.
 
 ## Stop Conditions
 
@@ -1110,5 +1279,5 @@ The implementation is ready for Reviewer only when all of these are true:
 - `npm run depcruise` exits 0.
 - `git diff --check` exits 0.
 - Browser verification confirms desktop Navbar, mobile drawer, direct `/member`, one info toast after home redirect, Back behavior, and signed-in `/member`.
-- `git diff --name-only` is limited to the file list in Task 5 Step 7.
+- `git diff --name-only` is limited to the file list in Task 8 Step 7.
 - No `tasks.md`, `handoff.md`, `status.json`, service/repo/Firebase rules/schema/deployment, login, sign-out, or `/member/favorites` changes exist.
