@@ -17,11 +17,11 @@
 - Phase: `integration`.
 - Active task: `T004`.
 - Active wave: `wave-4`.
-- Latest reviewer decision: `review_passed` for `T003` article post list/detail UI wiring and browser evidence.
+- Latest reviewer decision: `review_passed` for `T003` article post list/detail UI wiring and browser evidence; `T004` is `engineer_done` and awaits Integration Reviewer.
 - Blocked: no. The old T003 lint/browser blocker is resolved: changed-file lint passed without `toHaveBeenCalledTimes(N)`, and Browser/Playwright evidence verified the article history affordance/modal on emulator-backed local app data.
-- Next gate: run `T004` final integration verification and workflow-state sync. Do not mark the feature complete until T004 passes.
+- Next gate: send `T004` workflow-only diff and final integration evidence to Integration Reviewer. Do not mark T004 or the feature complete until Reviewer PASS and post-review workflow sync.
 - Authorization boundary: `edit=true`, `commit=true` after Engineer + Reviewer + fresh verification for reviewed implementation batches; `push=false`, `pullRequest=false`, `ciWatch=false`, `merge=false`, `localMainSync=false`, `deployFirestoreRules=false`.
-- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `6821d3c5f92d6e8adc768aa610d27e7cba87be70`, tracking `origin/main` at `14515eee2d730d25c7f73fa8eb5c1315504787e8`; `git status --short --branch` currently reports branch ahead 8 and behind 6 with dirty reviewed T003 implementation files, untracked T003 browser tests, and workflow state files.
+- Branch/worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history` on `092-post-edit-history`, current HEAD `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`, tracking `origin/main` at `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 9 and behind 0 relative to `origin/main`, and dirty scope is only workflow files: `specs/post-edit-history/handoff.md`, `specs/post-edit-history/plan.md`, `specs/post-edit-history/status.json`, and `specs/post-edit-history/tasks.md`.
 - Rules deploy status: `required`, currently `changed=true`; T002 changed `firestore.rules`, but deploy remains unauthorized and not claimed.
 - Incidents: none.
 - Planning evidence:
@@ -476,7 +476,7 @@ Evidence:
 - **Engineer**: UI Runtime Engineer
 - **Reviewer**: UI Runtime Reviewer
 - **Commit checkpoint**: `article_history_ui` after Reviewer PASS and fresh verification
-- **Last verified commit**: none for this task; T003 is reviewed in the dirty working tree and awaits its authorized checkpoint commit
+- **Last verified commit**: `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296` (`article_history_ui`); T003 is completed and committed on the current rebased HEAD
 - **Authorization boundary**: edit=yes, commit=yes after Reviewer PASS and fresh verification, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
 - **Rules deploy status**: required; carry T002 changed=true state; deploy remains unauthorized
 - **Incidents**: none
@@ -590,7 +590,7 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: Implemented T003 UI/runtime owned scope in the current dirty working tree and resolved the prior lint/browser evidence blocker.
+- Engineer report: Implemented T003 UI/runtime owned scope, resolved the prior lint/browser evidence blocker, and committed it as `article_history_ui` at `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`.
 - Reviewer report: `review_passed`; findings none. `PostCard` shows article-level `已編輯` only when `post.isEdited && onViewArticleHistory`, calls the article handler, list/detail runtimes use shared `useEditHistoryModal` plus T002 `fetchPostHistory`, local edit sets `isEdited: true`, detail comment history wiring remains intact, and tests cover list/detail article history plus detail comment regression without `toHaveBeenCalledTimes(N)`.
 - Command output summary:
   - `npx vitest run tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 1 file / 4 tests passed.
@@ -614,15 +614,15 @@ Evidence:
 
 ### T004 - Final Integration Verification And Workflow State
 
-- **State**: `todo`
+- **State**: `engineer_done`
 - **Attempt**: 1
 - **Wave**: `wave-4`
 - **Engineer**: Integration Verifier
 - **Reviewer**: Integration Reviewer
 - **Commit checkpoint**: `integration_gate` after Reviewer PASS and fresh verification if workflow state changed
-- **Last verified commit**: none for this task
+- **Last verified commit**: `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`
 - **Authorization boundary**: edit=yes for workflow state only, commit=yes after Reviewer PASS and fresh verification, push=no, pullRequest=no, ciWatch=no, merge=no, localMainSync=no, deployFirestoreRules=no
-- **Rules deploy status**: required if `firestore.rules` changed; deploy remains unauthorized
+- **Rules deploy status**: required; `firestore.rules` changed in T002, deploy remains unauthorized, changed=true, deployedCommit=null
 - **Incidents**: none
 
 Scope:
@@ -642,6 +642,7 @@ Owned files:
 - `specs/post-edit-history/tasks.md`
 - `specs/post-edit-history/handoff.md`
 - `specs/post-edit-history/status.json`
+- `specs/post-edit-history/plan.md` only for stale HEAD/remote/T004 language sync
 
 Read-only context:
 
@@ -664,15 +665,15 @@ Dependencies:
 
 Browser evidence:
 
-- required by validation, but T004 may reuse T003 reviewed browser evidence if it includes target URL, route/journey, viewport, tool, screenshot artifact, expected vs actual UI signal, and console/network findings. If missing or stale, rerun browser verification before PASS.
+- Fresh browser verification reran via `node /private/tmp/t003-article-history-ui/verify-article-history.mjs` against `demo-test` emulators and `http://localhost:3002/posts`. Final PASS result and screenshots are under `/private/tmp/t003-article-history-ui/`.
 
 Engineer instructions:
 
-- Confirm T001, T002, T003A, and T003 are `completed` in `tasks.md` and `status.json`.
-- Run the final integration commands one at a time and record exit codes and concise signals.
-- Update workflow state to reflect latest task states, current head, last verification, phase commits, rules deploy state, and any incidents.
-- If `firestore.rules` changed, keep `rulesDeployStatus.state=required`, `required=true`, `changed=true`, `deployedCommit=null`, and no deploy evidence.
-- Modify only the owned workflow files above.
+- Confirmed T001, T002, T003A, and T003 are `completed` in `tasks.md` and `status.json`.
+- Ran final integration commands one at a time and recorded exit codes and concise signals.
+- Updated workflow state to reflect latest task states, current head, last verification, phase commits, rules deploy state, and incidents.
+- Because `firestore.rules` changed, kept `rulesDeployStatus.state=required`, `required=true`, `changed=true`, `deployedCommit=null`, and no deploy evidence.
+- Modified only T004 workflow files.
 
 Acceptance criteria:
 
@@ -684,15 +685,17 @@ Acceptance criteria:
 
 Verification commands and expected signal:
 
-| Command | Expected signal |
-| ------- | --------------- |
-| `git status --short --branch` | exit 0; branch is `092-post-edit-history`; only expected reviewed files are dirty or tree is clean after authorized commits |
-| `git diff --check` | exit 0; no whitespace errors |
-| `npm run lint:changed` | exit 0; changed files lint clean |
-| `npm run type-check:changed` | exit 0; changed-file type check clean |
-| `npm run workflow:check` | exit 0; `specs/post-edit-history/status.json` valid and synced |
-| `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | exit 0; post rules tests pass |
-| `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; focused shared/persistence/UI tests pass |
+| Command | Expected signal | Last run |
+| ------- | --------------- | -------- |
+| `git status --short --branch` | exit 0; branch is `092-post-edit-history`; only expected reviewed files are dirty or tree is clean after authorized commits | exit 0; clean before T004 workflow edits; ahead 9 / behind 0 |
+| `git diff --check` | exit 0; no whitespace errors | exit 0; post-sync workflow diff has no whitespace errors |
+| `npm run lint:changed` | exit 0; changed files lint clean | exit 0; no changed JS files to lint |
+| `npm run type-check:changed` | exit 0; changed-file type check clean | exit 0; no changed JS files to check |
+| `npm run workflow:check` | exit 0; `specs/post-edit-history/status.json` valid and synced | exit 0 post-sync; 18 status files valid and synced, including `specs/post-edit-history/status.json` |
+| `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | exit 0; post rules tests pass | exit 0; 1 file / 37 tests passed |
+| `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; focused T003 runtime/UI tests pass | exit 0; 4 files / 11 tests passed |
+| `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | exit 0; focused shared/persistence/UI tests pass | exit 0; 9 files / 27 tests passed |
+| `node /private/tmp/t003-article-history-ui/verify-article-history.mjs` | exit 0; browser article create/edit/history journey passes against local demo-test app | exit 0; fresh PASS, networkIssues empty, emulator connection warnings only |
 
 Reviewer PASS criteria:
 
@@ -712,11 +715,24 @@ Reviewer REJECT criteria:
 
 Evidence:
 
-- Engineer report: pending
+- Engineer report: T004 final integration verification completed and workflow docs/state synced to rebased HEAD `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`, `origin/main` `14515eee2d730d25c7f73fa8eb5c1315504787e8`, ahead 9 / behind 0. T004 is `engineer_done`; Reviewer PASS is pending.
 - Reviewer report: pending
-- Command output summary: pending
-- Changed files summary: pending
-- Browser evidence: pending
-- Phase commits: pending
-- Rules deploy status: required; no deploy evidence
+- Command output summary:
+  - `git status --short --branch`: exit 0; branch clean before T004 workflow edits, ahead 9 / behind 0.
+  - `git diff --check`: exit 0; post-sync workflow diff has no whitespace errors.
+  - `npm run lint:changed`: exit 0; no changed JS files to lint.
+  - `npm run type-check:changed`: exit 0; no changed JS files to check.
+  - `npm run workflow:check`: exit 0 post-sync; 18 status files valid and synced. Earlier pre-sync exit 1 was stale pre-rebase `lastVerifiedCommit`/`phaseCommits` ancestry and is resolved.
+  - `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 4 files / 11 tests passed.
+  - `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx`: exit 0; 9 files / 27 tests passed.
+  - `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"`: exit 0; 1 file / 37 tests passed.
+  - `node /private/tmp/t003-article-history-ui/verify-article-history.mjs`: exit 0; browser PASS against demo-test emulators and localhost:3002.
+- Changed files summary:
+  - `specs/post-edit-history/status.json`: synced T004 Engineer state/evidence, rebased commit snapshots, phase commit SHAs, verification results, and required/not-deployed rules state.
+  - `specs/post-edit-history/tasks.md`: synced T004 state/evidence and browser rerun handling.
+  - `specs/post-edit-history/handoff.md`: synced current handoff, latest verification, and remaining closeout boundaries.
+  - `specs/post-edit-history/plan.md`: synced stale HEAD/remote/ahead-behind workflow-state language.
+- Browser evidence: fresh PASS via Playwright/emulator using project `demo-test`, Auth 9099, Firestore 8080, Storage 9199, and Next on `localhost:3002`; screenshots/result under `/private/tmp/t003-article-history-ui/`. Setup-only reruns failed until the local emulator Auth/profile avatar was set to `/default-avatar.png`; no repo files changed for setup.
+- Phase commits: `spec_approved` -> `0278717e7b30808d3f69580b4b571c502c82b182`; `post_rebase_state` -> `173b68393fad51b6d0fa7a47c96171a9342baac2`; `plan_and_tasks` -> `f9aec2f4cae314b79bea64e4b947541885be295d`; `shared_core` -> `7621e962038c7d4f7caff638e96e51efd63b5e7e`; `shared_core_test_layout` -> `6b06f1d7c9ce29d8f7b050ef3276157a18d0149a`; `article_history_persistence_rules` -> `4f8763f9f43a8df261011be1a2f336dc21884cc2`; `browser_test_lint_config` -> `776413e67872f214bb94f90d649dc6c623649f65`; `article_history_ui` -> `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`.
+- Rules deploy status: required; changed=true; deployedCommit=null; no deploy evidence; deploy unauthorized
 - Incidents: none

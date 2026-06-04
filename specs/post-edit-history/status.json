@@ -18,16 +18,16 @@
   },
   "currentHead": {
     "branch": "092-post-edit-history",
-    "commit": "6821d3c5f92d6e8adc768aa610d27e7cba87be70",
-    "capturedAt": "2026-06-04T13:19:43Z",
-    "summary": "Current HEAD includes the T003A browser test lint config checkpoint; T003 UI/runtime implementation is reviewed in the dirty working tree with Reviewer PASS and Browser/Playwright evidence PASS; T004 final integration remains. Current branch reports ahead 8 and behind 6 relative to origin/main."
+    "commit": "4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296",
+    "capturedAt": "2026-06-04T13:48:31Z",
+    "summary": "Current HEAD is the rebased T003 UI checkpoint `4d80d09 Add post edit history UI`; branch reports ahead 9 and behind 0 relative to origin/main. T004 workflow-state edits are uncommitted pending Reviewer PASS and checkpoint commit."
   },
   "remoteHead": {
     "remote": "origin",
     "branch": "main",
     "commit": "14515eee2d730d25c7f73fa8eb5c1315504787e8",
-    "capturedAt": "2026-06-04T13:19:43Z",
-    "summary": "origin/main is at 14515eee2d730d25c7f73fa8eb5c1315504787e8; current branch reports ahead 8 and behind 6 relative to origin/main."
+    "capturedAt": "2026-06-04T13:48:31Z",
+    "summary": "origin/main is at 14515eee2d730d25c7f73fa8eb5c1315504787e8; current branch reports ahead 9 and behind 0 relative to origin/main."
   },
   "completedTasks": [
     "T001",
@@ -543,7 +543,7 @@
         "decidedAt": "2026-06-04T13:10:53Z"
       },
       "evidence": {
-        "engineerReport": "Implemented T003 UI/runtime owned scope in the current dirty working tree and resolved the prior lint/browser evidence blocker.",
+        "engineerReport": "Implemented T003 UI/runtime owned scope, resolved the prior lint/browser evidence blocker, and committed it as article_history_ui at 4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296.",
         "reviewerReport": "review_passed; findings none. PostCard shows article-level 已編輯 only when post.isEdited && onViewArticleHistory, calls the article handler, list/detail runtimes use shared useEditHistoryModal plus T002 fetchPostHistory, local edit sets isEdited: true, detail comment history wiring remains intact, and tests cover list/detail article history plus detail comment regression without toHaveBeenCalledTimes(N).",
         "commandOutputSummary": [
           "npx vitest run tests/browser/ui/posts/PostDetailScreen.test.jsx: exit 0; 1 file / 4 tests passed.",
@@ -566,7 +566,7 @@
     {
       "id": "T004",
       "title": "Final Integration Verification And Workflow State",
-      "state": "todo",
+      "state": "engineer_done",
       "attempt": 1,
       "wave": "wave-4",
       "engineer": "Integration Verifier",
@@ -621,37 +621,82 @@
         {
           "command": "git status --short --branch",
           "expectedSignal": "exit 0; branch is 092-post-edit-history and dirty files are expected reviewed files or tree is clean",
-          "lastRun": null
+          "lastRun": {
+            "command": "git status --short --branch",
+            "exitCode": 0,
+            "summary": "On 092-post-edit-history; ahead 9 and behind 0 relative to origin/main; dirty files are the four T004 workflow files only.",
+            "verifiedAt": "2026-06-04T13:54:42Z"
+          }
         },
         {
           "command": "git diff --check",
           "expectedSignal": "exit 0; no whitespace errors",
-          "lastRun": null
+          "lastRun": {
+            "command": "git diff --check",
+            "exitCode": 0,
+            "summary": "Post-sync workflow diff has no whitespace errors.",
+            "verifiedAt": "2026-06-04T13:54:42Z"
+          }
         },
         {
           "command": "npm run lint:changed",
           "expectedSignal": "exit 0; changed files lint clean",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run lint:changed",
+            "exitCode": 0,
+            "summary": "No changed JS files to lint.",
+            "verifiedAt": "2026-06-04T13:48:31Z"
+          }
         },
         {
           "command": "npm run type-check:changed",
           "expectedSignal": "exit 0; changed-file type check clean",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run type-check:changed",
+            "exitCode": 0,
+            "summary": "No changed JS files to check.",
+            "verifiedAt": "2026-06-04T13:48:31Z"
+          }
         },
         {
           "command": "npm run workflow:check",
           "expectedSignal": "exit 0; post-edit-history status valid and synced",
-          "lastRun": null
+          "lastRun": {
+            "command": "npm run workflow:check",
+            "exitCode": 0,
+            "summary": "Post-sync check passed: 18 status files valid and synced, including specs/post-edit-history/status.json. Earlier pre-sync failure was stale pre-rebase commit ancestry and is resolved.",
+            "verifiedAt": "2026-06-04T13:54:42Z"
+          }
         },
         {
           "command": "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
           "expectedSignal": "exit 0; post rules tests pass",
-          "lastRun": null
+          "lastRun": {
+            "command": "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
+            "exitCode": 0,
+            "summary": "1 file / 37 tests passed; auth and firestore emulators started and stopped successfully.",
+            "verifiedAt": "2026-06-04T13:48:31Z"
+          }
+        },
+        {
+          "command": "npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
+          "expectedSignal": "exit 0; focused T003 runtime/UI tests pass",
+          "lastRun": {
+            "command": "npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
+            "exitCode": 0,
+            "summary": "4 files / 11 tests passed.",
+            "verifiedAt": "2026-06-04T13:48:31Z"
+          }
         },
         {
           "command": "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
           "expectedSignal": "exit 0; focused shared/persistence/UI tests pass",
-          "lastRun": null
+          "lastRun": {
+            "command": "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
+            "exitCode": 0,
+            "summary": "9 files / 27 tests passed.",
+            "verifiedAt": "2026-06-04T13:48:31Z"
+          }
         }
       ],
       "reviewerPassCriteria": [
@@ -670,36 +715,72 @@
       ],
       "reviewerDecision": null,
       "evidence": {
-        "engineerReport": null,
+        "engineerReport": "T004 final integration verification completed through Engineer handoff state; Reviewer PASS is still pending. Workflow state/docs were synced after rebase to HEAD 4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296 and origin/main 14515eee2d730d25c7f73fa8eb5c1315504787e8, ahead 9 / behind 0. Rules deploy remains required, changed=true, deployedCommit=null, and unauthorized.",
         "reviewerReport": null,
-        "commandOutputSummary": [],
-        "changedFilesSummary": []
+        "commandOutputSummary": [
+          "git status --short --branch: exit 0; On 092-post-edit-history; ahead 9 and behind 0 relative to origin/main; dirty files are the four T004 workflow files only.",
+          "git diff --check: exit 0; Post-sync workflow diff has no whitespace errors.",
+          "npm run lint:changed: exit 0; No changed JS files to lint.",
+          "npm run type-check:changed: exit 0; No changed JS files to check.",
+          "npm run workflow:check: exit 0; Post-sync check passed: 18 status files valid and synced, including specs/post-edit-history/status.json. Earlier pre-sync failure was stale pre-rebase commit ancestry and is resolved.",
+          "npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx: exit 0; 4 files / 11 tests passed.",
+          "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx: exit 0; 9 files / 27 tests passed.",
+          "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\": exit 0; 1 file / 37 tests passed; auth and firestore emulators started and stopped successfully.",
+          "node /private/tmp/t003-article-history-ui/verify-article-history.mjs: exit 0; Fresh Playwright/browser rerun PASS against demo-test emulators and Next http://localhost:3002/posts; modal showed current/original title and content; networkIssues empty; console issues limited to emulator connection warnings. Screenshots/result under /private/tmp/t003-article-history-ui/.",
+          "Browser evidence: fresh PASS via /private/tmp/t003-article-history-ui/verify-article-history.mjs against demo-test emulators and localhost:3002; screenshots/result under /private/tmp/t003-article-history-ui/."
+        ],
+        "changedFilesSummary": [
+          "specs/post-edit-history/status.json: synced T004 Engineer evidence, rebased commit snapshots, phase commit SHAs, verification results, and required/not-deployed rules state.",
+          "specs/post-edit-history/tasks.md: synced T004 state/evidence and browser rerun handling.",
+          "specs/post-edit-history/handoff.md: synced current handoff, latest verification, and remaining closeout boundaries.",
+          "specs/post-edit-history/plan.md: synced stale HEAD/remote/ahead-behind workflow-state language."
+        ]
       }
     }
   ],
   "blocked": false,
   "blockedReason": null,
-  "lastVerifiedCommit": "6a61283c02c6334f9062f10b26e44e0c4a9910c3",
+  "lastVerifiedCommit": "4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296",
   "phaseCommits": [
     {
       "phase": "spec_approved",
-      "commit": "891da4a415da652dc32688f9d738afd958adc5c6",
-      "summary": "Reviewed spec workflow docs committed before Planner dispatch."
+      "commit": "0278717e7b30808d3f69580b4b571c502c82b182",
+      "summary": "Recorded post edit history spec approval on the rebased branch."
     },
     {
       "phase": "post_rebase_state",
-      "commit": "b97f8a0db6e8fe62ba10c23593cbec133ece5eec",
-      "summary": "Recorded post-rebase workflow state after rebasing onto Remove colocated src tests (#134)."
+      "commit": "173b68393fad51b6d0fa7a47c96171a9342baac2",
+      "summary": "Recorded post-history rebase workflow state on the rebased branch."
+    },
+    {
+      "phase": "plan_and_tasks",
+      "commit": "f9aec2f4cae314b79bea64e4b947541885be295d",
+      "summary": "Planned post edit history task contracts."
     },
     {
       "phase": "shared_core",
-      "commit": "3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf",
-      "summary": "Committed T001 shared edit-history core; post-rebase test-layout migration remains pending review/commit."
+      "commit": "7621e962038c7d4f7caff638e96e51efd63b5e7e",
+      "summary": "Committed T001 shared edit-history core."
+    },
+    {
+      "phase": "shared_core_test_layout",
+      "commit": "6b06f1d7c9ce29d8f7b050ef3276157a18d0149a",
+      "summary": "Moved shared core tests into the browser test layout."
     },
     {
       "phase": "article_history_persistence_rules",
-      "commit": "6a61283c02c6334f9062f10b26e44e0c4a9910c3",
+      "commit": "4f8763f9f43a8df261011be1a2f336dc21884cc2",
       "summary": "Committed T002 article post edit-history persistence, strict rules, and cleanup."
+    },
+    {
+      "phase": "browser_test_lint_config",
+      "commit": "776413e67872f214bb94f90d649dc6c623649f65",
+      "summary": "Committed T003A browser test lint configuration."
+    },
+    {
+      "phase": "article_history_ui",
+      "commit": "4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296",
+      "summary": "Committed T003 article post edit-history UI/runtime wiring and browser tests."
     }
   ],
   "rulesDeployStatus": {
@@ -714,21 +795,57 @@
     {
       "command": "git status --short --branch",
       "exitCode": 0,
-      "summary": "On 092-post-edit-history; branch ahead 8 and behind 6 relative to origin/main; workflow docs dirty plus reviewed T003 implementation files and untracked T003 browser tests; no staged changes.",
-      "verifiedAt": "2026-06-04T13:15:19Z"
+      "summary": "On 092-post-edit-history; ahead 9 and behind 0 relative to origin/main; dirty files are the four T004 workflow files only.",
+      "verifiedAt": "2026-06-04T13:54:42Z"
     },
     {
       "command": "git diff --check",
       "exitCode": 0,
-      "summary": "No whitespace errors.",
-      "verifiedAt": "2026-06-04T13:15:19Z"
+      "summary": "Post-sync workflow diff has no whitespace errors.",
+      "verifiedAt": "2026-06-04T13:54:42Z"
+    },
+    {
+      "command": "npm run lint:changed",
+      "exitCode": 0,
+      "summary": "No changed JS files to lint.",
+      "verifiedAt": "2026-06-04T13:48:31Z"
+    },
+    {
+      "command": "npm run type-check:changed",
+      "exitCode": 0,
+      "summary": "No changed JS files to check.",
+      "verifiedAt": "2026-06-04T13:48:31Z"
     },
     {
       "command": "npm run workflow:check",
       "exitCode": 0,
-      "summary": "17 status file(s) valid and synced; specs/post-edit-history/status.json ok and sync ok.",
-      "verifiedAt": "2026-06-04T13:15:19Z"
+      "summary": "Post-sync check passed: 18 status files valid and synced, including specs/post-edit-history/status.json. Earlier pre-sync failure was stale pre-rebase commit ancestry and is resolved.",
+      "verifiedAt": "2026-06-04T13:54:42Z"
+    },
+    {
+      "command": "npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
+      "exitCode": 0,
+      "summary": "4 files / 11 tests passed.",
+      "verifiedAt": "2026-06-04T13:48:31Z"
+    },
+    {
+      "command": "npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx",
+      "exitCode": 0,
+      "summary": "9 files / 27 tests passed.",
+      "verifiedAt": "2026-06-04T13:48:31Z"
+    },
+    {
+      "command": "firebase emulators:exec --only auth,firestore --project dive-into-run \"npx vitest run tests/server/firestore/post-soft-delete-rules.test.js\"",
+      "exitCode": 0,
+      "summary": "1 file / 37 tests passed; auth and firestore emulators started and stopped successfully.",
+      "verifiedAt": "2026-06-04T13:48:31Z"
+    },
+    {
+      "command": "node /private/tmp/t003-article-history-ui/verify-article-history.mjs",
+      "exitCode": 0,
+      "summary": "Fresh Playwright/browser rerun PASS against demo-test emulators and Next http://localhost:3002/posts; modal showed current/original title and content; networkIssues empty; console issues limited to emulator connection warnings. Screenshots/result under /private/tmp/t003-article-history-ui/.",
+      "verifiedAt": "2026-06-04T13:48:31Z"
     }
   ],
-  "updatedAt": "2026-06-04T13:15:19Z"
+  "updatedAt": "2026-06-04T13:54:42Z"
 }

@@ -5,8 +5,8 @@
 - Must match `status.json`; reconcile before dispatch if this section differs.
 - Worktree: `/Users/chentzuyu/Desktop/dive-into-run-092-post-edit-history`
 - Branch: `092-post-edit-history`
-- Current head: `6821d3c5f92d6e8adc768aa610d27e7cba87be70` (`Fix browser test lint config`)
-- Remote head: `origin/main` at `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 8 and behind 6 relative to `origin/main`
+- Current head: `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296` (`4d80d09 Add post edit history UI`)
+- Remote head: `origin/main` at `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 9 and behind 0 relative to `origin/main`
 - Authorization boundary:
   - edit: true
   - commit: true after Engineer + Reviewer + fresh verification for reviewed implementation batches
@@ -19,19 +19,23 @@
 - Current phase: `integration`
 - Active task: `T004`
 - Active wave: `wave-4`
-- Latest reviewer decision: `review_passed` for `T003`; findings none
-- Last verified commit: `6a61283c02c6334f9062f10b26e44e0c4a9910c3`; T001 and T002 are committed, while T003 UI/runtime implementation is reviewed in the dirty working tree and awaits its authorized checkpoint commit
+- Latest reviewer decision: `review_passed` for `T003`; findings none. T004 is `engineer_done` and awaits Integration Reviewer.
+- Last verified commit: `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`; fresh final integration gates covered current HEAD before T004 workflow-state edits.
 - Phase commits:
-  - `spec_approved` -> `891da4a415da652dc32688f9d738afd958adc5c6`
-  - `post_rebase_state` -> `b97f8a0db6e8fe62ba10c23593cbec133ece5eec`
-  - `shared_core` -> `3cd1d970a7a42a8dc9c1b8a35ca843b1edc367cf`
-  - `article_history_persistence_rules` -> `6a61283c02c6334f9062f10b26e44e0c4a9910c3`
-- Pending phase commit: `article_history_ui`; do not commit from this state sync
+  - `spec_approved` -> `0278717e7b30808d3f69580b4b571c502c82b182`
+  - `post_rebase_state` -> `173b68393fad51b6d0fa7a47c96171a9342baac2`
+  - `plan_and_tasks` -> `f9aec2f4cae314b79bea64e4b947541885be295d`
+  - `shared_core` -> `7621e962038c7d4f7caff638e96e51efd63b5e7e`
+  - `shared_core_test_layout` -> `6b06f1d7c9ce29d8f7b050ef3276157a18d0149a`
+  - `article_history_persistence_rules` -> `4f8763f9f43a8df261011be1a2f336dc21884cc2`
+  - `browser_test_lint_config` -> `776413e67872f214bb94f90d649dc6c623649f65`
+  - `article_history_ui` -> `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296`
+- Pending phase commit: `integration_gate`; do not commit until Reviewer PASS and explicit commit boundary handling.
 - Rules deploy status: `required`; changed=true because `firestore.rules` changed, deployedCommit=null, no deploy evidence
 - Incidents: none
 - Blocked: no
 - Blocked reason: null
-- Latest blocker sync: 2026-06-04T13:10:53Z; old T003 lint/browser blocker is resolved. T003 Reviewer returned `review_passed` with no findings. Rules deploy remains required and unauthorized; do not claim deploy.
+- Latest T004 sync: 2026-06-04T13:48:31Z; stale pre-rebase commit ancestry was corrected after final verification. Rules deploy remains required and unauthorized; do not claim deploy.
 
 ## Read Order
 
@@ -46,11 +50,11 @@
 
 ## Next Action
 
-Dispatch `T004` final integration verification and workflow-state sync. Do not mark the feature complete until T004 passes.
+Send T004 to Integration Reviewer. Do not mark T004 or the feature completed until Reviewer PASS and the workflow files are synced after review.
 
 Next dispatchable task:
 
-- `T004 - Final Integration Verification And Workflow State`
+- `T004 Integration Reviewer` review of the workflow-only diff and final verification evidence
 
 ## Task Graph Summary
 
@@ -73,9 +77,17 @@ T001 shared core
 
 | Command | Exit | Evidence |
 | ------- | ---- | -------- |
-| `git status --short --branch` | 0 | On `092-post-edit-history`; branch ahead 8 and behind 6 relative to `origin/main`; workflow docs dirty plus reviewed T003 implementation files and untracked T003 browser tests; no staged changes. |
-| `git diff --check` | 0 | No whitespace errors. |
-| `npm run workflow:check` | 0 | 17 status file(s) valid and synced; `specs/post-edit-history/status.json` ok and sync ok. |
+| `git status --short --branch` | 0 | Before T004 workflow edits: on `092-post-edit-history`, branch clean, ahead 9 and behind 0 relative to `origin/main`. |
+| `git diff --check` | 0 | Post-sync workflow diff has no whitespace errors. |
+| `npm run lint:changed` | 0 | No changed JS files to lint. |
+| `npm run type-check:changed` | 0 | No changed JS files to check. |
+| `npm run workflow:check` | 0 | Post-sync check passed: 18 status files valid and synced, including `specs/post-edit-history/status.json`. Earlier pre-sync failure was stale pre-rebase commit ancestry and is resolved. |
+| `npx vitest run tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | 0 | 4 files / 11 tests passed. |
+| `npx vitest run tests/browser/runtime/hooks/useEditHistoryModal.test.jsx tests/browser/components/EditHistoryModal.test.jsx tests/browser/components/CommentHistoryModal.test.jsx tests/browser/service/post-service.test.js tests/browser/runtime/client/use-cases/post-use-cases.test.js tests/browser/runtime/hooks/usePostsPageRuntime.test.jsx tests/browser/runtime/hooks/usePostDetailRuntime.test.jsx tests/browser/ui/posts/PostsPageScreen.test.jsx tests/browser/ui/posts/PostDetailScreen.test.jsx` | 0 | 9 files / 27 tests passed. |
+| `firebase emulators:exec --only auth,firestore --project dive-into-run "npx vitest run tests/server/firestore/post-soft-delete-rules.test.js"` | 0 | 1 file / 37 tests passed; auth/firestore emulators started and stopped successfully. |
+| `node /private/tmp/t003-article-history-ui/verify-article-history.mjs` | 0 | Fresh browser rerun PASS against `demo-test` emulators and `http://localhost:3002/posts`; modal showed current/original title and content; networkIssues empty; console warnings were emulator connection messages only. |
+
+Browser screenshots/result: `/private/tmp/t003-article-history-ui/playwright-article-edited-button-desktop.png`, `/private/tmp/t003-article-history-ui/playwright-article-history-modal-desktop.png`, `/private/tmp/t003-article-history-ui/playwright-article-edited-button-mobile.png`, and `/private/tmp/t003-article-history-ui/result.json`.
 
 ## Closeout Checklist
 
@@ -95,18 +107,17 @@ T001 shared core
 ## Blockers
 
 - None active.
-- Carry-forward gate before feature completion: run T004 final integration verification and keep Firestore rules deploy state explicit as required/changed/not deployed. Do not dispatch if workflow state drifts.
+- Carry-forward release boundary: Firestore rules deploy is required because `firestore.rules` changed, but deploy is unauthorized and not evidenced. Keep `rulesDeployStatus.state=required`, `changed=true`, and `deployedCommit=null` until a separate authorized deploy occurs.
 
 ## Latest Review State
 
+- T004 Engineer state: `engineer_done`; Integration Reviewer PASS is pending.
 - Reviewer returned `review_passed` for `T003`; findings none. T003A parser/project-service blocker and the later T003 lint/browser blocker are resolved.
-- T003 evidence:
-  - Code review: `PostCard` shows article-level `已編輯` only when `post.isEdited && onViewArticleHistory`, calls the article handler, list/detail runtimes use shared `useEditHistoryModal` plus T002 `fetchPostHistory`, local edit sets `isEdited: true`, detail comment history wiring remains intact, and tests cover list/detail article history plus detail comment regression without `toHaveBeenCalledTimes(N)`.
-  - Verification: `npx vitest run tests/browser/ui/posts/PostDetailScreen.test.jsx` passed 1 file / 4 tests; focused T003 runtime/UI suite passed 4 files / 11 tests; `npm run lint:changed` passed with only the existing React version warning; `npm run type-check:changed` passed; `git diff --check` passed.
-  - Browser: PASS via Playwright/emulator using project `demo-test`, Auth 9099, Firestore 8080, Storage 9199, and Next on `localhost:3002` with emulator env/fake config; screenshots are under `/private/tmp/t003-article-history-ui/`; modal showed the old title/content plus current/original labels and new title/content.
+- T004 final gates passed. The expected pre-sync `workflow:check` stale-commit failure was corrected by this workflow-state sync; post-sync `git diff --check`, `npm run workflow:check`, and `git status --short --branch` were rerun.
+- Browser evidence was rerun fresh via Playwright/emulator using project `demo-test`, Auth 9099, Firestore 8080, Storage 9199, and Next on `localhost:3002` with emulator env/fake config; screenshots are under `/private/tmp/t003-article-history-ui/`; modal showed the old title/content plus current/original labels and new title/content. Setup-only reruns failed until the local emulator Auth/profile test avatar was set to `/default-avatar.png`; no repo files changed for that setup.
 - User approved the spec and authorized implementation start after Planner task contracts.
-- Planner contracts are now available in `tasks.md`.
-- Commit is authorized when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches, but this state sync did not commit.
+- Planner contracts are available in `tasks.md`.
+- Commit is authorized when appropriate after Engineer + Reviewer + fresh verification for reviewed implementation batches, but this T004 Engineer sync did not commit.
 - Push, PR, CI watch, merge, local `main` sync, and rules deploy remain unauthorized.
 
 ## Reviewer Attention

@@ -2,11 +2,12 @@
 
 ## Summary
 
-Current phase: `integration`. T001 and T002 are completed and committed. T003
-article post list/detail UI wiring is reviewed in the dirty working tree with
-Reviewer `review_passed` and Browser/Playwright evidence PASS. The earlier T003
-lint/browser blocker is resolved; T004 final integration verification and
-workflow-state sync remain.
+Current phase: `integration`. T001, T002, T003A, and T003 are completed and
+committed. T003 article post list/detail UI wiring is committed as
+`article_history_ui` at HEAD `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296` with
+Reviewer `review_passed` and Browser/Playwright evidence PASS. T004 final
+integration verification and workflow-state sync are `engineer_done` and await
+Integration Reviewer.
 
 The implementation uses Shared Core + Resource Adapters. Shared edit-history
 code owns generic affordance/modal/state/snapshot concepts. Article posts own
@@ -116,29 +117,32 @@ wiring.
 
 - Status schema: v3.
 - Current head snapshot: captured from `092-post-edit-history` at
-  `6821d3c5f92d6e8adc768aa610d27e7cba87be70` after the T003A browser test
-  lint config checkpoint.
+  `4d80d098a4f2e2cb65387f55db8c9f1d4a4cc296` (`4d80d09 Add post edit history UI`) after rebase.
 - Remote head snapshot: captured from `origin/main` at
-  `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 8
-  and behind 6 relative to `origin/main`.
+  `14515eee2d730d25c7f73fa8eb5c1315504787e8`; current branch reports ahead 9
+  and behind 0 relative to `origin/main`.
 - Post-rebase test-layout migration: T001 browser/jsdom tests live under
   `tests/browser/...` and are committed in the current head.
 - T003 blocker: resolved. T003A fixed type-aware ESLint project coverage for
   `tests/browser/**`; T003 later resolved the no-restricted-syntax
-  `toHaveBeenCalledTimes(N)` issue and captured Browser/Playwright article
+  `toHaveBeenCalledTimes(N)` issue and T004 reran Browser/Playwright article
   history evidence against emulator-backed local data.
+- T004 state: `engineer_done`; Integration Reviewer PASS is still pending.
 - Last verified commit policy: `lastVerifiedCommit` records the local HEAD/ref
   covered by fresh verification; dirty workflow doc edits must be described in
   `lastVerification` until committed.
 - Phase commit checkpoints:
   - `spec_approved`
   - `post_rebase_state`
+  - `plan_and_tasks`
   - `shared_core`
+  - `shared_core_test_layout`
   - `article_history_persistence_rules`
+  - `browser_test_lint_config`
   - `article_history_ui`
   - `integration_gate`
 - Rules deploy status: `required`; T002 changed `firestore.rules`, so
-  `changed=true`, but deploy remains unauthorized.
+  `changed=true`, but deploy remains unauthorized and `deployedCommit=null`.
 - Incident handling: any open incident blocks dispatch, commit, push, PR, CI,
   merge, local main sync, and rules deploy until resolved or explicitly carried
   forward.
