@@ -628,8 +628,8 @@ export default [
   //      via flat-config last-write-wins). Attempt 3 / option (B') per T35.
   //      Baseline retire: 45 -> 0 (S8); rule applies to all matched files.
   //      Status: retired (S8, 2026-05-02); ignores cleared.
-  //      Per T33 (C): 只擋 toHaveBeenCalledTimes；setTimeout 維度由
-  //      scripts/audit-flaky-patterns.sh exit 1 blocking pre-commit/CI。
+  //      Per T33 (C): 只擋 toHaveBeenCalledTimes；setTimeout 維度不由
+  //      此 ESLint selector 檢查，需由 review 補位。
   {
     files: ['tests/**/*.{js,jsx,mjs}'],
     ignores: [],
@@ -639,7 +639,7 @@ export default [
         {
           selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
           message:
-            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nBaseline retired in S8; this rule now applies to all matched test files.\nFor 'new Promise + setTimeout' sleep patterns, scripts/audit-flaky-patterns.sh now exits 1 and blocks pre-commit/CI.",
+            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nBaseline retired in S8; this rule now applies to all matched test files.\nFor 'new Promise + setTimeout' sleep patterns, review must catch cases outside this ESLint selector.",
         },
       ],
     },
@@ -683,7 +683,7 @@ export default [
         {
           selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
           message:
-            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nBaseline retired in S8; this rule now applies to all matched integration test files.\nFor 'new Promise + setTimeout' sleep patterns, scripts/audit-flaky-patterns.sh now exits 1 and blocks pre-commit/CI.",
+            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nBaseline retired in S8; this rule now applies to all matched integration test files.\nFor 'new Promise + setTimeout' sleep patterns, review must catch cases outside this ESLint selector.",
         },
       ],
     },
@@ -726,7 +726,7 @@ export default [
         {
           selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
           message:
-            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin.",
+            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns this ESLint rule does not lint; review must catch cases outside this selector.",
         },
       ],
     },
@@ -769,7 +769,7 @@ export default [
         {
           selector: "CallExpression[callee.property.name='toHaveBeenCalledTimes']",
           message:
-            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns the S6 ESLint rule does NOT lint — S4 grep gate (scripts/audit-flaky-patterns.sh) keeps monitoring; S8 trigger upgrades it to AST custom plugin.",
+            "Use toHaveBeenLastCalledWith / toHaveBeenNthCalledWith / waitFor instead of toHaveBeenCalledTimes(N) — count assertions are flaky under async timing.\nRefs: project-health/2026-04-29-tests-audit-report.md P1-4 (L293-318) / P1-5 (L293-318) / R7 (L552-556).\nIf this file is in the S6 flaky-pattern baseline ignores list (frozen S6-effective baseline ⊆ 45), the rule won't fire; new violations outside baseline must be removed (Wave 3 trigger).\nFor 'new Promise + setTimeout' sleep patterns this ESLint rule does not lint; review must catch cases outside this selector.",
         },
       ],
     },

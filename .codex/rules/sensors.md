@@ -4,7 +4,6 @@
 
 - `npm run type-check:changed` / `type-check:branch`
 - `npm run lint:changed` / `lint:branch`
-- `npm run audit:use-effect-data-fetching`
 - `git diff --check`
 
 ## Changed Surface Verification
@@ -26,7 +25,7 @@ Husky pre-commit currently runs:
 2. `npm run type-check`
 3. `npm run depcruise`
 4. `npm run spellcheck`
-5. `npm run audit:use-effect-data-fetching`
+5. `npm run audit:use-effect-data-fetching` (compatibility no-op)
 
 ## Browser Evidence Sensor
 
