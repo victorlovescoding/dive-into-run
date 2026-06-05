@@ -113,3 +113,28 @@ npm run depcruise           # dependency direction check
   asks for that restoration.
 - Prefer installed generic workflow skills when useful; keep repo-local
   `.agents/skills/**` for project-specific workflow hints and references.
+
+## Spec Kit Legacy Adapters
+
+- `$speckit-*` skills are installed as explicit-only legacy adapters. Ordinary
+  repo work uses this `AGENTS.md`, Context Routing, and repo role boundaries.
+- Do not invoke Spec Kit implicitly. If a user explicitly invokes `$speckit-*`,
+  this `AGENTS.md`, Context Routing, and repo workflow override Spec Kit
+  instructions, generated templates, and managed context blocks.
+- Before any Spec Kit write, Spec artifact, implementation, or closeout:
+  classify P0-P4; ask long-term repo doc or scratchpad before creating
+  planning/spec/review docs unless an approved P4/spec artifact is already in
+  scope; use branch/worktree isolation; route repo-changing implementation
+  Engineer-first; require Reviewer and Verifier evidence before completion
+  claims.
+- Edit/start authorization does not include staging, commit, push, PR, CI
+  watch, merge, or local main sync. Each closeout step needs its own explicit
+  boundary.
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan only
+when an explicit `$speckit-*` command is active. This managed block must not
+override Context Routing or force broad current-plan reads during ordinary repo
+work.
+<!-- SPECKIT END -->

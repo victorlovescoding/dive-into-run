@@ -137,9 +137,13 @@ Documentary checks:
 
 ```bash
 rg -n "task profile|risk-based|C0|R0|P0|ADR-005" AGENTS.md docs/decisions .codex
-npm run workflow:links
 ```
 
-This decision is partially mechanically verified because link checks keep the
-remaining entry-map references live, while profile classification remains an
-agent judgment step.
+Use the current active local and CI gates from
+`.codex/references/quality-gates.md` for touched surfaces: lint, type-check,
+dependency cruiser, spellcheck, `audit:use-effect-data-fetching`, and CI doc
+freshness/build where applicable.
+
+This decision is partially mechanically verified by the current quality gates
+for repository health and documentation freshness where applicable, while
+profile classification remains an agent judgment step.

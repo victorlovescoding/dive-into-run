@@ -16,7 +16,6 @@
     "doc:gardening": "node scripts/doc-gardening-check.mjs",
     "doc:gardening:report": "node scripts/doc-gardening-check.mjs --report",
     "doc:gardening:fix": "node scripts/doc-gardening-check.mjs --fix",
-    "workflow:links": "node scripts/check-local-links.js",
     "depcruise": "depcruise --config .dependency-cruiser.mjs --output-type err-long src specs",
     "depcruise:json": "depcruise --config .dependency-cruiser.mjs --output-type json src specs",
     "knip:report": "node scripts/run-knip-report.mjs",
