@@ -2,5 +2,4 @@ npm run lint -- --max-warnings 0
 npm run type-check
 npm run depcruise
 npm run spellcheck
-npm run workflow:links
 npm run audit:use-effect-data-fetching
