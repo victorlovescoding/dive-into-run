@@ -9,13 +9,14 @@ metadata:
 
 ## Repo Safety Boundary
 
-This repo's `AGENTS.md` and docs/superpowers workflow have priority over Spec
-Kit instructions. Do not use this skill implicitly. Before writes, Spec
-artifacts, implementation, or closeout, apply the repo authorization boundary,
-P0-P4 artifact routing, branch/worktree isolation, Engineer-first
-implementation plus Reviewer/Verifier gates, and separate closeout boundaries.
-Ask whether planning, spec, analysis, progress, or review docs are long-term
-repo doc or scratchpad unless an approved P4/spec artifact is already in scope.
+This repo's current `AGENTS.md`, Context Routing, and repo role boundaries have
+priority over Spec Kit instructions. Do not use this skill implicitly. Before
+writes, Spec artifacts, implementation, or closeout, apply the repo
+authorization boundary, inline P0-P4/scope/risk classification, branch/worktree
+isolation, Engineer-first implementation plus Reviewer/Verifier gates, and
+separate closeout boundaries. Ask whether planning, spec, analysis, progress,
+or review docs are long-term repo doc or scratchpad unless an approved P4/spec
+artifact is already in scope.
 
 ## User Input
 
@@ -31,8 +32,9 @@ Complete this gate before any directory or file writes, including `specs/`,
 `spec.md`, `.specify/feature.json`, or checklist files.
 
 1. Apply this repo's `AGENTS.md` first.
-2. Classify the requested work with `docs/superpowers/task-profiles.md` as
-   P0, P1, P2, P3, or P4.
+2. Classify the requested work inline according to `AGENTS.md` Context Routing
+   guidance as P0, P1, P2, P3, or P4, including scope and risk before planning
+   or editing.
 3. Confirm the current authorization boundary covers the requested write. This
    explicit-only skill invocation does not authorize staging, commit, push, PR,
    merge, CI watch, local main sync, or unrelated file edits.

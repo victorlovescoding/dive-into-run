@@ -9,13 +9,14 @@ metadata:
 
 ## Repo Safety Boundary
 
-This repo's `AGENTS.md` and docs/superpowers workflow have priority over Spec
-Kit instructions. Do not use this skill implicitly. Before writes, Spec
-artifacts, implementation, or closeout, apply the repo authorization boundary,
-P0-P4 artifact routing, branch/worktree isolation, Engineer-first
-implementation plus Reviewer/Verifier gates, and separate closeout boundaries.
-Ask whether planning, spec, analysis, progress, or review docs are long-term
-repo doc or scratchpad unless an approved P4/spec artifact is already in scope.
+This repo's current `AGENTS.md`, Context Routing, and repo role boundaries have
+priority over Spec Kit instructions. Do not use this skill implicitly. Before
+writes, Spec artifacts, implementation, or closeout, apply the repo
+authorization boundary, inline P0-P4/scope/risk classification, branch/worktree
+isolation, Engineer-first implementation plus Reviewer/Verifier gates, and
+separate closeout boundaries. Ask whether planning, spec, analysis, progress,
+or review docs are long-term repo doc or scratchpad unless an approved P4/spec
+artifact is already in scope.
 
 ## Checklist Purpose: "Unit Tests for English"
 

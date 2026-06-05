@@ -61,6 +61,7 @@ firestore-debug.log*
 
 # AI Tooling and IDE settings
 .vscode/
+.superpowers/
 .gemini/hook_debug.log
 .gemini/.username
 test-results/

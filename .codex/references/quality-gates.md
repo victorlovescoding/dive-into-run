@@ -1,6 +1,6 @@
 # Quality Gates Reference
 
-> Last-Verified: 2026-05-24
+> Last-Verified: 2026-06-05
 > Agent-only. Current gate posture.
 
 ## Active Local Gates
@@ -11,13 +11,12 @@ Pre-commit currently runs:
 2. `npm run type-check`
 3. `npm run depcruise`
 4. `npm run spellcheck`
-5. `npm run workflow:check`
-6. `npm run workflow:links`
-7. `npm run audit:use-effect-data-fetching`
+5. `npm run workflow:links`
+6. `npm run audit:use-effect-data-fetching`
 
 ## Active CI Gates
 
-The `ci` job includes doc freshness, workflow checks, lint, useEffect
+The `ci` job includes doc freshness, workflow link checks, lint, useEffect
 data-fetch audit, type-check, dependency cruiser, spellcheck, and build.
 
 ## Dangerous Command Guard

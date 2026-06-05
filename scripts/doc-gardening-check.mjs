@@ -22,7 +22,6 @@ const REPORT_ONLY_CODES = new Set([
 
 const SOURCE_OF_TRUTH_FILES = new Set([
   'AGENTS.md',
-  'docs/automation/doc-gardening-sot.md',
   'docs/decisions/INDEX.md',
 ]);
 
@@ -30,39 +29,7 @@ const SOURCE_OF_TRUTH_PREFIXES = ['.codex/rules/', '.codex/references/'];
 
 const SPEC_CONTROL_FILES = new Set(['handoff.md', 'tasks.md', 'status.json']);
 
-export const tableContracts = [
-  {
-    id: 'doc-governance-source',
-    file: 'docs/automation/doc-gardening-sot.md',
-    table: { heading: 'Source Of Truth Contract', ordinal: 1 },
-    requiredColumns: ['Path', 'Status', 'Contract'],
-    pathColumn: 'Path',
-    statusColumn: 'Status',
-    allowedStatuses: ['active', 'retired'],
-    requiredPaths: [
-      'AGENTS.md',
-      'docs/automation/doc-gardening-sot.md',
-      'docs/decisions/INDEX.md',
-      'docs/superpowers/workflow.md',
-      'docs/superpowers/task-profiles.md',
-      '.codex/rules/sensors.md',
-      '.codex/references/quality-gates.md',
-      '.codex/references/review-standards.md',
-    ],
-    expectedStatuses: {
-      'AGENTS.md': 'active',
-      'docs/automation/doc-gardening-sot.md': 'active',
-      'docs/decisions/INDEX.md': 'active',
-      'docs/superpowers/workflow.md': 'active',
-      'docs/superpowers/task-profiles.md': 'active',
-      '.codex/rules/sensors.md': 'active',
-      '.codex/references/quality-gates.md': 'active',
-      '.codex/references/review-standards.md': 'active',
-    },
-    requiresExistingPath: true,
-    kind: 'reference',
-  },
-];
+export const tableContracts = [];
 
 /**
  * @typedef {{ line: number, cellsByHeader: Record<string, string>, cells: Record<string, string> }} MarkdownTableRow
