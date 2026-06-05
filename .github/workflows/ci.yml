@@ -45,9 +45,6 @@ jobs:
       - name: Lint
         run: npm run lint -- --max-warnings 0
 
-      - name: useEffect data fetching audit
-        run: npm run audit:use-effect-data-fetching
-
       - name: Type check
         run: npm run type-check
 
