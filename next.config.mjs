@@ -1,10 +1,3 @@
-import bundleAnalyzer from '@next/bundle-analyzer';
-
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true',
-  openAnalyzer: false,
-});
-
 const DEVELOPMENT_HSTS = 'max-age=0';
 const PRODUCTION_HSTS = 'max-age=63072000; includeSubDomains; preload';
 
@@ -114,4 +107,4 @@ const nextConfig = {
   },
 };
 
-export default withBundleAnalyzer(nextConfig);
+export default nextConfig;
