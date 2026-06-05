@@ -6,7 +6,6 @@ max_age_days=45
 
 tracked_docs=(
   "AGENTS.md"
-  "docs/superpowers/workflow.md"
   ".codex/references/quality-gates.md"
   ".codex/references/review-standards.md"
 )

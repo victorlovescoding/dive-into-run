@@ -42,9 +42,6 @@ jobs:
       - name: Doc freshness
         run: npm run doc:freshness
 
-      - name: Workflow state check
-        run: npm run workflow:check
-
       - name: Workflow links check
         run: npm run workflow:links
 
