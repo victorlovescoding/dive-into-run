@@ -8,8 +8,6 @@ import {
   getAuth,
   GoogleAuthProvider,
   connectAuthEmulator,
-  signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
 } from 'firebase/auth';
 
 // Your web app's Firebase configuration
@@ -41,12 +39,6 @@ if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
     // client side
     connectAuthEmulator(auth, 'http://localhost:9099');
     connectStorageEmulator(storage, 'localhost', 9199);
-    // Expose auth helpers for E2E tests (emulator only)
-    window.testFirebaseHelpers = {
-      auth,
-      signIn: signInWithEmailAndPassword,
-      signOut: firebaseSignOut,
-    };
   }
 }
 
