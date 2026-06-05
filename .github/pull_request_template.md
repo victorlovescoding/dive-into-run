@@ -20,7 +20,7 @@
 -->
 
 - [ ] `npm run lint` / `npm run type-check` / `npm run spellcheck` green
-- [ ] `npm run depcruise` / `npm run workflow:check` / `npm run workflow:links` green
+- [ ] `npm run depcruise` / `npm run workflow:links` green
 - [ ] `npm run build` green
 
 ## Related

@@ -2,7 +2,7 @@
 
 > Agent-facing HOW decision framework for this repo.
 > 這不是 coding standards 文件；具體 rules 與 gates 請看 `.codex/rules/*` 和 `.codex/references/quality-gates.md`。
-> Workflow、Engineer + Reviewer、lifecycle 請看 `docs/superpowers/workflow.md`。
+> Workflow、Engineer + Reviewer、lifecycle 以 `AGENTS.md` 和 task-local handoff 為準。
 
 當 agent 需要在多個合理做法之間取捨、review tradeoff、或判斷 refactor 時該保留什麼，用這份文件決定 HOW。
 

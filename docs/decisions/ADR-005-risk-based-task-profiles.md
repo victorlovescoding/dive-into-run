@@ -18,14 +18,12 @@ Partially Verified
 
 ## Verification Source
 
-- `AGENTS.md` routes work through `docs/superpowers/task-profiles.md` before
-  the full feature lifecycle.
-- `docs/superpowers/workflow.md` defines Task Profile Routing before Required
-  Feature Artifacts.
-- `docs/superpowers/task-profiles.md` defines Complexity, Risk, Profile
-  selection, escalation, and non-negotiable safety rules.
-- `docs/superpowers/task-profiles.md` states P1/P2/P3 reduce artifact weight,
-  not Engineer-first or Reviewer-default ownership.
+- `AGENTS.md` routes repo-changing work through inline scope/risk
+  classification before planning or editing.
+- `AGENTS.md` keeps branch isolation, Engineer-first editing, Reviewer checks,
+  and fresh verification as repo invariants.
+- `.codex/references/quality-gates.md` and `.codex/rules/sensors.md` describe
+  active local gates and changed-surface verification.
 - `docs/decisions/INDEX.md` lists this ADR.
 
 ## Supersedes
@@ -35,17 +33,14 @@ None
 ## Related
 
 - `AGENTS.md`
-- `docs/superpowers/workflow.md`
-- `docs/superpowers/task-profiles.md`
-- `docs/decisions/ADR-004-superpowers-first-agent-workflow.md`
 - `docs/decisions/INDEX.md`
 
 ## Context
 
-ADR-004 established Superpowers-first workflow and the durable five-file feature
-artifact set. That full feature workflow is appropriate for new features,
-multi-session work, and high-risk programs, but it is too heavy for many
-bugfix, maintenance, refactor, and docs tasks.
+The repo previously used one heavy feature workflow and durable five-file
+feature artifact set for most non-trivial work. That full feature workflow is
+appropriate for new features, multi-session work, and high-risk programs, but
+it is too heavy for many bugfix, maintenance, refactor, and docs tasks.
 
 The repo already moved toward phase-gated and conditional review behavior:
 Engineer/Reviewer gates remain important, but the artifact and coordination
@@ -125,7 +120,7 @@ needs no Reviewer.
 
 Before changing files:
 
-1. Read `docs/superpowers/task-profiles.md`.
+1. Read `AGENTS.md`.
 2. Classify Complexity and Risk.
 3. Select the Profile.
 4. For P1/P2/P3 repo-changing work, dispatch an Engineer before edits and a
@@ -141,10 +136,10 @@ scope expansion not already approved.
 Documentary checks:
 
 ```bash
-rg -n "task profile|risk-based|C0|R0|P0|ADR-005" AGENTS.md docs/superpowers docs/decisions
-npm run workflow:validate
+rg -n "task profile|risk-based|C0|R0|P0|ADR-005" AGENTS.md docs/decisions .codex
+npm run workflow:links
 ```
 
-This decision is partially mechanically verified because current validation
-checks workflow state shape, while profile classification remains an agent
-judgment step.
+This decision is partially mechanically verified because link checks keep the
+remaining entry-map references live, while profile classification remains an
+agent judgment step.

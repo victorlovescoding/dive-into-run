@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> Last-Verified: 2026-05-11
+> Last-Verified: 2026-06-05
 
 Codex agents use this file as the repo entry map, not a complete manual.
 
@@ -18,12 +18,11 @@ source exists.
 - Keep `AGENTS.md` as the entry map; open referenced docs only when they match
   the current task.
 - For repo-changing requests such as develop, implement, fix, refactor,
-  document, 開發, 實作, 修, 修正, 修 bug, 重構, 改文件, or 更新文件,
-  read `docs/superpowers/workflow.md` before planning,
-  dispatching, or editing. This detects repo-changing intent only; it is not
-  edit authorization, and edits still require explicit confirmation.
-- When choosing profile, artifacts, branch/worktree, or authorization boundary,
-  read `docs/superpowers/task-profiles.md`.
+  document, 開發, 實作, 修, 修正, 修 bug, 重構, 改文件, or 更新文件, classify
+  scope and risk inline before planning or editing. This detects repo-changing
+  intent only; it is not edit authorization, and edits still require explicit
+  confirmation.
+- Confirm the authorization boundary before edits or closeout steps.
 - Do not revert changes you did not make. Work with existing dirty state.
 
 ## Repo Invariants
@@ -46,22 +45,14 @@ source exists.
   `.codex/rules/code-style.md`.
 - Verification sensors and pre-commit expectations: `.codex/rules/sensors.md`.
 - Communication details: `.codex/references/communication-style.md`.
-- Quality, review, troubleshooting, and closeout:
+- Quality, review, and troubleshooting:
   `.codex/references/quality-gates.md`,
   `.codex/references/review-standards.md`,
-  `.codex/references/troubleshooting.md`,
-  `.codex/references/github-closeout.md`.
-- Superpowers lifecycle and task routing:
-  `docs/superpowers/workflow.md` and `docs/superpowers/task-profiles.md`.
-- Subagent staffing, stage leads, role boundaries, and dispatch rules:
-  `.codex/references/subagent-roles.md`.
+  `.codex/references/troubleshooting.md`.
 - Durable architecture/workflow decisions: `docs/decisions/INDEX.md`.
 - Active feature specs: read only the active `specs/<feature>/` directory.
   Start from `handoff.md`, `tasks.md`, and `status.json` when present; open
   `spec.md` or `plan.md` only for missing scope or acceptance details.
-- Legacy Superpowers plugin outputs live under `specs/_legacy/superpowers/**`
-  and are lookup/provenance only. They are not active workflow state or resume
-  entrypoints.
 - Historical specs, `project-health/**`, archives, and old handoffs are lookup
   payloads, not startup context.
 
@@ -79,13 +70,10 @@ source exists.
   `src/ui/`; state/use-cases live in `src/runtime/`.
 ## Agent Workflow Boundaries
 
-- Superpowers lifecycle and task profile details live in
-  `docs/superpowers/workflow.md` and `docs/superpowers/task-profiles.md`; this
-  file is only the entry map.
-- Main agent is control plane only. It may read `AGENTS.md`,
-  `docs/superpowers/workflow.md`, active `handoff.md/tasks.md/status.json`,
-  `git status --short --branch`, task-local diffs or changed-file lists, and
-  exact Engineer/Reviewer evidence lines.
+- Main agent is control plane only. It may read `AGENTS.md`, active
+  `handoff.md/tasks.md/status.json`, `git status --short --branch`,
+  task-local diffs or changed-file lists, and exact Engineer/Reviewer evidence
+  lines.
 - Main agent must not do broad source exploration, design fixes from its own
   code investigation, or replace Engineer/Reviewer with self-review.
 - Repo-changing implementation goes Engineer-first. Docs-only, workflow docs,
@@ -121,12 +109,7 @@ npm run depcruise           # dependency direction check
 ## Legacy
 
 - `speckit.*` is legacy. Do not use it unless the user explicitly asks.
-- docs/superpowers/specs/ and docs/superpowers/plans/ were old
-  Superpowers plugin default paths and are no longer used. If a plugin skill
-  names those paths as defaults, repo policy overrides the plugin default.
-- Add durable workflow state according to `docs/superpowers/task-profiles.md`.
-  P4 uses `specs/<feature>/`; P1/P2 default to no `specs/` artifacts; P3 uses
-  compact artifacts only for cross-session, multi-task, or dispatcher
-  continuity needs.
-- Prefer installed Superpowers plugin skills for generic workflow skills; keep
-  repo-local `.agents/skills/**` for project-specific workflows and references.
+- Do not recreate deleted legacy workflow artifacts unless the user explicitly
+  asks for that restoration.
+- Prefer installed generic workflow skills when useful; keep repo-local
+  `.agents/skills/**` for project-specific workflow hints and references.
