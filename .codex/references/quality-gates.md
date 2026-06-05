@@ -11,12 +11,13 @@ Pre-commit currently runs:
 2. `npm run type-check`
 3. `npm run depcruise`
 4. `npm run spellcheck`
-5. `npm run audit:use-effect-data-fetching`
+5. `npm run audit:use-effect-data-fetching` (compatibility no-op)
 
 ## Active CI Gates
 
-The `ci` job includes doc freshness, lint, useEffect data-fetch audit,
-type-check, dependency cruiser, spellcheck, and build.
+The `ci` job includes compatibility no-op steps for doc freshness and
+useEffect data-fetch audit, then lint, type-check, dependency cruiser,
+spellcheck, and build.
 
 ## Dangerous Command Guard
 
