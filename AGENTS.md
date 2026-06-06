@@ -132,9 +132,10 @@ npm run depcruise           # dependency direction check
   boundary.
 
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan only
-when an explicit `$speckit-*` command is active. This managed block must not
+For the current explicit Spec Kit plan, use
+`specs/099-comment-identity-hint/plan.md` only when an explicit `$speckit-*`
+command is active. Ordinary repo work continues to use this `AGENTS.md`,
+Context Routing, and repo role boundaries first. This managed block must not
 override Context Routing or force broad current-plan reads during ordinary repo
 work.
 <!-- SPECKIT END -->
