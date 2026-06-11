@@ -2,11 +2,11 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import CommentCard from '@/components/CommentCard';
 import CommentEditModal from '@/components/CommentEditModal';
 import CommentHistoryModal from '@/components/CommentHistoryModal';
+import CommentInput from '@/components/CommentInput';
 import ComposeModal from '@/components/ComposeModal';
 import EditHistoryModal from '@/components/EditHistoryModal';
 import PostCard from '@/components/PostCard';
@@ -221,7 +221,6 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     shareUrl,
     comments,
     highlightedCommentId,
-    comment,
     editingComment: runtimeEditingComment,
     historyComment,
     historyEntries,
@@ -263,7 +262,6 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     handleViewArticleHistory,
     handleCloseArticleHistory,
     handleSubmitComment,
-    handleCommentChange,
   } = runtime;
 
   const [localEditingComment, setLocalEditingComment] = useState(null);
@@ -276,6 +274,13 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     ? runtimeCommentUpdateError ?? null
     : localUpdateError;
   const activeHistoryComment = historyComment ? mapToCommentCardData(historyComment) : null;
+  const shouldRenderCommentComposer = !!user;
+  const detailContainerClassName = shouldRenderCommentComposer
+    ? `${styles.detailContainer} ${styles.detailWithComposerReserve}`
+    : styles.detailContainer;
+  const commentsSectionClassName = shouldRenderCommentComposer
+    ? `${styles.commentsSection} ${styles.commentsWithComposerReserve}`
+    : styles.commentsSection;
 
   const handleOpenCommentEdit = useCallback(
     (currentComment) => {
@@ -324,7 +329,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
   }, [handleEditCancel]);
 
   return (
-    <div className={styles.detailContainer}>
+    <div className={detailContainerClassName}>
       <Link href="/posts" className={styles.backLink}>
         ← 回到文章列表
       </Link>
@@ -359,7 +364,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
             <PostDetailActions title={post.title} url={shareUrl} />
           </PostCard>
 
-          <section className={styles.commentsSection}>
+          <section className={commentsSectionClassName} aria-label="文章留言">
             <h3 className={styles.commentsTitle}>留言 ({post.commentsCount ?? 0})</h3>
             {comments.map((commentItem) => (
               <CommentCard
@@ -378,28 +383,14 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
             ))}
           </section>
 
-          <form onSubmit={handleSubmitComment} className={styles.commentForm}>
-            {user?.photoURL && (
-              <Image
-                src={user.photoURL}
-                alt={`${user?.name ?? '使用者'}的大頭貼`}
-                width={36}
-                height={36}
-                className={styles.commentAvatar}
-              />
-            )}
-            <input
-              type="text"
-              placeholder="留言"
-              aria-label="留言"
-              value={comment}
-              onChange={handleCommentChange}
-              className={styles.commentInput}
+          {shouldRenderCommentComposer && (
+            <CommentInput
+              user={user}
+              onSubmit={handleSubmitComment}
+              isSubmitting={isSubmitting}
+              className={styles.postComposer}
             />
-            <button type="submit" className={styles.commentSubmit}>
-              送出
-            </button>
-          </form>
+          )}
 
           {activeEditingComment && (
             <CommentEditModal

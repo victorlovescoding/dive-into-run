@@ -1,4 +1,6 @@
 .section {
+  --comment-section-composer-reserve: calc(96px + env(safe-area-inset-bottom));
+
   margin-top: 24px;
   position: relative;
   background: #fff;
@@ -6,7 +8,11 @@
   border: 1px solid #e0e3e7;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   padding: 14px;
-  padding-bottom: 80px;
+}
+
+.withComposerReserve {
+  padding-bottom: calc(14px + var(--comment-section-composer-reserve));
+  scroll-padding-bottom: var(--comment-section-composer-reserve);
 }
 
 .loading {
@@ -27,6 +33,10 @@
   list-style: none;
   padding: 0;
   margin: 0;
+}
+
+.eventComposer {
+  --comment-composer-width: min(1400px, 65vw);
 }
 
 .listItem {
@@ -90,4 +100,10 @@
   border-radius: 8px;
   font-size: 0.85rem;
   z-index: 101;
+}
+
+@media (min-width: 1024px) {
+  .eventComposer {
+    --comment-composer-width: min(1400px, 70vw);
+  }
 }
