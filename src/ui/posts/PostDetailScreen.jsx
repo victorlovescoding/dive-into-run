@@ -274,6 +274,13 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     ? runtimeCommentUpdateError ?? null
     : localUpdateError;
   const activeHistoryComment = historyComment ? mapToCommentCardData(historyComment) : null;
+  const shouldRenderCommentComposer = !!user;
+  const detailContainerClassName = shouldRenderCommentComposer
+    ? `${styles.detailContainer} ${styles.detailWithComposerReserve}`
+    : styles.detailContainer;
+  const commentsSectionClassName = shouldRenderCommentComposer
+    ? `${styles.commentsSection} ${styles.commentsWithComposerReserve}`
+    : styles.commentsSection;
 
   const handleOpenCommentEdit = useCallback(
     (currentComment) => {
@@ -322,7 +329,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
   }, [handleEditCancel]);
 
   return (
-    <div className={styles.detailContainer}>
+    <div className={detailContainerClassName}>
       <Link href="/posts" className={styles.backLink}>
         ← 回到文章列表
       </Link>
@@ -357,7 +364,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
             <PostDetailActions title={post.title} url={shareUrl} />
           </PostCard>
 
-          <section className={styles.commentsSection}>
+          <section className={commentsSectionClassName} aria-label="文章留言">
             <h3 className={styles.commentsTitle}>留言 ({post.commentsCount ?? 0})</h3>
             {comments.map((commentItem) => (
               <CommentCard
@@ -376,8 +383,13 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
             ))}
           </section>
 
-          {user && (
-            <CommentInput user={user} onSubmit={handleSubmitComment} isSubmitting={isSubmitting} />
+          {shouldRenderCommentComposer && (
+            <CommentInput
+              user={user}
+              onSubmit={handleSubmitComment}
+              isSubmitting={isSubmitting}
+              className={styles.postComposer}
+            />
           )}
 
           {activeEditingComment && (

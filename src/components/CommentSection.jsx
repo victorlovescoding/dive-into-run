@@ -61,6 +61,10 @@ export default function CommentSection({ eventId, onCommentAdded }) {
   });
 
   const searchParams = useSearchParams();
+  const shouldRenderComposer = !!user;
+  const sectionClassName = shouldRenderComposer
+    ? `${styles.section} ${styles.withComposerReserve}`
+    : styles.section;
 
   // Scroll-to-comment: 從通知點擊導航至留言時滾動到指定留言
   useEffect(() => {
@@ -92,7 +96,7 @@ export default function CommentSection({ eventId, onCommentAdded }) {
   }, [searchParams]);
 
   return (
-    <section aria-label="留言區" className={styles.section}>
+    <section aria-label="留言區" className={sectionClassName}>
       {isLoading && (
         <div role="status" className={styles.loading}>
           載入中...
@@ -110,7 +114,7 @@ export default function CommentSection({ eventId, onCommentAdded }) {
         <p className={styles.empty}>還沒有人留言</p>
       )}
       {!isLoading && comments.length > 0 && (
-        <ul className={styles.list} style={user ? { paddingBottom: 80 } : undefined}>
+        <ul className={styles.list}>
           {comments.map((c) => (
             <li key={c.id} className={styles.listItem}>
               <CommentCard
@@ -144,7 +148,14 @@ export default function CommentSection({ eventId, onCommentAdded }) {
           送出失敗，請再試一次
         </div>
       )}
-      {user && <CommentInput user={user} onSubmit={handleSubmit} isSubmitting={isSubmitting} />}
+      {shouldRenderComposer && (
+        <CommentInput
+          user={user}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          className={styles.eventComposer}
+        />
+      )}
       {editingComment && (
         <CommentEditModal
           comment={editingComment}

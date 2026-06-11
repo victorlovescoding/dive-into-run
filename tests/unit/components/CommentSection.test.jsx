@@ -237,6 +237,45 @@ describe('CommentSection event composer identity', () => {
     expect(screen.getByTestId('composer-avatar')).toHaveAttribute('src', user.photoURL);
   });
 
+  it('passes the event composer layout class for authenticated users', () => {
+    renderWithAuth(makeUser());
+
+    const composerProps = commentInputMock.mock.calls.at(-1)?.[0];
+    expect(composerProps.className).toEqual(expect.stringContaining('eventComposer'));
+  });
+
+  it('adds section bottom reserve when the authenticated event composer is rendered', () => {
+    commentsHookMock.mockReturnValue(
+      makeComments({
+        comments: [
+          {
+            id: 'comment-1',
+            authorUid: 'runner-1',
+            content: '最後一則不能被遮住',
+            createdAt: null,
+          },
+        ],
+      }),
+    );
+
+    renderWithAuth(makeUser());
+
+    const section = screen.getByRole('region', { name: '留言區' });
+    expect(section.className).toEqual(expect.stringContaining('withComposerReserve'));
+    expect(screen.getByText('已顯示所有留言')).toBeInTheDocument();
+    expect(screen.getByRole('list').className).not.toEqual(
+      expect.stringContaining('listWithReserve'),
+    );
+  });
+
+  it('protects the authenticated empty state with the section reserve', () => {
+    renderWithAuth(makeUser());
+
+    const section = screen.getByRole('region', { name: '留言區' });
+    expect(section.className).toEqual(expect.stringContaining('withComposerReserve'));
+    expect(screen.getByText('還沒有人留言')).toBeInTheDocument();
+  });
+
   it('uses the fallback avatar for an authenticated event composer user without a usable avatar', () => {
     const { unmount } = renderWithAuth(makeUser({ photoURL: '' }));
 
@@ -251,6 +290,9 @@ describe('CommentSection event composer identity', () => {
   it('hides the event composer and does not add login UI for anonymous users', () => {
     renderWithAuth(null);
 
+    const section = screen.getByRole('region', { name: '留言區' });
+    expect(section.className).not.toEqual(expect.stringContaining('withComposerReserve'));
+    expect(screen.getByText('還沒有人留言')).toBeInTheDocument();
     expect(commentInputMock).not.toHaveBeenCalled();
     expect(screen.queryByRole('form', { name: '留言輸入區' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('composer-avatar')).not.toBeInTheDocument();

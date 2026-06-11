@@ -38,9 +38,10 @@ function resolveAvatarName(user) {
  * @param {{ name?: string | null, displayName?: string | null, email?: string | null, photoURL?: string | null } | null} props.user - 目前登入使用者。
  * @param {(content: string) => boolean | Promise<boolean>} props.onSubmit - 送出留言回呼，成功回傳 true。
  * @param {boolean} props.isSubmitting - 是否送出中。
+ * @param {string} [props.className] - 額外套用到 fixed wrapper 的 layout class。
  * @returns {import('react').ReactElement} 留言輸入框元件。
  */
-export default function CommentInput({ user, onSubmit, isSubmitting }) {
+export default function CommentInput({ user, onSubmit, isSubmitting, className }) {
   const {
     content,
     setContent,
@@ -57,9 +58,10 @@ export default function CommentInput({ user, onSubmit, isSubmitting }) {
   const charCountClassName = isOverLimit
     ? `${styles.charCount} ${styles.charCountOver}`
     : styles.charCount;
+  const wrapperClassName = className ? `${styles.wrapper} ${className}` : styles.wrapper;
 
   return (
-    <div className={styles.wrapper}>
+    <div className={wrapperClassName} role="group" aria-label="留言輸入區">
       <div className={styles.inputRow}>
         <Image
           src={avatarSrc}

@@ -195,6 +195,32 @@ describe('PostDetailScreen comment composer', () => {
     });
   });
 
+  it('passes the post detail composer layout class for authenticated users', () => {
+    renderScreen();
+
+    expect(commentInputProps.at(-1)?.className).toEqual(
+      expect.stringContaining('postComposer'),
+    );
+  });
+
+  it('adds comments bottom reserve only when the authenticated post composer is rendered', () => {
+    renderScreen({
+      comments: [
+        {
+          id: 'comment-1',
+          authorUid: 'runner-1',
+          content: '最後一則不能被遮住',
+          createdAt: null,
+        },
+      ],
+    });
+
+    const commentsSection = screen.getByRole('region', { name: '文章留言' });
+    expect(commentsSection.className).toEqual(
+      expect.stringContaining('commentsWithComposerReserve'),
+    );
+  });
+
   it('passes authenticated users without a usable photoURL to the shared fallback-avatar path', () => {
     const userWithoutPhoto = { ...authenticatedUser, photoURL: '' };
     renderScreen({ user: userWithoutPhoto });
@@ -215,6 +241,10 @@ describe('PostDetailScreen comment composer', () => {
     expect(screen.queryByRole('button', { name: '送出留言' })).not.toBeInTheDocument();
     expect(screen.queryByText(/請先登入|登入後|登入留言/)).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /登入/ })).not.toBeInTheDocument();
+    const commentsSection = screen.getByRole('region', { name: '文章留言' });
+    expect(commentsSection.className).not.toEqual(
+      expect.stringContaining('commentsWithComposerReserve'),
+    );
   });
 
   it('wires shared composer submit content, submitting state, duplicate blocking, and clear-on-success', async () => {

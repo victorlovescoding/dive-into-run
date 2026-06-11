@@ -1,8 +1,14 @@
 /* 詳文頁容器 — 窄欄置中，配合列表頁 feed 一致 */
 .detailContainer {
+  --post-comment-composer-reserve: calc(96px + env(safe-area-inset-bottom));
+
   max-width: 680px;
   margin: 0 auto;
   padding: 16px 1rem;
+}
+
+.detailWithComposerReserve {
+  scroll-padding-bottom: var(--post-comment-composer-reserve);
 }
 
 /* 留言區塊 */
@@ -10,6 +16,14 @@
   margin-top: 16px;
   border-top: 1px solid #e0e3e7;
   padding-top: 16px;
+}
+
+.commentsWithComposerReserve {
+  padding-bottom: var(--post-comment-composer-reserve);
+}
+
+.postComposer {
+  --comment-composer-width: min(calc(680px - 2rem), calc(100vw - 2rem));
 }
 
 .commentsTitle {

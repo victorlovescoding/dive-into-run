@@ -37,6 +37,7 @@ function renderCommentInput(props = {}) {
       user={user}
       onSubmit={onSubmit}
       isSubmitting={props.isSubmitting ?? false}
+      className={props.className}
     />,
   );
 
@@ -57,6 +58,14 @@ function getComposerAvatar(name = currentUser.name) {
 }
 
 describe('CommentInput', () => {
+  it('applies custom layout className to the fixed wrapper', () => {
+    const { submitButton } = renderCommentInput({ className: 'unit-composer-layout' });
+
+    const wrapper = screen.getByRole('group', { name: '留言輸入區' });
+    expect(wrapper).toHaveClass('unit-composer-layout');
+    expect(wrapper).toContainElement(submitButton);
+  });
+
   it('顯示目前登入使用者大頭貼，且 avatar 只作為顯示用途', () => {
     renderCommentInput();
 
