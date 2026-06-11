@@ -2,11 +2,11 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import CommentCard from '@/components/CommentCard';
 import CommentEditModal from '@/components/CommentEditModal';
 import CommentHistoryModal from '@/components/CommentHistoryModal';
+import CommentInput from '@/components/CommentInput';
 import ComposeModal from '@/components/ComposeModal';
 import EditHistoryModal from '@/components/EditHistoryModal';
 import PostCard from '@/components/PostCard';
@@ -221,7 +221,6 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     shareUrl,
     comments,
     highlightedCommentId,
-    comment,
     editingComment: runtimeEditingComment,
     historyComment,
     historyEntries,
@@ -263,7 +262,6 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     handleViewArticleHistory,
     handleCloseArticleHistory,
     handleSubmitComment,
-    handleCommentChange,
   } = runtime;
 
   const [localEditingComment, setLocalEditingComment] = useState(null);
@@ -378,28 +376,9 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
             ))}
           </section>
 
-          <form onSubmit={handleSubmitComment} className={styles.commentForm}>
-            {user?.photoURL && (
-              <Image
-                src={user.photoURL}
-                alt={`${user?.name ?? '使用者'}的大頭貼`}
-                width={36}
-                height={36}
-                className={styles.commentAvatar}
-              />
-            )}
-            <input
-              type="text"
-              placeholder="留言"
-              aria-label="留言"
-              value={comment}
-              onChange={handleCommentChange}
-              className={styles.commentInput}
-            />
-            <button type="submit" className={styles.commentSubmit}>
-              送出
-            </button>
-          </form>
+          {user && (
+            <CommentInput user={user} onSubmit={handleSubmitComment} isSubmitting={isSubmitting} />
+          )}
 
           {activeEditingComment && (
             <CommentEditModal

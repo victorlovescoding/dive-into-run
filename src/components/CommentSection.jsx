@@ -144,7 +144,7 @@ export default function CommentSection({ eventId, onCommentAdded }) {
           送出失敗，請再試一次
         </div>
       )}
-      {user && <CommentInput onSubmit={handleSubmit} isSubmitting={isSubmitting} />}
+      {user && <CommentInput user={user} onSubmit={handleSubmit} isSubmitting={isSubmitting} />}
       {editingComment && (
         <CommentEditModal
           comment={editingComment}

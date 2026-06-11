@@ -10,6 +10,10 @@ const COMMENT_MAX_LENGTH = 500;
  * @returns {{
  *   content: string,
  *   setContent: import('react').Dispatch<import('react').SetStateAction<string>>,
+ *   isEmpty: boolean,
+ *   isOverLimit: boolean,
+ *   isSubmitting: boolean,
+ *   canSubmit: boolean,
  *   isDisabled: boolean,
  *   textboxRef: import('react').RefObject<HTMLInputElement | null>,
  *   handleSubmit: () => Promise<boolean>,
@@ -18,12 +22,18 @@ const COMMENT_MAX_LENGTH = 500;
  */
 export default function useCommentComposerInput({ onSubmit, isSubmitting }) {
   const [content, setContent] = useState('');
+  const [isSubmitPending, setIsSubmitPending] = useState(false);
   const [refocusToken, setRefocusToken] = useState(0);
   const textboxRef = useRef(/** @type {HTMLInputElement | null} */ (null));
   const pendingRefocusRef = useRef(false);
+  const pendingSubmitRef = useRef(false);
 
   const trimmed = content.trim();
-  const isDisabled = trimmed === '' || content.length > COMMENT_MAX_LENGTH || isSubmitting;
+  const isEmpty = trimmed === '';
+  const isOverLimit = content.length > COMMENT_MAX_LENGTH;
+  const isSubmittingDraft = isSubmitting || isSubmitPending;
+  const canSubmit = !isEmpty && !isOverLimit && !isSubmittingDraft;
+  const isDisabled = !canSubmit;
 
   const requestRefocus = useCallback(() => {
     pendingRefocusRef.current = true;
@@ -41,16 +51,22 @@ export default function useCommentComposerInput({ onSubmit, isSubmitting }) {
   }, [isSubmitting, refocusToken]);
 
   const handleSubmit = useCallback(async () => {
-    if (isDisabled) {
+    if (isEmpty || isOverLimit || isSubmitting || pendingSubmitRef.current) {
       requestRefocus();
       return false;
     }
+
+    pendingSubmitRef.current = true;
+    setIsSubmitPending(true);
 
     let didSubmit = false;
     try {
       didSubmit = await onSubmit(content);
     } catch {
       didSubmit = false;
+    } finally {
+      pendingSubmitRef.current = false;
+      setIsSubmitPending(false);
     }
 
     if (didSubmit) {
@@ -58,7 +74,7 @@ export default function useCommentComposerInput({ onSubmit, isSubmitting }) {
     }
     requestRefocus();
     return didSubmit;
-  }, [content, isDisabled, onSubmit, requestRefocus]);
+  }, [content, isEmpty, isOverLimit, isSubmitting, onSubmit, requestRefocus]);
 
   const handleKeyDown = useCallback(
     (event) => {
@@ -76,6 +92,10 @@ export default function useCommentComposerInput({ onSubmit, isSubmitting }) {
   return {
     content,
     setContent,
+    isEmpty,
+    isOverLimit,
+    isSubmitting: isSubmittingDraft,
+    canSubmit,
     isDisabled,
     textboxRef,
     handleSubmit,
