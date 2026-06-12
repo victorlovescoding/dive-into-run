@@ -7,11 +7,15 @@ const mocks = vi.hoisted(() => ({
   getCommentById: vi.fn(),
   notifyPostCommentReply: vi.fn(),
   notifyPostNewComment: vi.fn(),
+  searchParamCommentId: null,
   showToast: vi.fn(),
+  useCommentScrollTarget: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
-  useSearchParams: () => ({ get: () => null }),
+  useSearchParams: () => ({
+    get: (key) => (key === 'commentId' ? mocks.searchParamCommentId : null),
+  }),
 }));
 
 vi.mock('../../../src/runtime/providers/ToastProvider', () => ({
@@ -27,6 +31,10 @@ vi.mock('../../../src/config/client/firebase-timestamp', () => ({
 vi.mock('../../../src/runtime/hooks/usePostCommentsEffects', () => ({
   usePostCommentsInfiniteScroll: vi.fn(),
   useScrollToHighlightedComment: vi.fn(),
+}));
+
+vi.mock('../../../src/runtime/hooks/useCommentScrollTarget', () => ({
+  default: mocks.useCommentScrollTarget,
 }));
 
 vi.mock('../../../src/runtime/client/use-cases/post-use-cases', () => ({
@@ -104,12 +112,21 @@ function renderUsePostComments(overrides = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.searchParamCommentId = null;
   mocks.getCommentById.mockResolvedValue(null);
   mocks.notifyPostCommentReply.mockResolvedValue(undefined);
   mocks.notifyPostNewComment.mockResolvedValue(undefined);
 });
 
 describe('usePostComments submit runtime', () => {
+  test('uses the URL comment id as the initial scroll target', () => {
+    mocks.searchParamCommentId = 'comment-from-url';
+
+    renderUsePostComments();
+
+    expect(mocks.useCommentScrollTarget).toHaveBeenCalledWith('comment-from-url');
+  });
+
   test('submits the provided content string, exposes pending state, and returns true on success', async () => {
     const pendingAdd = createDeferred();
     mocks.addComment.mockReturnValue(pendingAdd.promise);
@@ -185,5 +202,30 @@ describe('usePostComments submit runtime', () => {
     });
     expect(didSignalFailure).toBe(true);
     expect(result.current.isSubmitting).toBe(false);
+  });
+
+  test('scrolls to the locally submitted post comment id after a successful submit', async () => {
+    mocks.searchParamCommentId = 'comment-from-url';
+    mocks.addComment.mockResolvedValue({ id: 'comment-new' });
+    const { result } = renderUsePostComments();
+
+    await act(async () => {
+      await result.current.handleSubmitComment('Scroll to me');
+    });
+
+    expect(mocks.useCommentScrollTarget).toHaveBeenLastCalledWith('comment-new');
+  });
+
+  test('keeps the URL scroll target when post comment submit fails', async () => {
+    mocks.searchParamCommentId = 'comment-from-url';
+    mocks.addComment.mockRejectedValue(new Error('write failed'));
+    const { result } = renderUsePostComments();
+
+    await act(async () => {
+      await result.current.handleSubmitComment('Draft should stay');
+    });
+
+    expect(mocks.useCommentScrollTarget).toHaveBeenLastCalledWith('comment-from-url');
+    expect(mocks.useCommentScrollTarget).not.toHaveBeenCalledWith('comment-new');
   });
 });

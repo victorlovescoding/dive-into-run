@@ -17,8 +17,8 @@ import {
 } from '@/runtime/hooks/usePostCommentsHelpers';
 import {
   usePostCommentsInfiniteScroll,
-  useScrollToHighlightedComment,
 } from '@/runtime/hooks/usePostCommentsEffects';
+import useCommentScrollTarget from '@/runtime/hooks/useCommentScrollTarget';
 import useCommentEditModal from '@/runtime/hooks/useCommentEditModal';
 import { useToast } from '@/runtime/providers/ToastProvider';
 
@@ -80,6 +80,9 @@ export default function usePostComments({
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedCommentId, setSubmittedCommentId] = useState(
+    /** @type {string | null} */ (null),
+  );
   const [historyComment, setHistoryComment] = useState(/** @type {object | null} */ (null));
   const [historyEntries, setHistoryEntries] = useState(/** @type {Array<object>} */ ([]));
   const [historyError, setHistoryError] = useState(/** @type {string | null} */ (null));
@@ -96,7 +99,8 @@ export default function usePostComments({
     };
   }, []);
 
-  const highlightedCommentId = searchParams.get('commentId');
+  const urlCommentId = searchParams.get('commentId');
+  const highlightedCommentId = submittedCommentId ?? urlCommentId;
 
   const actor = useMemo(() => {
     if (!userUid) return null;
@@ -135,7 +139,7 @@ export default function usePostComments({
     setComments,
     hydrateComments,
   });
-  useScrollToHighlightedComment(searchParams);
+  useCommentScrollTarget(highlightedCommentId);
 
   // --- Handlers ---
 
@@ -339,6 +343,7 @@ export default function usePostComments({
           mine ?? createSubmittedCommentFallback({ id, user, rawComment });
 
         setComments((prev) => [{ ...hydratedComment, isAuthor: true }, ...prev]);
+        setSubmittedCommentId(id);
         setPostDetail((prev) =>
           prev
             ? {
