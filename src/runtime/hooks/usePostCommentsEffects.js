@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { getMoreCommentsPage } from '@/runtime/client/use-cases/post-use-cases';
+import useCommentScrollTarget from '@/runtime/hooks/useCommentScrollTarget';
 
 const INFINITE_SCROLL_MARGIN = '300px 0px';
 
@@ -159,31 +160,5 @@ export function usePostCommentsInfiniteScroll({
  * @param {{ get: (key: string) => string | null }} searchParams - 查詢參數物件。
  */
 export function useScrollToHighlightedComment(searchParams) {
-  useEffect(() => {
-    const commentId = searchParams.get('commentId');
-    if (!commentId) return undefined;
-
-    let attempts = 0;
-    const maxAttempts = 20;
-    const timer = setInterval(() => {
-      attempts += 1;
-      const element = document.getElementById(commentId);
-      if (element) {
-        clearInterval(timer);
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        element.classList.add('commentHighlight');
-        element.addEventListener(
-          'animationend',
-          () => {
-            element.classList.remove('commentHighlight');
-          },
-          { once: true },
-        );
-      } else if (attempts >= maxAttempts) {
-        clearInterval(timer);
-      }
-    }, 200);
-
-    return () => clearInterval(timer);
-  }, [searchParams]);
+  useCommentScrollTarget(searchParams.get('commentId'));
 }

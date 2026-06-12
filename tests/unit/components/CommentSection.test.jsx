@@ -9,6 +9,8 @@ const AuthContext = createContext({ user: null, setUser: () => {}, loading: fals
 const commentsHookMock = vi.fn();
 const commentMutationsHookMock = vi.fn();
 const commentInputMock = vi.fn();
+const commentScrollTargetMock = vi.fn();
+let currentSearchParams = new URLSearchParams();
 let CommentSection;
 
 /**
@@ -83,7 +85,7 @@ function MockCommentInput(props) {
 
 beforeAll(async () => {
   vi.doMock('next/navigation', () => ({
-    useSearchParams: () => new URLSearchParams(),
+    useSearchParams: () => currentSearchParams,
   }));
 
   vi.doMock('@/contexts/AuthContext', () => ({
@@ -96,6 +98,10 @@ beforeAll(async () => {
 
   vi.doMock('@/runtime/hooks/useCommentMutations', () => ({
     default: useMockCommentMutations,
+  }));
+
+  vi.doMock('@/runtime/hooks/useCommentScrollTarget', () => ({
+    default: commentScrollTargetMock,
   }));
 
   vi.doMock('@/components/CommentCard', () => ({
@@ -216,6 +222,7 @@ function makeMutations(overrides = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  currentSearchParams = new URLSearchParams();
   commentsHookMock.mockReturnValue(makeComments());
   commentMutationsHookMock.mockReturnValue(makeMutations());
 });
@@ -383,5 +390,47 @@ describe('CommentSection event composer submit wiring', () => {
 
     deferred.resolve(true);
     await waitFor(() => expect(textbox).toHaveValue(''));
+  });
+
+  it('uses the URL comment id as the initial event scroll target', () => {
+    currentSearchParams = new URLSearchParams('commentId=event-comment-from-url');
+
+    renderWithAuth(makeUser());
+
+    expect(commentScrollTargetMock).toHaveBeenCalledWith('event-comment-from-url');
+  });
+
+  it('scrolls to the locally submitted event comment id after a successful submit', async () => {
+    const user = userEvent.setup();
+    currentSearchParams = new URLSearchParams('commentId=event-comment-from-url');
+    const handleSubmit = vi.fn(async () => {
+      const onSuccess = commentMutationsHookMock.mock.calls.at(-1)?.[3];
+      onSuccess?.('event-comment-new');
+      return true;
+    });
+    commentMutationsHookMock.mockReturnValue(makeMutations({ handleSubmit }));
+    renderWithAuth(makeUser());
+
+    await user.type(screen.getByRole('textbox', { name: '留言' }), '一起跑吧');
+    await user.click(screen.getByRole('button', { name: '送出留言' }));
+
+    await waitFor(() =>
+      expect(commentScrollTargetMock).toHaveBeenLastCalledWith('event-comment-new'),
+    );
+  });
+
+  it('keeps the URL event scroll target when submit fails', async () => {
+    const user = userEvent.setup();
+    currentSearchParams = new URLSearchParams('commentId=event-comment-from-url');
+    const handleSubmit = vi.fn().mockResolvedValue(false);
+    commentMutationsHookMock.mockReturnValue(makeMutations({ handleSubmit }));
+    renderWithAuth(makeUser());
+
+    await user.type(screen.getByRole('textbox', { name: '留言' }), '先保留這段');
+    await user.click(screen.getByRole('button', { name: '送出留言' }));
+
+    await waitFor(() => expect(handleSubmit).toHaveBeenCalledWith('先保留這段'));
+    expect(commentScrollTargetMock).toHaveBeenLastCalledWith('event-comment-from-url');
+    expect(commentScrollTargetMock).not.toHaveBeenCalledWith('event-comment-new');
   });
 });

@@ -1,10 +1,11 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useContext, useEffect } from 'react';
+import { useContext, useState } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
 import useComments from '@/runtime/hooks/useComments';
 import useCommentMutations from '@/runtime/hooks/useCommentMutations';
+import useCommentScrollTarget from '@/runtime/hooks/useCommentScrollTarget';
 import CommentCard from '@/components/CommentCard';
 import CommentInput from '@/components/CommentInput';
 import CommentEditModal from '@/components/CommentEditModal';
@@ -21,6 +22,7 @@ import styles from './CommentSection.module.css';
  */
 export default function CommentSection({ eventId, onCommentAdded }) {
   const { user } = useContext(AuthContext);
+  const [submittedCommentId, setSubmittedCommentId] = useState(/** @type {string | null} */ (null));
 
   const {
     comments,
@@ -57,43 +59,19 @@ export default function CommentSection({ eventId, onCommentAdded }) {
     handleViewHistory,
     handleHistoryClose,
   } = useCommentMutations(eventId, user, setComments, (commentId) => {
+    setSubmittedCommentId(commentId);
     onCommentAdded?.(commentId);
   });
 
   const searchParams = useSearchParams();
+  const urlCommentId = searchParams.get('commentId');
+  const scrollTargetCommentId = submittedCommentId ?? urlCommentId;
   const shouldRenderComposer = !!user;
   const sectionClassName = shouldRenderComposer
     ? `${styles.section} ${styles.withComposerReserve}`
     : styles.section;
 
-  // Scroll-to-comment: 從通知點擊導航至留言時滾動到指定留言
-  useEffect(() => {
-    const commentId = searchParams.get('commentId');
-    if (!commentId) return undefined;
-
-    let attempts = 0;
-    const maxAttempts = 20;
-    const timer = setInterval(() => {
-      attempts += 1;
-      const el = document.getElementById(commentId);
-      if (el) {
-        clearInterval(timer);
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.classList.add('commentHighlight');
-        el.addEventListener(
-          'animationend',
-          () => {
-            el.classList.remove('commentHighlight');
-          },
-          { once: true },
-        );
-      } else if (attempts >= maxAttempts) {
-        clearInterval(timer);
-      }
-    }, 200);
-
-    return () => clearInterval(timer);
-  }, [searchParams]);
+  useCommentScrollTarget(scrollTargetCommentId);
 
   return (
     <section aria-label="留言區" className={sectionClassName}>
