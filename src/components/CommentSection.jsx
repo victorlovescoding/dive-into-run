@@ -1,17 +1,37 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useContext, useState } from 'react';
+import { useCallback, useContext, useMemo, useState } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
+import { getCommentById } from '@/runtime/client/use-cases/event-comment-use-cases';
 import useComments from '@/runtime/hooks/useComments';
 import useCommentMutations from '@/runtime/hooks/useCommentMutations';
 import useCommentScrollTarget from '@/runtime/hooks/useCommentScrollTarget';
+import useNotificationTargetComment from '@/runtime/hooks/useNotificationTargetComment';
 import CommentCard from '@/components/CommentCard';
 import CommentInput from '@/components/CommentInput';
 import CommentEditModal from '@/components/CommentEditModal';
 import CommentDeleteConfirm from '@/components/CommentDeleteConfirm';
 import CommentHistoryModal from '@/components/CommentHistoryModal';
 import styles from './CommentSection.module.css';
+
+/**
+ * Event comments already use the shared CommentCard shape.
+ * @param {object} comment - Event comment data.
+ * @returns {object} CommentCard-compatible event comment.
+ */
+function normalizeEventComment(comment) {
+  return comment;
+}
+
+/**
+ * Reads an event comment id.
+ * @param {object} comment - Event comment data.
+ * @returns {string} Event comment id.
+ */
+function getEventCommentId(comment) {
+  return comment.id;
+}
 
 /**
  * 留言區容器元件，管理所有留言相關 state 與子元件。
@@ -36,6 +56,34 @@ export default function CommentSection({ eventId, onCommentAdded }) {
     sentinelRef,
   } = useComments(eventId);
 
+  const searchParams = useSearchParams();
+  const urlCommentId = searchParams.get('commentId');
+  const loadNotificationTargetComment = useCallback(
+    (commentId) => getCommentById(eventId, commentId),
+    [eventId],
+  );
+  const {
+    pinnedComment,
+    visibleComments,
+    activeTargetId,
+    updatePinnedComment,
+    removePinnedComment,
+  } = useNotificationTargetComment({
+    targetCommentId: urlCommentId,
+    submittedCommentId,
+    comments,
+    loadCommentById: loadNotificationTargetComment,
+    normalizeComment: normalizeEventComment,
+    getCommentId: getEventCommentId,
+    isReady: !isLoading,
+  });
+  const targetMutationCallbacks = useMemo(
+    () => ({
+      onCommentUpdated: updatePinnedComment,
+      onCommentDeleted: removePinnedComment,
+    }),
+    [removePinnedComment, updatePinnedComment],
+  );
   const {
     isSubmitting,
     submitError,
@@ -61,17 +109,15 @@ export default function CommentSection({ eventId, onCommentAdded }) {
   } = useCommentMutations(eventId, user, setComments, (commentId) => {
     setSubmittedCommentId(commentId);
     onCommentAdded?.(commentId);
-  });
-
-  const searchParams = useSearchParams();
-  const urlCommentId = searchParams.get('commentId');
-  const scrollTargetCommentId = submittedCommentId ?? urlCommentId;
+  }, targetMutationCallbacks);
+  const hasPinnedComment = !!pinnedComment;
+  const hasVisibleComments = visibleComments.length > 0;
   const shouldRenderComposer = !!user;
   const sectionClassName = shouldRenderComposer
     ? `${styles.section} ${styles.withComposerReserve}`
     : styles.section;
 
-  useCommentScrollTarget(scrollTargetCommentId);
+  useCommentScrollTarget(activeTargetId);
 
   return (
     <section aria-label="留言區" className={sectionClassName}>
@@ -88,12 +134,25 @@ export default function CommentSection({ eventId, onCommentAdded }) {
           </button>
         </div>
       )}
-      {!isLoading && !loadError && comments.length === 0 && (
+      {!isLoading && !loadError && !hasPinnedComment && !hasVisibleComments && (
         <p className={styles.empty}>還沒有人留言</p>
       )}
-      {!isLoading && comments.length > 0 && (
+      {!isLoading && pinnedComment && (
+        <div className={styles.pinnedComment}>
+          <span className={styles.pinnedLabel}>通知中的留言</span>
+          <CommentCard
+            comment={pinnedComment}
+            isOwner={user?.uid === pinnedComment.authorUid}
+            isHighlighted={pinnedComment.id === activeTargetId}
+            onEdit={handleEditOpen}
+            onDelete={handleDeleteOpen}
+            onViewHistory={handleViewHistory}
+          />
+        </div>
+      )}
+      {!isLoading && hasVisibleComments && (
         <ul className={styles.list}>
-          {comments.map((c) => (
+          {visibleComments.map((c) => (
             <li key={c.id} className={styles.listItem}>
               <CommentCard
                 comment={c}
@@ -118,7 +177,7 @@ export default function CommentSection({ eventId, onCommentAdded }) {
           </button>
         </div>
       )}
-      {!isLoading && !hasMore && comments.length > 0 && (
+      {!isLoading && !hasMore && (hasPinnedComment || hasVisibleComments) && (
         <p className={styles.endHint}>已顯示所有留言</p>
       )}
       {submitError && (

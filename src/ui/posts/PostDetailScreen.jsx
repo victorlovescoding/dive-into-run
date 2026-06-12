@@ -220,6 +220,8 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     error,
     shareUrl,
     comments,
+    pinnedComment,
+    visibleComments,
     highlightedCommentId,
     editingComment: runtimeEditingComment,
     historyComment,
@@ -275,6 +277,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     : localUpdateError;
   const activeHistoryComment = historyComment ? mapToCommentCardData(historyComment) : null;
   const shouldRenderCommentComposer = !!user;
+  const renderedComments = visibleComments ?? comments;
   const detailContainerClassName = shouldRenderCommentComposer
     ? `${styles.detailContainer} ${styles.detailWithComposerReserve}`
     : styles.detailContainer;
@@ -366,7 +369,24 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
 
           <section className={commentsSectionClassName} aria-label="文章留言">
             <h3 className={styles.commentsTitle}>留言 ({post.commentsCount ?? 0})</h3>
-            {comments.map((commentItem) => (
+            {pinnedComment && (
+              <div className={styles.pinnedComment}>
+                <span className={styles.pinnedLabel}>通知中的留言</span>
+                <CommentCard
+                  comment={mapToCommentCardData(pinnedComment)}
+                  isOwner={!!pinnedComment.isAuthor || user?.uid === pinnedComment.authorUid}
+                  isHighlighted={pinnedComment.id === highlightedCommentId}
+                  onEdit={(currentComment) => {
+                    handleOpenCommentEdit(currentComment);
+                  }}
+                  onDelete={(currentComment) => {
+                    handleDeleteComment(currentComment.id);
+                  }}
+                  onViewHistory={handleViewHistory}
+                />
+              </div>
+            )}
+            {renderedComments.map((commentItem) => (
               <CommentCard
                 key={commentItem.id}
                 comment={mapToCommentCardData(commentItem)}

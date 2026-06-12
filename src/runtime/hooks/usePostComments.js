@@ -20,6 +20,7 @@ import {
 } from '@/runtime/hooks/usePostCommentsEffects';
 import useCommentScrollTarget from '@/runtime/hooks/useCommentScrollTarget';
 import useCommentEditModal from '@/runtime/hooks/useCommentEditModal';
+import usePostNotificationTargetComment from '@/runtime/hooks/usePostNotificationTargetComment';
 import { useToast } from '@/runtime/providers/ToastProvider';
 
 /**
@@ -43,6 +44,10 @@ import { useToast } from '@/runtime/providers/ToastProvider';
  * @property {boolean} isUpdating - 是否正在儲存留言編輯。
  * @property {string | null} updateError - 留言編輯錯誤訊息。
  * @property {string | null} highlightedCommentId - 需高亮的留言 ID。
+ * @property {object | null} pinnedComment - 通知指定且置頂顯示的留言。
+ * @property {Array<object>} visibleComments - 去掉 pinned 留言後的一般留言清單。
+ * @property {string | null} activeTargetId - 目前 active 的 scroll/highlight target。
+ * @property {boolean} isLoadingTargetComment - 是否正在載入通知指定留言。
  * @property {boolean} isLoadingNext - 是否正在載入下一頁留言。
  * @property {boolean} isSubmitting - 是否正在送出新留言。
  * @property {boolean} hasMore - 是否仍有下一頁留言。
@@ -80,9 +85,8 @@ export default function usePostComments({
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittedCommentId, setSubmittedCommentId] = useState(
-    /** @type {string | null} */ (null),
-  );
+  const [hasInitialCommentsLoaded, setHasInitialCommentsLoaded] = useState(false);
+  const [submittedCommentId, setSubmittedCommentId] = useState(/** @type {string | null} */ (null));
   const [historyComment, setHistoryComment] = useState(/** @type {object | null} */ (null));
   const [historyEntries, setHistoryEntries] = useState(/** @type {Array<object>} */ ([]));
   const [historyError, setHistoryError] = useState(/** @type {string | null} */ (null));
@@ -100,7 +104,6 @@ export default function usePostComments({
   }, []);
 
   const urlCommentId = searchParams.get('commentId');
-  const highlightedCommentId = submittedCommentId ?? urlCommentId;
 
   const actor = useMemo(() => {
     if (!userUid) return null;
@@ -120,6 +123,7 @@ export default function usePostComments({
       setComments(hydrateComments(data.comments, userUid));
       setNextCursor(data.nextCursor);
       setHasMore(typeof data.hasMore === 'boolean' ? data.hasMore : Boolean(data.nextCursor));
+      setHasInitialCommentsLoaded(true);
     },
     [userUid],
   );
@@ -139,7 +143,20 @@ export default function usePostComments({
     setComments,
     hydrateComments,
   });
-  useCommentScrollTarget(highlightedCommentId);
+
+  const targetCommentState = usePostNotificationTargetComment({
+    postId, userUid, urlCommentId, submittedCommentId, comments, isReady: hasInitialCommentsLoaded,
+  });
+  const { pinnedComment, visibleComments, activeTargetId, isLoadingTargetComment } =
+    targetCommentState;
+  const { updatePinnedComment, removePinnedComment } = targetCommentState;
+  const highlightedCommentId = activeTargetId;
+  const editableComments = useMemo(
+    () => (pinnedComment ? [pinnedComment, ...comments] : comments),
+    [comments, pinnedComment],
+  );
+
+  useCommentScrollTarget(activeTargetId);
 
   // --- Handlers ---
 
@@ -171,6 +188,13 @@ export default function usePostComments({
           comment: trimmedText,
           currentComment: previousText,
         });
+        updatePinnedComment({
+          ...currentComment,
+          comment: trimmedText,
+          content: trimmedText,
+          isEdited: true,
+          updatedAt: optimisticUpdatedAt,
+        });
       } catch (saveError) {
         setComments((prev) =>
           prev.map((commentItem) =>
@@ -187,7 +211,7 @@ export default function usePostComments({
         throw saveError;
       }
     },
-    [comments, postId],
+    [comments, postId, updatePinnedComment],
   );
 
   const handleViewHistory = useCallback(
@@ -235,14 +259,14 @@ export default function usePostComments({
         return handleEditSave(newContent);
       }
 
-      const target = comments.find((commentItem) => commentItem.id === commentId);
+      const target = editableComments.find((commentItem) => commentItem.id === commentId);
       if (!target) return undefined;
 
       handleEditOpen(target);
       setOpenMenuPostId('');
       return undefined;
     },
-    [comments, handleEditOpen, handleEditSave, setOpenMenuPostId],
+    [editableComments, handleEditOpen, handleEditSave, setOpenMenuPostId],
   );
 
   /**
@@ -265,6 +289,7 @@ export default function usePostComments({
         if (editingCommentId === commentId) handleEditCancel();
 
         setComments((prev) => prev.filter((commentItem) => commentItem.id !== commentId));
+        removePinnedComment(commentId);
         setPostDetail((prev) =>
           prev
             ? {
@@ -287,6 +312,7 @@ export default function usePostComments({
       setPostDetail,
       showToast,
       userUid,
+      removePinnedComment,
     ],
   );
 
@@ -370,29 +396,15 @@ export default function usePostComments({
   }, []);
 
   return {
-    comments,
-    comment,
-    editingComment,
-    commentEditing: editingComment,
-    historyComment,
-    historyEntries,
-    historyError,
-    isUpdating,
-    updateError,
-    highlightedCommentId,
-    isLoadingNext,
-    isSubmitting,
-    hasMore,
-    bottomRef,
-    handleEditComment,
-    handleEditSave,
-    handleEditCancel,
-    handleDeleteComment,
-    handleViewHistory,
-    handleCloseHistory,
-    handleHistoryClose: handleCloseHistory,
-    handleSubmitComment,
-    handleCommentChange,
-    setInitialComments,
+    comments, pinnedComment, visibleComments, comment,
+    editingComment, commentEditing: editingComment,
+    historyComment, historyEntries, historyError,
+    isUpdating, updateError,
+    highlightedCommentId, activeTargetId, isLoadingTargetComment,
+    isLoadingNext, isSubmitting, hasMore, bottomRef,
+    handleEditComment, handleEditSave, handleEditCancel,
+    handleDeleteComment, handleViewHistory,
+    handleCloseHistory, handleHistoryClose: handleCloseHistory,
+    handleSubmitComment, handleCommentChange, setInitialComments,
   };
 }

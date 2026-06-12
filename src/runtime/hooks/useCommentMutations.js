@@ -44,9 +44,10 @@ import useCommentEditModal from '@/runtime/hooks/useCommentEditModal';
  * @param {{ uid: string, name: string, photoURL: string } | null} user - 目前使用者。
  * @param {(updater: (prev: CommentData[]) => CommentData[]) => void} setComments - 更新留言列表。
  * @param {((commentId: string) => void)} [onSuccess] - 新留言建立成功後的回呼。
+ * @param {{ onCommentUpdated?: (comment: CommentData) => void, onCommentDeleted?: (commentId: string) => void }} [options] - 獨立 pinned target 同步 callbacks。
  * @returns {UseCommentMutationsReturn} mutation 狀態與操作。
  */
-export default function useCommentMutations(eventId, user, setComments, onSuccess) {
+export default function useCommentMutations(eventId, user, setComments, onSuccess, options = {}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(/** @type {string | null} */ (null));
   const [highlightId, setHighlightId] = useState(/** @type {string | null} */ (null));
@@ -92,20 +93,20 @@ export default function useCommentMutations(eventId, user, setComments, onSucces
   const saveEditedComment = useCallback(
     async (targetComment, newContent) => {
       await updateComment(eventId, targetComment.id, newContent, targetComment.content);
+      const updatedComment = {
+        ...targetComment,
+        content: newContent.trim(),
+        isEdited: true,
+        updatedAt: getCurrentFirestoreTimestamp(),
+      };
       setComments((prev) =>
         prev.map((c) =>
-          c.id === targetComment.id
-            ? {
-                ...c,
-                content: newContent.trim(),
-                isEdited: true,
-                updatedAt: getCurrentFirestoreTimestamp(),
-              }
-            : c,
+          c.id === targetComment.id ? updatedComment : c,
         ),
       );
+      options.onCommentUpdated?.(updatedComment);
     },
-    [eventId, setComments],
+    [eventId, options, setComments],
   );
 
   const {
@@ -136,13 +137,14 @@ export default function useCommentMutations(eventId, user, setComments, onSucces
     try {
       await deleteComment(eventId, deletingComment.id);
       setComments((prev) => prev.filter((c) => c.id !== deletingComment.id));
+      options.onCommentDeleted?.(deletingComment.id);
       setDeletingComment(null);
     } catch {
       setDeleteError('刪除失敗，請再試一次');
     } finally {
       setIsDeleting(false);
     }
-  }, [eventId, deletingComment, setComments]);
+  }, [eventId, deletingComment, options, setComments]);
 
   const handleDeleteCancel = useCallback(() => {
     setDeletingComment(null);
