@@ -33,6 +33,20 @@
   margin: 0 0 12px;
 }
 
+.pinnedComment {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+}
+
+.pinnedLabel {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 8px;
+  color: #185abc;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .postActionGroup {
   display: inline-flex;
   align-items: center;

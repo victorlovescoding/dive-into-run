@@ -1,5 +1,7 @@
+// @vitest-environment jsdom
+
 import '@testing-library/jest-dom/vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createContext, useState } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +12,7 @@ const commentsHookMock = vi.fn();
 const commentMutationsHookMock = vi.fn();
 const commentInputMock = vi.fn();
 const commentScrollTargetMock = vi.fn();
+const eventGetCommentByIdMock = vi.fn();
 let currentSearchParams = new URLSearchParams();
 let CommentSection;
 
@@ -104,8 +107,16 @@ beforeAll(async () => {
     default: commentScrollTargetMock,
   }));
 
+  vi.doMock('@/runtime/client/use-cases/event-comment-use-cases', () => ({
+    getCommentById: eventGetCommentByIdMock,
+  }));
+
   vi.doMock('@/components/CommentCard', () => ({
-    default: ({ comment }) => <article>{comment.content}</article>,
+    default: ({ comment }) => (
+      <article id={comment.id} data-testid="comment-card">
+        {comment.content}
+      </article>
+    ),
   }));
 
   vi.doMock('@/components/CommentEditModal', () => ({
@@ -223,6 +234,7 @@ function makeMutations(overrides = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   currentSearchParams = new URLSearchParams();
+  eventGetCommentByIdMock.mockResolvedValue(null);
   commentsHookMock.mockReturnValue(makeComments());
   commentMutationsHookMock.mockReturnValue(makeMutations());
 });
@@ -400,6 +412,41 @@ describe('CommentSection event composer submit wiring', () => {
     expect(commentScrollTargetMock).toHaveBeenCalledWith('event-comment-from-url');
   });
 
+  it('renders the event URL target as a pinned notification comment before normal comments', async () => {
+    currentSearchParams = new URLSearchParams('commentId=event-comment-old');
+    eventGetCommentByIdMock.mockResolvedValue({
+      id: 'event-comment-old',
+      authorUid: 'runner-old',
+      authorName: '舊留言者',
+      authorPhotoURL: 'https://example.test/old.png',
+      content: '通知中的活動舊留言',
+      createdAt: null,
+    });
+    commentsHookMock.mockReturnValue(
+      makeComments({
+        comments: [
+          {
+            id: 'event-comment-newer',
+            authorUid: 'runner-new',
+            content: '一般活動留言',
+            createdAt: null,
+          },
+        ],
+      }),
+    );
+
+    renderWithAuth(makeUser());
+
+    expect(await screen.findByText('通知中的活動舊留言')).toBeInTheDocument();
+    expect(screen.getByText('通知中的留言')).toBeInTheDocument();
+    const cards = screen.getAllByTestId('comment-card');
+    expect(cards.map((card) => card.textContent)).toEqual([
+      '通知中的活動舊留言',
+      '一般活動留言',
+    ]);
+    expect(eventGetCommentByIdMock).toHaveBeenCalledWith('event-1', 'event-comment-old');
+  });
+
   it('scrolls to the locally submitted event comment id after a successful submit', async () => {
     const user = userEvent.setup();
     currentSearchParams = new URLSearchParams('commentId=event-comment-from-url');
@@ -417,6 +464,92 @@ describe('CommentSection event composer submit wiring', () => {
     await waitFor(() =>
       expect(commentScrollTargetMock).toHaveBeenLastCalledWith('event-comment-new'),
     );
+  });
+
+  it('lets a locally submitted event comment override the URL target pin', async () => {
+    const user = userEvent.setup();
+    currentSearchParams = new URLSearchParams('commentId=event-comment-from-url');
+    eventGetCommentByIdMock.mockResolvedValue({
+      id: 'event-comment-from-url',
+      authorUid: 'runner-old',
+      authorName: '通知留言者',
+      authorPhotoURL: 'https://example.test/old.png',
+      content: '通知中的舊活動留言',
+      createdAt: null,
+    });
+    const handleSubmit = vi.fn(async () => {
+      const onSuccess = commentMutationsHookMock.mock.calls.at(-1)?.[3];
+      onSuccess?.('event-comment-new');
+      return true;
+    });
+    commentMutationsHookMock.mockReturnValue(makeMutations({ handleSubmit }));
+    renderWithAuth(makeUser());
+
+    expect(await screen.findByText('通知中的舊活動留言')).toBeInTheDocument();
+
+    await user.type(screen.getByRole('textbox', { name: '留言' }), '一起跑吧');
+    await user.click(screen.getByRole('button', { name: '送出留言' }));
+
+    await waitFor(() =>
+      expect(commentScrollTargetMock).toHaveBeenLastCalledWith('event-comment-new'),
+    );
+    expect(screen.queryByText('通知中的舊活動留言')).not.toBeInTheDocument();
+  });
+
+  it('updates the fetched pinned event comment through the mutation callback wiring', async () => {
+    currentSearchParams = new URLSearchParams('commentId=event-comment-from-url');
+    eventGetCommentByIdMock.mockResolvedValue({
+      id: 'event-comment-from-url',
+      authorUid: 'user-1',
+      authorName: '通知留言者',
+      authorPhotoURL: 'https://example.test/old.png',
+      content: '編輯前舊活動留言',
+      createdAt: null,
+    });
+
+    renderWithAuth(makeUser());
+    expect(await screen.findByText('編輯前舊活動留言')).toBeInTheDocument();
+
+    const mutationOptions = commentMutationsHookMock.mock.calls.at(-1)?.[4];
+    await waitFor(() => expect(mutationOptions?.onCommentUpdated).toEqual(expect.any(Function)));
+    act(() => {
+      mutationOptions.onCommentUpdated({
+        id: 'event-comment-from-url',
+        authorUid: 'user-1',
+        authorName: '通知留言者',
+        authorPhotoURL: 'https://example.test/old.png',
+        content: '編輯後舊活動留言',
+        createdAt: null,
+        isEdited: true,
+      });
+    });
+
+    expect(screen.getByText('編輯後舊活動留言')).toBeInTheDocument();
+    expect(screen.queryByText('編輯前舊活動留言')).not.toBeInTheDocument();
+  });
+
+  it('removes the fetched pinned event comment through the mutation callback wiring', async () => {
+    currentSearchParams = new URLSearchParams('commentId=event-comment-from-url');
+    eventGetCommentByIdMock.mockResolvedValue({
+      id: 'event-comment-from-url',
+      authorUid: 'user-1',
+      authorName: '通知留言者',
+      authorPhotoURL: 'https://example.test/old.png',
+      content: '要刪除的舊活動留言',
+      createdAt: null,
+    });
+
+    renderWithAuth(makeUser());
+    expect(await screen.findByText('要刪除的舊活動留言')).toBeInTheDocument();
+
+    const mutationOptions = commentMutationsHookMock.mock.calls.at(-1)?.[4];
+    await waitFor(() => expect(mutationOptions?.onCommentDeleted).toEqual(expect.any(Function)));
+    act(() => {
+      mutationOptions.onCommentDeleted('event-comment-from-url');
+    });
+
+    expect(screen.queryByText('要刪除的舊活動留言')).not.toBeInTheDocument();
+    expect(screen.getByText('還沒有人留言')).toBeInTheDocument();
   });
 
   it('keeps the URL event scroll target when submit fails', async () => {

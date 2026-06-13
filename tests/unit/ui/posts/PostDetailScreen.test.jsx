@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -52,7 +54,11 @@ vi.mock('@/components/CommentInput', () => ({
 }));
 
 vi.mock('@/components/CommentCard', () => ({
-  default: ({ comment }) => <article>{comment.content}</article>,
+  default: ({ comment }) => (
+    <article id={comment.id} data-testid="comment-card">
+      {comment.content}
+    </article>
+  ),
 }));
 
 vi.mock('@/components/CommentEditModal', () => ({
@@ -219,6 +225,35 @@ describe('PostDetailScreen comment composer', () => {
     expect(commentsSection.className).toEqual(
       expect.stringContaining('commentsWithComposerReserve'),
     );
+  });
+
+  it('renders the pinned notification comment before normal post comments', () => {
+    renderScreen({
+      highlightedCommentId: 'comment-old',
+      pinnedComment: {
+        id: 'comment-old',
+        authorUid: 'runner-old',
+        authorName: '舊留言者',
+        authorPhotoURL: 'https://example.test/old.png',
+        content: '通知中的文章舊留言',
+        createdAt: null,
+      },
+      visibleComments: [
+        {
+          id: 'comment-newer',
+          authorUid: 'runner-new',
+          content: '一般文章留言',
+          createdAt: null,
+        },
+      ],
+    });
+
+    expect(screen.getByText('通知中的留言')).toBeInTheDocument();
+    const cards = screen.getAllByTestId('comment-card');
+    expect(cards.map((card) => card.textContent)).toEqual([
+      '通知中的文章舊留言',
+      '一般文章留言',
+    ]);
   });
 
   it('passes authenticated users without a usable photoURL to the shared fallback-avatar path', () => {

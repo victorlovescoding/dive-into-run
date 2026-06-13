@@ -1,14 +1,18 @@
-import { act, renderHook } from '@testing-library/react';
+// @vitest-environment jsdom
+
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import usePostComments from '../../../src/runtime/hooks/usePostComments';
 
 const mocks = vi.hoisted(() => ({
   addComment: vi.fn(),
+  deleteComment: vi.fn(),
   getCommentById: vi.fn(),
   notifyPostCommentReply: vi.fn(),
   notifyPostNewComment: vi.fn(),
   searchParamCommentId: null,
   showToast: vi.fn(),
+  updateComment: vi.fn(),
   useCommentScrollTarget: vi.fn(),
 }));
 
@@ -39,10 +43,10 @@ vi.mock('../../../src/runtime/hooks/useCommentScrollTarget', () => ({
 
 vi.mock('../../../src/runtime/client/use-cases/post-use-cases', () => ({
   addComment: mocks.addComment,
-  deleteComment: vi.fn(),
+  deleteComment: mocks.deleteComment,
   fetchCommentHistory: vi.fn(),
   getCommentById: mocks.getCommentById,
-  updateComment: vi.fn(),
+  updateComment: mocks.updateComment,
 }));
 
 vi.mock('../../../src/runtime/client/use-cases/notification-use-cases', () => ({
@@ -114,8 +118,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.searchParamCommentId = null;
   mocks.getCommentById.mockResolvedValue(null);
+  mocks.deleteComment.mockResolvedValue(undefined);
+  mocks.updateComment.mockResolvedValue(undefined);
   mocks.notifyPostCommentReply.mockResolvedValue(undefined);
   mocks.notifyPostNewComment.mockResolvedValue(undefined);
+  window.confirm = vi.fn(() => true);
 });
 
 describe('usePostComments submit runtime', () => {
@@ -125,6 +132,82 @@ describe('usePostComments submit runtime', () => {
     renderUsePostComments();
 
     expect(mocks.useCommentScrollTarget).toHaveBeenCalledWith('comment-from-url');
+  });
+
+  test('fetches a URL target missing from initial post comments and exposes it as pinned', async () => {
+    mocks.searchParamCommentId = 'comment-old';
+    mocks.getCommentById.mockResolvedValueOnce({
+      id: 'comment-old',
+      authorUid: 'runner-old',
+      authorName: '舊留言者',
+      authorImgURL: 'https://example.test/old.png',
+      comment: '初始頁沒有的舊留言',
+      createdAt: null,
+      updatedAt: null,
+      isEdited: false,
+    });
+    const { result } = renderUsePostComments();
+
+    act(() => {
+      result.current.setInitialComments({
+        comments: [
+          {
+            id: 'comment-newer',
+            authorUid: 'runner-new',
+            authorName: '新留言者',
+            comment: '初始頁留言',
+            createdAt: null,
+          },
+        ],
+        nextCursor: null,
+      });
+    });
+
+    await waitFor(() => expect(result.current.pinnedComment?.id).toBe('comment-old'));
+
+    expect(mocks.getCommentById).toHaveBeenCalledWith('post-1', 'comment-old');
+    expect(result.current.pinnedComment).toMatchObject({
+      id: 'comment-old',
+      authorUid: 'runner-old',
+      authorName: '舊留言者',
+      authorPhotoURL: 'https://example.test/old.png',
+      content: '初始頁沒有的舊留言',
+      isAuthor: false,
+    });
+    expect(result.current.visibleComments.map((commentItem) => commentItem.id)).toEqual([
+      'comment-newer',
+    ]);
+    expect(result.current.activeTargetId).toBe('comment-old');
+  });
+
+  test('keeps post target loading silent when the URL target is missing or hidden', async () => {
+    mocks.searchParamCommentId = 'comment-hidden';
+    mocks.getCommentById.mockResolvedValueOnce(null);
+    const { result } = renderUsePostComments();
+
+    act(() => {
+      result.current.setInitialComments({
+        comments: [
+          {
+            id: 'comment-newer',
+            authorUid: 'runner-new',
+            authorName: '新留言者',
+            comment: '初始頁留言',
+            createdAt: null,
+          },
+        ],
+        nextCursor: null,
+      });
+    });
+
+    await waitFor(() =>
+      expect(mocks.getCommentById).toHaveBeenCalledWith('post-1', 'comment-hidden'),
+    );
+
+    expect(result.current.pinnedComment).toBeNull();
+    expect(result.current.visibleComments.map((commentItem) => commentItem.id)).toEqual([
+      'comment-newer',
+    ]);
   });
 
   test('submits the provided content string, exposes pending state, and returns true on success', async () => {
@@ -214,6 +297,107 @@ describe('usePostComments submit runtime', () => {
     });
 
     expect(mocks.useCommentScrollTarget).toHaveBeenLastCalledWith('comment-new');
+  });
+
+  test('lets a locally submitted post comment override the URL target pin', async () => {
+    mocks.searchParamCommentId = 'comment-from-url';
+    mocks.addComment.mockResolvedValue({ id: 'comment-new' });
+    mocks.getCommentById.mockImplementation((_postId, commentId) => {
+      if (commentId === 'comment-from-url') {
+        return Promise.resolve({
+          id: 'comment-from-url',
+          authorUid: 'runner-old',
+          authorName: '通知留言者',
+          comment: '通知中的舊留言',
+          createdAt: null,
+        });
+      }
+      return Promise.resolve({
+        id: 'comment-new',
+        authorUid: user.uid,
+        authorName: user.name,
+        authorPhotoURL: user.photoURL,
+        comment: 'Scroll to me',
+        createdAt: null,
+      });
+    });
+    const { result } = renderUsePostComments();
+
+    act(() => {
+      result.current.setInitialComments({ comments: [], nextCursor: null });
+    });
+    await waitFor(() => expect(result.current.pinnedComment?.id).toBe('comment-from-url'));
+
+    await act(async () => {
+      await result.current.handleSubmitComment('Scroll to me');
+    });
+
+    expect(result.current.activeTargetId).toBe('comment-new');
+    expect(result.current.pinnedComment).toBeNull();
+    expect(mocks.useCommentScrollTarget).toHaveBeenLastCalledWith('comment-new');
+  });
+
+  test('updates a fetched pinned post comment after editing it', async () => {
+    mocks.searchParamCommentId = 'comment-old';
+    mocks.getCommentById.mockResolvedValueOnce({
+      id: 'comment-old',
+      authorUid: user.uid,
+      authorName: user.name,
+      authorImgURL: 'https://example.test/old.png',
+      comment: '編輯前通知留言',
+      createdAt: null,
+      updatedAt: null,
+      isEdited: false,
+    });
+    const { result } = renderUsePostComments();
+
+    act(() => {
+      result.current.setInitialComments({ comments: [], nextCursor: null });
+    });
+    await waitFor(() => expect(result.current.pinnedComment?.id).toBe('comment-old'));
+
+    act(() => {
+      result.current.handleEditComment('comment-old');
+    });
+    await act(async () => {
+      await result.current.handleEditSave('編輯後通知留言');
+    });
+
+    expect(mocks.updateComment).toHaveBeenCalledWith('post-1', 'comment-old', {
+      comment: '編輯後通知留言',
+      currentComment: '編輯前通知留言',
+    });
+    expect(result.current.pinnedComment).toMatchObject({
+      id: 'comment-old',
+      content: '編輯後通知留言',
+      comment: '編輯後通知留言',
+      isEdited: true,
+    });
+  });
+
+  test('removes a fetched pinned post comment after deleting it', async () => {
+    mocks.searchParamCommentId = 'comment-old';
+    mocks.getCommentById.mockResolvedValueOnce({
+      id: 'comment-old',
+      authorUid: user.uid,
+      authorName: user.name,
+      comment: '要刪除的通知留言',
+      createdAt: null,
+    });
+    const { result } = renderUsePostComments();
+
+    act(() => {
+      result.current.setInitialComments({ comments: [], nextCursor: null });
+    });
+    await waitFor(() => expect(result.current.pinnedComment?.id).toBe('comment-old'));
+
+    await act(async () => {
+      await result.current.handleDeleteComment('comment-old');
+    });
+
+    expect(mocks.deleteComment).toHaveBeenCalledWith('post-1', 'comment-old', user.uid);
+    expect(result.current.pinnedComment).toBeNull();
+    expect(result.current.visibleComments).toEqual([]);
   });
 
   test('keeps the URL scroll target when post comment submit fails', async () => {

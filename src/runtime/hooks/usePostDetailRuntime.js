@@ -66,6 +66,10 @@ export default function usePostDetailRuntime(postId) {
 
   const {
     comments,
+    pinnedComment,
+    visibleComments,
+    activeTargetId,
+    isLoadingTargetComment,
     comment,
     historyComment,
     historyEntries,
@@ -399,6 +403,10 @@ export default function usePostDetailRuntime(postId) {
     error,
     shareUrl,
     comments,
+    pinnedComment,
+    visibleComments,
+    activeTargetId,
+    isLoadingTargetComment,
     highlightedCommentId,
     comment,
     historyComment,
