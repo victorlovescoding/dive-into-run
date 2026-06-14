@@ -1,5 +1,8 @@
 import { Timestamp as FirestoreTimestamp, deleteField, serverTimestamp } from 'firebase/firestore';
 import {
+  EVENT_STARTED_LOCK_ERROR_CODE,
+  EVENT_STARTED_LOCK_ERROR_MESSAGE,
+  EVENT_STARTED_LOCK_ERROR_STATUS,
   buildCreateEventPayload,
   buildJoinEventPlan,
   buildLeaveEventPlan,
@@ -24,6 +27,94 @@ import {
 } from '@/repo/client/firebase-events-repo';
 
 export { EVENT_NOT_FOUND_MESSAGE } from '@/service/event-service';
+
+export const EVENT_STARTED_LOCK_METADATA = Object.freeze({
+  code: EVENT_STARTED_LOCK_ERROR_CODE,
+  status: EVENT_STARTED_LOCK_ERROR_STATUS,
+  message: EVENT_STARTED_LOCK_ERROR_MESSAGE,
+});
+
+/**
+ * 判斷錯誤是否為 started-lock rejection。
+ * @param {unknown} error - 例外物件。
+ * @returns {boolean} true when the error carries started-lock classification.
+ */
+function isEventStartedLockError(error) {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === EVENT_STARTED_LOCK_ERROR_CODE,
+  );
+}
+
+/**
+ * 判斷錯誤是否為 Firestore permission-denied。
+ * @param {unknown} error - 例外物件。
+ * @returns {boolean} true when the error is permission-denied.
+ */
+function isPermissionDeniedError(error) {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'permission-denied',
+  );
+}
+
+/**
+ * 取出更新 actor 的 UID。
+ * @param {string | { uid?: string } | null | undefined} actor - 執行更新的使用者。
+ * @returns {string} 正規化後的 UID，沒有 actor 時回傳空字串。
+ */
+function getActorUid(actor) {
+  if (typeof actor === 'string') return actor.trim();
+  return String(actor?.uid || '').trim();
+}
+
+/**
+ * 將活動開始時間轉成毫秒。
+ * @param {Date | number | string | { toDate?: () => Date } | null | undefined} value - 活動開始時間。
+ * @returns {number | null} 有效毫秒時間戳，無效時回傳 null。
+ */
+function toEventTimeMs(value) {
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (value && typeof value === 'object' && typeof value.toDate === 'function') {
+    return value.toDate().getTime();
+  }
+  const timeMs = new Date(String(value || '')).getTime();
+  return Number.isNaN(timeMs) ? null : timeMs;
+}
+
+/**
+ * 判斷 host delete 是否應先以 started-lock 拒絕。
+ * @param {Record<string, unknown> | null | undefined} eventData - 目前活動資料。
+ * @param {string} actorUid - 執行刪除的使用者 UID。
+ * @returns {boolean} true when the actor owns an active event that has started.
+ */
+function shouldReturnStartedLockForDelete(eventData, actorUid) {
+  if (!actorUid || !isPublicEventRecordVisible(eventData)) return false;
+  if (String(eventData?.hostUid || '') !== actorUid) return false;
+  const eventTimeMs = toEventTimeMs(
+    /** @type {Date | number | string | { toDate?: () => Date } | null | undefined} */ (
+      eventData?.time
+    ),
+  );
+  return eventTimeMs !== null && Date.now() >= eventTimeMs;
+}
+
+/**
+ * @typedef {object} EventStartedLockMetadata
+ * @property {typeof EVENT_STARTED_LOCK_ERROR_CODE} code - Started-lock error code.
+ * @property {typeof EVENT_STARTED_LOCK_ERROR_STATUS} status - Started-lock result status.
+ * @property {typeof EVENT_STARTED_LOCK_ERROR_MESSAGE} message - User-facing started-lock reason.
+ */
+
+/**
+ * @typedef {object} EventMutationResultMetadata
+ * @property {EventStartedLockMetadata | null} startedLock - Started-lock metadata, null when not blocked.
+ */
 
 /**
  * 建立活動。
@@ -189,9 +280,11 @@ export async function fetchMyJoinedEventsForIds(uid, eventIds) {
  * 更新活動資料。
  * @param {string} eventId - 活動 ID。
  * @param {object} updatedFields - 要更新的欄位。
- * @returns {Promise<{ ok: boolean }>} 更新結果。
+ * @param {string | { uid?: string } | null} [actor] - 執行更新的使用者；
+ * 提供時會先檢查 host 權限。
+ * @returns {Promise<{ ok: boolean } & EventMutationResultMetadata>} 更新結果。
  */
-export async function updateEvent(eventId, updatedFields) {
+export async function updateEvent(eventId, updatedFields, actor = null) {
   const deleteFieldValue =
     updatedFields &&
     typeof updatedFields === 'object' &&
@@ -199,25 +292,62 @@ export async function updateEvent(eventId, updatedFields) {
     updatedFields.route === null
       ? deleteField()
       : undefined;
+  const actorUid = getActorUid(actor);
 
-  return runEventUpdateTransaction(String(eventId), (currentEventData) => ({
-    result: { ok: true },
-    updates: prepareEventUpdateFields(
-      String(eventId),
-      updatedFields,
-      currentEventData,
-      deleteFieldValue,
-    ),
-  }));
+  try {
+    return await runEventUpdateTransaction(String(eventId), (currentEventData) => ({
+      result: { ok: true, startedLock: null },
+      updates: prepareEventUpdateFields(
+        String(eventId),
+        updatedFields,
+        currentEventData,
+        deleteFieldValue,
+        { actorUid },
+      ),
+    }));
+  } catch (error) {
+    if (isEventStartedLockError(error)) {
+      return { ok: false, startedLock: EVENT_STARTED_LOCK_METADATA };
+    }
+    throw error;
+  }
 }
 
 /**
  * Soft deletes an event document.
  * @param {string} eventId - 活動 ID。
  * @param {string | { uid?: string, name?: string, photoURL?: string }} actor - User performing the delete.
- * @returns {Promise<{ ok: boolean, status: 'deleted' | 'already_deleted' }>} 刪除結果。
+ * @returns {Promise<({
+ *   ok: true,
+ *   status: 'deleted' | 'already_deleted'
+ * } | {
+ *   ok: false
+ * }) & EventMutationResultMetadata>} 刪除結果。
  */
 export async function deleteEvent(eventId, actor) {
   if (!eventId) throw new Error('deleteEvent: eventId is required');
-  return deleteEventTree(String(eventId), actor);
+  const normalizedEventId = String(eventId);
+  const actorUid = getActorUid(actor);
+  const snapshot = await fetchEventDocument(normalizedEventId);
+  const currentEventData = snapshot?.data?.();
+
+  if (shouldReturnStartedLockForDelete(currentEventData, actorUid)) {
+    return { ok: false, startedLock: EVENT_STARTED_LOCK_METADATA };
+  }
+
+  try {
+    const result = await deleteEventTree(normalizedEventId, actor);
+    return {
+      ...result,
+      startedLock: null,
+    };
+  } catch (error) {
+    if (isEventStartedLockError(error)) {
+      return { ok: false, startedLock: EVENT_STARTED_LOCK_METADATA };
+    }
+    if (isPermissionDeniedError(error) && shouldReturnStartedLockForDelete(currentEventData, actorUid)) {
+      return { ok: false, startedLock: EVENT_STARTED_LOCK_METADATA };
+    }
+    throw error;
+  }
 }

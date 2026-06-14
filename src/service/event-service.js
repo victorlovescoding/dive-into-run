@@ -5,6 +5,10 @@ import { isSoftDeletedRecord } from '@/repo/soft-delete-retention';
 
 export { EVENT_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
 
+export const EVENT_STARTED_LOCK_ERROR_CODE = 'event_started_lock';
+export const EVENT_STARTED_LOCK_ERROR_STATUS = 'started_locked';
+export const EVENT_STARTED_LOCK_ERROR_MESSAGE = '活動已開始，無法編輯或刪除。';
+
 /**
  * @typedef {import('firebase/firestore').Timestamp} Timestamp
  */
@@ -19,6 +23,12 @@ export { EVENT_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
  * @property {number} [maxParticipants] - 人數上限。
  * @property {number} [participantsCount] - 目前參加人數。
  * @property {number} [remainingSeats] - 剩餘名額。
+ */
+
+/**
+ * @typedef {object} EventUpdateValidationContext
+ * @property {string | null | undefined} [actorUid] - 執行更新的使用者 UID。
+ * @property {Date | number | string} [now] - 評估活動是否已開始的目前時間。
  */
 
 /**
@@ -166,6 +176,14 @@ export function normalizeEventPayload(raw) {
     maxParticipants,
     paceSec: paceMin * 60 + paceSecPart,
   };
+}
+
+/**
+ * 建立活動已開始的標準錯誤，供 service/runtime use-case 對齊 result metadata。
+ * @returns {Error & { code: string, status: string }} Started-lock error.
+ */
+export function createEventStartedLockError() {
+  return Object.assign(new Error(EVENT_STARTED_LOCK_ERROR_MESSAGE), { code: EVENT_STARTED_LOCK_ERROR_CODE, status: EVENT_STARTED_LOCK_ERROR_STATUS });
 }
 
 /**
@@ -471,19 +489,60 @@ export function buildLeaveEventPlan({ eventData, participantExists }) {
 }
 
 /**
+ * 將 service 可接受的日期值轉成毫秒時間戳。
+ * @param {Date | number | string | FirestoreDateLike | null | undefined} value - 日期候選值。
+ * @returns {number | null} 有效毫秒時間戳，無效時回傳 null。
+ */
+function toDateMs(value) {
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (value && typeof value === 'object' && typeof value.toDate === 'function') return value.toDate().getTime();
+  const date = new Date(String(value || '')); return Number.isNaN(date.getTime()) ? null : date.getTime();
+}
+
+/**
+ * 確認 event update 由 host 操作且活動尚未開始。
+ * @param {object} currentEventData - 目前活動文件資料。
+ * @param {EventUpdateValidationContext} [validationContext] - 更新驗證上下文。
+ * @returns {void}
+ */
+function assertHostCanEditBeforeStart(currentEventData, validationContext = {}) {
+  const actorUid = String(validationContext.actorUid || '').trim();
+  if (!actorUid) return;
+  if (String(currentEventData?.hostUid || '') !== actorUid) {
+    throw Object.assign(new Error('permission-denied'), { code: 'permission-denied' });
+  }
+  const nowMs = toDateMs(validationContext.now ?? Date.now());
+  const eventTimeMs = toDateMs(currentEventData?.time);
+  if (nowMs !== null && eventTimeMs !== null && nowMs >= eventTimeMs) {
+    throw createEventStartedLockError();
+  }
+}
+
+/**
+ * 確認更新後活動開始時間仍在目前時間之後。
+ * @param {Date | number | string | FirestoreDateLike} eventTime - 更新後活動開始時間。
+ * @param {EventUpdateValidationContext} [validationContext] - 更新驗證上下文。
+ * @returns {void}
+ */
+function assertResultingStartTimeIsFuture(eventTime, validationContext = {}) {
+  const nowMs = toDateMs(validationContext.now ?? Date.now());
+  const eventTimeMs = toDateMs(eventTime);
+  if (nowMs !== null && eventTimeMs !== null && eventTimeMs <= nowMs) {
+    throw new Error('活動開始時間必須晚於目前時間');
+  }
+}
+
+/**
  * 建立 update event transaction 的 payload。
  * @param {string} eventId - 活動 ID。
  * @param {object} updatedFields - 要更新的欄位。
  * @param {object} currentEventData - 目前活動文件資料。
  * @param {unknown} [deleteFieldValue] - 由 runtime 注入的 delete sentinel。
+ * @param {EventUpdateValidationContext} [validationContext] - 更新驗證上下文。
  * @returns {object} 可直接 tx.update 的 payload。
  */
-export function prepareEventUpdateFields(
-  eventId,
-  updatedFields,
-  currentEventData,
-  deleteFieldValue,
-) {
+export function prepareEventUpdateFields(eventId, updatedFields, currentEventData, deleteFieldValue, validationContext = {}) {
   if (!eventId) throw new Error('updateEvent: eventId is required');
   if (
     !updatedFields ||
@@ -493,6 +552,8 @@ export function prepareEventUpdateFields(
   ) {
     throw new Error('updateEvent: updatedFields must be a non-empty object');
   }
+
+  assertHostCanEditBeforeStart(currentEventData, validationContext);
 
   const updates = { ...updatedFields };
 
@@ -513,6 +574,8 @@ export function prepareEventUpdateFields(
     if (effectiveDeadline.toDate().getTime() >= effectiveTime.toDate().getTime()) {
       throw new Error('報名截止時間必須在活動開始時間之前');
     }
+
+    assertResultingStartTimeIsFuture(effectiveTime, validationContext);
   }
 
   if ('route' in updates && updates.route === null && deleteFieldValue !== undefined) {

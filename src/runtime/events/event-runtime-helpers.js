@@ -1,3 +1,9 @@
+import {
+  EVENT_STARTED_LOCK_ERROR_CODE,
+  EVENT_STARTED_LOCK_ERROR_MESSAGE,
+  EVENT_STARTED_LOCK_ERROR_STATUS,
+} from '@/service/event-service';
+
 /**
  * 將陣列分割為指定大小的子陣列。
  * @template T
@@ -51,4 +57,49 @@ export function toMs(value) {
     return value.toDate().getTime();
   }
   return null;
+}
+
+/**
+ * 判斷 client 目前時間是否已達活動開始時間；這只作 UI 提示，非權威授權。
+ * @param {{ time?: string | { toDate?: () => Date } } | null | undefined} event - 活動資料。
+ * @param {Date | number | string} [now] - 評估用目前時間，預設為現在。
+ * @returns {boolean} true when now is equal to or after event.time.
+ */
+export function isEventStarted(event, now = Date.now()) {
+  const eventTimeMs = toMs(event?.time);
+  const nowMs = now instanceof Date ? now.getTime() : new Date(now).getTime();
+
+  if (eventTimeMs === null || Number.isNaN(nowMs)) return false;
+  return nowMs >= eventTimeMs;
+}
+
+/**
+ * 評估 host 編輯入口是否應因活動已開始而鎖定。
+ * @param {{ time?: string | { toDate?: () => Date } } | null | undefined} event - 活動資料。
+ * @param {Date | number | string} [now] - 評估用目前時間，預設為現在。
+ * @returns {{
+ *   locked: boolean,
+ *   startedLock: null | {
+ *     code: typeof EVENT_STARTED_LOCK_ERROR_CODE,
+ *     status: typeof EVENT_STARTED_LOCK_ERROR_STATUS,
+ *     message: typeof EVENT_STARTED_LOCK_ERROR_MESSAGE
+ *   }
+ * }} edit started-lock 評估結果。
+ */
+export function evaluateEventEditStartedLock(event, now = Date.now()) {
+  if (!isEventStarted(event, now)) {
+    return {
+      locked: false,
+      startedLock: null,
+    };
+  }
+
+  return {
+    locked: true,
+    startedLock: {
+      code: EVENT_STARTED_LOCK_ERROR_CODE,
+      status: EVENT_STARTED_LOCK_ERROR_STATUS,
+      message: EVENT_STARTED_LOCK_ERROR_MESSAGE,
+    },
+  };
 }

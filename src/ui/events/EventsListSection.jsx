@@ -7,6 +7,7 @@ import BookmarkButton from '@/components/BookmarkButton';
 import EventActionButtons from '@/components/EventActionButtons';
 import EventCardMenu from '@/components/EventCardMenu';
 import UserLink from '@/components/UserLink';
+import { evaluateEventEditStartedLock } from '@/runtime/events/event-runtime-helpers';
 import { formatDateTime, formatPace, renderRouteLabel } from './event-formatters';
 import styles from './EventsPageScreen.module.css';
 
@@ -136,6 +137,10 @@ export default function EventsListSection({
   const eventCards = events.map((event) => {
     const eventId = String(event.id);
     const routeLabel = renderRouteLabel(event);
+    const isHost = user?.uid === event.hostUid;
+    const hostStartedLock = isHost ? evaluateEventEditStartedLock(event).startedLock : null;
+    const editDisabledReason = hostStartedLock?.message || '';
+    const deleteDisabledReason = hostStartedLock?.message || '';
 
     return (
       <article
@@ -179,6 +184,8 @@ export default function EventsListSection({
               currentUserUid={user?.uid || null}
               onEdit={onEdit}
               onDelete={onDelete}
+              editDisabledReason={editDisabledReason}
+              deleteDisabledReason={deleteDisabledReason}
             />
           </div>
         </div>

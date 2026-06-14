@@ -14,6 +14,45 @@ service cloud.firestore {
       return ['deletedAt', 'deletedByUid', 'deletedPurgeAt'];
     }
 
+    function eventBodyFields() {
+      return [
+        'title',
+        'time',
+        'registrationDeadline',
+        'city',
+        'district',
+        'meetPlace',
+        'route',
+        'distanceKm',
+        'maxParticipants',
+        'paceSec',
+        'runType',
+        'description'
+      ];
+    }
+
+    function eventCounterFields() {
+      return ['remainingSeats', 'participantsCount'];
+    }
+
+    function hostEventBodyUpdateFields() {
+      return [
+        'title',
+        'time',
+        'registrationDeadline',
+        'city',
+        'district',
+        'meetPlace',
+        'route',
+        'distanceKm',
+        'maxParticipants',
+        'paceSec',
+        'runType',
+        'description',
+        'remainingSeats'
+      ];
+    }
+
     function softDeleteRetentionWindow() {
       return duration.value(90, 'd');
     }
@@ -156,17 +195,18 @@ service cloud.firestore {
     }
 
     function isSoftDeleteUpdateBy(actorUid) {
+      let deletedAt = request.resource.data.get('deletedAt', request.time);
+      let deletedPurgeAt = request.resource.data.get('deletedPurgeAt', request.time);
       return !resource.data.keys().hasAny(softDeleteFields())
         && request.resource.data.keys().hasAll(softDeleteFields())
         && request.resource.data.diff(resource.data).addedKeys().hasAll(softDeleteFields())
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(softDeleteFields())
-        && request.resource.data.deletedByUid == actorUid
-        && request.resource.data.deletedAt is timestamp
-        && request.resource.data.deletedPurgeAt is timestamp
-        && request.resource.data.deletedPurgeAt
-          == request.resource.data.deletedAt + softDeleteRetentionWindow()
-        && request.resource.data.deletedAt >= request.time - softDeleteRequestSkewWindow()
-        && request.resource.data.deletedAt <= request.time + softDeleteRequestSkewWindow();
+        && request.resource.data.get('deletedByUid', '') == actorUid
+        && deletedAt is timestamp
+        && deletedPurgeAt is timestamp
+        && deletedPurgeAt == deletedAt + softDeleteRetentionWindow()
+        && deletedAt >= request.time - softDeleteRequestSkewWindow()
+        && deletedAt <= request.time + softDeleteRequestSkewWindow();
     }
 
     function isPostCounterUpdate() {
@@ -182,6 +222,67 @@ service cloud.firestore {
           || (request.resource.data.likesCount is number
               && request.resource.data.likesCount >= 0)
         );
+    }
+
+    function isEventCounterUpdate() {
+      let remainingSeats = request.resource.data.get('remainingSeats', -1);
+      let participantsCount = request.resource.data.get('participantsCount', -1);
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(eventCounterFields())
+        && remainingSeats is number
+        && participantsCount is number
+        && remainingSeats >= 0
+        && participantsCount >= 0
+        && (remainingSeats + participantsCount) == resource.data.maxParticipants;
+    }
+
+    function isHostRemainingSeatsRecalculation() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['remainingSeats'])
+        || (
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['maxParticipants'])
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['participantsCount'])
+          && request.resource.data.maxParticipants is number
+          && resource.data.participantsCount is number
+          && request.resource.data.remainingSeats is number
+          && request.resource.data.remainingSeats
+            == request.resource.data.maxParticipants - resource.data.participantsCount
+          && request.resource.data.remainingSeats >= 0
+        );
+    }
+
+    function isHostEventBodyUpdateBeforeStart() {
+      return resource.data.keys().hasAll(['hostUid', 'time'])
+        && request.resource.data.keys().hasAll(['hostUid', 'time'])
+        && isSignedIn()
+        && request.auth.uid == resource.data.hostUid
+        && isActiveData(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(hostEventBodyUpdateFields())
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(accountDeletionManagedFields())
+        && !affectsSoftDeleteFields()
+        && resource.data.time is timestamp
+        && request.resource.data.time is timestamp
+        && request.time < resource.data.time
+        && request.resource.data.time > request.time
+        && isHostRemainingSeatsRecalculation()
+        && (!request.resource.data.keys().hasAny(['maxParticipants'])
+            || !('participantsCount' in resource.data)
+            || request.resource.data.maxParticipants >= resource.data.participantsCount);
+    }
+
+    function isHostEventSoftDeleteBeforeStart() {
+      return resource.data.keys().hasAll(['hostUid', 'time'])
+        && request.resource.data.keys().hasAll(['hostUid', 'time'])
+        && isSignedIn()
+        && request.auth.uid == resource.data.hostUid
+        && isActiveData(resource.data)
+        && resource.data.time is timestamp
+        && request.time < resource.data.time
+        && isSoftDeleteUpdateBy(request.auth.uid);
     }
 
     function isValidPostHistoryCreate() {
@@ -506,31 +607,15 @@ service cloud.firestore {
 
       allow delete: if false;
 
-      // 主揪：可更新任何欄位（但 maxParticipants 不可低於目前報名人數）；非主揪：只能更新名額相關欄位
+      // 主揪：開始前可更新活動本體；非本體 counter 更新維持獨立分支。
       allow update: if (
-        isSignedIn() && request.auth.uid == resource.data.hostUid
-        && isActiveData(resource.data)
-        && !request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(accountDeletionManagedFields())
-        && !affectsSoftDeleteFields()
-        && (!request.resource.data.keys().hasAny(['maxParticipants'])
-            || !('participantsCount' in resource.data)
-            || request.resource.data.maxParticipants >= resource.data.participantsCount)
+        isHostEventBodyUpdateBeforeStart()
       ) || (
-        isSignedIn()
-        && request.auth.uid == resource.data.hostUid
-        && isSoftDeleteUpdateBy(request.auth.uid)
+        isHostEventSoftDeleteBeforeStart()
       ) || (
         isSignedIn()
         && isActiveData(resource.data)
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['remainingSeats', 'participantsCount'])
-        && request.resource.data.remainingSeats is number
-        && request.resource.data.participantsCount is number
-        && request.resource.data.remainingSeats >= 0
-        && request.resource.data.participantsCount >= 0
-        && (request.resource.data.remainingSeats + request.resource.data.participantsCount)
-            == resource.data.maxParticipants
+        && isEventCounterUpdate()
       );
 
       // participants 子集合

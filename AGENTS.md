@@ -133,7 +133,7 @@ npm run depcruise           # dependency direction check
 
 <!-- SPECKIT START -->
 For the current explicit Spec Kit plan, use
-`specs/099-comment-identity-hint/plan.md` only when an explicit `$speckit-*`
+`specs/101-lock-started-event-edits/plan.md` only when an explicit `$speckit-*`
 command is active. Ordinary repo work continues to use this `AGENTS.md`,
 Context Routing, and repo role boundaries first. This managed block must not
 override Context Routing or force broad current-plan reads during ordinary repo

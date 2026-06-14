@@ -3,7 +3,11 @@
 import { useCallback, useState } from 'react';
 import { createFirestoreTimestamp } from '@/config/client/firebase-timestamp';
 import { toMs, toNumber } from '@/runtime/events/event-runtime-helpers';
-import { buildRoutePayload } from '@/service/event-service';
+import {
+  buildRoutePayload,
+  EVENT_STARTED_LOCK_ERROR_CODE,
+  EVENT_STARTED_LOCK_ERROR_MESSAGE,
+} from '@/service/event-service';
 import { createEvent, deleteEvent, updateEvent } from '@/runtime/client/use-cases/event-use-cases';
 /**
  * @typedef {import('@/service/event-service').EventData} EventData
@@ -59,6 +63,7 @@ export default function useEventMutations({ isMountedRef, setEvents, showToast, 
   const [editingEvent, setEditingEvent] = useState(/** @type {EventData | null} */ (null));
   const [isUpdating, setIsUpdating] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState(/** @type {string | null} */ (null));
+  const [deletingEvent, setDeletingEvent] = useState(/** @type {EventData | null} */ (null));
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
 
   const handleEditEvent = useCallback(
@@ -84,6 +89,15 @@ export default function useEventMutations({ isMountedRef, setEvents, showToast, 
      */
     async (changedData) => {
       const { id, ...fields } = changedData;
+      const actorUid = String(createCtx.hostUid || '').trim();
+      if (!actorUid) {
+        showToast('編輯活動前請先登入', 'error');
+        return;
+      }
+      if (editingEvent?.hostUid && String(editingEvent.hostUid) !== actorUid) {
+        showToast('更新活動失敗，請稍後再試', 'error');
+        return;
+      }
 
       if ('time' in fields || 'registrationDeadline' in fields) {
         const effectiveTime = fields.time ?? editingEvent?.time;
@@ -99,8 +113,23 @@ export default function useEventMutations({ isMountedRef, setEvents, showToast, 
       setIsUpdating(true);
 
       try {
-        await updateEvent(String(id), fields);
+        const updateResult = await updateEvent(String(id), fields, { uid: createCtx.hostUid });
         if (!isMountedRef.current) return;
+        const startedLock = updateResult?.startedLock;
+        if (startedLock) {
+          const message =
+            typeof startedLock.message === 'string'
+              ? startedLock.message
+              : '活動已開始，無法編輯或刪除。';
+          showToast(message, 'error');
+          return;
+        }
+
+        if (updateResult && typeof updateResult === 'object' && updateResult.ok === false) {
+          showToast('更新活動失敗，請稍後再試', 'error');
+          return;
+        }
+
         const mergedFields = { ...fields };
 
         if (typeof mergedFields.time === 'string' && mergedFields.time) {
@@ -139,7 +168,13 @@ export default function useEventMutations({ isMountedRef, setEvents, showToast, 
         }
       }
     },
-    [editingEvent, isMountedRef, setEvents, showToast],
+    [
+      createCtx.hostUid,
+      editingEvent,
+      isMountedRef,
+      setEvents,
+      showToast,
+    ],
   );
 
   const handleDeleteEventRequest = useCallback(
@@ -149,12 +184,14 @@ export default function useEventMutations({ isMountedRef, setEvents, showToast, 
      */
     (event) => {
       setDeletingEventId(String(event.id));
+      setDeletingEvent(event);
     },
     [],
   );
 
   const handleDeleteCancel = useCallback(() => {
     setDeletingEventId(null);
+    setDeletingEvent(null);
   }, []);
 
   const handleDeleteConfirm = useCallback(
@@ -164,20 +201,51 @@ export default function useEventMutations({ isMountedRef, setEvents, showToast, 
      * @returns {Promise<void>}
      */
     async (eventId) => {
+      const actorUid = String(createCtx.hostUid || '').trim();
+      if (!actorUid) {
+        showToast('刪除活動前請先登入', 'error');
+        return;
+      }
+      if (deletingEvent?.hostUid && String(deletingEvent.hostUid) !== actorUid) {
+        showToast('刪除活動失敗，請稍後再試', 'error');
+        return;
+      }
+
       setIsDeletingEvent(true);
       try {
-        await deleteEvent(String(eventId), {
+        const deleteResult = await deleteEvent(String(eventId), {
           uid: createCtx.hostUid,
           name: createCtx.hostName,
           photoURL: createCtx.hostPhotoURL,
         });
         if (!isMountedRef.current) return;
+
+        const startedLock = deleteResult?.startedLock;
+        if (startedLock) {
+          const message =
+            typeof startedLock.message === 'string'
+              ? startedLock.message
+              : EVENT_STARTED_LOCK_ERROR_MESSAGE;
+          showToast(message, 'error');
+          return;
+        }
+
+        if (deleteResult && typeof deleteResult === 'object' && deleteResult.ok === false) {
+          showToast('刪除活動失敗，請稍後再試', 'error');
+          return;
+        }
+
         setEvents((previous) => previous.filter((event) => String(event.id) !== String(eventId)));
         setDeletingEventId(null);
+        setDeletingEvent(null);
         showToast('活動已刪除');
       } catch (error) {
         console.error('刪除活動失敗:', error);
         if (!isMountedRef.current) return;
+        if (error && typeof error === 'object' && error.code === EVENT_STARTED_LOCK_ERROR_CODE) {
+          showToast(EVENT_STARTED_LOCK_ERROR_MESSAGE, 'error');
+          return;
+        }
         showToast('刪除活動失敗，請稍後再試', 'error');
       } finally {
         if (isMountedRef.current) {
@@ -185,7 +253,15 @@ export default function useEventMutations({ isMountedRef, setEvents, showToast, 
         }
       }
     },
-    [createCtx.hostName, createCtx.hostPhotoURL, createCtx.hostUid, isMountedRef, setEvents, showToast],
+    [
+      createCtx.hostName,
+      createCtx.hostPhotoURL,
+      createCtx.hostUid,
+      deletingEvent,
+      isMountedRef,
+      setEvents,
+      showToast,
+    ],
   );
 
   const handleSubmit = useCallback(
