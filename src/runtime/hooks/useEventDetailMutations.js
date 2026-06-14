@@ -6,6 +6,7 @@ import { toMs } from '@/runtime/events/event-runtime-helpers';
 import {
   deleteEvent,
   EVENT_NOT_FOUND_MESSAGE,
+  EVENT_STARTED_LOCK_METADATA,
   fetchParticipants,
   updateEvent,
 } from '@/runtime/client/use-cases/event-use-cases';
@@ -14,6 +15,11 @@ import {
   notifyEventModified,
   notifyEventNewComment,
 } from '@/runtime/client/use-cases/notification-use-cases';
+
+const UPDATE_EVENT_LOGIN_REQUIRED_MESSAGE = '更新活動前請先登入';
+const UPDATE_EVENT_PERMISSION_ERROR_MESSAGE = '更新活動失敗，請稍後再試';
+const DELETE_EVENT_PERMISSION_ERROR_MESSAGE = '刪除活動失敗，請稍後再試';
+
 /**
  * @typedef {import('@/service/event-service').EventData} EventData
  */
@@ -44,6 +50,34 @@ import {
  * @property {(eventId: string) => Promise<void>} handleDeleteConfirm - 確認刪除活動。
  * @property {(commentId: string) => void} handleCommentAdded - 處理新留言通知。
  */
+
+/**
+ * 取得 started-lock result 的使用者訊息。
+ * @param {unknown} result - mutation use-case result。
+ * @returns {string | null} started-lock 訊息；沒有 started-lock 時回傳 null。
+ */
+function getStartedLockMessage(result) {
+  if (!result || typeof result !== 'object' || !('startedLock' in result)) {
+    return null;
+  }
+  const { startedLock } = /** @type {{ startedLock?: { message?: string } | null }} */ (result);
+  if (!startedLock) return null;
+  return startedLock.message || EVENT_STARTED_LOCK_METADATA.message;
+}
+
+/**
+ * 判斷例外是否為 started-lock rejection。
+ * @param {unknown} error - 例外物件。
+ * @returns {boolean} true 表示底層以 started-lock 拒絕操作。
+ */
+function isStartedLockError(error) {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      (('code' in error && error.code === EVENT_STARTED_LOCK_METADATA.code) ||
+        ('status' in error && error.status === EVENT_STARTED_LOCK_METADATA.status)),
+  );
+}
 
 /**
  * 活動詳情頁的編輯/刪除/留言通知相關 state 與 handlers。
@@ -99,6 +133,15 @@ export default function useEventDetailMutations({
     async (changedData) => {
       const { id: eventId, ...fields } = changedData;
 
+      if (!actor) {
+        showToast(UPDATE_EVENT_LOGIN_REQUIRED_MESSAGE, 'error');
+        return;
+      }
+      if (!event || String(event.hostUid || '') !== actor.uid) {
+        showToast(UPDATE_EVENT_PERMISSION_ERROR_MESSAGE, 'error');
+        return;
+      }
+
       if ('time' in fields || 'registrationDeadline' in fields) {
         const effectiveTime = fields.time ?? editingEvent?.time;
         const effectiveDeadline = fields.registrationDeadline ?? editingEvent?.registrationDeadline;
@@ -113,7 +156,12 @@ export default function useEventDetailMutations({
       setIsUpdating(true);
 
       try {
-        await updateEvent(String(eventId), fields);
+        const updateResult = await updateEvent(String(eventId), fields, actor);
+        if (updateResult?.startedLock) {
+          const message = updateResult.startedLock.message || EVENT_STARTED_LOCK_METADATA.message;
+          showToast(message, 'error');
+          return;
+        }
 
         if (actor) {
           notifyEventModified(String(eventId), event?.title || '', actor).catch((notifyError) => {
@@ -188,20 +236,37 @@ export default function useEventDetailMutations({
         return;
       }
       if (!event || String(event.hostUid || '') !== actor.uid) {
-        showToast('刪除活動失敗，請稍後再試', 'error');
+        showToast(DELETE_EVENT_PERMISSION_ERROR_MESSAGE, 'error');
         return;
       }
 
       setIsDeletingEvent(true);
       try {
-        const currentParticipants = await fetchParticipants(String(eventId));
-        await notifyEventCancelled(String(eventId), event.title || '', currentParticipants, actor);
-        await deleteEvent(String(eventId), actor);
+        const deleteResult = await deleteEvent(String(eventId), actor);
+        const startedLockMessage = getStartedLockMessage(deleteResult);
+        if (startedLockMessage) {
+          showToast(startedLockMessage, 'error');
+          return;
+        }
+
+        try {
+          const currentParticipants = await fetchParticipants(String(eventId));
+          await notifyEventCancelled(String(eventId), event.title || '', currentParticipants, actor);
+        } catch (notifyError) {
+          console.error('刪除活動通知失敗:', notifyError);
+        }
 
         if (!isMountedRef.current) return;
         setDeletingEventId(null);
         router.push('/events?toast=活動已刪除');
       } catch (deleteError) {
+        if (isStartedLockError(deleteError)) {
+          if (isMountedRef.current) {
+            showToast(EVENT_STARTED_LOCK_METADATA.message, 'error');
+          }
+          return;
+        }
+
         if (deleteError instanceof Error && deleteError.message === EVENT_NOT_FOUND_MESSAGE) {
           console.warn('Delete event skipped: already deleted by another session');
           if (!isMountedRef.current) return;

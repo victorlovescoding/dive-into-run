@@ -13,6 +13,7 @@ import styles from './EventDeleteConfirm.module.css';
  * @property {(id: string) => void} onConfirm - 確認刪除的回呼。
  * @property {() => void} onCancel - 取消刪除的回呼。
  * @property {boolean} [isDeleting] - 是否正在刪除中。
+ * @property {string} [disabledReason] - 確認刪除停用原因。
  */
 
 /**
@@ -21,7 +22,23 @@ import styles from './EventDeleteConfirm.module.css';
  * @param {EventDeleteConfirmProps} props - Component props.
  * @returns {import('react').ReactElement} 確認對話框元件。
  */
-export default function EventDeleteConfirm({ eventId, onConfirm, onCancel, isDeleting = false }) {
+export default function EventDeleteConfirm({
+  eventId,
+  onConfirm,
+  onCancel,
+  isDeleting = false,
+  disabledReason = '',
+}) {
+  const isConfirmDisabled = isDeleting || Boolean(disabledReason);
+
+  /**
+   * 處理確認刪除。
+   */
+  function handleConfirm() {
+    if (isConfirmDisabled) return;
+    onConfirm(eventId);
+  }
+
   return (
     <div
       role="dialog"
@@ -32,12 +49,17 @@ export default function EventDeleteConfirm({ eventId, onConfirm, onCancel, isDel
       <p id="delete-dialog-title" className={styles.message}>
         確定要刪除活動？
       </p>
+      {disabledReason && (
+        <div className={styles.errorAlert} role="alert">
+          {disabledReason}
+        </div>
+      )}
       <div className={styles.actions}>
         <button
           type="button"
           className={styles.confirmButton}
-          onClick={() => onConfirm(eventId)}
-          disabled={isDeleting}
+          onClick={handleConfirm}
+          disabled={isConfirmDisabled}
         >
           {isDeleting ? '刪除中…' : '是，確認刪除'}
         </button>

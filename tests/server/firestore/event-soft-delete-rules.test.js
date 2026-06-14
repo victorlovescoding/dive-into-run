@@ -15,10 +15,12 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 
-const PROJECT_ID = 'demo-test';
+const PROJECT_ID = 'demo-test-soft-delete';
 const RULES_PATH = 'firestore.rules';
 const RETENTION_DAYS = 90;
 const RETENTION_MS = RETENTION_DAYS * 24 * 60 * 60 * 1000;
+const ONE_HOUR_MS = 60 * 60 * 1000;
+const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
 /** @type {import('@firebase/rules-unit-testing').RulesTestEnvironment} */
 let testEnv;
@@ -87,6 +89,15 @@ function futureSkewedDeletedAt() {
 }
 
 /**
+ * Builds a Firestore Timestamp relative to test execution time.
+ * @param {number} offsetMs - Offset from now in milliseconds.
+ * @returns {import('firebase/firestore').Timestamp} Offset timestamp.
+ */
+function timestampFromNow(offsetMs) {
+  return Timestamp.fromMillis(Date.now() + offsetMs);
+}
+
+/**
  * Builds the soft-delete payload sent by client runtime code.
  * @param {string} actorUid - Acting user uid.
  * @param {Partial<{
@@ -122,6 +133,7 @@ function softDeletePayload(actorUid, overrides = {}) {
  * @param {string} options.hostUid - Event host uid.
  * @param {string} options.participantUid - Participant uid.
  * @param {string} options.commentAuthorUid - Event comment author uid.
+ * @param {import('firebase/firestore').Timestamp} [options.eventTime] - Event start timestamp.
  * @param {boolean} [options.deletedEvent] - Whether the parent event is soft-deleted.
  * @returns {Promise<void>} Seed completion.
  */
@@ -131,14 +143,15 @@ async function seedEventTree({
   hostUid,
   participantUid,
   commentAuthorUid,
+  eventTime = timestampFromNow(ONE_HOUR_MS),
   deletedEvent = false,
 }) {
   await seed(async (adminDb) => {
     await setDoc(doc(adminDb, 'events', eventId), {
       hostUid,
       title: 'City run',
-      time: Timestamp.fromDate(new Date('2026-05-28T10:00:00.000Z')),
-      registrationDeadline: Timestamp.fromDate(new Date('2026-05-27T10:00:00.000Z')),
+      time: eventTime,
+      registrationDeadline: timestampFromNow(-ONE_HOUR_MS),
       distanceKm: 5,
       maxParticipants: 20,
       participantsCount: 1,
@@ -183,7 +196,7 @@ describe('event soft-delete Firestore rules', () => {
     );
   });
 
-  it('allows exact 90-day authorized event and event-comment soft-delete updates', async () => {
+  it('allows exact 90-day authorized event soft-delete before start and comment soft-delete updates', async () => {
     await seedEventTree({
       eventId: 'event-1',
       commentId: 'comment-1',
@@ -200,6 +213,42 @@ describe('event soft-delete Firestore rules', () => {
     );
     await assertSucceeds(
       updateDoc(doc(dbFor('event-host'), 'events', 'event-1'), softDeletePayload('event-host')),
+    );
+  });
+
+  it('denies host event soft-delete updates at or after the persisted event start', async () => {
+    await seedEventTree({
+      eventId: 'event-at-start',
+      commentId: 'comment-1',
+      hostUid: 'event-host',
+      participantUid: 'runner-1',
+      commentAuthorUid: 'comment-author',
+      eventTime: timestampFromNow(-1000),
+    });
+
+    await assertFails(
+      updateDoc(
+        doc(dbFor('event-host'), 'events', 'event-at-start'),
+        softDeletePayload('event-host'),
+      ),
+    );
+  });
+
+  it('denies stale host event soft-delete updates after the persisted event start', async () => {
+    await seedEventTree({
+      eventId: 'event-after-start',
+      commentId: 'comment-1',
+      hostUid: 'event-host',
+      participantUid: 'runner-1',
+      commentAuthorUid: 'comment-author',
+      eventTime: timestampFromNow(-FIVE_MINUTES_MS),
+    });
+
+    await assertFails(
+      updateDoc(
+        doc(dbFor('event-host'), 'events', 'event-after-start'),
+        softDeletePayload('event-host'),
+      ),
     );
   });
 

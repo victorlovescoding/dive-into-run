@@ -9,6 +9,7 @@ import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import EventEditForm from '@/components/EventEditForm';
 import ShareButton from '@/components/ShareButton';
 import UserLink from '@/components/UserLink';
+import { evaluateEventEditStartedLock } from '@/runtime/events/event-runtime-helpers';
 import { formatDateTime, formatPace } from './event-formatters';
 import styles from './EventDetailScreen.module.css';
 import ParticipantsModal from './ParticipantsModal';
@@ -61,6 +62,10 @@ export default function EventDetailScreen({ id, runtime }) {
     handleCommentAdded,
     handleToggleFavoriteEvent,
   } = runtime;
+  const isCurrentUserHost = user?.uid === event?.hostUid;
+  const editStartedLock = isCurrentUserHost ? evaluateEventEditStartedLock(event) : null;
+  const editDisabledReason = editStartedLock?.startedLock?.message ?? '';
+  const deleteDisabledReason = editDisabledReason;
 
   return (
     <main className={styles.pageContainer}>
@@ -102,6 +107,8 @@ export default function EventDetailScreen({ id, runtime }) {
                     currentUserUid={user?.uid || null}
                     onEdit={handleEditEvent}
                     onDelete={handleDeleteEventRequest}
+                    editDisabledReason={editDisabledReason}
+                    deleteDisabledReason={deleteDisabledReason}
                   />
                 </div>
               </div>
@@ -296,6 +303,7 @@ export default function EventDetailScreen({ id, runtime }) {
             onConfirm={handleDeleteConfirm}
             onCancel={handleDeleteCancel}
             isDeleting={isDeletingEvent}
+            disabledReason={deleteDisabledReason}
           />
         </div>
       )}
