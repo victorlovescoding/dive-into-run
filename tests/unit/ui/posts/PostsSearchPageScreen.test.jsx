@@ -132,8 +132,7 @@ vi.mock('@/ui/posts/PostSearchForm', () => ({
     postSearchFormProps.push(props);
     return (
       <form role="search" aria-label="搜尋文章" data-testid="post-search-form">
-        <label htmlFor="post-search-input">搜尋文章</label>
-        <input id="post-search-input" type="search" defaultValue={props.initialKeyword} />
+        <input type="search" aria-label="搜尋文章" defaultValue={props.initialKeyword} />
       </form>
     );
   },
@@ -204,6 +203,15 @@ function renderScreen(runtimeOverrides = {}) {
 
   return render(<PostsSearchPageScreen runtime={createRuntime(runtimeOverrides)} />);
 }
+
+describe('PostsSearchPageScreen search entry', () => {
+  it('renders the post search form without the search page title', () => {
+    renderScreen();
+
+    expect(screen.getByRole('search', { name: '搜尋文章' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1, name: '搜尋文章' })).not.toBeInTheDocument();
+  });
+});
 
 describe('PostsSearchPageScreen result highlights', () => {
   it('maps title and snippet highlight ranges into result cards', () => {

@@ -49,6 +49,14 @@ beforeEach(() => {
 });
 
 describe('PostSearchForm submit behavior', () => {
+  it('keeps accessible search names without rendering the redundant visible label text', async () => {
+    await renderPostSearchForm();
+
+    expect(screen.getByRole('search', { name: searchTextboxName })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: searchTextboxName })).toBeInTheDocument();
+    expect(screen.queryByText(searchTextboxName)).not.toBeInTheDocument();
+  });
+
   it('keeps the current page and prompts for a keyword when submitted blank', async () => {
     const { user } = await renderPostSearchForm();
 

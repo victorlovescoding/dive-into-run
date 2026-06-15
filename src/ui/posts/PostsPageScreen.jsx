@@ -103,7 +103,6 @@ export default function PostsPageScreen({ runtime }) {
 
   return (
     <div className={styles.feed} data-testid="post-feed">
-      <h1 className={styles.feedTitle}>文章河道</h1>
       <PostSearchForm />
       {user && <ComposePrompt userPhotoURL={user.photoURL} onClick={handleComposeButton} />}
 

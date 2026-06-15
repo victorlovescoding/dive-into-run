@@ -100,8 +100,7 @@ vi.mock('@/ui/posts/PostSearchForm', () => ({
     postSearchFormProps.push(props);
     return (
       <form role="search" aria-label="搜尋文章" data-testid="post-search-form">
-        <label htmlFor="post-search-input">搜尋文章</label>
-        <input id="post-search-input" type="search" />
+        <input type="search" aria-label="搜尋文章" />
       </form>
     );
   },
@@ -179,16 +178,15 @@ function renderScreen(runtimeOverrides = {}) {
 }
 
 describe('PostsPageScreen search entry', () => {
-  it('renders the post search form after the h1 and before the compose prompt', () => {
+  it('renders the post search form before the compose prompt without the feed title', () => {
     renderScreen();
 
     const feed = screen.getByTestId('post-feed');
-    const title = screen.getByRole('heading', { level: 1, name: '文章河道' });
     const searchForm = screen.getByRole('search', { name: '搜尋文章' });
     const composePrompt = screen.getByTestId('compose-prompt');
 
+    expect(screen.queryByRole('heading', { level: 1, name: '文章河道' })).not.toBeInTheDocument();
     expect(feed).toContainElement(searchForm);
-    expect(title).toAppearBefore(searchForm);
     expect(searchForm).toAppearBefore(composePrompt);
     expect(within(searchForm).getByRole('searchbox', { name: '搜尋文章' })).toBeInTheDocument();
   });

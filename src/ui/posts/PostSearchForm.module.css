@@ -2,20 +2,13 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
-  align-items: start;
+  align-items: center;
   margin: 0 0 16px;
 }
 
 .inputGroup {
   display: grid;
-  gap: 6px;
   min-width: 0;
-}
-
-.label {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #3c4043;
 }
 
 .input {

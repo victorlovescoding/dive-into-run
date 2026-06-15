@@ -298,7 +298,6 @@ export default function PostsSearchPageScreen({ runtime }) {
 
   return (
     <main className={feedStyles.feed} data-testid="post-search-feed">
-      <h1 className={feedStyles.feedTitle}>搜尋文章</h1>
       <div onChangeCapture={handleSearchInputChange} onSubmitCapture={handleSearchFormSubmit}>
         <PostSearchForm key={keyword} initialKeyword={searchInput} />
       </div>

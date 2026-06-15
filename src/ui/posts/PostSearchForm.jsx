@@ -10,7 +10,7 @@ const DEFAULT_SEARCH_ROUTE = '/posts/search';
 /**
  * @typedef {object} PostSearchFormProps
  * @property {string} [initialKeyword] 初始搜尋關鍵字。
- * @property {string} [label] 搜尋輸入框的 accessible label。
+ * @property {string} [label] 搜尋區域與輸入框的 accessible label。
  * @property {string} [placeholder] 搜尋輸入框 placeholder。
  * @property {string} [submitLabel] 搜尋按鈕文字。
  * @property {string} [blankPrompt] 空白提交時顯示的提示。
@@ -25,13 +25,12 @@ const DEFAULT_SEARCH_ROUTE = '/posts/search';
 export default function PostSearchForm({
   initialKeyword = '',
   label = '搜尋文章',
-  placeholder = '搜尋文章',
+  placeholder = '輸入關鍵字',
   submitLabel = '搜尋',
   blankPrompt = DEFAULT_PROMPT,
   searchRoute = DEFAULT_SEARCH_ROUTE,
 } = {}) {
   const router = useRouter();
-  const inputId = useId();
   const promptId = useId();
   const [keyword, setKeyword] = useState(initialKeyword);
   const [prompt, setPrompt] = useState('');
@@ -67,17 +66,20 @@ export default function PostSearchForm({
   }
 
   return (
-    <form className={styles.searchForm} role="search" onSubmit={handleSubmit} noValidate>
+    <form
+      className={styles.searchForm}
+      role="search"
+      aria-label={label}
+      onSubmit={handleSubmit}
+      noValidate
+    >
       <div className={styles.inputGroup}>
-        <label className={styles.label} htmlFor={inputId}>
-          {label}
-        </label>
         <input
-          id={inputId}
           className={styles.input}
           type="text"
           value={keyword}
           placeholder={placeholder}
+          aria-label={label}
           onChange={handleKeywordChange}
           aria-invalid={prompt ? 'true' : undefined}
           aria-describedby={prompt ? promptId : undefined}
