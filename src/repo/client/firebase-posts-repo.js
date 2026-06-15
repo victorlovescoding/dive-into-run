@@ -26,6 +26,7 @@ import { POST_NOT_FOUND_MESSAGE } from '@/types/not-found-messages';
  * @typedef {import('firebase/firestore').QueryDocumentSnapshot} QueryDocumentSnapshot
  * @typedef {import('firebase/firestore').DocumentSnapshot} DocumentSnapshot
  * @typedef {{ id: string, postAt: import('firebase/firestore').Timestamp }} PostCursor
+ * @typedef {{ lastPostAt: import('firebase/firestore').Timestamp, lastPostId: string }} PostSearchCandidateCursor
  * @typedef {{ id: string, title: string }} PostSearchCursor
  * @typedef {{ id: string, createdAt: import('firebase/firestore').Timestamp }} CommentCursor
  */
@@ -116,6 +117,18 @@ export async function fetchNextPostDocuments(afterDoc, limitCount) {
     docs: snapshot.docs,
     lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
   };
+}
+
+/**
+ * 取得搜尋候選文章頁。
+ * @param {object} options - 分頁選項。
+ * @param {PostSearchCandidateCursor | null} [options.cursor] - 上一頁最後掃描候選 cursor。
+ * @param {number} options.pageSize - 每頁候選數量。
+ * @returns {Promise<{ docs: QueryDocumentSnapshot[], lastDoc: QueryDocumentSnapshot | null }>} 查詢結果。
+ */
+export async function fetchSearchCandidatePostDocumentsPage({ cursor = null, pageSize }) {
+  if (!cursor) return fetchLatestPostDocuments(pageSize);
+  return fetchNextPostDocuments({ postAt: cursor.lastPostAt, id: cursor.lastPostId }, pageSize);
 }
 
 /**

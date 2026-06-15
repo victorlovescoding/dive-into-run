@@ -6,6 +6,7 @@ import EditHistoryModal from '@/components/EditHistoryModal';
 import PostCard from '@/components/PostCard';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import styles from '@/app/posts/posts.module.css';
+import PostSearchForm from '@/ui/posts/PostSearchForm';
 
 /**
  * 渲染文章列表或空狀態。
@@ -103,6 +104,7 @@ export default function PostsPageScreen({ runtime }) {
   return (
     <div className={styles.feed} data-testid="post-feed">
       <h1 className={styles.feedTitle}>文章河道</h1>
+      <PostSearchForm />
       {user && <ComposePrompt userPhotoURL={user.photoURL} onClick={handleComposeButton} />}
 
       {renderPostList({

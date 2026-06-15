@@ -17,9 +17,8 @@
 
 **Purpose**: Create shared fixtures/mocks so later TDD tasks can run in parallel without each subagent inventing incompatible post data.
 
-- [ ] T001 Create shared post search fixture builders in `tests/_helpers/posts-search-fixtures.js`
-- [ ] T002 [P] Create shared router/searchParams/user-event mocks for posts search tests in `tests/_helpers/posts-search-runtime-mocks.jsx`
-
+- [X] T001 Create shared post search fixture builders in `tests/_helpers/posts-search-fixtures.js`
+- [X] T002 [P] Create shared router/searchParams/user-event mocks for posts search tests in `tests/_helpers/posts-search-runtime-mocks.jsx`
 **Checkpoint**: Shared test inputs are ready; foundational test tasks can start in parallel.
 
 ---
@@ -32,17 +31,17 @@
 
 ### Tests First
 
-- [ ] T003 [P] Add failing unit tests for keyword trim/case-fold, public active visibility exclusion, title/content matching, hit tier sorting, snippet, and highlight metadata in `tests/unit/service/post-service.test.js`
-- [ ] T004 [P] Add failing unit tests for candidate pagination scan, active filter page fill, cursor advancement, `hasMore`, and `scannedCount` in `tests/unit/runtime/post-use-cases.test.js`
-- [ ] T005 [P] Add failing unit tests for hydration, id-based dedupe, favorite/liked flags, and result removal helpers in `tests/unit/runtime/usePostsPageRuntimeHelpers.test.js`
+- [X] T003 [P] Add failing unit tests for keyword trim/case-fold, public active visibility exclusion, title/content matching, hit tier sorting, snippet, and highlight metadata in `tests/unit/service/post-service.test.js`
+- [X] T004 [P] Add failing unit tests for candidate pagination scan, active filter page fill, cursor advancement, `hasMore`, and `scannedCount` in `tests/unit/runtime/post-use-cases.test.js`
+- [X] T005 [P] Add failing unit tests for hydration, id-based dedupe, favorite/liked flags, and result removal helpers in `tests/unit/runtime/usePostsPageRuntimeHelpers.test.js`
 
 ### Implementation
 
-- [ ] T006 Implement exported search keyword normalization, post matching, result sorting, snippet, and highlight metadata helpers in `src/service/post-service.js`
-- [ ] T007 [P] Add candidate post page repository APIs ordered by `postAt desc` and `documentId desc` in `src/repo/client/firebase-posts-repo.js`
-- [ ] T008 Implement `searchPublicActivePosts` candidate scanning, active filtering, page fill, cursor, `hasMore`, and `scannedCount` in `src/runtime/client/use-cases/post-use-cases.js`
-- [ ] T009 Implement reusable hydration, dedupe, favorite/liked, and remove-by-id helpers for posts/search results in `src/runtime/hooks/usePostsPageRuntimeHelpers.js`
-- [ ] T010 Run foundational Vitest targets for `tests/unit/service/post-service.test.js`, `tests/unit/runtime/post-use-cases.test.js`, and `tests/unit/runtime/usePostsPageRuntimeHelpers.test.js`
+- [X] T006 Implement exported search keyword normalization, post matching, result sorting, snippet, and highlight metadata helpers in `src/service/post-service.js`
+- [X] T007 [P] Add candidate post page repository APIs ordered by `postAt desc` and `documentId desc` in `src/repo/client/firebase-posts-repo.js`
+- [X] T008 Implement `searchPublicActivePosts` candidate scanning, active filtering, page fill, cursor, `hasMore`, and `scannedCount` in `src/runtime/client/use-cases/post-use-cases.js`
+- [X] T009 Implement reusable hydration, dedupe, favorite/liked, and remove-by-id helpers for posts/search results in `src/runtime/hooks/usePostsPageRuntimeHelpers.js`
+- [X] T010 Run foundational Vitest targets for `tests/unit/service/post-service.test.js`, `tests/unit/runtime/post-use-cases.test.js`, and `tests/unit/runtime/usePostsPageRuntimeHelpers.test.js`
 
 **Checkpoint**: Search use-case returns public active, deduped, sorted `PostSearchMatch` results with stable cursor semantics.
 
@@ -56,19 +55,19 @@
 
 ### Tests First
 
-- [ ] T011 [P] [US1] Add failing search form tests for blank submit prompt, Enter submit, button submit, trim, and URL encoding in `tests/unit/ui/posts/PostSearchForm.test.jsx`
-- [ ] T012 [P] [US1] Add failing `/posts` screen tests for search form placement after `h1`, no main feed mutation, and existing compose prompt behavior in `tests/unit/ui/posts/PostsPageScreen.test.jsx`
-- [ ] T013 [P] [US1] Add failing search runtime tests for missing/blank `q` redirect, valid `q` initial load, search input hydration, submit navigation, and clear-to-`/posts` behavior in `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`
+- [X] T011 [P] [US1] Add failing search form tests for blank submit prompt, Enter submit, button submit, trim, and URL encoding in `tests/unit/ui/posts/PostSearchForm.test.jsx`
+- [X] T012 [P] [US1] Add failing `/posts` screen tests for search form placement after `h1`, no main feed mutation, and existing compose prompt behavior in `tests/unit/ui/posts/PostsPageScreen.test.jsx`
+- [X] T013 [P] [US1] Add failing search runtime tests for missing/blank `q` redirect, valid `q` initial load, search input hydration, submit navigation, and clear-to-`/posts` behavior in `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`
 
 ### Implementation
 
-- [ ] T014 [US1] Implement reusable search form behavior and accessibility in `src/ui/posts/PostSearchForm.jsx`
-- [ ] T015 [P] [US1] Add search form CSS module styles in `src/ui/posts/PostSearchForm.module.css`
-- [ ] T016 [US1] Insert `PostSearchForm` after the `h1` and before `ComposePrompt` in `src/ui/posts/PostsPageScreen.jsx`
-- [ ] T017 [US1] Implement URL validation, keyword state, initial search load, submit navigation, and clear-to-`/posts` behavior in `src/runtime/hooks/usePostsSearchPageRuntime.js`
-- [ ] T018 [US1] Implement initial search result page composition with retained search form and basic result list in `src/ui/posts/PostsSearchPageScreen.jsx`
-- [ ] T019 [US1] Add thin App Router entry for `/posts/search` in `src/app/posts/search/page.jsx`
-- [ ] T020 [US1] Run US1 targets for `tests/unit/ui/posts/PostSearchForm.test.jsx`, `tests/unit/ui/posts/PostsPageScreen.test.jsx`, and `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`
+- [X] T014 [US1] Implement reusable search form behavior and accessibility in `src/ui/posts/PostSearchForm.jsx`
+- [X] T015 [P] [US1] Add search form CSS module styles in `src/ui/posts/PostSearchForm.module.css`
+- [X] T016 [US1] Insert `PostSearchForm` after the `h1` and before `ComposePrompt` in `src/ui/posts/PostsPageScreen.jsx`
+- [X] T017 [US1] Implement URL validation, keyword state, initial search load, submit navigation, and clear-to-`/posts` behavior in `src/runtime/hooks/usePostsSearchPageRuntime.js`
+- [X] T018 [US1] Implement initial search result page composition with retained search form and basic result list in `src/ui/posts/PostsSearchPageScreen.jsx`
+- [X] T019 [US1] Add thin App Router entry for `/posts/search` in `src/app/posts/search/page.jsx`
+- [X] T020 [US1] Run US1 targets for `tests/unit/ui/posts/PostSearchForm.test.jsx`, `tests/unit/ui/posts/PostsPageScreen.test.jsx`, and `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`
 
 **Checkpoint**: MVP route and search entry are functional and independently testable.
 
@@ -82,18 +81,18 @@
 
 ### Tests First
 
-- [ ] T021 [P] [US2] Extend failing service tests for title hit priority, content-only hit, title+content tiering, same-`postAt` id desc tie-break, case-insensitive English, literal Chinese contains, content snippet, and highlight ranges in `tests/unit/service/post-service.test.js`
-- [ ] T022 [P] [US2] Add failing result screen tests for highlighted title/snippet rendering, content-hit snippet display, and no unsafe HTML rendering in `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`
-- [ ] T023 [P] [US2] Add failing component tests for optional search snippet/highlight props on result cards in `tests/unit/components/PostCard.test.jsx`
+- [X] T021 [P] [US2] Extend failing service tests for title hit priority, content-only hit, title+content tiering, same-`postAt` id desc tie-break, case-insensitive English, literal Chinese contains, content snippet, and highlight ranges in `tests/unit/service/post-service.test.js`
+- [X] T022 [P] [US2] Add failing result screen tests for highlighted title/snippet rendering, content-hit snippet display, and no unsafe HTML rendering in `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`
+- [X] T023 [P] [US2] Add failing component tests for optional search snippet/highlight props on result cards in `tests/unit/components/PostCard.test.jsx`
 
 ### Implementation
 
-- [ ] T024 [US2] Complete stable comparator, first-match snippet, and highlight range generation in `src/service/post-service.js`
-- [ ] T025 [US2] Propagate `PostSearchMatch` metadata from `searchPublicActivePosts` in `src/runtime/client/use-cases/post-use-cases.js`
-- [ ] T026 [US2] Add optional search snippet/highlight rendering props to `PostCard` without changing default feed rendering in `src/components/PostCard.jsx`
-- [ ] T027 [P] [US2] Add highlight and search snippet styles in `src/components/PostCard.module.css`
-- [ ] T028 [US2] Map search match metadata into result cards in `src/ui/posts/PostsSearchPageScreen.jsx`
-- [ ] T029 [US2] Run US2 targets for `tests/unit/service/post-service.test.js`, `tests/unit/runtime/post-use-cases.test.js`, `tests/unit/components/PostCard.test.jsx`, and `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`
+- [X] T024 [US2] Complete stable comparator, first-match snippet, and highlight range generation in `src/service/post-service.js`
+- [X] T025 [US2] Propagate `PostSearchMatch` metadata from `searchPublicActivePosts` in `src/runtime/client/use-cases/post-use-cases.js`
+- [X] T026 [US2] Add optional search snippet/highlight rendering props to `PostCard` without changing default feed rendering in `src/components/PostCard.jsx`
+- [X] T027 [P] [US2] Add highlight and search snippet styles in `src/components/PostCard.module.css`
+- [X] T028 [US2] Map search match metadata into result cards in `src/ui/posts/PostsSearchPageScreen.jsx`
+- [X] T029 [US2] Run US2 targets for `tests/unit/service/post-service.test.js`, `tests/unit/runtime/post-use-cases.test.js`, `tests/unit/components/PostCard.test.jsx`, and `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`
 
 **Checkpoint**: Results are explainable, sorted by contract, and highlighted without HTML injection.
 
@@ -107,15 +106,15 @@
 
 ### Tests First
 
-- [ ] T030 [P] [US3] Add failing search runtime tests for anonymous interaction guard, liked/favorite hydration, optimistic rollback, owner menu, delete removal, history modal, and detail/comment navigation handlers in `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`
-- [ ] T031 [P] [US3] Add failing `PostCard` compatibility tests for search result like, favorite, owner menu, delete, title navigation, comment count navigation, and history callbacks in `tests/unit/components/PostCard.test.jsx`
+- [X] T030 [P] [US3] Add failing search runtime tests for anonymous interaction guard, liked/favorite hydration, optimistic rollback, owner menu, delete removal, history modal, and detail/comment navigation handlers in `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`
+- [X] T031 [P] [US3] Add failing `PostCard` compatibility tests for search result like, favorite, owner menu, delete, title navigation, comment count navigation, and history callbacks in `tests/unit/components/PostCard.test.jsx`
 
 ### Implementation
 
-- [ ] T032 [US3] Reuse post like, favorite, delete, owner menu, and history handlers with optimistic rollback in `src/runtime/hooks/usePostsSearchPageRuntime.js`
-- [ ] T033 [US3] Wire search result cards to detail, comment count, like, favorite, owner menu, delete, and history handlers in `src/ui/posts/PostsSearchPageScreen.jsx`
-- [ ] T034 [US3] Preserve anonymous login-required behavior and default feed behavior while supporting search result props in `src/components/PostCard.jsx`
-- [ ] T035 [US3] Run US3 targets for `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`, `tests/unit/components/PostCard.test.jsx`, and `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`
+- [X] T032 [US3] Reuse post like, favorite, delete, owner menu, and history handlers with optimistic rollback in `src/runtime/hooks/usePostsSearchPageRuntime.js`
+- [X] T033 [US3] Wire search result cards to detail, comment count, like, favorite, owner menu, delete, and history handlers in `src/ui/posts/PostsSearchPageScreen.jsx`
+- [X] T034 [US3] Preserve anonymous login-required behavior and default feed behavior while supporting search result props in `src/components/PostCard.jsx`
+- [X] T035 [US3] Run US3 targets for `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`, `tests/unit/components/PostCard.test.jsx`, and `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`
 
 **Checkpoint**: Search cards behave like feed cards without exposing authenticated interactions to anonymous users.
 
@@ -129,18 +128,18 @@
 
 ### Tests First
 
-- [ ] T036 [P] [US4] Add failing use-case tests for load-more dedupe, exhausted cursor, empty result after exhausted candidates, initial operational failure, and load-more operational failure in `tests/unit/runtime/post-use-cases.test.js`
-- [ ] T037 [P] [US4] Add failing search runtime tests for `IntersectionObserver` load more, retry, load-more failure preserving existing items, invalid `q` redirect, and retained keyword after error in `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`
-- [ ] T038 [P] [US4] Add failing result screen tests for initial loading, empty copy, error block, retry button, loading-more state, terminal no-more state, and no compose prompt in `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`
+- [X] T036 [P] [US4] Add failing use-case tests for load-more dedupe, exhausted cursor, empty result after exhausted candidates, initial operational failure, and load-more operational failure in `tests/unit/runtime/post-use-cases.test.js`
+- [X] T037 [P] [US4] Add failing search runtime tests for `IntersectionObserver` load more, retry, load-more failure preserving existing items, invalid `q` redirect, and retained keyword after error in `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`
+- [X] T038 [P] [US4] Add failing result screen tests for initial loading, empty copy, error block, retry button, loading-more state, terminal no-more state, and no compose prompt in `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`
 
 ### Implementation
 
-- [ ] T039 [US4] Implement search runtime status machine, retry, load-more, `bottomRef` observer, and failure handling in `src/runtime/hooks/usePostsSearchPageRuntime.js`
-- [ ] T040 [US4] Ensure load-more append dedupes by post id and deleted/hidden result removal stays reusable in `src/runtime/hooks/usePostsPageRuntimeHelpers.js`
-- [ ] T041 [US4] Render loading, empty, error, retry, loading-more, terminal `hasMore`, and no-compose states in `src/ui/posts/PostsSearchPageScreen.jsx`
-- [ ] T042 [P] [US4] Add search result screen CSS module styles for state blocks, retry actions, and sentinel layout in `src/ui/posts/PostsSearchPageScreen.module.css`
-- [ ] T043 [US4] Add `scannedCount` and elapsed-time measurement around search candidate scans in `src/runtime/client/use-cases/post-use-cases.js`
-- [ ] T044 [US4] Run US4 targets for `tests/unit/runtime/post-use-cases.test.js`, `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`, and `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`
+- [X] T039 [US4] Implement search runtime status machine, retry, load-more, `bottomRef` observer, and failure handling in `src/runtime/hooks/usePostsSearchPageRuntime.js`
+- [X] T040 [US4] Ensure load-more append dedupes by post id and deleted/hidden result removal stays reusable in `src/runtime/hooks/usePostsPageRuntimeHelpers.js`
+- [X] T041 [US4] Render loading, empty, error, retry, loading-more, terminal `hasMore`, and no-compose states in `src/ui/posts/PostsSearchPageScreen.jsx`
+- [X] T042 [P] [US4] Add search result screen CSS module styles for state blocks, retry actions, and sentinel layout in `src/ui/posts/PostsSearchPageScreen.module.css`
+- [X] T043 [US4] Add `scannedCount` and elapsed-time measurement around search candidate scans in `src/runtime/client/use-cases/post-use-cases.js`
+- [X] T044 [US4] Run US4 targets for `tests/unit/runtime/post-use-cases.test.js`, `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`, and `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`
 
 **Checkpoint**: Large, empty, and failed searches are recoverable and do not duplicate results.
 
@@ -150,18 +149,18 @@
 
 **Purpose**: Regression coverage, verification, manual quickstart validation, and reviewer handoff.
 
-- [ ] T045 [P] Add final regression tests that `/posts` feed ordering, compose prompt, card interactions, and main infinite scroll remain independent from search state in `tests/unit/ui/posts/PostsPageScreen.test.jsx`
-- [ ] T046 [P] Add new project dictionary entries only if spellcheck flags task-introduced identifiers in `cspell.json`
-- [ ] T047 Run `git diff --check` for changed paths under `src/`, `tests/`, and `specs/103-posts-search/tasks.md`
-- [ ] T048 Run `npm run lint:changed` for changed paths under `src/`, `tests/`, and `specs/103-posts-search/tasks.md`
-- [ ] T049 Run `npm run type-check:changed` for changed paths under `src/`, `tests/`, and `specs/103-posts-search/tasks.md`
-- [ ] T050 Run targeted Vitest for `tests/unit/service/post-service.test.js`, `tests/unit/runtime/post-use-cases.test.js`, `tests/unit/runtime/usePostsPageRuntime.test.jsx`, `tests/unit/runtime/usePostsPageRuntimeHelpers.test.js`, `tests/unit/ui/posts/PostSearchForm.test.jsx`, `tests/unit/ui/posts/PostsPageScreen.test.jsx`, `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`, and `tests/unit/components/PostCard.test.jsx`
-- [ ] T051 Run `npm run lint -- --max-warnings 0` for repository-wide lint verification from `package.json`
-- [ ] T052 Run `npm run type-check` for repository-wide type verification from `package.json`
-- [ ] T053 Run `npm run depcruise` for layered dependency verification from `package.json`
-- [ ] T054 Run `npm run spellcheck` for repository-wide spelling verification from `package.json`
-- [ ] T055 Execute manual quickstart validation for `/posts` and `/posts/search` using `specs/103-posts-search/quickstart.md`
-- [ ] T056 Request Reviewer check for the task-local diff against `specs/103-posts-search/spec.md`, `specs/103-posts-search/plan.md`, and `specs/103-posts-search/tasks.md`
+- [X] T045 [P] Add final regression tests that `/posts` feed ordering, compose prompt, card interactions, and main infinite scroll remain independent from search state in `tests/unit/ui/posts/PostsPageScreen.test.jsx`
+- [X] T046 [P] Add new project dictionary entries only if spellcheck flags task-introduced identifiers in `cspell.json`
+- [X] T047 Run `git diff --check` for changed paths under `src/`, `tests/`, and `specs/103-posts-search/tasks.md`
+- [X] T048 Run `npm run lint:changed` for changed paths under `src/`, `tests/`, and `specs/103-posts-search/tasks.md`
+- [X] T049 Run `npm run type-check:changed` for changed paths under `src/`, `tests/`, and `specs/103-posts-search/tasks.md`
+- [X] T050 Run targeted Vitest for `tests/unit/service/post-service.test.js`, `tests/unit/runtime/post-use-cases.test.js`, `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`, `tests/unit/runtime/usePostsPageRuntimeHelpers.test.js`, `tests/unit/ui/posts/PostSearchForm.test.jsx`, `tests/unit/ui/posts/PostsPageScreen.test.jsx`, `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`, and `tests/unit/components/PostCard.test.jsx`
+- [X] T051 Run `npm run lint -- --max-warnings 0` for repository-wide lint verification from `package.json`
+- [X] T052 Run `npm run type-check` for repository-wide type verification from `package.json`
+- [X] T053 Run `npm run depcruise` for layered dependency verification from `package.json`
+- [X] T054 Run `npm run spellcheck` for repository-wide spelling verification from `package.json`
+- [X] T055 Execute manual quickstart validation for `/posts` and `/posts/search` using `specs/103-posts-search/quickstart.md`
+- [X] T056 Request Reviewer check for the task-local diff against `specs/103-posts-search/spec.md`, `specs/103-posts-search/plan.md`, and `specs/103-posts-search/tasks.md`
 
 ---
 

@@ -10,6 +10,13 @@ import styles from './PostCard.module.css';
 const TRUNCATE_THRESHOLD = 150;
 
 /**
+ * @typedef {object} SearchHighlightRange
+ * @property {'title' | 'snippet'} field - 高亮目標欄位。
+ * @property {number} start - 高亮起始 offset（含）。
+ * @property {number} end - 高亮結束 offset（不含）。
+ */
+
+/**
  * @typedef {object} EnrichedPost
  * @property {string} id - 文章 ID。
  * @property {string} title - 文章標題。
@@ -43,15 +50,7 @@ function getLikeButtonClassName(liked) {
  */
 function HeartIcon({ filled }) {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill={filled ? 'currentColor' : 'none'}
-      stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden="true"
-    >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <path
         d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0
            L12 5.67l-1.06-1.06a5.5 5.5 0 0
@@ -69,15 +68,7 @@ function HeartIcon({ filled }) {
  */
 function ChatIcon() {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden="true"
-    >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <path
         d="M21 15a2 2 0 0 1-2 2H7l-4
            4V5a2 2 0 0 1 2-2h14a2 2 0 0
@@ -112,24 +103,64 @@ function getTimeText(postAt) {
 }
 
 /**
+ * 將純文字依搜尋 range 拆成 React text nodes 與 mark，不接受 HTML 字串。
+ * @param {string} text - 要呈現的純文字。
+ * @param {SearchHighlightRange[] | undefined} ranges - 搜尋高亮 ranges。
+ * @param {'title' | 'snippet'} field - 要呈現的欄位。
+ * @returns {import('react').ReactNode} 安全的純文字 / mark 節點。
+ */
+function renderHighlightedText(text, ranges, field) {
+  if (!Array.isArray(ranges) || ranges.length === 0) return text;
+
+  const fieldRanges = ranges
+    .filter((range) => (
+      range.field === field
+      && Number.isInteger(range.start)
+      && Number.isInteger(range.end)
+      && range.start >= 0
+      && range.start < range.end
+      && range.end <= text.length
+    ))
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+
+  if (fieldRanges.length === 0) return text;
+
+  const nodes = [];
+  let cursor = 0;
+
+  for (const range of fieldRanges) {
+    if (range.start < cursor) continue;
+    if (range.start > cursor) nodes.push(text.slice(cursor, range.start));
+    nodes.push(<mark key={`${field}-${range.start}-${range.end}`} className={styles.searchHighlight}>{text.slice(range.start, range.end)}</mark>);
+    cursor = range.end;
+  }
+
+  if (cursor < text.length) nodes.push(text.slice(cursor));
+  return nodes.length > 0 ? nodes : text;
+}
+
+/**
  * 文章標題區塊，truncate 模式下為連結，否則為純文字。
  * @param {object} props - 元件屬性。
  * @param {string} props.postId - 文章 ID。
  * @param {string} props.title - 文章標題。
+ * @param {SearchHighlightRange[] | undefined} props.searchHighlightRanges - 搜尋高亮 ranges。
  * @param {boolean} props.truncate - 是否截斷模式。
  * @returns {import('react').ReactElement} 標題元素。
  */
-function PostTitle({ postId, title, truncate }) {
+function PostTitle({ postId, title, searchHighlightRanges, truncate }) {
+  const renderedTitle = renderHighlightedText(title, searchHighlightRanges, 'title');
+
   if (truncate) {
     return (
       <h2 className={styles.title}>
         <Link href={`/posts/${postId}`} className={styles.titleLink}>
-          {title}
+          {renderedTitle}
         </Link>
       </h2>
     );
   }
-  return <h2 className={styles.title}>{title}</h2>;
+  return <h2 className={styles.title}>{renderedTitle}</h2>;
 }
 
 /**
@@ -164,8 +195,8 @@ function CommentMeta({ postId, count, truncate }) {
  * @param {boolean} props.isOpen - 選單是否展開。
  * @param {(postId: string, e: import('react').MouseEvent) => void} props.onToggleMenu - 切換選單。
  * @param {() => void} props.onCloseMenu - 關閉選單。
- * @param {(postId: string) => void} props.onEdit - 編輯回呼。
- * @param {(postId: string) => void} props.onDelete - 刪除回呼。
+ * @param {(postId: string) => void} [props.onEdit] - 編輯回呼。
+ * @param {(postId: string) => void} [props.onDelete] - 刪除回呼。
  * @returns {import('react').ReactElement} 選單元件。
  */
 function OwnerMenu({ postId, isOpen, onToggleMenu, onCloseMenu, onEdit, onDelete }) {
@@ -190,13 +221,13 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onCloseMenu, onEdit, onDelete
   /** 關閉選單並進入編輯流程。 */
   function handleEdit() {
     onCloseMenu();
-    onEdit(postId);
+    onEdit?.(postId);
   }
 
   /** 關閉選單並進入刪除流程。 */
   function handleDelete() {
     onCloseMenu();
-    onDelete(postId);
+    onDelete?.(postId);
   }
 
   return (
@@ -213,26 +244,30 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onCloseMenu, onEdit, onDelete
       </button>
       {isOpen && (
         <ul role="menu" className={styles.menuList}>
-          <li>
-            <button
-              type="button"
-              role="menuitem"
-              className={styles.menuItem}
-              onClick={handleEdit}
-            >
-              編輯
-            </button>
-          </li>
-          <li>
-            <button
-              type="button"
-              role="menuitem"
-              className={styles.menuItem}
-              onClick={handleDelete}
-            >
-              刪除
-            </button>
-          </li>
+          {onEdit && (
+            <li>
+              <button
+                type="button"
+                role="menuitem"
+                className={styles.menuItem}
+                onClick={handleEdit}
+              >
+                編輯
+              </button>
+            </li>
+          )}
+          {onDelete && (
+            <li>
+              <button
+                type="button"
+                role="menuitem"
+                className={styles.menuItem}
+                onClick={handleDelete}
+              >
+                刪除
+              </button>
+            </li>
+          )}
         </ul>
       )}
     </div>
@@ -251,6 +286,8 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onCloseMenu, onEdit, onDelete
  * @property {(postId: string) => void} [onLike] - 按讚回呼。
  * @property {(postId: string) => void | Promise<void>} [onToggleFavorite] - 收藏切換回呼。
  * @property {(post: EnrichedPost) => void | Promise<void>} [onViewArticleHistory] - 查看文章編輯記錄。
+ * @property {string} [searchSnippet] - 搜尋結果摘要；存在時取代預設內容顯示。
+ * @property {SearchHighlightRange[]} [searchHighlightRanges] - title/snippet 搜尋高亮 ranges。
  * @property {import('react').ReactNode} [children] - 額外 meta action（詳文頁用，如分享/複製）。
  * @property {import('react').Key} [key] - React reconciler 專用 key；非元件內部使用的 prop，
  *   但為了讓 JSDoc-based `checkJs` 不誤報 "Property 'key' does not exist on type 'PostCardProps'"，
@@ -273,6 +310,8 @@ export default function PostCard({
   onLike,
   onToggleFavorite,
   onViewArticleHistory,
+  searchSnippet,
+  searchHighlightRanges,
   children,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -280,10 +319,13 @@ export default function PostCard({
   const timeText = getTimeText(post.postAt);
   const isMenuOpen = openMenuPostId === post.id;
   const likeClassName = getLikeButtonClassName(post.liked);
-  const hasContent = !!post.content;
+  const displayContent = typeof searchSnippet === 'string' ? searchSnippet : post.content;
+  const isSearchSnippet = typeof searchSnippet === 'string';
+  const hasContent = !!displayContent;
   const contentRef = useRef(/** @type {HTMLDivElement | null} */ (null));
-  const needsTruncation = hasContent && truncate && post.content.length > TRUNCATE_THRESHOLD;
+  const needsTruncation = hasContent && truncate && displayContent.length > TRUNCATE_THRESHOLD;
   const isCollapsed = needsTruncation && !isExpanded;
+  const contentClassName = isSearchSnippet ? `${styles.content} ${styles.searchSnippet}` : styles.content;
 
   /** 量測 scrollHeight 並觸發 max-height CSS transition。 */
   function handleExpand() {
@@ -331,7 +373,7 @@ export default function PostCard({
             />
           )}
         </div>
-        {post.isAuthor && onToggleMenu && onCloseMenu && onEdit && onDelete && (
+        {post.isAuthor && onToggleMenu && onCloseMenu && (onEdit || onDelete) && (
           <OwnerMenu
             postId={post.id}
             isOpen={isMenuOpen}
@@ -343,7 +385,12 @@ export default function PostCard({
         )}
       </div>
 
-      <PostTitle postId={post.id} title={post.title} truncate={truncate} />
+      <PostTitle
+        postId={post.id}
+        title={post.title}
+        searchHighlightRanges={searchHighlightRanges}
+        truncate={truncate}
+      />
 
       {hasContent && (
         <>
@@ -352,7 +399,11 @@ export default function PostCard({
             className={contentWrapperClassName}
             onTransitionEnd={contentTransitionEnd}
           >
-            <p className={styles.content}>{post.content}</p>
+            <p className={contentClassName}>
+              {isSearchSnippet
+                ? renderHighlightedText(displayContent, searchHighlightRanges, 'snippet')
+                : displayContent}
+            </p>
           </div>
           {isCollapsed && (
             <button type="button" className={styles.expandButton} onClick={handleExpand}>

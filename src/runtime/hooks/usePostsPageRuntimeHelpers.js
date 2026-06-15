@@ -38,6 +38,42 @@ export function mergeUniquePosts(previousPosts, nextPosts) {
 }
 
 /**
+ * 為 post search result 補上當前使用者視角的 nested post UI flags。
+ * @param {Array<{ post: object }>} matches - 原始搜尋結果。
+ * @param {string | null | undefined} userUid - 當前使用者 UID。
+ * @param {Set<string>} [likedPostIds] - 已按讚文章 ID 集合。
+ * @param {Set<string>} [favoritePostIds] - 已收藏文章 ID 集合。
+ * @returns {Array<{ post: object }>} 帶 hydrated post 的搜尋結果。
+ */
+export function hydratePostSearchMatches(
+  matches,
+  userUid,
+  likedPostIds = new Set(),
+  favoritePostIds = new Set(),
+) {
+  return (Array.isArray(matches) ? matches : []).map((match) => ({
+    ...match,
+    post: hydratePosts([match.post], userUid, likedPostIds, favoritePostIds)[0],
+  }));
+}
+
+/**
+ * 以 nested post id 去重後把新搜尋結果接到列表尾端。
+ * @param {Array<{ post: { id: string } }>} previousMatches - 既有搜尋結果。
+ * @param {Array<{ post: { id: string } }>} nextMatches - 待追加搜尋結果。
+ * @returns {Array<{ post: { id: string } }>} 合併後搜尋結果。
+ */
+export function mergeUniquePostSearchMatches(previousMatches, nextMatches) {
+  const seenIds = new Set(previousMatches.map((match) => match.post.id));
+  const freshMatches = nextMatches.filter((match) => {
+    if (seenIds.has(match.post.id)) return false;
+    seenIds.add(match.post.id);
+    return true;
+  });
+  return [...previousMatches, ...freshMatches];
+}
+
+/**
  * 判斷是否為 Firestore 權限不足錯誤。
  * @param {unknown} error - 捕捉到的錯誤。
  * @returns {boolean} 是否為 permission-denied。
@@ -171,6 +207,35 @@ export function applyPostFavoriteState(previousPosts, postId, isFavorited) {
 }
 
 /**
+ * 套用搜尋結果 nested post 按讚 UI 狀態。
+ * @param {Array<{ post: { id: string } }>} previousMatches - 既有搜尋結果。
+ * @param {string} postId - 文章 ID。
+ * @param {boolean} liked - 目標 liked 狀態。
+ * @param {number} likesCount - 目標 likesCount。
+ * @returns {Array<{ post: { id: string } }>} 更新後搜尋結果。
+ */
+export function applyPostSearchMatchLikeState(previousMatches, postId, liked, likesCount) {
+  return previousMatches.map((match) =>
+    match.post.id === postId
+      ? { ...match, post: { ...match.post, liked, likesCount } }
+      : match,
+  );
+}
+
+/**
+ * 套用搜尋結果 nested post 收藏 UI 狀態。
+ * @param {Array<{ post: { id: string } }>} previousMatches - 既有搜尋結果。
+ * @param {string} postId - 文章 ID。
+ * @param {boolean} isFavorited - 目標收藏狀態。
+ * @returns {Array<{ post: { id: string } }>} 更新後搜尋結果。
+ */
+export function applyPostSearchMatchFavoriteState(previousMatches, postId, isFavorited) {
+  return previousMatches.map((match) =>
+    match.post.id === postId ? { ...match, post: { ...match.post, isFavorited } } : match,
+  );
+}
+
+/**
  * 更新本地文章列表中的標題與內容。
  * @param {Array<object>} previousPosts - 既有文章。
  * @param {string} editingPostId - 編輯中的文章 ID。
@@ -194,6 +259,16 @@ export function replaceEditedPost(previousPosts, editingPostId, title, content) 
  */
 export function removePostById(previousPosts, postId) {
   return previousPosts.filter((postItem) => postItem.id !== postId);
+}
+
+/**
+ * 從搜尋結果移除指定 nested post id。
+ * @param {Array<{ post: { id: string } }>} previousMatches - 既有搜尋結果。
+ * @param {string} postId - 文章 ID。
+ * @returns {Array<{ post: { id: string } }>} 更新後搜尋結果。
+ */
+export function removePostSearchMatchByPostId(previousMatches, postId) {
+  return previousMatches.filter((match) => match.post.id !== postId);
 }
 
 /**
