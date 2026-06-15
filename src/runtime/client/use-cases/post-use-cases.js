@@ -1,12 +1,15 @@
 /* eslint-disable max-lines -- Post browser use-case facade groups post, comment, and history APIs. */
 import { serverTimestamp } from 'firebase/firestore';
 import {
+  buildPostSearchMatch,
   buildAddCommentPayload,
   buildCreatePostPayload,
   buildUpdateCommentPayload,
   buildUpdatePostPayload,
   isActiveRecord,
+  normalizePostSearchKeyword,
   POST_NOT_FOUND_MESSAGE,
+  sortPostSearchMatches,
   toCommentData,
   toCommentDataList,
   toPostData,
@@ -30,6 +33,7 @@ import {
   fetchPostDocument,
   fetchPostDocumentsBySearch,
   fetchPostHistoryDocuments,
+  fetchSearchCandidatePostDocumentsPage,
   toggleLikePost as toggleLikePostDocument,
   updateCommentDocument,
   updatePostDocument,
@@ -48,9 +52,37 @@ export {
  * @typedef {import('firebase/firestore').QueryDocumentSnapshot} QueryDocumentSnapshot
  * @typedef {{ id: string, content: unknown, editedAt: unknown }} CommentHistoryEntry
  * @typedef {{ id: string, title: unknown, content: unknown, editedAt: unknown }} PostHistoryEntry
+ * @typedef {{ lastPostAt: import('firebase/firestore').Timestamp, lastPostId: string }} PostSearchCandidateCursor
+ * @typedef {{ lastPostAt: import('firebase/firestore').Timestamp, lastPostId: string, scannedCount: number, resultCount: number, exhausted: boolean }} PostSearchPageCursor
  */
 
 const POST_PAGE_SIZE = 10;
+
+/**
+ * 建立搜尋 load-more cursor。
+ * @param {Post & Record<string, unknown>} post - 最後掃描的候選文章。
+ * @param {number} scannedCount - 累積掃描候選數。
+ * @param {number} resultCount - 累積回傳結果數。
+ * @param {boolean} exhausted - 搜尋結果是否已耗盡。
+ * @returns {PostSearchPageCursor} 搜尋分頁 cursor。
+ */
+function toPostSearchPageCursor(post, scannedCount, resultCount, exhausted) {
+  return {
+    lastPostAt: /** @type {import('firebase/firestore').Timestamp} */ (post.postAt),
+    lastPostId: post.id,
+    scannedCount,
+    resultCount,
+    exhausted,
+  };
+}
+
+/**
+ * 取得搜尋掃描量測用時間戳。
+ * @returns {number} 單調遞增優先的毫秒時間戳。
+ */
+function getSearchScanNowMs() {
+  return globalThis.performance?.now?.() ?? Date.now();
+}
 
 /**
  * 將文章留言 history snapshot 正規化成共用 modal 需要的資料形狀。
@@ -297,6 +329,114 @@ export async function getMorePostsBySearch(searchTerm, last) {
         /** @type {Post & { title: string }} */ (cursor),
       ),
   });
+}
+
+/**
+ * 搜尋公開 active 文章，掃完整候選集合後排序，再依 result offset 回傳頁面。
+ * @param {object} params - 參數物件。
+ * @param {string} params.keyword - 搜尋關鍵字。
+ * @param {string | null} params.userUid - 目前使用者 UID；此 use-case 階段不做互動 hydration。
+ * @param {number} params.pageSize - 回傳頁大小。
+ * @param {PostSearchPageCursor | null} params.cursor - 上一批搜尋 cursor。
+ * @returns {Promise<{ keyword: string, items: Array<object>, nextCursor: PostSearchPageCursor | null, hasMore: boolean, scannedCount: number, scanElapsedMs?: number }>} 搜尋結果頁。
+ */
+export async function searchPublicActivePosts(params) {
+  const { keyword, pageSize, cursor } = params;
+  const normalizedKeyword = normalizePostSearchKeyword(keyword);
+  const normalizedPageSize = Number.isFinite(pageSize) && pageSize > 0 ? pageSize : POST_PAGE_SIZE;
+  const initialScannedCount = cursor?.scannedCount ?? 0;
+  const initialResultCount = cursor?.resultCount ?? 0;
+
+  if (!normalizedKeyword) {
+    return {
+      keyword: '',
+      items: [],
+      nextCursor: null,
+      hasMore: false,
+      scannedCount: initialScannedCount,
+    };
+  }
+
+  if (cursor?.exhausted) {
+    return {
+      keyword: normalizedKeyword.value,
+      items: [],
+      nextCursor: cursor,
+      hasMore: false,
+      scannedCount: initialScannedCount,
+    };
+  }
+
+  /** @type {Array<NonNullable<ReturnType<typeof buildPostSearchMatch>>>} */
+  const matches = [];
+  const seenPostIds = new Set();
+  let candidateCursor = /** @type {PostSearchCandidateCursor | null} */ (null);
+  let lastScannedPost = /** @type {(Post & Record<string, unknown>) | null} */ (null);
+  let scannedCount = initialScannedCount;
+  let exhausted = false;
+
+  /**
+   * 掃描下一批候選，直到候選集合耗盡。
+   * @returns {Promise<void>} 掃描完成。
+   */
+  async function scanCandidatePages() {
+    if (exhausted) return;
+
+    const { docs } = await fetchSearchCandidatePostDocumentsPage({
+      cursor: candidateCursor,
+      pageSize: normalizedPageSize,
+    });
+
+    if (docs.length === 0) {
+      exhausted = true;
+      return;
+    }
+
+    const posts = /** @type {Array<Post & Record<string, unknown>>} */ (toPostDataList(docs));
+
+    for (const post of posts) {
+      scannedCount += 1;
+      lastScannedPost = post;
+      candidateCursor = {
+        lastPostAt: /** @type {import('firebase/firestore').Timestamp} */ (post.postAt),
+        lastPostId: post.id,
+      };
+
+      const match = buildPostSearchMatch(post, normalizedKeyword);
+      if (match && !seenPostIds.has(match.post.id)) {
+        seenPostIds.add(match.post.id);
+        matches.push(match);
+      }
+    }
+
+    if (docs.length < normalizedPageSize) {
+      exhausted = true;
+      return;
+    }
+
+    await scanCandidatePages();
+  }
+
+  const scanStartedAt = getSearchScanNowMs();
+  await scanCandidatePages();
+  const scanElapsedMs = Math.max(0, getSearchScanNowMs() - scanStartedAt);
+
+  const sortedMatches = sortPostSearchMatches(matches);
+  const items = sortedMatches.slice(initialResultCount, initialResultCount + normalizedPageSize);
+  const resultCount = initialResultCount + items.length;
+  const hasMore = sortedMatches.length > resultCount;
+  const nextCursor = lastScannedPost
+    ? toPostSearchPageCursor(lastScannedPost, scannedCount, resultCount, !hasMore)
+    : null;
+
+  return {
+    keyword: normalizedKeyword.value,
+    items,
+    nextCursor,
+    hasMore,
+    scannedCount,
+    scanElapsedMs,
+  };
 }
 
 /**

@@ -47,6 +47,37 @@ export const POST_TITLE_MAX_LENGTH = 50;
 /** @type {number} 文章內容最大長度。 */
 export const POST_CONTENT_MAX_LENGTH = 10000;
 
+/** @type {number} 搜尋摘要命中前後保留字數。 */
+const POST_SEARCH_SNIPPET_CONTEXT_LENGTH = 48;
+
+/** @type {number} 標題命中時的預設內容摘要長度。 */
+const POST_SEARCH_SUMMARY_MAX_LENGTH = 160;
+
+/**
+ * @typedef {object} PostSearchKeyword
+ * @property {string} rawValue - 使用者輸入的原始關鍵字。
+ * @property {string} value - trim 後的有效關鍵字。
+ * @property {string} caseFoldedValue - 大小寫不敏感比對用關鍵字。
+ */
+
+/**
+ * @typedef {object} PostSearchHighlightRange
+ * @property {'title' | 'snippet'} field - 高亮目標欄位。
+ * @property {number} start - 高亮起點（含）。
+ * @property {number} end - 高亮終點（不含）。
+ */
+
+/**
+ * @typedef {object} PostSearchMatch
+ * @property {Post} post - 命中文章。
+ * @property {'title' | 'content'} hitType - 主要命中層級。
+ * @property {{ title: boolean, content: boolean }} matchedFields - 命中欄位。
+ * @property {number} firstMatchIndex - 主要命中欄位中的第一個命中位置。
+ * @property {string} snippet - 結果摘要。
+ * @property {PostSearchHighlightRange[]} highlightRanges - UI 高亮 metadata。
+ * @property {{ hitTypeRank: number, postAt: unknown, id: string }} rankKey - 排序鍵。
+ */
+
 /**
  * 判斷資料是否仍為可見 active 狀態。
  * @param {Record<string, unknown> | null | undefined} record - Firestore 正規化資料。
@@ -74,6 +105,177 @@ export function validatePostInput({ title, content }) {
   if (c.length > POST_CONTENT_MAX_LENGTH) return '內容不可超過 10,000 字';
 
   return null;
+}
+
+/**
+ * 將搜尋關鍵字正規化。
+ * @param {string | null | undefined} rawKeyword - 使用者輸入關鍵字。
+ * @returns {PostSearchKeyword | null} 有效搜尋關鍵字；空白輸入回傳 null。
+ */
+export function normalizePostSearchKeyword(rawKeyword) {
+  const rawValue = rawKeyword ?? '';
+  const value = rawValue.trim();
+  if (!value) return null;
+
+  return {
+    rawValue,
+    value,
+    caseFoldedValue: value.toLowerCase(),
+  };
+}
+
+/**
+ * 將任意值轉成搜尋比對文字。
+ * @param {unknown} value - 欄位值。
+ * @returns {string} 可搜尋文字。
+ */
+function toSearchableText(value) {
+  return typeof value === 'string' ? value : '';
+}
+
+/**
+ * 建立內容摘要與摘要對應的原文 offset。
+ * @param {string} content - 文章內容。
+ * @param {number} matchIndex - 內容命中位置。
+ * @param {number} keywordLength - 關鍵字長度。
+ * @returns {{ snippet: string, offset: number }} 摘要與原文 offset。
+ */
+function buildContentHitSnippet(content, matchIndex, keywordLength) {
+  const rawStart = Math.max(0, matchIndex - POST_SEARCH_SNIPPET_CONTEXT_LENGTH);
+  const rawEnd = Math.min(
+    content.length,
+    matchIndex + keywordLength + POST_SEARCH_SNIPPET_CONTEXT_LENGTH,
+  );
+  const rawSnippet = content.slice(rawStart, rawEnd);
+  const leadingWhitespaceLength = rawSnippet.length - rawSnippet.trimStart().length;
+
+  return {
+    snippet: rawSnippet.trim(),
+    offset: rawStart + leadingWhitespaceLength,
+  };
+}
+
+/**
+ * 建立一般內容摘要。
+ * @param {string} content - 文章內容。
+ * @returns {string} 摘要。
+ */
+function buildDefaultPostSearchSnippet(content) {
+  return content.slice(0, POST_SEARCH_SUMMARY_MAX_LENGTH).trim();
+}
+
+/**
+ * 將時間欄位轉成排序用毫秒值。
+ * @param {unknown} value - Timestamp-like、Date、number 或 string。
+ * @returns {number} 可排序毫秒值；無效值為 0。
+ */
+function toSortableMillis(value) {
+  if (value && typeof value === 'object' && 'toMillis' in value && typeof value.toMillis === 'function') {
+    return Number(value.toMillis());
+  }
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const millis = Date.parse(value);
+    return Number.isNaN(millis) ? 0 : millis;
+  }
+
+  return 0;
+}
+
+/**
+ * 建立單篇文章的搜尋命中資料。
+ * @param {(Post & Record<string, unknown>) | null | undefined} post - 候選文章。
+ * @param {PostSearchKeyword | null | undefined} keyword - 正規化關鍵字。
+ * @returns {PostSearchMatch | null} 命中資料；不可見或未命中時為 null。
+ */
+export function buildPostSearchMatch(post, keyword) {
+  if (!post || !keyword || !isActiveRecord(post)) return null;
+
+  const title = toSearchableText(post.title);
+  const content = toSearchableText(post.content);
+  const caseFoldedTitle = title.toLowerCase();
+  const caseFoldedContent = content.toLowerCase();
+  const titleMatchIndex = caseFoldedTitle.indexOf(keyword.caseFoldedValue);
+  const contentMatchIndex = caseFoldedContent.indexOf(keyword.caseFoldedValue);
+  const titleMatches = titleMatchIndex >= 0;
+  const contentMatches = contentMatchIndex >= 0;
+
+  if (!titleMatches && !contentMatches) return null;
+
+  const hitType = titleMatches ? 'title' : 'content';
+  const firstMatchIndex = titleMatches ? titleMatchIndex : contentMatchIndex;
+  /** @type {PostSearchHighlightRange[]} */
+  const highlightRanges = [];
+  const snippetInfo = contentMatches
+    ? buildContentHitSnippet(content, contentMatchIndex, keyword.value.length)
+    : { snippet: buildDefaultPostSearchSnippet(content), offset: 0 };
+
+  if (titleMatches) {
+    highlightRanges.push({
+      field: 'title',
+      start: titleMatchIndex,
+      end: titleMatchIndex + keyword.value.length,
+    });
+  }
+
+  if (contentMatches) {
+    highlightRanges.push({
+      field: 'snippet',
+      start: contentMatchIndex - snippetInfo.offset,
+      end: contentMatchIndex - snippetInfo.offset + keyword.value.length,
+    });
+  }
+
+  return {
+    post,
+    hitType,
+    matchedFields: {
+      title: titleMatches,
+      content: contentMatches,
+    },
+    firstMatchIndex,
+    snippet: snippetInfo.snippet,
+    highlightRanges,
+    rankKey: {
+      hitTypeRank: hitType === 'title' ? 0 : 1,
+      postAt: post.postAt,
+      id: post.id,
+    },
+  };
+}
+
+/**
+ * 排序搜尋命中資料。
+ * @param {Array<PostSearchMatch | null | undefined>} matches - 未排序命中資料。
+ * @returns {PostSearchMatch[]} 已排序命中資料。
+ */
+export function sortPostSearchMatches(matches) {
+  return matches
+    .filter((match) => Boolean(match))
+    .sort((left, right) => {
+      const hitTypeDiff = left.rankKey.hitTypeRank - right.rankKey.hitTypeRank;
+      if (hitTypeDiff !== 0) return hitTypeDiff;
+
+      const timeDiff =
+        toSortableMillis(right.rankKey.postAt) - toSortableMillis(left.rankKey.postAt);
+      if (timeDiff !== 0) return timeDiff;
+
+      return String(right.rankKey.id).localeCompare(String(left.rankKey.id));
+    });
+}
+
+/**
+ * 從候選文章中篩選並排序搜尋結果。
+ * @param {Array<Post & Record<string, unknown>>} posts - 候選文章。
+ * @param {string | null | undefined} rawKeyword - 使用者輸入關鍵字。
+ * @returns {PostSearchMatch[]} 已排序搜尋結果。
+ */
+export function filterAndRankPostSearchMatches(posts, rawKeyword) {
+  const keyword = normalizePostSearchKeyword(rawKeyword);
+  if (!keyword) return [];
+
+  return sortPostSearchMatches(posts.map((post) => buildPostSearchMatch(post, keyword)));
 }
 
 /**

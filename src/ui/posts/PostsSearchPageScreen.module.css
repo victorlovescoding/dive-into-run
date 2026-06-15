@@ -1,0 +1,61 @@
+.results {
+  display: grid;
+  gap: 12px;
+}
+
+.stateBlock {
+  margin: 24px 0;
+  padding: 40px 16px;
+  border: 1px solid #e0e3e7;
+  border-radius: 8px;
+  background: #fff;
+  color: #3c4043;
+  text-align: center;
+}
+
+.stateBlock p {
+  margin: 0;
+}
+
+.stateHint {
+  margin-top: 8px;
+  color: #5f6368;
+  font-size: 0.95rem;
+}
+
+.retryButton {
+  margin-top: 16px;
+  padding: 8px 14px;
+  border: 1px solid #1a73e8;
+  border-radius: 6px;
+  background: #1a73e8;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.retryButton:hover {
+  background: #1558b0;
+  border-color: #1558b0;
+}
+
+.retryButton:focus-visible {
+  outline: 3px solid #a8c7fa;
+  outline-offset: 2px;
+}
+
+.sentinel {
+  margin: 16px 0 32px;
+  padding: 16px;
+  color: #5f6368;
+  text-align: center;
+}
+
+.sentinel p {
+  margin: 0;
+}
+
+.observerSentinel {
+  height: 1px;
+}

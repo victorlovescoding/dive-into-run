@@ -81,6 +81,18 @@
   word-break: break-word;
 }
 
+.searchSnippet {
+  color: #2f3a45;
+}
+
+.searchHighlight {
+  padding: 0 1px;
+  border-radius: 2px;
+  background-color: #fff0a6;
+  color: inherit;
+  font-weight: 700;
+}
+
 .contentWrapper {
   overflow: hidden;
   transition: max-height 250ms ease;
