@@ -63,6 +63,7 @@ export default function usePostsPageRuntime() {
   const [nextCursor, setNextCursor] = useState(null);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
   const [isDraftConfirmOpen, setIsDraftConfirmOpen] = useState(false);
+  const [reportDialogTarget, setReportDialogTarget] = useState(null);
 
   const dialogRef = useRef(/** @type {HTMLDialogElement | null} */ (null));
   const bottomRef = useRef(/** @type {HTMLDivElement | null} */ (null));
@@ -360,6 +361,34 @@ export default function usePostsPageRuntime() {
   }, []);
 
   /**
+   * 開啟檢舉對話框。
+   * @param {object} target - Report target descriptor.
+   */
+  const handleOpenReportDialog = useCallback((target) => {
+    setOpenMenuPostId('');
+    setReportDialogTarget(target);
+  }, []);
+
+  /** 關閉檢舉對話框。 */
+  const handleCloseReportDialog = useCallback(() => {
+    setReportDialogTarget(null);
+  }, []);
+
+  /**
+   * 顯示檢舉送出結果。
+   * @param {{ ok: boolean, message: string }} result - Submit result.
+   */
+  const handleReportResult = useCallback(
+    (result) => {
+      showToast(result.message, result.ok ? 'success' : 'error');
+      if (result.ok) {
+        setReportDialogTarget(null);
+      }
+    },
+    [showToast],
+  );
+
+  /**
    * 刪除文章。
    * @param {string} postId - 文章 ID。
    */
@@ -460,6 +489,7 @@ export default function usePostsPageRuntime() {
     openMenuPostId,
     isLoadingNext,
     isDraftConfirmOpen,
+    reportDialogTarget,
     articleHistoryPost,
     articleHistoryEntries,
     articleHistoryError,
@@ -473,6 +503,9 @@ export default function usePostsPageRuntime() {
     handleToggleFavoritePost,
     handleToggleOwnerMenu,
     handleCloseOwnerMenu,
+    handleOpenReportDialog,
+    handleCloseReportDialog,
+    handleReportResult,
     handleDeletePost,
     handleSubmitPost,
     handleViewArticleHistory,

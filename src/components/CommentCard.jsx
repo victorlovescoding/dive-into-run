@@ -12,6 +12,7 @@ import styles from './CommentCard.module.css';
  * @property {(comment: import('@/lib/firebase-comments').CommentData) => void} [onEdit] - 編輯回呼。
  * @property {(comment: import('@/lib/firebase-comments').CommentData) => void} [onDelete] - 刪除回呼。
  * @property {(comment: import('@/lib/firebase-comments').CommentData) => void} [onViewHistory] - 查看編輯記錄回呼。
+ * @property {(comment: import('@/lib/firebase-comments').CommentData) => void} [onReport] - 檢舉回呼。
  * @property {import('react').Key} [key] - React reconciler 專用 key；同 PostCardProps 的說明，
  *   為了讓 JSDoc-based `checkJs` 不誤報 "Property 'key' does not exist" 而列出。
  */
@@ -40,10 +41,13 @@ export default function CommentCard({
   onEdit,
   onDelete,
   onViewHistory,
+  onReport,
 }) {
   const timeText = formatCommentTime(comment.createdAt);
   const timeFullText = formatCommentTimeFull(comment.createdAt);
   const isoString = toIsoString(comment.createdAt);
+  const canShowOwnerActions = isOwner && (onEdit || onDelete);
+  const canShowReportAction = !isOwner && onReport;
 
   return (
     <article
@@ -71,8 +75,12 @@ export default function CommentCard({
             )}
           </div>
         </div>
-        {isOwner && (
-          <CommentCardMenu onEdit={() => onEdit?.(comment)} onDelete={() => onDelete?.(comment)} />
+        {(canShowOwnerActions || canShowReportAction) && (
+          <CommentCardMenu
+            onEdit={isOwner && onEdit ? () => onEdit(comment) : undefined}
+            onDelete={isOwner && onDelete ? () => onDelete(comment) : undefined}
+            onReport={!isOwner && onReport ? () => onReport(comment) : undefined}
+          />
         )}
       </div>
       <p className={styles.content}>{comment.content}</p>

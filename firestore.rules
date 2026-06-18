@@ -470,6 +470,10 @@ service cloud.firestore {
       }
     }
 
+    match /reports/{reportId} {
+      allow read, write: if false;
+    }
+
     match /posts/{postId} {
       allow read: if true;
 

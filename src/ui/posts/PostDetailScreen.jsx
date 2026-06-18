@@ -11,6 +11,7 @@ import ComposeModal from '@/components/ComposeModal';
 import EditHistoryModal from '@/components/EditHistoryModal';
 import PostCard from '@/components/PostCard';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
+import ReportDialog from '@/components/reports/ReportDialog';
 import ShareButton from '@/components/ShareButton';
 import styles from './PostDetailScreen.module.css';
 
@@ -238,6 +239,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     originalContent,
     isSubmitting,
     isDraftConfirmOpen,
+    reportDialogTarget,
     isLoadingNext,
     openMenuPostId,
     dialogRef,
@@ -263,6 +265,9 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     handleCloseHistory,
     handleViewArticleHistory,
     handleCloseArticleHistory,
+    handleOpenReportDialog,
+    handleCloseReportDialog,
+    handleReportResult,
     handleSubmitComment,
   } = runtime;
 
@@ -284,6 +289,43 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
   const commentsSectionClassName = shouldRenderCommentComposer
     ? `${styles.commentsSection} ${styles.commentsWithComposerReserve}`
     : styles.commentsSection;
+  const reportDialogPayload = reportDialogTarget
+    ? {
+        targetType: reportDialogTarget.targetType,
+        target:
+          reportDialogTarget.targetType === 'postComment'
+            ? { postId: reportDialogTarget.postId, commentId: reportDialogTarget.commentId }
+            : { postId: reportDialogTarget.postId },
+        preview:
+          reportDialogTarget.targetType === 'postComment'
+            ? reportDialogTarget.target?.content ?? ''
+            : reportDialogTarget.target?.title ?? '',
+        sourcePath:
+          reportDialogTarget.targetType === 'postComment' && reportDialogTarget.isNotificationTarget
+            ? `/posts/${reportDialogTarget.postId}?commentId=${reportDialogTarget.commentId}`
+            : `/posts/${reportDialogTarget.postId}`,
+      }
+    : null;
+  const handleReportPost =
+    user && handleOpenReportDialog
+      ? (targetPost) =>
+          handleOpenReportDialog({
+            targetType: 'post',
+            postId: targetPost.id,
+            target: targetPost,
+          })
+      : undefined;
+  const handleReportComment =
+    user && handleOpenReportDialog && post
+      ? (targetComment) =>
+          handleOpenReportDialog({
+            targetType: 'postComment',
+            postId: post.id,
+            commentId: targetComment.id,
+            isNotificationTarget: targetComment.id === pinnedComment?.id,
+            target: targetComment,
+          })
+      : undefined;
 
   const handleOpenCommentEdit = useCallback(
     (currentComment) => {
@@ -363,6 +405,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
             onLike={handleToggleLike}
             onToggleFavorite={handleToggleFavoritePost}
             onViewArticleHistory={handleViewArticleHistory}
+            onReport={handleReportPost}
           >
             <PostDetailActions title={post.title} url={shareUrl} />
           </PostCard>
@@ -383,6 +426,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
                     handleDeleteComment(currentComment.id);
                   }}
                   onViewHistory={handleViewHistory}
+                  onReport={handleReportComment}
                 />
               </div>
             )}
@@ -390,7 +434,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
               <CommentCard
                 key={commentItem.id}
                 comment={mapToCommentCardData(commentItem)}
-                isOwner={!!commentItem.isAuthor}
+                isOwner={!!commentItem.isAuthor || user?.uid === commentItem.authorUid}
                 isHighlighted={commentItem.id === highlightedCommentId}
                 onEdit={(currentComment) => {
                   handleOpenCommentEdit(currentComment);
@@ -399,6 +443,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
                   handleDeleteComment(currentComment.id);
                 }}
                 onViewHistory={handleViewHistory}
+                onReport={handleReportComment}
               />
             ))}
           </section>
@@ -457,6 +502,19 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
             onContinueEditing={handleContinueEditingDraft}
             onDiscardDraft={handleDiscardComposerDraft}
           />
+
+          {reportDialogPayload && (
+            <ReportDialog
+              isOpen
+              currentUser={user}
+              targetType={reportDialogPayload.targetType}
+              target={reportDialogPayload.target}
+              preview={reportDialogPayload.preview}
+              sourcePath={reportDialogPayload.sourcePath}
+              onClose={handleCloseReportDialog}
+              onResult={handleReportResult}
+            />
+          )}
 
           {isLoadingNext && <PostCardSkeleton count={1} />}
           <div ref={bottomRef} className={styles.scrollSentinel} />

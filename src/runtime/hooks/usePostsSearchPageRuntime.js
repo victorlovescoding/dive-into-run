@@ -114,6 +114,7 @@ export default function usePostsSearchPageRuntime() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openMenuPostId, setOpenMenuPostId] = useState('');
   const [isDraftConfirmOpen, setIsDraftConfirmOpen] = useState(false);
+  const [reportDialogTarget, setReportDialogTarget] = useState(null);
   const dialogRef = useRef(/** @type {HTMLDialogElement | null} */ (null));
   const bottomRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const isLoadingNextRef = useRef(false);
@@ -539,6 +540,34 @@ export default function usePostsSearchPageRuntime() {
   }, []);
 
   /**
+   * 開啟檢舉對話框。
+   * @param {object} target - Report target descriptor.
+   */
+  const handleOpenReportDialog = useCallback((target) => {
+    setOpenMenuPostId('');
+    setReportDialogTarget(target);
+  }, []);
+
+  /** 關閉檢舉對話框。 */
+  const handleCloseReportDialog = useCallback(() => {
+    setReportDialogTarget(null);
+  }, []);
+
+  /**
+   * 顯示檢舉送出結果。
+   * @param {{ ok: boolean, message: string }} result - Submit result.
+   */
+  const handleReportResult = useCallback(
+    (result) => {
+      showToast(result.message, result.ok ? 'success' : 'error');
+      if (result.ok) {
+        setReportDialogTarget(null);
+      }
+    },
+    [showToast],
+  );
+
+  /**
    * 開啟搜尋結果文章編輯 modal。
    * @param {string} postId - 編輯目標文章 ID。
    * @returns {void}
@@ -713,6 +742,7 @@ export default function usePostsSearchPageRuntime() {
     scannedCount,
     openMenuPostId,
     isDraftConfirmOpen,
+    reportDialogTarget,
     errorMessage,
     isLoadingNext,
     articleHistoryPost,
@@ -731,6 +761,9 @@ export default function usePostsSearchPageRuntime() {
     handleToggleFavoritePost,
     handleToggleOwnerMenu,
     handleCloseOwnerMenu,
+    handleOpenReportDialog,
+    handleCloseReportDialog,
+    handleReportResult,
     handleEditPost,
     handleDeletePost,
     handleSubmitPost,
