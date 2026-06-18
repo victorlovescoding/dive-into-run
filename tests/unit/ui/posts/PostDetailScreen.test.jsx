@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import PostDetailScreen from '../../../../src/ui/posts/PostDetailScreen.jsx';
 
 const commentInputProps = [];
+const reportDialogProps = [];
 
 vi.mock('next/image', () => ({
   default: ({ src, alt, width, height, className }) => (
@@ -54,9 +55,14 @@ vi.mock('@/components/CommentInput', () => ({
 }));
 
 vi.mock('@/components/CommentCard', () => ({
-  default: ({ comment }) => (
+  default: ({ comment, onReport }) => (
     <article id={comment.id} data-testid="comment-card">
       {comment.content}
+      {onReport && (
+        <button type="button" onClick={() => onReport(comment)}>
+          report comment {comment.id}
+        </button>
+      )}
     </article>
   ),
 }));
@@ -78,10 +84,15 @@ vi.mock('@/components/EditHistoryModal', () => ({
 }));
 
 vi.mock('@/components/PostCard', () => ({
-  default: ({ post, children }) => (
+  default: ({ post, children, onReport }) => (
     <article>
       <h1>{post.title}</h1>
       <p>{post.content}</p>
+      {onReport && (
+        <button type="button" onClick={() => onReport(post)}>
+          report post {post.id}
+        </button>
+      )}
       {children}
     </article>
   ),
@@ -89,6 +100,17 @@ vi.mock('@/components/PostCard', () => ({
 
 vi.mock('@/components/PostCardSkeleton', () => ({
   default: () => <div role="status">載入更多文章</div>,
+}));
+
+vi.mock('@/components/reports/ReportDialog', () => ({
+  default: (props) => {
+    reportDialogProps.push(props);
+    return (
+      <div role="dialog" aria-label={props.targetType === 'postComment' ? '檢舉這則留言' : '檢舉這篇文章'}>
+        {props.preview}
+      </div>
+    );
+  },
 }));
 
 vi.mock('@/components/ShareButton', () => ({
@@ -182,6 +204,7 @@ function renderScreen(runtimeOverrides = {}) {
 
 afterEach(() => {
   commentInputProps.length = 0;
+  reportDialogProps.length = 0;
   vi.clearAllMocks();
 });
 
@@ -310,5 +333,172 @@ describe('PostDetailScreen comment composer', () => {
 
     await user.click(submitButton);
     expect(handleSubmitComment).toHaveBeenLastCalledWith('有效留言');
+  });
+});
+
+describe('PostDetailScreen report wiring', () => {
+  it('passes authenticated detail post report wiring to the post card', async () => {
+    const user = userEvent.setup();
+    const handleOpenReportDialog = vi.fn();
+
+    renderScreen({ handleOpenReportDialog });
+
+    await user.click(screen.getByRole('button', { name: 'report post post-1' }));
+
+    expect(handleOpenReportDialog).toHaveBeenLastCalledWith({
+      targetType: 'post',
+      postId: 'post-1',
+      target: expect.objectContaining({ id: 'post-1' }),
+    });
+  });
+
+  it('passes normal post comment report wiring to visible comment cards', async () => {
+    const user = userEvent.setup();
+    const handleOpenReportDialog = vi.fn();
+    const comment = {
+      id: 'normal-comment-report-target',
+      authorUid: 'runner-1',
+      content: '一般文章留言',
+      createdAt: null,
+      isAuthor: false,
+    };
+
+    renderScreen({
+      comments: [comment],
+      visibleComments: [comment],
+      handleOpenReportDialog,
+    });
+
+    await user.click(screen.getByRole('button', { name: 'report comment normal-comment-report-target' }));
+
+    expect(handleOpenReportDialog).toHaveBeenLastCalledWith({
+      targetType: 'postComment',
+      postId: 'post-1',
+      commentId: 'normal-comment-report-target',
+      isNotificationTarget: false,
+      target: expect.objectContaining({ id: 'normal-comment-report-target' }),
+    });
+  });
+
+  it('passes notification target comment report wiring without adding extra target comments', async () => {
+    const user = userEvent.setup();
+    const handleOpenReportDialog = vi.fn();
+
+    renderScreen({
+      highlightedCommentId: 'target-comment-report',
+      pinnedComment: {
+        id: 'target-comment-report',
+        authorUid: 'runner-target',
+        content: '通知中的文章留言',
+        createdAt: null,
+        isAuthor: false,
+      },
+      visibleComments: [
+        {
+          id: 'normal-comment',
+          authorUid: 'runner-normal',
+          content: '一般文章留言',
+          createdAt: null,
+          isAuthor: false,
+        },
+      ],
+      handleOpenReportDialog,
+    });
+
+    expect(screen.getAllByTestId('comment-card')).toHaveLength(2);
+    await user.click(screen.getByRole('button', { name: 'report comment target-comment-report' }));
+
+    expect(handleOpenReportDialog).toHaveBeenLastCalledWith({
+      targetType: 'postComment',
+      postId: 'post-1',
+      commentId: 'target-comment-report',
+      isNotificationTarget: true,
+      target: expect.objectContaining({ id: 'target-comment-report' }),
+    });
+  });
+
+  it('does not pass post or comment report wiring for anonymous users', () => {
+    renderScreen({
+      user: null,
+      comments: [
+        {
+          id: 'anonymous-comment-report-hidden',
+          authorUid: 'runner-1',
+          content: '匿名不可檢舉',
+          createdAt: null,
+          isAuthor: false,
+        },
+      ],
+    });
+
+    expect(screen.queryByRole('button', { name: /report post/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /report comment/ })).not.toBeInTheDocument();
+  });
+
+  it('renders the detail post report dialog from the runtime report target', () => {
+    renderScreen({
+      reportDialogTarget: {
+        targetType: 'post',
+        postId: 'post-1',
+        target: {
+          id: 'post-1',
+          title: '詳情頁檢舉文章',
+        },
+      },
+      handleCloseReportDialog: vi.fn(),
+      handleReportResult: vi.fn(),
+    });
+
+    expect(screen.getByRole('dialog', { name: '檢舉這篇文章' })).toBeInTheDocument();
+    expect(screen.getByText('詳情頁檢舉文章')).toBeInTheDocument();
+    expect(reportDialogProps.at(-1)).toMatchObject({
+      target: { postId: 'post-1' },
+      sourcePath: '/posts/post-1',
+    });
+  });
+
+  it('renders the detail comment report dialog from the runtime report target', () => {
+    renderScreen({
+      reportDialogTarget: {
+        targetType: 'postComment',
+        postId: 'post-1',
+        commentId: 'comment-report-dialog',
+        target: {
+          id: 'comment-report-dialog',
+          content: '詳情頁檢舉留言',
+        },
+      },
+      handleCloseReportDialog: vi.fn(),
+      handleReportResult: vi.fn(),
+    });
+
+    expect(screen.getByRole('dialog', { name: '檢舉這則留言' })).toBeInTheDocument();
+    expect(screen.getByText('詳情頁檢舉留言')).toBeInTheDocument();
+    expect(reportDialogProps.at(-1)).toMatchObject({
+      target: { postId: 'post-1', commentId: 'comment-report-dialog' },
+      sourcePath: '/posts/post-1',
+    });
+  });
+
+  it('uses the notification target comment URL as source path only for pinned comments', () => {
+    renderScreen({
+      reportDialogTarget: {
+        targetType: 'postComment',
+        postId: 'post-1',
+        commentId: 'target-comment-report',
+        isNotificationTarget: true,
+        target: {
+          id: 'target-comment-report',
+          content: '通知目標檢舉留言',
+        },
+      },
+      handleCloseReportDialog: vi.fn(),
+      handleReportResult: vi.fn(),
+    });
+
+    expect(reportDialogProps.at(-1)).toMatchObject({
+      target: { postId: 'post-1', commentId: 'target-comment-report' },
+      sourcePath: '/posts/post-1?commentId=target-comment-report',
+    });
   });
 });

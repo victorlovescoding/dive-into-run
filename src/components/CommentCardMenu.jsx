@@ -6,15 +6,21 @@ import styles from './CommentCardMenu.module.css';
 /**
  * 留言卡片三點選單。
  * @param {object} props - 元件 props。
- * @param {() => void} props.onEdit - 點擊「編輯留言」回呼。
- * @param {() => void} props.onDelete - 點擊「刪除留言」回呼。
+ * @param {() => void} [props.onEdit] - 點擊「編輯留言」回呼。
+ * @param {() => void} [props.onDelete] - 點擊「刪除留言」回呼。
+ * @param {() => void} [props.onReport] - 點擊「檢舉留言」回呼。
  * @returns {import('react').ReactElement} 三點選單元件。
  */
-export default function CommentCardMenu({ onEdit, onDelete }) {
+export default function CommentCardMenu({ onEdit, onDelete, onReport }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const triggerRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const itemsRef = useRef(/** @type {HTMLButtonElement[]} */ ([]));
+  const menuItems = [
+    onEdit && { key: 'edit', label: '編輯留言', action: onEdit },
+    onDelete && { key: 'delete', label: '刪除留言', action: onDelete },
+    onReport && { key: 'report', label: '檢舉留言', action: onReport },
+  ].filter(Boolean);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -78,20 +84,17 @@ export default function CommentCardMenu({ onEdit, onDelete }) {
     }
   }, []);
 
-  /**
-   * 處理點擊「編輯留言」。
-   */
-  function handleEdit() {
-    setIsOpen(false);
-    onEdit();
+  if (menuItems.length === 0) {
+    return null;
   }
 
   /**
-   * 處理點擊「刪除留言」。
+   * 關閉選單並執行指定操作。
+   * @param {() => void} action - 選單操作。
    */
-  function handleDelete() {
+  function handleMenuItem(action) {
     setIsOpen(false);
-    onDelete();
+    action();
   }
 
   return (
@@ -109,30 +112,23 @@ export default function CommentCardMenu({ onEdit, onDelete }) {
       </button>
       {isOpen && (
         <div className={styles.dropdown} role="menu" tabIndex={-1} onKeyDown={handleMenuKeyDown}>
-          <button
-            ref={(el) => {
-              itemsRef.current[0] = /** @type {HTMLButtonElement} */ (el);
-            }}
-            type="button"
-            role="menuitem"
-            className={styles.menuItem}
-            onClick={handleEdit}
-            tabIndex={0}
-          >
-            編輯留言
-          </button>
-          <button
-            ref={(el) => {
-              itemsRef.current[1] = /** @type {HTMLButtonElement} */ (el);
-            }}
-            type="button"
-            role="menuitem"
-            className={styles.menuItem}
-            onClick={handleDelete}
-            tabIndex={-1}
-          >
-            刪除留言
-          </button>
+          {menuItems.map((item, index) => (
+            <button
+              key={item.key}
+              ref={(el) => {
+                if (el) {
+                  itemsRef.current[index] = el;
+                }
+              }}
+              type="button"
+              role="menuitem"
+              className={styles.menuItem}
+              onClick={() => handleMenuItem(item.action)}
+              tabIndex={index === 0 ? 0 : -1}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       )}
     </div>

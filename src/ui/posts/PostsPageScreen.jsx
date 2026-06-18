@@ -5,6 +5,7 @@ import ComposePrompt from '@/components/ComposePrompt';
 import EditHistoryModal from '@/components/EditHistoryModal';
 import PostCard from '@/components/PostCard';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
+import ReportDialog from '@/components/reports/ReportDialog';
 import styles from '@/app/posts/posts.module.css';
 import PostSearchForm from '@/ui/posts/PostSearchForm';
 
@@ -21,6 +22,7 @@ import PostSearchForm from '@/ui/posts/PostSearchForm';
  * @param {(postId: string) => void | Promise<void>} props.onLike - 按讚文章。
  * @param {(postId: string) => void | Promise<void>} props.onToggleFavorite - 收藏文章。
  * @param {(post: object) => void | Promise<void>} props.onViewArticleHistory - 查看文章編輯記錄。
+ * @param {(post: object) => void | Promise<void>} [props.onReport] - 開啟文章檢舉流程。
  * @returns {import('react').ReactNode} 文章列表內容。
  */
 function renderPostList({
@@ -34,6 +36,7 @@ function renderPostList({
   onLike,
   onToggleFavorite,
   onViewArticleHistory,
+  onReport,
 }) {
   if (isLoading) {
     return <PostCardSkeleton count={3} />;
@@ -55,6 +58,7 @@ function renderPostList({
       onLike={onLike}
       onToggleFavorite={onToggleFavorite}
       onViewArticleHistory={onViewArticleHistory}
+      onReport={onReport}
     />
   ));
 }
@@ -79,6 +83,7 @@ export default function PostsPageScreen({ runtime }) {
     openMenuPostId,
     isLoadingNext,
     isDraftConfirmOpen,
+    reportDialogTarget,
     articleHistoryPost,
     articleHistoryEntries,
     articleHistoryError,
@@ -94,12 +99,24 @@ export default function PostsPageScreen({ runtime }) {
     handleSubmitPost,
     handleToggleFavoritePost,
     handleViewArticleHistory,
+    handleOpenReportDialog,
+    handleCloseReportDialog,
+    handleReportResult,
     handleCloseArticleHistory,
     handleRequestComposerClose,
     handleSaveComposerDraft,
     handleContinueEditingDraft,
     handleDiscardComposerDraft,
   } = runtime;
+  const handleReportPost =
+    user && handleOpenReportDialog
+      ? (targetPost) =>
+          handleOpenReportDialog({
+            targetType: 'post',
+            postId: targetPost.id,
+            target: targetPost,
+          })
+      : undefined;
 
   return (
     <div className={styles.feed} data-testid="post-feed">
@@ -117,6 +134,7 @@ export default function PostsPageScreen({ runtime }) {
         onLike: handlePressLike,
         onToggleFavorite: handleToggleFavoritePost,
         onViewArticleHistory: handleViewArticleHistory,
+        onReport: handleReportPost,
       })}
 
       {isLoadingNext && <PostCardSkeleton count={1} />}
@@ -139,6 +157,19 @@ export default function PostsPageScreen({ runtime }) {
         onContinueEditing={handleContinueEditingDraft}
         onDiscardDraft={handleDiscardComposerDraft}
       />
+
+      {reportDialogTarget && (
+        <ReportDialog
+          isOpen
+          currentUser={user}
+          targetType="post"
+          target={{ postId: reportDialogTarget.postId }}
+          preview={reportDialogTarget.target?.title ?? ''}
+          sourcePath="/posts"
+          onClose={handleCloseReportDialog}
+          onResult={handleReportResult}
+        />
+      )}
 
       {articleHistoryPost && (
         <EditHistoryModal

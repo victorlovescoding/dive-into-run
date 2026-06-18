@@ -22,6 +22,7 @@ const composePromptProps = [];
 const postCardProps = [];
 const postCardSkeletonProps = [];
 const postSearchFormProps = [];
+const reportDialogProps = [];
 
 /** @type {import('react').ComponentType<{ runtime: Record<string, unknown> }> | null} */
 let PostsPageScreen = null;
@@ -83,6 +84,11 @@ vi.mock('@/components/PostCard', () => ({
         <button type="button" onClick={() => props.onViewArticleHistory(props.post)}>
           history {props.post.id}
         </button>
+        {props.onReport && (
+          <button type="button" onClick={() => props.onReport(props.post)}>
+            report {props.post.id}
+          </button>
+        )}
       </article>
     );
   },
@@ -92,6 +98,17 @@ vi.mock('@/components/PostCardSkeleton', () => ({
   default: (props) => {
     postCardSkeletonProps.push(props);
     return <div role="status">載入 {props.count} 篇文章</div>;
+  },
+}));
+
+vi.mock('@/components/reports/ReportDialog', () => ({
+  default: (props) => {
+    reportDialogProps.push(props);
+    return (
+      <div role="dialog" aria-label={props.targetType === 'postComment' ? '檢舉這則留言' : '檢舉這篇文章'}>
+        {props.preview}
+      </div>
+    );
   },
 }));
 
@@ -117,6 +134,7 @@ afterEach(() => {
   postCardProps.length = 0;
   postCardSkeletonProps.length = 0;
   postSearchFormProps.length = 0;
+  reportDialogProps.length = 0;
   resetPostsSearchRuntimeMocks({ pathname: '/posts' });
   vi.clearAllMocks();
 });
@@ -286,6 +304,68 @@ describe('PostsPageScreen search entry', () => {
     expect(handleComposeButton).toHaveBeenLastCalledWith(post.id);
     expect(handleDeletePost).toHaveBeenLastCalledWith(post.id);
     expect(handleViewArticleHistory).toHaveBeenLastCalledWith(post);
+  });
+
+  it('passes authenticated main feed post report wiring to post cards', async () => {
+    const user = setupPostsSearchUser();
+    const post = createPostSearchPost({
+      id: 'post-screen-report-target',
+      title: '主河道檢舉文章',
+      content: '主河道文章卡片檢舉維持可用。',
+      isAuthor: false,
+    });
+    const handleOpenReportDialog = vi.fn();
+
+    renderScreen({
+      posts: [post],
+      handleOpenReportDialog,
+    });
+
+    await user.click(screen.getByRole('button', { name: 'report post-screen-report-target' }));
+
+    expect(postCardProps[0].onReport).toEqual(expect.any(Function));
+    expect(handleOpenReportDialog).toHaveBeenLastCalledWith({
+      targetType: 'post',
+      postId: post.id,
+      target: post,
+    });
+  });
+
+  it('does not pass main feed post report wiring for anonymous users', () => {
+    const post = createPostSearchPost({
+      id: 'post-screen-anonymous-report-hidden',
+      isAuthor: false,
+    });
+
+    renderScreen({
+      user: null,
+      posts: [post],
+    });
+
+    expect(postCardProps[0].onReport).toBeUndefined();
+    expect(screen.queryByRole('button', { name: 'report post-screen-anonymous-report-hidden' })).not.toBeInTheDocument();
+  });
+
+  it('renders the post report dialog from the runtime report target', () => {
+    renderScreen({
+      reportDialogTarget: {
+        targetType: 'post',
+        postId: 'post-screen-report-dialog',
+        target: {
+          id: 'post-screen-report-dialog',
+          title: '主河道檢舉對話框文章',
+        },
+      },
+      handleCloseReportDialog: vi.fn(),
+      handleReportResult: vi.fn(),
+    });
+
+    expect(screen.getByRole('dialog', { name: '檢舉這篇文章' })).toBeInTheDocument();
+    expect(screen.getByText('主河道檢舉對話框文章')).toBeInTheDocument();
+    expect(reportDialogProps.at(-1)).toMatchObject({
+      target: { postId: 'post-screen-report-dialog' },
+      sourcePath: '/posts',
+    });
   });
 
   it('uses the main feed loading-more sentinel independent from search URL state', () => {

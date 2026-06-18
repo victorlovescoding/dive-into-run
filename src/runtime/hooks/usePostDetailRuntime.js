@@ -53,6 +53,7 @@ export default function usePostDetailRuntime(postId) {
   const [openMenuPostId, setOpenMenuPostId] = useState('');
   const [editingPostId, setEditingPostId] = useState(null);
   const [isDraftConfirmOpen, setIsDraftConfirmOpen] = useState(false);
+  const [reportDialogTarget, setReportDialogTarget] = useState(null);
 
   const dialogRef = useRef(/** @type {HTMLDialogElement | null} */ (null));
   const isMountedRef = useRef(false);
@@ -304,6 +305,34 @@ export default function usePostDetailRuntime(postId) {
     setOpenMenuPostId('');
   }, []);
 
+  /**
+   * 開啟檢舉對話框。
+   * @param {object} target - Report target descriptor.
+   */
+  const handleOpenReportDialog = useCallback((target) => {
+    setOpenMenuPostId('');
+    setReportDialogTarget(target);
+  }, []);
+
+  /** 關閉檢舉對話框。 */
+  const handleCloseReportDialog = useCallback(() => {
+    setReportDialogTarget(null);
+  }, []);
+
+  /**
+   * 顯示檢舉送出結果。
+   * @param {{ ok: boolean, message: string }} result - Submit result.
+   */
+  const handleReportResult = useCallback(
+    (result) => {
+      showToast(result.message, result.ok ? 'success' : 'error');
+      if (result.ok) {
+        setReportDialogTarget(null);
+      }
+    },
+    [showToast],
+  );
+
   const handleDeletePost = useCallback(
     async (targetPostId) => {
       // eslint-disable-next-line no-alert -- 刪除確認使用原生對話框
@@ -422,6 +451,7 @@ export default function usePostDetailRuntime(postId) {
     originalContent,
     isSubmitting,
     isDraftConfirmOpen,
+    reportDialogTarget,
     isLoadingNext,
     openMenuPostId,
     dialogRef,
@@ -430,6 +460,9 @@ export default function usePostDetailRuntime(postId) {
     setContent,
     handleToggleMenu,
     handleCloseMenu,
+    handleOpenReportDialog,
+    handleCloseReportDialog,
+    handleReportResult,
     handleOpenEdit,
     handleRequestComposerClose,
     handleSaveComposerDraft,

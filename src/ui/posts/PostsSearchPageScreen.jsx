@@ -3,6 +3,7 @@
 import ComposeModal from '@/components/ComposeModal';
 import EditHistoryModal from '@/components/EditHistoryModal';
 import PostCard from '@/components/PostCard';
+import ReportDialog from '@/components/reports/ReportDialog';
 import feedStyles from '@/app/posts/posts.module.css';
 import PostSearchForm from '@/ui/posts/PostSearchForm';
 import styles from './PostsSearchPageScreen.module.css';
@@ -62,6 +63,7 @@ function getResultPost(match) {
  * @param {(postId: string) => void | Promise<void>} [props.onLike] 按讚文章。
  * @param {(postId: string) => void | Promise<void>} [props.onToggleFavorite] 收藏文章。
  * @param {(post: SearchResultPost) => void | Promise<void>} [props.onViewArticleHistory] 查看文章編輯紀錄。
+ * @param {(post: SearchResultPost) => void | Promise<void>} [props.onReport] 開啟文章檢舉流程。
  * @returns {import('react').ReactElement} 搜尋結果卡片。
  */
 function SearchResultCard({
@@ -74,6 +76,7 @@ function SearchResultCard({
   onLike,
   onToggleFavorite,
   onViewArticleHistory,
+  onReport,
 }) {
   const post = getResultPost(match);
 
@@ -88,6 +91,7 @@ function SearchResultCard({
       onLike={onLike}
       onToggleFavorite={onToggleFavorite}
       onViewArticleHistory={onViewArticleHistory}
+      onReport={onReport}
       searchSnippet={match.snippet}
       searchHighlightRanges={match.highlightRanges}
     />
@@ -106,6 +110,7 @@ function SearchResultCard({
  * @param {(postId: string) => void | Promise<void>} [props.onLike] 按讚文章。
  * @param {(postId: string) => void | Promise<void>} [props.onToggleFavorite] 收藏文章。
  * @param {(post: SearchResultPost) => void | Promise<void>} [props.onViewArticleHistory] 查看文章編輯紀錄。
+ * @param {(post: SearchResultPost) => void | Promise<void>} [props.onReport] 開啟文章檢舉流程。
  * @returns {import('react').ReactNode} 搜尋結果內容。
  */
 function renderSearchResults({
@@ -118,6 +123,7 @@ function renderSearchResults({
   onLike,
   onToggleFavorite,
   onViewArticleHistory,
+  onReport,
 }) {
   return (
     <section className={styles.results} aria-label="搜尋結果">
@@ -133,6 +139,7 @@ function renderSearchResults({
           onLike={onLike}
           onToggleFavorite={onToggleFavorite}
           onViewArticleHistory={onViewArticleHistory}
+          onReport={onReport}
         />
       ))}
     </section>
@@ -229,6 +236,7 @@ function SearchResultsFooter({
  */
 export default function PostsSearchPageScreen({ runtime }) {
   const {
+    user,
     keyword,
     searchInput,
     setSearchInput,
@@ -251,6 +259,7 @@ export default function PostsSearchPageScreen({ runtime }) {
     articleHistoryPost,
     articleHistoryEntries = [],
     articleHistoryError = null,
+    reportDialogTarget,
     handleSubmitSearch,
     handleRetrySearch,
     handlePressLike,
@@ -262,6 +271,9 @@ export default function PostsSearchPageScreen({ runtime }) {
     handleSubmitPost,
     handleViewArticleHistory,
     handleCloseArticleHistory,
+    handleOpenReportDialog,
+    handleCloseReportDialog,
+    handleReportResult,
     setTitle,
     setContent,
     handleRequestComposerClose,
@@ -295,6 +307,15 @@ export default function PostsSearchPageScreen({ runtime }) {
   const isInitialError = status === 'error' && results.length === 0;
   const isEmpty = (status === 'empty' || status === 'success') && results.length === 0;
   const hasResults = results.length > 0;
+  const handleReportPost =
+    user && handleOpenReportDialog
+      ? (targetPost) =>
+          handleOpenReportDialog({
+            targetType: 'post',
+            postId: targetPost.id,
+            target: targetPost,
+          })
+      : undefined;
 
   return (
     <main className={feedStyles.feed} data-testid="post-search-feed">
@@ -338,6 +359,7 @@ export default function PostsSearchPageScreen({ runtime }) {
             onLike: handlePressLike,
             onToggleFavorite: handleToggleFavoritePost,
             onViewArticleHistory: handleViewArticleHistory,
+            onReport: handleReportPost,
           })}
           <SearchResultsFooter
             hasMore={hasMore}
@@ -367,6 +389,19 @@ export default function PostsSearchPageScreen({ runtime }) {
         onContinueEditing={handleContinueEditingDraft}
         onDiscardDraft={handleDiscardComposerDraft}
       />
+
+      {reportDialogTarget && (
+        <ReportDialog
+          isOpen
+          currentUser={user}
+          targetType="post"
+          target={{ postId: reportDialogTarget.postId }}
+          preview={reportDialogTarget.target?.title ?? ''}
+          sourcePath={`/posts/search?q=${encodeURIComponent(keyword)}`}
+          onClose={handleCloseReportDialog}
+          onResult={handleReportResult}
+        />
+      )}
 
       {articleHistoryPost && (
         <EditHistoryModal

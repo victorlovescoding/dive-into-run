@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- PostCard owns rendering, interactions, and menu wiring for post cards. */
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import BookmarkButton from '@/components/BookmarkButton';
@@ -189,18 +190,21 @@ function CommentMeta({ postId, count, truncate }) {
 }
 
 /**
- * 作者操作選單（編輯 / 刪除），僅作者可見。
+ * 文章操作選單（作者編輯/刪除；非作者檢舉）。
  * @param {object} props - 元件屬性。
- * @param {string} props.postId - 文章 ID。
+ * @param {EnrichedPost} props.post - 文章資料。
  * @param {boolean} props.isOpen - 選單是否展開。
  * @param {(postId: string, e: import('react').MouseEvent) => void} props.onToggleMenu - 切換選單。
  * @param {() => void} props.onCloseMenu - 關閉選單。
  * @param {(postId: string) => void} [props.onEdit] - 編輯回呼。
  * @param {(postId: string) => void} [props.onDelete] - 刪除回呼。
+ * @param {(post: EnrichedPost) => void | Promise<void>} [props.onReport] - 檢舉回呼。
  * @returns {import('react').ReactElement} 選單元件。
  */
-function OwnerMenu({ postId, isOpen, onToggleMenu, onCloseMenu, onEdit, onDelete }) {
+function PostMenu({ post, isOpen, onToggleMenu, onCloseMenu, onEdit, onDelete, onReport }) {
   const menuRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const canShowOwnerActions = post.isAuthor;
+  const canShowReportAction = !post.isAuthor && typeof onReport === 'function';
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -221,13 +225,19 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onCloseMenu, onEdit, onDelete
   /** 關閉選單並進入編輯流程。 */
   function handleEdit() {
     onCloseMenu();
-    onEdit?.(postId);
+    onEdit?.(post.id);
   }
 
   /** 關閉選單並進入刪除流程。 */
   function handleDelete() {
     onCloseMenu();
-    onDelete?.(postId);
+    onDelete?.(post.id);
+  }
+
+  /** 關閉選單並進入檢舉流程。 */
+  function handleReport() {
+    onCloseMenu();
+    onReport?.(post);
   }
 
   return (
@@ -238,13 +248,13 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onCloseMenu, onEdit, onDelete
         aria-label="更多選項"
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        onClick={(e) => onToggleMenu(postId, e)}
+        onClick={(e) => onToggleMenu(post.id, e)}
       >
         <MoreIcon />
       </button>
       {isOpen && (
         <ul role="menu" className={styles.menuList}>
-          {onEdit && (
+          {canShowOwnerActions && onEdit && (
             <li>
               <button
                 type="button"
@@ -256,7 +266,7 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onCloseMenu, onEdit, onDelete
               </button>
             </li>
           )}
-          {onDelete && (
+          {canShowOwnerActions && onDelete && (
             <li>
               <button
                 type="button"
@@ -265,6 +275,18 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onCloseMenu, onEdit, onDelete
                 onClick={handleDelete}
               >
                 刪除
+              </button>
+            </li>
+          )}
+          {canShowReportAction && (
+            <li>
+              <button
+                type="button"
+                role="menuitem"
+                className={styles.menuItem}
+                onClick={handleReport}
+              >
+                檢舉文章
               </button>
             </li>
           )}
@@ -286,6 +308,7 @@ function OwnerMenu({ postId, isOpen, onToggleMenu, onCloseMenu, onEdit, onDelete
  * @property {(postId: string) => void} [onLike] - 按讚回呼。
  * @property {(postId: string) => void | Promise<void>} [onToggleFavorite] - 收藏切換回呼。
  * @property {(post: EnrichedPost) => void | Promise<void>} [onViewArticleHistory] - 查看文章編輯記錄。
+ * @property {(post: EnrichedPost) => void | Promise<void>} [onReport] - 開啟文章檢舉流程。
  * @property {string} [searchSnippet] - 搜尋結果摘要；存在時取代預設內容顯示。
  * @property {SearchHighlightRange[]} [searchHighlightRanges] - title/snippet 搜尋高亮 ranges。
  * @property {import('react').ReactNode} [children] - 額外 meta action（詳文頁用，如分享/複製）。
@@ -310,6 +333,7 @@ export default function PostCard({
   onLike,
   onToggleFavorite,
   onViewArticleHistory,
+  onReport,
   searchSnippet,
   searchHighlightRanges,
   children,
@@ -326,6 +350,11 @@ export default function PostCard({
   const needsTruncation = hasContent && truncate && displayContent.length > TRUNCATE_THRESHOLD;
   const isCollapsed = needsTruncation && !isExpanded;
   const contentClassName = isSearchSnippet ? `${styles.content} ${styles.searchSnippet}` : styles.content;
+  const canRenderMenu = Boolean(
+    onToggleMenu &&
+      onCloseMenu &&
+      ((post.isAuthor && (onEdit || onDelete)) || (!post.isAuthor && onReport)),
+  );
 
   /** 量測 scrollHeight 並觸發 max-height CSS transition。 */
   function handleExpand() {
@@ -373,14 +402,15 @@ export default function PostCard({
             />
           )}
         </div>
-        {post.isAuthor && onToggleMenu && onCloseMenu && (onEdit || onDelete) && (
-          <OwnerMenu
-            postId={post.id}
+        {canRenderMenu && onToggleMenu && onCloseMenu && (
+          <PostMenu
+            post={post}
             isOpen={isMenuOpen}
             onToggleMenu={onToggleMenu}
             onCloseMenu={onCloseMenu}
             onEdit={onEdit}
             onDelete={onDelete}
+            onReport={onReport}
           />
         )}
       </div>

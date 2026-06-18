@@ -17,6 +17,7 @@ import {
 const postCardProps = [];
 const composeModalProps = [];
 const postSearchFormProps = [];
+const reportDialogProps = [];
 
 /** @type {import('react').ComponentType<{ runtime: Record<string, unknown> }> | null} */
 let PostsSearchPageScreen = null;
@@ -110,6 +111,11 @@ vi.mock('@/components/PostCard', () => ({
         ) : (
           <p>{props.post.content}</p>
         )}
+        {props.onReport && (
+          <button type="button" onClick={() => props.onReport(props.post)}>
+            report {props.post.id}
+          </button>
+        )}
       </article>
     );
   },
@@ -117,6 +123,17 @@ vi.mock('@/components/PostCard', () => ({
 
 vi.mock('@/components/PostCardSkeleton', () => ({
   default: ({ count }) => <div role="status">載入 {count} 篇文章</div>,
+}));
+
+vi.mock('@/components/reports/ReportDialog', () => ({
+  default: (props) => {
+    reportDialogProps.push(props);
+    return (
+      <div role="dialog" aria-label={props.targetType === 'postComment' ? '檢舉這則留言' : '檢舉這篇文章'}>
+        {props.preview}
+      </div>
+    );
+  },
 }));
 
 vi.mock('@/components/ComposePrompt', () => ({
@@ -148,6 +165,7 @@ afterEach(() => {
   postCardProps.length = 0;
   composeModalProps.length = 0;
   postSearchFormProps.length = 0;
+  reportDialogProps.length = 0;
   resetPostsSearchRuntimeMocks();
   vi.clearAllMocks();
 });
@@ -159,6 +177,7 @@ afterEach(() => {
  */
 function createRuntime(overrides = {}) {
   return {
+    user: { uid: 'viewer-search-screen' },
     keyword: 'reef',
     searchInput: 'reef',
     setSearchInput: vi.fn(),
@@ -348,6 +367,68 @@ describe('PostsSearchPageScreen result interactions', () => {
       onToggleFavorite: handleToggleFavoritePost,
       onViewArticleHistory: handleViewArticleHistory,
       onEdit: handleEditPost,
+    });
+  });
+
+  it('passes authenticated search result post report wiring to result cards', async () => {
+    const user = setupPostsSearchUser();
+    const post = createPostSearchPost({
+      id: 'post-search-report-target',
+      title: '搜尋檢舉文章',
+      isAuthor: false,
+    });
+    const match = createPostSearchMatch({ post });
+    const handleOpenReportDialog = vi.fn();
+
+    renderScreen({
+      results: [match],
+      handleOpenReportDialog,
+    });
+
+    await user.click(screen.getByRole('button', { name: 'report post-search-report-target' }));
+
+    expect(postCardProps[0].onReport).toEqual(expect.any(Function));
+    expect(handleOpenReportDialog).toHaveBeenLastCalledWith({
+      targetType: 'post',
+      postId: post.id,
+      target: post,
+    });
+  });
+
+  it('does not pass search result post report wiring for anonymous users', () => {
+    const post = createPostSearchPost({
+      id: 'post-search-anonymous-report-hidden',
+      isAuthor: false,
+    });
+
+    renderScreen({
+      user: null,
+      results: [createPostSearchMatch({ post })],
+    });
+
+    expect(postCardProps[0].onReport).toBeUndefined();
+    expect(screen.queryByRole('button', { name: 'report post-search-anonymous-report-hidden' })).not.toBeInTheDocument();
+  });
+
+  it('renders the search result report dialog from the runtime report target', () => {
+    renderScreen({
+      reportDialogTarget: {
+        targetType: 'post',
+        postId: 'post-search-report-dialog',
+        target: {
+          id: 'post-search-report-dialog',
+          title: '搜尋結果檢舉對話框文章',
+        },
+      },
+      handleCloseReportDialog: vi.fn(),
+      handleReportResult: vi.fn(),
+    });
+
+    expect(screen.getByRole('dialog', { name: '檢舉這篇文章' })).toBeInTheDocument();
+    expect(screen.getByText('搜尋結果檢舉對話框文章')).toBeInTheDocument();
+    expect(reportDialogProps.at(-1)).toMatchObject({
+      target: { postId: 'post-search-report-dialog' },
+      sourcePath: '/posts/search?q=reef',
     });
   });
 
