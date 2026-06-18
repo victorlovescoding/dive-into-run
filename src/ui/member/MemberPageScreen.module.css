@@ -40,6 +40,10 @@
   align-items: start;
 }
 
+.leftColumn {
+  display: contents;
+}
+
 .profilePanel {
   display: flex;
   grid-area: profile;
@@ -245,15 +249,22 @@
 
 @media (min-width: 940px) {
   .workspaceGrid {
-    grid-template-areas:
-      "profile dashboard"
-      "bio dashboard"
-      "danger dashboard";
+    grid-template-areas: "left dashboard";
     grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
     gap: 24px;
   }
 
+  .leftColumn {
+    display: flex;
+    grid-area: left;
+    min-width: 0;
+    flex-direction: column;
+    gap: 24px;
+    align-self: start;
+  }
+
   .dashboardSlot {
+    align-self: start;
     position: sticky;
     top: 24px;
   }
