@@ -53,55 +53,6 @@
   gap: 8px;
 }
 
-.copyLinkButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid #dadce0;
-  border-radius: 50%;
-  background: transparent;
-  color: #5f6368;
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.copyLinkButton:hover {
-  background: #f1f3f4;
-  color: #202124;
-  border-color: #c4c7cc;
-}
-
-.copyLinkButton:active {
-  background: #e8eaed;
-}
-
-.copyLinkButton:focus-visible {
-  outline: 2px solid #1a73e8;
-  outline-offset: 2px;
-}
-
-.copyLinkButtonCopied {
-  background: #e6f4ea;
-  border-color: #b7dfb9;
-  color: #188038;
-}
-
-.copyIcon {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 /* 底部哨兵 — 無視覺 */
 .scrollSentinel {
   height: 1px;

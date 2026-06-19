@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import BookmarkButton from '@/components/BookmarkButton';
 import CommentSection from '@/components/CommentSection';
+import CopyLinkButton from '@/components/CopyLinkButton';
 import EventCardMenu from '@/components/EventCardMenu';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import EventEditForm from '@/components/EventEditForm';
@@ -100,6 +101,7 @@ export default function EventDetailScreen({ id, runtime }) {
                     disabled={isTogglingFavoriteEvent}
                     onClick={handleToggleFavoriteEvent}
                   />
+                  <CopyLinkButton url={shareUrl} />
                   <ShareButton title={event.title} url={shareUrl} />
                   <div className={styles.statusPill}>{statusText}</div>
                   <EventCardMenu
