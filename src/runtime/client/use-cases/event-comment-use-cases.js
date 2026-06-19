@@ -24,44 +24,60 @@ import {
  * @param {import('firebase/firestore').DocumentSnapshot | undefined} options.afterDoc - Initial cursor.
  * @param {number} options.limitCount - Visible page size.
  * @param {import('@/service/event-comment-service').CommentData[]} [options.comments] - Accumulated visible comments.
+ * @param {import('firebase/firestore').DocumentSnapshot | null} [options.cursorDoc] - Last returned
+ *   visible cursor.
  * @returns {Promise<{
  *   comments: import('@/service/event-comment-service').CommentData[],
- *   lastDoc: import('firebase/firestore').DocumentSnapshot | null
- * }>} Visible comments and raw cursor.
+ *   lastDoc: import('firebase/firestore').DocumentSnapshot | null,
+ *   hasMore: boolean
+ * }>} Visible comments and pagination state.
  */
 async function collectVisibleEventCommentPage(options) {
-  const { eventId, afterDoc, limitCount, comments = [] } = options;
-  const page = await fetchEventCommentPage(eventId, { afterDoc, limitCount });
+  const { eventId, afterDoc, limitCount, comments = [], cursorDoc = null } = options;
+  const rawLimitCount = limitCount + 1;
+  const page = await fetchEventCommentPage(eventId, {
+    afterDoc,
+    limitCount: rawLimitCount,
+  });
+
   if (page.docs.length === 0) {
-    return { comments, lastDoc: null };
+    return { comments, lastDoc: null, hasMore: false };
   }
 
-  /** @type {import('firebase/firestore').DocumentSnapshot | null} */
-  let lastDoc = null;
   const nextComments = [...comments];
+  /** @type {import('firebase/firestore').DocumentSnapshot | null} */
+  let lastScannedDoc = null;
+  /** @type {import('firebase/firestore').DocumentSnapshot | null} */
+  let lastReturnedVisibleDoc = cursorDoc;
 
   for (const snapshot of page.docs) {
-    lastDoc = snapshot;
-    if (isPublicEventCommentVisible(snapshot.data())) {
-      nextComments.push(toCommentData(snapshot));
-      if (nextComments.length >= limitCount) {
-        return { comments: nextComments, lastDoc: snapshot };
-      }
+    lastScannedDoc = snapshot;
+    if (!isPublicEventCommentVisible(snapshot.data())) {
+      continue;
     }
+
+    if (nextComments.length >= limitCount) {
+      return {
+        comments: nextComments,
+        lastDoc: lastReturnedVisibleDoc,
+        hasMore: true,
+      };
+    }
+
+    nextComments.push(toCommentData(snapshot));
+    lastReturnedVisibleDoc = snapshot;
   }
 
-  if (page.docs.length < limitCount) {
-    return {
-      comments: nextComments,
-      lastDoc: nextComments.length === comments.length ? null : lastDoc,
-    };
+  if (page.docs.length < rawLimitCount) {
+    return { comments: nextComments, lastDoc: null, hasMore: false };
   }
 
   return collectVisibleEventCommentPage({
     eventId,
-    afterDoc: lastDoc ?? undefined,
+    afterDoc: lastScannedDoc ?? undefined,
     limitCount,
     comments: nextComments,
+    cursorDoc: lastReturnedVisibleDoc,
   });
 }
 
@@ -74,8 +90,9 @@ async function collectVisibleEventCommentPage(options) {
  * }} [options] - 分頁選項。
  * @returns {Promise<{
  *   comments: import('@/service/event-comment-service').CommentData[],
- *   lastDoc: import('firebase/firestore').DocumentSnapshot | null
- * }>} 留言與分頁游標。
+ *   lastDoc: import('firebase/firestore').DocumentSnapshot | null,
+ *   hasMore: boolean
+ * }>} 留言與分頁狀態。
  */
 export async function fetchComments(eventId, options = {}) {
   assertEventId(eventId, 'fetchComments');

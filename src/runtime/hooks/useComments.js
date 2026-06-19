@@ -2,6 +2,31 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchComments } from '@/runtime/client/use-cases/event-comment-use-cases';
 
 /**
+ * Merges comments while preserving existing order and dropping duplicate IDs.
+ * @param {import('@/service/event-comment-service').CommentData[]} current - Current comments.
+ * @param {import('@/service/event-comment-service').CommentData[]} incoming - Incoming comments.
+ * @returns {import('@/service/event-comment-service').CommentData[]} Merged comments.
+ */
+function appendFreshComments(current, incoming) {
+  const seen = new Set(current.map((comment) => comment.id));
+  const fresh = incoming.filter((comment) => !seen.has(comment.id));
+  return [...current, ...fresh];
+}
+
+/**
+ * Reconciles a fresh fetch with same-event comments already in local state.
+ * @param {import('@/service/event-comment-service').CommentData[]} current - Current comments.
+ * @param {import('@/service/event-comment-service').CommentData[]} incoming - Fetched comments.
+ * @returns {import('@/service/event-comment-service').CommentData[]} Reconciled comments.
+ */
+function prependLocalOnlyComments(current, incoming) {
+  if (current.length === 0) return incoming;
+  const incomingIds = new Set(incoming.map((comment) => comment.id));
+  const localOnly = current.filter((comment) => !incomingIds.has(comment.id));
+  return [...localOnly, ...incoming];
+}
+
+/**
  * @typedef {object} UseCommentsReturn
  * @property {import('@/service/event-comment-service').CommentData[]} comments - 留言列表。
  * @property {(updater: (prev: import('@/service/event-comment-service').CommentData[]) => import('@/service/event-comment-service').CommentData[]) => void} setComments - 更新留言列表。
@@ -34,56 +59,103 @@ export default function useComments(eventId) {
   const [loadMoreError, setLoadMoreError] = useState(/** @type {string | null} */ (null));
 
   const sentinelRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const isMountedRef = useRef(false);
+  const requestGenerationRef = useRef(0);
+  const loadMoreInFlightRef = useRef(
+    /** @type {{ generation: number, cursor: import('firebase/firestore').DocumentSnapshot } | null} */ (
+      null
+    ),
+  );
 
   useEffect(() => {
-    let cancelled = false;
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      requestGenerationRef.current += 1;
+      loadMoreInFlightRef.current = null;
+    };
+  }, []);
 
-    /** 載入初始留言。 */
-    async function load() {
-      setIsLoading(true);
-      setLoadError(null);
-      try {
-        const result = await fetchComments(eventId);
-        if (!cancelled) {
-          setComments((prev) => {
-            if (prev.length === 0) return result.comments;
-            const fetchIds = new Set(result.comments.map((c) => c.id));
-            const localOnly = prev.filter((c) => !fetchIds.has(c.id));
-            return [...localOnly, ...result.comments];
-          });
-          setCursor(result.lastDoc);
-          setHasMore(result.lastDoc !== null);
-          setIsLoading(false);
-        }
-      } catch {
-        if (!cancelled) {
-          setLoadError('載入留言失敗');
-          setIsLoading(false);
-        }
+  const loadInitialComments = useCallback(async () => {
+    const requestGeneration = requestGenerationRef.current + 1;
+    requestGenerationRef.current = requestGeneration;
+    loadMoreInFlightRef.current = null;
+
+    const isCurrentRequest = () =>
+      isMountedRef.current && requestGenerationRef.current === requestGeneration;
+
+    setIsLoading(true);
+    setIsLoadingMore(false);
+    setLoadError(null);
+
+    try {
+      const result = await fetchComments(eventId);
+      if (!isCurrentRequest()) return;
+
+      setComments((prev) => prependLocalOnlyComments(prev, result.comments));
+      setCursor(result.lastDoc);
+      setHasMore(result.hasMore === true);
+    } catch {
+      if (!isCurrentRequest()) return;
+
+      setLoadError('載入留言失敗');
+    } finally {
+      if (isCurrentRequest()) {
+        setIsLoading(false);
       }
     }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
   }, [eventId]);
 
+  useEffect(() => {
+    setComments([]);
+    setCursor(null);
+    setHasMore(true);
+    setIsLoadingMore(false);
+    setLoadMoreError(null);
+    loadInitialComments();
+    return () => {
+      requestGenerationRef.current += 1;
+      loadMoreInFlightRef.current = null;
+    };
+  }, [eventId, loadInitialComments]);
+
   const loadMore = useCallback(async () => {
-    if (isLoadingMore || !cursor) return;
+    if (!cursor || !hasMore || loadMoreInFlightRef.current) return;
+    const requestGeneration = requestGenerationRef.current;
+    const requestCursor = cursor;
+    loadMoreInFlightRef.current = { generation: requestGeneration, cursor: requestCursor };
+
+    const isCurrentRequest = () =>
+      isMountedRef.current &&
+      requestGenerationRef.current === requestGeneration &&
+      loadMoreInFlightRef.current?.cursor === requestCursor;
+
     setIsLoadingMore(true);
     setLoadMoreError(null);
+
     try {
-      const result = await fetchComments(eventId, { afterDoc: cursor, limitCount: 15 });
-      setComments((prev) => [...prev, ...result.comments]);
+      const result = await fetchComments(eventId, { afterDoc: requestCursor, limitCount: 15 });
+      if (!isCurrentRequest()) return;
+
+      setComments((prev) => appendFreshComments(prev, result.comments));
       setCursor(result.lastDoc);
-      setHasMore(result.lastDoc !== null);
+      setHasMore(result.hasMore === true);
     } catch {
+      if (!isCurrentRequest()) return;
+
       setLoadMoreError('載入更多失敗');
     } finally {
-      setIsLoadingMore(false);
+      if (loadMoreInFlightRef.current?.cursor === requestCursor) {
+        loadMoreInFlightRef.current = null;
+      }
+      if (
+        isMountedRef.current &&
+        requestGenerationRef.current === requestGeneration
+      ) {
+        setIsLoadingMore(false);
+      }
     }
-  }, [eventId, cursor, isLoadingMore]);
+  }, [eventId, cursor, hasMore]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -101,21 +173,8 @@ export default function useComments(eventId) {
   }, [hasMore, loadMore]);
 
   const retryLoad = useCallback(() => {
-    setLoadError(null);
-    setIsLoading(true);
-    fetchComments(eventId)
-      .then((result) => {
-        setComments(result.comments);
-        setCursor(result.lastDoc);
-        setHasMore(result.lastDoc !== null);
-      })
-      .catch(() => {
-        setLoadError('載入留言失敗');
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [eventId]);
+    loadInitialComments();
+  }, [loadInitialComments]);
 
   const retryLoadMore = useCallback(() => {
     setLoadMoreError(null);
