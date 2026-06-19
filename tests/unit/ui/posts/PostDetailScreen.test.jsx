@@ -9,6 +9,29 @@ import PostDetailScreen from '../../../../src/ui/posts/PostDetailScreen.jsx';
 
 const commentInputProps = [];
 const reportDialogProps = [];
+const originalGlobalClipboardDescriptor = Object.getOwnPropertyDescriptor(
+  globalThis.navigator,
+  'clipboard',
+);
+const originalWindowClipboardDescriptor = Object.getOwnPropertyDescriptor(window.navigator, 'clipboard');
+
+/**
+ * Replace clipboard writeText without replacing the navigator object userEvent reads.
+ * @param {ReturnType<typeof vi.fn>} writeText - Clipboard mock.
+ * @returns {void}
+ */
+function setClipboardWriteText(writeText) {
+  const navigatorWithClipboard = Object.create(globalThis.navigator);
+  Object.defineProperty(navigatorWithClipboard, 'clipboard', {
+    configurable: true,
+    value: { writeText },
+  });
+  vi.stubGlobal('navigator', navigatorWithClipboard);
+  Object.defineProperty(window.navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText },
+  });
+}
 
 vi.mock('next/image', () => ({
   default: ({ src, alt, width, height, className }) => (
@@ -206,6 +229,19 @@ afterEach(() => {
   commentInputProps.length = 0;
   reportDialogProps.length = 0;
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
+
+  if (originalGlobalClipboardDescriptor) {
+    Object.defineProperty(globalThis.navigator, 'clipboard', originalGlobalClipboardDescriptor);
+  } else {
+    Reflect.deleteProperty(globalThis.navigator, 'clipboard');
+  }
+
+  if (originalWindowClipboardDescriptor) {
+    Object.defineProperty(window.navigator, 'clipboard', originalWindowClipboardDescriptor);
+  } else {
+    Reflect.deleteProperty(window.navigator, 'clipboard');
+  }
 });
 
 describe('PostDetailScreen comment composer', () => {
@@ -333,6 +369,21 @@ describe('PostDetailScreen comment composer', () => {
 
     await user.click(submitButton);
     expect(handleSubmitComment).toHaveBeenLastCalledWith('有效留言');
+  });
+});
+
+describe('PostDetailScreen share actions', () => {
+  it('copies the post detail shareUrl from the shared copy-link button', async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    setClipboardWriteText(writeText);
+
+    renderScreen({ shareUrl: 'https://example.test/posts/post-1?from=detail' });
+
+    await user.click(screen.getByRole('button', { name: '複製連結' }));
+
+    expect(writeText).toHaveBeenCalledWith('https://example.test/posts/post-1?from=detail');
+    expect(screen.getByRole('button', { name: '已複製連結' })).toBeInTheDocument();
   });
 });
 

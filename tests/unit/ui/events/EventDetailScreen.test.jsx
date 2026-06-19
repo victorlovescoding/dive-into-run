@@ -2,6 +2,7 @@
 
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import EventDetailScreen from '@/ui/events/EventDetailScreen';
 
@@ -15,6 +16,29 @@ const userLinkProps = [];
 const hostUid = 'host-1';
 const nonHostUid = 'runner-1';
 const startedLockReason = '活動已開始，無法編輯或刪除。';
+const originalGlobalClipboardDescriptor = Object.getOwnPropertyDescriptor(
+  globalThis.navigator,
+  'clipboard',
+);
+const originalWindowClipboardDescriptor = Object.getOwnPropertyDescriptor(window.navigator, 'clipboard');
+
+/**
+ * Replace clipboard writeText without replacing the navigator object userEvent reads.
+ * @param {ReturnType<typeof vi.fn>} writeText - Clipboard mock.
+ * @returns {void}
+ */
+function setClipboardWriteText(writeText) {
+  const navigatorWithClipboard = Object.create(globalThis.navigator);
+  Object.defineProperty(navigatorWithClipboard, 'clipboard', {
+    configurable: true,
+    value: { writeText },
+  });
+  vi.stubGlobal('navigator', navigatorWithClipboard);
+  Object.defineProperty(window.navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText },
+  });
+}
 
 vi.mock('next/dynamic', () => ({
   default: () => function MockDynamicComponent() {
@@ -206,6 +230,20 @@ afterEach(() => {
   shareButtonProps.length = 0;
   userLinkProps.length = 0;
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
+
+  if (originalGlobalClipboardDescriptor) {
+    Object.defineProperty(globalThis.navigator, 'clipboard', originalGlobalClipboardDescriptor);
+  } else {
+    Reflect.deleteProperty(globalThis.navigator, 'clipboard');
+  }
+
+  if (originalWindowClipboardDescriptor) {
+    Object.defineProperty(window.navigator, 'clipboard', originalWindowClipboardDescriptor);
+  } else {
+    Reflect.deleteProperty(window.navigator, 'clipboard');
+  }
+
   vi.useRealTimers();
 });
 
@@ -309,6 +347,23 @@ describe('EventDetailScreen started event non-body actions', () => {
       title: '晨跑團',
       url: 'https://example.test/events/event-1?from=share',
     });
+  });
+
+  it('copies the event detail shareUrl from the shared copy-link button', async () => {
+    vi.useRealTimers();
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    setClipboardWriteText(writeText);
+
+    renderScreen({
+      event: createStartedEvent(),
+      shareUrl: 'https://example.test/events/event-1?from=detail',
+    });
+
+    await user.click(screen.getByRole('button', { name: '複製連結' }));
+
+    expect(writeText).toHaveBeenCalledWith('https://example.test/events/event-1?from=detail');
+    expect(screen.getByRole('button', { name: '已複製連結' })).toBeInTheDocument();
   });
 });
 
