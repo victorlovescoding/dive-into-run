@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 /**
  * @template TComment
  * @typedef {object} UseCommentEditModalParams
- * @property {(comment: TComment, newContent: string) => Promise<void>} saveComment - 儲存留言編輯的 domain callback。
+ * @property {(comment: TComment, newContent: string) => Promise<void | boolean>} saveComment - 儲存留言編輯的 domain callback。
  * @property {string} [errorMessage] - 儲存失敗時顯示的錯誤訊息。
  */
 
@@ -33,14 +33,28 @@ export default function useCommentEditModal({
   const [editingComment, setEditingComment] = useState(/** @type {TComment | null} */ (null));
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState(/** @type {string | null} */ (null));
+  const isMountedRef = useRef(false);
+  const saveRequestIdRef = useRef(0);
+
+  useLayoutEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      saveRequestIdRef.current += 1;
+    };
+  }, []);
 
   const handleEditOpen = useCallback((comment) => {
+    saveRequestIdRef.current += 1;
     setEditingComment(comment);
+    setIsUpdating(false);
     setUpdateError(null);
   }, []);
 
   const handleEditCancel = useCallback(() => {
+    saveRequestIdRef.current += 1;
     setEditingComment(null);
+    setIsUpdating(false);
     setUpdateError(null);
   }, []);
 
@@ -48,17 +62,28 @@ export default function useCommentEditModal({
     async (newContent) => {
       if (!editingComment) return false;
 
+      const saveRequestId = saveRequestIdRef.current + 1;
+      saveRequestIdRef.current = saveRequestId;
+      const isCurrentSave = () =>
+        isMountedRef.current && saveRequestIdRef.current === saveRequestId;
+
       setIsUpdating(true);
       setUpdateError(null);
       try {
-        await saveComment(editingComment, newContent);
+        const saveResult = await saveComment(editingComment, newContent);
+        if (!isCurrentSave() || saveResult === false) return false;
+
         setEditingComment(null);
         return true;
       } catch {
+        if (!isCurrentSave()) return false;
+
         setUpdateError(errorMessage);
         return false;
       } finally {
-        setIsUpdating(false);
+        if (isCurrentSave()) {
+          setIsUpdating(false);
+        }
       }
     },
     [editingComment, errorMessage, saveComment],
