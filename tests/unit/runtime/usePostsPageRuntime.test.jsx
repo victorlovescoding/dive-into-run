@@ -61,7 +61,7 @@ vi.mock('../../../src/runtime/client/use-cases/content-favorite-use-cases', () =
   removeContentFavorite: mocks.removeContentFavorite,
 }));
 
-vi.mock('../../../src/lib/firebase-auth-helpers', () => ({
+vi.mock('../../../src/repo/client/firebase-auth-repo', () => ({
   signInWithGoogle: mocks.signInWithGoogle,
 }));
 
