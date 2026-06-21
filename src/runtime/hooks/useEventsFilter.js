@@ -9,6 +9,33 @@ import { queryEvents } from '@/runtime/client/use-cases/event-use-cases';
  */
 
 /**
+ * @typedef {object} AppliedEventFilters
+ * @property {string} city - 已套用縣市。
+ * @property {string} district - 已套用區域。
+ * @property {string} startTime - 已套用活動開始時間（起）。
+ * @property {string} endTime - 已套用活動開始時間（迄）。
+ * @property {string} minDistance - 已套用最小跑步距離。
+ * @property {string} maxDistance - 已套用最大跑步距離。
+ * @property {boolean} hasSeatsOnly - 是否只顯示有空位活動。
+ */
+
+/**
+ * 建立空的已套用篩選條件。
+ * @returns {AppliedEventFilters} 空篩選條件。
+ */
+function createEmptyAppliedFilters() {
+  return {
+    city: '',
+    district: '',
+    startTime: '',
+    endTime: '',
+    minDistance: '',
+    maxDistance: '',
+    hasSeatsOnly: false,
+  };
+}
+
+/**
  * @typedef {object} UseEventsFilterParams
  * @property {boolean} isFormOpen - 建立表單是否開啟（過濾器不可同時開啟）。
  * @property {MountedRef} isMountedRef - 元件是否已掛載的 ref。
@@ -30,6 +57,7 @@ import { queryEvents } from '@/runtime/client/use-cases/event-use-cases';
  * @property {boolean} filterHasSeatsOnly - 是否只顯示有空位的活動。
  * @property {string} filterCity - 篩選縣市。
  * @property {string} filterDistrict - 篩選區域。
+ * @property {AppliedEventFilters} appliedFilters - 已套用篩選條件。
  * @property {boolean} isFilteredResults - 目前列表是否為篩選結果。
  * @property {boolean} isFiltering - 是否正在篩選中。
  * @property {string[]} cityOptions - 可選縣市列表。
@@ -70,6 +98,7 @@ export default function useEventsFilter({
   const [filterHasSeatsOnly, setFilterHasSeatsOnly] = useState(false);
   const [filterCity, setFilterCity] = useState('');
   const [filterDistrict, setFilterDistrict] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState(createEmptyAppliedFilters);
   const [isFilteredResults, setIsFilteredResults] = useState(false);
   const [isFiltering, setIsFiltering] = useState(false);
 
@@ -111,6 +140,7 @@ export default function useEventsFilter({
     setFilterHasSeatsOnly(false);
     setFilterCity('');
     setFilterDistrict('');
+    setAppliedFilters(createEmptyAppliedFilters());
     setIsFilteredResults(false);
     await loadLatestPage({ replaceExisting: true });
   }, [loadLatestPage]);
@@ -136,6 +166,7 @@ export default function useEventsFilter({
       setEvents(results);
       setCursor(null);
       setLoadMoreError(null);
+      setAppliedFilters(filters);
       setIsFilteredResults(true);
       setHasMore(false);
     } catch (error) {
@@ -172,6 +203,7 @@ export default function useEventsFilter({
     filterHasSeatsOnly,
     filterCity,
     filterDistrict,
+    appliedFilters,
     isFilteredResults,
     isFiltering,
     cityOptions,

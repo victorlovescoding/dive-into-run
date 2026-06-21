@@ -34,6 +34,7 @@ export default function EventsPageScreen() {
     selectedDistrict,
     minDateTime,
     isFilteredResults,
+    appliedFilters,
     isLoadingEvents,
     isFiltering,
     loadError,
@@ -92,8 +93,6 @@ export default function EventsPageScreen() {
 
   return (
     <div className={styles.pageContainer}>
-      <h1>這是揪團跑步頁面</h1>
-
       <EventsListSection
         events={events}
         user={user}
@@ -102,6 +101,7 @@ export default function EventsPageScreen() {
         isCreating={isCreating}
         loadError={loadError}
         isFilteredResults={isFilteredResults}
+        appliedFilters={appliedFilters}
         isLoadingMore={isLoadingMore}
         loadMoreError={loadMoreError}
         hasMore={hasMore}

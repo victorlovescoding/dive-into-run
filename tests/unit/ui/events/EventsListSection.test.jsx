@@ -41,6 +41,7 @@ function createEvent(overrides = {}) {
     meetPlace: '森林公園',
     distanceKm: 5,
     paceSec: 360,
+    runType: '晨跑',
     maxParticipants: 10,
     participantsCount: 2,
     remainingSeats: 8,
@@ -67,6 +68,7 @@ function createProps(overrides = {}) {
     isCreating: false,
     loadError: null,
     isFilteredResults: false,
+    appliedFilters: {},
     isLoadingMore: false,
     loadMoreError: null,
     hasMore: false,
@@ -168,5 +170,75 @@ describe('EventsListSection started event non-body interactions', () => {
       expect.any(Object),
     );
     expect(routerPush).not.toHaveBeenCalled();
+  });
+});
+
+describe('EventsListSection card scanning summary', () => {
+  it('renders run type, status, remaining seats, and capacity progress for each card', () => {
+    renderList({
+      events: [
+        createEvent({
+          title: '河濱間歇',
+          runType: '晨跑',
+          maxParticipants: 10,
+          participantsCount: 2,
+          remainingSeats: 8,
+          time: '2000-01-01T10:00:00.000Z',
+          registrationDeadline: '1999-12-31T10:00:00.000Z',
+        }),
+      ],
+      getRemainingSeats: vi.fn(() => 8),
+    });
+
+    expect(screen.getByText('晨跑')).toBeInTheDocument();
+    expect(screen.getByText('活動已開始')).toBeInTheDocument();
+    expect(screen.getByText('剩 8 / 10 名')).toBeInTheDocument();
+
+    const capacityProgress = screen.getByRole('progressbar', {
+      name: '河濱間歇名額使用狀態',
+    });
+    expect(capacityProgress).toHaveAttribute('aria-valuemin', '0');
+    expect(capacityProgress).toHaveAttribute('aria-valuemax', '10');
+    expect(capacityProgress).toHaveAttribute('aria-valuenow', '2');
+  });
+
+  it('renders stored run type slugs as localized card chips', () => {
+    renderList({
+      events: [
+        createEvent({
+          title: '河濱變速跑',
+          runType: 'fartlek',
+        }),
+        createEvent({
+          id: 'event-2',
+          title: '操場節奏跑',
+          runType: 'tempo_run',
+        }),
+      ],
+    });
+
+    expect(screen.getByText('變速跑')).toBeInTheDocument();
+    expect(screen.getByText('節奏跑')).toBeInTheDocument();
+    expect(screen.queryByText('fartlek')).not.toBeInTheDocument();
+    expect(screen.queryByText('tempo_run')).not.toBeInTheDocument();
+  });
+
+  it('renders chips for applied filters', () => {
+    renderList({
+      appliedFilters: {
+        city: '台北市',
+        district: '大安區',
+        startTime: '2026-07-01T06:00',
+        endTime: '',
+        minDistance: '5',
+        maxDistance: '',
+        hasSeatsOnly: true,
+      },
+    });
+
+    expect(screen.getByText('地點：台北市 大安區')).toBeInTheDocument();
+    expect(screen.getByText('時間：2026-07-01 06:00 起')).toBeInTheDocument();
+    expect(screen.getByText('距離：5 km 以上')).toBeInTheDocument();
+    expect(screen.getByText('有名額')).toBeInTheDocument();
   });
 });
