@@ -49,7 +49,7 @@
 /* 讓表單像個卡片置中顯示 */
 .googleFormCard {
   background: white;
-  width: 65vw; /* Mobile-first: Default max-width for smaller screens */
+  width: 100%; /* Mobile-first: use the modal shell's available width */
   margin: 0; /* 由 overlay 的 padding 控制留白，避免外層出現滾輪 */
   border-radius: 8px;
   box-shadow:
@@ -361,7 +361,7 @@
 
 .filterCard {
   background: white;
-  width: 65vw;
+  width: 100%;
   max-width: 900px;
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
