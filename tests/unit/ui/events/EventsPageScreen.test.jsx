@@ -82,6 +82,7 @@ function createRuntime(overrides = {}) {
     selectedDistrict: '',
     minDateTime: '',
     isFilteredResults: false,
+    appliedFilters: {},
     isLoadingEvents: false,
     isFiltering: false,
     loadError: null,
@@ -160,6 +161,30 @@ afterEach(() => {
 });
 
 describe('EventsPageScreen favorite login continuation dialog', () => {
+  it('does not render the removed product heading and passes applied filters instead of filter drafts', () => {
+    renderScreen({
+      filterCity: '新北市',
+      filterDistrict: '板橋區',
+      appliedFilters: {
+        city: '台北市',
+        district: '大安區',
+        startTime: '',
+        endTime: '',
+        minDistance: '',
+        maxDistance: '',
+        hasSeatsOnly: true,
+      },
+    });
+
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(eventsListSectionProps[0].appliedFilters).toMatchObject({
+      city: '台北市',
+      district: '大安區',
+      hasSeatsOnly: true,
+    });
+    expect(eventsListSectionProps[0].appliedFilters.city).not.toBe('新北市');
+  });
+
   it('renders runtime dialog state and forwards confirm, cancel, and close handlers', async () => {
     const user = userEvent.setup();
     const confirmContinuation = vi.fn();

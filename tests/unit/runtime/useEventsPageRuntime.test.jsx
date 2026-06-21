@@ -211,6 +211,21 @@ describe('useEventsPageRuntime started event list regressions', () => {
     });
     expect(result.current.events.map((event) => event.id)).toEqual(['future-1', 'started-1']);
     expect(result.current.isFilteredResults).toBe(true);
+    expect(result.current.appliedFilters).toMatchObject({
+      city: '台北市',
+      district: '',
+      startTime: '',
+      endTime: '',
+      minDistance: '5',
+      maxDistance: '',
+      hasSeatsOnly: true,
+    });
+
+    act(() => {
+      result.current.handleFilterCityChange('新北市');
+    });
+
+    expect(result.current.appliedFilters.city).toBe('台北市');
     expect(result.current.hasMore).toBe(false);
   });
 
