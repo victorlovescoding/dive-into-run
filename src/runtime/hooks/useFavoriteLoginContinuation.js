@@ -19,8 +19,9 @@ const FAVORITE_ADD_FAILED_TOAST = '收藏失敗，請稍後再試';
  * @typedef {import('@/runtime/favorites/favorite-login-continuation-helpers').FavoriteLoginContinuationIntent}
  *   FavoriteLoginContinuationIntent
  * @typedef {{
- *   showToast?: (message: string, type?: string) => void,
+ *   showToast?: (message: string, type?: string, actions?: { label: string, callback: () => void | Promise<void> }[]) => void,
  *   onFavoriteAdded?: (payload: { contentType: string, targetId: string }) => void,
+ *   getFavoriteAddedToastActions?: (payload: { contentType: string, targetId: string, uid: string | null }) => { label: string, callback: () => void | Promise<void> }[] | undefined,
  *   onFavoriteAddFailed?: (payload: { contentType: string, targetId: string }) => void,
  *   runContinuation?: typeof runFavoriteLoginContinuation
  * }} UseFavoriteLoginContinuationOptions
@@ -41,6 +42,7 @@ export default function useFavoriteLoginContinuation({
   showToast,
   onFavoriteAdded,
   onFavoriteAddFailed,
+  getFavoriteAddedToastActions,
   runContinuation = runFavoriteLoginContinuation,
 } = {}) {
   const [intent, setIntent] = useState(/** @type {FavoriteLoginContinuationIntent | null} */ (null));
@@ -136,7 +138,15 @@ export default function useFavoriteLoginContinuation({
 
     if (result.kind === FAVORITE_LOGIN_CONTINUATION_RESULT_KINDS.FAVORITE_ADDED) {
       onFavoriteAdded?.(payload);
-      showToast?.(FAVORITE_ADDED_TOAST, 'success');
+      const actions = getFavoriteAddedToastActions?.({
+        ...payload,
+        uid: result.uid,
+      });
+      if (actions?.length) {
+        showToast?.(FAVORITE_ADDED_TOAST, 'success', actions);
+      } else {
+        showToast?.(FAVORITE_ADDED_TOAST, 'success');
+      }
       return;
     }
 
@@ -144,7 +154,14 @@ export default function useFavoriteLoginContinuation({
       onFavoriteAddFailed?.(payload);
       showToast?.(FAVORITE_ADD_FAILED_TOAST, 'error');
     }
-  }, [intent, onFavoriteAddFailed, onFavoriteAdded, runContinuation, showToast]);
+  }, [
+    getFavoriteAddedToastActions,
+    intent,
+    onFavoriteAddFailed,
+    onFavoriteAdded,
+    runContinuation,
+    showToast,
+  ]);
 
   return {
     dialogState,

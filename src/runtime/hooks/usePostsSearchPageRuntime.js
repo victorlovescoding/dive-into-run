@@ -35,6 +35,7 @@ import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 import useEditHistoryModal from '@/runtime/hooks/useEditHistoryModal';
 import useFavoriteLoginContinuation from '@/runtime/hooks/useFavoriteLoginContinuation';
+import createContentFavoriteSuccessActions from '@/runtime/hooks/content-favorite-toast-actions';
 
 const PAGE_SIZE = 10;
 const EMPTY_RESULTS = [];
@@ -168,6 +169,32 @@ export default function usePostsSearchPageRuntime() {
     }));
   }, []);
 
+  const handleContinuationFavoriteUndone = useCallback(({ contentType, targetId }) => {
+    if (contentType !== FAVORITE_CONTENT_TYPES.POST) return;
+    favoritePostMutationVersionRef.current += 1;
+    setSearchState((previousState) => ({
+      ...previousState,
+      results: applyPostSearchMatchFavoriteState(previousState.results, targetId, false),
+    }));
+  }, []);
+
+  const getFavoriteAddedToastActions = useCallback(
+    ({ contentType, targetId, uid }) => {
+      if (contentType !== FAVORITE_CONTENT_TYPES.POST || !uid) return [];
+      return createContentFavoriteSuccessActions({
+        router,
+        uid,
+        type: FAVORITE_CONTENT_TYPES.POST,
+        targetId,
+        onUndoSuccess: () => {
+          handleContinuationFavoriteUndone({ contentType, targetId });
+        },
+        showToast,
+      });
+    },
+    [handleContinuationFavoriteUndone, router, showToast],
+  );
+
   const {
     dialogState,
     openContinuation,
@@ -177,6 +204,7 @@ export default function usePostsSearchPageRuntime() {
   } = useFavoriteLoginContinuation({
     showToast,
     onFavoriteAdded: handleContinuationFavoriteAdded,
+    getFavoriteAddedToastActions,
   });
   const isCurrentSearchState = searchState.keyword === keyword;
   const searchInput = searchDraft.keyword === keyword ? searchDraft.value : keyword;
@@ -592,7 +620,20 @@ export default function usePostsSearchPageRuntime() {
           ...previousState,
           results: applyPostSearchMatchFavoriteState(previousState.results, postId, true),
         }));
-        showToast('已加入收藏', 'success');
+        showToast('已加入收藏', 'success', createContentFavoriteSuccessActions({
+          router,
+          uid: userUid,
+          type: FAVORITE_CONTENT_TYPES.POST,
+          targetId: postId,
+          onUndoSuccess: () => {
+            favoritePostMutationVersionRef.current += 1;
+            setSearchState((previousState) => ({
+              ...previousState,
+              results: applyPostSearchMatchFavoriteState(previousState.results, postId, false),
+            }));
+          },
+          showToast,
+        }));
       } catch (favoriteError) {
         console.error('Toggle favorite post error:', favoriteError);
         favoritePostMutationVersionRef.current += 1;
@@ -610,7 +651,7 @@ export default function usePostsSearchPageRuntime() {
         );
       }
     },
-    [openContinuation, results, showToast, userUid],
+    [openContinuation, results, router, showToast, userUid],
   );
 
   /**

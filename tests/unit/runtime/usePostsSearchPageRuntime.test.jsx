@@ -125,6 +125,10 @@ vi.mock('../../../src/repo/client/firebase-auth-repo', () => ({
   signInWithGoogle: mocks.signInWithGoogle,
 }));
 
+vi.mock('../../../src/repo/client/firebase-auth-repo', () => ({
+  signInWithGoogle: mocks.signInWithGoogle,
+}));
+
 vi.mock('../../../src/runtime/hooks/useEditHistoryModal', async () => {
   const { useCallback, useState } = await vi.importActual('react');
 
@@ -622,7 +626,14 @@ describe('usePostsSearchPageRuntime favorite login continuation', () => {
       [firstPost.id, false],
       [clickedPost.id, true],
     ]);
-    expect(mocks.showToast).toHaveBeenCalledWith('登入成功，已加入收藏', 'success');
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      '登入成功，已加入收藏',
+      'success',
+      expect.arrayContaining([
+        expect.objectContaining({ label: '查看收藏', callback: expect.any(Function) }),
+        expect.objectContaining({ label: '復原', callback: expect.any(Function) }),
+      ]),
+    );
   });
 
   it('keeps the continuation favorite when signed-in search reload returns stale empty favorites after add success', async () => {
@@ -713,7 +724,14 @@ describe('usePostsSearchPageRuntime favorite login continuation', () => {
       [firstPost.id, false],
       [clickedPost.id, true],
     ]);
-    expect(mocks.showToast).toHaveBeenCalledWith('登入成功，已加入收藏', 'success');
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      '登入成功，已加入收藏',
+      'success',
+      expect.arrayContaining([
+        expect.objectContaining({ label: '查看收藏', callback: expect.any(Function) }),
+        expect.objectContaining({ label: '復原', callback: expect.any(Function) }),
+      ]),
+    );
   });
 });
 
@@ -738,7 +756,45 @@ describe('usePostsSearchPageRuntime signed-in favorite regressions', () => {
       id: post.id,
       isFavorited: true,
     });
-    expect(mocks.showToast).toHaveBeenCalledWith('已加入收藏', 'success');
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      '已加入收藏',
+      'success',
+      expect.arrayContaining([
+        expect.objectContaining({ label: '查看收藏', callback: expect.any(Function) }),
+        expect.objectContaining({ label: '復原', callback: expect.any(Function) }),
+      ]),
+    );
+  });
+
+  it('lets the signed-in add favorite toast navigate to favorites or undo the add', async () => {
+    const post = createPostSearchPost({ id: 'post-search-signed-in-add-undo' });
+    const { result } = await renderRuntimeWithSearchResult(post);
+
+    await act(async () => {
+      await getRuntimeHandler(result.current, 'handleToggleFavoritePost')(post.id);
+    });
+
+    const actions = mocks.showToast.mock.calls.find((call) => call[0] === '已加入收藏')?.[2];
+    expect(actions).toEqual([
+      expect.objectContaining({ label: '查看收藏', callback: expect.any(Function) }),
+      expect.objectContaining({ label: '復原', callback: expect.any(Function) }),
+    ]);
+
+    actions[0].callback();
+    expect(navigation.router.push).toHaveBeenCalledWith('/member/favorites');
+
+    await act(async () => {
+      await actions[1].callback();
+    });
+    expect(mocks.removeContentFavorite).toHaveBeenCalledWith({
+      uid: POST_SEARCH_VIEWER_UID,
+      type: 'post',
+      targetId: post.id,
+    });
+    expect(result.current.results[0].post).toMatchObject({
+      id: post.id,
+      isFavorited: false,
+    });
   });
 
   it('keeps signed-in remove favorite on the existing branch without opening continuation', async () => {

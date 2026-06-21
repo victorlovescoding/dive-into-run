@@ -6,6 +6,7 @@ export type ToastItem = {
   type: 'success' | 'error' | 'info';
   createdAt: number;
   action?: ToastItemAction;
+  actions?: ToastItemAction[];
 };
 
 export type ToastItemAction = {
@@ -25,7 +26,7 @@ export type ToastContextValue = {
   showToast: (
     message: string,
     type?: 'success' | 'error' | 'info',
-    action?: ToastItemAction,
+    action?: ToastItemAction | ToastItemAction[],
   ) => void;
   removeToast: (id: string) => void;
 };

@@ -19,23 +19,26 @@ import {
  *   showToast: import('vitest').Mock,
  *   onFavoriteAdded: import('vitest').Mock,
  *   onFavoriteAddFailed: import('vitest').Mock,
+ *   getFavoriteAddedToastActions: import('vitest').Mock,
  *   runContinuation: import('vitest').Mock
  * }} Rendered hook utilities.
  */
 function renderUseFavoriteLoginContinuation(overrides = {}) {
   const showToast = createToastSpy();
   const callbacks = createFavoriteContinuationCallbacks();
+  const getFavoriteAddedToastActions = vi.fn();
   const runContinuation = vi.fn();
   const view = renderHook(() =>
     useFavoriteLoginContinuation({
       showToast,
       ...callbacks,
+      getFavoriteAddedToastActions,
       runContinuation,
       ...overrides,
     }),
   );
 
-  return { ...view, showToast, ...callbacks, runContinuation };
+  return { ...view, showToast, ...callbacks, getFavoriteAddedToastActions, runContinuation };
 }
 
 beforeEach(() => {
@@ -353,8 +356,19 @@ describe('useFavoriteLoginContinuation confirm flow', () => {
   });
 
   it('clears on favorite success and calls the success callback', async () => {
-    const { result, showToast, onFavoriteAdded, onFavoriteAddFailed, runContinuation } =
-      renderUseFavoriteLoginContinuation();
+    const actions = [
+      { label: '查看收藏', callback: vi.fn() },
+      { label: '復原', callback: vi.fn() },
+    ];
+    const {
+      result,
+      showToast,
+      onFavoriteAdded,
+      onFavoriteAddFailed,
+      getFavoriteAddedToastActions,
+      runContinuation,
+    } = renderUseFavoriteLoginContinuation();
+    getFavoriteAddedToastActions.mockReturnValueOnce(actions);
     runContinuation.mockResolvedValueOnce({
       kind: FAVORITE_LOGIN_CONTINUATION_RESULT_KINDS.FAVORITE_ADDED,
       contentType: 'post',
@@ -375,7 +389,12 @@ describe('useFavoriteLoginContinuation confirm flow', () => {
       targetId: 'post-1',
     });
     expect(onFavoriteAddFailed).not.toHaveBeenCalled();
-    expect(showToast).toHaveBeenCalledWith('登入成功，已加入收藏', 'success');
+    expect(getFavoriteAddedToastActions).toHaveBeenCalledWith({
+      contentType: 'post',
+      targetId: 'post-1',
+      uid: 'runner-uid',
+    });
+    expect(showToast).toHaveBeenCalledWith('登入成功，已加入收藏', 'success', actions);
   });
 
   it('clears on favorite add failure and calls the failure callback', async () => {

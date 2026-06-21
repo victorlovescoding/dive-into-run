@@ -17,7 +17,8 @@ const MAX_TOASTS = 5;
  * @property {string} message - 顯示訊息。
  * @property {'success' | 'error' | 'info'} type - Toast 類型。
  * @property {number} createdAt - 建立時間戳。
- * @property {ToastItemAction} [action] - 可選的 toast 操作，例如復原。
+ * @property {ToastItemAction} [action] - 可選的單一 toast 操作，例如復原。
+ * @property {ToastItemAction[]} [actions] - 可選的多個 toast 操作。
  */
 
 /**
@@ -29,7 +30,7 @@ const MAX_TOASTS = 5;
 /**
  * @typedef {object} ToastContextValue
  * @property {ToastItem[]} toasts - 目前的 toast 佇列。
- * @property {(message: string, type?: 'success' | 'error' | 'info', action?: ToastItemAction) => void} showToast - 新增 toast。
+ * @property {(message: string, type?: 'success' | 'error' | 'info', action?: ToastItemAction | ToastItemAction[]) => void} showToast - 新增 toast。
  * @property {(id: string) => void} removeToast - 移除指定 toast。
  */
 
@@ -77,16 +78,21 @@ export default function ToastProvider({ children }) {
      * 新增一筆 toast 通知。
      * @param {string} message - 顯示訊息。
      * @param {'success' | 'error' | 'info'} [type] - Toast 類型，預設 'success'。
-     * @param {ToastItemAction} [action] - 可選的 toast 操作。
+     * @param {ToastItemAction | ToastItemAction[]} [action] - 可選的 toast 操作。
      */
     (message, type = 'success', action) => {
+      const actionPayload = Array.isArray(action)
+        ? { actions: action }
+        : action
+          ? { action }
+          : {};
       /** @type {ToastItem} */
       const toast = {
         id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         message,
         type,
         createdAt: Date.now(),
-        ...(action ? { action } : {}),
+        ...actionPayload,
       };
       dispatch({ type: 'ADD', payload: toast });
     },
