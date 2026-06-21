@@ -39,6 +39,12 @@
   --comment-composer-width: min(1400px, 65vw);
 }
 
+@media (max-width: 767px) {
+  .eventComposer {
+    --comment-composer-width: calc(100vw - 2rem);
+  }
+}
+
 .listItem {
   border-bottom: 1px solid #f0f0f0;
 }
