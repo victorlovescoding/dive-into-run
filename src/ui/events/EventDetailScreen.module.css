@@ -12,6 +12,12 @@
   margin: 16px auto 0;
 }
 
+@media (max-width: 767px) {
+  .eventsSection {
+    width: 100%;
+  }
+}
+
 @media (min-width: 1024px) {
   .eventsSection {
     width: 70vw;
