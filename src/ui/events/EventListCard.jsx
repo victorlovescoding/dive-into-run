@@ -8,6 +8,12 @@ import UserLink from '@/components/UserLink';
 import { evaluateEventEditStartedLock } from '@/runtime/events/event-runtime-helpers';
 import EventCardScanSummary from './EventCardScanSummary';
 import { formatDateTime, formatPace, renderRouteLabel } from './event-formatters';
+import {
+  EVENT_AVAILABILITY_BADGE_LABELS,
+  EVENT_AVAILABILITY_BADGE_STYLE_KEYS,
+  getEventAvailabilityBadgeState,
+  getEventPersonalBadgeLabel,
+} from './event-status-badges';
 import styles from './EventsPageScreen.module.css';
 
 /**
@@ -101,6 +107,19 @@ export default function EventListCard({
   );
   const registrationDeadline =
     /** @type {string | { toDate?: () => Date } | null | undefined} */ (rawRegistrationDeadline);
+  const remainingSeats = getRemainingSeats(event);
+  const availabilityStatus = getEventAvailabilityBadgeState(event, remainingSeats);
+  const availabilityBadgeClassName = [
+    styles.eventStatusBadge,
+    styles[EVENT_AVAILABILITY_BADGE_STYLE_KEYS[availabilityStatus]],
+  ].join(' ');
+  const personalBadgeLabel = getEventPersonalBadgeLabel({
+    event,
+    eventId,
+    user,
+    membershipStatus: membershipStatusByEventId[eventId],
+    myJoinedEventIds,
+  });
 
   return (
     <article
@@ -121,9 +140,21 @@ export default function EventListCard({
       </div>
 
       <div className={styles.eventCardHeader}>
-        <Link href={`/events/${eventId}`} className={styles.eventTitleLink}>
-          <h3 className={styles.eventTitle}>{title}</h3>
-        </Link>
+        <div className={styles.eventTitleCluster}>
+          <Link href={`/events/${eventId}`} className={styles.eventTitleLink}>
+            <h3 className={styles.eventTitle}>{title}</h3>
+          </Link>
+          <div className={styles.eventStatusBadgeGroup} aria-label={`${title} 狀態`}>
+            <span className={availabilityBadgeClassName}>
+              {EVENT_AVAILABILITY_BADGE_LABELS[availabilityStatus]}
+            </span>
+            {personalBadgeLabel && (
+              <span className={`${styles.eventStatusBadge} ${styles.eventPersonalBadge}`}>
+                {personalBadgeLabel}
+              </span>
+            )}
+          </div>
+        </div>
 
         <div className={styles.eventCardTopActions} role="group" aria-label={`${title} 操作`}>
           <BookmarkButton
@@ -172,7 +203,7 @@ export default function EventListCard({
         </div>
         <div className={styles.eventFact}>
           <dt>剩餘名額</dt>
-          <dd className={styles.eventNumericValue}>{getRemainingSeats(event)}</dd>
+          <dd className={styles.eventNumericValue}>{remainingSeats}</dd>
         </div>
       </dl>
 
