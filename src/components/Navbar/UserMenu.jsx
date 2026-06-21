@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import { signInWithGoogle } from '@/lib/firebase-auth-helpers';
 import styles from './Navbar.module.css';
 
 /**
@@ -12,8 +11,10 @@ import styles from './Navbar.module.css';
  * @param {import('react').RefObject<HTMLButtonElement | null>} props.avatarButtonRef - avatar 按鈕 ref。
  * @param {() => void} props.toggleDropdown - 切換 dropdown 開關。
  * @param {() => Promise<void>} props.handleSignOut - 登出處理函式。
+ * @param {() => Promise<void>} props.handleSignIn - 登入處理函式。
  * @param {object | null} props.user - 目前登入使用者。
  * @param {boolean} props.loading - 認證載入狀態。
+ * @param {boolean} props.loginPending - Google 登入流程是否處理中。
  * @returns {import('react').JSX.Element} UserMenu 元件。
  */
 export default function UserMenu({
@@ -22,8 +23,10 @@ export default function UserMenu({
   avatarButtonRef,
   toggleDropdown,
   handleSignOut,
+  handleSignIn,
   user,
   loading,
+  loginPending,
 }) {
   return (
     <div className={styles.userSection} ref={dropdownRef}>
@@ -32,9 +35,11 @@ export default function UserMenu({
         <button
           type="button"
           className={styles.loginButton}
-          onClick={() => signInWithGoogle()?.catch(() => {})}
+          disabled={loginPending}
+          aria-busy={loginPending}
+          onClick={handleSignIn}
         >
-          登入
+          {loginPending ? '處理中…' : '登入'}
         </button>
       )}
       {!loading && user && (

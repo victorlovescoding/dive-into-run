@@ -7,6 +7,7 @@ import { AuthContext } from '@/contexts/AuthContext';
 import NotificationBell from '@/components/Notifications/NotificationBell';
 import NotificationPanel from '@/components/Notifications/NotificationPanel';
 import useMobileDrawer from './useMobileDrawer';
+import useNavbarSignIn from './useNavbarSignIn';
 import useUserMenu from './useUserMenu';
 import MobileDrawer from './MobileDrawer';
 import UserMenu from './UserMenu';
@@ -23,6 +24,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const { isDrawerOpen, hamburgerRef, closeButtonRef, toggleDrawer, closeDrawer, handleLinkClick } =
     useMobileDrawer();
+  const { loginPending, handleSignIn } = useNavbarSignIn();
   const { isDropdownOpen, dropdownRef, avatarButtonRef, toggleDropdown, handleSignOut } =
     useUserMenu();
 
@@ -83,8 +85,10 @@ export default function Navbar() {
           avatarButtonRef={avatarButtonRef}
           toggleDropdown={toggleDropdown}
           handleSignOut={handleSignOut}
+          handleSignIn={handleSignIn}
           user={user}
           loading={loading}
+          loginPending={loginPending}
         />
       </nav>
 
@@ -95,8 +99,10 @@ export default function Navbar() {
         closeDrawer={closeDrawer}
         handleLinkClick={handleLinkClick}
         pathname={pathname}
+        handleSignIn={handleSignIn}
         user={user}
         loading={loading}
+        loginPending={loginPending}
       />
     </>
   );
