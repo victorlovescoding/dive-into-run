@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   fetchLatestEvents: vi.fn(),
   fetchNextEvents: vi.fn(),
   getFavoritedTargetIds: vi.fn(),
+  push: vi.fn(),
   queryEvents: vi.fn(),
   removeContentFavorite: vi.fn(),
   replace: vi.fn(),
@@ -18,7 +19,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: mocks.replace }),
+  useRouter: () => ({ push: mocks.push, replace: mocks.replace }),
   useSearchParams: () => ({ get: vi.fn(() => null) }),
 }));
 
@@ -44,6 +45,10 @@ vi.mock('../../../src/runtime/client/use-cases/content-favorite-use-cases', () =
   FAVORITE_CONTENT_TYPES: { EVENT: 'event' },
   getFavoritedTargetIds: mocks.getFavoritedTargetIds,
   removeContentFavorite: mocks.removeContentFavorite,
+}));
+
+vi.mock('../../../src/repo/client/firebase-auth-repo', () => ({
+  signInWithGoogle: mocks.signInWithGoogle,
 }));
 
 vi.mock('../../../src/repo/client/firebase-auth-repo', () => ({
@@ -302,7 +307,14 @@ describe('useEventsPageRuntime favorite login continuation', () => {
     });
     expect(result.current.favoriteEventIds.has('future-1')).toBe(true);
     expect(result.current.favoriteEventIds.has('started-1')).toBe(false);
-    expect(mocks.showToast).toHaveBeenCalledWith('登入成功，已加入收藏', 'success');
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      '登入成功，已加入收藏',
+      'success',
+      expect.arrayContaining([
+        expect.objectContaining({ label: '查看收藏', callback: expect.any(Function) }),
+        expect.objectContaining({ label: '復原', callback: expect.any(Function) }),
+      ]),
+    );
   });
 
   it('keeps the continuation favorite when signed-in sync returns stale empty ids after add success', async () => {
@@ -349,7 +361,14 @@ describe('useEventsPageRuntime favorite login continuation', () => {
     });
 
     expect(result.current.favoriteEventIds.has('future-1')).toBe(true);
-    expect(mocks.showToast).toHaveBeenCalledWith('登入成功，已加入收藏', 'success');
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      '登入成功，已加入收藏',
+      'success',
+      expect.arrayContaining([
+        expect.objectContaining({ label: '查看收藏', callback: expect.any(Function) }),
+        expect.objectContaining({ label: '復原', callback: expect.any(Function) }),
+      ]),
+    );
   });
 });
 
@@ -373,7 +392,44 @@ describe('useEventsPageRuntime signed-in favorite regressions', () => {
     expect(mocks.signInWithGoogle).not.toHaveBeenCalled();
     expect(result.current.dialogState).toMatchObject({ isOpen: false });
     expect(result.current.favoriteEventIds.has('future-1')).toBe(true);
-    expect(mocks.showToast).toHaveBeenCalledWith('已加入收藏', 'success');
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      '已加入收藏',
+      'success',
+      expect.arrayContaining([
+        expect.objectContaining({ label: '查看收藏', callback: expect.any(Function) }),
+        expect.objectContaining({ label: '復原', callback: expect.any(Function) }),
+      ]),
+    );
+  });
+
+  it('lets the signed-in add favorite toast navigate to favorites or undo the add', async () => {
+    const { result } = renderUseEventsPageRuntime();
+
+    await waitFor(() => {
+      expect(result.current.favoriteEventIds.has('started-1')).toBe(true);
+    });
+    await act(async () => {
+      await result.current.handleToggleFavoriteEvent('future-1');
+    });
+
+    const actions = mocks.showToast.mock.calls.find((call) => call[0] === '已加入收藏')?.[2];
+    expect(actions).toEqual([
+      expect.objectContaining({ label: '查看收藏', callback: expect.any(Function) }),
+      expect.objectContaining({ label: '復原', callback: expect.any(Function) }),
+    ]);
+
+    actions[0].callback();
+    expect(mocks.push).toHaveBeenCalledWith('/member/favorites');
+
+    await act(async () => {
+      await actions[1].callback();
+    });
+    expect(mocks.removeContentFavorite).toHaveBeenCalledWith({
+      uid: 'runner-1',
+      type: 'event',
+      targetId: 'future-1',
+    });
+    expect(result.current.favoriteEventIds.has('future-1')).toBe(false);
   });
 
   it('keeps signed-in remove favorite on the existing branch without opening continuation', async () => {

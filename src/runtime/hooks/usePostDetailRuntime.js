@@ -30,6 +30,7 @@ import { useToast } from '@/runtime/providers/ToastProvider';
 import useEditHistoryModal from '@/runtime/hooks/useEditHistoryModal';
 import useFavoriteLoginContinuation from '@/runtime/hooks/useFavoriteLoginContinuation';
 import usePostComments from '@/runtime/hooks/usePostComments';
+import createContentFavoriteSuccessActions from '@/runtime/hooks/content-favorite-toast-actions';
 
 const POST_DELETED_MESSAGE = '找不到這篇文章（可能已被刪除）';
 
@@ -112,6 +113,34 @@ export default function usePostDetailRuntime(postId) {
     });
   }, []);
 
+  const handleContinuationFavoriteUndone = useCallback(({ contentType, targetId }) => {
+    if (contentType !== FAVORITE_CONTENT_TYPES.POST) return;
+    favoritePostMutationVersionRef.current += 1;
+    setPostDetail((previousPostDetail) => {
+      if (!previousPostDetail || previousPostDetail.id !== targetId) {
+        return previousPostDetail;
+      }
+      return { ...previousPostDetail, isFavorited: false };
+    });
+  }, []);
+
+  const getFavoriteAddedToastActions = useCallback(
+    ({ contentType, targetId, uid }) => {
+      if (contentType !== FAVORITE_CONTENT_TYPES.POST || !uid) return [];
+      return createContentFavoriteSuccessActions({
+        router,
+        uid,
+        type: FAVORITE_CONTENT_TYPES.POST,
+        targetId,
+        onUndoSuccess: () => {
+          handleContinuationFavoriteUndone({ contentType, targetId });
+        },
+        showToast,
+      });
+    },
+    [handleContinuationFavoriteUndone, router, showToast],
+  );
+
   const {
     dialogState,
     openContinuation,
@@ -121,6 +150,7 @@ export default function usePostDetailRuntime(postId) {
   } = useFavoriteLoginContinuation({
     showToast,
     onFavoriteAdded: handleContinuationFavoriteAdded,
+    getFavoriteAddedToastActions,
   });
 
   const shareUrl =
@@ -457,7 +487,17 @@ export default function usePostDetailRuntime(postId) {
         type: FAVORITE_CONTENT_TYPES.POST,
         targetId: targetPostId,
       });
-      showToast('已加入收藏', 'success');
+      showToast('已加入收藏', 'success', createContentFavoriteSuccessActions({
+        router,
+        uid: user.uid,
+        type: FAVORITE_CONTENT_TYPES.POST,
+        targetId: targetPostId,
+        onUndoSuccess: () => {
+          favoritePostMutationVersionRef.current += 1;
+          setPostDetail((prev) => (prev ? { ...prev, isFavorited: false } : prev));
+        },
+        showToast,
+      }));
     } catch (favoriteError) {
       console.error('Toggle post favorite error:', favoriteError);
       favoritePostMutationVersionRef.current += 1;
@@ -467,7 +507,7 @@ export default function usePostDetailRuntime(postId) {
         'error',
       );
     }
-  }, [openContinuation, postDetail, postId, showToast, user]);
+  }, [openContinuation, postDetail, postId, router, showToast, user]);
 
   return {
     user,

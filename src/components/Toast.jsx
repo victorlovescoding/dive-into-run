@@ -19,14 +19,12 @@ import styles from './Toast.module.css';
  * @property {string} message - 顯示給使用者的訊息文字。
  * @property {ToastType} type - Toast 等級，決定視覺樣式與 ARIA role。
  * @property {number} createdAt - 建立時間戳。
- * @property {ToastItemAction} [action] - 可選的 toast 操作，例如復原。
+ * @property {ToastItemAction} [action] - 可選的單一 toast 操作，例如復原。
+ * @property {ToastItemAction[]} [actions] - 可選的多個 toast 操作。
  */
 
 /** @type {number} 自動消失延遲（毫秒）。 */
 const AUTO_DISMISS_MS = 3000;
-
-/** @type {number} 錯誤通知自動消失延遲（毫秒）。 */
-const ERROR_AUTO_DISMISS_MS = 5000;
 
 /**
  * 根據 toast type 回傳對應的 ARIA role。
@@ -38,15 +36,6 @@ function getAriaRole(type) {
 }
 
 /**
- * 根據 toast type 回傳自動消失延遲。
- * @param {ToastType} type - Toast 類型。
- * @returns {number} 延遲毫秒數。
- */
-function getAutoDismissMs(type) {
-  return type === 'error' ? ERROR_AUTO_DISMISS_MS : AUTO_DISMISS_MS;
-}
-
-/**
  * 單一 Toast 通知元件。
  * @param {object} props - 元件屬性。
  * @param {ToastItem} props.toast - Toast 資料。
@@ -54,7 +43,8 @@ function getAutoDismissMs(type) {
  * @returns {import('react').ReactElement} Toast 元件。
  */
 export default function Toast({ toast, onClose }) {
-  const { id, message, type, action } = toast;
+  const { id, message, type, action, actions } = toast;
+  const renderedActions = actions?.length ? actions : action ? [action] : [];
 
   const [animState, setAnimState] = useState('entering');
 
@@ -70,15 +60,13 @@ export default function Toast({ toast, onClose }) {
     onClose(id);
   }, [id, onClose]);
 
-  const handleActionClick = useCallback(() => {
-    action?.callback();
-  }, [action]);
-
-  // 自動消失：success/info 3 秒後、error 5 秒後呼叫 onClose
+  // 自動消失：success/info 3 秒後呼叫 onClose；error 需使用者手動關閉。
   useEffect(() => {
+    if (type === 'error') return undefined;
+
     const timerId = setTimeout(() => {
       handleClose();
-    }, getAutoDismissMs(type));
+    }, AUTO_DISMISS_MS);
 
     return () => clearTimeout(timerId);
   }, [type, handleClose]);
@@ -88,11 +76,18 @@ export default function Toast({ toast, onClose }) {
   return (
     <div className={className} role={getAriaRole(type)}>
       <span className={styles.message}>{message}</span>
-      {action ? (
-        <button type="button" className={styles.actionButton} onClick={handleActionClick}>
-          {action.label}
+      {renderedActions.map((toastAction) => (
+        <button
+          key={toastAction.label}
+          type="button"
+          className={styles.actionButton}
+          onClick={() => {
+            toastAction.callback();
+          }}
+        >
+          {toastAction.label}
         </button>
-      ) : null}
+      ))}
       <button
         type="button"
         className={styles.closeButton}

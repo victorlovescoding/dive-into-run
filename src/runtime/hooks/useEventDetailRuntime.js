@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- Existing detail runtime exceeds the shared limit after scoped favorite undo wiring. */
 'use client';
 
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -16,6 +17,7 @@ import { useToast } from '@/runtime/providers/ToastProvider';
 import useEventDetailParticipation from '@/runtime/hooks/useEventDetailParticipation';
 import useEventDetailMutations from '@/runtime/hooks/useEventDetailMutations';
 import useFavoriteLoginContinuation from '@/runtime/hooks/useFavoriteLoginContinuation';
+import createContentFavoriteSuccessActions from '@/runtime/hooks/content-favorite-toast-actions';
 /**
  * @typedef {import('@/service/event-service').EventData} EventData
  */
@@ -215,6 +217,30 @@ export default function useEventDetailRuntime(id) {
     setIsFavoriteEvent(true);
   }, [id]);
 
+  const handleContinuationFavoriteUndone = useCallback(({ contentType, targetId }) => {
+    if (contentType !== FAVORITE_CONTENT_TYPES.EVENT) return;
+    if (String(targetId) !== String(id)) return;
+    favoriteEventMutationVersionRef.current += 1;
+    setIsFavoriteEvent(false);
+  }, [id]);
+
+  const getFavoriteAddedToastActions = useCallback(
+    ({ contentType, targetId, uid }) => {
+      if (contentType !== FAVORITE_CONTENT_TYPES.EVENT || !uid) return [];
+      return createContentFavoriteSuccessActions({
+        router,
+        uid,
+        type: FAVORITE_CONTENT_TYPES.EVENT,
+        targetId,
+        onUndoSuccess: () => {
+          handleContinuationFavoriteUndone({ contentType, targetId });
+        },
+        showToast,
+      });
+    },
+    [handleContinuationFavoriteUndone, router, showToast],
+  );
+
   const {
     dialogState,
     openContinuation,
@@ -224,6 +250,7 @@ export default function useEventDetailRuntime(id) {
   } = useFavoriteLoginContinuation({
     showToast,
     onFavoriteAdded: handleContinuationFavoriteAdded,
+    getFavoriteAddedToastActions,
   });
 
   const handleToggleFavoriteEvent = useCallback(async () => {
@@ -246,7 +273,17 @@ export default function useEventDetailRuntime(id) {
         showToast('已取消收藏', 'success');
       } else {
         await addContentFavorite({ uid, type: FAVORITE_CONTENT_TYPES.EVENT, targetId: id });
-        showToast('已加入收藏', 'success');
+        showToast('已加入收藏', 'success', createContentFavoriteSuccessActions({
+          router,
+          uid,
+          type: FAVORITE_CONTENT_TYPES.EVENT,
+          targetId: id,
+          onUndoSuccess: () => {
+            favoriteEventMutationVersionRef.current += 1;
+            setIsFavoriteEvent(false);
+          },
+          showToast,
+        }));
       }
     } catch (favoriteError) {
       console.error('切換活動收藏失敗:', favoriteError);
@@ -261,7 +298,7 @@ export default function useEventDetailRuntime(id) {
         setIsTogglingFavoriteEvent(false);
       }
     }
-  }, [id, isFavoriteEvent, isTogglingFavoriteEvent, openContinuation, showToast, user?.uid]);
+  }, [id, isFavoriteEvent, isTogglingFavoriteEvent, openContinuation, router, showToast, user?.uid]);
 
   const hasOverlay = isParticipantsOpen || editingEvent !== null || deletingEventId !== null;
 

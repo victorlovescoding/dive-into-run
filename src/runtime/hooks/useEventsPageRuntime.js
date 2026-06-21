@@ -18,6 +18,7 @@ import useEventsPageCreateFormState from '@/runtime/hooks/useEventsPageCreateFor
 import useEventMutations from '@/runtime/hooks/useEventMutations';
 import useEventParticipation from '@/runtime/hooks/useEventParticipation';
 import useFavoriteLoginContinuation from '@/runtime/hooks/useFavoriteLoginContinuation';
+import createContentFavoriteSuccessActions from '@/runtime/hooks/content-favorite-toast-actions';
 /**
  * @typedef {import('@/service/event-service').EventData} EventData
  */
@@ -240,6 +241,33 @@ export default function useEventsPageRuntime() {
     });
   }, []);
 
+  const handleContinuationFavoriteUndone = useCallback(({ contentType, targetId }) => {
+    if (contentType !== FAVORITE_CONTENT_TYPES.EVENT) return;
+    favoriteEventMutationVersionRef.current += 1;
+    setFavoriteEventIds((previous) => {
+      const next = new Set(previous);
+      next.delete(targetId);
+      return next;
+    });
+  }, []);
+
+  const getFavoriteAddedToastActions = useCallback(
+    ({ contentType, targetId, uid }) => {
+      if (contentType !== FAVORITE_CONTENT_TYPES.EVENT || !uid) return [];
+      return createContentFavoriteSuccessActions({
+        router,
+        uid,
+        type: FAVORITE_CONTENT_TYPES.EVENT,
+        targetId,
+        onUndoSuccess: () => {
+          handleContinuationFavoriteUndone({ contentType, targetId });
+        },
+        showToast,
+      });
+    },
+    [handleContinuationFavoriteUndone, router, showToast],
+  );
+
   const {
     dialogState,
     openContinuation,
@@ -249,6 +277,7 @@ export default function useEventsPageRuntime() {
   } = useFavoriteLoginContinuation({
     showToast,
     onFavoriteAdded: handleContinuationFavoriteAdded,
+    getFavoriteAddedToastActions,
   });
 
   const handleToggleCreateRunForm = useCallback(() => {
@@ -284,7 +313,21 @@ export default function useEventsPageRuntime() {
           showToast('已取消收藏', 'success');
         } else {
           await addContentFavorite({ uid, type: FAVORITE_CONTENT_TYPES.EVENT, targetId });
-          showToast('已加入收藏', 'success');
+          showToast('已加入收藏', 'success', createContentFavoriteSuccessActions({
+            router,
+            uid,
+            type: FAVORITE_CONTENT_TYPES.EVENT,
+            targetId,
+            onUndoSuccess: () => {
+              favoriteEventMutationVersionRef.current += 1;
+              setFavoriteEventIds((previous) => {
+                const next = new Set(previous);
+                next.delete(targetId);
+                return next;
+              });
+            },
+            showToast,
+          }));
         }
       } catch (error) {
         console.error('切換活動收藏失敗:', error);
@@ -301,7 +344,7 @@ export default function useEventsPageRuntime() {
         );
       }
     },
-    [favoriteEventIds, openContinuation, showToast, user?.uid],
+    [favoriteEventIds, openContinuation, router, showToast, user?.uid],
   );
 
   const loadMore = useCallback(async () => {
