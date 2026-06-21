@@ -1,6 +1,17 @@
 import { formatDateTime } from './event-formatters';
 
 const EMPTY_FILTER_TEXT = '';
+const RUN_TYPE_DISPLAY_LABELS = {
+  easy_run: '輕鬆跑',
+  long_run: '長距離跑',
+  tempo_run: '節奏跑',
+  interval_training: '間歇跑',
+  hill_repeats: '坡道訓練',
+  hill_training: '坡道訓練',
+  fartlek: '變速跑',
+  trail_run: '越野跑',
+  social_run: '社交跑',
+};
 
 /**
  * 將任意值轉為非負整數，供卡片掃描資訊防守舊資料。
@@ -34,6 +45,27 @@ function toTimestampMs(value) {
 
   const time = new Date(String(value)).getTime();
   return Number.isFinite(time) ? time : null;
+}
+
+/**
+ * 將資料庫儲存的跑步類型轉成列表 chip 顯示文字。
+ * @param {unknown} value - Firestore 或舊資料中的跑步類型值。
+ * @returns {string} 已知 slug 的中文文案，或可讀的舊資料 fallback。
+ */
+function formatRunTypeChipLabel(value) {
+  const runType = String(value || '').trim();
+  if (!runType) return '';
+
+  if (RUN_TYPE_DISPLAY_LABELS[runType]) {
+    return RUN_TYPE_DISPLAY_LABELS[runType];
+  }
+
+  if (!/[A-Za-z]/.test(runType)) {
+    return runType;
+  }
+
+  const fallbackLabel = runType.replace(/[_-]+/g, ' ').trim();
+  return fallbackLabel || runType;
 }
 
 /**
@@ -90,11 +122,13 @@ export function buildStatusChip(event, remainingSeats) {
  * 建立卡片首屏掃描摘要。
  * @param {object} event - 活動資料。
  * @param {(event: object) => number} getRemainingSeats - 剩餘名額計算器。
- * @returns {{ runType: string, status: ReturnType<typeof buildStatusChip>, capacity: ReturnType<typeof buildCapacitySummary> }} 卡片掃描摘要。
+ * @returns {{ runType: string, status: ReturnType<typeof buildStatusChip>, capacity: ReturnType<typeof buildCapacitySummary> }} 卡片掃描摘要，runType 為顯示用文案。
  */
 export function buildEventScanSummary(event, getRemainingSeats) {
   const capacity = buildCapacitySummary(event, getRemainingSeats);
-  const runType = String(/** @type {{ runType?: unknown }} */ (event).runType || '').trim();
+  const runType = formatRunTypeChipLabel(
+    /** @type {{ runType?: unknown }} */ (event).runType,
+  );
 
   return {
     runType,

@@ -202,6 +202,27 @@ describe('EventsListSection card scanning summary', () => {
     expect(capacityProgress).toHaveAttribute('aria-valuenow', '2');
   });
 
+  it('renders stored run type slugs as localized card chips', () => {
+    renderList({
+      events: [
+        createEvent({
+          title: '河濱變速跑',
+          runType: 'fartlek',
+        }),
+        createEvent({
+          id: 'event-2',
+          title: '操場節奏跑',
+          runType: 'tempo_run',
+        }),
+      ],
+    });
+
+    expect(screen.getByText('變速跑')).toBeInTheDocument();
+    expect(screen.getByText('節奏跑')).toBeInTheDocument();
+    expect(screen.queryByText('fartlek')).not.toBeInTheDocument();
+    expect(screen.queryByText('tempo_run')).not.toBeInTheDocument();
+  });
+
   it('renders chips for applied filters', () => {
     renderList({
       appliedFilters: {
