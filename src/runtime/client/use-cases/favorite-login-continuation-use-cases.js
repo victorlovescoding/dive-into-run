@@ -57,7 +57,7 @@ function isCancelledAuthError(error) {
  * @returns {Promise<unknown>} Firebase UserCredential-like result.
  */
 async function defaultSignInWithGoogle() {
-  const { signInWithGoogle } = await import('@/lib/firebase-auth-helpers');
+  const { signInWithGoogle } = await import('@/repo/client/firebase-auth-repo');
   return signInWithGoogle();
 }
 
