@@ -8,6 +8,10 @@ import EventActionButtons from '@/components/EventActionButtons';
 import EventCardMenu from '@/components/EventCardMenu';
 import UserLink from '@/components/UserLink';
 import { evaluateEventEditStartedLock } from '@/runtime/events/event-runtime-helpers';
+import {
+  EVENT_AVAILABILITY_BADGE_LABELS, EVENT_AVAILABILITY_BADGE_STYLE_KEYS,
+  getEventAvailabilityBadgeState, getEventPersonalBadgeLabel,
+} from './event-status-badges';
 import { formatDateTime, formatPace, renderRouteLabel } from './event-formatters';
 import styles from './EventsPageScreen.module.css';
 
@@ -138,6 +142,19 @@ export default function EventsListSection({
     const eventId = String(event.id);
     const routeLabel = renderRouteLabel(event);
     const isHost = user?.uid === event.hostUid;
+    const remainingSeats = getRemainingSeats(event);
+    const availabilityStatus = getEventAvailabilityBadgeState(event, remainingSeats);
+    const availabilityBadgeClassName = [
+      styles.eventStatusBadge,
+      styles[EVENT_AVAILABILITY_BADGE_STYLE_KEYS[availabilityStatus]],
+    ].join(' ');
+    const personalBadgeLabel = getEventPersonalBadgeLabel({
+      event,
+      eventId,
+      user,
+      membershipStatus: membershipStatusByEventId[eventId],
+      myJoinedEventIds,
+    });
     const hostStartedLock = isHost ? evaluateEventEditStartedLock(event).startedLock : null;
     const editDisabledReason = hostStartedLock?.message || '';
     const deleteDisabledReason = hostStartedLock?.message || '';
@@ -164,9 +181,21 @@ export default function EventsListSection({
         </div>
 
         <div className={styles.eventCardHeader}>
-          <Link href={`/events/${event.id}`} className={styles.eventTitleLink}>
-            <h3 className={styles.eventTitle}>{event.title}</h3>
-          </Link>
+          <div className={styles.eventTitleCluster}>
+            <Link href={`/events/${event.id}`} className={styles.eventTitleLink}>
+              <h3 className={styles.eventTitle}>{event.title}</h3>
+            </Link>
+            <div className={styles.eventStatusBadgeGroup} aria-label={`${event.title} 狀態`}>
+              <span className={availabilityBadgeClassName}>
+                {EVENT_AVAILABILITY_BADGE_LABELS[availabilityStatus]}
+              </span>
+              {personalBadgeLabel && (
+                <span className={`${styles.eventStatusBadge} ${styles.eventPersonalBadge}`}>
+                  {personalBadgeLabel}
+                </span>
+              )}
+            </div>
+          </div>
 
           <div
             className={styles.eventCardTopActions}
@@ -215,7 +244,7 @@ export default function EventsListSection({
           </div>
           <div className={styles.eventFact}>
             <dt>剩餘名額</dt>
-            <dd className={styles.eventNumericValue}>{getRemainingSeats(event)}</dd>
+            <dd className={styles.eventNumericValue}>{remainingSeats}</dd>
           </div>
         </dl>
 

@@ -2,7 +2,7 @@
 
 import '@testing-library/jest-dom/vitest';
 import userEvent from '@testing-library/user-event';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import EventsListSection from '@/ui/events/EventsListSection';
 
@@ -168,5 +168,106 @@ describe('EventsListSection started event non-body interactions', () => {
       expect.any(Object),
     );
     expect(routerPush).not.toHaveBeenCalled();
+  });
+});
+
+describe('EventsListSection event status badges', () => {
+  it('renders one availability pill per card using full before deadline before open priority', () => {
+    renderList({
+      user: { uid: runnerUid },
+      events: [
+        createEvent({
+          id: 'event-full',
+          title: '額滿優先活動',
+          remainingSeats: 0,
+          registrationDeadline: '2000-01-01T11:00:00.000Z',
+        }),
+        createEvent({
+          id: 'event-closed',
+          title: '截止活動',
+          remainingSeats: 3,
+          registrationDeadline: '2000-01-01T11:00:00.000Z',
+        }),
+        createEvent({
+          id: 'event-open',
+          title: '開放報名活動',
+          remainingSeats: 3,
+          registrationDeadline: '2099-01-01T11:00:00.000Z',
+        }),
+      ],
+      getRemainingSeats: vi.fn((event) => event.remainingSeats),
+    });
+
+    const fullCard = within(screen.getByTestId('event-card-event-full'));
+    expect(fullCard.getByText('額滿')).toBeInTheDocument();
+    expect(fullCard.queryByText('已截止')).not.toBeInTheDocument();
+    expect(fullCard.queryByText('報名中')).not.toBeInTheDocument();
+
+    const closedCard = within(screen.getByTestId('event-card-event-closed'));
+    expect(closedCard.getByText('已截止')).toBeInTheDocument();
+    expect(closedCard.queryByText('額滿')).not.toBeInTheDocument();
+    expect(closedCard.queryByText('報名中')).not.toBeInTheDocument();
+
+    const openCard = within(screen.getByTestId('event-card-event-open'));
+    expect(openCard.getByText('報名中')).toBeInTheDocument();
+    expect(openCard.queryByText('額滿')).not.toBeInTheDocument();
+    expect(openCard.queryByText('已截止')).not.toBeInTheDocument();
+  });
+
+  it('renders personal badges for logged-in hosts and joined users with host priority', () => {
+    renderList({
+      user: { uid: runnerUid },
+      events: [
+        createEvent({
+          id: 'event-host',
+          title: '我是主揪活動',
+          hostUid: runnerUid,
+          remainingSeats: 4,
+        }),
+        createEvent({
+          id: 'event-member-status',
+          title: '狀態已報名活動',
+          hostUid,
+          remainingSeats: 4,
+        }),
+        createEvent({
+          id: 'event-member-set',
+          title: '集合已報名活動',
+          hostUid,
+          remainingSeats: 4,
+        }),
+      ],
+      myJoinedEventIds: new Set(['event-host', 'event-member-set']),
+      membershipStatusByEventId: {
+        'event-host': 'joined',
+        'event-member-status': 'joined',
+      },
+      getRemainingSeats: vi.fn((event) => event.remainingSeats),
+    });
+
+    const hostCard = within(screen.getByTestId('event-card-event-host'));
+    expect(hostCard.getByText('你是主揪')).toBeInTheDocument();
+    expect(hostCard.queryByText('你已報名')).not.toBeInTheDocument();
+
+    expect(
+      within(screen.getByTestId('event-card-event-member-status')).getByText('你已報名'),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('event-card-event-member-set')).getByText('你已報名'),
+    ).toBeInTheDocument();
+  });
+
+  it('does not render personal badges when there is no logged-in user', () => {
+    renderList({
+      user: null,
+      events: [createEvent({ id: 'event-anonymous', remainingSeats: 4 })],
+      myJoinedEventIds: new Set(['event-anonymous']),
+      membershipStatusByEventId: { 'event-anonymous': 'joined' },
+      getRemainingSeats: vi.fn((event) => event.remainingSeats),
+    });
+
+    const card = within(screen.getByTestId('event-card-event-anonymous'));
+    expect(card.queryByText('你是主揪')).not.toBeInTheDocument();
+    expect(card.queryByText('你已報名')).not.toBeInTheDocument();
   });
 });
