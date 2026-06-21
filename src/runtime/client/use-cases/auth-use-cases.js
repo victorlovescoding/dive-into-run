@@ -4,6 +4,15 @@ import {
   subscribeToAuthChanges,
   watchUserProfileDocument,
 } from '@/service/auth-service';
+import { signInWithGoogle as signInWithGoogleRepo } from '@/repo/client/firebase-auth-repo';
+
+/**
+ * Starts the Google sign-in flow from runtime clients.
+ * @returns {Promise<import('firebase/auth').UserCredential>} Firebase user credential.
+ */
+export function signInWithGoogleUseCase() {
+  return signInWithGoogleRepo();
+}
 
 /**
  * 啟動 auth/profile 的 runtime orchestration。

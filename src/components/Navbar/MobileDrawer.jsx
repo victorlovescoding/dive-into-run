@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { signInWithGoogle, signOutUser } from '@/lib/firebase-auth-helpers';
+import { signOutUser } from '@/lib/firebase-auth-helpers';
 import getVisibleNavItems from './member-nav-visibility';
 import { NAV_ITEMS, isActivePath } from './nav-constants';
 import styles from './Navbar.module.css';
@@ -14,9 +14,11 @@ import styles from './Navbar.module.css';
  * @param {import('react').RefObject<HTMLButtonElement | null>} props.closeButtonRef - drawer 關閉按鈕 ref。
  * @param {() => void} props.closeDrawer - 關閉 drawer 處理函式。
  * @param {(e: import('react').MouseEvent<HTMLAnchorElement>) => void} props.handleLinkClick - drawer 內連結點擊處理。
+ * @param {() => Promise<void>} props.handleSignIn - 登入處理函式。
  * @param {string} props.pathname - 目前路由路徑。
  * @param {object | null} props.user - 目前登入使用者。
  * @param {boolean} props.loading - 認證載入狀態。
+ * @param {boolean} props.loginPending - Google 登入流程是否處理中。
  * @returns {import('react').JSX.Element} MobileDrawer 元件。
  */
 export default function MobileDrawer({
@@ -24,9 +26,11 @@ export default function MobileDrawer({
   closeButtonRef,
   closeDrawer,
   handleLinkClick,
+  handleSignIn,
   pathname,
   user,
   loading,
+  loginPending,
 }) {
   const visibleNavItems = getVisibleNavItems(NAV_ITEMS, { user, loading });
   const drawerClass = isDrawerOpen ? `${styles.drawer} ${styles.drawerOpen}` : styles.drawer;
@@ -87,9 +91,11 @@ export default function MobileDrawer({
             <button
               type="button"
               className={styles.loginButton}
-              onClick={() => signInWithGoogle()?.catch(() => {})}
+              disabled={loginPending}
+              aria-busy={loginPending}
+              onClick={handleSignIn}
             >
-              登入
+              {loginPending ? '處理中…' : '登入'}
             </button>
           )}
           {!loading && user && (

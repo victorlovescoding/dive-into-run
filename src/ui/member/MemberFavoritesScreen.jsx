@@ -124,7 +124,9 @@ function FavoritesPanel({ tab, onRemove }) {
  * @returns {import('react').ReactElement} Rendered screen.
  */
 export default function MemberFavoritesScreen({ runtime }) {
-  const { tabs, selectTab, handleTabKeyDown, removeFavorite } = runtime;
+  const { canRender = true, tabs, selectTab, handleTabKeyDown, removeFavorite } = runtime;
+
+  if (!canRender) return null;
 
   return (
     <main className={styles.container}>

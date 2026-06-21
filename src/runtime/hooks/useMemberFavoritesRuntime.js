@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
+import { markMemberAuthGateToastPending } from '@/runtime/member-auth-gate-toast';
 import {
   addContentFavorite,
   FAVORITE_CONTENT_TYPES,
@@ -57,10 +59,12 @@ function createFavoritesState() {
 export default function useMemberFavoritesRuntime() {
   const { user, loading: authLoading } = useContext(AuthContext);
   const { showToast } = useToast();
+  const router = useRouter();
   const uid = user?.uid;
   const [activeIndex, setActiveIndex] = useState(0);
   const [favoritesByType, setFavoritesByType] = useState(() => createFavoritesState());
   const favoritesRef = useRef(favoritesByType);
+  const unauthRedirectStartedRef = useRef(false);
   const requestIdsRef = useRef({
     [FAVORITE_CONTENT_TYPES.POST]: 0,
     [FAVORITE_CONTENT_TYPES.EVENT]: 0,
@@ -69,6 +73,7 @@ export default function useMemberFavoritesRuntime() {
   const activeTab = FAVORITE_TABS[activeIndex] ?? FAVORITE_TABS[0];
   const activeType = activeTab.type;
   const activeBucket = favoritesByType[activeType] ?? createBucket();
+  const canRender = Boolean(user) && !authLoading;
 
   const commitTypeBucket = useCallback((type, nextBucket) => {
     const nextState = {
@@ -82,7 +87,6 @@ export default function useMemberFavoritesRuntime() {
   const loadType = useCallback(
     async (type) => {
       if (!uid || authLoading) {
-        commitTypeBucket(type, createBucket());
         return;
       }
 
@@ -122,6 +126,15 @@ export default function useMemberFavoritesRuntime() {
     },
     [authLoading, commitTypeBucket, uid],
   );
+
+  useEffect(() => {
+    if (authLoading || user) return;
+    if (unauthRedirectStartedRef.current) return;
+
+    unauthRedirectStartedRef.current = true;
+    markMemberAuthGateToastPending();
+    router.replace('/');
+  }, [authLoading, router, user]);
 
   useEffect(() => {
     favoritesRef.current = favoritesByType;
@@ -224,6 +237,8 @@ export default function useMemberFavoritesRuntime() {
     activeIndex,
     activeType,
     activeTab,
+    authLoading,
+    canRender,
     tabs: FAVORITE_TABS.map((tab, index) => ({
       ...tab,
       tabIndex: index,
@@ -233,6 +248,7 @@ export default function useMemberFavoritesRuntime() {
     items: activeBucket.items,
     isLoading: activeBucket.isLoading,
     error: activeBucket.error,
+    user,
     selectTab,
     handleTabKeyDown,
     removeFavorite,
