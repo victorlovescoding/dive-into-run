@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { signOutUser } from '@/lib/firebase-auth-helpers';
 import getVisibleNavItems from './member-nav-visibility';
-import { NAV_ITEMS, isActivePath } from './nav-constants';
+import { NAV_ITEMS, getAuthenticatedMenuItems, isActivePath } from './nav-constants';
 import styles from './Navbar.module.css';
 
 /**
@@ -16,7 +16,7 @@ import styles from './Navbar.module.css';
  * @param {(e: import('react').MouseEvent<HTMLAnchorElement>) => void} props.handleLinkClick - drawer 內連結點擊處理。
  * @param {() => Promise<void>} props.handleSignIn - 登入處理函式。
  * @param {string} props.pathname - 目前路由路徑。
- * @param {object | null} props.user - 目前登入使用者。
+ * @param {{ uid: string, name?: string } | null} props.user - 目前登入使用者。
  * @param {boolean} props.loading - 認證載入狀態。
  * @param {boolean} props.loginPending - Google 登入流程是否處理中。
  * @returns {import('react').JSX.Element} MobileDrawer 元件。
@@ -33,6 +33,7 @@ export default function MobileDrawer({
   loginPending,
 }) {
   const visibleNavItems = getVisibleNavItems(NAV_ITEMS, { user, loading });
+  const authenticatedMenuItems = getAuthenticatedMenuItems(user);
   const drawerClass = isDrawerOpen ? `${styles.drawer} ${styles.drawerOpen}` : styles.drawer;
   const overlayClass = isDrawerOpen ? `${styles.overlay} ${styles.overlayVisible}` : styles.overlay;
   const drawerLinks = visibleNavItems.map((item) => {
@@ -101,6 +102,18 @@ export default function MobileDrawer({
           {!loading && user && (
             <div className={styles.drawerUserInfo}>
               <span className={styles.drawerUserName}>{user.name}</span>
+              <nav className={styles.drawerMemberLinks} aria-label="會員導覽">
+                {authenticatedMenuItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={styles.drawerLink}
+                    onClick={handleLinkClick}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
               <button
                 type="button"
                 className={styles.loginButton}

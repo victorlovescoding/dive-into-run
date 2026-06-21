@@ -7,7 +7,7 @@
 /** @type {NavItem[]} */
 const NAV_ITEMS = [
   { href: '/', label: '回首頁' },
-  { href: '/member', label: '會員頁面' },
+  { href: '/member', label: '會員中心' },
   { href: '/posts', label: '文章' },
   { href: '/events', label: '揪團頁面' },
   { href: '/runs', label: '跑步' },
@@ -25,4 +25,19 @@ function isActivePath(pathname, href) {
   return pathname.startsWith(href);
 }
 
-export { NAV_ITEMS, isActivePath };
+/**
+ * 建立登入後使用者選單入口。
+ * @param {{ uid: string } | null | undefined} user - 目前登入使用者。
+ * @returns {NavItem[]} 登入後使用者選單項目。
+ */
+function getAuthenticatedMenuItems(user) {
+  if (!user?.uid) return [];
+
+  return [
+    { href: '/member', label: '會員中心' },
+    { href: '/member/favorites', label: '我的收藏' },
+    { href: `/users/${user.uid}`, label: '我的公開檔案' },
+  ];
+}
+
+export { NAV_ITEMS, getAuthenticatedMenuItems, isActivePath };
