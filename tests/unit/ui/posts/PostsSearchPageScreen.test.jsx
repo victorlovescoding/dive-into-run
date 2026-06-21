@@ -4,6 +4,10 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
+  FAVORITE_LOGIN_TEST_COPY,
+  createFavoriteLoginDialogState,
+} from '../../../_helpers/favorite-login-continuation-helpers';
+import {
   createPostSearchHighlightRange,
   createPostSearchMatch,
   createPostSearchPost,
@@ -197,11 +201,15 @@ function createRuntime(overrides = {}) {
     editingPostId: null,
     isSubmitting: false,
     isDraftConfirmOpen: false,
+    dialogState: createFavoriteLoginDialogState({ isOpen: false }),
     dialogRef: { current: null },
     setTitle: vi.fn(),
     setContent: vi.fn(),
     handleEditPost: vi.fn(),
     handleSubmitPost: vi.fn(),
+    confirmContinuation: vi.fn(),
+    cancelContinuation: vi.fn(),
+    closeContinuation: vi.fn(),
     handleRequestComposerClose: vi.fn(),
     handleSaveComposerDraft: vi.fn(),
     handleContinueEditingDraft: vi.fn(),
@@ -229,6 +237,36 @@ describe('PostsSearchPageScreen search entry', () => {
 
     expect(screen.getByRole('search', { name: '搜尋文章' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 1, name: '搜尋文章' })).not.toBeInTheDocument();
+  });
+});
+
+describe('PostsSearchPageScreen favorite login continuation dialog', () => {
+  it('renders runtime dialog state and forwards confirm, cancel, and close handlers', async () => {
+    const user = setupPostsSearchUser();
+    const confirmContinuation = vi.fn();
+    const cancelContinuation = vi.fn();
+    const closeContinuation = vi.fn();
+
+    renderScreen({
+      dialogState: createFavoriteLoginDialogState({
+        contentType: 'post',
+        body: FAVORITE_LOGIN_TEST_COPY.postBody,
+      }),
+      confirmContinuation,
+      cancelContinuation,
+      closeContinuation,
+    });
+
+    const dialog = screen.getByRole('dialog', { name: '登入後即可收藏' });
+    expect(dialog).toHaveTextContent('登入後會自動將這篇文章加入收藏。');
+
+    await user.click(screen.getByRole('button', { name: '使用 Google 登入' }));
+    await user.click(screen.getByRole('button', { name: '稍後再說' }));
+    await user.click(screen.getByRole('button', { name: '關閉收藏登入提示' }));
+
+    expect(confirmContinuation).toHaveBeenLastCalledWith();
+    expect(cancelContinuation).toHaveBeenLastCalledWith();
+    expect(closeContinuation).toHaveBeenLastCalledWith();
   });
 });
 

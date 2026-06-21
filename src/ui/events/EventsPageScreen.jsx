@@ -2,6 +2,7 @@
 
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import EventEditForm from '@/components/EventEditForm';
+import FavoriteLoginContinuationDialog from '@/components/FavoriteLoginContinuationDialog';
 import useEventsPageRuntime from '@/runtime/hooks/useEventsPageRuntime';
 import EventCreateForm from './EventCreateForm';
 import EventsFilterPanel from './EventsFilterPanel';
@@ -50,6 +51,7 @@ export default function EventsPageScreen() {
     isUpdating,
     deletingEventId,
     isDeletingEvent,
+    dialogState,
     cityOptions,
     filterDistrictOptions,
     selectedDistrictOptions,
@@ -82,6 +84,9 @@ export default function EventsPageScreen() {
     handleDeleteCancel,
     handleDeleteConfirm,
     handleToggleFavoriteEvent,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
     loadMore,
   } = useEventsPageRuntime();
 
@@ -190,6 +195,13 @@ export default function EventsPageScreen() {
           />
         </div>
       )}
+
+      <FavoriteLoginContinuationDialog
+        dialogState={dialogState}
+        onConfirm={confirmContinuation}
+        onCancel={cancelContinuation}
+        onClose={closeContinuation}
+      />
     </div>
   );
 }

@@ -1,0 +1,128 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.48);
+}
+
+.dialog {
+  width: min(100%, 440px);
+  max-height: min(92vh, 560px);
+  overflow: auto;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.24);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.title {
+  margin: 0;
+  color: #111827;
+  font-size: 1.18rem;
+  line-height: 1.35;
+}
+
+.closeButton {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  background: #e5e7eb;
+}
+
+.closeButton:focus-visible,
+.secondaryButton:focus-visible,
+.primaryButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+}
+
+.body {
+  margin: 0;
+  color: #374151;
+  font-size: 0.96rem;
+  line-height: 1.65;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.secondaryButton,
+.primaryButton {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondaryButton {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+}
+
+.secondaryButton:hover {
+  background: #f9fafb;
+}
+
+.primaryButton {
+  border: 1px solid #15803d;
+  background: #15803d;
+  color: #ffffff;
+}
+
+.primaryButton:hover {
+  border-color: #166534;
+  background: #166534;
+}
+
+.primaryButton:disabled {
+  border-color: #d1d5db;
+  background: #e5e7eb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .backdrop {
+    padding: 12px;
+  }
+
+  .dialog {
+    padding: 18px;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+}

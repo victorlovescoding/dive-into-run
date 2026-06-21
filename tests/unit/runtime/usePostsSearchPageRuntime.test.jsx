@@ -32,6 +32,7 @@ const mocks = vi.hoisted(() => ({
   hasUserLikedPosts: vi.fn(),
   removeContentFavorite: vi.fn(),
   searchPublicActivePosts: vi.fn(),
+  signInWithGoogle: vi.fn(),
   showToast: vi.fn(),
   toggleLikePost: vi.fn(),
   updatePost: vi.fn(),
@@ -120,6 +121,10 @@ vi.mock('../../../src/runtime/client/use-cases/content-favorite-use-cases', () =
   removeContentFavorite: mocks.removeContentFavorite,
 }));
 
+vi.mock('../../../src/lib/firebase-auth-helpers', () => ({
+  signInWithGoogle: mocks.signInWithGoogle,
+}));
+
 vi.mock('../../../src/runtime/hooks/useEditHistoryModal', async () => {
   const { useCallback, useState } = await vi.importActual('react');
 
@@ -197,6 +202,7 @@ vi.mock('../../../src/runtime/hooks/useEditHistoryModal', async () => {
  *   articleHistoryError?: string | null,
  *   articleHistoryPost?: object | null,
  *   isArticleHistoryOpen?: boolean,
+ *   dialogState?: object,
  *   handleSubmitSearch: (event?: { preventDefault?: () => void }) => void | Promise<void>,
  *   handleRetrySearch?: () => void | Promise<void>,
  *   handlePressLike?: (postId: string) => void | Promise<void>,
@@ -208,6 +214,9 @@ vi.mock('../../../src/runtime/hooks/useEditHistoryModal', async () => {
  *   handleSubmitPost?: (event: { preventDefault?: () => void }) => void | Promise<void>,
  *   handleViewArticleHistory?: (post: object) => void | Promise<void>,
  *   handleCloseArticleHistory?: () => void,
+ *   confirmContinuation?: () => Promise<void>,
+ *   cancelContinuation?: () => void,
+ *   closeContinuation?: () => void,
  * }} UsePostsSearchPageRuntime
  */
 
@@ -242,17 +251,27 @@ async function loadPostsSearchPageRuntime() {
 /**
  * Renders the posts search page runtime with stable auth context.
  * @param {{ user?: typeof viewer | null }} [options] Render options.
- * @returns {ReturnType<typeof renderHook<ReturnType<UsePostsSearchPageRuntime>, unknown>>}
- *   Rendered runtime hook.
+ * @returns {ReturnType<typeof renderHook<ReturnType<UsePostsSearchPageRuntime>, unknown>> & {
+ *   setAuthUser: (nextUser: typeof viewer | null) => void,
+ * }} Rendered runtime hook.
  */
 function renderUsePostsSearchPageRuntime({ user = viewer } = {}) {
-  return renderHook(() => usePostsSearchPageRuntime(), {
+  let currentUser = user;
+  const utils = renderHook(() => usePostsSearchPageRuntime(), {
     wrapper: ({ children }) => (
-      <AuthContext.Provider value={{ user, setUser: vi.fn(), loading: false }}>
+      <AuthContext.Provider value={{ user: currentUser, setUser: vi.fn(), loading: false }}>
         {children}
       </AuthContext.Provider>
     ),
   });
+
+  return {
+    ...utils,
+    setAuthUser(nextUser) {
+      currentUser = nextUser;
+      utils.rerender();
+    },
+  };
 }
 
 /**
@@ -386,6 +405,9 @@ beforeEach(() => {
   );
   mocks.getFavoritedTargetIds.mockResolvedValue(new Set());
   mocks.hasUserLikedPosts.mockResolvedValue(new Set());
+  mocks.signInWithGoogle.mockResolvedValue({
+    user: { uid: 'runner-after-google' },
+  });
   mocks.updatePost.mockResolvedValue(undefined);
   mocks.validatePostInput.mockReturnValue(null);
 });
@@ -530,6 +552,217 @@ describe('usePostsSearchPageRuntime search form navigation', () => {
     });
 
     expect(navigation.router.push).toHaveBeenCalledWith('/posts');
+  });
+});
+
+describe('usePostsSearchPageRuntime favorite login continuation', () => {
+  it('opens the post continuation dialog for unauthenticated favorite clicks without toast', async () => {
+    const post = createPostSearchPost({ id: 'post-search-continuation-open' });
+    const { result } = await renderRuntimeWithSearchResult(post, { user: null });
+
+    await act(async () => {
+      await getRuntimeHandler(result.current, 'handleToggleFavoritePost')(post.id);
+    });
+
+    expect(result.current.dialogState).toMatchObject({
+      isOpen: true,
+      contentType: 'post',
+      body: '登入後會自動將這篇文章加入收藏。',
+      isSubmitting: false,
+    });
+    expect(mocks.showToast).not.toHaveBeenCalledWith('請先登入才能收藏', 'info');
+    expect(mocks.signInWithGoogle).not.toHaveBeenCalled();
+    expect(mocks.addContentFavorite).not.toHaveBeenCalled();
+  });
+
+  it('patches only the clicked nested search result after continuation success', async () => {
+    const firstPost = createPostSearchPost({
+      id: 'post-search-continuation-first',
+      isFavorited: false,
+    });
+    const clickedPost = createPostSearchPost({
+      id: 'post-search-continuation-clicked',
+      isFavorited: false,
+    });
+    mocks.searchPublicActivePosts.mockResolvedValueOnce(
+      createPostSearchPage({
+        keyword: POST_SEARCH_KEYWORD,
+        items: [
+          createPostSearchMatch({ post: firstPost }),
+          createPostSearchMatch({ post: clickedPost }),
+        ],
+        nextCursor: null,
+        hasMore: false,
+        scannedCount: 2,
+      }),
+    );
+    navigation.setSearchParams({ q: POST_SEARCH_KEYWORD });
+
+    const { result } = renderUsePostsSearchPageRuntime({ user: null });
+    await waitFor(() => {
+      expect(result.current.results.map((match) => match.post.id)).toEqual([
+        firstPost.id,
+        clickedPost.id,
+      ]);
+    });
+    await act(async () => {
+      await getRuntimeHandler(result.current, 'handleToggleFavoritePost')(clickedPost.id);
+    });
+    await act(async () => {
+      await getRuntimeHandler(result.current, 'confirmContinuation')();
+    });
+
+    expect(mocks.signInWithGoogle).toHaveBeenCalled();
+    expect(mocks.addContentFavorite).toHaveBeenCalledWith({
+      uid: 'runner-after-google',
+      type: 'post',
+      targetId: clickedPost.id,
+    });
+    expect(result.current.results.map((match) => [match.post.id, match.post.isFavorited])).toEqual([
+      [firstPost.id, false],
+      [clickedPost.id, true],
+    ]);
+    expect(mocks.showToast).toHaveBeenCalledWith('登入成功，已加入收藏', 'success');
+  });
+
+  it('keeps the continuation favorite when signed-in search reload returns stale empty favorites after add success', async () => {
+    const firstPost = createPostSearchPost({
+      id: 'post-search-continuation-stale-first',
+      isFavorited: false,
+    });
+    const clickedPost = createPostSearchPost({
+      id: 'post-search-continuation-stale-clicked',
+      isFavorited: false,
+    });
+    const initialSearchPage = createPostSearchPage({
+      keyword: POST_SEARCH_KEYWORD,
+      items: [
+        createPostSearchMatch({ post: firstPost }),
+        createPostSearchMatch({ post: clickedPost }),
+      ],
+      nextCursor: null,
+      hasMore: false,
+      scannedCount: 2,
+    });
+    const staleSignedInSearchPage = createPostSearchPage({
+      keyword: POST_SEARCH_KEYWORD,
+      items: [
+        createPostSearchMatch({ post: firstPost }),
+        createPostSearchMatch({ post: clickedPost }),
+      ],
+      nextCursor: null,
+      hasMore: false,
+      scannedCount: 2,
+    });
+    const pendingAddFavorite = createDeferred();
+    const staleSignedInFavorites = createDeferred();
+    mocks.searchPublicActivePosts
+      .mockResolvedValueOnce(initialSearchPage)
+      .mockResolvedValueOnce(staleSignedInSearchPage);
+    mocks.addContentFavorite.mockReturnValueOnce(pendingAddFavorite.promise);
+    mocks.getFavoritedTargetIds.mockReturnValueOnce(staleSignedInFavorites.promise);
+    navigation.setSearchParams({ q: POST_SEARCH_KEYWORD });
+
+    const { result, setAuthUser } = renderUsePostsSearchPageRuntime({ user: null });
+    await waitFor(() => {
+      expect(result.current.results.map((match) => match.post.id)).toEqual([
+        firstPost.id,
+        clickedPost.id,
+      ]);
+    });
+    await act(async () => {
+      await getRuntimeHandler(result.current, 'handleToggleFavoritePost')(clickedPost.id);
+    });
+
+    /** @type {Promise<void>} */
+    let confirmPromise;
+    act(() => {
+      confirmPromise = /** @type {Promise<void>} */ (
+        getRuntimeHandler(result.current, 'confirmContinuation')()
+      );
+    });
+    await waitFor(() => {
+      expect(mocks.addContentFavorite).toHaveBeenCalledWith({
+        uid: 'runner-after-google',
+        type: 'post',
+        targetId: clickedPost.id,
+      });
+    });
+
+    act(() => {
+      setAuthUser({ ...viewer, uid: 'runner-after-google' });
+    });
+    await waitFor(() => {
+      expect(mocks.getFavoritedTargetIds).toHaveBeenCalledWith({
+        uid: 'runner-after-google',
+        type: 'post',
+        targetIds: [firstPost.id, clickedPost.id],
+      });
+    });
+
+    await act(async () => {
+      pendingAddFavorite.resolve(undefined);
+      await confirmPromise;
+    });
+    await act(async () => {
+      staleSignedInFavorites.resolve(new Set());
+      await staleSignedInFavorites.promise;
+    });
+
+    expect(result.current.results.map((match) => [match.post.id, match.post.isFavorited])).toEqual([
+      [firstPost.id, false],
+      [clickedPost.id, true],
+    ]);
+    expect(mocks.showToast).toHaveBeenCalledWith('登入成功，已加入收藏', 'success');
+  });
+});
+
+describe('usePostsSearchPageRuntime signed-in favorite regressions', () => {
+  it('keeps signed-in add favorite on the existing branch without opening continuation', async () => {
+    const post = createPostSearchPost({ id: 'post-search-signed-in-add' });
+    const { result } = await renderRuntimeWithSearchResult(post);
+
+    await act(async () => {
+      await getRuntimeHandler(result.current, 'handleToggleFavoritePost')(post.id);
+    });
+
+    expect(mocks.addContentFavorite).toHaveBeenCalledWith({
+      uid: POST_SEARCH_VIEWER_UID,
+      type: 'post',
+      targetId: post.id,
+    });
+    expect(mocks.removeContentFavorite).not.toHaveBeenCalled();
+    expect(mocks.signInWithGoogle).not.toHaveBeenCalled();
+    expect(result.current.dialogState).toMatchObject({ isOpen: false });
+    expect(result.current.results[0].post).toMatchObject({
+      id: post.id,
+      isFavorited: true,
+    });
+    expect(mocks.showToast).toHaveBeenCalledWith('已加入收藏', 'success');
+  });
+
+  it('keeps signed-in remove favorite on the existing branch without opening continuation', async () => {
+    const post = createPostSearchPost({ id: 'post-search-signed-in-remove' });
+    mocks.getFavoritedTargetIds.mockResolvedValueOnce(new Set([post.id]));
+    const { result } = await renderRuntimeWithSearchResult(post);
+
+    await act(async () => {
+      await getRuntimeHandler(result.current, 'handleToggleFavoritePost')(post.id);
+    });
+
+    expect(mocks.removeContentFavorite).toHaveBeenCalledWith({
+      uid: POST_SEARCH_VIEWER_UID,
+      type: 'post',
+      targetId: post.id,
+    });
+    expect(mocks.addContentFavorite).not.toHaveBeenCalled();
+    expect(mocks.signInWithGoogle).not.toHaveBeenCalled();
+    expect(result.current.dialogState).toMatchObject({ isOpen: false });
+    expect(result.current.results[0].post).toMatchObject({
+      id: post.id,
+      isFavorited: false,
+    });
+    expect(mocks.showToast).toHaveBeenCalledWith('已取消收藏', 'success');
   });
 });
 
@@ -758,7 +991,12 @@ describe('usePostsSearchPageRuntime personalized result interactions', () => {
     });
 
     expect(mocks.showToast).toHaveBeenNthCalledWith(1, '請先登入才能按讚', 'info');
-    expect(mocks.showToast).toHaveBeenNthCalledWith(2, '請先登入才能收藏', 'info');
+    expect(mocks.showToast).not.toHaveBeenCalledWith('請先登入才能收藏', 'info');
+    expect(result.current.dialogState).toMatchObject({
+      isOpen: true,
+      contentType: 'post',
+      body: '登入後會自動將這篇文章加入收藏。',
+    });
     expect(mocks.toggleLikePost).not.toHaveBeenCalled();
     expect(mocks.addContentFavorite).not.toHaveBeenCalled();
     expect(mocks.removeContentFavorite).not.toHaveBeenCalled();

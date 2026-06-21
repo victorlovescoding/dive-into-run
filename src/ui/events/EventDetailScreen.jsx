@@ -8,6 +8,7 @@ import CopyLinkButton from '@/components/CopyLinkButton';
 import EventCardMenu from '@/components/EventCardMenu';
 import EventDeleteConfirm from '@/components/EventDeleteConfirm';
 import EventEditForm from '@/components/EventEditForm';
+import FavoriteLoginContinuationDialog from '@/components/FavoriteLoginContinuationDialog';
 import ShareButton from '@/components/ShareButton';
 import UserLink from '@/components/UserLink';
 import { evaluateEventEditStartedLock } from '@/runtime/events/event-runtime-helpers';
@@ -42,6 +43,7 @@ export default function EventDetailScreen({ id, runtime }) {
     isDeletingEvent,
     isFavoriteEvent,
     isTogglingFavoriteEvent,
+    dialogState,
     statusText,
     hasRoute,
     routePolylines,
@@ -62,6 +64,9 @@ export default function EventDetailScreen({ id, runtime }) {
     handleDeleteConfirm,
     handleCommentAdded,
     handleToggleFavoriteEvent,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
   } = runtime;
   const isCurrentUserHost = user?.uid === event?.hostUid;
   const editStartedLock = isCurrentUserHost ? evaluateEventEditStartedLock(event) : null;
@@ -309,6 +314,13 @@ export default function EventDetailScreen({ id, runtime }) {
           />
         </div>
       )}
+
+      <FavoriteLoginContinuationDialog
+        dialogState={dialogState}
+        onConfirm={confirmContinuation}
+        onCancel={cancelContinuation}
+        onClose={closeContinuation}
+      />
     </main>
   );
 }

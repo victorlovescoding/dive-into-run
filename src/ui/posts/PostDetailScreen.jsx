@@ -10,6 +10,7 @@ import CommentInput from '@/components/CommentInput';
 import ComposeModal from '@/components/ComposeModal';
 import CopyLinkButton from '@/components/CopyLinkButton';
 import EditHistoryModal from '@/components/EditHistoryModal';
+import FavoriteLoginContinuationDialog from '@/components/FavoriteLoginContinuationDialog';
 import PostCard from '@/components/PostCard';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import ReportDialog from '@/components/reports/ReportDialog';
@@ -131,6 +132,7 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     isSubmitting,
     isDraftConfirmOpen,
     reportDialogTarget,
+    dialogState,
     isLoadingNext,
     openMenuPostId,
     dialogRef,
@@ -148,6 +150,9 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     handleDeletePost,
     handleToggleLike,
     handleToggleFavoritePost,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
     handleEditComment,
     handleEditSave,
     handleEditCancel,
@@ -411,6 +416,13 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
           <div ref={bottomRef} className={styles.scrollSentinel} />
         </>
       )}
+
+      <FavoriteLoginContinuationDialog
+        dialogState={dialogState}
+        onConfirm={confirmContinuation}
+        onCancel={cancelContinuation}
+        onClose={closeContinuation}
+      />
     </div>
   );
 }

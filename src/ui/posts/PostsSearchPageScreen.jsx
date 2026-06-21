@@ -2,6 +2,7 @@
 
 import ComposeModal from '@/components/ComposeModal';
 import EditHistoryModal from '@/components/EditHistoryModal';
+import FavoriteLoginContinuationDialog from '@/components/FavoriteLoginContinuationDialog';
 import PostCard from '@/components/PostCard';
 import ReportDialog from '@/components/reports/ReportDialog';
 import feedStyles from '@/app/posts/posts.module.css';
@@ -253,6 +254,7 @@ export default function PostsSearchPageScreen({ runtime }) {
     editingPostId,
     isSubmitting,
     isDraftConfirmOpen,
+    dialogState,
     dialogRef,
     bottomRef,
     openMenuPostId,
@@ -271,6 +273,9 @@ export default function PostsSearchPageScreen({ runtime }) {
     handleSubmitPost,
     handleViewArticleHistory,
     handleCloseArticleHistory,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
     handleOpenReportDialog,
     handleCloseReportDialog,
     handleReportResult,
@@ -411,6 +416,8 @@ export default function PostsSearchPageScreen({ runtime }) {
           onClose={handleCloseArticleHistory}
         />
       )}
+
+      <FavoriteLoginContinuationDialog dialogState={dialogState} onConfirm={confirmContinuation} onCancel={cancelContinuation} onClose={closeContinuation} />
     </main>
   );
 }

@@ -300,6 +300,7 @@ export default [
             'vitest.setup.jsx',
             'scripts/*.js',
             'functions/*.js',
+            'tests/e2e/*.js',
             'tests/server/firestore/*.js',
             'tests/browser/*/*.test.js',
             'tests/browser/*/*.test.jsx',

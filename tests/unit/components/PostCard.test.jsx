@@ -181,6 +181,24 @@ describe('PostCard search result interactions', () => {
     expect(onToggleFavorite).toHaveBeenCalledWith(post.id);
   });
 
+  it('delegates favorite clicks with only the rendered post id', async () => {
+    const user = userEvent.setup();
+    const post = makePost({
+      id: 'post-card-favorite-delegation',
+      isFavorited: false,
+    });
+    const onToggleFavorite = vi.fn();
+
+    renderPostCard({
+      post,
+      onToggleFavorite,
+    });
+
+    await user.click(screen.getByRole('button', { name: '收藏文章' }));
+
+    expect(onToggleFavorite).toHaveBeenLastCalledWith(post.id);
+  });
+
   it('uses the matched search result post for owner menu and delete callbacks', async () => {
     const user = userEvent.setup();
     const post = makePost({

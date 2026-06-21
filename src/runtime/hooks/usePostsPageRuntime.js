@@ -37,9 +37,35 @@ import {
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 import useEditHistoryModal from '@/runtime/hooks/useEditHistoryModal';
+import useFavoriteLoginContinuation from '@/runtime/hooks/useFavoriteLoginContinuation';
 
 const PAGE_SIZE = 10;
 const OBSERVER_MARGIN = '300px 0px';
+
+/**
+ * @typedef {object} FavoritePostLocalMutation
+ * @property {boolean} isFavorited - 本地 mutation 後的收藏狀態。
+ * @property {number} version - 發生 mutation 時的版本。
+ */
+
+/**
+ * 保留 hydrate 請求開始後發生的本地收藏 mutation。
+ * @param {Array<Record<string, unknown> & { id: string }>} hydratedPosts - Hydrated posts.
+ * @param {Map<string, FavoritePostLocalMutation>} localMutations - 本地收藏 mutation 狀態。
+ * @param {number} hydrationMutationVersion - Hydrate 開始時的 mutation 版本。
+ * @returns {Array<Record<string, unknown> & { id: string }>} 套用 race guard 後的 posts。
+ */
+function preservePostFavoriteMutations(
+  hydratedPosts,
+  localMutations,
+  hydrationMutationVersion,
+) {
+  return hydratedPosts.map((postItem) => {
+    const localMutation = localMutations.get(postItem.id);
+    if (!localMutation || localMutation.version <= hydrationMutationVersion) return postItem;
+    return { ...postItem, isFavorited: localMutation.isFavorited };
+  });
+}
 
 /**
  * posts list 頁 runtime orchestration。
@@ -68,6 +94,8 @@ export default function usePostsPageRuntime() {
   const dialogRef = useRef(/** @type {HTMLDialogElement | null} */ (null));
   const bottomRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const isLoadingNextRef = useRef(false);
+  const favoritePostMutationVersionRef = useRef(0);
+  const favoritePostLocalMutationsRef = useRef(new Map());
 
   const userUid = user?.uid ?? null;
   const loadArticleHistory = useCallback((targetPost) => fetchPostHistory(targetPost.id), []);
@@ -81,6 +109,31 @@ export default function usePostsPageRuntime() {
   } = useEditHistoryModal({
     loadHistory: loadArticleHistory,
     loadErrorMessage: '載入編輯記錄失敗',
+  });
+
+  const recordFavoritePostMutation = useCallback((postId, isFavorited) => {
+    favoritePostMutationVersionRef.current += 1;
+    favoritePostLocalMutationsRef.current.set(postId, {
+      isFavorited,
+      version: favoritePostMutationVersionRef.current,
+    });
+  }, []);
+
+  const handleContinuationFavoriteAdded = useCallback(({ contentType, targetId }) => {
+    if (contentType !== FAVORITE_CONTENT_TYPES.POST) return;
+    recordFavoritePostMutation(targetId, true);
+    setPosts((previousPosts) => applyPostFavoriteState(previousPosts, targetId, true));
+  }, [recordFavoritePostMutation]);
+
+  const {
+    dialogState,
+    openContinuation,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
+  } = useFavoriteLoginContinuation({
+    showToast,
+    onFavoriteAdded: handleContinuationFavoriteAdded,
   });
 
   /**
@@ -120,10 +173,17 @@ export default function usePostsPageRuntime() {
     /** 載入第一頁文章與按讚狀態。 */
     async function loadPosts() {
       if (!cancelled) setIsLoading(true);
+      const hydrationMutationVersion = favoritePostMutationVersionRef.current;
       try {
         const { posts: hydratedPosts, nextCursor: initialCursor } = await loadInitialPosts(userUid);
         if (cancelled) return;
-        setPosts(hydratedPosts);
+        setPosts(
+          preservePostFavoriteMutations(
+            hydratedPosts,
+            favoritePostLocalMutationsRef.current,
+            hydrationMutationVersion,
+          ),
+        );
         setNextCursor(initialCursor);
       } catch (error) {
         console.error('取得文章失敗:', error);
@@ -306,7 +366,7 @@ export default function usePostsPageRuntime() {
   const handleToggleFavoritePost = useCallback(
     async (postId) => {
       if (!userUid) {
-        showToast('請先登入才能收藏', 'info');
+        openContinuation({ contentType: FAVORITE_CONTENT_TYPES.POST, targetId: postId });
         return;
       }
 
@@ -314,6 +374,7 @@ export default function usePostsPageRuntime() {
       if (!targetPost) return;
 
       const wasFavorited = !!targetPost.isFavorited;
+      recordFavoritePostMutation(postId, !wasFavorited);
       setPosts((previousPosts) => applyPostFavoriteState(previousPosts, postId, !wasFavorited));
 
       try {
@@ -335,6 +396,7 @@ export default function usePostsPageRuntime() {
         showToast('已加入收藏', 'success');
       } catch (error) {
         console.error('Toggle favorite post error:', error);
+        recordFavoritePostMutation(postId, wasFavorited);
         setPosts((previousPosts) => applyPostFavoriteState(previousPosts, postId, wasFavorited));
         showToast(
           wasFavorited ? '取消收藏失敗，請稍後再試' : '收藏失敗，請稍後再試',
@@ -342,7 +404,7 @@ export default function usePostsPageRuntime() {
         );
       }
     },
-    [posts, showToast, userUid],
+    [openContinuation, posts, recordFavoritePostMutation, showToast, userUid],
   );
 
   /**
@@ -490,6 +552,7 @@ export default function usePostsPageRuntime() {
     isLoadingNext,
     isDraftConfirmOpen,
     reportDialogTarget,
+    dialogState,
     articleHistoryPost,
     articleHistoryEntries,
     articleHistoryError,
@@ -501,6 +564,9 @@ export default function usePostsPageRuntime() {
     handleComposeButton,
     handlePressLike,
     handleToggleFavoritePost,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
     handleToggleOwnerMenu,
     handleCloseOwnerMenu,
     handleOpenReportDialog,
