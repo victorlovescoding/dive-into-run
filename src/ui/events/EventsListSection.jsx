@@ -1,18 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import BookmarkButton from '@/components/BookmarkButton';
-import EventActionButtons from '@/components/EventActionButtons';
-import EventCardMenu from '@/components/EventCardMenu';
-import UserLink from '@/components/UserLink';
-import { evaluateEventEditStartedLock } from '@/runtime/events/event-runtime-helpers';
-import {
-  EVENT_AVAILABILITY_BADGE_LABELS, EVENT_AVAILABILITY_BADGE_STYLE_KEYS,
-  getEventAvailabilityBadgeState, getEventPersonalBadgeLabel,
-} from './event-status-badges';
-import { formatDateTime, formatPace, renderRouteLabel } from './event-formatters';
+import EventListCard from './EventListCard';
+import { buildAppliedFilterChips } from './event-list-scanning';
 import styles from './EventsPageScreen.module.css';
 
 const CARD_NAVIGATION_SELECTOR = [
@@ -48,6 +39,7 @@ export function isInteractiveCardTarget(target) {
  * @property {boolean} isCreating - 是否正在建立新活動。
  * @property {string | null} loadError - 載入活動時的錯誤訊息。
  * @property {boolean} isFilteredResults - 目前列表是否為篩選結果。
+ * @property {{ city?: string, district?: string, startTime?: string, endTime?: string, minDistance?: string, maxDistance?: string, hasSeatsOnly?: boolean }} appliedFilters - 已套用篩選條件。
  * @property {boolean} isLoadingMore - 是否正在載入更多活動。
  * @property {string | null} loadMoreError - 載入更多活動時的錯誤訊息。
  * @property {boolean} hasMore - 是否還有更多活動可載入。
@@ -81,6 +73,7 @@ export default function EventsListSection({
   isCreating,
   loadError,
   isFilteredResults,
+  appliedFilters = {},
   isLoadingMore,
   loadMoreError,
   hasMore,
@@ -103,6 +96,7 @@ export default function EventsListSection({
   const eventListRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const isEmptyEventsList = !isLoadingEvents && !isFiltering && events.length === 0;
   const emptyEventsMessage = isFilteredResults ? '沒有符合條件的活動' : '目前還沒有活動（先建立一筆看看）';
+  const activeFilterChips = buildAppliedFilterChips(appliedFilters);
 
   /**
    * 處理活動卡片背景點擊導覽；互動子元素維持自己的行為。
@@ -138,150 +132,25 @@ export default function EventsListSection({
     return () => eventList.removeEventListener('click', handleEventListClick);
   }, [handleCardClick]);
 
-  const eventCards = events.map((event) => {
-    const eventId = String(event.id);
-    const routeLabel = renderRouteLabel(event);
-    const isHost = user?.uid === event.hostUid;
-    const remainingSeats = getRemainingSeats(event);
-    const availabilityStatus = getEventAvailabilityBadgeState(event, remainingSeats);
-    const availabilityBadgeClassName = [
-      styles.eventStatusBadge,
-      styles[EVENT_AVAILABILITY_BADGE_STYLE_KEYS[availabilityStatus]],
-    ].join(' ');
-    const personalBadgeLabel = getEventPersonalBadgeLabel({
-      event,
-      eventId,
-      user,
-      membershipStatus: membershipStatusByEventId[eventId],
-      myJoinedEventIds,
-    });
-    const hostStartedLock = isHost ? evaluateEventEditStartedLock(event).startedLock : null;
-    const editDisabledReason = hostStartedLock?.message || '';
-    const deleteDisabledReason = hostStartedLock?.message || '';
-
-    return (
-      <article
-        key={event.id}
-        className={styles.eventCard}
-        aria-label={`${event.title} 活動卡片`}
-        data-event-card-id={eventId}
-        data-testid={`event-card-${eventId}`}
-      >
-        <div className={styles.eventMetaRow}>
-          <div className={styles.eventMetaItem}>
-            <span className={styles.eventMetaLabel}>時間</span>
-            <span className={styles.eventMetaValue}>{formatDateTime(event.time)}</span>
-          </div>
-          <div className={styles.eventMetaItem}>
-            <span className={styles.eventMetaLabel}>報名截止</span>
-            <span className={styles.eventMetaValue}>
-              {formatDateTime(event.registrationDeadline)}
-            </span>
-          </div>
-        </div>
-
-        <div className={styles.eventCardHeader}>
-          <div className={styles.eventTitleCluster}>
-            <Link href={`/events/${event.id}`} className={styles.eventTitleLink}>
-              <h3 className={styles.eventTitle}>{event.title}</h3>
-            </Link>
-            <div className={styles.eventStatusBadgeGroup} aria-label={`${event.title} 狀態`}>
-              <span className={availabilityBadgeClassName}>
-                {EVENT_AVAILABILITY_BADGE_LABELS[availabilityStatus]}
-              </span>
-              {personalBadgeLabel && (
-                <span className={`${styles.eventStatusBadge} ${styles.eventPersonalBadge}`}>
-                  {personalBadgeLabel}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div
-            className={styles.eventCardTopActions}
-            role="group"
-            aria-label={`${event.title} 操作`}
-          >
-            <BookmarkButton
-              isActive={favoriteEventIds.has(String(event.id))}
-              label={`收藏活動：${event.title}`}
-              activeLabel={`取消收藏活動：${event.title}`}
-              onClick={() => onToggleFavoriteEvent(String(event.id))}
-            />
-            <EventCardMenu
-              event={event}
-              currentUserUid={user?.uid || null}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              editDisabledReason={editDisabledReason}
-              deleteDisabledReason={deleteDisabledReason}
-            />
-          </div>
-        </div>
-
-        <dl className={styles.eventFactGrid}>
-          <div className={styles.eventFact}>
-            <dt>地點</dt>
-            <dd>
-              {event.city} {event.district}
-            </dd>
-          </div>
-          <div className={styles.eventFact}>
-            <dt>集合</dt>
-            <dd>{event.meetPlace}</dd>
-          </div>
-          <div className={styles.eventFact}>
-            <dt>距離</dt>
-            <dd className={styles.eventNumericValue}>{event.distanceKm} km</dd>
-          </div>
-          <div className={styles.eventFact}>
-            <dt>配速</dt>
-            <dd className={styles.eventNumericValue}>{formatPace(event.paceSec, event.pace)} /km</dd>
-          </div>
-          <div className={styles.eventFact}>
-            <dt>人數上限</dt>
-            <dd className={styles.eventNumericValue}>{event.maxParticipants}</dd>
-          </div>
-          <div className={styles.eventFact}>
-            <dt>剩餘名額</dt>
-            <dd className={styles.eventNumericValue}>{remainingSeats}</dd>
-          </div>
-        </dl>
-
-        <div className={styles.eventCardFooter}>
-          <div className={styles.eventHostRouteGroup}>
-            <div className={styles.hostRow}>
-              <span className={styles.eventMetaLabel}>主揪</span>
-              <UserLink
-                uid={event.hostUid}
-                name={event.hostName}
-                photoURL={event.hostPhotoURL}
-                size={24}
-              />
-            </div>
-            <span className={styles.routePill}>
-              路線：
-              {routeLabel}
-            </span>
-          </div>
-
-          <div className={styles.eventParticipationSlot} data-card-navigation="ignore">
-            <EventActionButtons
-              event={event}
-              user={user}
-              onJoin={onJoin}
-              onLeave={onLeave}
-              isPending={pendingByEventId[String(event.id)]}
-              isCreating={isCreating}
-              isFormOpen={isFormOpen}
-              myJoinedEventIds={myJoinedEventIds}
-              membershipStatus={membershipStatusByEventId[String(event.id)]}
-            />
-          </div>
-        </div>
-      </article>
-    );
-  });
+  const eventCards = events.map((event) => (
+    <EventListCard
+      key={String(event.id)}
+      event={event}
+      user={user}
+      isCreating={isCreating}
+      isFormOpen={isFormOpen}
+      pendingByEventId={pendingByEventId}
+      myJoinedEventIds={myJoinedEventIds}
+      membershipStatusByEventId={membershipStatusByEventId}
+      favoriteEventIds={favoriteEventIds}
+      getRemainingSeats={getRemainingSeats}
+      onJoin={onJoin}
+      onLeave={onLeave}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      onToggleFavoriteEvent={onToggleFavoriteEvent}
+    />
+  ));
 
   return (
     <div className={styles.eventsSection}>
@@ -310,6 +179,16 @@ export default function EventsListSection({
           </svg>
         </button>
       </div>
+
+      {activeFilterChips.length > 0 && (
+        <div className={styles.activeFilterChips} aria-label="已套用篩選">
+          {activeFilterChips.map((chip) => (
+            <span key={chip} className={styles.activeFilterChip}>
+              {chip}
+            </span>
+          ))}
+        </div>
+      )}
 
       {isLoadingEvents && (
         <div className={styles.statusRow} role="status" aria-live="polite">
