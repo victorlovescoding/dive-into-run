@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   removeContentFavorite: vi.fn(),
   replace: vi.fn(),
   showToast: vi.fn(),
+  signInWithGoogle: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -43,6 +44,10 @@ vi.mock('../../../src/runtime/client/use-cases/content-favorite-use-cases', () =
   FAVORITE_CONTENT_TYPES: { EVENT: 'event' },
   getFavoritedTargetIds: mocks.getFavoritedTargetIds,
   removeContentFavorite: mocks.removeContentFavorite,
+}));
+
+vi.mock('../../../src/lib/firebase-auth-helpers', () => ({
+  signInWithGoogle: mocks.signInWithGoogle,
 }));
 
 vi.mock('../../../src/runtime/hooks/useEventMutations', () => ({
@@ -93,16 +98,50 @@ const futureEvent = {
 
 /**
  * Render events page runtime with stable auth and toast collaborators.
- * @returns {ReturnType<typeof renderHook>} Rendered events page runtime hook.
+ * @param {{ authUser?: typeof user | null }} [options] - Render options.
+ * @returns {ReturnType<typeof renderHook> & {
+ *   setAuthUser: (nextUser: typeof user | null) => void
+ * }} Rendered events page runtime hook.
  */
-function renderUseEventsPageRuntime() {
-  return renderHook(() => useEventsPageRuntime(), {
+function renderUseEventsPageRuntime({ authUser = user } = {}) {
+  let currentAuthUser = authUser;
+  const utils = renderHook(() => useEventsPageRuntime(), {
     wrapper: ({ children }) => (
-      <AuthContext.Provider value={{ user, setUser: vi.fn(), loading: false }}>
+      <AuthContext.Provider value={{ user: currentAuthUser, setUser: vi.fn(), loading: false }}>
         {children}
       </AuthContext.Provider>
     ),
   });
+
+  return {
+    ...utils,
+    setAuthUser(nextUser) {
+      currentAuthUser = nextUser;
+      utils.rerender();
+    },
+  };
+}
+
+/**
+ * Creates a controllable promise for race-condition assertions.
+ * @template T
+ * @returns {{
+ *   promise: Promise<T>,
+ *   resolve: (value: T | PromiseLike<T>) => void,
+ *   reject: (reason?: unknown) => void
+ * }} Deferred promise controls.
+ */
+function createDeferred() {
+  /** @type {(value: unknown) => void} */
+  let resolve = () => {};
+  /** @type {(reason?: unknown) => void} */
+  let reject = () => {};
+  const promise = new Promise((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+
+  return { promise, resolve, reject };
 }
 
 beforeEach(() => {
@@ -119,6 +158,9 @@ beforeEach(() => {
   });
   mocks.getFavoritedTargetIds.mockResolvedValue(new Set(['started-1']));
   mocks.queryEvents.mockResolvedValue([]);
+  mocks.signInWithGoogle.mockResolvedValue({
+    user: { uid: 'runner-after-google' },
+  });
 });
 
 describe('useEventsPageRuntime started event list regressions', () => {
@@ -199,5 +241,145 @@ describe('useEventsPageRuntime started event list regressions', () => {
       'started-2',
     ]);
     expect(result.current.hasMore).toBe(false);
+  });
+});
+
+describe('useEventsPageRuntime favorite login continuation', () => {
+  it('opens the event continuation dialog for unauthenticated favorite clicks without toast', async () => {
+    const { result } = renderUseEventsPageRuntime({ authUser: null });
+
+    await waitFor(() => {
+      expect(result.current.events.map((event) => event.id)).toEqual(['started-1', 'future-1']);
+    });
+    await act(async () => {
+      await result.current.handleToggleFavoriteEvent('future-1');
+    });
+
+    expect(result.current.dialogState).toMatchObject({
+      isOpen: true,
+      contentType: 'event',
+      body: '登入後會自動將這個活動加入收藏。',
+      isSubmitting: false,
+    });
+    expect(mocks.showToast).not.toHaveBeenCalledWith('請先登入才能收藏', 'info');
+    expect(mocks.signInWithGoogle).not.toHaveBeenCalled();
+    expect(mocks.addContentFavorite).not.toHaveBeenCalled();
+  });
+
+  it('patches only the clicked event as favorited after continuation success', async () => {
+    const { result } = renderUseEventsPageRuntime({ authUser: null });
+
+    await waitFor(() => {
+      expect(result.current.events.map((event) => event.id)).toEqual(['started-1', 'future-1']);
+    });
+    await act(async () => {
+      await result.current.handleToggleFavoriteEvent('future-1');
+    });
+    await act(async () => {
+      await result.current.confirmContinuation();
+    });
+
+    expect(mocks.signInWithGoogle).toHaveBeenCalled();
+    expect(mocks.addContentFavorite).toHaveBeenCalledWith({
+      uid: 'runner-after-google',
+      type: 'event',
+      targetId: 'future-1',
+    });
+    expect(result.current.favoriteEventIds.has('future-1')).toBe(true);
+    expect(result.current.favoriteEventIds.has('started-1')).toBe(false);
+    expect(mocks.showToast).toHaveBeenCalledWith('登入成功，已加入收藏', 'success');
+  });
+
+  it('keeps the continuation favorite when signed-in sync returns stale empty ids after add success', async () => {
+    const pendingAddFavorite = createDeferred();
+    const staleSignedInSync = createDeferred();
+    mocks.addContentFavorite.mockReturnValueOnce(pendingAddFavorite.promise);
+    mocks.getFavoritedTargetIds.mockReturnValueOnce(staleSignedInSync.promise);
+
+    const { result, setAuthUser } = renderUseEventsPageRuntime({ authUser: null });
+
+    await waitFor(() => {
+      expect(result.current.events.map((event) => event.id)).toEqual(['started-1', 'future-1']);
+    });
+    await act(async () => {
+      await result.current.handleToggleFavoriteEvent('future-1');
+    });
+
+    /** @type {Promise<void>} */
+    let confirmPromise;
+    act(() => {
+      confirmPromise = result.current.confirmContinuation();
+    });
+
+    act(() => {
+      setAuthUser({ ...user, uid: 'runner-after-google' });
+    });
+    await waitFor(() => {
+      expect(mocks.getFavoritedTargetIds).toHaveBeenCalledWith({
+        uid: 'runner-after-google',
+        type: 'event',
+        targetIds: ['started-1', 'future-1'],
+      });
+    });
+
+    await act(async () => {
+      pendingAddFavorite.resolve(undefined);
+      await confirmPromise;
+    });
+    expect(result.current.favoriteEventIds.has('future-1')).toBe(true);
+
+    await act(async () => {
+      staleSignedInSync.resolve(new Set());
+      await staleSignedInSync.promise;
+    });
+
+    expect(result.current.favoriteEventIds.has('future-1')).toBe(true);
+    expect(mocks.showToast).toHaveBeenCalledWith('登入成功，已加入收藏', 'success');
+  });
+});
+
+describe('useEventsPageRuntime signed-in favorite regressions', () => {
+  it('keeps signed-in add favorite on the existing branch without opening continuation', async () => {
+    const { result } = renderUseEventsPageRuntime();
+
+    await waitFor(() => {
+      expect(result.current.favoriteEventIds.has('started-1')).toBe(true);
+    });
+    await act(async () => {
+      await result.current.handleToggleFavoriteEvent('future-1');
+    });
+
+    expect(mocks.addContentFavorite).toHaveBeenCalledWith({
+      uid: 'runner-1',
+      type: 'event',
+      targetId: 'future-1',
+    });
+    expect(mocks.removeContentFavorite).not.toHaveBeenCalled();
+    expect(mocks.signInWithGoogle).not.toHaveBeenCalled();
+    expect(result.current.dialogState).toMatchObject({ isOpen: false });
+    expect(result.current.favoriteEventIds.has('future-1')).toBe(true);
+    expect(mocks.showToast).toHaveBeenCalledWith('已加入收藏', 'success');
+  });
+
+  it('keeps signed-in remove favorite on the existing branch without opening continuation', async () => {
+    const { result } = renderUseEventsPageRuntime();
+
+    await waitFor(() => {
+      expect(result.current.favoriteEventIds.has('started-1')).toBe(true);
+    });
+    await act(async () => {
+      await result.current.handleToggleFavoriteEvent('started-1');
+    });
+
+    expect(mocks.removeContentFavorite).toHaveBeenCalledWith({
+      uid: 'runner-1',
+      type: 'event',
+      targetId: 'started-1',
+    });
+    expect(mocks.addContentFavorite).not.toHaveBeenCalled();
+    expect(mocks.signInWithGoogle).not.toHaveBeenCalled();
+    expect(result.current.dialogState).toMatchObject({ isOpen: false });
+    expect(result.current.favoriteEventIds.has('started-1')).toBe(false);
+    expect(mocks.showToast).toHaveBeenCalledWith('已取消收藏', 'success');
   });
 });

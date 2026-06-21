@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- Events page runtime coordinates list, filters, create form, participation, and favorite continuation. */
 'use client';
 
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -16,6 +17,7 @@ import useEventsFilter from '@/runtime/hooks/useEventsFilter';
 import useEventsPageCreateFormState from '@/runtime/hooks/useEventsPageCreateFormState';
 import useEventMutations from '@/runtime/hooks/useEventMutations';
 import useEventParticipation from '@/runtime/hooks/useEventParticipation';
+import useFavoriteLoginContinuation from '@/runtime/hooks/useFavoriteLoginContinuation';
 /**
  * @typedef {import('@/service/event-service').EventData} EventData
  */
@@ -55,6 +57,7 @@ export default function useEventsPageRuntime() {
   const [loadMoreError, setLoadMoreError] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [favoriteEventIds, setFavoriteEventIds] = useState(() => new Set());
+  const favoriteEventMutationVersionRef = useRef(0);
   const sentinelRef = useRef(null);
   const isMountedRef = useRef(false);
 
@@ -66,21 +69,10 @@ export default function useEventsPageRuntime() {
   const hostName = user?.name || (user?.email ? user.email.split('@')[0] : '');
   const {
     isFormOpen,
-    showMap,
     routeCoordinates,
-    routePointCount,
-    selectedCity,
-    selectedDistrict,
-    selectedDistrictOptions,
-    minDateTime,
-    setSelectedDistrict,
-    setRouteCoordinates,
     resetCreateForm,
-    handleCloseCreateForm,
-    handleSelectedCityChange,
-    handleEnableRoutePlanning,
-    handleDisableRoutePlanning,
     handleToggleCreateRunForm: toggleCreateRunForm,
+    ...createFormScreenState
   } = useEventsPageCreateFormState({ showToast });
 
   const loadLatestPage = useCallback(async ({ replaceExisting = false } = {}) => {
@@ -183,18 +175,32 @@ export default function useEventsPageRuntime() {
 
     /** 依目前可見活動 ID 批次同步收藏狀態。 */
     async function refreshFavoriteEventIds() {
+      const syncMutationVersion = favoriteEventMutationVersionRef.current;
       try {
         const ids = await getFavoritedTargetIds({
           uid,
           type: FAVORITE_CONTENT_TYPES.EVENT,
           targetIds: visibleEventIds,
         });
-        if (!cancelled && isMountedRef.current) { setFavoriteEventIds(ids); }
+        if (
+          !cancelled
+          && isMountedRef.current
+          && syncMutationVersion === favoriteEventMutationVersionRef.current
+        ) {
+          setFavoriteEventIds(ids);
+        }
       } catch (error) {
         const isPermissionDenied =
           error && typeof error === 'object'
           && /** @type {{ code?: unknown }} */ (error).code === 'permission-denied';
-        if (isPermissionDenied && !cancelled && isMountedRef.current) { setFavoriteEventIds(new Set()); }
+        if (
+          isPermissionDenied
+          && !cancelled
+          && isMountedRef.current
+          && syncMutationVersion === favoriteEventMutationVersionRef.current
+        ) {
+          setFavoriteEventIds(new Set());
+        }
         if (isPermissionDenied) return;
         console.error('載入活動收藏狀態失敗:', error);
       }
@@ -224,6 +230,27 @@ export default function useEventsPageRuntime() {
     createCtx,
   });
 
+  const handleContinuationFavoriteAdded = useCallback(({ contentType, targetId }) => {
+    if (contentType !== FAVORITE_CONTENT_TYPES.EVENT) return;
+    favoriteEventMutationVersionRef.current += 1;
+    setFavoriteEventIds((previous) => {
+      const next = new Set(previous);
+      next.add(targetId);
+      return next;
+    });
+  }, []);
+
+  const {
+    dialogState,
+    openContinuation,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
+  } = useFavoriteLoginContinuation({
+    showToast,
+    onFavoriteAdded: handleContinuationFavoriteAdded,
+  });
+
   const handleToggleCreateRunForm = useCallback(() => {
     toggleCreateRunForm({
       draftFormData: mutationState.draftFormData,
@@ -234,14 +261,16 @@ export default function useEventsPageRuntime() {
   const handleToggleFavoriteEvent = useCallback(
     async (eventId) => {
       const targetId = String(eventId || '');
-      const uid = user?.uid;
-      if (!uid) {
-        showToast('請先登入才能收藏', 'info');
-        return;
-      }
       if (!targetId) return;
 
+      const uid = user?.uid;
+      if (!uid) {
+        openContinuation({ contentType: FAVORITE_CONTENT_TYPES.EVENT, targetId });
+        return;
+      }
+
       const wasFavorite = favoriteEventIds.has(targetId);
+      favoriteEventMutationVersionRef.current += 1;
       setFavoriteEventIds((previous) => {
         const next = new Set(previous);
         if (wasFavorite) next.delete(targetId);
@@ -259,6 +288,7 @@ export default function useEventsPageRuntime() {
         }
       } catch (error) {
         console.error('切換活動收藏失敗:', error);
+        favoriteEventMutationVersionRef.current += 1;
         setFavoriteEventIds((previous) => {
           const next = new Set(previous);
           if (wasFavorite) next.add(targetId);
@@ -271,7 +301,7 @@ export default function useEventsPageRuntime() {
         );
       }
     },
-    [favoriteEventIds, showToast, user?.uid],
+    [favoriteEventIds, openContinuation, showToast, user?.uid],
   );
 
   const loadMore = useCallback(async () => {
@@ -322,29 +352,22 @@ export default function useEventsPageRuntime() {
     events,
     hostName,
     isFormOpen,
-    showMap,
     routeCoordinates,
-    routePointCount,
-    selectedCity,
-    selectedDistrict,
-    minDateTime,
+    ...createFormScreenState,
     isLoadingEvents,
     loadError,
     isLoadingMore,
     loadMoreError,
     hasMore,
-    favoriteEventIds: user?.uid && visibleEventIds.length > 0 ? favoriteEventIds : new Set(),
+    favoriteEventIds: visibleEventIds.length > 0 ? favoriteEventIds : new Set(),
+    dialogState,
     sentinelRef,
-    selectedDistrictOptions,
     getRemainingSeats,
-    setSelectedDistrict,
-    setRouteCoordinates,
-    handleSelectedCityChange,
-    handleEnableRoutePlanning,
-    handleDisableRoutePlanning,
     handleToggleCreateRunForm,
     handleToggleFavoriteEvent,
-    handleCloseCreateForm,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
     loadMore,
     ...filterState,
     ...participationState,

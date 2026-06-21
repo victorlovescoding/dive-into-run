@@ -17,8 +17,8 @@
 
 **Purpose**: Confirm scoped entry points and prepare shared test support before feature tests.
 
-- [ ] T001 Verify the supported favorite branches and excluded surfaces before implementation in `src/runtime/hooks/useEventsPageRuntime.js`, `src/runtime/hooks/useEventDetailRuntime.js`, `src/runtime/hooks/usePostsPageRuntime.js`, `src/runtime/hooks/usePostsSearchPageRuntime.js`, `src/runtime/hooks/usePostDetailRuntime.js`, `src/components/PostCard.jsx`, `src/runtime/hooks/useWeatherFavorites.js`, `src/runtime/hooks/useWeatherPageRuntime.js`, `src/ui/weather/WeatherPageScreen.jsx`, `src/components/weather/FavoriteButton.jsx`, `src/components/weather/FavoritesBar.jsx`, `src/runtime/hooks/useMemberFavoritesRuntime.js`, `src/ui/member/MemberFavoritesScreen.jsx`, `src/runtime/hooks/usePostComments.js`, `src/runtime/hooks/usePostCommentsHelpers.js`, `src/components/CommentCard.jsx`, `src/components/CommentSection.jsx`, `src/components/reports/ReportMenuItem.jsx`, `src/runtime/hooks/useReportDialogRuntime.js`, `src/runtime/hooks/useEventDetailParticipation.js`, `src/runtime/hooks/useEventParticipation.js`, `src/app/runs/page.jsx`, `src/runtime/hooks/useRunsPageRuntime.js`, `src/ui/runs/RunsPageScreen.jsx`, `src/runtime/server/use-cases/strava-server-use-cases.js`, and `src/repo/client/post-composer-draft-storage-repo.js`
-- [ ] T002 [P] Add shared favorite continuation test factories for intents, auth results, toast spies, and callbacks in `tests/_helpers/favorite-login-continuation-helpers.js`
+- [X] T001 Verify the supported favorite branches and excluded surfaces before implementation in `src/runtime/hooks/useEventsPageRuntime.js`, `src/runtime/hooks/useEventDetailRuntime.js`, `src/runtime/hooks/usePostsPageRuntime.js`, `src/runtime/hooks/usePostsSearchPageRuntime.js`, `src/runtime/hooks/usePostDetailRuntime.js`, `src/components/PostCard.jsx`, `src/runtime/hooks/useWeatherFavorites.js`, `src/runtime/hooks/useWeatherPageRuntime.js`, `src/ui/weather/WeatherPageScreen.jsx`, `src/components/weather/FavoriteButton.jsx`, `src/components/weather/FavoritesBar.jsx`, `src/runtime/hooks/useMemberFavoritesRuntime.js`, `src/ui/member/MemberFavoritesScreen.jsx`, `src/runtime/hooks/usePostComments.js`, `src/runtime/hooks/usePostCommentsHelpers.js`, `src/components/CommentCard.jsx`, `src/components/CommentSection.jsx`, `src/components/reports/ReportMenuItem.jsx`, `src/runtime/hooks/useReportDialogRuntime.js`, `src/runtime/hooks/useEventDetailParticipation.js`, `src/runtime/hooks/useEventParticipation.js`, `src/app/runs/page.jsx`, `src/runtime/hooks/useRunsPageRuntime.js`, `src/ui/runs/RunsPageScreen.jsx`, `src/runtime/server/use-cases/strava-server-use-cases.js`, and `src/repo/client/post-composer-draft-storage-repo.js`
+- [X] T002 [P] Add shared favorite continuation test factories for intents, auth results, toast spies, and callbacks in `tests/_helpers/favorite-login-continuation-helpers.js`
 
 ---
 
@@ -28,15 +28,15 @@
 
 **Critical**: No user story implementation should begin until this phase is complete.
 
-- [ ] T003 [P] Write failing tests for copy selection, target normalization, state transitions, single-intent guard, and no persistence in `tests/unit/runtime/favorite-login-continuation-helpers.test.js`
-- [ ] T004 [P] Write failing tests for Google sign-in success through `signInWithGoogle` only, no full login page redirect, no email/password auth helper import or call, popup cancel/close/failure, add-only favorite success, idempotent already-favorited success, and add failure mapping in `tests/unit/runtime/favorite-login-continuation-use-cases.test.js`
-- [ ] T005 Implement favorite continuation constants, copy selection, target normalization, state transition helpers, and single-intent guard in `src/runtime/favorites/favorite-login-continuation-helpers.js`
-- [ ] T006 Implement add-only Google sign-in continuation use-case with `signInWithGoogle` and `addContentFavorite` in `src/runtime/client/use-cases/favorite-login-continuation-use-cases.js`
-- [ ] T007 Write failing hook tests for open, confirm, retry, cancel, close, success callback, failure callback, submitting state, and no second pending flow in `tests/unit/runtime/useFavoriteLoginContinuation.test.jsx`
-- [ ] T008 Implement `useFavoriteLoginContinuation` render state and handlers in `src/runtime/hooks/useFavoriteLoginContinuation.js`
-- [ ] T009 [P] Write failing dialog integration tests for exact copy, accessible role/name, no target title/name/id, primary click, secondary click, close click, and pending state in `tests/integration/favorites/FavoriteLoginContinuationDialog.test.jsx`
-- [ ] T010 Implement reusable favorite login continuation dialog markup in `src/components/FavoriteLoginContinuationDialog.jsx`
-- [ ] T011 Implement reusable favorite login continuation dialog styling in `src/components/FavoriteLoginContinuationDialog.module.css`
+- [X] T003 [P] Write failing tests for copy selection, target normalization, state transitions, single-intent guard, and no persistence in `tests/unit/runtime/favorite-login-continuation-helpers.test.js`
+- [X] T004 [P] Write failing tests for Google sign-in success through `signInWithGoogle` only, no full login page redirect, no email/password auth helper import or call, popup cancel/close/failure, add-only favorite success, idempotent already-favorited success, and add failure mapping in `tests/unit/runtime/favorite-login-continuation-use-cases.test.js`
+- [X] T005 Implement favorite continuation constants, copy selection, target normalization, state transition helpers, and single-intent guard in `src/runtime/favorites/favorite-login-continuation-helpers.js`
+- [X] T006 Implement add-only Google sign-in continuation use-case with `signInWithGoogle` and `addContentFavorite` in `src/runtime/client/use-cases/favorite-login-continuation-use-cases.js`
+- [X] T007 Write failing hook tests for open, confirm, retry, cancel, close, success callback, failure callback, submitting state, and no second pending flow in `tests/unit/runtime/useFavoriteLoginContinuation.test.jsx`
+- [X] T008 Implement `useFavoriteLoginContinuation` render state and handlers in `src/runtime/hooks/useFavoriteLoginContinuation.js`
+- [X] T009 [P] Write failing dialog integration tests for exact copy, accessible role/name, no target title/name/id, primary click, secondary click, close click, and pending state in `tests/integration/favorites/FavoriteLoginContinuationDialog.test.jsx`
+- [X] T010 Implement reusable favorite login continuation dialog markup in `src/components/FavoriteLoginContinuationDialog.jsx`
+- [X] T011 Implement reusable favorite login continuation dialog styling in `src/components/FavoriteLoginContinuationDialog.module.css`
 
 **Checkpoint**: Shared continuation contract is ready for page-level wiring.
 
@@ -50,17 +50,17 @@
 
 ### Tests for User Story 1
 
-- [ ] T012 [P] [US1] Extend failing event list runtime tests for unauthenticated continuation open and local success patch in `tests/unit/runtime/useEventsPageRuntime.test.jsx`
-- [ ] T013 [P] [US1] Add failing event detail runtime tests for unauthenticated continuation open and detail success patch in `tests/unit/runtime/useEventDetailRuntime.test.jsx`
-- [ ] T014 [P] [US1] Add failing event list screen dialog wiring tests for runtime dialog state and handlers in `tests/unit/ui/events/EventsPageScreen.test.jsx`
-- [ ] T015 [P] [US1] Extend failing event detail screen dialog wiring tests for runtime dialog state and handlers in `tests/unit/ui/events/EventDetailScreen.test.jsx`
+- [X] T012 [P] [US1] Extend failing event list runtime tests for unauthenticated continuation open and local success patch in `tests/unit/runtime/useEventsPageRuntime.test.jsx`
+- [X] T013 [P] [US1] Add failing event detail runtime tests for unauthenticated continuation open and detail success patch in `tests/unit/runtime/useEventDetailRuntime.test.jsx`
+- [X] T014 [P] [US1] Add failing event list screen dialog wiring tests for runtime dialog state and handlers in `tests/unit/ui/events/EventsPageScreen.test.jsx`
+- [X] T015 [P] [US1] Extend failing event detail screen dialog wiring tests for runtime dialog state and handlers in `tests/unit/ui/events/EventDetailScreen.test.jsx`
 
 ### Implementation for User Story 1
 
-- [ ] T016 [P] [US1] Replace the unauthenticated `/events` favorite toast branch with `openContinuation({ contentType: 'event', targetId })` and keep the clicked-event success patch local in `src/runtime/hooks/useEventsPageRuntime.js`
-- [ ] T017 [P] [US1] Replace the unauthenticated `/events/[id]` favorite toast branch with `openContinuation({ contentType: 'event', targetId })` and keep the detail success patch local in `src/runtime/hooks/useEventDetailRuntime.js`
-- [ ] T018 [P] [US1] Render `FavoriteLoginContinuationDialog` and pass the event list continuation contract through the screen boundary in `src/ui/events/EventsPageScreen.jsx`
-- [ ] T019 [P] [US1] Render `FavoriteLoginContinuationDialog` and pass the event detail continuation contract through the screen boundary in `src/ui/events/EventDetailScreen.jsx`
+- [X] T016 [P] [US1] Replace the unauthenticated `/events` favorite toast branch with `openContinuation({ contentType: 'event', targetId })` and keep the clicked-event success patch local in `src/runtime/hooks/useEventsPageRuntime.js`
+- [X] T017 [P] [US1] Replace the unauthenticated `/events/[id]` favorite toast branch with `openContinuation({ contentType: 'event', targetId })` and keep the detail success patch local in `src/runtime/hooks/useEventDetailRuntime.js`
+- [X] T018 [P] [US1] Render `FavoriteLoginContinuationDialog` and pass the event list continuation contract through the screen boundary in `src/ui/events/EventsPageScreen.jsx`
+- [X] T019 [P] [US1] Render `FavoriteLoginContinuationDialog` and pass the event detail continuation contract through the screen boundary in `src/ui/events/EventDetailScreen.jsx`
 
 **Checkpoint**: Event continuation is independently testable and can be released as MVP after focused verification.
 
@@ -74,22 +74,22 @@
 
 ### Tests for User Story 2
 
-- [ ] T020 [P] [US2] Add failing posts list runtime tests for unauthenticated continuation open and clicked post success patch in `tests/unit/runtime/usePostsPageRuntime.test.jsx`
-- [ ] T021 [P] [US2] Extend failing posts search runtime tests for unauthenticated continuation open and nested result success patch in `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`
-- [ ] T022 [P] [US2] Extend failing post detail runtime tests for unauthenticated continuation open and detail success patch in `tests/unit/runtime/usePostDetailRuntime.test.jsx`
-- [ ] T023 [P] [US2] Extend failing post card favorite delegation tests to preserve click-to-handler behavior in `tests/unit/components/PostCard.test.jsx`
-- [ ] T024 [P] [US2] Extend failing posts page screen dialog wiring tests for runtime dialog state and handlers in `tests/unit/ui/posts/PostsPageScreen.test.jsx`
-- [ ] T025 [P] [US2] Extend failing posts search screen dialog wiring tests for runtime dialog state and handlers in `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`
-- [ ] T026 [P] [US2] Extend failing post detail screen dialog wiring tests for runtime dialog state and handlers in `tests/unit/ui/posts/PostDetailScreen.test.jsx`
+- [X] T020 [P] [US2] Add failing posts list runtime tests for unauthenticated continuation open and clicked post success patch in `tests/unit/runtime/usePostsPageRuntime.test.jsx`
+- [X] T021 [P] [US2] Extend failing posts search runtime tests for unauthenticated continuation open and nested result success patch in `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`
+- [X] T022 [P] [US2] Extend failing post detail runtime tests for unauthenticated continuation open and detail success patch in `tests/unit/runtime/usePostDetailRuntime.test.jsx`
+- [X] T023 [P] [US2] Extend failing post card favorite delegation tests to preserve click-to-handler behavior in `tests/unit/components/PostCard.test.jsx`
+- [X] T024 [P] [US2] Extend failing posts page screen dialog wiring tests for runtime dialog state and handlers in `tests/unit/ui/posts/PostsPageScreen.test.jsx`
+- [X] T025 [P] [US2] Extend failing posts search screen dialog wiring tests for runtime dialog state and handlers in `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`
+- [X] T026 [P] [US2] Extend failing post detail screen dialog wiring tests for runtime dialog state and handlers in `tests/unit/ui/posts/PostDetailScreen.test.jsx`
 
 ### Implementation for User Story 2
 
-- [ ] T027 [P] [US2] Replace the unauthenticated `/posts` favorite toast branch with `openContinuation({ contentType: 'post', targetId })` and keep the clicked-post success patch local in `src/runtime/hooks/usePostsPageRuntime.js`
-- [ ] T028 [P] [US2] Replace the unauthenticated `/posts/search` favorite toast branch with `openContinuation({ contentType: 'post', targetId })` and keep the nested result success patch local in `src/runtime/hooks/usePostsSearchPageRuntime.js`
-- [ ] T029 [P] [US2] Replace the unauthenticated `/posts/[id]` favorite toast branch with `openContinuation({ contentType: 'post', targetId })` and keep the detail success patch local in `src/runtime/hooks/usePostDetailRuntime.js`
-- [ ] T030 [P] [US2] Render `FavoriteLoginContinuationDialog` and pass the posts list continuation contract through the screen boundary in `src/ui/posts/PostsPageScreen.jsx`
-- [ ] T031 [P] [US2] Render `FavoriteLoginContinuationDialog` and pass the posts search continuation contract through the screen boundary in `src/ui/posts/PostsSearchPageScreen.jsx`
-- [ ] T032 [P] [US2] Render `FavoriteLoginContinuationDialog` and pass the post detail continuation contract through the screen boundary in `src/ui/posts/PostDetailScreen.jsx`
+- [X] T027 [P] [US2] Replace the unauthenticated `/posts` favorite toast branch with `openContinuation({ contentType: 'post', targetId })` and keep the clicked-post success patch local in `src/runtime/hooks/usePostsPageRuntime.js`
+- [X] T028 [P] [US2] Replace the unauthenticated `/posts/search` favorite toast branch with `openContinuation({ contentType: 'post', targetId })` and keep the nested result success patch local in `src/runtime/hooks/usePostsSearchPageRuntime.js`
+- [X] T029 [P] [US2] Replace the unauthenticated `/posts/[id]` favorite toast branch with `openContinuation({ contentType: 'post', targetId })` and keep the detail success patch local in `src/runtime/hooks/usePostDetailRuntime.js`
+- [X] T030 [P] [US2] Render `FavoriteLoginContinuationDialog` and pass the posts list continuation contract through the screen boundary in `src/ui/posts/PostsPageScreen.jsx`
+- [X] T031 [P] [US2] Render `FavoriteLoginContinuationDialog` and pass the posts search continuation contract through the screen boundary in `src/ui/posts/PostsSearchPageScreen.jsx`
+- [X] T032 [P] [US2] Render `FavoriteLoginContinuationDialog` and pass the post detail continuation contract through the screen boundary in `src/ui/posts/PostDetailScreen.jsx`
 
 **Checkpoint**: Post continuation is independently testable without event-page dependencies beyond the shared foundation.
 
@@ -103,15 +103,15 @@
 
 ### Tests for User Story 3
 
-- [ ] T033 [P] [US3] Add failing retry, cancel, close, single-intent, add-success, and add-failure regression tests in `tests/unit/runtime/useFavoriteLoginContinuation.test.jsx`
-- [ ] T034 [P] [US3] Add failing auth cancel, popup close, auth failure, no-uid, no-add, no full login page fallback, no email/password fallback, and add-failure normalization tests in `tests/unit/runtime/favorite-login-continuation-use-cases.test.js`
-- [ ] T035 [P] [US3] Add failing dialog pending, disabled primary, secondary cancel, and close button tests in `tests/integration/favorites/FavoriteLoginContinuationDialog.test.jsx`
+- [X] T033 [P] [US3] Add failing retry, cancel, close, single-intent, add-success, and add-failure regression tests in `tests/unit/runtime/useFavoriteLoginContinuation.test.jsx`
+- [X] T034 [P] [US3] Add failing auth cancel, popup close, auth failure, no-uid, no-add, no full login page fallback, no email/password fallback, and add-failure normalization tests in `tests/unit/runtime/favorite-login-continuation-use-cases.test.js`
+- [X] T035 [P] [US3] Add failing dialog pending, disabled primary, secondary cancel, and close button tests in `tests/integration/favorites/FavoriteLoginContinuationDialog.test.jsx`
 
 ### Implementation for User Story 3
 
-- [ ] T036 [US3] Implement retryable auth failure, no-add-on-auth-failure, add-only success, and add-failure result mapping in `src/runtime/client/use-cases/favorite-login-continuation-use-cases.js`
-- [ ] T037 [US3] Implement single-intent guard, cancel/close clearing, retryable auth failure state, success callback, failure callback, and toast side effects in `src/runtime/hooks/useFavoriteLoginContinuation.js`
-- [ ] T038 [US3] Implement pending disabled state, primary submit, secondary cancel, and close handlers in `src/components/FavoriteLoginContinuationDialog.jsx`
+- [X] T036 [US3] Implement retryable auth failure, no-add-on-auth-failure, add-only success, and add-failure result mapping in `src/runtime/client/use-cases/favorite-login-continuation-use-cases.js`
+- [X] T037 [US3] Implement single-intent guard, cancel/close clearing, retryable auth failure state, success callback, failure callback, and toast side effects in `src/runtime/hooks/useFavoriteLoginContinuation.js`
+- [X] T038 [US3] Implement pending disabled state, primary submit, secondary cancel, and close handlers in `src/components/FavoriteLoginContinuationDialog.jsx`
 
 **Checkpoint**: Failure and retry behavior is independently verified against the runtime/UI contract.
 
@@ -125,19 +125,19 @@
 
 ### Tests for User Story 4
 
-- [ ] T039 [P] [US4] Add signed-in event list add/remove no-dialog regression tests in `tests/unit/runtime/useEventsPageRuntime.test.jsx`
-- [ ] T040 [P] [US4] Add signed-in event detail add/remove no-dialog regression tests in `tests/unit/runtime/useEventDetailRuntime.test.jsx`
-- [ ] T041 [P] [US4] Add signed-in posts list add/remove no-dialog regression tests in `tests/unit/runtime/usePostsPageRuntime.test.jsx`
-- [ ] T042 [P] [US4] Add signed-in posts search add/remove no-dialog regression tests in `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`
-- [ ] T043 [P] [US4] Add signed-in post detail add/remove no-dialog regression tests in `tests/unit/runtime/usePostDetailRuntime.test.jsx`
+- [X] T039 [P] [US4] Add signed-in event list add/remove no-dialog regression tests in `tests/unit/runtime/useEventsPageRuntime.test.jsx`
+- [X] T040 [P] [US4] Add signed-in event detail add/remove no-dialog regression tests in `tests/unit/runtime/useEventDetailRuntime.test.jsx`
+- [X] T041 [P] [US4] Add signed-in posts list add/remove no-dialog regression tests in `tests/unit/runtime/usePostsPageRuntime.test.jsx`
+- [X] T042 [P] [US4] Add signed-in posts search add/remove no-dialog regression tests in `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`
+- [X] T043 [P] [US4] Add signed-in post detail add/remove no-dialog regression tests in `tests/unit/runtime/usePostDetailRuntime.test.jsx`
 
 ### Implementation for User Story 4
 
-- [ ] T044 [P] [US4] Preserve signed-in event list add/remove favorite branches and existing toast messages while integrating continuation in `src/runtime/hooks/useEventsPageRuntime.js`
-- [ ] T045 [P] [US4] Preserve signed-in event detail add/remove favorite branch and existing toast messages while integrating continuation in `src/runtime/hooks/useEventDetailRuntime.js`
-- [ ] T046 [P] [US4] Preserve signed-in posts list add/remove favorite branches and existing toast messages while integrating continuation in `src/runtime/hooks/usePostsPageRuntime.js`
-- [ ] T047 [P] [US4] Preserve signed-in posts search add/remove favorite branches and existing toast messages while integrating continuation in `src/runtime/hooks/usePostsSearchPageRuntime.js`
-- [ ] T048 [P] [US4] Preserve signed-in post detail add/remove favorite branch and existing toast messages while integrating continuation in `src/runtime/hooks/usePostDetailRuntime.js`
+- [X] T044 [P] [US4] Preserve signed-in event list add/remove favorite branches and existing toast messages while integrating continuation in `src/runtime/hooks/useEventsPageRuntime.js`
+- [X] T045 [P] [US4] Preserve signed-in event detail add/remove favorite branch and existing toast messages while integrating continuation in `src/runtime/hooks/useEventDetailRuntime.js`
+- [X] T046 [P] [US4] Preserve signed-in posts list add/remove favorite branches and existing toast messages while integrating continuation in `src/runtime/hooks/usePostsPageRuntime.js`
+- [X] T047 [P] [US4] Preserve signed-in posts search add/remove favorite branches and existing toast messages while integrating continuation in `src/runtime/hooks/usePostsSearchPageRuntime.js`
+- [X] T048 [P] [US4] Preserve signed-in post detail add/remove favorite branch and existing toast messages while integrating continuation in `src/runtime/hooks/usePostDetailRuntime.js`
 
 **Checkpoint**: Signed-in favorite behavior remains unchanged across all applicable pages.
 
@@ -147,13 +147,13 @@
 
 **Purpose**: Add browser-level coverage, run focused validation, and complete repo workflow evidence.
 
-- [ ] T049 [P] Add Playwright coverage for dialog opening, no popup before primary click, primary click uses Google continuation without login page navigation or email/password form rendering, reload clearing pending intent, signed-in no-dialog behavior, weather favorites, member favorites, likes, comments, report menus, event participation, post composer, running records, and all non-listed routes in `tests/e2e/favorite-login-continuation.spec.js`
-- [ ] T050 [P] Add source-level scope guard tests proving only supported event/post favorite entry points import or render the continuation flow, excluded auth paths never import or call email/password auth helpers or full login page routing, and excluded weather favorites, member favorites, likes, comments, report menus, event participation, post composer, running records in `src/app/runs/page.jsx`, `src/runtime/hooks/useRunsPageRuntime.js`, `src/ui/runs/RunsPageScreen.jsx`, `src/runtime/server/use-cases/strava-server-use-cases.js`, and non-listed routes do not, in `tests/unit/runtime/favorite-login-continuation-scope.test.js`
-- [ ] T051 Run focused helper, use-case, hook, and dialog validation and fix failures in `tests/unit/runtime/favorite-login-continuation-helpers.test.js`, `tests/unit/runtime/favorite-login-continuation-use-cases.test.js`, `tests/unit/runtime/useFavoriteLoginContinuation.test.jsx`, and `tests/integration/favorites/FavoriteLoginContinuationDialog.test.jsx`
-- [ ] T052 Run focused event validation and fix failures in `tests/unit/runtime/useEventsPageRuntime.test.jsx`, `tests/unit/runtime/useEventDetailRuntime.test.jsx`, `tests/unit/ui/events/EventsPageScreen.test.jsx`, and `tests/unit/ui/events/EventDetailScreen.test.jsx`
-- [ ] T053 Run focused post validation and fix failures in `tests/unit/runtime/usePostsPageRuntime.test.jsx`, `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`, `tests/unit/runtime/usePostDetailRuntime.test.jsx`, `tests/unit/ui/posts/PostsPageScreen.test.jsx`, `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`, `tests/unit/ui/posts/PostDetailScreen.test.jsx`, and `tests/unit/components/PostCard.test.jsx`
-- [ ] T054 Run branch quality gates from `specs/106-favorite-login-continuation/quickstart.md` and record command exit codes in `specs/106-favorite-login-continuation/tasks.md`
-- [ ] T055 Request Reviewer check for the task-local diff and record PASS/REJECT evidence in `specs/106-favorite-login-continuation/tasks.md`
+- [X] T049 [P] Add Playwright coverage for dialog opening, no popup before primary click, primary click uses Google continuation without login page navigation or email/password form rendering, reload clearing pending intent, signed-in no-dialog behavior, weather favorites, member favorites, likes, comments, report menus, event participation, post composer, running records, and all non-listed routes in `tests/e2e/favorite-login-continuation.spec.js`
+- [X] T050 [P] Add source-level scope guard tests proving only supported event/post favorite entry points import or render the continuation flow, excluded auth paths never import or call email/password auth helpers or full login page routing, and excluded weather favorites, member favorites, likes, comments, report menus, event participation, post composer, running records in `src/app/runs/page.jsx`, `src/runtime/hooks/useRunsPageRuntime.js`, `src/ui/runs/RunsPageScreen.jsx`, `src/runtime/server/use-cases/strava-server-use-cases.js`, and non-listed routes do not, in `tests/unit/runtime/favorite-login-continuation-scope.test.js`
+- [X] T051 Run focused helper, use-case, hook, and dialog validation and fix failures in `tests/unit/runtime/favorite-login-continuation-helpers.test.js`, `tests/unit/runtime/favorite-login-continuation-use-cases.test.js`, `tests/unit/runtime/useFavoriteLoginContinuation.test.jsx`, and `tests/integration/favorites/FavoriteLoginContinuationDialog.test.jsx`
+- [X] T052 Run focused event validation and fix failures in `tests/unit/runtime/useEventsPageRuntime.test.jsx`, `tests/unit/runtime/useEventDetailRuntime.test.jsx`, `tests/unit/ui/events/EventsPageScreen.test.jsx`, and `tests/unit/ui/events/EventDetailScreen.test.jsx`
+- [X] T053 Run focused post validation and fix failures in `tests/unit/runtime/usePostsPageRuntime.test.jsx`, `tests/unit/runtime/usePostsSearchPageRuntime.test.jsx`, `tests/unit/runtime/usePostDetailRuntime.test.jsx`, `tests/unit/ui/posts/PostsPageScreen.test.jsx`, `tests/unit/ui/posts/PostsSearchPageScreen.test.jsx`, `tests/unit/ui/posts/PostDetailScreen.test.jsx`, and `tests/unit/components/PostCard.test.jsx`
+- [X] T054 Run branch quality gates from `specs/106-favorite-login-continuation/quickstart.md` and record command exit codes in `specs/106-favorite-login-continuation/tasks.md` — Evidence: `npm run lint:branch` exit 0 (`No JS files changed on this branch.`); `npm run type-check:branch` exit 0 (`No JS files changed on this branch.`); `npm run test:branch` exit 0 (`Test gate disabled for testless reset`); `npm run test:e2e:branch` exit 0 (`Test gate disabled for testless reset`). Working-tree supplemental gates: `npm run lint:changed` exit 0 (0 errors, 18 JSDoc warnings in Playwright e2e); `npm run type-check:changed` exit 0; `npm run spellcheck` exit 0; focused `npx vitest run ...` exit 0 (16 files, 162 tests); race-runtime `npx vitest run ...` exit 0 (5 files, 50 tests); `PORT=3106 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3106 CI=1 firebase emulators:exec --only auth,firestore,storage --project dive-into-run "npx playwright test tests/e2e/favorite-login-continuation.spec.js"` exit 0 (5 passed).
+- [X] T055 Request Reviewer check for the task-local diff and record PASS/REJECT evidence in `specs/106-favorite-login-continuation/tasks.md` — Reviewer Hooke PASS: no blocking findings. Reviewer verification: shared continuation tests exit 0 (3 files, 32 tests), race runtime tests exit 0 (5 files, 50 tests), `git diff --check origin/main` exit 0. Residual non-blocking risks recorded by reviewer: route-change unmount does not abort pending continuation, and Playwright auth popup uses bounded retry for emulator flake.
 
 ---
 

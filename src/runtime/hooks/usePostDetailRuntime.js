@@ -28,6 +28,7 @@ import {
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 import useEditHistoryModal from '@/runtime/hooks/useEditHistoryModal';
+import useFavoriteLoginContinuation from '@/runtime/hooks/useFavoriteLoginContinuation';
 import usePostComments from '@/runtime/hooks/usePostComments';
 
 const POST_DELETED_MESSAGE = '找不到這篇文章（可能已被刪除）';
@@ -57,6 +58,7 @@ export default function usePostDetailRuntime(postId) {
 
   const dialogRef = useRef(/** @type {HTMLDialogElement | null} */ (null));
   const isMountedRef = useRef(false);
+  const favoritePostMutationVersionRef = useRef(0);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -99,6 +101,28 @@ export default function usePostDetailRuntime(postId) {
     loadErrorMessage: '載入編輯記錄失敗',
   });
 
+  const handleContinuationFavoriteAdded = useCallback(({ contentType, targetId }) => {
+    if (contentType !== FAVORITE_CONTENT_TYPES.POST) return;
+    favoritePostMutationVersionRef.current += 1;
+    setPostDetail((previousPostDetail) => {
+      if (!previousPostDetail || previousPostDetail.id !== targetId) {
+        return previousPostDetail;
+      }
+      return { ...previousPostDetail, isFavorited: true };
+    });
+  }, []);
+
+  const {
+    dialogState,
+    openContinuation,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
+  } = useFavoriteLoginContinuation({
+    showToast,
+    onFavoriteAdded: handleContinuationFavoriteAdded,
+  });
+
   const shareUrl =
     typeof window !== 'undefined'
       ? `${window.location.origin}/posts/${postId}`
@@ -128,6 +152,8 @@ export default function usePostDetailRuntime(postId) {
         }
         return;
       }
+
+      const favoriteSyncMutationVersion = favoritePostMutationVersionRef.current;
 
       if (!cancelled && isMountedRef.current) {
         setLoading(true);
@@ -166,7 +192,19 @@ export default function usePostDetailRuntime(postId) {
         };
 
         if (cancelled || !isMountedRef.current) return;
-        setPostDetail(nextPostDetail);
+        setPostDetail((previousPostDetail) => {
+          if (favoriteSyncMutationVersion === favoritePostMutationVersionRef.current) {
+            return nextPostDetail;
+          }
+
+          return {
+            ...nextPostDetail,
+            isFavorited:
+              previousPostDetail?.id === postId
+                ? !!previousPostDetail.isFavorited
+                : nextPostDetail.isFavorited,
+          };
+        });
         setInitialComments(commentsPage);
       } catch (loadError) {
         console.error('讀取文章詳情失敗:', loadError);
@@ -389,13 +427,18 @@ export default function usePostDetailRuntime(postId) {
     }
   }, [postDetail, postId, showToast, user]);
 
-  const handleToggleFavoritePost = useCallback(async () => {
-    if (!user?.uid || !postDetail) {
-      showToast('請先登入才能收藏', 'info');
+  const handleToggleFavoritePost = useCallback(async (targetPostId = postId) => {
+    if (!postDetail || targetPostId !== postDetail.id) {
+      return;
+    }
+
+    if (!user?.uid) {
+      openContinuation({ contentType: FAVORITE_CONTENT_TYPES.POST, targetId: targetPostId });
       return;
     }
 
     const wasFavorited = !!postDetail.isFavorited;
+    favoritePostMutationVersionRef.current += 1;
     setPostDetail((prev) => (prev ? { ...prev, isFavorited: !wasFavorited } : prev));
 
     try {
@@ -403,7 +446,7 @@ export default function usePostDetailRuntime(postId) {
         await removeContentFavorite({
           uid: user.uid,
           type: FAVORITE_CONTENT_TYPES.POST,
-          targetId: postId,
+          targetId: targetPostId,
         });
         showToast('已取消收藏', 'success');
         return;
@@ -412,18 +455,19 @@ export default function usePostDetailRuntime(postId) {
       await addContentFavorite({
         uid: user.uid,
         type: FAVORITE_CONTENT_TYPES.POST,
-        targetId: postId,
+        targetId: targetPostId,
       });
       showToast('已加入收藏', 'success');
     } catch (favoriteError) {
       console.error('Toggle post favorite error:', favoriteError);
+      favoritePostMutationVersionRef.current += 1;
       setPostDetail((prev) => (prev ? { ...prev, isFavorited: wasFavorited } : prev));
       showToast(
         wasFavorited ? '取消收藏失敗，請稍後再試' : '收藏失敗，請稍後再試',
         'error',
       );
     }
-  }, [postDetail, postId, showToast, user]);
+  }, [openContinuation, postDetail, postId, showToast, user]);
 
   return {
     user,
@@ -452,6 +496,7 @@ export default function usePostDetailRuntime(postId) {
     isSubmitting,
     isDraftConfirmOpen,
     reportDialogTarget,
+    dialogState,
     isLoadingNext,
     openMenuPostId,
     dialogRef,
@@ -472,6 +517,9 @@ export default function usePostDetailRuntime(postId) {
     handleDeletePost,
     handleToggleLike,
     handleToggleFavoritePost,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
     handleEditComment,
     handleDeleteComment,
     handleViewHistory,

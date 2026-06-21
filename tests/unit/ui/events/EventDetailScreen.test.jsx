@@ -5,6 +5,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import EventDetailScreen from '@/ui/events/EventDetailScreen';
+import { createFavoriteLoginDialogState } from '../../../_helpers/favorite-login-continuation-helpers';
 
 const bookmarkButtonProps = [];
 const commentSectionProps = [];
@@ -194,6 +195,10 @@ function createRuntime(overrides = {}) {
     handleDeleteConfirm: vi.fn(),
     handleCommentAdded: vi.fn(),
     handleToggleFavoriteEvent: vi.fn(),
+    dialogState: createFavoriteLoginDialogState({ isOpen: false }),
+    confirmContinuation: vi.fn(),
+    cancelContinuation: vi.fn(),
+    closeContinuation: vi.fn(),
     ...overrides,
   };
 }
@@ -364,6 +369,34 @@ describe('EventDetailScreen started event non-body actions', () => {
 
     expect(writeText).toHaveBeenCalledWith('https://example.test/events/event-1?from=detail');
     expect(screen.getByRole('button', { name: '已複製連結' })).toBeInTheDocument();
+  });
+});
+
+describe('EventDetailScreen favorite login continuation dialog', () => {
+  it('renders runtime dialog state and forwards confirm, cancel, and close handlers', async () => {
+    vi.useRealTimers();
+    const user = userEvent.setup();
+    const confirmContinuation = vi.fn();
+    const cancelContinuation = vi.fn();
+    const closeContinuation = vi.fn();
+
+    renderScreen({
+      dialogState: createFavoriteLoginDialogState(),
+      confirmContinuation,
+      cancelContinuation,
+      closeContinuation,
+    });
+
+    const dialog = screen.getByRole('dialog', { name: '登入後即可收藏' });
+    expect(dialog).toHaveTextContent('登入後會自動將這個活動加入收藏。');
+
+    await user.click(screen.getByRole('button', { name: '使用 Google 登入' }));
+    await user.click(screen.getByRole('button', { name: '稍後再說' }));
+    await user.click(screen.getByRole('button', { name: '關閉收藏登入提示' }));
+
+    expect(confirmContinuation).toHaveBeenLastCalledWith();
+    expect(cancelContinuation).toHaveBeenLastCalledWith();
+    expect(closeContinuation).toHaveBeenLastCalledWith();
   });
 });
 

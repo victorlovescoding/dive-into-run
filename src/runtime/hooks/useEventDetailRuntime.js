@@ -15,6 +15,7 @@ import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 import useEventDetailParticipation from '@/runtime/hooks/useEventDetailParticipation';
 import useEventDetailMutations from '@/runtime/hooks/useEventDetailMutations';
+import useFavoriteLoginContinuation from '@/runtime/hooks/useFavoriteLoginContinuation';
 /**
  * @typedef {import('@/service/event-service').EventData} EventData
  */
@@ -53,6 +54,7 @@ export default function useEventDetailRuntime(id) {
   const [isTogglingFavoriteEvent, setIsTogglingFavoriteEvent] = useState(false);
 
   const isMountedRef = useRef(false);
+  const favoriteEventMutationVersionRef = useRef(0);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -174,18 +176,27 @@ export default function useEventDetailRuntime(id) {
 
     /** 同步目前活動詳情的收藏狀態。 */
     async function refreshFavoriteState() {
+      const syncMutationVersion = favoriteEventMutationVersionRef.current;
       try {
         const ids = await getFavoritedTargetIds({
           uid,
           type: FAVORITE_CONTENT_TYPES.EVENT,
           targetIds: [id],
         });
-        if (!cancelled && isMountedRef.current) {
+        if (
+          !cancelled
+          && isMountedRef.current
+          && syncMutationVersion === favoriteEventMutationVersionRef.current
+        ) {
           setIsFavoriteEvent(ids.has(id));
         }
       } catch (favoriteError) {
         console.error('載入活動收藏狀態失敗:', favoriteError);
-        if (!cancelled && isMountedRef.current) {
+        if (
+          !cancelled
+          && isMountedRef.current
+          && syncMutationVersion === favoriteEventMutationVersionRef.current
+        ) {
           setIsFavoriteEvent(false);
         }
       }
@@ -197,15 +208,35 @@ export default function useEventDetailRuntime(id) {
     };
   }, [id, user?.uid]);
 
+  const handleContinuationFavoriteAdded = useCallback(({ contentType, targetId }) => {
+    if (contentType !== FAVORITE_CONTENT_TYPES.EVENT) return;
+    if (String(targetId) !== String(id)) return;
+    favoriteEventMutationVersionRef.current += 1;
+    setIsFavoriteEvent(true);
+  }, [id]);
+
+  const {
+    dialogState,
+    openContinuation,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
+  } = useFavoriteLoginContinuation({
+    showToast,
+    onFavoriteAdded: handleContinuationFavoriteAdded,
+  });
+
   const handleToggleFavoriteEvent = useCallback(async () => {
-    const uid = user?.uid;
-    if (!uid) {
-      showToast('請先登入才能收藏', 'info');
-      return;
-    }
     if (!id || isTogglingFavoriteEvent) return;
 
+    const uid = user?.uid;
+    if (!uid) {
+      openContinuation({ contentType: FAVORITE_CONTENT_TYPES.EVENT, targetId: id });
+      return;
+    }
+
     const wasFavorite = isFavoriteEvent;
+    favoriteEventMutationVersionRef.current += 1;
     setIsTogglingFavoriteEvent(true);
     setIsFavoriteEvent(!wasFavorite);
 
@@ -219,6 +250,7 @@ export default function useEventDetailRuntime(id) {
       }
     } catch (favoriteError) {
       console.error('切換活動收藏失敗:', favoriteError);
+      favoriteEventMutationVersionRef.current += 1;
       setIsFavoriteEvent(wasFavorite);
       showToast(
         wasFavorite ? '取消收藏失敗，請稍後再試' : '收藏失敗，請稍後再試',
@@ -229,7 +261,7 @@ export default function useEventDetailRuntime(id) {
         setIsTogglingFavoriteEvent(false);
       }
     }
-  }, [id, isFavoriteEvent, isTogglingFavoriteEvent, showToast, user?.uid]);
+  }, [id, isFavoriteEvent, isTogglingFavoriteEvent, openContinuation, showToast, user?.uid]);
 
   const hasOverlay = isParticipantsOpen || editingEvent !== null || deletingEventId !== null;
 
@@ -281,8 +313,9 @@ export default function useEventDetailRuntime(id) {
     isUpdating,
     deletingEventId,
     isDeletingEvent,
-    isFavoriteEvent: user?.uid && id ? isFavoriteEvent : false,
+    isFavoriteEvent: id ? isFavoriteEvent : false,
     isTogglingFavoriteEvent,
+    dialogState,
     statusText,
     hasRoute,
     routePolylines,
@@ -303,5 +336,8 @@ export default function useEventDetailRuntime(id) {
     handleDeleteConfirm,
     handleCommentAdded,
     handleToggleFavoriteEvent,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
   };
 }

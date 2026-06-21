@@ -5,6 +5,10 @@ import { render, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createPostSearchPost } from '../../../_helpers/posts-search-fixtures';
 import {
+  FAVORITE_LOGIN_TEST_COPY,
+  createFavoriteLoginDialogState,
+} from '../../../_helpers/favorite-login-continuation-helpers';
+import {
   mockPostsSearchNavigation,
   resetPostsSearchRuntimeMocks,
   setupPostsSearchUser,
@@ -161,6 +165,7 @@ function createRuntime(overrides = {}) {
     articleHistoryPost: null,
     articleHistoryEntries: [],
     articleHistoryError: null,
+    dialogState: createFavoriteLoginDialogState({ isOpen: false }),
     dialogRef: { current: null },
     bottomRef: { current: null },
     setTitle: vi.fn(),
@@ -174,6 +179,9 @@ function createRuntime(overrides = {}) {
     handleToggleFavoritePost: vi.fn(),
     handleViewArticleHistory: vi.fn(),
     handleCloseArticleHistory: vi.fn(),
+    confirmContinuation: vi.fn(),
+    cancelContinuation: vi.fn(),
+    closeContinuation: vi.fn(),
     handleRequestComposerClose: vi.fn(),
     handleSaveComposerDraft: vi.fn(),
     handleContinueEditingDraft: vi.fn(),
@@ -389,5 +397,35 @@ describe('PostsPageScreen search entry', () => {
     expect(postSearchFormProps).toEqual([{}]);
     expect(bottomRef).toHaveBeenCalledWith(expect.any(HTMLDivElement));
     expect(screen.queryByText('載入更多搜尋結果')).not.toBeInTheDocument();
+  });
+});
+
+describe('PostsPageScreen favorite login continuation dialog', () => {
+  it('renders runtime dialog state and forwards confirm, cancel, and close handlers', async () => {
+    const user = setupPostsSearchUser();
+    const confirmContinuation = vi.fn();
+    const cancelContinuation = vi.fn();
+    const closeContinuation = vi.fn();
+
+    renderScreen({
+      dialogState: createFavoriteLoginDialogState({
+        contentType: 'post',
+        body: FAVORITE_LOGIN_TEST_COPY.postBody,
+      }),
+      confirmContinuation,
+      cancelContinuation,
+      closeContinuation,
+    });
+
+    const dialog = screen.getByRole('dialog', { name: '登入後即可收藏' });
+    expect(dialog).toHaveTextContent('登入後會自動將這篇文章加入收藏。');
+
+    await user.click(screen.getByRole('button', { name: '使用 Google 登入' }));
+    await user.click(screen.getByRole('button', { name: '稍後再說' }));
+    await user.click(screen.getByRole('button', { name: '關閉收藏登入提示' }));
+
+    expect(confirmContinuation).toHaveBeenLastCalledWith();
+    expect(cancelContinuation).toHaveBeenLastCalledWith();
+    expect(closeContinuation).toHaveBeenLastCalledWith();
   });
 });

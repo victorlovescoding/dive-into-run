@@ -6,6 +6,10 @@ import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import PostDetailScreen from '../../../../src/ui/posts/PostDetailScreen.jsx';
+import {
+  FAVORITE_LOGIN_TEST_COPY,
+  createFavoriteLoginDialogState,
+} from '../../../_helpers/favorite-login-continuation-helpers';
 
 const commentInputProps = [];
 const reportDialogProps = [];
@@ -107,10 +111,13 @@ vi.mock('@/components/EditHistoryModal', () => ({
 }));
 
 vi.mock('@/components/PostCard', () => ({
-  default: ({ post, children, onReport }) => (
+  default: ({ post, children, onReport, onToggleFavorite }) => (
     <article>
       <h1>{post.title}</h1>
       <p>{post.content}</p>
+      <button type="button" onClick={() => onToggleFavorite(post.id)}>
+        favorite post {post.id}
+      </button>
       {onReport && (
         <button type="button" onClick={() => onReport(post)}>
           report post {post.id}
@@ -177,6 +184,7 @@ function createRuntime(overrides = {}) {
     articleHistoryPost: null,
     articleHistoryEntries: [],
     articleHistoryError: null,
+    dialogState: createFavoriteLoginDialogState({ isOpen: false }),
     isUpdating: false,
     updateError: null,
     title: '',
@@ -210,6 +218,9 @@ function createRuntime(overrides = {}) {
     handleCloseHistory: vi.fn(),
     handleViewArticleHistory: vi.fn(),
     handleCloseArticleHistory: vi.fn(),
+    confirmContinuation: vi.fn(),
+    cancelContinuation: vi.fn(),
+    closeContinuation: vi.fn(),
     handleSubmitComment: vi.fn().mockResolvedValue(true),
     handleCommentChange: vi.fn(),
     ...overrides,
@@ -369,6 +380,40 @@ describe('PostDetailScreen comment composer', () => {
 
     await user.click(submitButton);
     expect(handleSubmitComment).toHaveBeenLastCalledWith('有效留言');
+  });
+});
+
+describe('PostDetailScreen favorite login continuation dialog', () => {
+  it('passes detail favorite clicks to the runtime and renders continuation handlers', async () => {
+    const user = userEvent.setup();
+    const handleToggleFavoritePost = vi.fn();
+    const confirmContinuation = vi.fn();
+    const cancelContinuation = vi.fn();
+    const closeContinuation = vi.fn();
+
+    renderScreen({
+      handleToggleFavoritePost,
+      dialogState: createFavoriteLoginDialogState({
+        contentType: 'post',
+        body: FAVORITE_LOGIN_TEST_COPY.postBody,
+      }),
+      confirmContinuation,
+      cancelContinuation,
+      closeContinuation,
+    });
+
+    await user.click(screen.getByRole('button', { name: 'favorite post post-1' }));
+    const dialog = screen.getByRole('dialog', { name: '登入後即可收藏' });
+    expect(dialog).toHaveTextContent('登入後會自動將這篇文章加入收藏。');
+
+    await user.click(screen.getByRole('button', { name: '使用 Google 登入' }));
+    await user.click(screen.getByRole('button', { name: '稍後再說' }));
+    await user.click(screen.getByRole('button', { name: '關閉收藏登入提示' }));
+
+    expect(handleToggleFavoritePost).toHaveBeenLastCalledWith('post-1');
+    expect(confirmContinuation).toHaveBeenLastCalledWith();
+    expect(cancelContinuation).toHaveBeenLastCalledWith();
+    expect(closeContinuation).toHaveBeenLastCalledWith();
   });
 });
 

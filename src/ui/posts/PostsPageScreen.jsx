@@ -3,6 +3,7 @@
 import ComposeModal from '@/components/ComposeModal';
 import ComposePrompt from '@/components/ComposePrompt';
 import EditHistoryModal from '@/components/EditHistoryModal';
+import FavoriteLoginContinuationDialog from '@/components/FavoriteLoginContinuationDialog';
 import PostCard from '@/components/PostCard';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import ReportDialog from '@/components/reports/ReportDialog';
@@ -84,6 +85,7 @@ export default function PostsPageScreen({ runtime }) {
     isLoadingNext,
     isDraftConfirmOpen,
     reportDialogTarget,
+    dialogState,
     articleHistoryPost,
     articleHistoryEntries,
     articleHistoryError,
@@ -98,6 +100,9 @@ export default function PostsPageScreen({ runtime }) {
     handleDeletePost,
     handleSubmitPost,
     handleToggleFavoritePost,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
     handleViewArticleHistory,
     handleOpenReportDialog,
     handleCloseReportDialog,
@@ -179,6 +184,13 @@ export default function PostsPageScreen({ runtime }) {
           onClose={handleCloseArticleHistory}
         />
       )}
+
+      <FavoriteLoginContinuationDialog
+        dialogState={dialogState}
+        onConfirm={confirmContinuation}
+        onCancel={cancelContinuation}
+        onClose={closeContinuation}
+      />
     </div>
   );
 }

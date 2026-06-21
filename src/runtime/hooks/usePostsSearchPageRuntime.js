@@ -34,6 +34,7 @@ import {
 import { AuthContext } from '@/runtime/providers/AuthProvider';
 import { useToast } from '@/runtime/providers/ToastProvider';
 import useEditHistoryModal from '@/runtime/hooks/useEditHistoryModal';
+import useFavoriteLoginContinuation from '@/runtime/hooks/useFavoriteLoginContinuation';
 
 const PAGE_SIZE = 10;
 const EMPTY_RESULTS = [];
@@ -58,6 +59,30 @@ function replaceEditedSearchMatchPost(previousMatches, postId, title, content) {
             title: title.trim(),
             content: content.trim(),
             isEdited: true,
+          },
+        }
+      : match,
+  );
+}
+
+/**
+ * 在 stale reload 完成時保留目前本地收藏狀態，避免覆蓋已確認的 optimistic mutation。
+ * @param {Array<{ post: { id: string, isFavorited?: boolean } }>} loadedMatches - 重新載入結果。
+ * @param {Array<{ post: { id: string, isFavorited?: boolean } }>} currentMatches - 目前畫面結果。
+ * @returns {Array<{ post: { id: string, isFavorited?: boolean } }>} 套用本地收藏狀態後的結果。
+ */
+function preserveCurrentFavoriteStates(loadedMatches, currentMatches) {
+  const currentFavoriteStates = new Map(
+    currentMatches.map((match) => [match.post.id, !!match.post.isFavorited]),
+  );
+
+  return loadedMatches.map((match) =>
+    currentFavoriteStates.has(match.post.id)
+      ? {
+          ...match,
+          post: {
+            ...match.post,
+            isFavorited: currentFavoriteStates.get(match.post.id),
           },
         }
       : match,
@@ -118,6 +143,7 @@ export default function usePostsSearchPageRuntime() {
   const dialogRef = useRef(/** @type {HTMLDialogElement | null} */ (null));
   const bottomRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const isLoadingNextRef = useRef(false);
+  const favoritePostMutationVersionRef = useRef(0);
 
   const userUid = user?.uid ?? null;
   const loadArticleHistory = useCallback((targetPost) => fetchPostHistory(targetPost.id), []);
@@ -131,6 +157,26 @@ export default function usePostsSearchPageRuntime() {
   } = useEditHistoryModal({
     loadHistory: loadArticleHistory,
     loadErrorMessage: '載入編輯記錄失敗',
+  });
+
+  const handleContinuationFavoriteAdded = useCallback(({ contentType, targetId }) => {
+    if (contentType !== FAVORITE_CONTENT_TYPES.POST) return;
+    favoritePostMutationVersionRef.current += 1;
+    setSearchState((previousState) => ({
+      ...previousState,
+      results: applyPostSearchMatchFavoriteState(previousState.results, targetId, true),
+    }));
+  }, []);
+
+  const {
+    dialogState,
+    openContinuation,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
+  } = useFavoriteLoginContinuation({
+    showToast,
+    onFavoriteAdded: handleContinuationFavoriteAdded,
   });
   const isCurrentSearchState = searchState.keyword === keyword;
   const searchInput = searchDraft.keyword === keyword ? searchDraft.value : keyword;
@@ -185,6 +231,7 @@ export default function usePostsSearchPageRuntime() {
    */
   const loadSearchPage = useCallback(
     async ({ targetKeyword, cursor }) => {
+      const favoriteMutationVersion = favoritePostMutationVersionRef.current;
       const searchPage = await searchPublicActivePosts({
         keyword: targetKeyword,
         userUid,
@@ -209,6 +256,7 @@ export default function usePostsSearchPageRuntime() {
         nextCursor: searchPage.nextCursor,
         hasMore: searchPage.hasMore,
         scannedCount: searchPage.scannedCount,
+        favoriteMutationVersion,
       };
     },
     [userUid],
@@ -224,28 +272,46 @@ export default function usePostsSearchPageRuntime() {
 
     /** 載入 URL q 對應的第一頁搜尋結果。 */
     async function loadInitialSearchPage() {
-      setSearchState({
-        keyword,
-        results: [],
-        status: 'loading',
-        error: null,
-        nextCursor: null,
-        hasMore: false,
-        scannedCount: 0,
-      });
+      setSearchState((previousState) =>
+        previousState.keyword === keyword
+          ? {
+              ...previousState,
+              status: 'loading',
+              error: null,
+              nextCursor: null,
+              hasMore: false,
+              scannedCount: 0,
+            }
+          : {
+              keyword,
+              results: [],
+              status: 'loading',
+              error: null,
+              nextCursor: null,
+              hasMore: false,
+              scannedCount: 0,
+            },
+      );
 
       try {
         const searchPage = await loadSearchPage({ targetKeyword: keyword, cursor: null });
 
         if (cancelled) return;
-        setSearchState({
-          keyword,
-          results: searchPage.items,
-          status: searchPage.items.length === 0 && !searchPage.hasMore ? 'empty' : 'success',
-          error: null,
-          nextCursor: searchPage.nextCursor,
-          hasMore: searchPage.hasMore,
-          scannedCount: searchPage.scannedCount,
+        setSearchState((previousState) => {
+          const nextResults =
+            searchPage.favoriteMutationVersion === favoritePostMutationVersionRef.current
+              ? searchPage.items
+              : preserveCurrentFavoriteStates(searchPage.items, previousState.results);
+
+          return {
+            keyword,
+            results: nextResults,
+            status: nextResults.length === 0 && !searchPage.hasMore ? 'empty' : 'success',
+            error: null,
+            nextCursor: searchPage.nextCursor,
+            hasMore: searchPage.hasMore,
+            scannedCount: searchPage.scannedCount,
+          };
         });
       } catch (searchError) {
         if (cancelled) return;
@@ -287,14 +353,21 @@ export default function usePostsSearchPageRuntime() {
 
     try {
       const searchPage = await loadSearchPage({ targetKeyword: keyword, cursor: null });
-      setSearchState({
-        keyword,
-        results: searchPage.items,
-        status: searchPage.items.length === 0 && !searchPage.hasMore ? 'empty' : 'success',
-        error: null,
-        nextCursor: searchPage.nextCursor,
-        hasMore: searchPage.hasMore,
-        scannedCount: searchPage.scannedCount,
+      setSearchState((previousState) => {
+        const nextResults =
+          searchPage.favoriteMutationVersion === favoritePostMutationVersionRef.current
+            ? searchPage.items
+            : preserveCurrentFavoriteStates(searchPage.items, previousState.results);
+
+        return {
+          keyword,
+          results: nextResults,
+          status: nextResults.length === 0 && !searchPage.hasMore ? 'empty' : 'success',
+          error: null,
+          nextCursor: searchPage.nextCursor,
+          hasMore: searchPage.hasMore,
+          scannedCount: searchPage.scannedCount,
+        };
       });
     } catch (searchError) {
       console.error('搜尋文章失敗:', searchError);
@@ -329,7 +402,11 @@ export default function usePostsSearchPageRuntime() {
       setSearchState((previousState) => {
         if (previousState.keyword !== keyword) return previousState;
 
-        const nextResults = mergeUniquePostSearchMatches(previousState.results, searchPage.items);
+        const nextItems =
+          searchPage.favoriteMutationVersion === favoritePostMutationVersionRef.current
+            ? searchPage.items
+            : preserveCurrentFavoriteStates(searchPage.items, previousState.results);
+        const nextResults = mergeUniquePostSearchMatches(previousState.results, nextItems);
         return {
           keyword,
           results: nextResults,
@@ -471,7 +548,7 @@ export default function usePostsSearchPageRuntime() {
   const handleToggleFavoritePost = useCallback(
     async (postId) => {
       if (!userUid) {
-        showToast('請先登入才能收藏', 'info');
+        openContinuation({ contentType: FAVORITE_CONTENT_TYPES.POST, targetId: postId });
         return;
       }
 
@@ -479,6 +556,7 @@ export default function usePostsSearchPageRuntime() {
       if (!targetMatch) return;
 
       const wasFavorited = !!targetMatch.post.isFavorited;
+      favoritePostMutationVersionRef.current += 1;
       setSearchState((previousState) => ({
         ...previousState,
         results: applyPostSearchMatchFavoriteState(
@@ -495,6 +573,11 @@ export default function usePostsSearchPageRuntime() {
             type: FAVORITE_CONTENT_TYPES.POST,
             targetId: postId,
           });
+          favoritePostMutationVersionRef.current += 1;
+          setSearchState((previousState) => ({
+            ...previousState,
+            results: applyPostSearchMatchFavoriteState(previousState.results, postId, false),
+          }));
           showToast('已取消收藏', 'success');
           return;
         }
@@ -504,9 +587,15 @@ export default function usePostsSearchPageRuntime() {
           type: FAVORITE_CONTENT_TYPES.POST,
           targetId: postId,
         });
+        favoritePostMutationVersionRef.current += 1;
+        setSearchState((previousState) => ({
+          ...previousState,
+          results: applyPostSearchMatchFavoriteState(previousState.results, postId, true),
+        }));
         showToast('已加入收藏', 'success');
       } catch (favoriteError) {
         console.error('Toggle favorite post error:', favoriteError);
+        favoritePostMutationVersionRef.current += 1;
         setSearchState((previousState) => ({
           ...previousState,
           results: applyPostSearchMatchFavoriteState(
@@ -521,7 +610,7 @@ export default function usePostsSearchPageRuntime() {
         );
       }
     },
-    [results, showToast, userUid],
+    [openContinuation, results, showToast, userUid],
   );
 
   /**
@@ -743,6 +832,7 @@ export default function usePostsSearchPageRuntime() {
     openMenuPostId,
     isDraftConfirmOpen,
     reportDialogTarget,
+    dialogState,
     errorMessage,
     isLoadingNext,
     articleHistoryPost,
@@ -759,6 +849,9 @@ export default function usePostsSearchPageRuntime() {
     handleRetrySearch,
     handlePressLike,
     handleToggleFavoritePost,
+    confirmContinuation,
+    cancelContinuation,
+    closeContinuation,
     handleToggleOwnerMenu,
     handleCloseOwnerMenu,
     handleOpenReportDialog,
