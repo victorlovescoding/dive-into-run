@@ -9,6 +9,7 @@ import { signOutUser } from '@/lib/firebase-auth-helpers';
  * @property {import('react').RefObject<HTMLDivElement | null>} dropdownRef - dropdown 容器 ref。
  * @property {import('react').RefObject<HTMLButtonElement | null>} avatarButtonRef - avatar 按鈕 ref。
  * @property {() => void} toggleDropdown - 切換 dropdown 開關。
+ * @property {() => void} closeDropdown - 關閉 dropdown。
  * @property {() => Promise<void>} handleSignOut - 登出處理。
  */
 
@@ -68,6 +69,11 @@ export default function useUserMenu() {
     setIsDropdownOpen((prev) => !prev);
   }, []);
 
+  /** 關閉 dropdown。 */
+  const closeDropdown = useCallback(() => {
+    setIsDropdownOpen(false);
+  }, []);
+
   /** 登出並關閉 dropdown。 */
   const handleSignOut = useCallback(async () => {
     setIsDropdownOpen(false);
@@ -79,6 +85,7 @@ export default function useUserMenu() {
     dropdownRef,
     avatarButtonRef,
     toggleDropdown,
+    closeDropdown,
     handleSignOut,
   };
 }

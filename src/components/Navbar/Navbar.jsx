@@ -25,7 +25,7 @@ export default function Navbar() {
   const { isDrawerOpen, hamburgerRef, closeButtonRef, toggleDrawer, closeDrawer, handleLinkClick } =
     useMobileDrawer();
   const { loginPending, handleSignIn } = useNavbarSignIn();
-  const { isDropdownOpen, dropdownRef, avatarButtonRef, toggleDropdown, handleSignOut } =
+  const { isDropdownOpen, dropdownRef, avatarButtonRef, toggleDropdown, closeDropdown, handleSignOut } =
     useUserMenu();
 
   const visibleNavItems = getVisibleNavItems(NAV_ITEMS, { user, loading });
@@ -84,6 +84,7 @@ export default function Navbar() {
           dropdownRef={dropdownRef}
           avatarButtonRef={avatarButtonRef}
           toggleDropdown={toggleDropdown}
+          closeDropdown={closeDropdown}
           handleSignOut={handleSignOut}
           handleSignIn={handleSignIn}
           user={user}

@@ -1,6 +1,8 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
+import { getAuthenticatedMenuItems } from './nav-constants';
 import styles from './Navbar.module.css';
 
 /**
@@ -10,9 +12,10 @@ import styles from './Navbar.module.css';
  * @param {import('react').RefObject<HTMLDivElement | null>} props.dropdownRef - dropdown 容器 ref。
  * @param {import('react').RefObject<HTMLButtonElement | null>} props.avatarButtonRef - avatar 按鈕 ref。
  * @param {() => void} props.toggleDropdown - 切換 dropdown 開關。
+ * @param {() => void} props.closeDropdown - 關閉 dropdown。
  * @param {() => Promise<void>} props.handleSignOut - 登出處理函式。
  * @param {() => Promise<void>} props.handleSignIn - 登入處理函式。
- * @param {object | null} props.user - 目前登入使用者。
+ * @param {{ uid: string, photoURL?: string | null } | null} props.user - 目前登入使用者。
  * @param {boolean} props.loading - 認證載入狀態。
  * @param {boolean} props.loginPending - Google 登入流程是否處理中。
  * @returns {import('react').JSX.Element} UserMenu 元件。
@@ -22,12 +25,15 @@ export default function UserMenu({
   dropdownRef,
   avatarButtonRef,
   toggleDropdown,
+  closeDropdown,
   handleSignOut,
   handleSignIn,
   user,
   loading,
   loginPending,
 }) {
+  const authenticatedMenuItems = getAuthenticatedMenuItems(user);
+
   return (
     <div className={styles.userSection} ref={dropdownRef}>
       {loading && <div className={styles.skeleton} data-testid="user-menu-skeleton" />}
@@ -82,8 +88,25 @@ export default function UserMenu({
               isDropdownOpen ? `${styles.dropdown} ${styles.dropdownOpen}` : styles.dropdown
             }
           >
+            {authenticatedMenuItems.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  role="menuitem"
+                  className={styles.dropdownItem}
+                  onClick={closeDropdown}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
             <li>
-              <button type="button" role="menuitem" onClick={handleSignOut}>
+              <button
+                type="button"
+                role="menuitem"
+                className={styles.dropdownItem}
+                onClick={handleSignOut}
+              >
                 登出
               </button>
             </li>
