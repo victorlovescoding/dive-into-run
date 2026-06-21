@@ -56,6 +56,7 @@ export function isInteractiveCardTarget(target) {
  * @property {(ev: object) => void} onDelete - 刪除活動的回呼。
  * @property {(eventId: string) => void} onToggleFavoriteEvent - 切換活動收藏的回呼。
  * @property {() => void} onOpenFilter - 開啟篩選面板的回呼。
+ * @property {() => void} onClearFilters - 清除已套用篩選的回呼。
  * @property {() => void} loadMore - 載入更多活動的回呼。
  */
 
@@ -90,6 +91,7 @@ export default function EventsListSection({
   onDelete,
   onToggleFavoriteEvent,
   onOpenFilter,
+  onClearFilters,
   loadMore,
 }) {
   const router = useRouter();
@@ -187,6 +189,13 @@ export default function EventsListSection({
               {chip}
             </span>
           ))}
+          <button
+            type="button"
+            className={styles.activeFilterClearButton}
+            onClick={() => onClearFilters()}
+          >
+            清除篩選
+          </button>
         </div>
       )}
 

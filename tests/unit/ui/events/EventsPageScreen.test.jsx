@@ -162,6 +162,8 @@ afterEach(() => {
 
 describe('EventsPageScreen favorite login continuation dialog', () => {
   it('does not render the removed product heading and passes applied filters instead of filter drafts', () => {
+    const handleClearFilters = vi.fn();
+
     renderScreen({
       filterCity: '新北市',
       filterDistrict: '板橋區',
@@ -174,6 +176,7 @@ describe('EventsPageScreen favorite login continuation dialog', () => {
         maxDistance: '',
         hasSeatsOnly: true,
       },
+      handleClearFilters,
     });
 
     expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
@@ -183,6 +186,10 @@ describe('EventsPageScreen favorite login continuation dialog', () => {
       hasSeatsOnly: true,
     });
     expect(eventsListSectionProps[0].appliedFilters.city).not.toBe('新北市');
+
+    eventsListSectionProps[0].onClearFilters();
+
+    expect(handleClearFilters).toHaveBeenCalledWith();
   });
 
   it('renders runtime dialog state and forwards confirm, cancel, and close handlers', async () => {
