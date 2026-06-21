@@ -118,6 +118,7 @@ export default function EventsPageScreen() {
         onDelete={handleDeleteEventRequest}
         onToggleFavoriteEvent={handleToggleFavoriteEvent}
         onOpenFilter={handleOpenFilter}
+        onClearFilters={handleClearFilters}
         loadMore={loadMore}
       />
 

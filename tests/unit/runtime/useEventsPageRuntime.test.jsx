@@ -234,6 +234,75 @@ describe('useEventsPageRuntime started event list regressions', () => {
     expect(result.current.hasMore).toBe(false);
   });
 
+  it('clears applied and draft filters and reloads the latest list', async () => {
+    mocks.queryEvents.mockResolvedValueOnce([futureEvent]);
+    const { result } = renderUseEventsPageRuntime();
+
+    await waitFor(() => {
+      expect(result.current.events).toHaveLength(2);
+    });
+
+    act(() => {
+      result.current.handleFilterCityChange('台北市');
+      result.current.setFilterDistrict('大安區');
+      result.current.setFilterTimeStart('2026-07-01T06:00');
+      result.current.setFilterTimeEnd('2026-07-01T08:00');
+      result.current.setFilterDistanceMin('5');
+      result.current.setFilterDistanceMax('10');
+      result.current.setFilterHasSeatsOnly(true);
+    });
+    await act(async () => {
+      await result.current.handleSearchFilters();
+    });
+
+    expect(result.current.isFilteredResults).toBe(true);
+    expect(result.current.appliedFilters).toMatchObject({
+      city: '台北市',
+      district: '大安區',
+      startTime: '2026-07-01T06:00',
+      endTime: '2026-07-01T08:00',
+      minDistance: '5',
+      maxDistance: '10',
+      hasSeatsOnly: true,
+    });
+
+    act(() => {
+      result.current.handleFilterCityChange('新北市');
+      result.current.setFilterDistanceMin('3');
+    });
+    mocks.fetchLatestEvents.mockClear();
+    mocks.fetchLatestEvents.mockResolvedValueOnce({
+      events: [startedEvent],
+      lastDoc: 'reloaded-cursor',
+      hasMore: true,
+    });
+
+    await act(async () => {
+      await result.current.handleClearFilters();
+    });
+
+    expect(mocks.fetchLatestEvents).toHaveBeenCalledWith(10);
+    expect(result.current.events).toEqual([startedEvent]);
+    expect(result.current.isFilteredResults).toBe(false);
+    expect(result.current.appliedFilters).toEqual({
+      city: '',
+      district: '',
+      startTime: '',
+      endTime: '',
+      minDistance: '',
+      maxDistance: '',
+      hasSeatsOnly: false,
+    });
+    expect(result.current.filterCity).toBe('');
+    expect(result.current.filterDistrict).toBe('');
+    expect(result.current.filterTimeStart).toBe('');
+    expect(result.current.filterTimeEnd).toBe('');
+    expect(result.current.filterDistanceMin).toBe('');
+    expect(result.current.filterDistanceMax).toBe('');
+    expect(result.current.filterHasSeatsOnly).toBe(false);
+    expect(result.current.hasMore).toBe(true);
+  });
+
   it('keeps started events when loading more and preserves page merge order', async () => {
     const nextStartedEvent = {
       ...startedEvent,

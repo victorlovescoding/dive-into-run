@@ -360,6 +360,38 @@
   overflow-wrap: anywhere;
 }
 
+.activeFilterClearButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 5px 12px;
+  border: 1px solid #dadce0;
+  border-radius: 999px;
+  background: #fff;
+  color: #5f6368;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.activeFilterClearButton:hover {
+  border-color: #b8c0c7;
+  background: #f8f9fa;
+  color: #202124;
+}
+
+.activeFilterClearButton:focus-visible {
+  outline: 3px solid rgba(103, 58, 183, 0.18);
+  outline-offset: 2px;
+}
+
 /* --- 篩選浮層 --- */
 
 .filterOverlay {

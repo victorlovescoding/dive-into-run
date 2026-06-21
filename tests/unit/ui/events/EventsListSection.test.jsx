@@ -85,6 +85,7 @@ function createProps(overrides = {}) {
     onDelete: vi.fn(),
     onToggleFavoriteEvent: vi.fn(),
     onOpenFilter: vi.fn(),
+    onClearFilters: vi.fn(),
     loadMore: vi.fn(),
     ...overrides,
   };
@@ -341,5 +342,31 @@ describe('EventsListSection card scanning summary', () => {
     expect(screen.getByText('時間：2026-07-01 06:00 起')).toBeInTheDocument();
     expect(screen.getByText('距離：5 km 以上')).toBeInTheDocument();
     expect(screen.getByText('有名額')).toBeInTheDocument();
+  });
+
+  it('renders a clear filters button for applied chips and calls onClearFilters', async () => {
+    const { props, user } = renderList({
+      appliedFilters: {
+        city: '台北市',
+        district: '大安區',
+        startTime: '',
+        endTime: '',
+        minDistance: '',
+        maxDistance: '',
+        hasSeatsOnly: true,
+      },
+    });
+
+    await user.click(screen.getByRole('button', { name: '清除篩選' }));
+
+    expect(props.onClearFilters).toHaveBeenCalledWith();
+  });
+
+  it('does not render the clear filters button without applied chips', () => {
+    renderList({
+      appliedFilters: {},
+    });
+
+    expect(screen.queryByRole('button', { name: '清除篩選' })).not.toBeInTheDocument();
   });
 });
