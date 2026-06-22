@@ -194,6 +194,8 @@
 }
 
 .metricInfoButton {
+  inline-size: 44px;
+  block-size: 44px;
   min-width: 44px;
   min-height: 44px;
   display: grid;
@@ -206,24 +208,30 @@
   color: var(--sky-accent);
   cursor: pointer;
   font: inherit;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
 }
 
-.metricInfoGlyph {
-  inline-size: 32px;
-  block-size: 32px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(91, 141, 184, 0.28);
-  border-radius: 999px;
-  background: rgba(234, 248, 252, 0.72);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  line-height: 1;
+.metricInfoIcon {
+  inline-size: 20px;
+  block-size: 20px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
-.metricInfoButton:hover .metricInfoGlyph {
+.metricInfoButton:hover {
   background: var(--sky-light);
-  border-color: var(--sky-accent);
+  color: var(--sky-text);
+}
+
+.metricInfoButton[aria-expanded="true"] {
+  background: rgba(91, 141, 184, 0.14);
+  color: var(--sky-text);
 }
 
 .metricInfoButton:focus-visible {
