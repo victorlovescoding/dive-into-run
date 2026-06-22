@@ -58,6 +58,68 @@ describe('Toast auto-dismiss behavior', () => {
     });
     expect(onClose).toHaveBeenCalledWith('toast-1');
   });
+
+  it('keeps a legacy single-action toast visible until the extended delay', async () => {
+    const onClose = vi.fn();
+
+    render(
+      <Toast
+        toast={{
+          ...baseToast,
+          action: { label: '復原', callback: vi.fn() },
+        }}
+        onClose={onClose}
+      />,
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(onClose).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(4999);
+    });
+    expect(onClose).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(onClose).toHaveBeenCalledWith('toast-1');
+  });
+
+  it('keeps a multi-action toast visible until the extended delay', async () => {
+    const onClose = vi.fn();
+
+    render(
+      <Toast
+        toast={{
+          ...baseToast,
+          type: 'info',
+          actions: [
+            { label: '查看收藏', callback: vi.fn() },
+            { label: '復原', callback: vi.fn() },
+          ],
+        }}
+        onClose={onClose}
+      />,
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(onClose).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(4999);
+    });
+    expect(onClose).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(onClose).toHaveBeenCalledWith('toast-1');
+  });
 });
 
 describe('Toast actions', () => {
