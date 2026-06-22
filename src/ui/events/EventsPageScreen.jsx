@@ -33,6 +33,9 @@ export default function EventsPageScreen() {
     selectedCity,
     selectedDistrict,
     minDateTime,
+    eventTimeValue,
+    registrationDeadlineValue,
+    registrationDeadlineError,
     isFilteredResults,
     appliedFilters,
     isLoadingEvents,
@@ -65,6 +68,8 @@ export default function EventsPageScreen() {
     setFilterDistrict,
     setSelectedDistrict,
     setRouteCoordinates,
+    setEventTimeValue,
+    setRegistrationDeadlineValue,
     handleOpenFilter,
     handleCloseFilter,
     handleFilterCityChange,
@@ -165,10 +170,15 @@ export default function EventsPageScreen() {
           routeCoordinates={routeCoordinates}
           routePointCount={routePointCount}
           isCreating={isCreating}
+          eventTimeValue={eventTimeValue}
+          registrationDeadlineValue={registrationDeadlineValue}
+          registrationDeadlineError={registrationDeadlineError}
           onSubmit={handleSubmit}
           onClose={handleCloseCreateForm}
           onCityChange={handleSelectedCityChange}
           onDistrictChange={setSelectedDistrict}
+          onTimeChange={setEventTimeValue}
+          onRegistrationDeadlineChange={setRegistrationDeadlineValue}
           onEnableRoute={handleEnableRoutePlanning}
           onDisableRoute={handleDisableRoutePlanning}
           onRouteDrawn={setRouteCoordinates}

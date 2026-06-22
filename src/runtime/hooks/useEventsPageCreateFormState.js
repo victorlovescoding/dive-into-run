@@ -1,7 +1,10 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { countTotalPoints } from '@/runtime/events/event-runtime-helpers';
+import {
+  countTotalPoints,
+  validateEventDeadlineBeforeStart,
+} from '@/runtime/events/event-runtime-helpers';
 import { listTaiwanDistricts } from '@/service/taiwan-location-service';
 
 /**
@@ -12,6 +15,8 @@ import { listTaiwanDistricts } from '@/service/taiwan-location-service';
 
 /**
  * @typedef {object} DraftFormData
+ * @property {string} [time] - 活動時間草稿。
+ * @property {string} [registrationDeadline] - 報名截止時間草稿。
  * @property {string} [city] - 草稿城市。
  * @property {string} [district] - 草稿區域。
  * @property {string} [planRoute] - 是否規劃路線。
@@ -53,11 +58,17 @@ export default function useEventsPageCreateFormState({ showToast }) {
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [minDateTime, setMinDateTime] = useState('');
+  const [eventTimeValue, setEventTimeValue] = useState('');
+  const [registrationDeadlineValue, setRegistrationDeadlineValue] = useState('');
 
   const selectedDistrictOptions = useMemo(() => listTaiwanDistricts(selectedCity), [selectedCity]);
   const routePointCount = useMemo(
     () => (Array.isArray(routeCoordinates) ? countTotalPoints(routeCoordinates) : 0),
     [routeCoordinates],
+  );
+  const registrationDeadlineError = useMemo(
+    () => validateEventDeadlineBeforeStart(eventTimeValue, registrationDeadlineValue),
+    [eventTimeValue, registrationDeadlineValue],
   );
 
   const resetCreateForm = useCallback(() => {
@@ -66,6 +77,8 @@ export default function useEventsPageCreateFormState({ showToast }) {
     setRouteCoordinates(null);
     setSelectedCity('');
     setSelectedDistrict('');
+    setEventTimeValue('');
+    setRegistrationDeadlineValue('');
   }, []);
 
   const handleCloseCreateForm = useCallback(() => {
@@ -110,6 +123,8 @@ export default function useEventsPageCreateFormState({ showToast }) {
       setMinDateTime(createCurrentMinuteValue());
 
       if (draftFormData) {
+        setEventTimeValue(draftFormData.time || '');
+        setRegistrationDeadlineValue(draftFormData.registrationDeadline || '');
         setSelectedCity(draftFormData.city || '');
         setSelectedDistrict(draftFormData.district || '');
 
@@ -121,6 +136,8 @@ export default function useEventsPageCreateFormState({ showToast }) {
           setRouteCoordinates(null);
         }
       } else {
+        setEventTimeValue('');
+        setRegistrationDeadlineValue('');
         setSelectedCity('');
         setSelectedDistrict('');
         setShowMap(false);
@@ -141,8 +158,13 @@ export default function useEventsPageCreateFormState({ showToast }) {
     selectedDistrict,
     selectedDistrictOptions,
     minDateTime,
+    eventTimeValue,
+    registrationDeadlineValue,
+    registrationDeadlineError,
     setSelectedDistrict,
     setRouteCoordinates,
+    setEventTimeValue,
+    setRegistrationDeadlineValue,
     resetCreateForm,
     handleCloseCreateForm,
     handleSelectedCityChange,

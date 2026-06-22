@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import * as eventRuntimeHelpers from '@/runtime/events/event-runtime-helpers';
 import {
   evaluateEventEditStartedLock,
   isEventStarted,
@@ -80,5 +81,40 @@ describe('evaluateEventEditStartedLock', () => {
         message: '活動已開始，無法編輯或刪除。',
       },
     });
+  });
+});
+
+describe('validateEventDeadlineBeforeStart', () => {
+  it('returns the shared inline error when registration deadline is not before event time', () => {
+    expect(
+      eventRuntimeHelpers.validateEventDeadlineBeforeStart(
+        '2026-07-01T10:00',
+        '2026-07-01T10:00',
+      ),
+    ).toBe(eventRuntimeHelpers.EVENT_DEADLINE_BEFORE_START_ERROR);
+
+    expect(
+      eventRuntimeHelpers.validateEventDeadlineBeforeStart(
+        '2026-07-01T10:00',
+        '2026-07-01T10:30',
+      ),
+    ).toBe(eventRuntimeHelpers.EVENT_DEADLINE_BEFORE_START_ERROR);
+  });
+
+  it('returns an empty string for valid, blank, or unparsable deadline comparisons', () => {
+    expect(
+      eventRuntimeHelpers.validateEventDeadlineBeforeStart(
+        '2026-07-01T10:00',
+        '2026-07-01T09:59',
+      ),
+    ).toBe('');
+    expect(eventRuntimeHelpers.validateEventDeadlineBeforeStart('', '2026-07-01T09:59')).toBe('');
+    expect(eventRuntimeHelpers.validateEventDeadlineBeforeStart('2026-07-01T10:00', '')).toBe('');
+    expect(
+      eventRuntimeHelpers.validateEventDeadlineBeforeStart('not-a-date', '2026-07-01T09:59'),
+    ).toBe('');
+    expect(
+      eventRuntimeHelpers.validateEventDeadlineBeforeStart('2026-07-01T10:00', 'not-a-date'),
+    ).toBe('');
   });
 });

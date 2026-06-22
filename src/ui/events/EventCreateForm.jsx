@@ -32,10 +32,15 @@ const EventMap = dynamic(() => import('@/components/EventMap'), { ssr: false });
  * @property {Array<Array<{lat: number, lng: number}>> | null} routeCoordinates - 已繪製的路線座標。
  * @property {number} routePointCount - 路線座標點數量。
  * @property {boolean} isCreating - 是否正在建立活動中。
+ * @property {string} eventTimeValue - controlled 活動時間欄位值。
+ * @property {string} registrationDeadlineValue - controlled 報名截止時間欄位值。
+ * @property {string} registrationDeadlineError - 報名截止時間 inline validation 訊息。
  * @property {(event: import('react').FormEvent<HTMLFormElement>) => void} onSubmit - 表單送出處理。
  * @property {() => void} onClose - 取消 / 關閉表單處理。
  * @property {(value: string) => void} onCityChange - 縣市變更處理。
  * @property {(value: string) => void} onDistrictChange - 區域變更處理。
+ * @property {(value: string) => void} onTimeChange - 活動時間變更處理。
+ * @property {(value: string) => void} onRegistrationDeadlineChange - 報名截止時間變更處理。
  * @property {() => void} onEnableRoute - 啟用路線繪製。
  * @property {() => void} onDisableRoute - 停用路線繪製。
  * @property {(coords: Array<Array<{lat: number, lng: number}>> | null) => void} onRouteDrawn - 路線繪製完成回呼。
@@ -59,20 +64,41 @@ export default function EventCreateForm({
   routeCoordinates,
   routePointCount,
   isCreating,
+  eventTimeValue,
+  registrationDeadlineValue,
+  registrationDeadlineError,
   onSubmit,
   onClose,
   onCityChange,
   onDistrictChange,
+  onTimeChange,
+  onRegistrationDeadlineChange,
   onEnableRoute,
   onDisableRoute,
   onRouteDrawn,
 }) {
+  const hasDeadlineError = Boolean(registrationDeadlineError);
+  const deadlineErrorId = 'registrationDeadline-error';
+
+  /**
+   * 擋下 deadline inline validation 失敗時的所有 submit 入口。
+   * @param {import('react').FormEvent<HTMLFormElement>} event - 表單提交事件。
+   */
+  function handleFormSubmit(event) {
+    if (hasDeadlineError) {
+      event.preventDefault();
+      return;
+    }
+
+    onSubmit(event);
+  }
+
   return (
     <div className={styles.formOverlay}>
       <form
         className={styles.googleFormCard}
         aria-labelledby="event-create-form-title"
-        onSubmit={onSubmit}
+        onSubmit={handleFormSubmit}
       >
         <div className={styles.formHeaderAccent} />
 
@@ -122,7 +148,8 @@ export default function EventCreateForm({
               name="time"
               min={minDateTime}
               required
-              defaultValue={draftFormData?.time || ''}
+              value={eventTimeValue}
+              onChange={(event) => onTimeChange(event.target.value)}
             />
           </label>
           <div className={styles.focusBorder} />
@@ -137,10 +164,17 @@ export default function EventCreateForm({
               name="registrationDeadline"
               min={minDateTime}
               required
-              defaultValue={draftFormData?.registrationDeadline || ''}
+              value={registrationDeadlineValue}
+              onChange={(event) => onRegistrationDeadlineChange(event.target.value)}
+              className={hasDeadlineError ? styles.invalidField : undefined}
+              aria-invalid={hasDeadlineError ? 'true' : undefined}
+              aria-describedby={hasDeadlineError ? deadlineErrorId : undefined}
             />
           </label>
           <div className={styles.focusBorder} />
+          {hasDeadlineError && (
+            <p id={deadlineErrorId} className={styles.fieldError} role="alert">{registrationDeadlineError}</p>
+          )}
         </div>
 
         <div className={styles.formGroup}>
@@ -329,7 +363,7 @@ export default function EventCreateForm({
           >
             取消
           </button>
-          <button type="submit" className={styles.submitButton} disabled={isCreating}>
+          <button type="submit" className={styles.submitButton} disabled={isCreating || hasDeadlineError}>
             {isCreating ? '建立中…' : '建立活動'}
           </button>
         </div>
