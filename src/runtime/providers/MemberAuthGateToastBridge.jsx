@@ -1,12 +1,14 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { useCallback, useContext, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { signInWithGoogleUseCase } from '@/runtime/client/use-cases/auth-use-cases';
 import {
   MEMBER_AUTH_GATE_TOAST_MESSAGE,
+  consumeMemberAuthGateReturnTo,
   consumeMemberAuthGateToastPending,
 } from '@/runtime/member-auth-gate-toast';
+import { AuthContext } from './AuthProvider';
 import { useToast } from './ToastProvider';
 
 const SIGN_IN_ERROR_MESSAGE = '登入失敗，請稍後再試';
@@ -32,6 +34,8 @@ function isSignInCancelError(error) {
  */
 export default function MemberAuthGateToastBridge() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useContext(AuthContext);
   const { showToast } = useToast();
   const handleSignInAction = useCallback(() => {
     signInWithGoogleUseCase().catch((error) => {
@@ -41,6 +45,15 @@ export default function MemberAuthGateToastBridge() {
       showToast(SIGN_IN_ERROR_MESSAGE, 'error');
     });
   }, [showToast]);
+
+  useEffect(() => {
+    if (pathname !== '/' || loading || !user?.uid) return;
+
+    const returnTo = consumeMemberAuthGateReturnTo();
+    if (!returnTo) return;
+
+    router.replace(returnTo);
+  }, [loading, pathname, router, user?.uid]);
 
   useEffect(() => {
     if (pathname !== '/') return;
