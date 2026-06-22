@@ -42,6 +42,7 @@ import createContentFavoriteSuccessActions from '@/runtime/hooks/content-favorit
 
 const PAGE_SIZE = 10;
 const OBSERVER_MARGIN = '300px 0px';
+const LOAD_POSTS_ERROR_MESSAGE = '載入文章失敗，請稍後再試';
 
 /**
  * @typedef {object} FavoritePostLocalMutation
@@ -85,6 +86,7 @@ export default function usePostsPageRuntime() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingPostId, setEditingPostId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(/** @type {string | null} */ (null));
   const [posts, setPosts] = useState([]);
   const [openMenuPostId, setOpenMenuPostId] = useState('');
   const [nextCursor, setNextCursor] = useState(null);
@@ -95,6 +97,8 @@ export default function usePostsPageRuntime() {
   const dialogRef = useRef(/** @type {HTMLDialogElement | null} */ (null));
   const bottomRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const isLoadingNextRef = useRef(false);
+  const isMountedRef = useRef(false);
+  const initialLoadRequestSeqRef = useRef(0);
   const favoritePostMutationVersionRef = useRef(0);
   const favoritePostLocalMutationsRef = useRef(new Map());
 
@@ -193,39 +197,55 @@ export default function usePostsPageRuntime() {
   );
 
   useEffect(() => {
-    let cancelled = false;
-
-    /** 載入第一頁文章與按讚狀態。 */
-    async function loadPosts() {
-      if (!cancelled) setIsLoading(true);
-      const hydrationMutationVersion = favoritePostMutationVersionRef.current;
-      try {
-        const { posts: hydratedPosts, nextCursor: initialCursor } = await loadInitialPosts(userUid);
-        if (cancelled) return;
-        setPosts(
-          preservePostFavoriteMutations(
-            hydratedPosts,
-            favoritePostLocalMutationsRef.current,
-            hydrationMutationVersion,
-          ),
-        );
-        setNextCursor(initialCursor);
-      } catch (error) {
-        console.error('取得文章失敗:', error);
-        if (!cancelled) {
-          setPosts([]);
-          setNextCursor(null);
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    loadPosts();
+    isMountedRef.current = true;
     return () => {
-      cancelled = true;
+      isMountedRef.current = false;
+      initialLoadRequestSeqRef.current += 1;
     };
+  }, []);
+
+  const loadFirstPagePosts = useCallback(async () => {
+    if (!isMountedRef.current) return;
+
+    const requestSeq = initialLoadRequestSeqRef.current + 1;
+    initialLoadRequestSeqRef.current = requestSeq;
+    const hydrationMutationVersion = favoritePostMutationVersionRef.current;
+    const isCurrentRequest = () =>
+      isMountedRef.current && initialLoadRequestSeqRef.current === requestSeq;
+
+    setIsLoading(true);
+    setLoadError(null);
+
+    try {
+      const { posts: hydratedPosts, nextCursor: initialCursor } = await loadInitialPosts(userUid);
+      if (!isCurrentRequest()) return;
+      setPosts(
+        preservePostFavoriteMutations(
+          hydratedPosts,
+          favoritePostLocalMutationsRef.current,
+          hydrationMutationVersion,
+        ),
+      );
+      setNextCursor(initialCursor);
+      setLoadError(null);
+    } catch (error) {
+      console.error('取得文章失敗:', error);
+      if (!isCurrentRequest()) return;
+      setLoadError(LOAD_POSTS_ERROR_MESSAGE);
+      setNextCursor(null);
+    } finally {
+      if (isCurrentRequest()) setIsLoading(false);
+    }
   }, [userUid]);
+
+  useEffect(() => {
+    loadFirstPagePosts();
+    return () => {
+      initialLoadRequestSeqRef.current += 1;
+    };
+  }, [loadFirstPagePosts]);
+
+  const retryLoadPosts = useCallback(() => loadFirstPagePosts(), [loadFirstPagePosts]);
 
   useEffect(() => {
     const toastMessage = searchParams.get('toast');
@@ -582,6 +602,7 @@ export default function usePostsPageRuntime() {
     isSubmitting,
     editingPostId,
     isLoading,
+    loadError,
     posts,
     openMenuPostId,
     isLoadingNext,
@@ -599,6 +620,7 @@ export default function usePostsPageRuntime() {
     handleComposeButton,
     handlePressLike,
     handleToggleFavoritePost,
+    retryLoadPosts,
     confirmContinuation,
     cancelContinuation,
     closeContinuation,

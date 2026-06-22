@@ -1,0 +1,77 @@
+.feed {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.scrollSentinel {
+  height: 1px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 48px 16px;
+  color: #5f6368;
+  font-size: 1rem;
+}
+
+.loadErrorState {
+  margin: 24px 0;
+  padding: 40px 16px;
+  border: 1px solid #e0e3e7;
+  border-radius: 8px;
+  background: #fff;
+  color: #3c4043;
+  text-align: center;
+}
+
+.loadErrorBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid #fad2cf;
+  border-radius: 8px;
+  background: #fff8f7;
+  color: #3c4043;
+}
+
+.loadErrorState p,
+.loadErrorBanner p {
+  margin: 0;
+}
+
+.retryButton {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: 1px solid #1a73e8;
+  border-radius: 6px;
+  background: #1a73e8;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.retryButton:hover {
+  background: #1558b0;
+  border-color: #1558b0;
+}
+
+.retryButton:focus-visible {
+  outline: 3px solid #a8c7fa;
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .loadErrorBanner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .retryButton {
+    width: 100%;
+  }
+}

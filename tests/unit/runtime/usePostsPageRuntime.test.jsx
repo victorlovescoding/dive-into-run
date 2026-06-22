@@ -312,6 +312,56 @@ describe('usePostsPageRuntime favorite login continuation', () => {
   });
 });
 
+describe('usePostsPageRuntime initial load errors', () => {
+  it('preserves existing posts and exposes retry after a reload failure', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      const retryPost = createPostSearchPost({
+        id: 'post-runtime-retry-loaded',
+        title: '重試後載入的文章',
+      });
+      const { result, setAuthUser } = renderUsePostsPageRuntime();
+
+      await waitFor(() => {
+        expect(result.current.posts.map((post) => post.id)).toEqual([
+          firstPost.id,
+          clickedPost.id,
+        ]);
+      });
+
+      mocks.getLatestPosts.mockRejectedValueOnce(new Error('feed unavailable'));
+      act(() => {
+        setAuthUser({ ...viewer, uid: 'posts-runtime-reloaded-viewer' });
+      });
+
+      await waitFor(() => {
+        expect(mocks.getLatestPosts).toHaveBeenNthCalledWith(2);
+        expect(result.current.isLoading).toBe(false);
+      });
+      expect(result.current.posts.map((post) => post.id)).toEqual([
+        firstPost.id,
+        clickedPost.id,
+      ]);
+      expect(result.current.loadError).toBe('載入文章失敗，請稍後再試');
+      expect(typeof result.current.retryLoadPosts).toBe('function');
+
+      mocks.getLatestPosts.mockResolvedValueOnce([retryPost]);
+      await act(async () => {
+        await getRuntimeHandler(result.current, 'retryLoadPosts')();
+      });
+
+      await waitFor(() => {
+        expect(result.current.posts.map((post) => post.id)).toEqual([retryPost.id]);
+      });
+      expect(result.current.loadError).toBeNull();
+      expect(mocks.getLatestPosts).toHaveBeenNthCalledWith(3);
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
+  });
+});
+
 describe('usePostsPageRuntime signed-in favorite regressions', () => {
   it('keeps signed-in add favorite on the existing branch without opening continuation', async () => {
     const { result } = renderUsePostsPageRuntime();

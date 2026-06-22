@@ -7,13 +7,33 @@ import FavoriteLoginContinuationDialog from '@/components/FavoriteLoginContinuat
 import PostCard from '@/components/PostCard';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import ReportDialog from '@/components/reports/ReportDialog';
-import styles from '@/app/posts/posts.module.css';
+import styles from '@/ui/posts/PostsPageScreen.module.css';
 import PostSearchForm from '@/ui/posts/PostSearchForm';
+
+/**
+ * 文章列表載入錯誤狀態。
+ * @param {object} props - Render props。
+ * @param {string} props.message - 錯誤訊息。
+ * @param {() => void | Promise<void>} props.onRetry - 重試載入 callback。
+ * @param {boolean} [props.isInline] - 是否顯示為列表上方的非阻塞提示。
+ * @returns {import('react').ReactElement} 錯誤提示。
+ */
+function PostsLoadErrorBlock({ message, onRetry, isInline = false }) {
+  return (
+    <div className={isInline ? styles.loadErrorBanner : styles.loadErrorState} role="alert">
+      <p>{message}</p>
+      <button className={styles.retryButton} type="button" onClick={() => onRetry()}>
+        重試
+      </button>
+    </div>
+  );
+}
 
 /**
  * 渲染文章列表或空狀態。
  * @param {object} props - Render props。
  * @param {boolean} props.isLoading - 是否初始載入中。
+ * @param {string | null} props.loadError - 初始載入失敗訊息。
  * @param {Array<object>} props.posts - 文章列表。
  * @param {string} props.openMenuPostId - 目前展開選單的文章 ID。
  * @param {(postId: string, event: import('react').MouseEvent) => void} props.onToggleMenu - 切換選單。
@@ -24,10 +44,12 @@ import PostSearchForm from '@/ui/posts/PostSearchForm';
  * @param {(postId: string) => void | Promise<void>} props.onToggleFavorite - 收藏文章。
  * @param {(post: object) => void | Promise<void>} props.onViewArticleHistory - 查看文章編輯記錄。
  * @param {(post: object) => void | Promise<void>} [props.onReport] - 開啟文章檢舉流程。
+ * @param {() => void | Promise<void>} props.onRetryLoadPosts - 重試初始載入。
  * @returns {import('react').ReactNode} 文章列表內容。
  */
 function renderPostList({
   isLoading,
+  loadError,
   posts,
   openMenuPostId,
   onToggleMenu,
@@ -38,30 +60,42 @@ function renderPostList({
   onToggleFavorite,
   onViewArticleHistory,
   onReport,
+  onRetryLoadPosts,
 }) {
   if (isLoading) {
     return <PostCardSkeleton count={3} />;
+  }
+
+  if (loadError && posts.length === 0) {
+    return <PostsLoadErrorBlock message={loadError} onRetry={onRetryLoadPosts} />;
   }
 
   if (posts.length === 0) {
     return <p className={styles.emptyState}>還沒有文章，成為第一個分享的人吧！</p>;
   }
 
-  return posts.map((post) => (
-    <PostCard
-      key={post.id}
-      post={post}
-      openMenuPostId={openMenuPostId}
-      onToggleMenu={onToggleMenu}
-      onCloseMenu={onCloseMenu}
-      onEdit={onEdit}
-      onDelete={onDelete}
-      onLike={onLike}
-      onToggleFavorite={onToggleFavorite}
-      onViewArticleHistory={onViewArticleHistory}
-      onReport={onReport}
-    />
-  ));
+  return (
+    <>
+      {loadError && (
+        <PostsLoadErrorBlock message={loadError} onRetry={onRetryLoadPosts} isInline />
+      )}
+      {posts.map((post) => (
+        <PostCard
+          key={post.id}
+          post={post}
+          openMenuPostId={openMenuPostId}
+          onToggleMenu={onToggleMenu}
+          onCloseMenu={onCloseMenu}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onLike={onLike}
+          onToggleFavorite={onToggleFavorite}
+          onViewArticleHistory={onViewArticleHistory}
+          onReport={onReport}
+        />
+      ))}
+    </>
+  );
 }
 
 /**
@@ -80,6 +114,7 @@ export default function PostsPageScreen({ runtime }) {
     isSubmitting,
     editingPostId,
     isLoading,
+    loadError,
     posts,
     openMenuPostId,
     isLoadingNext,
@@ -95,6 +130,7 @@ export default function PostsPageScreen({ runtime }) {
     setContent,
     handleComposeButton,
     handlePressLike,
+    retryLoadPosts,
     handleToggleOwnerMenu,
     handleCloseOwnerMenu,
     handleDeletePost,
@@ -130,6 +166,7 @@ export default function PostsPageScreen({ runtime }) {
 
       {renderPostList({
         isLoading,
+        loadError,
         posts,
         openMenuPostId,
         onToggleMenu: handleToggleOwnerMenu,
@@ -140,6 +177,7 @@ export default function PostsPageScreen({ runtime }) {
         onToggleFavorite: handleToggleFavoritePost,
         onViewArticleHistory: handleViewArticleHistory,
         onReport: handleReportPost,
+        onRetryLoadPosts: retryLoadPosts,
       })}
 
       {isLoadingNext && <PostCardSkeleton count={1} />}

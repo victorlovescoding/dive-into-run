@@ -158,6 +158,7 @@ function createRuntime(overrides = {}) {
     isSubmitting: false,
     editingPostId: null,
     isLoading: false,
+    loadError: null,
     posts: [],
     openMenuPostId: '',
     isLoadingNext: false,
@@ -177,6 +178,7 @@ function createRuntime(overrides = {}) {
     handleDeletePost: vi.fn(),
     handleSubmitPost: vi.fn(),
     handleToggleFavoritePost: vi.fn(),
+    retryLoadPosts: vi.fn(),
     handleViewArticleHistory: vi.fn(),
     handleCloseArticleHistory: vi.fn(),
     confirmContinuation: vi.fn(),
@@ -215,6 +217,53 @@ describe('PostsPageScreen search entry', () => {
     expect(feed).toContainElement(searchForm);
     expect(searchForm).toAppearBefore(composePrompt);
     expect(within(searchForm).getByRole('searchbox', { name: '搜尋文章' })).toBeInTheDocument();
+  });
+
+  it('renders initial load errors as retryable alerts instead of the empty state', async () => {
+    const user = setupPostsSearchUser();
+    const retryLoadPosts = vi.fn();
+
+    renderScreen({
+      loadError: '載入文章失敗，請稍後再試',
+      retryLoadPosts,
+    });
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('載入文章失敗，請稍後再試');
+    expect(screen.queryByText('還沒有文章，成為第一個分享的人吧！')).not.toBeInTheDocument();
+
+    await user.click(within(alert).getByRole('button', { name: '重試' }));
+
+    expect(retryLoadPosts).toHaveBeenLastCalledWith();
+  });
+
+  it('keeps existing posts visible while showing a retryable load error alert', async () => {
+    const user = setupPostsSearchUser();
+    const retryLoadPosts = vi.fn();
+    const post = createPostSearchPost({
+      id: 'post-screen-load-error-existing',
+      title: '載入錯誤時保留的文章',
+      content: '既有文章列表不應被錯誤狀態取代。',
+    });
+
+    renderScreen({
+      loadError: '載入文章失敗，請稍後再試',
+      posts: [post],
+      retryLoadPosts,
+    });
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('載入文章失敗，請稍後再試');
+    expect(screen.getByRole('heading', { level: 2, name: '載入錯誤時保留的文章' })).toBeInTheDocument();
+    expect(screen.getByTestId('post-card')).toHaveAttribute(
+      'data-post-id',
+      'post-screen-load-error-existing',
+    );
+    expect(screen.queryByText('還沒有文章，成為第一個分享的人吧！')).not.toBeInTheDocument();
+
+    await user.click(within(alert).getByRole('button', { name: '重試' }));
+
+    expect(retryLoadPosts).toHaveBeenLastCalledWith();
   });
 
   it('renders the search form without changing main feed post cards', () => {
