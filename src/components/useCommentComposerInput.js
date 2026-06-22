@@ -7,6 +7,8 @@ const COMMENT_MAX_LENGTH = 500;
  * @param {object} options - Hook options.
  * @param {(content: string) => boolean | Promise<boolean>} options.onSubmit - 送出草稿，成功回傳 true。
  * @param {boolean} options.isSubmitting - 外部送出中狀態。
+ * @param {string} [options.initialContent] - 草稿初始化內容，供編輯模式帶入原留言。
+ * @param {string | number | null} [options.draftKey] - 需要重設草稿的留言識別。
  * @returns {{
  *   content: string,
  *   setContent: import('react').Dispatch<import('react').SetStateAction<string>>,
@@ -20,8 +22,14 @@ const COMMENT_MAX_LENGTH = 500;
  *   handleKeyDown: (event: import('react').KeyboardEvent<HTMLInputElement>) => void,
  * }} 留言輸入框狀態與事件處理器。
  */
-export default function useCommentComposerInput({ onSubmit, isSubmitting }) {
-  const [content, setContent] = useState('');
+export default function useCommentComposerInput({
+  onSubmit,
+  isSubmitting,
+  initialContent,
+  draftKey,
+}) {
+  const initialDraft = typeof initialContent === 'string' ? initialContent : '';
+  const [content, setContent] = useState(initialDraft);
   const [isSubmitPending, setIsSubmitPending] = useState(false);
   const [refocusToken, setRefocusToken] = useState(0);
   const textboxRef = useRef(/** @type {HTMLInputElement | null} */ (null));
@@ -34,6 +42,10 @@ export default function useCommentComposerInput({ onSubmit, isSubmitting }) {
   const isSubmittingDraft = isSubmitting || isSubmitPending;
   const canSubmit = !isEmpty && !isOverLimit && !isSubmittingDraft;
   const isDisabled = !canSubmit;
+
+  useEffect(() => {
+    setContent(initialDraft);
+  }, [draftKey, initialDraft]);
 
   const requestRefocus = useCallback(() => {
     pendingRefocusRef.current = true;

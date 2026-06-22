@@ -39,9 +39,22 @@ function resolveAvatarName(user) {
  * @param {(content: string) => boolean | Promise<boolean>} props.onSubmit - 送出留言回呼，成功回傳 true。
  * @param {boolean} props.isSubmitting - 是否送出中。
  * @param {string} [props.className] - 額外套用到 fixed wrapper 的 layout class。
+ * @param {boolean} [props.isEditing] - 是否以編輯既有留言的模式顯示。
+ * @param {string} [props.initialContent] - 編輯模式帶入的原留言內容。
+ * @param {string | number | null} [props.draftKey] - 需要重新帶入草稿的留言識別。
+ * @param {() => void} [props.onCancel] - 取消編輯回呼。
  * @returns {import('react').ReactElement} 留言輸入框元件。
  */
-export default function CommentInput({ user, onSubmit, isSubmitting, className }) {
+export default function CommentInput({
+  user,
+  onSubmit,
+  isSubmitting,
+  className,
+  isEditing = false,
+  initialContent,
+  draftKey,
+  onCancel,
+}) {
   const {
     content,
     setContent,
@@ -51,7 +64,12 @@ export default function CommentInput({ user, onSubmit, isSubmitting, className }
     textboxRef,
     handleSubmit,
     handleKeyDown,
-  } = useCommentComposerInput({ onSubmit, isSubmitting });
+  } = useCommentComposerInput({
+    onSubmit,
+    isSubmitting,
+    initialContent,
+    draftKey,
+  });
   const avatarSrc = resolveAvatarSrc(user?.photoURL);
   const avatarName = resolveAvatarName(user);
   const showCharCount = content.length > 450;
@@ -59,9 +77,31 @@ export default function CommentInput({ user, onSubmit, isSubmitting, className }
     ? `${styles.charCount} ${styles.charCountOver}`
     : styles.charCount;
   const wrapperClassName = className ? `${styles.wrapper} ${className}` : styles.wrapper;
+  const groupLabel = isEditing ? '留言編輯區' : '留言輸入區';
+  const inputLabel = isEditing ? '編輯留言' : '留言';
+  const submitLabel = isEditing ? '儲存留言' : '送出留言';
+  const pendingLabel = isEditing ? '儲存中' : '送出中';
+  const submitText = isEditing ? '儲存' : '送出';
 
   return (
-    <div className={wrapperClassName} role="group" aria-label="留言輸入區">
+    <div className={wrapperClassName} role="group" aria-label={groupLabel}>
+      {isEditing && (
+        <div className={styles.editingHeader}>
+          <span className={styles.editingLabel}>正在編輯</span>
+          {onCancel && (
+            <button
+              type="button"
+              className={styles.cancelEditButton}
+              onClick={() => {
+                onCancel();
+              }}
+              aria-label="取消編輯"
+            >
+              取消
+            </button>
+          )}
+        </div>
+      )}
       <div className={styles.inputRow}>
         <Image
           src={avatarSrc}
@@ -74,13 +114,13 @@ export default function CommentInput({ user, onSubmit, isSubmitting, className }
         <input
           ref={textboxRef}
           type="text"
-          aria-label="留言"
+          aria-label={inputLabel}
           aria-invalid={isOverLimit}
           aria-describedby={showCharCount ? 'comment-input-count' : undefined}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="留言"
+          placeholder={inputLabel}
           className={styles.textbox}
           disabled={isComposerSubmitting}
         />
@@ -91,9 +131,9 @@ export default function CommentInput({ user, onSubmit, isSubmitting, className }
           }}
           disabled={isDisabled}
           className={styles.submitButton}
-          aria-label="送出留言"
+          aria-label={submitLabel}
         >
-          {isComposerSubmitting ? '送出中' : '送出'}
+          {isComposerSubmitting ? pendingLabel : submitText}
         </button>
       </div>
       {showCharCount && (

@@ -47,6 +47,23 @@
   font-weight: 700;
 }
 
+.emptyComments {
+  margin: 12px 0 0;
+  color: #5f6368;
+  font-size: 0.92rem;
+}
+
+.commentUpdateError {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #f28b82;
+  border-radius: 8px;
+  background: #fce8e6;
+  color: #c5221f;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .postActionGroup {
   display: inline-flex;
   align-items: center;

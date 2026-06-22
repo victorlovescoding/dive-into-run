@@ -54,9 +54,16 @@ vi.mock('next/link', () => ({
 vi.mock('@/components/CommentInput', () => ({
   default: function MockCommentInput(props) {
     commentInputProps.push(props);
-    const [draft, setDraft] = React.useState('');
+    const [draft, setDraft] = React.useState(props.initialContent ?? '');
     const avatarSrc = props.user?.photoURL || '/default-avatar.png';
+    const textboxLabel = props.isEditing ? '編輯留言' : '留言';
+    const submitLabel = props.isEditing ? '儲存留言' : '送出留言';
+    const submitText = props.isEditing ? '儲存' : '送出';
     const isDisabled = props.isSubmitting || draft.trim() === '' || draft.length > 500;
+
+    React.useEffect(() => {
+      setDraft(props.initialContent ?? '');
+    }, [props.draftKey, props.initialContent]);
 
     const handleSubmit = async () => {
       if (isDisabled) return;
@@ -66,16 +73,23 @@ vi.mock('@/components/CommentInput', () => ({
 
     return (
       <div data-testid="post-comment-composer">
+        {props.isEditing && <p>正在編輯</p>}
         <img src={avatarSrc} alt="目前使用者大頭貼" data-testid="post-comment-avatar" />
         <input
-          aria-label="留言"
+          aria-label={textboxLabel}
+          placeholder={textboxLabel}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           disabled={props.isSubmitting}
         />
-        <button type="button" aria-label="送出留言" onClick={handleSubmit} disabled={isDisabled}>
-          送出
+        <button type="button" aria-label={submitLabel} onClick={handleSubmit} disabled={isDisabled}>
+          {submitText}
         </button>
+        {props.isEditing && (
+          <button type="button" aria-label="取消編輯" onClick={props.onCancel}>
+            取消
+          </button>
+        )}
       </div>
     );
   },
@@ -326,6 +340,17 @@ describe('PostDetailScreen comment composer', () => {
     ]);
   });
 
+  it('renders an empty state when there are no pinned or visible comments', () => {
+    renderScreen({
+      pinnedComment: null,
+      visibleComments: [],
+      comments: [],
+    });
+
+    expect(screen.getByText('還沒有人留言')).toBeInTheDocument();
+    expect(screen.queryAllByTestId('comment-card')).toHaveLength(0);
+  });
+
   it('passes authenticated users without a usable photoURL to the shared fallback-avatar path', () => {
     const userWithoutPhoto = { ...authenticatedUser, photoURL: '' };
     renderScreen({ user: userWithoutPhoto });
@@ -380,6 +405,42 @@ describe('PostDetailScreen comment composer', () => {
 
     await user.click(submitButton);
     expect(handleSubmitComment).toHaveBeenLastCalledWith('有效留言');
+  });
+
+  it('uses the shared composer for editing comments without opening the edit dialog', async () => {
+    const user = userEvent.setup();
+    const handleSubmitComment = vi.fn().mockResolvedValue(true);
+    const handleEditSave = vi.fn().mockResolvedValue(true);
+    const handleEditCancel = vi.fn();
+
+    renderScreen({
+      editingComment: {
+        id: 'comment-editing',
+        authorUid: authenticatedUser.uid,
+        content: '原本留言內容',
+        createdAt: null,
+      },
+      handleSubmitComment,
+      handleEditSave,
+      handleEditCancel,
+    });
+
+    expect(screen.queryByRole('dialog', { name: '編輯留言' })).not.toBeInTheDocument();
+    expect(screen.getByText('正在編輯')).toBeInTheDocument();
+    const textbox = screen.getByRole('textbox', { name: '編輯留言' });
+    expect(textbox).toHaveValue('原本留言內容');
+    expect(textbox).toHaveAttribute('placeholder', '編輯留言');
+    expect(screen.queryByRole('button', { name: '送出留言' })).not.toBeInTheDocument();
+
+    await user.clear(textbox);
+    await user.type(textbox, '改好的留言內容');
+    await user.click(screen.getByRole('button', { name: '儲存留言' }));
+
+    expect(handleEditSave).toHaveBeenLastCalledWith('改好的留言內容');
+    expect(handleSubmitComment).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: '取消編輯' }));
+    expect(handleEditCancel).toHaveBeenCalledWith();
   });
 });
 

@@ -27,6 +27,35 @@
   gap: 10px;
 }
 
+.editingHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding-left: 46px;
+}
+
+.editingLabel {
+  color: #202124;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.cancelEditButton {
+  border: none;
+  background: transparent;
+  color: #5f6368;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cancelEditButton:hover {
+  color: #202124;
+}
+
 .avatar {
   width: 36px;
   height: 36px;
@@ -122,6 +151,11 @@
   .inputRow {
     grid-template-columns: 34px minmax(0, 1fr) auto;
     gap: 8px;
+  }
+
+  .editingHeader {
+    margin-bottom: 6px;
+    padding-left: 42px;
   }
 
   .avatar {
