@@ -229,7 +229,10 @@ function WeatherStandardMetric({ metric, label, value, levelOrStatus, infoButton
           <div className={styles.metricLabel}>{label}</div>
         </div>
         <button ref={buttonRef} type="button" className={styles.metricInfoButton} aria-label={infoButtonLabel} aria-controls={controlId} aria-expanded={isOpen} onClick={onToggle}>
-          <span aria-hidden="true" className={styles.metricInfoGlyph}>i</span>
+          <svg className={styles.metricInfoIcon} viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-testid="weather-standard-info-icon">
+            <circle cx="12" cy="12" r="9" />
+            <circle cx="12" cy="8" r="0.75" fill="currentColor" stroke="none" /><path d="M12 11v6" />
+          </svg>
         </button>
       </div>
       <div className={styles.metricStandardText}>{levelOrStatus}</div>
