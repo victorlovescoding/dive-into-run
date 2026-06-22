@@ -4,7 +4,6 @@
 import { useCallback, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import CommentCard from '@/components/CommentCard';
-import CommentEditModal from '@/components/CommentEditModal';
 import CommentHistoryModal from '@/components/CommentHistoryModal';
 import CommentInput from '@/components/CommentInput';
 import ComposeModal from '@/components/ComposeModal';
@@ -178,7 +177,9 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     : localUpdateError;
   const activeHistoryComment = historyComment ? mapToCommentCardData(historyComment) : null;
   const shouldRenderCommentComposer = !!user;
-  const renderedComments = visibleComments ?? comments;
+  const renderedComments = visibleComments ?? comments ?? [];
+  const hasRenderedComments = renderedComments.length > 0;
+  const shouldRenderCommentsEmpty = !pinnedComment && !hasRenderedComments;
   const detailContainerClassName = shouldRenderCommentComposer
     ? `${styles.detailContainer} ${styles.detailWithComposerReserve}`
     : styles.detailContainer;
@@ -234,15 +235,15 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
 
   const handleSaveCommentEdit = useCallback(
     async (newContent) => {
-      if (!activeEditingComment) return;
+      if (!activeEditingComment) return false;
 
       if (handleEditSave) {
         const didSave = await handleEditSave(newContent);
-        if (didSave !== false) {
-          setLocalEditingComment(null);
-          setLocalUpdateError(null);
-        }
-        return;
+        if (didSave === false) return false;
+
+        setLocalEditingComment(null);
+        setLocalUpdateError(null);
+        return true;
       }
 
       setLocalIsUpdating(true);
@@ -251,11 +252,13 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
         const didSave = await handleEditComment(activeEditingComment.id, newContent);
         if (didSave === false) {
           setLocalUpdateError('更新失敗，請再試一次');
-          return;
+          return false;
         }
         setLocalEditingComment(null);
+        return true;
       } catch {
         setLocalUpdateError('更新失敗，請再試一次');
+        return false;
       } finally {
         setLocalIsUpdating(false);
       }
@@ -268,6 +271,13 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
     setLocalEditingComment(null);
     setLocalUpdateError(null);
   }, [handleEditCancel]);
+  const activeEditingInitialContent = activeEditingComment
+    ? mapToCommentCardData(activeEditingComment).content
+    : '';
+  const composerSubmitHandler = activeEditingComment
+    ? handleSaveCommentEdit
+    : handleSubmitComment;
+  const composerIsSubmitting = activeEditingComment ? activeIsUpdating : isSubmitting;
 
   return (
     <div className={detailContainerClassName}>
@@ -342,24 +352,27 @@ export default function PostDetailScreen({ postId: _postId, runtime }) {
                 onReport={handleReportComment}
               />
             ))}
+            {shouldRenderCommentsEmpty && (
+              <p className={styles.emptyComments}>還沒有人留言</p>
+            )}
           </section>
+
+          {activeEditingComment && activeUpdateError && (
+            <div role="alert" className={styles.commentUpdateError}>
+              {activeUpdateError}
+            </div>
+          )}
 
           {shouldRenderCommentComposer && (
             <CommentInput
               user={user}
-              onSubmit={handleSubmitComment}
-              isSubmitting={isSubmitting}
+              onSubmit={composerSubmitHandler}
+              isSubmitting={composerIsSubmitting}
               className={styles.postComposer}
-            />
-          )}
-
-          {activeEditingComment && (
-            <CommentEditModal
-              comment={activeEditingComment}
-              isUpdating={activeIsUpdating}
-              updateError={activeUpdateError}
-              onSave={handleSaveCommentEdit}
-              onCancel={handleCancelCommentEdit}
+              isEditing={!!activeEditingComment}
+              initialContent={activeEditingInitialContent}
+              draftKey={activeEditingComment?.id ?? null}
+              onCancel={activeEditingComment ? handleCancelCommentEdit : undefined}
             />
           )}
 

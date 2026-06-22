@@ -126,9 +126,14 @@ function makePostComments(overrides = {}) {
     historyEntries: [],
     historyError: null,
     highlightedCommentId: 'comment-old',
+    editingComment: null,
+    isUpdating: false,
+    updateError: null,
     isLoadingNext: false,
     bottomRef: { current: null },
     handleEditComment: vi.fn(),
+    handleEditSave: vi.fn(),
+    handleEditCancel: vi.fn(),
     handleDeleteComment: vi.fn(),
     handleViewHistory: vi.fn(),
     handleCloseHistory: vi.fn(),
@@ -223,6 +228,34 @@ describe('usePostDetailRuntime comment target boundary', () => {
     expect(result.current.visibleComments).toBe(visibleComments);
     expect(result.current.activeTargetId).toBe('comment-old');
     expect(result.current.isLoadingTargetComment).toBe(false);
+  });
+
+  it('forwards post comment edit state and handlers to the screen runtime contract', () => {
+    const editingComment = {
+      id: 'comment-editing',
+      authorUid: viewer.uid,
+      content: '正在編輯的留言',
+    };
+    const handleEditComment = vi.fn();
+    const handleEditSave = vi.fn();
+    const handleEditCancel = vi.fn();
+    mocks.usePostComments.mockReturnValueOnce(makePostComments({
+      editingComment,
+      isUpdating: true,
+      updateError: '更新失敗',
+      handleEditComment,
+      handleEditSave,
+      handleEditCancel,
+    }));
+
+    const { result } = renderUsePostDetailRuntime();
+
+    expect(result.current.editingComment).toBe(editingComment);
+    expect(result.current.isUpdating).toBe(true);
+    expect(result.current.updateError).toBe('更新失敗');
+    expect(result.current.handleEditComment).toBe(handleEditComment);
+    expect(result.current.handleEditSave).toBe(handleEditSave);
+    expect(result.current.handleEditCancel).toBe(handleEditCancel);
   });
 });
 

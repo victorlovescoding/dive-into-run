@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import '@testing-library/jest-dom/vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -32,19 +34,24 @@ const currentUser = {
 function renderCommentInput(props = {}) {
   const onSubmit = props.onSubmit ?? vi.fn().mockResolvedValue(true);
   const user = Object.hasOwn(props, 'user') ? props.user : currentUser;
+  const isEditing = props.isEditing ?? false;
   render(
     <CommentInput
       user={user}
       onSubmit={onSubmit}
       isSubmitting={props.isSubmitting ?? false}
       className={props.className}
+      isEditing={isEditing}
+      initialContent={props.initialContent}
+      draftKey={props.draftKey}
+      onCancel={props.onCancel}
     />,
   );
 
   return {
     onSubmit,
-    textbox: screen.getByRole('textbox', { name: '留言' }),
-    submitButton: screen.getByRole('button', { name: '送出留言' }),
+    textbox: screen.getByRole('textbox', { name: isEditing ? '編輯留言' : '留言' }),
+    submitButton: screen.getByRole('button', { name: isEditing ? '儲存留言' : '送出留言' }),
   };
 }
 
@@ -58,6 +65,16 @@ function getComposerAvatar(name = currentUser.name) {
 }
 
 describe('CommentInput', () => {
+  it('預設新增留言模式維持新增語意', () => {
+    const { textbox, submitButton } = renderCommentInput();
+
+    expect(screen.getByRole('group', { name: '留言輸入區' })).toBeInTheDocument();
+    expect(textbox).toHaveAttribute('placeholder', '留言');
+    expect(submitButton).toHaveTextContent('送出');
+    expect(screen.queryByText('正在編輯')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '取消編輯' })).not.toBeInTheDocument();
+  });
+
   it('applies custom layout className to the fixed wrapper', () => {
     const { submitButton } = renderCommentInput({ className: 'unit-composer-layout' });
 
@@ -191,5 +208,36 @@ describe('CommentInput', () => {
 
     await user.click(submitButton);
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('編輯模式顯示編輯語意、帶入原內容、儲存並可取消', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(true);
+    const onCancel = vi.fn();
+    const { textbox, submitButton } = renderCommentInput({
+      isEditing: true,
+      initialContent: '原本的留言',
+      draftKey: 'comment-1',
+      onSubmit,
+      onCancel,
+    });
+
+    expect(screen.getByRole('group', { name: '留言編輯區' })).toBeInTheDocument();
+    expect(screen.getByText('正在編輯')).toBeInTheDocument();
+    expect(textbox).toHaveAttribute('placeholder', '編輯留言');
+    expect(textbox).toHaveValue('原本的留言');
+    expect(submitButton).toHaveTextContent('儲存');
+    expect(screen.queryByRole('button', { name: '送出留言' })).not.toBeInTheDocument();
+
+    await user.clear(textbox);
+    await user.type(textbox, '更新後留言');
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith('更新後留言');
+    });
+
+    await user.click(screen.getByRole('button', { name: '取消編輯' }));
+    expect(onCancel).toHaveBeenCalledWith();
   });
 });
