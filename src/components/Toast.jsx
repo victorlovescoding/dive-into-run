@@ -25,6 +25,8 @@ import styles from './Toast.module.css';
 
 /** @type {number} 自動消失延遲（毫秒）。 */
 const AUTO_DISMISS_MS = 3000;
+/** @type {number} 有操作按鈕時的自動消失延遲（毫秒）。 */
+const ACTION_AUTO_DISMISS_MS = 8000;
 
 /**
  * 根據 toast type 回傳對應的 ARIA role。
@@ -45,6 +47,8 @@ function getAriaRole(type) {
 export default function Toast({ toast, onClose }) {
   const { id, message, type, action, actions } = toast;
   const renderedActions = actions?.length ? actions : action ? [action] : [];
+  const autoDismissMs =
+    renderedActions.length > 0 ? ACTION_AUTO_DISMISS_MS : AUTO_DISMISS_MS;
 
   const [animState, setAnimState] = useState('entering');
 
@@ -60,16 +64,16 @@ export default function Toast({ toast, onClose }) {
     onClose(id);
   }, [id, onClose]);
 
-  // 自動消失：success/info 3 秒後呼叫 onClose；error 需使用者手動關閉。
+  // 自動消失：success/info 會自動關閉；有操作按鈕時給使用者更長反應時間。
   useEffect(() => {
     if (type === 'error') return undefined;
 
     const timerId = setTimeout(() => {
       handleClose();
-    }, AUTO_DISMISS_MS);
+    }, autoDismissMs);
 
     return () => clearTimeout(timerId);
-  }, [type, handleClose]);
+  }, [type, handleClose, autoDismissMs]);
 
   const className = [styles.toast, styles[type], styles[animState]].join(' ');
 
