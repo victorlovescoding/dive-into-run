@@ -4,6 +4,8 @@ import {
   EVENT_STARTED_LOCK_ERROR_STATUS,
 } from '@/service/event-service';
 
+export const EVENT_DEADLINE_BEFORE_START_ERROR = '報名截止時間必須在活動開始時間之前';
+
 /**
  * 將陣列分割為指定大小的子陣列。
  * @template T
@@ -57,6 +59,20 @@ export function toMs(value) {
     return value.toDate().getTime();
   }
   return null;
+}
+
+/**
+ * 驗證報名截止時間必須早於活動開始時間；空值或不可解析日期交給原生欄位驗證。
+ * @param {string | null | undefined} eventTime - datetime-local 活動開始時間。
+ * @param {string | null | undefined} registrationDeadline - datetime-local 報名截止時間。
+ * @returns {string} inline validation error；有效、空值或不可解析時回傳空字串。
+ */
+export function validateEventDeadlineBeforeStart(eventTime, registrationDeadline) {
+  const eventTimeMs = toMs(eventTime);
+  const deadlineMs = toMs(registrationDeadline);
+
+  if (eventTimeMs === null || deadlineMs === null) return '';
+  return deadlineMs >= eventTimeMs ? EVENT_DEADLINE_BEFORE_START_ERROR : '';
 }
 
 /**

@@ -103,6 +103,9 @@ function createRuntime(overrides = {}) {
     cityOptions: [],
     filterDistrictOptions: [],
     selectedDistrictOptions: [],
+    eventTimeValue: '',
+    registrationDeadlineValue: '',
+    registrationDeadlineError: '',
     dialogState: createFavoriteLoginDialogState({ isOpen: false }),
     getRemainingSeats: vi.fn(),
     setFilterTimeStart: vi.fn(),
@@ -113,6 +116,8 @@ function createRuntime(overrides = {}) {
     setFilterDistrict: vi.fn(),
     setSelectedDistrict: vi.fn(),
     setRouteCoordinates: vi.fn(),
+    setEventTimeValue: vi.fn(),
+    setRegistrationDeadlineValue: vi.fn(),
     handleOpenFilter: vi.fn(),
     handleCloseFilter: vi.fn(),
     handleFilterCityChange: vi.fn(),
@@ -215,5 +220,28 @@ describe('EventsPageScreen favorite login continuation dialog', () => {
     expect(confirmContinuation).toHaveBeenLastCalledWith();
     expect(cancelContinuation).toHaveBeenLastCalledWith();
     expect(closeContinuation).toHaveBeenLastCalledWith();
+  });
+
+  it('forwards create form deadline validation state and setters to EventCreateForm', () => {
+    const setEventTimeValue = vi.fn();
+    const setRegistrationDeadlineValue = vi.fn();
+
+    renderScreen({
+      user: { uid: 'runner-1' },
+      isFormOpen: true,
+      eventTimeValue: '2026-07-01T10:00',
+      registrationDeadlineValue: '2026-07-01T10:00',
+      registrationDeadlineError: '報名截止時間必須在活動開始時間之前',
+      setEventTimeValue,
+      setRegistrationDeadlineValue,
+    });
+
+    expect(eventCreateFormProps[0]).toMatchObject({
+      eventTimeValue: '2026-07-01T10:00',
+      registrationDeadlineValue: '2026-07-01T10:00',
+      registrationDeadlineError: '報名截止時間必須在活動開始時間之前',
+      onTimeChange: setEventTimeValue,
+      onRegistrationDeadlineChange: setRegistrationDeadlineValue,
+    });
   });
 });
