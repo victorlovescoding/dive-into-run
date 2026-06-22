@@ -73,19 +73,16 @@ export default function NotificationProvider({ children }) {
     /** @type {import('@/service/notification-service').NotificationItem[]} */ ([]),
   );
   const [toastState, setToastState] = useState(() => ({
-    queue: /** @type {{ id: string, message: string }[]} */ ([]),
-    current: /** @type {{ id: string, message: string } | null} */ (null),
+    queue: /** @type {import('@/service/notification-service').NotificationItem[]} */ ([]),
+    current: /** @type {import('@/service/notification-service').NotificationItem | null} */ (null),
   }));
   const currentToast = toastState.current;
-
   const { user } = useContext(AuthContext);
   const toastCtx = useContext(ToastContext);
   const showToast = toastCtx?.showToast;
-
   const bellButtonRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const isPanelOpenRef = useRef(false);
   const showToastRef = useRef(showToast);
-
   useEffect(() => {
     showToastRef.current = showToast;
   }, [showToast]);
@@ -129,13 +126,9 @@ export default function NotificationProvider({ children }) {
       (newNotifications) => {
         if (isPanelOpenRef.current) return;
 
-        const toasts = newNotifications.map((n) => ({
-          id: n.id || String(Date.now()),
-          message: n.message,
-        }));
         setToastState((prev) => ({
           ...prev,
-          queue: [...prev.queue, ...toasts],
+          queue: [...prev.queue, ...newNotifications],
         }));
       },
     );
@@ -156,6 +149,7 @@ export default function NotificationProvider({ children }) {
       setUnreadPaginationCursor(null);
       setUnreadServerExhausted(false);
       setExtraUnreadNotifications([]);
+      setToastState({ current: null, queue: [] });
     };
   }, [user]);
 
@@ -198,6 +192,13 @@ export default function NotificationProvider({ children }) {
     bellButtonRef.current?.focus();
   }, []);
 
+  const dismissNotificationToast = useCallback((notificationId) => {
+    setToastState((prev) => ({
+      current: prev.current?.id === notificationId ? null : prev.current,
+      queue: prev.queue.filter((notification) => notification.id !== notificationId),
+    }));
+  }, []);
+
   const markAsRead = useCallback(
     /**
      * 標記單則通知已讀（含 optimistic update）。
@@ -214,10 +215,11 @@ export default function NotificationProvider({ children }) {
       });
       setUnreadNotifications((prev) => prev.filter((n) => n.id !== notificationId));
       setExtraUnreadNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      dismissNotificationToast(notificationId);
 
       await markNotificationAsRead(notificationId);
     },
-    [],
+    [dismissNotificationToast],
   );
 
   const displayedNotifications = useMemo(() => {
@@ -329,8 +331,7 @@ export default function NotificationProvider({ children }) {
       isLoadingMore,
       hasLoadedMore,
       loadMore,
-      currentToast,
-      bellButtonRef,
+      currentToast, dismissNotificationToast, bellButtonRef,
     }),
     [
       unreadNotifications.length,
@@ -344,7 +345,7 @@ export default function NotificationProvider({ children }) {
       isLoadingMore,
       hasLoadedMore,
       loadMore,
-      currentToast,
+      currentToast, dismissNotificationToast,
     ],
   );
 

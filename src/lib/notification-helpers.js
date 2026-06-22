@@ -63,6 +63,36 @@ export function formatRelativeTime(timestamp) {
 
 export { buildNotificationMessage } from '@/service/notification-service';
 
+const POST_COMMENT_TYPES = new Set(['post_new_comment', 'post_comment_reply']);
+const EVENT_COMMENT_TYPES = new Set([
+  'event_host_comment',
+  'event_participant_comment',
+  'event_comment_reply',
+]);
+const EVENT_TYPES = new Set([
+  ...EVENT_COMMENT_TYPES,
+  'event_modified',
+  'event_cancelled',
+  'event_host_joined',
+]);
+
+/**
+ * Resolves the notification destination family.
+ * @param {NotificationItem} notification - 通知資料。
+ * @returns {'/posts'|'/events'} 導航根路徑。
+ */
+function getNotificationBasePath(notification) {
+  if (POST_COMMENT_TYPES.has(notification.type)) {
+    return '/posts';
+  }
+
+  if (EVENT_TYPES.has(notification.type)) {
+    return '/events';
+  }
+
+  return notification.entityType === 'post' ? '/posts' : '/events';
+}
+
 /**
  * 根據通知資料回傳導航 URL。
  * @param {NotificationItem} notification - 通知資料。
@@ -70,18 +100,18 @@ export { buildNotificationMessage } from '@/service/notification-service';
  */
 export function getNotificationLink(notification) {
   const { type, entityId, commentId } = notification;
+  const basePath = getNotificationBasePath(notification);
 
-  if (type === 'post_new_comment' || type === 'post_comment_reply') {
-    return `/posts/${entityId}?commentId=${commentId}`;
+  if (!entityId) {
+    return basePath;
   }
 
-  if (
-    type === 'event_host_comment' ||
-    type === 'event_participant_comment' ||
-    type === 'event_comment_reply'
-  ) {
-    return `/events/${entityId}?commentId=${commentId}`;
+  const detailPath = `${basePath}/${entityId}`;
+  const hasCommentTarget = POST_COMMENT_TYPES.has(type) || EVENT_COMMENT_TYPES.has(type);
+
+  if (hasCommentTarget && commentId) {
+    return `${detailPath}?commentId=${commentId}`;
   }
 
-  return `/events/${entityId}`;
+  return detailPath;
 }

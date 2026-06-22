@@ -3,16 +3,41 @@
   bottom: 1.5rem;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   max-width: 360px;
   padding: 0.75rem 1.25rem;
   background-color: #1f2937;
   color: white;
+  border: 0;
   border-radius: 0.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   font-size: 0.875rem;
+  font: inherit;
+  text-align: left;
   z-index: 2000;
   animation: fadeIn 0.3s ease-out;
-  pointer-events: none;
+  cursor: pointer;
+}
+
+.toast:hover {
+  background-color: #111827;
+}
+
+.toast:focus-visible {
+  outline: 3px solid #60a5fa;
+  outline-offset: 3px;
+}
+
+.message {
+  min-width: 0;
+}
+
+.cta {
+  flex: 0 0 auto;
+  font-weight: 700;
+  color: #bfdbfe;
 }
 
 @keyframes fadeIn {

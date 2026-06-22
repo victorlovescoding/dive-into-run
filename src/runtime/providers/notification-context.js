@@ -14,7 +14,8 @@ import { createContext, useContext } from 'react';
  * @property {boolean} isLoadingMore - 是否正在載入更多。
  * @property {boolean} hasLoadedMore - 是否已執行過查看先前通知。
  * @property {() => Promise<void>} loadMore - 載入更多通知。
- * @property {{ id: string, message: string } | null} currentToast - 目前顯示的 toast。
+ * @property {import('@/service/notification-service').NotificationItem | null} currentToast - 目前顯示的 toast。
+ * @property {(notificationId: string) => void} dismissNotificationToast - 移除指定通知 toast。
  * @property {import('react').RefObject<HTMLButtonElement | null>} bellButtonRef - 鈴鐺按鈕 ref，用於 focus restore。
  */
 
@@ -33,6 +34,7 @@ const defaultValue = {
   hasLoadedMore: false,
   loadMore: async () => {},
   currentToast: null,
+  dismissNotificationToast: () => {},
   bellButtonRef: { current: null },
 };
 
